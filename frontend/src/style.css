@@ -1,0 +1,317 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   CLASH ROYALE MANAGER - Design System
+   ============================================================================ */
+
+/* Custom Properties */
+:root {
+  /* Primary Colors - Royal Blue to Purple gradient */
+  --cr-primary: #6366f1;
+  --cr-primary-dark: #4f46e5;
+  --cr-primary-light: #818cf8;
+  
+  /* Accent - Gold for highlights */
+  --cr-gold: #fbbf24;
+  --cr-gold-dark: #f59e0b;
+  
+  /* Victory/Defeat */
+  --cr-victory: #10b981;
+  --cr-defeat: #ef4444;
+  --cr-neutral: #64748b;
+  
+  /* Surface colors */
+  --cr-bg-primary: #0f172a;
+  --cr-bg-secondary: #1e293b;
+  --cr-bg-tertiary: #334155;
+  --cr-bg-card: rgba(30, 41, 59, 0.8);
+  
+  /* Text */
+  --cr-text-primary: #f8fafc;
+  --cr-text-secondary: #94a3b8;
+  --cr-text-muted: #64748b;
+  
+  /* Gradients */
+  --cr-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  --cr-gradient-gold: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --cr-gradient-dark: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  
+  /* Shadows */
+  --cr-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --cr-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --cr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --cr-shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+  
+  /* Spacing */
+  --cr-nav-height: 4rem;
+  --cr-bottom-nav-height: 4.5rem;
+}
+
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--cr-bg-primary);
+  color: var(--cr-text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================================
+   GLASSMORPHISM UTILITIES
+   ============================================================================ */
+
+.glass {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: var(--cr-shadow-md);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: var(--cr-shadow-lg), var(--cr-shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(99, 102, 241, 0.2); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
+.stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
+
+/* ============================================================================
+   SKELETON LOADING
+   ============================================================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--cr-bg-tertiary) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    var(--cr-bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* ============================================================================
+   SCROLLBAR
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cr-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cr-bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cr-primary);
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--cr-gradient-primary);
+  color: white;
+  box-shadow: var(--cr-shadow-sm);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cr-shadow-md), var(--cr-shadow-glow);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--cr-bg-tertiary);
+  color: var(--cr-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+  background: var(--cr-bg-secondary);
+  border-color: var(--cr-primary);
+}
+
+.btn-gold {
+  background: var(--cr-gradient-gold);
+  color: #1e293b;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+}
+
+/* ============================================================================
+   BADGES
+   ============================================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-leader {
+  background: var(--cr-gradient-gold);
+  color: #1e293b;
+}
+
+.badge-co-leader {
+  background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+  color: white;
+}
+
+.badge-elder {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: white;
+}
+
+.badge-member {
+  background: var(--cr-bg-tertiary);
+  color: var(--cr-text-secondary);
+}
+
+.badge-victory {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--cr-victory);
+  border: 1px solid var(--cr-victory);
+}
+
+.badge-defeat {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--cr-defeat);
+  border: 1px solid var(--cr-defeat);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 640px) {
+  :root {
+    --cr-bottom-nav-height: 4rem;
+  }
+  
+  .glass-card {
+    border-radius: 0.75rem;
+  }
+}
+
+/* Safe area for PWA on iOS */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: calc(var(--cr-bottom-nav-height) + env(safe-area-inset-bottom));
+  }
+}
