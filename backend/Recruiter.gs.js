@@ -1,5 +1,4 @@
 
-
 /**
  * ============================================================================
  * 🔭 MODULE: RECRUITER
@@ -127,6 +126,21 @@ function scoutRecruits() {
 
   console.log(`💾 Writing ${finalPool.length} active recruits to sheet...`);
   renderHeadhunterView(sheet, finalPool, avgTrophies);
+
+  // --------------------------------------------------------
+  // ⚡ PWA SYNC: FORCE CACHE UPDATE
+  // --------------------------------------------------------
+  // REASONING: Ensure the PWA immediately reflects the new search results.
+  try {
+    if (typeof refreshWebPayload === 'function') {
+      refreshWebPayload();
+      console.log("🔭 Headhunter: PWA Cache Refreshed Successfully.");
+    } else {
+      console.warn("🔭 Headhunter: refreshWebPayload function not found. PWA Cache not updated.");
+    }
+  } catch (e) {
+    console.warn(`🔭 Headhunter: PWA Refresh Failed - ${e.message}`);
+  }
 }
 
 /**
@@ -260,7 +274,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   // 4. Moderate Scan (Top 75 of the Shuffled list)
   // 36 Search + 75 Details + 50 Profiles = ~161 calls. 
-  const topTournaments = lotteryPool.slice(0, 75);
+  const topTournaments = lotteryPool.slice(0, 100);
   const tourneyTags = topTournaments.map(t => t.tag);
 
   console.log(`🔭 Phase B: Deduplication & Selection complete. Reduced ${rawCount} raw hits to ${tourneyTags.length} target tournaments (Randomized Selection from Top 200).`);
