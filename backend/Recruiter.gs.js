@@ -4,23 +4,20 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V5.0.0): 
+ * ⚙️ LOGIC (V5.1.0): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
- *    3. Stochastic Prioritization:
- *       - Sorts tournaments by Capacity (Descending).
- *       - Takes the Top 200 (Wider Net for diversity).
- *       - SHUFFLES them randomly.
- *       - Selects the first 75 to scan.
+ *    3. Stochastic Prioritization: Top 200 Capacity -> Shuffle -> Top 75.
  *    4. Density Filter: Discards empty rooms (members < 10) after fetch.
  *    5. Mercenary Scoring: Massive bonus for recent war activity.
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
- *    7. Blacklist: Ignored "Invited" players for 7 days to prevent cycling.
- * 🏷️ VERSION: 5.0.0
+ *    7. Blacklist (Smart): Tracks scores of invited players for 7 days to maintain
+ *       a "Historical Benchmark" for the 0-100% score calculation.
+ * 🏷️ VERSION: 5.1.0
  * ============================================================================
  */
 
-const VER_RECRUITER = '5.0.0';
+const VER_RECRUITER = '5.1.0';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -37,10 +34,10 @@ function scoutRecruits() {
     avgTrophies = baselineData[0].items.reduce((a,b)=>a+b.trophies,0) / baselineData[0].items.length;
   }
   
-  // 🚫 BLACKLIST UPDATE
-  // We must do this BEFORE loading existing map and deleting entries, 
-  // because updateAndGetBlacklist reads the "Invited=TRUE" rows from the sheet itself.
-  const blacklistSet = updateAndGetBlacklist(sheet);
+  // 🚫 BLACKLIST & BENCHMARK UPDATE
+  // We retrieve the set of ignored tags AND the highest score among them.
+  // This ensures the 100% benchmark considers players in the "Discarded Pile".
+  const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
   // 2. Load existing tracking data FIRST to check Pool Size
   const existing = loadRecruitDatabase(sheet);
@@ -104,13 +101,20 @@ function scoutRecruits() {
     .sort((a,b) => b.rawScore - a.rawScore)
     .slice(0, CONFIG.HEADHUNTER.TARGET);
 
-  // Normalize Performance Score for UI (0-100 relative to best in pool)
-  const maxScore = finalPool.length > 0 ? Math.max(...finalPool.map(p => p.rawScore)) : 1;
-  finalPool.forEach(p => p.perfScore = Math.round((p.rawScore / maxScore) * 100));
+  // ⚓ ANCHOR: Global Benchmark Calculation
+  // The Benchmark (100% Score) is the greater of: 
+  // 1. The best player currently in the list (Active).
+  // 2. The best player in the "Discarded Pile" (Blacklist - 7 Days).
+  // This prevents the "Score Inflation" issue where dismissing a good player makes everyone else look better.
+  const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
+  const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
+  
+  // Avoid division by zero
+  const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
+  
+  finalPool.forEach(p => p.perfScore = Math.round((p.rawScore / finalBenchmark) * 100));
 
   // 📊 LOGGING: The Honest Report
-  // We compare the Final Pool against the Initial IDs.
-  // If a player is in the Final Pool but WAS NOT in Initial IDs, they are a "Survivor" (New Add).
   const survivors = finalPool.filter(p => !initialIds.has(p.tag));
   
   if (survivors.length > 0) {
@@ -130,7 +134,6 @@ function scoutRecruits() {
   // --------------------------------------------------------
   // ⚡ PWA SYNC: FORCE CACHE UPDATE
   // --------------------------------------------------------
-  // REASONING: Ensure the PWA immediately reflects the new search results.
   try {
     if (typeof refreshWebPayload === 'function') {
       refreshWebPayload();
@@ -144,9 +147,10 @@ function scoutRecruits() {
 }
 
 /**
- * 🚫 BLACKLIST MANAGER
- * Stores "Invited" players in ScriptProperties with an expiry timestamp.
- * Returns a Set of Tags to ignore during the current scan.
+ * 🚫 BLACKLIST & HISTORY MANAGER
+ * 1. Stores "Invited" players in ScriptProperties with an expiry timestamp.
+ * 2. Returns a Set of Tags to ignore during the current scan.
+ * 3. Returns the HIGH SCORE of the blacklist to serve as a benchmark.
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
@@ -162,45 +166,65 @@ function updateAndGetBlacklist(sheet) {
   const dayMs = 24 * 60 * 60 * 1000;
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 7) * dayMs;
   
-  // 1. Prune Expired Entries
-  const initialSize = Object.keys(blacklist).length;
+  let maxScore = 0;
+
+  // 1. Prune Expired Entries & Find Historical Max
+  const tagsToDelete = [];
   for (const tag in blacklist) {
-    if (blacklist[tag] < now) {
-      delete blacklist[tag];
+    let entry = blacklist[tag];
+    let expiry, score;
+
+    // Migration Support: Handle old format (Number) vs new format (Object)
+    if (typeof entry === 'number') {
+      expiry = entry;
+      score = 0;
+    } else {
+      expiry = entry.e;
+      score = entry.s || 0;
+    }
+
+    if (expiry < now) {
+      tagsToDelete.push(tag);
+    } else {
+      // Valid entry: check score
+      if (score > maxScore) maxScore = score;
     }
   }
+  
+  // Cleanup
+  tagsToDelete.forEach(t => delete blacklist[t]);
 
-  // 2. Ingest New Invites from Sheet
-  // We scan the current sheet state. If a player is marked invited, we add them.
-  // This logic runs BEFORE the rows are deleted by scoutRecruits.
+  // 2. Ingest New Invites from Sheet (Before they are wiped)
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
+    // Read enough columns to get RAW_SCORE (Index 8)
     const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), Object.keys(H).length).getValues();
     
     data.forEach(row => {
       const tag = row[H.TAG];
       const invited = row[H.INVITED];
+      const raw = Number(row[H.RAW_SCORE]) || 0;
       
       if (tag && invited === true) {
-        // Add or Update expiry to 7 days from NOW
-        blacklist[tag] = now + expiryDuration;
+        // Add to blacklist with compact keys to save property size
+        blacklist[tag] = { e: now + expiryDuration, s: raw };
+        if (raw > maxScore) maxScore = raw;
       }
     });
   }
   
   // 3. Save & Return
   const finalSize = Object.keys(blacklist).length;
-  if (finalSize !== initialSize || finalSize > 0) {
-    // Only save if changed or not empty to save IO
+  if (finalSize > 0) {
     try {
       prop.setProperty(PROP_KEY, JSON.stringify(blacklist));
-      console.log(`🚫 Blacklist Updated: ${finalSize} active entries (Pruned ${initialSize > finalSize ? initialSize - finalSize : 0}).`);
+      console.log(`🚫 Blacklist Updated: ${finalSize} active entries. Discarded High Score: ${maxScore}`);
     } catch(e) {
       console.warn("Blacklist save failed (likely size limit): " + e.message);
     }
   }
   
-  return new Set(Object.keys(blacklist));
+  return { ids: new Set(Object.keys(blacklist)), highScore: maxScore };
 }
 
 function loadRecruitDatabase(sheet) {
@@ -252,9 +276,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     if (res && res.items) {
       res.items.forEach(t => {
         rawCount++;
-        // RELAXED FILTER:
-        // We accept ALL tournaments here. We cannot filter by 'currentPlayers' 
-        // because the Search API often omits it. We filter by density LATER.
         uniqueTourneys.set(t.tag, t);
       });
     }
@@ -265,23 +286,21 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const sortedTournaments = Array.from(uniqueTourneys.values())
     .sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
 
-  // 2. Select a wider pool of candidates (Top 200).
-  const lotteryPool = sortedTournaments.slice(0, 200);
+  // 2. Select a wider pool of candidates (Top 300).
+  const lotteryPool = sortedTournaments.slice(0, 300);
 
   // 3. Shuffle this pool.
-  // This ensures we don't just check the exact same empty 1000-cap tournaments every time.
   Utils.shuffleArray(lotteryPool);
 
-  // 4. Moderate Scan (Top 75 of the Shuffled list)
-  // 36 Search + 75 Details + 50 Profiles = ~161 calls. 
-  const topTournaments = lotteryPool.slice(0, 100);
+  // 4. Aggressive Scan (Top 150 of the Shuffled list)
+  const topTournaments = lotteryPool.slice(0, 150);
   const tourneyTags = topTournaments.map(t => t.tag);
 
-  console.log(`🔭 Phase B: Deduplication & Selection complete. Reduced ${rawCount} raw hits to ${tourneyTags.length} target tournaments (Randomized Selection from Top 200).`);
+  console.log(`🔭 Phase B: Deduplication & Selection complete. Reduced ${rawCount} raw hits to ${tourneyTags.length} target tournaments.`);
   
   if (tourneyTags.length === 0) {
     if (rawCount > 0) {
-      console.warn(`🔭 FILTER WARNING: Found ${rawCount} tournaments, but deduplication reduced to zero. Check logic.`);
+      console.warn(`🔭 FILTER WARNING: Found ${rawCount} tournaments, but deduplication reduced to zero.`);
     } else {
       console.warn("🔭 API WARNING: Zero tournaments returned. Check API Keys/Quota.");
     }
@@ -295,9 +314,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const candidateTags = new Set();
   
   details.forEach(d => {
-    // DENSITY FILTER (SAFE STATE):
-    // Now that we have the full details, we check the ACTUAL player count.
-    // We only recruit from active hives (>= 10 members).
+    // DENSITY FILTER: Only recruit from active hives (>= 10 members).
     if (d && d.membersList && d.membersList.length >= 10) {
       d.membersList.forEach(p => {
         // Core Recruitment Rule: Must be clanless
@@ -335,8 +352,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   playersData.forEach(p => {
     if (p) {
         if (p.trophies >= minTrophies) {
-            // FILTER REMOVED: HoursSinceSeen logic is removed. 
-            // If they are in the tournament list, they are deemed valid candidates.
             validCandidates.push(p);
             playersNeedingWarLogs.push(p.tag);
             playersNeedingWarLogsIndices.push(validCandidates.length - 1);
@@ -373,21 +388,14 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
         if (hasWarActivity) warBonus = 500; // MASSIVE BONUS: 500 wins * 20 weight = 10,000 points. "The Mercenary God" bonus.
       }
 
-      // STICKY MEMORY IMPLEMENTATION (V10.5.1)
-      // Problem: Battle Log only holds 25 items (~2-6 hours of gameplay).
-      // If a player played war yesterday, it falls off the log, causing their score to drop.
-      // Solution: If the player is already in our spreadsheet with a high War Score (implying a bonus),
-      // we PERSIST that bonus. "Once a mercenary, always a mercenary."
-      
+      // STICKY MEMORY IMPLEMENTATION
       let totalWarScore = (p.warDayWins || 0) + warBonus;
       
       if (existingRecruits && existingRecruits.has(p.tag)) {
         const storedRecruit = existingRecruits.get(p.tag);
         const storedWar = storedRecruit.war || 0;
         
-        // If the stored score is higher than the currently calculated score,
-        // it means they likely had a War Bonus in a previous scan that is now lost.
-        // We restore it.
+        // Restore previous bonus if current scan missed it
         if (storedWar > totalWarScore) {
           totalWarScore = storedWar;
         }
@@ -415,7 +423,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     c.tag, c.invited, 
     `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=pool&pin=${c.tag.replace('#','')}", "${c.name}")`,
     c.trophies, c.donations, c.cards, c.war, 
-    new Date(c.foundDate), // ⚠️ FIXED: Passing raw Date object to preserve full timestamp info
+    new Date(c.foundDate), 
     c.rawScore, c.perfScore  
   ]);
 
@@ -427,7 +435,6 @@ function renderHeadhunterView(sheet, list, baseline) {
     dataRange.setValues(rows);
     sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.INVITED, rows.length, 1).insertCheckboxes();
     sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.PERF_SCORE, rows.length, 1).setNumberFormat('0"%"');
-    // ⚠️ FIXED: Explicit full-precision date format for visual debugging
     sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.FOUND_DATE, rows.length, 1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
     
     // Formatting: Highlight good scores
@@ -447,8 +454,7 @@ function renderHeadhunterView(sheet, list, baseline) {
   // FIX: Force layout to Target size (50) to ensure empty slots are visible
   const layoutRows = Math.max(rows.length, CONFIG.HEADHUNTER.TARGET);
   
-  // Explicitly clear buffer rows if we have fewer results than the target (e.g., 47 rows found vs 50 slots).
-  // This removes any ghost checkboxes or artifacts from previous runs in the empty "buffer" slots.
+  // Explicitly clear buffer rows if we have fewer results than the target
   if (rows.length > 0 && rows.length < layoutRows) {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW + rows.length;
     const numRows = layoutRows - rows.length;
@@ -457,7 +463,6 @@ function renderHeadhunterView(sheet, list, baseline) {
          .clearDataValidations();
   }
   
-  // Centralized layout logic (Utilities.gs.js) now handles Column Widths (100) and Alignment.
   // Pass HEADERS for schema enforcement
   Utils.applyStandardLayout(sheet, layoutRows, HEADERS.length, HEADERS);
 }
