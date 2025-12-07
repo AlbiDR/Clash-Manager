@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
 
@@ -55,7 +55,37 @@ const historyBars = computed(() => {
   return bars
 })
 
-function handleInteraction(e: Event) {
+// Long Press Logic
+let lpTimer: any = null
+const lpDuration = 500
+const isLongPress = ref(false)
+
+function startPress() {
+  isLongPress.value = false
+  lpTimer = setTimeout(() => {
+    isLongPress.value = true // Mark as long press trigger
+    if (navigator.vibrate) navigator.vibrate(50)
+    
+    // If NOT in selection mode, enter it and select this item
+    // If IN selection mode, just toggle this item
+    emit('toggle-select')
+  }, lpDuration)
+}
+
+function cancelPress() {
+  if (lpTimer) {
+    clearTimeout(lpTimer)
+    lpTimer = null
+  }
+}
+
+function handleClick(e: Event) {
+  // If we just triggered a long press, Ignore this click
+  if (isLongPress.value) {
+    isLongPress.value = false
+    return
+  }
+  
   // Prevent card click if clicking button or link
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
@@ -64,6 +94,8 @@ function handleInteraction(e: Event) {
     return
   }
 
+  // Standard Logic: If selection mode is ON, click = toggle select
+  // If selection mode is OFF, click = expand
   if (props.selectionMode) {
     emit('toggle-select')
   } else {
@@ -76,7 +108,14 @@ function handleInteraction(e: Event) {
   <div 
     class="card"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleInteraction"
+    @click="handleClick"
+    @mousedown="startPress"
+    @touchstart="startPress"
+    @mouseup="cancelPress"
+    @touchend="cancelPress"
+    @touchmove="cancelPress"
+    @mouseleave="cancelPress"
+    @contextmenu.prevent
   >
     <div class="selection-indicator"></div>
 

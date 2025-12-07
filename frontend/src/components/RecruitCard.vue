@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Recruit } from '../types'
 import Icon from './Icon.vue'
 
@@ -34,7 +34,33 @@ const timeAgo = computed(() => {
   return m > 60 ? Math.floor(m/60) + 'h ago' : m + 'm ago'
 })
 
-function handleInteraction(e: Event) {
+// Long Press Logic
+let lpTimer: any = null
+const lpDuration = 500
+const isLongPress = ref(false)
+
+function startPress() {
+  isLongPress.value = false
+  lpTimer = setTimeout(() => {
+    isLongPress.value = true
+    if (navigator.vibrate) navigator.vibrate(50)
+    emit('toggle-select')
+  }, lpDuration)
+}
+
+function cancelPress() {
+  if (lpTimer) {
+    clearTimeout(lpTimer)
+    lpTimer = null
+  }
+}
+
+function handleClick(e: Event) {
+  if (isLongPress.value) {
+    isLongPress.value = false
+    return
+  }
+  
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
   if ((e.target as HTMLElement).closest('.chevron-btn')) {
@@ -54,7 +80,14 @@ function handleInteraction(e: Event) {
   <div 
     class="card"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleInteraction"
+    @click="handleClick"
+    @mousedown="startPress"
+    @touchstart="startPress"
+    @mouseup="cancelPress"
+    @touchend="cancelPress"
+    @touchmove="cancelPress"
+    @mouseleave="cancelPress"
+    @contextmenu.prevent
   >
     <div class="selection-indicator"></div>
 

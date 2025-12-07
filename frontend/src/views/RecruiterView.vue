@@ -20,8 +20,38 @@ const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 
 const selectedIds = ref<Set<string>>(new Set())
 const expandedIds = ref<Set<string>>(new Set())
+const selectionQueue = ref<string[]>([])
 const selectionMode = ref(false)
 const dismissing = ref(false)
+
+// Computed for FAB
+const fabState = computed(() => {
+  if (!selectionMode.value) return { visible: false }
+  
+  if (selectionQueue.value.length > 0) {
+    const total = selectedIds.value.size
+    const current = total - selectionQueue.value.length + 1
+    const nextId = selectionQueue.value[0]
+    return {
+      visible: true,
+      label: `Next (${current}/${total})`,
+      actionHref: `clashroyale://playerInfo?id=${nextId}`,
+      dismissLabel: 'Exit',
+      isQueue: true
+    }
+  } else {
+    const ids = Array.from(selectedIds.value)
+    const firstId = ids.length > 0 ? ids[0] : null
+    
+    return {
+      visible: ids.length > 0,
+      label: `Open (${ids.length})`,
+      actionHref: firstId ? `clashroyale://playerInfo?id=${firstId}` : undefined,
+      dismissLabel: 'Dismiss',
+      isQueue: false
+    }
+  }
+})
 
 const status = computed(() => {
   if (error.value) return { type: 'error', text: 'Error' } as const
@@ -123,11 +153,18 @@ function selectAll() {
   selectedIds.value = new Set(selectedIds.value)
 }
 
-function openSelection() {
-  // same logic as leaderboard for opening
-  const ids = Array.from(selectedIds.value)
-  if (ids.length === 0) return
-  window.location.href = `clashroyale://playerInfo?id=${ids[0]}`
+function selectionAction() {
+  if (selectionQueue.value.length === 0) {
+    selectionQueue.value = Array.from(selectedIds.value)
+  }
+  
+  setTimeout(() => {
+    selectionQueue.value.shift()
+    if (selectionQueue.value.length === 0) {
+      selectionMode.value = false
+      selectedIds.value.clear()
+    }
+  }, 100)
 }
 
 onMounted(loadData)
@@ -185,10 +222,11 @@ onMounted(loadData)
 
     <!-- Neo-Material Floating Island -->
     <FabIsland
-      :visible="selectionMode"
-      label="Open"
-      dismiss-label="Dismiss"
-      @action="openSelection"
+      :visible="fabState.visible"
+      :label="fabState.label"
+      :action-href="fabState.actionHref"
+      :dismiss-label="fabState.dismissLabel"
+      @action="selectionAction"
       @dismiss="dismissBulk"
     />
   </div>

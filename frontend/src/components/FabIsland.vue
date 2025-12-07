@@ -11,6 +11,7 @@ defineProps<{
   visible: boolean
   label?: string
   dismissLabel?: string
+  actionHref?: string
 }>()
 
 const emit = defineEmits<{
@@ -32,7 +33,19 @@ const emit = defineEmits<{
       </button>
 
       <!-- Action Button (Primary) -->
+      <!-- Render as <a> if href exists to support Deep Links properly -->
+      <a 
+        v-if="actionHref"
+        :href="actionHref"
+        class="fab-btn primary" 
+        @click="emit('action')"
+      >
+        <Icon name="check" size="18" />
+        <span>{{ label || 'Open' }}</span>
+      </a>
+      
       <button 
+        v-else
         class="fab-btn primary" 
         @click="emit('action')"
       >

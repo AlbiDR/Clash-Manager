@@ -21,7 +21,39 @@ const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 // Expansion & Selection
 const expandedIds = ref<Set<string>>(new Set())
 const selectedIds = ref<Set<string>>(new Set())
+const selectionQueue = ref<string[]>([]) // For "Next (1/5)" workflow
 const selectionMode = ref(false)
+
+// Computed for FAB
+const fabState = computed(() => {
+  if (!selectionMode.value) return { visible: false }
+  
+  if (selectionQueue.value.length > 0) {
+    // Queue Mode
+    const total = selectedIds.value.size
+    const current = total - selectionQueue.value.length + 1
+    const nextId = selectionQueue.value[0]
+    return {
+      visible: true,
+      label: `Next (${current}/${total})`,
+      actionHref: `clashroyale://playerInfo?id=${nextId}`,
+      dismissLabel: 'Exit',
+      isQueue: true
+    }
+  } else {
+    // Initial Select Mode
+    const ids = Array.from(selectedIds.value)
+    const firstId = ids.length > 0 ? ids[0] : null
+    
+    return {
+      visible: ids.length > 0,
+      label: `Open (${ids.length})`,
+      actionHref: firstId ? `clashroyale://playerInfo?id=${firstId}` : undefined,
+      dismissLabel: 'Clear',
+      isQueue: false
+    }
+  }
+})
 
 const status = computed(() => {
   if (error.value) return { type: 'error', text: 'Error' } as const
@@ -39,6 +71,8 @@ function toggleExpand(id: string) {
 }
 
 function toggleSelect(id: string) {
+  if (selectionQueue.value.length > 0) return // Lock selection during queue mode
+  
   if (selectedIds.value.has(id)) {
     selectedIds.value.delete(id)
   } else {
@@ -60,11 +94,21 @@ function selectAll() {
   selectionAllLogic(filteredMembers.value)
 }
 
-function openSelection() {
-  const ids = Array.from(selectedIds.value)
-  if (ids.length === 0) return
-  // Open first selected member (simplified logic for now)
-  window.location.href = `clashroyale://playerInfo?id=${ids[0]}`
+
+function selectionAction() {
+  // If not in queue mode, START queue mode
+  if (selectionQueue.value.length === 0) {
+    selectionQueue.value = Array.from(selectedIds.value)
+  }
+  
+  // Advance Queue (Shift)
+  setTimeout(() => {
+    selectionQueue.value.shift()
+    if (selectionQueue.value.length === 0) {
+      selectionMode.value = false
+      selectedIds.value.clear()
+    }
+  }, 100)
 }
 
 function dismissSelection() {
@@ -187,10 +231,11 @@ onMounted(loadData)
 
     <!-- Selection Island -->
     <FabIsland
-      :visible="selectionMode"
-      :label="`Open (${selectedIds.size})`"
-      dismiss-label="Clear"
-      @action="openSelection"
+      :visible="fabState.visible"
+      :label="fabState.label"
+      :action-href="fabState.actionHref"
+      :dismiss-label="fabState.dismissLabel"
+      @action="selectionAction"
       @dismiss="dismissSelection"
     />
   </div>
