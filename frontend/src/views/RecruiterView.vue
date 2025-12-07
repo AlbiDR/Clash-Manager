@@ -1,28 +1,57 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { getLeaderboard, dismissRecruits } from '../api/gasClient'
 import type { Recruit } from '../types'
+import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
+import FabIsland from '../components/FabIsland.vue'
 import PullToRefresh from '../components/PullToRefresh.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import Icon from '../components/Icon.vue'
 
 const route = useRoute()
 
 const recruits = ref<Recruit[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const searchQuery = ref('')
+const sortBy = ref<'score' | 'trophies' | 'name'>('score')
+
 const selectedIds = ref<Set<string>>(new Set())
 const expandedIds = ref<Set<string>>(new Set())
-const dismissing = ref(false)
 const selectionMode = ref(false)
-const isScrolled = ref(false)
+const dismissing = ref(false)
 
-function handleScroll() {
-  isScrolled.value = window.scrollY > 10
-}
+const status = computed(() => {
+  if (error.value) return { type: 'error', text: 'Error' } as const
+  if (loading.value) return { type: 'loading', text: 'Syncing' } as const
+  return { type: 'ready', text: `${recruits.value.length} Prospects` } as const
+})
+
+// Filtered and sorted
+const filteredRecruits = computed(() => {
+  let result = [...recruits.value]
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(r => 
+      r.n.toLowerCase().includes(query) || 
+      r.id.toLowerCase().includes(query)
+    )
+  }
+  
+  result.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'score': return (b.s || 0) - (a.s || 0)
+      case 'trophies': return (b.t || 0) - (a.t || 0)
+      case 'name': return a.n.localeCompare(b.n)
+      default: return 0
+    }
+  })
+  
+  return result
+})
 
 async function loadData() {
   loading.value = true
@@ -30,24 +59,15 @@ async function loadData() {
   
   try {
     const response = await getLeaderboard()
-    // Check if response exists and has success status
-    // The API might return LegacyApiResponse or ApiResponse, gasClient normalizes it usually.
-    // Based on previous files, we check .success (boolean) or .status === 'success'
-    // Let's cover both or checks usage in gasClient. 
-    // gasClient getLeaderboard returns Promise<ApiResponse<WebAppData>>
-    // where ApiResponse has { success: boolean, data?: T, error?: ... }
     if (response && response.success && response.data) {
       recruits.value = response.data.hh || []
       
-      // Handle Pin/Scroll-to
       const pinId = route.query.pin as string
       if (pinId && recruits.value.some(r => r.id === pinId)) {
         expandedIds.value.add(pinId)
         nextTick(() => {
           const el = document.getElementById(`recruit-${pinId}`)
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         })
       }
     } else {
@@ -61,235 +81,146 @@ async function loadData() {
 }
 
 function toggleExpand(id: string) {
-  if (expandedIds.value.has(id)) {
-    expandedIds.value.delete(id)
-  } else {
-    expandedIds.value.add(id)
-  }
-  // Force reactivity
+  if (expandedIds.value.has(id)) expandedIds.value.delete(id)
+  else expandedIds.value.add(id)
   expandedIds.value = new Set(expandedIds.value)
 }
 
 function toggleSelect(id: string) {
-  if (selectedIds.value.has(id)) {
-    selectedIds.value.delete(id)
-  } else {
+  if (selectedIds.value.has(id)) selectedIds.value.delete(id)
+  else {
     selectedIds.value.add(id)
     if (!selectionMode.value) selectionMode.value = true
   }
   selectedIds.value = new Set(selectedIds.value)
-  
-  if (selectedIds.value.size === 0) {
-    selectionMode.value = false
-  }
+  if (selectedIds.value.size === 0) selectionMode.value = false
 }
 
-async function dismissRecruitsFn() {
+async function dismissBulk() {
   if (selectedIds.value.size === 0) return
+  if (!confirm(`Dismiss ${selectedIds.value.size} recruits?`)) return
   
   dismissing.value = true
   try {
-    const idsToDismiss = Array.from(selectedIds.value)
-    const response = await dismissRecruits(idsToDismiss)
+    const ids = Array.from(selectedIds.value)
     
-    if (response.status === 'success') {
-      // Remove from local list
-      recruits.value = recruits.value.filter(r => !selectedIds.value.has(r.id))
-      selectedIds.value.clear()
-      selectionMode.value = false
-    } else {
-      alert('Failed to dismiss: ' + (response.error?.message || 'Unknown error'))
-    }
+    // Optimistic UI update
+    recruits.value = recruits.value.filter(r => !selectedIds.value.has(r.id))
+    selectedIds.value.clear()
+    selectionMode.value = false
+    
+    await dismissRecruits(ids)
   } catch (e) {
-    alert('Error dismissing recruits')
+    alert('Failed to dismiss recruits')
+    loadData() // Re-sync on failure
   } finally {
     dismissing.value = false
   }
 }
 
-onMounted(() => {
-  loadData()
-  window.addEventListener('scroll', handleScroll)
-})
+function selectAll() {
+  filteredRecruits.value.forEach(r => selectedIds.value.add(r.id))
+  selectedIds.value = new Set(selectedIds.value)
+}
 
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
+function openSelection() {
+  // same logic as leaderboard for opening
+  const ids = Array.from(selectedIds.value)
+  if (ids.length === 0) return
+  window.location.href = `clashroyale://playerInfo?id=${ids[0]}`
+}
+
+onMounted(loadData)
 </script>
 
 <template>
-  <div class="recruiter-view">
+  <div class="view-container">
     <PullToRefresh @refresh="loadData" />
     
-    <!-- Functional Top App Bar -->
-    <header class="top-app-bar" :class="{ 'scrolled': isScrolled }">
-      <div class="toolbar-content">
-        <h1 class="page-title" v-if="!selectionMode">Recruiter</h1>
-        <div class="selection-header" v-else>
-          <button class="icon-btn" @click="selectionMode = false">
-            <Icon name="close" />
-          </button>
-          <span class="selection-count">{{ selectedIds.size }} selected</span>
+    <ConsoleHeader
+      title="Headhunter"
+      :status="status"
+      :show-search="!selectionMode"
+      @update:search="val => searchQuery = val"
+      @update:sort="val => sortBy = val as any"
+      @refresh="loadData"
+    >
+      <template #extra>
+        <div v-if="selectionMode" class="selection-bar">
+           <div class="sel-count">{{ selectedIds.size }} Selected</div>
+           <div class="sel-actions">
+             <span class="text-btn primary" @click="selectAll">All</span>
+             <span class="text-btn" @click="selectedIds.clear()">None</span>
+             <span class="text-btn danger" @click="selectedIds.clear(); selectionMode = false">Done</span>
+           </div>
         </div>
-        
-        <div class="actions">
-          <button 
-            v-if="!selectionMode"
-            class="icon-btn" 
-            @click="selectionMode = true"
-            v-tooltip="'Select'"
-          >
-            <Icon name="check" />
-          </button>
-          
-          <button 
-            v-if="selectionMode"
-            class="icon-btn"
-            @click="dismissRecruitsFn"
-            :disabled="dismissing || selectedIds.size === 0"
-            v-tooltip="'Dismiss Selected'"
-          >
-             <Icon name="close" />
-          </button>
-          
-          <button 
-            v-if="!selectionMode"
-            class="icon-btn"
-            @click="loadData"
-            :disabled="loading"
-            v-tooltip="'Refresh'"
-          >
-            <Icon name="refresh" :class="{ 'spin': loading }" />
-          </button>
-        </div>
-      </div>
-    </header>
+      </template>
+    </ConsoleHeader>
 
-    <!-- Error State -->
-    <ErrorState 
-      v-if="error" 
-      :message="error" 
-      @retry="loadData" 
-    />
+    <ErrorState v-if="error" :message="error" @retry="loadData" />
     
-    <!-- Loading State -->
-    <div v-else-if="loading" class="recruit-list">
+    <div v-else-if="loading" class="list-container">
       <div v-for="i in 5" :key="i" class="skeleton-card"></div>
     </div>
     
-    <!-- Empty State -->
     <EmptyState 
-      v-else-if="recruits.length === 0"
-      icon="scope"
-      message="No recruits found"
-      hint="Check back later for new prospects"
+      v-else-if="filteredRecruits.length === 0" 
+      icon="scope" 
+      message="No recruits found" 
     />
     
-    <!-- Recruit List -->
-    <div v-else class="recruit-list stagger-children">
+    <div v-else class="list-container stagger-children">
       <RecruitCard
-        v-for="recruit in recruits"
+        v-for="recruit in filteredRecruits"
         :key="recruit.id"
         :id="`recruit-${recruit.id}`"
         :recruit="recruit"
-        :selected="selectedIds.has(recruit.id)"
         :expanded="expandedIds.has(recruit.id)"
+        :selected="selectedIds.has(recruit.id)"
         :selection-mode="selectionMode"
-        @toggle-select="toggleSelect(recruit.id)"
         @toggle-expand="toggleExpand(recruit.id)"
+        @toggle-select="toggleSelect(recruit.id)"
       />
     </div>
+
+    <!-- Neo-Material Floating Island -->
+    <FabIsland
+      :visible="selectionMode"
+      label="Open"
+      dismiss-label="Dismiss"
+      @action="openSelection"
+      @dismiss="dismissBulk"
+    />
   </div>
 </template>
 
 <style scoped>
-.recruiter-view {
+.view-container {
   min-height: 100%;
+  padding-bottom: 24px;
 }
 
-/* App Bar */
-.top-app-bar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: var(--md-sys-color-surface);
-  transition: all 0.2s ease;
-  padding: 0.5rem 1rem;
+.list-container {
+  padding-bottom: 32px;
 }
 
-.top-app-bar.scrolled {
-  background: var(--md-sys-color-surface-container);
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+.selection-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--sys-color-outline-variant);
+  animation: fadeSlideIn 0.3s;
 }
 
-.toolbar-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 48px;
-}
+.sel-count { font-size: 20px; font-weight: 700; }
 
-.page-title {
-  font-size: 1.375rem;
-  font-weight: 500;
-  margin: 0;
-}
+.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.text-btn.primary { color: var(--sys-color-primary); }
 
-.selection-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-}
-
-.selection-count {
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--md-sys-color-on-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.icon-btn:hover {
-  background-color: var(--md-sys-color-surface-variant);
-}
-
-.icon-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-.recruit-list {
-  padding: 0 1rem 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Skeletons */
 .skeleton-card {
-  height: 80px;
-  background: var(--md-sys-color-surface-container);
-  border-radius: var(--md-sys-shape-corner-large);
+  height: 100px;
+  background: var(--sys-color-surface-container-high);
+  border-radius: var(--shape-corner-l);
+  margin-bottom: 8px;
   animation: pulse 1.5s infinite;
 }
 </style>
