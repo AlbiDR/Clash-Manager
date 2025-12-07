@@ -174,14 +174,23 @@ onMounted(loadData)
         <span class="stat-value">{{ stats.avgScore.toLocaleString() }}</span>
         <span class="stat-label">Avg Score</span>
       </div>
-      <button 
-        class="refresh-btn" 
-        @click="loadData" 
-        :disabled="loading"
-        v-tooltip="'Refresh'"
-      >
-        {{ loading ? '...' : '🔄' }}
-      </button>
+      <div class="header-actions">
+        <button 
+          class="action-btn"
+          @click="selectionMode = true"
+          v-tooltip="'Select Multiple'"
+        >
+          ✅
+        </button>
+        <button 
+          class="refresh-btn" 
+          @click="loadData" 
+          :disabled="loading"
+          v-tooltip="'Refresh'"
+        >
+          {{ loading ? '...' : '🔄' }}
+        </button>
+      </div>
     </div>
     
     <!-- Error State -->
@@ -326,6 +335,29 @@ onMounted(loadData)
   border-radius: 50%;
   font-size: 1.25rem;
   cursor: pointer;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  width: 3rem;
+  height: 3rem;
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  border-radius: 50%;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: var(--md-sys-color-surface-container-highest);
 }
 
 /* Recruit List */
