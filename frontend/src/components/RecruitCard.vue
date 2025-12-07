@@ -48,6 +48,19 @@ function startPress() {
   }, lpDuration)
 }
 
+// Share Logic
+const canShare = typeof navigator !== 'undefined' && !!navigator.share
+
+function shareRecruit() {
+  if (navigator.share) {
+    navigator.share({
+      title: `Recruit: ${props.recruit.n}`,
+      text: `Found a potential recruit: ${props.recruit.n} (Score: ${Math.round(props.recruit.s || 0)})`,
+      url: `https://royaleapi.com/player/${props.recruit.id}`
+    }).catch(console.error)
+  }
+}
+
 function cancelPress() {
   if (lpTimer) {
     clearTimeout(lpTimer)
@@ -146,6 +159,9 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
+        <button v-if="canShare" class="btn-action secondary" @click.stop="shareRecruit">
+          Share
+        </button>
       </div>
     </div>
   </div>

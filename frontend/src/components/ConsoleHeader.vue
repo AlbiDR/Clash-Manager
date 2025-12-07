@@ -72,7 +72,10 @@ const sortValue = ref('score')
 <style scoped>
 /* 🛸 Floating Console Header */
 .header-wrapper {
-  position: sticky; top: 12px; z-index: 100;
+  position: sticky;
+  /* Top position + Safe Area (Status Bar) */
+  top: calc(12px + env(safe-area-inset-top));
+  z-index: 100;
   margin-bottom: 24px;
 }
 

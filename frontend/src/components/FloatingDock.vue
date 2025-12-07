@@ -32,7 +32,10 @@ function navigate(path: string) {
 
 <style scoped>
 .dock-container {
-  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  position: fixed;
+  /* Bottom position + Safe Area (Home Bar) */
+  bottom: calc(32px + env(safe-area-inset-bottom));
+  left: 50%; transform: translateX(-50%);
   background: var(--sys-surface-glass);
   backdrop-filter: var(--sys-surface-glass-blur); -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   padding: 6px; border-radius: var(--shape-corner-full);

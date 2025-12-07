@@ -102,6 +102,19 @@ function handleClick(e: Event) {
     emit('toggle')
   }
 }
+
+// Share Logic
+const canShare = typeof navigator !== 'undefined' && !!navigator.share
+
+function shareMember() {
+  if (navigator.share) {
+    navigator.share({
+      title: `Clash Manager: ${props.member.n}`,
+      text: `Check out ${props.member.n} (${props.member.d.role}) in our clan!`,
+      url: `https://royaleapi.com/player/${props.member.id}`
+    }).catch(console.error)
+  }
+}
 </script>
 
 <template>
@@ -172,6 +185,7 @@ function handleClick(e: Event) {
         ></div>
       </div>
 
+      <!-- Action Grid -->
       <div class="btn-row">
         <a 
           :href="`https://royaleapi.com/player/${member.id}`" 
@@ -186,6 +200,9 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
+        <button v-if="canShare" class="btn-action secondary" @click.stop="shareMember">
+          Share
+        </button>
       </div>
     </div>
   </div>

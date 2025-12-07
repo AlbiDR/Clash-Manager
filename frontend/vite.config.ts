@@ -38,7 +38,27 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'any maskable'
           }
-        ]
+        ],
+        shortcuts: [
+          {
+            name: '🏆 Leaderboard',
+            short_name: 'Leaderboard',
+            description: 'View current clan standings',
+            url: '/Clash_Manager-Clan_Tracker/',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
+          },
+          {
+            name: '🔭 Headhunter',
+            short_name: 'Headhunter',
+            description: 'Scout for new recruits',
+            url: '/Clash_Manager-Clan_Tracker/recruiter',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
+          }
+        ],
+        categories: ['productivity', 'games'],
+        launch_handler: {
+          client_mode: 'auto'
+        }
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],

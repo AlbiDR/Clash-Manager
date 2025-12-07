@@ -136,9 +136,11 @@ body {
   background-color: var(--sys-color-background);
   color: var(--sys-color-on-background);
   font-family: var(--sys-typescale-body);
-  padding-bottom: 140px;
-  /* Space for Dock */
+  /* Space for Dock + Safe Area */
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
   overflow-y: scroll;
+  /* Prevent rubber-banding on app shell */
+  overscroll-behavior-y: none;
 }
 
 #app {
