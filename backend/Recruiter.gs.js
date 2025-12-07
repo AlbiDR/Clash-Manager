@@ -4,7 +4,7 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V5.1.0): 
+ * ⚙️ LOGIC (V5.1.1): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
  *    3. Stochastic Prioritization: Top 200 Capacity -> Shuffle -> Top 75.
@@ -13,11 +13,11 @@
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
  *    7. Blacklist (Smart): Tracks scores of invited players for 7 days to maintain
  *       a "Historical Benchmark" for the 0-100% score calculation.
- * 🏷️ VERSION: 5.1.0
+ * 🏷️ VERSION: 5.1.1
  * ============================================================================
  */
 
-const VER_RECRUITER = '5.1.0';
+const VER_RECRUITER = '5.1.1';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -36,7 +36,7 @@ function scoutRecruits() {
   
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   // We retrieve the set of ignored tags AND the highest score among them.
-  // This ensures the 100% benchmark considers players in the "Discarded Pile".
+  // This ensures the 100% benchmark considers players in the "Discarded Pile" (Last 7 Days).
   const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
   // 2. Load existing tracking data FIRST to check Pool Size
@@ -107,8 +107,14 @@ function scoutRecruits() {
   // 2. The best player in the "Discarded Pile" (Blacklist - 7 Days).
   // This prevents the "Score Inflation" issue where dismissing a good player makes everyone else look better.
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
+  
+  // ⚡ LOGIC: Max(History, Current).
+  // If we just dismissed a 10k player, the benchmark stays 10k.
+  // If we found a NEW 12k player, the benchmark raises to 12k.
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
   
+  console.log(`🔭 Scoring Benchmark: ${benchmarkScore} (Active High: ${currentHighRaw} | Discarded High: ${discardedHighScore})`);
+
   // Avoid division by zero
   const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
   
@@ -164,6 +170,7 @@ function updateAndGetBlacklist(sheet) {
 
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
+  // ⚡ CONFIGURATION: This determines how long the "Discarded Pile" affects the benchmark.
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 7) * dayMs;
   
   let maxScore = 0;
