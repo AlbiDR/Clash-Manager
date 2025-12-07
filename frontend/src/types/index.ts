@@ -43,6 +43,7 @@ export interface Recruit {
         don: number   // Donations
         war: number   // War Wins
         ago: string   // Found Date ISO
+        cards?: number // Cards Won (optional)
     }
 }
 

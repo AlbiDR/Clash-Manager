@@ -10,6 +10,19 @@ const error = ref<string | null>(null)
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 
+// Expansion state
+const expandedIds = ref<Set<string>>(new Set())
+
+function toggleExpand(id: string) {
+  if (expandedIds.value.has(id)) {
+    expandedIds.value.delete(id)
+  } else {
+    expandedIds.value.add(id)
+  }
+  // Force reactivity
+  expandedIds.value = new Set(expandedIds.value)
+}
+
 // Filtered and sorted members
 const filteredMembers = computed(() => {
   let result = [...members.value]
@@ -148,6 +161,8 @@ onMounted(loadData)
         :key="member.id"
         :member="member"
         :rank="index + 1"
+        :expanded="expandedIds.has(member.id)"
+        @toggle="toggleExpand(member.id)"
       />
     </div>
   </div>

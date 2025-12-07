@@ -39,7 +39,7 @@ onMounted(async () => {
 <template>
   <div class="app-container">
     <!-- Header -->
-    <header class="header glass">
+    <header class="header">
       <div class="header-content">
         <div class="logo">
           <span class="logo-icon">👑</span>
@@ -61,7 +61,7 @@ onMounted(async () => {
     </header>
     
     <!-- Main Content -->
-    <main class="main-content safe-bottom">
+    <main class="main-content">
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />
@@ -69,17 +69,17 @@ onMounted(async () => {
       </RouterView>
     </main>
     
-    <!-- Bottom Navigation (Mobile-first) -->
-    <nav class="bottom-nav glass">
+    <!-- Floating Dock Navigation -->
+    <nav class="floating-dock">
       <RouterLink
         v-for="item in navItems"
         :key="item.name"
         :to="item.path"
-        class="nav-item"
-        :class="{ 'nav-item-active': route.name === item.name }"
+        class="dock-item"
+        :class="{ 'dock-item-active': route.name === item.name }"
       >
-        <span class="nav-icon">{{ item.icon }}</span>
-        <span class="nav-label">{{ item.label }}</span>
+        <span class="dock-icon">{{ item.icon }}</span>
+        <span class="dock-label">{{ item.label }}</span>
       </RouterLink>
     </nav>
   </div>
@@ -88,27 +88,32 @@ onMounted(async () => {
 <style scoped>
 .app-container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
 .header {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  height: var(--cr-nav-height);
-  z-index: 100;
+  z-index: 50;
+  background-color: color-mix(in oklch, var(--md-sys-color-surface) 85%, transparent);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
+  height: 4rem;
   padding: 0 1rem;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -125,10 +130,7 @@ onMounted(async () => {
 .logo-text {
   font-size: 1.125rem;
   font-weight: 700;
-  background: var(--cr-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--md-sys-color-on-surface);
 }
 
 .header-status {
@@ -141,127 +143,154 @@ onMounted(async () => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  transition: background-color 0.3s;
+  transition: all 0.3s var(--md-sys-motion-easing-standard);
 }
 
 .status-online {
-  background: var(--cr-victory);
-  box-shadow: 0 0 8px var(--cr-victory);
+  background-color: var(--md-sys-color-success);
+  box-shadow: 0 0 8px var(--md-sys-color-success);
 }
 
 .status-offline {
-  background: var(--cr-defeat);
+  background-color: var(--md-sys-color-error);
 }
 
 .status-checking {
-  background: var(--cr-gold);
-  animation: pulse-glow 1s infinite;
+  background-color: var(--md-sys-color-tertiary);
+  animation: pulse-ring 1s infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .offline-badge {
   font-size: 0.75rem;
-  color: var(--cr-defeat);
+  color: var(--md-sys-color-error);
   font-weight: 600;
 }
 
-/* Main Content */
+/* ============================================================================
+   MAIN CONTENT
+   ============================================================================ */
+
 .main-content {
   flex: 1;
-  padding: calc(var(--cr-nav-height) + 1rem) 1rem 1rem;
-  max-width: 1200px;
+  padding: 1rem;
+  padding-bottom: 120px; /* Space for floating dock */
+  max-width: 800px;
   margin: 0 auto;
   width: 100%;
 }
 
-/* Bottom Navigation */
-.bottom-nav {
+/* ============================================================================
+   FLOATING DOCK NAVIGATION
+   ============================================================================ */
+
+.floating-dock {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--cr-bottom-nav-height);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  
+  display: inline-flex;
+  gap: 6px;
+  padding: 8px;
+  
+  background-color: color-mix(in oklch, var(--md-sys-color-surface-container) 90%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  
+  border-radius: var(--md-sys-shape-corner-full);
+  box-shadow: var(--md-sys-elevation-3);
+  border: 1px solid var(--md-sys-color-outline-variant);
 }
 
-.nav-item {
+.dock-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 1rem;
+  gap: 2px;
+  padding: 10px 18px;
+  
   text-decoration: none;
-  color: var(--cr-text-muted);
-  transition: all 0.2s ease;
-  border-radius: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+  
+  border-radius: var(--md-sys-shape-corner-full);
+  
+  transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
 }
 
-.nav-item:hover {
-  color: var(--cr-text-secondary);
+.dock-item:active {
+  transform: scale(0.95);
 }
 
-.nav-item-active {
-  color: var(--cr-primary-light);
-  background: rgba(99, 102, 241, 0.1);
+.dock-item-active {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
 }
 
-.nav-icon {
+.dock-icon {
   font-size: 1.25rem;
-  transition: transform 0.2s ease;
+  line-height: 1;
+  transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-spring);
 }
 
-.nav-item-active .nav-icon {
+.dock-item-active .dock-icon {
   transform: scale(1.1);
 }
 
-.nav-label {
-  font-size: 0.625rem;
+.dock-label {
+  font-size: 0.5rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-/* Page Transitions */
+/* Hide labels on very small screens */
+@media (max-width: 400px) {
+  .dock-label {
+    display: none;
+  }
+  
+  .dock-item {
+    padding: 12px 14px;
+  }
+}
+
+/* ============================================================================
+   PAGE TRANSITIONS
+   ============================================================================ */
+
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+              transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(8px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-8px);
 }
 
-/* Desktop: Hide bottom nav, show as sidebar */
+/* ============================================================================
+   DESKTOP LAYOUT
+   ============================================================================ */
+
 @media (min-width: 768px) {
-  .bottom-nav {
-    top: var(--cr-nav-height);
-    bottom: auto;
-    left: 0;
-    right: auto;
-    width: 5rem;
-    height: auto;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 1rem 0.5rem;
-    gap: 0.5rem;
-    border-radius: 0 1rem 1rem 0;
+  .floating-dock {
+    bottom: 32px;
   }
   
   .main-content {
-    padding-left: 6rem;
-  }
-  
-  .nav-item {
-    width: 100%;
+    padding-bottom: 140px;
   }
 }
 </style>
