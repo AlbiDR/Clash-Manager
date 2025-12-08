@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { getLeaderboard } from '../api/gasClient'
+import { getLeaderboard, forceRefresh, getLastUpdateTimestamp } from '../api/gasClient'
 import type { LeaderboardMember } from '../types'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
@@ -9,6 +9,7 @@ import FabIsland from '../components/FabIsland.vue'
 import PullToRefresh from '../components/PullToRefresh.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
+import DataFreshnessPill from '../components/DataFreshnessPill.vue'
 
 const route = useRoute()
 
@@ -17,6 +18,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
+const dataTimestamp = ref<number>(0)
 
 // Expansion & Selection
 const expandedIds = ref<Set<string>>(new Set())
@@ -148,6 +150,7 @@ async function loadData() {
     const response = await getLeaderboard()
     if (response.success && response.data) {
       members.value = response.data.lb || []
+      dataTimestamp.value = getLastUpdateTimestamp('leaderboard') || Date.now()
       
       const pinId = route.query.pin as string
       if (pinId && members.value.some(m => m.id === pinId)) {
@@ -167,6 +170,25 @@ async function loadData() {
   }
 }
 
+async function handleForceRefresh() {
+  loading.value = true
+  error.value = null
+  
+  try {
+    const response = await forceRefresh()
+    if (response.success && response.data) {
+      members.value = response.data.lb || []
+      dataTimestamp.value = Date.now()
+    } else {
+      error.value = response.error?.message || 'Failed to refresh data'
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Network error'
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(loadData)
 </script>
 
@@ -177,12 +199,19 @@ onMounted(loadData)
     <!-- Neo-Material Console Header -->
     <ConsoleHeader
       title="Leaderboard"
-      :status="status"
       :show-search="!selectionMode"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
-      @refresh="loadData"
+      @refresh="handleForceRefresh"
     >
+      <template #status>
+        <DataFreshnessPill
+          :timestamp="dataTimestamp"
+          :loading="loading"
+          :error="error"
+          @refresh="handleForceRefresh"
+        />
+      </template>
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
            <div class="sel-count">{{ selectedIds.size }} Selected</div>

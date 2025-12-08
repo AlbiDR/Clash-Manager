@@ -25,15 +25,17 @@ const sortValue = ref('score')
       <div class="console-top">
         <div class="view-title">{{ title }}</div>
         
-        <div 
-          v-if="status"
-          class="status-badge" 
-          :class="status.type"
-          @click="emit('refresh')"
-        >
-          <div v-if="status.type === 'loading'" class="spinner"></div>
-          <span>{{ status.text }}</span>
-        </div>
+        <slot name="status">
+          <div 
+            v-if="status"
+            class="status-badge" 
+            :class="status.type"
+            @click="emit('refresh')"
+          >
+            <div v-if="status.type === 'loading'" class="spinner"></div>
+            <span>{{ status.text }}</span>
+          </div>
+        </slot>
       </div>
 
       <!-- Bottom Row: Search & Filter -->
