@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   CLASH MANAGER - Neo-Material Design System (2026 Vision)
+   ============================================================================ */
+
+:root {
+  /* 🌈 Color System (Neo-Material 2026) */
+  --sys-color-primary: #0061a4;
+  --sys-color-primary-rgb: 0, 97, 164;
+  --sys-color-on-primary: #ffffff;
+  --sys-color-primary-container: #d1e4ff;
+  --sys-color-on-primary-container: #001d36;
+
+  --sys-color-secondary: #535f70;
+  --sys-color-secondary-container: #d7e3f7;
+  --sys-color-on-secondary-container: #101c2b;
+
+  --sys-color-tertiary: #6b5778;
+  --sys-color-tertiary-rgb: 107, 87, 120;
+  --sys-color-tertiary-container: #f2daff;
+  --sys-color-on-tertiary-container: #251431;
+
+  --sys-color-error: #ba1a1a;
+  --sys-color-error-container: #ffdad6;
+  --sys-color-on-error-container: #410002;
+
+  --sys-color-success: #2e7d32;
+  --sys-color-success-container: #b9f6ca;
+  --sys-color-on-success: #ffffff;
+  --sys-color-on-success-container: #002105;
+
+  --sys-color-background: #fdfcff;
+  --sys-color-on-background: #1a1c1e;
+
+  --sys-color-surface: #fdfcff;
+  --sys-color-on-surface: #1a1c1e;
+
+  /* Surface Container Levels (Depth) */
+  --sys-color-surface-container-low: #f7f2fa;
+  --sys-color-surface-container: #f3edf7;
+  --sys-color-surface-container-high: #ece6f0;
+
+  --sys-color-surface-variant: #dfe2eb;
+  --sys-color-on-surface-variant: #43474e;
+  --sys-color-outline: #73777f;
+  --sys-color-outline-variant: #c4c7c5;
+
+  /* 🥛 Neo-Glass Tokens */
+  --sys-surface-glass: rgba(253, 252, 255, 0.75);
+  --sys-surface-glass-border: rgba(255, 255, 255, 0.4);
+  --sys-surface-glass-blur: blur(20px) saturate(180%);
+
+  /* 📐 Geometry */
+  --shape-corner-xs: 4px;
+  --shape-corner-s: 12px;
+  --shape-corner-m: 16px;
+  --shape-corner-l: 28px;
+  --shape-corner-full: 999px;
+
+  /* 🎭 Elevation & Physics */
+  --sys-elevation-0: 0 0 0 0 transparent;
+  --sys-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --sys-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --sys-elevation-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+
+  --sys-motion-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sys-motion-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* 🔤 Typography */
+  --sys-typescale-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", Helvetica, Arial, sans-serif;
+  --sys-typescale-mono: "SF Mono", "Roboto Mono", monospace;
+
+  /* Layout */
+  --sys-layout-max-width: 720px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sys-color-primary: #9ecaff;
+    --sys-color-primary-rgb: 158, 202, 255;
+    --sys-color-on-primary: #003258;
+    --sys-color-primary-container: #00497d;
+    --sys-color-on-primary-container: #d1e4ff;
+
+    --sys-color-secondary: #bbc7db;
+    --sys-color-secondary-container: #3b4858;
+    --sys-color-on-secondary-container: #d7e3f7;
+
+    --sys-color-tertiary: #d6bee4;
+    --sys-color-tertiary-rgb: 214, 190, 228;
+    --sys-color-tertiary-container: #523f5f;
+    --sys-color-on-tertiary-container: #f2daff;
+
+    --sys-color-error: #ffb4ab;
+    --sys-color-error-container: #93000a;
+    --sys-color-on-error-container: #ffdad6;
+
+    --sys-color-success: #75ec85;
+    --sys-color-success-container: #005313;
+    --sys-color-on-success: #00390a;
+    --sys-color-on-success-container: #98ff9d;
+
+    --sys-color-background: #141218;
+    --sys-color-on-background: #e6e1e5;
+
+    --sys-color-surface: #141218;
+    --sys-color-on-surface: #e6e1e5;
+
+    --sys-color-surface-container-low: #1d1b20;
+    --sys-color-surface-container: #211f26;
+    --sys-color-surface-container-high: #2b2930;
+
+    --sys-color-surface-variant: #49454f;
+    --sys-color-on-surface-variant: #cac4d0;
+    --sys-color-outline: #938f99;
+    --sys-color-outline-variant: #444746;
+
+    --sys-surface-glass: rgba(20, 18, 24, 0.75);
+    --sys-surface-glass-border: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ============================================================================
+   ⚡ BASE STYLES
+   ============================================================================ */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: var(--sys-typescale-body);
+  /* Use system defaults or requested font */
+}
+
+body {
+  margin: 0;
+  background-color: var(--sys-color-background);
+  /* Depth Layer: Subtle gradient to give atmosphere */
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(var(--sys-color-primary-rgb), 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(var(--sys-color-tertiary-rgb), 0.03) 0%, transparent 40%);
+  background-attachment: fixed;
+  color: var(--sys-color-on-background);
+  font-family: var(--sys-typescale-body);
+  /* Space for Dock + Safe Area */
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  overflow-y: scroll;
+  /* Prevent rubber-banding on app shell */
+  overscroll-behavior-y: none;
+}
+
+#app {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-container {
+  max-width: var(--sys-layout-max-width);
+  margin: 0 auto;
+  padding: 0 8px;
+  /* Slight padding for card spread */
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Staggered Children Helper */
+.stagger-children>* {
+  animation: fadeSlideIn 0.4s backwards;
+}
+
+.stagger-children>*:nth-child(1) {
+  animation-delay: 30ms;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 150ms;
+}
+
+/* ============================================================================
+   COMMON UTILITIES
+   ============================================================================ */
+.role-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--sys-color-tertiary-container);
+  color: var(--sys-color-on-tertiary-container);
+}
+
+.btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: var(--shape-corner-full);
+  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-action:active {
+  transform: scale(0.96);
+  /* More satisfying click */
+}
+
+.btn-action.primary {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: var(--sys-elevation-1);
+}
+
+.btn-action.secondary {
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+}
