@@ -59,12 +59,23 @@ const historyBars = computed(() => {
 
 // Composables
 import { useLongPress } from '../composables/useLongPress'
+import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
   // If NOT in selection mode, enter it and select this item
   // If IN selection mode, just toggle this item
   emit('toggle-select')
 })
+
+const { canShare, share } = useShare()
+
+function shareMember() {
+  share({
+    title: `Clash Manager: ${props.member.n}`,
+    text: `Check out ${props.member.n} (${props.member.d.role}) in our clan!`,
+    url: `https://royaleapi.com/player/${props.member.id}`
+  })
+}
 
 function handleClick(e: Event) {
   // If we just triggered a long press, Ignore this click
@@ -174,6 +185,9 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
+        <button v-if="canShare" class="btn-action secondary" @click.stop="shareMember">
+          Share
+        </button>
       </div>
     </div>
   </div>

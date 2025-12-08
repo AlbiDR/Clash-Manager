@@ -6,12 +6,10 @@ import PullToRefresh from '../components/PullToRefresh.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import Icon from '../components/Icon.vue'
-import DataFreshnessPill from '../components/DataFreshnessPill.vue'
 
 const logs = ref<WarLogEntry[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-const dataTimestamp = ref<number>(0)
 
 // Stats
 const seasonStats = computed(() => {
@@ -30,7 +28,6 @@ async function loadData() {
     const response = await getWarLog()
     if (response.status === 'success' && response.data) {
       logs.value = response.data
-      dataTimestamp.value = Date.now()
     } else {
       error.value = response.error?.message || 'Failed to load war log'
     }
@@ -62,12 +59,14 @@ onMounted(loadData)
     <header class="top-app-bar">
       <h1 class="page-title">War History</h1>
       <div class="actions">
-        <DataFreshnessPill
-          :timestamp="dataTimestamp"
-          :loading="loading"
-          :error="error"
-          @refresh="loadData"
-        />
+         <button 
+            class="icon-btn"
+            @click="loadData"
+            :disabled="loading"
+            v-tooltip="'Refresh'"
+          >
+            <Icon name="refresh" :class="{ 'spin': loading }" />
+          </button>
       </div>
     </header>
 

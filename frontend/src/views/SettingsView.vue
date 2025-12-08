@@ -1,18 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { isConfigured, getApiUrl, ping } from '../api/gasClient'
 import type { PingResponse } from '../types'
-import { appSettings, setModuleEnabled } from '../stores/appSettings'
 
 const apiUrl = ref('')
 const apiConfigured = ref(false)
 const apiStatus = ref<'checking' | 'online' | 'offline'>('checking')
 const pingData = ref<PingResponse | null>(null)
-
-const warLogEnabled = computed({
-  get: () => appSettings.modules.warLog,
-  set: (value: boolean) => setModuleEnabled('warLog', value)
-})
+const newApiUrl = ref('')
 
 onMounted(async () => {
   apiUrl.value = getApiUrl()
@@ -32,49 +27,32 @@ onMounted(async () => {
     }
   }
 })
+
+function saveApiUrl() {
+  if (newApiUrl.value.trim()) {
+    // In a real app, you'd save this to localStorage
+    alert(`To configure the API URL, add this to your .env file:\n\nVITE_GAS_URL=${newApiUrl.value}\n\nThen restart the dev server.`)
+  }
+}
 </script>
 
 <template>
   <div class="settings-view">
-    <header class="settings-header">
-      <h1 class="page-title">Settings</h1>
-    </header>
-    
-    <!-- Modules Section -->
-    <section class="settings-card">
-      <div class="card-header">
-        <span class="card-icon">🧩</span>
-        <h2 class="card-title">Modules</h2>
-      </div>
-      
-      <div class="toggle-item">
-        <div class="toggle-info">
-          <span class="toggle-label">War Log</span>
-          <span class="toggle-desc">Track clan war history and performance</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" v-model="warLogEnabled" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </section>
+    <h1 class="page-title">Settings</h1>
     
     <!-- API Configuration -->
-    <section class="settings-card">
-      <div class="card-header">
-        <span class="card-icon">🔌</span>
-        <h2 class="card-title">API Configuration</h2>
-      </div>
+    <section class="settings-section glass-card animate-fade-in">
+      <h2 class="section-title">🔌 API Configuration</h2>
       
-      <div class="info-row">
-        <span class="info-label">Status</span>
+      <div class="setting-item">
+        <label class="setting-label">Status</label>
         <div class="status-display">
           <span 
-            class="status-dot"
+            class="status-indicator"
             :class="{
-              'online': apiStatus === 'online',
-              'offline': apiStatus === 'offline',
-              'checking': apiStatus === 'checking'
+              'status-online': apiStatus === 'online',
+              'status-offline': apiStatus === 'offline',
+              'status-checking': apiStatus === 'checking'
             }"
           ></span>
           <span class="status-text">
@@ -83,249 +61,271 @@ onMounted(async () => {
         </div>
       </div>
       
-      <div class="info-row">
-        <span class="info-label">Endpoint</span>
-        <code class="endpoint-url">{{ apiUrl }}</code>
+      <div class="setting-item">
+        <label class="setting-label">Endpoint</label>
+        <code class="api-url">{{ apiUrl }}</code>
       </div>
       
-      <div class="info-row" v-if="pingData">
-        <span class="info-label">Version</span>
-        <span class="info-value">{{ pingData.version }}</span>
+      <div class="setting-item" v-if="pingData">
+        <label class="setting-label">Backend Version</label>
+        <span class="setting-value">{{ pingData.version }}</span>
+      </div>
+      
+      <!-- API URL Input (for unconfigured state) -->
+      <div class="setting-item" v-if="!apiConfigured">
+        <label class="setting-label">Configure API URL</label>
+        <div class="url-input-group">
+          <input 
+            v-model="newApiUrl"
+            type="url" 
+            placeholder="https://script.google.com/macros/s/.../exec"
+            class="url-input"
+          />
+          <button class="btn btn-primary" @click="saveApiUrl">Save</button>
+        </div>
+        <p class="setting-hint">
+          Deploy your GAS backend and paste the Web App URL here.
+        </p>
       </div>
     </section>
     
-    <!-- About Section -->
-    <section class="settings-card about-card">
-      <div class="about-content">
-        <div class="app-icon">👑</div>
-        <h3 class="app-name">Clash Royale Manager</h3>
-        <p class="app-version">v1.0.0</p>
-        <p class="app-desc">
-          A modern PWA for managing your Clash Royale clan. Built with Vue 3 + TypeScript.
-        </p>
+    <!-- Module Versions -->
+    <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.1s" v-if="pingData?.modules">
+      <h2 class="section-title">📦 Backend Modules</h2>
+      
+      <div class="modules-grid">
+        <div 
+          v-for="(version, name) in pingData.modules" 
+          :key="name"
+          class="module-item"
+        >
+          <span class="module-name">{{ name }}</span>
+          <span class="module-version">v{{ version }}</span>
+        </div>
       </div>
+    </section>
+    
+    <!-- App Info -->
+    <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.2s">
+      <h2 class="section-title">ℹ️ About</h2>
+      
+      <div class="about-content">
+        <div class="app-logo">👑</div>
+        <h3 class="app-name">Clash Royale Manager</h3>
+        <p class="app-version">PWA v1.0.0</p>
+        <p class="app-description">
+          A modern Progressive Web App for managing your Clash Royale clan.
+          Built with Vue 3, TypeScript, and Vite.
+        </p>
+        
+        <div class="about-links">
+          <a href="https://github.com" target="_blank" class="about-link">
+            GitHub →
+          </a>
+        </div>
+      </div>
+    </section>
+    
+    <!-- PWA Install (if available) -->
+    <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.3s">
+      <h2 class="section-title">📱 Install App</h2>
+      <p class="setting-hint">
+        Install this app to your home screen for the best experience.
+        The app works offline and receives automatic updates.
+      </p>
+      <button class="btn btn-gold" disabled>
+        Install PWA (Coming Soon)
+      </button>
     </section>
   </div>
 </template>
 
 <style scoped>
 .settings-view {
-  min-height: 100vh;
-  padding-bottom: 120px;
-}
-
-.settings-header {
-  padding: 16px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .page-title {
-  font-size: 28px;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--sys-color-on-surface);
-  margin: 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 0.5rem;
 }
 
-.settings-card {
-  background: var(--sys-color-surface-container-low);
-  border-radius: var(--shape-corner-l);
-  padding: 20px;
-  margin-bottom: 16px;
+/* Settings Section */
+.settings-section {
+  padding: 1.25rem;
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.card-icon {
-  font-size: 20px;
-}
-
-.card-title {
-  font-size: 16px;
+.section-title {
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--sys-color-on-surface);
-  margin: 0;
-}
-
-.toggle-item {
+  margin: 0 0 1rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
+  gap: 0.5rem;
 }
 
-.toggle-info {
+/* Setting Items */
+.setting-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.toggle-label {
-  font-size: 15px;
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-label {
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--sys-color-on-surface);
+  color: var(--cr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.toggle-desc {
-  font-size: 13px;
-  color: var(--sys-color-on-surface-variant);
+.setting-value {
+  color: var(--cr-text-primary);
 }
 
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 52px;
-  height: 32px;
-  flex-shrink: 0;
+.setting-hint {
+  font-size: 0.8125rem;
+  color: var(--cr-text-muted);
+  margin: 0.5rem 0 0;
 }
 
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--sys-color-surface-variant);
-  transition: all 0.3s var(--sys-motion-spring);
-  border-radius: var(--shape-corner-full);
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 24px;
-  width: 24px;
-  left: 4px;
-  bottom: 4px;
-  background-color: var(--sys-color-on-surface-variant);
-  transition: all 0.3s var(--sys-motion-spring);
-  border-radius: 50%;
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background-color: var(--sys-color-primary);
-}
-
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(20px);
-  background-color: var(--sys-color-on-primary);
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--sys-color-outline-variant);
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--sys-color-on-surface-variant);
-}
-
-.info-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--sys-color-on-surface);
-}
-
+/* Status Display */
 .status-display {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
-.status-dot {
+.status-indicator {
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
-.status-dot.online {
-  background: var(--sys-color-success);
-  box-shadow: 0 0 8px var(--sys-color-success);
+.status-online {
+  background: var(--cr-victory);
+  box-shadow: 0 0 8px var(--cr-victory);
 }
 
-.status-dot.offline {
-  background: var(--sys-color-error);
+.status-offline {
+  background: var(--cr-defeat);
 }
 
-.status-dot.checking {
-  background: var(--sys-color-tertiary);
-  animation: pulse 1.5s infinite;
+.status-checking {
+  background: var(--cr-gold);
+  animation: pulse-glow 1s infinite;
 }
 
 .status-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--sys-color-on-surface);
+  font-weight: 500;
 }
 
-.endpoint-url {
-  font-size: 12px;
-  padding: 6px 10px;
-  background: var(--sys-color-surface-container-high);
-  border-radius: var(--shape-corner-s);
-  color: var(--sys-color-on-surface-variant);
+/* API URL */
+.api-url {
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--cr-bg-tertiary);
+  border-radius: 0.5rem;
   word-break: break-all;
-  max-width: 200px;
-  text-align: right;
+  color: var(--cr-text-secondary);
 }
 
-.about-card {
+/* URL Input */
+.url-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.url-input {
+  flex: 1;
+  padding: 0.75rem;
+  background: var(--cr-bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--cr-text-primary);
+  font-size: 0.875rem;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: var(--cr-primary);
+}
+
+/* Modules Grid */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.module-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--cr-bg-tertiary);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.module-name {
+  color: var(--cr-text-secondary);
+}
+
+.module-version {
+  color: var(--cr-primary-light);
+  font-weight: 600;
+}
+
+/* About Section */
+.about-content {
   text-align: center;
 }
 
-.about-content {
-  padding: 20px 0;
-}
-
-.app-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
+.app-logo {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
 }
 
 .app-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--sys-color-on-surface);
-  margin: 0 0 4px;
+  font-size: 1.25rem;
+  margin: 0 0 0.25rem;
 }
 
 .app-version {
-  font-size: 13px;
-  color: var(--sys-color-on-surface-variant);
-  margin: 0 0 16px;
+  font-size: 0.875rem;
+  color: var(--cr-text-muted);
+  margin: 0 0 1rem;
 }
 
-.app-desc {
-  font-size: 14px;
-  color: var(--sys-color-on-surface-variant);
+.app-description {
+  font-size: 0.875rem;
+  color: var(--cr-text-secondary);
+  margin: 0 0 1rem;
   line-height: 1.5;
-  margin: 0;
-  max-width: 280px;
-  margin: 0 auto;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.about-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.about-link {
+  color: var(--cr-primary-light);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.about-link:hover {
+  text-decoration: underline;
 }
 </style>
