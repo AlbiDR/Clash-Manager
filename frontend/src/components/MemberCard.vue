@@ -67,7 +67,7 @@ const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() 
   emit('toggle-select')
 })
 
-const { canShare, share } = useShare()
+const { share } = useShare()
 
 function shareMember() {
   share({

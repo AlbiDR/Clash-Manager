@@ -3,6 +3,11 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import { vTooltip } from './directives/vTooltip'
+import { useModules } from './composables/useModules' // ✅ NEW IMPORT
+
+// 1. Initialize the module store to load state from localStorage
+const moduleState = useModules()
+moduleState.init()
 
 const app = createApp(App)
 
