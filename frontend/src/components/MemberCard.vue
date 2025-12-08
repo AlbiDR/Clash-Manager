@@ -136,9 +136,6 @@ function handleClick(e: Event) {
           <div class="stat-score">{{ Math.round(member.s || 0) }}</div>
           <div class="stat-sub">SCORE</div>
         </div>
-        <div class="chevron-btn">
-          <Icon name="chevron_down" size="20" />
-        </div>
       </div>
     </div>
 
@@ -185,9 +182,6 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
-        <button v-if="canShare" class="btn-action secondary" @click.stop="shareMember">
-          Share
-        </button>
       </div>
     </div>
   </div>

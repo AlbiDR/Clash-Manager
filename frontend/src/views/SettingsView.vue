@@ -124,47 +124,37 @@ function saveApiUrl() {
           </a>
         </div>
       </div>
-    </section>
+          <div class="thumb"></div>
+        </button>
+      </div>
+    </div>
+
+    <div class="section-title">About</div>
+    <div class="neo-card">
+      <div class="about-row">
+        <span>Version</span>
+        <span class="version-tag">{{ version }}</span>
+      </div>
+      <div class="about-row">
+        <span>Build</span>
+        <span>Stable (PWA)</span>
+      </div>
+    </div>
     
-    <!-- PWA Install (if available) -->
-    <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.3s">
-      <h2 class="section-title">📱 Install App</h2>
-      <p class="setting-hint">
-        Install this app to your home screen for the best experience.
-        The app works offline and receives automatic updates.
-      </p>
-      <button class="btn btn-gold" disabled>
-        Install PWA (Coming Soon)
-      </button>
-    </section>
+    <div class="footer-note">
+      Clash Manager &copy; 2025
+    </div>
   </div>
 </template>
 
 <style scoped>
 .settings-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem;
-}
-
-/* Settings Section */
-.settings-section {
-  padding: 1.25rem;
+  padding: 24px 16px 120px 16px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 /* Setting Items */
