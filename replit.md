@@ -111,7 +111,16 @@ The application is configured for deployment on Replit with static hosting. The 
 
 ## Recent Changes
 
-**December 8, 2024:**
+**December 8, 2024 - UI Enhancements:**
+- Created DataFreshnessPill component showing time-ago display with click-to-refresh
+- Integrated status pill into Leaderboard, Recruiter, and War Log views via ConsoleHeader #status slot
+- Added forceRefresh() and getLastUpdateTimestamp() API methods for manual refresh flows
+- Removed Share button from MemberCard and RecruitCard extended panels (UI cleanup)
+- Created appSettings store with reactive state and localStorage persistence for module management
+- Overhauled Settings view with Material Design 3 styling (Modules, API Config, About sections)
+- Implemented War Log module toggle with conditional navigation and router guards
+
+**December 8, 2024 - Initial Setup:**
 - Initial setup for Replit environment
 - Configured Vite to bind to 0.0.0.0:5000
 - Updated base path from GitHub Pages (`/Clash_Manager-Clan_Tracker/`) to root (`/`)
@@ -120,7 +129,9 @@ The application is configured for deployment on Replit with static hosting. The 
 
 ## User Preferences
 
-*No specific preferences documented yet.*
+- Material Design 3 CSS variables preferred (--sys-color-*, --shape-corner-*, --sys-motion-spring)
+- SWR caching pattern for API calls with forceRefresh capability
+- Modular feature system allowing users to enable/disable features like War Log
 
 ## Notes
 
