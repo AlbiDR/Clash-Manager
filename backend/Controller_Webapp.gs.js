@@ -1,4 +1,3 @@
-
 /**
  * ============================================================================
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
@@ -11,7 +10,7 @@
  *    3. Pre-Flight Checks: Verifies sheets exist before reading.
  *    4. Per-Row Sanitization: Skips corrupted rows instead of crashing.
  *    5. WYSIWYG Parsing: Uses getDisplayValues() for formatted text fields.
- * 🏷️ VERSION: 6.0.0
+ * 🏷️ VERSION: 6.0.2
  * 
  * 🧠 REASONING:
  *    - doGet/doPost have been moved to API_Public.gs.js (the router)
@@ -20,7 +19,7 @@
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.0.0';
+const VER_CONTROLLER_WEBAPP = '6.0.2';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -158,35 +157,43 @@ function markRecruitsAsInvitedBulk(ids) {
  * @returns {string} JSON string with payload
  */
 function refreshWebPayload() {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+  // 🛡️ RACE CONDITION PREVENTION: Wrap logic in Mutex Lock
+  return Utils.executeSafely('PAYLOAD_GEN', () => {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    const data = {
-      lb: extractSheetData(ss, CONFIG.SHEETS.LB, CONFIG.SCHEMA.LB, false),
-      hh: extractSheetData(ss, CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, true),
-      timestamp: new Date().getTime()
-    };
+      const data = {
+        lb: extractSheetData(ss, CONFIG.SHEETS.LB, CONFIG.SCHEMA.LB, false),
+        hh: extractSheetData(ss, CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, true),
+        timestamp: new Date().getTime()
+      };
 
-    const payload = { success: true, data: data, error: null };
-    const payloadStr = JSON.stringify(payload);
+      const payload = { success: true, data: data, error: null };
+      const payloadStr = JSON.stringify(payload);
 
-    // Store the STRING in cache
-    Utils.CacheHandler.putLarge(CONFIG.SYSTEM.JSON_STORE_KEY, payloadStr, 21600);
-    console.log(`🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`);
+      // Store the STRING in cache
+      Utils.CacheHandler.putLarge(CONFIG.SYSTEM.JSON_STORE_KEY, payloadStr, 21600);
+      
+      // 🧠 SMART SYNC METADATA
+      // Store the timestamp in Script Properties for "Cheap" checks by the frontend.
+      Utils.Props.set('LAST_PAYLOAD_TIMESTAMP', data.timestamp);
+      
+      console.log(`🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`);
 
-    return payloadStr; // Return STRING
+      return payloadStr; // Return STRING
 
-  } catch (e) {
-    console.error(`refreshWebPayload FAILED: ${e.stack}`);
-    return JSON.stringify({
-      success: false,
-      data: null,
-      error: {
-        code: 'PAYLOAD_GENERATION_FAILED',
-        message: `Failed to generate data from Sheets: ${e.message}`
-      }
-    });
-  }
+    } catch (e) {
+      console.error(`refreshWebPayload FAILED: ${e.stack}`);
+      return JSON.stringify({
+        success: false,
+        data: null,
+        error: {
+          code: 'PAYLOAD_GENERATION_FAILED',
+          message: `Failed to generate data from Sheets: ${e.message}`
+        }
+      });
+    }
+  });
 }
 
 // ============================================================================
@@ -221,10 +228,6 @@ function extractSheetData(ss, sheetName, SCHEMA, isHeadhunter) {
   const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 20);
 
   // 🛠️ DUAL FETCH STRATEGY
-  // REASONING: 
-  // - getValues() returns raw data (Numbers, Dates), perfect for sorting and math.
-  // - getDisplayValues() returns the String EXACTLY as shown in the sheet (e.g., "90%").
-  // We use values for math-heavy columns (Score/Trophies) and displayValues for formatted text (War Rate).
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
@@ -263,24 +266,16 @@ function extractSheetData(ss, sheetName, SCHEMA, isHeadhunter) {
 
         // 🛠️ WAR RATE FIX (Final - v9.0.2)
         // Strategy: Trust the Eye.
-        // We use the Display Value (what the user sees) as the primary source of truth.
-        // If the sheet says "90%", we send "90%".
-
         let rateDisplay = '0%';
         const visualRate = displayVals[index][SCHEMA.WAR_RATE]; // From getDisplayValues()
         const rawRate = r[SCHEMA.WAR_RATE]; // From getValues()
 
         if (visualRate && visualRate.includes('%')) {
-          // Case 1: Sheet is formatted as %, e.g., "90%". We take it literally.
           rateDisplay = visualRate.trim();
         }
         else {
-          // Case 2: Sheet is formatted as Number (e.g., 0.9 or 90).
-          // We fall back to math.
           let val = parseFloat(String(rawRate));
           if (!isNaN(val)) {
-            // Heuristic: If <= 1.0, it's a decimal percentage (0.9 -> 90%).
-            // We use 1.0 (100%) as the cutoff.
             if (val <= 1.0) {
               val = val * 100;
             }
