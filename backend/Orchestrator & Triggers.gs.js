@@ -6,7 +6,7 @@
  * ⚙️ WORKFLOW: 
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Runs the master sequence (`sequenceFullUpdate`) to ensure data consistency.
- * 🏷️ VERSION: 5.0.1
+ * 🏷️ VERSION: 5.0.2
  * 
  * 🧠 REASONING:
  *    - Central Command: Separates "When things happen" from "How things happen".
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR_TRIGGERS = '5.0.1';
+const VER_ORCHESTRATOR_TRIGGERS = '5.0.2';
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
@@ -121,26 +121,30 @@ function handleMobileEdit(e) {
   // 2. Route to the correct function based on the Tab Name
   console.log(`📱 Mobile Trigger activated on: ${sheetName}`);
   
-  try {
-    if (sheetName === CONFIG.SHEETS.LB) {
-      updateLeaderboard(); 
-      // Refresh Cache Manually for Leaderboard (Recruiter does it internally)
-      refreshWebPayload();
-    } 
-    else if (sheetName === CONFIG.SHEETS.DB) {
-      updateClanDatabase();
-      refreshWebPayload();
+  // 🛡️ RACE CONDITION PREVENTION: Wrap logic in Mutex Lock
+  Utils.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
+    try {
+      if (sheetName === CONFIG.SHEETS.LB) {
+        updateLeaderboard(); 
+        // Refresh Cache Manually for Leaderboard (Recruiter does it internally)
+        refreshWebPayload();
+      } 
+      else if (sheetName === CONFIG.SHEETS.DB) {
+        updateClanDatabase();
+        refreshWebPayload();
+      }
+      else if (sheetName === CONFIG.SHEETS.HH) {
+        scoutRecruits(); // Recruiter handles its own cache refresh now
+      }
+      
+      // We update the timestamp in B1 usually, which serves as feedback that it finished.
+      sheet.getRange('B1').setValue(`✅ Done ${new Date().toLocaleTimeString()}`);
+    } catch (err) {
+      console.error(`📱 Mobile Run Error: ${err.message}`);
+      // Write error to cell B1 so user sees it
+      sheet.getRange('B1').setValue(`ERROR: ${err.message}`);
     }
-    else if (sheetName === CONFIG.SHEETS.HH) {
-      scoutRecruits(); // Recruiter handles its own cache refresh now
-    }
-    
-    // We update the timestamp in B1 usually, which serves as feedback that it finished.
-  } catch (err) {
-    console.error(`📱 Mobile Run Error: ${err.message}`);
-    // Write error to cell B1 so user sees it
-    sheet.getRange('B1').setValue(`ERROR: ${err.message}`);
-  }
+  });
 }
 
 
@@ -151,39 +155,51 @@ function handleMobileEdit(e) {
 function triggerUpdateDatabase() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast('Connecting to RoyaleAPI...', 'Update Database', 5);
-  try {
-    updateClanDatabase();
-    // REFRESH CACHE: Ensure web app sees new database data
-    refreshWebPayload(); 
-    ss.toast('Database updated successfully.', 'Success', 3);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
-  }
+  
+  // 🛡️ RACE CONDITION PREVENTION
+  Utils.executeSafely('MANUAL_DB', () => {
+    try {
+      updateClanDatabase();
+      // REFRESH CACHE: Ensure web app sees new database data
+      refreshWebPayload(); 
+      ss.toast('Database updated successfully.', 'Success', 3);
+    } catch (e) {
+      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
+    }
+  });
 }
 
 function triggerUpdateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast('Calculating scores...', 'Update Leaderboard', 5);
-  try {
-    updateLeaderboard();
-    // REFRESH CACHE: Ensure web app sees new scores/ranks
-    refreshWebPayload();
-    ss.toast('Leaderboard refreshed.', 'Success', 3);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
-  }
+
+  // 🛡️ RACE CONDITION PREVENTION
+  Utils.executeSafely('MANUAL_LB', () => {
+    try {
+      updateLeaderboard();
+      // REFRESH CACHE: Ensure web app sees new scores/ranks
+      refreshWebPayload();
+      ss.toast('Leaderboard refreshed.', 'Success', 3);
+    } catch (e) {
+      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
+    }
+  });
 }
 
 function triggerScoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast('Scanning tournaments (this takes ~30s)...', 'Headhunter', 20);
-  try {
-    // Note: scoutRecruits now handles the PWA Cache Refresh internally.
-    scoutRecruits();
-    ss.toast('Scout Complete. Check Headhunter tab.', 'Success', 5);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
-  }
+  
+  // 🛡️ RACE CONDITION PREVENTION
+  Utils.executeSafely('MANUAL_HH', () => {
+    try {
+      // Note: scoutRecruits now handles the PWA Cache Refresh internally.
+      scoutRecruits();
+      ss.toast('Scout Complete. Check Headhunter tab.', 'Success', 5);
+    } catch (e) {
+      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
+    }
+  });
 }
 
 // ----------------------------------------------------------------------------
@@ -289,39 +305,43 @@ function checkSystemHealth() {
  */
 function sequenceFullUpdate() {
   console.log(`👑 MASTER: Initiating Full Sequence (Orchestrator v${VER_ORCHESTRATOR_TRIGGERS})...`);
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    ss.toast('Starting Update Sequence...', CONFIG.UI.MENU_NAME, 5);
-    
-    // 1. Critical Data Updates
-    console.log("  Step 1: Logging daily data...");
-    updateClanDatabase();
-    
-    console.log("  Step 2: Updating Leaderboard view...");
-    updateLeaderboard();
-
-    // 2. Refresh Web App (Priority: High)
-    // We run this BEFORE Recruiter. If Recruiter times out/crashes, 
-    // the Clan members still get their updated Leaderboard.
-    console.log("  Step 3: Refreshing web app payload (Early Priority)...");
-    refreshWebPayload(); 
-
-    // 3. Optional/Heavy Operations (Priority: Low)
-    console.log("  Step 4: Running Headhunter scout (Heavy Operation)...");
+  
+  // 🛡️ RACE CONDITION PREVENTION
+  Utils.executeSafely('MASTER_SEQUENCE', () => {
     try {
-      // scoutRecruits handles its own cache refresh, so we don't need to call it again.
-      scoutRecruits();
-    } catch (e) {
-      // Soft Fail: Log error but don't crash the whole sequence history
-      console.warn(`⚠️ Scout Failed (Soft Fail): ${e.message}`);
-    }
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      ss.toast('Starting Update Sequence...', CONFIG.UI.MENU_NAME, 5);
+      
+      // 1. Critical Data Updates
+      console.log("  Step 1: Logging daily data...");
+      updateClanDatabase();
+      
+      console.log("  Step 2: Updating Leaderboard view...");
+      updateLeaderboard();
 
-    console.log("👑 MASTER: Sequence Complete ✅");
-    ss.toast('Update Sequence finished successfully!', CONFIG.UI.MENU_NAME, 10);
-  } catch (e) {
-    console.error(`👑 MASTER FAILED: ${e.stack}`);
-    // No email alerts
-  }
+      // 2. Refresh Web App (Priority: High)
+      // We run this BEFORE Recruiter. If Recruiter times out/crashes, 
+      // the Clan members still get their updated Leaderboard.
+      console.log("  Step 3: Refreshing web app payload (Early Priority)...");
+      refreshWebPayload(); 
+
+      // 3. Optional/Heavy Operations (Priority: Low)
+      console.log("  Step 4: Running Headhunter scout (Heavy Operation)...");
+      try {
+        // scoutRecruits handles its own cache refresh, so we don't need to call it again.
+        scoutRecruits();
+      } catch (e) {
+        // Soft Fail: Log error but don't crash the whole sequence history
+        console.warn(`⚠️ Scout Failed (Soft Fail): ${e.message}`);
+      }
+
+      console.log("👑 MASTER: Sequence Complete ✅");
+      ss.toast('Update Sequence finished successfully!', CONFIG.UI.MENU_NAME, 10);
+    } catch (e) {
+      console.error(`👑 MASTER FAILED: ${e.stack}`);
+      // No email alerts
+    }
+  });
 }
 
 /**
@@ -331,12 +351,16 @@ function sequenceFullUpdate() {
  */
 function sequenceHeadhunterUpdate() {
   console.log(`🔭 HEADHUNTER: Initiating Frequent Scan (Orchestrator v${VER_ORCHESTRATOR_TRIGGERS})...`);
-  try {
-    // Note: scoutRecruits now handles the PWA Cache Refresh internally.
-    scoutRecruits();
-    
-    console.log("🔭 HEADHUNTER: Scan & Cache Refresh Complete ✅");
-  } catch (e) {
-    console.error(`🔭 HEADHUNTER FAILED: ${e.stack}`);
-  }
+  
+  // 🛡️ RACE CONDITION PREVENTION
+  Utils.executeSafely('HH_SEQUENCE', () => {
+    try {
+      // Note: scoutRecruits now handles the PWA Cache Refresh internally.
+      scoutRecruits();
+      
+      console.log("🔭 HEADHUNTER: Scan & Cache Refresh Complete ✅");
+    } catch (e) {
+      console.error(`🔭 HEADHUNTER FAILED: ${e.stack}`);
+    }
+  });
 }
