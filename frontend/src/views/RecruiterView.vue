@@ -29,7 +29,7 @@ const dismissing = ref(false)
 // Computed for FAB
 const fabState = computed(() => {
   if (!selectionMode.value) return { visible: false }
-  
+
   if (selectionQueue.value.length > 0) {
     const total = selectedIds.value.size
     const current = total - selectionQueue.value.length + 1
@@ -44,7 +44,7 @@ const fabState = computed(() => {
   } else {
     const ids = Array.from(selectedIds.value)
     const firstId = ids.length > 0 ? ids[0] : null
-    
+
     return {
       visible: ids.length > 0,
       label: `Open (${ids.length})`,
@@ -55,24 +55,18 @@ const fabState = computed(() => {
   }
 })
 
-const status = computed(() => {
-  if (error.value) return { type: 'error', text: 'Error' } as const
-  if (loading.value) return { type: 'loading', text: 'Syncing' } as const
-  return { type: 'ready', text: `${recruits.value.length} Prospects` } as const
-})
-
 // Filtered and sorted
 const filteredRecruits = computed(() => {
   let result = [...recruits.value]
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(r => 
-      r.n.toLowerCase().includes(query) || 
+    result = result.filter(r =>
+      r.n.toLowerCase().includes(query) ||
       r.id.toLowerCase().includes(query)
     )
   }
-  
+
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
@@ -81,20 +75,20 @@ const filteredRecruits = computed(() => {
       default: return 0
     }
   })
-  
+
   return result
 })
 
 async function loadData() {
   loading.value = true
   error.value = null
-  
+
   try {
     const response = await getLeaderboard()
     if (response && response.success && response.data) {
       recruits.value = response.data.hh || []
       dataTimestamp.value = getLastUpdateTimestamp('leaderboard') || Date.now()
-      
+
       const pinId = route.query.pin as string
       if (pinId && recruits.value.some(r => r.id === pinId)) {
         expandedIds.value.add(pinId)
@@ -116,7 +110,7 @@ async function loadData() {
 async function handleForceRefresh() {
   loading.value = true
   error.value = null
-  
+
   try {
     const response = await forceRefresh()
     if (response && response.success && response.data) {
@@ -151,16 +145,16 @@ function toggleSelect(id: string) {
 async function dismissBulk() {
   if (selectedIds.value.size === 0) return
   if (!confirm(`Dismiss ${selectedIds.value.size} recruits?`)) return
-  
+
   dismissing.value = true
   try {
     const ids = Array.from(selectedIds.value)
-    
+
     // Optimistic UI update
     recruits.value = recruits.value.filter(r => !selectedIds.value.has(r.id))
     selectedIds.value.clear()
     selectionMode.value = false
-    
+
     await dismissRecruits(ids)
   } catch (e) {
     alert('Failed to dismiss recruits')
@@ -179,7 +173,7 @@ function selectionAction() {
   if (selectionQueue.value.length === 0) {
     selectionQueue.value = Array.from(selectedIds.value)
   }
-  
+
   setTimeout(() => {
     selectionQueue.value.shift()
     if (selectionQueue.value.length === 0) {
@@ -195,69 +189,41 @@ onMounted(loadData)
 <template>
   <div class="view-container">
     <PullToRefresh @refresh="loadData" />
-    
-    <ConsoleHeader
-      title="Headhunter"
-      :show-search="!selectionMode"
-      @update:search="val => searchQuery = val"
-      @update:sort="val => sortBy = val as any"
-      @refresh="handleForceRefresh"
-    >
+
+    <ConsoleHeader title="Headhunter" :show-search="!selectionMode" @update:search="val => searchQuery = val"
+      @update:sort="val => sortBy = val as any" @refresh="handleForceRefresh">
       <template #status>
-        <DataFreshnessPill
-          :timestamp="dataTimestamp"
-          :loading="loading"
-          :error="error"
-          @refresh="handleForceRefresh"
-        />
+        <DataFreshnessPill :timestamp="dataTimestamp" :loading="loading" :error="error" @refresh="handleForceRefresh" />
       </template>
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
-           <div class="sel-count">{{ selectedIds.size }} Selected</div>
-           <div class="sel-actions">
-             <span class="text-btn primary" @click="selectAll">All</span>
-             <span class="text-btn" @click="selectedIds.clear()">None</span>
-             <span class="text-btn danger" @click="selectedIds.clear(); selectionMode = false">Done</span>
-           </div>
+          <div class="sel-count">{{ selectedIds.size }} Selected</div>
+          <div class="sel-actions">
+            <span class="text-btn primary" @click="selectAll">All</span>
+            <span class="text-btn" @click="selectedIds.clear()">None</span>
+            <span class="text-btn danger" @click="selectedIds.clear(); selectionMode = false">Done</span>
+          </div>
         </div>
       </template>
     </ConsoleHeader>
 
     <ErrorState v-if="error" :message="error" @retry="loadData" />
-    
+
     <div v-else-if="loading" class="list-container">
       <div v-for="i in 5" :key="i" class="skeleton-card"></div>
     </div>
-    
-    <EmptyState 
-      v-else-if="filteredRecruits.length === 0" 
-      icon="scope" 
-      message="No recruits found" 
-    />
-    
+
+    <EmptyState v-else-if="filteredRecruits.length === 0" icon="scope" message="No recruits found" />
+
     <div v-else class="list-container stagger-children">
-      <RecruitCard
-        v-for="recruit in filteredRecruits"
-        :key="recruit.id"
-        :id="`recruit-${recruit.id}`"
-        :recruit="recruit"
-        :expanded="expandedIds.has(recruit.id)"
-        :selected="selectedIds.has(recruit.id)"
-        :selection-mode="selectionMode"
-        @toggle-expand="toggleExpand(recruit.id)"
-        @toggle-select="toggleSelect(recruit.id)"
-      />
+      <RecruitCard v-for="recruit in filteredRecruits" :key="recruit.id" :id="`recruit-${recruit.id}`" :recruit="recruit"
+        :expanded="expandedIds.has(recruit.id)" :selected="selectedIds.has(recruit.id)" :selection-mode="selectionMode"
+        @toggle-expand="toggleExpand(recruit.id)" @toggle-select="toggleSelect(recruit.id)" />
     </div>
 
     <!-- Neo-Material Floating Island -->
-    <FabIsland
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="fabState.dismissLabel"
-      @action="selectionAction"
-      @dismiss="dismissBulk"
-    />
+    <FabIsland :visible="fabState.visible" :label="fabState.label" :action-href="fabState.actionHref"
+      :dismiss-label="fabState.dismissLabel" @action="selectionAction" @dismiss="dismissBulk" />
   </div>
 </template>
 
@@ -272,16 +238,29 @@ onMounted(loadData)
 }
 
 .selection-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
   animation: fadeSlideIn 0.3s;
 }
 
-.sel-count { font-size: 20px; font-weight: 700; }
+.sel-count {
+  font-size: 20px;
+  font-weight: 700;
+}
 
-.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
-.text-btn.primary { color: var(--sys-color-primary); }
+.text-btn {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.text-btn.primary {
+  color: var(--sys-color-primary);
+}
 
 .skeleton-card {
   height: 100px;

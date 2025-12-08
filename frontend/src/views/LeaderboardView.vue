@@ -29,7 +29,7 @@ const selectionMode = ref(false)
 // Computed for FAB
 const fabState = computed(() => {
   if (!selectionMode.value) return { visible: false }
-  
+
   if (selectionQueue.value.length > 0) {
     // Queue Mode
     const total = selectedIds.value.size
@@ -46,7 +46,7 @@ const fabState = computed(() => {
     // Initial Select Mode
     const ids = Array.from(selectedIds.value)
     const firstId = ids.length > 0 ? ids[0] : null
-    
+
     return {
       visible: ids.length > 0,
       label: `Open (${ids.length})`,
@@ -55,12 +55,6 @@ const fabState = computed(() => {
       isQueue: false
     }
   }
-})
-
-const status = computed(() => {
-  if (error.value) return { type: 'error', text: 'Error' } as const
-  if (loading.value) return { type: 'loading', text: 'Syncing' } as const
-  return { type: 'ready', text: `${members.value.length} Members` } as const
 })
 
 function toggleExpand(id: string) {
@@ -74,7 +68,7 @@ function toggleExpand(id: string) {
 
 function toggleSelect(id: string) {
   if (selectionQueue.value.length > 0) return // Lock selection during queue mode
-  
+
   if (selectedIds.value.has(id)) {
     selectedIds.value.delete(id)
   } else {
@@ -82,7 +76,7 @@ function toggleSelect(id: string) {
     if (!selectionMode.value) selectionMode.value = true
   }
   selectedIds.value = new Set(selectedIds.value)
-  
+
   if (selectedIds.value.size === 0) {
     selectionMode.value = false
   }
@@ -102,7 +96,7 @@ function selectionAction() {
   if (selectionQueue.value.length === 0) {
     selectionQueue.value = Array.from(selectedIds.value)
   }
-  
+
   // Advance Queue (Shift)
   setTimeout(() => {
     selectionQueue.value.shift()
@@ -121,15 +115,15 @@ function dismissSelection() {
 // Filtered and sorted members
 const filteredMembers = computed(() => {
   let result = [...members.value]
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(m => 
-      m.n.toLowerCase().includes(query) || 
+    result = result.filter(m =>
+      m.n.toLowerCase().includes(query) ||
       m.id.toLowerCase().includes(query)
     )
   }
-  
+
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
@@ -138,20 +132,20 @@ const filteredMembers = computed(() => {
       default: return 0
     }
   })
-  
+
   return result
 })
 
 async function loadData() {
   loading.value = true
   error.value = null
-  
+
   try {
     const response = await getLeaderboard()
     if (response.success && response.data) {
       members.value = response.data.lb || []
       dataTimestamp.value = getLastUpdateTimestamp('leaderboard') || Date.now()
-      
+
       const pinId = route.query.pin as string
       if (pinId && members.value.some(m => m.id === pinId)) {
         expandedIds.value.add(pinId)
@@ -173,7 +167,7 @@ async function loadData() {
 async function handleForceRefresh() {
   loading.value = true
   error.value = null
-  
+
   try {
     const response = await forceRefresh()
     if (response.success && response.data) {
@@ -195,78 +189,46 @@ onMounted(loadData)
 <template>
   <div class="view-container">
     <PullToRefresh @refresh="loadData" />
-    
+
     <!-- Neo-Material Console Header -->
-    <ConsoleHeader
-      title="Leaderboard"
-      :show-search="!selectionMode"
-      @update:search="val => searchQuery = val"
-      @update:sort="val => sortBy = val as any"
-      @refresh="handleForceRefresh"
-    >
+    <ConsoleHeader title="Leaderboard" :show-search="!selectionMode" @update:search="val => searchQuery = val"
+      @update:sort="val => sortBy = val as any" @refresh="handleForceRefresh">
       <template #status>
-        <DataFreshnessPill
-          :timestamp="dataTimestamp"
-          :loading="loading"
-          :error="error"
-          @refresh="handleForceRefresh"
-        />
+        <DataFreshnessPill :timestamp="dataTimestamp" :loading="loading" :error="error" @refresh="handleForceRefresh" />
       </template>
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
-           <div class="sel-count">{{ selectedIds.size }} Selected</div>
-           <div class="sel-actions">
-             <span class="text-btn primary" @click="selectAll">All</span>
-             <span class="text-btn" @click="selectedIds.clear()">None</span>
-             <span class="text-btn danger" @click="dismissSelection">Done</span>
-           </div>
+          <div class="sel-count">{{ selectedIds.size }} Selected</div>
+          <div class="sel-actions">
+            <span class="text-btn primary" @click="selectAll">All</span>
+            <span class="text-btn" @click="selectedIds.clear()">None</span>
+            <span class="text-btn danger" @click="dismissSelection">Done</span>
+          </div>
         </div>
       </template>
     </ConsoleHeader>
-    
+
     <!-- Error State -->
-    <ErrorState 
-      v-if="error" 
-      :message="error" 
-      @retry="loadData" 
-    />
-    
+    <ErrorState v-if="error" :message="error" @retry="loadData" />
+
     <!-- Loading State -->
     <div v-else-if="loading" class="list-container">
       <div v-for="i in 5" :key="i" class="skeleton-card"></div>
     </div>
-    
+
     <!-- Empty State -->
-    <EmptyState 
-      v-else-if="filteredMembers.length === 0"
-      icon="🍃"
-      message="No members found"
-    />
-    
+    <EmptyState v-else-if="filteredMembers.length === 0" icon="🍃" message="No members found" />
+
     <!-- Member List -->
     <div v-else class="list-container stagger-children">
-      <MemberCard
-        v-for="member in filteredMembers"
-        :key="member.id"
-        :id="`member-${member.id}`"
-        :member="member"
-        :expanded="expandedIds.has(member.id)"
-        :selected="selectedIds.has(member.id)"
-        :selection-mode="selectionMode"
-        @toggle="toggleExpand(member.id)"
-        @toggle-select="toggleSelect(member.id)"
-      />
+      <MemberCard v-for="member in filteredMembers" :key="member.id" :id="`member-${member.id}`" :member="member"
+        :expanded="expandedIds.has(member.id)" :selected="selectedIds.has(member.id)" :selection-mode="selectionMode"
+        @toggle="toggleExpand(member.id)" @toggle-select="toggleSelect(member.id)" />
     </div>
 
     <!-- Selection Island -->
-    <FabIsland
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="fabState.dismissLabel"
-      @action="selectionAction"
-      @dismiss="dismissSelection"
-    />
+    <FabIsland :visible="fabState.visible" :label="fabState.label" :action-href="fabState.actionHref"
+      :dismiss-label="fabState.dismissLabel" @action="selectionAction" @dismiss="dismissSelection" />
   </div>
 </template>
 
@@ -281,18 +243,29 @@ onMounted(loadData)
 }
 
 .selection-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
   animation: fadeSlideIn 0.3s;
 }
 
-.sel-count { font-size: 20px; font-weight: 700; }
+.sel-count {
+  font-size: 20px;
+  font-weight: 700;
+}
 
 .text-btn {
-  font-weight: 700; cursor: pointer; padding: 4px 8px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
 }
-.text-btn.danger { color: var(--sys-color-error); }
+
+.text-btn.danger {
+  color: var(--sys-color-error);
+}
 
 .skeleton-card {
   height: 100px;
