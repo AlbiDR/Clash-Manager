@@ -81,6 +81,20 @@ Optimistic UI: When dismissing recruits, immediately filter them out of the Loca
 
 All notable changes to the "Clan Manager" project will be documented in this file.
 
+## [11.0.0] - Backend Modernization & Scaling
+### Added
+- **Utilities**: Implemented **Property Sharding (Chunking)**.
+    - *Problem*: The `HH_BLACKLIST` property exceeded the 9KB Google Apps Script limit, causing silent failures in recruitment logic.
+    - *Solution*: `Utils.Props.setChunked` now automatically splits large payloads into sequential keys (`KEY_0`, `KEY_1`, `KEY_2`) and reassembles them on read. This effectively removes the storage limit for persistent data.
+- **Orchestrator**: Implemented **Mutex Locking (Circuit Breaker)**.
+    - *Logic*: All triggers (Manual, Mobile, Time-Based) are now wrapped in `Utils.executeSafely`. This uses `LockService` to prevent simultaneous execution (Race Conditions), ensuring that a mobile update doesn't corrupt a scheduled daily update running at the same time.
+- **API**: Implemented **Smart Sync Protocol**.
+    - *Fix*: The Controller now publishes a precise `LAST_PAYLOAD_TIMESTAMP` to Script Properties. This enables the frontend to perform a "Headless Check" (reading a tiny property via `Utils.Props`) before deciding to download the full data payload.
+
+### Changed
+- **Architecture**: Separated `API_Public` (Router) from `Controller_Webapp` (Data Layer). The system now operates as a Headless REST API.
+- **Recruiter**: Refactored Blacklist persistence to use the new Sharding engine, ensuring the blacklist can grow indefinitely without crashing.
+
 ## [10.8.0] - Layout Engine Hardening
 ### Fixed
 - **Utilities**: Enhanced `applyStandardLayout` to be more aggressive in scrubbing buffer zones.
