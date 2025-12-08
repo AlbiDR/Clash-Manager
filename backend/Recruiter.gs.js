@@ -131,8 +131,8 @@ function scoutRecruits() {
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
-  // Use safe JSON getter
-  let blacklist = Utils.Props.getJSON(PROP_KEY, {});
+  // Use safe JSON getter (Chunked aware)
+  let blacklist = Utils.Props.getChunked(PROP_KEY, {});
   
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
@@ -183,8 +183,8 @@ function updateAndGetBlacklist(sheet) {
   // 3. Save & Return
   const finalSize = Object.keys(blacklist).length;
   if (finalSize > 0) {
-    // Use safe JSON setter
-    const saved = Utils.Props.setJSON(PROP_KEY, blacklist);
+    // Use safe JSON setter (Chunked aware)
+    const saved = Utils.Props.setChunked(PROP_KEY, blacklist);
     if (saved) {
        console.log(`🚫 Blacklist Updated: ${finalSize} active entries. Discarded High Score: ${maxScore}`);
     }
