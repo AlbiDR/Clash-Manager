@@ -19,8 +19,8 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/Clash_Manager-Clan_Tracker/',
+        start_url: '/Clash_Manager-Clan_Tracker/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -44,14 +44,14 @@ export default defineConfig({
             name: '🏆 Leaderboard',
             short_name: 'Leaderboard',
             description: 'View current clan standings',
-            url: '/',
+            url: '/Clash_Manager-Clan_Tracker/',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
             name: '🔭 Headhunter',
             short_name: 'Headhunter',
             description: 'Scout for new recruits',
-            url: '/recruiter',
+            url: '/Clash_Manager-Clan_Tracker/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
@@ -70,7 +70,7 @@ export default defineConfig({
               cacheName: 'gas-api-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -81,17 +81,7 @@ export default defineConfig({
       }
     })
   ],
-  base: '/',
-  server: {
-    host: '0.0.0.0',
-    port: 5000,
-    strictPort: true
-  },
-  preview: {
-    host: '0.0.0.0',
-    port: 5000,
-    strictPort: true
-  },
+  base: '/Clash_Manager-Clan_Tracker/', // For GitHub Pages deployment
   build: {
     outDir: 'dist',
     sourcemap: false

@@ -152,42 +152,6 @@ export async function refresh(): Promise<LegacyApiResponse<WebAppData>> {
 }
 
 /**
- * Force refresh - clears local cache and fetches fresh data from backend
- */
-export async function forceRefresh(): Promise<LegacyApiResponse<WebAppData>> {
-    // Clear all caches
-    localStorage.removeItem('gas_cache_leaderboard')
-    localStorage.removeItem('gas_cache_recruits')
-    
-    // Call backend refresh action
-    const data = await gasRequest<LegacyApiResponse<WebAppData>>('refresh')
-    
-    // Update cache with fresh data
-    const timestamp = Date.now()
-    localStorage.setItem('gas_cache_leaderboard', JSON.stringify({ data, timestamp }))
-    
-    return data
-}
-
-/**
- * Get the timestamp of the last cache update for a given key
- */
-export function getLastUpdateTimestamp(key: string = 'leaderboard'): number | null {
-    const cacheKey = `gas_cache_${key}`
-    const cached = localStorage.getItem(cacheKey)
-    
-    if (cached) {
-        try {
-            const { timestamp } = JSON.parse(cached)
-            return timestamp || null
-        } catch (e) {
-            return null
-        }
-    }
-    return null
-}
-
-/**
  * Mark recruits as dismissed/invited
  */
 export async function dismissRecruits(ids: string[]): Promise<ApiResponse<DismissResponse>> {

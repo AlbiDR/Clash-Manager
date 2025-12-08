@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { getModuleEnabled } from '../stores/appSettings'
 
 const router = createRouter({
+    // Use hash history for GitHub Pages compatibility
     history: createWebHashHistory(),
     routes: [
         {
@@ -20,7 +20,7 @@ const router = createRouter({
             path: '/warlog',
             name: 'warlog',
             component: () => import('../views/WarLogView.vue'),
-            meta: { title: 'War Log', requiresModule: 'warLog' }
+            meta: { title: 'War Log' }
         },
         {
             path: '/settings',
@@ -31,15 +31,7 @@ const router = createRouter({
     ]
 })
 
-router.beforeEach((to, _from, next) => {
-    const requiredModule = to.meta.requiresModule as string | undefined
-    if (requiredModule && !getModuleEnabled(requiredModule as 'warLog')) {
-        next({ path: '/' })
-    } else {
-        next()
-    }
-})
-
+// Update document title on navigation
 router.afterEach((to) => {
     document.title = `${to.meta.title || 'Home'} | Clash Royale Manager`
 })

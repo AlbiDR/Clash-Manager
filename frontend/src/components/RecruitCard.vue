@@ -38,10 +38,21 @@ const timeAgo = computed(() => {
 
 // Composables
 import { useLongPress } from '../composables/useLongPress'
+import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
   emit('toggle-select')
 })
+
+const { canShare, share } = useShare()
+
+function shareRecruit() {
+  share({
+    title: `Recruit: ${props.recruit.n}`,
+    text: `Found a potential recruit: ${props.recruit.n} (Score: ${Math.round(props.recruit.s || 0)})`,
+    url: `https://royaleapi.com/player/${props.recruit.id}`
+  })
+}
 
 function handleClick(e: Event) {
   if (isLongPress.value) {
@@ -134,6 +145,9 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
+        <button v-if="canShare" class="btn-action secondary" @click.stop="shareRecruit">
+          Share
+        </button>
       </div>
     </div>
   </div>

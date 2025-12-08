@@ -1,27 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { appSettings } from '../stores/appSettings'
 
 const route = useRoute()
 const router = useRouter()
 
-const allNavItems = [
-  { path: '/', name: 'leaderboard', label: '🏆 Leaderboard', module: null },
-  { path: '/recruiter', name: 'recruiter', label: '🔭 Headhunter', module: null },
-  { path: '/warlog', name: 'warlog', label: '⚔️ War Log', module: 'warLog' as const },
-  { path: '/settings', name: 'settings', label: '⚙️ Settings', module: null }
+const navItems = [
+  { path: '/', name: 'leaderboard', label: '🏆 Leaderboard' },
+  { path: '/recruiter', name: 'recruiter', label: '🔭 Headhunter' },
+  { path: '/warlog', name: 'warlog', label: '⚔️ War Log' },
+  { path: '/settings', name: 'settings', label: '⚙️ Settings' }
 ]
 
-const navItems = computed(() => {
-  return allNavItems.filter(item => {
-    if (item.module === null) return true
-    return appSettings.modules[item.module]
-  })
-})
-
 function navigate(path: string) {
-  if (navigator.vibrate) navigator.vibrate(10)
+  if (navigator.vibrate) navigator.vibrate(10) // Small pop
   router.push(path)
 }
 </script>
