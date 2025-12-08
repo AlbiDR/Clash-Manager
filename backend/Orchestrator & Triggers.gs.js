@@ -6,7 +6,7 @@
  * ⚙️ WORKFLOW: 
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Runs the master sequence (`sequenceFullUpdate`) to ensure data consistency.
- * 🏷️ VERSION: 5.0.0
+ * 🏷️ VERSION: 5.0.1
  * 
  * 🧠 REASONING:
  *    - Central Command: Separates "When things happen" from "How things happen".
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR_TRIGGERS = '5.0.0';
+const VER_ORCHESTRATOR_TRIGGERS = '5.0.1';
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
@@ -123,19 +123,18 @@ function handleMobileEdit(e) {
   
   try {
     if (sheetName === CONFIG.SHEETS.LB) {
-      updateLeaderboard(); // Direct call
+      updateLeaderboard(); 
+      // Refresh Cache Manually for Leaderboard (Recruiter does it internally)
+      refreshWebPayload();
     } 
     else if (sheetName === CONFIG.SHEETS.DB) {
       updateClanDatabase();
+      refreshWebPayload();
     }
     else if (sheetName === CONFIG.SHEETS.HH) {
-      scoutRecruits();
+      scoutRecruits(); // Recruiter handles its own cache refresh now
     }
     
-    // 3. REFRESH WEB APP CACHE (Critical Fix)
-    // Ensures the web app reflects the changes made by the mobile trigger.
-    refreshWebPayload();
-
     // We update the timestamp in B1 usually, which serves as feedback that it finished.
   } catch (err) {
     console.error(`📱 Mobile Run Error: ${err.message}`);
@@ -179,9 +178,8 @@ function triggerScoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast('Scanning tournaments (this takes ~30s)...', 'Headhunter', 20);
   try {
+    // Note: scoutRecruits now handles the PWA Cache Refresh internally.
     scoutRecruits();
-    // REFRESH CACHE: Ensure web app sees new recruits
-    refreshWebPayload();
     ss.toast('Scout Complete. Check Headhunter tab.', 'Success', 5);
   } catch (e) {
     SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -311,9 +309,8 @@ function sequenceFullUpdate() {
     // 3. Optional/Heavy Operations (Priority: Low)
     console.log("  Step 4: Running Headhunter scout (Heavy Operation)...");
     try {
+      // scoutRecruits handles its own cache refresh, so we don't need to call it again.
       scoutRecruits();
-      // Optional: Refresh again if Recruiter found new people, so they show up instantly
-      refreshWebPayload(); 
     } catch (e) {
       // Soft Fail: Log error but don't crash the whole sequence history
       console.warn(`⚠️ Scout Failed (Soft Fail): ${e.message}`);
@@ -335,11 +332,8 @@ function sequenceFullUpdate() {
 function sequenceHeadhunterUpdate() {
   console.log(`🔭 HEADHUNTER: Initiating Frequent Scan (Orchestrator v${VER_ORCHESTRATOR_TRIGGERS})...`);
   try {
-    // 1. Run the Scout logic to update the Spreadsheet
+    // Note: scoutRecruits now handles the PWA Cache Refresh internally.
     scoutRecruits();
-    
-    // 2. Refresh the Web App payload so the UI shows new recruits immediately
-    refreshWebPayload();
     
     console.log("🔭 HEADHUNTER: Scan & Cache Refresh Complete ✅");
   } catch (e) {
