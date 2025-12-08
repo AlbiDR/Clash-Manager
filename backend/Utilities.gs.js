@@ -64,7 +64,7 @@ const Utils = {
   /**
    * 💾 PROPS MANAGER (Script Properties Wrapper)
    * Centralizes access to persistent storage for Metadata and Config.
-   * robust against JSON errors and handles type conversion.
+   * Robust against JSON errors and handles type conversion.
    */
   Props: {
     _service: PropertiesService.getScriptProperties(),
@@ -94,13 +94,88 @@ const Utils = {
         const str = JSON.stringify(val);
         // Check size limit (9KB per value)
         if (str.length > 9000) {
-          console.warn(`⚠️ Props: Value for '${key}' exceeds 9KB limit. Save aborted.`);
+          console.warn(`⚠️ Props: Value for '${key}' exceeds 9KB limit. Use setChunked instead.`);
           return false;
         }
         this._service.setProperty(key, str);
         return true;
       } catch (e) {
         console.error(`⚠️ Props: JSON Stringify error for '${key}': ${e.message}`);
+        return false;
+      }
+    },
+
+    /**
+     * 🧩 CHUNKED STORAGE (For >9KB Properties)
+     * Automatically splits large JSON objects into keys like KEY_0, KEY_1, KEY_2...
+     */
+    getChunked: function(baseKey, defaultVal = {}) {
+      try {
+        // 1. Check for legacy single key first (Migration path)
+        const simple = this._service.getProperty(baseKey);
+        if (simple) {
+          console.log(`🧩 Props: Found legacy key for '${baseKey}'. Migrating on next save.`);
+          return JSON.parse(simple);
+        }
+
+        // 2. Scan for chunks
+        const allProps = this._service.getProperties();
+        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
+        const chunks = [];
+
+        Object.keys(allProps).forEach(k => {
+          const match = k.match(chunkPattern);
+          if (match) {
+            chunks.push({ index: parseInt(match[1]), val: allProps[k] });
+          }
+        });
+
+        if (chunks.length === 0) return defaultVal;
+
+        // 3. Reassemble
+        chunks.sort((a, b) => a.index - b.index);
+        const fullString = chunks.map(c => c.val).join('');
+        return JSON.parse(fullString);
+
+      } catch (e) {
+        console.error(`🧩 Props: Chunk read error for '${baseKey}': ${e.message}`);
+        return defaultVal;
+      }
+    },
+
+    setChunked: function(baseKey, val) {
+      try {
+        const fullString = JSON.stringify(val);
+        const CHUNK_SIZE = 8500; // Safety buffer below 9000 limit
+        const totalChunks = Math.ceil(fullString.length / CHUNK_SIZE);
+
+        // 1. Write new chunks
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = fullString.substr(i * CHUNK_SIZE, CHUNK_SIZE);
+          this._service.setProperty(`${baseKey}_${i}`, chunk);
+        }
+
+        // 2. Clean up old excess chunks
+        // If we previously had 5 chunks and now only need 2, delete _2, _3, _4
+        const allProps = this._service.getProperties();
+        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
+        
+        Object.keys(allProps).forEach(k => {
+          const match = k.match(chunkPattern);
+          if (match) {
+            const index = parseInt(match[1]);
+            if (index >= totalChunks) {
+              this._service.deleteProperty(k);
+            }
+          }
+        });
+
+        // 3. Clean up legacy single key if it exists
+        this._service.deleteProperty(baseKey);
+
+        return true;
+      } catch (e) {
+        console.error(`🧩 Props: Chunk write error for '${baseKey}': ${e.message}`);
         return false;
       }
     },
@@ -255,7 +330,9 @@ const Utils = {
         try {
           const { count } = JSON.parse(meta);
           const keys = [];
-          for (let i = 0; i < count; i++) keys.push(key + "_" + i);
+          for (let i = 0; i < count; i++) {
+             keys.push(key + "_" + i);
+          }
           
           const chunks = cache.getAll(keys);
           let fullString = "";
