@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
+import WarHistoryChart from './WarHistoryChart.vue'
 
 const props = defineProps<{
   id: string
@@ -42,17 +43,6 @@ const displayRate = computed(() => {
   const n = parseFloat(String(val))
   if (!isNaN(n) && n <= 1) return Math.round(n * 100) + '%'
   return val
-})
-
-// War History Bars
-const historyBars = computed(() => {
-  const hist = props.member.d.hist
-  if (!hist || hist === '-') return []
-  
-  // Format: "Score WeekID | ..."
-  let bars = hist.split('|').map(x => parseInt(x.trim().split(' ')[0] || '0') || 0).reverse()
-  if (bars.length > 52) bars = bars.slice(-52)
-  return bars
 })
 
 // Composables
@@ -152,15 +142,7 @@ function handleClick(e: Event) {
       </div>
 
       <!-- War History Viz -->
-      <div class="viz-bars" v-if="historyBars.length">
-        <div 
-          v-for="(val, i) in historyBars" 
-          :key="i"
-          class="v-bar"
-          :class="{ 'win': val > 2000, 'hit': val > 0 && val <= 2000 }"
-          :style="{ height: Math.max(15, Math.min(100, (val/3200)*100)) + '%' }"
-        ></div>
-      </div>
+      <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" class="mb-4" />
 
       <!-- Action Grid -->
       <div class="btn-row">
@@ -276,10 +258,6 @@ function handleClick(e: Event) {
 .si-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--sys-color-on-surface-variant); opacity: 0.7; margin-bottom: 4px; }
 .si-val { font-size: 15px; font-weight: 600; color: var(--sys-color-on-surface-variant); }
 
-.viz-bars { display: flex; gap: 1px; height: 40px; align-items: flex-end; margin: 20px 0; }
-.v-bar { flex: 1 1 auto; background: var(--sys-color-surface-variant); border-radius: 1px; min-height: 4px; }
-.v-bar.hit { background: var(--sys-color-secondary); }
-.v-bar.win { background: var(--sys-color-primary); }
-
 .btn-row { display: flex; gap: 12px; margin-top: 16px; }
+.mb-4 { margin-bottom: 16px; }
 </style>
