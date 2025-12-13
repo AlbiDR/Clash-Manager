@@ -18,12 +18,6 @@ const router = createRouter({
             meta: { title: 'Headhunter' }
         },
         {
-            path: '/warlog',
-            name: 'warlog',
-            component: () => import('../views/WarLogView.vue'),
-            meta: { title: 'War Log' }
-        },
-        {
             path: '/settings',
             name: 'settings',
             component: () => import('../views/SettingsView.vue'),
