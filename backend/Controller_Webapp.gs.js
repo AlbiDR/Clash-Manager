@@ -6,20 +6,14 @@
  *                 Provides fault-tolerant data extraction from Google Sheets.
  * ⚙️ STRATEGY: 
  *    1. String Transport Protocol: Returns JSON STRINGS for consistent handling.
- *    2. Structured Payloads: All data is sent as `{ success, data/error }`.
+ *    2. Payload Compression: Returns "Matrix" (Array of Arrays) to reduce size.
  *    3. Pre-Flight Checks: Verifies sheets exist before reading.
  *    4. Per-Row Sanitization: Skips corrupted rows instead of crashing.
- *    5. WYSIWYG Parsing: Uses getDisplayValues() for formatted text fields.
- * 🏷️ VERSION: 6.0.2
- * 
- * 🧠 REASONING:
- *    - doGet/doPost have been moved to API_Public.gs.js (the router)
- *    - This module now focuses purely on data generation and sheet operations
- *    - All functions here are called by the API router
+ * 🏷️ VERSION: 6.1.0
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.0.2';
+const VER_CONTROLLER_WEBAPP = '6.1.0';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -70,22 +64,8 @@ function getWebAppData(forceRefresh) {
 // ============================================================================
 
 /**
- * Handles "Discarding" a recruit (Marking as Invited).
- * @deprecated Use markRecruitsAsInvitedBulk for better performance.
- * @param {string} id - The player tag (without #)
- */
-function markRecruitAsInvited(id) {
-  return markRecruitsAsInvitedBulk([id]);
-}
-
-/**
  * ⚡ BULK ACTION OPTIMIZATION (v5.0.0)
  * Handles "Discarding" multiple recruits in a single execution.
- * 
- * REASONING:
- * - Previous method called `markRecruitAsInvited` in a client-side loop.
- * - This created N network requests for N recruits (e.g., 20 requests).
- * - This function reads the sheet ONCE, updates memory, and writes ONCE.
  * 
  * @param {Array<string>} ids - Array of player tags (without #)
  * @returns {Object} Result object with success status
@@ -154,6 +134,10 @@ function markRecruitsAsInvitedBulk(ids) {
  * Regenerates the JSON payload from the Google Sheets.
  * Stores it in cache and returns the JSON STRING.
  * 
+ * 📦 COMPRESSION UPDATE:
+ * Returns data in 'matrix' format (Array of Arrays) instead of objects
+ * to reduce JSON payload size by ~40%.
+ * 
  * @returns {string} JSON string with payload
  */
 function refreshWebPayload() {
@@ -163,8 +147,14 @@ function refreshWebPayload() {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
 
       const data = {
-        lb: extractSheetData(ss, CONFIG.SHEETS.LB, CONFIG.SCHEMA.LB, false),
-        hh: extractSheetData(ss, CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, true),
+        // Schema version helps frontend know how to hydrate the matrix
+        format: 'matrix',
+        schema: {
+          lb: ['id', 'n', 't', 's', 'role', 'days', 'avg', 'seen', 'rate', 'hist'],
+          hh: ['id', 'n', 't', 's', 'don', 'war', 'ago', 'cards']
+        },
+        lb: extractSheetDataMatrix(ss, CONFIG.SHEETS.LB, CONFIG.SCHEMA.LB, false),
+        hh: extractSheetDataMatrix(ss, CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, true),
         timestamp: new Date().getTime()
       };
 
@@ -175,7 +165,6 @@ function refreshWebPayload() {
       Utils.CacheHandler.putLarge(CONFIG.SYSTEM.JSON_STORE_KEY, payloadStr, 21600);
       
       // 🧠 SMART SYNC METADATA
-      // Store the timestamp in Script Properties for "Cheap" checks by the frontend.
       Utils.Props.set('LAST_PAYLOAD_TIMESTAMP', data.timestamp);
       
       console.log(`🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`);
@@ -197,24 +186,24 @@ function refreshWebPayload() {
 }
 
 // ============================================================================
-// 📊 DATA EXTRACTION
+// 📊 DATA EXTRACTION (MATRIX MODE)
 // ============================================================================
 
 /**
- * Robust data extraction logic with pre-flight checks and per-row sanitization.
+ * Robust data extraction returning a compressed Matrix (Array of Arrays).
  * 
  * @param {Spreadsheet} ss - Active spreadsheet
  * @param {string} sheetName - Name of sheet to extract from
  * @param {Object} SCHEMA - Column mapping schema
  * @param {boolean} isHeadhunter - Whether this is the Headhunter sheet
- * @returns {Array} Extracted and sanitized data rows
+ * @returns {Array<Array>} Extracted data rows
  */
-function extractSheetData(ss, sheetName, SCHEMA, isHeadhunter) {
+function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
   // 1. PRE-FLIGHT CHECK: Sheet Existence
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     console.warn(`Data Extraction Warning: Sheet "${sheetName}" not found.`);
-    return []; // Return empty array, not an error, as it's a valid state.
+    return []; 
   }
 
   const lastRow = sheet.getLastRow();
@@ -222,7 +211,7 @@ function extractSheetData(ss, sheetName, SCHEMA, isHeadhunter) {
 
   // 2. PRE-FLIGHT CHECK: Content Existence
   if (lastRow < startRow) {
-    return []; // Sheet exists but is empty.
+    return []; 
   }
 
   const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 20);
@@ -243,57 +232,52 @@ function extractSheetData(ss, sheetName, SCHEMA, isHeadhunter) {
       if (!tagRaw || typeof tagRaw !== 'string' || !tagRaw.startsWith('#')) return null;
 
       const id = tagRaw.replace('#', '').trim();
-      // Safety: Ensure ID is valid length
       if (id.length < 3) return null;
 
       const name = sanitizeStr(r[SCHEMA.NAME]).replace(/^=HYPERLINK.*"(.*)".*$/, '$1');
       const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
       const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
 
-      let details = {};
-
       if (isHeadhunter) {
+        // HEADHUNTER MATRIX: [id, n, t, s, don, war, ago, cards]
         if (r[SCHEMA.INVITED] === true) return null;
+        
         const fd = r[SCHEMA.FOUND_DATE];
-        details = {
-          don: sanitizeNum(r[SCHEMA.DONATIONS]),
-          war: sanitizeNum(r[SCHEMA.WAR_WINS]),
-          ago: (fd instanceof Date && !isNaN(fd.getTime())) ? fd.toISOString() : ''
-        };
+        const ago = (fd instanceof Date && !isNaN(fd.getTime())) ? fd.toISOString() : '';
+        const don = sanitizeNum(r[SCHEMA.DONATIONS]);
+        const war = sanitizeNum(r[SCHEMA.WAR_WINS]);
+        const cards = sanitizeNum(r[SCHEMA.CARDS]); // Maps to cards won
+
+        return [id, name, trophies, score, don, war, ago, cards];
+
       } else {
+        // LEADERBOARD MATRIX: [id, n, t, s, role, days, avg, seen, rate, hist]
         let role = sanitizeStr(r[SCHEMA.ROLE] || 'Member');
         if (role === 'coLeader') role = 'Co-Leader';
 
-        // 🛠️ WAR RATE FIX (Final - v9.0.2)
-        // Strategy: Trust the Eye.
+        // War Rate Display Fix
         let rateDisplay = '0%';
-        const visualRate = displayVals[index][SCHEMA.WAR_RATE]; // From getDisplayValues()
-        const rawRate = r[SCHEMA.WAR_RATE]; // From getValues()
+        const visualRate = displayVals[index][SCHEMA.WAR_RATE];
+        const rawRate = r[SCHEMA.WAR_RATE];
 
         if (visualRate && visualRate.includes('%')) {
           rateDisplay = visualRate.trim();
-        }
-        else {
+        } else {
           let val = parseFloat(String(rawRate));
           if (!isNaN(val)) {
-            if (val <= 1.0) {
-              val = val * 100;
-            }
+            if (val <= 1.0) val = val * 100;
             rateDisplay = `${Math.round(val)}%`;
           }
         }
 
-        details = {
-          role: role,
-          days: sanitizeNum(r[SCHEMA.DAYS]),
-          avg: sanitizeNum(r[SCHEMA.AVG_DAY]),
-          seen: sanitizeStr(r[SCHEMA.LAST_SEEN] || '-'),
-          rate: rateDisplay,
-          hist: sanitizeStr(r[SCHEMA.HISTORY])
-        };
+        const days = sanitizeNum(r[SCHEMA.DAYS]);
+        const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
+        const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || '-');
+        const hist = sanitizeStr(r[SCHEMA.HISTORY]);
+
+        return [id, name, trophies, score, role, days, avg, seen, rateDisplay, hist];
       }
 
-      return { id, n: name, t: trophies, s: score, d: details };
     } catch (err) {
       console.warn(`Row extraction error in ${sheetName} at row ${startRow + index}: ${err.message}. Skipping.`);
       return null;
