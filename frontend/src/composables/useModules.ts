@@ -1,14 +1,12 @@
 import { ref, watch } from 'vue'
 
-const MODULES_KEY = 'cm_modules_v1'
+const MODULES_KEY = 'cm_modules_v2'
 
 export interface ModuleState {
-    warLog: boolean
+    // Reserved for future modules
 }
 
-const defaultState: ModuleState = {
-    warLog: true
-}
+const defaultState: ModuleState = {}
 
 // Global state
 const modules = ref<ModuleState>(defaultState)
@@ -35,7 +33,7 @@ export function useModules() {
     }, { deep: true })
 
     function toggle(key: keyof ModuleState) {
-        modules.value[key] = !modules.value[key]
+        // Implementation reserved
     }
 
     return {
