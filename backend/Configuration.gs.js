@@ -63,7 +63,8 @@ const CONFIG = {
     
     TIMEZONE: 'Europe/Rome',
     API_BASE: 'https://proxy.royaleapi.dev/v1',
-    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzllZM4VP5bvv5fUa4SGzfzrpMcmLePmhLv66lAOe4N_YIEkXkrLMel6TqLtuTbf3aE6g/exec',
+    // 🛡️ SECURITY: URL is now pulled from Script Properties to prevent exposure in Repo
+    WEB_APP_URL: _PROPS['WebAppUrl'] || '',
     RETRY_MAX: 3,
     
     // 💥 CACHE BUST: Key updated to V5_0_4 to force flush of old data (100 week history update).
