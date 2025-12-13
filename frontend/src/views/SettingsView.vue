@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
 
 // Local state for the input field
@@ -18,9 +18,21 @@ onMounted(() => {
     checkApiStatus()
 })
 
+const hasLocalOverride = computed(() => {
+  return !!localStorage.getItem('cm_gas_url')
+})
+
 function saveApiUrl() {
     if (newApiUrl.value.trim()) {
-        alert(`To configure the API URL, add this to your .env file:\n\nVITE_GAS_URL=${newApiUrl.value}\n\nThen restart the dev server.`)
+        localStorage.setItem('cm_gas_url', newApiUrl.value.trim())
+        window.location.reload()
+    }
+}
+
+function resetApiUrl() {
+    if(confirm('Reset API URL to default?')) {
+        localStorage.removeItem('cm_gas_url')
+        window.location.reload()
     }
 }
 </script>
@@ -59,8 +71,8 @@ function saveApiUrl() {
         <span class="setting-value">{{ pingData.version }}</span>
       </div>
       
-      <div class="setting-item" v-if="!apiConfigured">
-        <label class="setting-label">Configure API URL</label>
+      <div class="setting-item">
+        <label class="setting-label">Update API URL</label>
         <div class="url-input-group">
           <input 
             v-model="newApiUrl"
@@ -71,8 +83,11 @@ function saveApiUrl() {
           <button class="btn btn-primary" @click="saveApiUrl">Save</button>
         </div>
         <p class="setting-hint">
-          Deploy your GAS backend and paste the Web App URL here.
+          Deploy your GAS backend and paste the Web App URL here to override the default.
         </p>
+        <div v-if="hasLocalOverride" style="margin-top: 12px;">
+            <button class="btn btn-danger-text" @click="resetApiUrl">Reset to Default</button>
+        </div>
       </div>
     </section>
     
@@ -249,6 +264,12 @@ function saveApiUrl() {
 .btn-primary {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
+}
+
+.btn-danger-text {
+    background: transparent;
+    color: var(--sys-color-error);
+    padding-left: 0;
 }
 
 /* Modules Grid */
