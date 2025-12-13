@@ -32,7 +32,8 @@ export function useModules() {
         localStorage.setItem(MODULES_KEY, JSON.stringify(newVal))
     }, { deep: true })
 
-    function toggle(key: keyof ModuleState) {
+    // Prefix with _ to silence "unused parameter" error
+    function toggle(_key: keyof ModuleState) {
         // Implementation reserved
     }
 
