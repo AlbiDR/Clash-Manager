@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { getLeaderboard } from '../api/gasClient'
+import { loadCache, fetchRemote } from '../api/gasClient'
 import type { LeaderboardMember } from '../types'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
@@ -13,7 +13,8 @@ import ErrorState from '../components/ErrorState.vue'
 const route = useRoute()
 
 const members = ref<LeaderboardMember[]>([])
-const loading = ref(true)
+const loading = ref(true) // True only on initial load if no cache
+const syncing = ref(false) // True during background fetch
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
@@ -21,7 +22,7 @@ const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 // Expansion & Selection
 const expandedIds = ref<Set<string>>(new Set())
 const selectedIds = ref<Set<string>>(new Set())
-const selectionQueue = ref<string[]>([]) // For "Next (1/5)" workflow
+const selectionQueue = ref<string[]>([])
 const selectionMode = ref(false)
 
 // Computed for FAB
@@ -29,7 +30,6 @@ const fabState = computed(() => {
   if (!selectionMode.value) return { visible: false }
   
   if (selectionQueue.value.length > 0) {
-    // Queue Mode
     const total = selectedIds.value.size
     const current = total - selectionQueue.value.length + 1
     const nextId = selectionQueue.value[0]
@@ -41,7 +41,6 @@ const fabState = computed(() => {
       isQueue: true
     }
   } else {
-    // Initial Select Mode
     const ids = Array.from(selectedIds.value)
     const firstId = ids.length > 0 ? ids[0] : null
     
@@ -57,7 +56,7 @@ const fabState = computed(() => {
 
 const status = computed(() => {
   if (error.value) return { type: 'error', text: 'Error' } as const
-  if (loading.value) return { type: 'loading', text: 'Syncing' } as const
+  if (syncing.value) return { type: 'loading', text: 'Syncing...' } as const
   return { type: 'ready', text: `${members.value.length} Members` } as const
 })
 
@@ -71,8 +70,7 @@ function toggleExpand(id: string) {
 }
 
 function toggleSelect(id: string) {
-  if (selectionQueue.value.length > 0) return // Lock selection during queue mode
-  
+  if (selectionQueue.value.length > 0) return
   if (selectedIds.value.has(id)) {
     selectedIds.value.delete(id)
   } else {
@@ -80,28 +78,16 @@ function toggleSelect(id: string) {
     if (!selectionMode.value) selectionMode.value = true
   }
   selectedIds.value = new Set(selectedIds.value)
-  
-  if (selectedIds.value.size === 0) {
-    selectionMode.value = false
-  }
+  if (selectedIds.value.size === 0) selectionMode.value = false
 }
 
-function selectionAllLogic(items: any[]) {
-  items.forEach(i => selectedIds.value.add(i.id))
-  selectedIds.value = new Set(selectedIds.value) // Force reactivity
-}
 function selectAll() {
-  selectionAllLogic(filteredMembers.value)
+  filteredMembers.value.forEach(i => selectedIds.value.add(i.id))
+  selectedIds.value = new Set(selectedIds.value)
 }
-
 
 function selectionAction() {
-  // If not in queue mode, START queue mode
-  if (selectionQueue.value.length === 0) {
-    selectionQueue.value = Array.from(selectedIds.value)
-  }
-  
-  // Advance Queue (Shift)
+  if (selectionQueue.value.length === 0) selectionQueue.value = Array.from(selectedIds.value)
   setTimeout(() => {
     selectionQueue.value.shift()
     if (selectionQueue.value.length === 0) {
@@ -116,18 +102,12 @@ function dismissSelection() {
   selectionMode.value = false
 }
 
-// Filtered and sorted members
 const filteredMembers = computed(() => {
   let result = [...members.value]
-  
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(m => 
-      m.n.toLowerCase().includes(query) || 
-      m.id.toLowerCase().includes(query)
-    )
+    result = result.filter(m => m.n.toLowerCase().includes(query) || m.id.toLowerCase().includes(query))
   }
-  
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
@@ -136,34 +116,50 @@ const filteredMembers = computed(() => {
       default: return 0
     }
   })
-  
   return result
 })
 
 async function loadData() {
-  loading.value = true
   error.value = null
   
+  // 1. Instant Load from Cache
+  const cached = loadCache()
+  if (cached && cached.lb) {
+    members.value = cached.lb
+    loading.value = false // We have data, don't show skeleton
+  } else {
+    loading.value = true // No cache, show skeleton
+  }
+
+  // 2. Background Fetch
+  syncing.value = true
   try {
-    const response = await getLeaderboard()
-    if (response.success && response.data) {
-      members.value = response.data.lb || []
-      
-      const pinId = route.query.pin as string
-      if (pinId && members.value.some(m => m.id === pinId)) {
-        expandedIds.value.add(pinId)
-        nextTick(() => {
-          const el = document.getElementById(`member-${pinId}`)
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        })
-      }
-    } else {
-      error.value = response.error?.message || 'Failed to load data'
+    const fresh = await fetchRemote()
+    if (fresh.lb) {
+      members.value = fresh.lb
+      handleDeepLinks()
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Network error'
+    // Only show error if we have NO data. If we have cache, just toast/log it (silent fail)
+    if (members.value.length === 0) {
+      error.value = e instanceof Error ? e.message : 'Network error'
+    } else {
+      console.warn('Background sync failed:', e)
+    }
   } finally {
     loading.value = false
+    syncing.value = false
+  }
+}
+
+function handleDeepLinks() {
+  const pinId = route.query.pin as string
+  if (pinId && members.value.some(m => m.id === pinId)) {
+    expandedIds.value.add(pinId)
+    nextTick(() => {
+      const el = document.getElementById(`member-${pinId}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 }
 
@@ -174,7 +170,6 @@ onMounted(loadData)
   <div class="view-container">
     <PullToRefresh @refresh="loadData" />
     
-    <!-- Neo-Material Console Header -->
     <ConsoleHeader
       title="Leaderboard"
       :status="status"
@@ -195,26 +190,19 @@ onMounted(loadData)
       </template>
     </ConsoleHeader>
     
-    <!-- Error State -->
-    <ErrorState 
-      v-if="error" 
-      :message="error" 
-      @retry="loadData" 
-    />
+    <ErrorState v-if="error" :message="error" @retry="loadData" />
     
-    <!-- Loading State -->
-    <div v-else-if="loading" class="list-container">
+    <!-- Only show Skeleton if completely empty and loading -->
+    <div v-else-if="loading && members.length === 0" class="list-container">
       <div v-for="i in 5" :key="i" class="skeleton-card"></div>
     </div>
     
-    <!-- Empty State -->
     <EmptyState 
-      v-else-if="filteredMembers.length === 0"
+      v-else-if="!loading && filteredMembers.length === 0"
       icon="🍃"
       message="No members found"
     />
     
-    <!-- Member List -->
     <div v-else class="list-container stagger-children">
       <MemberCard
         v-for="member in filteredMembers"
@@ -229,7 +217,6 @@ onMounted(loadData)
       />
     </div>
 
-    <!-- Selection Island -->
     <FabIsland
       :visible="fabState.visible"
       :label="fabState.label"
@@ -242,29 +229,17 @@ onMounted(loadData)
 </template>
 
 <style scoped>
-.view-container {
-  min-height: 100%;
-  padding-bottom: 24px;
-}
-
-.list-container {
-  padding-bottom: 32px;
-}
-
+.view-container { min-height: 100%; padding-bottom: 24px; }
+.list-container { padding-bottom: 32px; }
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
   animation: fadeSlideIn 0.3s;
 }
-
 .sel-count { font-size: 20px; font-weight: 700; }
-
-.text-btn {
-  font-weight: 700; cursor: pointer; padding: 4px 8px;
-}
+.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .text-btn.danger { color: var(--sys-color-error); }
-
 .skeleton-card {
   height: 100px;
   background: var(--sys-color-surface-container-high);
