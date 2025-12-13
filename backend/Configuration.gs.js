@@ -63,8 +63,12 @@ const CONFIG = {
     
     TIMEZONE: 'Europe/Rome',
     API_BASE: 'https://proxy.royaleapi.dev/v1',
-    // 🛡️ SECURITY: URL is now pulled from Script Properties to prevent exposure in Repo
-    WEB_APP_URL: _PROPS['WebAppUrl'] || '',
+    
+    // 🌍 FRONTEND URL: The public URL where your React App is hosted.
+    // HYBRID SETUP: Checks Script Properties first (if you want to override it),
+    // otherwise falls back to your hardcoded GitHub Pages URL.
+    WEB_APP_URL: _PROPS['WebAppUrl'] || 'https://albidr.github.io/Clash-Manager/',
+    
     RETRY_MAX: 3,
     
     // 💥 CACHE BUST: Key updated to V5_0_4 to force flush of old data (100 week history update).
