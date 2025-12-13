@@ -1,5 +1,3 @@
-
-
 /**
  * ============================================================================
  * 🛠️ MODULE: UTILITIES
@@ -12,53 +10,203 @@
  *    4. Data Parsing (War History String -> Map objects).
  *    5. Backup System (Rolling backups for sheet safety).
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
- * 🏷️ VERSION: 5.0.1
+ *    7. Safety Lock: Mutex locking to prevent Race Conditions.
+ *    8. Properties Manager: Safe JSON handling for Script Properties.
+ * 🏷️ VERSION: 5.1.0
  * ============================================================================
  */
 
-const VER_UTILITIES = '5.0.1';
+const VER_UTILITIES = '5.1.0';
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
-// REASONING: Functions often need the same data (e.g., Member List). 
-// Storing it here prevents redundant API calls within the same execution flow.
 const _EXECUTION_CACHE = new Map();
 
 // 🛡️ API BUDGET: Prevents runaway execution from burning daily quotas.
 let _FETCH_COUNT = 0;
-// Safety limit: GAS allows ~6 mins. 400 fetches is safe (approx 60-90s execution).
-// Increased from 200 -> 400 to support Aggressive Scanning (150 rooms).
 const MAX_FETCH_PER_EXECUTION = 400; 
 
 const Utils = { 
   /**
-   * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
+   * 🔒 EXECUTE SAFELY (Mutex Lock)
+   * Prevents race conditions by acquiring a Script Lock before running critical code.
+   * Useful for ensuring only one update runs at a time.
    * 
-   * REASONING:
-   * 1. UrlFetchApp.fetchAll is significantly faster than sequential fetches.
-   * 2. We manage a pool of keys to avoid hitting Rate Limits on a single key.
-   * 3. We auto-remove "Bad Keys" (403/429) during execution to prevent cascade failures.
+   * @param {string} lockKey - Name of the process for logging (e.g. "UPDATE_DB")
+   * @param {Function} callback - The code to run if lock is acquired
+   * @return {any} The result of the callback
+   */
+  executeSafely: function(lockKey, callback) {
+    const lock = LockService.getScriptLock();
+    try {
+      // Attempt to acquire lock for 30 seconds.
+      // If locked by ANOTHER execution, it waits.
+      const success = lock.tryLock(30000);
+      
+      if (!success) {
+        console.warn(`🔒 RACE PREVENTED: Could not acquire lock for '${lockKey}'. System is busy.`);
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        try { ss.toast('System is busy. Please try again in 30s.', '⚠️ Locked'); } catch(e) {}
+        throw new Error(`System Busy: Could not acquire lock for ${lockKey}`);
+      }
+
+      // Lock acquired, run critical section
+      return callback();
+
+    } catch (e) {
+      // Re-throw to ensure caller knows it failed
+      throw e;
+    } finally {
+      // Always release the lock, even if callback fails
+      lock.releaseLock();
+    }
+  },
+
+  /**
+   * 💾 PROPS MANAGER (Script Properties Wrapper)
+   * Centralizes access to persistent storage for Metadata and Config.
+   * Robust against JSON errors and handles type conversion.
+   */
+  Props: {
+    _service: PropertiesService.getScriptProperties(),
+
+    get: function(key, defaultVal = null) {
+      const val = this._service.getProperty(key);
+      return val !== null ? val : defaultVal;
+    },
+
+    set: function(key, val) {
+      this._service.setProperty(key, String(val));
+    },
+
+    getJSON: function(key, defaultVal = {}) {
+      const raw = this._service.getProperty(key);
+      if (!raw) return defaultVal;
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        console.warn(`⚠️ Props: JSON Parse error for key '${key}'. Resetting to default.`);
+        return defaultVal;
+      }
+    },
+
+    setJSON: function(key, val) {
+      try {
+        const str = JSON.stringify(val);
+        // Check size limit (9KB per value)
+        if (str.length > 9000) {
+          console.warn(`⚠️ Props: Value for '${key}' exceeds 9KB limit. Use setChunked instead.`);
+          return false;
+        }
+        this._service.setProperty(key, str);
+        return true;
+      } catch (e) {
+        console.error(`⚠️ Props: JSON Stringify error for '${key}': ${e.message}`);
+        return false;
+      }
+    },
+
+    /**
+     * 🧩 CHUNKED STORAGE (For >9KB Properties)
+     * Automatically splits large JSON objects into keys like KEY_0, KEY_1, KEY_2...
+     */
+    getChunked: function(baseKey, defaultVal = {}) {
+      try {
+        // 1. Check for legacy single key first (Migration path)
+        const simple = this._service.getProperty(baseKey);
+        if (simple) {
+          console.log(`🧩 Props: Found legacy key for '${baseKey}'. Migrating on next save.`);
+          return JSON.parse(simple);
+        }
+
+        // 2. Scan for chunks
+        const allProps = this._service.getProperties();
+        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
+        const chunks = [];
+
+        Object.keys(allProps).forEach(k => {
+          const match = k.match(chunkPattern);
+          if (match) {
+            chunks.push({ index: parseInt(match[1]), val: allProps[k] });
+          }
+        });
+
+        if (chunks.length === 0) return defaultVal;
+
+        // 3. Reassemble
+        chunks.sort((a, b) => a.index - b.index);
+        const fullString = chunks.map(c => c.val).join('');
+        return JSON.parse(fullString);
+
+      } catch (e) {
+        console.error(`🧩 Props: Chunk read error for '${baseKey}': ${e.message}`);
+        return defaultVal;
+      }
+    },
+
+    setChunked: function(baseKey, val) {
+      try {
+        const fullString = JSON.stringify(val);
+        const CHUNK_SIZE = 8500; // Safety buffer below 9000 limit
+        const totalChunks = Math.ceil(fullString.length / CHUNK_SIZE);
+
+        // 1. Write new chunks
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = fullString.substr(i * CHUNK_SIZE, CHUNK_SIZE);
+          this._service.setProperty(`${baseKey}_${i}`, chunk);
+        }
+
+        // 2. Clean up old excess chunks
+        // If we previously had 5 chunks and now only need 2, delete _2, _3, _4
+        const allProps = this._service.getProperties();
+        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
+        
+        Object.keys(allProps).forEach(k => {
+          const match = k.match(chunkPattern);
+          if (match) {
+            const index = parseInt(match[1]);
+            if (index >= totalChunks) {
+              this._service.deleteProperty(k);
+            }
+          }
+        });
+
+        // 3. Clean up legacy single key if it exists
+        this._service.deleteProperty(baseKey);
+
+        return true;
+      } catch (e) {
+        console.error(`🧩 Props: Chunk write error for '${baseKey}': ${e.message}`);
+        return false;
+      }
+    },
+    
+    delete: function(key) {
+      this._service.deleteProperty(key);
+    }
+  },
+
+  /**
+   * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
    */
   fetchRoyaleAPI: function(urls) {
     if (!urls || urls.length === 0) return [];
 
     // 0. Safety Quota Check
     if (_FETCH_COUNT > MAX_FETCH_PER_EXECUTION) {
-      console.error(`⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches to save execution.`);
-      // Return nulls to prevent destructuring errors in calling functions
+      console.error(`⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`);
       return new Array(urls.length).fill(null);
     }
     _FETCH_COUNT += urls.length;
 
-    // 1. Initialize Key Pool (Clone objects to local array)
+    // 1. Initialize Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
     if (!keyPool || keyPool.length === 0) {
-      console.error("CRITICAL: No API Keys (CMV1-CMV10) found in Configuration.");
-      throw new Error("Missing API Keys");
+      throw new Error("CRITICAL: No API Keys (CRK1-CRK10) found in Configuration.");
     }
 
     const finalResults = new Array(urls.length).fill(null);
     const urlsToFetch = [];
-    const urlIndices = new Map(); // Maps URL string -> [Index 0, Index 5...]
+    const urlIndices = new Map(); 
 
     // 2. Cache Check & Deduplication
     urls.forEach((url, index) => {
@@ -73,7 +221,7 @@ const Utils = {
       }
     });
 
-    if (urlsToFetch.length === 0) return finalResults; // All satisfied by cache
+    if (urlsToFetch.length === 0) return finalResults;
 
     // 3. Batch Processing
     const BATCH_SIZE = 10; 
@@ -81,7 +229,6 @@ const Utils = {
     for (let c = 0; c < urlsToFetch.length; c += BATCH_SIZE) {
       const chunkUrls = urlsToFetch.slice(c, c + BATCH_SIZE);
       
-      // Retry Loop
       for (let attempt = 0; attempt < CONFIG.SYSTEM.RETRY_MAX; attempt++) {
         if (keyPool.length === 0) throw new Error("CRITICAL: All API Keys exhausted.");
 
@@ -119,7 +266,6 @@ const Utils = {
                urlIndices.get(url).forEach(idx => finalResults[idx] = null);
             }
             else if (code === 403 || code === 429) {
-               // Key exhaustion or rate limit
                const badKeyVal = requests[i].headers['Authorization'].replace('Bearer ', '');
                const keyObj = keyPool.find(k => k.value === badKeyVal);
                const keyName = keyObj ? keyObj.name : 'Unknown Key';
@@ -152,10 +298,7 @@ const Utils = {
   },
 
   /**
-   * 💾 CACHE HANDLER
-   * REASONING: Google Apps Script CacheService has a strict 100KB limit per key.
-   * Our full member/headhunter JSON often exceeds this. 
-   * We split the data into chunks (key_0, key_1...) and reassemble on retrieval.
+   * 💾 CACHE HANDLER (Chunking for >100KB Payloads)
    */
   CacheHandler: {
     putLarge: function(key, value, expirationSec = 21600) {
@@ -164,43 +307,38 @@ const Utils = {
 
       if (value.length <= CHUNK_SIZE) {
         cache.put(key, value, expirationSec);
-        cache.remove(key + "_meta"); // Clear old chunks if any
+        cache.remove(key + "_meta");
         return;
       }
 
-      // Chunking required
       const chunks = value.match(new RegExp('.{1,' + CHUNK_SIZE + '}', 'g'));
       chunks.forEach((chunk, i) => {
         cache.put(key + "_" + i, chunk, expirationSec);
       });
 
-      // Save Metadata
       cache.put(key + "_meta", JSON.stringify({ count: chunks.length }), expirationSec);
-      cache.remove(key); // Remove standard key to avoid confusion
-      console.log(`💾 Cache: Split ${Math.round(value.length/1024)}KB into ${chunks.length} chunks.`);
+      cache.remove(key); 
     },
 
     getLarge: function(key) {
       const cache = CacheService.getScriptCache();
-      
-      // 1. Try standard get (migration path)
       const standard = cache.get(key);
       if (standard) return standard;
 
-      // 2. Try chunked get
       const meta = cache.get(key + "_meta");
       if (meta) {
         try {
           const { count } = JSON.parse(meta);
           const keys = [];
-          for (let i = 0; i < count; i++) keys.push(key + "_" + i);
+          for (let i = 0; i < count; i++) {
+             keys.push(key + "_" + i);
+          }
           
           const chunks = cache.getAll(keys);
           let fullString = "";
-          // Reassemble in order
           for (let i = 0; i < count; i++) {
             const part = chunks[key + "_" + i];
-            if (!part) return null; // Corrupted cache (missing part)
+            if (!part) return null; 
             fullString += part;
           }
           return fullString;
@@ -218,34 +356,23 @@ const Utils = {
     return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, 'yyyy-MM-dd'); 
   },
   
-  /**
-   * Robust parser for RoyaleAPI's compact ISO format: 20231105T100000.000Z
-   * Standard JS new Date() fails on this in GAS V8.
-   */
   parseRoyaleApiDate: function(dateStr) {
     if (!dateStr) return new Date();
     if (dateStr instanceof Date) return dateStr;
-    
-    // Check if it matches the Compact ISO format
-    // regex: YYYYMMDDThhmmss
     if (/^\d{8}T\d{6}/.test(dateStr)) {
       const y = parseInt(dateStr.substr(0,4), 10);
-      const m = parseInt(dateStr.substr(4,2), 10) - 1; // Months are 0-based
+      const m = parseInt(dateStr.substr(4,2), 10) - 1;
       const d = parseInt(dateStr.substr(6,2), 10);
       const h = parseInt(dateStr.substr(9,2), 10);
       const min = parseInt(dateStr.substr(11,2), 10);
       const s = parseInt(dateStr.substr(13,2), 10);
       return new Date(Date.UTC(y, m, d, h, min, s));
     }
-    
-    // Fallback to standard parser
     return new Date(dateStr);
   },
 
   calculateWarWeekId: function(d) {
-    // Ensure we have a valid date object
     if (!d || isNaN(d.getTime())) return "Unknown";
-    
     const date = new Date(d.getTime());
     date.setHours(0,0,0,0);
     date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
@@ -265,10 +392,6 @@ const Utils = {
     return historyMap;
   },
   
-  /**
-   * 🔀 FISHER-YATES SHUFFLE
-   * Randomizes an array in-place. Used for stochastic tournament selection.
-   */
   shuffleArray: function(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -277,11 +400,12 @@ const Utils = {
     return array;
   },
 
-  // 🛡️ SMART BACKUP SYSTEM
-  // REASONING: 
-  // 1. Prevents Data Loss during failures.
-  // 2. Checks for duplicates to avoid filling backup history with identical sheets.
-  // 3. ROLLING WINDOW + ORDERING: Keeps backups explicitly ordered next to source.
+  /**
+   * 🛡️ ROBUST BACKUP SYSTEM
+   * - Rotates backups (1-5).
+   * - Compares content to prevent redundant backups.
+   * - SELF-HEALING: Enforces Sort Order and Visibility on every run.
+   */
   backupSheet: function(ss, sheetName) {
     try {
       const sheet = ss.getSheetByName(sheetName);
@@ -291,47 +415,41 @@ const Utils = {
       const backup1Name = `Backup 1 ${sheetName}`;
       const existingBackup1 = ss.getSheetByName(backup1Name);
 
-      // 1. SMART REDUNDANCY CHECK
+      // 1. REDUNDANCY CHECK: Skip if data hasn't changed
       if (existingBackup1) {
         const currentLastRow = sheet.getLastRow();
         const currentLastCol = sheet.getLastColumn();
         
-        // Fast Fail: Dimension Mismatch
+        // If dimensions match, check content
         if (currentLastRow === existingBackup1.getLastRow() && 
             currentLastCol === existingBackup1.getLastColumn()) {
           
-          // Deep Check: Content Hash
-          // CHANGE: Ignore Row 1 (Timestamp/Status) to avoid spamming backups when only time updates.
+          // Optimization: Skip Row 1 (Timestamps often change, data does not)
           const startRow = currentLastRow > 1 ? 2 : 1;
           const numRows = currentLastRow > 1 ? currentLastRow - startRow + 1 : 1;
-          
-          // Guard for empty sheets
-          if (currentLastRow === 0) return;
 
-          const currentData = sheet.getRange(startRow, 1, numRows, currentLastCol).getValues();
-          const backupData = existingBackup1.getRange(startRow, 1, numRows, currentLastCol).getValues();
-          
-          if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
-            console.log(`🛡️ Pre-Modification Backup: Skipped (Current sheet matches Backup 1).`);
-            return;
-          } else {
-            // Debug Log for Users
-            console.log(`🛡️ Pre-Modification Backup: Proceeding (Content changed since last run).`);
+          if (currentLastRow > 0) {
+            const currentData = sheet.getRange(startRow, 1, numRows, currentLastCol).getValues();
+            const backupData = existingBackup1.getRange(startRow, 1, numRows, currentLastCol).getValues();
+            
+            // Fast Stringify comparison
+            if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
+              console.log(`🛡️ Backup: Skipped for '${sheetName}' (Content matches Backup 1).`);
+              // Even if skipped, we MUST run the Self-Healing logic to fix any previous sorting errors
+              this._enforceBackupOrder(ss, sheetName, MAX_BACKUPS);
+              return;
+            }
           }
-        } else {
-           console.log(`🛡️ Pre-Modification Backup: Proceeding (Dimensions changed).`);
         }
       }
 
       console.log(`🛡️ Creating new backup for '${sheetName}'...`);
-
-      // 2. ROTATE OLD BACKUPS
-      // Delete the oldest
+      
+      // 2. ROTATION: Delete Oldest, Shift Others
       const oldestName = `Backup ${MAX_BACKUPS} ${sheetName}`;
       const oldest = ss.getSheetByName(oldestName);
       if (oldest) ss.deleteSheet(oldest);
 
-      // Shift others up (Backup 4 -> Backup 5)
       for (let i = MAX_BACKUPS - 1; i >= 1; i--) {
         const currentName = `Backup ${i} ${sheetName}`;
         const nextName = `Backup ${i + 1} ${sheetName}`;
@@ -339,40 +457,62 @@ const Utils = {
         if (existing) existing.setName(nextName);
       }
 
-      // 3. CREATE NEW SNAPSHOT
-      // copyTo creates the sheet at the end of the spreadsheet by default.
+      // 3. CREATION: Copy current
       const copy = sheet.copyTo(ss);
       copy.setName(backup1Name);
-      copy.setTabColor(null); // Clean visual
+      copy.setTabColor('#cccccc'); // Set Gray color for backups
       
-      // 4. REORDERING LOGIC
-      // Move the new Backup 1 to be immediately after the Source Sheet.
-      // e.g. Source (Index 1) -> Backup 1 (Index 2) -> Backup 2 (Index 3)
-      const sourceIndex = sheet.getIndex(); // 1-based index
-      copy.activate(); // Required for moveActiveSheet
-      ss.moveActiveSheet(sourceIndex + 1);
+      // 4. SELF-HEALING: Enforce Order and Visibility
+      this._enforceBackupOrder(ss, sheetName, MAX_BACKUPS);
       
-      // 5. HIDE AFTER MOVING
-      // Hiding before moving can sometimes cause issues with activate()
-      copy.hideSheet();
-
-      // Return focus to the original sheet so the user doesn't get disoriented
+      // Activate source to be safe
       sheet.activate();
       
     } catch (e) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
-      // Non-blocking error
     }
   },
 
-  // Helper: Draws the Mobile Checkbox in A1 with specific styling
+  /**
+   * Helper to ensure backups 1-N are strictly ordered after the source sheet
+   * and definitely hidden.
+   */
+  _enforceBackupOrder: function(ss, sheetName, maxBackups) {
+    const sourceSheet = ss.getSheetByName(sheetName);
+    if (!sourceSheet) return;
+
+    const sourceIndex = sourceSheet.getIndex(); // 1-based index
+
+    for (let i = 1; i <= maxBackups; i++) {
+      const bName = `Backup ${i} ${sheetName}`;
+      const bSheet = ss.getSheetByName(bName);
+      
+      if (bSheet) {
+        // Enforce Visibility
+        if (!bSheet.isSheetHidden()) {
+          bSheet.hideSheet();
+        }
+        
+        // Enforce Position: Source is at N, Backup 1 goes to N+1, Backup 2 to N+2...
+        // Note: moveActiveSheet is reliable, setIndex can be finicky.
+        // We only move if the index is wrong to save time.
+        const expectedIndex = sourceIndex + i;
+        if (bSheet.getIndex() !== expectedIndex) {
+          bSheet.activate();
+          ss.moveActiveSheet(expectedIndex);
+        }
+      }
+    }
+    // Return focus to source
+    sourceSheet.activate();
+  },
+
   drawMobileCheckbox: function(sheet) {
     if (!sheet) return;
     const mobileTrigger = sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL || 'A1');
     if (mobileTrigger.getDataValidation() == null || mobileTrigger.getDataValidation().getCriteriaType() != SpreadsheetApp.DataValidationCriteria.CHECKBOX) {
       mobileTrigger.insertCheckboxes();
     }
-    // Updated: Removed Red background for cleaner look
     mobileTrigger.setBackground(null) 
                  .setFontColor(null)
                  .setHorizontalAlignment("center")
@@ -380,134 +520,91 @@ const Utils = {
                  .setNote('⚡ QUICK UPDATE:\nClick/Tap this checkbox to run the update for this specific tab.\n(Requires "Enable Mobile Controls" setup once).');
   },
 
-  // Helper: Iterates through all key sheets and forces the mobile checkbox to appear.
-  // Useful when enabling controls for the first time, so user doesn't have to wait for a layout update.
   refreshMobileControls: function(ss) {
     const sheets = [CONFIG.SHEETS.DB, CONFIG.SHEETS.LB, CONFIG.SHEETS.HH];
     sheets.forEach(name => {
       const sheet = ss.getSheetByName(name);
       if (sheet) {
         Utils.drawMobileCheckbox(sheet);
-        // Ensure it starts unchecked
         sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL || 'A1').setValue(false);
       }
     });
   },
 
-  // REASONING: Ensures consistent UI across all tabs (buffers, hidden gridlines) without manual formatting.
-  // RULES: 
-  // 1. Column Width: Fixed 100
-  // 2. Alignment: Center/Middle
-  // 3. Headers: Wrap
-  // 4. Data: Overflow (Clip)
-  // 5. Borders: Outer Table + Header All
-  // 6. Banding: Include Header
-  // 7. Mobile Trigger: Ensure A1 is a red checkbox.
-  // 8. Auto-Schema: If headers are provided, they are enforced on Row 2.
   applyStandardLayout: function(sheet, contentRows, contentCols, optHeaders = null) {
     if (!sheet) return;
 
     const L = CONFIG.LAYOUT;
-    const DATA_START_ROW = L.DATA_START_ROW; // 3
+    const DATA_START_ROW = L.DATA_START_ROW; 
     const HEADER_ROW = 2;
     const STATUS_ROW = 1;
     const COL_BUFFER_LEFT = 1; 
     const COL_DATA_START = 2;
 
-    // 🧠 SCHEMA ADAPTATION:
-    // If headers are provided, they dictate the column structure.
     if (Array.isArray(optHeaders) && optHeaders.length > 0) {
       contentCols = optHeaders.length;
     }
 
     const lastDataRow = (DATA_START_ROW - 1) + Math.max(contentRows, 0); 
-    const totalRows = Math.max(lastDataRow + 1, DATA_START_ROW + 1); // Ensure minimal buffer
+    const totalRows = Math.max(lastDataRow + 1, DATA_START_ROW + 1); 
     const lastDataCol = (COL_DATA_START - 1) + contentCols;
-    const totalCols = lastDataCol + 1; // Right buffer
+    const totalCols = lastDataCol + 1; 
 
     const currentRows = sheet.getMaxRows();
     const currentCols = sheet.getMaxColumns();
 
-    // 1. DIMENSION CONTROL (Smart Resize)
     if (currentRows < totalRows) sheet.insertRowsAfter(currentRows, totalRows - currentRows);
     if (currentCols < totalCols) sheet.insertColumnsAfter(currentCols, totalCols - currentCols);
-    
-    // Safety: Only delete if we are strictly formatting a known controlled sheet.
-    // Given this is an internal tool, clean borders are preferred.
     if (currentRows > totalRows) sheet.deleteRows(totalRows + 1, currentRows - totalRows);
     if (currentCols > totalCols) sheet.deleteColumns(totalCols + 1, currentCols - totalCols);
 
-    // 2. BUFFER SETUP
     try {
         sheet.setColumnWidth(COL_BUFFER_LEFT, L.BUFFER_SIZE); 
         sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);       
         sheet.setRowHeight(totalRows, L.BUFFER_SIZE); 
     } catch(e) { console.warn("Layout: Resize buffer failed", e); }        
 
-    // Clear Buffers (Preserving A1)
-    // We explicitly clear borders and formatting to ensure no artifacts remain if schema shrunk.
     const buffers = [];
-    
-    // Left Buffer (Below A1)
     if (totalRows >= 2) buffers.push(sheet.getRange(2, COL_BUFFER_LEFT, totalRows - 1, 1));
-    // Right Buffer (Entire col)
     buffers.push(sheet.getRange(1, totalCols, totalRows, 1));
-    // Bottom Buffer (Entire row)
     buffers.push(sheet.getRange(totalRows, 1, 1, totalCols));
 
     buffers.forEach(rng => {
         rng.setBackground(null)
            .clearContent()
-           .clearDataValidations() // Ensure no leftover checkboxes/dropdowns
-           .clearNote() // Clear notes
-           .setBorder(false, false, false, false, false, false); // Explicitly remove borders
+           .clearDataValidations() 
+           .clearNote() 
+           .setBorder(false, false, false, false, false, false); 
     });
 
-    // 3. MOBILE TRIGGER (A1)
     Utils.drawMobileCheckbox(sheet);
 
     if (contentCols > 0) {
-      // Column Widths
       sheet.setColumnWidths(COL_DATA_START, contentCols, 100);
 
-      // Status Row (Merged)
-      // Break merges first to avoid overlap errors if schema changed
       sheet.getRange(STATUS_ROW, 1, 1, totalCols).breakApart();
-      
       const statusRange = sheet.getRange(STATUS_ROW, COL_DATA_START, 1, contentCols);
       statusRange.merge()
            .setHorizontalAlignment("left").setVerticalAlignment("middle")
            .setFontWeight("bold").setFontColor("#888888");
 
-      // Table Range (Header + Data)
       const tableRows = 1 + contentRows; 
       const tableRange = sheet.getRange(HEADER_ROW, COL_DATA_START, tableRows, contentCols);
-
-      // Clear existing bandings to prevent corruption/overlap
       const existingBandings = sheet.getBandings();
       if (existingBandings) existingBandings.forEach(b => b.remove());
-      
-      // Apply Banding
       tableRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
-      
-      // Borders: Outer Border for Table
       tableRange.setBorder(true, true, true, true, null, null); 
 
-      // Header Formatting
       const headerRange = sheet.getRange(HEADER_ROW, COL_DATA_START, 1, contentCols);
-      
-      // If headers provided, write them now
       if (Array.isArray(optHeaders) && optHeaders.length > 0) {
           headerRange.setValues([optHeaders]);
       }
-
       headerRange.setBorder(true, true, true, true, true, true) 
                  .setFontWeight("bold")
                  .setHorizontalAlignment("center")
                  .setVerticalAlignment("middle")
                  .setWrap(true);
 
-      // Data Formatting
       if (contentRows > 0) {
         const dataRange = sheet.getRange(DATA_START_ROW, COL_DATA_START, contentRows, contentCols);
         dataRange.setHorizontalAlignment("center")
