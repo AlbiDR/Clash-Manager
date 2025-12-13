@@ -1,7 +1,8 @@
-
+All notable changes to the project will be documented in this file following the documentation on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and adhering to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # To-Do & Development Roadmap
-***future and possible additions can be written here as a placeholder and for safekeeping
+> *Future features, technical debt, and placeholder additions are listed here for safekeeping.*
+
 
 **Frontend Adaptation Requirements (v6.0 Backend):**
 1. **Persistence**: Implement "Stale-While-Revalidate". Load from LocalStorage immediately, then fetch background update.
