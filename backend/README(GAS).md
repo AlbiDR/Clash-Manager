@@ -79,5 +79,5 @@ This allows you to trigger updates directly from the Google Sheet mobile app usi
 ## 🛠️ Troubleshooting
 
 *   **"Permissions Denied"**: Ensure you deployed the Web App as "Execute as: Me" and "Access: Anyone".
-*   **"API Error"**: Check the `Logger` in Apps Script to see if your `CMV` keys are valid or if you are hitting rate limits.
+*   **"API Error"**: Check the `Logger` in Apps Script to see if your `CRK` keys are valid or if you are hitting rate limits.
 *   **"System Busy"**: The system uses a locking mechanism. Wait 30 seconds and try again.
