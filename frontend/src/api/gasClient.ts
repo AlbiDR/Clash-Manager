@@ -10,7 +10,9 @@ import type {
     ClanMember,
     WarLogEntry,
     PingResponse,
-    DismissResponse
+    DismissResponse,
+    LeaderboardMember,
+    Recruit
 } from '../types'
 
 // ============================================================================
@@ -22,6 +24,59 @@ import type {
  * Format: https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
  */
 const GAS_URL = import.meta.env.VITE_GAS_URL || ''
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+/**
+ * Inflates a Matrix-compressed response back into Objects.
+ * Compatible with legacy Object-based responses for seamless migration.
+ */
+function inflatePayload(data: any): WebAppData {
+    // If it's old format (no format tag or schema), return as is
+    if (!data || data.format !== 'matrix' || !data.schema) {
+        return data as WebAppData
+    }
+
+    const { lb, hh, timestamp } = data
+    
+    // Inflate Leaderboard: [id, n, t, s, role, days, avg, seen, rate, hist]
+    const inflatedLB: LeaderboardMember[] = (lb || []).map((r: any[]) => ({
+        id: r[0],
+        n: r[1],
+        t: r[2],
+        s: r[3],
+        d: {
+            role: r[4],
+            days: r[5],
+            avg: r[6],
+            seen: r[7],
+            rate: r[8],
+            hist: r[9]
+        }
+    }))
+
+    // Inflate Recruits: [id, n, t, s, don, war, ago, cards]
+    const inflatedHH: Recruit[] = (hh || []).map((r: any[]) => ({
+        id: r[0],
+        n: r[1],
+        t: r[2],
+        s: r[3],
+        d: {
+            don: r[4],
+            war: r[5],
+            ago: r[6],
+            cards: r[7]
+        }
+    }))
+
+    return {
+        lb: inflatedLB,
+        hh: inflatedHH,
+        timestamp: timestamp
+    }
+}
 
 // ============================================================================
 // CORE FETCH UTILITY
@@ -81,8 +136,6 @@ async function getSWR<T>(key: string, fetcher: () => Promise<T>, ttlMinutes = 5)
                         data: fresh,
                         timestamp: Date.now()
                     }))
-                    // Dispatch event for reactive updates (if needed)
-                    // For now, simpler SWR: just return cached, next load gets fresh
                 }).catch(e => console.warn('Background revalidation failed:', e))
             }
 
@@ -115,16 +168,58 @@ export async function ping(): Promise<ApiResponse<PingResponse>> {
 
 /**
  * Get leaderboard and recruiter data (cached on server)
+ * 🛠️ Includes automatic Payload Inflation (Matrix -> Objects)
  */
 export async function getLeaderboard(): Promise<LegacyApiResponse<WebAppData>> {
-    return getSWR('leaderboard', () => gasRequest<LegacyApiResponse<WebAppData>>('getLeaderboard'), 5)
+    // We define a specialized fetcher that handles the inflation
+    const fetcher = async () => {
+        const raw = await gasRequest<LegacyApiResponse<any>>('getLeaderboard')
+        if (raw.success && raw.data) {
+            raw.data = inflatePayload(raw.data)
+        }
+        return raw as LegacyApiResponse<WebAppData>
+    }
+
+    return getSWR('leaderboard', fetcher, 5)
 }
 
 /**
  * Get recruiter pool only
+ * 🛠️ Includes automatic Payload Inflation
  */
 export async function getRecruits(): Promise<ApiResponse<{ hh: WebAppData['hh']; timestamp: number }>> {
-    return getSWR('recruits', () => gasRequest<ApiResponse<{ hh: WebAppData['hh']; timestamp: number }>>('getRecruits'), 5)
+    const fetcher = async () => {
+        const raw = await gasRequest<ApiResponse<any>>('getRecruits')
+        if (raw.status === 'success' && raw.data) {
+            // Check if raw.data is a wrapper containing the full matrix payload
+            // The backend endpoint returns { hh: ..., timestamp: ... } 
+            // If the backend returns full compressed object for getRecruits, we inflate it.
+            // Note: getRecruits endpoint usually returns a subset. 
+            // Currently API_Public returns { hh: parsed.data.hh ... }
+            // If parsed.data was matrix, hh is an array of arrays.
+            
+            // We need to check if the 'hh' inside data is a matrix or objects.
+            const sample = raw.data.hh?.[0];
+            if (Array.isArray(sample)) {
+                 // Manual inflation for just the hh part since we don't have the full payload wrapper
+                 raw.data.hh = raw.data.hh.map((r: any[]) => ({
+                    id: r[0],
+                    n: r[1],
+                    t: r[2],
+                    s: r[3],
+                    d: {
+                        don: r[4],
+                        war: r[5],
+                        ago: r[6],
+                        cards: r[7]
+                    }
+                }))
+            }
+        }
+        return raw as ApiResponse<{ hh: WebAppData['hh']; timestamp: number }>
+    }
+
+    return getSWR('recruits', fetcher, 5)
 }
 
 /**
@@ -145,10 +240,18 @@ export async function getWarLog(): Promise<ApiResponse<WarLogEntry[]>> {
  * Force refresh the cached data
  */
 export async function refresh(): Promise<LegacyApiResponse<WebAppData>> {
-    const data = await gasRequest<LegacyApiResponse<WebAppData>>('refresh')
+    const raw = await gasRequest<LegacyApiResponse<any>>('refresh')
+    
+    // Inflate if necessary
+    if (raw.success && raw.data) {
+        raw.data = inflatePayload(raw.data)
+    }
+    
+    const finalData = raw as LegacyApiResponse<WebAppData>
+    
     // Update cache on manual refresh
-    localStorage.setItem('gas_cache_leaderboard', JSON.stringify({ data, timestamp: Date.now() }))
-    return data
+    localStorage.setItem('gas_cache_leaderboard', JSON.stringify({ data: finalData, timestamp: Date.now() }))
+    return finalData
 }
 
 /**
