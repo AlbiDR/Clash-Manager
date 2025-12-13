@@ -105,11 +105,29 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
 
         const envelope = await response.json()
 
-        if (envelope.status === 'error') {
-            throw new Error(envelope.error?.message || 'Unknown Backend Error')
+        // --------------------------------------------------------
+        // CRITICAL FIX: Handle Mixed Response Formats
+        // --------------------------------------------------------
+        // Standard API: { status: 'success', data: ... }
+        // Legacy Data:  { success: true, data: ... } (from getWebAppData)
+
+        const isStandardSuccess = envelope.status === 'success'
+        const isLegacySuccess = envelope.success === true
+
+        if (isStandardSuccess || isLegacySuccess) {
+            return envelope as T
         }
 
-        return envelope as T
+        // Handle Errors
+        if (envelope.status === 'error' || envelope.success === false) {
+            const errorMsg = envelope.error?.message || 'Unknown Backend Error'
+            console.error(`GAS API Error [${action}]:`, errorMsg, envelope.error)
+            throw new Error(errorMsg)
+        }
+
+        // Fallback for completely unexpected structure
+        console.warn(`GAS API Warning [${action}]: Unexpected response structure`, envelope)
+        throw new Error('Invalid response structure: ' + JSON.stringify(envelope).substring(0, 100))
     } catch (error) {
         console.error(`GAS API Error [${action}]:`, error)
         throw error
