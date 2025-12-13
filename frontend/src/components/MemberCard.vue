@@ -55,19 +55,15 @@ const historyBars = computed(() => {
   return bars
 })
 
-
-
 // Composables
 import { useLongPress } from '../composables/useLongPress'
 import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  // If NOT in selection mode, enter it and select this item
-  // If IN selection mode, just toggle this item
   emit('toggle-select')
 })
 
-const { share } = useShare()
+const { canShare, share } = useShare()
 
 function shareMember() {
   share({
@@ -78,13 +74,11 @@ function shareMember() {
 }
 
 function handleClick(e: Event) {
-  // If we just triggered a long press, Ignore this click
   if (isLongPress.value) {
     isLongPress.value = false
     return
   }
   
-  // Prevent card click if clicking button or link
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
   if ((e.target as HTMLElement).closest('.chevron-btn')) {
@@ -92,8 +86,6 @@ function handleClick(e: Event) {
     return
   }
 
-  // Standard Logic: If selection mode is ON, click = toggle select
-  // If selection mode is OFF, click = expand
   if (props.selectionMode) {
     emit('toggle-select')
   } else {
@@ -135,6 +127,9 @@ function handleClick(e: Event) {
         <div class="stat-pod" :class="toneClass">
           <div class="stat-score">{{ Math.round(member.s || 0) }}</div>
           <div class="stat-sub">SCORE</div>
+        </div>
+        <div class="chevron-btn">
+          <Icon name="chevron_down" size="20" />
         </div>
       </div>
     </div>
@@ -182,6 +177,9 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
+        <button v-if="canShare" class="btn-action secondary" @click.stop="shareMember">
+          Share
+        </button>
       </div>
     </div>
   </div>
