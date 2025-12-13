@@ -400,6 +400,12 @@ const Utils = {
     return array;
   },
 
+  /**
+   * 🛡️ ROBUST BACKUP SYSTEM
+   * - Rotates backups (1-5).
+   * - Compares content to prevent redundant backups.
+   * - SELF-HEALING: Enforces Sort Order and Visibility on every run.
+   */
   backupSheet: function(ss, sheetName) {
     try {
       const sheet = ss.getSheetByName(sheetName);
@@ -409,28 +415,37 @@ const Utils = {
       const backup1Name = `Backup 1 ${sheetName}`;
       const existingBackup1 = ss.getSheetByName(backup1Name);
 
+      // 1. REDUNDANCY CHECK: Skip if data hasn't changed
       if (existingBackup1) {
         const currentLastRow = sheet.getLastRow();
         const currentLastCol = sheet.getLastColumn();
         
+        // If dimensions match, check content
         if (currentLastRow === existingBackup1.getLastRow() && 
             currentLastCol === existingBackup1.getLastColumn()) {
           
+          // Optimization: Skip Row 1 (Timestamps often change, data does not)
           const startRow = currentLastRow > 1 ? 2 : 1;
           const numRows = currentLastRow > 1 ? currentLastRow - startRow + 1 : 1;
-          if (currentLastRow === 0) return;
 
-          const currentData = sheet.getRange(startRow, 1, numRows, currentLastCol).getValues();
-          const backupData = existingBackup1.getRange(startRow, 1, numRows, currentLastCol).getValues();
-          
-          if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
-            console.log(`🛡️ Pre-Modification Backup: Skipped (Matches Backup 1).`);
-            return;
+          if (currentLastRow > 0) {
+            const currentData = sheet.getRange(startRow, 1, numRows, currentLastCol).getValues();
+            const backupData = existingBackup1.getRange(startRow, 1, numRows, currentLastCol).getValues();
+            
+            // Fast Stringify comparison
+            if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
+              console.log(`🛡️ Backup: Skipped for '${sheetName}' (Content matches Backup 1).`);
+              // Even if skipped, we MUST run the Self-Healing logic to fix any previous sorting errors
+              this._enforceBackupOrder(ss, sheetName, MAX_BACKUPS);
+              return;
+            }
           }
         }
       }
 
       console.log(`🛡️ Creating new backup for '${sheetName}'...`);
+      
+      // 2. ROTATION: Delete Oldest, Shift Others
       const oldestName = `Backup ${MAX_BACKUPS} ${sheetName}`;
       const oldest = ss.getSheetByName(oldestName);
       if (oldest) ss.deleteSheet(oldest);
@@ -442,18 +457,54 @@ const Utils = {
         if (existing) existing.setName(nextName);
       }
 
+      // 3. CREATION: Copy current
       const copy = sheet.copyTo(ss);
       copy.setName(backup1Name);
-      copy.setTabColor(null); 
+      copy.setTabColor('#cccccc'); // Set Gray color for backups
       
-      const sourceIndex = sheet.getIndex(); 
-      ss.moveActiveSheet(sourceIndex + 1);
-      copy.hideSheet();
+      // 4. SELF-HEALING: Enforce Order and Visibility
+      this._enforceBackupOrder(ss, sheetName, MAX_BACKUPS);
+      
+      // Activate source to be safe
       sheet.activate();
       
     } catch (e) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
     }
+  },
+
+  /**
+   * Helper to ensure backups 1-N are strictly ordered after the source sheet
+   * and definitely hidden.
+   */
+  _enforceBackupOrder: function(ss, sheetName, maxBackups) {
+    const sourceSheet = ss.getSheetByName(sheetName);
+    if (!sourceSheet) return;
+
+    const sourceIndex = sourceSheet.getIndex(); // 1-based index
+
+    for (let i = 1; i <= maxBackups; i++) {
+      const bName = `Backup ${i} ${sheetName}`;
+      const bSheet = ss.getSheetByName(bName);
+      
+      if (bSheet) {
+        // Enforce Visibility
+        if (!bSheet.isSheetHidden()) {
+          bSheet.hideSheet();
+        }
+        
+        // Enforce Position: Source is at N, Backup 1 goes to N+1, Backup 2 to N+2...
+        // Note: moveActiveSheet is reliable, setIndex can be finicky.
+        // We only move if the index is wrong to save time.
+        const expectedIndex = sourceIndex + i;
+        if (bSheet.getIndex() !== expectedIndex) {
+          bSheet.activate();
+          ss.moveActiveSheet(expectedIndex);
+        }
+      }
+    }
+    // Return focus to source
+    sourceSheet.activate();
   },
 
   drawMobileCheckbox: function(sheet) {
