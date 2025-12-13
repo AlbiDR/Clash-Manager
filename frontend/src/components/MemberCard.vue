@@ -72,6 +72,7 @@ function handleClick(e: Event) {
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
   if ((e.target as HTMLElement).closest('.chevron-btn')) {
+    // Chevron always toggles expansion, even in selection mode
     emit('toggle')
     return
   }
@@ -219,9 +220,10 @@ function handleClick(e: Event) {
   color: var(--sys-color-on-surface-variant);
   background: rgba(0,0,0,0.05);
   border-radius: 50%;
-  transition: transform 0.3s var(--sys-motion-spring);
+  transition: transform 0.4s var(--sys-motion-bouncy), background-color 0.2s;
 }
 .card.expanded .chevron-btn { transform: rotate(180deg); background: rgba(0,0,0,0.1); }
+
 
 /* Stat Pod */
 .stat-pod {

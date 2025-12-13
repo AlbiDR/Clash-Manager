@@ -6,9 +6,9 @@
   "author": "Alberto Di Rosa",
   "repository": {
     "type": "git",
-    "url": "https://github.com/albidr/Clash_Manager-Clan_Tracker.git"
+    "url": "https://github.com/albidr/Clash-Manager.git"
   },
-  "homepage": "https://albidr.github.io/Clash_Manager-Clan_Tracker/",
+  "homepage": "https://albidr.github.io/Clash-Manager/",
   "type": "module",
   "scripts": {
     "dev": "vite",

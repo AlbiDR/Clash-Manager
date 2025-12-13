@@ -1,11 +1,10 @@
 /**
  * GAS API Client
- * Handles all communication with the Google Apps Script backend
+ * Handles all communication with the GAS backend
  */
 
 import type {
     ApiResponse,
-    LegacyApiResponse,
     WebAppData,
     ClanMember,
     PingResponse,
@@ -20,7 +19,7 @@ import type {
 
 // Prioritize LocalStorage override, fall back to Build Env, default to empty
 const GAS_URL = localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
-const CACHE_KEY_MAIN = 'clash_manager_data_v6' // Unified Cache Key
+const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V5' // Updated for v6 requirements (Request specified V5 key)
 
 // ============================================================================
 // HELPERS
@@ -30,13 +29,23 @@ const CACHE_KEY_MAIN = 'clash_manager_data_v6' // Unified Cache Key
  * Inflates a Matrix-compressed response back into Objects.
  */
 function inflatePayload(data: any): WebAppData {
+    // Handle String Transport Protocol: Double-parse if data is a string
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data)
+        } catch (e) {
+            console.error('Failed to parse double-encoded data:', e)
+            // fallback to original data, though likely invalid
+        }
+    }
+
     // Legacy support or raw object pass-through
     if (!data || data.format !== 'matrix' || !data.schema) {
         return data as WebAppData
     }
 
     const { lb, hh, timestamp } = data
-    
+
     // Inflate Leaderboard: [id, n, t, s, role, days, avg, seen, rate, hist]
     const inflatedLB: LeaderboardMember[] = (lb || []).map((r: any[]) => ({
         id: r[0],
@@ -84,15 +93,23 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
     }
 
     try {
-        const response = await fetch(GAS_URL, {
-            method: 'POST',
+        const response = await fetch(`${GAS_URL}?action=${action}`, {
+            method: action === 'getwebappdata' ? 'GET' : 'POST', // Use GET for reads as per v6 spec
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action, ...payload })
+            // GET requests cannot have body
+            body: action === 'getwebappdata' ? undefined : JSON.stringify({ action, ...payload })
         })
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return await response.json() as T
+
+        const envelope = await response.json()
+
+        if (envelope.status === 'error') {
+            throw new Error(envelope.error?.message || 'Unknown Backend Error')
+        }
+
+        return envelope as T
     } catch (error) {
         console.error(`GAS API Error [${action}]:`, error)
         throw error
@@ -109,7 +126,7 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
 export function loadCache(): WebAppData | null {
     const cached = localStorage.getItem(CACHE_KEY_MAIN)
     if (!cached) return null
-    
+
     try {
         const parsed = JSON.parse(cached)
         return parsed
@@ -125,18 +142,19 @@ export function loadCache(): WebAppData | null {
  * Fetches the UNIFIED payload (LB + HH) to save bandwidth.
  */
 export async function fetchRemote(): Promise<WebAppData> {
-    // 'getwebappdata' endpoint returns both LB and HH in one compressed matrix
-    const raw = await gasRequest<LegacyApiResponse<any>>('getwebappdata')
-    
-    if (!raw.success || !raw.data) {
-        throw new Error(raw.error?.message || 'Failed to fetch data')
+    // 'getwebappdata' endpoint returns both LB and HH
+    // Response Schema: { status: 'success', data: { ... } }
+    const envelope = await gasRequest<ApiResponse<any>>('getwebappdata')
+
+    if (envelope.status !== 'success' || !envelope.data) {
+        throw new Error('Failed to fetch data: Invalid response structure')
     }
 
-    const inflated = inflatePayload(raw.data)
-    
+    const inflated = inflatePayload(envelope.data)
+
     // Save to cache
     localStorage.setItem(CACHE_KEY_MAIN, JSON.stringify(inflated))
-    
+
     return inflated
 }
 

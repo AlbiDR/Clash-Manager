@@ -10,9 +10,14 @@ const props = defineProps<{
 const bars = computed(() => {
   if (!props.history || props.history === '-') return []
   
-  const entries = props.history
+  // Format: "1600 24W10 | 0 24W09"
+  const entries = (props.history || '')
     .split('|')
-    .map(x => parseInt((x.trim().split(' ')[0]) ?? '0') || 0)
+    .map(x => {
+        const parts = (x || '').trim().split(' ') // Safe trim
+        const val = parseInt(parts[0] ?? '0')
+        return isNaN(val) ? 0 : val
+    })
     .reverse() // Oldest → Newest (left to right)
   
   // Cap at 52 weeks (1 year)
@@ -22,9 +27,9 @@ const bars = computed(() => {
 // Dynamic styling based on density
 const chartStyle = computed(() => {
   const len = bars.value.length
-  if (len > 40) return { gap: '1px', radius: '1px' }
-  if (len > 20) return { gap: '2px', radius: '2px' }
-  return { gap: '4px', radius: '4px' }
+  if (len > 40) return { gap: '1px', radius: '2px' }
+  if (len > 20) return { gap: '2px', radius: '3px' }
+  return { gap: '4px', radius: '4px' } // Default rounded
 })
 </script>
 

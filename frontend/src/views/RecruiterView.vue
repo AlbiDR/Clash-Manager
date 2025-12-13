@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { loadCache, fetchRemote, dismissRecruits } from '../api/gasClient'
-import type { Recruit } from '../types'
+import { useClanData } from '../composables/useClanData'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
 import FabIsland from '../components/FabIsland.vue'
@@ -12,10 +11,12 @@ import ErrorState from '../components/ErrorState.vue'
 
 const route = useRoute()
 
-const recruits = ref<Recruit[]>([])
-const loading = ref(true)
-const syncing = ref(false)
-const error = ref<string | null>(null)
+// Global Data
+const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+
+const recruits = computed(() => data.value?.hh || [])
+const loading = computed(() => !data.value && isRefreshing.value)
+
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 
@@ -54,10 +55,22 @@ const fabState = computed(() => {
   }
 })
 
+// Status Pill Logic
+const timeAgo = computed(() => {
+  if (!lastSyncTime.value) return ''
+  const ms = Date.now() - lastSyncTime.value
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  return `${hours}h ago`
+})
+
 const status = computed(() => {
-  if (error.value) return { type: 'error', text: 'Error' } as const
-  if (syncing.value) return { type: 'loading', text: 'Syncing...' } as const
-  return { type: 'ready', text: `${recruits.value.length} Prospects` } as const
+  if (syncError.value) return { type: 'error', text: 'Retry' } as const
+  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
+  if (recruits.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
+  return { type: 'ready', text: 'Empty' } as const
 })
 
 // Filtered and sorted
@@ -84,38 +97,6 @@ const filteredRecruits = computed(() => {
   return result
 })
 
-async function loadData() {
-  error.value = null
-  
-  // 1. Instant Load Cache
-  const cached = loadCache()
-  if (cached && cached.hh) {
-    recruits.value = cached.hh
-    loading.value = false
-  } else {
-    loading.value = true
-  }
-
-  // 2. Background Fetch
-  syncing.value = true
-  try {
-    const fresh = await fetchRemote()
-    if (fresh.hh) {
-      recruits.value = fresh.hh
-      handleDeepLinks()
-    }
-  } catch (e) {
-    if (recruits.value.length === 0) {
-      error.value = e instanceof Error ? e.message : 'Network error'
-    } else {
-      console.warn('Background sync failed:', e)
-    }
-  } finally {
-    loading.value = false
-    syncing.value = false
-  }
-}
-
 function handleDeepLinks() {
   const pinId = route.query.pin as string
   if (pinId && recruits.value.some(r => r.id === pinId)) {
@@ -126,6 +107,11 @@ function handleDeepLinks() {
     })
   }
 }
+
+// Watch for data changes to handle deep links
+watch(recruits, (newVal) => {
+    if (newVal.length > 0) handleDeepLinks()
+}, { immediate: true })
 
 function toggleExpand(id: string) {
   if (expandedIds.value.has(id)) expandedIds.value.delete(id)
@@ -151,15 +137,16 @@ async function dismissBulk() {
   try {
     const ids = Array.from(selectedIds.value)
     
-    // Optimistic UI update
-    recruits.value = recruits.value.filter(r => !selectedIds.value.has(r.id))
+    // Clear selection UI immediately
     selectedIds.value.clear()
     selectionMode.value = false
+
+    // Optimistic Action
+    await dismissRecruitsAction(ids)
     
-    await dismissRecruits(ids)
   } catch (e) {
     alert('Failed to dismiss recruits')
-    loadData() // Re-sync on failure
+    refresh() // Re-sync on failure
   } finally {
     dismissing.value = false
   }
@@ -183,13 +170,11 @@ function selectionAction() {
     }
   }, 100)
 }
-
-onMounted(loadData)
 </script>
 
 <template>
   <div class="view-container">
-    <PullToRefresh @refresh="loadData" />
+    <PullToRefresh @refresh="refresh" />
     
     <ConsoleHeader
       title="Headhunter"
@@ -197,7 +182,7 @@ onMounted(loadData)
       :show-search="!selectionMode"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
-      @refresh="loadData"
+      @refresh="refresh"
     >
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
@@ -211,7 +196,7 @@ onMounted(loadData)
       </template>
     </ConsoleHeader>
 
-    <ErrorState v-if="error" :message="error" @retry="loadData" />
+    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
     <div v-else-if="loading && recruits.length === 0" class="list-container">
       <div v-for="i in 5" :key="i" class="skeleton-card"></div>
