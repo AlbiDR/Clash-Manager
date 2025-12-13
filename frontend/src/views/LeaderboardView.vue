@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { loadCache, fetchRemote } from '../api/gasClient'
-import type { LeaderboardMember } from '../types'
+// Use global data composable instead of direct API
+import { useClanData } from '../composables/useClanData'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
 import FabIsland from '../components/FabIsland.vue'
@@ -12,10 +12,15 @@ import ErrorState from '../components/ErrorState.vue'
 
 const route = useRoute()
 
-const members = ref<LeaderboardMember[]>([])
-const loading = ref(true) // True only on initial load if no cache
-const syncing = ref(false) // True during background fetch
-const error = ref<string | null>(null)
+// Global Data
+const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
+
+// Derived Members List from Global Data
+const members = computed(() => data.value?.lb || [])
+
+// Loading state roughly correlates with no data being present
+const loading = computed(() => !data.value && isRefreshing.value)
+
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 
@@ -54,10 +59,22 @@ const fabState = computed(() => {
   }
 })
 
+// Status Pill Logic
+const timeAgo = computed(() => {
+  if (!lastSyncTime.value) return ''
+  const ms = Date.now() - lastSyncTime.value
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  return `${hours}h ago`
+})
+
 const status = computed(() => {
-  if (error.value) return { type: 'error', text: 'Error' } as const
-  if (syncing.value) return { type: 'loading', text: 'Syncing...' } as const
-  return { type: 'ready', text: `${members.value.length} Members` } as const
+  if (syncError.value) return { type: 'error', text: 'Retry' } as const
+  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
+  if (members.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
+  return { type: 'ready', text: 'Empty' } as const
 })
 
 function toggleExpand(id: string) {
@@ -119,39 +136,6 @@ const filteredMembers = computed(() => {
   return result
 })
 
-async function loadData() {
-  error.value = null
-  
-  // 1. Instant Load from Cache
-  const cached = loadCache()
-  if (cached && cached.lb) {
-    members.value = cached.lb
-    loading.value = false // We have data, don't show skeleton
-  } else {
-    loading.value = true // No cache, show skeleton
-  }
-
-  // 2. Background Fetch
-  syncing.value = true
-  try {
-    const fresh = await fetchRemote()
-    if (fresh.lb) {
-      members.value = fresh.lb
-      handleDeepLinks()
-    }
-  } catch (e) {
-    // Only show error if we have NO data. If we have cache, just toast/log it (silent fail)
-    if (members.value.length === 0) {
-      error.value = e instanceof Error ? e.message : 'Network error'
-    } else {
-      console.warn('Background sync failed:', e)
-    }
-  } finally {
-    loading.value = false
-    syncing.value = false
-  }
-}
-
 function handleDeepLinks() {
   const pinId = route.query.pin as string
   if (pinId && members.value.some(m => m.id === pinId)) {
@@ -163,12 +147,16 @@ function handleDeepLinks() {
   }
 }
 
-onMounted(loadData)
+// Watch for data changes to handle deep links
+watch(members, (newVal) => {
+    if (newVal.length > 0) handleDeepLinks()
+}, { immediate: true })
+
 </script>
 
 <template>
   <div class="view-container">
-    <PullToRefresh @refresh="loadData" />
+    <PullToRefresh @refresh="refresh" />
     
     <ConsoleHeader
       title="Leaderboard"
@@ -176,7 +164,7 @@ onMounted(loadData)
       :show-search="!selectionMode"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
-      @refresh="loadData"
+      @refresh="refresh"
     >
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
@@ -190,7 +178,7 @@ onMounted(loadData)
       </template>
     </ConsoleHeader>
     
-    <ErrorState v-if="error" :message="error" @retry="loadData" />
+    <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
     
     <!-- Only show Skeleton if completely empty and loading -->
     <div v-else-if="loading && members.length === 0" class="list-container">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
+import ConsoleHeader from '../components/ConsoleHeader.vue'
 
 // Local state for the input field
 const newApiUrl = ref('') 
@@ -8,7 +9,6 @@ const newApiUrl = ref('')
 // Use the centralized composable for all API-related reactive data
 const { 
     apiUrl, 
-    apiConfigured, 
     apiStatus, 
     pingData, 
     checkApiStatus 
@@ -38,103 +38,108 @@ function resetApiUrl() {
 </script>
 
 <template>
-  <div class="settings-view">
-    <h1 class="page-title">Settings</h1>
+  <div class="view-container">
+    <ConsoleHeader title="Settings" />
     
-    <section class="settings-section glass-card animate-fade-in">
-      <h2 class="section-title">🔌 API Configuration</h2>
-      
-      <div class="setting-item">
-        <label class="setting-label">Status</label>
-        <div class="status-display">
-          <span 
-            class="status-indicator"
-            :class="{
-              'status-online': apiStatus === 'online',
-              'status-offline': apiStatus === 'offline',
-              'status-checking': apiStatus === 'checking'
-            }"
-          ></span>
-          <span class="status-text">
-            {{ apiStatus === 'online' ? 'Connected' : apiStatus === 'offline' ? 'Disconnected' : 'Checking...' }}
-          </span>
-        </div>
-      </div>
-      
-      <div class="setting-item">
-        <label class="setting-label">Endpoint</label>
-        <code class="api-url">{{ apiUrl }}</code>
-      </div>
-      
-      <div class="setting-item" v-if="pingData">
-        <label class="setting-label">Backend Version</label>
-        <span class="setting-value">{{ pingData.version }}</span>
-      </div>
-      
-      <div class="setting-item">
-        <label class="setting-label">Update API URL</label>
-        <div class="url-input-group">
-          <input 
-            v-model="newApiUrl"
-            type="url" 
-            placeholder="https://script.google.com/macros/s/.../exec"
-            class="url-input"
-          />
-          <button class="btn btn-primary" @click="saveApiUrl">Save</button>
-        </div>
-        <p class="setting-hint">
-          Deploy your GAS backend and paste the Web App URL here to override the default.
-        </p>
-        <div v-if="hasLocalOverride" style="margin-top: 12px;">
-            <button class="btn btn-danger-text" @click="resetApiUrl">Reset to Default</button>
-        </div>
-      </div>
-    </section>
-    
-    <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.1s" v-if="pingData?.modules">
-      <h2 class="section-title">📦 Backend Modules</h2>
-      
-      <div class="modules-grid">
-        <div 
-          v-for="(version, name) in pingData.modules" 
-          :key="name"
-          class="module-item"
-        >
-          <span class="module-name">{{ name }}</span>
-          <span class="module-version">v{{ version }}</span>
-        </div>
-      </div>
-    </section>
-    
-    <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.2s">
-      <h2 class="section-title">ℹ️ About</h2>
-      
-      <div class="about-content">
-        <div class="app-logo">👑</div>
-        <h3 class="app-name">Clash Manager</h3>
-        <p class="app-version">Clan Manager for Clash Royale</p>
-        <p class="app-description">
-          A modern Progressive Web App for managing your Clash Royale clan.
-          Built with Vue 3, TypeScript, and Vite.
-        </p>
+    <div class="content-wrapper">
+        <section class="settings-section glass-card animate-fade-in">
+        <h2 class="section-title">🔌 API Configuration</h2>
         
-        <div class="about-links">
-          <a href="https://github.com/albidr/Clash_Manager-Clan_Tracker" target="_blank" class="about-link">
-            GitHub →
-          </a>
+        <div class="setting-item">
+            <label class="setting-label">Status</label>
+            <div class="status-display">
+            <span 
+                class="status-indicator"
+                :class="{
+                'status-online': apiStatus === 'online',
+                'status-offline': apiStatus === 'offline',
+                'status-checking': apiStatus === 'checking'
+                }"
+            ></span>
+            <span class="status-text">
+                {{ apiStatus === 'online' ? 'Connected' : apiStatus === 'offline' ? 'Disconnected' : 'Checking...' }}
+            </span>
+            </div>
         </div>
-      </div>
-    </section>
-    
-    <div class="footer-note">
-      Clash Manager &copy; 2025
+        
+        <div class="setting-item">
+            <label class="setting-label">Endpoint</label>
+            <code class="api-url">{{ apiUrl }}</code>
+        </div>
+        
+        <div class="setting-item" v-if="pingData">
+            <label class="setting-label">GAS Backend Version</label>
+            <span class="setting-value">{{ pingData.version }}</span>
+        </div>
+        
+        <div class="setting-item">
+            <label class="setting-label">Update API URL</label>
+            <div class="url-input-group">
+            <input 
+                v-model="newApiUrl"
+                type="url" 
+                placeholder="https://script.google.com/macros/s/.../exec"
+                class="url-input"
+            />
+            <button class="btn btn-primary" @click="saveApiUrl">Save</button>
+            </div>
+            <p class="setting-hint">
+            Deploy your GAS backend and paste the Web App URL here to override the default.
+            </p>
+            <div v-if="hasLocalOverride" style="margin-top: 12px;">
+                <button class="btn btn-danger-text" @click="resetApiUrl">Reset to Default</button>
+            </div>
+        </div>
+        </section>
+        
+        <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.1s" v-if="pingData?.modules">
+        <h2 class="section-title">📦 GAS Backend Modules</h2>
+        
+        <div class="modules-grid">
+            <div 
+            v-for="(version, name) in pingData.modules" 
+            :key="name"
+            class="module-item"
+            >
+            <span class="module-name">{{ name }}</span>
+            <span class="module-version">v{{ version }}</span>
+            </div>
+        </div>
+        </section>
+        
+        <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.2s">
+        <h2 class="section-title">ℹ️ About</h2>
+        
+        <div class="about-content">
+            <div class="app-logo">👑</div>
+            <h3 class="app-name">Clash Manager</h3>
+            <p class="app-version">Clan Manager for Clash Royale</p>
+            <p class="app-description">
+            A modern PWA frontend for managing your Clash Royale clan.
+            Built with Vue 3, TypeScript, and Vite.
+            </p>
+            
+            <div class="about-links">
+            <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="about-link">
+                GitHub →
+            </a>
+            </div>
+        </div>
+        </section>
+        
+        <div class="footer-note">
+        Clash Manager &copy; 2025
+        </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.settings-view {
-  padding: 24px 16px 120px 16px;
+.view-container { 
+    min-height: 100%; 
+}
+.content-wrapper {
+  padding: 0 16px 120px 16px;
   max-width: 600px;
   margin: 0 auto;
 }
