@@ -42,7 +42,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_GAS_URL: ${{ secrets.GAS_URL }}
+          # CORRECTION: This must match the exact name of the secret in GitHub Settings
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
