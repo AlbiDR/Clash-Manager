@@ -8,7 +8,6 @@ import type {
     LegacyApiResponse,
     WebAppData,
     ClanMember,
-    WarLogEntry,
     PingResponse,
     DismissResponse,
     LeaderboardMember,
@@ -227,13 +226,6 @@ export async function getRecruits(): Promise<ApiResponse<{ hh: WebAppData['hh'];
  */
 export async function getMembers(): Promise<ApiResponse<ClanMember[]>> {
     return gasRequest<ApiResponse<ClanMember[]>>('getMembers')
-}
-
-/**
- * Get war log history
- */
-export async function getWarLog(): Promise<ApiResponse<WarLogEntry[]>> {
-    return gasRequest<ApiResponse<WarLogEntry[]>>('getWarLog')
 }
 
 /**
