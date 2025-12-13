@@ -52,7 +52,7 @@ To make the backend accessible to your React frontend, you must deploy it as a W
 
 1. Click **Deploy > New Deployment**.
 2. Click the **Select type** icon (Start) > **Web app**.
-3. **Description**: `v5.0.0 - Initial Release`.
+3. **Description**: `Initial Release`.
 4. **Execute as**: **Me** (your account).
 5. **Who has access**: **Anyone** (This is required for the React app to fetch data without OAuth complexity).
 6. Click **Deploy**.
