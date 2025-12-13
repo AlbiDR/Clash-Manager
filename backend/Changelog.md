@@ -1,85 +1,30 @@
 
 
 # To-Do & Development Roadmap
-For the frontend, coherently add an elegant status pill in each tab to see how long ago the data shown is from. Make it so that clicking this status pill will instruct the api to run the respective commands to update the backand data, and once done, to update the frontend data as well. This new element will basically bridge a backend data update and show it on the frontend.
+***future and possible additions can be written here as a placeholder and for safekeeping
 
-In the extended panels of the players remove the Share pill, and clean up the code left behind.
-
-Next to the score badges, on the right side of the player pill, there was supposed to be a chevron indicating the Card being expanded or collapsed. Improve this chevron to only appear when the selection mode is enabled and make dynamically represent if the panel is expanded or not; while the selection mode is turned on, i can click the chevron to expand the card, and click the card to add it to the selection.
-
-In the expanded Member Cards, give the bars of the bar diagram a bit more of a rounded shape instead of being squared off bars. 
-
-Overhaul and reimagine the settings tab to be coherent with the rest of the app. You can use a "modules" concept to enable current and future features; disabling modules actually cleans up the processes of thhat specific module making the app lighter. The first module i suggest to implement is one to completely disable the War Log tab.
-
-Some modifications have been made to the backend, and the frontend needs to be adapted accordingly and attentively to reflect these backend chanches.
-Technical Specification: Frontend Adaptation for Version 6.0 Backend
-Context: The Google Apps Script (GAS) backend has been upgraded to v6.0.0. It now utilizes a Headless REST APIarchitecture with Mutex Locking and Smart Caching. The React frontend must be adapted to consume this new protocol.
-1. Persistence Architecture: "Stale-While-Revalidate"
-Objective: The app must load instantly using cached data, then verify freshness in the background.
-Logic:
-Boot: Immediately read localStorage.getItem('CLAN_MANAGER_DATA_V5'). If valid, parse and render data.
-Mount: Trigger an async background fetch to API_URL?action=getwebappdata.
-Sync: When the fetch returns:
-Compare server.timestamp vs local.timestamp.
-Update State & LocalStorage only if the server data is newer or different.
-
-UI Feedback: Display a "Syncing..." indicator (e.g., a pulsing dot or glass badge) during the background fetch phase. Do not show a full-screen loading skeleton if cache exists.
-
-2. API Communication Protocol
-The backend has moved from google.script.run to a pure JSON REST API.
-Endpoint: The WEB_APP_URL provided in GAS_Setup.md.
-Method: GET for reads, POST for writes.
-String Transport Protocol: The backend returns a JSON String inside the response body to bypass GAS serialization quirks.
-Requirement: The frontend must perform const response = await fetch(...), const envelope = await response.json(), and potentially parsing envelope.data again if it arrives as a string.
-
-Endpoints Implementation:
-Get Data:
-URL: ?action=getwebappdata
-Response Schema: { status: 'success', data: { lb: Player[], hh: Player[], timestamp: number } }
-
-Bulk Dismiss (Headhunter):
-Method: POST (to avoid URL length limits)
-Body: JSON.stringify({ action: 'dismissRecruits', ids: ['tag1', 'tag2'] })
-Note: Do not loop single requests. Send the array in one payload.
-
-3. Backend Robustness & Frontend Handling
-The backend now implements Mutex Locking (LockService). The frontend must handle specific HTTP responses gracefully.
-Race Condition Handling:
-Maintain an isRefreshing state flag.
-Disable/Hide manual "Refresh" buttons while isRefreshing is true.
-Logic: If isRefreshing === true, abort any new fetch calls to prevent "Double Writes" or redundant network requests.
-
-Error Handling:
-The backend wraps errors in a standard envelope: { status: 'error', error: { code: '...', message: '...' } }.
-Display message in a toast notification rather than crashing the view.
-
-4. Design System: "Neo-Material" Tokens
-The CSS implementation must utilize the specific CSS Variables defined in the new index.html. Do not hardcode colors.
-Surface Hierarchy:
-Background: var(--sys-color-background)
-Cards: var(--sys-color-surface)
-Modals/Dock: var(--glass-surface) with backdrop-filter: blur(20px)
-
-Selection Mode:
-Use var(--sys-color-primary) for selected states.
-Implement the "Floating Dock" (Bottom Navigation) styles: border: 1px solid var(--glass-border).
-
-5. Specific Component Logic Changes
-War History Visualization:
-Input: A pipe-separated string (e.g., "1600 24W10 | 0 24W09").
-Action: Parse this string into an array of integers [1600, 0] and render as a bar chart.
-Critical: Handle potential leading whitespace during splitting to avoid NaN errors.
-
-Bulk Actions:
-Optimistic UI: When dismissing recruits, immediately filter them out of the Local State (setData) before the API call finishes. This makes the app feel "Native/Instant". Revert state if the API call returns status: 'error'.
-
-
+**Frontend Adaptation Requirements (v6.0 Backend):**
+1. **Persistence**: Implement "Stale-While-Revalidate". Load from LocalStorage immediately, then fetch background update.
+2. **API**: Switch to `fetch()` based JSON REST API (GET/POST). Handle String Transport Protocol.
+3. **Robustness**: Respect `isRefreshing` locks. Show "Syncing..." UI state.
+4. **Design**: Use Neo-Material CSS tokens (`--glass-surface`, `--sys-color-primary`).
 
 ---
 
 # Changelog
 
 All notable changes to the "Clan Manager" project will be documented in this file.
+
+## [11.1.0] - Robust Backup System
+### Fixed
+- **Utilities**: Hardened the `backupSheet` function with **Self-Healing** logic.
+    - *Problem*: Rapid script execution sometimes left backup tabs unhidden or out of order due to Google Sheets UI lag.
+    - *Solution*: Added a dedicated `_enforceBackupOrder` routine that runs at the end of every backup cycle.
+    - *Logic*: Iterates through `Backup 1` to `Backup 5`. For each existing sheet:
+        1.  Explicitly moves it to `SourceIndex + N`.
+        2.  Forces `.hideSheet()`.
+        3.  Sets the tab color to Gray.
+    - *Result*: Even if a user manually unhides or drags tabs around, the next script run automatically cleans up the workspace and restores perfect sorting.
 
 ## [11.0.0] - Backend Modernization & Scaling
 ### Added
