@@ -49,25 +49,25 @@ const CONFIG = {
     // REASONING: RoyaleAPI has rate limits. We rotate keys in Utilities.gs to distribute load.
     // Structure changed to Objects to identify WHICH key fails in logs.
     API_KEYS: [
-      { name: 'CMV1', value: _PROPS['CMV1'] },
-      { name: 'CMV2', value: _PROPS['CMV2'] },
-      { name: 'CMV3', value: _PROPS['CMV3'] },
-      { name: 'CMV4', value: _PROPS['CMV4'] },
-      { name: 'CMV5', value: _PROPS['CMV5'] },
-      { name: 'CMV6', value: _PROPS['CMV6'] },
-      { name: 'CMV7', value: _PROPS['CMV7'] },
-      { name: 'CMV8', value: _PROPS['CMV8'] },
-      { name: 'CMV9', value: _PROPS['CMV9'] },
-      { name: 'CMV10', value: _PROPS['CMV10'] }
+      { name: 'CRK1', value: _PROPS['CRK1'] },
+      { name: 'CRK2', value: _PROPS['CRK2'] },
+      { name: 'CRK3', value: _PROPS['CRK3'] },
+      { name: 'CRK4', value: _PROPS['CRK4'] },
+      { name: 'CRK5', value: _PROPS['CRK5'] },
+      { name: 'CRK6', value: _PROPS['CRK6'] },
+      { name: 'CRK7', value: _PROPS['CRK7'] },
+      { name: 'CRK8', value: _PROPS['CRK8'] },
+      { name: 'CRK9', value: _PROPS['CRK9'] },
+      { name: 'CRK10', value: _PROPS['CRK10'] }
     ].filter(k => k.value && k.value.trim().length > 0), // Filter out empty or undefined keys
     
     TIMEZONE: 'Europe/Rome',
     API_BASE: 'https://proxy.royaleapi.dev/v1',
     
     // 🌍 FRONTEND URL: The public URL where your React App is hosted.
-    // HYBRID SETUP: Checks Script Properties first (if you want to override it),
-    // otherwise falls back to your hardcoded GitHub Pages URL.
-    WEB_APP_URL: _PROPS['WebAppUrl'] || 'https://albidr.github.io/Clash-Manager/',
+    // This is NOT sensitive information (it's just a website link), so it is safe to hardcode.
+    // Used to generate hyperlinks in the Google Sheet (e.g. clicking a name opens the app).
+    WEB_APP_URL: 'https://albidr.github.io/Clash-Manager/',
     
     RETRY_MAX: 3,
     
