@@ -41,11 +41,11 @@ The system relies on **Script Properties** to store sensitive keys and configura
 | Property | Value | Required |
 |----------|-------|----------|
 | `ClanTag` | Your clan tag (e.g., `#ABC1234`) | **Yes** |
-| `CMV1` | RoyaleAPI Proxy Key 1 | **Yes** |
-| `CMV2` - `CMV10` | Additional Proxy Keys (for rotation/redundancy) | Optional |
+| `CRK1` | Clash Royale Key 1 | **Yes** |
+| `CRK2` - `CRK10` | Additional Keys (for rotation/redundancy) | Optional |
 | `WebAppUrl` | URL of your hosted React App (e.g., `https://yourname.github.io/repo/`). If omitted, it defaults to the URL hardcoded in `Configuration.gs`. | Optional |
 
-> **Note:** You can obtain proxy keys from RoyaleAPI or use your own proxy solution.
+> **Note on Keys and Proxies:** The system requires **official API keys** obtained directly from the [Clash Royale Developer Portal](https://developer.clashroyale.com). All API calls using these keys are automatically routed through the **RoyaleAPI Proxy Endpoint** to ensure speed, stability, and handling of necessary header authorization.
 
 ### 4. Deployment
 To make the backend accessible to your React frontend, you must deploy it as a Web App.
