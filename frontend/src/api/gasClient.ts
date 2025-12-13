@@ -106,26 +106,29 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
         const envelope = await response.json()
 
         // --------------------------------------------------------
-        // CRITICAL FIX: Handle Mixed Response Formats
+        // CRITICAL FIX: Normalization Pattern
         // --------------------------------------------------------
-        // Standard API: { status: 'success', data: ... }
-        // Legacy Data:  { success: true, data: ... } (from getWebAppData)
+        // We normalize the response HERE so downstream consumers (like fetchRemote)
+        // don't need to know about legacy formats.
 
-        const isStandardSuccess = envelope.status === 'success'
-        const isLegacySuccess = envelope.success === true
+        // 1. Detect Legacy Format (from getWebAppData)
+        if (envelope.success === true && !envelope.status) {
+            envelope.status = 'success'
+        }
 
-        if (isStandardSuccess || isLegacySuccess) {
+        // 2. Standard Validation
+        if (envelope.status === 'success') {
             return envelope as T
         }
 
-        // Handle Errors
+        // 3. Error Handling
         if (envelope.status === 'error' || envelope.success === false) {
             const errorMsg = envelope.error?.message || 'Unknown Backend Error'
             console.error(`GAS API Error [${action}]:`, errorMsg, envelope.error)
             throw new Error(errorMsg)
         }
 
-        // Fallback for completely unexpected structure
+        // 4. Fallback
         console.warn(`GAS API Warning [${action}]: Unexpected response structure`, envelope)
         throw new Error('Invalid response structure: ' + JSON.stringify(envelope).substring(0, 100))
     } catch (error) {
