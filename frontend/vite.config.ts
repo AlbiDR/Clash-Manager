@@ -12,15 +12,15 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Clash Royale Manager',
-        short_name: 'CR Manager',
-        description: 'Manage your Clash Royale clan with style',
+        name: 'Clash Manager: Clan Manager for Clash Royale',
+        short_name: 'Clash Manager',
+        description: 'Clan Manager for Clash Royale - Track leaderboards, scout recruits, and analyze war performance.',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/Clash_Manager-Clan_Tracker/',
-        start_url: '/Clash_Manager-Clan_Tracker/',
+        scope: '/Clash-Manager/',
+        start_url: '/Clash-Manager/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -44,14 +44,14 @@ export default defineConfig({
             name: '🏆 Leaderboard',
             short_name: 'Leaderboard',
             description: 'View current clan standings',
-            url: '/Clash_Manager-Clan_Tracker/',
+            url: '/Clash-Manager/',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
             name: '🔭 Headhunter',
             short_name: 'Headhunter',
             description: 'Scout for new recruits',
-            url: '/Clash_Manager-Clan_Tracker/recruiter',
+            url: '/Clash-Manager/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
@@ -81,7 +81,7 @@ export default defineConfig({
       }
     })
   ],
-  base: '/Clash_Manager-Clan_Tracker/', // For GitHub Pages deployment
+  base: '/Clash-Manager/', // CRITICAL: This must match your GitHub Repo name case-sensitively
   build: {
     outDir: 'dist',
     sourcemap: false

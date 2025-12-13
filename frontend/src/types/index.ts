@@ -64,16 +64,6 @@ export interface ClanMember {
     donationsReceived: number
 }
 
-// War Log entry
-export interface WarLogEntry {
-    result: 'win' | 'lose' | 'n/a'
-    endTime: string
-    opponent: string
-    teamSize: number
-    score: number
-    opponentScore: number
-}
-
 // Ping response
 export interface PingResponse {
     version: string
