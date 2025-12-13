@@ -96,15 +96,15 @@ function saveApiUrl() {
       
       <div class="about-content">
         <div class="app-logo">👑</div>
-        <h3 class="app-name">Clash Royale Manager</h3>
-        <p class="app-version">PWA v1.0.0</p>
+        <h3 class="app-name">Clash Manager</h3>
+        <p class="app-version">Clan Manager for Clash Royale</p>
         <p class="app-description">
           A modern Progressive Web App for managing your Clash Royale clan.
           Built with Vue 3, TypeScript, and Vite.
         </p>
         
         <div class="about-links">
-          <a href="https://github.com" target="_blank" class="about-link">
+          <a href="https://github.com/albidr/Clash_Manager-Clan_Tracker" target="_blank" class="about-link">
             GitHub →
           </a>
         </div>
