@@ -31,7 +31,7 @@ jobs:
         run: npm run build
         env:
           # Use a placeholder or the secret if strictly needed for build
-          VITE_GAS_URL: ${{ secrets.GAS_URL }}
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
