@@ -201,7 +201,7 @@ const Utils = {
     // 1. Initialize Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
     if (!keyPool || keyPool.length === 0) {
-      throw new Error("CRITICAL: No API Keys (CMV1-CMV10) found in Configuration.");
+      throw new Error("CRITICAL: No API Keys (CRK1-CRK10) found in Configuration.");
     }
 
     const finalResults = new Array(urls.length).fill(null);
