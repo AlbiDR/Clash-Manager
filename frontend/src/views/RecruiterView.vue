@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { getLeaderboard, dismissRecruits } from '../api/gasClient'
+import { loadCache, fetchRemote, dismissRecruits } from '../api/gasClient'
 import type { Recruit } from '../types'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
@@ -14,6 +14,7 @@ const route = useRoute()
 
 const recruits = ref<Recruit[]>([])
 const loading = ref(true)
+const syncing = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
@@ -55,7 +56,7 @@ const fabState = computed(() => {
 
 const status = computed(() => {
   if (error.value) return { type: 'error', text: 'Error' } as const
-  if (loading.value) return { type: 'loading', text: 'Syncing' } as const
+  if (syncing.value) return { type: 'loading', text: 'Syncing...' } as const
   return { type: 'ready', text: `${recruits.value.length} Prospects` } as const
 })
 
@@ -84,29 +85,45 @@ const filteredRecruits = computed(() => {
 })
 
 async function loadData() {
-  loading.value = true
   error.value = null
   
+  // 1. Instant Load Cache
+  const cached = loadCache()
+  if (cached && cached.hh) {
+    recruits.value = cached.hh
+    loading.value = false
+  } else {
+    loading.value = true
+  }
+
+  // 2. Background Fetch
+  syncing.value = true
   try {
-    const response = await getLeaderboard()
-    if (response && response.success && response.data) {
-      recruits.value = response.data.hh || []
-      
-      const pinId = route.query.pin as string
-      if (pinId && recruits.value.some(r => r.id === pinId)) {
-        expandedIds.value.add(pinId)
-        nextTick(() => {
-          const el = document.getElementById(`recruit-${pinId}`)
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        })
-      }
-    } else {
-      error.value = response?.error?.message || 'Failed to load recruits'
+    const fresh = await fetchRemote()
+    if (fresh.hh) {
+      recruits.value = fresh.hh
+      handleDeepLinks()
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Network error'
+    if (recruits.value.length === 0) {
+      error.value = e instanceof Error ? e.message : 'Network error'
+    } else {
+      console.warn('Background sync failed:', e)
+    }
   } finally {
     loading.value = false
+    syncing.value = false
+  }
+}
+
+function handleDeepLinks() {
+  const pinId = route.query.pin as string
+  if (pinId && recruits.value.some(r => r.id === pinId)) {
+    expandedIds.value.add(pinId)
+    nextTick(() => {
+      const el = document.getElementById(`recruit-${pinId}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 }
 
@@ -196,12 +213,12 @@ onMounted(loadData)
 
     <ErrorState v-if="error" :message="error" @retry="loadData" />
     
-    <div v-else-if="loading" class="list-container">
+    <div v-else-if="loading && recruits.length === 0" class="list-container">
       <div v-for="i in 5" :key="i" class="skeleton-card"></div>
     </div>
     
     <EmptyState 
-      v-else-if="filteredRecruits.length === 0" 
+      v-else-if="!loading && filteredRecruits.length === 0" 
       icon="scope" 
       message="No recruits found" 
     />
@@ -220,7 +237,6 @@ onMounted(loadData)
       />
     </div>
 
-    <!-- Neo-Material Floating Island -->
     <FabIsland
       :visible="fabState.visible"
       :label="fabState.label"
@@ -233,27 +249,17 @@ onMounted(loadData)
 </template>
 
 <style scoped>
-.view-container {
-  min-height: 100%;
-  padding-bottom: 24px;
-}
-
-.list-container {
-  padding-bottom: 32px;
-}
-
+.view-container { min-height: 100%; padding-bottom: 24px; }
+.list-container { padding-bottom: 32px; }
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
   animation: fadeSlideIn 0.3s;
 }
-
 .sel-count { font-size: 20px; font-weight: 700; }
-
 .text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .text-btn.primary { color: var(--sys-color-primary); }
-
 .skeleton-card {
   height: 100px;
   background: var(--sys-color-surface-container-high);

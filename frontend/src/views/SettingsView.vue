@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
 
 // Local state for the input field
@@ -18,9 +18,21 @@ onMounted(() => {
     checkApiStatus()
 })
 
+const hasLocalOverride = computed(() => {
+  return !!localStorage.getItem('cm_gas_url')
+})
+
 function saveApiUrl() {
     if (newApiUrl.value.trim()) {
-        alert(`To configure the API URL, add this to your .env file:\n\nVITE_GAS_URL=${newApiUrl.value}\n\nThen restart the dev server.`)
+        localStorage.setItem('cm_gas_url', newApiUrl.value.trim())
+        window.location.reload()
+    }
+}
+
+function resetApiUrl() {
+    if(confirm('Reset API URL to default?')) {
+        localStorage.removeItem('cm_gas_url')
+        window.location.reload()
     }
 }
 </script>
@@ -59,8 +71,8 @@ function saveApiUrl() {
         <span class="setting-value">{{ pingData.version }}</span>
       </div>
       
-      <div class="setting-item" v-if="!apiConfigured">
-        <label class="setting-label">Configure API URL</label>
+      <div class="setting-item">
+        <label class="setting-label">Update API URL</label>
         <div class="url-input-group">
           <input 
             v-model="newApiUrl"
@@ -71,8 +83,11 @@ function saveApiUrl() {
           <button class="btn btn-primary" @click="saveApiUrl">Save</button>
         </div>
         <p class="setting-hint">
-          Deploy your GAS backend and paste the Web App URL here.
+          Deploy your GAS backend and paste the Web App URL here to override the default.
         </p>
+        <div v-if="hasLocalOverride" style="margin-top: 12px;">
+            <button class="btn btn-danger-text" @click="resetApiUrl">Reset to Default</button>
+        </div>
       </div>
     </section>
     
@@ -96,15 +111,15 @@ function saveApiUrl() {
       
       <div class="about-content">
         <div class="app-logo">👑</div>
-        <h3 class="app-name">Clash Royale Manager</h3>
-        <p class="app-version">PWA v1.0.0</p>
+        <h3 class="app-name">Clash Manager</h3>
+        <p class="app-version">Clan Manager for Clash Royale</p>
         <p class="app-description">
           A modern Progressive Web App for managing your Clash Royale clan.
           Built with Vue 3, TypeScript, and Vite.
         </p>
         
         <div class="about-links">
-          <a href="https://github.com" target="_blank" class="about-link">
+          <a href="https://github.com/albidr/Clash_Manager-Clan_Tracker" target="_blank" class="about-link">
             GitHub →
           </a>
         </div>
@@ -249,6 +264,12 @@ function saveApiUrl() {
 .btn-primary {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
+}
+
+.btn-danger-text {
+    background: transparent;
+    color: var(--sys-color-error);
+    padding-left: 0;
 }
 
 /* Modules Grid */

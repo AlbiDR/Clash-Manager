@@ -2,7 +2,8 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 
 const router = createRouter({
     // Use hash history for GitHub Pages compatibility
-    history: createWebHashHistory(),
+    // Pass import.meta.env.BASE_URL to ensure it respects the vite.config.ts base path
+    history: createWebHashHistory(import.meta.env.BASE_URL),
     routes: [
         {
             path: '/',
@@ -14,13 +15,7 @@ const router = createRouter({
             path: '/recruiter',
             name: 'recruiter',
             component: () => import('../views/RecruiterView.vue'),
-            meta: { title: 'Recruiter' }
-        },
-        {
-            path: '/warlog',
-            name: 'warlog',
-            component: () => import('../views/WarLogView.vue'),
-            meta: { title: 'War Log' }
+            meta: { title: 'Headhunter' }
         },
         {
             path: '/settings',
@@ -33,7 +28,8 @@ const router = createRouter({
 
 // Update document title on navigation
 router.afterEach((to) => {
-    document.title = `${to.meta.title || 'Home'} | Clash Royale Manager`
+    const baseTitle = 'Clash Manager: Clan Manager for Clash Royale'
+    document.title = to.meta.title ? `${to.meta.title} | ${baseTitle}` : baseTitle
 })
 
 export default router

@@ -7,7 +7,6 @@ const router = useRouter()
 const navItems = [
   { path: '/', name: 'leaderboard', label: '🏆 Leaderboard' },
   { path: '/recruiter', name: 'recruiter', label: '🔭 Headhunter' },
-  { path: '/warlog', name: 'warlog', label: '⚔️ War Log' },
   { path: '/settings', name: 'settings', label: '⚙️ Settings' }
 ]
 

@@ -8,7 +8,6 @@ import type {
     LegacyApiResponse,
     WebAppData,
     ClanMember,
-    WarLogEntry,
     PingResponse,
     DismissResponse,
     LeaderboardMember,
@@ -19,11 +18,9 @@ import type {
 // CONFIGURATION
 // ============================================================================
 
-/**
- * Your GAS Web App URL - Update this after deploying the backend
- * Format: https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
- */
-const GAS_URL = import.meta.env.VITE_GAS_URL || ''
+// Prioritize LocalStorage override, fall back to Build Env, default to empty
+const GAS_URL = localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
+const CACHE_KEY_MAIN = 'clash_manager_data_v6' // Unified Cache Key
 
 // ============================================================================
 // HELPERS
@@ -31,10 +28,9 @@ const GAS_URL = import.meta.env.VITE_GAS_URL || ''
 
 /**
  * Inflates a Matrix-compressed response back into Objects.
- * Compatible with legacy Object-based responses for seamless migration.
  */
 function inflatePayload(data: any): WebAppData {
-    // If it's old format (no format tag or schema), return as is
+    // Legacy support or raw object pass-through
     if (!data || data.format !== 'matrix' || !data.schema) {
         return data as WebAppData
     }
@@ -82,199 +78,89 @@ function inflatePayload(data: any): WebAppData {
 // CORE FETCH UTILITY
 // ============================================================================
 
-/**
- * Makes a request to the GAS API using POST to bypass CORS/caching issues.
- * GAS Web Apps return a 302 redirect which fetch handles automatically.
- */
 async function gasRequest<T>(action: string, payload?: Record<string, unknown>): Promise<T> {
     if (!GAS_URL) {
-        throw new Error('GAS_URL not configured. Set VITE_GAS_URL environment variable.')
+        throw new Error('GAS_URL not configured. Set VITE_GAS_URL environment variable or configure in Settings.')
     }
 
     try {
         const response = await fetch(GAS_URL, {
             method: 'POST',
             redirect: 'follow',
-            headers: {
-                'Content-Type': 'text/plain' // GAS handles this better than application/json
-            },
-            body: JSON.stringify({
-                action,
-                ...payload
-            })
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action, ...payload })
         })
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        return data as T
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return await response.json() as T
     } catch (error) {
         console.error(`GAS API Error [${action}]:`, error)
         throw error
     }
 }
 
+// ============================================================================
+// UNIFIED DATA STORE (SWR PATTERN)
+// ============================================================================
+
 /**
- * Stale-While-Revalidate Caching Wrapper
- * Returns cached data immediately (if available) and triggers background fetch
+ * 1. Synchronously load data from LocalStorage (Instant Render)
  */
-async function getSWR<T>(key: string, fetcher: () => Promise<T>, ttlMinutes = 5): Promise<T> {
-    const cacheKey = `gas_cache_${key}`
-    const cached = localStorage.getItem(cacheKey)
+export function loadCache(): WebAppData | null {
+    const cached = localStorage.getItem(CACHE_KEY_MAIN)
+    if (!cached) return null
+    
+    try {
+        const parsed = JSON.parse(cached)
+        return parsed
+    } catch (e) {
+        console.warn('Cache corrupted, clearing.')
+        localStorage.removeItem(CACHE_KEY_MAIN)
+        return null
+    }
+}
 
-    if (cached) {
-        try {
-            const { data, timestamp } = JSON.parse(cached)
-            const ageMinutes = (Date.now() - timestamp) / (1000 * 60)
-
-            // Background revalidation based on TTL
-            if (ageMinutes > ttlMinutes) {
-                fetcher().then(fresh => {
-                    localStorage.setItem(cacheKey, JSON.stringify({
-                        data: fresh,
-                        timestamp: Date.now()
-                    }))
-                }).catch(e => console.warn('Background revalidation failed:', e))
-            }
-
-            return data as T
-        } catch (e) {
-            console.warn('Cache parse error:', e)
-            localStorage.removeItem(cacheKey)
-        }
+/**
+ * 2. Fetch fresh data from server and update cache (Background Sync)
+ * Fetches the UNIFIED payload (LB + HH) to save bandwidth.
+ */
+export async function fetchRemote(): Promise<WebAppData> {
+    // 'getwebappdata' endpoint returns both LB and HH in one compressed matrix
+    const raw = await gasRequest<LegacyApiResponse<any>>('getwebappdata')
+    
+    if (!raw.success || !raw.data) {
+        throw new Error(raw.error?.message || 'Failed to fetch data')
     }
 
-    // No cache or error, fetch fresh
-    const fresh = await fetcher()
-    localStorage.setItem(cacheKey, JSON.stringify({
-        data: fresh,
-        timestamp: Date.now()
-    }))
-    return fresh
+    const inflated = inflatePayload(raw.data)
+    
+    // Save to cache
+    localStorage.setItem(CACHE_KEY_MAIN, JSON.stringify(inflated))
+    
+    return inflated
 }
 
 // ============================================================================
-// API METHODS
+// SPECIFIC ACTIONS
 // ============================================================================
 
-/**
- * Health check - verify API is online
- */
 export async function ping(): Promise<ApiResponse<PingResponse>> {
     return gasRequest<ApiResponse<PingResponse>>('ping')
 }
 
-/**
- * Get leaderboard and recruiter data (cached on server)
- * 🛠️ Includes automatic Payload Inflation (Matrix -> Objects)
- */
-export async function getLeaderboard(): Promise<LegacyApiResponse<WebAppData>> {
-    // We define a specialized fetcher that handles the inflation
-    const fetcher = async () => {
-        const raw = await gasRequest<LegacyApiResponse<any>>('getLeaderboard')
-        if (raw.success && raw.data) {
-            raw.data = inflatePayload(raw.data)
-        }
-        return raw as LegacyApiResponse<WebAppData>
-    }
-
-    return getSWR('leaderboard', fetcher, 5)
-}
-
-/**
- * Get recruiter pool only
- * 🛠️ Includes automatic Payload Inflation
- */
-export async function getRecruits(): Promise<ApiResponse<{ hh: WebAppData['hh']; timestamp: number }>> {
-    const fetcher = async () => {
-        const raw = await gasRequest<ApiResponse<any>>('getRecruits')
-        if (raw.status === 'success' && raw.data) {
-            // Check if raw.data is a wrapper containing the full matrix payload
-            // The backend endpoint returns { hh: ..., timestamp: ... } 
-            // If the backend returns full compressed object for getRecruits, we inflate it.
-            // Note: getRecruits endpoint usually returns a subset. 
-            // Currently API_Public returns { hh: parsed.data.hh ... }
-            // If parsed.data was matrix, hh is an array of arrays.
-            
-            // We need to check if the 'hh' inside data is a matrix or objects.
-            const sample = raw.data.hh?.[0];
-            if (Array.isArray(sample)) {
-                 // Manual inflation for just the hh part since we don't have the full payload wrapper
-                 raw.data.hh = raw.data.hh.map((r: any[]) => ({
-                    id: r[0],
-                    n: r[1],
-                    t: r[2],
-                    s: r[3],
-                    d: {
-                        don: r[4],
-                        war: r[5],
-                        ago: r[6],
-                        cards: r[7]
-                    }
-                }))
-            }
-        }
-        return raw as ApiResponse<{ hh: WebAppData['hh']; timestamp: number }>
-    }
-
-    return getSWR('recruits', fetcher, 5)
-}
-
-/**
- * Get real-time clan members from Clash Royale API
- */
 export async function getMembers(): Promise<ApiResponse<ClanMember[]>> {
     return gasRequest<ApiResponse<ClanMember[]>>('getMembers')
 }
 
-/**
- * Get war log history
- */
-export async function getWarLog(): Promise<ApiResponse<WarLogEntry[]>> {
-    return gasRequest<ApiResponse<WarLogEntry[]>>('getWarLog')
-}
-
-/**
- * Force refresh the cached data
- */
-export async function refresh(): Promise<LegacyApiResponse<WebAppData>> {
-    const raw = await gasRequest<LegacyApiResponse<any>>('refresh')
-    
-    // Inflate if necessary
-    if (raw.success && raw.data) {
-        raw.data = inflatePayload(raw.data)
-    }
-    
-    const finalData = raw as LegacyApiResponse<WebAppData>
-    
-    // Update cache on manual refresh
-    localStorage.setItem('gas_cache_leaderboard', JSON.stringify({ data: finalData, timestamp: Date.now() }))
-    return finalData
-}
-
-/**
- * Mark recruits as dismissed/invited
- */
 export async function dismissRecruits(ids: string[]): Promise<ApiResponse<DismissResponse>> {
     return gasRequest<ApiResponse<DismissResponse>>('dismissRecruits', { ids })
 }
 
-// ============================================================================
-// UTILITY
-// ============================================================================
-
-/**
- * Check if the API is configured
- */
+// Utility
 export function isConfigured(): boolean {
     return Boolean(GAS_URL)
 }
 
-/**
- * Get the configured API URL (for debugging)
- */
 export function getApiUrl(): string {
     return GAS_URL || '(not configured)'
 }
