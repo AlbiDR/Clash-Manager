@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
+import Icon from './Icon.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const navItems = [
-  { path: '/', name: 'leaderboard', label: '🏆 Leaderboard' },
-  { path: '/recruiter', name: 'recruiter', label: '🔭 Headhunter' },
-  { path: '/settings', name: 'settings', label: '⚙️ Settings' }
+  { path: '/', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
+  { path: '/recruiter', name: 'recruiter', label: 'Headhunter', icon: 'recruiter' },
+  { path: '/settings', name: 'settings', label: 'Settings', icon: 'settings' } // Use settings icon which maps to gear/sliders
 ]
 
 function navigate(path: string) {
@@ -25,7 +26,8 @@ function navigate(path: string) {
       :class="{ 'active': route.path === item.path }"
       @click="navigate(item.path)"
     >
-      <span>{{ item.label }}</span>
+      <Icon :name="item.icon" size="20" :filled="route.path === item.path" />
+      <span class="dock-label">{{ item.label }}</span>
     </div>
   </div>
 </template>
@@ -34,14 +36,24 @@ function navigate(path: string) {
 .dock-container {
   position: fixed;
   /* Bottom position + Safe Area (Home Bar) */
-  bottom: calc(32px + env(safe-area-inset-bottom));
+  bottom: calc(24px + env(safe-area-inset-bottom));
   left: 50%; transform: translateX(-50%);
+  
+  /* Neo-Glassmorphism */
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur); -webkit-backdrop-filter: var(--sys-surface-glass-blur);
-  padding: 6px; border-radius: var(--shape-corner-full);
-  display: flex; gap: 6px;
-  box-shadow: var(--sys-elevation-3);
-  border: 1px solid var(--sys-surface-glass-border);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  
+  padding: 6px; 
+  border-radius: 999px; /* Pill shape */
+  display: flex; gap: 4px;
+  
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 12px 24px -4px rgba(0, 0, 0, 0.2);
+    
   z-index: 200;
   max-width: calc(100% - 32px);
   overflow-x: auto;
@@ -51,24 +63,52 @@ function navigate(path: string) {
 .dock-container::-webkit-scrollbar { display: none; }
 
 .dock-item {
-  padding: 14px 20px; border-radius: var(--shape-corner-full);
-  font-size: 15px; font-weight: 600; color: var(--sys-color-on-surface-variant);
-  cursor: pointer; transition: all 0.3s var(--sys-motion-spring);
+  padding: 10px 18px; 
+  border-radius: 999px;
+  
   display: flex; align-items: center; gap: 8px;
+  
+  font-size: 14px; 
+  font-weight: 600; 
+  color: var(--sys-color-on-surface-variant);
+  
+  cursor: pointer; 
+  transition: all 0.3s var(--sys-motion-spring);
   white-space: nowrap;
+  position: relative;
+  
+  /* Remove tap highlight */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dock-item:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dock-item.active { 
-  background: var(--sys-color-on-surface); 
-  color: var(--sys-color-surface); 
+  background: var(--sys-color-primary); 
+  color: var(--sys-color-on-primary);
   font-weight: 700; 
-  /* Interaction Layer: Glow effect */
-  box-shadow: 0 0 15px rgba(var(--sys-color-primary-rgb), 0.3);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
-/* Mobile Adjustment: Tighter padding if many items */
-@media (max-width: 480px) {
-  .dock-item { padding: 12px 16px; font-size: 14px; }
+.dock-label {
+  display: block;
+}
+
+/* Mobile: Icon only for non-active items to save space? 
+   Or just keep it tight. Let's keep labels but adjust padding. */
+@media (max-width: 400px) {
+  .dock-item {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .dock-item .dock-label {
+    /* Optional: hide label on inactive items for very small screens */
+    /* display: none; */ 
+  }
+  .dock-item.active .dock-label {
+    display: block;
+  }
 }
 </style>
