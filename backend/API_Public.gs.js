@@ -50,6 +50,7 @@ function doGet(e) {
         return respond({
           version: VER_API_PUBLIC,
           status: 'online',
+          scriptId: ScriptApp.getScriptId(),
           spreadsheetUrl: ss.getUrl(),
           // Map of SheetName -> GID for direct linking
           sheets: sheetsMap,

@@ -68,6 +68,7 @@ export interface ClanMember {
 export interface PingResponse {
     version: string
     status: string
+    scriptId?: string
     spreadsheetUrl?: string
     sheets?: Record<string, number>
     modules: Record<string, string>
