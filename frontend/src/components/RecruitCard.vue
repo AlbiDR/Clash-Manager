@@ -131,7 +131,7 @@ function handleClick(e: Event) {
         </div>
       </div>
 
-      <div class="btn-row">
+      <div class="row-actions">
         <a 
           :href="`https://royaleapi.com/player/${recruit.id}`" 
           target="_blank"
@@ -156,26 +156,36 @@ function handleClick(e: Event) {
 <style scoped>
 /* 🃏 Neo-Card Styles (Shared) */
 .card {
-  background: var(--sys-color-surface-container-low);
+  background: var(--sys-color-surface-container);
   border-radius: var(--shape-corner-l);
-  padding: 20px;
-  margin-bottom: 8px;
+  padding: var(--spacing-l) var(--spacing-m);
+  margin-bottom: var(--spacing-xs);
   border: 1px solid transparent;
   position: relative; overflow: hidden;
   transition: all 0.3s var(--sys-motion-spring);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  
+  /* Internal Grid Layout */
+  display: grid;
+  gap: var(--spacing-m);
 }
 
-.card:active { transform: scale(0.98); background: var(--sys-color-surface-container-high); }
+.card:active { 
+  transform: scale(0.98); 
+  background: var(--sys-color-surface-container-high); 
+}
 
 .card.expanded { 
   box-shadow: var(--sys-elevation-3); 
-  background: var(--sys-color-surface-container);
-  z-index: 10; margin: 16px 0; 
+  background: var(--sys-color-surface-container-high);
+  z-index: 10; margin: var(--spacing-m) 0;
+  border-color: var(--sys-surface-glass-border);
 }
 
-.card.selected { background: var(--sys-color-secondary-container); }
+.card.selected { 
+  background: var(--sys-color-secondary-container); 
+}
 .card.selected .player-name { color: var(--sys-color-on-secondary-container); }
 .card.selected .meta-row { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
 
@@ -185,19 +195,40 @@ function handleClick(e: Event) {
 }
 .card.selected .selection-indicator { opacity: 1; }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.info-stack { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-right: 8px; }
-
-.name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
-.player-name { 
-  font-size: 18px; font-weight: 600; 
-  color: var(--sys-color-on-surface); 
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; 
+/* HEADER GRID */
+.card-header { 
+  display: grid; 
+  grid-template-columns: 1fr auto;
+  gap: var(--spacing-s);
+  align-items: center; 
 }
 
-.meta-row { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--sys-color-outline); font-weight: 500; }
+.info-stack { 
+  display: flex; flex-direction: column; 
+  gap: 2px;
+  min-width: 0; 
+}
 
-.action-area { display: flex; align-items: center; gap: 12px; }
+.name-row { display: flex; align-items: center; gap: var(--spacing-xs); flex-wrap: wrap;}
+
+.player-name { 
+  font-family: var(--sys-font-family-body);
+  font-size: var(--font-size-l); 
+  font-weight: var(--font-weight-bold); 
+  color: var(--sys-color-on-surface); 
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+  letter-spacing: -0.02em;
+}
+
+.meta-row { 
+  display: flex; align-items: center; 
+  gap: var(--spacing-xs); 
+  font-size: var(--font-size-s); 
+  color: var(--sys-color-outline); 
+  font-weight: var(--font-weight-medium); 
+}
+
+.action-area { display: flex; align-items: center; gap: var(--spacing-s); }
 
 .chevron-btn {
   display: flex; align-items: center; justify-content: center;
@@ -209,11 +240,12 @@ function handleClick(e: Event) {
 }
 .card.expanded .chevron-btn { transform: rotate(180deg); background: rgba(0,0,0,0.1); }
 
-/* Stat Pod */
+/* STAT POD */
 .stat-pod {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 64px; height: 64px; border-radius: 20px;
-  background: var(--sys-color-surface-container-high);
+  width: 56px; height: 56px; 
+  border-radius: var(--shape-corner-m);
+  background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
   transition: background 0.3s;
@@ -222,10 +254,23 @@ function handleClick(e: Event) {
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 .stat-pod.tone-low { background: var(--sys-color-surface-variant); color: var(--sys-color-on-surface-variant); }
 
-.stat-score { font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: -1px; font-family: var(--sys-typescale-mono); }
-.stat-sub { font-size: 9px; font-weight: 700; opacity: 0.8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-score { 
+  font-size: var(--font-size-l); 
+  font-weight: var(--font-weight-heavy); 
+  line-height: 1; 
+  letter-spacing: -0.5px; 
+  font-family: var(--sys-font-family-mono); 
+}
+.stat-sub { 
+  font-size: 9px; 
+  font-weight: var(--font-weight-bold); 
+  opacity: 0.8; 
+  margin-top: 2px; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+}
 
-/* Grid & Body */
+/* BODY */
 .card-body {
   max-height: 0; opacity: 0; overflow: hidden;
   transition: all 0.4s var(--sys-motion-spring);
@@ -234,15 +279,65 @@ function handleClick(e: Event) {
 }
 .card.expanded .card-body {
   max-height: 500px; opacity: 1;
-  margin-top: 20px; padding-top: 20px;
-  border-top-color: var(--sys-color-outline);
-  border-top-width: 0.5px;
+  margin-top: var(--spacing-s);
+  padding-top: var(--spacing-m);
+  border-top-color: var(--sys-color-outline-variant);
+  border-top-width: 1px;
 }
 
-.grid-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-.stat-item { background: var(--sys-color-surface-container-high); padding: 12px 8px; border-radius: var(--shape-corner-m); text-align: center; }
-.si-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--sys-color-on-surface-variant); opacity: 0.7; margin-bottom: 4px; }
-.si-val { font-size: 15px; font-weight: 600; color: var(--sys-color-on-surface-variant); }
+.grid-stats { 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: var(--spacing-xs); 
+  margin-bottom: var(--spacing-m); 
+}
 
-.btn-row { display: flex; gap: 12px; margin-top: 16px; }
+.stat-item { 
+  background: var(--sys-color-surface-container-highest); 
+  padding: var(--spacing-s) var(--spacing-xs); 
+  border-radius: var(--shape-corner-m); 
+  text-align: center; 
+}
+.si-label { 
+  font-size: 10px; 
+  font-weight: var(--font-weight-bold); 
+  text-transform: uppercase; 
+  color: var(--sys-color-on-surface-variant); 
+  opacity: 0.7; 
+  margin-bottom: 2px; 
+}
+.si-val { 
+  font-size: var(--font-size-m); 
+  font-weight: var(--font-weight-bold); 
+  color: var(--sys-color-on-surface-variant); 
+  font-family: var(--sys-font-family-mono); 
+}
+
+.row-actions { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr auto; 
+  gap: var(--spacing-xs); 
+  margin-top: var(--spacing-m); 
+}
+
+/* Action Buttons */
+.btn-action {
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--spacing-s);
+  border-radius: var(--shape-corner-m);
+  font-weight: var(--font-weight-bold); 
+  font-size: var(--font-size-s);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: filter 0.2s;
+}
+.btn-action.primary {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+.btn-action.secondary {
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-primary);
+}
+.btn-action:active { filter: brightness(0.9); transform: scale(0.98); }
 </style>

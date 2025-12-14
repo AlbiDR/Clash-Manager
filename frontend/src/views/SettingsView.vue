@@ -174,25 +174,24 @@ const editorUrl = computed(() => {
 <style scoped>
 .view-container { 
     min-height: 100%;
-    /* Gradient background handled by global app styles, checking consistency */
 }
 
 .content-wrapper {
-    max-width: 720px; /* Restored constraint for readability */
+    max-width: var(--sys-layout-max-width);
     margin: 0 auto;
-    padding: 24px 16px 120px;
+    padding: var(--spacing-l) var(--spacing-m) 120px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--spacing-l);
 }
 
 /* --- GLASS PANEL --- */
 .glass-panel {
     background: var(--sys-surface-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: var(--sys-surface-glass-blur);
+    -webkit-backdrop-filter: var(--sys-surface-glass-blur);
     border: 1px solid var(--sys-surface-glass-border);
-    border-radius: 24px;
+    border-radius: var(--shape-corner-l);
     overflow: hidden;
     box-shadow: var(--sys-elevation-2);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -202,22 +201,23 @@ const editorUrl = computed(() => {
 .card-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 24px;
+    gap: var(--spacing-m);
+    padding: var(--spacing-l);
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 .header-icon { font-size: 24px; }
 .header-info { flex: 1; }
+
 .card-title {
     margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: var(--font-size-l);
+    font-weight: var(--font-weight-heavy);
     color: var(--sys-color-on-surface);
 }
 .card-subtitle {
     margin: 4px 0 0;
-    font-size: 0.85rem;
+    font-size: var(--font-size-s);
     color: var(--sys-color-outline);
 }
 
@@ -227,9 +227,9 @@ const editorUrl = computed(() => {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border-radius: 100px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    border-radius: var(--shape-corner-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     background: var(--sys-color-surface-container);
@@ -243,24 +243,25 @@ const editorUrl = computed(() => {
 .status-badge.checking { color: var(--sys-color-primary); }
 
 /* --- CARD BODY --- */
-.card-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.card-body { padding: var(--spacing-l); display: flex; flex-direction: column; gap: 20px; }
 
-.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+
 .field-label {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-heavy);
     text-transform: uppercase;
     color: var(--sys-color-primary);
     letter-spacing: 0.05em;
 }
-.field-hint { font-size: 0.8rem; color: var(--sys-color-outline); margin: 0; }
+.field-hint { font-size: var(--font-size-s); color: var(--sys-color-outline); margin: 0; }
 
 .code-block {
     background: rgba(0, 0, 0, 0.3);
-    padding: 12px;
-    border-radius: 8px;
-    font-family: monospace;
-    font-size: 0.8rem;
+    padding: var(--spacing-s);
+    border-radius: var(--shape-corner-s);
+    font-family: var(--sys-typescale-mono);
+    font-size: var(--font-size-s);
     color: var(--sys-color-on-surface-variant);
     word-break: break-all;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -272,42 +273,11 @@ const editorUrl = computed(() => {
     background: var(--sys-color-secondary-container);
     color: var(--sys-color-on-secondary-container);
     border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-s);
 }
 
 /* --- ACTIONS --- */
-.card-actions {
-    padding: 24px;
-    background: rgba(var(--sys-rgb-primary), 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    text-align: center;
-}
-.action-btn {
-    width: 100%;
-    padding: 14px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    display: flex; justify-content: center; align-items: center; gap: 10px;
-}
-.action-btn.primary {
-    background: var(--sys-color-primary);
-    color: var(--sys-color-on-primary);
-    box-shadow: 0 4px 12px rgba(var(--sys-rgb-primary), 0.3);
-}
-.action-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--sys-color-primary);
-    text-decoration: none;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.action-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
 .clickable-url {
     display: block;
     text-decoration: none;
@@ -317,7 +287,7 @@ const editorUrl = computed(() => {
     padding-right: 32px; /* Space for hint */
 }
 .clickable-url:hover {
-    background: rgba(var(--sys-rgb-primary), 0.1);
+    background: rgba(var(--sys-color-primary-rgb), 0.1);
     color: var(--sys-color-primary);
 }
 .link-hint {
@@ -329,8 +299,6 @@ const editorUrl = computed(() => {
     font-size: 14px;
 }
 .clickable-url:hover .link-hint { opacity: 1; }
-.action-btn:active { transform: scale(0.98); }
-.action-btn:disabled { opacity: 0.7; cursor: wait; }
 
 .action-hint {
     margin: 12px 0 0;
@@ -339,20 +307,20 @@ const editorUrl = computed(() => {
 }
 
 /* --- INPUTS --- */
-.input-row { display: flex; gap: 12px; }
+.input-row { display: flex; gap: var(--spacing-s); }
 .text-input {
     flex: 1;
     background: var(--sys-color-surface-container-high);
     border: 1px solid transparent;
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: var(--shape-corner-s);
     color: var(--sys-color-on-surface);
-    font-size: 0.9rem;
+    font-size: var(--font-size-m);
 }
 .text-input:focus { outline: none; border-color: var(--sys-color-primary); }
 .icon-btn {
     width: 42px; height: 42px;
-    border-radius: 8px;
+    border-radius: var(--shape-corner-s);
     background: var(--sys-color-surface-container-highest);
     border: none;
     font-size: 1.2rem;
@@ -366,36 +334,36 @@ const editorUrl = computed(() => {
 
 /* --- MODULES GRID --- */
 .modules-grid {
-    padding: 24px;
+    padding: var(--spacing-l);
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 12px;
+    gap: var(--spacing-s);
 }
 .module-chip {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--shape-corner-s);
     display: flex; flex-direction: column; gap: 4px;
 }
-.mod-name { font-size: 0.7rem; color: var(--sys-color-outline); text-transform: uppercase; }
-.mod-ver { font-size: 0.9rem; font-weight: 700; color: var(--sys-color-primary); }
+.mod-name { font-size: var(--font-size-xs); color: var(--sys-color-outline); text-transform: uppercase; }
+.mod-ver { font-size: var(--font-size-s); font-weight: var(--font-weight-heavy); color: var(--sys-color-primary); }
 
 /* --- FOOTER --- */
 .about-footer {
     text-align: center;
-    margin-top: 24px;
+    margin-top: var(--spacing-l);
     color: var(--sys-color-outline);
 }
 .app-logo { font-size: 48px; margin-bottom: 8px; }
 .footer-title { margin: 0; font-size: 1.2rem; color: var(--sys-color-on-surface); }
-.footer-ver { margin: 4px 0 16px; font-size: 0.8rem; font-family: monospace; opacity: 0.7; }
+.footer-ver { margin: 4px 0 16px; font-size: 0.8rem; font-family: var(--sys-typescale-mono); opacity: 0.7; }
 .footer-desc { margin: 0 0 24px; font-size: 0.9rem; line-height: 1.5; }
 .github-link {
     display: inline-block;
     padding: 8px 24px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 100px;
+    border-radius: var(--shape-corner-full);
     color: var(--sys-color-primary);
     text-decoration: none;
     font-weight: 600;
@@ -403,12 +371,4 @@ const editorUrl = computed(() => {
     transition: background 0.2s;
 }
 .github-link:hover { background: rgba(255, 255, 255, 0.1); }
-
-/* --- ANIMATION --- */
-.spinner-sm {
-    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff; border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 </style>

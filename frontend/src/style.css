@@ -5,81 +5,115 @@
    ============================================================================ */
 
 :root {
-  /* 🌈 Color System (Neo-Material 2026) */
-  --sys-color-primary: #0061a4;
+  /* --------------------------------------------------------------------------
+     🎨 COLOR SYSTEM (Neo-Material 2026)
+     -------------------------------------------------------------------------- */
+  /* Primary */
+  --sys-color-primary: #0061a4; /* Vibrant Blue */
   --sys-color-primary-rgb: 0, 97, 164;
   --sys-color-on-primary: #ffffff;
   --sys-color-primary-container: #d1e4ff;
   --sys-color-on-primary-container: #001d36;
 
-  --sys-color-secondary: #535f70;
+  /* Secondary */
+  --sys-color-secondary: #535f70; /* Cool Grey */
   --sys-color-secondary-container: #d7e3f7;
   --sys-color-on-secondary-container: #101c2b;
 
-  --sys-color-tertiary: #6b5778;
+  /* Tertiary */
+  --sys-color-tertiary: #6b5778; /* Muted Purple */
   --sys-color-tertiary-rgb: 107, 87, 120;
   --sys-color-tertiary-container: #f2daff;
   --sys-color-on-tertiary-container: #251431;
 
+  /* Semantic */
   --sys-color-error: #ba1a1a;
   --sys-color-error-container: #ffdad6;
   --sys-color-on-error-container: #410002;
-
   --sys-color-success: #2e7d32;
   --sys-color-success-container: #b9f6ca;
   --sys-color-on-success: #ffffff;
   --sys-color-on-success-container: #002105;
 
+  /* Surface & Background */
   --sys-color-background: #fdfcff;
   --sys-color-on-background: #1a1c1e;
-
   --sys-color-surface: #fdfcff;
   --sys-color-on-surface: #1a1c1e;
 
   /* Surface Container Levels (Depth) */
   --sys-color-surface-container-low: #f7f2fa;
-  --sys-color-surface-container: #f3edf7;
+  --sys-color-surface-container: #f3edf7; /* Default Cards */
   --sys-color-surface-container-high: #ece6f0;
+  --sys-color-surface-container-highest: #e6e0e9;
 
-  --sys-color-surface-variant: #dfe2eb;
-  --sys-color-on-surface-variant: #43474e;
+  /* Outlines */
   --sys-color-outline: #73777f;
-  --sys-color-outline-variant: #c4c7c5;
+  --sys-color-outline-variant: #c4c7c5; /* Dividers */
 
-  /* 🥛 Neo-Glass Tokens */
+  /* 🥛 GLASS TOKENS */
   --sys-surface-glass: rgba(253, 252, 255, 0.75);
   --sys-surface-glass-border: rgba(255, 255, 255, 0.4);
   --sys-surface-glass-blur: blur(20px) saturate(180%);
 
-  /* 📐 Geometry */
-  --shape-corner-xs: 4px;
-  --shape-corner-s: 12px;
-  --shape-corner-m: 16px;
-  --shape-corner-l: 28px;
-  --shape-corner-full: 999px;
+  /* --------------------------------------------------------------------------
+     📏 SPACING SYSTEM (Grid: 4px)
+     -------------------------------------------------------------------------- */
+  --spacing-2xs: 4px;
+  --spacing-xs: 8px;
+  --spacing-s: 12px;
+  --spacing-m: 16px;
+  --spacing-l: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
 
-  /* 🎭 Elevation & Physics */
+  /* --------------------------------------------------------------------------
+     🔤 TYPOGRAPHY SYSTEM
+     -------------------------------------------------------------------------- */
+  --sys-font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, sans-serif;
+  --sys-font-family-mono: 'JetBrains Mono', "SF Mono", "Roboto Mono", monospace;
+
+  --font-size-xs: 11px;
+  --font-size-s: 13px;
+  --font-size-m: 15px;      /* Body Copy */
+  --font-size-l: 17px;      /* Headings */
+  --font-size-xl: 22px;     /* Titles */
+  --font-size-2xl: 28px;    /* Display */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;  /* Modern bold is usually 600, not 700 */
+  --font-weight-heavy: 700;
+
+  /* --------------------------------------------------------------------------
+     📐 SHAPE & LAYOUT
+     -------------------------------------------------------------------------- */
+  --shape-corner-xs: 4px;
+  --shape-corner-s: 8px;
+  --shape-corner-m: 12px;
+  --shape-corner-l: 24px;   /* Cards */
+  --shape-corner-full: 9999px;
+
+  --sys-layout-max-width: 720px;
+  
+  /* --------------------------------------------------------------------------
+     🎭 PHYSICS & ELEVATION
+     -------------------------------------------------------------------------- */
   --sys-elevation-0: 0 0 0 0 transparent;
-  --sys-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --sys-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --sys-elevation-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --sys-elevation-1: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --sys-elevation-2: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --sys-elevation-3: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
 
   --sys-motion-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
   --sys-motion-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
-
-  /* 🔤 Typography */
-  --sys-typescale-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", Helvetica, Arial, sans-serif;
-  --sys-typescale-mono: "SF Mono", "Roboto Mono", monospace;
-
-  /* Layout */
-  --sys-layout-max-width: 720px;
+  --sys-motion-duration: 0.3s;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sys-color-primary: #9ecaff;
-    --sys-color-primary-rgb: 158, 202, 255;
+    /* Dark Mode Colors */
+    --sys-color-primary: #aecbfa;
+    --sys-color-primary-rgb: 174, 203, 250;
     --sys-color-on-primary: #003258;
     --sys-color-primary-container: #00497d;
     --sys-color-on-primary-container: #d1e4ff;
@@ -97,27 +131,20 @@
     --sys-color-error-container: #93000a;
     --sys-color-on-error-container: #ffdad6;
 
-    --sys-color-success: #75ec85;
-    --sys-color-success-container: #005313;
-    --sys-color-on-success: #00390a;
-    --sys-color-on-success-container: #98ff9d;
-
-    --sys-color-background: #141218;
+    --sys-color-background: #101014; /* Deep OLED Black-ish */
     --sys-color-on-background: #e6e1e5;
-
-    --sys-color-surface: #141218;
+    --sys-color-surface: #101014;
     --sys-color-on-surface: #e6e1e5;
 
-    --sys-color-surface-container-low: #1d1b20;
-    --sys-color-surface-container: #211f26;
-    --sys-color-surface-container-high: #2b2930;
+    --sys-color-surface-container-low: #18191e;
+    --sys-color-surface-container: #202127;
+    --sys-color-surface-container-high: #2b2d35;
+    --sys-color-surface-container-highest: #363841;
 
-    --sys-color-surface-variant: #49454f;
-    --sys-color-on-surface-variant: #cac4d0;
-    --sys-color-outline: #938f99;
+    --sys-color-outline: #8e9196;
     --sys-color-outline-variant: #444746;
 
-    --sys-surface-glass: rgba(20, 18, 24, 0.75);
+    --sys-surface-glass: rgba(16, 16, 20, 0.75);
     --sys-surface-glass-border: rgba(255, 255, 255, 0.08);
   }
 }
