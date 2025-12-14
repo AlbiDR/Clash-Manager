@@ -1,10 +1,20 @@
 # Clash Manager PWA Client
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Vue](https://img.shields.io/badge/Vue.js-3.5.24-4FC08D.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6.svg)
-![Vite](https://img.shields.io/badge/Vite-7.2.4-646CFF.svg)
+<!-- 
+  DYNAMIC BADGES 
+  These update automatically based on your Repo state and GitHub Actions.
+-->
+![GitHub Release](https://img.shields.io/github/v/release/albidr/Clash-Manager?style=flat-square&color=0061a4&label=Release)
+![Build Status](https://img.shields.io/github/actions/workflow/status/albidr/Clash-Manager/deploy.yml?branch=main&style=flat-square&label=Build)
+![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)
+
+<!-- 
+  TECH STACK BADGES 
+  Kept at Major versions to minimize maintenance frequency.
+-->
+![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?style=flat-square&logo=vue.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?style=flat-square&logo=vite&logoColor=white)
 
 **Clash Manager** is a specialized, high-performance Progressive Web Application (PWA) designed for advanced Clash Royale clan management. It operates as the frontend presentation layer in a **Headless Architecture**, communicating with a serverless Google Apps Script (GAS) backend via a custom JSON REST API.
 
