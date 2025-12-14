@@ -160,8 +160,8 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
-        <button v-if="canShare" class="btn-action secondary" @click.stop="shareMember">
-          Share
+        <button v-if="canShare" class="btn-icon-action secondary" @click.stop="shareMember">
+          <Icon name="share" size="20" />
         </button>
       </div>
     </div>
@@ -260,6 +260,45 @@ function handleClick(e: Event) {
 .si-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--sys-color-on-surface-variant); opacity: 0.7; margin-bottom: 4px; }
 .si-val { font-size: 15px; font-weight: 600; color: var(--sys-color-on-surface-variant); }
 
-.btn-row { display: flex; gap: 12px; margin-top: 16px; }
+.btn-row { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr auto; /* Two pills + strict icon width */
+  gap: 8px; 
+  margin-top: 16px; 
+}
+
+/* Action Buttons */
+.btn-action {
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px;
+  border-radius: var(--shape-corner-m);
+  font-weight: 600; font-size: 14px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: filter 0.2s;
+}
+.btn-action.primary {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+.btn-action.secondary {
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-primary);
+}
+.btn-action:active { filter: brightness(0.9); }
+
+/* Icon Button (Squircle) */
+.btn-icon-action {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 100%; /* Matches height of pills */
+  border-radius: 16px; /* Squircle */
+  border: none;
+  cursor: pointer;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-primary);
+  transition: background 0.2s;
+}
+.btn-icon-action:active { background: var(--sys-color-surface-variant); }
+
 .mb-4 { margin-bottom: 16px; }
 </style>

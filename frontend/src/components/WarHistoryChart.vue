@@ -20,51 +20,66 @@ const bars = computed(() => {
     })
     .reverse() // Oldest → Newest (left to right)
   
-  // Cap at 52 weeks (1 year)
-  return entries.slice(-52)
+  // Cap at 104 weeks (2 years) just in case, but rely on CSS for width
+  return entries.slice(-104)
 })
 
 // Dynamic styling based on density
 const chartStyle = computed(() => {
   const len = bars.value.length
-  if (len > 40) return { gap: '1px', radius: '2px' }
+  if (len > 50) return { gap: '1px', radius: '1px' }
+  if (len > 30) return { gap: '1px', radius: '2px' }
   if (len > 20) return { gap: '2px', radius: '3px' }
   return { gap: '4px', radius: '4px' } // Default rounded
 })
 </script>
 
 <template>
-  <div 
-    v-if="bars.length > 0" 
-    class="war-chart"
-    :style="{ gap: chartStyle.gap }"
-  >
+  <div class="chart-container">
     <div 
-      v-for="(fame, i) in bars" 
-      :key="i"
-      class="bar"
-      :class="{ 
-        'bar-win': fame > 2000, 
-        'bar-hit': fame > 0 && fame <= 2000,
-        'bar-miss': fame === 0
-      }"
-      :style="{ 
-        height: `${Math.max(15, Math.min(100, (fame / 3200) * 100))}%`,
-        borderRadius: chartStyle.radius
-      }"
-    />
-  </div>
-  <div v-else class="war-chart-empty">
-    No war history
+      v-if="bars.length > 0" 
+      class="war-chart"
+      :style="{ gap: chartStyle.gap }"
+    >
+      <div 
+        v-for="(fame, i) in bars" 
+        :key="i"
+        class="bar"
+        :class="{ 
+          'bar-win': fame > 2000, 
+          'bar-hit': fame > 0 && fame <= 2000,
+          'bar-miss': fame === 0
+        }"
+        :style="{ 
+          height: `${Math.max(15, Math.min(100, (fame / 3200) * 100))}%`,
+          borderRadius: chartStyle.radius
+        }"
+      />
+    </div>
+    <div v-else class="war-chart-empty">
+      No war history
+    </div>
   </div>
 </template>
 
 <style scoped>
+.chart-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+  /* Hide scrollbar */
+  scrollbar-width: none; 
+}
+.chart-container::-webkit-scrollbar { display: none; }
+
 .war-chart {
   display: flex;
   align-items: flex-end;
   height: 48px;
   padding: 4px 0;
+  min-width: 100%; /* Ensure it fills at least the container */
+  width: fit-content; /* Allow it to grow horizontally if dense */
 }
 
 .bar {
