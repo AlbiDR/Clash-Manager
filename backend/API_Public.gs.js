@@ -322,13 +322,12 @@ function triggerHeadlessUpdate() {
 
   return Utils.executeSafely('API_TRIGGER_UPDATE', () => {
     try {
-      // 1. Update Leaderboard (Score calculation)
-      updateLeaderboard();
+      console.log("🤖 API Trigger: Delegating to Master Sequence...");
 
-      // 2. Refresh Payload (So the PWA sees the new data on next fetch)
-      refreshWebPayload();
+      // Run the robust master sequence (Database -> Leaderboard -> Web App -> Recruits)
+      sequenceFullUpdate();
 
-      return { success: true, message: "Backend updated successfully" };
+      return { success: true, message: "Full backend update sequence initiated." };
     } catch (e) {
       console.error(`API Trigger Failed: ${e.message}`);
       throw e;

@@ -38,345 +38,339 @@ function resetApiUrl() {
         window.location.reload()
     }
 }
+
+const apiStatusText = computed(() => {
+    if (apiStatus.value === 'online') return 'Online'
+    if (apiStatus.value === 'offline') return 'Offline'
+    return 'Checking...'
+})
 </script>
 
 <template>
   <div class="view-container">
     <ConsoleHeader title="Settings" />
     
-    <div class="content-wrapper">
-        <section class="settings-section glass-card animate-fade-in">
-        <h2 class="section-title">🔌 API Configuration</h2>
+    <div class="content-wrapper animate-stagger">
         
-        <div class="setting-item">
-            <label class="setting-label">Status</label>
-            <div class="status-display">
-            <span 
-                class="status-indicator"
-                :class="{
-                'status-online': apiStatus === 'online',
-                'status-offline': apiStatus === 'offline',
-                'status-checking': apiStatus === 'checking'
-                }"
-            ></span>
-            <span class="status-text">
-                {{ apiStatus === 'online' ? 'Connected' : apiStatus === 'offline' ? 'Disconnected' : 'Checking...' }}
-            </span>
-            </div>
-        </div>
-        
-        <div class="setting-item">
-            <label class="setting-label">Endpoint</label>
-            <code class="api-url">{{ apiUrl }}</code>
-        </div>
-        
-        <div class="setting-item" v-if="pingData">
-            <label class="setting-label">GAS Backend Version</label>
-            <span class="setting-value">{{ pingData.version }}</span>
-        </div>
-        
-        <div class="setting-item">
-             <label class="setting-label">Data Sync</label>
-             <button 
-                class="btn btn-primary" 
-                :disabled="isUpdatingCloud"
-                @click="triggerCloudUpdate"
-             >
-                {{ isUpdatingCloud ? 'Running Update...' : 'Force Cloud Update' }}
-             </button>
-             <p class="setting-hint">
-                Triggers a full backend refresh (Clash Royale API → Google Sheets → App).
-             </p>
-        </div>
+        <!-- API Status Card -->
+        <section class="settings-card glass-panel">
+            <header class="card-header">
+                <div class="header-icon">🔌</div>
+                <div class="header-info">
+                    <h2 class="card-title">Connection</h2>
+                    <p class="card-subtitle">Manage API connectivity</p>
+                </div>
+                <div class="status-badge" :class="apiStatus">
+                    <span class="status-dot"></span>
+                    {{ apiStatusText }}
+                </div>
+            </header>
 
-        <div class="setting-item">
-            <label class="setting-label">Update API URL</label>
-            <div class="url-input-group">
-            <input 
-                v-model="newApiUrl"
-                type="url" 
-                placeholder="https://script.google.com/macros/s/.../exec"
-                class="url-input"
-            />
-            <button class="btn btn-primary" @click="saveApiUrl">Save</button>
+            <div class="card-body">
+                <div class="field-group">
+                    <label class="field-label">Current Endpoint</label>
+                    <div class="code-block" :title="apiUrl">{{ apiUrl }}</div>
+                </div>
+
+                <div class="field-group" v-if="pingData">
+                    <label class="field-label">Backend Version</label>
+                    <div class="version-pill">v{{ pingData.version }}</div>
+                </div>
             </div>
-            <p class="setting-hint">
-            Deploy your GAS backend and paste the Web App URL here to override the default.
-            </p>
-            <div v-if="hasLocalOverride" style="margin-top: 12px;">
-                <button class="btn btn-danger-text" @click="resetApiUrl">Reset to Default</button>
-            </div>
-        </div>
-        </section>
-        
-        <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.1s" v-if="pingData?.modules">
-        <h2 class="section-title">📦 GAS Backend Modules</h2>
-        
-        <div class="modules-grid">
-            <div 
-            v-for="(version, name) in pingData.modules" 
-            :key="name"
-            class="module-item"
-            >
-            <span class="module-name">{{ name }}</span>
-            <span class="module-version">v{{ version }}</span>
-            </div>
-        </div>
-        </section>
-        
-        <section class="settings-section glass-card animate-fade-in" style="animation-delay: 0.2s">
-        <h2 class="section-title">ℹ️ About</h2>
-        
-        <div class="about-content">
-            <div class="app-logo">👑</div>
-            <h3 class="app-name">Clash Manager</h3>
-            <p class="app-version">Clan Manager for Clash Royale</p>
-            <p class="app-description">
-            A modern PWA frontend for managing your Clash Royale clan.
-            Built with Vue 3, TypeScript, and Vite.
-            </p>
             
-            <div class="about-links">
-            <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="about-link">
-                GitHub →
-            </a>
+            <div class="card-actions">
+                <button 
+                    class="action-btn primary" 
+                    :disabled="isUpdatingCloud"
+                    @click="triggerCloudUpdate"
+                >
+                    <span v-if="isUpdatingCloud" class="spinner-sm"></span>
+                    <span>{{ isUpdatingCloud ? 'Running Update...' : 'Force Cloud Update' }}</span>
+                </button>
+                <p class="action-hint">
+                    Runs the full backend sequence: CR API → Database → Leaderboard → App Cache.
+                </p>
             </div>
-        </div>
+        </section>
+
+        <!-- Configuration Card -->
+        <section class="settings-card glass-panel">
+            <header class="card-header">
+                <div class="header-icon">⚙️</div>
+                <div class="header-info">
+                    <h2 class="card-title">Configuration</h2>
+                    <p class="card-subtitle">Override default settings</p>
+                </div>
+            </header>
+
+            <div class="card-body">
+                <div class="field-group">
+                    <label class="field-label">Custom API URL</label>
+                    <div class="input-row">
+                        <input 
+                            v-model="newApiUrl"
+                            type="url" 
+                            placeholder="https://script.google.com/..."
+                            class="text-input"
+                        />
+                        <button class="icon-btn" @click="saveApiUrl" title="Save">💾</button>
+                    </div>
+                    <p class="field-hint">Paste a Web App URL to override the build default.</p>
+                </div>
+
+                <div v-if="hasLocalOverride" class="field-group">
+                    <button class="text-btn danger" @click="resetApiUrl">Reset to Default</button>
+                </div>
+            </div>
         </section>
         
-        <div class="footer-note">
-        Clash Manager &copy; 2025
-        </div>
+        <!-- Modules Card -->
+        <section class="settings-card glass-panel" v-if="pingData?.modules">
+            <header class="card-header">
+                <div class="header-icon">📦</div>
+                <div class="header-info">
+                    <h2 class="card-title">Modules</h2>
+                    <p class="card-subtitle">Installed backend components</p>
+                </div>
+            </header>
+
+            <div class="modules-grid">
+                <div 
+                    v-for="(version, name) in pingData.modules" 
+                    :key="name"
+                    class="module-chip"
+                >
+                    <span class="mod-name">{{ name }}</span>
+                    <span class="mod-ver">v{{ version }}</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- About Footer -->
+        <footer class="about-footer">
+            <div class="app-logo">👑</div>
+            <h3 class="footer-title">Clash Manager</h3>
+            <p class="footer-ver">v2.0.0 (PWA)</p>
+            <p class="footer-desc">
+                Advanced Clan Management System<br>
+                Built with Vue 3 & Google Apps Script
+            </p>
+            <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-link">
+                View on GitHub
+            </a>
+        </footer>
     </div>
   </div>
 </template>
 
 <style scoped>
 .view-container { 
-    min-height: 100%; 
+    min-height: 100%;
+    /* Gradient background handled by global app styles, checking consistency */
 }
+
 .content-wrapper {
-  padding: 0 16px 120px 16px;
-  /* Removed max-width restriction to match other tabs */
-  /* max-width: 600px; */ 
-  margin: 0 auto;
+    max-width: 720px; /* Restored constraint for readability */
+    margin: 0 auto;
+    padding: 24px 16px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: var(--sys-color-on-surface);
+/* --- GLASS PANEL --- */
+.glass-panel {
+    background: var(--sys-surface-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--sys-surface-glass-border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: var(--sys-elevation-2);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.glass-card {
-  background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
-  border: 1px solid var(--sys-surface-glass-border);
-  border-radius: var(--shape-corner-l);
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: var(--sys-elevation-1);
+/* --- CARD HEADER --- */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.header-icon { font-size: 24px; }
+.header-info { flex: 1; }
+.card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sys-color-on-surface);
+}
+.card-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--sys-color-outline);
 }
 
-/* Setting Items */
-.setting-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+/* --- STATUS BADGE --- */
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--sys-color-surface-container);
+}
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+}
+.status-badge.online { color: var(--sys-color-success); background: rgba(var(--sys-rgb-success), 0.1); }
+.status-badge.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
+.status-badge.checking { color: var(--sys-color-primary); }
+
+/* --- CARD BODY --- */
+.card-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--sys-color-primary);
+    letter-spacing: 0.05em;
+}
+.field-hint { font-size: 0.8rem; color: var(--sys-color-outline); margin: 0; }
+
+.code-block {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--sys-color-on-surface-variant);
+    word-break: break-all;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.setting-item:last-child {
-  margin-bottom: 0;
+.version-pill {
+    align-self: flex-start;
+    padding: 4px 12px;
+    background: var(--sys-color-secondary-container);
+    color: var(--sys-color-on-secondary-container);
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
-.setting-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--sys-color-outline);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+/* --- ACTIONS --- */
+.card-actions {
+    padding: 24px;
+    background: rgba(var(--sys-rgb-primary), 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: center;
+}
+.action-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+}
+.action-btn.primary {
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
+    box-shadow: 0 4px 12px rgba(var(--sys-rgb-primary), 0.3);
+}
+.action-btn:active { transform: scale(0.98); }
+.action-btn:disabled { opacity: 0.7; cursor: wait; }
+
+.action-hint {
+    margin: 12px 0 0;
+    font-size: 0.8rem;
+    color: var(--sys-color-outline);
 }
 
-.setting-value {
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-typescale-mono);
+/* --- INPUTS --- */
+.input-row { display: flex; gap: 12px; }
+.text-input {
+    flex: 1;
+    background: var(--sys-color-surface-container-high);
+    border: 1px solid transparent;
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: var(--sys-color-on-surface);
+    font-size: 0.9rem;
 }
-
-.setting-hint {
-  font-size: 0.8125rem;
-  color: var(--sys-color-outline);
-  margin: 0.5rem 0 0;
+.text-input:focus { outline: none; border-color: var(--sys-color-primary); }
+.icon-btn {
+    width: 42px; height: 42px;
+    border-radius: 8px;
+    background: var(--sys-color-surface-container-highest);
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
 }
-
-/* Status Display */
-.status-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.text-btn {
+    background: none; border: none; font-weight: 600; cursor: pointer; padding: 0;
+    align-self: flex-start;
 }
+.text-btn.danger { color: var(--sys-color-error); }
 
-.status-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  transition: all 0.3s;
-}
-
-.status-online {
-  background: var(--sys-color-success);
-  box-shadow: 0 0 8px var(--sys-color-success);
-}
-
-.status-offline {
-  background: var(--sys-color-error);
-}
-
-.status-checking {
-  background: var(--sys-color-primary);
-  animation: pulse-glow 1s infinite;
-}
-
-.status-text {
-  font-weight: 500;
-}
-
-/* API URL */
-.api-url {
-  font-size: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--sys-color-surface-container-high);
-  border-radius: 0.5rem;
-  word-break: break-all;
-  color: var(--sys-color-on-surface-variant);
-  font-family: var(--sys-typescale-mono);
-}
-
-/* URL Input */
-.url-input-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.url-input {
-  flex: 1;
-  padding: 0.75rem;
-  background: var(--sys-color-surface-container-high);
-  border: 1px solid transparent;
-  border-radius: 0.5rem;
-  color: var(--sys-color-on-surface);
-  font-size: 0.875rem;
-}
-
-.url-input:focus {
-  outline: none;
-  border-color: var(--sys-color-primary);
-  background: var(--sys-color-surface);
-}
-
-.btn {
-  padding: 0 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-}
-
-.btn-danger-text {
-    background: transparent;
-    color: var(--sys-color-error);
-    padding-left: 0;
-}
-
-/* Modules Grid */
+/* --- MODULES GRID --- */
 .modules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
 }
+.module-chip {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.mod-name { font-size: 0.7rem; color: var(--sys-color-outline); text-transform: uppercase; }
+.mod-ver { font-size: 0.9rem; font-weight: 700; color: var(--sys-color-primary); }
 
-.module-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0.75rem;
-  background: var(--sys-color-surface-container-high);
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
+/* --- FOOTER --- */
+.about-footer {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--sys-color-outline);
 }
+.app-logo { font-size: 48px; margin-bottom: 8px; }
+.footer-title { margin: 0; font-size: 1.2rem; color: var(--sys-color-on-surface); }
+.footer-ver { margin: 4px 0 16px; font-size: 0.8rem; font-family: monospace; opacity: 0.7; }
+.footer-desc { margin: 0 0 24px; font-size: 0.9rem; line-height: 1.5; }
+.github-link {
+    display: inline-block;
+    padding: 8px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 100px;
+    color: var(--sys-color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+.github-link:hover { background: rgba(255, 255, 255, 0.1); }
 
-.module-name {
-  color: var(--sys-color-on-surface-variant);
+/* --- ANIMATION --- */
+.spinner-sm {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
-
-.module-version {
-  color: var(--sys-color-primary);
-  font-weight: 600;
-}
-
-/* About Section */
-.about-content {
-  text-align: center;
-}
-
-.app-logo {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-}
-
-.app-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0 0 0.25rem;
-  color: var(--sys-color-on-surface);
-}
-
-.app-version {
-  font-size: 0.875rem;
-  color: var(--sys-color-outline);
-  margin: 0 0 1rem;
-}
-
-.app-description {
-  font-size: 0.875rem;
-  color: var(--sys-color-on-surface-variant);
-  margin: 0 0 1rem;
-  line-height: 1.5;
-}
-
-.about-links {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.about-link {
-  color: var(--sys-color-primary);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.about-link:hover {
-  text-decoration: underline;
-}
-
-.footer-note {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--sys-color-outline);
-  margin-top: 2rem;
-}
-
-@keyframes pulse-glow {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
