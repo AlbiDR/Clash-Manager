@@ -43,9 +43,11 @@ function doGet(e) {
 
     switch (action) {
       case 'ping':
+        const isBusy = CacheService.getScriptCache().get('SYSTEM_STATUS') === 'BUSY';
         return respond({
           version: VER_API_PUBLIC,
           status: 'online',
+          isBusy: isBusy,
           modules: getModuleVersions()
         });
 
@@ -318,16 +320,27 @@ function parseCRDateISO(t) {
  * Runs the update sequence without UI interactions (toast/alert) to prevent API crashes.
  */
 function triggerHeadlessUpdate() {
-  console.log("🤖 API Trigger: Starting Headless Update...");
+  console.log("🤖 API Trigger (Async): Scheduling Master Sequence...");
 
-  return Utils.executeSafely('API_TRIGGER_UPDATE', () => {
+  return Utils.executeSafely('API_TRIGGER_ASYNC', () => {
     try {
-      console.log("🤖 API Trigger: Delegating to Master Sequence...");
+      // 1. Check if already running
+      const cache = CacheService.getScriptCache();
+      if (cache.get('SYSTEM_STATUS') === 'BUSY') {
+        return { success: false, status: 'BUSY', message: "Update already incorrectly in progress." };
+      }
 
-      // Run the robust master sequence (Database -> Leaderboard -> Web App -> Recruits)
-      sequenceFullUpdate();
+      // 2. Set 'Busy' flag immediately so UI reacts fast
+      cache.put('SYSTEM_STATUS', 'BUSY', 21600);
 
-      return { success: true, message: "Full backend update sequence initiated." };
+      // 3. Create One-Time Trigger (Fire & Forget)
+      // Runs 'sequenceFullUpdate' after 100ms
+      ScriptApp.newTrigger('sequenceFullUpdate')
+        .timeBased()
+        .after(100)
+        .create();
+
+      return { success: true, status: 'QUEUED', message: "Update queued successfully." };
     } catch (e) {
       console.error(`API Trigger Failed: ${e.message}`);
       throw e;

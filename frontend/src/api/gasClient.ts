@@ -187,6 +187,10 @@ export async function ping(): Promise<ApiResponse<PingResponse>> {
     return gasRequest<ApiResponse<PingResponse>>('ping')
 }
 
+export async function checkApiStatus(): Promise<ApiResponse<PingResponse>> {
+    return gasRequest<ApiResponse<PingResponse>>('ping')
+}
+
 export async function getMembers(): Promise<ApiResponse<ClanMember[]>> {
     return gasRequest<ApiResponse<ClanMember[]>>('getMembers')
 }

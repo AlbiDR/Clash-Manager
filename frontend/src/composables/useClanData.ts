@@ -118,19 +118,40 @@ export function useClanData() {
      * Then refreshes the local cache to get the new data.
      */
     async function triggerCloudUpdate() {
-        if (isUpdatingCloud.value || isRefreshing.value) return
+        if (isUpdatingCloud.value) return
+        isUpdatingCloud.value = true
+        syncError.value = null
 
         try {
-            isUpdatingCloud.value = true
-            const { triggerBackendUpdate } = await import('../api/gasClient')
-            await triggerBackendUpdate()
+            // 1. Fire the Async Trigger
+            console.log('🚀 Triggering Cloud Update...')
+            const { triggerBackendUpdate, checkApiStatus } = await import('../api/gasClient')
+            const response = await triggerBackendUpdate()
+            console.log('✅ Trigger Response:', response)
 
-            // After successful trigger, fetch the new data
-            await refresh()
+            // 2. Poll for Completion (Max 60s)
+            const MAX_ATTEMPTS = 30
+            const POLLING_INTERVAL = 2000
 
-        } catch (e: any) {
-            console.error('Cloud update failed:', e)
-            syncError.value = e.message || 'Cloud update failed'
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                await new Promise(r => setTimeout(r, POLLING_INTERVAL))
+
+                console.log(`⏳ Polling Status (${i + 1}/${MAX_ATTEMPTS})...`)
+                const status = await checkApiStatus()
+
+                // If system is no longer busy, we assume it finished
+                if (status.data?.isBusy === false) {
+                    console.log('🎉 Cloud Update Complete (System Idle). Refreshing data...')
+                    await refresh() // Pull the fresh data
+                    return
+                }
+            }
+
+            throw new Error('Cloud update timed out (Backend is still busy).')
+
+        } catch (e) {
+            console.error('❌ Cloud Update Failed:', e)
+            syncError.value = (e as Error).message
         } finally {
             isUpdatingCloud.value = false
         }

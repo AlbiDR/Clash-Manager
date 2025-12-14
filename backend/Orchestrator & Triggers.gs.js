@@ -28,19 +28,19 @@ function onOpen(e) {
   const ITEMS = UI.MENU_ITEMS;
 
   SpreadsheetApp.getUi()
-      .createMenu(UI.MENU_NAME) 
-      // ZONE 1: CORE ACTIONS (Data & Recruitment)
-      .addItem(ITEMS.DB, 'triggerUpdateDatabase')
-      .addItem(ITEMS.LB, 'triggerUpdateLeaderboard')
-      .addItem(ITEMS.HH, 'triggerScoutRecruits')
-      .addSeparator()
-      // ZONE 2: AUTOMATION & MOBILE
-      .addItem(ITEMS.ALL, 'sequenceFullUpdate')
-      .addItem(ITEMS.MOBILE, 'setupMobileTriggers') // 📱 New Setup Button
-      .addSeparator()
-      // ZONE 3: MAINTENANCE
-      .addItem(ITEMS.HEALTH, 'checkSystemHealth')
-      .addToUi();
+    .createMenu(UI.MENU_NAME)
+    // ZONE 1: CORE ACTIONS (Data & Recruitment)
+    .addItem(ITEMS.DB, 'triggerUpdateDatabase')
+    .addItem(ITEMS.LB, 'triggerUpdateLeaderboard')
+    .addItem(ITEMS.HH, 'triggerScoutRecruits')
+    .addSeparator()
+    // ZONE 2: AUTOMATION & MOBILE
+    .addItem(ITEMS.ALL, 'sequenceFullUpdate')
+    .addItem(ITEMS.MOBILE, 'setupMobileTriggers') // 📱 New Setup Button
+    .addSeparator()
+    // ZONE 3: MAINTENANCE
+    .addItem(ITEMS.HEALTH, 'checkSystemHealth')
+    .addToUi();
 }
 
 // ----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ function setupMobileTriggers() {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const triggerName = 'handleMobileEdit';
-  
+
   // 1. REFRESH UI ELEMENTS
   // Force draw the checkboxes immediately so the user doesn't have to wait for an update loop.
   Utils.refreshMobileControls(ss);
@@ -73,21 +73,21 @@ function setupMobileTriggers() {
   }
 
   if (exists) {
-     ui.alert('✅ Mobile Controls Refreshed', 
-       'The red checkboxes have been re-applied to cell A1 on the Dashboard, Leaderboard, and Headhunter tabs.\n\nThe system is ready.', 
-       ui.ButtonSet.OK);
-     return;
+    ui.alert('✅ Mobile Controls Refreshed',
+      'The red checkboxes have been re-applied to cell A1 on the Dashboard, Leaderboard, and Headhunter tabs.\n\nThe system is ready.',
+      ui.ButtonSet.OK);
+    return;
   }
 
   // 3. CREATE TRIGGER
   ScriptApp.newTrigger(triggerName)
-      .forSpreadsheet(ss)
-      .onEdit()
-      .create();
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
 
-  ui.alert('📱 Mobile Controls Enabled!', 
-    'You can now tap the red checkbox in cell A1 of any tab (on your phone) to run updates.\n\n' + 
-    'Note: It usually takes 2-5 seconds for the script to react to the checkbox.', 
+  ui.alert('📱 Mobile Controls Enabled!',
+    'You can now tap the red checkbox in cell A1 of any tab (on your phone) to run updates.\n\n' +
+    'Note: It usually takes 2-5 seconds for the script to react to the checkbox.',
     ui.ButtonSet.OK);
 }
 
@@ -98,37 +98,37 @@ function setupMobileTriggers() {
 function handleMobileEdit(e) {
   // Guard clauses
   if (!e || !e.range || !e.value) return; // Only run on value changes (not format)
-  
+
   const range = e.range;
   const sheet = range.getSheet();
   const sheetName = sheet.getName();
-  
+
   // Check location: Must be the designated trigger cell (Default: A1)
   if (range.getA1Notation() !== CONFIG.UI.MOBILE_TRIGGER_CELL) return;
-  
+
   // Check value: Must be checked (TRUE)
   if (e.value !== 'TRUE') return;
 
   // 1. Immediate UI Feedback
   // Uncheck the box immediately so it acts like a push button
   range.setValue(false);
-  
+
   // Write status to the nearby Header area so the user knows something is happening.
   // This is critical on mobile where "Toast" notifications often don't appear.
   sheet.getRange('B1').setValue('⏳ Updating...');
-  SpreadsheetApp.flush(); 
-  
+  SpreadsheetApp.flush();
+
   // 2. Route to the correct function based on the Tab Name
   console.log(`📱 Mobile Trigger activated on: ${sheetName}`);
-  
+
   // 🛡️ RACE CONDITION PREVENTION: Wrap logic in Mutex Lock
   Utils.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
     try {
       if (sheetName === CONFIG.SHEETS.LB) {
-        updateLeaderboard(); 
+        updateLeaderboard();
         // Refresh Cache Manually for Leaderboard (Recruiter does it internally)
         refreshWebPayload();
-      } 
+      }
       else if (sheetName === CONFIG.SHEETS.DB) {
         updateClanDatabase();
         refreshWebPayload();
@@ -136,7 +136,7 @@ function handleMobileEdit(e) {
       else if (sheetName === CONFIG.SHEETS.HH) {
         scoutRecruits(); // Recruiter handles its own cache refresh now
       }
-      
+
       // We update the timestamp in B1 usually, which serves as feedback that it finished.
       sheet.getRange('B1').setValue(`✅ Done ${new Date().toLocaleTimeString()}`);
     } catch (err) {
@@ -155,13 +155,13 @@ function handleMobileEdit(e) {
 function triggerUpdateDatabase() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast('Connecting to RoyaleAPI...', 'Update Database', 5);
-  
+
   // 🛡️ RACE CONDITION PREVENTION
   Utils.executeSafely('MANUAL_DB', () => {
     try {
       updateClanDatabase();
       // REFRESH CACHE: Ensure web app sees new database data
-      refreshWebPayload(); 
+      refreshWebPayload();
       ss.toast('Database updated successfully.', 'Success', 3);
     } catch (e) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -189,7 +189,7 @@ function triggerUpdateLeaderboard() {
 function triggerScoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast('Scanning tournaments (this takes ~30s)...', 'Headhunter', 20);
-  
+
   // 🛡️ RACE CONDITION PREVENTION
   Utils.executeSafely('MANUAL_HH', () => {
     try {
@@ -219,7 +219,7 @@ function checkSystemHealth() {
   ss.toast('Verifying System & Testing API Keys...', 'Health Check', 10);
 
   const manifest = CONFIG.SYSTEM.MANIFEST;
-  
+
   // 1. Module Version Check
   const modules = [
     { name: 'Configuration', current: typeof VER_CONFIGURATION !== 'undefined' ? VER_CONFIGURATION : 'MISSING', expected: manifest.CONFIGURATION },
@@ -257,20 +257,20 @@ function checkSystemHealth() {
   } else {
     // We use a lightweight endpoint to test the keys: Clan Info
     const testUrl = `${CONFIG.SYSTEM.API_BASE}/clans/${encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG)}`;
-    
+
     keys.forEach(k => {
       try {
         const response = UrlFetchApp.fetch(testUrl, {
           'method': 'get',
-          'headers': { 
+          'headers': {
             'Authorization': `Bearer ${k.value}`,
             'User-Agent': 'ClanManagerHealthCheck/1.0'
           },
           'muteHttpExceptions': true // Prevent crash on 403/404
         });
-        
+
         const code = response.getResponseCode();
-        
+
         if (code === 200) {
           report += `✅ ${k.name}: Active (200 OK)\n`;
         } else if (code === 403) {
@@ -293,7 +293,7 @@ function checkSystemHealth() {
   const ui = SpreadsheetApp.getUi();
   const overallHealth = healthyFiles && healthyKeys;
   const title = overallHealth ? "System Healthy" : "⚠️ System Issues Detected";
-  
+
   // Use specific width for the alert to display the full report nicely
   ui.alert(title, report, ui.ButtonSet.OK);
 }
@@ -305,17 +305,20 @@ function checkSystemHealth() {
  */
 function sequenceFullUpdate() {
   console.log(`👑 MASTER: Initiating Full Sequence (Orchestrator v${VER_ORCHESTRATOR_TRIGGERS})...`);
-  
+
   // 🛡️ RACE CONDITION PREVENTION
   Utils.executeSafely('MASTER_SEQUENCE', () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       ss.toast('Starting Update Sequence...', CONFIG.UI.MENU_NAME, 5);
-      
+
       // 1. Critical Data Updates
+      const cache = CacheService.getScriptCache();
+      cache.put('SYSTEM_STATUS', 'BUSY', 21600); // Set Flag (6h max)
+
       console.log("  Step 1: Logging daily data...");
       updateClanDatabase();
-      
+
       console.log("  Step 2: Updating Leaderboard view...");
       updateLeaderboard();
 
@@ -323,7 +326,7 @@ function sequenceFullUpdate() {
       // We run this BEFORE Recruiter. If Recruiter times out/crashes, 
       // the Clan members still get their updated Leaderboard.
       console.log("  Step 3: Refreshing web app payload (Early Priority)...");
-      refreshWebPayload(); 
+      refreshWebPayload();
 
       // 3. Optional/Heavy Operations (Priority: Low)
       console.log("  Step 4: Running Headhunter scout (Heavy Operation)...");
@@ -340,6 +343,8 @@ function sequenceFullUpdate() {
     } catch (e) {
       console.error(`👑 MASTER FAILED: ${e.stack}`);
       // No email alerts
+    } finally {
+      CacheService.getScriptCache().remove('SYSTEM_STATUS'); // Clear Flag
     }
   });
 }
@@ -351,13 +356,13 @@ function sequenceFullUpdate() {
  */
 function sequenceHeadhunterUpdate() {
   console.log(`🔭 HEADHUNTER: Initiating Frequent Scan (Orchestrator v${VER_ORCHESTRATOR_TRIGGERS})...`);
-  
+
   // 🛡️ RACE CONDITION PREVENTION
   Utils.executeSafely('HH_SEQUENCE', () => {
     try {
       // Note: scoutRecruits now handles the PWA Cache Refresh internally.
       scoutRecruits();
-      
+
       console.log("🔭 HEADHUNTER: Scan & Cache Refresh Complete ✅");
     } catch (e) {
       console.error(`🔭 HEADHUNTER FAILED: ${e.stack}`);
