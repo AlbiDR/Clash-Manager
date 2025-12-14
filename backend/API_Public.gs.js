@@ -135,9 +135,6 @@ function doPost(e) {
         }
         return respond(markRecruitsAsInvitedBulk(ids));
 
-      // ========== TRIGGER OPERATIONS ==========
-      // Removed: Feature reverted to pure clean UI architecture.
-
       // ========== READ OPERATIONS (POST alternative) ==========
       // Allow reads via POST for CORS flexibility
       case 'ping':
