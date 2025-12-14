@@ -6,17 +6,14 @@ defineProps<{
   title: string
   status?: { type: 'updated' | 'error' | 'loading' | 'ready', text: string }
   showSearch?: boolean
-  canTriggerUpdate?: boolean
-  isUpdatingCloud?: boolean
+  sheetUrl?: string
 }>()
 
 const emit = defineEmits<{
   'update:search': [value: string]
   'update:sort': [value: string]
   'refresh': []
-  'trigger-update': []
 }>()
-
 const sortValue = ref('score')
 </script>
 
@@ -38,18 +35,16 @@ const sortValue = ref('score')
           <span>{{ status.text }}</span>
         </div>
 
-        <!-- NEW: Cloud Update Trigger -->
-        <div 
-          v-if="canTriggerUpdate"
-          class="status-badge"
-          :class="{ 'updated': isUpdatingCloud }"
-          style="margin-left: 8px;"
-          @click="!isUpdatingCloud && emit('trigger-update')"
+        <!-- NEW: Open in Sheets Button -->
+        <a 
+          v-if="sheetUrl" 
+          :href="sheetUrl" 
+          target="_blank" 
+          class="action-icon"
+          title="Open in Sheets"
         >
-           <div v-if="isUpdatingCloud" class="spinner"></div>
-           <span v-else>☁️</span>
-           <span>{{ isUpdatingCloud ? 'Running...' : 'Update' }}</span>
-        </div>
+           <span class="icon-google-sheets">📄</span> <!-- Simple Placeholder Icon -->
+        </a>
       </div>
 
       <!-- Bottom Row: Search & Filter -->
@@ -152,4 +147,21 @@ const sortValue = ref('score')
   cursor: pointer; transition: background 0.2s;
 }
 .sort-native { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+
+.action-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  background: var(--sys-color-surface-container-high);
+  border-radius: 50%;
+  text-decoration: none;
+  font-size: 16px;
+  transition: all 0.2s var(--sys-motion-bouncy);
+  margin-left: 8px;
+}
+.action-icon:hover {
+  background: var(--sys-color-primary-container);
+  transform: scale(1.1);
+}
+.icon-google-sheets { filter: grayscale(1); transition: filter 0.2s; }
+.action-icon:hover .icon-google-sheets { filter: none; }
 </style>

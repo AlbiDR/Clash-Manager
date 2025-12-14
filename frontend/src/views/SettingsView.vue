@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
-import { useClanData } from '../composables/useClanData'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 
 // Local state for the input field
@@ -14,8 +13,6 @@ const {
     pingData, 
     checkApiStatus 
 } = useApiState()
-
-const { triggerCloudUpdate, isUpdatingCloud } = useClanData()
 
 onMounted(() => {
     checkApiStatus()
@@ -69,7 +66,9 @@ const apiStatusText = computed(() => {
             <div class="card-body">
                 <div class="field-group">
                     <label class="field-label">Current Endpoint</label>
-                    <div class="code-block" :title="apiUrl">{{ apiUrl }}</div>
+                    <a :href="apiUrl" target="_blank" class="code-block clickable-url" :title="apiUrl">
+                        {{ apiUrl }}
+                    </a>
                 </div>
 
                 <div class="field-group" v-if="pingData">
@@ -78,18 +77,11 @@ const apiStatusText = computed(() => {
                 </div>
             </div>
             
-            <div class="card-actions">
-                <button 
-                    class="action-btn primary" 
-                    :disabled="isUpdatingCloud"
-                    @click="triggerCloudUpdate"
-                >
-                    <span v-if="isUpdatingCloud" class="spinner-sm"></span>
-                    <span>{{ isUpdatingCloud ? 'Running Update...' : 'Force Cloud Update' }}</span>
-                </button>
-                <p class="action-hint">
-                    Runs the full backend sequence: CR API → Database → Leaderboard → App Cache.
-                </p>
+            <div class="card-actions" v-if="pingData?.spreadsheetUrl">
+                 <a :href="pingData.spreadsheetUrl" target="_blank" class="action-btn secondary">
+                    <span>Open in Sheets</span>
+                    <span>↗</span>
+                </a>
             </div>
         </section>
 
@@ -290,6 +282,25 @@ const apiStatusText = computed(() => {
     background: var(--sys-color-primary);
     color: var(--sys-color-on-primary);
     box-shadow: 0 4px 12px rgba(var(--sys-rgb-primary), 0.3);
+}
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--sys-color-primary);
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.clickable-url {
+    display: block;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.clickable-url:hover {
+    background: rgba(var(--sys-rgb-primary), 0.1);
+    color: var(--sys-color-primary);
 }
 .action-btn:active { transform: scale(0.98); }
 .action-btn:disabled { opacity: 0.7; cursor: wait; }

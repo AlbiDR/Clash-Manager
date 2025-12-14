@@ -43,11 +43,16 @@ function doGet(e) {
 
     switch (action) {
       case 'ping':
-        const isBusy = CacheService.getScriptCache().get('SYSTEM_STATUS') === 'BUSY';
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const sheetsMap = {};
+        ss.getSheets().forEach(s => sheetsMap[s.getName()] = s.getSheetId());
+
         return respond({
           version: VER_API_PUBLIC,
           status: 'online',
-          isBusy: isBusy,
+          spreadsheetUrl: ss.getUrl(),
+          // Map of SheetName -> GID for direct linking
+          sheets: sheetsMap,
           modules: getModuleVersions()
         });
 
@@ -130,12 +135,7 @@ function doPost(e) {
         return respond(markRecruitsAsInvitedBulk(ids));
 
       // ========== TRIGGER OPERATIONS ==========
-      case 'triggerupdate':
-        return respond(triggerHeadlessUpdate());
-
-      // ========== TRIGGER OPERATIONS ==========
-      case 'triggerupdate':
-        return respond(triggerHeadlessUpdate());
+      // Removed: Feature reverted to pure clean UI architecture.
 
       // ========== READ OPERATIONS (POST alternative) ==========
       // Allow reads via POST for CORS flexibility

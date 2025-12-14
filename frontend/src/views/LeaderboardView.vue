@@ -1,8 +1,10 @@
+```vue
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 // Use global data composable instead of direct API
 import { useClanData } from '../composables/useClanData'
+import { useApiState } from '../composables/useApiState'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
 import FabIsland from '../components/FabIsland.vue'
@@ -11,9 +13,17 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 
 const route = useRoute()
+const { pingData } = useApiState()
+
+// Sheet Link Computation
+const sheetUrl = computed(() => {
+  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
+  const gid = pingData.value.sheets['Leaderboard']
+  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
+})
 
 // Global Data
-const { data, isRefreshing, syncError, lastSyncTime, refresh, triggerCloudUpdate, isUpdatingCloud } = useClanData()
+const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
 
 // Derived Members List from Global Data
 const members = computed(() => data.value?.lb || [])
@@ -162,12 +172,10 @@ watch(members, (newVal) => {
       title="Leaderboard"
       :status="status"
       :show-search="!selectionMode"
-      :can-trigger-update="true"
-      :is-updating-cloud="isUpdatingCloud"
+      :sheet-url="sheetUrl"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
-      @trigger-update="triggerCloudUpdate"
     >
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">

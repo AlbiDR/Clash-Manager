@@ -68,7 +68,8 @@ export interface ClanMember {
 export interface PingResponse {
     version: string
     status: string
-    isBusy?: boolean
+    spreadsheetUrl?: string
+    sheets?: Record<string, number>
     modules: Record<string, string>
 }
 
