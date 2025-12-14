@@ -23,9 +23,9 @@ const _EXECUTION_CACHE = new Map();
 
 // 🛡️ API BUDGET: Prevents runaway execution from burning daily quotas.
 let _FETCH_COUNT = 0;
-const MAX_FETCH_PER_EXECUTION = 400; 
+const MAX_FETCH_PER_EXECUTION = 400;
 
-const Utils = { 
+const Utils = {
   /**
    * 🔒 EXECUTE SAFELY (Mutex Lock)
    * Prevents race conditions by acquiring a Script Lock before running critical code.
@@ -35,17 +35,17 @@ const Utils = {
    * @param {Function} callback - The code to run if lock is acquired
    * @return {any} The result of the callback
    */
-  executeSafely: function(lockKey, callback) {
+  executeSafely: function (lockKey, callback) {
     const lock = LockService.getScriptLock();
     try {
       // Attempt to acquire lock for 30 seconds.
       // If locked by ANOTHER execution, it waits.
       const success = lock.tryLock(30000);
-      
+
       if (!success) {
         console.warn(`🔒 RACE PREVENTED: Could not acquire lock for '${lockKey}'. System is busy.`);
         const ss = SpreadsheetApp.getActiveSpreadsheet();
-        try { ss.toast('System is busy. Please try again in 30s.', '⚠️ Locked'); } catch(e) {}
+        try { ss.toast('System is busy. Please try again in 30s.', '⚠️ Locked'); } catch (e) { }
         throw new Error(`System Busy: Could not acquire lock for ${lockKey}`);
       }
 
@@ -69,16 +69,16 @@ const Utils = {
   Props: {
     _service: PropertiesService.getScriptProperties(),
 
-    get: function(key, defaultVal = null) {
+    get: function (key, defaultVal = null) {
       const val = this._service.getProperty(key);
       return val !== null ? val : defaultVal;
     },
 
-    set: function(key, val) {
+    set: function (key, val) {
       this._service.setProperty(key, String(val));
     },
 
-    getJSON: function(key, defaultVal = {}) {
+    getJSON: function (key, defaultVal = {}) {
       const raw = this._service.getProperty(key);
       if (!raw) return defaultVal;
       try {
@@ -89,7 +89,7 @@ const Utils = {
       }
     },
 
-    setJSON: function(key, val) {
+    setJSON: function (key, val) {
       try {
         const str = JSON.stringify(val);
         // Check size limit (9KB per value)
@@ -109,7 +109,7 @@ const Utils = {
      * 🧩 CHUNKED STORAGE (For >9KB Properties)
      * Automatically splits large JSON objects into keys like KEY_0, KEY_1, KEY_2...
      */
-    getChunked: function(baseKey, defaultVal = {}) {
+    getChunked: function (baseKey, defaultVal = {}) {
       try {
         // 1. Check for legacy single key first (Migration path)
         const simple = this._service.getProperty(baseKey);
@@ -143,7 +143,7 @@ const Utils = {
       }
     },
 
-    setChunked: function(baseKey, val) {
+    setChunked: function (baseKey, val) {
       try {
         const fullString = JSON.stringify(val);
         const CHUNK_SIZE = 8500; // Safety buffer below 9000 limit
@@ -159,7 +159,7 @@ const Utils = {
         // If we previously had 5 chunks and now only need 2, delete _2, _3, _4
         const allProps = this._service.getProperties();
         const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
-        
+
         Object.keys(allProps).forEach(k => {
           const match = k.match(chunkPattern);
           if (match) {
@@ -179,8 +179,8 @@ const Utils = {
         return false;
       }
     },
-    
-    delete: function(key) {
+
+    delete: function (key) {
       this._service.deleteProperty(key);
     }
   },
@@ -188,7 +188,7 @@ const Utils = {
   /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
    */
-  fetchRoyaleAPI: function(urls) {
+  fetchRoyaleAPI: function (urls) {
     if (!urls || urls.length === 0) return [];
 
     // 0. Safety Quota Check
@@ -206,7 +206,7 @@ const Utils = {
 
     const finalResults = new Array(urls.length).fill(null);
     const urlsToFetch = [];
-    const urlIndices = new Map(); 
+    const urlIndices = new Map();
 
     // 2. Cache Check & Deduplication
     urls.forEach((url, index) => {
@@ -224,11 +224,11 @@ const Utils = {
     if (urlsToFetch.length === 0) return finalResults;
 
     // 3. Batch Processing
-    const BATCH_SIZE = 10; 
-    
+    const BATCH_SIZE = 10;
+
     for (let c = 0; c < urlsToFetch.length; c += BATCH_SIZE) {
       const chunkUrls = urlsToFetch.slice(c, c + BATCH_SIZE);
-      
+
       for (let attempt = 0; attempt < CONFIG.SYSTEM.RETRY_MAX; attempt++) {
         if (keyPool.length === 0) throw new Error("CRITICAL: All API Keys exhausted.");
 
@@ -237,7 +237,7 @@ const Utils = {
           return {
             url: u,
             method: 'get',
-            headers: { 
+            headers: {
               'Authorization': `Bearer ${keyObj.value}`,
               'User-Agent': 'ClanManagerBot/5.8 (GAS)',
               'Accept-Encoding': 'gzip'
@@ -249,39 +249,39 @@ const Utils = {
         try {
           const responses = UrlFetchApp.fetchAll(requests);
           let retryChunk = false;
-          
+
           responses.forEach((r, i) => {
             const code = r.getResponseCode();
             const url = chunkUrls[i];
-            
+
             if (code === 200) {
               try {
                 const json = JSON.parse(r.getContentText());
                 _EXECUTION_CACHE.set(url, json);
                 urlIndices.get(url).forEach(idx => finalResults[idx] = json);
               } catch (e) { console.warn(`JSON Parse Error: ${url}`); }
-            } 
+            }
             else if (code === 404) {
-               _EXECUTION_CACHE.set(url, null); 
-               urlIndices.get(url).forEach(idx => finalResults[idx] = null);
+              _EXECUTION_CACHE.set(url, null);
+              urlIndices.get(url).forEach(idx => finalResults[idx] = null);
             }
             else if (code === 403 || code === 429) {
-               const badKeyVal = requests[i].headers['Authorization'].replace('Bearer ', '');
-               const keyObj = keyPool.find(k => k.value === badKeyVal);
-               const keyName = keyObj ? keyObj.name : 'Unknown Key';
-               console.warn(`⚠️ API ${code} on key ${keyName}. Removing.`);
-               keyPool = keyPool.filter(k => k.value !== badKeyVal);
-               const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(k => k.value === badKeyVal);
-               if (gIdx > -1) CONFIG.SYSTEM.API_KEYS.splice(gIdx, 1);
-               retryChunk = true;
-            } 
+              const badKeyVal = requests[i].headers['Authorization'].replace('Bearer ', '');
+              const keyObj = keyPool.find(k => k.value === badKeyVal);
+              const keyName = keyObj ? keyObj.name : 'Unknown Key';
+              console.warn(`⚠️ API ${code} on key ${keyName}. Removing.`);
+              keyPool = keyPool.filter(k => k.value !== badKeyVal);
+              const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(k => k.value === badKeyVal);
+              if (gIdx > -1) CONFIG.SYSTEM.API_KEYS.splice(gIdx, 1);
+              retryChunk = true;
+            }
             else {
-               if (code >= 500) retryChunk = true;
-               console.warn(`API ${code} for ${url}`);
+              if (code >= 500) retryChunk = true;
+              console.warn(`API ${code} for ${url}`);
             }
           });
 
-          if (!retryChunk) break; 
+          if (!retryChunk) break;
           if (retryChunk && attempt < CONFIG.SYSTEM.RETRY_MAX - 1) {
             Utilities.sleep(1000 * (attempt + 1));
           }
@@ -290,8 +290,8 @@ const Utils = {
           console.error(`Fetch Network Error (Attempt ${attempt + 1}): ${e.message}`);
           if (attempt < CONFIG.SYSTEM.RETRY_MAX - 1) Utilities.sleep(2000);
         }
-      } 
-      Utilities.sleep(200); 
+      }
+      Utilities.sleep(200);
     }
 
     return finalResults;
@@ -301,7 +301,7 @@ const Utils = {
    * 💾 CACHE HANDLER (Chunking for >100KB Payloads)
    */
   CacheHandler: {
-    putLarge: function(key, value, expirationSec = 21600) {
+    putLarge: function (key, value, expirationSec = 21600) {
       const cache = CacheService.getScriptCache();
       const CHUNK_SIZE = 90000; // 90KB safe limit
 
@@ -317,10 +317,10 @@ const Utils = {
       });
 
       cache.put(key + "_meta", JSON.stringify({ count: chunks.length }), expirationSec);
-      cache.remove(key); 
+      cache.remove(key);
     },
 
-    getLarge: function(key) {
+    getLarge: function (key) {
       const cache = CacheService.getScriptCache();
       const standard = cache.get(key);
       if (standard) return standard;
@@ -331,14 +331,14 @@ const Utils = {
           const { count } = JSON.parse(meta);
           const keys = [];
           for (let i = 0; i < count; i++) {
-             keys.push(key + "_" + i);
+            keys.push(key + "_" + i);
           }
-          
+
           const chunks = cache.getAll(keys);
           let fullString = "";
           for (let i = 0; i < count; i++) {
             const part = chunks[key + "_" + i];
-            if (!part) return null; 
+            if (!part) return null;
             fullString += part;
           }
           return fullString;
@@ -351,30 +351,30 @@ const Utils = {
     }
   },
 
-  formatDate: function(date) { 
-    if (!date || isNaN(date.getTime())) return ""; 
-    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, 'yyyy-MM-dd'); 
+  formatDate: function (date) {
+    if (!date || isNaN(date.getTime())) return "";
+    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, 'yyyy-MM-dd');
   },
-  
-  parseRoyaleApiDate: function(dateStr) {
+
+  parseRoyaleApiDate: function (dateStr) {
     if (!dateStr) return new Date();
     if (dateStr instanceof Date) return dateStr;
     if (/^\d{8}T\d{6}/.test(dateStr)) {
-      const y = parseInt(dateStr.substr(0,4), 10);
-      const m = parseInt(dateStr.substr(4,2), 10) - 1;
-      const d = parseInt(dateStr.substr(6,2), 10);
-      const h = parseInt(dateStr.substr(9,2), 10);
-      const min = parseInt(dateStr.substr(11,2), 10);
-      const s = parseInt(dateStr.substr(13,2), 10);
+      const y = parseInt(dateStr.substr(0, 4), 10);
+      const m = parseInt(dateStr.substr(4, 2), 10) - 1;
+      const d = parseInt(dateStr.substr(6, 2), 10);
+      const h = parseInt(dateStr.substr(9, 2), 10);
+      const min = parseInt(dateStr.substr(11, 2), 10);
+      const s = parseInt(dateStr.substr(13, 2), 10);
       return new Date(Date.UTC(y, m, d, h, min, s));
     }
     return new Date(dateStr);
   },
 
-  calculateWarWeekId: function(d) {
+  calculateWarWeekId: function (d) {
     if (!d || isNaN(d.getTime())) return "Unknown";
     const date = new Date(d.getTime());
-    date.setHours(0,0,0,0);
+    date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
     const week1 = new Date(date.getFullYear(), 0, 4);
     const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
@@ -382,17 +382,17 @@ const Utils = {
     return `${yearShort}W${weekNum.toString().padStart(2, '0')}`;
   },
 
-  parseWarHistory: function(histStr) {
+  parseWarHistory: function (histStr) {
     const historyMap = new Map();
     if (!histStr || histStr === "-" || typeof histStr !== 'string') return historyMap;
     histStr.split(' | ').forEach(entry => {
-      const parts = entry.trim().split(' '); 
+      const parts = entry.trim().split(' ');
       if (parts.length === 2) historyMap.set(parts[1], Number(parts[0]));
     });
     return historyMap;
   },
-  
-  shuffleArray: function(array) {
+
+  shuffleArray: function (array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
@@ -406,10 +406,16 @@ const Utils = {
    * - Compares content to prevent redundant backups.
    * - SELF-HEALING: Enforces Sort Order and Visibility on every run.
    */
-  backupSheet: function(ss, sheetName) {
+  /**
+   * 🛡️ ROBUST BACKUP SYSTEM
+   * - Rotates backups (1-5).
+   * - Compares content to prevent redundant backups.
+   * - SELF-HEALING: Enforces Global Sort Order and Visibility on every run.
+   */
+  backupSheet: function (ss, sheetName) {
     try {
       const sheet = ss.getSheetByName(sheetName);
-      if (!sheet) return; 
+      if (!sheet) return;
 
       const MAX_BACKUPS = 5;
       const backup1Name = `Backup 1 ${sheetName}`;
@@ -419,11 +425,11 @@ const Utils = {
       if (existingBackup1) {
         const currentLastRow = sheet.getLastRow();
         const currentLastCol = sheet.getLastColumn();
-        
+
         // If dimensions match, check content
-        if (currentLastRow === existingBackup1.getLastRow() && 
-            currentLastCol === existingBackup1.getLastColumn()) {
-          
+        if (currentLastRow === existingBackup1.getLastRow() &&
+          currentLastCol === existingBackup1.getLastColumn()) {
+
           // Optimization: Skip Row 1 (Timestamps often change, data does not)
           const startRow = currentLastRow > 1 ? 2 : 1;
           const numRows = currentLastRow > 1 ? currentLastRow - startRow + 1 : 1;
@@ -431,12 +437,12 @@ const Utils = {
           if (currentLastRow > 0) {
             const currentData = sheet.getRange(startRow, 1, numRows, currentLastCol).getValues();
             const backupData = existingBackup1.getRange(startRow, 1, numRows, currentLastCol).getValues();
-            
+
             // Fast Stringify comparison
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
               console.log(`🛡️ Backup: Skipped for '${sheetName}' (Content matches Backup 1).`);
-              // Even if skipped, we MUST run the Self-Healing logic to fix any previous sorting errors
-              this._enforceBackupOrder(ss, sheetName, MAX_BACKUPS);
+              // Even if skipped, we MUST run the Global Hygiene logic to fix any sorting errors
+              this.enforceGlobalTabHygiene(ss);
               return;
             }
           }
@@ -444,7 +450,7 @@ const Utils = {
       }
 
       console.log(`🛡️ Creating new backup for '${sheetName}'...`);
-      
+
       // 2. ROTATION: Delete Oldest, Shift Others
       const oldestName = `Backup ${MAX_BACKUPS} ${sheetName}`;
       const oldest = ss.getSheetByName(oldestName);
@@ -461,66 +467,84 @@ const Utils = {
       const copy = sheet.copyTo(ss);
       copy.setName(backup1Name);
       copy.setTabColor('#cccccc'); // Set Gray color for backups
-      
-      // 4. SELF-HEALING: Enforce Order and Visibility
-      this._enforceBackupOrder(ss, sheetName, MAX_BACKUPS);
-      
+
+      // 4. GLOBAL HYGIENE: Enforce Order and Visibility for ALL tabs
+      // This ensures that even if one tab acted, the whole workbook is tidied up.
+      this.enforceGlobalTabHygiene(ss);
+
       // Activate source to be safe
       sheet.activate();
-      
+
     } catch (e) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
     }
   },
 
   /**
-   * Helper to ensure backups 1-N are strictly ordered after the source sheet
-   * and definitely hidden.
+   * GLOBAL HYGIENE PROTOCOL
+   * Enforces strict visibility and ordering for the entire workbook.
+   * ORDER: DB -> DB Backups -> LB -> LB Backups -> HH -> HH Backups
    */
-  _enforceBackupOrder: function(ss, sheetName, maxBackups) {
-    const sourceSheet = ss.getSheetByName(sheetName);
-    if (!sourceSheet) return;
+  enforceGlobalTabHygiene: function (ss) {
+    if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    const sourceIndex = sourceSheet.getIndex(); // 1-based index
+    // Define the Strictly Enforced Order
+    // Note: Use a flat list to represent the exact sequence 1..N
+    const MASTER_ORDER = [];
+    const TABS = [CONFIG.SHEETS.DB, CONFIG.SHEETS.LB, CONFIG.SHEETS.HH];
 
-    for (let i = 1; i <= maxBackups; i++) {
-      const bName = `Backup ${i} ${sheetName}`;
-      const bSheet = ss.getSheetByName(bName);
-      
-      if (bSheet) {
-        // Enforce Visibility
-        if (!bSheet.isSheetHidden()) {
-          bSheet.hideSheet();
-        }
-        
-        // Enforce Position: Source is at N, Backup 1 goes to N+1, Backup 2 to N+2...
-        // Note: moveActiveSheet is reliable, setIndex can be finicky.
-        // We only move if the index is wrong to save time.
-        const expectedIndex = sourceIndex + i;
-        if (bSheet.getIndex() !== expectedIndex) {
-          bSheet.activate();
-          ss.moveActiveSheet(expectedIndex);
-        }
+    TABS.forEach(mainName => {
+      // 1. Main Tab
+      MASTER_ORDER.push({ name: mainName, visible: true });
+      // 2. Backups 1-5
+      for (let i = 1; i <= 5; i++) {
+        MASTER_ORDER.push({ name: `Backup ${i} ${mainName}`, visible: false });
       }
-    }
-    // Return focus to source
-    sourceSheet.activate();
+    });
+
+    let targetIndex = 1; // GAS Indices are 1-based
+
+    MASTER_ORDER.forEach(item => {
+      const sheet = ss.getSheetByName(item.name);
+      if (sheet) {
+        // A. Enforce Visibility
+        if (item.visible) {
+          if (sheet.isSheetHidden()) sheet.showSheet();
+        } else {
+          if (!sheet.isSheetHidden()) sheet.hideSheet();
+        }
+
+        // B. Enforce Position
+        // Only move if it's not already in the correct slot (Efficiency)
+        if (sheet.getIndex() !== targetIndex) {
+          try {
+            sheet.activate();
+            ss.moveActiveSheet(targetIndex);
+          } catch (e) {
+            console.warn(`Hygiene: Could not move '${item.name}' to ${targetIndex} - ${e.message}`);
+          }
+        }
+
+        // Increment target only if the sheet actually exists (otherwise we skip that slot)
+        targetIndex++;
+      }
+    });
   },
 
-  drawMobileCheckbox: function(sheet) {
+  drawMobileCheckbox: function (sheet) {
     if (!sheet) return;
     const mobileTrigger = sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL || 'A1');
     if (mobileTrigger.getDataValidation() == null || mobileTrigger.getDataValidation().getCriteriaType() != SpreadsheetApp.DataValidationCriteria.CHECKBOX) {
       mobileTrigger.insertCheckboxes();
     }
-    mobileTrigger.setBackground(null) 
-                 .setFontColor(null)
-                 .setHorizontalAlignment("center")
-                 .setVerticalAlignment("middle")
-                 .setNote('⚡ QUICK UPDATE:\nClick/Tap this checkbox to run the update for this specific tab.\n(Requires "Enable Mobile Controls" setup once).');
+    mobileTrigger.setBackground(null)
+      .setFontColor(null)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle")
+      .setNote('⚡ QUICK UPDATE:\nClick/Tap this checkbox to run the update for this specific tab.\n(Requires "Enable Mobile Controls" setup once).');
   },
 
-  refreshMobileControls: function(ss) {
+  refreshMobileControls: function (ss) {
     const sheets = [CONFIG.SHEETS.DB, CONFIG.SHEETS.LB, CONFIG.SHEETS.HH];
     sheets.forEach(name => {
       const sheet = ss.getSheetByName(name);
@@ -531,24 +555,24 @@ const Utils = {
     });
   },
 
-  applyStandardLayout: function(sheet, contentRows, contentCols, optHeaders = null) {
+  applyStandardLayout: function (sheet, contentRows, contentCols, optHeaders = null) {
     if (!sheet) return;
 
     const L = CONFIG.LAYOUT;
-    const DATA_START_ROW = L.DATA_START_ROW; 
+    const DATA_START_ROW = L.DATA_START_ROW;
     const HEADER_ROW = 2;
     const STATUS_ROW = 1;
-    const COL_BUFFER_LEFT = 1; 
+    const COL_BUFFER_LEFT = 1;
     const COL_DATA_START = 2;
 
     if (Array.isArray(optHeaders) && optHeaders.length > 0) {
       contentCols = optHeaders.length;
     }
 
-    const lastDataRow = (DATA_START_ROW - 1) + Math.max(contentRows, 0); 
-    const totalRows = Math.max(lastDataRow + 1, DATA_START_ROW + 1); 
+    const lastDataRow = (DATA_START_ROW - 1) + Math.max(contentRows, 0);
+    const totalRows = Math.max(lastDataRow + 1, DATA_START_ROW + 1);
     const lastDataCol = (COL_DATA_START - 1) + contentCols;
-    const totalCols = lastDataCol + 1; 
+    const totalCols = lastDataCol + 1;
 
     const currentRows = sheet.getMaxRows();
     const currentCols = sheet.getMaxColumns();
@@ -559,10 +583,10 @@ const Utils = {
     if (currentCols > totalCols) sheet.deleteColumns(totalCols + 1, currentCols - totalCols);
 
     try {
-        sheet.setColumnWidth(COL_BUFFER_LEFT, L.BUFFER_SIZE); 
-        sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);       
-        sheet.setRowHeight(totalRows, L.BUFFER_SIZE); 
-    } catch(e) { console.warn("Layout: Resize buffer failed", e); }        
+      sheet.setColumnWidth(COL_BUFFER_LEFT, L.BUFFER_SIZE);
+      sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
+      sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
+    } catch (e) { console.warn("Layout: Resize buffer failed", e); }
 
     const buffers = [];
     if (totalRows >= 2) buffers.push(sheet.getRange(2, COL_BUFFER_LEFT, totalRows - 1, 1));
@@ -570,11 +594,11 @@ const Utils = {
     buffers.push(sheet.getRange(totalRows, 1, 1, totalCols));
 
     buffers.forEach(rng => {
-        rng.setBackground(null)
-           .clearContent()
-           .clearDataValidations() 
-           .clearNote() 
-           .setBorder(false, false, false, false, false, false); 
+      rng.setBackground(null)
+        .clearContent()
+        .clearDataValidations()
+        .clearNote()
+        .setBorder(false, false, false, false, false, false);
     });
 
     Utils.drawMobileCheckbox(sheet);
@@ -585,31 +609,31 @@ const Utils = {
       sheet.getRange(STATUS_ROW, 1, 1, totalCols).breakApart();
       const statusRange = sheet.getRange(STATUS_ROW, COL_DATA_START, 1, contentCols);
       statusRange.merge()
-           .setHorizontalAlignment("left").setVerticalAlignment("middle")
-           .setFontWeight("bold").setFontColor("#888888");
+        .setHorizontalAlignment("left").setVerticalAlignment("middle")
+        .setFontWeight("bold").setFontColor("#888888");
 
-      const tableRows = 1 + contentRows; 
+      const tableRows = 1 + contentRows;
       const tableRange = sheet.getRange(HEADER_ROW, COL_DATA_START, tableRows, contentCols);
       const existingBandings = sheet.getBandings();
       if (existingBandings) existingBandings.forEach(b => b.remove());
       tableRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
-      tableRange.setBorder(true, true, true, true, null, null); 
+      tableRange.setBorder(true, true, true, true, null, null);
 
       const headerRange = sheet.getRange(HEADER_ROW, COL_DATA_START, 1, contentCols);
       if (Array.isArray(optHeaders) && optHeaders.length > 0) {
-          headerRange.setValues([optHeaders]);
+        headerRange.setValues([optHeaders]);
       }
-      headerRange.setBorder(true, true, true, true, true, true) 
-                 .setFontWeight("bold")
-                 .setHorizontalAlignment("center")
-                 .setVerticalAlignment("middle")
-                 .setWrap(true);
+      headerRange.setBorder(true, true, true, true, true, true)
+        .setFontWeight("bold")
+        .setHorizontalAlignment("center")
+        .setVerticalAlignment("middle")
+        .setWrap(true);
 
       if (contentRows > 0) {
         const dataRange = sheet.getRange(DATA_START_ROW, COL_DATA_START, contentRows, contentCols);
         dataRange.setHorizontalAlignment("center")
-                 .setVerticalAlignment("middle")
-                 .setWrap(false);
+          .setVerticalAlignment("middle")
+          .setWrap(false);
       }
     }
     sheet.setHiddenGridlines(true);
