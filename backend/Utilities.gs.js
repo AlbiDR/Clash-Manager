@@ -481,54 +481,53 @@ const Utils = {
   },
 
   /**
-   * GLOBAL HYGIENE PROTOCOL
+   * GLOBAL HYGIENE PROTOCOL (AGGRESSIVE)
    * Enforces strict visibility and ordering for the entire workbook.
-   * ORDER: DB -> DB Backups -> LB -> LB Backups -> HH -> HH Backups
+   * STRATEGY: Whitelist only main tabs. HIDE EVERYTHING ELSE.
    */
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Define the Strictly Enforced Order
-    // Note: Use a flat list to represent the exact sequence 1..N
-    const MASTER_ORDER = [];
-    const TABS = [CONFIG.SHEETS.DB, CONFIG.SHEETS.LB, CONFIG.SHEETS.HH];
+    // 1. Define the Whitelist (The ONLY tabs allowed to be seen)
+    // Order matters here for the final sort.
+    const VISIBLE_WHITELIST = [CONFIG.SHEETS.DB, CONFIG.SHEETS.LB, CONFIG.SHEETS.HH];
 
-    TABS.forEach(mainName => {
-      // 1. Main Tab
-      MASTER_ORDER.push({ name: mainName, visible: true });
-      // 2. Backups 1-5
-      for (let i = 1; i <= 5; i++) {
-        MASTER_ORDER.push({ name: `Backup ${i} ${mainName}`, visible: false });
+    // 2. Scan ALL sheets in the workbook
+    const allSheets = ss.getSheets();
+
+    allSheets.forEach(sheet => {
+      const name = sheet.getName();
+
+      // A. AGGRESSIVE VISIBILITY ENFORCEMENT
+      if (VISIBLE_WHITELIST.includes(name)) {
+        // Must be Visible
+        if (sheet.isSheetHidden()) sheet.showSheet();
+      } else {
+        // Must be Hidden (Backups, random sheets, errors, duplicates)
+        if (!sheet.isSheetHidden()) sheet.hideSheet();
       }
     });
 
-    let targetIndex = 1; // GAS Indices are 1-based
-
-    MASTER_ORDER.forEach(item => {
-      const sheet = ss.getSheetByName(item.name);
+    // 3. ENFORCE ORDER (1, 2, 3...)
+    // We only care about sorting the visible main tabs.
+    // Hidden tabs can be anywhere, it doesn't matter visually.
+    VISIBLE_WHITELIST.forEach((name, index) => {
+      const sheet = ss.getSheetByName(name);
       if (sheet) {
-        // A. Enforce Visibility
-        if (item.visible) {
-          if (sheet.isSheetHidden()) sheet.showSheet();
-        } else {
-          if (!sheet.isSheetHidden()) sheet.hideSheet();
-        }
-
-        // B. Enforce Position
-        // Only move if it's not already in the correct slot (Efficiency)
+        const targetIndex = index + 1; // 1-based index
         if (sheet.getIndex() !== targetIndex) {
           try {
-            sheet.activate();
+            ss.setActiveSheet(sheet); // Must activate to move reliably
             ss.moveActiveSheet(targetIndex);
           } catch (e) {
-            console.warn(`Hygiene: Could not move '${item.name}' to ${targetIndex} - ${e.message}`);
+            console.warn(`Hygiene: Could not move '${name}' to ${targetIndex} - ${e.message}`);
           }
         }
-
-        // Increment target only if the sheet actually exists (otherwise we skip that slot)
-        targetIndex++;
       }
     });
+
+    // 4. COMMIT CHANGES
+    SpreadsheetApp.flush();
   },
 
   drawMobileCheckbox: function (sheet) {
