@@ -314,7 +314,6 @@ function sequenceFullUpdate() {
 
       // 1. Critical Data Updates
       const cache = CacheService.getScriptCache();
-      cache.put('SYSTEM_STATUS', 'BUSY', 21600); // Set Flag (6h max)
 
       console.log("  Step 1: Logging daily data...");
       updateClanDatabase();
@@ -343,8 +342,6 @@ function sequenceFullUpdate() {
     } catch (e) {
       console.error(`👑 MASTER FAILED: ${e.stack}`);
       // No email alerts
-    } finally {
-      CacheService.getScriptCache().remove('SYSTEM_STATUS'); // Clear Flag
     }
   });
 }

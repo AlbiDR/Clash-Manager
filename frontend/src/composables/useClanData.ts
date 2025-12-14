@@ -8,8 +8,6 @@ const isRefreshing = ref(false)
 const lastSyncTime = ref<number | null>(null)
 const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
 const syncError = ref<string | null>(null)
-// New: State for the heavy backend update process
-const isUpdatingCloud = ref(false)
 
 export function useClanData() {
 
@@ -113,50 +111,6 @@ export function useClanData() {
         }
     }
 
-    /**
-     * Triggers the full backend update sequence (Headless).
-     * Then refreshes the local cache to get the new data.
-     */
-    async function triggerCloudUpdate() {
-        if (isUpdatingCloud.value) return
-        isUpdatingCloud.value = true
-        syncError.value = null
-
-        try {
-            // 1. Fire the Async Trigger
-            console.log('🚀 Triggering Cloud Update...')
-            const { triggerBackendUpdate, checkApiStatus } = await import('../api/gasClient')
-            const response = await triggerBackendUpdate()
-            console.log('✅ Trigger Response:', response)
-
-            // 2. Poll for Completion (Max 60s)
-            const MAX_ATTEMPTS = 30
-            const POLLING_INTERVAL = 2000
-
-            for (let i = 0; i < MAX_ATTEMPTS; i++) {
-                await new Promise(r => setTimeout(r, POLLING_INTERVAL))
-
-                console.log(`⏳ Polling Status (${i + 1}/${MAX_ATTEMPTS})...`)
-                const status = await checkApiStatus()
-
-                // If system is no longer busy, we assume it finished
-                if (status.data?.isBusy === false) {
-                    console.log('🎉 Cloud Update Complete (System Idle). Refreshing data...')
-                    await refresh() // Pull the fresh data
-                    return
-                }
-            }
-
-            throw new Error('Cloud update timed out (Backend is still busy).')
-
-        } catch (e) {
-            console.error('❌ Cloud Update Failed:', e)
-            syncError.value = (e as Error).message
-        } finally {
-            isUpdatingCloud.value = false
-        }
-    }
-
     return {
         // State
         data: readonly(clanData),
@@ -164,12 +118,10 @@ export function useClanData() {
         syncStatus: readonly(syncStatus),
         syncError: readonly(syncError),
         lastSyncTime: readonly(lastSyncTime),
-        isUpdatingCloud: readonly(isUpdatingCloud),
 
         // Actions
         init,
         refresh,
-        dismissRecruitsAction,
-        triggerCloudUpdate
+        dismissRecruitsAction
     }
 }

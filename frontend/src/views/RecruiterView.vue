@@ -2,6 +2,7 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClanData } from '../composables/useClanData'
+import { useApiState } from '../composables/useApiState'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
 import FabIsland from '../components/FabIsland.vue'
@@ -10,9 +11,18 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 
 const route = useRoute()
+const { pingData } = useApiState()
+
+// Sheet Link Computation
+const sheetUrl = computed(() => {
+  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
+  // Try 'Headhunter' or 'Recruiter' or fallback to spreadsheet root
+  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
+  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
+})
 
 // Global Data
-const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction, triggerCloudUpdate, isUpdatingCloud } = useClanData()
+const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
 
 const recruits = computed(() => data.value?.hh || [])
 const loading = computed(() => !data.value && isRefreshing.value)
@@ -180,12 +190,10 @@ function selectionAction() {
       title="Headhunter"
       :status="status"
       :show-search="!selectionMode"
-      :can-trigger-update="true"
-      :is-updating-cloud="isUpdatingCloud"
+      :sheet-url="sheetUrl"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
-      @trigger-update="triggerCloudUpdate"
     >
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
