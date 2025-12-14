@@ -41,6 +41,14 @@ const apiStatusText = computed(() => {
     if (apiStatus.value === 'offline') return 'Offline'
     return 'Checking...'
 })
+
+// Editor Link Logic
+const editorUrl = computed(() => {
+    if (pingData.value?.scriptId) {
+        return `https://script.google.com/home/projects/${pingData.value.scriptId}/edit`
+    }
+    return undefined
+})
 </script>
 
 <template>
