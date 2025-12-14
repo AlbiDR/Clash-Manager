@@ -8,6 +8,8 @@ const isRefreshing = ref(false)
 const lastSyncTime = ref<number | null>(null)
 const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
 const syncError = ref<string | null>(null)
+// New: State for the heavy backend update process
+const isUpdatingCloud = ref(false)
 
 export function useClanData() {
 
@@ -111,6 +113,29 @@ export function useClanData() {
         }
     }
 
+    /**
+     * Triggers the full backend update sequence (Headless).
+     * Then refreshes the local cache to get the new data.
+     */
+    async function triggerCloudUpdate() {
+        if (isUpdatingCloud.value || isRefreshing.value) return
+
+        try {
+            isUpdatingCloud.value = true
+            const { triggerBackendUpdate } = await import('../api/gasClient')
+            await triggerBackendUpdate()
+
+            // After successful trigger, fetch the new data
+            await refresh()
+
+        } catch (e: any) {
+            console.error('Cloud update failed:', e)
+            syncError.value = e.message || 'Cloud update failed'
+        } finally {
+            isUpdatingCloud.value = false
+        }
+    }
+
     return {
         // State
         data: readonly(clanData),
@@ -118,10 +143,12 @@ export function useClanData() {
         syncStatus: readonly(syncStatus),
         syncError: readonly(syncError),
         lastSyncTime: readonly(lastSyncTime),
+        isUpdatingCloud: readonly(isUpdatingCloud),
 
         // Actions
         init,
         refresh,
-        dismissRecruitsAction
+        dismissRecruitsAction,
+        triggerCloudUpdate
     }
 }

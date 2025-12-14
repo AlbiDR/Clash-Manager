@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
+import { useClanData } from '../composables/useClanData'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 
 // Local state for the input field
@@ -13,6 +14,8 @@ const {
     pingData, 
     checkApiStatus 
 } = useApiState()
+
+const { triggerCloudUpdate, isUpdatingCloud } = useClanData()
 
 onMounted(() => {
     checkApiStatus()
@@ -72,6 +75,20 @@ function resetApiUrl() {
             <span class="setting-value">{{ pingData.version }}</span>
         </div>
         
+        <div class="setting-item">
+             <label class="setting-label">Data Sync</label>
+             <button 
+                class="btn btn-primary" 
+                :disabled="isUpdatingCloud"
+                @click="triggerCloudUpdate"
+             >
+                {{ isUpdatingCloud ? 'Running Update...' : 'Force Cloud Update' }}
+             </button>
+             <p class="setting-hint">
+                Triggers a full backend refresh (Clash Royale API → Google Sheets → App).
+             </p>
+        </div>
+
         <div class="setting-item">
             <label class="setting-label">Update API URL</label>
             <div class="url-input-group">
@@ -140,7 +157,8 @@ function resetApiUrl() {
 }
 .content-wrapper {
   padding: 0 16px 120px 16px;
-  max-width: 600px;
+  /* Removed max-width restriction to match other tabs */
+  /* max-width: 600px; */ 
   margin: 0 auto;
 }
 
