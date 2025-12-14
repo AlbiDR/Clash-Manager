@@ -194,6 +194,7 @@ const editorUrl = computed(() => {
         </footer>
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped>
