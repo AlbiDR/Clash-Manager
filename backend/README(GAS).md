@@ -1,17 +1,10 @@
 # Clash Manager Serverless Backend
 
-<!-- 
-  DYNAMIC AUTOMATED BADGES 
-  These track the live state of the 'backend' directory and repository.
--->
 ![GitHub Release](https://img.shields.io/github/v/release/albidr/Clash-Manager?include_prereleases&style=flat-square&label=Release&color=0061a4)
 ![Last Commit](https://img.shields.io/github/last-commit/albidr/Clash-Manager?path=backend&style=flat-square&label=Updated)
 ![Repo Size](https://img.shields.io/github/repo-size/albidr/Clash-Manager?style=flat-square&label=Codebase)
 ![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)
 
-<!-- 
-  PLATFORM BADGES 
--->
 ![Platform](https://img.shields.io/badge/Google%20Apps%20Script-V8%20Runtime-4285F4?style=flat-square&logo=google&logoColor=white)
 ![API Standard](https://img.shields.io/badge/API-REST%20over%20HTTPS-orange?style=flat-square&logo=json)
 
