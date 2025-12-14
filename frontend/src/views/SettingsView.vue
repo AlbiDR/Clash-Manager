@@ -2,9 +2,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
+import Icon from '../components/Icon.vue'
 
 // Local state for the input field
 const newApiUrl = ref('') 
+const isEditing = ref(false)
 
 // Use the centralized composable for all API-related reactive data
 const { 
@@ -37,9 +39,9 @@ function resetApiUrl() {
 }
 
 const apiStatusText = computed(() => {
-    if (apiStatus.value === 'online') return 'Online'
-    if (apiStatus.value === 'offline') return 'Offline'
-    return 'Checking...'
+    if (apiStatus.value === 'online') return 'Systems Online'
+    if (apiStatus.value === 'offline') return 'Disconnected'
+    return 'Ping...'
 })
 
 // Editor Link Logic
@@ -57,115 +59,116 @@ const editorUrl = computed(() => {
     
     <div class="content-wrapper animate-stagger">
         
-        <!-- API Status Card -->
+        <!-- 🌐 Unified Network Dashboard -->
         <section class="settings-card glass-panel">
             <header class="card-header">
-                <div class="header-icon">🔌</div>
-                <div class="header-info">
-                    <h2 class="card-title">Connection</h2>
-                    <p class="card-subtitle">Manage API connectivity</p>
+                <div class="icon-box">
+                    <Icon name="plug" size="24" />
                 </div>
-                <div class="status-badge" :class="apiStatus">
-                    <span class="status-dot"></span>
+                <div class="header-info">
+                    <h2 class="card-title">Network & API</h2>
+                    <p class="card-subtitle">Connection status and configuration</p>
+                </div>
+                <div class="status-pill" :class="apiStatus">
+                    <div class="pulse-dot"></div>
                     {{ apiStatusText }}
                 </div>
             </header>
 
             <div class="card-body">
-                <div class="field-group">
-                    <label class="field-label">Current Endpoint</label>
-                    
-                    <!-- Clickable Link to Editor -->
-                    <a v-if="editorUrl" 
-                       :href="editorUrl" 
-                       target="_blank" 
-                       class="code-block clickable-url" 
-                       title="Open GAS Editor"
-                    >
-                        {{ apiUrl }}
-                        <span class="link-hint">↗</span>
-                    </a>
-
-                    <!-- Fallback: Read-only -->
-                    <div v-else class="code-block" :title="apiUrl">
-                        {{ apiUrl }}
+                <!-- Status Row -->
+                <div class="network-stats">
+                    <div class="stat-block">
+                        <span class="label">Latency</span>
+                        <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="label">Backend</span>
+                        <span class="value">v{{ pingData?.version || '0.0' }}</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="label">Environment</span>
+                        <span class="value">{{ hasLocalOverride ? 'Custom' : 'Production' }}</span>
                     </div>
                 </div>
 
-                <div class="field-group" v-if="pingData">
-                    <label class="field-label">Backend Version</label>
-                    <div class="version-pill">v{{ pingData.version }}</div>
-                </div>
-            </div>
-            
-            <!-- Removed redundant 'Open in Sheets' button here as requested -->
-        </section>
+                <div class="divider"></div>
 
-        <!-- Configuration Card -->
-        <section class="settings-card glass-panel">
-            <header class="card-header">
-                <div class="header-icon">⚙️</div>
-                <div class="header-info">
-                    <h2 class="card-title">Configuration</h2>
-                    <p class="card-subtitle">Override default settings</p>
-                </div>
-            </header>
+                <!-- Endpoint Configuration -->
+                 <div class="field-group">
+                    <div class="flex-between">
+                        <label class="field-label">API Endpoint</label>
+                        <button v-if="!isEditing" @click="isEditing = true" class="text-link">Change URL</button>
+                        <button v-else @click="isEditing = false" class="text-link">Cancel</button>
+                    </div>
 
-            <div class="card-body">
-                <div class="field-group">
-                    <label class="field-label">Custom API URL</label>
-                    <div class="input-row">
+                    <!-- Display Mode -->
+                    <div v-if="!isEditing" class="endpoint-display">
+                        <div class="url-text">{{ apiUrl }}</div>
+                        <a v-if="editorUrl" :href="editorUrl" target="_blank" class="icon-link" title="Open GAS Editor">
+                            <Icon name="spreadsheet" size="18" />
+                        </a>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div v-else class="input-row">
                         <input 
                             v-model="newApiUrl"
                             type="url" 
                             placeholder="https://script.google.com/..."
                             class="text-input"
                         />
-                        <button class="icon-btn" @click="saveApiUrl" title="Save">💾</button>
+                        <button class="save-btn" @click="saveApiUrl">
+                            <Icon name="check" size="20" />
+                        </button>
                     </div>
-                    <p class="field-hint">Paste a Web App URL to override the build default.</p>
-                </div>
-
-                <div v-if="hasLocalOverride" class="field-group">
-                    <button class="text-btn danger" @click="resetApiUrl">Reset to Default</button>
+                    
+                    <div v-if="hasLocalOverride" class="override-alert">
+                        <Icon name="warning" size="16" />
+                        <span>Running on custom override URL</span>
+                        <button class="reset-link" @click="resetApiUrl">Reset</button>
+                    </div>
                 </div>
             </div>
         </section>
         
-        <!-- Modules Card -->
+        <!-- 📦 System Modules (Tech Specs) -->
         <section class="settings-card glass-panel" v-if="pingData?.modules">
             <header class="card-header">
-                <div class="header-icon">📦</div>
+                <div class="icon-box">
+                    <Icon name="box" size="24" />
+                </div>
                 <div class="header-info">
-                    <h2 class="card-title">Modules</h2>
+                    <h2 class="card-title">System Modules</h2>
                     <p class="card-subtitle">Installed backend components</p>
                 </div>
             </header>
 
-            <div class="modules-grid">
+            <div class="specs-grid">
                 <div 
                     v-for="(version, name) in pingData.modules" 
                     :key="name"
-                    class="module-chip"
+                    class="spec-item"
                 >
-                    <span class="mod-name">{{ name }}</span>
-                    <span class="mod-ver">v{{ version }}</span>
+                    <span class="spec-label">{{ name }}</span>
+                    <span class="spec-value">v{{ version }}</span>
                 </div>
             </div>
         </section>
         
         <!-- About Footer -->
         <footer class="about-footer">
-            <div class="app-logo">👑</div>
+            <div class="app-logo">
+                <Icon name="crown" size="48" />
+            </div>
             <h3 class="footer-title">Clash Manager</h3>
-            <p class="footer-ver">v2.0.0 (PWA)</p>
-            <p class="footer-desc">
-                Advanced Clan Management System<br>
-                Built with Vue 3 & Google Apps Script
-            </p>
-            <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-link">
-                View on GitHub
-            </a>
+            <p class="footer-ver">v2.1.0 (PWA)</p>
+            <div class="footer-links">
+                <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
+                    <Icon name="github" size="18" />
+                    <span>Source Code</span>
+                </a>
+            </div>
         </footer>
     </div>
   </div>
@@ -194,19 +197,30 @@ const editorUrl = computed(() => {
     border-radius: var(--shape-corner-l);
     overflow: hidden;
     box-shadow: var(--sys-elevation-2);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.4s var(--sys-motion-spring);
+    /* Entrance Animation */
+    animation: fadeSlideIn 0.6s backwards;
 }
 
-/* --- CARD HEADER --- */
+/* --- HEADER --- */
 .card-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-m);
     padding: var(--spacing-l);
-    background: rgba(255, 255, 255, 0.03);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-.header-icon { font-size: 24px; }
+
+.icon-box {
+    width: 48px; height: 48px;
+    border-radius: 16px;
+    background: var(--sys-color-surface-container-high);
+    color: var(--sys-color-primary);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
 .header-info { flex: 1; }
 
 .card-title {
@@ -219,13 +233,12 @@ const editorUrl = computed(() => {
     margin: 4px 0 0;
     font-size: var(--font-size-s);
     color: var(--sys-color-outline);
+    font-weight: var(--font-weight-medium);
 }
 
-/* --- STATUS BADGE --- */
-.status-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+/* --- STATUS PILL --- */
+.status-pill {
+    display: flex; align-items: center; gap: 8px;
     padding: 6px 12px;
     border-radius: var(--shape-corner-full);
     font-size: var(--font-size-xs);
@@ -233,142 +246,142 @@ const editorUrl = computed(() => {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     background: var(--sys-color-surface-container);
-}
-.status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: currentColor;
-}
-.status-badge.online { color: var(--sys-color-success); background: rgba(var(--sys-rgb-success), 0.1); }
-.status-badge.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
-.status-badge.checking { color: var(--sys-color-primary); }
-
-/* --- CARD BODY --- */
-.card-body { padding: var(--spacing-l); display: flex; flex-direction: column; gap: 20px; }
-
-.field-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
-
-.field-label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-heavy);
-    text-transform: uppercase;
-    color: var(--sys-color-primary);
-    letter-spacing: 0.05em;
-}
-.field-hint { font-size: var(--font-size-s); color: var(--sys-color-outline); margin: 0; }
-
-.code-block {
-    background: rgba(0, 0, 0, 0.3);
-    padding: var(--spacing-s);
-    border-radius: var(--shape-corner-s);
-    font-family: var(--sys-typescale-mono);
-    font-size: var(--font-size-s);
-    color: var(--sys-color-on-surface-variant);
-    word-break: break-all;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.version-pill {
-    align-self: flex-start;
-    padding: 4px 12px;
-    background: var(--sys-color-secondary-container);
-    color: var(--sys-color-on-secondary-container);
-    border-radius: 6px;
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-size-s);
-}
-
-/* --- ACTIONS --- */
-.clickable-url {
-    display: block;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background 0.2s;
-    position: relative;
-    padding-right: 32px; /* Space for hint */
-}
-.clickable-url:hover {
-    background: rgba(var(--sys-color-primary-rgb), 0.1);
-    color: var(--sys-color-primary);
-}
-.link-hint {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0.5;
-    font-size: 14px;
-}
-.clickable-url:hover .link-hint { opacity: 1; }
-
-.action-hint {
-    margin: 12px 0 0;
-    font-size: 0.8rem;
     color: var(--sys-color-outline);
 }
+.pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+}
+.status-pill.online { color: var(--sys-color-success); background: rgba(var(--sys-rgb-success), 0.1); }
+.status-pill.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
+
+/* --- CARD BODY --- */
+.card-body { padding: var(--spacing-l); }
+
+.network-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-m);
+    margin-bottom: var(--spacing-l);
+}
+.stat-block {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--sys-color-surface-container);
+    padding: var(--spacing-m);
+    border-radius: var(--shape-corner-m);
+}
+.stat-block .label { font-size: var(--font-size-xs); text-transform: uppercase; color: var(--sys-color-outline); margin-bottom: 4px; font-weight: 700; }
+.stat-block .value { font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
+.stat-block .value small { font-size: 0.6em; margin-left: 2px; opacity: 0.7; }
+
+.divider { height: 1px; background: var(--sys-color-outline-variant); opacity: 0.2; margin-bottom: var(--spacing-l); }
+
+/* --- FIELDS --- */
+.field-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+.flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.field-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    color: var(--sys-color-outline);
+    letter-spacing: 0.05em;
+}
+.text-link {
+    background: none; border: none; color: var(--sys-color-primary);
+    font-weight: 600; font-size: var(--font-size-s); cursor: pointer;
+}
+
+.endpoint-display {
+    display: flex; align-items: center; gap: var(--spacing-s);
+    background: var(--sys-color-surface-container-high);
+    padding: 12px;
+    border-radius: var(--shape-corner-m);
+    border: 1px solid transparent;
+}
+.url-text {
+    flex: 1;
+    font-family: var(--sys-font-family-mono);
+    font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--sys-color-on-surface-variant);
+    opacity: 0.8;
+}
+.icon-link {
+    color: var(--sys-color-primary); opacity: 0.7; transition: all 0.2s;
+}
+.icon-link:hover { opacity: 1; transform: scale(1.1); }
 
 /* --- INPUTS --- */
 .input-row { display: flex; gap: var(--spacing-s); }
 .text-input {
     flex: 1;
     background: var(--sys-color-surface-container-high);
-    border: 1px solid transparent;
+    border: 2px solid var(--sys-color-primary);
     padding: 10px 16px;
-    border-radius: var(--shape-corner-s);
+    border-radius: var(--shape-corner-m);
     color: var(--sys-color-on-surface);
     font-size: var(--font-size-m);
+    font-family: var(--sys-font-family-mono);
 }
-.text-input:focus { outline: none; border-color: var(--sys-color-primary); }
-.icon-btn {
-    width: 42px; height: 42px;
-    border-radius: var(--shape-corner-s);
-    background: var(--sys-color-surface-container-highest);
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
+.text-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(var(--sys-color-primary-rgb), 0.2); }
+.save-btn {
+    width: 46px; border-radius: var(--shape-corner-m);
+    background: var(--sys-color-primary); color: white; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-.text-btn {
-    background: none; border: none; font-weight: 600; cursor: pointer; padding: 0;
-    align-self: flex-start;
-}
-.text-btn.danger { color: var(--sys-color-error); }
 
-/* --- MODULES GRID --- */
-.modules-grid {
-    padding: var(--spacing-l);
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: var(--spacing-s);
+.override-alert {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--font-size-s); color: var(--sys-color-tertiary);
+    background: var(--sys-color-tertiary-container);
+    padding: 8px 12px; border-radius: var(--shape-corner-s);
+    margin-top: 8px;
 }
-.module-chip {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 10px;
-    border-radius: var(--shape-corner-s);
+.reset-link {
+    margin-left: auto; background: none; border: none;
+    font-weight: 700; color: var(--sys-color-on-tertiary-container);
+    cursor: pointer; text-decoration: underline;
+}
+
+/* --- MODULES GRID (TECH SPECS) --- */
+.specs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1px;
+    background: rgba(255,255,255,0.05); /* Grid Lines */
+    border: 1px solid rgba(255,255,255,0.05);
+    background-clip: content-box;
+}
+
+.spec-item {
+    background: var(--sys-color-surface-container-low);
+    padding: 16px;
     display: flex; flex-direction: column; gap: 4px;
 }
-.mod-name { font-size: var(--font-size-xs); color: var(--sys-color-outline); text-transform: uppercase; }
-.mod-ver { font-size: var(--font-size-s); font-weight: var(--font-weight-heavy); color: var(--sys-color-primary); }
+.spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; letter-spacing: 0.05em; }
+.spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
 
 /* --- FOOTER --- */
 .about-footer {
     text-align: center;
     margin-top: var(--spacing-l);
     color: var(--sys-color-outline);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
-.app-logo { font-size: 48px; margin-bottom: 8px; }
-.footer-title { margin: 0; font-size: 1.2rem; color: var(--sys-color-on-surface); }
-.footer-ver { margin: 4px 0 16px; font-size: 0.8rem; font-family: var(--sys-typescale-mono); opacity: 0.7; }
-.footer-desc { margin: 0 0 24px; font-size: 0.9rem; line-height: 1.5; }
-.github-link {
-    display: inline-block;
-    padding: 8px 24px;
-    background: rgba(255, 255, 255, 0.05);
+.app-logo { color: var(--sys-color-primary); margin-bottom: 8px; }
+.footer-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
+.footer-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
+
+.github-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: var(--sys-color-surface-container-high);
     border-radius: var(--shape-corner-full);
-    color: var(--sys-color-primary);
+    color: var(--sys-color-on-surface);
     text-decoration: none;
-    font-weight: 600;
-    font-size: 0.85rem;
-    transition: background 0.2s;
+    font-weight: 600; font-size: 14px;
+    margin-top: 16px;
+    transition: all 0.2s;
 }
-.github-link:hover { background: rgba(255, 255, 255, 0.1); }
+.github-btn:hover { background: var(--sys-color-surface-container-highest); transform: translateY(-2px); }
 </style>
