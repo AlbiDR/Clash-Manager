@@ -10,6 +10,7 @@ import FabIsland from '../components/FabIsland.vue'
 import PullToRefresh from '../components/PullToRefresh.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
 const route = useRoute()
 const { pingData } = useApiState()
@@ -230,14 +231,22 @@ function selectionAction() {
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
     <div v-else-if="loading && recruits.length === 0" class="list-container">
-      <div v-for="i in 5" :key="i" class="skeleton-card"></div>
+      <SkeletonCard v-for="i in 6" :key="i" />
     </div>
     
     <EmptyState 
       v-else-if="!loading && filteredRecruits.length === 0" 
       icon="scope" 
-      message="No recruits found" 
-    />
+      message="No recruits found"
+      hint="Try adjusting your filters or run a new scan."
+    >
+      <template #action>
+        <button class="btn-primary" @click="refresh">
+          <Icon name="refresh" size="18" />
+          <span>Scan Again</span>
+        </button>
+      </template>
+    </EmptyState>
     
     <TransitionGroup 
       v-else 
@@ -281,13 +290,6 @@ function selectionAction() {
 .sel-count { font-size: 20px; font-weight: 700; }
 .text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .text-btn.primary { color: var(--sys-color-primary); }
-.skeleton-card {
-  height: 100px;
-  background: var(--sys-color-surface-container-high);
-  border-radius: var(--shape-corner-l);
-  margin-bottom: 8px;
-  animation: pulse 1.5s infinite;
-}
 
 /* List Physics */
 .list-enter-active,
@@ -306,4 +308,17 @@ function selectionAction() {
 .list-leave-active {
   position: absolute; width: 100%; z-index: 0;
 }
+.btn-primary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 99px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: transform 0.2s;
+}
+.btn-primary:active { transform: scale(0.95); }
 </style>

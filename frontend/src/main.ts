@@ -3,7 +3,7 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import { vTooltip } from './directives/vTooltip'
-import { useModules } from './composables/useModules' // ✅ NEW IMPORT
+import { useModules } from './composables/useModules'
 
 // 1. Initialize the module store to load state from localStorage
 const moduleState = useModules()
@@ -15,11 +15,11 @@ app.use(router)
 app.directive('tooltip', vTooltip)
 app.mount('#app')
 
-// Register PWA Service Worker
+// 2. Register PWA Service Worker (Standard)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            // SW registration failed, app still works
+        navigator.serviceWorker.register('/Clash-Manager/sw.js').catch(() => {
+            console.log('SW registration failed')
         })
     })
 }

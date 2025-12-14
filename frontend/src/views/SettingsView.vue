@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
+// import { useClanData } from '../composables/useClanData'
+// import { useInstallPrompt } from '../composables/useInstallPrompt'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import Icon from '../components/Icon.vue'
 
@@ -15,6 +17,10 @@ const {
     pingData, 
     checkApiStatus 
 } = useApiState()
+// const { lastSyncTime, syncStatus } = useClanData() 
+// const { isInstallable, install } = useInstallPrompt()
+const isInstallable = ref(false)
+function install() {}
 
 onMounted(() => {
     checkApiStatus()
@@ -38,10 +44,10 @@ function resetApiUrl() {
     }
 }
 
-const apiStatusText = computed(() => {
-    if (apiStatus.value === 'online') return 'Systems Online'
-    if (apiStatus.value === 'offline') return 'Disconnected'
-    return 'Ping...'
+const apiStatusObject = computed(() => {
+    if (apiStatus.value === 'online') return { type: 'ready', text: 'Systems Online' } as const
+    if (apiStatus.value === 'offline') return { type: 'error', text: 'Disconnected' } as const
+    return { type: 'loading', text: 'Ping...' } as const
 })
 
 // Editor Link Logic
@@ -55,9 +61,25 @@ const editorUrl = computed(() => {
 
 <template>
   <div class="view-container">
-    <ConsoleHeader title="Settings" />
-    
-    <div class="content-wrapper animate-stagger">
+    <ConsoleHeader title="Settings" :status="apiStatusObject" />
+
+    <div class="settings-content">
+      
+      <!-- PWA Install Banner -->
+      <div v-if="isInstallable" class="install-banner" @click="install">
+        <div class="ib-icon">
+          <Icon name="download" size="24" style="color: white;" />
+        </div>
+        <div class="ib-text">
+          <div class="ib-title">Install App</div>
+          <div class="ib-desc">Add to Home Screen for the best experience</div>
+        </div>
+        <div class="ib-arrow">
+          <Icon name="chevron_right" size="20" />
+        </div>
+      </div>
+
+      <div class="section-card">
         
         <!-- 🌐 Unified Network Dashboard -->
         <section class="settings-card glass-panel">
@@ -71,7 +93,7 @@ const editorUrl = computed(() => {
                 </div>
                 <div class="status-pill" :class="apiStatus">
                     <div class="pulse-dot"></div>
-                    {{ apiStatusText }}
+                    {{ apiStatusObject.text }}
                 </div>
             </header>
 
@@ -371,6 +393,31 @@ const editorUrl = computed(() => {
 .app-logo { color: var(--sys-color-primary); margin-bottom: 8px; }
 .footer-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
 .footer-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
+.tech-val.mono { font-family: var(--sys-font-family-mono); letter-spacing: -0.5px; }
+
+/* Install Banner */
+.install-banner {
+  background: linear-gradient(135deg, var(--sys-color-primary) 0%, var(--sys-color-tertiary) 100%);
+  border-radius: var(--shape-corner-l);
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; gap: 16px;
+  color: white;
+  cursor: pointer;
+  box-shadow: var(--sys-elevation-3);
+  transition: transform 0.2s;
+}
+.install-banner:active { transform: scale(0.98); }
+.ib-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.ib-text { flex: 1; }
+.ib-title { font-weight: 700; font-size: 16px; }
+.ib-desc { font-size: 12px; opacity: 0.9; }
+.ib-arrow { opacity: 0.8; }
 
 .github-btn {
     display: flex; align-items: center; gap: 8px;

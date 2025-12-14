@@ -50,6 +50,7 @@ import { useLongPress } from '../composables/useLongPress'
 import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
+  if (navigator.vibrate) navigator.vibrate(50) // Haptic Pop
   emit('toggle-select')
 })
 
@@ -153,13 +154,13 @@ function handleClick(e: Event) {
         <a 
           :href="`https://royaleapi.com/player/${member.id}`" 
           target="_blank"
-          class="btn-action secondary"
+          class="btn-action secondary compact"
         >
           RoyaleAPI
         </a>
         <a 
           :href="`clashroyale://playerInfo?id=${member.id}`" 
-          class="btn-action primary"
+          class="btn-action primary compact"
         >
           Clash Royale
         </a>
@@ -340,31 +341,13 @@ function handleClick(e: Event) {
 }
 
 /* Action Buttons */
-.btn-action {
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--spacing-s);
-  border-radius: var(--shape-corner-m);
-  font-weight: var(--font-weight-bold); 
-  font-size: var(--font-size-s);
-  text-decoration: none;
-  border: 1px solid transparent;
-  transition: filter 0.2s;
-}
-.btn-action.primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-}
-.btn-action.secondary {
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-primary);
-}
-.btn-action:active { filter: brightness(0.9); transform: scale(0.98); }
+/* Uses global .btn-action from style.css */
 
 /* Icon Button (Squircle) */
 .btn-icon-action {
   display: flex; align-items: center; justify-content: center;
   width: 48px; height: 100%; /* Matches height of pills */
-  border-radius: var(--shape-corner-m);
+  border-radius: var(--shape-corner-full); /* Pill consistency */
   border: none;
   cursor: pointer;
   background: var(--sys-color-surface-container-highest);

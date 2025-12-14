@@ -138,17 +138,17 @@ function handleClick(e: Event) {
         <a 
           :href="`https://royaleapi.com/player/${recruit.id}`" 
           target="_blank"
-          class="btn-action secondary"
+          class="btn-action secondary compact"
         >
           RoyaleAPI
         </a>
         <a 
           :href="`clashroyale://playerInfo?id=${recruit.id}`" 
-          class="btn-action primary"
+          class="btn-action primary compact"
         >
           Clash Royale
         </a>
-        <button v-if="canShare" class="btn-action secondary" @click.stop="shareRecruit">
+        <button v-if="canShare" class="btn-action secondary compact" @click.stop="shareRecruit">
           Share
         </button>
       </div>
@@ -324,23 +324,5 @@ function handleClick(e: Event) {
 }
 
 /* Action Buttons */
-.btn-action {
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--spacing-s);
-  border-radius: var(--shape-corner-m);
-  font-weight: var(--font-weight-bold); 
-  font-size: var(--font-size-s);
-  text-decoration: none;
-  border: 1px solid transparent;
-  transition: filter 0.2s;
-}
-.btn-action.primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-}
-.btn-action.secondary {
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-primary);
-}
-.btn-action:active { filter: brightness(0.9); transform: scale(0.98); }
+/* Uses global .btn-action from style.css */
 </style>

@@ -54,33 +54,36 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Page Transitions */
+/* Page Transitions (Modern Scale-Fade) */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.page-enter-from { opacity: 0; transform: translateY(8px); }
-.page-leave-to { opacity: 0; transform: translateY(-8px); }
+.page-enter-from { opacity: 0; transform: translateY(10px) scale(0.98); }
+.page-leave-to { opacity: 0; transform: translateY(-10px) scale(0.98); }
 
 /* Sync Indicator */
 .sync-indicator {
   position: fixed;
-  top: 16px;
-  right: 16px; /* or center, but right is less intrusive */
+  top: calc(12px + env(safe-area-inset-top)); /* Match Header top margin */
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: var(--sys-surface-glass);
   backdrop-filter: blur(20px);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-full);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--sys-color-on-surface);
   box-shadow: var(--sys-elevation-2);
-  z-index: 9999;
+  z-index: 2000; /* Above Header */
   pointer-events: none;
 }
 

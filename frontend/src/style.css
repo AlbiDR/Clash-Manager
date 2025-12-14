@@ -299,3 +299,9 @@ body {
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
 }
+
+.btn-action.compact {
+  padding: 8px 16px;
+  font-size: 13px;
+  height: 36px;
+}

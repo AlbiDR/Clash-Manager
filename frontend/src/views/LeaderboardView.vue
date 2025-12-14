@@ -11,6 +11,7 @@ import FabIsland from '../components/FabIsland.vue'
 import PullToRefresh from '../components/PullToRefresh.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
 const route = useRoute()
 const { pingData } = useApiState()
@@ -193,7 +194,7 @@ watch(members, (newVal) => {
     
     <!-- Only show Skeleton if completely empty and loading -->
     <div v-else-if="loading && members.length === 0" class="list-container">
-      <div v-for="i in 5" :key="i" class="skeleton-card"></div>
+      <SkeletonCard v-for="i in 6" :key="i" />
     </div>
     
     <EmptyState 
@@ -244,13 +245,6 @@ watch(members, (newVal) => {
 .sel-count { font-size: 20px; font-weight: 700; }
 .text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .text-btn.danger { color: var(--sys-color-error); }
-.skeleton-card {
-  height: 100px;
-  background: var(--sys-color-surface-container-high);
-  border-radius: var(--shape-corner-l);
-  margin-bottom: 8px;
-  animation: pulse 1.5s infinite;
-}
 
 /* List Physics */
 .list-enter-active,

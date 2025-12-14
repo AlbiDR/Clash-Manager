@@ -41,9 +41,9 @@ function navigate(path: string) {
   
   /* Neo-Glassmorphism */
   background: var(--sys-surface-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  border: 1px solid var(--sys-surface-glass-border);
   
   padding: 6px; 
   border-radius: 999px; /* Pill shape */
