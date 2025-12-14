@@ -127,6 +127,14 @@ function doPost(e) {
         }
         return respond(markRecruitsAsInvitedBulk(ids));
 
+      // ========== TRIGGER OPERATIONS ==========
+      case 'triggerupdate':
+        return respond(triggerHeadlessUpdate());
+
+      // ========== TRIGGER OPERATIONS ==========
+      case 'triggerupdate':
+        return respond(triggerHeadlessUpdate());
+
       // ========== READ OPERATIONS (POST alternative) ==========
       // Allow reads via POST for CORS flexibility
       case 'ping':
@@ -303,4 +311,27 @@ function parseCRDateISO(t) {
   if (!t) return new Date().toISOString().split('T')[0];
   const d = new Date(t.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/, '$1-$2-$3T$4:$5:$6Z'));
   return Utils.formatDate(d);
+}
+
+/**
+ * 🤖 HEADLESS UPDATE TRIGGER
+ * Runs the update sequence without UI interactions (toast/alert) to prevent API crashes.
+ */
+function triggerHeadlessUpdate() {
+  console.log("🤖 API Trigger: Starting Headless Update...");
+
+  return Utils.executeSafely('API_TRIGGER_UPDATE', () => {
+    try {
+      // 1. Update Leaderboard (Score calculation)
+      updateLeaderboard();
+
+      // 2. Refresh Payload (So the PWA sees the new data on next fetch)
+      refreshWebPayload();
+
+      return { success: true, message: "Backend updated successfully" };
+    } catch (e) {
+      console.error(`API Trigger Failed: ${e.message}`);
+      throw e;
+    }
+  });
 }

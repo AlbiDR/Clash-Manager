@@ -13,7 +13,7 @@ import ErrorState from '../components/ErrorState.vue'
 const route = useRoute()
 
 // Global Data
-const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
+const { data, isRefreshing, syncError, lastSyncTime, refresh, triggerCloudUpdate, isUpdatingCloud } = useClanData()
 
 // Derived Members List from Global Data
 const members = computed(() => data.value?.lb || [])
@@ -162,9 +162,12 @@ watch(members, (newVal) => {
       title="Leaderboard"
       :status="status"
       :show-search="!selectionMode"
+      :can-trigger-update="true"
+      :is-updating-cloud="isUpdatingCloud"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
+      @trigger-update="triggerCloudUpdate"
     >
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">

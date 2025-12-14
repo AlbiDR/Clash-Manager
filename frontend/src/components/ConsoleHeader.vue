@@ -6,12 +6,15 @@ defineProps<{
   title: string
   status?: { type: 'updated' | 'error' | 'loading' | 'ready', text: string }
   showSearch?: boolean
+  canTriggerUpdate?: boolean
+  isUpdatingCloud?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:search': [value: string]
   'update:sort': [value: string]
   'refresh': []
+  'trigger-update': []
 }>()
 
 const sortValue = ref('score')
@@ -33,6 +36,19 @@ const sortValue = ref('score')
         >
           <div v-if="status.type === 'loading'" class="spinner"></div>
           <span>{{ status.text }}</span>
+        </div>
+
+        <!-- NEW: Cloud Update Trigger -->
+        <div 
+          v-if="canTriggerUpdate"
+          class="status-badge"
+          :class="{ 'updated': isUpdatingCloud }"
+          style="margin-left: 8px;"
+          @click="!isUpdatingCloud && emit('trigger-update')"
+        >
+           <div v-if="isUpdatingCloud" class="spinner"></div>
+           <span v-else>☁️</span>
+           <span>{{ isUpdatingCloud ? 'Running...' : 'Update' }}</span>
         </div>
       </div>
 
