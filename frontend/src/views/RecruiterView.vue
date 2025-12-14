@@ -12,7 +12,7 @@ import ErrorState from '../components/ErrorState.vue'
 const route = useRoute()
 
 // Global Data
-const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction, triggerCloudUpdate, isUpdatingCloud } = useClanData()
 
 const recruits = computed(() => data.value?.hh || [])
 const loading = computed(() => !data.value && isRefreshing.value)
@@ -180,9 +180,12 @@ function selectionAction() {
       title="Headhunter"
       :status="status"
       :show-search="!selectionMode"
+      :can-trigger-update="true"
+      :is-updating-cloud="isUpdatingCloud"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
+      @trigger-update="triggerCloudUpdate"
     >
       <template #extra>
         <div v-if="selectionMode" class="selection-bar">
