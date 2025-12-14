@@ -10,11 +10,13 @@ defineEmits<{
 
 <template>
   <div class="error-state animate-pulse-glow">
-    <span class="error-icon">⚠️</span>
+    <div class="error-icon-box">
+      <Icon name="warning" size="40" />
+    </div>
     <p class="error-message">{{ message }}</p>
     <button class="btn-primary" @click="$emit('retry')">
-      <span>🔄</span>
-      Try Again
+      <Icon name="refresh" size="18" />
+      <span>Try Again</span>
     </button>
   </div>
 </template>
@@ -27,13 +29,14 @@ defineEmits<{
   gap: 1rem;
   padding: 3rem 2rem;
   text-align: center;
-  background: var(--md-sys-color-error-container);
-  color: var(--md-sys-color-on-error-container);
-  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--sys-color-error-container);
+  color: var(--sys-color-on-error-container);
+  border-radius: var(--shape-corner-l);
 }
 
-.error-icon {
-  font-size: 2.5rem;
+.error-icon-box {
+  color: var(--sys-color-error);
+  margin-bottom: 8px;
 }
 
 .error-message {

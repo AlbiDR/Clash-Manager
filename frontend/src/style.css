@@ -75,29 +75,26 @@
   /* --------------------------------------------------------------------------
      🔤 TYPOGRAPHY SYSTEM
      -------------------------------------------------------------------------- */
-  /* Geometric, Bold, Modern Application Font */
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
-
-  --sys-font-family-body: 'Outfit', -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  --sys-font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, sans-serif;
   --sys-font-family-mono: 'JetBrains Mono', "SF Mono", "Roboto Mono", monospace;
 
-  --font-size-xs: 12px;
-  --font-size-s: 14px;
-  --font-size-m: 16px;
-  /* Body Copy (Bumped up) */
-  --font-size-l: 19px;
+  --font-size-xs: 11px;
+  --font-size-s: 13px;
+  --font-size-m: 15px;
+  /* Body Copy */
+  --font-size-l: 17px;
   /* Headings */
-  --font-size-xl: 24px;
+  --font-size-xl: 22px;
   /* Titles */
-  --font-size-2xl: 32px;
+  --font-size-2xl: 28px;
   /* Display */
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
-  --font-weight-bold: 700;
-  /* Reverted to 700 for pop */
-  --font-weight-heavy: 800;
-  /* Extra punch */
+  --font-weight-bold: 600;
+  /* Modern bold (Premium feel without being too thick) */
+  --font-weight-heavy: 700;
+  /* Headers */
 
   /* --------------------------------------------------------------------------
      📐 SHAPE & LAYOUT

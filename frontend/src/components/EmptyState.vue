@@ -8,7 +8,9 @@ defineProps<{
 
 <template>
   <div class="empty-state animate-fade-in">
-    <span class="empty-icon">{{ icon || '🔭' }}</span>
+    <div class="empty-icon-box">
+      <Icon :name="icon || 'telescope'" size="48" />
+    </div>
     <p class="empty-message">{{ message }}</p>
     <p v-if="hint" class="empty-hint">{{ hint }}</p>
     <slot name="action"></slot>
