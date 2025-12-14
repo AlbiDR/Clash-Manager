@@ -72,6 +72,7 @@ export interface PingResponse {
     spreadsheetUrl?: string
     sheets?: Record<string, number>
     modules: Record<string, string>
+    latency?: number
 }
 
 // Dismiss response

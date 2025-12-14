@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { isConfigured, ping, getApiUrl } from '../api/gasClient'
 // You will also need to define or import the PingResponse type
-import type { PingResponse } from '../types' 
+import type { PingResponse } from '../types'
 
 // Global Shared State (REPLACING the refs in App.vue and SettingsView.vue)
 const apiUrl = ref('')
@@ -21,12 +21,18 @@ async function checkApiStatus() {
         apiStatus.value = 'unconfigured'
         return
     }
-    
+
     try {
+        const start = Date.now()
         const response = await ping()
+        const latency = Date.now() - start
+
         if (response.status === 'success' && response.data) {
             apiStatus.value = 'online'
-            pingData.value = response.data
+            pingData.value = {
+                ...response.data,
+                latency
+            }
         } else {
             apiStatus.value = 'offline'
         }
