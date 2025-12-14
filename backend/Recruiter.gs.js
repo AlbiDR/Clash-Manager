@@ -21,44 +21,76 @@ const VER_RECRUITER = '5.1.1';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
+
   let sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
   if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.HH);
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  
+
   // 1. Establish Baseline
   const baselineData = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`]);
-  let avgTrophies = 4000; 
+  let avgTrophies = 4000;
   if (baselineData && baselineData[0] && baselineData[0].items) {
-    avgTrophies = baselineData[0].items.reduce((a,b)=>a+b.trophies,0) / baselineData[0].items.length;
+    avgTrophies = baselineData[0].items.reduce((a, b) => a + b.trophies, 0) / baselineData[0].items.length;
   }
-  
+
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
   // 2. Load existing tracking data FIRST to check Pool Size
   const existing = loadRecruitDatabase(sheet);
+
+  // ⚡ OPTIMIZATION: "Cheap" Clanless Check
+  // Filter out any existing recruits that have joined a clan since the last run.
+  // This prevents the pool from getting clogged with 50/50 stale players.
+
+  const tagsToCheck = [];
+  existing.forEach(p => {
+    // Only check if not invited (invited players are tracked by blacklist anyway)
+    // And limit to 50 to avoid massive fetches if database is huge (though target is 50)
+    if (!p.invited) tagsToCheck.push(p.tag);
+  });
+
+  if (tagsToCheck.length > 0) {
+    console.log(`🔭 Verifying clan status for ${tagsToCheck.length} existing recruits...`);
+    const profiles = Utils.fetchRoyaleAPI(tagsToCheck.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
+
+    let removedCount = 0;
+    profiles.forEach(p => {
+      if (p && p.clan && p.clan.tag) {
+        // Player has a clan! Remove from pool immediately.
+        if (existing.has(p.tag)) {
+          existing.delete(p.tag);
+          removedCount++;
+        }
+      }
+    });
+
+    if (removedCount > 0) {
+      console.log(`🔭 Cleanup: Removed ${removedCount} recruits who found a clan.`);
+    }
+  }
+
   const initialIds = new Set(existing.keys());
-  
+
   // Count active recruits (Not Invited)
   let activePoolCount = 0;
-  existing.forEach(p => { if(!p.invited) activePoolCount++; });
-  
+  existing.forEach(p => { if (!p.invited) activePoolCount++; });
+
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
   const isFillingPhase = activePoolCount < target;
-  
+
   let calculatedThreshold = avgTrophies;
   let logicNote = "Strict Average";
 
   if (isFillingPhase) {
-    calculatedThreshold = avgTrophies * 0.75; 
+    calculatedThreshold = avgTrophies * 0.75;
     logicNote = "Safety Cap (75%)";
   }
-  
+
   const minTrophies = Math.max(4000, Math.round(calculatedThreshold));
-  
+
   console.log(`🔭 Headhunter Context: Pool ${activePoolCount}/${target} (${isFillingPhase ? 'Filling' : 'Full'}).`);
   console.log(`🔭 Threshold Logic: ${logicNote} -> Searching for > ${minTrophies} trophies (Clan Avg: ${Math.round(avgTrophies)}).`);
 
@@ -68,28 +100,28 @@ function scoutRecruits() {
       existing.delete(tag);
     }
   }
-  
+
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
-  
+
   // 5. Merge New Scans with Old Tracking
   scanned.forEach(c => {
     if (existing.has(c.tag)) {
       c.invited = existing.get(c.tag).invited;
       c.foundDate = existing.get(c.tag).foundDate;
-    } 
+    }
     existing.set(c.tag, c);
   });
-  
+
   // 6. Score and Sort
   const finalPool = Array.from(existing.values())
-    .sort((a,b) => b.rawScore - a.rawScore)
+    .sort((a, b) => b.rawScore - a.rawScore)
     .slice(0, CONFIG.HEADHUNTER.TARGET);
 
   // ⚓ ANCHOR: Global Benchmark Calculation
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
-  
+
   console.log(`🔭 Scoring Benchmark: ${benchmarkScore} (Active High: ${currentHighRaw} | Discarded High: ${discardedHighScore})`);
 
   const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
@@ -97,7 +129,7 @@ function scoutRecruits() {
 
   // 📊 LOGGING
   const survivors = finalPool.filter(p => !initialIds.has(p.tag));
-  
+
   if (survivors.length > 0) {
     const sample = survivors.slice(0, 3).map(p => p.name).join(', ');
     const moreTxt = survivors.length > 3 ? ` and ${survivors.length - 3} others` : '';
@@ -133,11 +165,11 @@ function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
   // Use safe JSON getter (Chunked aware)
   let blacklist = Utils.Props.getChunked(PROP_KEY, {});
-  
+
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 7) * dayMs;
-  
+
   let maxScore = 0;
 
   // 1. Prune Expired Entries & Find Historical Max
@@ -160,55 +192,55 @@ function updateAndGetBlacklist(sheet) {
       if (score > maxScore) maxScore = score;
     }
   }
-  
+
   tagsToDelete.forEach(t => delete blacklist[t]);
 
   // 2. Ingest New Invites from Sheet
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
     const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), Object.keys(H).length).getValues();
-    
+
     data.forEach(row => {
       const tag = row[H.TAG];
       const invited = row[H.INVITED];
       const raw = Number(row[H.RAW_SCORE]) || 0;
-      
+
       if (tag && invited === true) {
         blacklist[tag] = { e: now + expiryDuration, s: raw };
         if (raw > maxScore) maxScore = raw;
       }
     });
   }
-  
+
   // 3. Save & Return
   const finalSize = Object.keys(blacklist).length;
   if (finalSize > 0) {
     // Use safe JSON setter (Chunked aware)
     const saved = Utils.Props.setChunked(PROP_KEY, blacklist);
     if (saved) {
-       console.log(`🚫 Blacklist Updated: ${finalSize} active entries. Discarded High Score: ${maxScore}`);
+      console.log(`🚫 Blacklist Updated: ${finalSize} active entries. Discarded High Score: ${maxScore}`);
     }
   }
-  
+
   return { ids: new Set(Object.keys(blacklist)), highScore: maxScore };
 }
 
 function loadRecruitDatabase(sheet) {
   const map = new Map();
   if (sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return map;
-  
+
   const H = CONFIG.SCHEMA.HH;
   const numRows = sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
   const numCols = Object.keys(H).length;
 
   if (numRows < 1) return map;
 
-  const rows = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, numRows, numCols).getValues(); 
+  const rows = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, numRows, numCols).getValues();
   rows.forEach(r => {
-    if(r[H.TAG]) map.set(r[H.TAG], { 
-      tag: r[H.TAG], invited: r[H.INVITED], name: r[H.NAME], trophies: r[H.TROPHIES], 
-      donations: r[H.DONATIONS], cards: r[H.CARDS], war: r[H.WAR_WINS], 
-      foundDate: r[H.FOUND_DATE] ? new Date(r[H.FOUND_DATE]) : new Date(), 
+    if (r[H.TAG]) map.set(r[H.TAG], {
+      tag: r[H.TAG], invited: r[H.INVITED], name: r[H.NAME], trophies: r[H.TROPHIES],
+      donations: r[H.DONATIONS], cards: r[H.CARDS], war: r[H.WAR_WINS],
+      foundDate: r[H.FOUND_DATE] ? new Date(r[H.FOUND_DATE]) : new Date(),
       rawScore: Number(r[H.RAW_SCORE]), perfScore: Number(r[H.PERF_SCORE])
     });
   });
@@ -221,16 +253,16 @@ function loadRecruitDatabase(sheet) {
 function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   console.time('ScanTournaments');
   const START_TIME = Date.now();
-  const TIME_LIMIT_MS = 240000; 
+  const TIME_LIMIT_MS = 240000;
   const W = CONFIG.HEADHUNTER.WEIGHTS;
-  
+
   // A. Search Phase: Broad Keywords
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
   const searchUrls = keywords.map(k => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`);
-  
+
   console.log(`🔭 Phase A: Broadcasting search for ${keywords.length} keys: [ "${keywords.join('", "')}" ]`);
-  
-  const searchResults = Utils.fetchRoyaleAPI(searchUrls); 
+
+  const searchResults = Utils.fetchRoyaleAPI(searchUrls);
 
   // B. Deduplication Phase
   const uniqueTourneys = new Map();
@@ -255,7 +287,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const tourneyTags = topTournaments.map(t => t.tag);
 
   console.log(`🔭 Phase B: Deduplication & Selection complete. Reduced ${rawCount} raw hits to ${tourneyTags.length} target tournaments.`);
-  
+
   if (tourneyTags.length === 0) {
     if (rawCount > 0) console.warn(`🔭 FILTER WARNING: Found ${rawCount} tournaments, but deduplication reduced to zero.`);
     else console.warn("🔭 API WARNING: Zero tournaments returned. Check API Keys/Quota.");
@@ -267,7 +299,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const details = Utils.fetchRoyaleAPI(tourneyTags.map(t => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`));
 
   const candidateTags = new Set();
-  
+
   details.forEach(d => {
     // DENSITY FILTER: >= 10 members
     if (d && d.membersList && d.membersList.length >= 10) {
@@ -303,16 +335,16 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   playersData.forEach(p => {
     if (p) {
-        if (p.trophies >= minTrophies) {
-            validCandidates.push(p);
-            playersNeedingWarLogs.push(p.tag);
-            playersNeedingWarLogsIndices.push(validCandidates.length - 1);
-        } else {
-            rejectedStats.lowTrophy++;
-        }
+      if (p.trophies >= minTrophies) {
+        validCandidates.push(p);
+        playersNeedingWarLogs.push(p.tag);
+        playersNeedingWarLogsIndices.push(validCandidates.length - 1);
+      } else {
+        rejectedStats.lowTrophy++;
+      }
     }
   });
-  
+
   console.log(`🔭 Filter Stats: Accepted ${validCandidates.length}. Rejected ${rejectedStats.lowTrophy} (Low Trophies).`);
 
   // 🛑 TIME CHECK 2
@@ -333,11 +365,11 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     validCandidates.forEach((p, idx) => {
       const logIdx = playersNeedingWarLogsIndices.indexOf(idx);
       let warBonus = 0;
-      
+
       if (logIdx > -1 && logs[logIdx]) {
         // Check for ANY river race activity in last 25 battles
         const hasWarActivity = logs[logIdx].some(b => b.type === 'riverRacePvP' || b.type === 'boatBattle' || b.type === 'riverRaceDuel');
-        if (hasWarActivity) warBonus = 500; 
+        if (hasWarActivity) warBonus = 500;
       }
 
       // STICKY MEMORY
@@ -365,15 +397,15 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 }
 
 function renderHeadhunterView(sheet, list, baseline) {
-  sheet.clear(); 
+  sheet.clear();
   const HEADERS = ['Tag', 'Invited', 'Name', 'Trophies', 'Donations', 'Cards Won', 'War Wins', 'Found', 'Raw Score', 'Performance Score'];
-  
+
   const rows = list.map(c => [
-    c.tag, c.invited, 
-    `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=pool&pin=${c.tag.replace('#','')}", "${c.name}")`,
-    c.trophies, c.donations, c.cards, c.war, 
-    new Date(c.foundDate), 
-    c.rawScore, c.perfScore  
+    c.tag, c.invited,
+    `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=pool&pin=${c.tag.replace('#', '')}", "${c.name}")`,
+    c.trophies, c.donations, c.cards, c.war,
+    new Date(c.foundDate),
+    c.rawScore, c.perfScore
   ]);
 
   const H = CONFIG.SCHEMA.HH;
@@ -385,10 +417,10 @@ function renderHeadhunterView(sheet, list, baseline) {
     sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.INVITED, rows.length, 1).insertCheckboxes();
     sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.PERF_SCORE, rows.length, 1).setNumberFormat('0"%"');
     sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.FOUND_DATE, rows.length, 1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
-    
+
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMinpointWithValue('#ffffff', SpreadsheetApp.InterpolationType.NUMBER, "0")
-      .setGradientMidpointWithValue('#fff2cc', SpreadsheetApp.InterpolationType.NUMBER, "50") 
+      .setGradientMidpointWithValue('#fff2cc', SpreadsheetApp.InterpolationType.NUMBER, "50")
       .setGradientMaxpointWithValue('#6aa84f', SpreadsheetApp.InterpolationType.NUMBER, "100")
       .setRanges([sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.PERF_SCORE, rows.length, 1)])
       .build();
@@ -398,15 +430,15 @@ function renderHeadhunterView(sheet, list, baseline) {
   }
 
   sheet.getRange('B1').setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
-  
+
   const layoutRows = Math.max(rows.length, CONFIG.HEADHUNTER.TARGET);
   if (rows.length > 0 && rows.length < layoutRows) {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW + rows.length;
     const numRows = layoutRows - rows.length;
     sheet.getRange(startRow, 2, numRows, HEADERS.length)
-         .clearContent()
-         .clearDataValidations();
+      .clearContent()
+      .clearDataValidations();
   }
-  
+
   Utils.applyStandardLayout(sheet, layoutRows, HEADERS.length, HEADERS);
 }

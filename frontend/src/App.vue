@@ -4,6 +4,7 @@ import { RouterView } from 'vue-router'
 import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
 import FloatingDock from './components/FloatingDock.vue'
+import ToastContainer from './components/ToastContainer.vue'
 
 // 1. Initialize API state to run the check
 useApiState() 
@@ -36,6 +37,8 @@ onMounted(() => {
     </main>
     
     <FloatingDock />
+    
+    <ToastContainer />
 
     <!-- SYNC INDICATOR (Glass Badge) -->
     <Transition name="fade">

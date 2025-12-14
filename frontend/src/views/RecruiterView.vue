@@ -3,6 +3,7 @@ import { ref, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
+import { useToast } from '../composables/useToast'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
 import FabIsland from '../components/FabIsland.vue'
@@ -34,7 +35,6 @@ const selectedIds = ref<Set<string>>(new Set())
 const expandedIds = ref<Set<string>>(new Set())
 const selectionQueue = ref<string[]>([])
 const selectionMode = ref(false)
-const dismissing = ref(false)
 
 // Computed for FAB
 const fabState = computed(() => {
@@ -90,9 +90,12 @@ const filteredRecruits = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(r => 
-      r.n.toLowerCase().includes(query) || 
-      r.id.toLowerCase().includes(query)
+      !hiddenIds.value.has(r.id) && 
+      (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query))
     )
+  } else {
+    // If no query, still filter hidden
+    result = result.filter(r => !hiddenIds.value.has(r.id))
   }
   
   result.sort((a, b) => {
@@ -139,27 +142,44 @@ function toggleSelect(id: string) {
   if (selectedIds.value.size === 0) selectionMode.value = false
 }
 
-async function dismissBulk() {
-  if (selectedIds.value.size === 0) return
-  if (!confirm(`Dismiss ${selectedIds.value.size} recruits?`)) return
-  
-  dismissing.value = true
-  try {
-    const ids = Array.from(selectedIds.value)
-    
-    // Clear selection UI immediately
-    selectedIds.value.clear()
-    selectionMode.value = false
+const { undo, success, error } = useToast()
 
-    // Optimistic Action
-    await dismissRecruitsAction(ids)
+// Separate state for temporary hiding before commit
+const hiddenIds = ref<Set<string>>(new Set())
+
+function dismissBulk() {
+  if (selectedIds.value.size === 0) return
+  
+  const ids = Array.from(selectedIds.value)
+  
+  // Clear selection UI
+  selectedIds.value.clear()
+  selectionMode.value = false
+  
+  // Execute with Undo capability
+  executeDismiss(ids)
+}
+
+function executeDismiss(ids: string[]) {
+    // 1. Locally hide immediately
+    ids.forEach(id => hiddenIds.value.add(id))
     
-  } catch (e) {
-    alert('Failed to dismiss recruits')
-    refresh() // Re-sync on failure
-  } finally {
-    dismissing.value = false
-  }
+    // 2. Set timer for actual commit
+    const timerId = setTimeout(() => {
+        dismissRecruitsAction(ids)
+            .catch(() => {
+                error('Failed to sync changes')
+                // Revert local hide if failed
+                ids.forEach(id => hiddenIds.value.delete(id))
+            })
+    }, 4500) // 4.5s delay
+    
+    // 3. Show Undo Toast
+    undo(`Dismissed ${ids.length} recruits`, () => {
+        clearTimeout(timerId)
+        ids.forEach(id => hiddenIds.value.delete(id))
+        success('Dismissal cancelled')
+    })
 }
 
 function selectAll() {
@@ -219,7 +239,12 @@ function selectionAction() {
       message="No recruits found" 
     />
     
-    <div v-else class="list-container stagger-children">
+    <TransitionGroup 
+      v-else 
+      name="list" 
+      tag="div" 
+      class="list-container"
+    >
       <RecruitCard
         v-for="recruit in filteredRecruits"
         :key="recruit.id"
@@ -231,7 +256,7 @@ function selectionAction() {
         @toggle-expand="toggleExpand(recruit.id)"
         @toggle-select="toggleSelect(recruit.id)"
       />
-    </div>
+    </TransitionGroup>
 
     <FabIsland
       :visible="fabState.visible"
@@ -262,5 +287,23 @@ function selectionAction() {
   border-radius: var(--shape-corner-l);
   margin-bottom: 8px;
   animation: pulse 1.5s infinite;
+}
+
+/* List Physics */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.4s var(--sys-motion-spring);
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+  margin-bottom: -100px; /* Collapses space */
+}
+.list-move {
+  transition: transform 0.4s var(--sys-motion-spring);
+}
+.list-leave-active {
+  position: absolute; width: 100%; z-index: 0;
 }
 </style>

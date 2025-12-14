@@ -202,7 +202,12 @@ watch(members, (newVal) => {
       message="No members found"
     />
     
-    <div v-else class="list-container stagger-children">
+    <TransitionGroup 
+      v-else 
+      name="list" 
+      tag="div" 
+      class="list-container"
+    >
       <MemberCard
         v-for="member in filteredMembers"
         :key="member.id"
@@ -214,7 +219,7 @@ watch(members, (newVal) => {
         @toggle="toggleExpand(member.id)"
         @toggle-select="toggleSelect(member.id)"
       />
-    </div>
+    </TransitionGroup>
 
     <FabIsland
       :visible="fabState.visible"
@@ -245,5 +250,20 @@ watch(members, (newVal) => {
   border-radius: var(--shape-corner-l);
   margin-bottom: 8px;
   animation: pulse 1.5s infinite;
+}
+
+/* List Physics */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.4s var(--sys-motion-spring);
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+  margin-bottom: -100px;
+}
+.list-move {
+  transition: transform 0.4s var(--sys-motion-spring);
 }
 </style>
