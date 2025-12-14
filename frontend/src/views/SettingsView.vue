@@ -66,9 +66,22 @@ const apiStatusText = computed(() => {
             <div class="card-body">
                 <div class="field-group">
                     <label class="field-label">Current Endpoint</label>
-                    <a :href="apiUrl" target="_blank" class="code-block clickable-url" :title="apiUrl">
+                    
+                    <!-- Clickable Link to Editor -->
+                    <a v-if="editorUrl" 
+                       :href="editorUrl" 
+                       target="_blank" 
+                       class="code-block clickable-url" 
+                       title="Open GAS Editor"
+                    >
                         {{ apiUrl }}
+                        <span class="link-hint">↗</span>
                     </a>
+
+                    <!-- Fallback: Read-only -->
+                    <div v-else class="code-block" :title="apiUrl">
+                        {{ apiUrl }}
+                    </div>
                 </div>
 
                 <div class="field-group" v-if="pingData">
@@ -77,12 +90,7 @@ const apiStatusText = computed(() => {
                 </div>
             </div>
             
-            <div class="card-actions" v-if="pingData?.spreadsheetUrl">
-                 <a :href="pingData.spreadsheetUrl" target="_blank" class="action-btn secondary">
-                    <span>Open in Sheets</span>
-                    <span>↗</span>
-                </a>
-            </div>
+            <!-- Removed redundant 'Open in Sheets' button here as requested -->
         </section>
 
         <!-- Configuration Card -->
@@ -297,11 +305,22 @@ const apiStatusText = computed(() => {
     text-decoration: none;
     cursor: pointer;
     transition: background 0.2s;
+    position: relative;
+    padding-right: 32px; /* Space for hint */
 }
 .clickable-url:hover {
     background: rgba(var(--sys-rgb-primary), 0.1);
     color: var(--sys-color-primary);
 }
+.link-hint {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+    font-size: 14px;
+}
+.clickable-url:hover .link-hint { opacity: 1; }
 .action-btn:active { transform: scale(0.98); }
 .action-btn:disabled { opacity: 0.7; cursor: wait; }
 

@@ -21,9 +21,21 @@ const sortValue = ref('score')
   <div class="header-wrapper">
     <div class="console-glass">
       
-      <!-- Top Row: Title & Status -->
+      <!-- Top Row: Title & Action -->
       <div class="console-top">
-        <div class="view-title">{{ title }}</div>
+        <div class="left-group">
+            <div class="view-title">{{ title }}</div>
+            <!-- NEW: Open in Sheets Button (Elegant Icon) -->
+            <a 
+              v-if="sheetUrl" 
+              :href="sheetUrl" 
+              target="_blank" 
+              class="action-icon"
+              title="Open in Sheets"
+            >
+               <Icon name="spreadsheet" size="18" />
+            </a>
+        </div>
         
         <div 
           v-if="status"
@@ -34,17 +46,6 @@ const sortValue = ref('score')
           <div v-if="status.type === 'loading'" class="spinner"></div>
           <span>{{ status.text }}</span>
         </div>
-
-        <!-- NEW: Open in Sheets Button -->
-        <a 
-          v-if="sheetUrl" 
-          :href="sheetUrl" 
-          target="_blank" 
-          class="action-icon"
-          title="Open in Sheets"
-        >
-           <span class="icon-google-sheets">📄</span> <!-- Simple Placeholder Icon -->
-        </a>
       </div>
 
       <!-- Bottom Row: Search & Filter -->
@@ -148,20 +149,20 @@ const sortValue = ref('score')
 }
 .sort-native { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; }
 
+.left-group { display: flex; align-items: center; gap: 12px; }
+
 .action-icon {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px;
   background: var(--sys-color-surface-container-high);
   border-radius: 50%;
+  color: var(--sys-color-primary);
   text-decoration: none;
-  font-size: 16px;
   transition: all 0.2s var(--sys-motion-bouncy);
-  margin-left: 8px;
 }
 .action-icon:hover {
   background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
   transform: scale(1.1);
 }
-.icon-google-sheets { filter: grayscale(1); transition: filter 0.2s; }
-.action-icon:hover .icon-google-sheets { filter: none; }
 </style>
