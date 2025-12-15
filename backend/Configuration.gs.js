@@ -4,7 +4,7 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 5.0.9
+ * 🏷️ VERSION: 5.1.3
  * 
  * 🧠 REASONING:
  *    - Centralizing configuration prevents "Magic Strings" scattered across files.
@@ -14,7 +14,7 @@
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = '5.0.9';
+const VER_CONFIGURATION = '5.1.3';
 
 // Fetch all script properties once at initialization
 // REASONING: Reduces calls to PropertiesService (slow) by fetching en masse.
@@ -30,12 +30,12 @@ const CONFIG = {
     // 📋 MANIFEST: Defines the expected version for every module in the system.
     // REASONING: Used by 'checkSystemHealth' in Orchestrator to ensure no file was missed during manual deployment.
     MANIFEST: {
-      CONFIGURATION: '5.0.9',
+      CONFIGURATION: '5.1.3',
       UTILITIES: '5.1.0',
       ORCHESTRATOR_TRIGGERS: '5.0.2',
       LOGGER: '5.0.1',
-      LEADERBOARD: '5.0.3',
-      SCORING_SYSTEM: '5.1.2',
+      LEADERBOARD: '5.1.4',
+      SCORING_SYSTEM: '5.1.3',
       RECRUITER: '5.1.1',
       CONTROLLER_WEBAPP: '6.0.2',
       API_PUBLIC: '6.0.0'
@@ -133,9 +133,13 @@ const CONFIG = {
 
   LEADERBOARD: {
     // Weights for calculating Raw Score
-    // WAR_RATE: 100 means 100% War Rate adds 10,000 points to score (Veteran Bonus)
-    // TROPHY: Reduced to 0.0002 (10k trophies = 2 pts) to prevent empty stats players from ranking high.
-    WEIGHTS: { FAME: 6, DONATION: 42, TROPHY: 0.0002, WAR_RATE: 100 },
+    // WEIGHTS REBALANCED (v5.1.3): Scoring V6
+    // Moved focus from "Current Week" to "Historical Power".
+    // FAME: 3 (Reduced. Rewards attacking NOW, but doesn't make you #1 instantly)
+    // AVG_FAME: 15 (NEW. The main driver. 2000 avg = 30,000 pts. Rewards consistency.)
+    // DONATION: 50 (Tie-breaker for active supporters)
+    // WAR_RATE: 150 (Attendance bonus)
+    WEIGHTS: { FAME: 3, AVG_FAME: 15, DONATION: 50, TROPHY: 0.0002, WAR_RATE: 150 },
 
     // Penalties applied to the score based on inactivity
     PENALTIES: {
