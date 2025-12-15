@@ -96,11 +96,11 @@ function handleSelectAll() {
 
 // ------------------------------------------------------------------
 // SORT HELPERS
-// Properly typed to accept null/undefined/string to satisfy strict mode
+// Strict typing with fallback logic at call site
 // ------------------------------------------------------------------
 
-function parseTimeAgo(str: string | null | undefined): number {
-  if (!str || typeof str !== 'string' || str === '-' || str === 'Just now') return 0
+function parseTimeAgo(str: string): number {
+  if (!str || str === '-' || str === 'Just now') return 0
   
   const match = str.match(/^(\d+)([ymdh]) ago$/)
   if (!match) return 99999999 // Unknown/Oldest
@@ -117,8 +117,8 @@ function parseTimeAgo(str: string | null | undefined): number {
   }
 }
 
-function parseRate(str: string | null | undefined): number {
-  if (!str || typeof str !== 'string') return 0
+function parseRate(str: string): number {
+  if (!str) return 0
   return parseFloat(str.replace('%', '')) || 0
 }
 
@@ -137,14 +137,14 @@ const filteredMembers = computed(() => {
       
       case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
       
-      // No casting needed: types align perfectly with signatures above
-      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
+      // Use Null Coalescing (??) to fallback to empty string if property is undefined
+      case 'war_rate': return parseRate(b.d.rate ?? '') - parseRate(a.d.rate ?? '')
       
       case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
       
       case 'last_seen': 
         // Smaller "minutes ago" means more recent. 
-        return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
+        return parseTimeAgo(a.d.seen ?? '') - parseTimeAgo(b.d.seen ?? '')
         
       default: return 0
     }
