@@ -17,10 +17,10 @@
 .skeleton-card {
   background: var(--sys-color-surface-container);
   border-radius: var(--shape-corner-l);
-  padding: var(--spacing-l) var(--spacing-m);
+  padding: var(--spacing-s) var(--spacing-m); /* Updated padding to match new compact style */
   margin-bottom: var(--spacing-xs);
   border: 1px solid transparent;
-  height: 106px; /* Approx height of MemberCard header */
+  height: 90px; /* Reduced height to match compact cards (64 + 12 + 12 + 2 border) */
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
