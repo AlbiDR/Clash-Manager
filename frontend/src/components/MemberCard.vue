@@ -177,7 +177,7 @@ function handleClick(e: Event) {
 .card {
   background: var(--sys-color-surface-container); /* Updated to standard container */
   border-radius: var(--shape-corner-l);
-  padding: var(--spacing-l) var(--spacing-m); /* 24px 16px */
+  padding: var(--spacing-s) var(--spacing-m); /* Reduced vertical padding (12px) */
   margin-bottom: var(--spacing-xs);
   border: 1px solid transparent;
   position: relative; overflow: hidden;
@@ -187,7 +187,7 @@ function handleClick(e: Event) {
   
   /* Internal Grid Layout */
   display: grid;
-  gap: var(--spacing-m);
+  /* Removed gap to allow full collapse. Spacing handled by expanded body margin. */
 }
 
 .card:active { 
@@ -300,8 +300,8 @@ function handleClick(e: Event) {
 }
 .card.expanded .card-body {
   max-height: 500px; opacity: 1;
-  margin-top: var(--spacing-s); /* Visual gap */
-  padding-top: var(--spacing-m);
+  margin-top: var(--spacing-m); /* Increased from s to m for visual balance when expanded */
+  padding-top: var(--spacing-s); /* Swapped slightly for better flow */
   border-top-color: var(--sys-color-outline-variant);
   border-top-width: 1px;
 }
