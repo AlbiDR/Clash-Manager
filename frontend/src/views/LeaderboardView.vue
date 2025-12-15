@@ -99,7 +99,7 @@ function handleSearchUpdate(val: string) {
 }
 
 function handleSortUpdate(val: string) {
-  // Safe assignment with type assertion
+  // Safe assignment
   sortBy.value = val as any
 }
 
@@ -107,27 +107,27 @@ function handleSortUpdate(val: string) {
 // SORT HELPERS
 // ------------------------------------------------------------------
 
-function parseTimeAgo(str: any): number {
-  if (!str || typeof str !== 'string' || str === '-' || str === 'Just now') return 0
+function parseTimeAgo(val: unknown): number {
+  if (typeof val !== 'string' || !val || val === '-' || val === 'Just now') return 0
   
-  const match = str.match(/^(\d+)([ymdh]) ago$/)
+  const match = val.match(/^(\d+)([ymdh]) ago$/)
   if (!match) return 99999999 // Unknown/Oldest
   
-  const val = parseInt(match[1])
+  const num = parseInt(match[1])
   const unit = match[2]
   
   switch(unit) {
-    case 'm': return val
-    case 'h': return val * 60
-    case 'd': return val * 1440
-    case 'y': return val * 525600
-    default: return val
+    case 'm': return num
+    case 'h': return num * 60
+    case 'd': return num * 1440
+    case 'y': return num * 525600
+    default: return num
   }
 }
 
-function parseRate(str: any): number {
-  if (!str || typeof str !== 'string') return 0
-  return parseFloat(str.replace('%', '')) || 0
+function parseRate(val: unknown): number {
+  if (typeof val !== 'string' || !val) return 0
+  return parseFloat(val.replace('%', '')) || 0
 }
 
 const filteredMembers = computed(() => {
@@ -146,12 +146,13 @@ const filteredMembers = computed(() => {
       case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
       
       case 'war_rate': 
-        return parseRate(b.d.rate as any) - parseRate(a.d.rate as any)
+        return parseRate(b.d.rate) - parseRate(a.d.rate)
       
       case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
       
       case 'last_seen': 
-        return parseTimeAgo(a.d.seen as any) - parseTimeAgo(b.d.seen as any)
+        // Smaller "minutes ago" means more recent (smaller number)
+        return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
         
       default: return 0
     }
