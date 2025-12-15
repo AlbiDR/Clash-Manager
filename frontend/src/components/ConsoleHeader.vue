@@ -7,6 +7,7 @@ defineProps<{
   status?: { type: 'updated' | 'error' | 'loading' | 'ready', text: string }
   showSearch?: boolean
   sheetUrl?: string
+  stats?: { label: string, value: string }
 }>()
 
 const emit = defineEmits<{
@@ -25,7 +26,12 @@ const sortValue = ref('score')
       <div class="console-top">
         <div class="left-group">
             <div class="view-title">{{ title }}</div>
-            <!-- NEW: Open in Sheets Button (Elegant Icon) -->
+            <!-- NEW: Stats Badge if present -->
+            <div v-if="stats" class="count-badge">
+              <span class="cb-label">{{ stats.label }}</span>
+              <span class="cb-value">{{ stats.value }}</span>
+            </div>
+            <!-- Open in Sheets Button -->
             <a 
               v-if="sheetUrl" 
               :href="sheetUrl" 
@@ -110,6 +116,17 @@ const sortValue = ref('score')
   color: var(--sys-color-on-surface); 
   letter-spacing: -0.02em; 
 }
+
+/* Stats Pill */
+.count-badge {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--sys-color-surface-container-highest);
+  padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 700;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.cb-label { text-transform: uppercase; color: var(--sys-color-outline); font-size: 9px; letter-spacing: 0.5px; }
+.cb-value { color: var(--sys-color-on-surface); }
 
 /* Status Pill */
 .status-badge {
