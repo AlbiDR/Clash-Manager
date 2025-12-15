@@ -1,28 +1,22 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
+// Global state to hold the event
 const deferredPrompt = ref<any>(null)
 const isInstallable = ref(false)
 
-export function useInstallPrompt() {
-
-    function handler(e: Event) {
+// Initialize listener immediately when module loads (App start)
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeinstallprompt', (e) => {
         // Prevent Chrome 67 and earlier from automatically showing the prompt
         e.preventDefault()
         // Stash the event so it can be triggered later.
         deferredPrompt.value = e
         isInstallable.value = true
-        console.log("📱 PWA Install Prompt captured")
-    }
-
-    onMounted(() => {
-        window.addEventListener('beforeinstallprompt', handler)
+        console.log("📱 PWA Install Prompt captured globally")
     })
+}
 
-    // Note: We generally don't remove the listener on unmount if we want global persistence, 
-    // but for a composable it's safer to just rely on the global event unless we move this to a store.
-    // For now, simple event listening in the component that needs it is fine, 
-    // OR we keep it global. Let's make it safe for multiple usages.
-
+export function useInstallPrompt() {
     async function install() {
         if (!deferredPrompt.value) return
 
