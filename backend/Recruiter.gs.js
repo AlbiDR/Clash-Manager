@@ -346,6 +346,10 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const playersNeedingWarLogs = [];
   const playersNeedingWarLogsIndices = [];
 
+  // DIAGNOSTICS FOR FILTERING
+  let rejectedCount = 0;
+  let rejectedTrophiesSum = 0;
+
   playersData.forEach(p => {
     if (p) {
       // Re-verify trophies (live data definitely has it)
@@ -353,9 +357,17 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
         validCandidates.push(p);
         playersNeedingWarLogs.push(p.tag);
         playersNeedingWarLogsIndices.push(validCandidates.length - 1);
+      } else {
+        rejectedCount++;
+        rejectedTrophiesSum += (p.trophies || 0);
       }
     }
   });
+
+  if (rejectedCount > 0) {
+     const avgRej = Math.round(rejectedTrophiesSum / rejectedCount);
+     console.log(`🔭 Phase D Filter: Accepted ${validCandidates.length}. Rejected ${rejectedCount} (Avg Trophies: ${avgRej} vs Req: ${minTrophies}).`);
+  }
 
   // F. Deep Dive Phase (Battle Logs)
   if (playersNeedingWarLogs.length > 0) {
