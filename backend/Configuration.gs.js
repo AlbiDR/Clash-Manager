@@ -4,7 +4,7 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 5.1.4
+ * 🏷️ VERSION: 6.0.0
  * 
  * 🧠 REASONING:
  *    - Centralizing configuration prevents "Magic Strings" scattered across files.
@@ -14,7 +14,7 @@
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = '5.1.4';
+const VER_CONFIGURATION = '6.0.0';
 
 // Fetch all script properties once at initialization
 // REASONING: Reduces calls to PropertiesService (slow) by fetching en masse.
@@ -30,14 +30,14 @@ const CONFIG = {
     // 📋 MANIFEST: Defines the expected version for every module in the system.
     // REASONING: Used by 'checkSystemHealth' in Orchestrator to ensure no file was missed during manual deployment.
     MANIFEST: {
-      CONFIGURATION: '5.1.4',
-      UTILITIES: '5.1.0',
-      ORCHESTRATOR_TRIGGERS: '5.0.3', // Updated
-      LOGGER: '5.0.1',
-      LEADERBOARD: '5.1.4',
-      SCORING_SYSTEM: '5.1.3',
-      RECRUITER: '5.1.1',
-      CONTROLLER_WEBAPP: '6.0.2',
+      CONFIGURATION: '6.0.0',
+      UTILITIES: '6.0.0',
+      ORCHESTRATOR_TRIGGERS: '6.0.0',
+      LOGGER: '6.0.0',
+      LEADERBOARD: '6.0.0',
+      SCORING_SYSTEM: '6.0.0',
+      RECRUITER: '6.0.0',
+      CONTROLLER_WEBAPP: '6.0.0',
       API_PUBLIC: '6.0.0'
     },
 
