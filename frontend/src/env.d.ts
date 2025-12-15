@@ -1,24 +1,17 @@
-// Replacement for vite/client types to fix resolution error
+// /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-    readonly VITE_GAS_URL: string
-    readonly BASE_URL: string
-    readonly MODE: string
-    readonly DEV: boolean
-    readonly PROD: boolean
-    readonly SSR: boolean
-    [key: string]: any
+  readonly VITE_GAS_URL: string
+  readonly BASE_URL: string
+  [key: string]: any
 }
 
 interface ImportMeta {
-    readonly url: string
-    readonly env: ImportMetaEnv
+  readonly env: ImportMetaEnv
 }
 
 declare module '*.vue' {
-    import type { DefineComponent } from 'vue'
-    const component: DefineComponent<{}, {}, any>
-    export default component
+  import type { DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export default component
 }
-
-declare module '*.css' {}
