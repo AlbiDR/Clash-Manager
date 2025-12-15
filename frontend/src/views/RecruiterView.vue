@@ -32,12 +32,12 @@ const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 
 
 // Sort Options Definition
 const sortOptions = [
-  { label: 'Potential Score', value: 'score' },
-  { label: 'Time Found', value: 'time_found' },
+  { label: 'Potential', value: 'score' },
   { label: 'War Wins', value: 'war_wins' },
-  { label: 'Total Donations', value: 'donations' },
   { label: 'Cards Won', value: 'cards_won' },
+  { label: 'Donations', value: 'donations' },
   { label: 'Trophies', value: 'trophies' },
+  { label: 'Recency', value: 'time_found' },
   { label: 'Name', value: 'name' }
 ]
 
