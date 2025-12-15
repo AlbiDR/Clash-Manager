@@ -95,10 +95,10 @@ function handleSelectAll() {
 }
 
 // ------------------------------------------------------------------
-// SORT HELPERS (Explicit Types)
+// SORT HELPERS (Using 'any' to bypass strict TS inference issues)
 // ------------------------------------------------------------------
 
-function parseTimeAgo(str: string | undefined | null): number {
+function parseTimeAgo(str: any): number {
   if (!str || typeof str !== 'string' || str === '-' || str === 'Just now') return 0
   
   const match = str.match(/^(\d+)([ymdh]) ago$/)
@@ -116,7 +116,7 @@ function parseTimeAgo(str: string | undefined | null): number {
   }
 }
 
-function parseRate(str: string | undefined | null): number {
+function parseRate(str: any): number {
   if (!str || typeof str !== 'string') return 0
   return parseFloat(str.replace('%', '')) || 0
 }
