@@ -8,6 +8,7 @@ defineProps<{
   showSearch?: boolean
   sheetUrl?: string
   stats?: { label: string, value: string }
+  sortOptions?: { label: string, value: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -23,17 +24,10 @@ const sortValue = ref('score')
   <div class="header-wrapper">
     <div class="console-glass">
       
-      <!-- Top Row: Title, Stats, Status -->
+      <!-- Top Row: Sheets Btn, Title, Stats, Status -->
       <div class="header-row top">
         <div class="left-cluster">
-            <h1 class="view-title">{{ title }}</h1>
-            
-            <div v-if="stats" class="stats-pill">
-              <span class="sp-label">{{ stats.label }}</span>
-              <span class="sp-separator"></span>
-              <span class="sp-value">{{ stats.value }}</span>
-            </div>
-
+            <!-- 1. Sheets Button (Leftmost) -->
             <a 
               v-if="sheetUrl" 
               :href="sheetUrl" 
@@ -43,6 +37,16 @@ const sortValue = ref('score')
             >
                <Icon name="spreadsheet" size="18" />
             </a>
+
+            <!-- 2. Title -->
+            <h1 class="view-title">{{ title }}</h1>
+            
+            <!-- 3. Stats -->
+            <div v-if="stats" class="stats-pill">
+              <span class="sp-label">{{ stats.label }}</span>
+              <span class="sp-separator"></span>
+              <span class="sp-value">{{ stats.value }}</span>
+            </div>
         </div>
         
         <button 
@@ -71,16 +75,25 @@ const sortValue = ref('score')
         </div>
         
         <div class="sort-container">
-          <span class="sort-label">Sort</span>
+          <!-- Icon Inside Input Area -->
           <Icon name="filter" size="16" class="sort-icon" />
           <select 
             v-model="sortValue"
             class="glass-select" 
             @change="emit('update:sort', sortValue)"
           >
-            <option value="score">Score</option>
-            <option value="trophies">Trophies</option>
-            <option value="name">Name</option>
+            <!-- Dynamic Options -->
+            <template v-if="sortOptions">
+              <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </template>
+            <!-- Fallback -->
+            <template v-else>
+              <option value="score">Score</option>
+              <option value="trophies">Trophies</option>
+              <option value="name">Name</option>
+            </template>
           </select>
         </div>
       </div>
@@ -99,7 +112,6 @@ const sortValue = ref('score')
   top: calc(var(--spacing-s) + env(safe-area-inset-top));
   z-index: 100;
   margin-bottom: var(--spacing-l);
-  /* Ensure it doesn't overflow horizontally */
   max-width: 100%;
 }
 
@@ -110,7 +122,8 @@ const sortValue = ref('score')
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-l);
   box-shadow: var(--sys-elevation-2);
-  padding: var(--spacing-m);
+  /* Equal padding on all sides */
+  padding: var(--spacing-m); 
   display: flex;
   flex-direction: column;
   gap: var(--spacing-m);
@@ -143,7 +156,7 @@ const sortValue = ref('score')
 
 .view-title {
   margin: 0;
-  font-size: 24px; /* Fixed size for consistency */
+  font-size: 24px;
   line-height: 1;
   font-weight: 800;
   color: var(--sys-color-on-surface);
@@ -258,7 +271,7 @@ const sortValue = ref('score')
 .search-container {
   position: relative;
   flex: 1;
-  height: 44px; /* Standardized Height */
+  height: 44px;
 }
 
 .input-icon {
@@ -300,23 +313,23 @@ const sortValue = ref('score')
 /* Sort Dropdown */
 .sort-container {
   position: relative;
-  height: 44px; /* Matches Search */
-  min-width: 120px;
+  height: 44px;
+  min-width: 130px; /* Slight bump for longer text */
 }
 
 .glass-select {
   width: 100%;
   height: 100%;
-  padding: 0 36px 0 16px; /* Right padding clears caret, but we have custom layout */
-  /* Actually for this specific design with label/icon inside: */
-  padding: 0 16px 0 54px; /* Left padding for "Sort + Icon" */
+  padding: 0 32px 0 42px; /* Left padding space for icon only */
   border-radius: 12px;
   border: 1px solid transparent;
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-body);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   appearance: none;
   outline: none;
   cursor: pointer;
@@ -328,30 +341,12 @@ const sortValue = ref('score')
   border-color: var(--sys-color-primary);
 }
 
-.sort-label {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--sys-color-outline);
-  pointer-events: none;
-}
-
 .sort-icon {
   position: absolute;
-  left: 42px; /* Position after label */
+  left: 14px; /* Centered in left padding area */
   top: 50%;
   transform: translateY(-50%);
   color: var(--sys-color-outline);
-  opacity: 0.5;
   pointer-events: none;
 }
-
-/* Mobile Tweak: Ensure search and sort stack properly if space is tight? 
-   No, side-by-side is better for usability. Flex handles it.
-   But if screen is very small, search gets small.
-*/
 </style>
