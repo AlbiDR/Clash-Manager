@@ -5,7 +5,7 @@
  * 📝 DESCRIPTION: The mathematical heart of the application.
  * ⚙️ ROLE: Pure Logic. Accepts raw data -> Returns Scores & Sort Orders.
  * 🔒 STATUS: PROTECTED "DO NOT MODIFY" ZONE.
- * 🏷️ VERSION: 5.1.3
+ * 🏷️ VERSION: 6.0.0
  * 
  * 🧠 REASONING:
  *    - Separation of Concerns: This file knows nothing about Sheets or APIs.
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_SCORING_SYSTEM = '5.1.3';
+const VER_SCORING_SYSTEM = '6.0.0';
 
 // 🔒 =======================================================================
 // 🔒 SCORING SYSTEM PROTECTION ZONE
