@@ -21,7 +21,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="fab-island" :class="{ 'visible': visible }">
+  <div class="fab-island" :class="{ 'visible': visible }" @touchstart.stop>
     <div class="fab-content">
       <!-- Dismiss Button (Danger) -->
       <button 
