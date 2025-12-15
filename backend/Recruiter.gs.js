@@ -5,7 +5,7 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V5.3.0): 
+ * ⚙️ LOGIC (V5.3.1): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
  *    3. Stochastic Prioritization (DOUBLE SHUFFLE): 
@@ -15,11 +15,11 @@
  *    5. Mercenary Scoring: Massive bonus for recent war activity.
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
  *    7. Blacklist (Smart): Tracks scores of invited players for 7 days.
- * 🏷️ VERSION: 5.3.0
+ * 🏷️ VERSION: 5.3.1
  * ============================================================================
  */
 
-const VER_RECRUITER = '5.3.0';
+const VER_RECRUITER = '5.3.1';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -304,11 +304,16 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const uniqueCandidates = new Map();
   candidates.forEach(c => uniqueCandidates.set(c.tag, c));
   
+  // 🔍 LOGGING: Funnel Stats
+  const rawCandidateCount = uniqueCandidates.size;
+  
   // 2. Filter by Trophies FIRST to remove noise
   // We allow a slightly lower threshold here to widen the net before randomizing
   // But strictly, we only want people meeting the criteria.
   const qualifiedCandidates = Array.from(uniqueCandidates.values())
                                    .filter(p => p.trophies >= minTrophies);
+
+  console.log(`🔭 Phase C Stats: Scanned ${tourneyTags.length} rooms. Found ${rawCandidateCount} clanless players. Qualified (> ${minTrophies} trophies): ${qualifiedCandidates.length}`);
 
   // 3. Sort by Trophies to get the "Best" pool
   qualifiedCandidates.sort((a, b) => b.trophies - a.trophies);
