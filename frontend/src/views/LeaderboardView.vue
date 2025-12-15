@@ -94,6 +94,15 @@ function handleSelectAll() {
   selectAll(ids)
 }
 
+function handleSearchUpdate(val: string) {
+  searchQuery.value = val
+}
+
+function handleSortUpdate(val: string) {
+  // Safe assignment with type assertion handled in script
+  sortBy.value = val as any
+}
+
 // ------------------------------------------------------------------
 // SORT HELPERS
 // ------------------------------------------------------------------
@@ -171,8 +180,8 @@ watch(members, (newVal) => {
       :sheet-url="sheetUrl"
       :stats="statsBadge"
       :sort-options="sortOptions"
-      @update:search="val => searchQuery = val"
-      @update:sort="val => sortBy = val as any"
+      @update:search="handleSearchUpdate"
+      @update:sort="handleSortUpdate"
       @refresh="refresh"
     >
       <template #extra>
