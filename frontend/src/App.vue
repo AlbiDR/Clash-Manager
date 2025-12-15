@@ -20,13 +20,7 @@ onMounted(() => {
 <template>
   <div class="app-container">
     <main class="main-content">
-      <RouterView v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
-          <KeepAlive>
-            <component :is="Component" />
-          </KeepAlive>
-        </Transition>
-      </RouterView>
+      <RouterView />
     </main>
     
     <FloatingDock />
@@ -34,28 +28,17 @@ onMounted(() => {
     <ToastContainer />
 
     <!-- SYNC INDICATOR (Glass Badge) -->
-    <Transition name="fade">
-      <div v-if="syncStatus === 'syncing' || syncStatus === 'error'" 
-           class="sync-indicator"
-           :class="{ 'error': syncStatus === 'error' }">
-        <div v-if="syncStatus === 'syncing'" class="pulse-dot"></div>
-        <span v-if="syncStatus === 'syncing'">Syncing...</span>
-        <span v-else>Sync Failed</span>
-      </div>
-    </Transition>
+    <div v-if="syncStatus === 'syncing' || syncStatus === 'error'" 
+         class="sync-indicator"
+         :class="{ 'error': syncStatus === 'error' }">
+      <div v-if="syncStatus === 'syncing'" class="pulse-dot"></div>
+      <span v-if="syncStatus === 'syncing'">Syncing...</span>
+      <span v-else>Sync Failed</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Page Transitions (Modern Scale-Fade) */
-.page-enter-active,
-.page-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.page-enter-from { opacity: 0; transform: translateY(10px) scale(0.98); }
-.page-leave-to { opacity: 0; transform: translateY(-10px) scale(0.98); }
-
 /* Sync Indicator */
 .sync-indicator {
   position: fixed;
@@ -97,15 +80,5 @@ onMounted(() => {
   0% { transform: scale(0.8); opacity: 0.5; }
   50% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(0.8); opacity: 0.5; }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>
