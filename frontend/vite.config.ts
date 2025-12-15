@@ -12,6 +12,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
+        id: '/Clash-Manager/', // Critical for Android PWA stability
         name: 'Clash Manager: Clan Manager for Clash Royale',
         short_name: 'Clash Manager',
         description: 'Clan Manager for Clash Royale - Track leaderboards, scout recruits, and analyze war performance.',
