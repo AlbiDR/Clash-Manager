@@ -1,8 +1,9 @@
 /**
- * Fallback type definitions for Vite environment.
- * If 'vite/client' cannot be resolved by the compiler, these will ensure
- * the app still compiles and runs.
+ * TypeScript Environment Definitions
+ * Defines the shape of import.meta.env and handles static assets.
  */
+
+// /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string
@@ -24,22 +25,10 @@ declare module '*.vue' {
 }
 
 // Static asset declarations
-declare module '*.svg' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.png' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.jpg' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.ico' {
-  const content: string;
-  export default content;
-}
+declare module '*.svg' { const content: string; export default content; }
+declare module '*.png' { const content: string; export default content; }
+declare module '*.jpg' { const content: string; export default content; }
+declare module '*.jpeg' { const content: string; export default content; }
+declare module '*.gif' { const content: string; export default content; }
+declare module '*.webp' { const content: string; export default content; }
+declare module '*.ico' { const content: string; export default content; }
