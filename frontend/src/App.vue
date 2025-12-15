@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { RouterView } from 'vue-router'
-import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
 
-// 1. Initialize API state to run the check
-useApiState() 
-
-// 2. Initialize Data Layer (SWR)
-const { init, syncStatus } = useClanData()
-onMounted(() => {
-    init()
-})
+// Read-only access to sync status for the UI indicator
+const { syncStatus } = useClanData()
 
 const isOnline = ref(true)
 
