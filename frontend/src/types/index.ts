@@ -27,9 +27,9 @@ export interface LeaderboardMember {
         role: string
         days: number
         avg: number
-        seen: string
-        rate: string  // War Rate as "90%"
-        hist: string  // War History
+        seen?: string | null // Made optional
+        rate?: string | null // Made optional
+        hist: string
     }
 }
 
