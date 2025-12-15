@@ -15,6 +15,7 @@ const emit = defineEmits<{
   'update:sort': [value: string]
   'refresh': []
 }>()
+
 const sortValue = ref('score')
 </script>
 
@@ -22,57 +23,59 @@ const sortValue = ref('score')
   <div class="header-wrapper">
     <div class="console-glass">
       
-      <!-- Top Row: Title & Action -->
-      <div class="console-top">
-        <div class="left-group">
-            <div class="view-title">{{ title }}</div>
-            <!-- NEW: Stats Badge if present -->
-            <div v-if="stats" class="count-badge">
-              <span class="cb-label">{{ stats.label }}</span>
-              <span class="cb-value">{{ stats.value }}</span>
+      <!-- Top Row: Title, Stats, Status -->
+      <div class="header-row top">
+        <div class="left-cluster">
+            <h1 class="view-title">{{ title }}</h1>
+            
+            <div v-if="stats" class="stats-pill">
+              <span class="sp-label">{{ stats.label }}</span>
+              <span class="sp-separator"></span>
+              <span class="sp-value">{{ stats.value }}</span>
             </div>
-            <!-- Open in Sheets Button -->
+
             <a 
               v-if="sheetUrl" 
               :href="sheetUrl" 
               target="_blank" 
-              class="action-icon"
+              class="icon-button"
               title="Open in Sheets"
             >
                <Icon name="spreadsheet" size="18" />
             </a>
         </div>
         
-        <div 
+        <button 
           v-if="status"
-          class="status-badge" 
+          class="status-pill" 
           :class="status.type"
           @click="emit('refresh')"
         >
           <div v-if="status.type === 'loading'" class="spinner"></div>
-          <span>{{ status.text }}</span>
-        </div>
+          <div v-else class="status-dot"></div>
+          <span class="status-text">{{ status.text }}</span>
+        </button>
       </div>
 
-      <!-- Bottom Row: Search & Filter -->
-      <div v-if="showSearch" class="input-group">
-        <div class="search-wrapper">
-          <Icon name="search" class="search-icon" size="20" />
+      <!-- Bottom Row: Search & Sort -->
+      <div v-if="showSearch" class="header-row bottom">
+        <div class="search-container">
+          <Icon name="search" class="input-icon" size="20" />
           <input 
             type="text" 
-            class="search-input" 
+            class="glass-input" 
             placeholder="Search..." 
             autocomplete="off"
             @input="e => emit('update:search', (e.target as HTMLInputElement).value)"
           >
         </div>
         
-        <div class="filter-toggle">
-          <span>Sort</span>
-          <Icon name="filter" size="16" style="opacity:0.6" />
+        <div class="sort-container">
+          <span class="sort-label">Sort</span>
+          <Icon name="filter" size="16" class="sort-icon" />
           <select 
             v-model="sortValue"
-            class="sort-native" 
+            class="glass-select" 
             @change="emit('update:sort', sortValue)"
           >
             <option value="score">Score</option>
@@ -82,116 +85,273 @@ const sortValue = ref('score')
         </div>
       </div>
       
-      <slot name="extra"></slot>
+      <!-- Extra Slot (e.g. Selection Bar) -->
+      <div v-if="$slots.extra" class="header-row extra">
+        <slot name="extra"></slot>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* 🛸 Floating Console Header */
 .header-wrapper {
   position: sticky;
-  /* Top position + Safe Area (Status Bar) */
   top: calc(var(--spacing-s) + env(safe-area-inset-top));
   z-index: 100;
   margin-bottom: var(--spacing-l);
+  /* Ensure it doesn't overflow horizontally */
+  max-width: 100%;
 }
 
 .console-glass {
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur); -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-l);
   box-shadow: var(--sys-elevation-2);
-  border: 1px solid var(--sys-surface-glass-border);
   padding: var(--spacing-m);
-  position: relative;
-  transition: all 0.4s var(--sys-motion-spring);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-m);
+  transition: all 0.3s var(--sys-motion-spring);
 }
 
-.console-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-m); }
+/* --- ROW LAYOUTS --- */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
 
-.view-title { 
-  font-size: var(--font-size-xl); 
-  font-weight: var(--font-weight-heavy); 
-  color: var(--sys-color-on-surface); 
-  letter-spacing: -0.02em; 
+.header-row.bottom {
+  gap: var(--spacing-s);
+}
+
+.header-row.extra {
+  padding-top: var(--spacing-s);
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* --- TOP ROW ELEMENTS --- */
+.left-cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-s);
+}
+
+.view-title {
+  margin: 0;
+  font-size: 24px; /* Fixed size for consistency */
+  line-height: 1;
+  font-weight: 800;
+  color: var(--sys-color-on-surface);
+  letter-spacing: -0.03em;
 }
 
 /* Stats Pill */
-.count-badge {
-  display: flex; align-items: center; gap: 4px;
+.stats-pill {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
   background: var(--sys-color-surface-container-highest);
-  padding: 2px 8px; border-radius: 6px;
-  font-size: 11px; font-weight: 700;
-  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sys-color-on-surface-variant);
+  user-select: none;
 }
-.cb-label { text-transform: uppercase; color: var(--sys-color-outline); font-size: 9px; letter-spacing: 0.5px; }
-.cb-value { color: var(--sys-color-on-surface); }
+
+.sp-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.sp-separator {
+  width: 1px;
+  height: 8px;
+  background: currentColor;
+  opacity: 0.2;
+  margin: 0 6px;
+}
+
+.sp-value {
+  color: var(--sys-color-primary);
+}
+
+/* Icon Button (Small) */
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sys-color-primary);
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.icon-button:hover {
+  background: var(--sys-color-primary-container);
+  opacity: 1;
+  border-color: rgba(var(--sys-color-primary-rgb), 0.2);
+}
 
 /* Status Pill */
-.status-badge {
-  display: flex; align-items: center; gap: var(--spacing-xs);
-  background: var(--sys-color-surface-container-high); 
-  padding: var(--spacing-xs) var(--spacing-m);
-  border-radius: var(--shape-corner-full);
-  font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); 
-  text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--sys-color-on-surface-variant); cursor: pointer;
-  transition: all 0.2s var(--sys-motion-bouncy);
-}
-.status-badge:active { transform: scale(0.95); }
-.status-badge.updated { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); }
-.status-badge.error { background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); }
-
-.spinner { 
-  width: 12px; height: 12px; 
-  border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; 
-  animation: spin 0.8s linear infinite; 
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: var(--sys-color-surface-container);
+  color: var(--sys-color-outline);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-/* Input Fields */
-.input-group { display: flex; gap: var(--spacing-s); }
-.search-wrapper { position: relative; flex: 1; }
-
-.search-input {
-  width: 100%; height: 56px;
+.status-pill:hover {
   background: var(--sys-color-surface-container-high);
-  border: 2px solid transparent; border-radius: var(--shape-corner-full);
-  padding: 0 var(--spacing-m) 0 52px;
-  font-size: var(--font-size-m); color: var(--sys-color-on-surface); 
-  font-family: var(--sys-typescale-body);
-  outline: none; transition: all 0.2s;
-}
-.search-input:focus { border-color: var(--sys-color-primary); background: var(--sys-color-surface); }
-.search-icon { 
-  position: absolute; left: 18px; top: 18px; 
-  color: var(--sys-color-on-surface-variant); pointer-events: none; 
+  transform: translateY(-1px);
 }
 
-.filter-toggle {
-  height: 56px; padding: 0 var(--spacing-l);
-  background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface-variant);
-  border-radius: var(--shape-corner-full);
-  display: flex; align-items: center; gap: var(--spacing-xs);
-  font-weight: var(--font-weight-bold); font-size: var(--font-size-s); position: relative;
-  cursor: pointer; transition: background 0.2s;
+.status-pill:active {
+  transform: translateY(0);
 }
-.sort-native { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; }
 
-.left-group { display: flex; align-items: center; gap: var(--spacing-s); }
-
-.action-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
-  background: var(--sys-color-surface-container-high);
+.status-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  color: var(--sys-color-primary);
-  text-decoration: none;
-  transition: all 0.2s var(--sys-motion-bouncy);
+  background: currentColor;
 }
-.action-icon:hover {
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  transform: scale(1.1);
+
+.status-pill.ready .status-dot { background: var(--sys-color-success); }
+.status-pill.ready { color: var(--sys-color-on-surface); border-color: rgba(var(--sys-color-success), 0.2); }
+
+.status-pill.error .status-dot { background: var(--sys-color-error); }
+.status-pill.error { color: var(--sys-color-error); background: var(--sys-color-error-container); }
+
+.spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
+
+/* --- BOTTOM ROW (INPUTS) --- */
+.search-container {
+  position: relative;
+  flex: 1;
+  height: 44px; /* Standardized Height */
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sys-color-outline);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.glass-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 16px 0 40px; /* Left padding clears icon */
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface);
+  font-family: var(--sys-font-family-body);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: var(--sys-color-surface);
+  border-color: var(--sys-color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.15);
+}
+
+.glass-input::placeholder {
+  color: var(--sys-color-outline);
+  opacity: 0.7;
+}
+
+/* Sort Dropdown */
+.sort-container {
+  position: relative;
+  height: 44px; /* Matches Search */
+  min-width: 120px;
+}
+
+.glass-select {
+  width: 100%;
+  height: 100%;
+  padding: 0 36px 0 16px; /* Right padding clears caret, but we have custom layout */
+  /* Actually for this specific design with label/icon inside: */
+  padding: 0 16px 0 54px; /* Left padding for "Sort + Icon" */
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface);
+  font-family: var(--sys-font-family-body);
+  font-size: 14px;
+  font-weight: 600;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.glass-select:focus {
+  background: var(--sys-color-surface);
+  border-color: var(--sys-color-primary);
+}
+
+.sort-label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--sys-color-outline);
+  pointer-events: none;
+}
+
+.sort-icon {
+  position: absolute;
+  left: 42px; /* Position after label */
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sys-color-outline);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Mobile Tweak: Ensure search and sort stack properly if space is tight? 
+   No, side-by-side is better for usability. Flex handles it.
+   But if screen is very small, search gets small.
+*/
 </style>
