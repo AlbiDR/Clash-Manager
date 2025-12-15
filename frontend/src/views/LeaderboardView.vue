@@ -99,16 +99,18 @@ function handleSearchUpdate(val: string) {
 }
 
 function handleSortUpdate(val: string) {
-  // Safe assignment
-  sortBy.value = val as any
+  // Type guard to ensure val is a valid sort key
+  if (sortOptions.some(opt => opt.value === val)) {
+    sortBy.value = val as typeof sortBy.value
+  }
 }
 
 // ------------------------------------------------------------------
-// SORT HELPERS
+// SORT HELPERS (Strict Typing)
 // ------------------------------------------------------------------
 
-function parseTimeAgo(val: unknown): number {
-  if (typeof val !== 'string' || !val || val === '-' || val === 'Just now') return 0
+function parseTimeAgo(val: string | null | undefined): number {
+  if (!val || val === '-' || val === 'Just now') return 0
   
   const match = val.match(/^(\d+)([ymdh]) ago$/)
   if (!match) return 99999999 // Unknown/Oldest
@@ -125,9 +127,10 @@ function parseTimeAgo(val: unknown): number {
   }
 }
 
-function parseRate(val: unknown): number {
-  if (typeof val !== 'string' || !val) return 0
-  return parseFloat(val.replace('%', '')) || 0
+function parseRate(val: string | number | null | undefined): number {
+  if (!val) return 0
+  const s = String(val)
+  return parseFloat(s.replace('%', '')) || 0
 }
 
 const filteredMembers = computed(() => {
