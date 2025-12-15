@@ -5,44 +5,72 @@ import router from './router'
 import { vTooltip } from './directives/vTooltip'
 import { useModules } from './composables/useModules'
 
-// --- Global Error Boundary (Prevents White Screen of Death) ---
-window.addEventListener('error', (event) => {
+// 🚨 CRITICAL ERROR HANDLER
+// This ensures that if the app crashes (White Screen), the error is shown to the user.
+function showFatalError(error: any) {
     const appEl = document.getElementById('app');
-    if (appEl) {
-        appEl.innerHTML = `
-            <div style="padding: 2rem; color: #ff3333; background: #1a0000; height: 100vh; font-family: monospace;">
-                <h1>Application Error</h1>
-                <p>The application failed to start.</p>
-                <pre style="background: #330000; padding: 1rem; overflow: auto;">${event.message}</pre>
-                <p style="margin-top:1rem; opacity:0.7;">Check console for full stack trace.</p>
-                <button onclick="window.location.reload()" style="padding: 10px 20px; margin-top: 20px; cursor: pointer;">Reload</button>
-            </div>
-        `;
-    }
-    console.error('CRITICAL APP ERROR:', event.error);
-});
+    if (!appEl) return;
+    
+    // Prevent double-rendering
+    if (appEl.getAttribute('data-error-rendered')) return;
+    appEl.setAttribute('data-error-rendered', 'true');
 
-// 1. Initialize the module store
-try {
-    const moduleState = useModules()
-    moduleState.init()
-} catch (e) {
-    console.error('Failed to initialize modules:', e)
+    const msg = error?.message || String(error);
+    const stack = error?.stack || 'No stack trace available.';
+
+    appEl.innerHTML = `
+        <div style="
+            position: fixed; inset: 0; z-index: 9999;
+            padding: 2rem; color: #ffcccc; background: #1a0505; 
+            font-family: 'Courier New', monospace; overflow: auto;
+            display: flex; flex-direction: column; gap: 1rem;
+        ">
+            <h1 style="color: #ff4444; margin: 0; font-size: 24px;">Application Crash</h1>
+            <p style="margin: 0; font-size: 16px; line-height: 1.5;">${msg}</p>
+            <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-left: 4px solid #ff4444; white-space: pre-wrap; font-size: 12px;">${stack}</div>
+            <button onclick="window.location.reload()" style="
+                padding: 12px 24px; background: #ff4444; color: white; border: none; 
+                border-radius: 4px; font-weight: bold; cursor: pointer; width: fit-content;
+                margin-top: 1rem;
+            ">
+                Reload App
+            </button>
+        </div>
+    `;
+    console.error('FATAL:', error);
 }
 
-// 2. Mount App
-const app = createApp(App)
+window.addEventListener('error', (event) => showFatalError(event.error));
+window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
-app.use(router)
-app.directive('tooltip', vTooltip)
+// --- Application Logic ---
 
-app.mount('#app')
+try {
+    // 1. Initialize the module store
+    const moduleState = useModules()
+    try {
+        moduleState.init()
+    } catch (e) {
+        console.warn('Module initialization warning:', e)
+        // Non-fatal, continue
+    }
 
-// 3. Register PWA Service Worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/Clash-Manager/sw.js').catch((err) => {
-            console.log('SW registration failed', err)
+    // 2. Mount App
+    const app = createApp(App)
+
+    app.use(router)
+    app.directive('tooltip', vTooltip)
+
+    app.mount('#app')
+
+    // 3. Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/Clash-Manager/sw.js').catch((err) => {
+                console.log('SW registration failed', err)
+            })
         })
-    })
+    }
+} catch (e) {
+    showFatalError(e);
 }
