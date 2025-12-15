@@ -79,12 +79,12 @@
 
 .sk-box {
   background: var(--sys-color-surface-container-highest);
-  border-radius: var(--shape-corner-m);
+  border-radius: 20px; /* Matched to new squircle */
 }
 
 .stat-pod {
-  width: 56px;
-  height: 56px;
+  width: 64px; /* Increased from 56px */
+  height: 64px;
 }
 
 .sk-circle {
