@@ -1,433 +1,82 @@
+<script lang="ts">
+// Defined outside setup to be a static constant shared across all instances
+const PATHS: Record<string, string> = {
+  // Navigation
+  'leaderboard': 'M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z', 
+  'recruiter': 'M20.94,6.56l-3.32-2.85c-1.39-1.2-3.41-1.35-4.99-0.45l-1.02,0.58l-1.3-1.6c-0.62-0.77-1.56-1.22-2.55-1.22 C6.3,1.02,5.13,1.96,4.68,3.22L4.03,5.03C3.58,6.29,3.95,7.7,5.01,8.6l1.24,1.06c-0.19,0.59-0.29,1.19-0.29,1.79 c0,3.31,2.69,6,6,6c1.23,0,2.4-0.37,3.38-1.03l3.65,3.13c0.77,0.66,1.92,0.59,2.62-0.16l0.26-0.28C22.68,18.3,22.68,17.07,21.94,16.4 L20.94,6.56z M7.78,7.99C7.26,8.42,6.48,8.38,6.03,7.9c-0.46-0.49-0.5-1.25-0.1-1.78l1.3-1.72c0.39-0.52,1.12-0.66,1.67-0.34 l1.02,0.58C10.74,5.08,11.2,6.01,11,6.86L7.78,7.99z',
+  'settings': 'M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z', 
+  
+  // Actions
+  'search': 'M15.5,14h-0.79l-0.28-0.27C15.41,12.59,16,11.11,16,9.5C16,5.91,13.09,3,9.5,3S3,5.91,3,9.5S5.91,16,9.5,16 c1.61,0,3.09-0.59,4.23-1.57l0.27,0.28v0.79l5,4.99L20.49,19L15.5,14z M9.5,14C7.01,14,5,11.99,5,9.5S7.01,5,9.5,5S14,7.01,14,9.5 S11.99,14,9.5,14z',
+  'filter': 'M3,17v2h6v-2H3z M3,5v2h10V5H3z M13,21v-2h8v-2h-8v-2h-2v6H13z M7,9v2H3v2h4v2h2V9H7z M21,13v-2H11v2H21z M15,9h2V7h4V5h-4V3h-2V9z',
+  'refresh': 'M17.65,6.35C16.2,4.9,14.21,4,12,4c-4.42,0-7.99,3.58-7.99,8s3.57,8,7.99,8c3.73,0,6.84-2.55,7.73-6h-2.08 c-0.82,2.33-3.04,4-5.65,4c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.66,0,3.14,0.69,4.22,1.78L13,11h7V4L17.65,6.35z',
+  'download': 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
+  'close': 'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41z',
+  'check': 'M9,16.17L4.83,12l-1.42,1.41L9,19L21,7l-1.41-1.41L9,16.17z',
+  'select_all': 'M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M17,17h-2v-2h2V17z M17,13h-2v-2h2V13z M17,9h-2V7h2V9z M13,17h-2v-2h2V17z M13,13h-2v-2h2V13z M13,9h-2V7h2V9z M9,17H7v-2h2V17z M9,13H7v-2h2V13z M9,9H7V7h2V9z',
+  
+  // Misc
+  'star': 'M12,17.27L18.18,21l-1.64-7.03L22,9.24l-7.19-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21L12,17.27z',
+  'expand': 'M16.59,8.59L12,13.17L7.41,8.59L6,10l6,6l6-6L16.59,8.59z',
+  'chevron_down': 'M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z',
+  'chevron_right': 'M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z',
+  'trophy': 'M20.2,2H17V1c0-0.55-0.45-1-1-1H8C7.45,0,7,0.45,7,1v1H3.8C2.8,2,2,2.8,2,3.8v1.4c0,2.1,1,3.96,2.6,5.1 c0.8,3.2,3.4,5.7,6.4,6.5V20H9v2h6v-2h-2v-3.2c3-0.8,5.6-3.3,6.4-6.5C21,10.16,22,8.3,22,6.2V3.8C22,2.8,21.2,2,20.2,2z M5.8,5.2 h1.3V9C7.1,8.9,5.2,7.2,5.1,5.2C5.1,5.2,5.1,5.2,5.8,5.2z M17,9V5.2h1.3c0.7,0,0.7,0,0.7-0.03C18.8,7.2,16.9,8.9,17,9z',
+  'crown': 'M5,16L3,5L8.5,10L12,4L15.5,10L21,5L19,16H5M19,19C19,19.6 18.6,20 18,20H6C5.4,20 5,19.6 5,19V17H19V19Z',
+  'card': 'M20,4H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V6C22,4.9,21.1,4,20,4z M20,18H4V6h16V18z',
+  'donation': 'M20,6h-2.18c0.11-0.31,0.18-0.65,0.18-1c0-1.66-1.34-3-3-3C13.52,2,12,3.33,12,5c0-1.66-1.52-3-3.22-3C7.2,2,6,3.33,6,5 c0,0.35,0.07,0.69,0.18,1H4C2.9,6,2,6.9,2,8v11c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V8C22,6.9,21.1,6,20,6z M11,18H8v-2h3V18z M11,14 H8v-2h3V14z M16,18h-3v-2h3V18z M16,14h-3v-2h3V14z',
+  'group': 'M16,11c1.66,0,2.99-1.34,2.99-3S17.66,5,16,5c-1.66,0-3,1.34-3,3S14.34,11,16,11z M8,11C9.66,11,11,9.66,11,8S9.66,5,8,5 C6.34,5,5,6.34,5,8S6.34,11,8,11z M8,13c-2.33,0-7,1.17-7,3.5V19h14v-2.5C15,14.17,10.33,13,8,13z M16,13c-0.29,0-0.62,0.02-0.97,0.05 C16.53,14.15,17,15.28,17,16.5V19h6v-2.5C23,14.17,18.33,13,16,13z',
+  'telescope': 'M20.94,6.56l-3.32-2.85c-1.39-1.2-3.41-1.35-4.99-0.45l-1.02,0.58l-1.3-1.6c-0.62-0.77-1.56-1.22-2.55-1.22 C6.3,1.02,5.13,1.96,4.68,3.22L4.03,5.03C3.58,6.29,3.95,7.7,5.01,8.6l1.24,1.06c-0.19,0.59-0.29,1.19-0.29,1.79 c0,3.31,2.69,6,6,6c1.23,0,2.4-0.37,3.38-1.03l3.65,3.13c0.77,0.66,1.92,0.59,2.62-0.16l0.26-0.28C22.68,18.3,22.68,17.07,21.94,16.4 L20.94,6.56z M7.78,7.99C7.26,8.42,6.48,8.38,6.03,7.9c-0.46-0.49-0.5-1.25-0.1-1.78l1.3-1.72c0.39-0.52,1.12-0.66,1.67-0.34 l1.02,0.58C10.74,5.08,11.2,6.01,11,6.86L7.78,7.99z',
+  'warning': 'M1,21h22L12,2L1,21z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z',
+  'share': 'M18,16.08c-0.76,0-1.44,0.3-1.96,0.77L8.91,12.7c0.05-0.23,0.09-0.46,0.09-0.7s-0.04-0.47-0.09-0.7l7.05-4.11 c0.54,0.5,1.25,0.81,2.04,0.81c1.66,0,3-1.34,3-3s-1.34-3-3-3c-1.66,0-3,1.34-3,3c0,0.24,0.04,0.47,0.09,0.7L8.04,9.81 C7.5,9.31,6.79,9,6,9c-1.66,0-3,1.34-3,3s1.34,3,3,3c0.79,0,1.5-0.31,2.04-0.81l7.12,4.16c-0.05,0.21-0.08,0.43-0.08,0.65 c0,1.61,1.31,2.92,2.92,2.92s2.92-1.31,2.92-2.92S20.44,16.08,18,16.08z',
+  'spreadsheet': 'M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M19,19H5V5h14V19z M7,7h2v2H7V7z M11,7h2v2h-2V7z M15,7h2v2h-2V7z M7,11h2v2H7V11z M11,11h2v2h-2V11z M15,11h2v2h-2V11z M7,15h2v2H7V15z M11,15h2v2h-2V15z M15,15h2v2h-2V15z',
+  
+  // Settings Icons
+  'plug': 'M16.01,7L16,3h-2v4h-4V3H8v4h-.01C7,6.99,6,7.99,6,8.99v5.49L9.5,18v3h5v-3l3.5-3.51v-5.5C18,7.99,17,6.99,16.01,7z',
+  'gear': 'M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z',
+  'box': 'M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M12,18l-5-5h3V7h4v6h3L12,18z',
+  'github': 'M12,2C6.48,2,2,6.48,2,12c0,4.42,2.87,8.17,6.84,9.5c0.5,0.08,0.66-0.23,0.66-0.5v-1.69c-2.77,0.6-3.36-1.34-3.36-1.34 c-0.46-1.16-1.11-1.47-1.11-1.47c-0.91-0.62,0.07-0.6,0.07-0.6c1,0.07,1.53,1.03,1.53,1.03c0.87,1.52,2.34,1.07,2.91,0.83 c0.09-0.65,0.35-1.09,0.63-1.34c-2.22-0.25-4.55-1.11-4.55-4.92c0-1.11,0.38-1.88,1.02-2.6c-0.1-0.28-0.45-1.23,0.1-2.64 c0,0,0.84-0.27,2.75,1.02c0.79-0.22,1.65-0.33,2.5-0.33c0.85,0,1.71,0.11,2.5,0.33c1.91-1.29,2.75-1.02,2.75-1.02 c0.55,1.41,0.2,2.36,0.1,2.64c0.64,0.73,1.02,1.56,1.02,2.6c0,3.61-2.33,4.66-4.56,4.91c0.36,0.31,0.69,0.92,0.69,1.85V21 c0,0.27,0.16,0.59,0.67,0.5C19.14,20.16,22,16.42,22,12A10,10,0,0,0,12,2z',
+  
+  // Toast Icons
+  'undo': 'M12.5,8c-2.65,0-5.05,0.99-6.9,2.6L2,7v9h9l-3.62-3.62c1.39-1.16,3.16-1.88,5.12-1.88c3.54,0,6.55,2.31,7.6,5.5 l2.37-0.78C21.08,11.03,17.15,8,12.5,8z',
+  'info': 'M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M13,17h-2v-6h2V17z M13,9h-2V7h2V9z'
+}
+</script>
+
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useApiState } from '../composables/useApiState'
-import { useInstallPrompt } from '../composables/useInstallPrompt'
-import ConsoleHeader from '../components/ConsoleHeader.vue'
-import Icon from '../components/Icon.vue'
+import { computed } from 'vue'
 
-// Local state for the input field
-const newApiUrl = ref('') 
-const isEditing = ref(false)
+const props = defineProps<{
+  name: string
+  size?: number | string
+  filled?: boolean
+}>()
 
-const { 
-    apiUrl, 
-    apiStatus, 
-    pingData, 
-    checkApiStatus 
-} = useApiState()
-
-const { isInstallable, install } = useInstallPrompt()
-
-onMounted(() => {
-    checkApiStatus()
-})
-
-const hasLocalOverride = computed(() => {
-  return !!localStorage.getItem('cm_gas_url')
-})
-
-function saveApiUrl() {
-    if (newApiUrl.value.trim()) {
-        localStorage.setItem('cm_gas_url', newApiUrl.value.trim())
-        window.location.reload()
-    }
-}
-
-function resetApiUrl() {
-    if(confirm('Reset API URL to default?')) {
-        localStorage.removeItem('cm_gas_url')
-        window.location.reload()
-    }
-}
-
-const apiStatusObject = computed(() => {
-    if (apiStatus.value === 'online') return { type: 'ready', text: 'Systems Online' } as const
-    if (apiStatus.value === 'offline') return { type: 'error', text: 'Disconnected' } as const
-    return { type: 'loading', text: 'Ping...' } as const
-})
-
-const editorUrl = computed(() => {
-    if (pingData.value?.scriptId) {
-        return `https://script.google.com/home/projects/${pingData.value.scriptId}/edit`
-    }
-    return undefined
+const sizePx = computed(() => {
+  if (typeof props.size === 'number') return `${props.size}px`
+  return props.size || '24px'
 })
 </script>
 
 <template>
-  <div class="view-container">
-    <ConsoleHeader title="Settings" :status="apiStatusObject" />
-
-    <div class="settings-content">
-      
-      <!-- PWA Install Banner -->
-      <div v-if="isInstallable" class="install-banner" @click="install">
-        <div class="ib-icon">
-          <Icon name="download" size="24" style="color: white;" />
-        </div>
-        <div class="ib-text">
-          <div class="ib-title">Install App</div>
-          <div class="ib-desc">Add to Home Screen for the best experience</div>
-        </div>
-        <div class="ib-arrow">
-          <Icon name="chevron_right" size="20" />
-        </div>
-      </div>
-
-      <!-- Main Cards Stack (No Gap) -->
-      <div class="cards-stack">
-        
-        <!-- 🌐 Unified Network Dashboard -->
-        <section class="glass-panel top-card">
-            <header class="card-header">
-                <div class="icon-box">
-                    <Icon name="plug" size="24" />
-                </div>
-                <div class="header-info">
-                    <h2 class="card-title">Network & API</h2>
-                    <p class="card-subtitle">Connection status and configuration</p>
-                </div>
-                <div class="status-pill" :class="apiStatus">
-                    <div class="pulse-dot"></div>
-                    {{ apiStatusObject.text }}
-                </div>
-            </header>
-
-            <div class="card-body">
-                <div class="network-stats">
-                    <div class="stat-block">
-                        <span class="label">Latency</span>
-                        <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="label">Backend</span>
-                        <span class="value">v{{ pingData?.version || '0.0' }}</span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="label">Environment</span>
-                        <span class="value">{{ hasLocalOverride ? 'Custom' : 'Production' }}</span>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                 <div class="field-group">
-                    <div class="flex-between">
-                        <label class="field-label">API Endpoint</label>
-                        <button v-if="!isEditing" @click="isEditing = true" class="text-link">Change URL</button>
-                        <button v-else @click="isEditing = false" class="text-link">Cancel</button>
-                    </div>
-
-                    <div v-if="!isEditing" class="endpoint-display">
-                        <div class="url-text">{{ apiUrl }}</div>
-                        <a v-if="editorUrl" :href="editorUrl" target="_blank" class="icon-link" title="Open GAS Editor">
-                            <Icon name="spreadsheet" size="18" />
-                        </a>
-                    </div>
-
-                    <div v-else class="input-row">
-                        <input 
-                            v-model="newApiUrl"
-                            type="url" 
-                            placeholder="https://script.google.com/..."
-                            class="text-input"
-                        />
-                        <button class="save-btn" @click="saveApiUrl">
-                            <Icon name="check" size="20" />
-                        </button>
-                    </div>
-                    
-                    <div v-if="hasLocalOverride" class="override-alert">
-                        <Icon name="warning" size="16" />
-                        <span>Running on custom override URL</span>
-                        <button class="reset-link" @click="resetApiUrl">Reset</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- 📦 System Modules (Tech Specs) -->
-        <section class="glass-panel bottom-card" v-if="pingData?.modules">
-            <header class="card-header">
-                <div class="icon-box">
-                    <Icon name="box" size="24" />
-                </div>
-                <div class="header-info">
-                    <h2 class="card-title">System Modules</h2>
-                    <p class="card-subtitle">Installed backend components</p>
-                </div>
-            </header>
-
-            <!-- Specs Grid (Body) -->
-            <div class="specs-grid">
-                <div 
-                    v-for="(version, name) in pingData.modules" 
-                    :key="name"
-                    class="spec-item"
-                >
-                    <span class="spec-label">{{ name }}</span>
-                    <span class="spec-value">v{{ version }}</span>
-                </div>
-            </div>
-        </section>
-      </div>
-        
-      <!-- About Footer -->
-      <footer class="about-footer">
-          <div class="app-logo">
-              <Icon name="crown" size="48" />
-          </div>
-          <h3 class="footer-title">Clash Manager</h3>
-          <p class="footer-ver">v6.0.0 (Gold Master)</p>
-          <div class="footer-links">
-              <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
-                  <Icon name="github" size="18" />
-                  <span>Source Code</span>
-              </a>
-          </div>
-      </footer>
-    </div>
-  </div>
+  <svg 
+    class="icon" 
+    :width="sizePx" 
+    :height="sizePx" 
+    viewBox="0 0 24 24" 
+    :style="{ width: sizePx, height: sizePx }"
+  >
+    <path 
+      :d="PATHS[name] || ''" 
+      fill="currentColor"
+    />
+  </svg>
 </template>
 
 <style scoped>
-.view-container { 
-    min-height: 100%;
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
 }
-
-.settings-content {
-    max-width: var(--sys-layout-max-width);
-    margin: 0 auto;
-    padding: var(--spacing-l) 0 120px;
-    display: flex;
-    flex-direction: column;
-    /* Main gap handling via stack below */
-}
-
-/* Stack Container for touching cards */
-.cards-stack {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-l); /* Gap between the distinct card groups */
-}
-
-/* --- GLASS PANEL --- */
-.glass-panel {
-    background: var(--sys-surface-glass);
-    backdrop-filter: var(--sys-surface-glass-blur);
-    -webkit-backdrop-filter: var(--sys-surface-glass-blur);
-    border: 1px solid var(--sys-surface-glass-border);
-    border-radius: var(--shape-corner-l);
-    overflow: hidden;
-    box-shadow: var(--sys-elevation-2);
-    transition: transform 0.4s var(--sys-motion-spring);
-    animation: fadeSlideIn 0.6s backwards;
-}
-
-/* --- HEADER --- */
-.card-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-m);
-    padding: var(--spacing-l);
-    background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.icon-box {
-    width: 48px; height: 48px;
-    border-radius: 16px;
-    background: var(--sys-color-surface-container-high);
-    color: var(--sys-color-primary);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
-}
-
-.header-info { flex: 1; }
-
-.card-title {
-    margin: 0;
-    font-size: var(--font-size-l);
-    font-weight: var(--font-weight-heavy);
-    color: var(--sys-color-on-surface);
-}
-.card-subtitle {
-    margin: 4px 0 0;
-    font-size: var(--font-size-s);
-    color: var(--sys-color-outline);
-    font-weight: var(--font-weight-medium);
-}
-
-/* --- STATUS PILL --- */
-.status-pill {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 12px;
-    border-radius: var(--shape-corner-full);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: var(--sys-color-surface-container);
-    color: var(--sys-color-outline);
-}
-.pulse-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 8px currentColor;
-}
-.status-pill.online { color: var(--sys-color-success); background: rgba(var(--sys-rgb-success), 0.1); }
-.status-pill.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
-
-/* --- CARD BODY --- */
-.card-body { padding: var(--spacing-l); }
-
-.network-stats {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-m);
-    margin-bottom: var(--spacing-l);
-}
-.stat-block {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: var(--sys-color-surface-container);
-    padding: var(--spacing-m);
-    border-radius: var(--shape-corner-m);
-}
-.stat-block .label { font-size: var(--font-size-xs); text-transform: uppercase; color: var(--sys-color-outline); margin-bottom: 4px; font-weight: 700; }
-.stat-block .value { font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
-.stat-block .value small { font-size: 0.6em; margin-left: 2px; opacity: 0.7; }
-
-.divider { height: 1px; background: var(--sys-color-outline-variant); opacity: 0.2; margin-bottom: var(--spacing-l); }
-
-/* --- FIELDS --- */
-.field-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
-.flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.field-label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
-    color: var(--sys-color-outline);
-    letter-spacing: 0.05em;
-}
-.text-link {
-    background: none; border: none; color: var(--sys-color-primary);
-    font-weight: 600; font-size: var(--font-size-s); cursor: pointer;
-}
-
-.endpoint-display {
-    display: flex; align-items: center; gap: var(--spacing-s);
-    background: var(--sys-color-surface-container-high);
-    padding: 12px;
-    border-radius: var(--shape-corner-m);
-    border: 1px solid transparent;
-}
-.url-text {
-    flex: 1;
-    font-family: var(--sys-font-family-mono);
-    font-size: 13px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    color: var(--sys-color-on-surface-variant);
-    opacity: 0.8;
-}
-.icon-link {
-    color: var(--sys-color-primary); opacity: 0.7; transition: all 0.2s;
-}
-.icon-link:hover { opacity: 1; transform: scale(1.1); }
-
-/* --- INPUTS --- */
-.input-row { display: flex; gap: var(--spacing-s); }
-.text-input {
-    flex: 1;
-    background: var(--sys-color-surface-container-high);
-    border: 2px solid var(--sys-color-primary);
-    padding: 10px 16px;
-    border-radius: var(--shape-corner-m);
-    color: var(--sys-color-on-surface);
-    font-size: var(--font-size-m);
-    font-family: var(--sys-font-family-mono);
-}
-.text-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(var(--sys-color-primary-rgb), 0.2); }
-.save-btn {
-    width: 46px; border-radius: var(--shape-corner-m);
-    background: var(--sys-color-primary); color: white; border: none;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-}
-
-.override-alert {
-    display: flex; align-items: center; gap: 8px;
-    font-size: var(--font-size-s); color: var(--sys-color-tertiary);
-    background: var(--sys-color-tertiary-container);
-    padding: 8px 12px; border-radius: var(--shape-corner-s);
-    margin-top: 8px;
-}
-.reset-link {
-    margin-left: auto; background: none; border: none;
-    font-weight: 700; color: var(--sys-color-on-tertiary-container);
-    cursor: pointer; text-decoration: underline;
-}
-
-/* --- MODULES GRID (TECH SPECS) --- */
-.specs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1px;
-    background: rgba(255,255,255,0.05); /* Grid Lines */
-    /* Ensure no double borders */
-    border-top: 1px solid rgba(255,255,255,0.05);
-}
-
-.spec-item {
-    background: var(--sys-color-surface-container-low);
-    padding: 16px;
-    display: flex; flex-direction: column; gap: 4px;
-}
-.spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; letter-spacing: 0.05em; }
-.spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
-
-/* --- FOOTER --- */
-.about-footer {
-    text-align: center;
-    margin-top: var(--spacing-xl);
-    color: var(--sys-color-outline);
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-}
-.app-logo { color: var(--sys-color-primary); margin-bottom: 8px; }
-.footer-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
-.footer-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
-
-/* Install Banner */
-.install-banner {
-  background: linear-gradient(135deg, var(--sys-color-primary) 0%, var(--sys-color-tertiary) 100%);
-  border-radius: var(--shape-corner-l);
-  padding: 16px;
-  margin-bottom: 24px;
-  display: flex; align-items: center; gap: 16px;
-  color: white;
-  cursor: pointer;
-  box-shadow: var(--sys-elevation-3);
-  transition: transform 0.2s;
-}
-.install-banner:active { transform: scale(0.98); }
-.ib-icon {
-  width: 40px; height: 40px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.ib-text { flex: 1; }
-.ib-title { font-weight: 700; font-size: 16px; }
-.ib-desc { font-size: 12px; opacity: 0.9; }
-.ib-arrow { opacity: 0.8; }
-
-.github-btn {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px;
-    background: var(--sys-color-surface-container-high);
-    border-radius: var(--shape-corner-full);
-    color: var(--sys-color-on-surface);
-    text-decoration: none;
-    font-weight: 600; font-size: 14px;
-    margin-top: 16px;
-    transition: all 0.2s;
-}
-.github-btn:hover { background: var(--sys-color-surface-container-highest); transform: translateY(-2px); }
 </style>
