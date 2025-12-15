@@ -246,29 +246,30 @@ function handleClick(e: Event) {
 /* STAT POD */
 .stat-pod {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 56px; height: 56px; 
-  border-radius: var(--shape-corner-m);
+  width: 64px; height: 64px; 
+  border-radius: 20px; /* Neo-Squircle */
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
   transition: background 0.3s;
+  box-shadow: var(--sys-elevation-1);
 }
 .stat-pod.tone-high { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 .stat-pod.tone-low { background: var(--sys-color-surface-variant); color: var(--sys-color-on-surface-variant); }
 
 .stat-score { 
-  font-size: var(--font-size-l); 
-  font-weight: var(--font-weight-heavy); 
+  font-size: 20px; 
+  font-weight: 800; 
   line-height: 1; 
   letter-spacing: -0.5px; 
   font-family: var(--sys-font-family-mono); 
 }
 .stat-sub { 
-  font-size: 9px; 
-  font-weight: var(--font-weight-bold); 
-  opacity: 0.8; 
-  margin-top: 2px; 
+  font-size: 10px; 
+  font-weight: 700; 
+  opacity: 0.85; 
+  margin-top: 3px; 
   text-transform: uppercase; 
   letter-spacing: 0.5px; 
 }
