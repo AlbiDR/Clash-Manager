@@ -184,7 +184,7 @@ const editorUrl = computed(() => {
                 <Icon name="crown" size="48" />
             </div>
             <h3 class="footer-title">Clash Manager</h3>
-            <p class="footer-ver">v2.1.0 (PWA)</p>
+            <p class="footer-ver">v6.0.0 (Gold Master)</p>
             <div class="footer-links">
                 <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
                     <Icon name="github" size="18" />
