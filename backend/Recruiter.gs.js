@@ -5,7 +5,7 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V5.1.1): 
+ * ⚙️ LOGIC (V5.1.2): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
  *    3. Stochastic Prioritization: Top 200 Capacity -> Shuffle -> Top 75.
@@ -13,11 +13,11 @@
  *    5. Mercenary Scoring: Massive bonus for recent war activity.
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
  *    7. Blacklist (Smart): Tracks scores of invited players for 7 days.
- * 🏷️ VERSION: 5.1.1
+ * 🏷️ VERSION: 5.1.2
  * ============================================================================
  */
 
-const VER_RECRUITER = '5.1.1';
+const VER_RECRUITER = '5.1.2';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -402,7 +402,7 @@ function renderHeadhunterView(sheet, list, baseline) {
 
   const rows = list.map(c => [
     c.tag, c.invited,
-    `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=pool&pin=${c.tag.replace('#', '')}", "${c.name}")`,
+    `=HYPERLINK("clashroyale://playerInfo?id=${c.tag.replace('#', '')}", "${c.name}")`,
     c.trophies, c.donations, c.cards, c.war,
     new Date(c.foundDate),
     c.rawScore, c.perfScore
