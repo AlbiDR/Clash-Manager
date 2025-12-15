@@ -8,11 +8,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs' (Protected Engine).
  *    4. SAFETY LOCK: Automatically aborts if new data deviates significantly.
- * 🏷️ VERSION: 5.1.5 (Avg Fame Inflation Fix)
+ * 🏷️ VERSION: 6.0.0
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '5.1.5';
+const VER_LEADERBOARD = '6.0.0';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
