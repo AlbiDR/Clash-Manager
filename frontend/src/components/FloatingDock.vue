@@ -18,7 +18,7 @@ function navigate(path: string) {
 </script>
 
 <template>
-  <div class="dock-container">
+  <div class="dock-container" @touchstart.stop>
     <div 
       v-for="item in navItems" 
       :key="item.name"
