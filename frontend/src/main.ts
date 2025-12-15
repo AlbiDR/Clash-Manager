@@ -9,37 +9,47 @@ import { useClanData } from './composables/useClanData'
 
 // 🚨 CRITICAL ERROR HANDLER
 // This ensures that if the app crashes (White Screen), the error is shown to the user.
+// We nuke the entire body to ensure Vue stops trying to patch a dying DOM.
 function showFatalError(error: any) {
-    const appEl = document.getElementById('app');
-    if (!appEl) return;
-    
-    // Prevent double-rendering
-    if (appEl.getAttribute('data-error-rendered')) return;
-    appEl.setAttribute('data-error-rendered', 'true');
+    // Prevent recursive error handling
+    if ((window as any).__hasShownFatalError) return;
+    (window as any).__hasShownFatalError = true;
+
+    console.error('FATAL ERROR CAUGHT:', error);
 
     const msg = error?.message || String(error);
     const stack = error?.stack || 'No stack trace available.';
 
-    appEl.innerHTML = `
-        <div style="
-            position: fixed; inset: 0; z-index: 9999;
-            padding: 2rem; color: #ffcccc; background: #1a0505; 
-            font-family: 'Courier New', monospace; overflow: auto;
-            display: flex; flex-direction: column; gap: 1rem;
-        ">
-            <h1 style="color: #ff4444; margin: 0; font-size: 24px;">Application Crash</h1>
-            <p style="margin: 0; font-size: 16px; line-height: 1.5;">${msg}</p>
-            <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-left: 4px solid #ff4444; white-space: pre-wrap; font-size: 12px;">${stack}</div>
-            <button onclick="window.location.reload()" style="
-                padding: 12px 24px; background: #ff4444; color: white; border: none; 
-                border-radius: 4px; font-weight: bold; cursor: pointer; width: fit-content;
-                margin-top: 1rem;
-            ">
-                Reload App
-            </button>
-        </div>
+    // Nuke everything. Stop all scripts/rendering.
+    document.body.innerHTML = '';
+    
+    // Create error container
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        padding: 2rem; color: #ffcccc; background: #1a0505; 
+        font-family: monospace; overflow: auto;
+        display: flex; flex-direction: column; gap: 1rem;
     `;
-    console.error('FATAL:', error);
+
+    errorDiv.innerHTML = `
+        <h1 style="color: #ff4444; margin: 0; font-size: 24px;">Application Crash</h1>
+        <p style="margin: 0; font-size: 16px; line-height: 1.5;">${msg}</p>
+        <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-left: 4px solid #ff4444; white-space: pre-wrap; font-size: 12px;">${stack}</div>
+        <button id="reload-btn" style="
+            padding: 12px 24px; background: #ff4444; color: white; border: none; 
+            border-radius: 4px; font-weight: bold; cursor: pointer; width: fit-content;
+            margin-top: 1rem;
+        ">
+            Reload App
+        </button>
+    `;
+
+    document.body.appendChild(errorDiv);
+    
+    document.getElementById('reload-btn')?.addEventListener('click', () => {
+        window.location.reload();
+    });
 }
 
 window.addEventListener('error', (event) => showFatalError(event.error));
@@ -66,6 +76,7 @@ async function bootstrap() {
         app.use(router)
         app.directive('tooltip', vTooltip)
 
+        // Attempt mount
         app.mount('#app')
 
         // 3. Register PWA Service Worker
