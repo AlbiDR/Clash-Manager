@@ -9,11 +9,11 @@
  *    2. Payload Compression: Returns "Matrix" (Array of Arrays) to reduce size.
  *    3. Pre-Flight Checks: Verifies sheets exist before reading.
  *    4. Per-Row Sanitization: Skips corrupted rows instead of crashing.
- * 🏷️ VERSION: 6.1.0
+ * 🏷️ VERSION: 6.0.0
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.1.0';
+const VER_CONTROLLER_WEBAPP = '6.0.0';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
