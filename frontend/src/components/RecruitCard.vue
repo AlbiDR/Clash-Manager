@@ -60,7 +60,7 @@ function handleClick(e: Event) {
     return
   }
   
-  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
+  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('.btn-icon-action') || (e.target as HTMLElement).closest('a')) return
   
   if ((e.target as HTMLElement).closest('.chevron-btn')) {
     emit('toggle-expand')
@@ -148,8 +148,8 @@ function handleClick(e: Event) {
         >
           Clash Royale
         </a>
-        <button v-if="canShare" class="btn-action secondary compact" @click.stop="shareRecruit">
-          Share
+        <button v-if="canShare" class="btn-icon-action secondary" @click.stop="shareRecruit">
+          <Icon name="share" size="20" />
         </button>
       </div>
     </div>
@@ -325,4 +325,17 @@ function handleClick(e: Event) {
 
 /* Action Buttons */
 /* Uses global .btn-action from style.css */
+
+/* Icon Button (Squircle) */
+.btn-icon-action {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 100%; /* Matches height of pills */
+  border-radius: var(--shape-corner-full); /* Pill consistency */
+  border: none;
+  cursor: pointer;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-primary);
+  transition: background 0.2s;
+}
+.btn-icon-action:active { background: var(--sys-color-surface-variant); transform: scale(0.95); }
 </style>
