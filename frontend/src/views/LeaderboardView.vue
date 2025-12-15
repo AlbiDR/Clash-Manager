@@ -138,14 +138,15 @@ const filteredMembers = computed(() => {
       
       case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
       
-      // We pass the raw value. The helper now accepts 'any' so undefined won't crash the build.
-      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
+      // Explicitly cast to 'any' to resolve TS2345 (string | undefined is not assignable to string)
+      // This works even if the helper signature accepts any, forcing the compiler to ignore the incoming type.
+      case 'war_rate': return parseRate(b.d.rate as any) - parseRate(a.d.rate as any)
       
       case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
       
       case 'last_seen': 
         // Smaller "minutes ago" means more recent. 
-        return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
+        return parseTimeAgo(a.d.seen as any) - parseTimeAgo(b.d.seen as any)
         
       default: return 0
     }
