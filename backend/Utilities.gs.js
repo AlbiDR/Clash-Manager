@@ -12,18 +12,19 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 5.1.0
+ * 🏷️ VERSION: 5.2.0
  * ============================================================================
  */
 
-const VER_UTILITIES = '5.1.0';
+const VER_UTILITIES = '5.2.0';
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
 
 // 🛡️ API BUDGET: Prevents runaway execution from burning daily quotas.
+// UPDATED (v5.2.0): Increased from 400 to 600 to allow "Deep Net Level 2" scans.
 let _FETCH_COUNT = 0;
-const MAX_FETCH_PER_EXECUTION = 400;
+const MAX_FETCH_PER_EXECUTION = 600;
 
 const Utils = {
   /**
@@ -400,12 +401,6 @@ const Utils = {
     return array;
   },
 
-  /**
-   * 🛡️ ROBUST BACKUP SYSTEM
-   * - Rotates backups (1-5).
-   * - Compares content to prevent redundant backups.
-   * - SELF-HEALING: Enforces Sort Order and Visibility on every run.
-   */
   /**
    * 🛡️ ROBUST BACKUP SYSTEM
    * - Rotates backups (1-5).
