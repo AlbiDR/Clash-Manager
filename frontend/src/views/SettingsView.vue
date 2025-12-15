@@ -201,9 +201,10 @@ const editorUrl = computed(() => {
 }
 
 .settings-content {
+    /* REMOVED Horizontal Padding to match ConsoleHeader width */
     max-width: var(--sys-layout-max-width);
     margin: 0 auto;
-    padding: var(--spacing-l) var(--spacing-m) 120px;
+    padding: var(--spacing-l) 0 120px; /* Only Top/Bottom padding */
     display: flex;
     flex-direction: column;
     gap: var(--spacing-l);
