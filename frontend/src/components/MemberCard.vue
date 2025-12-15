@@ -283,12 +283,12 @@ function handleClick(e: Event) {
   font-family: var(--sys-font-family-mono); 
 }
 .stat-sub { 
-  font-size: 10px; 
-  font-weight: 700; 
-  opacity: 0.85; 
-  margin-top: 3px; 
+  font-size: 8.5px; 
+  font-weight: 800; 
+  opacity: 0.9; 
+  margin-top: 2px; 
   text-transform: uppercase; 
-  letter-spacing: 0.5px; 
+  letter-spacing: 0px; 
 }
 
 /* EXPANDED BODY */
