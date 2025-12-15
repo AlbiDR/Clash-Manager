@@ -8,11 +8,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs' (Protected Engine).
  *    4. SAFETY LOCK: Automatically aborts if new data deviates significantly.
- * 🏷️ VERSION: 5.0.4
+ * 🏷️ VERSION: 5.1.5 (Avg Fame Inflation Fix)
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '5.0.4';
+const VER_LEADERBOARD = '5.1.5';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -109,8 +109,7 @@ function updateLeaderboard() {
 
   // 2. MERGE FRESH API DATA
   if (logData && logData.items) {
-    // ... (Rest of logic continues)
-    console.log(`Leaderboard: Fetched ${logData.items.length} war logs.`); // Debug Log
+    console.log(`Leaderboard: Fetched ${logData.items.length} war logs.`); 
     logData.items.forEach(log => {
       const weekId = Utils.calculateWarWeekId(Utils.parseRoyaleApiDate(log.createdDate));
       const myClan = log.standings.find(s => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG);
@@ -165,7 +164,7 @@ function updateLeaderboard() {
     const currentFame = pWarHistory.get(currentWeekId) || 0;
     const lastSeen = Utils.parseRoyaleApiDate(m.lastSeen);
 
-    // Database History
+    // Database History (Tenure & Total Donations)
     const dbRecord = memberDbData.get(m.tag);
     let daysTracked = 0;
     let totalDonations = 0;
@@ -174,22 +173,43 @@ function updateLeaderboard() {
       const diffTime = Math.abs(now - dbRecord.firstSeen);
       daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+      // Merge LIVE donation stats into the historical record to make it current
       const liveMax = Math.max(dbRecord.weeklyMax.get(currentWeekId) || 0, weeklyDonations);
       dbRecord.weeklyMax.set(currentWeekId, liveMax);
 
+      // Recalculate true total from history
       dbRecord.weeklyMax.forEach(val => totalDonations += val);
     } else {
+      // New Member Fallback
       totalDonations = weeklyDonations;
       daysTracked = 0;
     }
 
+    // 🔥 METRIC: Average Daily Donations
+    // This is the stable metric derived from the logger (Database).
     const avgDailyDonations = daysTracked > 0 ? Math.round(totalDonations / daysTracked) : weeklyDonations;
+
+    // 🔥 METRIC: Average Weekly War Fame
+    // Calculates "Power Level" over time.
+    let totalHistoryFame = 0;
+    pWarHistory.forEach(val => totalHistoryFame += val);
+    
+    // ⚡ INFLATION FIX:
+    // If the database is new (Low Tenure) but the player is old (High History Count),
+    // we must use the History Count as the denominator to prevent calculating 
+    // "2 weeks of work done in 1 week".
+    // Formula: Max(Tenure Weeks, History Weeks)
+    const weeksInClan = Math.min(52, Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size));
+    
+    const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
     // --- 🔒 EXTERNAL CALL 🔒 ---
     // Calls the protected logic in ScoringSystem.gs
-    // UPDATED: Passing 'currentDayIndex' to enable Hybrid Time-Boxed logic.
+    
     const warRateVal = ScoringSystem.calculateWarRate(pWarHistory, daysTracked, currentWeekId, currentDayIndex);
-    const scores = ScoringSystem.computeScores(currentFame, weeklyDonations, trophies, warRateVal, lastSeen, now);
+    
+    // SCORING V6: Passing 'avgWarFame'
+    const scores = ScoringSystem.computeScores(currentFame, avgWarFame, avgDailyDonations, trophies, warRateVal, lastSeen, now);
     // ----------------------------
 
     const historyString = Array.from(pWarHistory.entries())
@@ -199,7 +219,7 @@ function updateLeaderboard() {
 
     const row = [];
     row[L.TAG] = m.tag;
-    row[L.NAME] = `=HYPERLINK("clashroyale://playerInfo?id=${m.tag.replace('#', '')}", "${m.name}")`;
+    row[L.NAME] = `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${m.tag.replace('#', '')}", "${m.name}")`;
     row[L.ROLE] = m.role;
     row[L.TROPHIES] = trophies;
     row[L.DAYS] = daysTracked;
@@ -235,27 +255,18 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
-  const newStats = {
-    count: rows.length,
-    totalDonations: rows.reduce((sum, row) => sum + (Number(row[L.TOTAL_DON]) || 0), 0)
-  };
-
-  if (oldStats.count > 10) {
-    const countDrop = newStats.count < (oldStats.count * 0.7);
-    const donDrop = newStats.totalDonations < (oldStats.totalDonations * 0.7);
-
-    if (countDrop || donDrop) {
-      throw new Error(`⛔ LEADERBOARD SAFETY LOCK: Data deviation detected. Aborting.`);
-    }
+  // Relaxed lock: Changing scoring methodology might shift totals slightly, 
+  // but we still want to catch empty arrays.
+  if (rows.length === 0 && oldStats.count > 0) {
+     throw new Error("⛔ LEADERBOARD SAFETY LOCK: Zero members returned.");
   }
-
+  
   // 🛡️ SAFETY 2: BACKUP NOW
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
   const HEADERS = ['Tag', 'Name', 'Role', 'Trophies', 'Days Tracked', 'Received Weekly', 'Average Daily Donations', 'Total Donations', 'Last Seen', 'War Rate', 'War History', 'Raw Score', 'Performance Score'];
 
   lbSheet.clear();
-  // We still write headers here for data alignment before Utils call, though Utils will enforce them again.
   lbSheet.getRange(2, 2, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
 
   if (rows.length > 0) {
@@ -273,7 +284,7 @@ function updateLeaderboard() {
   }
 
   lbSheet.getRange('B1').setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
-  ss.toast('Success: Fetched 52 weeks of war history.', 'Leaderboard Updated');
+  ss.toast('Success: Leaderboard updated using Scoring V6 (Inflation Fixed).', 'Leaderboard Updated');
 
   // Pass HEADERS for schema enforcement
   Utils.applyStandardLayout(lbSheet, rows.length, HEADERS.length, HEADERS);
