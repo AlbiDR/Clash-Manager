@@ -3,7 +3,6 @@ import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
 import { useToast } from '../composables/useToast'
-// New Feature Composables
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 
@@ -17,23 +16,31 @@ import SkeletonCard from '../components/SkeletonCard.vue'
 
 const { pingData } = useApiState()
 
-// Sheet Link Computation
 const sheetUrl = computed(() => {
   if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
   const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
   return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-// Global Data
 const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
 
 const recruits = computed(() => data.value?.hh || [])
 const loading = computed(() => !data.value && isRefreshing.value)
 
 const searchQuery = ref('')
-const sortBy = ref<'score' | 'trophies' | 'name'>('score')
+const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
 
-// 1. Initialize Batch Queue Logic
+// Sort Options Definition
+const sortOptions = [
+  { label: 'Potential Score', value: 'score' },
+  { label: 'Time Found', value: 'time_found' },
+  { label: 'War Wins', value: 'war_wins' },
+  { label: 'Total Donations', value: 'donations' },
+  { label: 'Cards Won', value: 'cards_won' },
+  { label: 'Trophies', value: 'trophies' },
+  { label: 'Name', value: 'name' }
+]
+
 const { 
   selectedIds, 
   fabState, 
@@ -44,17 +51,14 @@ const {
   handleAction 
 } = useBatchQueue()
 
-// 2. Initialize Deep Link Logic
 const { 
   expandedIds, 
   toggleExpand, 
   processDeepLink 
 } = useDeepLinkHandler('recruit-')
 
-// Helper to check selection efficiently
 const selectedSet = computed(() => new Set(selectedIds.value))
 
-// Status Pill Logic
 const timeAgo = computed(() => {
   if (!lastSyncTime.value) return ''
   const ms = Date.now() - lastSyncTime.value
@@ -72,7 +76,6 @@ const status = computed(() => {
   return { type: 'ready', text: 'Empty' } as const
 })
 
-// Stats Badge
 const statsBadge = computed(() => {
   if (!recruits.value) return undefined
   return {
@@ -81,7 +84,9 @@ const statsBadge = computed(() => {
   }
 })
 
-// Filtered and sorted
+// Helper to get timestamp
+const getTs = (str?: string) => str ? new Date(str).getTime() : 0
+
 const filteredRecruits = computed(() => {
   let result = [...recruits.value]
   
@@ -92,7 +97,6 @@ const filteredRecruits = computed(() => {
       (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query))
     )
   } else {
-    // If no query, still filter hidden
     result = result.filter(r => !hiddenIds.value.has(r.id))
   }
   
@@ -101,6 +105,12 @@ const filteredRecruits = computed(() => {
       case 'score': return (b.s || 0) - (a.s || 0)
       case 'trophies': return (b.t || 0) - (a.t || 0)
       case 'name': return a.n.localeCompare(b.n)
+      
+      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago) // Newest first
+      case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
+      case 'donations': return (b.d.don || 0) - (a.d.don || 0)
+      case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
+      
       default: return 0
     }
   })
@@ -108,43 +118,30 @@ const filteredRecruits = computed(() => {
   return result
 })
 
-// Watch for data changes to handle deep links
 watch(recruits, (newVal) => {
     if (newVal.length > 0) processDeepLink(newVal)
 }, { immediate: true })
 
 const { undo, success, error } = useToast()
-
-// Separate state for temporary hiding before commit
 const hiddenIds = ref<Set<string>>(new Set())
 
 function dismissBulk() {
   if (selectedIds.value.length === 0) return
-  
   const ids = [...selectedIds.value]
-  
-  // Clear selection UI using composable action
   clearSelection()
-  
-  // Execute with Undo capability
   executeDismiss(ids)
 }
 
 function executeDismiss(ids: string[]) {
-    // 1. Locally hide immediately
     ids.forEach(id => hiddenIds.value.add(id))
-    
-    // 2. Set timer for actual commit
     const timerId = setTimeout(() => {
         dismissRecruitsAction(ids)
             .catch(() => {
                 error('Failed to sync changes')
-                // Revert local hide if failed
                 ids.forEach(id => hiddenIds.value.delete(id))
             })
-    }, 4500) // 4.5s delay
+    }, 4500)
     
-    // 3. Show Undo Toast
     undo(`Dismissed ${ids.length} recruits`, () => {
         clearTimeout(timerId)
         ids.forEach(id => hiddenIds.value.delete(id))
@@ -168,6 +165,7 @@ function handleSelectAll() {
       :show-search="!isSelectionMode"
       :sheet-url="sheetUrl"
       :stats="statsBadge"
+      :sort-options="sortOptions"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
@@ -257,7 +255,7 @@ function handleSelectAll() {
 .list-leave-to {
   opacity: 0;
   transform: scale(0.95);
-  margin-bottom: -100px; /* Collapses space */
+  margin-bottom: -100px;
 }
 .list-move {
   transition: transform 0.4s var(--sys-motion-spring);
