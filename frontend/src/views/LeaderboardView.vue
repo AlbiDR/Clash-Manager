@@ -94,8 +94,11 @@ function handleSelectAll() {
   selectAll(ids)
 }
 
-// Helper: Parse "2h ago", "5d ago" into comparable minutes
-function parseTimeAgo(str: any): number {
+// ------------------------------------------------------------------
+// SORT HELPERS (Explicit Types)
+// ------------------------------------------------------------------
+
+function parseTimeAgo(str: string | undefined | null): number {
   if (!str || typeof str !== 'string' || str === '-' || str === 'Just now') return 0
   
   const match = str.match(/^(\d+)([ymdh]) ago$/)
@@ -113,8 +116,7 @@ function parseTimeAgo(str: any): number {
   }
 }
 
-// Helper: Parse "100%" -> 100
-function parseRate(str: any): number {
+function parseRate(str: string | undefined | null): number {
   if (!str || typeof str !== 'string') return 0
   return parseFloat(str.replace('%', '')) || 0
 }
