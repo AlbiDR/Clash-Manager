@@ -8,7 +8,7 @@ const router = useRouter()
 const navItems = [
   { path: '/', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
   { path: '/recruiter', name: 'recruiter', label: 'Headhunter', icon: 'recruiter' },
-  { path: '/settings', name: 'settings', label: 'Settings', icon: 'settings' } // Use settings icon which maps to gear/sliders
+  { path: '/settings', name: 'settings', label: '', icon: 'settings' } // Removed label for icon-only look
 ]
 
 function navigate(path: string) {
@@ -27,7 +27,7 @@ function navigate(path: string) {
       @click="navigate(item.path)"
     >
       <Icon :name="item.icon" size="20" :filled="route.path === item.path" />
-      <span class="dock-label">{{ item.label }}</span>
+      <span v-if="item.label" class="dock-label">{{ item.label }}</span>
     </div>
   </div>
 </template>
@@ -102,13 +102,6 @@ function navigate(path: string) {
   .dock-item {
     padding: 10px 14px;
     font-size: 13px;
-  }
-  .dock-item .dock-label {
-    /* Optional: hide label on inactive items for very small screens */
-    /* display: none; */ 
-  }
-  .dock-item.active .dock-label {
-    display: block;
   }
 }
 </style>
