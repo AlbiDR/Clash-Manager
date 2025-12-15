@@ -60,6 +60,21 @@ const editorUrl = computed(() => {
 
     <div class="settings-content">
       
+      <!-- App Info Hero (Moved from Footer) -->
+      <section class="app-info-hero">
+          <div class="app-logo">
+              <Icon name="crown" size="48" />
+          </div>
+          <h3 class="hero-title">Clash Manager: Clan Manager for Clash Royale</h3>
+          <p class="hero-ver">v6.0.0 (Gold Master)</p>
+          <div class="hero-links">
+              <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
+                  <Icon name="github" size="18" />
+                  <span>Source Code</span>
+              </a>
+          </div>
+      </section>
+
       <!-- PWA Install Banner -->
       <div v-if="isInstallable" class="install-banner" @click="install">
         <div class="ib-icon">
@@ -171,21 +186,6 @@ const editorUrl = computed(() => {
             </div>
         </section>
       </div>
-        
-      <!-- About Footer -->
-      <footer class="about-footer">
-          <div class="app-logo">
-              <Icon name="crown" size="48" />
-          </div>
-          <h3 class="footer-title">Clash Manager</h3>
-          <p class="footer-ver">v6.0.0 (Gold Master)</p>
-          <div class="footer-links">
-              <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
-                  <Icon name="github" size="18" />
-                  <span>Source Code</span>
-              </a>
-          </div>
-      </footer>
     </div>
   </div>
 </template>
@@ -198,7 +198,7 @@ const editorUrl = computed(() => {
 .settings-content {
     max-width: var(--sys-layout-max-width);
     margin: 0 auto;
-    padding: var(--spacing-l) 0 120px;
+    padding: 0 0 120px;
     display: flex;
     flex-direction: column;
     /* Main gap handling via stack below */
@@ -383,16 +383,23 @@ const editorUrl = computed(() => {
 .spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; letter-spacing: 0.05em; }
 .spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
 
-/* --- FOOTER --- */
-.about-footer {
+/* --- HERO (APP INFO) --- */
+.app-info-hero {
     text-align: center;
-    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-l);
     color: var(--sys-color-outline);
     display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .app-logo { color: var(--sys-color-primary); margin-bottom: 8px; }
-.footer-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
-.footer-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
+.hero-title { 
+    margin: 0; 
+    font-size: var(--font-size-l); 
+    font-weight: 800; 
+    color: var(--sys-color-on-surface); 
+    line-height: 1.2;
+    padding: 0 16px;
+}
+.hero-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
 
 /* Install Banner */
 .install-banner {
