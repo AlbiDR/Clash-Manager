@@ -15,11 +15,11 @@
  *    5. Mercenary Scoring: Massive bonus for recent war activity.
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
  *    7. Blacklist (Smart): Tracks scores of invited players for 7 days.
- * 🏷️ VERSION: 5.3.1
+ * 🏷️ VERSION: 6.0.0
  * ============================================================================
  */
 
-const VER_RECRUITER = '5.3.1';
+const VER_RECRUITER = '6.0.0';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
