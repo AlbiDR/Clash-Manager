@@ -9,7 +9,6 @@ import Icon from '../components/Icon.vue'
 const newApiUrl = ref('') 
 const isEditing = ref(false)
 
-// Use the centralized composable for all API-related reactive data
 const { 
     apiUrl, 
     apiStatus, 
@@ -17,7 +16,6 @@ const {
     checkApiStatus 
 } = useApiState()
 
-// PWA Install Logic
 const { isInstallable, install } = useInstallPrompt()
 
 onMounted(() => {
@@ -48,7 +46,6 @@ const apiStatusObject = computed(() => {
     return { type: 'loading', text: 'Ping...' } as const
 })
 
-// Editor Link Logic
 const editorUrl = computed(() => {
     if (pingData.value?.scriptId) {
         return `https://script.google.com/home/projects/${pingData.value.scriptId}/edit`
@@ -77,10 +74,11 @@ const editorUrl = computed(() => {
         </div>
       </div>
 
-      <div class="section-card">
+      <!-- Main Cards Stack (No Gap) -->
+      <div class="cards-stack">
         
         <!-- 🌐 Unified Network Dashboard -->
-        <section class="settings-card glass-panel">
+        <section class="glass-panel top-card">
             <header class="card-header">
                 <div class="icon-box">
                     <Icon name="plug" size="24" />
@@ -96,7 +94,6 @@ const editorUrl = computed(() => {
             </header>
 
             <div class="card-body">
-                <!-- Status Row -->
                 <div class="network-stats">
                     <div class="stat-block">
                         <span class="label">Latency</span>
@@ -114,7 +111,6 @@ const editorUrl = computed(() => {
 
                 <div class="divider"></div>
 
-                <!-- Endpoint Configuration -->
                  <div class="field-group">
                     <div class="flex-between">
                         <label class="field-label">API Endpoint</label>
@@ -122,7 +118,6 @@ const editorUrl = computed(() => {
                         <button v-else @click="isEditing = false" class="text-link">Cancel</button>
                     </div>
 
-                    <!-- Display Mode -->
                     <div v-if="!isEditing" class="endpoint-display">
                         <div class="url-text">{{ apiUrl }}</div>
                         <a v-if="editorUrl" :href="editorUrl" target="_blank" class="icon-link" title="Open GAS Editor">
@@ -130,7 +125,6 @@ const editorUrl = computed(() => {
                         </a>
                     </div>
 
-                    <!-- Edit Mode -->
                     <div v-else class="input-row">
                         <input 
                             v-model="newApiUrl"
@@ -153,7 +147,7 @@ const editorUrl = computed(() => {
         </section>
         
         <!-- 📦 System Modules (Tech Specs) -->
-        <section class="settings-card glass-panel" v-if="pingData?.modules">
+        <section class="glass-panel bottom-card" v-if="pingData?.modules">
             <header class="card-header">
                 <div class="icon-box">
                     <Icon name="box" size="24" />
@@ -164,6 +158,7 @@ const editorUrl = computed(() => {
                 </div>
             </header>
 
+            <!-- Specs Grid (Body) -->
             <div class="specs-grid">
                 <div 
                     v-for="(version, name) in pingData.modules" 
@@ -175,23 +170,23 @@ const editorUrl = computed(() => {
                 </div>
             </div>
         </section>
+      </div>
         
-        <!-- About Footer -->
-        <footer class="about-footer">
-            <div class="app-logo">
-                <Icon name="crown" size="48" />
-            </div>
-            <h3 class="footer-title">Clash Manager</h3>
-            <p class="footer-ver">v6.0.0 (Gold Master)</p>
-            <div class="footer-links">
-                <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
-                    <Icon name="github" size="18" />
-                    <span>Source Code</span>
-                </a>
-            </div>
-        </footer>
+      <!-- About Footer -->
+      <footer class="about-footer">
+          <div class="app-logo">
+              <Icon name="crown" size="48" />
+          </div>
+          <h3 class="footer-title">Clash Manager</h3>
+          <p class="footer-ver">v6.0.0 (Gold Master)</p>
+          <div class="footer-links">
+              <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
+                  <Icon name="github" size="18" />
+                  <span>Source Code</span>
+              </a>
+          </div>
+      </footer>
     </div>
-  </div>
   </div>
 </template>
 
@@ -201,13 +196,19 @@ const editorUrl = computed(() => {
 }
 
 .settings-content {
-    /* REMOVED Horizontal Padding to match ConsoleHeader width */
     max-width: var(--sys-layout-max-width);
     margin: 0 auto;
-    padding: var(--spacing-l) 0 120px; /* Only Top/Bottom padding */
+    padding: var(--spacing-l) 0 120px;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-l);
+    /* Main gap handling via stack below */
+}
+
+/* Stack Container for touching cards */
+.cards-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l); /* Gap between the distinct card groups */
 }
 
 /* --- GLASS PANEL --- */
@@ -220,7 +221,6 @@ const editorUrl = computed(() => {
     overflow: hidden;
     box-shadow: var(--sys-elevation-2);
     transition: transform 0.4s var(--sys-motion-spring);
-    /* Entrance Animation */
     animation: fadeSlideIn 0.6s backwards;
 }
 
@@ -371,8 +371,8 @@ const editorUrl = computed(() => {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 1px;
     background: rgba(255,255,255,0.05); /* Grid Lines */
-    border: 1px solid rgba(255,255,255,0.05);
-    background-clip: content-box;
+    /* Ensure no double borders */
+    border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 .spec-item {
@@ -386,14 +386,13 @@ const editorUrl = computed(() => {
 /* --- FOOTER --- */
 .about-footer {
     text-align: center;
-    margin-top: var(--spacing-l);
+    margin-top: var(--spacing-xl);
     color: var(--sys-color-outline);
     display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .app-logo { color: var(--sys-color-primary); margin-bottom: 8px; }
 .footer-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
 .footer-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
-.tech-val.mono { font-family: var(--sys-font-family-mono); letter-spacing: -0.5px; }
 
 /* Install Banner */
 .install-banner {
