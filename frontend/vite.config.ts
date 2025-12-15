@@ -19,7 +19,7 @@ export default defineConfig({
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
-        display_override: ['standalone', 'fullscreen', 'minimal-ui'], // Fallback chain for display modes
+        display_override: ['standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/Clash-Manager/',
         start_url: '/Clash-Manager/',
@@ -41,22 +41,22 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        // Rich Install UI: Add actual screenshots of your app here later
-        // This makes the Android install prompt look like an App Store listing
+        // 📸 RICH INSTALL UI CONFIGURATION
+        // This tells Android to show a big preview card instead of a small popup.
         screenshots: [
           {
-            src: 'pwa-512x512.png', // Placeholder: Replace with actual screenshot later
-            sizes: '512x512',
-            type: 'image/png',
-            form_factor: 'wide',
-            label: 'Desktop Dashboard'
+            src: 'screenshot-mobile.svg', // We created this file in /public
+            sizes: '750x1334',
+            type: 'image/svg+xml',
+            form_factor: 'narrow',
+            label: 'Mobile Dashboard'
           },
           {
-            src: 'pwa-512x512.png', // Placeholder: Replace with actual screenshot later
-            sizes: '512x512',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'Mobile Leaderboard'
+            src: 'screenshot-mobile.svg', // Reusing same image for desktop for now
+            sizes: '750x1334',
+            type: 'image/svg+xml',
+            form_factor: 'wide',
+            label: 'Desktop Dashboard'
           }
         ],
         shortcuts: [
@@ -82,7 +82,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Clean up old caches to prevent storage bloat
         cleanupOutdatedCaches: true, 
         runtimeCaching: [
           {
@@ -92,14 +91,13 @@ export default defineConfig({
               cacheName: 'gas-api-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                maxAgeSeconds: 60 * 60 * 24 
               },
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
           },
-          // Cache Google Fonts (Stylesheets)
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'StaleWhileRevalidate',
@@ -107,19 +105,18 @@ export default defineConfig({
               cacheName: 'google-fonts-stylesheets',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30 
               }
             }
           },
-          // Cache Google Fonts (Font Files)
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst', // Fonts rarely change, serve from cache immediately
+            handler: 'CacheFirst', 
             options: {
               cacheName: 'google-fonts-webfonts',
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365 
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -130,7 +127,7 @@ export default defineConfig({
       }
     })
   ],
-  base: '/Clash-Manager/', // CRITICAL: This must match your GitHub Repo name case-sensitively
+  base: '/Clash-Manager/',
   build: {
     outDir: 'dist',
     sourcemap: false
