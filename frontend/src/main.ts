@@ -20,6 +20,27 @@ function showFatalError(error: any) {
     const msg = error?.message || String(error);
     const stack = error?.stack || 'No stack trace available.';
 
+    // ♻️ AUTO-RECOVERY: Asset/Chunk Load Failures
+    // This happens when a new version is deployed and the user's cached index.html
+    // points to old hashed files (CSS/JS) that no longer exist on the server.
+    if (
+        msg.includes('Unable to preload CSS') || 
+        msg.includes('Failed to fetch dynamically imported module') ||
+        msg.includes('Importing a module script failed')
+    ) {
+        const key = 'cm_retry_timestamp';
+        const lastRetry = parseInt(sessionStorage.getItem(key) || '0');
+        const now = Date.now();
+
+        // Retry only if we haven't done so in the last 15 seconds
+        if (now - lastRetry > 15000) {
+            sessionStorage.setItem(key, now.toString());
+            console.warn('♻️ Stale assets detected. Reloading app to fetch new version...');
+            window.location.reload();
+            return;
+        }
+    }
+
     // Nuke everything. Stop all scripts/rendering.
     document.body.innerHTML = '';
     
