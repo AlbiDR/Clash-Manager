@@ -95,10 +95,10 @@ function handleSelectAll() {
 }
 
 // ------------------------------------------------------------------
-// SORT HELPERS (Using 'any' to bypass strict TS inference issues)
+// SORT HELPERS
 // ------------------------------------------------------------------
 
-function parseTimeAgo(str: any): number {
+function parseTimeAgo(str: string | null | undefined): number {
   if (!str || typeof str !== 'string' || str === '-' || str === 'Just now') return 0
   
   const match = str.match(/^(\d+)([ymdh]) ago$/)
@@ -116,7 +116,7 @@ function parseTimeAgo(str: any): number {
   }
 }
 
-function parseRate(str: any): number {
+function parseRate(str: string | null | undefined): number {
   if (!str || typeof str !== 'string') return 0
   return parseFloat(str.replace('%', '')) || 0
 }
@@ -135,12 +135,13 @@ const filteredMembers = computed(() => {
       case 'name': return a.n.localeCompare(b.n)
       
       case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
-      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
+      // Explicitly handle null/undefined with ?? '' to ensure string type for helper
+      case 'war_rate': return parseRate(b.d.rate ?? '') - parseRate(a.d.rate ?? '')
       case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
       case 'last_seen': 
         // Smaller "minutes ago" means more recent. 
         // If sorting descending (Best/Most Recent first), we want smallest timeAgo first.
-        return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
+        return parseTimeAgo(a.d.seen ?? '') - parseTimeAgo(b.d.seen ?? '')
         
       default: return 0
     }
