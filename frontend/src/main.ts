@@ -4,6 +4,8 @@ import App from './App.vue'
 import router from './router'
 import { vTooltip } from './directives/vTooltip'
 import { useModules } from './composables/useModules'
+import { useApiState } from './composables/useApiState'
+import { useClanData } from './composables/useClanData'
 
 // 🚨 CRITICAL ERROR HANDLER
 // This ensures that if the app crashes (White Screen), the error is shown to the user.
@@ -45,32 +47,38 @@ window.addEventListener('unhandledrejection', (event) => showFatalError(event.re
 
 // --- Application Logic ---
 
-try {
-    // 1. Initialize the module store
-    const moduleState = useModules()
+async function bootstrap() {
     try {
+        // 1. Initialize Global Stores (Logic before UI)
+        const moduleState = useModules()
         moduleState.init()
-    } catch (e) {
-        console.warn('Module initialization warning:', e)
-        // Non-fatal, continue
-    }
 
-    // 2. Mount App
-    const app = createApp(App)
+        const apiState = useApiState()
+        apiState.init()
 
-    app.use(router)
-    app.directive('tooltip', vTooltip)
+        const clanData = useClanData()
+        // We do NOT await this, as it handles its own SWR (Stale-While-Revalidate)
+        clanData.init()
 
-    app.mount('#app')
+        // 2. Mount App
+        const app = createApp(App)
 
-    // 3. Register PWA Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/Clash-Manager/sw.js').catch((err) => {
-                console.log('SW registration failed', err)
+        app.use(router)
+        app.directive('tooltip', vTooltip)
+
+        app.mount('#app')
+
+        // 3. Register PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/Clash-Manager/sw.js').catch((err) => {
+                    console.log('SW registration failed', err)
+                })
             })
-        })
+        }
+    } catch (e) {
+        showFatalError(e);
     }
-} catch (e) {
-    showFatalError(e);
 }
+
+bootstrap();
