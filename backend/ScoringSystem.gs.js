@@ -5,7 +5,7 @@
  * 📝 DESCRIPTION: The mathematical heart of the application.
  * ⚙️ ROLE: Pure Logic. Accepts raw data -> Returns Scores & Sort Orders.
  * 🔒 STATUS: PROTECTED "DO NOT MODIFY" ZONE.
- * 🏷️ VERSION: 5.1.2
+ * 🏷️ VERSION: 5.1.3
  * 
  * 🧠 REASONING:
  *    - Separation of Concerns: This file knows nothing about Sheets or APIs.
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_SCORING_SYSTEM = '5.1.2';
+const VER_SCORING_SYSTEM = '5.1.3';
 
 // 🔒 =======================================================================
 // 🔒 SCORING SYSTEM PROTECTION ZONE
@@ -75,14 +75,16 @@ const ScoringSystem = {
 
   /**
    * Calculates Raw Score and Final Performance Score (with Decay).
+   * SCORING V6 UPDATE: Includes 'averageFame' to stabilize rank based on history.
    */
-  computeScores: function(currentFame, weeklyDonations, trophies, warRateVal, lastSeenDate, now) {
+  computeScores: function(currentFame, averageFame, weeklyDonations, trophies, warRateVal, lastSeenDate, now) {
     const W = CONFIG.LEADERBOARD.WEIGHTS;
     const P = CONFIG.LEADERBOARD.PENALTIES;
 
     // 1. Raw Score Calculation
-    // Includes Veteran Bonus (War Rate)
+    // V6 Formula: Mixed weighting of Current Fame (Volatile) and Average Fame (Stable)
     const rawScore = (currentFame * W.FAME) + 
+                     (averageFame * (W.AVG_FAME || 0)) +
                      (weeklyDonations * W.DONATION) + 
                      (trophies * W.TROPHY) + 
                      (warRateVal * (W.WAR_RATE || 0));
