@@ -3,8 +3,6 @@
  * Defines the shape of import.meta.env and handles static assets.
  */
 
-// /// <reference types="vite/client" />
-
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string
   readonly BASE_URL: string
