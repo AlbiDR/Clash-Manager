@@ -15,7 +15,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  action: []
+  action: [payload: MouseEvent]
   dismiss: []
 }>()
 </script>
@@ -38,7 +38,7 @@ const emit = defineEmits<{
         v-if="actionHref"
         :href="actionHref"
         class="fab-btn primary" 
-        @click="emit('action')"
+        @click="(e) => emit('action', e)"
       >
         <Icon name="check" size="18" />
         <span>{{ label || 'Open' }}</span>
@@ -47,7 +47,7 @@ const emit = defineEmits<{
       <button 
         v-else
         class="fab-btn primary" 
-        @click="emit('action')"
+        @click="(e) => emit('action', e)"
       >
         <Icon name="check" size="18" />
         <span>{{ label || 'Open' }}</span>
