@@ -1,10 +1,12 @@
-```vue
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
-// Use global data composable instead of direct API
+import { ref, computed, watch } from 'vue'
+// Use global data composable
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
+// New Feature Composables
+import { useBatchQueue } from '../composables/useBatchQueue'
+import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
+
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
 import FabIsland from '../components/FabIsland.vue'
@@ -13,7 +15,6 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
 
-const route = useRoute()
 const { pingData } = useApiState()
 
 // Sheet Link Computation
@@ -35,40 +36,23 @@ const loading = computed(() => !data.value && isRefreshing.value)
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name'>('score')
 
-// Expansion & Selection
-const expandedIds = ref<Set<string>>(new Set())
-const selectedIds = ref<Set<string>>(new Set())
-const selectionQueue = ref<string[]>([])
-const selectionMode = ref(false)
+// 1. Initialize Batch Queue Logic
+const { 
+  selectedIds, 
+  fabState, 
+  isSelectionMode, 
+  toggleSelect, 
+  selectAll, 
+  clearSelection, 
+  handleAction 
+} = useBatchQueue()
 
-// Computed for FAB
-const fabState = computed(() => {
-  if (!selectionMode.value) return { visible: false }
-  
-  if (selectionQueue.value.length > 0) {
-    const total = selectedIds.value.size
-    const current = total - selectionQueue.value.length + 1
-    const nextId = selectionQueue.value[0]
-    return {
-      visible: true,
-      label: `Next (${current}/${total})`,
-      actionHref: `clashroyale://playerInfo?id=${nextId}`,
-      dismissLabel: 'Exit',
-      isQueue: true
-    }
-  } else {
-    const ids = Array.from(selectedIds.value)
-    const firstId = ids.length > 0 ? ids[0] : null
-    
-    return {
-      visible: ids.length > 0,
-      label: `Open (${ids.length})`,
-      actionHref: firstId ? `clashroyale://playerInfo?id=${firstId}` : undefined,
-      dismissLabel: 'Clear',
-      isQueue: false
-    }
-  }
-})
+// 2. Initialize Deep Link Logic
+const { 
+  expandedIds, 
+  toggleExpand, 
+  processDeepLink 
+} = useDeepLinkHandler('member-')
 
 // Status Pill Logic
 const timeAgo = computed(() => {
@@ -88,46 +72,22 @@ const status = computed(() => {
   return { type: 'ready', text: 'Empty' } as const
 })
 
-function toggleExpand(id: string) {
-  if (expandedIds.value.has(id)) {
-    expandedIds.value.delete(id)
-  } else {
-    expandedIds.value.add(id)
+// Stats Badge
+const statsBadge = computed(() => {
+  if (!members.value) return undefined
+  return {
+    label: 'Clan',
+    value: members.value.length.toString()
   }
-  expandedIds.value = new Set(expandedIds.value)
-}
+})
 
-function toggleSelect(id: string) {
-  if (selectionQueue.value.length > 0) return
-  if (selectedIds.value.has(id)) {
-    selectedIds.value.delete(id)
-  } else {
-    selectedIds.value.add(id)
-    if (!selectionMode.value) selectionMode.value = true
-  }
-  selectedIds.value = new Set(selectedIds.value)
-  if (selectedIds.value.size === 0) selectionMode.value = false
-}
+// Efficient check for UI binding
+const selectedSet = computed(() => new Set(selectedIds.value))
 
-function selectAll() {
-  filteredMembers.value.forEach(i => selectedIds.value.add(i.id))
-  selectedIds.value = new Set(selectedIds.value)
-}
-
-function selectionAction() {
-  if (selectionQueue.value.length === 0) selectionQueue.value = Array.from(selectedIds.value)
-  setTimeout(() => {
-    selectionQueue.value.shift()
-    if (selectionQueue.value.length === 0) {
-      selectionMode.value = false
-      selectedIds.value.clear()
-    }
-  }, 100)
-}
-
-function dismissSelection() {
-  selectedIds.value.clear()
-  selectionMode.value = false
+function handleSelectAll() {
+  // Pass filtered members to ensure we respect current sort/filter
+  const ids = filteredMembers.value.map(i => i.id)
+  selectAll(ids)
 }
 
 const filteredMembers = computed(() => {
@@ -147,20 +107,9 @@ const filteredMembers = computed(() => {
   return result
 })
 
-function handleDeepLinks() {
-  const pinId = route.query.pin as string
-  if (pinId && members.value.some(m => m.id === pinId)) {
-    expandedIds.value.add(pinId)
-    nextTick(() => {
-      const el = document.getElementById(`member-${pinId}`)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
-  }
-}
-
 // Watch for data changes to handle deep links
 watch(members, (newVal) => {
-    if (newVal.length > 0) handleDeepLinks()
+    if (newVal.length > 0) processDeepLink(newVal)
 }, { immediate: true })
 
 </script>
@@ -172,19 +121,20 @@ watch(members, (newVal) => {
     <ConsoleHeader
       title="Leaderboard"
       :status="status"
-      :show-search="!selectionMode"
+      :show-search="!isSelectionMode"
       :sheet-url="sheetUrl"
+      :stats="statsBadge"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
     >
       <template #extra>
-        <div v-if="selectionMode" class="selection-bar">
-           <div class="sel-count">{{ selectedIds.size }} Selected</div>
+        <div v-if="isSelectionMode" class="selection-bar">
+           <div class="sel-count">{{ selectedIds.length }} Selected</div>
            <div class="sel-actions">
-             <span class="text-btn primary" @click="selectAll">All</span>
-             <span class="text-btn" @click="selectedIds.clear()">None</span>
-             <span class="text-btn danger" @click="dismissSelection">Done</span>
+             <span class="text-btn primary" @click="handleSelectAll">All</span>
+             <span class="text-btn" @click="clearSelection">None</span>
+             <span class="text-btn danger" @click="clearSelection">Done</span>
            </div>
         </div>
       </template>
@@ -199,7 +149,7 @@ watch(members, (newVal) => {
     
     <EmptyState 
       v-else-if="!loading && filteredMembers.length === 0"
-      icon="🍃"
+      icon="leaf"
       message="No members found"
     />
     
@@ -215,8 +165,8 @@ watch(members, (newVal) => {
         :id="`member-${member.id}`"
         :member="member"
         :expanded="expandedIds.has(member.id)"
-        :selected="selectedIds.has(member.id)"
-        :selection-mode="selectionMode"
+        :selected="selectedSet.has(member.id)"
+        :selection-mode="isSelectionMode"
         @toggle="toggleExpand(member.id)"
         @toggle-select="toggleSelect(member.id)"
       />
@@ -226,9 +176,9 @@ watch(members, (newVal) => {
       :visible="fabState.visible"
       :label="fabState.label"
       :action-href="fabState.actionHref"
-      :dismiss-label="fabState.dismissLabel"
-      @action="selectionAction"
-      @dismiss="dismissSelection"
+      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Clear'"
+      @action="handleAction"
+      @dismiss="clearSelection"
     />
   </div>
 </template>
@@ -244,6 +194,7 @@ watch(members, (newVal) => {
 }
 .sel-count { font-size: 20px; font-weight: 700; }
 .text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 
 /* List Physics */
