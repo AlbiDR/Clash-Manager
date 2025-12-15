@@ -55,7 +55,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }
   }
 
-  function selectAll(ids: string[]) {
+  function selectAll(ids: readonly string[]) {
     // 🛡️ Guard: Prevent modifying selection while a batch run is in progress
     if (isProcessing.value) return 
     selectedIds.value = [...ids]
