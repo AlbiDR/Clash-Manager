@@ -1,7 +1,7 @@
 {
   "name": "clash-manager-pwa",
   "private": true,
-  "version": "2.0.0",
+  "version": "6.0.0",
   "description": "A modern, material design PWA for managing Clash Royale clans.",
   "author": "Alberto Di Rosa",
   "repository": {
