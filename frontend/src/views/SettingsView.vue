@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
-// import { useClanData } from '../composables/useClanData'
-// import { useInstallPrompt } from '../composables/useInstallPrompt'
+import { useInstallPrompt } from '../composables/useInstallPrompt'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import Icon from '../components/Icon.vue'
 
@@ -17,10 +16,9 @@ const {
     pingData, 
     checkApiStatus 
 } = useApiState()
-// const { lastSyncTime, syncStatus } = useClanData() 
-// const { isInstallable, install } = useInstallPrompt()
-const isInstallable = ref(false)
-function install() {}
+
+// PWA Install Logic
+const { isInstallable, install } = useInstallPrompt()
 
 onMounted(() => {
     checkApiStatus()
@@ -194,7 +192,6 @@ const editorUrl = computed(() => {
         </footer>
     </div>
   </div>
-  </div>
 </template>
 
 <style scoped>
@@ -202,7 +199,7 @@ const editorUrl = computed(() => {
     min-height: 100%;
 }
 
-.content-wrapper {
+.settings-content {
     max-width: var(--sys-layout-max-width);
     margin: 0 auto;
     padding: var(--spacing-l) var(--spacing-m) 120px;
