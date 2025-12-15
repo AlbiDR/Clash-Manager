@@ -1,6 +1,7 @@
 /**
- * TypeScript Environment Definitions
- * Replaces 'vite/client' reference to fix missing type definition error.
+ * Fallback type definitions for Vite environment.
+ * If 'vite/client' cannot be resolved by the compiler, these will ensure
+ * the app still compiles and runs.
  */
 
 interface ImportMetaEnv {
@@ -22,16 +23,7 @@ declare module '*.vue' {
   export default component
 }
 
-// Static asset declarations normally provided by vite/client
-declare module '*.css' {}
-declare module '*.scss' {}
-declare module '*.sass' {}
-declare module '*.less' {}
-declare module '*.styl' {}
-declare module '*.stylus' {}
-declare module '*.pcss' {}
-declare module '*.sss' {}
-
+// Static asset declarations
 declare module '*.svg' {
   const content: string;
   export default content;
@@ -43,31 +35,6 @@ declare module '*.png' {
 }
 
 declare module '*.jpg' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.jpeg' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.gif' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.bmp' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.tiff' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.webp' {
   const content: string;
   export default content;
 }
