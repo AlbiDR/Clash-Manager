@@ -95,8 +95,8 @@ function handleSelectAll() {
 }
 
 // Helper: Parse "2h ago", "5d ago" into comparable minutes
-function parseTimeAgo(str: string | undefined): number {
-  if (!str || str === '-' || str === 'Just now') return 0
+function parseTimeAgo(str: any): number {
+  if (!str || typeof str !== 'string' || str === '-' || str === 'Just now') return 0
   
   const match = str.match(/^(\d+)([ymdh]) ago$/)
   if (!match) return 99999999 // Unknown/Oldest
@@ -114,8 +114,8 @@ function parseTimeAgo(str: string | undefined): number {
 }
 
 // Helper: Parse "100%" -> 100
-function parseRate(str: string | undefined): number {
-  if (!str) return 0
+function parseRate(str: any): number {
+  if (!str || typeof str !== 'string') return 0
   return parseFloat(str.replace('%', '')) || 0
 }
 
