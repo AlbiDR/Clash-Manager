@@ -1,10 +1,9 @@
 // src/composables/useApiState.ts
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { isConfigured, ping, getApiUrl } from '../api/gasClient'
-// You will also need to define or import the PingResponse type
 import type { PingResponse } from '../types'
 
-// Global Shared State (REPLACING the refs in App.vue and SettingsView.vue)
+// Global Shared State
 const apiUrl = ref('')
 const apiConfigured = ref(false)
 const apiStatus = ref<'checking' | 'online' | 'offline' | 'unconfigured'>('checking')
@@ -15,7 +14,7 @@ let isInitialized = false
 async function checkApiStatus() {
     apiStatus.value = 'checking'
     apiConfigured.value = isConfigured()
-    apiUrl.value = getApiUrl() // Assuming getApiUrl() is available and returns the URL
+    apiUrl.value = getApiUrl() 
 
     if (!apiConfigured.value) {
         apiStatus.value = 'unconfigured'
@@ -42,10 +41,11 @@ async function checkApiStatus() {
 }
 
 export function useApiState() {
-    if (!isInitialized) {
-        // Run initial status check when the composable is first called
-        onMounted(checkApiStatus)
-        isInitialized = true
+    function init() {
+        if (!isInitialized) {
+            checkApiStatus()
+            isInitialized = true
+        }
     }
 
     return {
@@ -53,6 +53,7 @@ export function useApiState() {
         apiConfigured,
         apiStatus,
         pingData,
-        checkApiStatus, // Expose a method to manually refresh (used by SettingsView)
+        checkApiStatus,
+        init
     }
 }
