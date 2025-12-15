@@ -298,29 +298,40 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   }
 
   // E. Profile Phase (PHASE 2: Candidate Shuffle)
-  // 1. Unify duplicates (same player in multiple tournaments?)
-  // Actually, RoyaleAPI tournament details give player snapshots. A player can't be in 2 tournaments at once.
-  // But let's deduce unique tags anyway.
+  // 1. Unify duplicates
   const uniqueCandidates = new Map();
   candidates.forEach(c => uniqueCandidates.set(c.tag, c));
   
   // 🔍 LOGGING: Funnel Stats
   const rawCandidateCount = uniqueCandidates.size;
   
+  // Check max trophies in raw pool (ignoring unknown for this specific log)
+  let maxFoundRaw = 0;
+  let unknownTrophiesCount = 0;
+  uniqueCandidates.forEach(p => {
+    if (p.trophies === undefined || p.trophies === null) unknownTrophiesCount++;
+    else if (p.trophies > maxFoundRaw) maxFoundRaw = p.trophies;
+  });
+  
   // 2. Filter by Trophies FIRST to remove noise
-  // We allow a slightly lower threshold here to widen the net before randomizing
-  // But strictly, we only want people meeting the criteria.
+  // CRITICAL FIX: Tournament objects often miss 'trophies'. 
+  // If missing, we optimistically include them and let Phase D (Profile) verify.
   const qualifiedCandidates = Array.from(uniqueCandidates.values())
-                                   .filter(p => p.trophies >= minTrophies);
+                                   .filter(p => {
+                                      // If trophies is undefined/null, keep them (Optimistic).
+                                      if (p.trophies === undefined || p.trophies === null) return true;
+                                      return p.trophies >= minTrophies;
+                                   });
 
-  console.log(`🔭 Phase C Stats: Scanned ${tourneyTags.length} rooms. Found ${rawCandidateCount} clanless players. Qualified (> ${minTrophies} trophies): ${qualifiedCandidates.length}`);
+  console.log(`🔭 Phase C Stats: Scanned ${tourneyTags.length} rooms. Found ${rawCandidateCount} clanless players.`);
+  console.log(`   > Diagnostics: Max Trophies Visible: ${maxFoundRaw}. Unknown Trophies: ${unknownTrophiesCount}.`);
+  console.log(`   > Optimized Filter: Passing ${qualifiedCandidates.length} candidates to Profile Scan.`);
 
-  // 3. Sort by Trophies to get the "Best" pool
-  qualifiedCandidates.sort((a, b) => b.trophies - a.trophies);
+  // 3. Sort by Trophies to get the "Best" pool (Treat undefined as high priority to check them)
+  qualifiedCandidates.sort((a, b) => (b.trophies || 0) - (a.trophies || 0));
 
   // 4. THE SECOND SHUFFLE:
   // Instead of taking Top 100, we take Top 200, shuffle them, and pick 100.
-  // This gives a chance to lower-trophy players in the top bracket.
   const candidatePool = qualifiedCandidates.slice(0, 200);
   Utils.shuffleArray(candidatePool);
   const tagsToFetch = candidatePool.slice(0, 100).map(p => p.tag);
@@ -337,7 +348,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   playersData.forEach(p => {
     if (p) {
-      // Re-verify trophies (live data might differ from tournament snapshot)
+      // Re-verify trophies (live data definitely has it)
       if (p.trophies >= minTrophies) {
         validCandidates.push(p);
         playersNeedingWarLogs.push(p.tag);
