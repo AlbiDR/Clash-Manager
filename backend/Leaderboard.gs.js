@@ -8,11 +8,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs' (Protected Engine).
  *    4. SAFETY LOCK: Automatically aborts if new data deviates significantly.
- * 🏷️ VERSION: 5.0.3
+ * 🏷️ VERSION: 5.0.4
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '5.0.3';
+const VER_LEADERBOARD = '5.0.4';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -199,7 +199,7 @@ function updateLeaderboard() {
 
     const row = [];
     row[L.TAG] = m.tag;
-    row[L.NAME] = `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${m.tag.replace('#', '')}", "${m.name}")`;
+    row[L.NAME] = `=HYPERLINK("clashroyale://playerInfo?id=${m.tag.replace('#', '')}", "${m.name}")`;
     row[L.ROLE] = m.role;
     row[L.TROPHIES] = trophies;
     row[L.DAYS] = daysTracked;
