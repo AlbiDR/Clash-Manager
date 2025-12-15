@@ -33,12 +33,12 @@ const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' 
 
 // Sort Options Definition
 const sortOptions = [
-  { label: 'Score', value: 'score' },
-  { label: 'Donations / Day', value: 'donations_day' },
-  { label: 'War Rate', value: 'war_rate' },
-  { label: 'Tenure', value: 'tenure' },
-  { label: 'Last Seen', value: 'last_seen' },
+  { label: 'Performance', value: 'score' },
+  { label: 'War Participation', value: 'war_rate' },
+  { label: 'Daily Donations', value: 'donations_day' },
   { label: 'Trophies', value: 'trophies' },
+  { label: 'Tenure', value: 'tenure' },
+  { label: 'Last Active', value: 'last_seen' },
   { label: 'Name', value: 'name' }
 ]
 
