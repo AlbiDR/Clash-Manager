@@ -18,7 +18,7 @@ export function useDeepLinkHandler(domIdPrefix: string) {
     expandedIds.value = newSet
   }
 
-  function processDeepLink(items: { id: string }[]) {
+  function processDeepLink(items: readonly { id: string }[]) {
     // Only run once per session/reload to avoid jarring resets
     if (deepLinkHandled.value) return
 
