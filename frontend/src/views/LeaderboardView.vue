@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-// Use global data composable
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
-// New Feature Composables
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 
@@ -26,15 +24,23 @@ const sheetUrl = computed(() => {
 
 // Global Data
 const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
-
-// Derived Members List from Global Data
 const members = computed(() => data.value?.lb || [])
-
-// Loading state roughly correlates with no data being present
 const loading = computed(() => !data.value && isRefreshing.value)
 
 const searchQuery = ref('')
-const sortBy = ref<'score' | 'trophies' | 'name'>('score')
+// Extended sorting keys
+const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen'>('score')
+
+// Sort Options Definition
+const sortOptions = [
+  { label: 'Score', value: 'score' },
+  { label: 'Donations / Day', value: 'donations_day' },
+  { label: 'War Rate', value: 'war_rate' },
+  { label: 'Tenure', value: 'tenure' },
+  { label: 'Last Seen', value: 'last_seen' },
+  { label: 'Trophies', value: 'trophies' },
+  { label: 'Name', value: 'name' }
+]
 
 // 1. Initialize Batch Queue Logic
 const { 
@@ -81,13 +87,36 @@ const statsBadge = computed(() => {
   }
 })
 
-// Efficient check for UI binding
 const selectedSet = computed(() => new Set(selectedIds.value))
 
 function handleSelectAll() {
-  // Pass filtered members to ensure we respect current sort/filter
   const ids = filteredMembers.value.map(i => i.id)
   selectAll(ids)
+}
+
+// Helper: Parse "2h ago", "5d ago" into comparable minutes
+function parseTimeAgo(str: string): number {
+  if (!str || str === '-' || str === 'Just now') return 0
+  
+  const match = str.match(/^(\d+)([ymdh]) ago$/)
+  if (!match) return 99999999 // Unknown/Oldest
+  
+  const val = parseInt(match[1])
+  const unit = match[2]
+  
+  switch(unit) {
+    case 'm': return val
+    case 'h': return val * 60
+    case 'd': return val * 1440
+    case 'y': return val * 525600
+    default: return val
+  }
+}
+
+// Helper: Parse "100%" -> 100
+function parseRate(str: string): number {
+  if (!str) return 0
+  return parseFloat(str.replace('%', '')) || 0
 }
 
 const filteredMembers = computed(() => {
@@ -96,18 +125,27 @@ const filteredMembers = computed(() => {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(m => m.n.toLowerCase().includes(query) || m.id.toLowerCase().includes(query))
   }
+  
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
       case 'trophies': return (b.t || 0) - (a.t || 0)
       case 'name': return a.n.localeCompare(b.n)
+      
+      case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
+      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
+      case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
+      case 'last_seen': 
+        // Smaller "minutes ago" means more recent. 
+        // If sorting descending (Best/Most Recent first), we want smallest timeAgo first.
+        return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
+        
       default: return 0
     }
   })
   return result
 })
 
-// Watch for data changes to handle deep links
 watch(members, (newVal) => {
     if (newVal.length > 0) processDeepLink(newVal)
 }, { immediate: true })
@@ -124,6 +162,7 @@ watch(members, (newVal) => {
       :show-search="!isSelectionMode"
       :sheet-url="sheetUrl"
       :stats="statsBadge"
+      :sort-options="sortOptions"
       @update:search="val => searchQuery = val"
       @update:sort="val => sortBy = val as any"
       @refresh="refresh"
@@ -142,7 +181,6 @@ watch(members, (newVal) => {
     
     <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
     
-    <!-- Only show Skeleton if completely empty and loading -->
     <div v-else-if="loading && members.length === 0" class="list-container">
       <SkeletonCard v-for="i in 6" :key="i" />
     </div>
