@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Recruit } from '../types'
@@ -292,10 +293,11 @@ function handleClick(e: Event) {
   border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* 💎 NEO-MATERIAL STAT POD */
+/* 💎 NEO-MATERIAL STAT POD (FIXED SIZE) */
 .stat-pod {
   display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; /* Locked Size */
+  width: 45px; /* LOCKED WIDTH */
+  height: 45px; /* LOCKED HEIGHT */
   border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
@@ -305,6 +307,7 @@ function handleClick(e: Event) {
     inset 0 1px 0 rgba(255,255,255,0.1), 
     0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
+  box-sizing: border-box;
 }
 
 .stat-pod.tone-high { 
