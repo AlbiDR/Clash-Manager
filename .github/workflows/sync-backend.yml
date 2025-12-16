@@ -1,0 +1,33 @@
+name: Sync GAS Backend
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'backend/**' # Only runs if files in your backend folder change
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  deploy-gas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Clasp
+        run: npm install -g @google/clasp
+
+      - name: Create Clasp Auth File
+        run: echo "$CLASPRC_JSON" > ~/.clasprc.json
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+
+      - name: Push Code to Google Apps Script
+        run: |
+          cd backend
+          clasp push -f
