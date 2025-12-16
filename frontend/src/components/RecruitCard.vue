@@ -135,6 +135,7 @@ function handleClick(e: Event) {
             target="_blank"
             class="btn-action secondary compact"
           >
+            <Icon name="analytics" size="14" />
             <span>RoyaleAPI</span>
           </a>
           <a 
