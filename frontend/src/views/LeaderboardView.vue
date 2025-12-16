@@ -8,7 +8,6 @@ import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
 import FabIsland from '../components/FabIsland.vue'
-import PullToRefresh from '../components/PullToRefresh.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
@@ -171,8 +170,6 @@ watch(members, (newVal) => {
 
 <template>
   <div class="view-container">
-    <PullToRefresh @refresh="refresh" />
-    
     <ConsoleHeader
       title="Leaderboard"
       :status="status"
