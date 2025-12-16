@@ -37,11 +37,11 @@ const metaWidth = computed(() => {
 <style scoped>
 .skeleton-card {
   background: var(--sys-color-surface-container);
-  border-radius: var(--shape-corner-l);
-  padding: 10px 14px; /* Matches new compact card padding */
+  border-radius: 16px; /* Matched radius */
+  padding: 8px 12px; /* Matched strict padding */
   margin-bottom: 6px;
   border: 1px solid transparent;
-  height: 64px; /* Adjusted total height approx (42px pod + 20px padding + 2px borders) */
+  height: 58px; /* 40px Header + 16px Padding + 2px Border approx */
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
@@ -67,20 +67,21 @@ const metaWidth = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 100%;
+  height: 40px; /* Locked Height */
 }
 
 .info-stack {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
 }
 
 .action-area {
   display: flex;
   align-items: center;
-  gap: var(--spacing-s);
+  gap: 10px;
 }
 
 .sk-bar {
@@ -90,11 +91,11 @@ const metaWidth = computed(() => {
 }
 
 .name-bar {
-  height: 16px; /* Slightly smaller */
+  height: 16px;
 }
 
 .meta-bar {
-  height: 12px; /* Slightly smaller */
+  height: 12px;
 }
 
 .sk-box {
@@ -103,8 +104,8 @@ const metaWidth = computed(() => {
 }
 
 .stat-pod {
-  width: 42px; /* Matched new size */
-  height: 42px; /* Matched new size */
+  width: 40px; /* Matched new size */
+  height: 40px; /* Matched new size */
 }
 
 .sk-circle {
@@ -113,8 +114,8 @@ const metaWidth = computed(() => {
 }
 
 .chevron {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
 }
 
 @keyframes shimmer {
