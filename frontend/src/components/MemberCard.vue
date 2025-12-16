@@ -290,10 +290,12 @@ function handleClick(e: Event) {
   display: inline-block;
   width: 75px;
   text-align: center;
-  font-size: 10px;
+  font-size: 9.5px; /* Slightly smaller to prevent wrapping */
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em; /* Tighter spacing */
+  white-space: nowrap; /* Failsafe to prevent breaking layout */
+  box-sizing: border-box; /* Ensure padding is included in width */
   padding: 3px 8px;
   border-radius: 6px;
   border: 1px solid transparent;
