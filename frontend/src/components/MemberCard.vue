@@ -98,7 +98,7 @@ function handleClick(e: Event) {
   >
     <div class="selection-indicator"></div>
 
-    <!-- Header -->
+    <!-- Header (Strict Height Enforced) -->
     <div class="card-header">
       <div class="info-stack">
         <div class="name-row">
@@ -178,7 +178,8 @@ function handleClick(e: Event) {
 .card {
   background: var(--sys-color-surface-container);
   border-radius: 16px;
-  padding: 10px 12px;
+  /* STRICT PADDING: ensures vertical size is consistent */
+  padding: 8px 12px;
   margin-bottom: 6px;
   position: relative; overflow: hidden;
   transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
@@ -212,30 +213,32 @@ function handleClick(e: Event) {
 }
 .card.selected .selection-indicator { opacity: 1; }
 
-/* HEADER */
+/* HEADER - STRICT HEIGHT */
 .card-header { 
   display: flex; justify-content: space-between; align-items: center;
+  height: 40px; /* Locked Height */
 }
 
-.info-stack { display: flex; flex-direction: column; gap: 2px; }
+.info-stack { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
 
 .name-row { display: flex; align-items: center; gap: 6px; }
 .player-name { 
   font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .meta-row { display: flex; align-items: center; gap: 6px; }
-.meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); }
+.meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
 .dot-separator { font-size: 10px; color: var(--sys-color-outline); opacity: 0.5; }
 .trophy-val { display: flex; align-items: center; }
 
-.action-area { display: flex; align-items: center; gap: 10px; }
+.action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
 
 /* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
   display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px;
+  width: 40px; height: 40px; /* Locked Size matching header */
   border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
@@ -271,11 +274,11 @@ function handleClick(e: Event) {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s var(--sys-motion-spring), margin-top 0.3s ease, border-top 0.3s step-end;
-  /* Reset collapsed state */
+  /* Reset collapsed state completely */
   margin-top: 0;
   padding-top: 0;
   border-top: 0 solid transparent;
-  pointer-events: none; /* Ghost click fix */
+  pointer-events: none;
 }
 
 .body-inner {
@@ -298,7 +301,7 @@ function handleClick(e: Event) {
   transition-delay: 0.1s;
 }
 
-/* STATS ROW */
+/* STATS */
 .stats-row {
   display: flex; justify-content: space-between;
   padding: 0 4px;
@@ -312,7 +315,7 @@ function handleClick(e: Event) {
 .sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; margin-bottom: 2px; }
 .sc-val { font-size: 14px; font-weight: 700; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
 
-/* ACTION TOOLBAR */
+/* ACTIONS */
 .actions-toolbar {
   display: flex; gap: 8px; margin-top: 8px;
 }
