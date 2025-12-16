@@ -1,3 +1,4 @@
+
 /**
  * TypeScript interfaces for Clash Royale Manager
  */
@@ -23,6 +24,7 @@ export interface LeaderboardMember {
     n: string       // Name
     t: number       // Trophies
     s: number       // Performance Score
+    dt?: number     // Score Trend (Performance Score Delta from previous update)
     d: {
         role: string
         days: number
