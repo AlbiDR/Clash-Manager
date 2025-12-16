@@ -9,11 +9,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 6.1.1
+ * 🏷️ VERSION: 6.1.2
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '6.1.1';
+const VER_LEADERBOARD = '6.1.2';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -25,28 +25,47 @@ function updateLeaderboard() {
 
   // 🛡️ SAFETY & HISTORY SNAPSHOT
   // We read the existing scores BEFORE we process new data.
-  // This allows us to calculate the Delta (Trend).
-  let oldStats = { count: 0, totalDonations: 0 };
-  const previousScores = new Map(); // Map<Tag, RawScore>
+  const previousScores = new Map(); // Map<CleanTag, RawScore>
 
   try {
     const lastRow = lbSheet.getLastRow();
-    if (lastRow >= CONFIG.LAYOUT.DATA_START_ROW) {
-      const numCols = Object.keys(L).length; // Read full width including old Trend col
-      const oldData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, lastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1), numCols).getValues();
+    const lastCol = lbSheet.getLastColumn();
+    
+    // Ensure we have enough data to read
+    if (lastRow >= CONFIG.LAYOUT.DATA_START_ROW && lastCol > 0) {
+      // Read entire data range available
+      const oldData = lbSheet.getRange(
+        CONFIG.LAYOUT.DATA_START_ROW, 
+        2, 
+        lastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
+        lastCol - 1 // -1 for buffer column
+      ).getValues();
       
-      oldStats.count = oldData.length;
-      oldStats.totalDonations = oldData.reduce((sum, row) => sum + (Number(row[L.TOTAL_DON]) || 0), 0);
+      // Determine indices dynamically to be safe
+      // Use configured index, but fallback to bounds check
+      const tagIdx = L.TAG;
+      const scoreIdx = L.RAW_SCORE; // Index 11
 
-      // Populate Previous Scores (Using RAW SCORE for precision)
       oldData.forEach(row => {
-        const tag = row[L.TAG];
-        // v6.1.1 Update: Use RAW_SCORE instead of PERF_SCORE to track precise activity changes
-        const score = Number(row[L.RAW_SCORE]) || 0; 
-        if (tag) previousScores.set(tag, score);
+        // Safe read: check if column exists in this row
+        if (row.length > tagIdx && row.length > scoreIdx) {
+          const rawTag = String(row[tagIdx]);
+          const rawScore = row[scoreIdx];
+          
+          if (rawTag) {
+            // NORMALIZE TAG: Remove #, trim, lowercase
+            const cleanKey = rawTag.replace('#', '').trim().toLowerCase();
+            const scoreVal = Number(rawScore) || 0;
+            previousScores.set(cleanKey, scoreVal);
+          }
+        }
       });
+      
+      console.log(`📉 Snapshot: Loaded ${previousScores.size} previous scores for trend analysis.`);
     }
-  } catch (e) { console.warn("⚠️ Safety Check / Snapshot Warning", e); }
+  } catch (e) { 
+    console.warn("⚠️ Safety Check / Snapshot Warning: " + e.message); 
+  }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
@@ -79,30 +98,32 @@ function updateLeaderboard() {
   };
 
   // 1. REHYDRATE FROM ARCHIVE (Existing Sheet Data)
-  // We need to keep history strings even if we wipe the sheet
   if (lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     try {
       const histColIndex = 2 + CONFIG.SCHEMA.LB.HISTORY;
       const tagColIndex = 2 + CONFIG.SCHEMA.LB.TAG;
       const numRows = lbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
 
-      const tagData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, tagColIndex, numRows, 1).getValues();
-      const histData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1).getValues();
+      // Safe check for range validity
+      if (lbSheet.getMaxColumns() >= histColIndex) {
+        const tagData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, tagColIndex, numRows, 1).getValues();
+        const histData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1).getValues();
 
-      tagData.forEach((row, i) => {
-        const tag = row[0];
-        const histStr = histData[i][0];
-        if (tag && histStr && typeof histStr === 'string' && histStr.length > 0) {
-          const archivedMap = Utils.parseWarHistory(histStr);
-          if (archivedMap.size > 0) {
-            if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
-            const userMap = warHistoryMap.get(tag);
-            archivedMap.forEach((fame, wk) => {
-              userMap.set(wk, fame);
-            });
+        tagData.forEach((row, i) => {
+          const tag = row[0];
+          const histStr = histData[i][0];
+          if (tag && histStr && typeof histStr === 'string' && histStr.length > 0) {
+            const archivedMap = Utils.parseWarHistory(histStr);
+            if (archivedMap.size > 0) {
+              if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
+              const userMap = warHistoryMap.get(tag);
+              archivedMap.forEach((fame, wk) => {
+                userMap.set(wk, fame);
+              });
+            }
           }
-        }
-      });
+        });
+      }
     } catch (e) {
       console.warn("Leaderboard: Failed to rehydrate history", e);
     }
@@ -199,10 +220,15 @@ function updateLeaderboard() {
       .join(' | ');
 
     // 📈 CALCULATE TREND (Raw Score Delta)
-    // v6.1.1 Update: Calculates diff using RAW score for precision.
+    // Robust Key Matching (Clean Tag)
     let trend = 0;
-    if (previousScores.has(m.tag)) {
-      trend = scores.raw - previousScores.get(m.tag);
+    const cleanKey = m.tag.replace('#', '').trim().toLowerCase();
+    
+    if (previousScores.has(cleanKey)) {
+      trend = scores.raw - previousScores.get(cleanKey);
+    } else if (previousScores.size > 0) {
+      // New player or tag mismatch, effectively infinite trend or 0
+      // We leave it as 0 to avoid noise for new joins
     }
 
     const row = [];
@@ -234,9 +260,7 @@ function updateLeaderboard() {
     const maxScore = rows[0][L.PERF_SCORE];
     rows.forEach(r => {
       const decayedVal = r[L.PERF_SCORE];
-      r[L.RAW_SCORE] = Math.round(decayedVal);
-      // Keep Perf Score purely as the decayed value, normalized view handled by frontend if needed
-      // Actually, standard is 0-100 normalized.
+      r[L.RAW_SCORE] = Math.round(r[L.RAW_SCORE]); // Ensure Integer
       r[L.PERF_SCORE] = maxScore > 0 ? Math.round((decayedVal / maxScore) * 100) : 0;
     });
   }
@@ -244,9 +268,6 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
-  if (rows.length === 0 && oldStats.count > 0) {
-     throw new Error("⛔ LEADERBOARD SAFETY LOCK: Zero members returned.");
-  }
   
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
@@ -268,7 +289,7 @@ function updateLeaderboard() {
       .build();
     lbSheet.setConditionalFormatRules([rule]);
     
-    // Format Trend Column
+    // Format Trend Column (Red/Green text in Sheet)
     const trendColIndex = 2 + L.TREND;
     const trendRange = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, trendColIndex, rows.length, 1);
     
