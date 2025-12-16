@@ -303,26 +303,45 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-.role-leader {
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  border-color: rgba(var(--sys-color-primary-rgb), 0.2);
-}
+/* --- Role Badge Hierarchy (New) --- */
 
-.role-co-leader {
-  background: var(--sys-color-tertiary-container);
-  color: var(--sys-color-on-tertiary-container);
-}
-
-.role-elder {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-}
-
+/* Level 1: Member (Base) */
 .role-member {
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
-  opacity: 0.8;
+  opacity: 0.9;
+  border: 1px solid var(--sys-color-surface-container-highest);
+}
+
+/* Level 2: Elder (Subtle Depth) */
+.role-elder {
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+  /* Visual Clue: Inner shadow for a slight bevel effect */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--sys-color-outline-variant);
+}
+
+/* Level 3: Co-Leader (Glow and prominence) */
+.role-co-leader {
+  background: var(--sys-color-tertiary-container);
+  color: var(--sys-color-on-tertiary-container);
+  /* Visual Clues: Stronger border and a subtle glow */
+  border: 1px solid var(--sys-color-tertiary);
+  box-shadow: 0 0 6px rgba(var(--sys-color-tertiary-rgb), 0.3);
+}
+
+/* Level 4: Leader (Premium) */
+.role-leader {
+  /* Visual Clues: Gradient, strong glow, inner shine, and bolder font */
+  background: linear-gradient(145deg, var(--sys-color-primary-container), var(--sys-color-primary));
+  color: var(--sys-color-on-primary);
+  border: none; /* Gradient is enough */
+  font-weight: 800; /* Bolder */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 
+    0 0 10px rgba(var(--sys-color-primary-rgb), 0.5), /* Stronger glow */
+    inset 0 1px 1px rgba(255, 255, 255, 0.3); /* Inner shine */
 }
 
 /* 💎 NEO-MATERIAL STAT POD */
