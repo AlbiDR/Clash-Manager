@@ -5,32 +5,27 @@ const props = defineProps<{
   history?: string
 }>()
 
-// Parse war history string (Format: "Score WeekID | Score WeekID...")
-// Returns array of fame values, oldest to newest (left to right)
 const bars = computed(() => {
   if (!props.history || props.history === '-') return []
   
-  // Format: "1600 24W10 | 0 24W09"
   const entries = (props.history || '')
     .split('|')
     .map(x => {
-        const parts = (x || '').trim().split(' ') // Safe trim
+        const parts = (x || '').trim().split(' ')
         const val = parseInt(parts[0] ?? '0')
         return isNaN(val) ? 0 : val
     })
-    .reverse() // Oldest → Newest (left to right)
+    .reverse()
   
-  // Cap at 104 weeks (2 years) just in case, but rely on CSS for width
   return entries.slice(-104)
 })
 
-// Dynamic styling based on density
 const chartStyle = computed(() => {
   const len = bars.value.length
   if (len > 50) return { gap: '1px', radius: '1px' }
   if (len > 30) return { gap: '1px', radius: '2px' }
   if (len > 20) return { gap: '2px', radius: '3px' }
-  return { gap: '4px', radius: '4px' } // Default rounded
+  return { gap: '4px', radius: '4px' }
 })
 </script>
 
@@ -67,8 +62,7 @@ const chartStyle = computed(() => {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
-  /* Hide scrollbar */
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none; 
 }
 .chart-container::-webkit-scrollbar { display: none; }
@@ -78,32 +72,36 @@ const chartStyle = computed(() => {
   align-items: flex-end;
   height: 48px;
   padding: 4px 0;
-  min-width: 100%; /* Ensure it fills at least the container */
-  width: fit-content; /* Allow it to grow horizontally if dense */
+  min-width: 100%;
+  width: fit-content;
 }
 
 .bar {
   flex: 1;
   min-height: 4px;
-  background: var(--md-sys-color-surface-variant, #e0e0e0);
+  background: var(--sys-color-surface-container-highest);
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .bar-hit {
-  background: var(--md-sys-color-secondary, #625b71);
+  background: linear-gradient(to top, var(--sys-color-secondary-container), var(--sys-color-secondary));
+  opacity: 0.8;
 }
 
 .bar-win {
-  background: var(--md-sys-color-primary, #6750a4);
+  background: linear-gradient(to top, var(--sys-color-primary), #6750a4);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .bar-miss {
-  opacity: 0.3;
+  background: var(--sys-color-surface-container-highest);
+  opacity: 0.5;
 }
 
 .war-chart-empty {
   font-size: 0.75rem;
-  color: var(--md-sys-color-outline, #79747e);
+  color: var(--sys-color-outline);
   text-align: center;
   padding: 1rem 0;
 }
