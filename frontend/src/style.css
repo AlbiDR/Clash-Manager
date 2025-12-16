@@ -10,7 +10,6 @@
      -------------------------------------------------------------------------- */
   /* Primary */
   --sys-color-primary: #0061a4;
-  /* Vibrant Blue */
   --sys-color-primary-rgb: 0, 97, 164;
   --sys-color-on-primary: #ffffff;
   --sys-color-primary-container: #d1e4ff;
@@ -18,13 +17,11 @@
 
   /* Secondary */
   --sys-color-secondary: #535f70;
-  /* Cool Grey */
   --sys-color-secondary-container: #d7e3f7;
   --sys-color-on-secondary-container: #101c2b;
 
   /* Tertiary */
   --sys-color-tertiary: #6b5778;
-  /* Muted Purple */
   --sys-color-tertiary-rgb: 107, 87, 120;
   --sys-color-tertiary-container: #f2daff;
   --sys-color-on-tertiary-container: #251431;
@@ -47,19 +44,17 @@
   /* Surface Container Levels (Depth) */
   --sys-color-surface-container-low: #f7f2fa;
   --sys-color-surface-container: #f3edf7;
-  /* Default Cards */
   --sys-color-surface-container-high: #ece6f0;
   --sys-color-surface-container-highest: #e6e0e9;
 
   /* Outlines */
   --sys-color-outline: #73777f;
   --sys-color-outline-variant: #c4c7c5;
-  /* Dividers */
 
-  /* 🥛 GLASS TOKENS */
-  --sys-surface-glass: rgba(253, 252, 255, 0.75);
-  --sys-surface-glass-border: rgba(255, 255, 255, 0.4);
-  --sys-surface-glass-blur: blur(20px) saturate(180%);
+  /* 🥛 GLASS TOKENS (Refined) */
+  --sys-surface-glass: rgba(255, 255, 255, 0.7);
+  --sys-surface-glass-border: rgba(255, 255, 255, 0.5);
+  --sys-surface-glass-blur: blur(24px) saturate(180%);
 
   /* --------------------------------------------------------------------------
      📏 SPACING SYSTEM (Grid: 4px)
@@ -75,26 +70,20 @@
   /* --------------------------------------------------------------------------
      🔤 TYPOGRAPHY SYSTEM
      -------------------------------------------------------------------------- */
-  --sys-font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, sans-serif;
+  --sys-font-family-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --sys-font-family-mono: 'JetBrains Mono', "SF Mono", "Roboto Mono", monospace;
 
   --font-size-xs: 11px;
   --font-size-s: 13px;
   --font-size-m: 15px;
-  /* Body Copy */
   --font-size-l: 17px;
-  /* Headings */
   --font-size-xl: 22px;
-  /* Titles */
   --font-size-2xl: 28px;
-  /* Display */
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 600;
-  /* Modern bold (Premium feel without being too thick) */
-  --font-weight-heavy: 700;
-  /* Headers */
+  --font-weight-heavy: 750;
 
   /* --------------------------------------------------------------------------
      📐 SHAPE & LAYOUT
@@ -102,8 +91,8 @@
   --shape-corner-xs: 4px;
   --shape-corner-s: 8px;
   --shape-corner-m: 12px;
-  --shape-corner-l: 24px;
-  /* Cards */
+  --shape-corner-l: 20px; /* Slightly reduced for cleaner look */
+  --shape-corner-xl: 28px;
   --shape-corner-full: 9999px;
 
   --sys-layout-max-width: 720px;
@@ -112,52 +101,53 @@
      🎭 PHYSICS & ELEVATION
      -------------------------------------------------------------------------- */
   --sys-elevation-0: 0 0 0 0 transparent;
-  --sys-elevation-1: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --sys-elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --sys-elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --sys-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --sys-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --sys-elevation-3: 0 12px 24px -4px rgba(0, 0, 0, 0.12), 0 4px 8px -2px rgba(0,0,0,0.06);
 
-  --sys-motion-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sys-motion-spring: cubic-bezier(0.2, 0.9, 0.2, 1);
   --sys-motion-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
   --sys-motion-duration: 0.3s;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark Mode Colors */
-    --sys-color-primary: #aecbfa;
-    --sys-color-primary-rgb: 174, 203, 250;
-    --sys-color-on-primary: #003258;
-    --sys-color-primary-container: #00497d;
-    --sys-color-on-primary-container: #d1e4ff;
+    /* Dark Mode Colors - Deep Blue-Black Base */
+    --sys-color-primary: #a8c7fa;
+    --sys-color-primary-rgb: 168, 199, 250;
+    --sys-color-on-primary: #00315b;
+    --sys-color-primary-container: #004781;
+    --sys-color-on-primary-container: #d7e3ff;
 
-    --sys-color-secondary: #bbc7db;
-    --sys-color-secondary-container: #3b4858;
-    --sys-color-on-secondary-container: #d7e3f7;
+    --sys-color-secondary: #bec6dc;
+    --sys-color-secondary-container: #3e4755;
+    --sys-color-on-secondary-container: #dae2f9;
 
-    --sys-color-tertiary: #d6bee4;
-    --sys-color-tertiary-rgb: 214, 190, 228;
-    --sys-color-tertiary-container: #523f5f;
-    --sys-color-on-tertiary-container: #f2daff;
+    --sys-color-tertiary: #d7bde4;
+    --sys-color-tertiary-rgb: 215, 189, 228;
+    --sys-color-tertiary-container: #533f5d;
+    --sys-color-on-tertiary-container: #f4d9ff;
 
     --sys-color-error: #ffb4ab;
     --sys-color-error-container: #93000a;
     --sys-color-on-error-container: #ffdad6;
 
-    --sys-color-background: #101014;
-    /* Deep OLED Black-ish */
-    --sys-color-on-background: #e6e1e5;
-    --sys-color-surface: #101014;
-    --sys-color-on-surface: #e6e1e5;
+    /* Deep OLED-like Base */
+    --sys-color-background: #0b0e14;
+    --sys-color-on-background: #e1e2e8;
+    --sys-color-surface: #0b0e14;
+    --sys-color-on-surface: #e1e2e8;
 
-    --sys-color-surface-container-low: #18191e;
-    --sys-color-surface-container: #202127;
-    --sys-color-surface-container-high: #2b2d35;
-    --sys-color-surface-container-highest: #363841;
+    /* Refined Surface Hierarchy */
+    --sys-color-surface-container-low: #13161c;
+    --sys-color-surface-container: #1b1f27;
+    --sys-color-surface-container-high: #242932;
+    --sys-color-surface-container-highest: #2f343e;
 
-    --sys-color-outline: #8e9196;
-    --sys-color-outline-variant: #444746;
+    --sys-color-outline: #8e9199;
+    --sys-color-outline-variant: #43474e;
 
-    --sys-surface-glass: rgba(16, 16, 20, 0.75);
+    --sys-surface-glass: rgba(11, 14, 20, 0.75);
     --sys-surface-glass-border: rgba(255, 255, 255, 0.08);
   }
 }
@@ -171,25 +161,41 @@
 }
 
 html {
-  font-family: var(--sys-typescale-body);
-  /* Use system defaults or requested font */
+  font-family: var(--sys-font-family-body);
+  /* Smoother fonts */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   margin: 0;
   background-color: var(--sys-color-background);
-  /* Depth Layer: Subtle gradient to give atmosphere */
+  /* Atmospheric Gradient */
   background-image:
-    radial-gradient(circle at 10% 20%, rgba(var(--sys-color-primary-rgb), 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(var(--sys-color-tertiary-rgb), 0.03) 0%, transparent 40%);
+    radial-gradient(circle at 0% 0%, rgba(var(--sys-color-primary-rgb), 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(var(--sys-color-tertiary-rgb), 0.06) 0%, transparent 50%);
   background-attachment: fixed;
   color: var(--sys-color-on-background);
-  font-family: var(--sys-typescale-body);
-  /* Space for Dock + Safe Area */
-  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
   overflow-y: scroll;
-  /* Prevent rubber-banding on app shell */
   overscroll-behavior-y: none;
+}
+
+/* Custom Scrollbar (WebKit) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sys-color-outline-variant);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sys-color-outline);
 }
 
 #app {
@@ -200,8 +206,7 @@ body {
 .app-container {
   max-width: var(--sys-layout-max-width);
   margin: 0 auto;
-  padding: 0 8px;
-  /* Slight padding for card spread */
+  padding: 0 12px;
 }
 
 .hidden {
@@ -212,60 +217,43 @@ body {
    ANIMATIONS
    ============================================================================ */
 @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(var(--sys-color-primary-rgb), 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(var(--sys-color-primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--sys-color-primary-rgb), 0); }
 }
 
 /* Staggered Children Helper */
-.stagger-children>* {
-  animation: fadeSlideIn 0.4s backwards;
+.stagger-children > * {
+  animation: fadeSlideIn 0.5s var(--sys-motion-spring) backwards;
 }
-
-.stagger-children>*:nth-child(1) {
-  animation-delay: 30ms;
-}
-
-.stagger-children>*:nth-child(2) {
-  animation-delay: 60ms;
-}
-
-.stagger-children>*:nth-child(3) {
-  animation-delay: 90ms;
-}
-
-.stagger-children>*:nth-child(4) {
-  animation-delay: 120ms;
-}
-
-.stagger-children>*:nth-child(5) {
-  animation-delay: 150ms;
-}
+.stagger-children > *:nth-child(1) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 250ms; }
 
 /* ============================================================================
    COMMON UTILITIES
    ============================================================================ */
 .role-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
-  padding: 4px 10px;
-  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
   background: var(--sys-color-tertiary-container);
   color: var(--sys-color-on-tertiary-container);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn-action {
@@ -275,29 +263,32 @@ body {
   justify-content: center;
   gap: 8px;
   padding: 16px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
   text-decoration: none;
   border-radius: var(--shape-corner-full);
-  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s;
+  transition: all 0.2s var(--sys-motion-spring);
   cursor: pointer;
   border: none;
+  /* Inner shadow for depth */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .btn-action:active {
-  transform: scale(0.96);
-  /* More satisfying click */
+  transform: scale(0.97);
+  opacity: 0.9;
 }
 
 .btn-action.primary {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-  box-shadow: var(--sys-elevation-1);
+  box-shadow: 0 4px 8px rgba(var(--sys-color-primary-rgb), 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
 .btn-action.secondary {
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .btn-action.compact {
