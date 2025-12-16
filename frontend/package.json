@@ -2,7 +2,7 @@
 {
   "name": "clash-manager-pwa",
   "private": true,
-  "version": "6.0.0",
+  "version": "6.1.1",
   "description": "A modern, material design PWA for managing Clash Royale clans.",
   "author": "AlbiDR",
   "repository": {
@@ -39,3 +39,4 @@
     "vue-tsc": "^3.1.4"
   }
 }
+
