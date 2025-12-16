@@ -9,11 +9,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 6.1.3
+ * 🏷️ VERSION: 6.1.5
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '6.1.3';
+const VER_LEADERBOARD = '6.1.5';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -25,6 +25,7 @@ function updateLeaderboard() {
 
   // 🛡️ SAFETY & HISTORY SNAPSHOT
   // We read the existing scores BEFORE we process new data.
+  // UPDATE: Tracking RAW SCORE (Col 11) for precise momentum calc.
   const previousScores = new Map(); // Map<CleanTag, RawScore>
 
   try {
@@ -35,8 +36,6 @@ function updateLeaderboard() {
     // Ensure we have enough data to read
     if (lastRow >= startRow && maxCols > 2) {
       
-      // Calculate a safe width to read. We need at least up to RAW_SCORE (index 11 -> col 13)
-      // Read up to 20 columns, or whatever the sheet has, minus the left buffer.
       const colsToRead = Math.min(20, maxCols - 1);
       
       const oldData = lbSheet.getRange(
@@ -46,21 +45,19 @@ function updateLeaderboard() {
         colsToRead
       ).getValues();
       
-      const tagIdx = L.TAG; // 0
-      const scoreIdx = L.RAW_SCORE; // 11
+      const tagIdx = L.TAG; 
+      const scoreIdx = L.RAW_SCORE; // ✨ CHANGED BACK: Tracking Raw Score (Index 11)
 
       oldData.forEach(row => {
         // Safe read: check if column exists in this row data
         if (row.length > scoreIdx) {
           const rawTag = String(row[tagIdx]);
-          const rawScore = row[scoreIdx];
+          const score = row[scoreIdx];
           
           if (rawTag && rawTag.startsWith('#')) {
-            // NORMALIZE TAG: Remove #, trim, lowercase
             const cleanKey = rawTag.replace('#', '').trim().toLowerCase();
-            const scoreVal = Number(rawScore);
+            const scoreVal = Number(score);
             
-            // Only store if it's a valid number (0 is valid)
             if (!isNaN(scoreVal)) {
               previousScores.set(cleanKey, scoreVal);
             }
@@ -186,15 +183,16 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   const rows = [];
 
+  // Sort helper to normalize scores first so trends are accurate to the final result
+  const rawMemberResults = [];
+
   membersData.items.forEach(m => {
-    // Stats
     const trophies = m.trophies || 0;
     const weeklyDonations = m.donations || 0;
     const pWarHistory = warHistoryMap.get(m.tag) || new Map();
     const currentFame = pWarHistory.get(currentWeekId) || 0;
     const lastSeen = Utils.parseRoyaleApiDate(m.lastSeen);
 
-    // Database History
     const dbRecord = memberDbData.get(m.tag);
     let daysTracked = 0;
     let totalDonations = 0;
@@ -226,50 +224,62 @@ function updateLeaderboard() {
       .map(([wk, f]) => `${f} ${wk}`)
       .join(' | ');
 
-    // 📈 CALCULATE TREND (Raw Score Delta)
-    let trend = 0;
-    const cleanKey = m.tag.replace('#', '').trim().toLowerCase();
+    rawMemberResults.push({
+      member: m,
+      trophies,
+      daysTracked,
+      avgDailyDonations,
+      totalDonations,
+      lastSeen,
+      warRateVal,
+      historyString,
+      scores,
+      cleanKey: m.tag.replace('#', '').trim().toLowerCase()
+    });
+  });
+
+  // Calculate Max Score first for Normalization
+  let maxPerfScore = 0;
+  rawMemberResults.forEach(r => {
+    if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf;
+  });
+
+  // ----------------------------------------------------------------------------
+  // 3. FINALIZE & CALCULATE TREND
+  // ----------------------------------------------------------------------------
+
+  rawMemberResults.forEach(r => {
+    // Normalize Performance Score (0-100)
+    const normalizedPerf = maxPerfScore > 0 ? Math.round((r.scores.perf / maxPerfScore) * 100) : 0;
     
-    // We strictly check if previousScores has the key.
-    // If key missing, trend = 0 (New player or data reset)
-    if (previousScores.has(cleanKey)) {
-      const oldScore = previousScores.get(cleanKey);
-      trend = scores.raw - oldScore;
+    // 📈 CALCULATE TREND (RAW SCORE DELTA)
+    let trend = 0;
+    if (previousScores.has(r.cleanKey)) {
+      const oldRaw = previousScores.get(r.cleanKey);
+      trend = r.scores.raw - oldRaw;
     }
 
     const row = [];
-    row[L.TAG] = m.tag;
-    row[L.NAME] = `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${m.tag.replace('#', '')}", "${m.name}")`;
-    row[L.ROLE] = m.role;
-    row[L.TROPHIES] = trophies;
-    row[L.DAYS] = daysTracked;
-    row[L.WEEKLY_REQ] = m.donationsReceived;
-    row[L.AVG_DAY] = avgDailyDonations;
-    row[L.TOTAL_DON] = totalDonations;
-    row[L.LAST_SEEN] = timeAgo(lastSeen);
-    row[L.WAR_RATE] = `${warRateVal}%`;
-    row[L.HISTORY] = historyString;
-    row[L.RAW_SCORE] = scores.raw;
-    row[L.PERF_SCORE] = scores.perf;
+    row[L.TAG] = r.member.tag;
+    row[L.NAME] = `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${r.member.tag.replace('#', '')}", "${r.member.name}")`;
+    row[L.ROLE] = r.member.role;
+    row[L.TROPHIES] = r.trophies;
+    row[L.DAYS] = r.daysTracked;
+    row[L.WEEKLY_REQ] = r.member.donationsReceived;
+    row[L.AVG_DAY] = r.avgDailyDonations;
+    row[L.TOTAL_DON] = r.totalDonations;
+    row[L.LAST_SEEN] = timeAgo(r.lastSeen);
+    row[L.WAR_RATE] = `${r.warRateVal}%`;
+    row[L.HISTORY] = r.historyString;
+    row[L.RAW_SCORE] = r.scores.raw;
+    row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score
     row[L.TREND] = trend; // ✨ Raw Score Delta
 
     rows.push(row);
   });
 
-  // ----------------------------------------------------------------------------
-  // 3. SORTING & NORMALIZATION
-  // ----------------------------------------------------------------------------
-
+  // Sort
   rows.sort(ScoringSystem.comparator);
-
-  if (rows.length > 0) {
-    const maxScore = rows[0][L.PERF_SCORE];
-    rows.forEach(r => {
-      const decayedVal = r[L.PERF_SCORE];
-      r[L.RAW_SCORE] = Math.round(r[L.RAW_SCORE]); // Ensure Integer
-      r[L.PERF_SCORE] = maxScore > 0 ? Math.round((decayedVal / maxScore) * 100) : 0;
-    });
-  }
 
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
@@ -293,21 +303,17 @@ function updateLeaderboard() {
       .setGradientMaxpointWithValue('#6aa84f', SpreadsheetApp.InterpolationType.NUMBER, "100")
       .setRanges([lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, scoreColIndex, rows.length, 1)])
       .build();
-    lbSheet.setConditionalFormatRules([rule]);
     
     // Format Trend Column (Red/Green text in Sheet)
     const trendColIndex = 2 + L.TREND;
     const trendRange = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, trendColIndex, rows.length, 1);
     
-    // Green > 0
     const trendPos = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThan(0)
       .setFontColor("#2e7d32").setBold(true).setRanges([trendRange]).build();
-    // Red < 0
     const trendNeg = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberLessThan(0)
       .setFontColor("#c62828").setBold(true).setRanges([trendRange]).build();
-    // Gray = 0
     const trendNeu = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberEqualTo(0)
       .setFontColor("#cccccc").setRanges([trendRange]).build();
@@ -316,7 +322,7 @@ function updateLeaderboard() {
   }
 
   lbSheet.getRange('B1').setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
-  ss.toast('Success: Leaderboard updated with Performance Trends.', 'Leaderboard Updated');
+  ss.toast('Success: Leaderboard updated.', 'Leaderboard Updated');
 
   Utils.applyStandardLayout(lbSheet, rows.length, HEADERS.length, HEADERS);
 }
