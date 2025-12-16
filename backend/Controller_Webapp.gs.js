@@ -4,11 +4,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.1.0
+ * 🏷️ VERSION: 6.1.1
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.1.0';
+const VER_CONTROLLER_WEBAPP = '6.1.1';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -111,8 +111,8 @@ function refreshWebPayload() {
       const data = {
         format: 'matrix',
         schema: {
-          // 'dt' = Delta Trend (Score Change)
-          lb: ['id', 'n', 't', 's', 'role', 'days', 'avg', 'seen', 'rate', 'hist', 'dt'],
+          // 'dt' = Delta Trend (Raw Score Change), 'r' = Raw Score
+          lb: ['id', 'n', 't', 's', 'role', 'days', 'avg', 'seen', 'rate', 'hist', 'dt', 'r'],
           hh: ['id', 'n', 't', 's', 'don', 'war', 'ago', 'cards']
         },
         lb: extractSheetDataMatrix(ss, CONFIG.SHEETS.LB, CONFIG.SCHEMA.LB, false),
@@ -213,9 +213,10 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
         const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || '-');
         const hist = sanitizeStr(r[SCHEMA.HISTORY]);
-        const trend = sanitizeNum(r[SCHEMA.TREND]); // ✨ SCORE TREND
+        const trend = sanitizeNum(r[SCHEMA.TREND]); // Raw Score Delta
+        const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]); // Raw Score Total
 
-        return [id, name, trophies, score, role, days, avg, seen, rateDisplay, hist, trend];
+        return [id, name, trophies, score, role, days, avg, seen, rateDisplay, hist, trend, raw];
       }
 
     } catch (err) {
