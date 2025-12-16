@@ -303,21 +303,21 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-/* --- Role Badge Hierarchy (V4) --- */
+/* --- Role Badge Hierarchy (V5) --- */
 
 /* Level 1: Member (Base) */
 .role-member {
   background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-outline); /* FIX: Was using undefined var */
+  color: var(--sys-color-outline);
   opacity: 0.9;
   border: 1px solid var(--sys-color-surface-container-highest);
 }
 
-/* Level 2: Elder (Introduces a subtle blue tint) */
+/* Level 2: Elder (Introduces blue text and border) */
 .role-elder {
-  background: rgba(var(--sys-color-secondary-rgb), 0.1); /* Very slight blue tint */
-  color: var(--sys-color-on-secondary-container); /* Use the family's text color for consistency */
-  border: 1px solid rgba(var(--sys-color-secondary-rgb), 0.4); /* A matching, subtle border */
+  background: var(--sys-color-surface-container-high); /* Keep neutral background */
+  color: var(--sys-color-secondary); /* Use the main secondary color for text */
+  border: 1px solid var(--sys-color-secondary); /* Use a solid secondary color border */
 }
 
 /* Level 3: Co-Leader (Secondary color, active glow) */
