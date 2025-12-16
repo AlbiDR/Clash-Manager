@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { LeaderboardMember } from '../types'
@@ -49,6 +50,16 @@ const displayRate = computed(() => {
   const n = parseFloat(String(val))
   if (!isNaN(n) && n <= 1) return Math.round(n * 100) + '%'
   return val
+})
+
+// Performance Trend Logic
+const trend = computed(() => {
+  const dt = props.member.dt
+  if (dt === undefined || dt === 0 || isNaN(dt)) return null
+  return {
+    val: Math.abs(dt),
+    dir: dt > 0 ? 'up' : 'down'
+  }
 })
 
 // Composables
@@ -124,9 +135,17 @@ function handleClick(e: Event) {
       </div>
 
       <div class="action-area">
+        <!-- SCORE POD with Trend -->
         <div class="stat-pod" :class="toneClass">
-          <div class="stat-score">{{ Math.round(member.s || 0) }}</div>
+          <div class="score-stack">
+            <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
+            <!-- Trend Pill Inside Score Pod -->
+            <div v-if="trend" class="trend-mini" :class="trend.dir">
+              {{ trend.dir === 'up' ? '+' : '-' }}{{ trend.val }}
+            </div>
+          </div>
         </div>
+        
         <div class="chevron-btn">
           <Icon name="chevron_down" size="18" />
         </div>
@@ -270,7 +289,7 @@ function handleClick(e: Event) {
 
 /* 
    -----------------------------------------------------------------------
-   BADGE SYSTEM: Unified Geometry (20px Height, 75px Width, 6px Radius) 
+   BADGE SYSTEM
    -----------------------------------------------------------------------
 */
 
@@ -291,32 +310,30 @@ function handleClick(e: Event) {
 
 /* 
    -----------------------------------------------------------------------
-   ROLE BADGE HIERARCHY (Atomic Additive System)
+   ROLE BADGE HIERARCHY
    -----------------------------------------------------------------------
 */
 
 .role-badge {
-  display: inline-flex; /* Ensures content is perfectly centered without hacks */
+  display: inline-flex; 
   align-items: center;
   justify-content: center;
   
   width: 75px;
-  height: 20px; /* Locked to tenure badge height */
+  height: 20px; 
   
   border-radius: 6px;
-  font-size: 9.5px; /* Tuned to fit "CO-LEADER" exactly */
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   
-  border: 1px solid transparent; /* Keeps sizing consistent across outlined/filled */
+  border: 1px solid transparent; 
   flex-shrink: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
-/* Level 1: MEMBER (Base) */
-/* Matte Outline. No Fill. Neutral. */
 .role-member {
   background: transparent;
   color: var(--sys-color-outline);
@@ -324,28 +341,22 @@ function handleClick(e: Event) {
   opacity: 0.8;
 }
 
-/* Level 2: ELDER (Activated) */
-/* Neon Outline. Tinted Fill. Active Blue. */
 .role-elder {
-  background: rgba(var(--sys-color-primary-rgb), 0.08); /* Minimal Tint */
+  background: rgba(var(--sys-color-primary-rgb), 0.08); 
   color: var(--sys-color-primary);
-  border-color: var(--sys-color-primary); /* Strong Border */
+  border-color: var(--sys-color-primary); 
 }
 
-/* Level 3: CO-LEADER (Elevated) */
-/* Neon Outline + Light Fill. "Elder" Border + "Admin" Weight. */
 .role-co-leader {
-  background: var(--sys-color-primary-container); /* Light Blue Fill */
-  color: var(--sys-color-on-primary-container); /* Dark Blue Text */
-  border-color: var(--sys-color-primary); /* MATCHES ELDER BORDER */
+  background: var(--sys-color-primary-container); 
+  color: var(--sys-color-on-primary-container); 
+  border-color: var(--sys-color-primary); 
   box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
 }
 
-/* Level 4: LEADER (Supreme) */
-/* Solid Dark Fill. Self-colored Border. Maximum Weight. */
 .role-leader {
-  background: var(--sys-color-primary); /* Dark Blue Fill */
-  color: var(--sys-color-on-primary); /* White Text */
+  background: var(--sys-color-primary); 
+  color: var(--sys-color-on-primary); 
   border-color: var(--sys-color-primary);
   box-shadow: 
     0 2px 4px rgba(var(--sys-color-primary-rgb), 0.4),
@@ -357,17 +368,32 @@ function handleClick(e: Event) {
 /* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
   display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; /* Locked Size matching header */
+  width: 40px; height: 40px; /* Locked Size */
   border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
-  font-weight: 800; font-size: 14px;
-  font-family: var(--sys-font-family-mono);
   box-shadow: 
     inset 0 1px 0 rgba(255,255,255,0.1), 
     0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
 }
+
+.score-stack {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+.stat-score {
+  font-weight: 800; font-size: 14px;
+  font-family: var(--sys-font-family-mono);
+}
+
+.trend-mini {
+  font-size: 8px; font-weight: 700;
+  margin-top: 1px;
+}
+.trend-mini.up { color: #b9f6ca; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
+.trend-mini.down { color: #ffdad6; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
 
 .stat-pod.tone-high { 
   background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
@@ -393,11 +419,7 @@ function handleClick(e: Event) {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s var(--sys-motion-spring), margin-top 0.3s ease, border-top 0.3s step-end;
-  /* Reset collapsed state completely */
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0 solid transparent;
-  pointer-events: none;
+  margin-top: 0; padding-top: 0; border-top: 0 solid transparent; pointer-events: none;
 }
 
 .body-inner {
