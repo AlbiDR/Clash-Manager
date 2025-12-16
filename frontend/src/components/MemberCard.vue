@@ -118,8 +118,8 @@ function handleClick(e: Event) {
         <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
         <!-- Row 2, Col 2 -->
         <span class="meta-val trophy-val">
-          <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
           <Icon name="trophy" size="12" style="color:#fbbf24;" />
+          <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
         </span>
       </div>
 
@@ -441,9 +441,7 @@ function handleClick(e: Event) {
   cursor: pointer;
 }
 .trophy-text {
-  min-width: 42px;
-  text-align: right;
   display: inline-block;
-  margin-right: 4px; /* Space between text and icon */
+  margin-left: 4px; /* Space between icon and text */
 }
 </style>
