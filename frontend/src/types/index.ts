@@ -24,7 +24,8 @@ export interface LeaderboardMember {
     n: string       // Name
     t: number       // Trophies
     s: number       // Performance Score
-    dt?: number     // Score Trend (Performance Score Delta from previous update)
+    r?: number      // Raw Score (Total)
+    dt?: number     // Score Trend (Raw Score Delta)
     d: {
         role: string
         days: number
@@ -83,3 +84,4 @@ export interface DismissResponse {
     count?: number
     message?: string
 }
+
