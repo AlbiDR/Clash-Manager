@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🏆 MODULE: LEADERBOARD
@@ -6,13 +7,13 @@
  * ⚙️ ALGORITHM OVERVIEW:
  *    1. Hybrid Data Fetch: Combines Live API (Current stats) + DB (Tenure).
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
- *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs' (Protected Engine).
- *    4. SAFETY LOCK: Automatically aborts if new data deviates significantly.
- * 🏷️ VERSION: 6.0.0
+ *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
+ *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
+ * 🏷️ VERSION: 6.1.1
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '6.0.0';
+const VER_LEADERBOARD = '6.1.1';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -22,17 +23,30 @@ function updateLeaderboard() {
 
   const L = CONFIG.SCHEMA.LB;
 
-  // 🛡️ SAFETY 1: SNAPSHOT EXISTING STATE
+  // 🛡️ SAFETY & HISTORY SNAPSHOT
+  // We read the existing scores BEFORE we process new data.
+  // This allows us to calculate the Delta (Trend).
   let oldStats = { count: 0, totalDonations: 0 };
+  const previousScores = new Map(); // Map<Tag, RawScore>
+
   try {
     const lastRow = lbSheet.getLastRow();
     if (lastRow >= CONFIG.LAYOUT.DATA_START_ROW) {
-      const numCols = Object.keys(L).length;
+      const numCols = Object.keys(L).length; // Read full width including old Trend col
       const oldData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, lastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1), numCols).getValues();
+      
       oldStats.count = oldData.length;
       oldStats.totalDonations = oldData.reduce((sum, row) => sum + (Number(row[L.TOTAL_DON]) || 0), 0);
+
+      // Populate Previous Scores (Using RAW SCORE for precision)
+      oldData.forEach(row => {
+        const tag = row[L.TAG];
+        // v6.1.1 Update: Use RAW_SCORE instead of PERF_SCORE to track precise activity changes
+        const score = Number(row[L.RAW_SCORE]) || 0; 
+        if (tag) previousScores.set(tag, score);
+      });
     }
-  } catch (e) { console.warn("⚠️ Safety Check Warning", e); }
+  } catch (e) { console.warn("⚠️ Safety Check / Snapshot Warning", e); }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
@@ -42,8 +56,6 @@ function updateLeaderboard() {
   const urls = [
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
-    // ⚠️ CRITICAL: Set limit to 52 for 1 year history (User Requested Limit)
-    // Added unique timestamp to bypass proxy caching
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`
   ];
 
@@ -56,15 +68,9 @@ function updateLeaderboard() {
 
   const now = new Date();
   const currentWeekId = Utils.calculateWarWeekId(now);
-
-  // 🕒 TIMEZONE SAFEGUARD (Hybrid War Rate Logic)
-  // We determine the Day of Week (1=Mon ... 7=Sun) based on the CLAN'S Timezone,
-  // NOT the Google Server's timezone. This prevents "Fake Data" caused by server location.
-  // 'u' returns ISO-8601 day number: 1 = Monday, 7 = Sunday.
   const currentDayIndex = parseInt(Utilities.formatDate(now, CONFIG.SYSTEM.TIMEZONE, 'u'));
 
   // A. Build War History Map
-  // ------------------------------------------------------------------------
   const warHistoryMap = new Map();
   const addWarEntry = (tag, weekId, fame) => {
     if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
@@ -73,35 +79,30 @@ function updateLeaderboard() {
   };
 
   // 1. REHYDRATE FROM ARCHIVE (Existing Sheet Data)
-  // We do this FIRST so new API data can update/correct it.
+  // We need to keep history strings even if we wipe the sheet
   if (lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     try {
       const histColIndex = 2 + CONFIG.SCHEMA.LB.HISTORY;
       const tagColIndex = 2 + CONFIG.SCHEMA.LB.TAG;
       const numRows = lbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
 
-      // Fetch Tags and History Columns
       const tagData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, tagColIndex, numRows, 1).getValues();
-      const histData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1).getValues(); // Load raw strings
+      const histData = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1).getValues();
 
       tagData.forEach((row, i) => {
         const tag = row[0];
         const histStr = histData[i][0];
-
         if (tag && histStr && typeof histStr === 'string' && histStr.length > 0) {
           const archivedMap = Utils.parseWarHistory(histStr);
           if (archivedMap.size > 0) {
             if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
             const userMap = warHistoryMap.get(tag);
-
-            // Merge Archive into Active Map
             archivedMap.forEach((fame, wk) => {
               userMap.set(wk, fame);
             });
           }
         }
       });
-      console.log(`Leaderboard: Rehydrated history for ${tagData.length} players.`);
     } catch (e) {
       console.warn("Leaderboard: Failed to rehydrate history", e);
     }
@@ -109,7 +110,6 @@ function updateLeaderboard() {
 
   // 2. MERGE FRESH API DATA
   if (logData && logData.items) {
-    console.log(`Leaderboard: Fetched ${logData.items.length} war logs.`); 
     logData.items.forEach(log => {
       const weekId = Utils.calculateWarWeekId(Utils.parseRoyaleApiDate(log.createdDate));
       const myClan = log.standings.find(s => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG);
@@ -136,7 +136,8 @@ function updateLeaderboard() {
 
     dbValues.forEach(row => {
       const tag = row[S_DB.TAG];
-      const date = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : new Date();
+      const dateVal = row[S_DB.DATE];
+      const date = dateVal ? new Date(dateVal) : new Date();
       const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
       const weekId = Utils.calculateWarWeekId(date);
 
@@ -146,13 +147,14 @@ function updateLeaderboard() {
 
       const h = memberDbData.get(tag);
       if (date < h.firstSeen) h.firstSeen = date;
+      
       const currentMax = h.weeklyMax.get(weekId) || 0;
       if (donGiven > currentMax) h.weeklyMax.set(weekId, donGiven);
     });
   }
 
   // ----------------------------------------------------------------------------
-  // 2. LOGIC DELEGATION (Using External ScoringSystem Module)
+  // 2. LOGIC DELEGATION
   // ----------------------------------------------------------------------------
   const rows = [];
 
@@ -164,7 +166,7 @@ function updateLeaderboard() {
     const currentFame = pWarHistory.get(currentWeekId) || 0;
     const lastSeen = Utils.parseRoyaleApiDate(m.lastSeen);
 
-    // Database History (Tenure & Total Donations)
+    // Database History
     const dbRecord = memberDbData.get(m.tag);
     let daysTracked = 0;
     let totalDonations = 0;
@@ -173,49 +175,35 @@ function updateLeaderboard() {
       const diffTime = Math.abs(now - dbRecord.firstSeen);
       daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      // Merge LIVE donation stats into the historical record to make it current
       const liveMax = Math.max(dbRecord.weeklyMax.get(currentWeekId) || 0, weeklyDonations);
       dbRecord.weeklyMax.set(currentWeekId, liveMax);
-
-      // Recalculate true total from history
       dbRecord.weeklyMax.forEach(val => totalDonations += val);
     } else {
-      // New Member Fallback
       totalDonations = weeklyDonations;
       daysTracked = 0;
     }
 
-    // 🔥 METRIC: Average Daily Donations
-    // This is the stable metric derived from the logger (Database).
     const avgDailyDonations = daysTracked > 0 ? Math.round(totalDonations / daysTracked) : weeklyDonations;
 
-    // 🔥 METRIC: Average Weekly War Fame
-    // Calculates "Power Level" over time.
     let totalHistoryFame = 0;
     pWarHistory.forEach(val => totalHistoryFame += val);
-    
-    // ⚡ INFLATION FIX:
-    // If the database is new (Low Tenure) but the player is old (High History Count),
-    // we must use the History Count as the denominator to prevent calculating 
-    // "2 weeks of work done in 1 week".
-    // Formula: Max(Tenure Weeks, History Weeks)
     const weeksInClan = Math.min(52, Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size));
-    
     const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
-    // --- 🔒 EXTERNAL CALL 🔒 ---
-    // Calls the protected logic in ScoringSystem.gs
-    
     const warRateVal = ScoringSystem.calculateWarRate(pWarHistory, daysTracked, currentWeekId, currentDayIndex);
-    
-    // SCORING V6: Passing 'avgWarFame'
     const scores = ScoringSystem.computeScores(currentFame, avgWarFame, avgDailyDonations, trophies, warRateVal, lastSeen, now);
-    // ----------------------------
 
     const historyString = Array.from(pWarHistory.entries())
       .sort((a, b) => b[0].localeCompare(a[0]))
       .map(([wk, f]) => `${f} ${wk}`)
       .join(' | ');
+
+    // 📈 CALCULATE TREND (Raw Score Delta)
+    // v6.1.1 Update: Calculates diff using RAW score for precision.
+    let trend = 0;
+    if (previousScores.has(m.tag)) {
+      trend = scores.raw - previousScores.get(m.tag);
+    }
 
     const row = [];
     row[L.TAG] = m.tag;
@@ -231,23 +219,24 @@ function updateLeaderboard() {
     row[L.HISTORY] = historyString;
     row[L.RAW_SCORE] = scores.raw;
     row[L.PERF_SCORE] = scores.perf;
+    row[L.TREND] = trend; // ✨ Raw Score Delta
 
     rows.push(row);
   });
 
   // ----------------------------------------------------------------------------
-  // 3. SORTING & NORMALIZATION (Using External ScoringSystem Module)
+  // 3. SORTING & NORMALIZATION
   // ----------------------------------------------------------------------------
 
-  // --- 🔒 EXTERNAL CALL 🔒 ---
   rows.sort(ScoringSystem.comparator);
-  // ----------------------------
 
   if (rows.length > 0) {
     const maxScore = rows[0][L.PERF_SCORE];
     rows.forEach(r => {
       const decayedVal = r[L.PERF_SCORE];
       r[L.RAW_SCORE] = Math.round(decayedVal);
+      // Keep Perf Score purely as the decayed value, normalized view handled by frontend if needed
+      // Actually, standard is 0-100 normalized.
       r[L.PERF_SCORE] = maxScore > 0 ? Math.round((decayedVal / maxScore) * 100) : 0;
     });
   }
@@ -255,16 +244,13 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
-  // Relaxed lock: Changing scoring methodology might shift totals slightly, 
-  // but we still want to catch empty arrays.
   if (rows.length === 0 && oldStats.count > 0) {
      throw new Error("⛔ LEADERBOARD SAFETY LOCK: Zero members returned.");
   }
   
-  // 🛡️ SAFETY 2: BACKUP NOW
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
-  const HEADERS = ['Tag', 'Name', 'Role', 'Trophies', 'Days Tracked', 'Received Weekly', 'Average Daily Donations', 'Total Donations', 'Last Seen', 'War Rate', 'War History', 'Raw Score', 'Performance Score'];
+  const HEADERS = ['Tag', 'Name', 'Role', 'Trophies', 'Days Tracked', 'Received Weekly', 'Average Daily Donations', 'Total Donations', 'Last Seen', 'War Rate', 'War History', 'Raw Score', 'Performance Score', 'Trend'];
 
   lbSheet.clear();
   lbSheet.getRange(2, 2, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
@@ -281,36 +267,45 @@ function updateLeaderboard() {
       .setRanges([lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, scoreColIndex, rows.length, 1)])
       .build();
     lbSheet.setConditionalFormatRules([rule]);
+    
+    // Format Trend Column
+    const trendColIndex = 2 + L.TREND;
+    const trendRange = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, trendColIndex, rows.length, 1);
+    
+    // Green > 0
+    const trendPos = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThan(0)
+      .setFontColor("#2e7d32").setBold(true).setRanges([trendRange]).build();
+    // Red < 0
+    const trendNeg = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberLessThan(0)
+      .setFontColor("#c62828").setBold(true).setRanges([trendRange]).build();
+    // Gray = 0
+    const trendNeu = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberEqualTo(0)
+      .setFontColor("#cccccc").setRanges([trendRange]).build();
+      
+    lbSheet.setConditionalFormatRules([rule, trendPos, trendNeg, trendNeu]);
   }
 
   lbSheet.getRange('B1').setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
-  ss.toast('Success: Leaderboard updated using Scoring V6 (Inflation Fixed).', 'Leaderboard Updated');
+  ss.toast('Success: Leaderboard updated with Performance Trends.', 'Leaderboard Updated');
 
-  // Pass HEADERS for schema enforcement
   Utils.applyStandardLayout(lbSheet, rows.length, HEADERS.length, HEADERS);
 }
 
-/**
- * Helper: Formats a date into "4h ago" or "2d ago" style.
- */
 function timeAgo(date) {
   if (!date) return "-";
   const seconds = Math.floor((new Date() - date) / 1000);
-
   let interval = seconds / 31536000;
   if (interval > 1) return Math.floor(interval) + "y ago";
-
   interval = seconds / 2592000;
   if (interval > 1) return Math.floor(interval) + "mo ago";
-
   interval = seconds / 86400;
   if (interval > 1) return Math.floor(interval) + "d ago";
-
   interval = seconds / 3600;
   if (interval > 1) return Math.floor(interval) + "h ago";
-
   interval = seconds / 60;
   if (interval > 1) return Math.floor(interval) + "m ago";
-
   return "Just now";
 }
