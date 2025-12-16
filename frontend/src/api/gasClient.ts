@@ -28,8 +28,9 @@ const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' // Updated for v6 Gold Master
 
 /**
  * Inflates a Matrix-compressed response back into Objects.
+ * Exported for testing purposes.
  */
-function inflatePayload(data: any): WebAppData {
+export function inflatePayload(data: any): WebAppData {
     // Handle String Transport Protocol: Double-parse if data is a string
     if (typeof data === 'string') {
         try {
@@ -212,3 +213,4 @@ export function isConfigured(): boolean {
 export function getApiUrl(): string {
     return GAS_URL || '(not configured)'
 }
+
