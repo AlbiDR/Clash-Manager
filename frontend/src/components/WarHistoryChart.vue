@@ -37,7 +37,7 @@ const bars = computed(() => {
           'bar-miss': fame === 0
         }"
         :style="{ 
-          height: `${Math.max(10, Math.min(100, (fame / 3200) * 100))}%`
+          height: `${Math.max(15, Math.min(100, (fame / 3200) * 100))}%`
         }"
       />
     </div>
@@ -50,9 +50,9 @@ const bars = computed(() => {
 <style scoped>
 .chart-container {
   width: 100%;
-  height: 24px; /* Fixed small height */
+  height: 28px; /* Slightly taller for elegance */
   overflow: hidden;
-  margin: 8px 0;
+  margin: 12px 0; /* More breathing room */
   display: flex; align-items: flex-end;
 }
 
@@ -61,29 +61,30 @@ const bars = computed(() => {
   align-items: flex-end;
   height: 100%;
   width: 100%;
-  gap: 2px;
+  gap: 3px; /* Wider gap for clarity */
 }
 
 .bar {
   flex: 1;
-  min-height: 2px;
-  border-radius: 1px;
-  opacity: 0.5;
+  min-height: 4px;
+  border-radius: 4px; /* Fully rounded pill shape */
+  opacity: 0.9;
   transition: all 0.2s ease;
+  background-color: var(--sys-color-surface-container-highest);
 }
 
 .bar-hit {
-  background-color: var(--sys-color-secondary);
+  background: linear-gradient(to top, var(--sys-color-secondary-container), var(--sys-color-secondary));
+  opacity: 0.8;
 }
 
 .bar-win {
-  background-color: var(--sys-color-primary);
-  opacity: 1;
+  background: linear-gradient(to top, var(--sys-color-primary), #6750a4);
+  box-shadow: 0 0 4px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
 .bar-miss {
-  background-color: var(--sys-color-surface-container-highest);
-  opacity: 0.3;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .war-chart-empty {
