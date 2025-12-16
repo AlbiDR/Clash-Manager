@@ -17,6 +17,7 @@
 
   /* Secondary */
   --sys-color-secondary: #535f70;
+  --sys-color-secondary-rgb: 83, 95, 112;
   --sys-color-secondary-container: #d7e3f7;
   --sys-color-on-secondary-container: #101c2b;
 
@@ -120,6 +121,7 @@
     --sys-color-on-primary-container: #d7e3ff;
 
     --sys-color-secondary: #bec6dc;
+    --sys-color-secondary-rgb: 190, 198, 220;
     --sys-color-secondary-container: #3e4755;
     --sys-color-on-secondary-container: #dae2f9;
 
