@@ -303,32 +303,36 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-/* --- Role Badge Hierarchy (V6 - Final) --- */
+/* --- Role Badge Hierarchy (V7 - Final) --- */
 
-/* Level 1: Member (Base) */
+/* Level 1: Member (Subdued Ghost) */
 .role-member {
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-outline);
-  opacity: 0.9;
-  border: 1px solid var(--sys-color-surface-container-highest);
+  border: 1px solid var(--sys-color-outline-variant);
+  opacity: 0.8;
 }
 
-/* Level 2: Elder (Solid Blue Background) */
+/* Level 2: Elder (Vibrant Ghost - Blue Text/Border, Clear Bg) */
+/* This looks like an "Officer" badge - crisp and colored but not heavy */
 .role-elder {
-  background: var(--sys-color-secondary-container); /* Unmistakable solid blue fill */
-  color: var(--sys-color-on-secondary-container);
-  border: 1px solid var(--sys-color-secondary);
+  background: rgba(var(--sys-color-primary-rgb), 0.1);
+  color: var(--sys-color-primary); /* Bright Blue Text */
+  border: 1px solid var(--sys-color-primary); /* Bright Blue Border */
+  box-shadow: 0 0 2px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
-/* Level 3: Co-Leader (Adds Glow) */
+/* Level 3: Co-Leader (Solid Fill - Blue Bg, White Text) */
+/* This looks like a "Commander" badge - heavy and visually dominant */
 .role-co-leader {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-  border: 1px solid var(--sys-color-secondary);
-  box-shadow: 0 0 8px rgba(var(--sys-color-secondary-rgb), 0.4); /* Glow effect */
+  background: var(--sys-color-primary); /* Solid Blue Block */
+  color: var(--sys-color-on-primary); /* White Text */
+  border: 1px solid var(--sys-color-primary);
+  box-shadow: 0 2px 6px rgba(var(--sys-color-primary-rgb), 0.4);
+  font-weight: 750; /* Slightly bolder */
 }
 
-/* Level 4: Leader (Premium) */
+/* Level 4: Leader (Premium Gradient) */
 .role-leader {
   background: linear-gradient(145deg, var(--sys-color-primary-container), var(--sys-color-primary));
   color: var(--sys-color-on-primary);
