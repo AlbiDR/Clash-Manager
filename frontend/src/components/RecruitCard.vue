@@ -100,8 +100,8 @@ function handleClick(e: Event) {
         <span class="role-badge tag-badge">#{{ recruit.id }}</span>
         <!-- Row 2, Col 2: Trophies -->
         <span class="meta-val trophy-val">
-          <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
           <Icon name="trophy" size="12" style="color:#fbbf24;" />
+          <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
         </span>
       </div>
 
@@ -408,9 +408,7 @@ function handleClick(e: Event) {
   cursor: pointer;
 }
 .trophy-text {
-  min-width: 42px;
-  text-align: right;
   display: inline-block;
-  margin-right: 4px;
+  margin-left: 4px;
 }
 </style>
