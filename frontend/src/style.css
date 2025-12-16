@@ -245,6 +245,9 @@ body {
    COMMON UTILITIES
    ============================================================================ */
 .role-badge {
+  display: inline-block; /* For width and text-align */
+  min-width: 75px; /* For horizontal alignment */
+  text-align: center; /* For horizontal alignment */
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -254,6 +257,7 @@ body {
   background: var(--sys-color-tertiary-container);
   color: var(--sys-color-on-tertiary-container);
   border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
 }
 
 .btn-action {
