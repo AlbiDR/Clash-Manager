@@ -99,7 +99,7 @@ function handleClick(e: Event) {
           <span class="dot-separator">•</span>
           <span class="trophy-val">
              {{ (recruit.t || 0).toLocaleString() }} 
-             <Icon name="trophy" size="13" style="margin-left:2px; color:#fbbf24;" />
+             <Icon name="trophy" size="12" style="margin-left:2px; color:#fbbf24;" />
           </span>
         </div>
       </div>
@@ -110,7 +110,7 @@ function handleClick(e: Event) {
           <div class="stat-sub">POTENTIAL</div>
         </div>
         <div class="chevron-btn">
-          <Icon name="chevron_down" size="20" />
+          <Icon name="chevron_down" size="18" />
         </div>
       </div>
     </div>
@@ -159,8 +159,8 @@ function handleClick(e: Event) {
 .card {
   background: var(--sys-color-surface-container);
   border-radius: var(--shape-corner-l);
-  padding: 14px 16px;
-  margin-bottom: 8px;
+  padding: 10px 14px; /* Slimmer Padding */
+  margin-bottom: 6px; /* Tighter list */
   border: 1px solid rgba(255,255,255,0.03);
   box-shadow: 
     0 1px 0 rgba(255,255,255,0.05) inset,
@@ -180,9 +180,10 @@ function handleClick(e: Event) {
 .card.expanded { 
   box-shadow: var(--sys-elevation-3); 
   background: var(--sys-color-surface-container-high);
-  z-index: 10; margin: 16px 0;
+  z-index: 10; margin: 12px 0;
   border-color: var(--sys-color-primary);
   box-shadow: 0 0 0 1px var(--sys-color-primary) inset, var(--sys-elevation-3);
+  padding-bottom: 14px;
 }
 
 .card.selected { 
@@ -208,36 +209,38 @@ function handleClick(e: Event) {
 
 .info-stack { 
   display: flex; flex-direction: column; 
-  gap: 4px;
+  gap: 2px;
   min-width: 0; 
 }
 
-.name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+.name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;}
 
 .player-name { 
   font-family: var(--sys-font-family-body);
-  font-size: 16px; 
+  font-size: 15px; 
   font-weight: var(--font-weight-heavy); 
   color: var(--sys-color-on-surface); 
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .meta-row { 
   display: flex; align-items: center; 
   gap: 6px; 
-  font-size: 13px; 
+  font-size: 12px; 
   color: var(--sys-color-outline); 
   font-weight: var(--font-weight-medium); 
+  line-height: 1.2;
 }
 
 .dot-separator { font-size: 8px; opacity: 0.5; }
 
-.action-area { display: flex; align-items: center; gap: 12px; }
+.action-area { display: flex; align-items: center; gap: 8px; }
 
 .chevron-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
+  width: 24px; height: 24px;
   color: var(--sys-color-outline);
   background: rgba(0,0,0,0.03);
   border-radius: 50%;
@@ -245,11 +248,11 @@ function handleClick(e: Event) {
 }
 .card.expanded .chevron-btn { transform: rotate(180deg); background: rgba(0,0,0,0.1); color: var(--sys-color-on-surface); }
 
-/* STAT POD */
+/* STAT POD (Slimmed) */
 .stat-pod {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 52px; height: 52px; 
-  border-radius: 16px; 
+  width: 42px; height: 42px; 
+  border-radius: 12px; 
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
@@ -271,17 +274,17 @@ function handleClick(e: Event) {
 }
 
 .stat-score { 
-  font-size: 18px; 
+  font-size: 15px; 
   font-weight: 800; 
   line-height: 1; 
   letter-spacing: -0.5px; 
   font-family: var(--sys-font-family-mono); 
 }
 .stat-sub { 
-  font-size: 7px; 
+  font-size: 6px; 
   font-weight: 800; 
   opacity: 0.8; 
-  margin-top: 2px; 
+  margin-top: 1px; 
   text-transform: uppercase; 
   letter-spacing: 0.5px; 
 }
@@ -300,8 +303,8 @@ function handleClick(e: Event) {
 .card.expanded .card-body {
   grid-template-rows: 1fr;
   opacity: 1;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
   border-top-style: dashed;
 }
@@ -315,8 +318,8 @@ function handleClick(e: Event) {
 
 .stat-item { 
   background: var(--sys-color-surface-container); 
-  padding: 10px 8px; 
-  border-radius: 12px; 
+  padding: 8px 6px; 
+  border-radius: 10px; 
   text-align: center; 
   border: 1px solid rgba(255,255,255,0.02);
 }
