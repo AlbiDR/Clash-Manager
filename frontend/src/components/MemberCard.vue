@@ -139,7 +139,7 @@ function handleClick(e: Event) {
         <div class="stat-pod" :class="toneClass">
           <div class="score-stack">
             <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-            <!-- Trend Pill Inside Score Pod -->
+            <!-- Trend Pill (Visibility Update: Added background class) -->
             <div v-if="trend" class="trend-mini" :class="trend.dir">
               {{ trend.dir === 'up' ? '+' : '-' }}{{ trend.val }}
             </div>
@@ -391,9 +391,19 @@ function handleClick(e: Event) {
 .trend-mini {
   font-size: 8px; font-weight: 700;
   margin-top: 1px;
+  padding: 0 4px;
+  border-radius: 4px;
 }
-.trend-mini.up { color: #b9f6ca; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
-.trend-mini.down { color: #ffdad6; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
+.trend-mini.up { 
+  color: #002105;
+  background: #b9f6ca;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.trend-mini.down { 
+  color: #410002;
+  background: #ffdad6;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
 
 .stat-pod.tone-high { 
   background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
@@ -496,3 +506,4 @@ function handleClick(e: Event) {
   margin-left: 4px; /* Space between icon and text */
 }
 </style>
+
