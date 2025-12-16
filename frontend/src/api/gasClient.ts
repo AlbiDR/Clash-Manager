@@ -48,7 +48,7 @@ export function inflatePayload(data: any): WebAppData {
 
     const { lb, hh, timestamp } = data
 
-    // Inflate Leaderboard: [id, n, t, s, role, days, avg, seen, rate, hist, dt]
+    // Inflate Leaderboard: [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
     const inflatedLB: LeaderboardMember[] = (lb || []).map((r: any[]) => ({
         id: r[0],
         n: r[1],
@@ -62,7 +62,8 @@ export function inflatePayload(data: any): WebAppData {
             rate: r[8],
             hist: r[9]
         },
-        dt: r[10] // Performance Score Trend Delta
+        dt: r[10], // Raw Score Trend Delta
+        r: r[11]   // Raw Score Total
     }))
 
     // Inflate Recruits: [id, n, t, s, don, war, ago, cards]
