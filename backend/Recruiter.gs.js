@@ -122,8 +122,32 @@ function scoutRecruits() {
   const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
   finalPool.forEach(p => p.perfScore = Math.round((p.rawScore / finalBenchmark) * 100));
 
+  // 🛡️ FINAL CONSISTENCY CHECK (ANTI-RACE CONDITION)
+  // Re-reads the sheet's "Invited" column to catch any user changes
+  // that happened while this long script was running. This prevents overwriting
+  // a user's dismissal action.
+  const finalInvitedTags = new Set();
+  if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    const numRows = sheet.getLastRow() - CONFIG.LAYOUT.DATA_START_ROW + 1;
+    const invitedColData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.INVITED, numRows, 1).getValues();
+    const tagColData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.TAG, numRows, 1).getValues();
+    
+    invitedColData.forEach((row, index) => {
+      if (row[0] === true && tagColData[index][0]) {
+        finalInvitedTags.add(tagColData[index][0]);
+      }
+    });
+  }
+  
+  const trulyFinalPool = finalPool.filter(p => !finalInvitedTags.has(p.tag));
+  
+  if (finalPool.length !== trulyFinalPool.length) {
+    const removedCount = finalPool.length - trulyFinalPool.length;
+    console.log(`🔭 Consistency Check: Removed ${removedCount} players who were dismissed during this scan.`);
+  }
+
   // 📊 LOGGING
-  const survivors = finalPool.filter(p => !initialIds.has(p.tag));
+  const survivors = trulyFinalPool.filter(p => !initialIds.has(p.tag));
 
   if (survivors.length > 0) {
     const sample = survivors.slice(0, 3).map(p => p.name).join(', ');
@@ -136,8 +160,8 @@ function scoutRecruits() {
   // 🛡️ BACKUP
   Utils.backupSheet(ss, CONFIG.SHEETS.HH);
 
-  console.log(`💾 Writing ${finalPool.length} active recruits to sheet...`);
-  renderHeadhunterView(sheet, finalPool, avgTrophies);
+  console.log(`💾 Writing ${trulyFinalPool.length} active recruits to sheet...`);
+  renderHeadhunterView(sheet, trulyFinalPool, avgTrophies);
 
   // ⚡ PWA SYNC: FORCE CACHE UPDATE
   try {
