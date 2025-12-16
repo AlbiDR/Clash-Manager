@@ -113,7 +113,7 @@ function handleClick(e: Event) {
           <span class="dot-separator">•</span>
           <span class="trophy-val">
             {{ (member.t || 0).toLocaleString() }} 
-            <Icon name="trophy" size="14" style="margin-left:2px; color:#fbbf24;" />
+            <Icon name="trophy" size="13" style="margin-left:2px; color:#fbbf24;" />
           </span>
         </div>
       </div>
@@ -175,41 +175,46 @@ function handleClick(e: Event) {
 <style scoped>
 /* 🃏 Neo-Card Styles */
 .card {
-  background: var(--sys-color-surface-container); /* Updated to standard container */
+  background: var(--sys-color-surface-container);
   border-radius: var(--shape-corner-l);
-  padding: var(--spacing-s) var(--spacing-m); /* Reduced vertical padding (12px) */
-  margin-bottom: var(--spacing-xs);
-  border: 1px solid transparent;
+  padding: 14px 16px;
+  margin-bottom: 8px;
   position: relative; overflow: hidden;
   transition: all 0.3s var(--sys-motion-spring);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  
-  /* Internal Grid Layout */
   display: grid;
-  /* Removed gap to allow full collapse. Spacing handled by expanded body margin. */
+  border: 1px solid rgba(255,255,255,0.03);
+  /* Top lighting effect */
+  box-shadow: 
+    0 1px 0 rgba(255,255,255,0.05) inset,
+    var(--sys-elevation-1);
 }
 
 .card:active { 
-  transform: scale(0.98); 
+  transform: scale(0.985); 
   background: var(--sys-color-surface-container-high); 
 }
 
 .card.expanded { 
   box-shadow: var(--sys-elevation-3); 
   background: var(--sys-color-surface-container-high);
-  z-index: 10; margin: var(--spacing-m) 0;
-  border-color: var(--sys-surface-glass-border);
+  z-index: 10; 
+  margin: 16px 0;
+  border-color: var(--sys-color-primary);
+  /* Subtle glow in expanded state */
+  box-shadow: 0 0 0 1px var(--sys-color-primary) inset, var(--sys-elevation-3);
 }
 
 .card.selected { 
   background: var(--sys-color-secondary-container); 
+  box-shadow: none;
 }
 .card.selected .player-name { color: var(--sys-color-on-secondary-container); }
 .card.selected .meta-row { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
 
 .selection-indicator {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   background: var(--sys-color-primary); opacity: 0; transition: opacity 0.2s;
 }
 .card.selected .selection-indicator { opacity: 1; }
@@ -224,131 +229,150 @@ function handleClick(e: Event) {
 
 .info-stack { 
   display: flex; flex-direction: column; 
-  gap: 2px; /* Tight leading */
+  gap: 4px;
   min-width: 0; 
 }
 
-.name-row { display: flex; align-items: center; gap: var(--spacing-xs); flex-wrap: wrap;}
+.name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
 
 .player-name { 
   font-family: var(--sys-font-family-body);
-  font-size: var(--font-size-l); 
-  font-weight: var(--font-weight-bold); 
+  font-size: 16px; 
+  font-weight: var(--font-weight-heavy); 
   color: var(--sys-color-on-surface); 
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-  letter-spacing: -0.02em; 
+  letter-spacing: -0.01em; 
 }
 
 .meta-row { 
   display: flex; align-items: center; 
-  gap: var(--spacing-xs); 
-  font-size: var(--font-size-s); 
+  gap: 6px; 
+  font-size: 13px; 
   color: var(--sys-color-outline); 
   font-weight: var(--font-weight-medium); 
 }
 
-.action-area { display: flex; align-items: center; gap: var(--spacing-s); }
+.dot-separator { font-size: 8px; opacity: 0.5; }
+
+.trophy-val { display: flex; align-items: center; }
+
+.action-area { display: flex; align-items: center; gap: 12px; }
 
 .chevron-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
-  color: var(--sys-color-on-surface-variant);
-  background: rgba(0,0,0,0.05);
+  width: 28px; height: 28px;
+  color: var(--sys-color-outline);
+  background: rgba(0,0,0,0.03);
   border-radius: 50%;
-  transition: transform 0.4s var(--sys-motion-bouncy), background-color 0.2s;
+  transition: all 0.3s var(--sys-motion-spring);
 }
-.card.expanded .chevron-btn { transform: rotate(180deg); background: rgba(0,0,0,0.1); }
+.card.expanded .chevron-btn { transform: rotate(180deg); background: rgba(0,0,0,0.1); color: var(--sys-color-on-surface); }
 
 
 /* STAT POD */
 .stat-pod {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 64px; height: 64px; 
-  border-radius: 20px; /* Neo-Squircle */
+  width: 52px; height: 52px; 
+  border-radius: 16px; 
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
-  transition: background 0.3s;
-  box-shadow: var(--sys-elevation-1);
+  transition: all 0.3s;
+  border: 1px solid rgba(255,255,255,0.05);
 }
-.stat-pod.tone-high { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); }
-.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
-.stat-pod.tone-low { background: var(--sys-color-surface-variant); color: var(--sys-color-on-surface-variant); }
+
+/* Gradients for Pods */
+.stat-pod.tone-high { 
+  background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
+  color: var(--sys-color-on-primary);
+  border: none;
+}
+.stat-pod.tone-mid { 
+  background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
+  color: var(--sys-color-on-secondary);
+  border: none;
+}
+.stat-pod.tone-low { 
+  background: var(--sys-color-surface-container-highest); 
+}
 
 .stat-score { 
-  font-size: 20px; 
+  font-size: 18px; 
   font-weight: 800; 
   line-height: 1; 
   letter-spacing: -0.5px; 
   font-family: var(--sys-font-family-mono); 
 }
 .stat-sub { 
-  font-size: 8.5px; 
+  font-size: 7px; 
   font-weight: 800; 
-  opacity: 0.9; 
+  opacity: 0.8; 
   margin-top: 2px; 
   text-transform: uppercase; 
-  letter-spacing: 0px; 
+  letter-spacing: 0.5px; 
 }
 
 /* EXPANDED BODY */
 .card-body {
-  max-height: 0; opacity: 0; overflow: hidden;
-  transition: all 0.4s var(--sys-motion-spring);
-  border-top: 1px solid transparent;
-  margin-top: 0; padding-top: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.4s var(--sys-motion-spring), opacity 0.4s ease, margin-top 0.4s ease;
+  overflow: hidden;
+  margin-top: 0;
 }
+.card-body > div { min-height: 0; }
+
 .card.expanded .card-body {
-  max-height: 500px; opacity: 1;
-  margin-top: var(--spacing-m); /* Increased from s to m for visual balance when expanded */
-  padding-top: var(--spacing-s); /* Swapped slightly for better flow */
-  border-top-color: var(--sys-color-outline-variant);
-  border-top-width: 1px;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sys-color-outline-variant);
+  border-top-style: dashed;
 }
 
 .grid-stats { 
   display: grid; 
   grid-template-columns: repeat(3, 1fr); 
-  gap: var(--spacing-xs); 
-  margin-bottom: var(--spacing-m); 
+  gap: 8px; 
+  margin-bottom: 16px; 
 }
 
 .stat-item { 
-  background: var(--sys-color-surface-container-highest); /* High contrast inside container */
-  padding: var(--spacing-s) var(--spacing-xs); 
-  border-radius: var(--shape-corner-m); 
+  background: var(--sys-color-surface-container); /* Slightly darker inset */
+  padding: 10px 8px; 
+  border-radius: 12px; 
   text-align: center; 
+  border: 1px solid rgba(255,255,255,0.02);
 }
 .si-label { 
-  font-size: 10px; 
-  font-weight: var(--font-weight-bold); 
+  font-size: 9px; 
+  font-weight: 700; 
   text-transform: uppercase; 
-  color: var(--sys-color-on-surface-variant); 
-  opacity: 0.7; 
+  color: var(--sys-color-outline); 
   margin-bottom: 2px; 
+  letter-spacing: 0.02em;
 }
 .si-val { 
-  font-size: var(--font-size-m); 
-  font-weight: var(--font-weight-bold); 
-  color: var(--sys-color-on-surface-variant); 
-  font-family: var(--sys-font-family-mono); /* Tabular data */
+  font-size: 14px; 
+  font-weight: 700; 
+  color: var(--sys-color-on-surface); 
+  font-family: var(--sys-font-family-mono); 
 }
 
 .row-actions { 
   display: grid; 
-  grid-template-columns: 1fr 1fr auto; /* Two pills + strict icon width */
-  gap: var(--spacing-xs); 
-  margin-top: var(--spacing-m); 
+  grid-template-columns: 1fr 1fr auto; 
+  gap: 8px; 
+  margin-top: 8px;
 }
-
-/* Action Buttons */
-/* Uses global .btn-action from style.css */
 
 /* Icon Button (Squircle) */
 .btn-icon-action {
   display: flex; align-items: center; justify-content: center;
-  width: 48px; height: 100%; /* Matches height of pills */
-  border-radius: var(--shape-corner-full); /* Pill consistency */
+  width: 48px; height: 100%; 
+  border-radius: var(--shape-corner-full); 
   border: none;
   cursor: pointer;
   background: var(--sys-color-surface-container-highest);
@@ -357,5 +381,5 @@ function handleClick(e: Event) {
 }
 .btn-icon-action:active { background: var(--sys-color-surface-variant); transform: scale(0.95); }
 
-.mb-4 { margin-bottom: var(--spacing-m); }
+.mb-4 { margin-bottom: 16px; }
 </style>
