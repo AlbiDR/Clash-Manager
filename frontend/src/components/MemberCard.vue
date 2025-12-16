@@ -274,7 +274,7 @@ function handleClick(e: Event) {
   align-items: center;
   justify-content: center;
   height: 20px;
-  min-width: 36px;
+  width: 75px;
   padding: 0 6px;
   border-radius: 6px;
   background: var(--sys-color-surface-container-highest);
@@ -288,7 +288,7 @@ function handleClick(e: Event) {
 /* Role Badge */
 .role-badge {
   display: inline-block;
-  min-width: 75px;
+  width: 75px;
   text-align: center;
   font-size: 10px;
   font-weight: 700;
