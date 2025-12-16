@@ -41,6 +41,26 @@ function resetApiUrl() {
     }
 }
 
+// 💥 NUCLEAR OPTION: Clears everything
+function factoryReset() {
+    if (confirm('⚠️ FACTORY RESET\n\nThis will clear all cached data, settings, and force a fresh download from the server.\n\nAre you sure?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Unregister service workers to force update
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister()
+                }
+                window.location.reload();
+            })
+        } else {
+            window.location.reload();
+        }
+    }
+}
+
 const apiStatusObject = computed(() => {
     if (apiStatus.value === 'online') return { type: 'ready', text: 'Systems Online' } as const
     if (apiStatus.value === 'offline') return { type: 'error', text: 'Disconnected' } as const
@@ -185,6 +205,14 @@ const editorUrl = computed(() => {
                     <span class="spec-value">v{{ version }}</span>
                 </div>
             </div>
+        </section>
+        
+        <!-- 🚨 DANGER ZONE -->
+        <section class="glass-panel danger-card">
+            <button class="reset-all-btn" @click="factoryReset">
+                <Icon name="warning" size="18" />
+                <span>Factory Reset App</span>
+            </button>
         </section>
       </div>
     </div>
@@ -384,6 +412,27 @@ const editorUrl = computed(() => {
 .spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; letter-spacing: 0.05em; }
 .spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
 
+/* --- DANGER ZONE --- */
+.danger-card {
+    padding: 16px;
+    display: flex; justify-content: center;
+    border-color: rgba(var(--sys-color-error-rgb), 0.2);
+    background: rgba(var(--sys-color-error-rgb), 0.05);
+}
+
+.reset-all-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 24px;
+    background: var(--sys-color-error-container);
+    color: var(--sys-color-on-error-container);
+    border-radius: var(--shape-corner-full);
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.reset-all-btn:active { transform: scale(0.96); }
+
 /* --- HERO (APP INFO) --- */
 .app-info-hero {
     text-align: center;
@@ -439,3 +488,4 @@ const editorUrl = computed(() => {
 }
 .github-btn:hover { background: var(--sys-color-surface-container-highest); transform: translateY(-2px); }
 </style>
+
