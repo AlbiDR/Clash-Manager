@@ -103,9 +103,9 @@ function handleClick(e: Event) {
       <div class="info-stack">
         <div class="name-row">
           <span class="player-name">{{ member.n }}</span>
-          <span v-if="roleDisplay" class="role-badge">{{ roleDisplay }}</span>
         </div>
         <div class="meta-row">
+          <span v-if="roleDisplay" class="role-badge">{{ roleDisplay }}</span>
           <span class="meta-val meta-time">{{ member.d.days }}d</span>
           <span class="dot-separator">•</span>
           <span class="meta-val trophy-val">
@@ -206,6 +206,10 @@ function handleClick(e: Event) {
 }
 .card.selected .player-name { color: var(--sys-color-on-secondary-container); }
 .card.selected .meta-val { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
+.card.selected .role-badge { 
+    background: rgba(var(--sys-color-on-secondary-container-rgb), 0.1);
+    color: var(--sys-color-on-secondary-container);
+}
 
 .selection-indicator {
   position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
@@ -223,16 +227,13 @@ function handleClick(e: Event) {
   display: flex; 
   flex-direction: column; 
   justify-content: center; 
-  gap: 1px; 
+  gap: 2px; /* Tighter gap between name/meta */
   flex: 1; 
   min-width: 0; 
-  padding-right: 10px; /* Gap between badge and score pod */
 }
 
 .name-row { 
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between; 
+  /* Now a simple container */
 }
 
 .player-name { 
@@ -243,7 +244,6 @@ function handleClick(e: Event) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: 6px; /* Gap */
 }
 
 .meta-row { display: flex; align-items: center; gap: 8px; }
