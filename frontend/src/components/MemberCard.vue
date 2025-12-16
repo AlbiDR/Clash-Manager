@@ -303,7 +303,7 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-/* --- Role Badge Hierarchy (V7 - Final) --- */
+/* --- Role Badge Hierarchy (V8 - Final) --- */
 
 /* Level 1: Member (Subdued Ghost) */
 .role-member {
@@ -314,34 +314,34 @@ function handleClick(e: Event) {
 }
 
 /* Level 2: Elder (Vibrant Ghost - Blue Text/Border, Clear Bg) */
-/* This looks like an "Officer" badge - crisp and colored but not heavy */
 .role-elder {
   background: rgba(var(--sys-color-primary-rgb), 0.1);
-  color: var(--sys-color-primary); /* Bright Blue Text */
-  border: 1px solid var(--sys-color-primary); /* Bright Blue Border */
+  color: var(--sys-color-primary);
+  border: 1px solid var(--sys-color-primary);
   box-shadow: 0 0 2px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
-/* Level 3: Co-Leader (Solid Fill - Blue Bg, White Text) */
-/* This looks like a "Commander" badge - heavy and visually dominant */
+/* Level 3: Co-Leader (Light Blue Fill - Secondary Rank) */
+/* Switched to Lighter Blue to look less dominant than Leader */
 .role-co-leader {
-  background: var(--sys-color-primary); /* Solid Blue Block */
-  color: var(--sys-color-on-primary); /* White Text */
-  border: 1px solid var(--sys-color-primary);
-  box-shadow: 0 2px 6px rgba(var(--sys-color-primary-rgb), 0.4);
-  font-weight: 750; /* Slightly bolder */
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  border: 1px solid var(--sys-color-primary-container);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 750;
 }
 
-/* Level 4: Leader (Premium Gradient) */
+/* Level 4: Leader (Solid Dark Blue - Highest Rank) */
+/* Switched to Dark Blue to look Heavy and Authoritative */
 .role-leader {
-  background: linear-gradient(145deg, var(--sys-color-primary-container), var(--sys-color-primary));
+  background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-  border: none;
+  border: 1px solid var(--sys-color-primary);
   font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   box-shadow: 
-    0 0 10px rgba(var(--sys-color-primary-rgb), 0.5),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    0 2px 8px rgba(var(--sys-color-primary-rgb), 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 
 
