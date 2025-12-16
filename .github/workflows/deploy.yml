@@ -36,6 +36,12 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # 🛡️ AUTOMATED TESTING
+      # This runs Vitest. If any test fails, the workflow STOPS here.
+      # The bad code will never be deployed to production.
+      - name: Run Unit Tests
+        run: npm test -- run
+
       - name: Build App
         run: npm run build
         env:
