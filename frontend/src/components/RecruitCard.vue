@@ -95,8 +95,8 @@ function handleClick(e: Event) {
           <span class="meta-val meta-time">{{ timeAgo }}</span>
           <span class="dot-separator">•</span>
           <span class="meta-val trophy-val">
-             {{ (recruit.t || 0).toLocaleString() }} 
-             <Icon name="trophy" size="10" style="margin-left:2px; color:#fbbf24;" />
+             <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
+             <Icon name="trophy" size="12" style="margin-left: 4px; color:#fbbf24;" />
           </span>
         </div>
       </div>
@@ -328,5 +328,10 @@ function handleClick(e: Event) {
   background: transparent; border: 1px solid rgba(255,255,255,0.1);
   color: var(--sys-color-primary); border-radius: 10px;
   cursor: pointer;
+}
+.trophy-text {
+  min-width: 42px;
+  text-align: right;
+  display: inline-block;
 }
 </style>
