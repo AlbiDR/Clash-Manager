@@ -30,6 +30,10 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # 🛡️ AUTOMATED TESTING for Releases
+      - name: Run Unit Tests
+        run: npm test -- run
+
       - name: Build App
         run: npm run build
         env:
