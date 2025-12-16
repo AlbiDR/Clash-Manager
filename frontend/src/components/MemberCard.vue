@@ -54,8 +54,12 @@ const displayRate = computed(() => {
 
 // Performance Trend Logic
 const trend = computed(() => {
-  const dt = props.member.dt
-  if (dt === undefined || dt === 0 || isNaN(dt)) return null
+  const rawDt = props.member.dt
+  // Ensure we treat '0' as null/hidden, but safely handle types
+  const dt = typeof rawDt === 'string' ? parseInt(rawDt) : rawDt
+  
+  if (dt === undefined || dt === null || isNaN(dt) || dt === 0) return null
+  
   return {
     val: Math.abs(dt),
     dir: dt > 0 ? 'up' : 'down'
@@ -139,7 +143,7 @@ function handleClick(e: Event) {
         <div class="stat-pod" :class="toneClass">
           <div class="score-stack">
             <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-            <!-- Trend Pill (Visibility Update: Added background class) -->
+            <!-- Trend Pill -->
             <div v-if="trend" class="trend-mini" :class="trend.dir">
               {{ trend.dir === 'up' ? '+' : '-' }}{{ trend.val }}
             </div>
