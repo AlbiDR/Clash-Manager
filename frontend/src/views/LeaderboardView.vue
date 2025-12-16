@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -28,11 +29,12 @@ const loading = computed(() => !data.value && isRefreshing.value)
 
 const searchQuery = ref('')
 // Extended sorting keys
-const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen'>('score')
+const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen' | 'trend'>('score')
 
 // Sort Options Definition
 const sortOptions = [
   { label: 'Performance', value: 'score' },
+  { label: 'Momentum', value: 'trend' }, // ✨ Added Momentum
   { label: 'War Participation', value: 'war_rate' },
   { label: 'Daily Donations', value: 'donations_day' },
   { label: 'Trophies', value: 'trophies' },
@@ -142,6 +144,7 @@ const filteredMembers = computed(() => {
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
+      case 'trend': return (b.dt || 0) - (a.dt || 0) // ✨ Sort by Delta
       case 'trophies': return (b.t || 0) - (a.t || 0)
       case 'name': return a.n.localeCompare(b.n)
       
