@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
 import { useInstallPrompt } from '../composables/useInstallPrompt'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
@@ -22,6 +22,11 @@ const { isInstallable, install } = useInstallPrompt()
 onMounted(() => {
     checkApiStatus()
 })
+
+// Auto-expand edit mode if unconfigured to help user recover from factory reset
+watch(apiStatus, (newVal) => {
+    if (newVal === 'unconfigured') isEditing.value = true
+}, { immediate: true })
 
 const hasLocalOverride = computed(() => {
   return !!localStorage.getItem('cm_gas_url')
@@ -64,6 +69,7 @@ function factoryReset() {
 const apiStatusObject = computed(() => {
     if (apiStatus.value === 'online') return { type: 'ready', text: 'Systems Online' } as const
     if (apiStatus.value === 'offline') return { type: 'error', text: 'Disconnected' } as const
+    if (apiStatus.value === 'unconfigured') return { type: 'error', text: 'Setup Required' } as const
     return { type: 'loading', text: 'Ping...' } as const
 })
 
@@ -209,10 +215,28 @@ const editorUrl = computed(() => {
         
         <!-- 🚨 DANGER ZONE -->
         <section class="glass-panel danger-card">
-            <button class="reset-all-btn" @click="factoryReset">
-                <Icon name="warning" size="18" />
-                <span>Factory Reset App</span>
-            </button>
+            <header class="card-header danger-header">
+                <div class="icon-box danger-icon-box">
+                    <Icon name="warning" size="24" />
+                </div>
+                <div class="header-info">
+                    <h2 class="card-title danger-text">Danger Zone</h2>
+                    <p class="card-subtitle">Irreversible actions</p>
+                </div>
+            </header>
+
+            <div class="card-body">
+                <div class="danger-content">
+                    <p class="danger-desc">
+                        Factory Reset will wipe all local data, cache, and custom configurations. 
+                        The application will return to its initial install state.
+                    </p>
+                    <button class="reset-all-btn" @click="factoryReset">
+                        <Icon name="trash" size="18" />
+                        <span>Factory Reset</span>
+                    </button>
+                </div>
+            </div>
         </section>
       </div>
     </div>
@@ -306,6 +330,7 @@ const editorUrl = computed(() => {
 }
 .status-pill.online { color: var(--sys-color-success); background: rgba(var(--sys-rgb-success), 0.1); }
 .status-pill.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
+.status-pill.unconfigured { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
 
 /* --- CARD BODY --- */
 .card-body { padding: var(--spacing-l); }
@@ -414,14 +439,35 @@ const editorUrl = computed(() => {
 
 /* --- DANGER ZONE --- */
 .danger-card {
-    padding: 16px;
-    display: flex; justify-content: center;
-    border-color: rgba(var(--sys-color-error-rgb), 0.2);
-    background: rgba(var(--sys-color-error-rgb), 0.05);
+    border-color: rgba(var(--sys-color-error-rgb), 0.3);
+    background: rgba(var(--sys-color-error-rgb), 0.03);
+}
+
+.danger-icon-box {
+    background: var(--sys-color-error-container);
+    color: var(--sys-color-on-error-container);
+}
+
+.danger-text {
+    color: var(--sys-color-error);
+}
+
+.danger-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.danger-desc {
+    font-size: 13px;
+    color: var(--sys-color-on-surface-variant);
+    line-height: 1.5;
+    margin: 0;
 }
 
 .reset-all-btn {
-    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
     padding: 12px 24px;
     background: var(--sys-color-error-container);
     color: var(--sys-color-on-error-container);
