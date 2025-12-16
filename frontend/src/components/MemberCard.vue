@@ -155,7 +155,7 @@ function handleClick(e: Event) {
 
       <div class="action-area">
         <!-- SCORE POD with Trend -->
-        <div class="stat-pod" :class="toneClass">
+        <div class="stat-pod" :class="[toneClass, { 'has-trend': trend }]">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
           
           <!-- Trend Ticker (Vertical Stack) -->
@@ -389,8 +389,9 @@ function handleClick(e: Event) {
 
 /* 💎 NEO-MATERIAL STAT POD (FIXED SIZE) */
 .stat-pod {
+  position: relative; /* Anchor for absolute items */
   display: flex; 
-  flex-direction: column; /* Vertical Stack */
+  flex-direction: column; 
   align-items: center; justify-content: center;
   width: 45px; /* LOCKED WIDTH */
   height: 45px; /* LOCKED HEIGHT */
@@ -401,7 +402,7 @@ function handleClick(e: Event) {
     inset 0 1px 0 rgba(255,255,255,0.1), 
     0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
-  gap: 0; /* Tight packing */
+  gap: 0;
   padding: 0;
   box-sizing: border-box;
 }
@@ -410,15 +411,24 @@ function handleClick(e: Event) {
   font-weight: 800; font-size: 16px;
   line-height: 1;
   font-family: var(--sys-font-family-mono);
+  transition: padding 0.2s ease; /* Smooth jump when trend appears */
 }
 
-/* Trend Ticker (Floating Style - Centered) */
+/* Push score UP visually when trend exists to maintain optical balance */
+.stat-pod.has-trend .stat-score {
+  padding-bottom: 9px;
+}
+
+/* Trend Ticker (Absolute Bottom) */
 .trend-ticker {
+  position: absolute;
+  bottom: 2px;
+  left: 0; 
+  right: 0;
   display: flex; align-items: center; justify-content: center;
   gap: 1px;
-  font-size: 10px;
-  font-weight: 600;
-  margin-top: 0px; /* Snug fit */
+  font-size: 9px;
+  font-weight: 700;
   line-height: 1;
   opacity: 0.95;
   font-family: var(--sys-font-family-mono); /* Technical look */
