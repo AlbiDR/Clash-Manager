@@ -28,8 +28,10 @@ const timeAgo = computed(() => {
   if (!dateStr) return '-'
   const ts = new Date(dateStr).getTime()
   const m = Math.floor((Date.now() - ts) / 60000)
-  if (m < 1) return 'Just now'
-  return m > 60 ? Math.floor(m/60) + 'h ago' : m + 'm ago'
+  if (m < 1) return 'New' // Shortened for badge fit
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  return h > 24 ? Math.floor(h / 24) + 'd ago' : h + 'h ago'
 })
 
 // Composables
@@ -37,6 +39,7 @@ import { useLongPress } from '../composables/useLongPress'
 import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
+  if (navigator.vibrate) navigator.vibrate(50)
   emit('toggle-select')
 })
 
@@ -88,17 +91,18 @@ function handleClick(e: Event) {
     <!-- Header (Strict Height Enforced) -->
     <div class="card-header">
       <div class="info-stack">
-        <div class="name-row">
-          <span class="player-name">{{ recruit.n }}</span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-val meta-time">{{ timeAgo }}</span>
-          <span class="dot-separator">•</span>
-          <span class="meta-val trophy-val">
-             <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
-             <Icon name="trophy" size="12" style="margin-left: 4px; color:#fbbf24;" />
-          </span>
-        </div>
+        <!-- Row 1, Col 1: Time Badge (Matches Tenure) -->
+        <span class="tenure-badge">{{ timeAgo }}</span>
+        <!-- Row 1, Col 2: Name -->
+        <span class="player-name">{{ recruit.n }}</span>
+        
+        <!-- Row 2, Col 1: Role Placeholder -->
+        <span class="role-badge role-placeholder">-</span>
+        <!-- Row 2, Col 2: Trophies -->
+        <span class="meta-val trophy-val">
+          <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
+          <Icon name="trophy" size="12" style="color:#fbbf24;" />
+        </span>
       </div>
 
       <div class="action-area">
@@ -114,6 +118,7 @@ function handleClick(e: Event) {
     <!-- Body (Expanded) -->
     <div class="card-body">
       <div class="body-inner">
+        <!-- Stats Row -->
         <div class="stats-row">
           <div class="stat-cell">
             <span class="sc-label">Donations</span>
@@ -129,6 +134,7 @@ function handleClick(e: Event) {
           </div>
         </div>
 
+        <!-- Action Toolbar -->
         <div class="actions-toolbar">
           <a 
             :href="`https://royaleapi.com/player/${recruit.id}`" 
@@ -155,7 +161,7 @@ function handleClick(e: Event) {
 </template>
 
 <style scoped>
-/* 🃏 Shared Card Styles */
+/* 🃏 Card Base */
 .card {
   background: var(--sys-color-surface-container);
   border-radius: 16px;
@@ -187,6 +193,16 @@ function handleClick(e: Event) {
 }
 .card.selected .player-name { color: var(--sys-color-on-secondary-container); }
 .card.selected .meta-val { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
+.card.selected .role-badge { 
+    background: rgba(var(--sys-color-on-secondary-container-rgb), 0.15);
+    color: var(--sys-color-on-secondary-container);
+    border-color: rgba(var(--sys-color-on-secondary-container-rgb), 0.3);
+    opacity: 1;
+}
+.card.selected .tenure-badge {
+  background: rgba(var(--sys-color-on-secondary-container-rgb), 0.1);
+  color: var(--sys-color-on-secondary-container);
+}
 
 .selection-indicator {
   position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
@@ -200,22 +216,78 @@ function handleClick(e: Event) {
   height: 40px; /* Locked Height */
 }
 
-.info-stack { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.info-stack { 
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px 8px; /* row-gap column-gap */
+  align-items: center;
+  flex: 1; 
+  min-width: 0; 
+}
 
-.name-row { display: flex; align-items: center; gap: 6px; }
 .player-name { 
   font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
   letter-spacing: -0.01em;
   line-height: 1.2;
+  /* Truncation */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0; /* For grid truncation */
 }
 
-.meta-row { display: flex; align-items: center; gap: 8px; }
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
-.meta-time { min-width: 50px; }
-.dot-separator { font-size: 10px; color: var(--sys-color-outline); opacity: 0.5; }
-.trophy-val { display: flex; align-items: center; }
+
+.trophy-val { 
+  display: flex; 
+  align-items: center; 
+  flex-shrink: 0;
+}
 
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
+
+/* Tenure/Time Badge */
+.tenure-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  width: 75px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-outline);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--sys-font-family-mono);
+  flex-shrink: 0;
+}
+
+/* Role Badge & Placeholder */
+.role-badge {
+  display: inline-block;
+  width: 75px;
+  text-align: center;
+  font-size: 9.5px; /* Matches MemberCard fix */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-sizing: border-box;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.role-placeholder {
+  background: transparent;
+  border: 1px dashed rgba(var(--sys-color-outline-rgb), 0.3); /* Subtle dashed border */
+  color: var(--sys-color-outline);
+  opacity: 0.5;
+}
 
 /* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
@@ -226,7 +298,9 @@ function handleClick(e: Event) {
   color: var(--sys-color-on-surface-variant);
   font-weight: 800; font-size: 14px;
   font-family: var(--sys-font-family-mono);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 
+    inset 0 1px 0 rgba(255,255,255,0.1), 
+    0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -254,6 +328,7 @@ function handleClick(e: Event) {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s var(--sys-motion-spring), margin-top 0.3s ease, border-top 0.3s step-end;
+  /* Reset collapsed state completely */
   margin-top: 0;
   padding-top: 0;
   border-top: 0 solid transparent;
@@ -284,7 +359,7 @@ function handleClick(e: Event) {
 .stats-row {
   display: flex; justify-content: space-between;
   padding: 0 4px;
-  margin-bottom: 10px;
+  margin-bottom: 4px; /* Reduced from 10px to match MemberCard tightness */
 }
 .stat-cell {
   flex: 1; display: flex; flex-direction: column; align-items: center;
@@ -296,7 +371,7 @@ function handleClick(e: Event) {
 
 /* ACTIONS */
 .actions-toolbar {
-  display: flex; gap: 8px; margin-top: 4px;
+  display: flex; gap: 8px; margin-top: 8px;
 }
 
 .btn-action {
@@ -333,5 +408,6 @@ function handleClick(e: Event) {
   min-width: 42px;
   text-align: right;
   display: inline-block;
+  margin-right: 4px;
 }
 </style>
