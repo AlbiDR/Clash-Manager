@@ -268,14 +268,18 @@ function handleClick(e: Event) {
 
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
 
-/* Tenure Badge */
+/* 
+   -----------------------------------------------------------------------
+   BADGE SYSTEM: Unified Geometry (20px Height, 75px Width, 6px Radius) 
+   -----------------------------------------------------------------------
+*/
+
 .tenure-badge {
-  display: flex;
+  display: inline-flex; /* Perfect Centering */
   align-items: center;
   justify-content: center;
   height: 20px;
   width: 75px;
-  padding: 0 6px;
   border-radius: 6px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-outline);
@@ -285,63 +289,71 @@ function handleClick(e: Event) {
   flex-shrink: 0;
 }
 
-/* Role Badge */
+/* 
+   -----------------------------------------------------------------------
+   ROLE BADGE HIERARCHY (Pixel Perfect)
+   -----------------------------------------------------------------------
+*/
+
 .role-badge {
-  display: inline-block;
+  display: inline-flex; /* Ensures content is perfectly centered without hacks */
+  align-items: center;
+  justify-content: center;
+  
   width: 75px;
-  text-align: center;
-  font-size: 9.5px; /* Slightly smaller to prevent wrapping */
+  height: 20px; /* Locked to tenure badge height */
+  
+  border-radius: 6px;
+  font-size: 9.5px; /* Tuned to fit "CO-LEADER" exactly */
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.02em; /* Tighter spacing */
-  white-space: nowrap; /* Failsafe to prevent breaking layout */
-  box-sizing: border-box; /* Ensure padding is included in width */
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid transparent;
+  letter-spacing: 0.03em;
+  
+  border: 1px solid transparent; /* Keeps sizing consistent across outlined/filled */
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
-/* --- Role Badge Hierarchy (V8 - Final) --- */
-
-/* Level 1: Member (Subdued Ghost) */
+/* Level 1: MEMBER (The Standard) */
+/* Matte finish. Sits in background. */
 .role-member {
-  background: var(--sys-color-surface-container-high);
+  background: transparent;
   color: var(--sys-color-outline);
-  border: 1px solid var(--sys-color-outline-variant);
+  border-color: var(--sys-color-outline-variant);
   opacity: 0.8;
 }
 
-/* Level 2: Elder (Vibrant Ghost - Blue Text/Border, Clear Bg) */
+/* Level 2: ELDER (The Officer) */
+/* Neon Outline. High contrast border, subtle tint. Looks "Active". */
 .role-elder {
-  background: rgba(var(--sys-color-primary-rgb), 0.1);
-  color: var(--sys-color-primary);
-  border: 1px solid var(--sys-color-primary);
-  box-shadow: 0 0 2px rgba(var(--sys-color-primary-rgb), 0.2);
+  background: rgba(var(--sys-color-primary-rgb), 0.08); /* Subtle Tint */
+  color: var(--sys-color-primary); /* Bright Blue Text */
+  border-color: var(--sys-color-primary); /* Bright Blue Border */
+  /* No Shadow, just crisp line work */
 }
 
-/* Level 3: Co-Leader (Light Blue Fill - Secondary Rank) */
-/* Switched to Lighter Blue to look less dominant than Leader */
+/* Level 3: CO-LEADER (The Lieutenant) */
+/* Soft Fill. Light solid background, Dark Text. Looks "Administrative". */
 .role-co-leader {
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  border: 1px solid var(--sys-color-primary-container);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  font-weight: 750;
+  background: var(--sys-color-primary-container); /* Light Blue Fill */
+  color: var(--sys-color-on-primary-container); /* Dark Blue Text */
+  border-color: var(--sys-color-primary-container); /* Match Fill */
+  /* Subtle drop shadow for lift */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
 }
 
-/* Level 4: Leader (Solid Dark Blue - Highest Rank) */
-/* Switched to Dark Blue to look Heavy and Authoritative */
+/* Level 4: LEADER (The General) */
+/* Hard Solid. Dark solid background, White Text. Looks "Authoritative". */
 .role-leader {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: 1px solid var(--sys-color-primary);
-  font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  background: var(--sys-color-primary); /* Dark Blue Fill */
+  color: var(--sys-color-on-primary); /* White Text */
+  border-color: var(--sys-color-primary);
+  /* Stronger shadow + Inset highlight for 3D feel */
   box-shadow: 
-    0 2px 8px rgba(var(--sys-color-primary-rgb), 0.6),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    0 2px 4px rgba(var(--sys-color-primary-rgb), 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2); 
+  font-weight: 800; /* Extra weight for the boss */
 }
 
 
