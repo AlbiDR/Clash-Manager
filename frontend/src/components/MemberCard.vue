@@ -54,14 +54,29 @@ const displayRate = computed(() => {
 
 // Performance Trend Logic
 const trend = computed(() => {
-  const rawDt = props.member.dt
-  // Ensure we treat '0' as null/hidden, but safely handle types
-  const dt = typeof rawDt === 'string' ? parseInt(rawDt) : rawDt
+  const rawDt = props.member.dt // Raw Score Delta (e.g. +1000)
+  const currentRaw = props.member.r // Total Raw Score (e.g. 11000)
   
+  // Need both delta and current raw score to calc %
+  const dt = typeof rawDt === 'string' ? parseInt(rawDt) : rawDt
   if (dt === undefined || dt === null || isNaN(dt) || dt === 0) return null
   
+  let percentVal = 0
+  
+  if (currentRaw && currentRaw > 0) {
+    // Math: Previous Score = Current - Delta
+    // % Change = (Delta / Previous) * 100
+    const prevScore = currentRaw - dt
+    if (prevScore > 0) {
+      percentVal = (dt / prevScore) * 100
+    }
+  }
+  
+  // Format to 1 decimal place max, e.g. "10%" or "2.5%"
+  const displayVal = Math.abs(percentVal).toFixed(Math.abs(percentVal) < 10 ? 1 : 0).replace(/\.0$/, '') + '%'
+  
   return {
-    val: Math.abs(dt),
+    val: displayVal,
     dir: dt > 0 ? 'up' : 'down'
   }
 })
@@ -141,12 +156,15 @@ function handleClick(e: Event) {
       <div class="action-area">
         <!-- SCORE POD with Trend -->
         <div class="stat-pod" :class="toneClass">
-          <div class="score-stack">
-            <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-            <!-- Trend Pill -->
-            <div v-if="trend" class="trend-mini" :class="trend.dir">
-              {{ trend.dir === 'up' ? '+' : '-' }}{{ trend.val }}
-            </div>
+          <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
+          
+          <!-- Trend Ticker (Vertical Stack) -->
+          <div v-if="trend" class="trend-ticker" :class="trend.dir">
+            <Icon 
+              :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" 
+              size="10" 
+            />
+            <span class="trend-val">{{ trend.val }}</span>
           </div>
         </div>
         
@@ -371,8 +389,13 @@ function handleClick(e: Event) {
 
 /* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
-  display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; /* Locked Size */
+  display: flex; 
+  flex-direction: column; /* Vertical Stack */
+  align-items: center; justify-content: center;
+  width: auto; /* Allow flexible width for % display */
+  min-width: 44px; /* Slightly wider than fixed 42px */
+  padding: 0 6px;
+  height: 42px; 
   border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
@@ -380,35 +403,30 @@ function handleClick(e: Event) {
     inset 0 1px 0 rgba(255,255,255,0.1), 
     0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
-}
-
-.score-stack {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  line-height: 1;
+  gap: 0; /* Tight packing */
 }
 
 .stat-score {
-  font-weight: 800; font-size: 14px;
+  font-weight: 800; font-size: 16px;
+  line-height: 1;
   font-family: var(--sys-font-family-mono);
 }
 
-.trend-mini {
-  font-size: 8px; font-weight: 700;
+/* Trend Ticker (Floating Style) */
+.trend-ticker {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1px;
+  font-size: 9px;
+  font-weight: 700;
   margin-top: 1px;
-  padding: 0 4px;
-  border-radius: 4px;
-}
-.trend-mini.up { 
-  color: #002105;
-  background: #b9f6ca;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-.trend-mini.down { 
-  color: #410002;
-  background: #ffdad6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  line-height: 1;
+  opacity: 0.9;
 }
 
+.trend-ticker.up { color: #b9f6ca; } /* Green tint */
+.trend-ticker.down { color: #ffdad6; } /* Red tint */
+
+/* Tone Styles apply to background, text must contrast */
 .stat-pod.tone-high { 
   background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
   color: var(--sys-color-on-primary); 
@@ -417,6 +435,9 @@ function handleClick(e: Event) {
     0 2px 6px rgba(var(--sys-color-primary-rgb), 0.3);
   border: none;
 }
+/* Ensure ticker contrasts well on colored backgrounds */
+.stat-pod.tone-high .trend-ticker.up { color: #ffffff; }
+.stat-pod.tone-high .trend-ticker.down { color: #ffb4ab; }
 
 .stat-pod.tone-mid { 
   background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
@@ -424,6 +445,12 @@ function handleClick(e: Event) {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
   border: none;
 }
+.stat-pod.tone-mid .trend-ticker.up { color: #ffffff; }
+.stat-pod.tone-mid .trend-ticker.down { color: #ffb4ab; }
+
+.stat-pod.tone-low .trend-ticker.up { color: #2e7d32; }
+.stat-pod.tone-low .trend-ticker.down { color: #ba1a1a; }
+
 
 .chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
 .card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
