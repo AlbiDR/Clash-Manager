@@ -1,9 +1,30 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = defineProps<{
+  index?: number
+}>()
+
+// Deterministic variation based on index
+const nameWidth = computed(() => {
+  if (props.index === undefined) return '60%'
+  const widths = ['55%', '70%', '45%', '65%', '50%', '75%']
+  return widths[props.index % widths.length]
+})
+
+const metaWidth = computed(() => {
+  if (props.index === undefined) return '40%'
+  const widths = ['35%', '45%', '30%', '40%', '38%', '42%']
+  return widths[props.index % widths.length]
+})
+</script>
+
 <template>
   <div class="skeleton-card">
     <div class="skeleton-header">
       <div class="info-stack">
-        <div class="sk-bar name-bar"></div>
-        <div class="sk-bar meta-bar"></div>
+        <div class="sk-bar name-bar" :style="{ width: nameWidth }"></div>
+        <div class="sk-bar meta-bar" :style="{ width: metaWidth }"></div>
       </div>
       <div class="action-area">
         <div class="sk-box stat-pod"></div>
@@ -17,10 +38,10 @@
 .skeleton-card {
   background: var(--sys-color-surface-container);
   border-radius: var(--shape-corner-l);
-  padding: var(--spacing-s) var(--spacing-m); /* Updated padding to match new compact style */
+  padding: var(--spacing-s) var(--spacing-m);
   margin-bottom: var(--spacing-xs);
   border: 1px solid transparent;
-  height: 90px; /* Reduced height to match compact cards (64 + 12 + 12 + 2 border) */
+  height: 90px;
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
@@ -65,25 +86,26 @@
 .sk-bar {
   background: var(--sys-color-surface-container-highest);
   border-radius: 4px;
+  transition: width 0.2s ease; /* Smooth if reused */
 }
 
 .name-bar {
-  width: 60%;
   height: 20px;
+  /* width set by inline style */
 }
 
 .meta-bar {
-  width: 40%;
   height: 14px;
+  /* width set by inline style */
 }
 
 .sk-box {
   background: var(--sys-color-surface-container-highest);
-  border-radius: 20px; /* Matched to new squircle */
+  border-radius: 20px;
 }
 
 .stat-pod {
-  width: 64px; /* Increased from 56px */
+  width: 64px;
   height: 64px;
 }
 
