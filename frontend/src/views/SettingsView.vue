@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
@@ -66,7 +67,7 @@ const editorUrl = computed(() => {
               <Icon name="crown" size="48" />
           </div>
           <h3 class="hero-title">Clash Manager: Clan Manager for Clash Royale</h3>
-          <p class="hero-ver">v6.0.0 (Gold Master)</p>
+          <p class="hero-ver">v6.1.1 (Momentum Update)</p>
           <div class="hero-links">
               <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
                   <Icon name="github" size="18" />
