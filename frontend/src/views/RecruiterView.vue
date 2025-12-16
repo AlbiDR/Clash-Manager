@@ -184,8 +184,8 @@ function handleSelectAll() {
 
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
-    <div v-else-if="loading && recruits.length === 0" class="list-container">
-      <SkeletonCard v-for="i in 6" :key="i" />
+    <div v-else-if="loading && recruits.length === 0" class="list-container stagger-children">
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" />
     </div>
     
     <EmptyState 
