@@ -25,13 +25,21 @@ const toneClass = computed(() => {
   return 'tone-low'
 })
 
+const role = computed(() => (props.member.d.role || '').toLowerCase())
+
 const roleDisplay = computed(() => {
-  const role = (props.member.d.role || '').toLowerCase()
-  if (['leader', 'co-leader', 'coleader', 'elder'].includes(role)) {
-    if (role === 'coleader' || role === 'co-leader') return 'Co-Leader'
-    return role.charAt(0).toUpperCase() + role.slice(1)
+  if (['leader', 'co-leader', 'coleader', 'elder', 'member'].includes(role.value)) {
+    if (role.value === 'coleader' || role.value === 'co-leader') return 'Co-Leader'
+    return role.value.charAt(0).toUpperCase() + role.value.slice(1)
   }
   return null
+})
+
+const roleBadgeClass = computed(() => {
+  if (role.value === 'leader') return 'role-leader'
+  if (role.value === 'co-leader' || role.value === 'coleader') return 'role-co-leader'
+  if (role.value === 'elder') return 'role-elder'
+  return 'role-member'
 })
 
 const displayRate = computed(() => {
@@ -105,7 +113,7 @@ function handleClick(e: Event) {
           <span class="player-name">{{ member.n }}</span>
         </div>
         <div class="meta-row">
-          <span v-if="roleDisplay" class="role-badge">{{ roleDisplay }}</span>
+          <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
           <span class="meta-val meta-time">{{ member.d.days }}d</span>
           <span class="dot-separator">•</span>
           <span class="meta-val trophy-val">
@@ -207,8 +215,10 @@ function handleClick(e: Event) {
 .card.selected .player-name { color: var(--sys-color-on-secondary-container); }
 .card.selected .meta-val { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
 .card.selected .role-badge { 
-    background: rgba(var(--sys-color-on-secondary-container-rgb), 0.1);
+    background: rgba(var(--sys-color-on-secondary-container-rgb), 0.15);
     color: var(--sys-color-on-secondary-container);
+    border-color: rgba(var(--sys-color-on-secondary-container-rgb), 0.3);
+    opacity: 1;
 }
 
 .selection-indicator {
@@ -253,6 +263,44 @@ function handleClick(e: Event) {
 .trophy-val { display: flex; align-items: center; }
 
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
+
+/* Role Badge */
+.role-badge {
+  display: inline-block;
+  min-width: 75px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.role-leader {
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.2);
+}
+
+.role-co-leader {
+  background: var(--sys-color-tertiary-container);
+  color: var(--sys-color-on-tertiary-container);
+}
+
+.role-elder {
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+}
+
+.role-member {
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface-variant);
+  opacity: 0.8;
+}
 
 /* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
