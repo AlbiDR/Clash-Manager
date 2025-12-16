@@ -9,11 +9,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 6.1.2
+ * 🏷️ VERSION: 6.1.3
  * ============================================================================
  */
 
-const VER_LEADERBOARD = '6.1.2';
+const VER_LEADERBOARD = '6.1.3';
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -29,42 +29,49 @@ function updateLeaderboard() {
 
   try {
     const lastRow = lbSheet.getLastRow();
-    const lastCol = lbSheet.getLastColumn();
+    const maxCols = lbSheet.getMaxColumns();
+    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
     
     // Ensure we have enough data to read
-    if (lastRow >= CONFIG.LAYOUT.DATA_START_ROW && lastCol > 0) {
-      // Read entire data range available
+    if (lastRow >= startRow && maxCols > 2) {
+      
+      // Calculate a safe width to read. We need at least up to RAW_SCORE (index 11 -> col 13)
+      // Read up to 20 columns, or whatever the sheet has, minus the left buffer.
+      const colsToRead = Math.min(20, maxCols - 1);
+      
       const oldData = lbSheet.getRange(
-        CONFIG.LAYOUT.DATA_START_ROW, 
+        startRow, 
         2, 
-        lastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
-        lastCol - 1 // -1 for buffer column
+        lastRow - startRow + 1, 
+        colsToRead
       ).getValues();
       
-      // Determine indices dynamically to be safe
-      // Use configured index, but fallback to bounds check
-      const tagIdx = L.TAG;
-      const scoreIdx = L.RAW_SCORE; // Index 11
+      const tagIdx = L.TAG; // 0
+      const scoreIdx = L.RAW_SCORE; // 11
 
       oldData.forEach(row => {
-        // Safe read: check if column exists in this row
-        if (row.length > tagIdx && row.length > scoreIdx) {
+        // Safe read: check if column exists in this row data
+        if (row.length > scoreIdx) {
           const rawTag = String(row[tagIdx]);
           const rawScore = row[scoreIdx];
           
-          if (rawTag) {
+          if (rawTag && rawTag.startsWith('#')) {
             // NORMALIZE TAG: Remove #, trim, lowercase
             const cleanKey = rawTag.replace('#', '').trim().toLowerCase();
-            const scoreVal = Number(rawScore) || 0;
-            previousScores.set(cleanKey, scoreVal);
+            const scoreVal = Number(rawScore);
+            
+            // Only store if it's a valid number (0 is valid)
+            if (!isNaN(scoreVal)) {
+              previousScores.set(cleanKey, scoreVal);
+            }
           }
         }
       });
       
-      console.log(`📉 Snapshot: Loaded ${previousScores.size} previous scores for trend analysis.`);
+      console.log(`📉 Snapshot: Loaded ${previousScores.size} previous scores.`);
     }
   } catch (e) { 
-    console.warn("⚠️ Safety Check / Snapshot Warning: " + e.message); 
+    console.warn("⚠️ Snapshot Warning (Trend data may be incomplete): " + e.message); 
   }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
@@ -220,15 +227,14 @@ function updateLeaderboard() {
       .join(' | ');
 
     // 📈 CALCULATE TREND (Raw Score Delta)
-    // Robust Key Matching (Clean Tag)
     let trend = 0;
     const cleanKey = m.tag.replace('#', '').trim().toLowerCase();
     
+    // We strictly check if previousScores has the key.
+    // If key missing, trend = 0 (New player or data reset)
     if (previousScores.has(cleanKey)) {
-      trend = scores.raw - previousScores.get(cleanKey);
-    } else if (previousScores.size > 0) {
-      // New player or tag mismatch, effectively infinite trend or 0
-      // We leave it as 0 to avoid noise for new joins
+      const oldScore = previousScores.get(cleanKey);
+      trend = scores.raw - oldScore;
     }
 
     const row = [];
