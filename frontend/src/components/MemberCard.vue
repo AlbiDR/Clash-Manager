@@ -127,45 +127,46 @@ function handleClick(e: Event) {
 
     <!-- Body (Expanded) -->
     <div class="card-body">
-      
-      <!-- Stats Row (Clean) -->
-      <div class="stats-row">
-        <div class="stat-cell">
-          <span class="sc-label">Avg/Day</span>
-          <span class="sc-val">{{ member.d.avg }}</span>
+      <div class="body-inner">
+        <!-- Stats Row (Clean) -->
+        <div class="stats-row">
+          <div class="stat-cell">
+            <span class="sc-label">Avg/Day</span>
+            <span class="sc-val">{{ member.d.avg }}</span>
+          </div>
+          <div class="stat-cell border-l">
+            <span class="sc-label">War Rate</span>
+            <span class="sc-val">{{ displayRate }}</span>
+          </div>
+          <div class="stat-cell border-l">
+            <span class="sc-label">Last Seen</span>
+            <span class="sc-val">{{ member.d.seen }}</span>
+          </div>
         </div>
-        <div class="stat-cell border-l">
-          <span class="sc-label">War Rate</span>
-          <span class="sc-val">{{ displayRate }}</span>
-        </div>
-        <div class="stat-cell border-l">
-          <span class="sc-label">Last Seen</span>
-          <span class="sc-val">{{ member.d.seen }}</span>
-        </div>
-      </div>
 
-      <!-- Sparkline -->
-      <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" />
+        <!-- Sparkline -->
+        <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" />
 
-      <!-- Action Toolbar -->
-      <div class="actions-toolbar">
-        <a 
-          :href="`clashroyale://playerInfo?id=${member.id}`" 
-          class="btn-action primary compact"
-        >
-          <Icon name="crown" size="14" />
-          <span>Open Game</span>
-        </a>
-        <a 
-          :href="`https://royaleapi.com/player/${member.id}`" 
-          target="_blank"
-          class="btn-action secondary compact"
-        >
-          <span>RoyaleAPI</span>
-        </a>
-        <button v-if="canShare" class="btn-icon-action" @click.stop="shareMember">
-          <Icon name="share" size="16" />
-        </button>
+        <!-- Action Toolbar -->
+        <div class="actions-toolbar">
+          <a 
+            :href="`https://royaleapi.com/player/${member.id}`" 
+            target="_blank"
+            class="btn-action secondary compact"
+          >
+            <span>RoyaleAPI</span>
+          </a>
+          <a 
+            :href="`clashroyale://playerInfo?id=${member.id}`" 
+            class="btn-action primary compact"
+          >
+            <Icon name="crown" size="14" />
+            <span>Open Game</span>
+          </a>
+          <button v-if="canShare" class="btn-icon-action" @click.stop="shareMember">
+            <Icon name="share" size="16" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -175,11 +176,11 @@ function handleClick(e: Event) {
 /* 🃏 Card Base */
 .card {
   background: var(--sys-color-surface-container);
-  border-radius: 16px; /* Slightly tighter radius */
+  border-radius: 16px;
   padding: 10px 12px;
   margin-bottom: 6px;
   position: relative; overflow: hidden;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   border: 1px solid rgba(255,255,255,0.03);
@@ -192,7 +193,7 @@ function handleClick(e: Event) {
 
 .card.expanded { 
   background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15), 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.1) inset;
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
   z-index: 10;
   margin: 12px 0;
@@ -230,41 +231,73 @@ function handleClick(e: Event) {
 
 .action-area { display: flex; align-items: center; gap: 10px; }
 
-/* COMPACT STAT POD */
+/* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
-  border-radius: 10px;
+  width: 38px; height: 38px;
+  border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   font-weight: 800; font-size: 14px;
   font-family: var(--sys-font-family-mono);
+  box-shadow: 
+    inset 0 1px 0 rgba(255,255,255,0.1), 
+    0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.05);
 }
-.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
+
+.stat-pod.tone-high { 
+  background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
+  color: var(--sys-color-on-primary); 
+  box-shadow: 
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    0 2px 6px rgba(var(--sys-color-primary-rgb), 0.3);
+  border: none;
+}
+
+.stat-pod.tone-mid { 
+  background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
+  color: var(--sys-color-on-secondary); 
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+  border: none;
+}
 
 .chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
 .card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
 
-/* BODY (SLIM) */
+/* BODY (ANIMATED COLLAPSE) */
 .card-body {
   display: grid;
   grid-template-rows: 0fr;
-  opacity: 0;
-  transition: grid-template-rows 0.3s var(--sys-motion-spring), opacity 0.3s ease;
-  overflow: hidden;
+  transition: grid-template-rows 0.3s var(--sys-motion-spring), margin-top 0.3s ease, border-top 0.3s step-end;
+  /* Reset collapsed state */
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0 solid transparent;
+  pointer-events: none; /* Ghost click fix */
 }
-.card-body > * { min-height: 0; }
+
+.body-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
 
 .card.expanded .card-body {
   grid-template-rows: 1fr;
-  opacity: 1;
+  margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(0,0,0,0.05);
-  margin-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  pointer-events: auto;
 }
 
-/* STATS ROW (DIVIDED) */
+.card.expanded .body-inner {
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+
+/* STATS ROW */
 .stats-row {
   display: flex; justify-content: space-between;
   padding: 0 4px;
@@ -286,20 +319,31 @@ function handleClick(e: Event) {
 .btn-action {
   flex: 1;
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 32px; /* Slim Height */
-  border-radius: 8px;
-  font-size: 12px; font-weight: 600; text-decoration: none;
-  transition: opacity 0.2s;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 12px; font-weight: 700; text-decoration: none;
+  transition: transform 0.1s, opacity 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.btn-action.primary { background: var(--sys-color-primary); color: white; }
-.btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
-.btn-action:active { opacity: 0.7; }
+.btn-action:active { transform: scale(0.97); opacity: 0.9; }
+
+.btn-action.primary { 
+  background: linear-gradient(135deg, var(--sys-color-primary), #00508a); 
+  color: white; 
+  box-shadow: 0 4px 8px rgba(var(--sys-color-primary-rgb), 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.btn-action.secondary { 
+  background: var(--sys-color-surface-container); 
+  color: var(--sys-color-on-surface); 
+  border: 1px solid rgba(255,255,255,0.05); 
+}
 
 .btn-icon-action {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: 1px solid rgba(255,255,255,0.1);
-  color: var(--sys-color-primary); border-radius: 8px;
+  color: var(--sys-color-primary); border-radius: 10px;
   cursor: pointer;
 }
 </style>
