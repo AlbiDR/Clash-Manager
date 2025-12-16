@@ -106,7 +106,7 @@ function handleClick(e: Event) {
           <span v-if="roleDisplay" class="role-badge">{{ roleDisplay }}</span>
         </div>
         <div class="meta-row">
-          <span class="meta-val">{{ member.d.days }}d</span>
+          <span class="meta-val meta-time">{{ member.d.days }}d</span>
           <span class="dot-separator">•</span>
           <span class="meta-val trophy-val">
             {{ (member.t || 0).toLocaleString() }} 
@@ -228,8 +228,9 @@ function handleClick(e: Event) {
   line-height: 1.2;
 }
 
-.meta-row { display: flex; align-items: center; gap: 6px; }
+.meta-row { display: flex; align-items: center; gap: 8px; }
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
+.meta-time { min-width: 36px; }
 .dot-separator { font-size: 10px; color: var(--sys-color-outline); opacity: 0.5; }
 .trophy-val { display: flex; align-items: center; }
 
