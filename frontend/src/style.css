@@ -179,7 +179,7 @@ body {
   color: var(--sys-color-on-background);
   padding-bottom: calc(120px + env(safe-area-inset-bottom));
   overflow-y: scroll;
-  overscroll-behavior-y: none;
+  /* Removed overscroll-behavior-y: none; to enable native refresh */
 }
 
 /* Custom Scrollbar (WebKit) */
