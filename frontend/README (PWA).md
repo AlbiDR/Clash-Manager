@@ -23,6 +23,8 @@ It prioritizes **Offline-First** usability using a Stale-While-Revalidate (SWR) 
 | **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first styling with a custom "Neo-Material" theme. |
 | **State** | Native Reactivity | `ref`/`reactive` (No Pinia required for this scale). |
 | **PWA** | [Vite Plugin PWA](https://vite-pwa-org.netlify.app/) | Service Worker generation and offline asset caching. |
+| **Testing**| [Vitest](https://vitest.dev/) | Unit & Component testing with JSDOM. |
+
 
 ---
 
@@ -54,12 +56,35 @@ VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 npm run dev
 ```
 
-### 5. Build for Production
+### 5. Run Tests
+The project is configured with Vitest for unit and component testing.
+
+```bash
+# Run tests once in the terminal
+npm test
+
+# Run tests in watch mode with a UI
+npm run test:ui
+
+# Run tests and generate a coverage report
+npm run test:coverage
+```
+
+### 6. Build for Production
 This generates the `dist` folder ready for GitHub Pages or static hosting.
 ```bash
 npm run build
 ```
 </details>
+
+---
+
+## ✅ Quality & CI/CD
+
+This project is configured with GitHub Actions to ensure code quality and automate deployments.
+*   **Automated Testing**: On every push to `main` or a `v*` tag, the full test suite is run. Failed tests will block deployment, preventing regressions.
+*   **Automated Deployment**: Successful builds on the `main` branch are automatically deployed to GitHub Pages.
+*   **Automated Releases**: Pushing a `v*` tag (e.g., `v6.1.0`) will automatically build the app, create a GitHub Release, and attach the production-ready `.zip` file.
 
 ---
 
