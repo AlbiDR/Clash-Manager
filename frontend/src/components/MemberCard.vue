@@ -303,7 +303,7 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-/* --- Role Badge Hierarchy (V5) --- */
+/* --- Role Badge Hierarchy (V6 - Final) --- */
 
 /* Level 1: Member (Base) */
 .role-member {
@@ -313,14 +313,14 @@ function handleClick(e: Event) {
   border: 1px solid var(--sys-color-surface-container-highest);
 }
 
-/* Level 2: Elder (Introduces blue text and border) */
+/* Level 2: Elder (Solid Blue Background) */
 .role-elder {
-  background: var(--sys-color-surface-container-high); /* Keep neutral background */
-  color: var(--sys-color-secondary); /* Use the main secondary color for text */
-  border: 1px solid var(--sys-color-secondary); /* Use a solid secondary color border */
+  background: var(--sys-color-secondary-container); /* Unmistakable solid blue fill */
+  color: var(--sys-color-on-secondary-container);
+  border: 1px solid var(--sys-color-secondary);
 }
 
-/* Level 3: Co-Leader (Secondary color, active glow) */
+/* Level 3: Co-Leader (Adds Glow) */
 .role-co-leader {
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
@@ -330,16 +330,16 @@ function handleClick(e: Event) {
 
 /* Level 4: Leader (Premium) */
 .role-leader {
-  /* Visual Clues: Gradient, strong glow, inner shine, and bolder font */
   background: linear-gradient(145deg, var(--sys-color-primary-container), var(--sys-color-primary));
   color: var(--sys-color-on-primary);
-  border: none; /* Gradient is enough */
-  font-weight: 800; /* Bolder */
+  border: none;
+  font-weight: 800;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   box-shadow: 
-    0 0 10px rgba(var(--sys-color-primary-rgb), 0.5), /* Stronger glow */
-    inset 0 1px 1px rgba(255, 255, 255, 0.3); /* Inner shine */
+    0 0 10px rgba(var(--sys-color-primary-rgb), 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
+
 
 /* 💎 NEO-MATERIAL STAT POD */
 .stat-pod {
