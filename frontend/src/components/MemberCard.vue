@@ -303,7 +303,7 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-/* --- Role Badge Hierarchy (REVISED) --- */
+/* --- Role Badge Hierarchy (Corrected) --- */
 
 /* Level 1: Member (Base) */
 .role-member {
@@ -313,20 +313,20 @@ function handleClick(e: Event) {
   border: 1px solid var(--sys-color-surface-container-highest);
 }
 
-/* Level 2: Elder (Solid, Metallic Badge) */
+/* Level 2: Elder (Tertiary color, subtle depth) */
 .role-elder {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
+  background: var(--sys-color-tertiary-container);
+  color: var(--sys-color-on-tertiary-container);
   border: 1px solid var(--sys-color-outline-variant);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle inner depth */
 }
 
-/* Level 3: Co-Leader (Active, Glowing Badge) */
+/* Level 3: Co-Leader (Secondary color, active glow) */
 .role-co-leader {
-  background: var(--sys-color-tertiary-container);
-  color: var(--sys-color-on-tertiary-container);
-  border: 1px solid var(--sys-color-tertiary);
-  box-shadow: 0 0 8px rgba(var(--sys-color-tertiary-rgb), 0.4); /* Glow effect */
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+  border: 1px solid var(--sys-color-secondary);
+  box-shadow: 0 0 8px rgba(var(--sys-color-secondary-rgb), 0.4); /* Glow effect */
 }
 
 /* Level 4: Leader (Premium) */
