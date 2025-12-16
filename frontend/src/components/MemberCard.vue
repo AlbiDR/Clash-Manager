@@ -219,13 +219,23 @@ function handleClick(e: Event) {
   height: 40px; /* Locked Height */
 }
 
-.info-stack { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.info-stack { display: flex; flex-direction: column; justify-content: center; gap: 1px; flex: 1; min-width: 0; }
 
-.name-row { display: flex; align-items: center; gap: 6px; }
+.name-row { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+}
+
 .player-name { 
   font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
   letter-spacing: -0.01em;
   line-height: 1.2;
+  /* Truncation */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 6px; /* Gap */
 }
 
 .meta-row { display: flex; align-items: center; gap: 8px; }
