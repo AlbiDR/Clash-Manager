@@ -96,8 +96,8 @@ function handleClick(e: Event) {
         <!-- Row 1, Col 2: Name -->
         <span class="player-name">{{ recruit.n }}</span>
         
-        <!-- Row 2, Col 1: Role Placeholder -->
-        <span class="role-badge role-placeholder">-</span>
+        <!-- Row 2, Col 1: Player Tag Badge -->
+        <span class="role-badge tag-badge">#{{ recruit.id }}</span>
         <!-- Row 2, Col 2: Trophies -->
         <span class="meta-val trophy-val">
           <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
@@ -282,11 +282,14 @@ function handleClick(e: Event) {
   transition: all 0.2s;
 }
 
-.role-placeholder {
-  background: transparent;
-  border: 1px dashed rgba(var(--sys-color-outline-rgb), 0.3); /* Subtle dashed border */
-  color: var(--sys-color-outline);
-  opacity: 0.5;
+.tag-badge {
+  font-family: var(--sys-font-family-mono);
+  font-size: 10.5px;
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface-variant);
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
 /* 💎 NEO-MATERIAL STAT POD */
