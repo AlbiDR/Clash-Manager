@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🛠️ MODULE: UTILITIES
@@ -240,7 +241,7 @@ const Utils = {
             method: 'get',
             headers: {
               'Authorization': `Bearer ${keyObj.value}`,
-              'User-Agent': 'ClanManagerBot/5.8 (GAS)',
+              'User-Agent': 'ClanManagerBot/6.0 (GAS)',
               'Accept-Encoding': 'gzip'
             },
             muteHttpExceptions: true
