@@ -18,7 +18,6 @@ const emit = defineEmits<{
   'toggle-select': []
 }>()
 
-// Tonal Palette Logic
 const toneClass = computed(() => {
   const score = props.member.s || 0
   if (score >= 80) return 'tone-high'
@@ -26,7 +25,6 @@ const toneClass = computed(() => {
   return 'tone-low'
 })
 
-// Role Badge Logic
 const roleDisplay = computed(() => {
   const role = (props.member.d.role || '').toLowerCase()
   if (['leader', 'co-leader', 'coleader', 'elder'].includes(role)) {
@@ -50,7 +48,7 @@ import { useLongPress } from '../composables/useLongPress'
 import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  if (navigator.vibrate) navigator.vibrate(50) // Haptic Pop
+  if (navigator.vibrate) navigator.vibrate(50)
   emit('toggle-select')
 })
 
@@ -69,11 +67,10 @@ function handleClick(e: Event) {
     isLongPress.value = false
     return
   }
-  
+  // Prevent toggle if clicking a button/link
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
   if ((e.target as HTMLElement).closest('.chevron-btn')) {
-    // Chevron always toggles expansion, even in selection mode
     emit('toggle')
     return
   }
@@ -109,11 +106,11 @@ function handleClick(e: Event) {
           <span v-if="roleDisplay" class="role-badge">{{ roleDisplay }}</span>
         </div>
         <div class="meta-row">
-          <span>{{ member.d.days }}d</span>
+          <span class="meta-val">{{ member.d.days }}d</span>
           <span class="dot-separator">•</span>
-          <span class="trophy-val">
+          <span class="meta-val trophy-val">
             {{ (member.t || 0).toLocaleString() }} 
-            <Icon name="trophy" size="12" style="margin-left:2px; color:#fbbf24;" />
+            <Icon name="trophy" size="10" style="margin-left:2px; color:#fbbf24;" />
           </span>
         </div>
       </div>
@@ -121,7 +118,6 @@ function handleClick(e: Event) {
       <div class="action-area">
         <div class="stat-pod" :class="toneClass">
           <div class="stat-score">{{ Math.round(member.s || 0) }}</div>
-          <div class="stat-sub">SCORE</div>
         </div>
         <div class="chevron-btn">
           <Icon name="chevron_down" size="18" />
@@ -131,41 +127,44 @@ function handleClick(e: Event) {
 
     <!-- Body (Expanded) -->
     <div class="card-body">
-      <div class="grid-stats">
-        <div class="stat-item">
-          <div class="si-label">Avg/Day</div>
-          <div class="si-val">{{ member.d.avg }}</div>
+      
+      <!-- Stats Row (Clean) -->
+      <div class="stats-row">
+        <div class="stat-cell">
+          <span class="sc-label">Avg/Day</span>
+          <span class="sc-val">{{ member.d.avg }}</span>
         </div>
-        <div class="stat-item">
-          <div class="si-label">War Rate</div>
-          <div class="si-val">{{ displayRate }}</div>
+        <div class="stat-cell border-l">
+          <span class="sc-label">War Rate</span>
+          <span class="sc-val">{{ displayRate }}</span>
         </div>
-        <div class="stat-item">
-          <div class="si-label">Last Seen</div>
-          <div class="si-val">{{ member.d.seen }}</div>
+        <div class="stat-cell border-l">
+          <span class="sc-label">Last Seen</span>
+          <span class="sc-val">{{ member.d.seen }}</span>
         </div>
       </div>
 
-      <!-- War History Viz -->
-      <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" class="mb-4" />
+      <!-- Sparkline -->
+      <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" />
 
-      <!-- Action Grid -->
-      <div class="row-actions">
+      <!-- Action Toolbar -->
+      <div class="actions-toolbar">
+        <a 
+          :href="`clashroyale://playerInfo?id=${member.id}`" 
+          class="btn-action primary compact"
+        >
+          <Icon name="crown" size="14" />
+          <span>Open Game</span>
+        </a>
         <a 
           :href="`https://royaleapi.com/player/${member.id}`" 
           target="_blank"
           class="btn-action secondary compact"
         >
-          RoyaleAPI
+          <span>RoyaleAPI</span>
         </a>
-        <a 
-          :href="`clashroyale://playerInfo?id=${member.id}`" 
-          class="btn-action primary compact"
-        >
-          Clash Royale
-        </a>
-        <button v-if="canShare" class="btn-icon-action secondary" @click.stop="shareMember">
-          <Icon name="share" size="20" />
+        <button v-if="canShare" class="btn-icon-action" @click.stop="shareMember">
+          <Icon name="share" size="16" />
         </button>
       </div>
     </div>
@@ -173,45 +172,37 @@ function handleClick(e: Event) {
 </template>
 
 <style scoped>
-/* 🃏 Neo-Card Styles */
+/* 🃏 Card Base */
 .card {
   background: var(--sys-color-surface-container);
-  border-radius: var(--shape-corner-l);
-  padding: 10px 14px; /* Slimmer Padding */
-  margin-bottom: 6px; /* Tighter list */
+  border-radius: 16px; /* Slightly tighter radius */
+  padding: 10px 12px;
+  margin-bottom: 6px;
   position: relative; overflow: hidden;
-  transition: all 0.3s var(--sys-motion-spring);
+  transition: background 0.2s, box-shadow 0.2s;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  display: grid;
   border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 
-    0 1px 0 rgba(255,255,255,0.05) inset,
-    var(--sys-elevation-1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .card:active { 
-  transform: scale(0.985); 
   background: var(--sys-color-surface-container-high); 
 }
 
 .card.expanded { 
-  box-shadow: var(--sys-elevation-3); 
   background: var(--sys-color-surface-container-high);
-  z-index: 10; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+  z-index: 10;
   margin: 12px 0;
-  border-color: var(--sys-color-primary);
-  /* Subtle glow in expanded state */
-  box-shadow: 0 0 0 1px var(--sys-color-primary) inset, var(--sys-elevation-3);
-  padding-bottom: 14px; /* Add padding back when expanded */
 }
 
 .card.selected { 
   background: var(--sys-color-secondary-container); 
-  box-shadow: none;
 }
 .card.selected .player-name { color: var(--sys-color-on-secondary-container); }
-.card.selected .meta-row { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
+.card.selected .meta-val { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
 
 .selection-indicator {
   position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
@@ -219,169 +210,96 @@ function handleClick(e: Event) {
 }
 .card.selected .selection-indicator { opacity: 1; }
 
-/* HEADER GRID */
+/* HEADER */
 .card-header { 
-  display: grid; 
-  grid-template-columns: 1fr auto;
-  gap: var(--spacing-s);
-  align-items: center; 
+  display: flex; justify-content: space-between; align-items: center;
 }
 
-.info-stack { 
-  display: flex; flex-direction: column; 
-  gap: 2px; /* Tighter gap */
-  min-width: 0; 
-}
+.info-stack { display: flex; flex-direction: column; gap: 2px; }
 
-.name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;}
-
+.name-row { display: flex; align-items: center; gap: 6px; }
 .player-name { 
-  font-family: var(--sys-font-family-body);
-  font-size: 15px; 
-  font-weight: var(--font-weight-heavy); 
-  color: var(--sys-color-on-surface); 
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-  letter-spacing: -0.01em; 
-  line-height: 1.2;
+  font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
+  letter-spacing: -0.01em;
 }
 
-.meta-row { 
-  display: flex; align-items: center; 
-  gap: 6px; 
-  font-size: 12px; 
-  color: var(--sys-color-outline); 
-  font-weight: var(--font-weight-medium); 
-  line-height: 1.2;
-}
-
-.dot-separator { font-size: 8px; opacity: 0.5; }
-
+.meta-row { display: flex; align-items: center; gap: 6px; }
+.meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); }
+.dot-separator { font-size: 10px; color: var(--sys-color-outline); opacity: 0.5; }
 .trophy-val { display: flex; align-items: center; }
 
-.action-area { display: flex; align-items: center; gap: 8px; }
+.action-area { display: flex; align-items: center; gap: 10px; }
 
-.chevron-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px;
-  color: var(--sys-color-outline);
-  background: rgba(0,0,0,0.03);
-  border-radius: 50%;
-  transition: all 0.3s var(--sys-motion-spring);
-}
-.card.expanded .chevron-btn { transform: rotate(180deg); background: rgba(0,0,0,0.1); color: var(--sys-color-on-surface); }
-
-
-/* STAT POD (SLIMMED DOWN) */
+/* COMPACT STAT POD */
 .stat-pod {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 42px; height: 42px; /* Reduced from 52px */
-  border-radius: 12px; 
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 10px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
-  flex-shrink: 0;
-  transition: all 0.3s;
-  border: 1px solid rgba(255,255,255,0.05);
+  font-weight: 800; font-size: 14px;
+  font-family: var(--sys-font-family-mono);
 }
+.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
-/* Gradients for Pods */
-.stat-pod.tone-high { 
-  background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
-  color: var(--sys-color-on-primary);
-  border: none;
-}
-.stat-pod.tone-mid { 
-  background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
-  color: var(--sys-color-on-secondary);
-  border: none;
-}
-.stat-pod.tone-low { 
-  background: var(--sys-color-surface-container-highest); 
-}
+.chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
+.card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
 
-.stat-score { 
-  font-size: 15px; 
-  font-weight: 800; 
-  line-height: 1; 
-  letter-spacing: -0.5px; 
-  font-family: var(--sys-font-family-mono); 
-}
-.stat-sub { 
-  font-size: 6px; 
-  font-weight: 800; 
-  opacity: 0.8; 
-  margin-top: 1px; 
-  text-transform: uppercase; 
-  letter-spacing: 0.5px; 
-}
-
-/* EXPANDED BODY */
+/* BODY (SLIM) */
 .card-body {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 0.4s var(--sys-motion-spring), opacity 0.4s ease, margin-top 0.4s ease;
+  transition: grid-template-rows 0.3s var(--sys-motion-spring), opacity 0.3s ease;
   overflow: hidden;
-  margin-top: 0;
 }
-.card-body > div { min-height: 0; }
+.card-body > * { min-height: 0; }
 
 .card.expanded .card-body {
   grid-template-rows: 1fr;
   opacity: 1;
-  margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--sys-color-outline-variant);
-  border-top-style: dashed;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  margin-top: 10px;
 }
 
-.grid-stats { 
-  display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 8px; 
-  margin-bottom: 16px; 
+/* STATS ROW (DIVIDED) */
+.stats-row {
+  display: flex; justify-content: space-between;
+  padding: 0 4px;
+  margin-bottom: 4px;
+}
+.stat-cell {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+}
+.stat-cell.border-l { border-left: 1px solid rgba(255,255,255,0.05); }
+
+.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; margin-bottom: 2px; }
+.sc-val { font-size: 14px; font-weight: 700; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
+
+/* ACTION TOOLBAR */
+.actions-toolbar {
+  display: flex; gap: 8px; margin-top: 8px;
 }
 
-.stat-item { 
-  background: var(--sys-color-surface-container); /* Slightly darker inset */
-  padding: 8px 6px; 
-  border-radius: 10px; 
-  text-align: center; 
-  border: 1px solid rgba(255,255,255,0.02);
+.btn-action {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; /* Slim Height */
+  border-radius: 8px;
+  font-size: 12px; font-weight: 600; text-decoration: none;
+  transition: opacity 0.2s;
 }
-.si-label { 
-  font-size: 9px; 
-  font-weight: 700; 
-  text-transform: uppercase; 
-  color: var(--sys-color-outline); 
-  margin-bottom: 2px; 
-  letter-spacing: 0.02em;
-}
-.si-val { 
-  font-size: 14px; 
-  font-weight: 700; 
-  color: var(--sys-color-on-surface); 
-  font-family: var(--sys-font-family-mono); 
-}
+.btn-action.primary { background: var(--sys-color-primary); color: white; }
+.btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
+.btn-action:active { opacity: 0.7; }
 
-.row-actions { 
-  display: grid; 
-  grid-template-columns: 1fr 1fr auto; 
-  gap: 8px; 
-  margin-top: 8px;
-}
-
-/* Icon Button (Squircle) */
 .btn-icon-action {
+  width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
-  width: 48px; height: 100%; 
-  border-radius: var(--shape-corner-full); 
-  border: none;
+  background: transparent; border: 1px solid rgba(255,255,255,0.1);
+  color: var(--sys-color-primary); border-radius: 8px;
   cursor: pointer;
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-primary);
-  transition: background 0.2s;
 }
-.btn-icon-action:active { background: var(--sys-color-surface-variant); transform: scale(0.95); }
-
-.mb-4 { margin-bottom: 16px; }
 </style>
