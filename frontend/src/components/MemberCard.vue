@@ -387,15 +387,13 @@ function handleClick(e: Event) {
 }
 
 
-/* 💎 NEO-MATERIAL STAT POD */
+/* 💎 NEO-MATERIAL STAT POD (FIXED SIZE) */
 .stat-pod {
   display: flex; 
   flex-direction: column; /* Vertical Stack */
   align-items: center; justify-content: center;
-  width: auto; /* Allow flexible width for % display */
-  min-width: 44px; /* Slightly wider than fixed 42px */
-  padding: 0 6px;
-  height: 42px; 
+  width: 45px; /* LOCKED WIDTH */
+  height: 45px; /* LOCKED HEIGHT */
   border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
@@ -404,6 +402,8 @@ function handleClick(e: Event) {
     0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
   gap: 0; /* Tight packing */
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .stat-score {
@@ -412,15 +412,16 @@ function handleClick(e: Event) {
   font-family: var(--sys-font-family-mono);
 }
 
-/* Trend Ticker (Floating Style) */
+/* Trend Ticker (Floating Style - Centered) */
 .trend-ticker {
   display: flex; align-items: center; justify-content: center;
   gap: 1px;
-  font-size: 9px;
-  font-weight: 700;
-  margin-top: 1px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 0px; /* Snug fit */
   line-height: 1;
-  opacity: 0.9;
+  opacity: 0.95;
+  font-family: var(--sys-font-family-mono); /* Technical look */
 }
 
 .trend-ticker.up { color: #b9f6ca; } /* Green tint */
