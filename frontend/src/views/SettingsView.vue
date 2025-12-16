@@ -46,9 +46,9 @@ function resetApiUrl() {
     }
 }
 
-// 💥 NUCLEAR OPTION: Clears everything
+// 💥 Reset Option (Neutral)
 function factoryReset() {
-    if (confirm('⚠️ FACTORY RESET\n\nThis will clear all cached data, settings, and force a fresh download from the server.\n\nAre you sure?')) {
+    if (confirm('Reset Application Data?\n\nThis will clear local cache and settings. Data on the Google Sheet will NOT be affected.')) {
         localStorage.clear();
         sessionStorage.clear();
         
@@ -213,27 +213,26 @@ const editorUrl = computed(() => {
             </div>
         </section>
         
-        <!-- 🚨 DANGER ZONE -->
-        <section class="glass-panel danger-card">
-            <header class="card-header danger-header">
-                <div class="icon-box danger-icon-box">
-                    <Icon name="warning" size="24" />
+        <!-- 🛠️ Troubleshooting (Neutral) -->
+        <section class="glass-panel util-card">
+            <header class="card-header">
+                <div class="icon-box util-icon-box">
+                    <Icon name="undo" size="24" />
                 </div>
                 <div class="header-info">
-                    <h2 class="card-title danger-text">Danger Zone</h2>
-                    <p class="card-subtitle">Irreversible actions</p>
+                    <h2 class="card-title">Troubleshooting</h2>
+                    <p class="card-subtitle">Local data management</p>
                 </div>
             </header>
 
             <div class="card-body">
-                <div class="danger-content">
-                    <p class="danger-desc">
-                        Factory Reset will wipe all local data, cache, and custom configurations. 
-                        The application will return to its initial install state.
+                <div class="util-content">
+                    <p class="util-desc">
+                        If the application is behaving unexpectedly or not syncing, you can clear the local cache. 
+                        This does not delete any data on the server.
                     </p>
                     <button class="reset-all-btn" @click="factoryReset">
-                        <Icon name="trash" size="18" />
-                        <span>Factory Reset</span>
+                        <span>Reset App Data</span>
                     </button>
                 </div>
             </div>
@@ -437,28 +436,23 @@ const editorUrl = computed(() => {
 .spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; letter-spacing: 0.05em; }
 .spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
 
-/* --- DANGER ZONE --- */
-.danger-card {
-    border-color: rgba(var(--sys-color-error-rgb), 0.3);
-    background: rgba(var(--sys-color-error-rgb), 0.03);
+/* --- TROUBLESHOOTING (Formerly Danger Zone) --- */
+.util-card {
+    border-color: rgba(var(--sys-color-outline-variant), 0.3);
 }
 
-.danger-icon-box {
-    background: var(--sys-color-error-container);
-    color: var(--sys-color-on-error-container);
+.util-icon-box {
+    background: var(--sys-color-surface-container-highest);
+    color: var(--sys-color-on-surface);
 }
 
-.danger-text {
-    color: var(--sys-color-error);
-}
-
-.danger-content {
+.util-content {
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
-.danger-desc {
+.util-desc {
     font-size: 13px;
     color: var(--sys-color-on-surface-variant);
     line-height: 1.5;
@@ -469,15 +463,15 @@ const editorUrl = computed(() => {
     width: 100%;
     display: flex; align-items: center; justify-content: center; gap: 8px;
     padding: 12px 24px;
-    background: var(--sys-color-error-container);
-    color: var(--sys-color-on-error-container);
+    background: var(--sys-color-surface-container-high);
+    color: var(--sys-color-on-surface);
     border-radius: var(--shape-corner-full);
-    border: none;
+    border: 1px solid var(--sys-color-outline-variant);
     font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.2s;
 }
-.reset-all-btn:active { transform: scale(0.96); }
+.reset-all-btn:active { transform: scale(0.96); background: var(--sys-color-surface-container-highest); }
 
 /* --- HERO (APP INFO) --- */
 .app-info-hero {
