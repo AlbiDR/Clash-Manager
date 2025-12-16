@@ -61,13 +61,13 @@ const bars = computed(() => {
   align-items: flex-end;
   height: 100%;
   width: 100%;
-  gap: 3px; /* Wider gap for clarity */
+  gap: 4px; /* Increased gap for clarity */
 }
 
 .bar {
   flex: 1;
   min-height: 4px;
-  border-radius: 4px; /* Fully rounded pill shape */
+  border-radius: 99px; /* Fully rounded pill shape */
   opacity: 0.9;
   transition: all 0.2s ease;
   background-color: var(--sys-color-surface-container-highest);
