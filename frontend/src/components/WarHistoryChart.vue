@@ -17,15 +17,7 @@ const bars = computed(() => {
     })
     .reverse()
   
-  return entries.slice(-104)
-})
-
-const chartStyle = computed(() => {
-  const len = bars.value.length
-  if (len > 50) return { gap: '1px', radius: '1px' }
-  if (len > 30) return { gap: '1px', radius: '2px' }
-  if (len > 20) return { gap: '2px', radius: '3px' }
-  return { gap: '4px', radius: '4px' }
+  return entries.slice(-52) // Show last 52 weeks max
 })
 </script>
 
@@ -34,7 +26,6 @@ const chartStyle = computed(() => {
     <div 
       v-if="bars.length > 0" 
       class="war-chart"
-      :style="{ gap: chartStyle.gap }"
     >
       <div 
         v-for="(fame, i) in bars" 
@@ -46,13 +37,12 @@ const chartStyle = computed(() => {
           'bar-miss': fame === 0
         }"
         :style="{ 
-          height: `${Math.max(15, Math.min(100, (fame / 3200) * 100))}%`,
-          borderRadius: chartStyle.radius
+          height: `${Math.max(10, Math.min(100, (fame / 3200) * 100))}%`
         }"
       />
     </div>
     <div v-else class="war-chart-empty">
-      No war history
+      No history
     </div>
   </div>
 </template>
@@ -60,49 +50,47 @@ const chartStyle = computed(() => {
 <style scoped>
 .chart-container {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; 
+  height: 24px; /* Fixed small height */
+  overflow: hidden;
+  margin: 8px 0;
+  display: flex; align-items: flex-end;
 }
-.chart-container::-webkit-scrollbar { display: none; }
 
 .war-chart {
   display: flex;
   align-items: flex-end;
-  height: 48px;
-  padding: 4px 0;
-  min-width: 100%;
-  width: fit-content;
+  height: 100%;
+  width: 100%;
+  gap: 2px;
 }
 
 .bar {
   flex: 1;
-  min-height: 4px;
-  background: var(--sys-color-surface-container-highest);
+  min-height: 2px;
+  border-radius: 1px;
+  opacity: 0.5;
   transition: all 0.2s ease;
-  position: relative;
 }
 
 .bar-hit {
-  background: linear-gradient(to top, var(--sys-color-secondary-container), var(--sys-color-secondary));
-  opacity: 0.8;
+  background-color: var(--sys-color-secondary);
 }
 
 .bar-win {
-  background: linear-gradient(to top, var(--sys-color-primary), #6750a4);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: var(--sys-color-primary);
+  opacity: 1;
 }
 
 .bar-miss {
-  background: var(--sys-color-surface-container-highest);
-  opacity: 0.5;
+  background-color: var(--sys-color-surface-container-highest);
+  opacity: 0.3;
 }
 
 .war-chart-empty {
-  font-size: 0.75rem;
+  width: 100%;
+  font-size: 10px;
   color: var(--sys-color-outline);
   text-align: center;
-  padding: 1rem 0;
+  align-self: center;
 }
 </style>
