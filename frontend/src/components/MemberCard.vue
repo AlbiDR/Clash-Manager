@@ -291,7 +291,7 @@ function handleClick(e: Event) {
 
 /* 
    -----------------------------------------------------------------------
-   ROLE BADGE HIERARCHY (Pixel Perfect)
+   ROLE BADGE HIERARCHY (Atomic Additive System)
    -----------------------------------------------------------------------
 */
 
@@ -315,8 +315,8 @@ function handleClick(e: Event) {
   box-sizing: border-box;
 }
 
-/* Level 1: MEMBER (The Standard) */
-/* Matte finish. Sits in background. */
+/* Level 1: MEMBER (Base) */
+/* Matte Outline. No Fill. Neutral. */
 .role-member {
   background: transparent;
   color: var(--sys-color-outline);
@@ -324,36 +324,33 @@ function handleClick(e: Event) {
   opacity: 0.8;
 }
 
-/* Level 2: ELDER (The Officer) */
-/* Neon Outline. High contrast border, subtle tint. Looks "Active". */
+/* Level 2: ELDER (Activated) */
+/* Neon Outline. Tinted Fill. Active Blue. */
 .role-elder {
-  background: rgba(var(--sys-color-primary-rgb), 0.08); /* Subtle Tint */
-  color: var(--sys-color-primary); /* Bright Blue Text */
-  border-color: var(--sys-color-primary); /* Bright Blue Border */
-  /* No Shadow, just crisp line work */
+  background: rgba(var(--sys-color-primary-rgb), 0.08); /* Minimal Tint */
+  color: var(--sys-color-primary);
+  border-color: var(--sys-color-primary); /* Strong Border */
 }
 
-/* Level 3: CO-LEADER (The Lieutenant) */
-/* Soft Fill. Light solid background, Dark Text. Looks "Administrative". */
+/* Level 3: CO-LEADER (Elevated) */
+/* Neon Outline + Light Fill. "Elder" Border + "Admin" Weight. */
 .role-co-leader {
   background: var(--sys-color-primary-container); /* Light Blue Fill */
   color: var(--sys-color-on-primary-container); /* Dark Blue Text */
-  border-color: var(--sys-color-primary-container); /* Match Fill */
-  /* Subtle drop shadow for lift */
+  border-color: var(--sys-color-primary); /* MATCHES ELDER BORDER */
   box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
 }
 
-/* Level 4: LEADER (The General) */
-/* Hard Solid. Dark solid background, White Text. Looks "Authoritative". */
+/* Level 4: LEADER (Supreme) */
+/* Solid Dark Fill. Self-colored Border. Maximum Weight. */
 .role-leader {
   background: var(--sys-color-primary); /* Dark Blue Fill */
   color: var(--sys-color-on-primary); /* White Text */
   border-color: var(--sys-color-primary);
-  /* Stronger shadow + Inset highlight for 3D feel */
   box-shadow: 
     0 2px 4px rgba(var(--sys-color-primary-rgb), 0.4),
     inset 0 1px 0 rgba(255,255,255,0.2); 
-  font-weight: 800; /* Extra weight for the boss */
+  font-weight: 800;
 }
 
 
