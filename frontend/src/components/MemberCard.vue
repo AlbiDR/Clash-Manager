@@ -110,10 +110,7 @@ function handleClick(e: Event) {
     <div class="card-header">
       <div class="info-stack">
         <div class="name-row">
-          <div class="name-tenure-group">
-            <span class="tenure-badge">{{ member.d.days }}d</span>
-            <span class="player-name">{{ member.n }}</span>
-          </div>
+          <span class="player-name">{{ member.n }}</span>
           <span class="meta-val trophy-val">
             <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
             <Icon name="trophy" size="12" style="color:#fbbf24;" />
@@ -121,6 +118,7 @@ function handleClick(e: Event) {
         </div>
         <div class="meta-row">
           <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
+          <span class="tenure-badge">{{ member.d.days }}d</span>
         </div>
       </div>
 
@@ -242,23 +240,16 @@ function handleClick(e: Event) {
   display: flex; 
   flex-direction: column; 
   justify-content: center; 
-  gap: 2px; /* Tighter gap between name/meta */
+  gap: 4px; /* A bit more space between rows */
   flex: 1; 
   min-width: 0; 
 }
 
 .name-row { 
   display: flex;
-  align-items: center;
+  align-items: baseline; /* Align text baselines */
   justify-content: space-between;
   gap: 8px;
-}
-
-.name-tenure-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0; /* Important for truncation of children */
 }
 
 .player-name { 
@@ -272,7 +263,11 @@ function handleClick(e: Event) {
   min-width: 0; /* For flex truncation */
 }
 
-.meta-row { display: flex; align-items: center; }
+.meta-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+}
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
 .trophy-val { display: flex; align-items: center; flex-shrink: 0; }
 
