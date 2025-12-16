@@ -110,12 +110,11 @@ function handleClick(e: Event) {
     <div class="card-header">
       <div class="info-stack">
         <div class="name-row">
+          <span class="tenure-badge">{{ member.d.days }}d</span>
           <span class="player-name">{{ member.n }}</span>
         </div>
         <div class="meta-row">
           <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
-          <span class="meta-val meta-time">{{ member.d.days }}d</span>
-          <span class="dot-separator">•</span>
           <span class="meta-val trophy-val">
             <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
             <Icon name="trophy" size="12" style="color:#fbbf24;" />
@@ -220,6 +219,10 @@ function handleClick(e: Event) {
     border-color: rgba(var(--sys-color-on-secondary-container-rgb), 0.3);
     opacity: 1;
 }
+.card.selected .tenure-badge {
+  background: rgba(var(--sys-color-on-secondary-container-rgb), 0.1);
+  color: var(--sys-color-on-secondary-container);
+}
 
 .selection-indicator {
   position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
@@ -243,7 +246,9 @@ function handleClick(e: Event) {
 }
 
 .name-row { 
-  /* Now a simple container */
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .player-name { 
@@ -254,15 +259,31 @@ function handleClick(e: Event) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0; /* For flex truncation */
 }
 
-.meta-row { display: flex; align-items: center; gap: 8px; }
+.meta-row { display: flex; align-items: center; justify-content: space-between; }
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
-.meta-time { min-width: 36px; }
-.dot-separator { font-size: 10px; color: var(--sys-color-outline); opacity: 0.5; }
 .trophy-val { display: flex; align-items: center; }
 
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
+
+/* Tenure Badge */
+.tenure-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 36px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-outline);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--sys-font-family-mono);
+  flex-shrink: 0;
+}
 
 /* Role Badge */
 .role-badge {
