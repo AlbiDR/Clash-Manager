@@ -1,3 +1,4 @@
+
 /**
  * GAS API Client
  * Handles all communication with the GAS backend
@@ -19,7 +20,7 @@ import type {
 
 // Prioritize LocalStorage override, fall back to Build Env, default to empty
 const GAS_URL = localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
-const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V5' // Updated for v6 requirements (Request specified V5 key)
+const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' // Updated for v6 Gold Master
 
 // ============================================================================
 // HELPERS
