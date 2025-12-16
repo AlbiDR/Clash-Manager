@@ -109,17 +109,18 @@ function handleClick(e: Event) {
     <!-- Header (Strict Height Enforced) -->
     <div class="card-header">
       <div class="info-stack">
-        <div class="name-row">
-          <span class="player-name">{{ member.n }}</span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-val trophy-val">
-            <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
-            <Icon name="trophy" size="12" style="color:#fbbf24;" />
-          </span>
-          <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
-          <span class="tenure-badge">{{ member.d.days }}d</span>
-        </div>
+        <!-- Row 1, Col 1 -->
+        <span class="tenure-badge">{{ member.d.days }}d</span>
+        <!-- Row 1, Col 2 -->
+        <span class="player-name">{{ member.n }}</span>
+        
+        <!-- Row 2, Col 1 -->
+        <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
+        <!-- Row 2, Col 2 -->
+        <span class="meta-val trophy-val">
+          <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
+          <Icon name="trophy" size="12" style="color:#fbbf24;" />
+        </span>
       </div>
 
       <div class="action-area">
@@ -237,17 +238,13 @@ function handleClick(e: Event) {
 }
 
 .info-stack { 
-  display: flex; 
-  flex-direction: column; 
-  justify-content: center; 
-  gap: 4px; /* A bit more space between rows */
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px 8px; /* row-gap column-gap */
+  align-items: center;
   flex: 1; 
   min-width: 0; 
-}
-
-.name-row { 
-  display: flex;
-  align-items: baseline; /* Align text baselines */
 }
 
 .player-name { 
@@ -258,21 +255,15 @@ function handleClick(e: Event) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0; /* For flex truncation */
+  min-width: 0; /* For grid truncation */
 }
 
-.meta-row { 
-  display: flex; 
-  align-items: center; 
-  gap: 8px;
-}
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
 
 .trophy-val { 
   display: flex; 
   align-items: center; 
   flex-shrink: 0;
-  width: 60px; /* FIXED WIDTH for alignment */
 }
 
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
