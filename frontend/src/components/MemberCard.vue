@@ -219,7 +219,15 @@ function handleClick(e: Event) {
   height: 40px; /* Locked Height */
 }
 
-.info-stack { display: flex; flex-direction: column; justify-content: center; gap: 1px; flex: 1; min-width: 0; }
+.info-stack { 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center; 
+  gap: 1px; 
+  flex: 1; 
+  min-width: 0; 
+  padding-right: 10px; /* Gap between badge and score pod */
+}
 
 .name-row { 
   display: flex; 
