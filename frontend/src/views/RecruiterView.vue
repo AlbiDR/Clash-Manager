@@ -1,295 +1,271 @@
-
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Recruit } from '../types'
-import Icon from './Icon.vue'
+import { ref, computed, watch } from 'vue'
+import { useClanData } from '../composables/useClanData'
+import { useApiState } from '../composables/useApiState'
+import { useToast } from '../composables/useToast'
+import { useBatchQueue } from '../composables/useBatchQueue'
+import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 
-const props = defineProps<{
-  id: string
-  recruit: Recruit
-  expanded: boolean
-  selected: boolean
-  selectionMode: boolean
-}>()
+import Icon from '../components/Icon.vue'
+import ConsoleHeader from '../components/ConsoleHeader.vue'
+import RecruitCard from '../components/RecruitCard.vue'
+import FabIsland from '../components/FabIsland.vue'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
-const emit = defineEmits<{
-  'toggle-expand': []
-  'toggle-select': []
-}>()
+const { pingData } = useApiState()
 
-const toneClass = computed(() => {
-  const score = props.recruit.s || 0
-  if (score >= 80) return 'tone-high'
-  if (score >= 50) return 'tone-mid'
-  return 'tone-low'
+const sheetUrl = computed(() => {
+  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
+  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
+  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
+
+const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+
+const recruits = computed(() => data.value?.hh || [])
+const loading = computed(() => !data.value && isRefreshing.value)
+
+const searchQuery = ref('')
+const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
+
+const sortOptions = [
+  { label: 'Potential', value: 'score' },
+  { label: 'War Wins', value: 'war_wins' },
+  { label: 'Cards Won', value: 'cards_won' },
+  { label: 'Donations', value: 'donations' },
+  { label: 'Trophies', value: 'trophies' },
+  { label: 'Recency', value: 'time_found' },
+  { label: 'Name', value: 'name' }
+]
+
+const { 
+  selectedIds, 
+  fabState, 
+  isSelectionMode, 
+  toggleSelect, 
+  selectAll, 
+  clearSelection, 
+  handleAction,
+  handleBlitz
+} = useBatchQueue()
+
+const { 
+  expandedIds, 
+  toggleExpand, 
+  processDeepLink 
+} = useDeepLinkHandler('recruit-')
+
+const selectedSet = computed(() => new Set(selectedIds.value))
 
 const timeAgo = computed(() => {
-  const dateStr = props.recruit.d.ago
-  if (!dateStr) return '-'
-  const ts = new Date(dateStr).getTime()
-  const m = Math.floor((Date.now() - ts) / 60000)
-  if (m < 1) return 'New' 
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  return h > 24 ? Math.floor(h / 24) + 'd ago' : h + 'h ago'
+  if (!lastSyncTime.value) return ''
+  const ms = Date.now() - lastSyncTime.value
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  return `${hours}h ago`
 })
 
-// Composables
-import { useLongPress } from '../composables/useLongPress'
-import { useShare } from '../composables/useShare'
-
-const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  if (navigator.vibrate) navigator.vibrate(50)
-  emit('toggle-select')
+const status = computed(() => {
+  if (syncError.value) return { type: 'error', text: 'Retry' } as const
+  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
+  if (recruits.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
+  return { type: 'ready', text: 'Empty' } as const
 })
 
-const { canShare, share } = useShare()
+const statsBadge = computed(() => {
+  if (!recruits.value) return undefined
+  return {
+    label: 'Pool',
+    value: recruits.value.length.toString()
+  }
+})
 
-function shareRecruit() {
-  share({
-    title: `Recruit: ${props.recruit.n}`,
-    text: `Found a potential recruit: ${props.recruit.n} (Score: ${Math.round(props.recruit.s || 0)})`,
-    url: `https://royaleapi.com/player/${props.recruit.id}`
+const getTs = (str?: string) => str ? new Date(str).getTime() : 0
+
+const filteredRecruits = computed(() => {
+  let result = [...recruits.value]
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(r => 
+      !hiddenIds.value.has(r.id) && 
+      (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query))
+    )
+  } else {
+    result = result.filter(r => !hiddenIds.value.has(r.id))
+  }
+  
+  result.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'score': return (b.s || 0) - (a.s || 0)
+      case 'trophies': return (b.t || 0) - (a.t || 0)
+      case 'name': return a.n.localeCompare(b.n)
+      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago)
+      case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
+      case 'donations': return (b.d.don || 0) - (a.d.don || 0)
+      case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
+      default: return 0
+    }
   })
+  return result
+})
+
+watch(recruits, (newVal) => {
+    if (newVal.length > 0) processDeepLink(newVal)
+}, { immediate: true })
+
+const { undo, success, error } = useToast()
+const hiddenIds = ref<Set<string>>(new Set())
+
+function dismissBulk() {
+  if (selectedIds.value.length === 0) return
+  const ids = [...selectedIds.value]
+  clearSelection()
+  executeDismiss(ids)
 }
 
-function handleClick(e: Event) {
-  if (isLongPress.value) {
-    isLongPress.value = false
-    return
-  }
-  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
-  
-  if ((e.target as HTMLElement).closest('.chevron-btn')) {
-    emit('toggle-expand')
-    return
-  }
+function executeDismiss(ids: string[]) {
+    ids.forEach(id => hiddenIds.value.add(id))
+    const timerId = setTimeout(() => {
+        dismissRecruitsAction(ids)
+            .catch(() => {
+                error('Failed to sync changes')
+                ids.forEach(id => hiddenIds.value.delete(id))
+            })
+    }, 4500)
+    
+    undo(`Dismissed ${ids.length} recruits`, () => {
+        clearTimeout(timerId)
+        ids.forEach(id => hiddenIds.value.delete(id))
+        success('Dismissal cancelled')
+    })
+}
 
-  if (props.selectionMode) {
-    emit('toggle-select')
+function handleSelectAll() {
+  const ids = filteredRecruits.value.map(r => r.id)
+  selectAll(ids)
+}
+
+function handleSortUpdate(val: string) {
+  if (document.startViewTransition) {
+    document.startViewTransition(() => {
+      sortBy.value = val as any
+    })
   } else {
-    emit('toggle-expand')
+    sortBy.value = val as any
   }
 }
 </script>
 
 <template>
-  <div 
-    class="card squish-interaction"
-    :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleClick"
-    @mousedown="startPress"
-    @touchstart="startPress"
-    @mouseup="cancelPress"
-    @touchend="cancelPress"
-    @touchmove="cancelPress"
-    @mouseleave="cancelPress"
-    @contextmenu.prevent
-  >
-    <div class="selection-indicator"></div>
-
-    <!-- Header (Strict Height Enforced) -->
-    <div class="card-header">
-      <div class="info-stack">
-        <!-- Row 1, Col 1: Time Badge (Matches Tenure) -->
-        <span class="tenure-badge">{{ timeAgo }}</span>
-        <!-- Row 1, Col 2: Name -->
-        <span class="player-name">{{ recruit.n }}</span>
-        
-        <!-- Row 2, Col 1: Player Tag Badge -->
-        <span class="role-badge tag-badge">#{{ recruit.id }}</span>
-        <!-- Row 2, Col 2: Trophies -->
-        <span class="meta-val trophy-val">
-          <Icon name="trophy" size="12" style="color:#fbbf24;" />
-          <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
-        </span>
-      </div>
-
-      <div class="action-area">
-        <div class="stat-pod" :class="toneClass">
-          <div class="stat-score">{{ Math.round(recruit.s || 0) }}</div>
+  <div class="view-container">
+    <ConsoleHeader
+      title="Headhunter"
+      :status="status"
+      :show-search="!isSelectionMode"
+      :sheet-url="sheetUrl"
+      :stats="statsBadge"
+      :sort-options="sortOptions"
+      @update:search="val => searchQuery = val"
+      @update:sort="handleSortUpdate"
+      @refresh="refresh"
+    >
+      <template #extra>
+        <div v-if="isSelectionMode" class="selection-bar">
+           <div class="sel-count">{{ selectedIds.length }} Selected</div>
+           <div class="sel-actions">
+             <span class="text-btn primary" @click="handleSelectAll">All</span>
+             <span class="text-btn" @click="clearSelection">None</span>
+             <span class="text-btn danger" @click="clearSelection">Done</span>
+           </div>
         </div>
-        <div class="chevron-btn">
-          <Icon name="chevron_down" size="18" />
-        </div>
-      </div>
+      </template>
+    </ConsoleHeader>
+
+    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
+    
+    <div v-else-if="loading && recruits.length === 0" class="list-container">
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
+    
+    <EmptyState 
+      v-else-if="!loading && filteredRecruits.length === 0" 
+      icon="telescope" 
+      message="No recruits found"
+      hint="Try adjusting your filters or run a new scan."
+    >
+      <template #action>
+        <button class="btn-primary" @click="refresh">
+          <Icon name="refresh" size="18" />
+          <span>Scan Again</span>
+        </button>
+      </template>
+    </EmptyState>
+    
+    <TransitionGroup 
+      v-else 
+      name="list" 
+      tag="div" 
+      class="list-container"
+    >
+      <RecruitCard
+        v-for="(recruit, index) in filteredRecruits"
+        :key="recruit.id"
+        :id="`recruit-${recruit.id}`"
+        :recruit="recruit"
+        :expanded="expandedIds.has(recruit.id)"
+        :selected="selectedSet.has(recruit.id)"
+        :selection-mode="isSelectionMode"
+        :style="{ '--i': index }"
+        @toggle-expand="toggleExpand(recruit.id)"
+        @toggle-select="toggleSelect(recruit.id)"
+      />
+    </TransitionGroup>
 
-    <!-- Body (Expanded) -->
-    <div class="card-body">
-      <div class="body-inner">
-        <!-- Stats Row -->
-        <div class="stats-row">
-          <div class="stat-cell">
-            <span class="sc-label">Donations</span>
-            <span class="sc-val">{{ recruit.d.don }}</span>
-          </div>
-          <div class="stat-cell border-l">
-            <span class="sc-label">War Wins</span>
-            <span class="sc-val">{{ recruit.d.war }}</span>
-          </div>
-          <div class="stat-cell border-l">
-            <span class="sc-label">Cards Won</span>
-            <span class="sc-val">{{ recruit.d.cards || '-' }}</span>
-          </div>
-        </div>
-
-        <!-- Action Toolbar -->
-        <div class="actions-toolbar">
-          <a 
-            :href="`https://royaleapi.com/player/${recruit.id}`" 
-            target="_blank"
-            class="btn-action secondary compact"
-          >
-            <Icon name="analytics" size="14" />
-            <span>RoyaleAPI</span>
-          </a>
-          <a 
-            :href="`clashroyale://playerInfo?id=${recruit.id}`" 
-            class="btn-action primary compact"
-          >
-            <Icon name="crown" size="14" />
-            <span>Open Game</span>
-          </a>
-          <button v-if="canShare" class="btn-icon-action" @click.stop="shareRecruit">
-            <Icon name="share" size="16" />
-          </button>
-        </div>
-      </div>
-    </div>
+    <FabIsland
+      :visible="fabState.visible"
+      :label="fabState.label"
+      :action-href="fabState.actionHref"
+      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
+      :is-processing="fabState.isProcessing"
+      :is-blasting="fabState.isBlasting"
+      :selection-count="fabState.selectionCount"
+      :blitz-enabled="fabState.blitzEnabled"
+      @action="handleAction"
+      @blitz="handleBlitz"
+      @dismiss="dismissBulk"
+    />
   </div>
 </template>
 
 <style scoped>
-.card {
-  background: var(--sys-color-surface-container);
-  border-radius: 16px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  position: relative; overflow: hidden;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  
-  /* Removed backdrop-filter to save memory */
-  will-change: auto;
-}
-
-.card.expanded { 
-  background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15), 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.1) inset;
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
-  z-index: 10;
-  margin: 12px 0;
-  transform: scale(1.02);
-  will-change: transform;
-  content-visibility: visible;
-}
-
-.card.selected { 
-  background: var(--sys-color-secondary-container); 
-}
-
-.selection-indicator {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--sys-color-primary); opacity: 0; transition: opacity 0.2s;
-}
-.card.selected .selection-indicator { opacity: 1; }
-
-.card-header { 
+.view-container { min-height: 100%; padding-bottom: 24px; }
+.list-container { padding-bottom: 32px; position: relative; perspective: 1000px; transform-style: preserve-3d; }
+.selection-bar {
   display: flex; justify-content: space-between; align-items: center;
-  height: 40px; 
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
+.sel-count { font-size: 20px; font-weight: 700; }
+.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.text-btn.primary { color: var(--sys-color-primary); }
+.text-btn.danger { color: var(--sys-color-error); }
 
-.info-stack { 
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px 8px;
-  align-items: center;
-  flex: 1; 
-  min-width: 0; 
+.btn-primary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 99px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: transform 0.2s;
 }
-
-.player-name { 
-  font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
-.trophy-val { display: flex; align-items: center; }
-.action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
-
-.tenure-badge {
-  display: flex; align-items: center; justify-content: center;
-  height: 20px; width: 75px; border-radius: 6px;
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-outline);
-  font-size: 11px; font-weight: 700; font-family: var(--sys-font-family-mono);
-}
-
-.role-badge {
-  display: inline-block; width: 75px; text-align: center;
-  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
-  padding: 3px 8px; border-radius: 6px; border: 1px solid transparent;
-}
-
-.tag-badge {
-  font-family: var(--sys-font-family-mono);
-  font-size: 10.5px; text-transform: none;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface-variant);
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-.stat-pod {
-  display: flex; align-items: center; justify-content: center;
-  width: 45px; height: 45px; border-radius: 12px;
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface-variant);
-  font-weight: 800; font-size: 14px;
-  font-family: var(--sys-font-family-mono);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.1);
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-.stat-pod.tone-high { 
-  background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
-  color: var(--sys-color-on-primary); border: none;
-}
-
-.stat-pod.tone-mid { 
-  background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
-  color: var(--sys-color-on-secondary); border: none;
-}
-
-.chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
-.card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
-
-.card-body {
-  display: grid; grid-template-rows: 0fr;
-  transition: grid-template-rows 0.4s var(--sys-motion-spring), margin-top 0.4s var(--sys-motion-spring);
-  margin-top: 0; padding-top: 0; pointer-events: none;
-}
-
-.body-inner { min-height: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
-.card.expanded .card-body { grid-template-rows: 1fr; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); pointer-events: auto; }
-.card.expanded .body-inner { opacity: 1; transition-delay: 0.1s; }
-
-.stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 4px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.stat-cell.border-l { border-left: 1px solid rgba(255,255,255,0.05); }
-.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; margin-bottom: 2px; }
-.sc-val { font-size: 14px; font-weight: 700; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
-
-.actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
-.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; }
-.btn-action.primary { background: linear-gradient(135deg, var(--sys-color-primary), #00508a); color: white; }
-.btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
-.btn-icon-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--sys-color-primary); border-radius: 10px; cursor: pointer; }
+.btn-primary:active { transform: scale(0.95); }
 </style>
