@@ -27,10 +27,10 @@ const CONFIG = {
       UTILITIES: '6.0.0',
       ORCHESTRATOR_TRIGGERS: '6.0.0',
       LOGGER: '6.0.0',
-      LEADERBOARD: '6.1.1',
+      LEADERBOARD: '6.1.5',
       SCORING_SYSTEM: '6.0.0',
-      RECRUITER: '6.2.0', // Updated for 14-day window
-      CONTROLLER_WEBAPP: '6.1.0',
+      RECRUITER: '6.2.0', 
+      CONTROLLER_WEBAPP: '6.1.2',
       API_PUBLIC: '6.0.0'
     },
 
@@ -92,7 +92,7 @@ const CONFIG = {
 
   HEADHUNTER: {
     TARGET: 50,
-    BLACKLIST_DAYS: 14, // ✨ EXTENDED: 2 Weeks for better cooling and scoring
+    BLACKLIST_DAYS: 14, // Extended from 7 to 14 for better cooling and benchmark stability
     KEYWORDS: [
       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
       'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -109,3 +109,4 @@ const CONFIG = {
     }
   }
 };
+
