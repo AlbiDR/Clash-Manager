@@ -5,24 +5,23 @@ import { RouterView } from 'vue-router'
 import { useClanData } from './composables/useClanData'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
-import SuccessPulse from './components/SuccessPulse.vue'
 
 const { syncStatus } = useClanData()
 const isOnline = ref(true)
 const connectionType = ref('unknown')
-const triggerSuccessEffect = ref(false)
+const isSuccessFading = ref(false)
 
-// Watch for sync success to trigger the "Momentum Explosion"
+// Watch for sync success to trigger the temporary "Resolve" state
 watch(syncStatus, (newStatus, oldStatus) => {
     if (oldStatus === 'syncing' && newStatus === 'success') {
-        triggerSuccessEffect.value = true
-        // Native Success Haptic Signature
-        if (navigator.vibrate) navigator.vibrate([20, 50, 20])
+        isSuccessFading.value = true
+        // Native Success Haptic Signature (Subtle nudge)
+        if (navigator.vibrate) navigator.vibrate([10, 30])
         
-        // Reset the trigger so it can fire again
+        // Keep the green state visible for a moment of feedback
         setTimeout(() => {
-            triggerSuccessEffect.value = false
-        }, 100)
+            isSuccessFading.value = false
+        }, 1800)
     }
 })
 
@@ -48,6 +47,7 @@ onMounted(() => {
 
 const connectionState = computed(() => {
     if (!isOnline.value) return 'offline'
+    if (isSuccessFading.value) return 'success-resolve'
     if (syncStatus.value === 'syncing') return 'syncing'
     if (['slow-2g', '2g'].includes(connectionType.value)) return 'slow'
     return 'online'
@@ -59,9 +59,6 @@ const connectionState = computed(() => {
     <!-- NATIVE FRONTIER: Connectivity Health Strip -->
     <div class="connectivity-strip" :class="connectionState"></div>
 
-    <!-- NEO-MATERIAL: Success Momentum Explosion -->
-    <SuccessPulse :trigger="triggerSuccessEffect" />
-
     <main class="main-content">
       <RouterView />
     </main>
@@ -69,6 +66,7 @@ const connectionState = computed(() => {
     <FloatingDock />
     <ToastContainer />
 
+    <!-- Subtle Sync Status (Contextual) -->
     <div v-if="syncStatus === 'syncing' || syncStatus === 'error'" 
          class="sync-indicator"
          :class="{ 'error': syncStatus === 'error' }">
@@ -85,8 +83,9 @@ const connectionState = computed(() => {
   top: 0; left: 0; right: 0;
   height: 2px;
   z-index: 3000;
-  transition: opacity 0.4s ease, background-color 0.4s ease;
+  transition: opacity 0.6s ease, background-color 0.4s ease, box-shadow 0.4s ease;
   opacity: 0;
+  pointer-events: none;
 }
 
 /* Hard Offline: Static Red */
@@ -112,7 +111,23 @@ const connectionState = computed(() => {
   );
   background-size: 200% 100%;
   animation: shimmer-data 1.5s linear infinite;
-  box-shadow: 0 0 8px rgba(var(--sys-color-primary-rgb), 0.4);
+  box-shadow: 0 1px 4px rgba(var(--sys-color-primary-rgb), 0.3);
+}
+
+/* SUCCESS RESOLVE: The "Elegant Nudge" 
+   Transforms the strip to green with a subtle top bloom */
+.connectivity-strip.success-resolve {
+  opacity: 1;
+  background-color: #22c55e; /* Vibrant Success Green */
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+  /* Force a quick pop animation */
+  animation: resolve-pop 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+}
+
+@keyframes resolve-pop {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(2); }
+  100% { transform: scaleY(1); }
 }
 
 /* Online/Healthy: Invisible */
