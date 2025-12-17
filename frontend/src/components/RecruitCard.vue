@@ -76,7 +76,7 @@ function handleClick(e: Event) {
 
 <template>
   <div 
-    class="card"
+    class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
     @click="handleClick"
     @mousedown="startPress"
@@ -166,19 +166,13 @@ function handleClick(e: Event) {
 .card {
   background: var(--sys-color-surface-container);
   border-radius: 16px;
-  /* STRICT PADDING: ensures vertical size is consistent */
   padding: 8px 12px;
   margin-bottom: 6px;
   position: relative; overflow: hidden;
-  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   border: 1px solid rgba(255,255,255,0.03);
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.card:active { 
-  background: var(--sys-color-surface-container-high); 
 }
 
 .card.expanded { 
@@ -187,22 +181,11 @@ function handleClick(e: Event) {
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
   z-index: 10;
   margin: 12px 0;
+  transform: scale(1.02);
 }
 
 .card.selected { 
   background: var(--sys-color-secondary-container); 
-}
-.card.selected .player-name { color: var(--sys-color-on-secondary-container); }
-.card.selected .meta-val { color: var(--sys-color-on-secondary-container); opacity: 0.8; }
-.card.selected .role-badge { 
-    background: rgba(var(--sys-color-on-secondary-container-rgb), 0.15);
-    color: var(--sys-color-on-secondary-container);
-    border-color: rgba(var(--sys-color-on-secondary-container-rgb), 0.3);
-    opacity: 1;
-}
-.card.selected .tenure-badge {
-  background: rgba(var(--sys-color-on-secondary-container-rgb), 0.1);
-  color: var(--sys-color-on-secondary-container);
 }
 
 .selection-indicator {
@@ -211,17 +194,16 @@ function handleClick(e: Event) {
 }
 .card.selected .selection-indicator { opacity: 1; }
 
-/* HEADER - STRICT HEIGHT */
 .card-header { 
   display: flex; justify-content: space-between; align-items: center;
-  height: 40px; /* Locked Height */
+  height: 40px; 
 }
 
 .info-stack { 
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 4px 8px; /* row-gap column-gap */
+  gap: 4px 8px;
   align-items: center;
   flex: 1; 
   min-width: 0; 
@@ -230,189 +212,81 @@ function handleClick(e: Event) {
 .player-name { 
   font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
   letter-spacing: -0.01em;
-  line-height: 1.2;
-  /* Truncation */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0; /* For grid truncation */
 }
 
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
-
-.trophy-val { 
-  display: flex; 
-  align-items: center; 
-  flex-shrink: 0;
-}
-
+.trophy-val { display: flex; align-items: center; }
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
 
-/* Tenure/Time Badge */
 .tenure-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  width: 75px;
-  padding: 0 6px;
-  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  height: 20px; width: 75px; border-radius: 6px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-outline);
-  font-size: 11px;
-  font-weight: 700;
-  font-family: var(--sys-font-family-mono);
-  flex-shrink: 0;
+  font-size: 11px; font-weight: 700; font-family: var(--sys-font-family-mono);
 }
 
-/* Role Badge & Placeholder */
 .role-badge {
-  display: inline-block;
-  width: 75px;
-  text-align: center;
-  font-size: 9.5px; /* Matches MemberCard fix */
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  box-sizing: border-box;
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  flex-shrink: 0;
-  transition: all 0.2s;
+  display: inline-block; width: 75px; text-align: center;
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 6px; border: 1px solid transparent;
 }
 
 .tag-badge {
   font-family: var(--sys-font-family-mono);
-  font-size: 10.5px;
-  text-transform: none;
-  letter-spacing: 0;
+  font-size: 10.5px; text-transform: none;
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
   border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* 💎 NEO-MATERIAL STAT POD (FIXED SIZE) */
 .stat-pod {
   display: flex; align-items: center; justify-content: center;
-  width: 45px; /* LOCKED WIDTH */
-  height: 45px; /* LOCKED HEIGHT */
-  border-radius: 12px;
+  width: 45px; height: 45px; border-radius: 12px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   font-weight: 800; font-size: 14px;
   font-family: var(--sys-font-family-mono);
-  box-shadow: 
-    inset 0 1px 0 rgba(255,255,255,0.1), 
-    0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(255,255,255,0.05);
-  box-sizing: border-box;
 }
 
 .stat-pod.tone-high { 
   background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
-  color: var(--sys-color-on-primary); 
-  box-shadow: 
-    inset 0 1px 0 rgba(255,255,255,0.3),
-    0 2px 6px rgba(var(--sys-color-primary-rgb), 0.3);
-  border: none;
+  color: var(--sys-color-on-primary); border: none;
 }
 
 .stat-pod.tone-mid { 
   background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
-  color: var(--sys-color-on-secondary); 
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
-  border: none;
+  color: var(--sys-color-on-secondary); border: none;
 }
 
 .chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
 .card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
 
-/* BODY (ANIMATED COLLAPSE) */
 .card-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s var(--sys-motion-spring), margin-top 0.3s ease, border-top 0.3s step-end;
-  /* Reset collapsed state completely */
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0 solid transparent;
-  pointer-events: none;
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s var(--sys-motion-spring), margin-top 0.4s var(--sys-motion-spring);
+  margin-top: 0; padding-top: 0; pointer-events: none;
 }
 
-.body-inner {
-  min-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
+.body-inner { min-height: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
+.card.expanded .card-body { grid-template-rows: 1fr; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); pointer-events: auto; }
+.card.expanded .body-inner { opacity: 1; transition-delay: 0.1s; }
 
-.card.expanded .card-body {
-  grid-template-rows: 1fr;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  pointer-events: auto;
-}
-
-.card.expanded .body-inner {
-  opacity: 1;
-  transition-delay: 0.1s;
-}
-
-/* STATS */
-.stats-row {
-  display: flex; justify-content: space-between;
-  padding: 0 4px;
-  margin-bottom: 4px; /* Reduced from 10px to match MemberCard tightness */
-}
-.stat-cell {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-}
+.stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 4px; }
+.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .stat-cell.border-l { border-left: 1px solid rgba(255,255,255,0.05); }
-
 .sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; margin-bottom: 2px; }
 .sc-val { font-size: 14px; font-weight: 700; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
 
-/* ACTIONS */
-.actions-toolbar {
-  display: flex; gap: 8px; margin-top: 8px;
-}
-
-.btn-action {
-  flex: 1;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 36px;
-  border-radius: 10px;
-  font-size: 12px; font-weight: 700; text-decoration: none;
-  transition: transform 0.1s, opacity 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.btn-action:active { transform: scale(0.97); opacity: 0.9; }
-
-.btn-action.primary { 
-  background: linear-gradient(135deg, var(--sys-color-primary), #00508a); 
-  color: white; 
-  box-shadow: 0 4px 8px rgba(var(--sys-color-primary-rgb), 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
-}
-
-.btn-action.secondary { 
-  background: var(--sys-color-surface-container); 
-  color: var(--sys-color-on-surface); 
-  border: 1px solid rgba(255,255,255,0.05); 
-}
-
-.btn-icon-action {
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  background: transparent; border: 1px solid rgba(255,255,255,0.1);
-  color: var(--sys-color-primary); border-radius: 10px;
-  cursor: pointer;
-}
-.trophy-text {
-  display: inline-block;
-  margin-left: 4px;
-}
+.actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
+.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; }
+.btn-action.primary { background: linear-gradient(135deg, var(--sys-color-primary), #00508a); color: white; }
+.btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
+.btn-icon-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--sys-color-primary); border-radius: 10px; cursor: pointer; }
 </style>
 
