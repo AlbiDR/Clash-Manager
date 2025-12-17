@@ -138,28 +138,37 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }
   }
 
-  function nextPulse() {
-    // Safety Check
-    if (!isBlasting.value) return
-    
+  /**
+   * Advances the state index.
+   * Checks for completion.
+   */
+  function advanceIndex() {
+    currentIndex.value++
     // End Condition
     if (currentIndex.value >= selectedIds.value.length) {
-        // Delay slightly to let UI show "10/10" before clearing
         setTimeout(() => {
-            if (isBlasting.value) { // Double check cancellation
+            if (isBlasting.value) {
                 stopBlitz()
                 clearSelection()
             }
         }, 500)
-        return
+        return false // Ended
     }
+    return true // Continue
+  }
 
-    // Fire!
-    const id = selectedIds.value[currentIndex.value]
-    fireDeepLink(`${baseScheme}${id}`)
+  /**
+   * 🤖 AUTO PULSE (Worker/Script Initiated)
+   * This triggers the JS injection. This WILL cause prompts on strict browsers.
+   */
+  function nextPulseAutomated() {
+    if (!isBlasting.value) return
     
-    // Advance
-    currentIndex.value++
+    const id = selectedIds.value[currentIndex.value]
+    if (id) {
+        fireDeepLink(`${baseScheme}${id}`)
+        advanceIndex()
+    }
   }
 
   // ⚡ BLITZ MODE START
@@ -172,13 +181,13 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     currentIndex.value = 0
     
     // 1. Fire first shot immediately
-    nextPulse()
+    nextPulseAutomated()
     
     // 2. Start Worker for rhythm
     worker = createWorker(throttleMs)
     worker.onmessage = () => {
-        // This runs on a separate thread's tick, bypassing throttling
-        nextPulse()
+        // This runs on a separate thread's tick
+        nextPulseAutomated()
     }
     worker.postMessage('start')
   }
@@ -187,13 +196,31 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleAction(e: MouseEvent) {
     // 1. BLITZ MODE (Manual Assist)
     if (isBlasting.value) {
-        e.preventDefault() // Don't follow link, we handle logic
+        // Check if this was a native anchor click (from FabIsland)
+        const isAnchor = (e.currentTarget as HTMLElement).tagName === 'A';
+
+        if (isAnchor) {
+            // ✅ NATIVE NAVIGATION:
+            // The browser will handle opening the link because it's a real <a> tag with href.
+            // This bypasses the popup prompt on most browsers.
+            
+            // We just need to update our internal state to the NEXT item
+            // and reset the automation timer so it doesn't double-fire immediately.
+            console.log("⚡ Manual Native Assist")
+            advanceIndex()
+            
+            if (worker) {
+                worker.postMessage('stop')
+                worker.postMessage('start')
+            }
+            return // Let default action (navigation) proceed
+        }
+
+        // 🛑 LEGACY FALLBACK (Button click):
+        e.preventDefault() 
+        console.log("⚡ Manual Scripted Assist")
+        nextPulseAutomated()
         
-        console.log("⚡ Manual Assist Triggered")
-        // Force the next step manually if automation stalled
-        nextPulse()
-        
-        // Reset the worker timer to prevent a double-fire immediately after manual click
         if (worker) {
             worker.postMessage('stop')
             worker.postMessage('start')
