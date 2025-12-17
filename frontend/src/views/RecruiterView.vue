@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -189,7 +188,7 @@ function handleSortUpdate(val: string) {
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
     <div v-else-if="loading && recruits.length === 0" class="list-container">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :style="{ '--i': i }" />
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
     <EmptyState 
@@ -269,4 +268,3 @@ function handleSortUpdate(val: string) {
 }
 .btn-primary:active { transform: scale(0.95); }
 </style>
-
