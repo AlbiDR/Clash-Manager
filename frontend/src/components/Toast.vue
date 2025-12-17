@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import Icon from './Icon.vue'
@@ -29,12 +30,24 @@ function clearTimer() {
   if (timer) clearTimeout(timer)
 }
 
+function handleMainClick() {
+  if (props.actionLabel) {
+    emit('action', props.id)
+  }
+}
+
 onMounted(startTimer)
 onUnmounted(clearTimer)
 </script>
 
 <template>
-  <div class="toast" :class="type" @mouseenter="clearTimer" @mouseleave="startTimer">
+  <div 
+    class="toast" 
+    :class="[type, { 'is-actionable': !!actionLabel }]" 
+    @mouseenter="clearTimer" 
+    @mouseleave="startTimer"
+    @click="handleMainClick"
+  >
     <div class="icon-side">
       <Icon v-if="type === 'success'" name="check" size="20" />
       <Icon v-else-if="type === 'error'" name="warning" size="20" />
@@ -48,7 +61,7 @@ onUnmounted(clearTimer)
       {{ actionLabel }}
     </button>
     
-    <button class="close-btn" @click="$emit('dismiss', id)">
+    <button class="close-btn" @click.stop="$emit('dismiss', id)">
       <Icon name="close" size="16" />
     </button>
   </div>
@@ -65,6 +78,14 @@ onUnmounted(clearTimer)
   min-width: 300px; max-width: 90vw;
   border: 1px solid var(--sys-color-outline-variant);
   pointer-events: auto;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.toast.is-actionable {
+  cursor: pointer;
+}
+.toast.is-actionable:active {
+  transform: scale(0.98);
 }
 
 .toast.success { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: none; }
