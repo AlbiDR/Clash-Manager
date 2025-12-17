@@ -4,7 +4,7 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V6.2.0): 
+ * ⚙️ LOGIC (V6.2.1): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
  *    3. Stochastic Prioritization (DOUBLE SHUFFLE): 
@@ -13,13 +13,13 @@
  *    4. Density Filter: Discards empty rooms (members < 10) after fetch.
  *    5. Mercenary Scoring: Massive bonus for recent war activity.
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
- *    7. Blacklist (Smart): Tracks scores of invited players for 14 days.
+ *    7. Blacklist (Coherent): Tracks scores of invited players for 14 days.
  *    8. Top-3 Benchmark: Anchors potential scores against the historical elite.
- * 🏷️ VERSION: 6.2.0
+ * 🏷️ VERSION: 6.2.1
  * ============================================================================
  */
 
-const VER_RECRUITER = '6.2.0';
+const VER_RECRUITER = '6.2.1';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -162,36 +162,31 @@ function scoutRecruits() {
 
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
- * UPDATED V6.2.0:
+ * UPDATED V6.2.1:
  * 1. Implements 14-day history retention.
- * 2. Calculates Benchmark using the average of the TOP 3 historical scores.
- * 3. Prevents "Unicorn Outliers" from distorting percentages.
+ * 2. Orderly Storage: Sorted by Score (Desc) to maintain coherence.
+ * 3. Standardized Formatting: Strictly numeric keys and tags.
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
-  let blacklist = Utils.Props.getChunked(PROP_KEY, {});
+  let rawBlacklist = Utils.Props.getChunked(PROP_KEY, {});
 
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
 
-  const activeScores = [];
-  const tagsToDelete = [];
+  const validEntries = [];
 
-  // 🧹 1. CLEANUP EXPIRED ENTRIES & COLLECT SCORES
-  for (const tag in blacklist) {
-    let entry = blacklist[tag];
-    let expiry = entry.e || 0;
-    let score = entry.s || 0;
+  // 🧹 1. CLEANUP EXPIRED ENTRIES
+  for (const tag in rawBlacklist) {
+    let entry = rawBlacklist[tag];
+    let expiry = Number(entry.e) || 0;
+    let score = Number(entry.s) || 0;
 
-    if (expiry < now) {
-      tagsToDelete.push(tag);
-    } else {
-      activeScores.push(score);
+    if (expiry > now) {
+      validEntries.push({ t: tag, e: expiry, s: score });
     }
   }
-
-  tagsToDelete.forEach(t => delete blacklist[t]);
 
   // 📥 2. INGEST NEW INVITES FROM SHEET
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -200,35 +195,44 @@ function updateAndGetBlacklist(sheet) {
     const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, numRows, Object.keys(H).length).getValues();
 
     data.forEach(row => {
-      const tag = row[H.TAG];
+      const tag = String(row[H.TAG] || '').trim();
       const invited = row[H.INVITED];
       const raw = Number(row[H.RAW_SCORE]) || 0;
 
-      // Only track if successfully invited
       if (tag && invited === true) {
-        // If not in blacklist or this instance has a higher score (rare), record it
-        if (!blacklist[tag] || blacklist[tag].s < raw) {
-          blacklist[tag] = { e: now + expiryDuration, s: raw };
-          activeScores.push(raw);
+        // Check if already in valid list, if so update score if higher
+        const existing = validEntries.find(v => v.t === tag);
+        if (existing) {
+          if (raw > existing.s) existing.s = raw;
+        } else {
+          validEntries.push({ t: tag, e: now + expiryDuration, s: raw });
         }
       }
     });
   }
 
-  // ⚓ 3. CALCULATE ROBUST BENCHMARK (Top-3 Average)
-  // This stabilizes the 100% mark across the 14-day window.
-  activeScores.sort((a, b) => b - a);
-  const topN = activeScores.slice(0, 3);
-  const benchmarkHigh = topN.length > 0 ? (topN.reduce((a, b) => a + b, 0) / topN.length) : 0;
+  // ⚓ 3. COHERENT ORDERING & BENCHMARKING
+  // Sort by Score Descending
+  validEntries.sort((a, b) => b.s - a.s);
 
-  // 💾 4. PERSIST
-  if (Object.keys(blacklist).length > 0 || tagsToDelete.length > 0) {
-    Utils.Props.setChunked(PROP_KEY, blacklist);
+  // Calculate Benchmark using the TOP 3
+  const topN = validEntries.slice(0, 3);
+  const benchmarkHigh = topN.length > 0 ? (topN.reduce((acc, cur) => acc + cur.s, 0) / topN.length) : 0;
+
+  // 💾 4. RE-FORMAT & PERSIST
+  // Convert back to Object for storage (Tags as keys)
+  const finalBlacklist = {};
+  validEntries.forEach(entry => {
+    finalBlacklist[entry.t] = { e: entry.e, s: entry.s };
+  });
+
+  if (Object.keys(finalBlacklist).length > 0 || Object.keys(rawBlacklist).length > 0) {
+    Utils.Props.setChunked(PROP_KEY, finalBlacklist);
   }
 
-  console.log(`🚫 Blacklist: ${Object.keys(blacklist).length} active. Benchmark anchor (Top-3 Avg): ${Math.round(benchmarkHigh)}.`);
+  console.log(`🚫 Blacklist: ${validEntries.length} entries. Benchmark anchor (Top-3 Avg): ${Math.round(benchmarkHigh)}.`);
 
-  return { ids: new Set(Object.keys(blacklist)), highScore: benchmarkHigh };
+  return { ids: new Set(validEntries.map(e => e.t)), highScore: benchmarkHigh };
 }
 
 function loadRecruitDatabase(sheet) {
