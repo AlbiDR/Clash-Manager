@@ -3,11 +3,12 @@
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
+import { useToast } from '../composables/useToast'
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 
 import ConsoleHeader from '../components/ConsoleHeader.vue'
-import MemberCard from '../components/MemberCard.vue'
+import RecruitCard from '../components/RecruitCard.vue'
 import FabIsland from '../components/FabIsland.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
@@ -17,25 +18,25 @@ const { pingData } = useApiState()
 
 const sheetUrl = computed(() => {
   if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
-  const gid = pingData.value.sheets['Leaderboard']
+  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
   return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
-const members = computed(() => data.value?.lb || [])
+const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+
+const recruits = computed(() => data.value?.hh || [])
 const loading = computed(() => !data.value && isRefreshing.value)
 
 const searchQuery = ref('')
-const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen' | 'trend'>('score')
+const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
 
 const sortOptions = [
-  { label: 'Performance', value: 'score' },
-  { label: 'Momentum', value: 'trend' },
-  { label: 'War Participation', value: 'war_rate' },
-  { label: 'Daily Donations', value: 'donations_day' },
+  { label: 'Potential', value: 'score' },
+  { label: 'War Wins', value: 'war_wins' },
+  { label: 'Cards Won', value: 'cards_won' },
+  { label: 'Donations', value: 'donations' },
   { label: 'Trophies', value: 'trophies' },
-  { label: 'Tenure', value: 'tenure' },
-  { label: 'Last Active', value: 'last_seen' },
+  { label: 'Recency', value: 'time_found' },
   { label: 'Name', value: 'name' }
 ]
 
@@ -54,7 +55,9 @@ const {
   expandedIds, 
   toggleExpand, 
   processDeepLink 
-} = useDeepLinkHandler('member-')
+} = useDeepLinkHandler('recruit-')
+
+const selectedSet = computed(() => new Set(selectedIds.value))
 
 const timeAgo = computed(() => {
   if (!lastSyncTime.value) return ''
@@ -69,102 +72,105 @@ const timeAgo = computed(() => {
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
   if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (members.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
+  if (recruits.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
   return { type: 'ready', text: 'Empty' } as const
 })
 
 const statsBadge = computed(() => {
-  if (!members.value) return undefined
+  if (!recruits.value) return undefined
   return {
-    label: 'Clan',
-    value: members.value.length.toString()
+    label: 'Pool',
+    value: recruits.value.length.toString()
   }
 })
 
-const selectedSet = computed(() => new Set(selectedIds.value))
+const getTs = (str?: string) => str ? new Date(str).getTime() : 0
 
-function handleSelectAll() {
-  const ids = filteredMembers.value.map(i => i.id)
-  selectAll(ids)
-}
-
-function handleSearchUpdate(val: string) {
-  searchQuery.value = val
-}
-
-function handleSortUpdate(val: string) {
-  if (sortOptions.some(opt => opt.value === val)) {
-    // Force immediate UI update before sort calculation
-    if (document.startViewTransition) {
-        document.startViewTransition(() => {
-            sortBy.value = val as typeof sortBy.value
-        })
-    } else {
-        sortBy.value = val as typeof sortBy.value
-    }
-  }
-}
-
-function parseTimeAgo(val: string | null | undefined): number {
-  if (!val || val === '-' || val === 'Just now') return 0
-  const match = val.match(/^(\d+)([ymdh]) ago$/)
-  if (!match) return 99999999
-  const num = parseInt(match[1])
-  const unit = match[2]
-  switch(unit) {
-    case 'm': return num
-    case 'h': return num * 60
-    case 'd': return num * 1440
-    case 'y': return num * 525600
-    default: return num
-  }
-}
-
-function parseRate(val: string | number | null | undefined): number {
-  if (!val) return 0
-  const s = String(val)
-  return parseFloat(s.replace('%', '')) || 0
-}
-
-const filteredMembers = computed(() => {
-  let result = [...members.value]
+const filteredRecruits = computed(() => {
+  let result = [...recruits.value]
+  
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(m => m.n.toLowerCase().includes(query) || m.id.toLowerCase().includes(query))
+    result = result.filter(r => 
+      !hiddenIds.value.has(r.id) && 
+      (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query))
+    )
+  } else {
+    result = result.filter(r => !hiddenIds.value.has(r.id))
   }
   
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
-      case 'trend': return (b.dt || 0) - (a.dt || 0)
       case 'trophies': return (b.t || 0) - (a.t || 0)
       case 'name': return a.n.localeCompare(b.n)
-      case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
-      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
-      case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
-      case 'last_seen': return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
+      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago)
+      case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
+      case 'donations': return (b.d.don || 0) - (a.d.don || 0)
+      case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
       default: return 0
     }
   })
   return result
 })
 
-watch(members, (newVal) => {
+watch(recruits, (newVal) => {
     if (newVal.length > 0) processDeepLink(newVal)
 }, { immediate: true })
 
+const { undo, success, error } = useToast()
+const hiddenIds = ref<Set<string>>(new Set())
+
+function dismissBulk() {
+  if (selectedIds.value.length === 0) return
+  const ids = [...selectedIds.value]
+  clearSelection()
+  executeDismiss(ids)
+}
+
+function executeDismiss(ids: string[]) {
+    ids.forEach(id => hiddenIds.value.add(id))
+    const timerId = setTimeout(() => {
+        dismissRecruitsAction(ids)
+            .catch(() => {
+                error('Failed to sync changes')
+                ids.forEach(id => hiddenIds.value.delete(id))
+            })
+    }, 4500)
+    
+    undo(`Dismissed ${ids.length} recruits`, () => {
+        clearTimeout(timerId)
+        ids.forEach(id => hiddenIds.value.delete(id))
+        success('Dismissal cancelled')
+    })
+}
+
+function handleSelectAll() {
+  const ids = filteredRecruits.value.map(r => r.id)
+  selectAll(ids)
+}
+
+function handleSortUpdate(val: string) {
+  if (document.startViewTransition) {
+    document.startViewTransition(() => {
+      sortBy.value = val as any
+    })
+  } else {
+    sortBy.value = val as any
+  }
+}
 </script>
 
 <template>
   <div class="view-container">
     <ConsoleHeader
-      title="Leaderboard"
+      title="Headhunter"
       :status="status"
       :show-search="!isSelectionMode"
       :sheet-url="sheetUrl"
       :stats="statsBadge"
       :sort-options="sortOptions"
-      @update:search="handleSearchUpdate"
+      @update:search="val => searchQuery = val"
       @update:sort="handleSortUpdate"
       @refresh="refresh"
     >
@@ -179,18 +185,26 @@ watch(members, (newVal) => {
         </div>
       </template>
     </ConsoleHeader>
+
+    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
-    <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
-    
-    <div v-else-if="loading && members.length === 0" class="list-container stagger-children">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" />
+    <div v-else-if="loading && recruits.length === 0" class="list-container stagger-children">
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :style="{ '--delay': i + 1 }" />
     </div>
     
     <EmptyState 
-      v-else-if="!loading && filteredMembers.length === 0"
-      icon="leaf"
-      message="No members found"
-    />
+      v-else-if="!loading && filteredRecruits.length === 0" 
+      icon="telescope" 
+      message="No recruits found"
+      hint="Try adjusting your filters or run a new scan."
+    >
+      <template #action>
+        <button class="btn-primary" @click="refresh">
+          <Icon name="refresh" size="18" />
+          <span>Scan Again</span>
+        </button>
+      </template>
+    </EmptyState>
     
     <TransitionGroup 
       v-else 
@@ -198,16 +212,18 @@ watch(members, (newVal) => {
       tag="div" 
       class="list-container stagger-children"
     >
-      <MemberCard
-        v-for="member in filteredMembers"
-        :key="member.id"
-        :id="`member-${member.id}`"
-        :member="member"
-        :expanded="expandedIds.has(member.id)"
-        :selected="selectedSet.has(member.id)"
+      <RecruitCard
+        v-for="(recruit, index) in filteredRecruits"
+        :key="recruit.id"
+        :id="`recruit-${recruit.id}`"
+        :recruit="recruit"
+        :expanded="expandedIds.has(recruit.id)"
+        :selected="selectedSet.has(recruit.id)"
         :selection-mode="isSelectionMode"
-        @toggle="toggleExpand(member.id)"
-        @toggle-select="toggleSelect(member.id)"
+        class="stagger-item"
+        :style="{ '--delay': index + 1 }"
+        @toggle-expand="toggleExpand(recruit.id)"
+        @toggle-select="toggleSelect(recruit.id)"
       />
     </TransitionGroup>
 
@@ -215,56 +231,49 @@ watch(members, (newVal) => {
       :visible="fabState.visible"
       :label="fabState.label"
       :action-href="fabState.actionHref"
-      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Clear'"
+      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
       :is-processing="fabState.isProcessing"
       :is-blasting="fabState.isBlasting"
       :selection-count="fabState.selectionCount"
       :blitz-enabled="fabState.blitzEnabled"
       @action="handleAction"
       @blitz="handleBlitz"
-      @dismiss="clearSelection"
+      @dismiss="dismissBulk"
     />
   </div>
 </template>
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; }
+.list-container { padding-bottom: 32px; position: relative; perspective: 1000px; }
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
-  animation: fadeSlideIn 0.3s;
 }
 .sel-count { font-size: 20px; font-weight: 700; }
 .text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 
-/* ✨ NATIVE LIST PHYSICS (Gold Standard) */
-.list-move {
-  transition: transform 0.5s var(--sys-motion-spring);
-}
+.list-move { transition: transform 0.5s var(--sys-motion-spring); }
+.list-enter-active, .list-leave-active { transition: all 0.4s var(--sys-motion-spring); }
+.list-enter-from { opacity: 0; transform: translateY(20px) scale(0.95); }
+.list-leave-to { opacity: 0; transform: scale(0.9) translateX(30px); }
+.list-leave-active { position: absolute; width: 100%; z-index: 0; }
 
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.4s var(--sys-motion-spring);
+.btn-primary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 99px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: transform 0.2s;
 }
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(20px) scale(0.95);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: scale(0.9) translateX(30px);
-}
-
-.list-leave-active {
-  position: absolute;
-  width: 100%;
-  z-index: 0;
-}
+.btn-primary:active { transform: scale(0.95); }
 </style>
 
