@@ -146,7 +146,9 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   display: flex; align-items: center; justify-content: center;
   color: var(--sys-color-primary);
   background: var(--sys-color-surface-container-high);
+  transition: background 0.2s;
 }
+.icon-button:active { background: var(--sys-color-surface-container-highest); }
 
 .status-pill {
   display: flex; align-items: center; gap: 8px;
@@ -189,6 +191,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   font-size: 13px; font-weight: 700;
   color: var(--sys-color-on-surface);
   appearance: none;
+  cursor: pointer;
 }
 .sort-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
 
