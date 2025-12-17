@@ -34,9 +34,17 @@ const roleInfo = computed(() => {
 
 const trend = computed(() => {
   const dt = props.member.dt || 0
-  if (dt === 0) return null
+  const currentRaw = props.member.r || 0
+  if (dt === 0 || currentRaw === 0) return null
+  
+  const previousRaw = currentRaw - dt
+  // Avoid division by zero and illogical trends
+  if (previousRaw <= 0) return null 
+  
+  const percentChange = (dt / previousRaw) * 100
+  
   return {
-    val: Math.round(Math.abs(dt)) + '%',
+    val: Math.round(Math.abs(percentChange)) + '%',
     dir: dt > 0 ? 'up' : 'down'
   }
 })
@@ -46,12 +54,12 @@ const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() 
   emit('toggle-select')
 })
 
-function handleIdentityClick(e: Event) {
+function handlePodClick(e: Event) {
   e.stopPropagation()
   emit('toggle')
 }
 
-function handleCardClick(e: Event) {
+function handleContentClick(e: Event) {
   if (isLongPress.value) { isLongPress.value = false; return }
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
@@ -67,15 +75,15 @@ function handleCardClick(e: Event) {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleCardClick"
+    @click="handleContentClick"
     @mousedown="startPress"
     @touchstart="startPress"
     @mouseup="cancelPress"
     @touchend="cancelPress"
   >
     <div class="card-header">
-      <!-- Zone: Identity (Always toggles expansion) -->
-      <div class="identity-group" @click="handleIdentityClick">
+      <!-- Zone: Selection / Info -->
+      <div class="identity-group">
         <div class="meta-stack">
           <div class="badge tenure">{{ member.d.days }}d</div>
           <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
@@ -86,13 +94,12 @@ function handleCardClick(e: Event) {
           <div class="trophy-meta">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
-            <Icon :name="expanded ? 'chevron_down' : 'chevron_right'" size="14" class="expand-hint" />
           </div>
         </div>
       </div>
 
-      <!-- Zone: Score (Centered Momentum) -->
-      <div class="score-section">
+      <!-- Zone: Inspect (Score Pod acts as toggle) -->
+      <div class="score-section" @click.stop="handlePodClick">
         <div class="stat-pod" :class="toneClass">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
           <div v-if="trend" class="momentum-pill" :class="trend.dir">
@@ -157,22 +164,9 @@ function handleCardClick(e: Event) {
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-.identity-group { 
-  display: flex; 
-  align-items: center; 
-  gap: 14px; 
-  flex: 1; 
-  min-width: 0; 
-  cursor: zoom-in;
-}
+.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 
-.meta-stack { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 4px; 
-  width: 60px; 
-  flex-shrink: 0; 
-}
+.meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
 
 .badge {
   height: 18px; width: 100%;
@@ -184,12 +178,13 @@ function handleCardClick(e: Event) {
   text-transform: uppercase;
 }
 
-/* Role Vibrancy Engine */
-.badge.role { font-family: var(--sys-font-family-body); font-weight: 850; font-size: 9px; }
+/* monochromatic Role Vibrancy */
+.badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
+
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.role-coleader { background: #6750a4; color: white; }
-.role-elder { background: #2e7d32; color: white; }
-.role-member { background: var(--sys-color-surface-container-highest); color: var(--sys-color-outline); opacity: 0.7; }
+.role-coleader { background: rgba(var(--sys-color-primary-rgb), 0.7); color: white; }
+.role-elder { background: rgba(var(--sys-color-primary-rgb), 0.35); color: var(--sys-color-primary); }
+.role-member { background: rgba(var(--sys-color-primary-rgb), 0.1); color: var(--sys-color-outline); }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -203,7 +198,8 @@ function handleCardClick(e: Event) {
 
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-.expand-hint { opacity: 0.2; color: var(--sys-color-on-surface); margin-left: 2px; }
+
+.score-section { cursor: zoom-in; }
 
 .stat-pod {
   position: relative;
@@ -213,23 +209,20 @@ function handleCardClick(e: Event) {
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; font-weight: 900;
   font-family: var(--sys-font-family-mono);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+.stat-pod:active { transform: scale(0.9); }
 
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
 .momentum-pill {
-  position: absolute; 
-  bottom: -8px; 
-  left: 50%;
+  position: absolute; bottom: -8px; left: 50%;
   transform: translateX(-50%);
-  height: 18px; 
-  padding: 0 6px;
+  height: 18px; padding: 0 6px;
   background: var(--sys-color-surface-container-highest);
   border-radius: 10px;
-  display: flex; 
-  align-items: center; 
-  gap: 2px;
+  display: flex; align-items: center; gap: 2px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   z-index: 2;
   border: 1px solid var(--sys-surface-glass-border);
