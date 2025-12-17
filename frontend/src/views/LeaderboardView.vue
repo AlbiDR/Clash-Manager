@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -236,6 +235,7 @@ watch(members, (newVal) => {
       :is-processing="fabState.isProcessing"
       :is-blasting="fabState.isBlasting"
       :selection-count="fabState.selectionCount"
+      :blitz-enabled="fabState.blitzEnabled"
       @action="handleAction"
       @blitz="handleBlitz"
       @dismiss="clearSelection"
@@ -272,4 +272,3 @@ watch(members, (newVal) => {
   transition: transform 0.4s var(--sys-motion-spring);
 }
 </style>
-
