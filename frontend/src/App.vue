@@ -7,7 +7,6 @@ import ToastContainer from './components/ToastContainer.vue'
 
 const { syncStatus } = useClanData()
 const isOnline = ref(true)
-const connectionType = ref('unknown')
 const isSuccessFading = ref(false)
 
 watch(syncStatus, (newStatus, oldStatus) => {
@@ -50,8 +49,15 @@ const connectionState = computed(() => {
 </template>
 
 <style scoped>
-.app-shell { min-height: 100vh; }
-.app-container { max-width: var(--sys-layout-max-width); margin: 0 auto; padding: 0 16px; }
+.app-shell { 
+  min-height: 100vh;
+  background-color: var(--sys-color-background);
+}
+.app-container { 
+  max-width: var(--sys-layout-max-width); 
+  margin: 0 auto; 
+  padding: 0 16px; 
+}
 
 .connectivity-strip {
   position: fixed; top: 0; left: 0; right: 0;
