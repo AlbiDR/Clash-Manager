@@ -54,6 +54,11 @@
   /* Typography */
   --sys-font-family-body: 'Inter', system-ui, sans-serif;
   --sys-font-family-mono: 'JetBrains Mono', monospace;
+
+  /* Elevations (Tonal-based) */
+  --sys-elevation-1: 0 1px 3px rgba(0,0,0,0.05);
+  --sys-elevation-2: 0 4px 12px rgba(0,0,0,0.08);
+  --sys-elevation-3: 0 12px 32px rgba(0,0,0,0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -81,7 +86,7 @@
 body {
   margin: 0;
   background-color: var(--sys-color-background);
-  color: var(--sys-color-on-background);
+  color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-body);
   -webkit-font-smoothing: antialiased;
   padding-bottom: calc(120px + env(safe-area-inset-bottom));
@@ -90,7 +95,7 @@ body {
 
 /* 🏎️ INTERACTION ENGINE */
 .squish-interaction {
-  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease;
+  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease, box-shadow 0.2s ease;
   will-change: transform;
 }
 
@@ -115,4 +120,24 @@ body {
 ::-webkit-scrollbar-thumb { 
   background: var(--sys-color-outline-variant); 
   border-radius: 10px;
+}
+
+/* Tooltip standard */
+.custom-tooltip {
+  position: fixed;
+  background: var(--sys-color-on-surface);
+  color: var(--sys-color-surface);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 10000;
+}
+.custom-tooltip.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-10px);
 }
