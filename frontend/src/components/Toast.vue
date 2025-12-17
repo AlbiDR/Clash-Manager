@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import Icon from './Icon.vue'
@@ -70,13 +69,13 @@ onUnmounted(clearTimer)
 <style scoped>
 .toast {
   display: flex; align-items: center; gap: 12px;
-  background: var(--sys-color-surface-container-high);
+  background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   padding: 12px 16px;
   border-radius: var(--shape-corner-m);
   box-shadow: var(--sys-elevation-3);
   min-width: 300px; max-width: 90vw;
-  border: 1px solid var(--sys-color-outline-variant);
+  border: 1px solid var(--sys-surface-glass-border);
   pointer-events: auto;
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -88,26 +87,26 @@ onUnmounted(clearTimer)
   transform: scale(0.98);
 }
 
-.toast.success { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: none; }
-.toast.error { background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); border: none; }
+.toast.success { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); }
+.toast.error { background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); }
 .toast.undo { background: var(--sys-color-inverse-surface); color: var(--sys-color-inverse-on-surface); border: none; }
 
-.icon-side { display: flex; align-items: center; }
+.icon-side { display: flex; align-items: center; opacity: 0.9; }
 
-.message { flex: 1; font-weight: 500; font-size: 14px; line-height: 1.4; }
+.message { flex: 1; font-weight: 700; font-size: 14px; line-height: 1.4; }
 
 .action-btn {
-  background: rgba(255,255,255,0.15);
-  border: none; border-radius: 4px;
-  padding: 4px 8px;
-  color: inherit; font-weight: 700; font-size: 13px; text-transform: uppercase;
+  background: rgba(var(--sys-color-primary-rgb), 0.1);
+  border: none; border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--sys-color-primary); font-weight: 800; font-size: 13px; text-transform: uppercase;
   cursor: pointer; transition: background 0.2s;
 }
-.action-btn:hover { background: rgba(255,255,255,0.25); }
+.toast.undo .action-btn { color: var(--sys-color-inverse-on-surface); background: rgba(255,255,255,0.1); }
 
 .close-btn {
   background: none; border: none;
-  color: inherit; opacity: 0.6;
+  color: inherit; opacity: 0.4;
   cursor: pointer; padding: 4px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
 }
