@@ -4,21 +4,20 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V6.2.2): 
+ * ⚙️ LOGIC (V6.2.3): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
  *    3. Stochastic Prioritization (DOUBLE SHUFFLE): 
  *       - Phase 1: Tournaments (Top 800 -> Shuffle -> Pick 150).
  *       - Phase 2: Candidates (Top 200 Trophies -> Shuffle -> Pick 100).
  *    4. High Volume Ready: Blacklist logic optimized for 100+ invites/day.
- *    5. Mercenary Scoring: Massive bonus for recent war activity.
- *    6. Sticky Memory: Persists War Bonuses even if battles leave the log.
- *    7. Top-3 Benchmark: Anchors potential scores against the historical elite.
- * 🏷️ VERSION: 6.2.2
+ *    5. Coherent Storage: Blacklist is sorted by SCORE (DESC) before saving.
+ *    6. Top-3 Benchmark: Anchors potential scores against the historical elite.
+ * 🏷️ VERSION: 6.2.3
  * ============================================================================
  */
 
-const VER_RECRUITER = '6.2.2';
+const VER_RECRUITER = '6.2.3';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -35,10 +34,10 @@ function scoutRecruits() {
     avgTrophies = baselineData[0].items.reduce((a, b) => a + b.trophies, 0) / baselineData[0].items.length;
   }
 
-  // 🚫 BLACKLIST & BENCHMARK UPDATE
+  // 🚫 BLACKLIST & BENCHMARK UPDATE (Sorted by Score)
   const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
-  // 2. Load existing tracking data FIRST to check Pool Size
+  // 2. Load existing tracking data
   const existing = loadRecruitDatabase(sheet);
 
   // ⚡ OPTIMIZATION: "Cheap" Clanless Check
@@ -48,58 +47,28 @@ function scoutRecruits() {
   });
 
   if (tagsToCheck.length > 0) {
-    console.log(`🔭 Verifying clan status for ${tagsToCheck.length} existing recruits...`);
     const profiles = Utils.fetchRoyaleAPI(tagsToCheck.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
-
-    let removedCount = 0;
     profiles.forEach(p => {
-      if (p && p.clan && p.clan.tag) {
-        if (existing.has(p.tag)) {
-          existing.delete(p.tag);
-          removedCount++;
-        }
-      }
+      if (p && p.clan && p.clan.tag) existing.delete(p.tag);
     });
-
-    if (removedCount > 0) {
-      console.log(`🔭 Cleanup: Removed ${removedCount} recruits who found a clan.`);
-    }
   }
 
   const initialIds = new Set(existing.keys());
-
-  // Count active recruits (Not Invited)
   let activePoolCount = 0;
   existing.forEach(p => { if (!p.invited) activePoolCount++; });
 
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
   const isFillingPhase = activePoolCount < target;
+  const minTrophies = Math.max(4000, Math.round(isFillingPhase ? avgTrophies * 0.75 : avgTrophies));
 
-  let calculatedThreshold = avgTrophies;
-  let logicNote = "Strict Average";
-
-  if (isFillingPhase) {
-    calculatedThreshold = avgTrophies * 0.75;
-    logicNote = "Safety Cap (75%)";
-  }
-
-  const minTrophies = Math.max(4000, Math.round(calculatedThreshold));
-
-  console.log(`🔭 Headhunter Context: Pool ${activePoolCount}/${target} (${isFillingPhase ? 'Filling' : 'Full'}).`);
-  console.log(`🔭 Threshold Logic: ${logicNote} -> Searching for > ${minTrophies} trophies.`);
-
-  // 🧹 CLEANUP: Remove players who have already been invited
-  for (const [tag, player] of existing) {
-    if (player.invited) {
-      existing.delete(tag);
-    }
-  }
+  // 🧹 CLEANUP: Remove invited
+  for (const [tag, player] of existing) { if (player.invited) existing.delete(tag); }
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
 
-  // 5. Merge New Scans with Old Tracking
+  // 5. Merge
   scanned.forEach(c => {
     if (existing.has(c.tag)) {
       c.invited = existing.get(c.tag).invited;
@@ -108,63 +77,38 @@ function scoutRecruits() {
     existing.set(c.tag, c);
   });
 
-  // 6. Score and Sort
+  // 6. Final Pool Scoring
   const finalPool = Array.from(existing.values())
     .sort((a, b) => b.rawScore - a.rawScore)
     .slice(0, CONFIG.HEADHUNTER.TARGET);
 
-  // ⚓ ANCHOR: Global Benchmark Calculation (V6.2: Top-3 Average Anchor)
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
-  
-  // Use the historical benchmark or current pool high (if someone new broke the record)
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
-
   const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
+  
   finalPool.forEach(p => p.perfScore = Math.round((p.rawScore / finalBenchmark) * 100));
 
-  // 🛡️ FINAL CONSISTENCY CHECK
+  // 🛡️ Final Check
   const finalInvitedTags = new Set();
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const numRows = sheet.getLastRow() - CONFIG.LAYOUT.DATA_START_ROW + 1;
-    const invitedColData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.INVITED, numRows, 1).getValues();
-    const tagColData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.TAG, numRows, 1).getValues();
-    
-    invitedColData.forEach((row, index) => {
-      if (row[0] === true && tagColData[index][0]) {
-        finalInvitedTags.add(tagColData[index][0]);
-      }
-    });
+    const invitedData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.INVITED, numRows, 1).getValues();
+    const tagData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.TAG, numRows, 1).getValues();
+    invitedData.forEach((row, idx) => { if (row[0] === true && tagData[idx][0]) finalInvitedTags.add(tagData[idx][0]); });
   }
   
   const trulyFinalPool = finalPool.filter(p => !finalInvitedTags.has(p.tag));
   
-  // 📊 LOGGING
-  const survivors = trulyFinalPool.filter(p => !initialIds.has(p.tag));
-  if (survivors.length > 0) {
-    console.log(`🔭 HEADHUNTER RESULT: Added ${survivors.length} new recruits.`);
-  }
-
-  // 🛡️ BACKUP
   Utils.backupSheet(ss, CONFIG.SHEETS.HH);
-
   renderHeadhunterView(sheet, trulyFinalPool, avgTrophies);
 
-  // ⚡ PWA SYNC
-  try {
-    if (typeof refreshWebPayload === 'function') {
-      refreshWebPayload();
-    }
-  } catch (e) {
-    console.warn(`🔭 Headhunter: PWA Refresh Failed - ${e.message}`);
-  }
+  try { if (typeof refreshWebPayload === 'function') refreshWebPayload(); } catch (e) {}
 }
 
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
- * UPDATED V6.2.2:
- * 1. Scaling: Uses Object-lookup ($O(1)$) instead of Array.find ($O(N)$) for massive invite volumes.
- * 2. Implements 14-day history retention.
- * 3. Standardized Formatting: Strictly numeric keys and tags.
+ * UPDATED V6.2.3: 
+ * - Enforces DESCENDING SCORE ORDER for Benchmarking consistency.
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
@@ -174,25 +118,20 @@ function updateAndGetBlacklist(sheet) {
   const dayMs = 24 * 60 * 60 * 1000;
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
 
-  // 🗺️ Use a Map object for O(1) ingestion performance
-  const blacklistMap = {}; 
+  const validEntries = [];
 
-  // 🧹 1. CLEANUP EXPIRED ENTRIES
+  // 🧹 1. CLEANUP EXPIRED
   for (const tag in rawBlacklist) {
     let entry = rawBlacklist[tag];
     let expiry = Number(entry.e) || 0;
     let score = Number(entry.s) || 0;
-
-    if (expiry > now) {
-      blacklistMap[tag] = { e: expiry, s: score };
-    }
+    if (expiry > now) validEntries.push({ t: tag, e: expiry, s: score });
   }
 
-  // 📥 2. INGEST NEW INVITES FROM SHEET
+  // 📥 2. INGEST NEW
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
-    const numRows = sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
-    const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, numRows, Object.keys(H).length).getValues();
+    const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 10).getValues();
 
     data.forEach(row => {
       const tag = String(row[H.TAG] || '').trim();
@@ -200,44 +139,41 @@ function updateAndGetBlacklist(sheet) {
       const raw = Number(row[H.RAW_SCORE]) || 0;
 
       if (tag && invited === true) {
-        // Fast Map Lookup
-        if (blacklistMap[tag]) {
-          if (raw > blacklistMap[tag].s) blacklistMap[tag].s = raw;
-        } else {
-          blacklistMap[tag] = { e: now + expiryDuration, s: raw };
-        }
+        const existing = validEntries.find(v => v.t === tag);
+        if (existing) { if (raw > existing.s) existing.s = raw; } 
+        else { validEntries.push({ t: tag, e: now + expiryDuration, s: raw }); }
       }
     });
   }
 
-  // ⚓ 3. CALCULATE ROBUST BENCHMARK (Top-3 Average)
-  const entries = Object.entries(blacklistMap).map(([t, val]) => ({ t, ...val }));
-  entries.sort((a, b) => b.s - a.s);
+  // ⚓ 3. SORT BY SCORE (DESCENDING)
+  // This ensures the "Elite" benchmark anchor is calculated from the top of the data.
+  validEntries.sort((a, b) => b.s - a.s);
 
-  const topN = entries.slice(0, 3);
+  // 🎯 4. CALCULATE BENCHMARK (Top 3)
+  const topN = validEntries.slice(0, 3);
   const benchmarkHigh = topN.length > 0 ? (topN.reduce((acc, cur) => acc + cur.s, 0) / topN.length) : 0;
 
-  // 💾 4. PERSIST
-  if (Object.keys(blacklistMap).length > 0 || Object.keys(rawBlacklist).length > 0) {
-    Utils.Props.setChunked(PROP_KEY, blacklistMap);
+  // 💾 5. PERSIST COHERENT OBJECT
+  // Reconstruct object in sorted order (most JS engines preserve insertion order for non-numeric keys)
+  const sortedBlacklist = {};
+  validEntries.forEach(entry => {
+    sortedBlacklist[entry.t] = { e: entry.e, s: entry.s };
+  });
+
+  if (Object.keys(sortedBlacklist).length > 0 || Object.keys(rawBlacklist).length > 0) {
+    Utils.Props.setChunked(PROP_KEY, sortedBlacklist);
   }
 
-  console.log(`🚫 Blacklist: ${entries.length} active. Benchmark anchor (Top-3 Avg): ${Math.round(benchmarkHigh)}.`);
-
-  return { ids: new Set(Object.keys(blacklistMap)), highScore: benchmarkHigh };
+  console.log(`🚫 Blacklist: ${validEntries.length} active. Benchmark Anchor: ${Math.round(benchmarkHigh)}.`);
+  return { ids: new Set(validEntries.map(e => e.t)), highScore: benchmarkHigh };
 }
 
 function loadRecruitDatabase(sheet) {
   const map = new Map();
   if (sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return map;
-
   const H = CONFIG.SCHEMA.HH;
-  const numRows = sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
-  const numCols = Object.keys(H).length;
-
-  if (numRows < 1) return map;
-
-  const rows = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, numRows, numCols).getValues();
+  const rows = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 10).getValues();
   rows.forEach(r => {
     if (r[H.TAG]) map.set(r[H.TAG], {
       tag: r[H.TAG], invited: r[H.INVITED], name: r[H.NAME], trophies: r[H.TROPHIES],
@@ -249,37 +185,20 @@ function loadRecruitDatabase(sheet) {
   return map;
 }
 
-/**
- * ⚡ CORE ALGORITHM: Deep Net Protocol
- */
 function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   console.time('ScanTournaments');
   const START_TIME = Date.now();
-  const TIME_LIMIT_MS = 240000; 
   const W = CONFIG.HEADHUNTER.WEIGHTS;
-
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
   const searchUrls = keywords.map(k => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`);
 
-  console.log(`🔭 Phase A: Broadcasting search for ${keywords.length} keys...`);
   const searchResults = Utils.fetchRoyaleAPI(searchUrls);
-
   const uniqueTourneys = new Map();
-  searchResults.forEach(res => {
-    if (res && res.items) {
-      res.items.forEach(t => {
-        uniqueTourneys.set(t.tag, t);
-      });
-    }
-  });
+  searchResults.forEach(res => { if (res && res.items) res.items.forEach(t => uniqueTourneys.set(t.tag, t)); });
 
-  const sortedTournaments = Array.from(uniqueTourneys.values())
-    .sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
-
-  const lotteryPool = sortedTournaments.slice(0, 800); 
+  const lotteryPool = Array.from(uniqueTourneys.values()).sort((a, b) => (b.capacity || 0) - (a.capacity || 0)).slice(0, 800); 
   Utils.shuffleArray(lotteryPool);
-  const topTournaments = lotteryPool.slice(0, 150); 
-  const tourneyTags = topTournaments.map(t => t.tag);
+  const tourneyTags = lotteryPool.slice(0, 150).map(t => t.tag);
 
   if (tourneyTags.length === 0) return [];
 
@@ -289,34 +208,19 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   details.forEach(d => {
     if (d && d.membersList && d.membersList.length >= 10) {
       d.membersList.forEach(p => {
-        if (!p.clan || p.clan.tag === '') {
-          if (!blacklistSet || !blacklistSet.has(p.tag)) {
-            candidates.push(p);
-          }
-        }
+        if ((!p.clan || p.clan.tag === '') && (!blacklistSet || !blacklistSet.has(p.tag))) candidates.push(p);
       });
     }
   });
 
-  if (Date.now() - START_TIME > TIME_LIMIT_MS) return [];
-
   const uniqueCandidates = new Map();
-  candidates.forEach(c => uniqueCandidates.set(c.tag, c));
+  candidates.forEach(c => { if (c.trophies >= minTrophies || c.trophies === undefined) uniqueCandidates.set(c.tag, c); });
   
-  const qualifiedCandidates = Array.from(uniqueCandidates.values())
-                                   .filter(p => {
-                                      if (p.trophies === undefined || p.trophies === null) return true;
-                                      return p.trophies >= minTrophies;
-                                   });
-
-  qualifiedCandidates.sort((a, b) => (b.trophies || 0) - (a.trophies || 0));
-
-  const candidatePool = qualifiedCandidates.slice(0, 200);
+  const candidatePool = Array.from(uniqueCandidates.values()).sort((a, b) => (b.trophies || 0) - (a.trophies || 0)).slice(0, 200);
   Utils.shuffleArray(candidatePool);
   const tagsToFetch = candidatePool.slice(0, 100).map(p => p.tag);
 
   if (tagsToFetch.length === 0) return [];
-
   const playersData = Utils.fetchRoyaleAPI(tagsToFetch.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
 
   const validCandidates = [];
@@ -324,43 +228,26 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const playersNeedingWarLogsIndices = [];
 
   playersData.forEach(p => {
-    if (p) {
-      if (p.trophies >= minTrophies) {
-        validCandidates.push(p);
-        playersNeedingWarLogs.push(p.tag);
-        playersNeedingWarLogsIndices.push(validCandidates.length - 1);
-      }
+    if (p && p.trophies >= minTrophies) {
+      validCandidates.push(p);
+      playersNeedingWarLogs.push(p.tag);
+      playersNeedingWarLogsIndices.push(validCandidates.length - 1);
     }
   });
 
   if (playersNeedingWarLogs.length > 0) {
     const logs = Utils.fetchRoyaleAPI(playersNeedingWarLogs.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`));
-
     validCandidates.forEach((p, idx) => {
       const logIdx = playersNeedingWarLogsIndices.indexOf(idx);
       let warBonus = 0;
-
       if (logIdx > -1 && logs[logIdx]) {
-        const hasWarActivity = logs[logIdx].some(b => b.type === 'riverRacePvP' || b.type === 'boatBattle' || b.type === 'riverRaceDuel');
-        if (hasWarActivity) warBonus = 500;
+        const hasWar = logs[logIdx].some(b => b.type === 'riverRacePvP' || b.type === 'boatBattle' || b.type === 'riverRaceDuel');
+        if (hasWar) warBonus = 500;
       }
-
       let totalWarScore = (p.warDayWins || 0) + warBonus;
-      if (existingRecruits && existingRecruits.has(p.tag)) {
-        const storedRecruit = existingRecruits.get(p.tag);
-        const storedWar = storedRecruit.war || 0;
-        if (storedWar > totalWarScore) {
-          totalWarScore = storedWar;
-        }
-      }
-
+      if (existingRecruits?.has(p.tag)) totalWarScore = Math.max(totalWarScore, existingRecruits.get(p.tag).war || 0);
       const rawScore = Math.round((p.trophies * W.TROPHY) + (p.totalDonations * W.DON) + (totalWarScore * W.WAR));
-
-      p._computed = {
-        tag: p.tag, name: p.name, trophies: p.trophies, donations: p.totalDonations,
-        cards: p.challengeCardsWon, war: totalWarScore, foundDate: new Date(), invited: false,
-        rawScore: rawScore
-      };
+      p._computed = { tag: p.tag, name: p.name, trophies: p.trophies, donations: p.totalDonations, cards: p.challengeCardsWon, war: totalWarScore, foundDate: new Date(), invited: false, rawScore: rawScore };
     });
   }
 
@@ -371,37 +258,18 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 function renderHeadhunterView(sheet, list, baseline) {
   sheet.clear();
   const HEADERS = ['Tag', 'Invited', 'Name', 'Trophies', 'Donations', 'Cards Won', 'War Wins', 'Found', 'Raw Score', 'Performance Score'];
-
-  const rows = list.map(c => [
-    c.tag, c.invited,
-    `=HYPERLINK("clashroyale://playerInfo?id=${c.tag.replace('#', '')}", "${c.name}")`,
-    c.trophies, c.donations, c.cards, c.war,
-    new Date(c.foundDate),
-    c.rawScore, c.perfScore
-  ]);
-
-  const H = CONFIG.SCHEMA.HH;
+  const rows = list.map(c => [c.tag, c.invited, `=HYPERLINK("clashroyale://playerInfo?id=${c.tag.replace('#', '')}", "${c.name}")`, c.trophies, c.donations, c.cards, c.war, new Date(c.foundDate), c.rawScore, c.perfScore]);
   sheet.getRange(2, 2, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold').setWrap(true);
-
   if (rows.length > 0) {
     const dataRange = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, rows.length, rows[0].length);
     dataRange.setValues(rows);
-    sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.INVITED, rows.length, 1).insertCheckboxes();
-    sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.PERF_SCORE, rows.length, 1).setNumberFormat('0"%"');
-    sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.FOUND_DATE, rows.length, 1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
-
-    const rule = SpreadsheetApp.newConditionalFormatRule()
-      .setGradientMinpointWithValue('#ffffff', SpreadsheetApp.InterpolationType.NUMBER, "0")
-      .setGradientMidpointWithValue('#fff2cc', SpreadsheetApp.InterpolationType.NUMBER, "50")
-      .setGradientMaxpointWithValue('#6aa84f', SpreadsheetApp.InterpolationType.NUMBER, "100")
-      .setRanges([sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + H.PERF_SCORE, rows.length, 1)])
-      .build();
+    sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.INVITED, rows.length, 1).insertCheckboxes();
+    sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.PERF_SCORE, rows.length, 1).setNumberFormat('0"%"');
+    sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.FOUND_DATE, rows.length, 1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
+    const rule = SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#ffffff', SpreadsheetApp.InterpolationType.NUMBER, "0").setGradientMidpointWithValue('#fff2cc', SpreadsheetApp.InterpolationType.NUMBER, "50").setGradientMaxpointWithValue('#6aa84f', SpreadsheetApp.InterpolationType.NUMBER, "100").setRanges([sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.PERF_SCORE, rows.length, 1)]).build();
     sheet.setConditionalFormatRules([rule]);
   }
-
   sheet.getRange('B1').setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
-
-  const layoutRows = Math.max(rows.length, CONFIG.HEADHUNTER.TARGET);
-  Utils.applyStandardLayout(sheet, layoutRows, HEADERS.length, HEADERS);
+  Utils.applyStandardLayout(sheet, Math.max(rows.length, CONFIG.HEADHUNTER.TARGET), HEADERS.length, HEADERS);
 }
 
