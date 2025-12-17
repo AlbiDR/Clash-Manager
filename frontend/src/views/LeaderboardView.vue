@@ -230,11 +230,9 @@ watch(members, (newVal) => {
 .view-container { min-height: 100%; padding-bottom: 24px; }
 .list-container { padding-bottom: 32px; position: relative; }
 
-/* Flatten the entire list into one GPU layer to save 30-50MB of RAM */
+/* Memory Optimized GPU Layer */
 .gpu-contain {
   transform: translateZ(0);
-  will-change: transform;
-  contain: layout paint;
 }
 
 .selection-bar {
