@@ -120,49 +120,47 @@ body {
 /* 🏎️ MEMORY-SAVING INTERACTION ENGINE */
 .squish-interaction {
   transition: transform 0.2s var(--sys-motion-spring);
-  
-  /* 🔋 THE MEMORY SAVER: content-visibility: auto
-     Drastically reduces RAM for lists by not painting off-screen elements. */
   content-visibility: auto;
   contain-intrinsic-size: auto 58px;
-  
-  /* Strict containment prevents global layout shifts */
   contain: layout paint;
-  
-  /* Reduce GPU texture overhead */
   image-rendering: -webkit-optimize-contrast;
-  backface-visibility: hidden;
+  
+  /* 🔋 STAGGERED ENTRY ANIMATION (Universal) */
+  animation: card-entrance 0.5s var(--sys-motion-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
 }
 
-/* Grouping layers at the parent level instead of individual promotion */
+@keyframes card-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Flatten the entire list into one GPU layer to save 30-50MB of RAM */
 .gpu-contain {
   transform: translateZ(0);
-  /* Force a single compositing layer for the whole list */
+  /* Use 'will-change' only on the list, not on 50 individual cards */
   will-change: transform;
-  contain: paint layout size;
+  contain: layout paint;
 }
 
 .squish-interaction:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
+  transition-duration: 0.1s;
 }
 
-/* 🌊 DYNAMIC INFINITE CASCADE */
-.list-enter-active {
-  transition: all 0.4s var(--sys-motion-spring);
-  transition-delay: calc(var(--i, 0) * 25ms); 
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(20px) scale(0.98);
-}
-
+/* 🌊 LIST TRANSITIONS (Vue-Specific) */
 .list-move {
   transition: transform 0.4s var(--sys-motion-spring);
 }
 
 .list-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   position: absolute;
   width: 100%;
   z-index: 0;
@@ -170,7 +168,7 @@ body {
 
 .list-leave-to {
   opacity: 0;
-  transform: scale(0.9) translateX(20px);
+  transform: scale(0.9) translateX(30px);
 }
 
 .custom-tooltip {
