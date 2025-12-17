@@ -24,19 +24,19 @@ const toneClass = computed(() => {
   return 'tone-low'
 })
 
-const roleDisplay = computed(() => {
-  const r = props.member.d.role?.toLowerCase()
-  if (r === 'leader') return 'Leader'
-  if (r === 'coleader' || r === 'co-leader') return 'Co-Leader'
-  if (r === 'elder') return 'Elder'
-  return 'Member'
+const roleInfo = computed(() => {
+  const r = props.member.d.role?.toLowerCase() || ''
+  if (r.includes('leader') && !r.includes('co')) return { label: 'Leader', class: 'role-leader' }
+  if (r.includes('coleader') || r.includes('co-leader')) return { label: 'Co-Lead', class: 'role-coleader' }
+  if (r.includes('elder')) return { label: 'Elder', class: 'role-elder' }
+  return { label: 'Member', class: 'role-member' }
 })
 
 const trend = computed(() => {
   const dt = props.member.dt || 0
   if (dt === 0) return null
   return {
-    val: (dt > 0 ? '+' : '') + Math.round(dt),
+    val: Math.round(Math.abs(dt)) + '%',
     dir: dt > 0 ? 'up' : 'down'
   }
 })
@@ -46,11 +46,20 @@ const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() 
   emit('toggle-select')
 })
 
-function handleClick(e: Event) {
+function handleIdentityClick(e: Event) {
+  e.stopPropagation()
+  emit('toggle')
+}
+
+function handleCardClick(e: Event) {
   if (isLongPress.value) { isLongPress.value = false; return }
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
-  if (props.selectionMode) emit('toggle-select')
-  else emit('toggle')
+  
+  if (props.selectionMode) {
+    emit('toggle-select')
+  } else {
+    emit('toggle')
+  }
 }
 </script>
 
@@ -58,31 +67,31 @@ function handleClick(e: Event) {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleClick"
+    @click="handleCardClick"
     @mousedown="startPress"
     @touchstart="startPress"
     @mouseup="cancelPress"
     @touchend="cancelPress"
   >
     <div class="card-header">
-      <div class="identity-group">
-        <!-- Stacked Badges -->
+      <!-- Zone: Identity (Always toggles expansion) -->
+      <div class="identity-group" @click="handleIdentityClick">
         <div class="meta-stack">
           <div class="badge tenure">{{ member.d.days }}d</div>
-          <div class="badge role">{{ roleDisplay }}</div>
+          <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
         </div>
         
-        <!-- Name and Trophies -->
         <div class="name-block">
           <span class="player-name">{{ member.n }}</span>
           <div class="trophy-meta">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
+            <Icon :name="expanded ? 'chevron_down' : 'chevron_right'" size="14" class="expand-hint" />
           </div>
         </div>
       </div>
 
-      <!-- Score Pod with Momentum Pill -->
+      <!-- Zone: Score (Centered Momentum) -->
       <div class="score-section">
         <div class="stat-pod" :class="toneClass">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
@@ -133,7 +142,8 @@ function handleClick(e: Event) {
   margin-bottom: 8px;
   border: 1px solid var(--sys-surface-glass-border);
   cursor: pointer;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
 }
 
 .card.expanded {
@@ -147,12 +157,25 @@ function handleClick(e: Event) {
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.identity-group { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+  flex: 1; 
+  min-width: 0; 
+  cursor: zoom-in;
+}
 
-.meta-stack { display: flex; flex-direction: column; gap: 4px; }
+.meta-stack { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  width: 60px; 
+  flex-shrink: 0; 
+}
 
 .badge {
-  height: 18px; padding: 0 6px;
+  height: 18px; width: 100%;
   background: var(--sys-color-surface-container-highest);
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
@@ -160,7 +183,13 @@ function handleClick(e: Event) {
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
 }
-.badge.role { color: var(--sys-color-primary); font-family: var(--sys-font-family-body); font-weight: 700; font-size: 9px; }
+
+/* Role Vibrancy Engine */
+.badge.role { font-family: var(--sys-font-family-body); font-weight: 850; font-size: 9px; }
+.role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.role-coleader { background: #6750a4; color: white; }
+.role-elder { background: #2e7d32; color: white; }
+.role-member { background: var(--sys-color-surface-container-highest); color: var(--sys-color-outline); opacity: 0.7; }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -174,6 +203,7 @@ function handleClick(e: Event) {
 
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
+.expand-hint { opacity: 0.2; color: var(--sys-color-on-surface); margin-left: 2px; }
 
 .stat-pod {
   position: relative;
@@ -189,18 +219,26 @@ function handleClick(e: Event) {
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
 .momentum-pill {
-  position: absolute; bottom: -6px; right: -8px;
-  height: 20px; padding: 0 6px;
+  position: absolute; 
+  bottom: -8px; 
+  left: 50%;
+  transform: translateX(-50%);
+  height: 18px; 
+  padding: 0 6px;
   background: var(--sys-color-surface-container-highest);
   border-radius: 10px;
-  display: flex; align-items: center; gap: 3px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  border: 1.5px solid var(--sys-surface-glass-border);
+  display: flex; 
+  align-items: center; 
+  gap: 2px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  z-index: 2;
+  border: 1px solid var(--sys-surface-glass-border);
 }
+
 .momentum-pill.up { color: #22c55e; }
 .momentum-pill.down { color: #ef4444; }
 
-.trend-val { font-size: 10px; font-weight: 900; font-family: var(--sys-font-family-mono); }
+.trend-val { font-size: 9px; font-weight: 900; font-family: var(--sys-font-family-mono); }
 
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
