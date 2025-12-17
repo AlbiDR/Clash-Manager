@@ -5,12 +5,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 6.2.2
+ * 🏷️ VERSION: 6.2.3
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = '6.2.2';
+const VER_CONFIGURATION = '6.2.3';
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -23,13 +23,13 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: '6.2.2',
+      CONFIGURATION: '6.2.3',
       UTILITIES: '6.0.0',
       ORCHESTRATOR_TRIGGERS: '6.0.0',
       LOGGER: '6.0.0',
       LEADERBOARD: '6.1.5',
       SCORING_SYSTEM: '6.0.0',
-      RECRUITER: '6.2.2', 
+      RECRUITER: '6.2.3', 
       CONTROLLER_WEBAPP: '6.1.2',
       API_PUBLIC: '6.0.0'
     },
