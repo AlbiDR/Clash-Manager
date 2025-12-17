@@ -16,6 +16,7 @@ defineProps<{
   isProcessing?: boolean
   isBlasting?: boolean
   selectionCount?: number
+  blitzEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,9 +47,9 @@ const emit = defineEmits<{
           <span v-if="!selectionCount">{{ dismissLabel || 'Dismiss' }}</span>
         </button>
 
-        <!-- ⚡ Blitz Button (Only if multiple items) -->
+        <!-- ⚡ Blitz Button (Only if multiple items AND blitz mode enabled) -->
         <button 
-          v-if="selectionCount && selectionCount > 1 && !isProcessing"
+          v-if="blitzEnabled && selectionCount && selectionCount > 1 && !isProcessing"
           class="fab-btn blitz"
           @click="emit('blitz')"
           v-tooltip="'Requires Pop-ups permission'"
@@ -140,3 +141,4 @@ const emit = defineEmits<{
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
+
