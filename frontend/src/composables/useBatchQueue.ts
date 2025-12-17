@@ -1,6 +1,7 @@
 
 import { ref, computed } from 'vue'
 import { useToast } from './useToast'
+import { useModules } from './useModules'
 
 interface BatchQueueOptions {
   throttleMs?: number
@@ -15,6 +16,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const lastActionTime = ref(0)
   const isBlasting = ref(false)
   const { error } = useToast()
+  const { modules } = useModules()
 
   const isSelectionMode = computed(() => selectedIds.value.length > 0)
   const isProcessing = computed(() => queue.value.length > 0)
@@ -45,7 +47,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       actionHref: targetId ? `${baseScheme}${targetId}` : undefined,
       isProcessing: isProcessing.value,
       isBlasting: isBlasting.value,
-      selectionCount: total
+      selectionCount: total,
+      blitzEnabled: modules.value.blitzMode
     }
   })
 
@@ -166,3 +169,4 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     handleBlitz
   }
 }
+
