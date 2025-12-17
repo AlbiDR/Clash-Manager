@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { LeaderboardMember } from '../types'
@@ -75,7 +74,7 @@ import { useLongPress } from '../composables/useLongPress'
 import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  if (navigator.vibrate) navigator.vibrate(50)
+  if (navigator.vibrate) navigator.vibrate(15) // Shorter tick
   emit('toggle-select')
 })
 
@@ -192,7 +191,9 @@ function handleClick(e: Event) {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  /* 🔋 RAM SAVER: Box-shadow removed on static state */
+  box-shadow: none;
+  backface-visibility: hidden;
 }
 
 .card.expanded { 
@@ -201,7 +202,8 @@ function handleClick(e: Event) {
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
   z-index: 10;
   margin: 12px 0;
-  transform: scale(1.02); /* Slight pop when expanded */
+  transform: scale(1.02);
+  will-change: transform;
 }
 
 .card.selected { background: var(--sys-color-secondary-container); }
@@ -240,7 +242,7 @@ function handleClick(e: Event) {
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 45px; height: 45px; border-radius: 12px;
   background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface-variant);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;
 }
 .stat-score { font-weight: 800; font-size: 16px; line-height: 1; font-family: var(--sys-font-family-mono); }
@@ -276,4 +278,3 @@ function handleClick(e: Event) {
 .btn-icon-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--sys-color-primary); border-radius: 10px; cursor: pointer; }
 .trophy-text { display: inline-block; margin-left: 4px; }
 </style>
-
