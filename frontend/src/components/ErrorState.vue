@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Icon from './Icon.vue'
+
 defineProps<{
   message: string
 }>()
@@ -43,5 +45,18 @@ defineEmits<{
   font-weight: 500;
   margin: 0;
   max-width: 300px;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--sys-color-error);
+  color: white;
+  border: none;
+  border-radius: 99px;
+  font-weight: 700;
+  cursor: pointer;
 }
 </style>
