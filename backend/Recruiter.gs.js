@@ -4,19 +4,19 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V6.2.3): 
+ * ⚙️ LOGIC (V6.2.4): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
- *    2. Deduplication Engine: Consolidates results into unique Set.
+ *    2. Funnel Logging: Added detailed console output for execution visibility.
  *    3. High Volume Ready: 
  *       - Blacklist uses O(1) Map lookup.
- *       - Self-Cleaning: Marked "Invited" rows are purged from sheet to maintain speed.
- *    4. Coherent Storage: Blacklist is sorted by SCORE (DESC) for benchmarking.
- *    5. Top-3 Benchmark: Anchors potential scores against the historical elite.
- * 🏷️ VERSION: 6.2.3
+ *       - Self-Cleaning: Marked "Invited" rows are purged from sheet.
+ *    4. Coherent Storage: Blacklist sorted by SCORE (DESC) for benchmarking.
+ *    5. Top-3 Benchmark: Anchors potential scores against historical elite.
+ * 🏷️ VERSION: 6.2.4
  * ============================================================================
  */
 
-const VER_RECRUITER = '6.2.3';
+const VER_RECRUITER = '6.2.4';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -32,31 +32,39 @@ function scoutRecruits() {
   if (baselineData && baselineData[0] && baselineData[0].items) {
     avgTrophies = baselineData[0].items.reduce((a, b) => a + b.trophies, 0) / baselineData[0].items.length;
   }
+  console.log(`📊 Baseline: Clan Avg Trophies is ${Math.round(avgTrophies)}.`);
 
-  // 🚫 BLACKLIST & BENCHMARK UPDATE (Sorted & High Performance)
+  // 🚫 BLACKLIST & BENCHMARK UPDATE
   const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
   // 2. Load existing tracking data (Those NOT yet invited)
   const existing = loadRecruitDatabase(sheet);
+  console.log(`📂 Database: Loaded ${existing.size} existing candidates from sheet.`);
 
   // ⚡ OPTIMIZATION: "Cheap" Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
     const profiles = Utils.fetchRoyaleAPI(tagsToCheck.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
+    let joinedCount = 0;
     profiles.forEach(p => {
-      if (p && p.clan && p.clan.tag) existing.delete(p.tag);
+      if (p && p.clan && p.clan.tag) {
+        existing.delete(p.tag);
+        joinedCount++;
+      }
     });
+    if (joinedCount > 0) console.log(`🧹 Clean-up: Removed ${joinedCount} players who joined other clans.`);
   }
 
-  const initialIds = new Set(existing.keys());
   let activePoolCount = existing.size;
 
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
   const minTrophies = Math.max(4000, Math.round(activePoolCount < target ? avgTrophies * 0.75 : avgTrophies));
+  console.log(`🎯 Strategy: Seeking players with >${minTrophies} Trophies to fill pool.`);
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
+  console.log(`🔍 Scan Result: Found ${scanned.length} new potential recruits.`);
 
   // 5. Merge
   scanned.forEach(c => {
@@ -66,10 +74,13 @@ function scoutRecruits() {
     existing.set(c.tag, c);
   });
 
-  // 6. Final Pool Scoring
-  const finalPool = Array.from(existing.values())
-    .sort((a, b) => b.rawScore - a.rawScore)
-    .slice(0, CONFIG.HEADHUNTER.TARGET);
+  // 6. Final Pool Scoring & Capping
+  const rawPool = Array.from(existing.values()).sort((a, b) => b.rawScore - a.rawScore);
+  const finalPool = rawPool.slice(0, CONFIG.HEADHUNTER.TARGET);
+
+  if (rawPool.length > CONFIG.HEADHUNTER.TARGET) {
+    console.log(`✂️ Capping: Truncating pool from ${rawPool.length} to ${CONFIG.HEADHUNTER.TARGET} (Max Capacity).`);
+  }
 
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
@@ -80,7 +91,7 @@ function scoutRecruits() {
   // 🛡️ BACKUP
   Utils.backupSheet(ss, CONFIG.SHEETS.HH);
 
-  // 7. RENDER (Self-Cleaning logic is handled in updateAndGetBlacklist)
+  // 7. RENDER
   renderHeadhunterView(sheet, finalPool, avgTrophies);
 
   try { if (typeof refreshWebPayload === 'function') refreshWebPayload(); } catch (e) {}
@@ -88,9 +99,6 @@ function scoutRecruits() {
 
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
- * UPDATED V6.2.3: 
- * - Enforces DESCENDING SCORE ORDER for Benchmarking stability.
- * - SELF-CLEANING: Removes invited rows from the spreadsheet after archiving.
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
@@ -102,7 +110,6 @@ function updateAndGetBlacklist(sheet) {
 
   const validEntries = [];
 
-  // 🧹 1. CLEANUP EXPIRED
   for (const tag in rawBlacklist) {
     let entry = rawBlacklist[tag];
     let expiry = Number(entry.e) || 0;
@@ -110,7 +117,6 @@ function updateAndGetBlacklist(sheet) {
     if (expiry > now) validEntries.push({ t: tag, e: expiry, s: score });
   }
 
-  // 📥 2. INGEST NEW & MARK FOR CLEANUP
   const rowsToDelete = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
@@ -127,21 +133,15 @@ function updateAndGetBlacklist(sheet) {
         const existing = validEntries.find(v => v.t === tag);
         if (existing) { if (raw > existing.s) existing.s = raw; } 
         else { validEntries.push({ t: tag, e: now + expiryDuration, s: raw }); }
-        
-        // Track absolute row index for deletion
         rowsToDelete.push(startRow + idx);
       }
     });
   }
 
-  // ⚓ 3. SORT BY SCORE (DESCENDING)
   validEntries.sort((a, b) => b.s - a.s);
-
-  // 🎯 4. CALCULATE BENCHMARK (Top 3)
   const topN = validEntries.slice(0, 3);
   const benchmarkHigh = topN.length > 0 ? (topN.reduce((acc, cur) => acc + cur.s, 0) / topN.length) : 0;
 
-  // 💾 5. PERSIST COHERENT OBJECT
   const sortedBlacklist = {};
   validEntries.forEach(entry => { sortedBlacklist[entry.t] = { e: entry.e, s: entry.s }; });
 
@@ -149,10 +149,8 @@ function updateAndGetBlacklist(sheet) {
     Utils.Props.setChunked(PROP_KEY, sortedBlacklist);
   }
 
-  // 🧹 6. EXECUTE SELF-CLEANING (Delete invited rows from sheet)
   if (rowsToDelete.length > 0) {
-    console.log(`🧹 Recruitment Clean-up: Moving ${rowsToDelete.length} invited recruits to the cooling pool.`);
-    // Delete in reverse order to maintain index integrity
+    console.log(`🧹 Sheet Clean-up: Purging ${rowsToDelete.length} invited rows.`);
     rowsToDelete.sort((a, b) => b - a).forEach(rowIdx => sheet.deleteRow(rowIdx));
   }
 
@@ -178,18 +176,22 @@ function loadRecruitDatabase(sheet) {
 
 function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   console.time('ScanTournaments');
-  const START_TIME = Date.now();
   const W = CONFIG.HEADHUNTER.WEIGHTS;
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
   const searchUrls = keywords.map(k => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`);
 
+  console.log(`📡 Discovery: Broadcasting search for ${keywords.length} keywords...`);
   const searchResults = Utils.fetchRoyaleAPI(searchUrls);
   const uniqueTourneys = new Map();
   searchResults.forEach(res => { if (res && res.items) res.items.forEach(t => uniqueTourneys.set(t.tag, t)); });
 
+  console.log(`📡 Discovery: Found ${uniqueTourneys.size} open tournaments.`);
+
   const lotteryPool = Array.from(uniqueTourneys.values()).sort((a, b) => (b.capacity || 0) - (a.capacity || 0)).slice(0, 800); 
   Utils.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool.slice(0, 150).map(t => t.tag);
+
+  console.log(`📡 Discovery: Deep-scanning ${tourneyTags.length} selected tournaments...`);
 
   if (tourneyTags.length === 0) return [];
 
@@ -207,20 +209,20 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const uniqueCandidates = new Map();
   candidates.forEach(c => { if (c.trophies >= minTrophies || c.trophies === undefined) uniqueCandidates.set(c.tag, c); });
   
+  console.log(`👥 Filtering: Extracted ${candidates.length} clanless players. ${uniqueCandidates.size} unique above trophy threshold.`);
+
   const candidatePool = Array.from(uniqueCandidates.values()).sort((a, b) => (b.trophies || 0) - (a.trophies || 0)).slice(0, 200);
   Utils.shuffleArray(candidatePool);
   const tagsToFetch = candidatePool.slice(0, 100).map(p => p.tag);
 
   if (tagsToFetch.length === 0) return [];
+  console.log(`👥 Filtering: Retrieving full profiles for ${tagsToFetch.length} final candidates...`);
   const playersData = Utils.fetchRoyaleAPI(tagsToFetch.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
 
   const validCandidates = [];
-  const playersNeedingWarLogsIndices = [];
-
   playersData.forEach((p, idx) => {
     if (p && p.trophies >= minTrophies) {
       validCandidates.push(p);
-      playersNeedingWarLogsIndices.push(idx);
     }
   });
 
