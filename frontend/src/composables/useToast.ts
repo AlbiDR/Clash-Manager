@@ -1,3 +1,4 @@
+
 import { ref } from 'vue'
 
 export interface ToastOptions {
@@ -20,6 +21,14 @@ export function useToast() {
             ...options
         }
         toasts.value.push(toast)
+
+        // Native Frontier: Haptic Feedback based on toast type
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            if (options.type === 'error') navigator.vibrate([40, 30, 40])
+            else if (options.type === 'success') navigator.vibrate(20)
+            else navigator.vibrate(10)
+        }
+
         return id
     }
 
@@ -38,7 +47,6 @@ export function useToast() {
         remove(id)
     }
 
-    // Convenience methods
     function success(message: string) {
         add({ type: 'success', message })
     }
@@ -72,3 +80,4 @@ export function useToast() {
         undo
     }
 }
+
