@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -29,7 +30,6 @@ const loading = computed(() => !data.value && isRefreshing.value)
 const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
 
-// Sort Options Definition
 const sortOptions = [
   { label: 'Potential', value: 'score' },
   { label: 'War Wins', value: 'war_wins' },
@@ -84,7 +84,6 @@ const statsBadge = computed(() => {
   }
 })
 
-// Helper to get timestamp
 const getTs = (str?: string) => str ? new Date(str).getTime() : 0
 
 const filteredRecruits = computed(() => {
@@ -105,16 +104,13 @@ const filteredRecruits = computed(() => {
       case 'score': return (b.s || 0) - (a.s || 0)
       case 'trophies': return (b.t || 0) - (a.t || 0)
       case 'name': return a.n.localeCompare(b.n)
-      
-      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago) // Newest first
+      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago)
       case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
       case 'donations': return (b.d.don || 0) - (a.d.don || 0)
       case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
-      
       default: return 0
     }
   })
-  
   return result
 })
 
@@ -153,6 +149,16 @@ function handleSelectAll() {
   const ids = filteredRecruits.value.map(r => r.id)
   selectAll(ids)
 }
+
+function handleSortUpdate(val: string) {
+  if (document.startViewTransition) {
+    document.startViewTransition(() => {
+      sortBy.value = val as any
+    })
+  } else {
+    sortBy.value = val as any
+  }
+}
 </script>
 
 <template>
@@ -165,7 +171,7 @@ function handleSelectAll() {
       :stats="statsBadge"
       :sort-options="sortOptions"
       @update:search="val => searchQuery = val"
-      @update:sort="val => sortBy = val as any"
+      @update:sort="handleSortUpdate"
       @refresh="refresh"
     >
       <template #extra>
@@ -204,7 +210,7 @@ function handleSelectAll() {
       v-else 
       name="list" 
       tag="div" 
-      class="list-container"
+      class="list-container stagger-children"
     >
       <RecruitCard
         v-for="recruit in filteredRecruits"
@@ -237,7 +243,7 @@ function handleSelectAll() {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; }
+.list-container { padding-bottom: 32px; position: relative; }
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
@@ -249,23 +255,32 @@ function handleSelectAll() {
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 
-/* List Physics */
+/* ✨ NATIVE LIST PHYSICS */
+.list-move {
+  transition: transform 0.5s var(--sys-motion-spring);
+}
+
 .list-enter-active,
 .list-leave-active {
   transition: all 0.4s var(--sys-motion-spring);
 }
-.list-enter-from,
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
 .list-leave-to {
   opacity: 0;
-  transform: scale(0.95);
-  margin-bottom: -100px;
+  transform: scale(0.9) translateX(30px);
 }
-.list-move {
-  transition: transform 0.4s var(--sys-motion-spring);
-}
+
 .list-leave-active {
-  position: absolute; width: 100%; z-index: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 0;
 }
+
 .btn-primary {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 20px;
