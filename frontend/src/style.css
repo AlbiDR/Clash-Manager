@@ -1,279 +1,175 @@
 
-<script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useClanData } from '../composables/useClanData'
-import { useApiState } from '../composables/useApiState'
-import { useToast } from '../composables/useToast'
-import { useBatchQueue } from '../composables/useBatchQueue'
-import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
+@import "tailwindcss";
 
-import ConsoleHeader from '../components/ConsoleHeader.vue'
-import RecruitCard from '../components/RecruitCard.vue'
-import FabIsland from '../components/FabIsland.vue'
-import EmptyState from '../components/EmptyState.vue'
-import ErrorState from '../components/ErrorState.vue'
-import SkeletonCard from '../components/SkeletonCard.vue'
+/* ============================================================================
+   CLASH MANAGER - Neo-Material Design System (Gold Standard 2026)
+   ============================================================================ */
 
-const { pingData } = useApiState()
-
-const sheetUrl = computed(() => {
-  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
-  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
-  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
-})
-
-const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
-
-const recruits = computed(() => data.value?.hh || [])
-const loading = computed(() => !data.value && isRefreshing.value)
-
-const searchQuery = ref('')
-const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
-
-const sortOptions = [
-  { label: 'Potential', value: 'score' },
-  { label: 'War Wins', value: 'war_wins' },
-  { label: 'Cards Won', value: 'cards_won' },
-  { label: 'Donations', value: 'donations' },
-  { label: 'Trophies', value: 'trophies' },
-  { label: 'Recency', value: 'time_found' },
-  { label: 'Name', value: 'name' }
-]
-
-const { 
-  selectedIds, 
-  fabState, 
-  isSelectionMode, 
-  toggleSelect, 
-  selectAll, 
-  clearSelection, 
-  handleAction,
-  handleBlitz
-} = useBatchQueue()
-
-const { 
-  expandedIds, 
-  toggleExpand, 
-  processDeepLink 
-} = useDeepLinkHandler('recruit-')
-
-const selectedSet = computed(() => new Set(selectedIds.value))
-
-const timeAgo = computed(() => {
-  if (!lastSyncTime.value) return ''
-  const ms = Date.now() - lastSyncTime.value
-  const mins = Math.floor(ms / 60000)
-  if (mins < 1) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  return `${hours}h ago`
-})
-
-const status = computed(() => {
-  if (syncError.value) return { type: 'error', text: 'Retry' } as const
-  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (recruits.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
-  return { type: 'ready', text: 'Empty' } as const
-})
-
-const statsBadge = computed(() => {
-  if (!recruits.value) return undefined
-  return {
-    label: 'Pool',
-    value: recruits.value.length.toString()
-  }
-})
-
-const getTs = (str?: string) => str ? new Date(str).getTime() : 0
-
-const filteredRecruits = computed(() => {
-  let result = [...recruits.value]
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(r => 
-      !hiddenIds.value.has(r.id) && 
-      (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query))
-    )
-  } else {
-    result = result.filter(r => !hiddenIds.value.has(r.id))
-  }
-  
-  result.sort((a, b) => {
-    switch (sortBy.value) {
-      case 'score': return (b.s || 0) - (a.s || 0)
-      case 'trophies': return (b.t || 0) - (a.t || 0)
-      case 'name': return a.n.localeCompare(b.n)
-      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago)
-      case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
-      case 'donations': return (b.d.don || 0) - (a.d.don || 0)
-      case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
-      default: return 0
-    }
-  })
-  return result
-})
-
-watch(recruits, (newVal) => {
-    if (newVal.length > 0) processDeepLink(newVal)
-}, { immediate: true })
-
-const { undo, success, error } = useToast()
-const hiddenIds = ref<Set<string>>(new Set())
-
-function dismissBulk() {
-  if (selectedIds.value.length === 0) return
-  const ids = [...selectedIds.value]
-  clearSelection()
-  executeDismiss(ids)
+:root {
+  --sys-color-primary: #0061a4;
+  --sys-color-primary-rgb: 0, 97, 164;
+  --sys-color-on-primary: #ffffff;
+  --sys-color-primary-container: #d1e4ff;
+  --sys-color-on-primary-container: #001d36;
+  --sys-color-secondary: #535f70;
+  --sys-color-secondary-rgb: 83, 95, 112;
+  --sys-color-secondary-container: #d7e3f7;
+  --sys-color-on-secondary-container: #101c2b;
+  --sys-color-tertiary: #6b5778;
+  --sys-color-tertiary-rgb: 107, 87, 120;
+  --sys-color-tertiary-container: #f2daff;
+  --sys-color-on-tertiary-container: #251431;
+  --sys-color-error: #ba1a1a;
+  --sys-color-error-container: #ffdad6;
+  --sys-color-on-error-container: #410002;
+  --sys-color-success: #2e7d32;
+  --sys-color-success-container: #b9f6ca;
+  --sys-color-on-success: #ffffff;
+  --sys-color-on-success-container: #002105;
+  --sys-color-background: #fdfcff;
+  --sys-color-on-background: #1a1c1e;
+  --sys-color-surface: #fdfcff;
+  --sys-color-on-surface: #1a1c1e;
+  --sys-color-surface-container-low: #f7f2fa;
+  --sys-color-surface-container: #f3edf7;
+  --sys-color-surface-container-high: #ece6f0;
+  --sys-color-surface-container-highest: #e6e0e9;
+  --sys-color-outline: #73777f;
+  --sys-color-outline-variant: #c4c7c5;
+  --sys-surface-glass: rgba(255, 255, 255, 0.7);
+  --sys-surface-glass-border: rgba(255, 255, 255, 0.5);
+  --sys-surface-glass-blur: blur(24px) saturate(180%);
+  --spacing-2xs: 4px;
+  --spacing-xs: 8px;
+  --spacing-s: 12px;
+  --spacing-m: 16px;
+  --spacing-l: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --sys-font-family-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sys-font-family-mono: 'JetBrains Mono', "SF Mono", "Roboto Mono", monospace;
+  --font-size-xs: 11px;
+  --font-size-s: 13px;
+  --font-size-m: 15px;
+  --font-size-l: 17px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+  --font-weight-heavy: 750;
+  --shape-corner-xs: 4px;
+  --shape-corner-s: 8px;
+  --shape-corner-m: 12px;
+  --shape-corner-l: 20px;
+  --shape-corner-xl: 28px;
+  --shape-corner-full: 9999px;
+  --sys-layout-max-width: 720px;
+  --sys-elevation-0: 0 0 0 0 transparent;
+  --sys-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --sys-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --sys-elevation-3: 0 12px 24px -4px rgba(0, 0, 0, 0.12), 0 4px 8px -2px rgba(0,0,0,0.06);
+  --sys-motion-spring: cubic-bezier(0.2, 1, 0.2, 1);
+  --sys-motion-duration: 0.4s;
 }
 
-function executeDismiss(ids: string[]) {
-    ids.forEach(id => hiddenIds.value.add(id))
-    const timerId = setTimeout(() => {
-        dismissRecruitsAction(ids)
-            .catch(() => {
-                error('Failed to sync changes')
-                ids.forEach(id => hiddenIds.value.delete(id))
-            })
-    }, 4500)
-    
-    undo(`Dismissed ${ids.length} recruits`, () => {
-        clearTimeout(timerId)
-        ids.forEach(id => hiddenIds.value.delete(id))
-        success('Dismissal cancelled')
-    })
-}
-
-function handleSelectAll() {
-  const ids = filteredRecruits.value.map(r => r.id)
-  selectAll(ids)
-}
-
-function handleSortUpdate(val: string) {
-  if (document.startViewTransition) {
-    document.startViewTransition(() => {
-      sortBy.value = val as any
-    })
-  } else {
-    sortBy.value = val as any
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sys-color-primary: #a8c7fa;
+    --sys-color-primary-rgb: 168, 199, 250;
+    --sys-color-on-primary: #00315b;
+    --sys-color-primary-container: #004781;
+    --sys-color-on-primary-container: #d7e3ff;
+    --sys-color-secondary: #bec6dc;
+    --sys-color-secondary-rgb: 190, 198, 220;
+    --sys-color-secondary-container: #3e4755;
+    --sys-color-on-secondary-container: #dae2f9;
+    --sys-color-tertiary: #d7bde4;
+    --sys-color-tertiary-rgb: 215, 189, 228;
+    --sys-color-tertiary-container: #533f5d;
+    --sys-color-on-tertiary-container: #f4d9ff;
+    --sys-color-error: #ffb4ab;
+    --sys-color-error-container: #93000a;
+    --sys-color-on-error-container: #ffdad6;
+    --sys-color-background: #0b0e14;
+    --sys-color-on-background: #e1e2e8;
+    --sys-color-surface: #0b0e14;
+    --sys-color-on-surface: #e1e2e8;
+    --sys-color-surface-container-low: #13161c;
+    --sys-color-surface-container: #1b1f27;
+    --sys-color-surface-container-high: #242932;
+    --sys-color-surface-container-highest: #2f343e;
+    --sys-color-outline: #8e9199;
+    --sys-color-outline-variant: #43474e;
+    --sys-surface-glass: rgba(11, 14, 20, 0.75);
+    --sys-surface-glass-border: rgba(255, 255, 255, 0.08);
   }
 }
-</script>
 
-<template>
-  <div class="view-container">
-    <ConsoleHeader
-      title="Headhunter"
-      :status="status"
-      :show-search="!isSelectionMode"
-      :sheet-url="sheetUrl"
-      :stats="statsBadge"
-      :sort-options="sortOptions"
-      @update:search="val => searchQuery = val"
-      @update:sort="handleSortUpdate"
-      @refresh="refresh"
-    >
-      <template #extra>
-        <div v-if="isSelectionMode" class="selection-bar">
-           <div class="sel-count">{{ selectedIds.length }} Selected</div>
-           <div class="sel-actions">
-             <span class="text-btn primary" @click="handleSelectAll">All</span>
-             <span class="text-btn" @click="clearSelection">None</span>
-             <span class="text-btn danger" @click="clearSelection">Done</span>
-           </div>
-        </div>
-      </template>
-    </ConsoleHeader>
-
-    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
-    
-    <div v-else-if="loading && recruits.length === 0" class="list-container stagger-children">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :style="{ '--delay': i + 1 }" />
-    </div>
-    
-    <EmptyState 
-      v-else-if="!loading && filteredRecruits.length === 0" 
-      icon="telescope" 
-      message="No recruits found"
-      hint="Try adjusting your filters or run a new scan."
-    >
-      <template #action>
-        <button class="btn-primary" @click="refresh">
-          <Icon name="refresh" size="18" />
-          <span>Scan Again</span>
-        </button>
-      </template>
-    </EmptyState>
-    
-    <TransitionGroup 
-      v-else 
-      name="list" 
-      tag="div" 
-      class="list-container stagger-children"
-    >
-      <RecruitCard
-        v-for="(recruit, index) in filteredRecruits"
-        :key="recruit.id"
-        :id="`recruit-${recruit.id}`"
-        :recruit="recruit"
-        :expanded="expandedIds.has(recruit.id)"
-        :selected="selectedSet.has(recruit.id)"
-        :selection-mode="isSelectionMode"
-        class="stagger-item"
-        :style="{ '--delay': index + 1 }"
-        @toggle-expand="toggleExpand(recruit.id)"
-        @toggle-select="toggleSelect(recruit.id)"
-      />
-    </TransitionGroup>
-
-    <FabIsland
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
-      :is-processing="fabState.isProcessing"
-      :is-blasting="fabState.isBlasting"
-      :selection-count="fabState.selectionCount"
-      :blitz-enabled="fabState.blitzEnabled"
-      @action="handleAction"
-      @blitz="handleBlitz"
-      @dismiss="dismissBulk"
-    />
-  </div>
-</template>
-
-<style scoped>
-.view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; perspective: 1000px; }
-.selection-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; padding-top: 12px;
-  border-top: 1px solid var(--sys-color-outline-variant);
+/* ⚡ VIEW TRANSITIONS */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.4s;
+  animation-timing-function: var(--sys-motion-spring);
 }
-.sel-count { font-size: 20px; font-weight: 700; }
-.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
-.text-btn.primary { color: var(--sys-color-primary); }
-.text-btn.danger { color: var(--sys-color-error); }
 
-.list-move { transition: transform 0.5s var(--sys-motion-spring); }
-.list-enter-active, .list-leave-active { transition: all 0.4s var(--sys-motion-spring); }
-.list-enter-from { opacity: 0; transform: translateY(20px) scale(0.95); }
-.list-leave-to { opacity: 0; transform: scale(0.9) translateX(30px); }
-.list-leave-active { position: absolute; width: 100%; z-index: 0; }
+.header-wrapper { view-transition-name: main-header; }
+.view-title { view-transition-name: view-title; }
+.dock-container { view-transition-name: nav-dock; }
 
-.btn-primary {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 99px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 16px;
-  transition: transform 0.2s;
+body {
+  margin: 0;
+  background-color: var(--sys-color-background);
+  color: var(--sys-color-on-background);
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  overflow-y: scroll;
+  overscroll-behavior-y: contain;
 }
-.btn-primary:active { transform: scale(0.95); }
-</style>
+
+#app { min-height: 100vh; }
+.app-container { max-width: var(--sys-layout-max-width); margin: 0 auto; padding: 0 12px; }
+
+/* 🏎️ GPU STABILIZATION UTILITIES */
+.squish-interaction {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.2s var(--sys-motion-spring);
+  contain: layout paint; /* Fixes sub-pixel twitching */
+  transform: translate3d(0,0,0); /* Forced GPU layer for mobile */
+}
+
+.squish-interaction:active {
+  transform: scale(0.96) translate3d(0,0,0);
+}
+
+/* 🌊 DYNAMIC INFINITE CASCADE */
+/* Using transition-delay on the Insertion Active state ensures a smooth ripple */
+.list-enter-active {
+  transition: all 0.5s var(--sys-motion-spring);
+  transition-delay: calc(var(--i, 0) * 35ms);
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.96);
+}
+
+/* Move logic (FLIP) - No delay on move to keep it snappy */
+.list-move {
+  transition: transform 0.5s var(--sys-motion-spring);
+}
+
+/* Leave logic - Absolute positioning prevents layout jumps */
+.list-leave-active {
+  transition: all 0.3s ease;
+  position: absolute;
+  width: 100%;
+  z-index: 0;
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateX(30px);
+}
 
