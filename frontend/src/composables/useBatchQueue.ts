@@ -1,5 +1,5 @@
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useToast } from './useToast'
 import { useModules } from './useModules'
 
@@ -12,15 +12,16 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const { throttleMs = 750, baseScheme = 'clashroyale://playerInfo?id=' } = options
   
   const selectedIds = ref<string[]>([])
-  const queue = ref<string[]>([])
+  const queue = ref<string[]>([]) // Legacy queue for non-blitz manual mode
   const lastActionTime = ref(0)
+  
+  // Blitz State
   const isBlasting = ref(false)
+  const currentIndex = ref(0)
+  let worker: Worker | null = null
+
   const { error } = useToast()
   const { modules } = useModules()
-
-  // Track the current index for the resurrection logic
-  let currentIndex = 0
-  let timerId: any = null
 
   const isSelectionMode = computed(() => selectedIds.value.length > 0)
   const isProcessing = computed(() => queue.value.length > 0)
@@ -29,20 +30,28 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const fabState = computed(() => {
     if (!isSelectionMode.value) return { visible: false }
 
-    // Target the first item in the active queue, or the first selected item
-    const targetId = isProcessing.value ? queue.value[0] : selectedIds.value[0]
     const total = selectedIds.value.length
     
+    // Label Logic
     let label = 'Open'
-    if (total > 0) {
-      if (isProcessing.value) {
-        // Calculate current position: (Total - Remaining) + 1
-        const current = (total - queue.value.length) + 1
-        label = `Next (${current}/${total})`
-      } else {
-        label = `Open (${total})`
-      }
+    
+    if (isBlasting.value) {
+        // Blasting Mode: Show progress
+        label = `${currentIndex.value + 1} / ${total}`
+    } else if (total > 0) {
+        // Manual Mode
+        if (isProcessing.value) {
+            const current = (total - queue.value.length) + 1
+            label = `Next (${current}/${total})`
+        } else {
+            label = `Open (${total})`
+        }
     }
+
+    // Target Logic (For href)
+    const targetId = isBlasting.value 
+        ? selectedIds.value[currentIndex.value] 
+        : (isProcessing.value ? queue.value[0] : selectedIds.value[0])
 
     return {
       visible: true,
@@ -69,31 +78,134 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   function selectAll(ids: readonly string[]) {
-    // 🛡️ Guard: Prevent modifying selection while a batch run is in progress
     if (isProcessing.value || isBlasting.value) return 
     selectedIds.value = [...ids]
-    queue.value = [] // Reset queue memory
+    queue.value = []
   }
 
   function clearSelection() {
-    if (isBlasting.value) return // Don't clear mid-blast
+    stopBlitz() // Emergency stop
     selectedIds.value = []
     queue.value = []
   }
 
-  function handleAction(e: MouseEvent) {
-    // Don't interfere if blasting
-    if (isBlasting.value) {
-      e.preventDefault()
-      return
+  /**
+   * 💉 DOM INJECTION: Anchor Click (Most robust for deep links)
+   */
+  function fireDeepLink(url: string) {
+    const link = document.createElement('a')
+    link.href = url
+    link.style.display = 'none'
+    link.rel = 'noopener noreferrer'
+    document.body.appendChild(link)
+    
+    link.click()
+    
+    // Garbage collection
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link)
+      }
+    }, 1500)
+  }
+
+  // --- WORKER LOGIC ---
+  
+  function createWorker(interval: number) {
+    // Create a blob worker to run the timer off-thread.
+    // This bypasses main-thread throttling when the tab is hidden.
+    const blob = new Blob([`
+      let timer = null;
+      self.onmessage = function(e) {
+        if (e.data === 'start') {
+          if (timer) clearInterval(timer);
+          timer = setInterval(() => self.postMessage('tick'), ${interval});
+        } else if (e.data === 'stop') {
+          clearInterval(timer);
+          timer = null;
+        }
+      };
+    `], { type: 'text/javascript' });
+    return new Worker(URL.createObjectURL(blob));
+  }
+
+  function stopBlitz() {
+    isBlasting.value = false
+    currentIndex.value = 0
+    if (worker) {
+        worker.terminate()
+        worker = null
+    }
+  }
+
+  function nextPulse() {
+    // Safety Check
+    if (!isBlasting.value) return
+    
+    // End Condition
+    if (currentIndex.value >= selectedIds.value.length) {
+        // Delay slightly to let UI show "10/10" before clearing
+        setTimeout(() => {
+            if (isBlasting.value) { // Double check cancellation
+                stopBlitz()
+                clearSelection()
+            }
+        }, 500)
+        return
     }
 
+    // Fire!
+    const id = selectedIds.value[currentIndex.value]
+    fireDeepLink(`${baseScheme}${id}`)
+    
+    // Advance
+    currentIndex.value++
+  }
+
+  // ⚡ BLITZ MODE START
+  function handleBlitz() {
+    if (isBlasting.value || selectedIds.value.length === 0) return
+    
+    console.log("⚡ Starting Blitz Mode (Solution Gamma: Web Worker Clock)")
+    
+    isBlasting.value = true
+    currentIndex.value = 0
+    
+    // 1. Fire first shot immediately
+    nextPulse()
+    
+    // 2. Start Worker for rhythm
+    worker = createWorker(throttleMs)
+    worker.onmessage = () => {
+        // This runs on a separate thread's tick, bypassing throttling
+        nextPulse()
+    }
+    worker.postMessage('start')
+  }
+
+  // MAIN ACTION HANDLER
+  function handleAction(e: MouseEvent) {
+    // 1. BLITZ MODE (Manual Assist)
+    if (isBlasting.value) {
+        e.preventDefault() // Don't follow link, we handle logic
+        
+        console.log("⚡ Manual Assist Triggered")
+        // Force the next step manually if automation stalled
+        nextPulse()
+        
+        // Reset the worker timer to prevent a double-fire immediately after manual click
+        if (worker) {
+            worker.postMessage('stop')
+            worker.postMessage('start')
+        }
+        return
+    }
+
+    // 2. STANDARD MODE (Legacy sequential)
     const now = Date.now()
     
-    // 🛡️ Robustness: Throttle
-    // Prevents game profile corruption from spam-clicking
     if (now - lastActionTime.value < throttleMs) {
-      e.preventDefault() // Stop navigation
+      e.preventDefault() // Stop navigation if clicking too fast
       return
     }
     
@@ -117,89 +229,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }, 50)
   }
 
-  /**
-   * ⚓ ANCHOR INJECTION ENGINE (Solution Alpha V2)
-   * Creates a hidden anchor tag and clicks it programmatically.
-   * This is treated as a "navigation" by mobile browsers and is less likely
-   * to be blocked than an iframe load for deep links.
-   */
-  function fireDeepLink(url: string) {
-    const link = document.createElement('a')
-    link.href = url
-    link.style.display = 'none'
-    // 'noopener' prevents the new window from controlling this one
-    // 'noreferrer' prevents sending referer headers
-    link.rel = 'noopener noreferrer' 
-    document.body.appendChild(link)
-    
-    link.click()
-    
-    // Garbage collection
-    setTimeout(() => {
-      if (document.body.contains(link)) {
-        document.body.removeChild(link)
-      }
-    }, 1000)
-  }
-
-  // Recursive execution loop
-  const next = () => {
-    // Stop condition
-    if (currentIndex >= selectedIds.value.length || !isBlasting.value) {
-      isBlasting.value = false
-      clearSelection()
-      return
-    }
-
-    const id = selectedIds.value[currentIndex]
-    const url = `${baseScheme}${id}`
-    
-    try {
-      fireDeepLink(url)
-    } catch (e) {
-      console.error("Deep link failed", e)
-    }
-
-    currentIndex++
-    
-    // Schedule next shot
-    if (timerId) clearTimeout(timerId)
-    timerId = setTimeout(next, throttleMs)
-  }
-
-  // ⚡ BLITZ MODE: Automated Opener
-  function handleBlitz() {
-    if (isBlasting.value || selectedIds.value.length === 0) return
-    
-    console.log("⚡ Starting Blitz Mode (Anchor Injection Protocol)")
-    
-    isBlasting.value = true
-    currentIndex = 0
-    
-    // Fire first shot immediately
-    next()
-  }
-
-  // 🧟 RESURRECTION LOGIC
-  // If the user switches apps (Browser -> Clash Royale), the browser might
-  // freeze the JS timer. When they switch back to the Browser, this detects
-  // the visibility change and immediately fires the next link if one was pending.
-  function handleVisibilityChange() {
-    if (document.visibilityState === 'visible' && isBlasting.value) {
-      console.log("👁️ App foregrounded - Resurrecting Blitz Queue")
-      if (timerId) clearTimeout(timerId)
-      // Small delay to allow browser to "settle" from background state
-      timerId = setTimeout(next, 200)
-    }
-  }
-
-  onMounted(() => {
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-  })
-
   onUnmounted(() => {
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
-    if (timerId) clearTimeout(timerId)
+    stopBlitz()
   })
 
   return {
