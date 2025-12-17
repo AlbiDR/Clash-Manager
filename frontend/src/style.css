@@ -1,4 +1,3 @@
-
 @import "tailwindcss";
 
 /* ============================================================================
@@ -106,17 +105,6 @@
   }
 }
 
-/* ⚡ VIEW TRANSITIONS */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.4s;
-  animation-timing-function: var(--sys-motion-spring);
-}
-
-.header-wrapper { view-transition-name: main-header; }
-.view-title { view-transition-name: view-title; }
-.dock-container { view-transition-name: nav-dock; }
-
 body {
   margin: 0;
   background-color: var(--sys-color-background);
@@ -131,36 +119,37 @@ body {
 
 /* 🏎️ GPU STABILIZATION UTILITIES */
 .squish-interaction {
-  will-change: transform;
+  will-change: transform, opacity;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
   transition: transform 0.2s var(--sys-motion-spring);
-  contain: layout paint; /* Fixes sub-pixel twitching */
-  transform: translate3d(0,0,0); /* Forced GPU layer for mobile */
+  contain: layout paint;
+  transform: translate3d(0, 0, 0); /* Fixes mobile jitter */
 }
 
 .squish-interaction:active {
-  transform: scale(0.96) translate3d(0,0,0);
+  transform: scale(0.96) translate3d(0, 0, 0);
 }
 
 /* 🌊 DYNAMIC INFINITE CASCADE */
-/* Using transition-delay on the Insertion Active state ensures a smooth ripple */
 .list-enter-active {
   transition: all 0.5s var(--sys-motion-spring);
-  transition-delay: calc(var(--i, 0) * 35ms);
+  /* The magic stagger variable passed from Vue */
+  transition-delay: calc(var(--i, 0) * 32ms);
 }
 
 .list-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.96);
+  transform: translateY(24px) scale(0.95);
 }
 
-/* Move logic (FLIP) - No delay on move to keep it snappy */
+/* Move logic (FLIP) - Snappy reordering without delay */
 .list-move {
   transition: transform 0.5s var(--sys-motion-spring);
 }
 
-/* Leave logic - Absolute positioning prevents layout jumps */
+/* Leave logic - Ensure cards stay static while others move */
 .list-leave-active {
   transition: all 0.3s ease;
   position: absolute;
@@ -173,3 +162,18 @@ body {
   transform: scale(0.9) translateX(30px);
 }
 
+/* Tooltip System */
+.custom-tooltip {
+  position: fixed;
+  background: var(--sys-color-inverse-surface);
+  color: var(--sys-color-inverse-on-surface);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 9999;
+  transform: translateX(-50%) translateY(-100%);
+}
+.custom-tooltip.visible { opacity: 1; }
