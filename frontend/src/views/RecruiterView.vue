@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -87,16 +88,12 @@ const statsBadge = computed(() => {
 const getTs = (str?: string) => str ? new Date(str).getTime() : 0
 
 const filteredRecruits = computed(() => {
-  let result = [...recruits.value]
+  // 🚨 CRITICAL: We filter by hiddenIds AND assume the data from server is already stripped of 'Invited' recruits.
+  let result = recruits.value.filter(r => !hiddenIds.value.has(r.id))
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(r => 
-      !hiddenIds.value.has(r.id) && 
-      (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query))
-    )
-  } else {
-    result = result.filter(r => !hiddenIds.value.has(r.id))
+    result = result.filter(r => (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query)))
   }
   
   result.sort((a, b) => {
@@ -114,9 +111,16 @@ const filteredRecruits = computed(() => {
   return result
 })
 
-watch(recruits, (newVal) => {
-    if (newVal.length > 0) processDeepLink(newVal)
-}, { immediate: true })
+// 🧹 Clean up hiddenIds when the underlying data source actually removes them
+watch(recruits, (newRecruits) => {
+    const currentIds = new Set(newRecruits.map(r => r.id))
+    hiddenIds.value.forEach(id => {
+        if (!currentIds.has(id)) {
+            hiddenIds.value.delete(id)
+        }
+    })
+    if (newRecruits.length > 0) processDeepLink(newRecruits)
+}, { deep: true })
 
 const { undo, success, error } = useToast()
 const hiddenIds = ref<Set<string>>(new Set())
@@ -129,11 +133,15 @@ function dismissBulk() {
 }
 
 function executeDismiss(ids: string[]) {
+    // 1. Instantly hide from UI
     ids.forEach(id => hiddenIds.value.add(id))
+    
+    // 2. Wait for Undo period (4.5s)
     const timerId = setTimeout(() => {
         dismissRecruitsAction(ids)
             .catch(() => {
                 error('Failed to sync changes')
+                // Restore if failed
                 ids.forEach(id => hiddenIds.value.delete(id))
             })
     }, 4500)
