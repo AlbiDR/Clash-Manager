@@ -1,6 +1,7 @@
+
 import { ref } from 'vue'
 
-export function useLongPress(callback: () => void, duration = 500) {
+export function useLongPress(callback: () => void, duration = 400) {
     const isLongPress = ref(false)
     let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -8,8 +9,9 @@ export function useLongPress(callback: () => void, duration = 500) {
         isLongPress.value = false
         timer = setTimeout(() => {
             isLongPress.value = true
+            // Native Frontier: Standardized Selection Haptic (Medium)
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                navigator.vibrate(50)
+                navigator.vibrate(60) 
             }
             callback()
         }, duration)
