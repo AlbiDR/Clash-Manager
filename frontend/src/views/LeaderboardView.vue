@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -182,7 +181,7 @@ watch(members, (newVal) => {
     <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
     
     <div v-else-if="loading && members.length === 0" class="list-container">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :style="{ '--i': i }" />
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
     <EmptyState 
@@ -240,4 +239,3 @@ watch(members, (newVal) => {
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 </style>
-
