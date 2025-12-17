@@ -52,11 +52,20 @@ function shareRecruit() {
   })
 }
 
-function handleClick(e: Event) {
+function handleIdentityClick(e: Event) {
+  e.stopPropagation()
+  emit('toggle-expand')
+}
+
+function handleCardClick(e: Event) {
   if (isLongPress.value) { isLongPress.value = false; return }
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('.btn-icon-action')) return
-  if (props.selectionMode) emit('toggle-select')
-  else emit('toggle-expand')
+  
+  if (props.selectionMode) {
+    emit('toggle-select')
+  } else {
+    emit('toggle-expand')
+  }
 }
 </script>
 
@@ -64,26 +73,26 @@ function handleClick(e: Event) {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleClick"
+    @click="handleCardClick"
     @mousedown="startPress"
     @touchstart="startPress"
     @mouseup="cancelPress"
     @touchend="cancelPress"
   >
     <div class="card-header">
-      <div class="identity-group">
-        <!-- Stacked Badges -->
+      <!-- Zone: Identity (Always toggles expansion) -->
+      <div class="identity-group" @click="handleIdentityClick">
         <div class="meta-stack">
           <div class="badge time">{{ timeAgo }}</div>
-          <div class="badge tag">#{{ recruit.id }}</div>
+          <div class="badge tag">#{{ recruit.id.substring(0, 5) }}</div>
         </div>
         
-        <!-- Name and Trophies -->
         <div class="name-block">
           <span class="player-name">{{ recruit.n }}</span>
           <div class="trophy-meta">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
+            <Icon :name="expanded ? 'chevron_down' : 'chevron_right'" size="14" class="expand-hint" />
           </div>
         </div>
       </div>
@@ -136,8 +145,8 @@ function handleClick(e: Event) {
   margin-bottom: 8px;
   border: 1px solid var(--sys-surface-glass-border);
   cursor: pointer;
-  overflow: hidden;
   position: relative;
+  overflow: visible;
 }
 
 .card.expanded {
@@ -151,12 +160,25 @@ function handleClick(e: Event) {
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.identity-group { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+  flex: 1; 
+  min-width: 0; 
+  cursor: zoom-in;
+}
 
-.meta-stack { display: flex; flex-direction: column; gap: 4px; }
+.meta-stack { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  width: 60px; 
+  flex-shrink: 0; 
+}
 
 .badge {
-  height: 18px; padding: 0 6px;
+  height: 18px; width: 100%;
   background: var(--sys-color-surface-container-highest);
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
@@ -164,7 +186,7 @@ function handleClick(e: Event) {
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
 }
-.badge.tag { color: var(--sys-color-outline); font-size: 8px; opacity: 0.8; }
+.badge.tag { color: var(--sys-color-outline); font-size: 8px; opacity: 0.8; letter-spacing: -0.02em; }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -178,6 +200,7 @@ function handleClick(e: Event) {
 
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
+.expand-hint { opacity: 0.2; color: var(--sys-color-on-surface); margin-left: 2px; }
 
 .stat-pod {
   width: 48px; height: 48px;
