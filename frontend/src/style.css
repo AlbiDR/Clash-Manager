@@ -120,30 +120,19 @@ body {
 /* 🏎️ MEMORY-SAVING INTERACTION ENGINE */
 .squish-interaction {
   transition: transform 0.2s var(--sys-motion-spring);
-  
-  /* 🔋 THE MEMORY SAVER: content-visibility: auto */
   content-visibility: auto;
   contain-intrinsic-size: auto 58px;
-  
-  /* Strict containment prevents layout shifts from triggering global repaints */
   contain: layout paint;
-  
-  /* Reduction in texture interpolation for RAM saving */
   image-rendering: -webkit-optimize-contrast;
 }
 
-/* Only promote to GPU when actually interacting/moving/visible */
-.squish-interaction:active,
-.card.expanded,
-.list-enter-active,
-.list-move {
-  transform: translate3d(0,0,0);
-  will-change: transform;
-  backface-visibility: hidden;
+/* Grouping layers at the parent level instead of individual promotion */
+.list-container {
+  transform: translateZ(0);
 }
 
 .squish-interaction:active {
-  transform: scale(0.96) translate3d(0, 0, 0);
+  transform: scale(0.96);
 }
 
 /* 🌊 DYNAMIC INFINITE CASCADE */
@@ -154,7 +143,7 @@ body {
 
 .list-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.98) translateZ(0);
+  transform: translateY(20px) scale(0.98);
 }
 
 .list-move {
@@ -170,7 +159,7 @@ body {
 
 .list-leave-to {
   opacity: 0;
-  transform: scale(0.9) translateX(20px) translateZ(0);
+  transform: scale(0.9) translateX(20px);
 }
 
 .custom-tooltip {
