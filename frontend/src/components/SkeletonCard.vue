@@ -37,14 +37,17 @@ const metaWidth = computed(() => {
 <style scoped>
 .skeleton-card {
   background: var(--sys-color-surface-container);
-  border-radius: 16px; /* Matched radius */
-  padding: 8px 12px; /* Matched strict padding */
+  border-radius: 16px;
+  padding: 8px 12px;
   margin-bottom: 6px;
   border: 1px solid transparent;
-  height: 58px; /* 40px Header + 16px Padding + 2px Border approx */
+  height: 58px;
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
+  
+  /* 🔋 PERFORMANCE: Layout, paint and size is fixed */
+  contain: strict;
 }
 
 /* Shimmer Effect */
@@ -56,8 +59,8 @@ const metaWidth = computed(() => {
   background-image: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.05) 20%,
-    rgba(255, 255, 255, 0.1) 60%,
+    rgba(255, 255, 255, 0.03) 20%,
+    rgba(255, 255, 255, 0.08) 60%,
     rgba(255, 255, 255, 0)
   );
   animation: shimmer 2s infinite;
@@ -67,7 +70,7 @@ const metaWidth = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 40px; /* Locked Height */
+  height: 40px;
 }
 
 .info-stack {
@@ -87,40 +90,26 @@ const metaWidth = computed(() => {
 .sk-bar {
   background: var(--sys-color-surface-container-highest);
   border-radius: 4px;
-  transition: width 0.2s ease;
 }
 
-.name-bar {
-  height: 16px;
-}
-
-.meta-bar {
-  height: 12px;
-}
+.name-bar { height: 16px; }
+.meta-bar { height: 12px; }
 
 .sk-box {
   background: var(--sys-color-surface-container-highest);
   border-radius: 12px;
 }
 
-.stat-pod {
-  width: 40px; /* Matched new size */
-  height: 40px; /* Matched new size */
-}
+.stat-pod { width: 40px; height: 40px; }
 
 .sk-circle {
   background: var(--sys-color-surface-container-highest);
   border-radius: 50%;
 }
 
-.chevron {
-  width: 18px;
-  height: 18px;
-}
+.chevron { width: 18px; height: 18px; }
 
 @keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
+  100% { transform: translateX(100%); }
 }
 </style>
