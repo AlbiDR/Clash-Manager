@@ -7,12 +7,11 @@
  * ⚙️ LOGIC (V6.2.3): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
  *    2. Deduplication Engine: Consolidates results into unique Set.
- *    3. Stochastic Prioritization (DOUBLE SHUFFLE): 
- *       - Phase 1: Tournaments (Top 800 -> Shuffle -> Pick 150).
- *       - Phase 2: Candidates (Top 200 Trophies -> Shuffle -> Pick 100).
- *    4. High Volume Ready: Blacklist logic optimized for 100+ invites/day.
- *    5. Coherent Storage: Blacklist is sorted by SCORE (DESC) before saving.
- *    6. Top-3 Benchmark: Anchors potential scores against the historical elite.
+ *    3. High Volume Ready: 
+ *       - Blacklist uses O(1) Map lookup.
+ *       - Self-Cleaning: Marked "Invited" rows are purged from sheet to maintain speed.
+ *    4. Coherent Storage: Blacklist is sorted by SCORE (DESC) for benchmarking.
+ *    5. Top-3 Benchmark: Anchors potential scores against the historical elite.
  * 🏷️ VERSION: 6.2.3
  * ============================================================================
  */
@@ -34,18 +33,14 @@ function scoutRecruits() {
     avgTrophies = baselineData[0].items.reduce((a, b) => a + b.trophies, 0) / baselineData[0].items.length;
   }
 
-  // 🚫 BLACKLIST & BENCHMARK UPDATE (Sorted by Score)
+  // 🚫 BLACKLIST & BENCHMARK UPDATE (Sorted & High Performance)
   const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
-  // 2. Load existing tracking data
+  // 2. Load existing tracking data (Those NOT yet invited)
   const existing = loadRecruitDatabase(sheet);
 
-  // ⚡ OPTIMIZATION: "Cheap" Clanless Check
-  const tagsToCheck = [];
-  existing.forEach(p => {
-    if (!p.invited) tagsToCheck.push(p.tag);
-  });
-
+  // ⚡ OPTIMIZATION: "Cheap" Clanless Check for survivors
+  const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
     const profiles = Utils.fetchRoyaleAPI(tagsToCheck.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
     profiles.forEach(p => {
@@ -54,16 +49,11 @@ function scoutRecruits() {
   }
 
   const initialIds = new Set(existing.keys());
-  let activePoolCount = 0;
-  existing.forEach(p => { if (!p.invited) activePoolCount++; });
+  let activePoolCount = existing.size;
 
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
-  const isFillingPhase = activePoolCount < target;
-  const minTrophies = Math.max(4000, Math.round(isFillingPhase ? avgTrophies * 0.75 : avgTrophies));
-
-  // 🧹 CLEANUP: Remove invited
-  for (const [tag, player] of existing) { if (player.invited) existing.delete(tag); }
+  const minTrophies = Math.max(4000, Math.round(activePoolCount < target ? avgTrophies * 0.75 : avgTrophies));
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
@@ -71,7 +61,6 @@ function scoutRecruits() {
   // 5. Merge
   scanned.forEach(c => {
     if (existing.has(c.tag)) {
-      c.invited = existing.get(c.tag).invited;
       c.foundDate = existing.get(c.tag).foundDate;
     }
     existing.set(c.tag, c);
@@ -88,19 +77,11 @@ function scoutRecruits() {
   
   finalPool.forEach(p => p.perfScore = Math.round((p.rawScore / finalBenchmark) * 100));
 
-  // 🛡️ Final Check
-  const finalInvitedTags = new Set();
-  if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
-    const numRows = sheet.getLastRow() - CONFIG.LAYOUT.DATA_START_ROW + 1;
-    const invitedData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.INVITED, numRows, 1).getValues();
-    const tagData = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2 + CONFIG.SCHEMA.HH.TAG, numRows, 1).getValues();
-    invitedData.forEach((row, idx) => { if (row[0] === true && tagData[idx][0]) finalInvitedTags.add(tagData[idx][0]); });
-  }
-  
-  const trulyFinalPool = finalPool.filter(p => !finalInvitedTags.has(p.tag));
-  
+  // 🛡️ BACKUP
   Utils.backupSheet(ss, CONFIG.SHEETS.HH);
-  renderHeadhunterView(sheet, trulyFinalPool, avgTrophies);
+
+  // 7. RENDER (Self-Cleaning logic is handled in updateAndGetBlacklist)
+  renderHeadhunterView(sheet, finalPool, avgTrophies);
 
   try { if (typeof refreshWebPayload === 'function') refreshWebPayload(); } catch (e) {}
 }
@@ -108,7 +89,8 @@ function scoutRecruits() {
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
  * UPDATED V6.2.3: 
- * - Enforces DESCENDING SCORE ORDER for Benchmarking consistency.
+ * - Enforces DESCENDING SCORE ORDER for Benchmarking stability.
+ * - SELF-CLEANING: Removes invited rows from the spreadsheet after archiving.
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
@@ -128,12 +110,15 @@ function updateAndGetBlacklist(sheet) {
     if (expiry > now) validEntries.push({ t: tag, e: expiry, s: score });
   }
 
-  // 📥 2. INGEST NEW
+  // 📥 2. INGEST NEW & MARK FOR CLEANUP
+  const rowsToDelete = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
-    const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 10).getValues();
+    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+    const numRows = sheet.getLastRow() - (startRow - 1);
+    const data = sheet.getRange(startRow, 2, numRows, 10).getValues();
 
-    data.forEach(row => {
+    data.forEach((row, idx) => {
       const tag = String(row[H.TAG] || '').trim();
       const invited = row[H.INVITED];
       const raw = Number(row[H.RAW_SCORE]) || 0;
@@ -142,12 +127,14 @@ function updateAndGetBlacklist(sheet) {
         const existing = validEntries.find(v => v.t === tag);
         if (existing) { if (raw > existing.s) existing.s = raw; } 
         else { validEntries.push({ t: tag, e: now + expiryDuration, s: raw }); }
+        
+        // Track absolute row index for deletion
+        rowsToDelete.push(startRow + idx);
       }
     });
   }
 
   // ⚓ 3. SORT BY SCORE (DESCENDING)
-  // This ensures the "Elite" benchmark anchor is calculated from the top of the data.
   validEntries.sort((a, b) => b.s - a.s);
 
   // 🎯 4. CALCULATE BENCHMARK (Top 3)
@@ -155,14 +142,18 @@ function updateAndGetBlacklist(sheet) {
   const benchmarkHigh = topN.length > 0 ? (topN.reduce((acc, cur) => acc + cur.s, 0) / topN.length) : 0;
 
   // 💾 5. PERSIST COHERENT OBJECT
-  // Reconstruct object in sorted order (most JS engines preserve insertion order for non-numeric keys)
   const sortedBlacklist = {};
-  validEntries.forEach(entry => {
-    sortedBlacklist[entry.t] = { e: entry.e, s: entry.s };
-  });
+  validEntries.forEach(entry => { sortedBlacklist[entry.t] = { e: entry.e, s: entry.s }; });
 
   if (Object.keys(sortedBlacklist).length > 0 || Object.keys(rawBlacklist).length > 0) {
     Utils.Props.setChunked(PROP_KEY, sortedBlacklist);
+  }
+
+  // 🧹 6. EXECUTE SELF-CLEANING (Delete invited rows from sheet)
+  if (rowsToDelete.length > 0) {
+    console.log(`🧹 Recruitment Clean-up: Moving ${rowsToDelete.length} invited recruits to the cooling pool.`);
+    // Delete in reverse order to maintain index integrity
+    rowsToDelete.sort((a, b) => b - a).forEach(rowIdx => sheet.deleteRow(rowIdx));
   }
 
   console.log(`🚫 Blacklist: ${validEntries.length} active. Benchmark Anchor: ${Math.round(benchmarkHigh)}.`);
@@ -176,7 +167,7 @@ function loadRecruitDatabase(sheet) {
   const rows = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 10).getValues();
   rows.forEach(r => {
     if (r[H.TAG]) map.set(r[H.TAG], {
-      tag: r[H.TAG], invited: r[H.INVITED], name: r[H.NAME], trophies: r[H.TROPHIES],
+      tag: r[H.TAG], invited: false, name: r[H.NAME], trophies: r[H.TROPHIES],
       donations: r[H.DONATIONS], cards: r[H.CARDS], war: r[H.WAR_WINS],
       foundDate: r[H.FOUND_DATE] ? new Date(r[H.FOUND_DATE]) : new Date(),
       rawScore: Number(r[H.RAW_SCORE]), perfScore: Number(r[H.PERF_SCORE])
@@ -224,24 +215,23 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const playersData = Utils.fetchRoyaleAPI(tagsToFetch.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
 
   const validCandidates = [];
-  const playersNeedingWarLogs = [];
   const playersNeedingWarLogsIndices = [];
 
-  playersData.forEach(p => {
+  playersData.forEach((p, idx) => {
     if (p && p.trophies >= minTrophies) {
       validCandidates.push(p);
-      playersNeedingWarLogs.push(p.tag);
-      playersNeedingWarLogsIndices.push(validCandidates.length - 1);
+      playersNeedingWarLogsIndices.push(idx);
     }
   });
 
-  if (playersNeedingWarLogs.length > 0) {
-    const logs = Utils.fetchRoyaleAPI(playersNeedingWarLogs.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`));
+  if (validCandidates.length > 0) {
+    const logUrls = validCandidates.map(p => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`);
+    const logs = Utils.fetchRoyaleAPI(logUrls);
+
     validCandidates.forEach((p, idx) => {
-      const logIdx = playersNeedingWarLogsIndices.indexOf(idx);
       let warBonus = 0;
-      if (logIdx > -1 && logs[logIdx]) {
-        const hasWar = logs[logIdx].some(b => b.type === 'riverRacePvP' || b.type === 'boatBattle' || b.type === 'riverRaceDuel');
+      if (logs[idx]) {
+        const hasWar = logs[idx].some(b => b.type === 'riverRacePvP' || b.type === 'boatBattle' || b.type === 'riverRaceDuel');
         if (hasWar) warBonus = 500;
       }
       let totalWarScore = (p.warDayWins || 0) + warBonus;
