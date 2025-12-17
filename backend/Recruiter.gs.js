@@ -14,6 +14,7 @@
  *    5. Mercenary Scoring: Massive bonus for recent war activity.
  *    6. Sticky Memory: Persists War Bonuses even if battles leave the 25-game log.
  *    7. Blacklist (Smart): Tracks scores of invited players for 14 days.
+ *    8. Top-3 Benchmark: Anchors potential scores against the historical elite.
  * 🏷️ VERSION: 6.2.0
  * ============================================================================
  */
@@ -113,10 +114,10 @@ function scoutRecruits() {
     .sort((a, b) => b.rawScore - a.rawScore)
     .slice(0, CONFIG.HEADHUNTER.TARGET);
 
-  // ⚓ ANCHOR: Global Benchmark Calculation
+  // ⚓ ANCHOR: Global Benchmark Calculation (V6.2: Top-3 Average Anchor)
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
   
-  // Use either the historical benchmark or current pool high
+  // Use the historical benchmark or current pool high (if someone new broke the record)
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
 
   const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
@@ -161,8 +162,10 @@ function scoutRecruits() {
 
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
- * IMPROVED V6.2: Decoupled Blacklist (Visibility) from Benchmark (Anchor).
- * Uses the average of top 3 historical recruits for smoother benchmarking over 14 days.
+ * UPDATED V6.2.0:
+ * 1. Implements 14-day history retention.
+ * 2. Calculates Benchmark using the average of the TOP 3 historical scores.
+ * 3. Prevents "Unicorn Outliers" from distorting percentages.
  */
 function updateAndGetBlacklist(sheet) {
   const PROP_KEY = 'HH_BLACKLIST';
@@ -175,7 +178,7 @@ function updateAndGetBlacklist(sheet) {
   const activeScores = [];
   const tagsToDelete = [];
 
-  // 🧹 1. CLEANUP & EXTRACT SCORES
+  // 🧹 1. CLEANUP EXPIRED ENTRIES & COLLECT SCORES
   for (const tag in blacklist) {
     let entry = blacklist[tag];
     let expiry = entry.e || 0;
@@ -193,15 +196,17 @@ function updateAndGetBlacklist(sheet) {
   // 📥 2. INGEST NEW INVITES FROM SHEET
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
-    const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), Object.keys(H).length).getValues();
+    const numRows = sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
+    const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, numRows, Object.keys(H).length).getValues();
 
     data.forEach(row => {
       const tag = row[H.TAG];
       const invited = row[H.INVITED];
       const raw = Number(row[H.RAW_SCORE]) || 0;
 
+      // Only track if successfully invited
       if (tag && invited === true) {
-        // If not already in blacklist or score is higher, update it
+        // If not in blacklist or this instance has a higher score (rare), record it
         if (!blacklist[tag] || blacklist[tag].s < raw) {
           blacklist[tag] = { e: now + expiryDuration, s: raw };
           activeScores.push(raw);
@@ -210,17 +215,18 @@ function updateAndGetBlacklist(sheet) {
     });
   }
 
-  // ⚓ 3. CALCULATE STABLE BENCHMARK (Top-3 Average)
-  // Instead of one peak, use Top 3 to stabilize the 14-day window.
+  // ⚓ 3. CALCULATE ROBUST BENCHMARK (Top-3 Average)
+  // This stabilizes the 100% mark across the 14-day window.
   activeScores.sort((a, b) => b - a);
   const topN = activeScores.slice(0, 3);
   const benchmarkHigh = topN.length > 0 ? (topN.reduce((a, b) => a + b, 0) / topN.length) : 0;
 
-  if (Object.keys(blacklist).length > 0) {
+  // 💾 4. PERSIST
+  if (Object.keys(blacklist).length > 0 || tagsToDelete.length > 0) {
     Utils.Props.setChunked(PROP_KEY, blacklist);
   }
 
-  console.log(`🚫 Blacklist: ${Object.keys(blacklist).length} entries active. Benchmark anchor: ${Math.round(benchmarkHigh)}.`);
+  console.log(`🚫 Blacklist: ${Object.keys(blacklist).length} active. Benchmark anchor (Top-3 Avg): ${Math.round(benchmarkHigh)}.`);
 
   return { ids: new Set(Object.keys(blacklist)), highScore: benchmarkHigh };
 }
