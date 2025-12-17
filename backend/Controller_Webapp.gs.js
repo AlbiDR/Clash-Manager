@@ -4,11 +4,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.1.1
+ * 🏷️ VERSION: 6.1.2
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.1.1';
+const VER_CONTROLLER_WEBAPP = '6.1.2';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -88,6 +88,10 @@ function markRecruitsAsInvitedBulk(ids) {
     if (updatesCount > 0) {
       invitedRange.setValues(invitedValues);
       console.log(`🌐 API Action: Bulk dismissed ${updatesCount} recruits.`);
+      
+      // 🔄 FORCE SYNC: Regenerate cache so subsequent reads reflect the dismissal
+      console.log("🌐 API Action: Refreshing read cache...");
+      refreshWebPayload();
     }
 
     console.timeEnd('BulkDismiss');
@@ -180,7 +184,12 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
       const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
 
       if (isHeadhunter) {
-        if (r[SCHEMA.INVITED] === true) return null;
+        // 🛡️ ROBUST CHECK: Filter out invited (Checked) recruits
+        // Handles boolean true, string 'TRUE', 'true', etc.
+        const invitedVal = r[SCHEMA.INVITED];
+        const isInvited = invitedVal === true || String(invitedVal).toUpperCase() === 'TRUE';
+        
+        if (isInvited) return null;
         
         const fd = r[SCHEMA.FOUND_DATE];
         const ago = (fd instanceof Date && !isNaN(fd.getTime())) ? fd.toISOString() : '';
