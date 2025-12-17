@@ -1,5 +1,5 @@
 
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useToast } from './useToast'
 import { useModules } from './useModules'
 
@@ -17,6 +17,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const isBlasting = ref(false)
   const { error } = useToast()
   const { modules } = useModules()
+
+  // Track the current index for the resurrection logic
+  let currentIndex = 0
+  let timerId: any = null
 
   const isSelectionMode = computed(() => selectedIds.value.length > 0)
   const isProcessing = computed(() => queue.value.length > 0)
@@ -114,63 +118,89 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   /**
-   * 💉 DOM INJECTION ENGINE (Solution Alpha)
-   * Creates a disposable iframe to trigger the Deep Link intent.
-   * This bypasses the browser's "Trusted Event" check for window.open().
+   * ⚓ ANCHOR INJECTION ENGINE (Solution Alpha V2)
+   * Creates a hidden anchor tag and clicks it programmatically.
+   * This is treated as a "navigation" by mobile browsers and is less likely
+   * to be blocked than an iframe load for deep links.
    */
   function fireDeepLink(url: string) {
-    const iframe = document.createElement('iframe')
-    iframe.style.display = 'none'
-    iframe.src = url
-    document.body.appendChild(iframe)
+    const link = document.createElement('a')
+    link.href = url
+    link.style.display = 'none'
+    // 'noopener' prevents the new window from controlling this one
+    // 'noreferrer' prevents sending referer headers
+    link.rel = 'noopener noreferrer' 
+    document.body.appendChild(link)
     
-    // Garbage collection: Remove element after OS captures intent
+    link.click()
+    
+    // Garbage collection
     setTimeout(() => {
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe)
+      if (document.body.contains(link)) {
+        document.body.removeChild(link)
       }
-    }, 1500)
+    }, 1000)
+  }
+
+  // Recursive execution loop
+  const next = () => {
+    // Stop condition
+    if (currentIndex >= selectedIds.value.length || !isBlasting.value) {
+      isBlasting.value = false
+      clearSelection()
+      return
+    }
+
+    const id = selectedIds.value[currentIndex]
+    const url = `${baseScheme}${id}`
+    
+    try {
+      fireDeepLink(url)
+    } catch (e) {
+      console.error("Deep link failed", e)
+    }
+
+    currentIndex++
+    
+    // Schedule next shot
+    if (timerId) clearTimeout(timerId)
+    timerId = setTimeout(next, throttleMs)
   }
 
   // ⚡ BLITZ MODE: Automated Opener
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return
     
-    console.log("⚡ Starting Blitz Mode (DOM Injection Protocol)")
+    console.log("⚡ Starting Blitz Mode (Anchor Injection Protocol)")
     
     isBlasting.value = true
-    const targets = [...selectedIds.value]
-    let index = 0
-
-    // Recursive execution loop
-    const next = () => {
-      // Stop condition
-      if (index >= targets.length || !isBlasting.value) {
-        isBlasting.value = false
-        clearSelection()
-        return
-      }
-
-      const id = targets[index]
-      const url = `${baseScheme}${id}`
-      
-      try {
-        fireDeepLink(url)
-      } catch (e) {
-        console.error("Deep link injection failed", e)
-      }
-
-      index++
-      
-      // Schedule next shot
-      // CRITICAL: 750ms is the specific delay required to ensure the game client 
-      // loads the profile content correctly. Opening faster results in empty profiles.
-      setTimeout(next, throttleMs)
-    }
-
+    currentIndex = 0
+    
     // Fire first shot immediately
     next()
   }
+
+  // 🧟 RESURRECTION LOGIC
+  // If the user switches apps (Browser -> Clash Royale), the browser might
+  // freeze the JS timer. When they switch back to the Browser, this detects
+  // the visibility change and immediately fires the next link if one was pending.
+  function handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && isBlasting.value) {
+      console.log("👁️ App foregrounded - Resurrecting Blitz Queue")
+      if (timerId) clearTimeout(timerId)
+      // Small delay to allow browser to "settle" from background state
+      timerId = setTimeout(next, 200)
+    }
+  }
+
+  onMounted(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  })
+
+  onUnmounted(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    if (timerId) clearTimeout(timerId)
+  })
 
   return {
     selectedIds,
