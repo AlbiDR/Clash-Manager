@@ -29,9 +29,9 @@ const timeAgo = computed(() => {
   const ts = new Date(dateStr).getTime()
   const m = Math.floor((Date.now() - ts) / 60000)
   if (m < 1) return 'New' 
-  if (m < 60) return `${m}m ago`
+  if (m < 60) return `${m}m`
   const h = Math.floor(m / 60)
-  return h > 24 ? Math.floor(h / 24) + 'd ago' : h + 'h ago'
+  return h > 24 ? Math.floor(h / 24) + 'd' : h + 'h'
 })
 
 // Composables
@@ -47,7 +47,7 @@ const { canShare, share } = useShare()
 function shareRecruit() {
   share({
     title: `Recruit: ${props.recruit.n}`,
-    text: `Found a potential recruit: ${props.recruit.n} (Score: ${Math.round(props.recruit.s || 0)})`,
+    text: `Potential recruit: ${props.recruit.n} (#${props.recruit.id})`,
     url: `https://royaleapi.com/player/${props.recruit.id}`
   })
 }
@@ -55,12 +55,8 @@ function shareRecruit() {
 function handleClick(e: Event) {
   if (isLongPress.value) { isLongPress.value = false; return }
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('.btn-icon-action')) return
-  
-  if (props.selectionMode) {
-    emit('toggle-select')
-  } else {
-    emit('toggle-expand')
-  }
+  if (props.selectionMode) emit('toggle-select')
+  else emit('toggle-expand')
 }
 </script>
 
@@ -73,22 +69,21 @@ function handleClick(e: Event) {
     @touchstart="startPress"
     @mouseup="cancelPress"
     @touchend="cancelPress"
-    @contextmenu.prevent
   >
-    <div class="selection-indicator"></div>
-
     <div class="card-header">
-      <div class="info-stack">
-        <div class="time-pill">{{ timeAgo }}</div>
+      <div class="identity-group">
+        <!-- Stacked Badges -->
+        <div class="meta-stack">
+          <div class="badge time">{{ timeAgo }}</div>
+          <div class="badge tag">#{{ recruit.id }}</div>
+        </div>
+        
+        <!-- Name and Trophies -->
         <div class="name-block">
           <span class="player-name">{{ recruit.n }}</span>
-          <div class="sub-meta">
-            <span class="tag-meta">#{{ recruit.id }}</span>
-            <span class="dot-sep">•</span>
-            <span class="trophy-meta">
-              <Icon name="trophy" size="12" />
-              {{ (recruit.t || 0).toLocaleString() }}
-            </span>
+          <div class="trophy-meta">
+            <Icon name="trophy" size="12" />
+            <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
           </div>
         </div>
       </div>
@@ -154,25 +149,22 @@ function handleClick(e: Event) {
 
 .card.selected { background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
 
-.selection-indicator {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--sys-color-primary); opacity: 0; transition: opacity 0.2s;
-}
-.card.selected .selection-indicator { opacity: 1; }
-
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-.info-stack { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 
-.time-pill {
-  width: 54px; height: 24px;
+.meta-stack { display: flex; flex-direction: column; gap: 4px; }
+
+.badge {
+  height: 18px; padding: 0 6px;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
 }
+.badge.tag { color: var(--sys-color-outline); font-size: 8px; opacity: 0.8; }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -181,12 +173,11 @@ function handleClick(e: Event) {
   color: var(--sys-color-on-surface);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
-.sub-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sys-color-outline); font-weight: 600; }
-.dot-sep { opacity: 0.3; }
-.tag-meta { font-family: var(--sys-font-family-mono); font-size: 11px; opacity: 0.7; }
-.trophy-meta { display: flex; align-items: center; gap: 3px; color: #fbbf24; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
+.trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
 .stat-pod {
   width: 48px; height: 48px;
@@ -209,8 +200,7 @@ function handleClick(e: Event) {
 .sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
 
 .actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
-.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; transition: transform 0.2s; }
-.btn-action:active { transform: scale(0.96); }
+.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .btn-action.secondary { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
 .btn-icon-action { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--sys-color-surface-container-highest); color: var(--sys-color-primary); border: none; border-radius: 12px; cursor: pointer; }
