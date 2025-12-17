@@ -5,12 +5,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 6.2.0
+ * 🏷️ VERSION: 6.2.2
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = '6.2.0';
+const VER_CONFIGURATION = '6.2.2';
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -23,13 +23,13 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: '6.2.0',
+      CONFIGURATION: '6.2.2',
       UTILITIES: '6.0.0',
       ORCHESTRATOR_TRIGGERS: '6.0.0',
       LOGGER: '6.0.0',
       LEADERBOARD: '6.1.5',
       SCORING_SYSTEM: '6.0.0',
-      RECRUITER: '6.2.0', 
+      RECRUITER: '6.2.2', 
       CONTROLLER_WEBAPP: '6.1.2',
       API_PUBLIC: '6.0.0'
     },
@@ -92,7 +92,7 @@ const CONFIG = {
 
   HEADHUNTER: {
     TARGET: 50,
-    BLACKLIST_DAYS: 14, // Extended from 7 to 14 for better cooling and benchmark stability
+    BLACKLIST_DAYS: 14, 
     KEYWORDS: [
       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
       'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
