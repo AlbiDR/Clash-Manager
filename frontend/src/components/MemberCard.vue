@@ -204,6 +204,8 @@ function handleClick(e: Event) {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   font-weight: 700; text-decoration: none;
+  transition: transform 0.2s;
 }
+.btn-action:active { transform: scale(0.96); }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 </style>
