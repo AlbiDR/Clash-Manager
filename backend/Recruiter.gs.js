@@ -4,19 +4,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V6.2.5): 
- *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
- *    2. Replacement Intel: Logs exactly how many players were added/displaced.
- *    3. High Volume Ready: 
- *       - Blacklist uses O(1) Map lookup.
- *       - Self-Cleaning: Marked "Invited" rows are purged from sheet.
- *    4. Coherent Storage: Blacklist sorted by SCORE (DESC) for benchmarking.
- *    5. Top-3 Benchmark: Anchors potential scores against historical elite.
- * 🏷️ VERSION: 6.2.5
+ * 🏷️ VERSION: 6.2.6
  * ============================================================================
  */
 
-const VER_RECRUITER = '6.2.5';
+const VER_RECRUITER = '6.2.6';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -83,11 +75,6 @@ function scoutRecruits() {
   const rawPool = Array.from(existing.values()).sort((a, b) => b.rawScore - a.rawScore);
   const finalPool = rawPool.slice(0, CONFIG.HEADHUNTER.TARGET);
 
-  if (rawPool.length > CONFIG.HEADHUNTER.TARGET) {
-    const displacedCount = rawPool.length - CONFIG.HEADHUNTER.TARGET;
-    console.log(`✂️ Capping: Kept Top 50. ${displacedCount} low-score survivors were displaced by better talent.`);
-  }
-
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
   const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
@@ -135,7 +122,10 @@ function updateAndGetBlacklist(sheet) {
       const invited = row[H.INVITED];
       const raw = Number(row[H.RAW_SCORE]) || 0;
 
-      if (tag && invited === true) {
+      // Airtight Truthy Check
+      const isInvited = invited === true || String(invited).toUpperCase() === 'TRUE';
+
+      if (tag && isInvited) {
         const existing = validEntries.find(v => v.t === tag);
         if (existing) { if (raw > existing.s) existing.s = raw; } 
         else { validEntries.push({ t: tag, e: now + expiryDuration, s: raw }); }
@@ -157,7 +147,10 @@ function updateAndGetBlacklist(sheet) {
 
   if (rowsToDelete.length > 0) {
     console.log(`🧹 Sheet Clean-up: Purging ${rowsToDelete.length} invited rows.`);
+    // Delete from bottom up to preserve indices
     rowsToDelete.sort((a, b) => b - a).forEach(rowIdx => sheet.deleteRow(rowIdx));
+    // 🚨 Flush to ensure deletion is physical before the next data read
+    SpreadsheetApp.flush();
   }
 
   console.log(`🚫 Blacklist: ${validEntries.length} active. Benchmark Anchor: ${Math.round(benchmarkHigh)}.`);
