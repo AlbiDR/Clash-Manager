@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Recruit } from '../types'
@@ -29,7 +28,7 @@ const timeAgo = computed(() => {
   if (!dateStr) return '-'
   const ts = new Date(dateStr).getTime()
   const m = Math.floor((Date.now() - ts) / 60000)
-  if (m < 1) return 'New' // Shortened for badge fit
+  if (m < 1) return 'New' 
   if (m < 60) return `${m}m ago`
   const h = Math.floor(m / 60)
   return h > 24 ? Math.floor(h / 24) + 'd ago' : h + 'h ago'
@@ -40,7 +39,7 @@ import { useLongPress } from '../composables/useLongPress'
 import { useShare } from '../composables/useShare'
 
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  if (navigator.vibrate) navigator.vibrate(50)
+  if (navigator.vibrate) navigator.vibrate(15) // Sharp tick
   emit('toggle-select')
 })
 
@@ -89,17 +88,12 @@ function handleClick(e: Event) {
   >
     <div class="selection-indicator"></div>
 
-    <!-- Header (Strict Height Enforced) -->
+    <!-- Header -->
     <div class="card-header">
       <div class="info-stack">
-        <!-- Row 1, Col 1: Time Badge (Matches Tenure) -->
         <span class="tenure-badge">{{ timeAgo }}</span>
-        <!-- Row 1, Col 2: Name -->
         <span class="player-name">{{ recruit.n }}</span>
-        
-        <!-- Row 2, Col 1: Player Tag Badge -->
         <span class="role-badge tag-badge">#{{ recruit.id }}</span>
-        <!-- Row 2, Col 2: Trophies -->
         <span class="meta-val trophy-val">
           <Icon name="trophy" size="12" style="color:#fbbf24;" />
           <span class="trophy-text">{{ (recruit.t || 0).toLocaleString() }}</span>
@@ -116,10 +110,9 @@ function handleClick(e: Event) {
       </div>
     </div>
 
-    <!-- Body (Expanded) -->
+    <!-- Body -->
     <div class="card-body">
       <div class="body-inner">
-        <!-- Stats Row -->
         <div class="stats-row">
           <div class="stat-cell">
             <span class="sc-label">Donations</span>
@@ -135,20 +128,12 @@ function handleClick(e: Event) {
           </div>
         </div>
 
-        <!-- Action Toolbar -->
         <div class="actions-toolbar">
-          <a 
-            :href="`https://royaleapi.com/player/${recruit.id}`" 
-            target="_blank"
-            class="btn-action secondary compact"
-          >
+          <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action secondary compact">
             <Icon name="analytics" size="14" />
             <span>RoyaleAPI</span>
           </a>
-          <a 
-            :href="`clashroyale://playerInfo?id=${recruit.id}`" 
-            class="btn-action primary compact"
-          >
+          <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
             <Icon name="crown" size="14" />
             <span>Open Game</span>
           </a>
@@ -162,7 +147,6 @@ function handleClick(e: Event) {
 </template>
 
 <style scoped>
-/* 🃏 Card Base */
 .card {
   background: var(--sys-color-surface-container);
   border-radius: 16px;
@@ -172,7 +156,9 @@ function handleClick(e: Event) {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  /* 🔋 RAM SAVER: Box-shadow removed on static state */
+  box-shadow: none;
+  backface-visibility: hidden;
 }
 
 .card.expanded { 
@@ -182,11 +168,10 @@ function handleClick(e: Event) {
   z-index: 10;
   margin: 12px 0;
   transform: scale(1.02);
+  will-change: transform;
 }
 
-.card.selected { 
-  background: var(--sys-color-secondary-container); 
-}
+.card.selected { background: var(--sys-color-secondary-container); }
 
 .selection-indicator {
   position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
@@ -194,29 +179,9 @@ function handleClick(e: Event) {
 }
 .card.selected .selection-indicator { opacity: 1; }
 
-.card-header { 
-  display: flex; justify-content: space-between; align-items: center;
-  height: 40px; 
-}
-
-.info-stack { 
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px 8px;
-  align-items: center;
-  flex: 1; 
-  min-width: 0; 
-}
-
-.player-name { 
-  font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); 
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
+.card-header { display: flex; justify-content: space-between; align-items: center; height: 40px; }
+.info-stack { display: grid; grid-template-columns: max-content 1fr; grid-template-rows: 1fr 1fr; gap: 4px 8px; align-items: center; flex: 1; min-width: 0; }
+.player-name { font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
 .trophy-val { display: flex; align-items: center; }
 .action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
@@ -229,19 +194,8 @@ function handleClick(e: Event) {
   font-size: 11px; font-weight: 700; font-family: var(--sys-font-family-mono);
 }
 
-.role-badge {
-  display: inline-block; width: 75px; text-align: center;
-  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
-  padding: 3px 8px; border-radius: 6px; border: 1px solid transparent;
-}
-
-.tag-badge {
-  font-family: var(--sys-font-family-mono);
-  font-size: 10.5px; text-transform: none;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface-variant);
-  border: 1px solid rgba(255,255,255,0.05);
-}
+.role-badge { display: inline-block; width: 75px; text-align: center; font-size: 9.5px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; border: 1px solid transparent; }
+.tag-badge { font-family: var(--sys-font-family-mono); font-size: 10.5px; text-transform: none; background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface-variant); border: 1px solid rgba(255,255,255,0.05); }
 
 .stat-pod {
   display: flex; align-items: center; justify-content: center;
@@ -250,19 +204,12 @@ function handleClick(e: Event) {
   color: var(--sys-color-on-surface-variant);
   font-weight: 800; font-size: 14px;
   font-family: var(--sys-font-family-mono);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.05);
 }
 
-.stat-pod.tone-high { 
-  background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary));
-  color: var(--sys-color-on-primary); border: none;
-}
-
-.stat-pod.tone-mid { 
-  background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); 
-  color: var(--sys-color-on-secondary); border: none;
-}
+.stat-pod.tone-high { background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary)); color: var(--sys-color-on-primary); border: none; }
+.stat-pod.tone-mid { background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); color: var(--sys-color-on-secondary); border: none; }
 
 .chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
 .card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
@@ -272,7 +219,6 @@ function handleClick(e: Event) {
   transition: grid-template-rows 0.4s var(--sys-motion-spring), margin-top 0.4s var(--sys-motion-spring);
   margin-top: 0; padding-top: 0; pointer-events: none;
 }
-
 .body-inner { min-height: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
 .card.expanded .card-body { grid-template-rows: 1fr; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); pointer-events: auto; }
 .card.expanded .body-inner { opacity: 1; transition-delay: 0.1s; }
@@ -289,4 +235,3 @@ function handleClick(e: Event) {
 .btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
 .btn-icon-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--sys-color-primary); border-radius: 10px; cursor: pointer; }
 </style>
-
