@@ -46,8 +46,17 @@ const emit = defineEmits<{
           <span class="blast-label">{{ label }}</span>
         </div>
 
-        <!-- Manual Assist Button (The Gamma Solution) -->
+        <!-- Manual Assist Button (NATIVE ANCHOR to prevent popups) -->
+        <a 
+          v-if="actionHref"
+          :href="actionHref"
+          class="fab-btn primary compact" 
+          @click="(e) => emit('action', e)"
+        >
+          <Icon name="chevron_right" size="20" />
+        </a>
         <button 
+          v-else
           class="fab-btn primary compact" 
           @click="(e) => emit('action', e)"
         >
