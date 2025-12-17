@@ -89,13 +89,13 @@ const editorUrl = computed(() => {
 
     <div class="settings-content">
       
-      <!-- App Info Hero (Moved from Footer) -->
+      <!-- App Info Hero -->
       <section class="app-info-hero">
           <div class="app-logo">
               <Icon name="crown" size="48" />
           </div>
           <h3 class="hero-title">Clash Manager: Clan Manager for Clash Royale</h3>
-          <p class="hero-ver">v6.1.1 (Momentum Update)</p>
+          <p class="hero-ver">v6.2.0 (Deployment Stable)</p>
           <div class="hero-links">
               <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
                   <Icon name="github" size="18" />
@@ -118,7 +118,7 @@ const editorUrl = computed(() => {
         </div>
       </div>
 
-      <!-- Main Cards Stack (No Gap) -->
+      <!-- Main Cards Stack -->
       <div class="cards-stack">
         
         <!-- 🌐 Unified Network Dashboard -->
@@ -224,7 +224,7 @@ const editorUrl = computed(() => {
             </div>
         </section>
 
-        <!-- 📦 System Modules (Tech Specs) -->
+        <!-- 📦 System Modules -->
         <section class="glass-panel bottom-card" v-if="pingData?.modules">
             <header class="card-header">
                 <div class="icon-box">
@@ -236,7 +236,6 @@ const editorUrl = computed(() => {
                 </div>
             </header>
 
-            <!-- Specs Grid (Body) -->
             <div class="specs-grid">
                 <div 
                     v-for="(version, name) in pingData.modules" 
@@ -249,7 +248,7 @@ const editorUrl = computed(() => {
             </div>
         </section>
         
-        <!-- 🛠️ Troubleshooting (Neutral) -->
+        <!-- 🛠️ Troubleshooting -->
         <section class="glass-panel util-card">
             <header class="card-header">
                 <div class="icon-box util-icon-box">
@@ -289,17 +288,14 @@ const editorUrl = computed(() => {
     padding: 0 0 120px;
     display: flex;
     flex-direction: column;
-    /* Main gap handling via stack below */
 }
 
-/* Stack Container for touching cards */
 .cards-stack {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-l); /* Gap between the distinct card groups */
+    gap: var(--spacing-l);
 }
 
-/* --- GLASS PANEL --- */
 .glass-panel {
     background: var(--sys-surface-glass);
     backdrop-filter: var(--sys-surface-glass-blur);
@@ -312,7 +308,6 @@ const editorUrl = computed(() => {
     animation: fadeSlideIn 0.6s backwards;
 }
 
-/* --- HEADER --- */
 .card-header {
     display: flex;
     align-items: center;
@@ -346,7 +341,6 @@ const editorUrl = computed(() => {
     font-weight: var(--font-weight-medium);
 }
 
-/* --- STATUS PILL --- */
 .status-pill {
     display: flex; align-items: center; gap: 8px;
     padding: 6px 12px;
@@ -367,7 +361,6 @@ const editorUrl = computed(() => {
 .status-pill.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
 .status-pill.unconfigured { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
 
-/* --- CARD BODY --- */
 .card-body { padding: var(--spacing-l); }
 
 .network-stats {
@@ -387,7 +380,6 @@ const editorUrl = computed(() => {
 
 .divider { height: 1px; background: var(--sys-color-outline-variant); opacity: 0.2; margin-bottom: var(--spacing-l); }
 
-/* --- FIELDS --- */
 .field-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
 .flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .field-label {
@@ -407,7 +399,6 @@ const editorUrl = computed(() => {
     background: var(--sys-color-surface-container-high);
     padding: 12px;
     border-radius: var(--shape-corner-m);
-    border: 1px solid transparent;
 }
 .url-text {
     flex: 1;
@@ -417,12 +408,7 @@ const editorUrl = computed(() => {
     color: var(--sys-color-on-surface-variant);
     opacity: 0.8;
 }
-.icon-link {
-    color: var(--sys-color-primary); opacity: 0.7; transition: all 0.2s;
-}
-.icon-link:hover { opacity: 1; transform: scale(1.1); }
 
-/* --- INPUTS --- */
 .input-row { display: flex; gap: var(--spacing-s); }
 .text-input {
     flex: 1;
@@ -434,7 +420,6 @@ const editorUrl = computed(() => {
     font-size: var(--font-size-m);
     font-family: var(--sys-font-family-mono);
 }
-.text-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(var(--sys-color-primary-rgb), 0.2); }
 .save-btn {
     width: 46px; border-radius: var(--shape-corner-m);
     background: var(--sys-color-primary); color: white; border: none;
@@ -448,46 +433,16 @@ const editorUrl = computed(() => {
     padding: 8px 12px; border-radius: var(--shape-corner-s);
     margin-top: 8px;
 }
-.reset-link {
-    margin-left: auto; background: none; border: none;
-    font-weight: 700; color: var(--sys-color-on-tertiary-container);
-    cursor: pointer; text-decoration: underline;
-}
 
-/* --- SETTINGS ROW & TOGGLE --- */
 .setting-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px 0;
-    cursor: pointer; /* Whole row clickable */
+    cursor: pointer;
 }
 .setting-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .setting-label { font-weight: 700; font-size: 15px; color: var(--sys-color-on-surface); }
 .setting-desc { font-size: 13px; color: var(--sys-color-outline); line-height: 1.4; padding-right: 16px; }
 
-/* Toggle Wrapper */
-.toggle-wrapper {
-    display: flex; align-items: center; gap: 12px;
-}
-.toggle-state-text {
-    font-size: 11px; font-weight: 800; 
-    color: var(--sys-color-outline); 
-    width: 24px; text-align: right;
-    transition: color 0.2s;
-}
-.toggle-switch.active ~ .toggle-state-text, /* If we reordered */
-.setting-row:hover .toggle-switch.active + .toggle-state-text {
-    /* CSS sibling selectors don't work backwards, so handled via JS state in template */
-}
-.toggle-switch.active {
-    background: var(--sys-color-primary);
-    border-color: var(--sys-color-primary);
-}
-.toggle-switch.active .toggle-thumb {
-    transform: translateX(20px);
-    background: var(--sys-color-on-primary);
-}
-
-/* Switch UI */
 .toggle-switch {
     width: 52px; height: 32px;
     border-radius: 99px;
@@ -495,8 +450,10 @@ const editorUrl = computed(() => {
     border: 2px solid var(--sys-color-outline);
     position: relative; cursor: pointer;
     transition: all 0.2s var(--sys-motion-spring);
-    flex-shrink: 0;
-    padding: 0;
+}
+.toggle-switch.active {
+    background: var(--sys-color-primary);
+    border-color: var(--sys-color-primary);
 }
 .toggle-thumb {
     width: 20px; height: 20px;
@@ -504,17 +461,17 @@ const editorUrl = computed(() => {
     border-radius: 50%;
     position: absolute; top: 4px; left: 4px;
     transition: all 0.2s var(--sys-motion-spring);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.toggle-switch.active .toggle-thumb {
+    transform: translateX(20px);
+    background: var(--sys-color-on-primary);
 }
 
-/* --- MODULES GRID (TECH SPECS) --- */
 .specs-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 1px;
-    background: rgba(255,255,255,0.05); /* Grid Lines */
-    /* Ensure no double borders */
-    border-top: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.05);
 }
 
 .spec-item {
@@ -522,99 +479,22 @@ const editorUrl = computed(() => {
     padding: 16px;
     display: flex; flex-direction: column; gap: 4px;
 }
-.spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; letter-spacing: 0.05em; }
+.spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; }
 .spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
 
-/* --- TROUBLESHOOTING (Formerly Danger Zone) --- */
-.util-card {
-    border-color: rgba(var(--sys-color-outline-variant), 0.3);
-}
-
-.util-icon-box {
-    background: var(--sys-color-surface-container-highest);
-    color: var(--sys-color-on-surface);
-}
-
-.util-content {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.util-desc {
-    font-size: 13px;
-    color: var(--sys-color-on-surface-variant);
-    line-height: 1.5;
-    margin: 0;
-}
-
+.util-card { border-color: rgba(var(--sys-color-outline-variant), 0.3); }
+.util-desc { font-size: 13px; color: var(--sys-color-on-surface-variant); line-height: 1.5; margin-bottom: 16px; }
 .reset-all-btn {
-    width: 100%;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 24px;
-    background: var(--sys-color-surface-container-high);
-    color: var(--sys-color-on-surface);
-    border-radius: var(--shape-corner-full);
-    border: 1px solid var(--sys-color-outline-variant);
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.2s, background 0.2s;
+    width: 100%; padding: 12px 24px; border-radius: var(--shape-corner-full);
+    background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface);
+    border: 1px solid var(--sys-color-outline-variant); font-weight: 700; cursor: pointer;
 }
-.reset-all-btn:active { transform: scale(0.96); background: var(--sys-color-surface-container-highest); }
 
-/* --- HERO (APP INFO) --- */
-.app-info-hero {
-    text-align: center;
-    margin-bottom: var(--spacing-l);
-    color: var(--sys-color-outline);
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-}
-.app-logo { color: var(--sys-color-primary); margin-bottom: 8px; }
-.hero-title { 
-    margin: 0; 
-    font-size: var(--font-size-l); 
-    font-weight: 800; 
-    color: var(--sys-color-on-surface); 
-    line-height: 1.2;
-    padding: 0 16px;
-}
+.app-info-hero { text-align: center; margin-bottom: var(--spacing-l); color: var(--sys-color-outline); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hero-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
 .hero-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
 
-/* Install Banner */
-.install-banner {
-  background: linear-gradient(135deg, var(--sys-color-primary) 0%, var(--sys-color-tertiary) 100%);
-  border-radius: var(--shape-corner-l);
-  padding: 16px;
-  margin-bottom: 24px;
-  display: flex; align-items: center; gap: 16px;
-  color: white;
-  cursor: pointer;
-  box-shadow: var(--sys-elevation-3);
-  transition: transform 0.2s;
-}
-.install-banner:active { transform: scale(0.98); }
-.ib-icon {
-  width: 40px; height: 40px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.ib-text { flex: 1; }
-.ib-title { font-weight: 700; font-size: 16px; }
-.ib-desc { font-size: 12px; opacity: 0.9; }
-.ib-arrow { opacity: 0.8; }
-
-.github-btn {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px;
-    background: var(--sys-color-surface-container-high);
-    border-radius: var(--shape-corner-full);
-    color: var(--sys-color-on-surface);
-    text-decoration: none;
-    font-weight: 600; font-size: 14px;
-    margin-top: 16px;
-    transition: all 0.2s;
-}
-.github-btn:hover { background: var(--sys-color-surface-container-highest); transform: translateY(-2px); }
+.install-banner { background: linear-gradient(135deg, var(--sys-color-primary) 0%, var(--sys-color-tertiary) 100%); border-radius: var(--shape-corner-l); padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; color: white; cursor: pointer; }
+.github-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--sys-color-surface-container-high); border-radius: var(--shape-corner-full); color: var(--sys-color-on-surface); text-decoration: none; font-weight: 600; font-size: 14px; margin-top: 16px; }
 </style>
 
