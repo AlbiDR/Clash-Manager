@@ -33,10 +33,10 @@ const roleDisplay = computed(() => {
 })
 
 const trend = computed(() => {
-  const dt = props.member.dt
-  if (!dt) return null
+  const dt = props.member.dt || 0
+  if (dt === 0) return null
   return {
-    val: Math.abs(dt).toFixed(0),
+    val: (dt > 0 ? '+' : '') + Math.round(dt),
     dir: dt > 0 ? 'up' : 'down'
   }
 })
@@ -65,26 +65,30 @@ function handleClick(e: Event) {
     @touchend="cancelPress"
   >
     <div class="card-header">
-      <div class="player-identity">
-        <div class="tenure-badge">{{ member.d.days }}d</div>
+      <div class="identity-group">
+        <!-- Stacked Badges -->
+        <div class="meta-stack">
+          <div class="badge tenure">{{ member.d.days }}d</div>
+          <div class="badge role">{{ roleDisplay }}</div>
+        </div>
+        
+        <!-- Name and Trophies -->
         <div class="name-block">
           <span class="player-name">{{ member.n }}</span>
-          <div class="sub-meta">
-            <span class="role-text">{{ roleDisplay }}</span>
-            <span class="dot-sep">•</span>
-            <span class="trophy-meta">
-              <Icon name="trophy" size="12" />
-              {{ (member.t || 0).toLocaleString() }}
-            </span>
+          <div class="trophy-meta">
+            <Icon name="trophy" size="12" />
+            <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
           </div>
         </div>
       </div>
 
+      <!-- Score Pod with Momentum Pill -->
       <div class="score-section">
         <div class="stat-pod" :class="toneClass">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="trend-badge" :class="trend.dir">
+          <div v-if="trend" class="momentum-pill" :class="trend.dir">
             <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
+            <span class="trend-val">{{ trend.val }}</span>
           </div>
         </div>
       </div>
@@ -143,16 +147,20 @@ function handleClick(e: Event) {
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-.player-identity { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 
-.tenure-badge {
-  width: 44px; height: 24px;
+.meta-stack { display: flex; flex-direction: column; gap: 4px; }
+
+.badge {
+  height: 18px; padding: 0 6px;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800; color: var(--sys-color-outline);
+  font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
   font-family: var(--sys-font-family-mono);
+  text-transform: uppercase;
 }
+.badge.role { color: var(--sys-color-primary); font-family: var(--sys-font-family-body); font-weight: 700; font-size: 9px; }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -161,11 +169,11 @@ function handleClick(e: Event) {
   color: var(--sys-color-on-surface);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
-.sub-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sys-color-outline); font-weight: 600; }
-.dot-sep { opacity: 0.3; }
-.trophy-meta { display: flex; align-items: center; gap: 3px; color: #fbbf24; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
+.trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
 .stat-pod {
   position: relative;
@@ -180,15 +188,19 @@ function handleClick(e: Event) {
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
-.trend-badge {
-  position: absolute; bottom: -4px; right: -4px;
-  width: 18px; height: 18px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+.momentum-pill {
+  position: absolute; bottom: -6px; right: -8px;
+  height: 20px; padding: 0 6px;
   background: var(--sys-color-surface-container-highest);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 10px;
+  display: flex; align-items: center; gap: 3px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  border: 1.5px solid var(--sys-surface-glass-border);
 }
-.trend-badge.up { color: #22c55e; }
-.trend-badge.down { color: #ef4444; }
+.momentum-pill.up { color: #22c55e; }
+.momentum-pill.down { color: #ef4444; }
+
+.trend-val { font-size: 10px; font-weight: 900; font-family: var(--sys-font-family-mono); }
 
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
@@ -204,8 +216,6 @@ function handleClick(e: Event) {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   font-weight: 700; text-decoration: none;
-  transition: transform 0.2s;
 }
-.btn-action:active { transform: scale(0.96); }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 </style>
