@@ -1,12 +1,15 @@
+
 import { ref, watch } from 'vue'
 
 const MODULES_KEY = 'cm_modules_v2'
 
 export interface ModuleState {
-    // Reserved for future modules
+    blitzMode?: boolean
 }
 
-const defaultState: ModuleState = {}
+const defaultState: ModuleState = {
+    blitzMode: false
+}
 
 // Global state
 const modules = ref<ModuleState>(defaultState)
@@ -32,9 +35,8 @@ export function useModules() {
         localStorage.setItem(MODULES_KEY, JSON.stringify(newVal))
     }, { deep: true })
 
-    // Prefix with _ to silence "unused parameter" error
-    function toggle(_key: keyof ModuleState) {
-        // Implementation reserved
+    function toggle(key: keyof ModuleState) {
+        modules.value[key] = !modules.value[key]
     }
 
     return {
