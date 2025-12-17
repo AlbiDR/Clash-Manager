@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -228,6 +227,7 @@ function handleSelectAll() {
       :is-processing="fabState.isProcessing"
       :is-blasting="fabState.isBlasting"
       :selection-count="fabState.selectionCount"
+      :blitz-enabled="fabState.blitzEnabled"
       @action="handleAction"
       @blitz="handleBlitz"
       @dismiss="dismissBulk"
