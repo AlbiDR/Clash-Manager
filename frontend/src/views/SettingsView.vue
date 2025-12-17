@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
@@ -7,17 +6,10 @@ import { useModules } from '../composables/useModules'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import Icon from '../components/Icon.vue'
 
-// Local state for the input field
 const newApiUrl = ref('') 
 const isEditing = ref(false)
 
-const { 
-    apiUrl, 
-    apiStatus, 
-    pingData, 
-    checkApiStatus 
-} = useApiState()
-
+const { apiUrl, apiStatus, pingData, checkApiStatus } = useApiState()
 const { isInstallable, install } = useInstallPrompt()
 const { modules, toggle } = useModules()
 
@@ -25,14 +17,11 @@ onMounted(() => {
     checkApiStatus()
 })
 
-// Auto-expand edit mode if unconfigured to help user recover from factory reset
 watch(apiStatus, (newVal) => {
     if (newVal === 'unconfigured') isEditing.value = true
 }, { immediate: true })
 
-const hasLocalOverride = computed(() => {
-  return !!localStorage.getItem('cm_gas_url')
-})
+const hasLocalOverride = computed(() => !!localStorage.getItem('cm_gas_url'))
 
 function saveApiUrl() {
     if (newApiUrl.value.trim()) {
@@ -48,23 +37,16 @@ function resetApiUrl() {
     }
 }
 
-// 💥 Reset Option (Neutral)
 function factoryReset() {
     if (confirm('Reset Application Data?\n\nThis will clear local cache and settings. Data on the Google Sheet will NOT be affected.')) {
         localStorage.clear();
         sessionStorage.clear();
-        
-        // Unregister service workers to force update
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister()
-                }
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                for(let r of regs) r.unregister()
                 window.location.reload();
             })
-        } else {
-            window.location.reload();
-        }
+        } else window.location.reload();
     }
 }
 
@@ -75,426 +57,197 @@ const apiStatusObject = computed(() => {
     return { type: 'loading', text: 'Ping...' } as const
 })
 
-const editorUrl = computed(() => {
-    if (pingData.value?.scriptId) {
-        return `https://script.google.com/home/projects/${pingData.value.scriptId}/edit`
-    }
-    return undefined
-})
+const editorUrl = computed(() => pingData.value?.scriptId ? `https://script.google.com/home/projects/${pingData.value.scriptId}/edit` : undefined)
 </script>
 
 <template>
   <div class="view-container">
     <ConsoleHeader title="Settings" :status="apiStatusObject" />
 
-    <div class="settings-content">
+    <div class="settings-content gpu-contain">
       
-      <!-- App Info Hero -->
-      <section class="app-info-hero">
-          <div class="app-logo">
-              <Icon name="crown" size="48" />
-          </div>
-          <h3 class="hero-title">Clash Manager: Clan Manager for Clash Royale</h3>
-          <p class="hero-ver">v6.2.0 (Deployment Stable)</p>
-          <div class="hero-links">
-              <a href="https://github.com/albidr/Clash-Manager" target="_blank" class="github-btn">
-                  <Icon name="github" size="18" />
-                  <span>Source Code</span>
-              </a>
-          </div>
-      </section>
-
       <!-- PWA Install Banner -->
       <div v-if="isInstallable" class="install-banner" @click="install">
-        <div class="ib-icon">
-          <Icon name="download" size="24" style="color: white;" />
-        </div>
+        <Icon name="download" size="24" />
         <div class="ib-text">
-          <div class="ib-title">Install App</div>
-          <div class="ib-desc">Add to Home Screen for the best experience</div>
+          <div class="ib-title">Install PWA</div>
+          <div class="ib-desc">Unlock full native features and speed</div>
         </div>
-        <div class="ib-arrow">
-          <Icon name="chevron_right" size="20" />
+        <Icon name="chevron_right" size="20" class="arrow" />
+      </div>
+
+      <!-- Section: Network -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="plug" size="20" class="header-icon" />
+          <h3>Network & API</h3>
+          <div class="status-indicator" :class="apiStatus"></div>
+        </div>
+        
+        <div class="card-body">
+          <div class="network-stats">
+            <div class="stat-box">
+              <span class="label">Latency</span>
+              <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Backend</span>
+              <span class="value">v{{ pingData?.version || '0.0' }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Cache</span>
+              <span class="value">Ready</span>
+            </div>
+          </div>
+
+          <div class="url-manager">
+            <div class="field-label">API ENDPOINT</div>
+            <div v-if="!isEditing" class="url-readout">
+              <span class="url-text">{{ apiUrl }}</span>
+              <button class="edit-btn" @click="isEditing = true">Edit</button>
+            </div>
+            <div v-else class="url-input-row">
+              <input v-model="newApiUrl" type="text" placeholder="https://script.google.com/..." class="glass-input" />
+              <button class="save-btn" @click="saveApiUrl"><Icon name="check" size="20" /></button>
+              <button class="cancel-btn" @click="isEditing = false">X</button>
+            </div>
+            <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
+              Running custom override • Tap to reset
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Main Cards Stack -->
-      <div class="cards-stack">
-        
-        <!-- 🌐 Unified Network Dashboard -->
-        <section class="glass-panel top-card">
-            <header class="card-header">
-                <div class="icon-box">
-                    <Icon name="plug" size="24" />
-                </div>
-                <div class="header-info">
-                    <h2 class="card-title">Network & API</h2>
-                    <p class="card-subtitle">Connection status and configuration</p>
-                </div>
-                <div class="status-pill" :class="apiStatus">
-                    <div class="pulse-dot"></div>
-                    {{ apiStatusObject.text }}
-                </div>
-            </header>
-
-            <div class="card-body">
-                <div class="network-stats">
-                    <div class="stat-block">
-                        <span class="label">Latency</span>
-                        <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="label">Backend</span>
-                        <span class="value">v{{ pingData?.version || '0.0' }}</span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="label">Environment</span>
-                        <span class="value">{{ hasLocalOverride ? 'Custom' : 'Production' }}</span>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                 <div class="field-group">
-                    <div class="flex-between">
-                        <label class="field-label">API Endpoint</label>
-                        <button v-if="!isEditing" @click="isEditing = true" class="text-link">Change URL</button>
-                        <button v-else @click="isEditing = false" class="text-link">Cancel</button>
-                    </div>
-
-                    <div v-if="!isEditing" class="endpoint-display">
-                        <div class="url-text">{{ apiUrl }}</div>
-                        <a v-if="editorUrl" :href="editorUrl" target="_blank" class="icon-link" title="Open GAS Editor">
-                            <Icon name="spreadsheet" size="18" />
-                        </a>
-                    </div>
-
-                    <div v-else class="input-row">
-                        <input 
-                            v-model="newApiUrl"
-                            type="url" 
-                            placeholder="https://script.google.com/..."
-                            class="text-input"
-                        />
-                        <button class="save-btn" @click="saveApiUrl">
-                            <Icon name="check" size="20" />
-                        </button>
-                    </div>
-                    
-                    <div v-if="hasLocalOverride" class="override-alert">
-                        <Icon name="warning" size="16" />
-                        <span>Running on custom override URL</span>
-                        <button class="reset-link" @click="resetApiUrl">Reset</button>
-                    </div>
-                </div>
+      <!-- Section: Features -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="lightning" size="20" class="header-icon" />
+          <h3>Experimental Features</h3>
+        </div>
+        <div class="card-body">
+          <div class="toggle-row" @click="toggle('blitzMode')">
+            <div class="row-info">
+              <div class="row-label">Blitz Mode</div>
+              <div class="row-desc">Multi-tab profile navigation engine</div>
             </div>
-        </section>
-        
-        <!-- 🧪 Experimental Features -->
-        <section class="glass-panel">
-            <header class="card-header">
-                <div class="icon-box util-icon-box">
-                    <Icon name="lightning" size="24" />
-                </div>
-                <div class="header-info">
-                    <h2 class="card-title">Experimental</h2>
-                    <p class="card-subtitle">Developer features & betas</p>
-                </div>
-            </header>
-
-            <div class="card-body">
-                <div class="setting-row" @click="toggle('blitzMode')">
-                    <div class="setting-info">
-                        <span class="setting-label">Blitz Mode</span>
-                        <span class="setting-desc">Auto-opens links. <strong>Warning:</strong> May trigger repetitive browser confirmation popups.</span>
-                    </div>
-                    
-                    <div class="toggle-wrapper">
-                        <span class="toggle-state-text">{{ modules.blitzMode ? 'ON' : 'OFF' }}</span>
-                        <button 
-                            class="toggle-switch" 
-                            :class="{ active: modules.blitzMode }" 
-                            role="switch"
-                            :aria-checked="modules.blitzMode"
-                        >
-                            <div class="toggle-thumb"></div>
-                        </button>
-                    </div>
-                </div>
+            <div class="switch" :class="{ active: modules.blitzMode }">
+              <div class="handle"></div>
             </div>
-        </section>
+          </div>
+        </div>
+      </div>
 
-        <!-- 📦 System Modules -->
-        <section class="glass-panel bottom-card" v-if="pingData?.modules">
-            <header class="card-header">
-                <div class="icon-box">
-                    <Icon name="box" size="24" />
-                </div>
-                <div class="header-info">
-                    <h2 class="card-title">System Modules</h2>
-                    <p class="card-subtitle">Installed backend components</p>
-                </div>
-            </header>
-
-            <div class="specs-grid">
-                <div 
-                    v-for="(version, name) in pingData.modules" 
-                    :key="name"
-                    class="spec-item"
-                >
-                    <span class="spec-label">{{ name }}</span>
-                    <span class="spec-value">v{{ version }}</span>
-                </div>
+      <!-- Section: Modules -->
+      <div v-if="pingData?.modules" class="settings-card">
+        <div class="card-header">
+          <Icon name="box" size="20" class="header-icon" />
+          <h3>System Modules</h3>
+        </div>
+        <div class="card-body">
+          <div class="module-grid">
+            <div v-for="(ver, name) in pingData.modules" :key="name" class="module-item">
+              <span class="m-name">{{ name }}</span>
+              <span class="m-ver">v{{ ver }}</span>
             </div>
-        </section>
-        
-        <!-- 🛠️ Troubleshooting -->
-        <section class="glass-panel util-card">
-            <header class="card-header">
-                <div class="icon-box util-icon-box">
-                    <Icon name="undo" size="24" />
-                </div>
-                <div class="header-info">
-                    <h2 class="card-title">Troubleshooting</h2>
-                    <p class="card-subtitle">Local data management</p>
-                </div>
-            </header>
+          </div>
+        </div>
+      </div>
 
-            <div class="card-body">
-                <div class="util-content">
-                    <p class="util-desc">
-                        If the application is behaving unexpectedly or not syncing, you can clear the local cache. 
-                        This does not delete any data on the server.
-                    </p>
-                    <button class="reset-all-btn" @click="factoryReset">
-                        <span>Reset App Data</span>
-                    </button>
-                </div>
-            </div>
-        </section>
+      <!-- Section: Recovery -->
+      <div class="settings-card danger-zone">
+        <div class="card-header">
+          <Icon name="undo" size="20" class="header-icon" />
+          <h3>Troubleshooting</h3>
+        </div>
+        <div class="card-body">
+          <p class="trouble-text">If data sync is inconsistent, a local reset will re-initialize the app cache.</p>
+          <button class="reset-btn" @click="factoryReset">Reset Application Data</button>
+        </div>
+      </div>
+
+      <div class="footer-info">
+        <div class="brand">CLASH MANAGER V6.2</div>
+        <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.view-container { 
-    min-height: 100%;
-}
+.view-container { min-height: 100vh; }
+.settings-content { padding: 12px 0 120px; display: flex; flex-direction: column; gap: 16px; }
 
-.settings-content {
-    max-width: var(--sys-layout-max-width);
-    margin: 0 auto;
-    padding: 0 0 120px;
-    display: flex;
-    flex-direction: column;
-}
-
-.cards-stack {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-l);
-}
-
-.glass-panel {
-    background: var(--sys-surface-glass);
-    backdrop-filter: var(--sys-surface-glass-blur);
-    -webkit-backdrop-filter: var(--sys-surface-glass-blur);
-    border: 1px solid var(--sys-surface-glass-border);
-    border-radius: var(--shape-corner-l);
-    overflow: hidden;
-    box-shadow: var(--sys-elevation-2);
-    transition: transform 0.4s var(--sys-motion-spring);
-    animation: fadeSlideIn 0.6s backwards;
+.settings-card {
+  background: var(--sys-color-surface-container);
+  border-radius: 24px;
+  border: 1px solid var(--sys-surface-glass-border);
+  overflow: hidden;
+  animation: card-bloom 0.4s var(--sys-motion-spring) backwards;
 }
 
 .card-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-m);
-    padding: var(--spacing-l);
-    background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
+.card-header h3 { margin: 0; font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); }
+.header-icon { color: var(--sys-color-primary); }
 
-.icon-box {
-    width: 48px; height: 48px;
-    border-radius: 16px;
-    background: var(--sys-color-surface-container-high);
-    color: var(--sys-color-primary);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
-}
+.card-body { padding: 20px; }
 
-.header-info { flex: 1; }
+.network-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-box {
+  background: var(--sys-color-surface-container-high);
+  padding: 12px; border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.stat-box .label { font-size: 10px; font-weight: 800; opacity: 0.6; text-transform: uppercase; }
+.stat-box .value { font-size: 15px; font-weight: 900; font-family: var(--sys-font-family-mono); color: var(--sys-color-primary); }
 
-.card-title {
-    margin: 0;
-    font-size: var(--font-size-l);
-    font-weight: var(--font-weight-heavy);
-    color: var(--sys-color-on-surface);
+.url-manager .field-label { font-size: 10px; font-weight: 800; opacity: 0.5; margin-bottom: 8px; }
+.url-readout {
+  background: var(--sys-color-surface-container-highest);
+  padding: 10px 14px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.card-subtitle {
-    margin: 4px 0 0;
-    font-size: var(--font-size-s);
-    color: var(--sys-color-outline);
-    font-weight: var(--font-weight-medium);
-}
+.url-text { font-family: var(--sys-font-family-mono); font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit-btn { background: none; border: none; color: var(--sys-color-primary); font-weight: 800; font-size: 12px; cursor: pointer; }
 
-.status-pill {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 12px;
-    border-radius: var(--shape-corner-full);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: var(--sys-color-surface-container);
-    color: var(--sys-color-outline);
-}
-.pulse-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 8px currentColor;
-}
-.status-pill.online { color: var(--sys-color-success); background: rgba(var(--sys-rgb-success), 0.1); }
-.status-pill.offline { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
-.status-pill.unconfigured { color: var(--sys-color-error); background: rgba(var(--sys-rgb-error), 0.1); }
+.url-input-row { display: flex; gap: 8px; }
+.glass-input { flex: 1; height: 40px; background: white; border: 1.5px solid var(--sys-color-primary); border-radius: 10px; padding: 0 12px; font-family: var(--sys-font-family-mono); font-size: 13px; }
+.save-btn { width: 40px; border-radius: 10px; background: var(--sys-color-primary); color: white; border: none; }
+.cancel-btn { width: 40px; border-radius: 10px; background: var(--sys-color-surface-container-highest); border: none; font-weight: 800; }
 
-.card-body { padding: var(--spacing-l); }
+.override-pill { margin-top: 10px; padding: 8px; border-radius: 8px; background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); font-size: 11px; font-weight: 800; text-align: center; cursor: pointer; }
 
-.network-stats {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-m);
-    margin-bottom: var(--spacing-l);
-}
-.stat-block {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: var(--sys-color-surface-container);
-    padding: var(--spacing-m);
-    border-radius: var(--shape-corner-m);
-}
-.stat-block .label { font-size: var(--font-size-xs); text-transform: uppercase; color: var(--sys-color-outline); margin-bottom: 4px; font-weight: 700; }
-.stat-block .value { font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
-.stat-block .value small { font-size: 0.6em; margin-left: 2px; opacity: 0.7; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.row-label { font-weight: 800; font-size: 15px; color: var(--sys-color-on-surface); }
+.row-desc { font-size: 13px; opacity: 0.6; }
 
-.divider { height: 1px; background: var(--sys-color-outline-variant); opacity: 0.2; margin-bottom: var(--spacing-l); }
+.switch { width: 44px; height: 24px; background: var(--sys-color-surface-container-highest); border-radius: 12px; position: relative; transition: 0.3s; border: 1.5px solid rgba(0,0,0,0.1); }
+.switch.active { background: var(--sys-color-primary); }
+.switch .handle { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; background: white; border-radius: 50%; transition: 0.3s; }
+.switch.active .handle { left: calc(100% - 19px); }
 
-.field-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
-.flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.field-label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
-    color: var(--sys-color-outline);
-    letter-spacing: 0.05em;
-}
-.text-link {
-    background: none; border: none; color: var(--sys-color-primary);
-    font-weight: 600; font-size: var(--font-size-s); cursor: pointer;
-}
+.module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; }
+.module-item { background: var(--sys-color-surface-container-high); padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.m-name { font-size: 10px; font-weight: 800; opacity: 0.5; text-transform: uppercase; }
+.m-ver { font-size: 14px; font-weight: 700; font-family: var(--sys-font-family-mono); color: var(--sys-color-primary); }
 
-.endpoint-display {
-    display: flex; align-items: center; gap: var(--spacing-s);
-    background: var(--sys-color-surface-container-high);
-    padding: 12px;
-    border-radius: var(--shape-corner-m);
-}
-.url-text {
-    flex: 1;
-    font-family: var(--sys-font-family-mono);
-    font-size: 13px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    color: var(--sys-color-on-surface-variant);
-    opacity: 0.8;
-}
+.danger-zone { border-color: rgba(var(--sys-color-error-rgb), 0.2); }
+.trouble-text { font-size: 13px; opacity: 0.6; line-height: 1.5; margin-bottom: 16px; }
+.reset-btn { width: 100%; height: 44px; border-radius: 12px; background: var(--sys-color-surface-container-highest); border: 1.5px solid rgba(0,0,0,0.05); font-weight: 800; font-size: 14px; color: var(--sys-color-on-surface); cursor: pointer; }
 
-.input-row { display: flex; gap: var(--spacing-s); }
-.text-input {
-    flex: 1;
-    background: var(--sys-color-surface-container-high);
-    border: 2px solid var(--sys-color-primary);
-    padding: 10px 16px;
-    border-radius: var(--shape-corner-m);
-    color: var(--sys-color-on-surface);
-    font-size: var(--font-size-m);
-    font-family: var(--sys-font-family-mono);
+.install-banner {
+  background: linear-gradient(135deg, var(--sys-color-primary), #6750a4);
+  color: white; border-radius: 24px; padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer;
+  box-shadow: 0 10px 25px rgba(var(--sys-color-primary-rgb), 0.3);
 }
-.save-btn {
-    width: 46px; border-radius: var(--shape-corner-m);
-    background: var(--sys-color-primary); color: white; border: none;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-}
+.ib-text { flex: 1; }
+.ib-title { font-weight: 900; font-size: 16px; letter-spacing: -0.01em; }
+.ib-desc { font-size: 13px; opacity: 0.8; }
 
-.override-alert {
-    display: flex; align-items: center; gap: 8px;
-    font-size: var(--font-size-s); color: var(--sys-color-tertiary);
-    background: var(--sys-color-tertiary-container);
-    padding: 8px 12px; border-radius: var(--shape-corner-s);
-    margin-top: 8px;
-}
-
-.setting-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 0;
-    cursor: pointer;
-}
-.setting-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.setting-label { font-weight: 700; font-size: 15px; color: var(--sys-color-on-surface); }
-.setting-desc { font-size: 13px; color: var(--sys-color-outline); line-height: 1.4; padding-right: 16px; }
-
-.toggle-switch {
-    width: 52px; height: 32px;
-    border-radius: 99px;
-    background: var(--sys-color-surface-container-highest);
-    border: 2px solid var(--sys-color-outline);
-    position: relative; cursor: pointer;
-    transition: all 0.2s var(--sys-motion-spring);
-}
-.toggle-switch.active {
-    background: var(--sys-color-primary);
-    border-color: var(--sys-color-primary);
-}
-.toggle-thumb {
-    width: 20px; height: 20px;
-    background: var(--sys-color-outline);
-    border-radius: 50%;
-    position: absolute; top: 4px; left: 4px;
-    transition: all 0.2s var(--sys-motion-spring);
-}
-.toggle-switch.active .toggle-thumb {
-    transform: translateX(20px);
-    background: var(--sys-color-on-primary);
-}
-
-.specs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1px;
-    background: rgba(255,255,255,0.05);
-}
-
-.spec-item {
-    background: var(--sys-color-surface-container-low);
-    padding: 16px;
-    display: flex; flex-direction: column; gap: 4px;
-}
-.spec-label { font-size: 11px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; }
-.spec-value { font-size: 15px; font-weight: 700; color: var(--sys-color-primary); font-family: var(--sys-font-family-mono); }
-
-.util-card { border-color: rgba(var(--sys-color-outline-variant), 0.3); }
-.util-desc { font-size: 13px; color: var(--sys-color-on-surface-variant); line-height: 1.5; margin-bottom: 16px; }
-.reset-all-btn {
-    width: 100%; padding: 12px 24px; border-radius: var(--shape-corner-full);
-    background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface);
-    border: 1px solid var(--sys-color-outline-variant); font-weight: 700; cursor: pointer;
-}
-
-.app-info-hero { text-align: center; margin-bottom: var(--spacing-l); color: var(--sys-color-outline); display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.hero-title { margin: 0; font-size: var(--font-size-l); font-weight: 800; color: var(--sys-color-on-surface); }
-.hero-ver { margin: 0; font-size: var(--font-size-s); font-family: var(--sys-font-family-mono); opacity: 0.6; }
-
-.install-banner { background: linear-gradient(135deg, var(--sys-color-primary) 0%, var(--sys-color-tertiary) 100%); border-radius: var(--shape-corner-l); padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; color: white; cursor: pointer; }
-.github-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--sys-color-surface-container-high); border-radius: var(--shape-corner-full); color: var(--sys-color-on-surface); text-decoration: none; font-weight: 600; font-size: 14px; margin-top: 16px; }
+.footer-info { padding: 40px 0; text-align: center; }
+.brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; }
+.copy { font-size: 10px; opacity: 0.2; margin-top: 4px; }
 </style>
-
