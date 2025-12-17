@@ -43,7 +43,7 @@ function navigate(path: string) {
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   padding: 6px; 
-  border-radius: 100px;
+  border-radius: var(--shape-corner-full);
   display: flex; gap: 4px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.2);
   z-index: 500;
@@ -52,9 +52,9 @@ function navigate(path: string) {
 .dock-item {
   position: relative;
   padding: 10px 20px;
-  border-radius: 100px;
+  border-radius: var(--shape-corner-full);
   display: flex; align-items: center; gap: 8px;
-  font-size: 14px; font-weight: 700;
+  font-size: 14px; font-weight: 750;
   color: var(--sys-color-on-surface);
   cursor: pointer;
   transition: all 0.3s var(--sys-motion-spring);
@@ -67,7 +67,7 @@ function navigate(path: string) {
   position: absolute;
   inset: 0;
   background: var(--sys-color-primary);
-  border-radius: 100px;
+  border-radius: var(--shape-corner-full);
   z-index: -1;
   animation: slide-in 0.3s var(--sys-motion-spring);
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
