@@ -3,6 +3,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
 import { useInstallPrompt } from '../composables/useInstallPrompt'
+import { useModules } from '../composables/useModules'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import Icon from '../components/Icon.vue'
 
@@ -18,6 +19,7 @@ const {
 } = useApiState()
 
 const { isInstallable, install } = useInstallPrompt()
+const { modules, toggle } = useModules()
 
 onMounted(() => {
     checkApiStatus()
@@ -188,6 +190,35 @@ const editorUrl = computed(() => {
             </div>
         </section>
         
+        <!-- 🧪 Experimental Features -->
+        <section class="glass-panel">
+            <header class="card-header">
+                <div class="icon-box util-icon-box">
+                    <Icon name="lightning" size="24" />
+                </div>
+                <div class="header-info">
+                    <h2 class="card-title">Experimental</h2>
+                    <p class="card-subtitle">Developer features & betas</p>
+                </div>
+            </header>
+
+            <div class="card-body">
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Blitz Mode</span>
+                        <span class="setting-desc">Enable rapid-fire profile opening (Pop-ups required)</span>
+                    </div>
+                    <button 
+                        class="toggle-switch" 
+                        :class="{ active: modules.blitzMode }" 
+                        @click="toggle('blitzMode')"
+                    >
+                        <div class="toggle-thumb"></div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- 📦 System Modules (Tech Specs) -->
         <section class="glass-panel bottom-card" v-if="pingData?.modules">
             <header class="card-header">
@@ -416,6 +447,42 @@ const editorUrl = computed(() => {
     margin-left: auto; background: none; border: none;
     font-weight: 700; color: var(--sys-color-on-tertiary-container);
     cursor: pointer; text-decoration: underline;
+}
+
+/* --- SETTINGS ROW & TOGGLE --- */
+.setting-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0;
+}
+.setting-info { display: flex; flex-direction: column; gap: 4px; }
+.setting-label { font-weight: 700; font-size: 15px; color: var(--sys-color-on-surface); }
+.setting-desc { font-size: 13px; color: var(--sys-color-outline); }
+
+/* Toggle Switch */
+.toggle-switch {
+    width: 52px; height: 32px;
+    border-radius: 99px;
+    background: var(--sys-color-surface-container-highest);
+    border: 2px solid var(--sys-color-outline);
+    position: relative; cursor: pointer;
+    transition: all 0.2s var(--sys-motion-spring);
+    flex-shrink: 0;
+}
+.toggle-switch.active {
+    background: var(--sys-color-primary);
+    border-color: var(--sys-color-primary);
+}
+.toggle-thumb {
+    width: 20px; height: 20px;
+    background: var(--sys-color-outline);
+    border-radius: 50%;
+    position: absolute; top: 4px; left: 4px;
+    transition: all 0.2s var(--sys-motion-spring);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.toggle-switch.active .toggle-thumb {
+    transform: translateX(20px);
+    background: var(--sys-color-on-primary);
 }
 
 /* --- MODULES GRID (TECH SPECS) --- */
