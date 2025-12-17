@@ -188,8 +188,8 @@ function handleSortUpdate(val: string) {
 
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
-    <div v-else-if="loading && recruits.length === 0" class="list-container stagger-children">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" />
+    <div v-else-if="loading && recruits.length === 0" class="list-container">
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :style="{ '--i': i }" />
     </div>
     
     <EmptyState 
@@ -210,16 +210,17 @@ function handleSortUpdate(val: string) {
       v-else 
       name="list" 
       tag="div" 
-      class="list-container stagger-children"
+      class="list-container"
     >
       <RecruitCard
-        v-for="recruit in filteredRecruits"
+        v-for="(recruit, index) in filteredRecruits"
         :key="recruit.id"
         :id="`recruit-${recruit.id}`"
         :recruit="recruit"
         :expanded="expandedIds.has(recruit.id)"
         :selected="selectedSet.has(recruit.id)"
         :selection-mode="isSelectionMode"
+        :style="{ '--i': index }"
         @toggle-expand="toggleExpand(recruit.id)"
         @toggle-select="toggleSelect(recruit.id)"
       />
@@ -243,43 +244,16 @@ function handleSortUpdate(val: string) {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; }
+.list-container { padding-bottom: 32px; position: relative; perspective: 1000px; transform-style: preserve-3d; }
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
-  animation: fadeSlideIn 0.3s;
 }
 .sel-count { font-size: 20px; font-weight: 700; }
 .text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
-
-/* ✨ NATIVE LIST PHYSICS */
-.list-move {
-  transition: transform 0.5s var(--sys-motion-spring);
-}
-
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.4s var(--sys-motion-spring);
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(20px) scale(0.95);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: scale(0.9) translateX(30px);
-}
-
-.list-leave-active {
-  position: absolute;
-  width: 100%;
-  z-index: 0;
-}
 
 .btn-primary {
   display: flex; align-items: center; gap: 8px;
@@ -295,3 +269,4 @@ function handleSortUpdate(val: string) {
 }
 .btn-primary:active { transform: scale(0.95); }
 </style>
+
