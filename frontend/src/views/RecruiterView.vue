@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -47,7 +48,8 @@ const {
   toggleSelect, 
   selectAll, 
   clearSelection, 
-  handleAction 
+  handleAction,
+  handleBlitz
 } = useBatchQueue()
 
 const { 
@@ -223,7 +225,11 @@ function handleSelectAll() {
       :label="fabState.label"
       :action-href="fabState.actionHref"
       :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
+      :is-processing="fabState.isProcessing"
+      :is-blasting="fabState.isBlasting"
+      :selection-count="fabState.selectionCount"
       @action="handleAction"
+      @blitz="handleBlitz"
       @dismiss="dismissBulk"
     />
   </div>
