@@ -1,283 +1,249 @@
-
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { LeaderboardMember } from '../types'
-import Icon from './Icon.vue'
-import WarHistoryChart from './WarHistoryChart.vue'
+import { ref, computed, watch } from 'vue'
+import { useClanData } from '../composables/useClanData'
+import { useApiState } from '../composables/useApiState'
+import { useBatchQueue } from '../composables/useBatchQueue'
+import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 
-const props = defineProps<{
-  id: string
-  member: LeaderboardMember
-  rank?: number
-  expanded: boolean
-  selected: boolean
-  selectionMode: boolean
-}>()
+import ConsoleHeader from '../components/ConsoleHeader.vue'
+import MemberCard from '../components/MemberCard.vue'
+import FabIsland from '../components/FabIsland.vue'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
-const emit = defineEmits<{
-  'toggle': []
-  'toggle-select': []
-}>()
+const { pingData } = useApiState()
 
-const toneClass = computed(() => {
-  const score = props.member.s || 0
-  if (score >= 80) return 'tone-high'
-  if (score >= 50) return 'tone-mid'
-  return 'tone-low'
+const sheetUrl = computed(() => {
+  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
+  const gid = pingData.value.sheets['Leaderboard']
+  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-const role = computed(() => (props.member.d.role || '').toLowerCase())
+const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
+const members = computed(() => data.value?.lb || [])
+const loading = computed(() => !data.value && isRefreshing.value)
 
-const roleDisplay = computed(() => {
-  if (['leader', 'co-leader', 'coleader', 'elder', 'member'].includes(role.value)) {
-    if (role.value === 'coleader' || role.value === 'co-leader') return 'Co-Leader'
-    return role.value.charAt(0).toUpperCase() + role.value.slice(1)
+const searchQuery = ref('')
+const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen' | 'trend'>('score')
+
+const sortOptions = [
+  { label: 'Performance', value: 'score' },
+  { label: 'Momentum', value: 'trend' },
+  { label: 'War Participation', value: 'war_rate' },
+  { label: 'Daily Donations', value: 'donations_day' },
+  { label: 'Trophies', value: 'trophies' },
+  { label: 'Tenure', value: 'tenure' },
+  { label: 'Last Active', value: 'last_seen' },
+  { label: 'Name', value: 'name' }
+]
+
+const { 
+  selectedIds, 
+  fabState, 
+  isSelectionMode, 
+  toggleSelect, 
+  selectAll, 
+  clearSelection, 
+  handleAction,
+  handleBlitz
+} = useBatchQueue()
+
+const { 
+  expandedIds, 
+  toggleExpand, 
+  processDeepLink 
+} = useDeepLinkHandler('member-')
+
+const timeAgo = computed(() => {
+  if (!lastSyncTime.value) return ''
+  const ms = Date.now() - lastSyncTime.value
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  return `${hours}h ago`
+})
+
+const status = computed(() => {
+  if (syncError.value) return { type: 'error', text: 'Retry' } as const
+  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
+  if (members.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
+  return { type: 'ready', text: 'Empty' } as const
+})
+
+const statsBadge = computed(() => {
+  if (!members.value) return undefined
+  return {
+    label: 'Clan',
+    value: members.value.length.toString()
   }
-  return null
 })
 
-const roleBadgeClass = computed(() => {
-  if (role.value === 'leader') return 'role-leader'
-  if (role.value === 'co-leader' || role.value === 'coleader') return 'role-co-leader'
-  if (role.value === 'elder') return 'role-elder'
-  return 'role-member'
-})
+const selectedSet = computed(() => new Set(selectedIds.value))
 
-const displayRate = computed(() => {
-  const val = props.member.d.rate
-  if (!val) return '0%'
-  if (String(val).includes('%')) return val
-  const n = parseFloat(String(val))
-  if (!isNaN(n) && n <= 1) return Math.round(n * 100) + '%'
-  return val
-})
+function handleSelectAll() {
+  const ids = filteredMembers.value.map(i => i.id)
+  selectAll(ids)
+}
 
-const trend = computed(() => {
-  const rawDt = props.member.dt 
-  const currentRaw = props.member.r 
-  const dt = typeof rawDt === 'string' ? parseInt(rawDt) : rawDt
-  if (dt === undefined || dt === null || isNaN(dt) || dt === 0) return null
-  let percentVal = 0
-  if (currentRaw && currentRaw > 0) {
-    const prevScore = currentRaw - dt
-    if (prevScore > 0) {
-      percentVal = (dt / prevScore) * 100
+function handleSearchUpdate(val: string) {
+  searchQuery.value = val
+}
+
+function handleSortUpdate(val: string) {
+  if (sortOptions.some(opt => opt.value === val)) {
+    if (document.startViewTransition) {
+        document.startViewTransition(() => {
+            sortBy.value = val as typeof sortBy.value
+        })
+    } else {
+        sortBy.value = val as typeof sortBy.value
     }
   }
-  const displayVal = Math.abs(percentVal).toFixed(Math.abs(percentVal) < 10 ? 1 : 0).replace(/\.0$/, '') + '%'
-  return {
-    val: displayVal,
-    dir: dt > 0 ? 'up' : 'down'
+}
+
+function parseTimeAgo(val: string | null | undefined): number {
+  if (!val || val === '-' || val === 'Just now') return 0
+  const match = val.match(/^(\d+)([ymdh]) ago$/)
+  if (!match) return 99999999
+  const num = parseInt(match[1])
+  const unit = match[2]
+  switch(unit) {
+    case 'm': return num
+    case 'h': return num * 60
+    case 'd': return num * 1440
+    case 'y': return num * 525600
+    default: return num
   }
-})
+}
 
-import { useLongPress } from '../composables/useLongPress'
-import { useShare } from '../composables/useShare'
+function parseRate(val: string | number | null | undefined): number {
+  if (!val) return 0
+  const s = String(val)
+  return parseFloat(s.replace('%', '')) || 0
+}
 
-const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  if (navigator.vibrate) navigator.vibrate(50)
-  emit('toggle-select')
-})
-
-const { canShare, share } = useShare()
-
-function shareMember() {
-  share({
-    title: `Clash Manager: ${props.member.n}`,
-    text: `Check out ${props.member.n} (${props.member.d.role}) in our clan!`,
-    url: `https://royaleapi.com/player/${props.member.id}`
+const filteredMembers = computed(() => {
+  let result = [...members.value]
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(m => m.n.toLowerCase().includes(query) || m.id.toLowerCase().includes(query))
+  }
+  
+  result.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'score': return (b.s || 0) - (a.s || 0)
+      case 'trend': return (b.dt || 0) - (a.dt || 0)
+      case 'trophies': return (b.t || 0) - (a.t || 0)
+      case 'name': return a.n.localeCompare(b.n)
+      case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
+      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
+      case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
+      case 'last_seen': return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
+      default: return 0
+    }
   })
-}
+  return result
+})
 
-function handleClick(e: Event) {
-  if (isLongPress.value) {
-    isLongPress.value = false
-    return
-  }
-  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
-  if ((e.target as HTMLElement).closest('.chevron-btn')) {
-    emit('toggle')
-    return
-  }
-  if (props.selectionMode) {
-    emit('toggle-select')
-  } else {
-    emit('toggle')
-  }
-}
+watch(members, (newVal) => {
+    if (newVal.length > 0) processDeepLink(newVal)
+}, { immediate: true })
+
 </script>
 
 <template>
-  <div 
-    class="card squish-interaction"
-    :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleClick"
-    @mousedown="startPress"
-    @touchstart="startPress"
-    @mouseup="cancelPress"
-    @touchend="cancelPress"
-    @touchmove="cancelPress"
-    @mouseleave="cancelPress"
-    @contextmenu.prevent
-  >
-    <div class="selection-indicator"></div>
-
-    <div class="card-header">
-      <div class="info-stack">
-        <span class="tenure-badge">{{ member.d.days }}d</span>
-        <span class="player-name">{{ member.n }}</span>
-        <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
-        <span class="meta-val trophy-val">
-          <Icon name="trophy" size="12" style="color:#fbbf24;" />
-          <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
-        </span>
-      </div>
-
-      <div class="action-area">
-        <div class="stat-pod" :class="[toneClass, { 'has-trend': trend }]">
-          <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="trend-ticker" :class="trend.dir">
-            <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
-            <span class="trend-val">{{ trend.val }}</span>
-          </div>
+  <div class="view-container">
+    <ConsoleHeader
+      title="Leaderboard"
+      :status="status"
+      :show-search="!isSelectionMode"
+      :sheet-url="sheetUrl"
+      :stats="statsBadge"
+      :sort-options="sortOptions"
+      @update:search="handleSearchUpdate"
+      @update:sort="handleSortUpdate"
+      @refresh="refresh"
+    >
+      <template #extra>
+        <div v-if="isSelectionMode" class="selection-bar">
+           <div class="sel-count">{{ selectedIds.length }} Selected</div>
+           <div class="sel-actions">
+             <span class="text-btn primary" @click="handleSelectAll">All</span>
+             <span class="text-btn" @click="clearSelection">None</span>
+             <span class="text-btn danger" @click="clearSelection">Done</span>
+           </div>
         </div>
-        <div class="chevron-btn">
-          <Icon name="chevron_down" size="18" />
-        </div>
-      </div>
+      </template>
+    </ConsoleHeader>
+    
+    <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
+    
+    <div v-else-if="loading && members.length === 0" class="list-container gpu-contain">
+      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
+    
+    <EmptyState 
+      v-else-if="!loading && filteredMembers.length === 0"
+      icon="leaf"
+      message="No members found"
+    />
+    
+    <TransitionGroup 
+      v-else 
+      name="list" 
+      tag="div" 
+      class="list-container gpu-contain"
+    >
+      <MemberCard
+        v-for="(member, index) in filteredMembers"
+        :key="member.id"
+        :id="`member-${member.id}`"
+        :member="member"
+        :expanded="expandedIds.has(member.id)"
+        :selected="selectedSet.has(member.id)"
+        :selection-mode="isSelectionMode"
+        :style="{ '--i': index }"
+        @toggle="toggleExpand(member.id)"
+        @toggle-select="toggleSelect(member.id)"
+      />
+    </TransitionGroup>
 
-    <div class="card-body">
-      <div class="body-inner">
-        <div class="stats-row">
-          <div class="stat-cell">
-            <span class="sc-label">Avg/Day</span>
-            <span class="sc-val">{{ member.d.avg }}</span>
-          </div>
-          <div class="stat-cell border-l">
-            <span class="sc-label">War Rate</span>
-            <span class="sc-val">{{ displayRate }}</span>
-          </div>
-          <div class="stat-cell border-l">
-            <span class="sc-label">Last Seen</span>
-            <span class="sc-val">{{ member.d.seen }}</span>
-          </div>
-        </div>
-        <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" />
-        <div class="actions-toolbar">
-          <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action secondary compact">
-            <Icon name="analytics" size="14" />
-            <span>RoyaleAPI</span>
-          </a>
-          <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary compact">
-            <Icon name="crown" size="14" />
-            <span>Open Game</span>
-          </a>
-          <button v-if="canShare" class="btn-icon-action" @click.stop="shareMember">
-            <Icon name="share" size="16" />
-          </button>
-        </div>
-      </div>
-    </div>
+    <FabIsland
+      :visible="fabState.visible"
+      :label="fabState.label"
+      :action-href="fabState.actionHref"
+      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Clear'"
+      :is-processing="fabState.isProcessing"
+      :is-blasting="fabState.isBlasting"
+      :selection-count="fabState.selectionCount"
+      :blitz-enabled="fabState.blitzEnabled"
+      @action="handleAction"
+      @blitz="handleBlitz"
+      @dismiss="clearSelection"
+    />
   </div>
 </template>
 
 <style scoped>
-.card {
-  background: var(--sys-color-surface-container);
-  border-radius: 16px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  position: relative; overflow: hidden;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  
-  /* Removed backdrop-filter to save memory */
-  will-change: auto; 
+.view-container { min-height: 100%; padding-bottom: 24px; }
+.list-container { padding-bottom: 32px; position: relative; }
+
+/* Flatten the entire list into one GPU layer to save 30-50MB of RAM */
+.gpu-contain {
+  transform: translateZ(0);
+  will-change: transform;
+  contain: layout paint;
 }
 
-.card.expanded { 
-  background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15), 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.1) inset;
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
-  z-index: 10;
-  margin: 12px 0;
-  transform: scale(1.02);
-  will-change: transform; /* Promote to GPU only when expanded */
-  content-visibility: visible; /* Ensure content is visible when expanded regardless of position */
+.selection-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
-
-.card.selected { background: var(--sys-color-secondary-container); }
-.selection-indicator {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--sys-color-primary); opacity: 0; transition: opacity 0.2s;
-}
-.card.selected .selection-indicator { opacity: 1; }
-
-.card-header { display: flex; justify-content: space-between; align-items: center; height: 40px; }
-.info-stack { display: grid; grid-template-columns: max-content 1fr; grid-template-rows: 1fr 1fr; gap: 4px 8px; align-items: center; flex: 1; min-width: 0; }
-.player-name { font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
-.trophy-val { display: flex; align-items: center; }
-.action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
-
-.tenure-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 20px; width: 75px; border-radius: 6px;
-  background: var(--sys-color-surface-container-highest); color: var(--sys-color-outline);
-  font-size: 11px; font-weight: 700; font-family: var(--sys-font-family-mono);
-}
-
-.role-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 75px; height: 20px; border-radius: 6px;
-  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
-  border: 1px solid transparent; flex-shrink: 0; box-sizing: border-box;
-}
-.role-member { color: var(--sys-color-outline); border-color: var(--sys-color-outline-variant); }
-.role-elder { background: rgba(var(--sys-color-primary-rgb), 0.08); color: var(--sys-color-primary); border-color: var(--sys-color-primary); }
-.role-co-leader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border-color: var(--sys-color-primary); }
-.role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); border-color: var(--sys-color-primary); font-weight: 800; }
-
-.stat-pod {
-  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 45px; height: 45px; border-radius: 12px;
-  background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface-variant);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.1);
-  border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;
-}
-.stat-score { font-weight: 800; font-size: 16px; line-height: 1; font-family: var(--sys-font-family-mono); }
-.stat-pod.has-trend .stat-score { padding-bottom: 9px; }
-.trend-ticker { position: absolute; bottom: 2px; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 1px; font-size: 9px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-.trend-ticker.up { color: #b9f6ca; }
-.trend-ticker.down { color: #ffdad6; }
-.stat-pod.tone-high { background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary)); color: var(--sys-color-on-primary); border: none; }
-.stat-pod.tone-mid { background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); color: var(--sys-color-on-secondary); border: none; }
-
-.chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
-.card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
-
-.card-body {
-  display: grid; grid-template-rows: 0fr;
-  transition: grid-template-rows 0.4s var(--sys-motion-spring), margin-top 0.4s var(--sys-motion-spring);
-  margin-top: 0; padding-top: 0; pointer-events: none;
-}
-.body-inner { min-height: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
-.card.expanded .card-body { grid-template-rows: 1fr; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); pointer-events: auto; }
-.card.expanded .body-inner { opacity: 1; transition-delay: 0.1s; }
-
-.stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 4px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.stat-cell.border-l { border-left: 1px solid rgba(255,255,255,0.05); }
-.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; margin-bottom: 2px; }
-.sc-val { font-size: 14px; font-weight: 700; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
-
-.actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
-.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; }
-.btn-action.primary { background: linear-gradient(135deg, var(--sys-color-primary), #00508a); color: white; }
-.btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
-.btn-icon-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--sys-color-primary); border-radius: 10px; cursor: pointer; }
-.trophy-text { display: inline-block; margin-left: 4px; }
+.sel-count { font-size: 20px; font-weight: 700; }
+.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.text-btn.primary { color: var(--sys-color-primary); }
+.text-btn.danger { color: var(--sys-color-error); }
 </style>
