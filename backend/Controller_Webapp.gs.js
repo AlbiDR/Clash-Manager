@@ -4,11 +4,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.1.2
+ * 🏷️ VERSION: 6.1.3
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.1.2';
+const VER_CONTROLLER_WEBAPP = '6.1.3';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -80,17 +80,21 @@ function markRecruitsAsInvitedBulk(ids) {
     idsSet.forEach(tag => {
       if (tagMap.has(tag)) {
         const idx = tagMap.get(tag);
-        invitedValues[idx][0] = true;
+        invitedValues[idx][0] = true; // Set Checkbox to TRUE
         updatesCount++;
       }
     });
 
     if (updatesCount > 0) {
       invitedRange.setValues(invitedValues);
-      console.log(`🌐 API Action: Bulk dismissed ${updatesCount} recruits.`);
       
-      // 🔄 FORCE SYNC: Regenerate cache so subsequent reads reflect the dismissal
-      console.log("🌐 API Action: Refreshing read cache...");
+      // 🚨 CRITICAL FIX: Force Google Sheets to write changes to disk NOW.
+      // Without this, the next line (refreshWebPayload) might read the OLD data from the sheet.
+      SpreadsheetApp.flush();
+      
+      console.log(`🌐 API Action: Bulk dismissed ${updatesCount} recruits. Flush complete.`);
+      
+      // 🔄 SYNC CACHE: Immediately regenerate the cached JSON
       refreshWebPayload();
     }
 
@@ -115,7 +119,6 @@ function refreshWebPayload() {
       const data = {
         format: 'matrix',
         schema: {
-          // 'dt' = Delta Trend (Raw Score Change), 'r' = Raw Score
           lb: ['id', 'n', 't', 's', 'role', 'days', 'avg', 'seen', 'rate', 'hist', 'dt', 'r'],
           hh: ['id', 'n', 't', 's', 'don', 'war', 'ago', 'cards']
         },
@@ -161,7 +164,8 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
 
   if (lastRow < startRow) return [];
 
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 20);
+  // Reading a generous range to ensure we don't miss columns
+  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 15);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
@@ -179,18 +183,28 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
       const id = tagRaw.replace('#', '').trim();
       if (id.length < 3) return null;
 
+      // 🚨 AIRTIGHT FILTER: Check "Invited" status (Column Index 1)
+      if (isHeadhunter) {
+        const rawInvited = r[SCHEMA.INVITED];
+        
+        // Broad truthy check: handles boolean true, "TRUE", "checked", 1, etc.
+        const isActuallyInvited = (
+           rawInvited === true || 
+           String(rawInvited).toUpperCase() === 'TRUE' ||
+           String(rawInvited) === '1'
+        );
+        
+        // IF INVITED -> STRIP FROM PAYLOAD IMMEDIATELY
+        if (isActuallyInvited) {
+          return null;
+        }
+      }
+
       const name = sanitizeStr(r[SCHEMA.NAME]).replace(/^=HYPERLINK.*"(.*)".*$/, '$1');
       const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
       const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
 
       if (isHeadhunter) {
-        // 🛡️ ROBUST CHECK: Filter out invited (Checked) recruits
-        // Handles boolean true, string 'TRUE', 'true', etc.
-        const invitedVal = r[SCHEMA.INVITED];
-        const isInvited = invitedVal === true || String(invitedVal).toUpperCase() === 'TRUE';
-        
-        if (isInvited) return null;
-        
         const fd = r[SCHEMA.FOUND_DATE];
         const ago = (fd instanceof Date && !isNaN(fd.getTime())) ? fd.toISOString() : '';
         const don = sanitizeNum(r[SCHEMA.DONATIONS]);
@@ -222,8 +236,8 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
         const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || '-');
         const hist = sanitizeStr(r[SCHEMA.HISTORY]);
-        const trend = sanitizeNum(r[SCHEMA.TREND]); // Raw Score Delta
-        const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]); // Raw Score Total
+        const trend = sanitizeNum(r[SCHEMA.TREND]); 
+        const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]); 
 
         return [id, name, trophies, score, role, days, avg, seen, rateDisplay, hist, trend, raw];
       }
@@ -232,6 +246,6 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
       console.warn(`Row extraction error in ${sheetName}: ${err.message}`);
       return null;
     }
-  }).filter(Boolean);
+  }).filter(Boolean); // Nuke all nulls (Invited recruits)
 }
 
