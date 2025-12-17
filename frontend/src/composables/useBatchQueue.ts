@@ -113,22 +113,39 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }, 50)
   }
 
+  /**
+   * 💉 DOM INJECTION ENGINE (Solution Alpha)
+   * Creates a disposable iframe to trigger the Deep Link intent.
+   * This bypasses the browser's "Trusted Event" check for window.open().
+   */
+  function fireDeepLink(url: string) {
+    const iframe = document.createElement('iframe')
+    iframe.style.display = 'none'
+    iframe.src = url
+    document.body.appendChild(iframe)
+    
+    // Garbage collection: Remove element after OS captures intent
+    setTimeout(() => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe)
+      }
+    }, 1500)
+  }
+
   // ⚡ BLITZ MODE: Automated Opener
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return
     
-    // Warn user immediately
-    console.log("⚡ Starting Blitz Mode. Ensure browser 'Pop-ups and redirects' are allowed.")
+    console.log("⚡ Starting Blitz Mode (DOM Injection Protocol)")
     
     isBlasting.value = true
     const targets = [...selectedIds.value]
     let index = 0
-    let failureCount = 0
 
-    const intervalId = setInterval(() => {
-      // End condition
-      if (index >= targets.length) {
-        clearInterval(intervalId)
+    // Recursive execution loop
+    const next = () => {
+      // Stop condition
+      if (index >= targets.length || !isBlasting.value) {
         isBlasting.value = false
         clearSelection()
         return
@@ -137,23 +154,22 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       const id = targets[index]
       const url = `${baseScheme}${id}`
       
-      // Attempt Open
-      const win = window.open(url, '_blank')
-      
-      // 🛡️ Detection: If browser blocks popup, window.open *might* return null.
-      // Note: This is not 100% reliable on mobile, but catches hard blocks.
-      if (!win) {
-        failureCount++
-        if (failureCount > 2) {
-          clearInterval(intervalId)
-          isBlasting.value = false
-          error('Pop-ups blocked! Please allow "Pop-ups and redirects" in Site Settings.')
-          return
-        }
+      try {
+        fireDeepLink(url)
+      } catch (e) {
+        console.error("Deep link injection failed", e)
       }
 
       index++
-    }, 750) // 750ms Delay to ensure reliable loading
+      
+      // Schedule next shot
+      // CRITICAL: 750ms is the specific delay required to ensure the game client 
+      // loads the profile content correctly. Opening faster results in empty profiles.
+      setTimeout(next, throttleMs)
+    }
+
+    // Fire first shot immediately
+    next()
   }
 
   return {
