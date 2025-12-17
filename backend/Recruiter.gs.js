@@ -4,19 +4,19 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * ⚙️ LOGIC (V6.2.4): 
+ * ⚙️ LOGIC (V6.2.5): 
  *    1. Parallel Discovery: Fetches multiple tournament keywords simultaneously.
- *    2. Funnel Logging: Added detailed console output for execution visibility.
+ *    2. Replacement Intel: Logs exactly how many players were added/displaced.
  *    3. High Volume Ready: 
  *       - Blacklist uses O(1) Map lookup.
  *       - Self-Cleaning: Marked "Invited" rows are purged from sheet.
  *    4. Coherent Storage: Blacklist sorted by SCORE (DESC) for benchmarking.
  *    5. Top-3 Benchmark: Anchors potential scores against historical elite.
- * 🏷️ VERSION: 6.2.4
+ * 🏷️ VERSION: 6.2.5
  * ============================================================================
  */
 
-const VER_RECRUITER = '6.2.4';
+const VER_RECRUITER = '6.2.5';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -37,11 +37,11 @@ function scoutRecruits() {
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   const { ids: blacklistSet, highScore: discardedHighScore } = updateAndGetBlacklist(sheet);
 
-  // 2. Load existing tracking data (Those NOT yet invited)
+  // 2. Load existing tracking data
   const existing = loadRecruitDatabase(sheet);
   console.log(`📂 Database: Loaded ${existing.size} existing candidates from sheet.`);
 
-  // ⚡ OPTIMIZATION: "Cheap" Clanless Check for survivors
+  // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
     const profiles = Utils.fetchRoyaleAPI(tagsToCheck.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`));
@@ -55,31 +55,37 @@ function scoutRecruits() {
     if (joinedCount > 0) console.log(`🧹 Clean-up: Removed ${joinedCount} players who joined other clans.`);
   }
 
-  let activePoolCount = existing.size;
-
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
-  const minTrophies = Math.max(4000, Math.round(activePoolCount < target ? avgTrophies * 0.75 : avgTrophies));
+  const minTrophies = Math.max(4000, Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies));
   console.log(`🎯 Strategy: Seeking players with >${minTrophies} Trophies to fill pool.`);
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
-  console.log(`🔍 Scan Result: Found ${scanned.length} new potential recruits.`);
+  
+  // 5. Intelligent Merge
+  let newArrivals = 0;
+  let updatedExisting = 0;
 
-  // 5. Merge
   scanned.forEach(c => {
     if (existing.has(c.tag)) {
       c.foundDate = existing.get(c.tag).foundDate;
+      updatedExisting++;
+    } else {
+      newArrivals++;
     }
     existing.set(c.tag, c);
   });
+
+  console.log(`🔍 Scan Result: Merged ${newArrivals} new arrivals and ${updatedExisting} status updates.`);
 
   // 6. Final Pool Scoring & Capping
   const rawPool = Array.from(existing.values()).sort((a, b) => b.rawScore - a.rawScore);
   const finalPool = rawPool.slice(0, CONFIG.HEADHUNTER.TARGET);
 
   if (rawPool.length > CONFIG.HEADHUNTER.TARGET) {
-    console.log(`✂️ Capping: Truncating pool from ${rawPool.length} to ${CONFIG.HEADHUNTER.TARGET} (Max Capacity).`);
+    const displacedCount = rawPool.length - CONFIG.HEADHUNTER.TARGET;
+    console.log(`✂️ Capping: Kept Top 50. ${displacedCount} low-score survivors were displaced by better talent.`);
   }
 
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
