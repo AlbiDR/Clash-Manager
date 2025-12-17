@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Icon from './Icon.vue'
 
 defineProps<{
@@ -18,87 +18,57 @@ const emit = defineEmits<{
 }>()
 
 const sortValue = ref('score')
+const isScrolled = ref(false)
+
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 20
+}
+
+onMounted(() => window.addEventListener('scroll', handleScroll))
+onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 </script>
 
 <template>
-  <div class="header-wrapper">
+  <div class="header-wrapper" :class="{ 'is-scrolled': isScrolled }">
     <div class="console-glass">
+      <!-- Decorative Background Bloom -->
+      <div class="bloom-effect"></div>
       
-      <!-- Top Row: Sheets Btn, Title, Stats, Status -->
       <div class="header-row top">
         <div class="left-cluster">
-            <!-- 1. Sheets Button (Leftmost) -->
-            <a 
-              v-if="sheetUrl" 
-              :href="sheetUrl" 
-              target="_blank" 
-              class="icon-button"
-              title="Open in Sheets"
-            >
+            <a v-if="sheetUrl" :href="sheetUrl" target="_blank" class="icon-button" title="Open in Sheets">
                <Icon name="spreadsheet" size="18" />
             </a>
-
-            <!-- 2. Title -->
             <h1 class="view-title">{{ title }}</h1>
-            
-            <!-- 3. Stats -->
             <div v-if="stats" class="stats-pill">
-              <span class="sp-label">{{ stats.label }}</span>
-              <span class="sp-separator"></span>
               <span class="sp-value">{{ stats.value }}</span>
+              <span class="sp-label">{{ stats.label }}</span>
             </div>
         </div>
         
-        <button 
-          v-if="status"
-          class="status-pill" 
-          :class="status.type"
-          @click="emit('refresh')"
-        >
+        <button v-if="status" class="status-pill" :class="status.type" @click="emit('refresh')">
           <div v-if="status.type === 'loading'" class="spinner"></div>
           <div v-else class="status-dot"></div>
           <span class="status-text">{{ status.text }}</span>
         </button>
       </div>
 
-      <!-- Bottom Row: Search & Sort -->
       <div v-if="showSearch" class="header-row bottom">
         <div class="search-container">
           <Icon name="search" class="input-icon" size="20" />
-          <input 
-            type="text" 
-            class="glass-input" 
-            placeholder="Search..." 
-            autocomplete="off"
-            @input="e => emit('update:search', (e.target as HTMLInputElement).value)"
-          >
+          <input type="text" class="glass-input" placeholder="Search..." autocomplete="off" @input="e => emit('update:search', (e.target as HTMLInputElement).value)">
         </div>
         
         <div class="sort-container">
-          <!-- Icon Inside Input Area -->
           <Icon name="filter" size="16" class="sort-icon" />
-          <select 
-            v-model="sortValue"
-            class="glass-select" 
-            @change="emit('update:sort', sortValue)"
-          >
-            <!-- Dynamic Options -->
+          <select v-model="sortValue" class="glass-select" @change="emit('update:sort', sortValue)">
             <template v-if="sortOptions">
-              <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </option>
-            </template>
-            <!-- Fallback -->
-            <template v-else>
-              <option value="score">Score</option>
-              <option value="trophies">Trophies</option>
-              <option value="name">Name</option>
+              <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </template>
           </select>
         </div>
       </div>
       
-      <!-- Extra Slot (e.g. Selection Bar) -->
       <div v-if="$slots.extra" class="header-row extra">
         <slot name="extra"></slot>
       </div>
@@ -109,244 +79,125 @@ const sortValue = ref('score')
 <style scoped>
 .header-wrapper {
   position: sticky;
-  top: calc(var(--spacing-s) + env(safe-area-inset-top));
+  top: env(safe-area-inset-top);
   z-index: 100;
-  margin-bottom: var(--spacing-l);
-  max-width: 100%;
+  padding: 12px 0;
+  transition: padding 0.3s var(--sys-motion-spring);
+}
+
+.header-wrapper.is-scrolled {
+  padding: 4px 0;
 }
 
 .console-glass {
+  position: relative;
   background: var(--sys-surface-glass);
   backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-l);
-  box-shadow: var(--sys-elevation-2);
-  /* Equal padding on all sides */
-  padding: var(--spacing-m); 
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-m);
-  transition: all 0.3s var(--sys-motion-spring);
+  gap: 12px;
+  box-shadow: var(--sys-elevation-2);
+  overflow: hidden;
 }
 
-/* --- ROW LAYOUTS --- */
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
+.bloom-effect {
+  position: absolute;
+  top: -50px; left: -20px;
+  width: 150px; height: 150px;
+  background: var(--sys-color-primary);
+  filter: blur(80px);
+  opacity: 0.12;
+  pointer-events: none;
 }
 
-.header-row.bottom {
-  gap: var(--spacing-s);
-}
+.header-row { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
 
-.header-row.extra {
-  padding-top: var(--spacing-s);
-  border-top: 1px solid rgba(0,0,0,0.05);
-}
-
-/* --- TOP ROW ELEMENTS --- */
-.left-cluster {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-s);
-}
+.left-cluster { display: flex; align-items: center; gap: 12px; }
 
 .view-title {
   margin: 0;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 800;
+  font-size: 26px;
+  font-weight: 850;
   color: var(--sys-color-on-surface);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
+  transition: font-size 0.3s var(--sys-motion-spring);
 }
 
-/* Stats Pill */
+.is-scrolled .view-title { font-size: 20px; }
+
 .stats-pill {
-  display: flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 8px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.sp-value { color: var(--sys-color-primary); }
+.sp-label { opacity: 0.6; text-transform: uppercase; font-size: 10px; }
+
+.icon-button {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--sys-color-primary);
+  background: var(--sys-color-surface-container-high);
+}
+
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--sys-color-on-surface-variant);
-  user-select: none;
-}
-
-.sp-label {
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-}
-
-.sp-separator {
-  width: 1px;
-  height: 8px;
-  background: currentColor;
-  opacity: 0.2;
-  margin: 0 6px;
-}
-
-.sp-value {
-  color: var(--sys-color-primary);
-}
-
-/* Icon Button (Small) */
-.icon-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--sys-color-primary);
-  opacity: 0.6;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.icon-button:hover {
-  background: var(--sys-color-primary-container);
-  opacity: 1;
-  border-color: rgba(var(--sys-color-primary-rgb), 0.2);
-}
-
-/* Status Pill */
-.status-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 14px;
-  border: 1px solid transparent;
   background: var(--sys-color-surface-container);
   color: var(--sys-color-outline);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
-
-.status-pill:hover {
-  background: var(--sys-color-surface-container-high);
-  transform: translateY(-1px);
-}
-
-.status-pill:active {
-  transform: translateY(0);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.status-pill.ready .status-dot { background: var(--sys-color-success); }
-.status-pill.ready { color: var(--sys-color-on-surface); border-color: rgba(var(--sys-color-success), 0.2); }
-
-.status-pill.error .status-dot { background: var(--sys-color-error); }
+.status-pill.ready { color: var(--sys-color-success); border-color: rgba(var(--sys-color-success), 0.2); }
 .status-pill.error { color: var(--sys-color-error); background: var(--sys-color-error-container); }
 
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.search-container { position: relative; flex: 1; }
+.input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
+
+.glass-input {
+  width: 100%; height: 44px;
+  padding: 0 16px 0 44px;
+  border-radius: 14px;
+  background: var(--sys-color-surface-container-high);
+  border: 1.5px solid transparent;
+  color: var(--sys-color-on-surface);
+  font-size: 15px;
+  transition: all 0.2s;
+}
+.glass-input:focus { background: var(--sys-color-surface); border-color: var(--sys-color-primary); outline: none; }
+
+.sort-container { position: relative; width: 140px; }
+.glass-select {
+  width: 100%; height: 44px;
+  padding: 0 12px 0 38px;
+  border-radius: 14px;
+  background: var(--sys-color-surface-container-high);
+  border: none;
+  font-size: 13px; font-weight: 700;
+  color: var(--sys-color-on-surface);
+  appearance: none;
+}
+.sort-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
+
 .spinner {
-  width: 10px;
-  height: 10px;
+  width: 12px; height: 12px;
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
-/* --- BOTTOM ROW (INPUTS) --- */
-.search-container {
-  position: relative;
-  flex: 1;
-  height: 44px;
-}
-
-.input-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-color-outline);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.glass-input {
-  width: 100%;
-  height: 100%;
-  padding: 0 16px 0 40px; /* Left padding clears icon */
-  border-radius: 12px;
-  border: 1px solid transparent;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-body);
-  font-size: 14px;
-  font-weight: 500;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.glass-input:focus {
-  background: var(--sys-color-surface);
-  border-color: var(--sys-color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.15);
-}
-
-.glass-input::placeholder {
-  color: var(--sys-color-outline);
-  opacity: 0.7;
-}
-
-/* Sort Dropdown */
-.sort-container {
-  position: relative;
-  height: 44px;
-  min-width: 130px; /* Slight bump for longer text */
-}
-
-.glass-select {
-  width: 100%;
-  height: 100%;
-  padding: 0 32px 0 42px; /* Left padding space for icon only */
-  border-radius: 12px;
-  border: 1px solid transparent;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-body);
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  appearance: none;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.glass-select:focus {
-  background: var(--sys-color-surface);
-  border-color: var(--sys-color-primary);
-}
-
-.sort-icon {
-  position: absolute;
-  left: 14px; /* Centered in left padding area */
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-color-outline);
-  pointer-events: none;
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
