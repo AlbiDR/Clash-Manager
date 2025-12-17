@@ -51,7 +51,8 @@ const {
   toggleSelect, 
   selectAll, 
   clearSelection, 
-  handleAction 
+  handleAction,
+  handleBlitz
 } = useBatchQueue()
 
 // 2. Initialize Deep Link Logic
@@ -232,7 +233,11 @@ watch(members, (newVal) => {
       :label="fabState.label"
       :action-href="fabState.actionHref"
       :dismiss-label="fabState.isProcessing ? 'Exit' : 'Clear'"
+      :is-processing="fabState.isProcessing"
+      :is-blasting="fabState.isBlasting"
+      :selection-count="fabState.selectionCount"
       @action="handleAction"
+      @blitz="handleBlitz"
       @dismiss="clearSelection"
     />
   </div>
@@ -267,3 +272,4 @@ watch(members, (newVal) => {
   transition: transform 0.4s var(--sys-motion-spring);
 }
 </style>
+
