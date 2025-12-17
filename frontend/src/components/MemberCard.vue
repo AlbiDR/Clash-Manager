@@ -7,7 +7,6 @@ import WarHistoryChart from './WarHistoryChart.vue'
 const props = defineProps<{
   id: string
   member: LeaderboardMember
-  rank?: number
   expanded: boolean
   selected: boolean
   selectionMode: boolean
@@ -25,84 +24,33 @@ const toneClass = computed(() => {
   return 'tone-low'
 })
 
-const role = computed(() => (props.member.d.role || '').toLowerCase())
-
 const roleDisplay = computed(() => {
-  if (['leader', 'co-leader', 'coleader', 'elder', 'member'].includes(role.value)) {
-    if (role.value === 'coleader' || role.value === 'co-leader') return 'Co-Leader'
-    return role.value.charAt(0).toUpperCase() + role.value.slice(1)
-  }
-  return null
-})
-
-const roleBadgeClass = computed(() => {
-  if (role.value === 'leader') return 'role-leader'
-  if (role.value === 'co-leader' || role.value === 'coleader') return 'role-co-leader'
-  if (role.value === 'elder') return 'role-elder'
-  return 'role-member'
-})
-
-const displayRate = computed(() => {
-  const val = props.member.d.rate
-  if (!val) return '0%'
-  if (String(val).includes('%')) return val
-  const n = parseFloat(String(val))
-  if (!isNaN(n) && n <= 1) return Math.round(n * 100) + '%'
-  return val
+  const r = props.member.d.role?.toLowerCase()
+  if (r === 'leader') return 'Leader'
+  if (r === 'coleader' || r === 'co-leader') return 'Co-Leader'
+  if (r === 'elder') return 'Elder'
+  return 'Member'
 })
 
 const trend = computed(() => {
-  const rawDt = props.member.dt 
-  const currentRaw = props.member.r 
-  const dt = typeof rawDt === 'string' ? parseInt(rawDt) : rawDt
-  if (dt === undefined || dt === null || isNaN(dt) || dt === 0) return null
-  let percentVal = 0
-  if (currentRaw && currentRaw > 0) {
-    const prevScore = currentRaw - dt
-    if (prevScore > 0) {
-      percentVal = (dt / prevScore) * 100
-    }
-  }
-  const displayVal = Math.abs(percentVal).toFixed(Math.abs(percentVal) < 10 ? 1 : 0).replace(/\.0$/, '') + '%'
+  const dt = props.member.dt
+  if (!dt) return null
   return {
-    val: displayVal,
+    val: Math.abs(dt).toFixed(0),
     dir: dt > 0 ? 'up' : 'down'
   }
 })
 
 import { useLongPress } from '../composables/useLongPress'
-import { useShare } from '../composables/useShare'
-
 const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  if (navigator.vibrate) navigator.vibrate(15) // Shorter tick
   emit('toggle-select')
 })
 
-const { canShare, share } = useShare()
-
-function shareMember() {
-  share({
-    title: `Clash Manager: ${props.member.n}`,
-    text: `Check out ${props.member.n} (${props.member.d.role}) in our clan!`,
-    url: `https://royaleapi.com/player/${props.member.id}`
-  })
-}
-
 function handleClick(e: Event) {
-  if (isLongPress.value) {
-    isLongPress.value = false
-    return
-  }
+  if (isLongPress.value) { isLongPress.value = false; return }
   if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
-  if ((e.target as HTMLElement).closest('.chevron-btn')) {
-    emit('toggle')
-    return
-  }
-  if (props.selectionMode) {
-    emit('toggle-select')
-  } else {
-    emit('toggle')
-  }
+  if (props.selectionMode) emit('toggle-select')
+  else emit('toggle')
 }
 </script>
 
@@ -115,67 +63,59 @@ function handleClick(e: Event) {
     @touchstart="startPress"
     @mouseup="cancelPress"
     @touchend="cancelPress"
-    @touchmove="cancelPress"
-    @mouseleave="cancelPress"
-    @contextmenu.prevent
   >
-    <div class="selection-indicator"></div>
-
     <div class="card-header">
-      <div class="info-stack">
-        <span class="tenure-badge">{{ member.d.days }}d</span>
-        <span class="player-name">{{ member.n }}</span>
-        <span v-if="roleDisplay" class="role-badge" :class="roleBadgeClass">{{ roleDisplay }}</span>
-        <span class="meta-val trophy-val">
-          <Icon name="trophy" size="12" style="color:#fbbf24;" />
-          <span class="trophy-text">{{ (member.t || 0).toLocaleString() }}</span>
-        </span>
-      </div>
-
-      <div class="action-area">
-        <div class="stat-pod" :class="[toneClass, { 'has-trend': trend }]">
-          <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="trend-ticker" :class="trend.dir">
-            <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
-            <span class="trend-val">{{ trend.val }}</span>
+      <div class="player-identity">
+        <div class="tenure-badge">{{ member.d.days }}d</div>
+        <div class="name-block">
+          <span class="player-name">{{ member.n }}</span>
+          <div class="sub-meta">
+            <span class="role-text">{{ roleDisplay }}</span>
+            <span class="dot-sep">•</span>
+            <span class="trophy-meta">
+              <Icon name="trophy" size="12" />
+              {{ (member.t || 0).toLocaleString() }}
+            </span>
           </div>
         </div>
-        <div class="chevron-btn">
-          <Icon name="chevron_down" size="18" />
+      </div>
+
+      <div class="score-section">
+        <div class="stat-pod" :class="toneClass">
+          <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
+          <div v-if="trend" class="trend-badge" :class="trend.dir">
+            <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="card-body">
-      <div class="body-inner">
-        <div class="stats-row">
-          <div class="stat-cell">
-            <span class="sc-label">Avg/Day</span>
-            <span class="sc-val">{{ member.d.avg }}</span>
-          </div>
-          <div class="stat-cell border-l">
-            <span class="sc-label">War Rate</span>
-            <span class="sc-val">{{ displayRate }}</span>
-          </div>
-          <div class="stat-cell border-l">
-            <span class="sc-label">Last Seen</span>
-            <span class="sc-val">{{ member.d.seen }}</span>
-          </div>
+    <div class="card-body" v-if="expanded">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="label">Daily Avg</span>
+          <span class="value">{{ member.d.avg }}</span>
         </div>
-        <WarHistoryChart v-if="member.d.hist" :history="member.d.hist" />
-        <div class="actions-toolbar">
-          <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action secondary compact">
-            <Icon name="analytics" size="14" />
-            <span>RoyaleAPI</span>
-          </a>
-          <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary compact">
-            <Icon name="crown" size="14" />
-            <span>Open Game</span>
-          </a>
-          <button v-if="canShare" class="btn-icon-action" @click.stop="shareMember">
-            <Icon name="share" size="16" />
-          </button>
+        <div class="stat-item">
+          <span class="label">War Rate</span>
+          <span class="value">{{ member.d.rate }}</span>
         </div>
+        <div class="stat-item">
+          <span class="label">Last Seen</span>
+          <span class="value">{{ member.d.seen }}</span>
+        </div>
+      </div>
+      
+      <WarHistoryChart :history="member.d.hist" />
+
+      <div class="actions">
+        <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
+          <Icon name="crown" size="16" />
+          <span>Open Game</span>
+        </a>
+        <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
+          <Icon name="analytics" size="16" />
+        </a>
       </div>
     </div>
   </div>
@@ -184,97 +124,86 @@ function handleClick(e: Event) {
 <style scoped>
 .card {
   background: var(--sys-color-surface-container);
-  border-radius: 16px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  position: relative; overflow: hidden;
+  border-radius: 20px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid var(--sys-surface-glass-border);
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  border: 1px solid rgba(255,255,255,0.03);
-  /* 🔋 RAM SAVER: Box-shadow removed on static state */
-  box-shadow: none;
-  backface-visibility: hidden;
+  overflow: hidden;
 }
 
-.card.expanded { 
+.card.expanded {
   background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15), 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.1) inset;
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
-  z-index: 10;
-  margin: 12px 0;
-  transform: scale(1.02);
-  will-change: transform;
+  box-shadow: var(--sys-elevation-3);
+  margin: 16px 0;
+  border-color: var(--sys-color-primary);
 }
 
-.card.selected { background: var(--sys-color-secondary-container); }
-.selection-indicator {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--sys-color-primary); opacity: 0; transition: opacity 0.2s;
-}
-.card.selected .selection-indicator { opacity: 1; }
+.card.selected { background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; height: 40px; }
-.info-stack { display: grid; grid-template-columns: max-content 1fr; grid-template-rows: 1fr 1fr; gap: 4px 8px; align-items: center; flex: 1; min-width: 0; }
-.player-name { font-size: 15px; font-weight: 750; color: var(--sys-color-on-surface); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta-val { font-size: 12px; font-weight: 500; color: var(--sys-color-outline); line-height: 1.2; }
-.trophy-val { display: flex; align-items: center; }
-.action-area { display: flex; align-items: center; gap: 10px; height: 100%; }
+.card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.player-identity { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 
 .tenure-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 20px; width: 75px; border-radius: 6px;
-  background: var(--sys-color-surface-container-highest); color: var(--sys-color-outline);
-  font-size: 11px; font-weight: 700; font-family: var(--sys-font-family-mono);
+  width: 44px; height: 24px;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: var(--sys-color-outline);
+  font-family: var(--sys-font-family-mono);
 }
 
-.role-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 75px; height: 20px; border-radius: 6px;
-  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
-  border: 1px solid transparent; flex-shrink: 0; box-sizing: border-box;
+.name-block { display: flex; flex-direction: column; min-width: 0; }
+
+.player-name {
+  font-size: 16px; font-weight: 850;
+  color: var(--sys-color-on-surface);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.02em;
 }
-.role-member { color: var(--sys-color-outline); border-color: var(--sys-color-outline-variant); }
-.role-elder { background: rgba(var(--sys-color-primary-rgb), 0.08); color: var(--sys-color-primary); border-color: var(--sys-color-primary); }
-.role-co-leader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border-color: var(--sys-color-primary); }
-.role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); border-color: var(--sys-color-primary); font-weight: 800; }
+
+.sub-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sys-color-outline); font-weight: 600; }
+.dot-sep { opacity: 0.3; }
+.trophy-meta { display: flex; align-items: center; gap: 3px; color: #fbbf24; }
 
 .stat-pod {
-  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 45px; height: 45px; border-radius: 12px;
-  background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface-variant);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;
+  position: relative;
+  width: 48px; height: 48px;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900;
+  font-family: var(--sys-font-family-mono);
 }
-.stat-score { font-weight: 800; font-size: 16px; line-height: 1; font-family: var(--sys-font-family-mono); }
-.stat-pod.has-trend .stat-score { padding-bottom: 9px; }
-.trend-ticker { position: absolute; bottom: 2px; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 1px; font-size: 9px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-.trend-ticker.up { color: #b9f6ca; }
-.trend-ticker.down { color: #ffdad6; }
-.stat-pod.tone-high { background: linear-gradient(135deg, var(--sys-color-primary-container), var(--sys-color-primary)); color: var(--sys-color-on-primary); border: none; }
-.stat-pod.tone-mid { background: linear-gradient(135deg, var(--sys-color-secondary-container), var(--sys-color-secondary)); color: var(--sys-color-on-secondary); border: none; }
 
-.chevron-btn { color: var(--sys-color-outline); transition: transform 0.3s; }
-.card.expanded .chevron-btn { transform: rotate(180deg); color: var(--sys-color-primary); }
+.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
-.card-body {
-  display: grid; grid-template-rows: 0fr;
-  transition: grid-template-rows 0.4s var(--sys-motion-spring), margin-top 0.4s var(--sys-motion-spring);
-  margin-top: 0; padding-top: 0; pointer-events: none;
+.trend-badge {
+  position: absolute; bottom: -4px; right: -4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sys-color-surface-container-highest);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.body-inner { min-height: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
-.card.expanded .card-body { grid-template-rows: 1fr; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); pointer-events: auto; }
-.card.expanded .body-inner { opacity: 1; transition-delay: 0.1s; }
+.trend-badge.up { color: #22c55e; }
+.trend-badge.down { color: #ef4444; }
 
-.stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 4px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.stat-cell.border-l { border-left: 1px solid rgba(255,255,255,0.05); }
-.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 700; margin-bottom: 2px; }
-.sc-val { font-size: 14px; font-weight: 700; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
+.card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
-.actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
-.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; }
-.btn-action.primary { background: linear-gradient(135deg, var(--sys-color-primary), #00508a); color: white; }
-.btn-action.secondary { background: var(--sys-color-surface-container); color: var(--sys-color-on-surface); border: 1px solid rgba(255,255,255,0.05); }
-.btn-icon-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--sys-color-primary); border-radius: 10px; cursor: pointer; }
-.trophy-text { display: inline-block; margin-left: 4px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; opacity: 0.5; }
+.stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
+
+.actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn-action {
+  flex: 1; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface);
+  font-weight: 700; text-decoration: none;
+}
+.btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 </style>
