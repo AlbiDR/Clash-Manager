@@ -206,7 +206,7 @@ const editorUrl = computed(() => {
                 <div class="setting-row" @click="toggle('blitzMode')">
                     <div class="setting-info">
                         <span class="setting-label">Blitz Mode</span>
-                        <span class="setting-desc">Enable rapid-fire profile opening (Pop-ups required)</span>
+                        <span class="setting-desc">Auto-opens links. <strong>Warning:</strong> May trigger repetitive browser confirmation popups.</span>
                     </div>
                     
                     <div class="toggle-wrapper">
