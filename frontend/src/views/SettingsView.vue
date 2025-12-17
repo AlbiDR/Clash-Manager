@@ -203,18 +203,23 @@ const editorUrl = computed(() => {
             </header>
 
             <div class="card-body">
-                <div class="setting-row">
+                <div class="setting-row" @click="toggle('blitzMode')">
                     <div class="setting-info">
                         <span class="setting-label">Blitz Mode</span>
                         <span class="setting-desc">Enable rapid-fire profile opening (Pop-ups required)</span>
                     </div>
-                    <button 
-                        class="toggle-switch" 
-                        :class="{ active: modules.blitzMode }" 
-                        @click="toggle('blitzMode')"
-                    >
-                        <div class="toggle-thumb"></div>
-                    </button>
+                    
+                    <div class="toggle-wrapper">
+                        <span class="toggle-state-text">{{ modules.blitzMode ? 'ON' : 'OFF' }}</span>
+                        <button 
+                            class="toggle-switch" 
+                            :class="{ active: modules.blitzMode }" 
+                            role="switch"
+                            :aria-checked="modules.blitzMode"
+                        >
+                            <div class="toggle-thumb"></div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -452,13 +457,37 @@ const editorUrl = computed(() => {
 /* --- SETTINGS ROW & TOGGLE --- */
 .setting-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0;
+    padding: 12px 0;
+    cursor: pointer; /* Whole row clickable */
 }
-.setting-info { display: flex; flex-direction: column; gap: 4px; }
+.setting-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .setting-label { font-weight: 700; font-size: 15px; color: var(--sys-color-on-surface); }
-.setting-desc { font-size: 13px; color: var(--sys-color-outline); }
+.setting-desc { font-size: 13px; color: var(--sys-color-outline); line-height: 1.4; padding-right: 16px; }
 
-/* Toggle Switch */
+/* Toggle Wrapper */
+.toggle-wrapper {
+    display: flex; align-items: center; gap: 12px;
+}
+.toggle-state-text {
+    font-size: 11px; font-weight: 800; 
+    color: var(--sys-color-outline); 
+    width: 24px; text-align: right;
+    transition: color 0.2s;
+}
+.toggle-switch.active ~ .toggle-state-text, /* If we reordered */
+.setting-row:hover .toggle-switch.active + .toggle-state-text {
+    /* CSS sibling selectors don't work backwards, so handled via JS state in template */
+}
+.toggle-switch.active {
+    background: var(--sys-color-primary);
+    border-color: var(--sys-color-primary);
+}
+.toggle-switch.active .toggle-thumb {
+    transform: translateX(20px);
+    background: var(--sys-color-on-primary);
+}
+
+/* Switch UI */
 .toggle-switch {
     width: 52px; height: 32px;
     border-radius: 99px;
@@ -467,10 +496,7 @@ const editorUrl = computed(() => {
     position: relative; cursor: pointer;
     transition: all 0.2s var(--sys-motion-spring);
     flex-shrink: 0;
-}
-.toggle-switch.active {
-    background: var(--sys-color-primary);
-    border-color: var(--sys-color-primary);
+    padding: 0;
 }
 .toggle-thumb {
     width: 20px; height: 20px;
@@ -479,10 +505,6 @@ const editorUrl = computed(() => {
     position: absolute; top: 4px; left: 4px;
     transition: all 0.2s var(--sys-motion-spring);
     box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-}
-.toggle-switch.active .toggle-thumb {
-    transform: translateX(20px);
-    background: var(--sys-color-on-primary);
 }
 
 /* --- MODULES GRID (TECH SPECS) --- */
