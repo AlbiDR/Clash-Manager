@@ -1,14 +1,14 @@
 
 import { ref, watch } from 'vue'
 
-const MODULES_KEY = 'cm_modules_v2'
+const MODULES_KEY = 'cm_modules_v3' // Bump version to reset defaults
 
 export interface ModuleState {
     blitzMode: boolean
 }
 
 const defaultState: ModuleState = {
-    blitzMode: false
+    blitzMode: false // Explicitly OFF by default
 }
 
 // Global singleton state to ensure reactivity across all components
