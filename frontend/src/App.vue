@@ -1,14 +1,30 @@
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { useClanData } from './composables/useClanData'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import SuccessPulse from './components/SuccessPulse.vue'
 
 const { syncStatus } = useClanData()
 const isOnline = ref(true)
 const connectionType = ref('unknown')
+const triggerSuccessEffect = ref(false)
+
+// Watch for sync success to trigger the "Momentum Explosion"
+watch(syncStatus, (newStatus, oldStatus) => {
+    if (oldStatus === 'syncing' && newStatus === 'success') {
+        triggerSuccessEffect.value = true
+        // Native Success Haptic Signature
+        if (navigator.vibrate) navigator.vibrate([20, 50, 20])
+        
+        // Reset the trigger so it can fire again
+        setTimeout(() => {
+            triggerSuccessEffect.value = false
+        }, 100)
+    }
+})
 
 onMounted(() => {
     isOnline.value = navigator.onLine
@@ -43,6 +59,9 @@ const connectionState = computed(() => {
     <!-- NATIVE FRONTIER: Connectivity Health Strip -->
     <div class="connectivity-strip" :class="connectionState"></div>
 
+    <!-- NEO-MATERIAL: Success Momentum Explosion -->
+    <SuccessPulse :trigger="triggerSuccessEffect" />
+
     <main class="main-content">
       <RouterView />
     </main>
@@ -66,23 +85,44 @@ const connectionState = computed(() => {
   top: 0; left: 0; right: 0;
   height: 2px;
   z-index: 3000;
-  transition: all 0.3s ease;
-  opacity: 0.8;
+  transition: opacity 0.4s ease, background-color 0.4s ease;
+  opacity: 0;
 }
 
-.connectivity-strip.online { background: var(--sys-color-primary); opacity: 0; }
+/* Hard Offline: Static Red */
+.connectivity-strip.offline { 
+  background-color: var(--sys-color-error); 
+  opacity: 1; 
+}
+
+/* Slow Connection: Static Amber */
+.connectivity-strip.slow { 
+  background-color: #fbbf24; 
+  opacity: 1; 
+}
+
+/* Syncing: Animated Blue Shimmer */
 .connectivity-strip.syncing { 
-    background: var(--sys-color-primary); 
-    opacity: 1;
-    box-shadow: 0 0 8px var(--sys-color-primary);
-    animation: flow 2s linear infinite;
+  opacity: 1;
+  background: linear-gradient(
+    90deg, 
+    var(--sys-color-primary) 0%, 
+    var(--sys-color-primary-container) 50%, 
+    var(--sys-color-primary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-data 1.5s linear infinite;
+  box-shadow: 0 0 8px rgba(var(--sys-color-primary-rgb), 0.4);
 }
-.connectivity-strip.slow { background: #fbbf24; opacity: 1; }
-.connectivity-strip.offline { background: var(--sys-color-error); opacity: 1; }
 
-@keyframes flow {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
+/* Online/Healthy: Invisible */
+.connectivity-strip.online { 
+  opacity: 0; 
+}
+
+@keyframes shimmer-data {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .sync-indicator {
@@ -127,3 +167,4 @@ const connectionState = computed(() => {
   100% { transform: scale(0.8); opacity: 0.5; }
 }
 </style>
+
