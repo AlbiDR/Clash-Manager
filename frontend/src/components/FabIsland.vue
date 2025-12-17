@@ -30,10 +30,29 @@ const emit = defineEmits<{
   <div class="fab-island" :class="{ 'visible': visible }" @touchstart.stop>
     <div class="fab-content">
       
-      <!-- State: BLASTING (Loading Indicator) -->
-      <div v-if="isBlasting" class="blasting-state">
-        <div class="spinner"></div>
-        <span>Opening All...</span>
+      <!-- State: BLASTING (With Controls) -->
+      <div v-if="isBlasting" class="blasting-controls">
+        <!-- Stop/Exit -->
+        <button 
+          class="fab-btn danger compact" 
+          @click="emit('dismiss')"
+        >
+          <Icon name="close" size="18" />
+        </button>
+
+        <!-- Status Indicator -->
+        <div class="blast-status">
+          <div class="spinner-small"></div>
+          <span class="blast-label">{{ label }}</span>
+        </div>
+
+        <!-- Manual Assist Button (The Gamma Solution) -->
+        <button 
+          class="fab-btn primary compact" 
+          @click="(e) => emit('action', e)"
+        >
+          <Icon name="chevron_right" size="20" />
+        </button>
       </div>
 
       <!-- State: NORMAL -->
@@ -113,6 +132,10 @@ const emit = defineEmits<{
 }
 .fab-btn:active { transform: scale(0.95); }
 
+.fab-btn.compact {
+  padding: 14px; /* Square-ish for icons */
+}
+
 .fab-btn.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .fab-btn.danger { background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); }
 
@@ -124,19 +147,33 @@ const emit = defineEmits<{
   box-shadow: 0 0 12px rgba(107, 87, 120, 0.4);
 }
 
-.blasting-state {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 24px;
+/* Blasting Controls Layout */
+.blasting-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.blast-status {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.blast-label {
+  font-family: var(--sys-font-family-mono);
+  font-size: 12px;
   font-weight: 700;
   color: var(--sys-color-surface);
 }
 
-.spinner {
-  width: 18px; height: 18px;
+.spinner-small {
+  width: 14px; height: 14px;
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  opacity: 0.6;
 }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
