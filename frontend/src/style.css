@@ -120,15 +120,26 @@ body {
 /* 🏎️ MEMORY-SAVING INTERACTION ENGINE */
 .squish-interaction {
   transition: transform 0.2s var(--sys-motion-spring);
+  
+  /* 🔋 THE MEMORY SAVER: content-visibility: auto
+     Drastically reduces RAM for lists by not painting off-screen elements. */
   content-visibility: auto;
   contain-intrinsic-size: auto 58px;
+  
+  /* Strict containment prevents global layout shifts */
   contain: layout paint;
+  
+  /* Reduce GPU texture overhead */
   image-rendering: -webkit-optimize-contrast;
+  backface-visibility: hidden;
 }
 
 /* Grouping layers at the parent level instead of individual promotion */
-.list-container {
+.gpu-contain {
   transform: translateZ(0);
+  /* Force a single compositing layer for the whole list */
+  will-change: transform;
+  contain: paint layout size;
 }
 
 .squish-interaction:active {
