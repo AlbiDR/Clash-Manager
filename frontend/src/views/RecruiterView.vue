@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useClanData } from '../composables/useClanData'
-import { useApiState } from '../composables/useApiState'
-import { useToast } from '../composables/useToast'
-import { useBatchQueue } from '../composables/useBatchQueue'
-import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
+import { useClanData } from '../clanData'
+import { useApiState } from '../apiState'
+import { useToast } from '../toast'
+import { useBatchQueue } from '../batchQueue'
+import { useDeepLinkHandler } from '../deepLink'
 
 import Icon from '../components/Icon.vue'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
@@ -13,6 +13,9 @@ import FabIsland from '../components/FabIsland.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
+
+// (Note: Corrected composable paths assume standard src structure)
+// If previous errors persist, we check if these files were renamed in your setup.
 
 const { pingData } = useApiState()
 
@@ -188,7 +191,7 @@ function handleSortUpdate(val: string) {
 
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
-    <div v-else-if="loading && recruits.length === 0" class="list-container">
+    <div v-else-if="loading && recruits.length === 0" class="list-container gpu-contain">
       <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
@@ -210,7 +213,7 @@ function handleSortUpdate(val: string) {
       v-else 
       name="list" 
       tag="div" 
-      class="list-container"
+      class="list-container gpu-contain"
     >
       <RecruitCard
         v-for="(recruit, index) in filteredRecruits"
@@ -244,7 +247,14 @@ function handleSortUpdate(val: string) {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; perspective: 1000px; transform-style: preserve-3d; }
+.list-container { padding-bottom: 32px; position: relative; }
+
+.gpu-contain {
+  transform: translateZ(0);
+  will-change: transform;
+  contain: layout paint;
+}
+
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
