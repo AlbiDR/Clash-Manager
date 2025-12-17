@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -14,26 +15,22 @@ import SkeletonCard from '../components/SkeletonCard.vue'
 
 const { pingData } = useApiState()
 
-// Sheet Link Computation
 const sheetUrl = computed(() => {
   if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
   const gid = pingData.value.sheets['Leaderboard']
   return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-// Global Data
 const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
 const members = computed(() => data.value?.lb || [])
 const loading = computed(() => !data.value && isRefreshing.value)
 
 const searchQuery = ref('')
-// Extended sorting keys
 const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen' | 'trend'>('score')
 
-// Sort Options Definition
 const sortOptions = [
   { label: 'Performance', value: 'score' },
-  { label: 'Momentum', value: 'trend' }, // ✨ Added Momentum
+  { label: 'Momentum', value: 'trend' },
   { label: 'War Participation', value: 'war_rate' },
   { label: 'Daily Donations', value: 'donations_day' },
   { label: 'Trophies', value: 'trophies' },
@@ -42,7 +39,6 @@ const sortOptions = [
   { label: 'Name', value: 'name' }
 ]
 
-// 1. Initialize Batch Queue Logic
 const { 
   selectedIds, 
   fabState, 
@@ -54,14 +50,12 @@ const {
   handleBlitz
 } = useBatchQueue()
 
-// 2. Initialize Deep Link Logic
 const { 
   expandedIds, 
   toggleExpand, 
   processDeepLink 
 } = useDeepLinkHandler('member-')
 
-// Status Pill Logic
 const timeAgo = computed(() => {
   if (!lastSyncTime.value) return ''
   const ms = Date.now() - lastSyncTime.value
@@ -79,7 +73,6 @@ const status = computed(() => {
   return { type: 'ready', text: 'Empty' } as const
 })
 
-// Stats Badge
 const statsBadge = computed(() => {
   if (!members.value) return undefined
   return {
@@ -100,25 +93,24 @@ function handleSearchUpdate(val: string) {
 }
 
 function handleSortUpdate(val: string) {
-  // Type guard to ensure val is a valid sort key
   if (sortOptions.some(opt => opt.value === val)) {
-    sortBy.value = val as typeof sortBy.value
+    // Force immediate UI update before sort calculation
+    if (document.startViewTransition) {
+        document.startViewTransition(() => {
+            sortBy.value = val as typeof sortBy.value
+        })
+    } else {
+        sortBy.value = val as typeof sortBy.value
+    }
   }
 }
 
-// ------------------------------------------------------------------
-// SORT HELPERS (Strict Typing)
-// ------------------------------------------------------------------
-
 function parseTimeAgo(val: string | null | undefined): number {
   if (!val || val === '-' || val === 'Just now') return 0
-  
   const match = val.match(/^(\d+)([ymdh]) ago$/)
-  if (!match) return 99999999 // Unknown/Oldest
-  
+  if (!match) return 99999999
   const num = parseInt(match[1])
   const unit = match[2]
-  
   switch(unit) {
     case 'm': return num
     case 'h': return num * 60
@@ -144,21 +136,13 @@ const filteredMembers = computed(() => {
   result.sort((a, b) => {
     switch (sortBy.value) {
       case 'score': return (b.s || 0) - (a.s || 0)
-      case 'trend': return (b.dt || 0) - (a.dt || 0) // ✨ Sort by Delta
+      case 'trend': return (b.dt || 0) - (a.dt || 0)
       case 'trophies': return (b.t || 0) - (a.t || 0)
       case 'name': return a.n.localeCompare(b.n)
-      
       case 'donations_day': return (b.d.avg || 0) - (a.d.avg || 0)
-      
-      case 'war_rate': 
-        return parseRate(b.d.rate) - parseRate(a.d.rate)
-      
+      case 'war_rate': return parseRate(b.d.rate) - parseRate(a.d.rate)
       case 'tenure': return (b.d.days || 0) - (a.d.days || 0)
-      
-      case 'last_seen': 
-        // Smaller "minutes ago" means more recent (smaller number)
-        return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
-        
+      case 'last_seen': return parseTimeAgo(a.d.seen) - parseTimeAgo(b.d.seen)
       default: return 0
     }
   })
@@ -212,7 +196,7 @@ watch(members, (newVal) => {
       v-else 
       name="list" 
       tag="div" 
-      class="list-container"
+      class="list-container stagger-children"
     >
       <MemberCard
         v-for="member in filteredMembers"
@@ -245,7 +229,7 @@ watch(members, (newVal) => {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; }
+.list-container { padding-bottom: 32px; position: relative; }
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
@@ -257,18 +241,30 @@ watch(members, (newVal) => {
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 
-/* List Physics */
+/* ✨ NATIVE LIST PHYSICS (Gold Standard) */
+.list-move {
+  transition: transform 0.5s var(--sys-motion-spring);
+}
+
 .list-enter-active,
 .list-leave-active {
   transition: all 0.4s var(--sys-motion-spring);
 }
-.list-enter-from,
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
 .list-leave-to {
   opacity: 0;
-  transform: scale(0.95);
-  margin-bottom: -100px;
+  transform: scale(0.9) translateX(30px);
 }
-.list-move {
-  transition: transform 0.4s var(--sys-motion-spring);
+
+.list-leave-active {
+  position: absolute;
+  width: 100%;
+  z-index: 0;
 }
 </style>
+
