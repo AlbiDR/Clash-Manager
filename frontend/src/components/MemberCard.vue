@@ -63,7 +63,8 @@ const trend = computed(() => {
   const percentChange = (dt / previousRaw) * 100
   return {
     val: Math.round(Math.abs(percentChange)) + '%',
-    dir: dt > 0 ? 'up' : 'down'
+    dir: dt > 0 ? 'up' : 'down',
+    raw: dt
   }
 })
 
@@ -94,7 +95,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
     <div class="card-header">
       <div class="identity-group">
         <div class="meta-stack">
-          <div class="badge tenure">{{ member.d.days }}d</div>
+          <div class="badge tenure" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('tenure', member.d.days) : null">{{ member.d.days }}d</div>
           <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
         </div>
         
@@ -108,9 +109,9 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       </div>
 
       <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
-        <div class="stat-pod" :class="toneClass">
+        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('score', member.s) : null">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="momentum-pill" :class="trend.dir">
+          <div v-if="trend" class="momentum-pill" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('momentum', trend.raw) : null">
             <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
             <span class="trend-val">{{ trend.val }}</span>
           </div>
@@ -187,7 +188,9 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
+  transition: background 0.2s;
 }
+.badge:hover { background: var(--sys-color-outline-variant); }
 
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
@@ -205,7 +208,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   line-height: 1.1;
 }
 
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; cursor: help; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
 .score-section { cursor: zoom-in; }
@@ -232,6 +235,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   z-index: 2;
   border: 1px solid var(--sys-surface-glass-border);
+  cursor: help;
 }
 
 .momentum-pill.up { color: #22c55e; }
@@ -242,7 +246,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; cursor: help; }
 .stat-item:hover { background: rgba(var(--sys-color-primary-rgb), 0.05); }
 .stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; opacity: 0.5; }
 .stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
@@ -257,3 +261,4 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 </style>
+
