@@ -159,6 +159,11 @@ function handleSelectAll() {
   selectAll(ids)
 }
 
+function handleSelectHighScores() {
+  const ids = filteredRecruits.value.filter(r => (r.s || 0) >= 50).map(r => r.id)
+  selectAll(ids)
+}
+
 function handleSortUpdate(val: string) {
   if (document.startViewTransition) {
     document.startViewTransition(() => {
@@ -188,6 +193,7 @@ function handleSortUpdate(val: string) {
            <div class="sel-count">{{ selectedIds.length }} Selected</div>
            <div class="sel-actions">
              <span class="text-btn primary" @click="handleSelectAll">All</span>
+             <span class="text-btn primary" @click="handleSelectHighScores">Score ≥ 50</span>
              <span class="text-btn" @click="clearSelection">None</span>
              <span class="text-btn danger" @click="clearSelection">Done</span>
            </div>
@@ -265,9 +271,12 @@ function handleSortUpdate(val: string) {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.sel-count { font-size: 20px; font-weight: 700; }
-.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.sel-count { font-size: 20px; font-weight: 700; white-space: nowrap; }
+.sel-actions { display: flex; gap: 12px; align-items: center; }
+.text-btn { font-weight: 700; cursor: pointer; padding: 4px 0; white-space: nowrap; font-size: 13px; }
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 
