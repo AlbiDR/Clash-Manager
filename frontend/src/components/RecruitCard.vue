@@ -22,43 +22,70 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// --- INTERACTION ENGINE ---
-const isScrolling = ref(false)
-const touchStartTime = ref(0)
-const longPressTimer = ref<number | null>(null)
-
-function onTouchStart() {
-    isScrolling.value = false
-    touchStartTime.value = Date.now()
-    
-    if (longPressTimer.value) clearTimeout(longPressTimer.value)
-    longPressTimer.value = window.setTimeout(() => {
-        if (!isScrolling.value) {
-            if (navigator.vibrate) navigator.vibrate(60)
-            emit('toggle-select')
-        }
-    }, 600)
+// --- ROBUST INTERACTION ENGINE ---
+const pointerState = {
+  startX: 0,
+  startY: 0,
+  timer: null as number | null,
+  isLongPress: false,
+  isActive: false
 }
 
-function onTouchMove() {
-    isScrolling.value = true
-    if (longPressTimer.value) {
-        clearTimeout(longPressTimer.value)
-        longPressTimer.value = null
+function handlePointerDown(e: PointerEvent) {
+  if (e.button !== 0) return 
+  
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
+
+  pointerState.isActive = true
+  pointerState.isLongPress = false
+  pointerState.startX = e.clientX
+  pointerState.startY = e.clientY
+
+  if (pointerState.timer) clearTimeout(pointerState.timer)
+  
+  pointerState.timer = window.setTimeout(() => {
+    if (pointerState.isActive) {
+      pointerState.isLongPress = true
+      if (navigator.vibrate) navigator.vibrate(60)
+      emit('toggle-select')
     }
+  }, 500)
 }
 
-function onTouchEnd() {
-    if (longPressTimer.value) {
-        clearTimeout(longPressTimer.value)
-        longPressTimer.value = null
+function handlePointerMove(e: PointerEvent) {
+  if (!pointerState.isActive) return
+  
+  const moveThreshold = 10
+  const dx = Math.abs(e.clientX - pointerState.startX)
+  const dy = Math.abs(e.clientY - pointerState.startY)
+
+  if (dx > moveThreshold || dy > moveThreshold) {
+    clearInteraction()
+  }
+}
+
+function handlePointerUp() {
+  if (pointerState.isActive && !pointerState.isLongPress) {
+    if (props.selectionMode) {
+      emit('toggle-select')
+    } else {
+      emit('toggle-expand')
     }
+  }
+  clearInteraction()
 }
 
-function handleContextMenu(e: Event) {
-    e.preventDefault()
-    if (navigator.vibrate) navigator.vibrate(40)
-    emit('toggle-select')
+function handlePointerCancel() {
+  clearInteraction()
+}
+
+function clearInteraction() {
+  pointerState.isActive = false
+  if (pointerState.timer) {
+    clearTimeout(pointerState.timer)
+    pointerState.timer = null
+  }
 }
 
 function handleScoreClick(e: Event) {
@@ -71,22 +98,6 @@ function handleExpandClick(e: Event) {
     e.stopPropagation()
     if (navigator.vibrate) navigator.vibrate(10)
     emit('toggle-expand')
-}
-
-function handleMainClick(e: MouseEvent | TouchEvent) {
-  if (isScrolling.value) return
-  
-  const pressDuration = touchStartTime.value > 0 ? Date.now() - touchStartTime.value : 0
-  if (pressDuration > 550) return
-
-  const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
-  
-  if (props.selectionMode) {
-      emit('toggle-select')
-  } else {
-      emit('toggle-expand')
-  }
 }
 
 const toneClass = computed(() => {
@@ -112,11 +123,11 @@ const timeAgo = computed(() => {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @touchstart="onTouchStart"
-    @touchmove="onTouchMove"
-    @touchend="onTouchEnd"
-    @click="handleMainClick"
-    @contextmenu.prevent="handleContextMenu"
+    @pointerdown="handlePointerDown"
+    @pointermove="handlePointerMove"
+    @pointerup="handlePointerUp"
+    @pointercancel="handlePointerCancel"
+    @contextmenu.prevent
   >
     <div class="card-header">
       <div class="identity-group">
@@ -189,6 +200,7 @@ const timeAgo = computed(() => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
   transition: all 0.2s var(--sys-motion-spring);
 }
 
