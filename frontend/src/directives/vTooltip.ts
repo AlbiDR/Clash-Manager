@@ -2,9 +2,11 @@
 import type { Directive } from 'vue'
 import type { BenchmarkData } from '../composables/useBenchmarking'
 
+// Singleton Tooltip State
 let tooltipEl: HTMLDivElement | null = null
 let activeElement: HTMLElement | null = null
 let hideTimer: number | null = null
+let pressTimer: number | null = null
 
 function createTooltip() {
     if (tooltipEl) return tooltipEl
@@ -82,7 +84,26 @@ function positionTooltip(el: HTMLElement) {
 
     tooltipEl.style.left = `${left}px`
     tooltipEl.style.top = `${top}px`
-    tooltipEl.style.transform = `translateX(-50%) translateY(${translateY})`
+    tooltipEl.style.transform = `translateX(-50%) translateY(${translateY}) scale(1)`
+}
+
+function globalHide() {
+    if (tooltipEl) {
+        tooltipEl.classList.remove('visible')
+        tooltipEl.style.transform = tooltipEl.style.transform.replace('scale(1)', 'scale(0.8)')
+    }
+    activeElement = null
+    if (pressTimer) clearTimeout(pressTimer)
+}
+
+// Global dismiss listeners
+if (typeof window !== 'undefined') {
+    window.addEventListener('scroll', globalHide, { passive: true })
+    window.addEventListener('touchstart', (e) => {
+        if (tooltipEl?.classList.contains('visible') && !(e.target as HTMLElement).closest('.rich-tooltip')) {
+            globalHide()
+        }
+    }, { passive: true })
 }
 
 export const vTooltip: Directive = {
@@ -98,26 +119,35 @@ export const vTooltip: Directive = {
             activeElement = el
             renderContent(binding.value)
             positionTooltip(el)
+            
+            // Haptic feedback if available
+            if (navigator.vibrate) navigator.vibrate(40)
         }
 
         const hide = () => {
             if (activeElement === el) {
-                hideTimer = window.setTimeout(() => {
-                    if (tooltipEl) tooltipEl.classList.remove('visible')
-                    activeElement = null
-                }, 100)
+                hideTimer = window.setTimeout(globalHide, 100)
             }
         }
 
+        // Desktop
         el.addEventListener('mouseenter', show)
         el.addEventListener('mouseleave', hide)
+
+        // Mobile Long Press
         el.addEventListener('touchstart', (e) => {
-            show()
-            if (hideTimer) clearTimeout(hideTimer)
-            hideTimer = window.setTimeout(() => {
-                if (tooltipEl) tooltipEl.classList.remove('visible')
-                activeElement = null
-            }, 3000)
+            if (pressTimer) clearTimeout(pressTimer)
+            pressTimer = window.setTimeout(() => {
+                show()
+            }, 400) // 400ms threshold for long press
+        }, { passive: true })
+
+        el.addEventListener('touchend', () => {
+            if (pressTimer) clearTimeout(pressTimer)
+        }, { passive: true })
+
+        el.addEventListener('touchmove', () => {
+            if (pressTimer) clearTimeout(pressTimer)
         }, { passive: true })
     }
 }
