@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -87,6 +88,11 @@ function handleSelectAll() {
   selectAll(ids)
 }
 
+function handleSelectHighScores() {
+  const ids = filteredMembers.value.filter(m => (m.s || 0) >= 50).map(m => m.id)
+  selectAll(ids)
+}
+
 function handleSearchUpdate(val: string) {
   searchQuery.value = val
 }
@@ -171,6 +177,7 @@ watch(members, (newVal) => {
            <div class="sel-count">{{ selectedIds.length }} Selected</div>
            <div class="sel-actions">
              <span class="text-btn primary" @click="handleSelectAll">All</span>
+             <span class="text-btn primary" @click="handleSelectHighScores">Score ≥ 50</span>
              <span class="text-btn" @click="clearSelection">None</span>
              <span class="text-btn danger" @click="clearSelection">Done</span>
            </div>
@@ -239,9 +246,12 @@ watch(members, (newVal) => {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--sys-color-outline-variant);
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.sel-count { font-size: 20px; font-weight: 700; }
-.text-btn { font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.sel-count { font-size: 20px; font-weight: 700; white-space: nowrap; }
+.sel-actions { display: flex; gap: 12px; align-items: center; }
+.text-btn { font-weight: 700; cursor: pointer; padding: 4px 0; white-space: nowrap; font-size: 13px; }
 .text-btn.primary { color: var(--sys-color-primary); }
 .text-btn.danger { color: var(--sys-color-error); }
 </style>
