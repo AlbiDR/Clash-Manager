@@ -4,11 +4,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.2.0
+ * 🏷️ VERSION: 6.2.1
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.2.0';
+const VER_CONTROLLER_WEBAPP = '6.2.1';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -205,6 +205,24 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
+  // 🕵️‍♀️ PRE-FETCH BLACKLIST (Passive Hiding Enforcement)
+  // We double-check the persistent blacklist properties. 
+  // Even if the sheet "Invited" column isn't updated (rare race condition),
+  // we MUST NOT return blacklisted recruits to the client.
+  const blacklistSet = new Set();
+  if (isHeadhunter) {
+    try {
+        const raw = Utils.Props.getChunked('HH_BLACKLIST', {});
+        const now = Date.now();
+        // Only consider active blacklist entries
+        Object.keys(raw).forEach(tag => {
+            if (raw[tag].e > now) blacklistSet.add(tag);
+        });
+    } catch(e) { 
+        console.warn("Blacklist passive check failed:", e); 
+    }
+  }
+
   const sanitizeNum = (v) => {
     const n = Number(v);
     return isFinite(n) ? n : 0;
@@ -215,6 +233,11 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
     try {
       const tagRaw = r[SCHEMA.TAG];
       if (!tagRaw || typeof tagRaw !== 'string' || !tagRaw.startsWith('#')) return null;
+
+      // 🛡️ PASSIVE HIDING: Check Blacklist Property
+      if (isHeadhunter && blacklistSet.has(tagRaw)) {
+          return null;
+      }
 
       const id = tagRaw.replace('#', '').trim();
       if (id.length < 3) return null;
