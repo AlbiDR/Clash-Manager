@@ -93,7 +93,10 @@ function globalHide() {
         tooltipEl.style.transform = tooltipEl.style.transform.replace('scale(1)', 'scale(0.8)')
     }
     activeElement = null
-    if (pressTimer) clearTimeout(pressTimer)
+    if (pressTimer) {
+        clearTimeout(pressTimer)
+        pressTimer = null
+    }
 }
 
 // Global dismiss listeners
@@ -110,7 +113,9 @@ export const vTooltip: Directive = {
     mounted(el, binding) {
         if (!binding.value) return
 
-        const show = () => {
+        const show = (e?: TouchEvent) => {
+            if (e) e.stopPropagation() // Stop bubbling to card long-press
+            
             if (hideTimer) {
                 clearTimeout(hideTimer)
                 hideTimer = null
@@ -120,7 +125,6 @@ export const vTooltip: Directive = {
             renderContent(binding.value)
             positionTooltip(el)
             
-            // Haptic feedback if available
             if (navigator.vibrate) navigator.vibrate(40)
         }
 
@@ -138,16 +142,22 @@ export const vTooltip: Directive = {
         el.addEventListener('touchstart', (e) => {
             if (pressTimer) clearTimeout(pressTimer)
             pressTimer = window.setTimeout(() => {
-                show()
-            }, 400) // 400ms threshold for long press
-        }, { passive: true })
+                show(e)
+            }, 400)
+        }, { passive: false })
 
         el.addEventListener('touchend', () => {
-            if (pressTimer) clearTimeout(pressTimer)
+            if (pressTimer) {
+                clearTimeout(pressTimer)
+                pressTimer = null
+            }
         }, { passive: true })
 
         el.addEventListener('touchmove', () => {
-            if (pressTimer) clearTimeout(pressTimer)
+            if (pressTimer) {
+                clearTimeout(pressTimer)
+                pressTimer = null
+            }
         }, { passive: true })
     }
 }
