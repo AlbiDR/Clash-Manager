@@ -21,12 +21,12 @@ const dragThreshold = 5
 const startPos = ref({ x: 0, y: 0 })
 
 function handleInteractionStart(e: MouseEvent | TouchEvent) {
-  const touch = 'touches' in e ? e.touches[0] : e
+  const touch = 'touches' in e ? e.touches[0] : (e as MouseEvent)
   startPos.value = { x: touch.clientX, y: touch.clientY }
 }
 
 function shouldExecute(e: MouseEvent | TouchEvent): boolean {
-  const touch = 'changedTouches' in e ? e.changedTouches[0] : e
+  const touch = 'changedTouches' in e ? e.changedTouches[0] : (e as MouseEvent)
   const dx = Math.abs(touch.clientX - startPos.value.x)
   const dy = Math.abs(touch.clientY - startPos.value.y)
   return dx < dragThreshold && dy < dragThreshold
@@ -58,7 +58,8 @@ function onPodClick(e: MouseEvent | TouchEvent) {
 
 function onContentClick(e: MouseEvent | TouchEvent) {
   if (!shouldExecute(e)) return
-  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a')) return
   
   if (props.selectionMode) {
     emit('toggle-select')
@@ -117,10 +118,12 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       </div>
 
       <div class="actions-toolbar">
+        <!-- RoyaleAPI on the Left -->
         <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action secondary compact">
           <Icon name="analytics" size="14" />
           <span>RoyaleAPI</span>
         </a>
+        <!-- Open Game on the Right -->
         <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
           <Icon name="crown" size="14" />
           <span>Open Game</span>
