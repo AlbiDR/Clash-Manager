@@ -55,13 +55,26 @@ function onTouchEnd() {
     }
 }
 
+function handleContextMenu(e: Event) {
+    e.preventDefault()
+    if (navigator.vibrate) navigator.vibrate(40)
+    emit('toggle-select')
+}
+
+function handleScoreClick(e: Event) {
+    e.stopPropagation()
+    if (navigator.vibrate) navigator.vibrate(20)
+    emit('toggle-select')
+}
+
 function handleMainClick(e: MouseEvent | TouchEvent) {
   if (isScrolling.value) return
-  const isLongPress = touchStartTime.value > 0 && (Date.now() - touchStartTime.value > 500)
-  if (isLongPress) return
+  
+  const pressDuration = touchStartTime.value > 0 ? Date.now() - touchStartTime.value : 0
+  if (pressDuration > 550) return
 
   const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
+  if (target.closest('.btn-action') || target.closest('a')) return
   
   if (props.selectionMode) {
       emit('toggle-select')
@@ -97,6 +110,7 @@ const timeAgo = computed(() => {
     @touchmove="onTouchMove"
     @touchend="onTouchEnd"
     @click="handleMainClick"
+    @contextmenu.prevent="handleContextMenu"
   >
     <div class="card-header">
       <div class="identity-group">
@@ -114,7 +128,7 @@ const timeAgo = computed(() => {
         </div>
       </div>
 
-      <div class="score-section">
+      <div class="score-section" @click.stop="handleScoreClick">
         <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'score', recruit.s) : null">
           <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
         </div>
@@ -138,10 +152,10 @@ const timeAgo = computed(() => {
       </div>
 
       <div class="actions-toolbar">
-        <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action secondary compact">
-          <Icon name="analytics" size="14" />
-          <span>RoyaleAPI</span>
-        </a>
+        <button class="btn-action secondary compact" @click.stop="emit('toggle-select')">
+           <Icon :name="selected ? 'check' : 'select_all'" size="14" />
+           <span>{{ selected ? 'Deselect' : 'Select' }}</span>
+        </button>
         <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
           <Icon name="crown" size="14" />
           <span>Open Game</span>
@@ -157,27 +171,27 @@ const timeAgo = computed(() => {
   border-radius: 20px;
   padding: 12px 16px;
   margin-bottom: 8px;
-  border: 1px solid var(--sys-surface-glass-border);
+  border: 1.5px solid transparent;
   cursor: pointer;
   position: relative;
   overflow: visible;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.3s var(--sys-motion-spring), transform 0.3s var(--sys-motion-spring), border 0.3s;
+  transition: all 0.25s var(--sys-motion-spring);
 }
 
 .card.expanded {
   background: var(--sys-color-surface-container-high);
   box-shadow: var(--sys-elevation-3);
   margin: 16px 0;
-  border-color: var(--sys-color-primary);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .card.selected { 
   background: var(--sys-color-primary-container); 
   border: 2px solid var(--sys-color-primary);
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -196,15 +210,8 @@ const timeAgo = computed(() => {
   text-transform: uppercase;
 }
 
-.hit-target {
-  position: relative;
-  z-index: 5;
-}
-.hit-target::after {
-  content: '';
-  position: absolute;
-  inset: -8px;
-}
+.hit-target { position: relative; z-index: 5; }
+.hit-target::after { content: ''; position: absolute; inset: -4px; }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -226,7 +233,9 @@ const timeAgo = computed(() => {
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; font-weight: 900;
   font-family: var(--sys-font-family-mono);
+  transition: transform 0.2s;
 }
+.stat-pod:hover { transform: scale(1.05); }
 
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
@@ -238,7 +247,7 @@ const timeAgo = computed(() => {
   animation: fade-in 0.3s ease;
 }
 
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
 .stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
@@ -247,7 +256,7 @@ const timeAgo = computed(() => {
 .sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
 
 .actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
-.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; }
+.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .btn-action.secondary { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
 </style>
