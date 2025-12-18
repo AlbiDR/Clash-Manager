@@ -1,295 +1,334 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useClanData } from '../composables/useClanData'
-import { useApiState } from '../composables/useApiState'
-import { useToast } from '../composables/useToast'
-import { useBatchQueue } from '../composables/useBatchQueue'
-import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
-import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
+import { computed } from 'vue'
+import type { Recruit } from '../types'
+import Icon from './Icon.vue'
+import { useBenchmarking } from '../composables/useBenchmarking'
+import { useModules } from '../composables/useModules'
 
-import Icon from '../components/Icon.vue'
-import ConsoleHeader from '../components/ConsoleHeader.vue'
-import RecruitCard from '../components/RecruitCard.vue'
-import FabIsland from '../components/FabIsland.vue'
-import EmptyState from '../components/EmptyState.vue'
-import ErrorState from '../components/ErrorState.vue'
-import SkeletonCard from '../components/SkeletonCard.vue'
+const props = defineProps<{
+  id: string
+  recruit: Recruit
+  expanded: boolean
+  selected: boolean
+  selectionMode: boolean
+}>()
 
-const { pingData } = useApiState()
+const emit = defineEmits<{
+  'toggle-expand': []
+  'toggle-select': []
+}>()
 
-const sheetUrl = computed(() => {
-  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
-  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
-  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
+const { getBenchmark } = useBenchmarking()
+const { modules } = useModules()
+
+// --- TOOLTIP HELPER ---
+function getTooltip(metric: string, value: number | undefined) {
+  if (!modules.value.ghostBenchmarking || value === undefined) return null
+  return getBenchmark('hh', metric, value)
+}
+
+// --- INTERACTION ENGINE (Long Press / Tap / Scroll Guard) ---
+const pointerState = {
+  startX: 0,
+  startY: 0,
+  timer: null as number | null,
+  isLongPress: false,
+  isActive: false
+}
+
+function handlePointerDown(e: PointerEvent) {
+  if (e.button !== 0) return 
+  
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
+
+  pointerState.isActive = true
+  pointerState.isLongPress = false
+  pointerState.startX = e.clientX
+  pointerState.startY = e.clientY
+
+  if (pointerState.timer) clearTimeout(pointerState.timer)
+  
+  pointerState.timer = window.setTimeout(() => {
+    if (pointerState.isActive) {
+      pointerState.isLongPress = true
+      if (navigator.vibrate) navigator.vibrate(60)
+      emit('toggle-select')
+    }
+  }, 500)
+}
+
+function handlePointerMove(e: PointerEvent) {
+  if (!pointerState.isActive) return
+  
+  const moveThreshold = 10
+  const dx = Math.abs(e.clientX - pointerState.startX)
+  const dy = Math.abs(e.clientY - pointerState.startY)
+
+  if (dx > moveThreshold || dy > moveThreshold) {
+    clearInteraction()
+  }
+}
+
+function handlePointerUp() {
+  if (pointerState.isActive && !pointerState.isLongPress) {
+    if (props.selectionMode) {
+      emit('toggle-select')
+    } else {
+      emit('toggle-expand')
+    }
+  }
+  clearInteraction()
+}
+
+function handlePointerCancel() {
+  clearInteraction()
+}
+
+function clearInteraction() {
+  pointerState.isActive = false
+  if (pointerState.timer) {
+    clearTimeout(pointerState.timer)
+    pointerState.timer = null
+  }
+}
+
+// --- SPECIFIC CLICKS ---
+function handleScoreClick(e: Event) {
+    e.stopPropagation()
+    if (navigator.vibrate) navigator.vibrate(20)
+    emit('toggle-select')
+}
+
+function handleExpandClick(e: Event) {
+    e.stopPropagation()
+    if (navigator.vibrate) navigator.vibrate(10)
+    emit('toggle-expand')
+}
+
+// --- COMPUTED VISUALS ---
+const toneClass = computed(() => {
+  const score = props.recruit.s || 0
+  if (score >= 80) return 'tone-high'
+  if (score >= 50) return 'tone-mid'
+  return 'tone-low'
 })
-
-const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
-const blacklist = useRecruitBlacklist()
-
-const recruits = computed(() => data.value?.hh || [])
-const loading = computed(() => !data.value && isRefreshing.value)
-
-const searchQuery = ref('')
-const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
-
-const sortOptions = [
-  { label: 'Potential', value: 'score' },
-  { label: 'War Wins', value: 'war_wins' },
-  { label: 'Cards Won', value: 'cards_won' },
-  { label: 'Donations', value: 'donations' },
-  { label: 'Trophies', value: 'trophies' },
-  { label: 'Recency', value: 'time_found' },
-  { label: 'Name', value: 'name' }
-]
-
-const { 
-  selectedIds, 
-  fabState, 
-  isSelectionMode, 
-  toggleSelect, 
-  selectAll, 
-  clearSelection, 
-  handleAction,
-  handleBlitz
-} = useBatchQueue()
-
-const { 
-  expandedIds, 
-  toggleExpand, 
-  processDeepLink 
-} = useDeepLinkHandler('recruit-')
-
-const selectedSet = computed(() => new Set(selectedIds.value))
 
 const timeAgo = computed(() => {
-  if (!lastSyncTime.value) return ''
-  const ms = Date.now() - lastSyncTime.value
-  const mins = Math.floor(ms / 60000)
-  if (mins < 1) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  return `${hours}h ago`
+  const dateStr = props.recruit.d.ago
+  if (!dateStr) return '-'
+  const ts = new Date(dateStr).getTime()
+  const m = Math.floor((Date.now() - ts) / 60000)
+  if (m < 1) return 'New' 
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  return h > 24 ? Math.floor(h / 24) + 'd' : h + 'h'
 })
-
-const status = computed(() => {
-  if (syncError.value) return { type: 'error', text: 'Retry' } as const
-  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (recruits.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
-  return { type: 'ready', text: 'Empty' } as const
-})
-
-const statsBadge = computed(() => {
-  if (!recruits.value) return undefined
-  return {
-    label: 'Pool',
-    value: recruits.value.length.toString()
-  }
-})
-
-const getTs = (str?: string) => str ? new Date(str).getTime() : 0
-
-const filteredRecruits = computed(() => {
-  // 🛡️ TOMBSTONE FILTER:
-  // We remove recruits that are in the local blacklist (tombstones).
-  // This persists even if the user reloads the page before the server update is live.
-  let result = recruits.value.filter(r => !blacklist.tombstones.value.has(r.id))
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(r => (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query)))
-  }
-  
-  result.sort((a, b) => {
-    switch (sortBy.value) {
-      case 'score': return (b.s || 0) - (a.s || 0)
-      case 'trophies': return (b.t || 0) - (a.t || 0)
-      case 'name': return a.n.localeCompare(b.n)
-      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago)
-      case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
-      case 'donations': return (b.d.don || 0) - (a.d.don || 0)
-      case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
-      default: return 0
-    }
-  })
-  return result
-})
-
-// 🧹 CLEANUP: When new data arrives, check if we can remove tombstones.
-watch(recruits, (newRecruits) => {
-    if (newRecruits.length > 0) {
-        const currentIds = newRecruits.map(r => r.id)
-        blacklist.prune(currentIds)
-        processDeepLink(newRecruits)
-    }
-}, { deep: true, immediate: true })
-
-const { undo, success, error } = useToast()
-
-function dismissBulk() {
-  if (selectedIds.value.length === 0) return
-  const ids = [...selectedIds.value]
-  clearSelection()
-  executeDismiss(ids)
-}
-
-function executeDismiss(ids: string[]) {
-    // 1. Instantly hide locally (Tombstone)
-    blacklist.hide(ids)
-    
-    // 2. Wait for Undo period (4.5s)
-    const timerId = setTimeout(() => {
-        dismissRecruitsAction(ids)
-            .catch(() => {
-                error('Failed to sync changes')
-                // Only un-hide if the network request specifically failed
-                blacklist.restore(ids)
-            })
-    }, 4500)
-    
-    undo(`Dismissed ${ids.length} recruits`, () => {
-        clearTimeout(timerId)
-        blacklist.restore(ids)
-        success('Dismissal cancelled')
-    })
-}
-
-function handleSelectAll() {
-  const ids = filteredRecruits.value.map(r => r.id)
-  selectAll(ids)
-}
-
-function handleSelectHighScores() {
-  const ids = filteredRecruits.value.filter(r => (r.s || 0) >= 50).map(r => r.id)
-  selectAll(ids)
-}
-
-function handleSortUpdate(val: string) {
-  if (document.startViewTransition) {
-    document.startViewTransition(() => {
-      sortBy.value = val as any
-    })
-  } else {
-    sortBy.value = val as any
-  }
-}
 </script>
 
 <template>
-  <div class="view-container">
-    <ConsoleHeader
-      title="Headhunter"
-      :status="status"
-      :show-search="!isSelectionMode"
-      :sheet-url="sheetUrl"
-      :stats="statsBadge"
-      :sort-options="sortOptions"
-      @update:search="val => searchQuery = val"
-      @update:sort="handleSortUpdate"
-      @refresh="refresh"
-    >
-      <template #extra>
-        <div v-if="isSelectionMode" class="selection-bar">
-           <div class="sel-count">{{ selectedIds.length }} Selected</div>
-           <div class="sel-actions">
-             <span class="text-btn primary" @click="handleSelectAll">All</span>
-             <span class="text-btn primary" @click="handleSelectHighScores">Score ≥ 50</span>
-             <span class="text-btn" @click="clearSelection">None</span>
-             <span class="text-btn danger" @click="clearSelection">Done</span>
-           </div>
+  <div 
+    class="card squish-interaction"
+    :class="{ 'expanded': expanded, 'selected': selected }"
+    @pointerdown="handlePointerDown"
+    @pointermove="handlePointerMove"
+    @pointerup="handlePointerUp"
+    @pointercancel="handlePointerCancel"
+    @contextmenu.prevent
+  >
+    <div class="card-header">
+      <div class="identity-group">
+        <div class="meta-stack">
+          <div class="badge time">{{ timeAgo }}</div>
+          <div class="badge tag">#{{ recruit.id.substring(0, 5) }}</div>
         </div>
-      </template>
-    </ConsoleHeader>
+        
+        <div class="name-block">
+          <span class="player-name">{{ recruit.n }}</span>
+          <div 
+            class="trophy-meta hit-target" 
+            v-tooltip="getTooltip('trophies', recruit.t)"
+          >
+            <Icon name="trophy" size="12" />
+            <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
+          </div>
+        </div>
+      </div>
 
-    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
-    
-    <div v-else-if="loading && recruits.length === 0" class="list-container gpu-contain">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
-    </div>
-    
-    <EmptyState 
-      v-else-if="!loading && filteredRecruits.length === 0" 
-      icon="telescope" 
-      message="No recruits found"
-      hint="Try adjusting your filters or run a new scan."
-    >
-      <template #action>
-        <button class="btn-primary" @click="refresh">
-          <Icon name="refresh" size="18" />
-          <span>Scan Again</span>
+      <div class="header-actions">
+        <div class="score-section" @click.stop="handleScoreClick">
+          <div 
+            class="stat-pod hit-target" 
+            :class="toneClass" 
+            v-tooltip="getTooltip('score', recruit.s)"
+          >
+            <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
+          </div>
+        </div>
+        <button 
+          class="expand-btn hit-target" 
+          @click.stop="handleExpandClick" 
+          :class="{ 'is-active': expanded }"
+        >
+          <Icon name="chevron_down" size="20" />
         </button>
-      </template>
-    </EmptyState>
-    
-    <TransitionGroup 
-      v-else 
-      name="list" 
-      tag="div" 
-      class="list-container gpu-contain"
-    >
-      <RecruitCard
-        v-for="(recruit, index) in filteredRecruits"
-        :key="recruit.id"
-        :id="`recruit-${recruit.id}`"
-        :recruit="recruit"
-        :expanded="expandedIds.has(recruit.id)"
-        :selected="selectedSet.has(recruit.id)"
-        :selection-mode="isSelectionMode"
-        :style="{ '--i': index }"
-        @toggle-expand="toggleExpand(recruit.id)"
-        @toggle-select="toggleSelect(recruit.id)"
-      />
-    </TransitionGroup>
+      </div>
+    </div>
 
-    <FabIsland
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
-      :is-processing="fabState.isProcessing"
-      :is-blasting="fabState.isBlasting"
-      :selection-count="fabState.selectionCount"
-      :blitz-enabled="fabState.blitzEnabled"
-      @action="handleAction"
-      @blitz="handleBlitz"
-      @dismiss="dismissBulk"
-    />
+    <div class="card-body" v-if="expanded">
+      <div class="stats-row">
+        <div class="stat-cell hit-target" v-tooltip="getTooltip('donations', recruit.d.don)">
+          <span class="sc-label">Donations</span>
+          <span class="sc-val">{{ recruit.d.don }}</span>
+        </div>
+        <div class="stat-cell border-l hit-target" v-tooltip="getTooltip('warWins', recruit.d.war)">
+          <span class="sc-label">War Wins</span>
+          <span class="sc-val">{{ recruit.d.war }}</span>
+        </div>
+        <div class="stat-cell border-l">
+          <span class="sc-label">Cards Won</span>
+          <span class="sc-val">{{ recruit.d.cards || '-' }}</span>
+        </div>
+      </div>
+
+      <div class="actions-toolbar">
+        <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
+          <Icon name="analytics" size="14" />
+          <span>RoyaleAPI</span>
+        </a>
+        <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
+          <Icon name="crown" size="14" />
+          <span>Open Game</span>
+        </a>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; }
-
-.gpu-contain {
-  transform: translateZ(0);
-  will-change: transform;
-  contain: layout paint;
-}
-
-.selection-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; padding-top: 12px;
-  border-top: 1px solid var(--sys-color-outline-variant);
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.sel-count { font-size: 20px; font-weight: 700; white-space: nowrap; }
-.sel-actions { display: flex; gap: 12px; align-items: center; }
-.text-btn { font-weight: 700; cursor: pointer; padding: 4px 0; white-space: nowrap; font-size: 13px; }
-.text-btn.primary { color: var(--sys-color-primary); }
-.text-btn.danger { color: var(--sys-color-error); }
-
-.btn-primary {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 99px;
-  font-weight: 700;
+.card {
+  background: var(--sys-color-surface-container);
+  border-radius: 20px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1.5px solid transparent;
   cursor: pointer;
-  margin-top: 16px;
+  position: relative;
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  transition: all 0.2s var(--sys-motion-spring);
+}
+
+.card.expanded {
+  background: var(--sys-color-surface-container-high);
+  box-shadow: var(--sys-elevation-3);
+  margin: 16px 0;
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+}
+
+.card.selected { 
+  background: var(--sys-color-primary-container) !important; 
+  border: 2.5px solid var(--sys-color-primary);
+  transform: scale(0.97);
+}
+
+/* 🎯 High Contrast Rules for Selection */
+.card.selected .player-name,
+.card.selected .trophy-val,
+.card.selected .stat-score,
+.card.selected .sc-label,
+.card.selected .sc-val,
+.card.selected .expand-btn { 
+  color: var(--sys-color-on-primary-container) !important; 
+  opacity: 1 !important;
+}
+
+.card.selected .stat-pod {
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important;
+  color: var(--sys-color-on-primary-container) !important;
+  border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1);
+}
+
+.card.selected .badge { 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; 
+  color: var(--sys-color-on-primary-container) !important;
+}
+
+.card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+
+.meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
+
+.badge {
+  height: 18px; width: 100%;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
+  font-family: var(--sys-font-family-mono);
+  text-transform: uppercase;
+}
+
+.hit-target { position: relative; z-index: 5; }
+.hit-target::after { content: ''; position: absolute; inset: -4px; }
+
+.name-block { display: flex; flex-direction: column; min-width: 0; }
+
+.player-name {
+  font-size: 16px; font-weight: 850;
+  color: var(--sys-color-on-surface);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
+.trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
+
+.header-actions { display: flex; align-items: center; gap: 4px; }
+
+.expand-btn {
+  background: none; border: none; padding: 8px;
+  color: var(--sys-color-outline);
+  cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expand-btn.is-active { transform: rotate(180deg); color: var(--sys-color-primary); }
+
+.stat-pod {
+  width: 48px; height: 48px;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900;
+  font-family: var(--sys-font-family-mono);
   transition: transform 0.2s;
 }
-.btn-primary:active { transform: scale(0.95); }
+.stat-pod:hover { transform: scale(1.05); }
+
+.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
+
+.card-body { 
+  margin-top: 16px; 
+  padding-top: 16px; 
+  border-top: 1px solid rgba(0,0,0,0.05); 
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+.stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
+.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
+.stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
+.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
+.sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
+
+.actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
+.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
+.btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.btn-action.secondary { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
 </style>
