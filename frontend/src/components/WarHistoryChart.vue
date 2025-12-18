@@ -8,16 +8,27 @@ const props = defineProps<{
 const bars = computed(() => {
   if (!props.history || props.history === '-') return []
   
+  // History string comes Descending (Newest -> Oldest)
   const entries = (props.history || '')
     .split('|')
-    .map(x => {
-        const parts = (x || '').trim().split(' ')
-        const val = parseInt(parts[0] ?? '0')
-        return isNaN(val) ? 0 : val
-    })
-    .reverse()
+    .map(x => x.trim())
+    .filter(Boolean)
   
-  return entries.slice(-52) // Show last 52 weeks max
+  // Take latest 52 weeks (approx 1 year), then reverse to show Old -> New (Left -> Right)
+  const chronological = entries.slice(0, 52).reverse()
+  
+  return chronological.map(entry => {
+    const parts = entry.split(' ')
+    const val = parseInt(parts[0] ?? '0')
+    const fame = isNaN(val) ? 0 : val
+    const week = parts[1] || 'Unknown'
+    
+    return {
+      fame,
+      week,
+      tooltip: `${week}: ${fame} Fame`
+    }
+  })
 })
 </script>
 
@@ -28,17 +39,18 @@ const bars = computed(() => {
       class="war-chart"
     >
       <div 
-        v-for="(fame, i) in bars" 
+        v-for="(bar, i) in bars" 
         :key="i"
-        class="bar"
+        class="bar hit-target"
         :class="{ 
-          'bar-win': fame > 2000, 
-          'bar-hit': fame > 0 && fame <= 2000,
-          'bar-miss': fame === 0
+          'bar-win': bar.fame > 2000, 
+          'bar-hit': bar.fame > 0 && bar.fame <= 2000,
+          'bar-miss': bar.fame === 0
         }"
         :style="{ 
-          height: `${Math.max(15, Math.min(100, (fame / 3200) * 100))}%`
+          height: `${Math.max(15, Math.min(100, (bar.fame / 3200) * 100))}%`
         }"
+        v-tooltip="bar.tooltip"
       />
     </div>
     <div v-else class="war-chart-empty">
@@ -50,9 +62,9 @@ const bars = computed(() => {
 <style scoped>
 .chart-container {
   width: 100%;
-  height: 28px; /* Slightly taller for elegance */
+  height: 32px;
   overflow: hidden;
-  margin: 12px 0; /* More breathing room */
+  margin: 12px 0;
   display: flex; align-items: flex-end;
 }
 
@@ -61,16 +73,28 @@ const bars = computed(() => {
   align-items: flex-end;
   height: 100%;
   width: 100%;
-  gap: 4px; /* Increased gap for clarity */
+  gap: 2px; /* Reduced gap to fit 52 weeks */
 }
 
 .bar {
   flex: 1;
   min-height: 4px;
-  border-radius: 99px; /* Fully rounded pill shape */
+  border-radius: 2px; /* Less rounding for tighter fit */
   opacity: 0.9;
   transition: all 0.2s ease;
   background-color: var(--sys-color-surface-container-highest);
+  position: relative;
+}
+
+.bar:hover {
+  transform: scaleY(1.1);
+  opacity: 1;
+  z-index: 10;
+}
+
+.hit-target {
+  /* Increase touch area for tooltips */
+  cursor: pointer;
 }
 
 .bar-hit {
@@ -84,7 +108,7 @@ const bars = computed(() => {
 }
 
 .bar-miss {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--sys-color-outline-variant-rgb, 100, 100, 100), 0.3);
 }
 
 .war-chart-empty {
