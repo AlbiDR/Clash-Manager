@@ -175,7 +175,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return
     
-    console.log("⚡ Starting Blitz Mode (Solution Gamma: Web Worker Clock)")
+    console.log("⚡ Starting Blitz Mode")
     
     isBlasting.value = true
     currentIndex.value = 0
@@ -273,4 +273,3 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     handleBlitz
   }
 }
-
