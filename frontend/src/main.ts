@@ -1,3 +1,4 @@
+
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
@@ -6,6 +7,7 @@ import { vTooltip } from './directives/vTooltip'
 import { useModules } from './composables/useModules'
 import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
+import { useTheme } from './composables/useTheme'
 
 // 🚨 CRITICAL ERROR HANDLER
 // This ensures that if the app crashes (White Screen), the error is shown to the user.
@@ -86,6 +88,10 @@ async function bootstrap() {
 
         const apiState = useApiState()
         apiState.init()
+
+        // Theme initialization must happen as early as possible
+        const themeState = useTheme()
+        themeState.init()
 
         const clanData = useClanData()
         // We do NOT await this, as it handles its own SWR (Stale-While-Revalidate)
