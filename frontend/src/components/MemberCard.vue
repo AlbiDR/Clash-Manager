@@ -20,7 +20,7 @@ const emit = defineEmits<{
   'toggle-select': []
 }>()
 
-const { getGhostTooltip } = useBenchmarking()
+const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
 // --- INTERACTION PROTECTION ---
@@ -95,13 +95,13 @@ function onContentClick(e: MouseEvent | TouchEvent) {
     <div class="card-header">
       <div class="identity-group">
         <div class="meta-stack">
-          <div class="badge tenure" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('tenure', member.d.days) : null">{{ member.d.days }}d</div>
+          <div class="badge tenure" v-tooltip="modules.ghostBenchmarking ? getBenchmark('tenure', member.d.days) : null">{{ member.d.days }}d</div>
           <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
         </div>
         
         <div class="name-block">
           <span class="player-name">{{ member.n }}</span>
-          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('trophies', member.t) : null">
+          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getBenchmark('trophies', member.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
           </div>
@@ -109,9 +109,9 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       </div>
 
       <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
-        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('score', member.s) : null">
+        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('score', member.s) : null">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="momentum-pill" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('momentum', trend.raw) : null">
+          <div v-if="trend" class="momentum-pill" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('momentum', trend.raw) : null">
             <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
             <span class="trend-val">{{ trend.val }}</span>
           </div>
@@ -121,11 +121,11 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 
     <div class="card-body" v-if="expanded">
       <div class="stats-grid">
-        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('donations', member.d.avg) : null">
+        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getBenchmark('donations', member.d.avg) : null">
           <span class="label">Daily Avg</span>
           <span class="value">{{ member.d.avg }}</span>
         </div>
-        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('warRate', parseFloat(member.d.rate || '0')) : null">
+        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getBenchmark('warRate', parseFloat(member.d.rate || '0')) : null">
           <span class="label">War Rate</span>
           <span class="value">{{ member.d.rate }}</span>
         </div>
