@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 📊 MODULE: LOGGER (DATABASE)
@@ -8,7 +9,7 @@
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
  *      (Preserves data for players who leave mid-day).
- * 🏷️ VERSION: 6.0.0
+ * 🏷️ VERSION: 6.0.1
  * 
  * 🧠 REASONING:
  *    - "Snapshots": We need a history of performance (War + Donos).
@@ -17,7 +18,7 @@
  * ============================================================================
  */
 
-const VER_LOGGER = '6.0.0';
+const VER_LOGGER = '6.0.1';
 
 function updateClanDatabase() {
   console.time('ETL');
@@ -34,9 +35,12 @@ function updateClanDatabase() {
     
     const [membersData, raceData] = Utils.fetchRoyaleAPI(urls);
     
-    // Check if index 0 exists and has items (fetchRoyaleAPI handles nulls internally)
-    if (!membersData || !membersData.items) {
-      throw new Error("API returned no member data");
+    // 🛑 CIRCUIT BREAKER: API FAILURE
+    // If the API fails or returns empty data (Maintenance/Rate Limit), 
+    // ABORT IMMEDIATELY to prevent wiping the database with zeros.
+    if (!membersData || !membersData.items || membersData.items.length === 0) {
+      console.error("⛔ ETL ABORTED: API returned empty or invalid member data. Database NOT updated.");
+      return; 
     }
 
     const activeMembers = membersData.items;
