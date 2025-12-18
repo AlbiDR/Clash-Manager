@@ -1,4 +1,3 @@
-
 import { ref, watch } from 'vue'
 
 const MODULES_KEY = 'cm_modules_v2' 
@@ -6,11 +5,13 @@ const MODULES_KEY = 'cm_modules_v2'
 export interface ModuleState {
     blitzMode: boolean
     ghostBenchmarking: boolean
+    sortExplanation: boolean
 }
 
 const defaultState: ModuleState = {
     blitzMode: false,
-    ghostBenchmarking: true
+    ghostBenchmarking: true,
+    sortExplanation: false
 }
 
 const modules = ref<ModuleState>({ ...defaultState })
@@ -35,7 +36,8 @@ export function useModules() {
                 const parsed = JSON.parse(stored)
                 modules.value = {
                     blitzMode: typeof parsed.blitzMode === 'boolean' ? parsed.blitzMode : defaultState.blitzMode,
-                    ghostBenchmarking: typeof parsed.ghostBenchmarking === 'boolean' ? parsed.ghostBenchmarking : defaultState.ghostBenchmarking
+                    ghostBenchmarking: typeof parsed.ghostBenchmarking === 'boolean' ? parsed.ghostBenchmarking : defaultState.ghostBenchmarking,
+                    sortExplanation: typeof parsed.sortExplanation === 'boolean' ? parsed.sortExplanation : defaultState.sortExplanation
                 }
             } else {
                 modules.value = { ...defaultState }
@@ -64,4 +66,3 @@ export function useModules() {
         init
     }
 }
-
