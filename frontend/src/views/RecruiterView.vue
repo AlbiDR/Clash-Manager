@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -34,13 +33,41 @@ const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
 
 const sortOptions = [
-  { label: 'Potential', value: 'score', desc: 'Weighted score based on War Wins (High), Trophies, and Donations.' },
-  { label: 'War Wins', value: 'war_wins', desc: 'Total war day wins + 500 bonus if active in current race.' },
-  { label: 'Cards Won', value: 'cards_won' },
-  { label: 'Donations', value: 'donations' },
-  { label: 'Trophies', value: 'trophies' },
-  { label: 'Recency', value: 'time_found' },
-  { label: 'Name', value: 'name' }
+  { 
+    label: 'Potential', 
+    value: 'score', 
+    desc: 'AI-modeled potential score comparing this recruit against current clan averages. Prioritizes War Wins and recent activity.' 
+  },
+  { 
+    label: 'War Wins', 
+    value: 'war_wins', 
+    desc: 'Lifetime War Day wins. Includes a +500 point heuristic bonus if the player participated in the current river race.' 
+  },
+  { 
+    label: 'Cards Won', 
+    value: 'cards_won',
+    desc: 'Total cards won in challenges. Indicates individual skill and tournament experience.'
+  },
+  { 
+    label: 'Donations', 
+    value: 'donations',
+    desc: 'Total lifetime donations. Used to gauge generosity and activity levels.'
+  },
+  { 
+    label: 'Trophies', 
+    value: 'trophies',
+    desc: 'Current ladder ranking.'
+  },
+  { 
+    label: 'Recency', 
+    value: 'time_found',
+    desc: 'Sorts by when the Deep Net scanner discovered this recruit.'
+  },
+  { 
+    label: 'Name', 
+    value: 'name',
+    desc: 'Alphabetical sorting.'
+  }
 ]
 
 const { 
