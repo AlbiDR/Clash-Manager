@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -33,8 +34,8 @@ const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
 
 const sortOptions = [
-  { label: 'Potential', value: 'score' },
-  { label: 'War Wins', value: 'war_wins' },
+  { label: 'Potential', value: 'score', desc: 'Weighted score based on War Wins (High), Trophies, and Donations.' },
+  { label: 'War Wins', value: 'war_wins', desc: 'Total war day wins + 500 bonus if active in current race.' },
   { label: 'Cards Won', value: 'cards_won' },
   { label: 'Donations', value: 'donations' },
   { label: 'Trophies', value: 'trophies' },
@@ -49,7 +50,7 @@ const {
   toggleSelect, 
   selectAll, 
   clearSelection, 
-  handleAction,
+  handleAction, 
   handleBlitz
 } = useBatchQueue()
 
