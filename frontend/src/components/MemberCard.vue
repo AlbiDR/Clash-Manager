@@ -181,13 +181,13 @@ const trend = computed(() => {
       <WarHistoryChart :history="member.d.hist" />
 
       <div class="actions">
-        <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
-          <Icon name="crown" size="16" />
-          <span>Open Game</span>
-        </a>
         <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
           <Icon name="analytics" size="16" />
           <span>RoyaleAPI</span>
+        </a>
+        <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
+          <Icon name="crown" size="16" />
+          <span>Open Game</span>
         </a>
       </div>
     </div>
