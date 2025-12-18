@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   CLASH MANAGER - Neo-Material Design System (Consolidated v6.5)
+   CLASH MANAGER - Neo-Material Design System (Consolidated v6.6)
    ============================================================================ */
 
 :root {
@@ -73,6 +73,8 @@ body {
   -webkit-font-smoothing: antialiased;
   padding-bottom: calc(120px + env(safe-area-inset-bottom));
   overflow-x: hidden;
+  /* Prevent context menu during long press for tooltips */
+  -webkit-touch-callout: none;
 }
 
 .squish-interaction {
@@ -96,14 +98,15 @@ body {
   z-index: 10000;
   border: 1px solid var(--sys-surface-glass-border);
   box-shadow: var(--sys-elevation-3);
-  transition: opacity 0.2s ease, transform 0.25s var(--sys-motion-spring), top 0.25s var(--sys-motion-spring), left 0.25s var(--sys-motion-spring);
+  transition: opacity 0.2s ease, transform 0.25s var(--sys-motion-spring), top 0.2s ease, left 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 10px;
   contain: content;
+  transform: translateX(-50%) translateY(-100%) scale(0.8);
 }
 
-.rich-tooltip.visible { opacity: 1; }
+.rich-tooltip.visible { opacity: 1; transform: translateX(-50%) translateY(-100%) scale(1); }
 
 .rt-header { 
   display: grid; 
