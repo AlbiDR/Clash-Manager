@@ -84,7 +84,7 @@ npm run build
 This project is configured with GitHub Actions to ensure code quality and automate deployments.
 *   **Automated Testing**: On every push to `main` or a `v*` tag, the full test suite is run. Failed tests will block deployment, preventing regressions.
 *   **Automated Deployment**: Successful builds on the `main` branch are automatically deployed to GitHub Pages.
-*   **Automated Releases**: Pushing a `v*` tag (e.g., `v6.1.0`) will automatically build the app, create a GitHub Release, and attach the production-ready `.zip` file.
+*   **Automated Releases**: Pushing a `v*` tag (e.g., `v6.2.0`) will automatically build the app, create a GitHub Release, and attach the production-ready `.zip` file.
 
 ---
 
