@@ -1,318 +1,340 @@
-
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Recruit } from '../types'
-import Icon from './Icon.vue'
-import { useBenchmarking } from '../composables/useBenchmarking'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useApiState } from '../composables/useApiState'
+import { useInstallPrompt } from '../composables/useInstallPrompt'
 import { useModules } from '../composables/useModules'
+import { useTheme } from '../composables/useTheme'
+import ConsoleHeader from '../components/ConsoleHeader.vue'
+import Icon from '../components/Icon.vue'
 
-const props = defineProps<{
-  id: string
-  recruit: Recruit
-  expanded: boolean
-  selected: boolean
-  selectionMode: boolean
-}>()
+const newApiUrl = ref('') 
+const isEditing = ref(false)
 
-const emit = defineEmits<{
-  'toggle-expand': []
-  'toggle-select': []
-}>()
+const { apiUrl, apiStatus, pingData, checkApiStatus } = useApiState()
+const { isInstallable, install } = useInstallPrompt()
+const { modules, toggle } = useModules()
+const { theme, setTheme } = useTheme()
 
-const { getBenchmark } = useBenchmarking()
-const { modules } = useModules()
-
-// --- ROBUST INTERACTION ENGINE ---
-const pointerState = {
-  startX: 0,
-  startY: 0,
-  timer: null as number | null,
-  isLongPress: false,
-  isActive: false
-}
-
-function handlePointerDown(e: PointerEvent) {
-  if (e.button !== 0) return 
-  
-  const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
-
-  pointerState.isActive = true
-  pointerState.isLongPress = false
-  pointerState.startX = e.clientX
-  pointerState.startY = e.clientY
-
-  if (pointerState.timer) clearTimeout(pointerState.timer)
-  
-  pointerState.timer = window.setTimeout(() => {
-    if (pointerState.isActive) {
-      pointerState.isLongPress = true
-      if (navigator.vibrate) navigator.vibrate(60)
-      emit('toggle-select')
-    }
-  }, 500)
-}
-
-function handlePointerMove(e: PointerEvent) {
-  if (!pointerState.isActive) return
-  
-  const moveThreshold = 10
-  const dx = Math.abs(e.clientX - pointerState.startX)
-  const dy = Math.abs(e.clientY - pointerState.startY)
-
-  if (dx > moveThreshold || dy > moveThreshold) {
-    clearInteraction()
-  }
-}
-
-function handlePointerUp() {
-  if (pointerState.isActive && !pointerState.isLongPress) {
-    if (props.selectionMode) {
-      emit('toggle-select')
-    } else {
-      emit('toggle-expand')
-    }
-  }
-  clearInteraction()
-}
-
-function handlePointerCancel() {
-  clearInteraction()
-}
-
-function clearInteraction() {
-  pointerState.isActive = false
-  if (pointerState.timer) {
-    clearTimeout(pointerState.timer)
-    pointerState.timer = null
-  }
-}
-
-function handleScoreClick(e: Event) {
-    e.stopPropagation()
-    if (navigator.vibrate) navigator.vibrate(20)
-    emit('toggle-select')
-}
-
-function handleExpandClick(e: Event) {
-    e.stopPropagation()
-    if (navigator.vibrate) navigator.vibrate(10)
-    emit('toggle-expand')
-}
-
-const toneClass = computed(() => {
-  const score = props.recruit.s || 0
-  if (score >= 80) return 'tone-high'
-  if (score >= 50) return 'tone-mid'
-  return 'tone-low'
+onMounted(() => {
+    checkApiStatus()
 })
 
-const timeAgo = computed(() => {
-  const dateStr = props.recruit.d.ago
-  if (!dateStr) return '-'
-  const ts = new Date(dateStr).getTime()
-  const m = Math.floor((Date.now() - ts) / 60000)
-  if (m < 1) return 'New' 
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  return h > 24 ? Math.floor(h / 24) + 'd' : h + 'h'
+watch(apiStatus, (newVal) => {
+    if (newVal === 'unconfigured') isEditing.value = true
+}, { immediate: true })
+
+const hasLocalOverride = computed(() => !!localStorage.getItem('cm_gas_url'))
+
+function saveApiUrl() {
+    if (newApiUrl.value.trim()) {
+        localStorage.setItem('cm_gas_url', newApiUrl.value.trim())
+        window.location.reload()
+    }
+}
+
+function resetApiUrl() {
+    if(confirm('Reset API URL to default?')) {
+        localStorage.removeItem('cm_gas_url')
+        window.location.reload()
+    }
+}
+
+function factoryReset() {
+    if (confirm('Reset Application Data?\n\nThis will clear local cache and settings. Data on the Google Sheet will NOT be affected.')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                for(let r of regs) r.unregister()
+                window.location.reload();
+            })
+        } else window.location.reload();
+    }
+}
+
+const apiStatusObject = computed(() => {
+    if (apiStatus.value === 'online') return { type: 'ready', text: 'Systems Online' } as const
+    if (apiStatus.value === 'offline') return { type: 'error', text: 'Disconnected' } as const
+    if (apiStatus.value === 'unconfigured') return { type: 'error', text: 'Setup Required' } as const
+    return { type: 'loading', text: 'Ping...' } as const
 })
 </script>
 
 <template>
-  <div 
-    class="card squish-interaction"
-    :class="{ 'expanded': expanded, 'selected': selected }"
-    @pointerdown="handlePointerDown"
-    @pointermove="handlePointerMove"
-    @pointerup="handlePointerUp"
-    @pointercancel="handlePointerCancel"
-    @contextmenu.prevent
-  >
-    <div class="card-header">
-      <div class="identity-group">
-        <div class="meta-stack">
-          <div class="badge time">{{ timeAgo }}</div>
-          <div class="badge tag">#{{ recruit.id.substring(0, 5) }}</div>
+  <div class="view-container">
+    <ConsoleHeader title="Settings" :status="apiStatusObject" />
+
+    <div class="settings-content gpu-contain">
+      
+      <!-- PWA Install Banner -->
+      <div v-if="isInstallable" class="install-banner" @click="install">
+        <Icon name="download" size="24" />
+        <div class="ib-text">
+          <div class="ib-title">Install PWA</div>
+          <div class="ib-desc">Unlock full native features and speed</div>
+        </div>
+        <Icon name="chevron_right" size="20" class="arrow" />
+      </div>
+
+      <!-- Section: Network -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="plug" size="20" class="header-icon" />
+          <h3>Network & API</h3>
+          <div class="status-indicator" :class="apiStatus"></div>
         </div>
         
-        <div class="name-block">
-          <span class="player-name">{{ recruit.n }}</span>
-          <div class="trophy-meta hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'trophies', recruit.t) : null">
-            <Icon name="trophy" size="12" />
-            <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
+        <div class="card-body">
+          <div class="network-stats">
+            <div class="stat-box">
+              <span class="label">Latency</span>
+              <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Backend</span>
+              <span class="value">v{{ pingData?.version || '0.0' }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Cache</span>
+              <span class="value">Ready</span>
+            </div>
+          </div>
+
+          <div class="url-manager">
+            <div class="field-label">API ENDPOINT</div>
+            <div v-if="!isEditing" class="url-readout">
+              <span class="url-text">{{ apiUrl }}</span>
+              <button class="edit-btn" @click="isEditing = true">Edit</button>
+            </div>
+            <div v-else class="url-input-row">
+              <input v-model="newApiUrl" type="text" placeholder="https://script.google.com/..." class="glass-input" />
+              <button class="save-btn" @click="saveApiUrl"><Icon name="check" size="20" /></button>
+              <button class="cancel-btn" @click="isEditing = false">X</button>
+            </div>
+            <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
+              Running custom override • Tap to reset
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="header-actions">
-        <div class="score-section" @click.stop="handleScoreClick">
-          <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'score', recruit.s) : null">
-            <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
+      <!-- Section: Visuals -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="gear" size="20" class="header-icon" />
+          <h3>Appearance</h3>
+        </div>
+        <div class="card-body">
+          <div class="theme-switch">
+            <button 
+              class="theme-btn" 
+              :class="{ active: theme === 'light' }" 
+              @click="setTheme('light')"
+              title="Light Mode"
+            >
+              <Icon name="theme_light" size="20" />
+            </button>
+            <button 
+              class="theme-btn" 
+              :class="{ active: theme === 'auto' }" 
+              @click="setTheme('auto')"
+              title="Auto / System"
+            >
+              <Icon name="theme_auto" size="20" />
+            </button>
+            <button 
+              class="theme-btn" 
+              :class="{ active: theme === 'dark' }" 
+              @click="setTheme('dark')"
+              title="Dark Mode"
+            >
+              <Icon name="moon" size="20" />
+            </button>
           </div>
         </div>
-        <button class="expand-btn hit-target" @click.stop="handleExpandClick" :class="{ 'is-active': expanded }">
-          <Icon name="chevron_down" size="20" />
-        </button>
-      </div>
-    </div>
-
-    <div class="card-body" v-if="expanded">
-      <div class="stats-row">
-        <div class="stat-cell hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'donations', recruit.d.don) : null">
-          <span class="sc-label">Donations</span>
-          <span class="sc-val">{{ recruit.d.don }}</span>
-        </div>
-        <div class="stat-cell border-l hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'warWins', recruit.d.war) : null">
-          <span class="sc-label">War Wins</span>
-          <span class="sc-val">{{ recruit.d.war }}</span>
-        </div>
-        <div class="stat-cell border-l">
-          <span class="sc-label">Cards Won</span>
-          <span class="sc-val">{{ recruit.d.cards || '-' }}</span>
-        </div>
       </div>
 
-      <div class="actions-toolbar">
-        <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
-          <Icon name="analytics" size="14" />
-          <span>RoyaleAPI</span>
-        </a>
-        <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
-          <Icon name="crown" size="14" />
-          <span>Open Game</span>
-        </a>
+      <!-- Section: Power Tools -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="lightning" size="20" class="header-icon" />
+          <h3>Power Tools</h3>
+        </div>
+        <div class="card-body">
+          <div class="features-list">
+            <div class="toggle-row" @click="toggle('ghostBenchmarking')">
+                <div class="row-info">
+                <div class="row-label">Ghost Benchmarking</div>
+                <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                </div>
+                <div class="switch" :class="{ active: modules.ghostBenchmarking }">
+                <div class="handle"></div>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Experiments -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="flask" size="20" class="header-icon" />
+          <h3>Experiments</h3>
+        </div>
+        <div class="card-body">
+          <div class="features-list">
+            <div class="toggle-row" @click="toggle('blitzMode')">
+                <div class="row-info">
+                <div class="row-label">Blitz Mode</div>
+                <div class="row-desc">Multi-tab profile navigation engine</div>
+                </div>
+                <div class="switch" :class="{ active: modules.blitzMode }">
+                <div class="handle"></div>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Modules -->
+      <div v-if="pingData?.modules" class="settings-card">
+        <div class="card-header">
+          <Icon name="box" size="20" class="header-icon" />
+          <h3>System Modules</h3>
+        </div>
+        <div class="card-body">
+          <div class="module-grid">
+            <div v-for="(ver, name) in pingData.modules" :key="name" class="module-item">
+              <span class="m-name">{{ name }}</span>
+              <span class="m-ver">v{{ ver }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Recovery -->
+      <div class="settings-card danger-zone">
+        <div class="card-header">
+          <Icon name="undo" size="20" class="header-icon" />
+          <h3>Troubleshooting</h3>
+        </div>
+        <div class="card-body">
+          <p class="trouble-text">If data sync is inconsistent, a local reset will re-initialize the app cache.</p>
+          <button class="reset-btn" @click="factoryReset">Reset Application Data</button>
+        </div>
+      </div>
+
+      <div class="footer-info">
+        <div class="brand">CLASH MANAGER V6.2.0</div>
+        <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.card {
+.view-container { min-height: 100vh; }
+.settings-content { padding: 12px 0 120px; display: flex; flex-direction: column; gap: 16px; }
+
+.settings-card {
   background: var(--sys-color-surface-container);
-  border-radius: 20px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  border: 1.5px solid transparent;
+  border-radius: 24px;
+  border: 1px solid var(--sys-surface-glass-border);
+  overflow: hidden;
+  animation: card-bloom 0.4s var(--sys-motion-spring) backwards;
+  transition: background-color 0.3s ease;
+}
+
+.card-header {
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.card-header h3 { margin: 0; font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); }
+.header-icon { color: var(--sys-color-primary); }
+
+.card-body { padding: 20px; }
+
+.network-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-box {
+  background: var(--sys-color-surface-container-high);
+  padding: 12px; border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.stat-box .label { font-size: 10px; font-weight: 800; opacity: 0.6; text-transform: uppercase; }
+.stat-box .value { font-size: 15px; font-weight: 900; font-family: var(--sys-font-family-mono); color: var(--sys-color-primary); }
+
+.url-manager .field-label { font-size: 10px; font-weight: 800; opacity: 0.5; margin-bottom: 8px; }
+.url-readout {
+  background: var(--sys-color-surface-container-highest);
+  padding: 10px 14px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.url-text { font-family: var(--sys-font-family-mono); font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit-btn { background: none; border: none; color: var(--sys-color-primary); font-weight: 800; font-size: 12px; cursor: pointer; }
+
+.url-input-row { display: flex; gap: 8px; }
+.glass-input { flex: 1; height: 40px; background: white; border: 1.5px solid var(--sys-color-primary); border-radius: 10px; padding: 0 12px; font-family: var(--sys-font-family-mono); font-size: 13px; }
+.save-btn { width: 40px; border-radius: 10px; background: var(--sys-color-primary); color: white; border: none; }
+.cancel-btn { width: 40px; border-radius: 10px; background: var(--sys-color-surface-container-highest); border: none; font-weight: 800; }
+
+.override-pill { margin-top: 10px; padding: 8px; border-radius: 8px; background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); font-size: 11px; font-weight: 800; text-align: center; cursor: pointer; }
+
+/* THEME SWITCH */
+.theme-switch {
+  display: flex;
+  background: var(--sys-color-surface-container-high);
+  padding: 4px;
+  border-radius: 99px;
+  gap: 4px;
+}
+.theme-btn {
+  flex: 1;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--sys-color-outline);
+  border-radius: 99px;
   cursor: pointer;
-  position: relative;
-  overflow: visible;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: pan-y;
+  display: flex; align-items: center; justify-content: center;
   transition: all 0.2s var(--sys-motion-spring);
 }
-
-.card.expanded {
-  background: var(--sys-color-surface-container-high);
-  box-shadow: var(--sys-elevation-3);
-  margin: 16px 0;
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+.theme-btn.active {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
-.card.selected { 
-  background: var(--sys-color-primary-container) !important; 
-  border: 2.5px solid var(--sys-color-primary);
-  transform: scale(0.97);
+.features-list { display: flex; flex-direction: column; gap: 16px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+
+.row-label { font-weight: 800; font-size: 15px; color: var(--sys-color-on-surface); }
+.row-desc { font-size: 13px; opacity: 0.6; }
+
+.switch { width: 44px; height: 24px; background: var(--sys-color-surface-container-highest); border-radius: 12px; position: relative; transition: 0.3s; border: 1.5px solid rgba(0,0,0,0.1); }
+.switch.active { background: var(--sys-color-primary); }
+.switch .handle { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; background: white; border-radius: 50%; transition: 0.3s; }
+.switch.active .handle { left: calc(100% - 19px); }
+
+.module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; }
+.module-item { background: var(--sys-color-surface-container-high); padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.m-name { font-size: 10px; font-weight: 800; opacity: 0.5; text-transform: uppercase; }
+.m-ver { font-size: 14px; font-weight: 700; font-family: var(--sys-font-family-mono); color: var(--sys-color-primary); }
+
+.danger-zone { border-color: rgba(var(--sys-color-error-rgb), 0.2); }
+.trouble-text { font-size: 13px; opacity: 0.6; line-height: 1.5; margin-bottom: 16px; }
+.reset-btn { width: 100%; height: 44px; border-radius: 12px; background: var(--sys-color-surface-container-highest); border: 1.5px solid rgba(0,0,0,0.05); font-weight: 800; font-size: 14px; color: var(--sys-color-on-surface); cursor: pointer; }
+
+.install-banner {
+  background: linear-gradient(135deg, var(--sys-color-primary), #6750a4);
+  color: white; border-radius: 24px; padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer;
+  box-shadow: 0 10px 25px rgba(var(--sys-color-primary-rgb), 0.3);
 }
+.ib-text { flex: 1; }
+.ib-title { font-weight: 900; font-size: 16px; letter-spacing: -0.01em; }
+.ib-desc { font-size: 13px; opacity: 0.8; }
 
-/* 🎯 High Contrast Rules for Selection */
-.card.selected .player-name,
-.card.selected .trophy-val,
-.card.selected .stat-score,
-.card.selected .sc-label,
-.card.selected .sc-val,
-.card.selected .expand-btn { 
-  color: var(--sys-color-on-primary-container) !important; 
-  opacity: 1 !important;
-}
-
-/* Fix for the Score Pod bug - ensures all pods look identical when selected */
-.card.selected .stat-pod {
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important;
-  color: var(--sys-color-on-primary-container) !important;
-  border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1);
-}
-
-.card.selected .badge { 
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; 
-  color: var(--sys-color-on-primary-container) !important;
-}
-
-.card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-
-.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-
-.meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
-
-.badge {
-  height: 18px; width: 100%;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
-  font-family: var(--sys-font-family-mono);
-  text-transform: uppercase;
-}
-
-.hit-target { position: relative; z-index: 5; }
-.hit-target::after { content: ''; position: absolute; inset: -4px; }
-
-.name-block { display: flex; flex-direction: column; min-width: 0; }
-
-.player-name {
-  font-size: 16px; font-weight: 850;
-  color: var(--sys-color-on-surface);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
-.trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-
-.header-actions { display: flex; align-items: center; gap: 4px; }
-
-.expand-btn {
-  background: none; border: none; padding: 8px;
-  color: var(--sys-color-outline);
-  cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.expand-btn.is-active { transform: rotate(180deg); color: var(--sys-color-primary); }
-
-.stat-pod {
-  width: 48px; height: 48px;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 900;
-  font-family: var(--sys-font-family-mono);
-  transition: transform 0.2s;
-}
-.stat-pod:hover { transform: scale(1.05); }
-
-.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
-
-.card-body { 
-  margin-top: 16px; 
-  padding-top: 16px; 
-  border-top: 1px solid rgba(0,0,0,0.05); 
-  animation: fade-in 0.3s ease;
-}
-
-@keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-
-.stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
-.stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
-.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
-.sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
-
-.actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
-.btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
-.btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.btn-action.secondary { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
+.footer-info { padding: 40px 0; text-align: center; }
+.brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; }
+.copy { font-size: 10px; opacity: 0.2; margin-top: 4px; }
 </style>
-
