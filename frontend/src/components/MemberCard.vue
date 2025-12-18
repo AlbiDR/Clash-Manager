@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { LeaderboardMember } from '../types'
@@ -127,12 +126,31 @@ const roleInfo = computed(() => {
 const trend = computed(() => {
   const dt = props.member.dt || 0
   const currentRaw = props.member.r || 0
+  
+  // Need valid data to show trend
   if (dt === 0 || currentRaw === 0) return null
+  
   const previousRaw = currentRaw - dt
+  
+  // Prevent division by zero or infinite growth for new members
   if (previousRaw <= 0) return null 
+  
   const percentChange = (dt / previousRaw) * 100
+  const absPercent = Math.abs(percentChange)
+  
+  let valStr = ''
+  
+  // Smart Formatting for small percentages
+  if (absPercent < 0.1 && absPercent > 0) {
+    valStr = '<0.1%'
+  } else if (absPercent < 10) {
+    valStr = absPercent.toFixed(1) + '%'
+  } else {
+    valStr = Math.round(absPercent) + '%'
+  }
+
   return {
-    val: Math.round(Math.abs(percentChange)) + '%',
+    val: valStr,
     dir: dt > 0 ? 'up' : 'down',
     raw: dt
   }
@@ -372,4 +390,3 @@ const trend = computed(() => {
 }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 </style>
-
