@@ -97,7 +97,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       </div>
 
       <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
-        <div class="stat-pod" :class="toneClass">
+        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('score', recruit.s) : null">
           <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
         </div>
       </div>
@@ -182,7 +182,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   line-height: 1.1;
 }
 
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; cursor: help; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
 .score-section { cursor: zoom-in; }
@@ -204,7 +204,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
+.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; cursor: help; }
 .stat-cell:hover { background: rgba(var(--sys-color-primary-rgb), 0.05); }
 .stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
 .sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
@@ -215,3 +215,4 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .btn-action.secondary { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
 </style>
+
