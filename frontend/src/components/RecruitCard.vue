@@ -22,28 +22,52 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// --- INTERACTION PROTECTION ---
+// --- INTERACTION ENGINE ---
 const isScrolling = ref(false)
 const touchStartTime = ref(0)
+const longPressTimer = ref<number | null>(null)
 
 function onTouchStart() {
     isScrolling.value = false
     touchStartTime.value = Date.now()
+    
+    if (longPressTimer.value) clearTimeout(longPressTimer.value)
+    longPressTimer.value = window.setTimeout(() => {
+        if (!isScrolling.value) {
+            if (navigator.vibrate) navigator.vibrate(60)
+            emit('toggle-select')
+        }
+    }, 600)
 }
 
 function onTouchMove() {
     isScrolling.value = true
+    if (longPressTimer.value) {
+        clearTimeout(longPressTimer.value)
+        longPressTimer.value = null
+    }
+}
+
+function onTouchEnd() {
+    if (longPressTimer.value) {
+        clearTimeout(longPressTimer.value)
+        longPressTimer.value = null
+    }
 }
 
 function handleMainClick(e: MouseEvent | TouchEvent) {
   if (isScrolling.value) return
-  if (Date.now() - touchStartTime.value > 350) return
+  const isLongPress = touchStartTime.value > 0 && (Date.now() - touchStartTime.value > 500)
+  if (isLongPress) return
 
   const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.stat-pod')) return
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
   
-  if (props.selectionMode) emit('toggle-select')
-  else emit('toggle-expand')
+  if (props.selectionMode) {
+      emit('toggle-select')
+  } else {
+      emit('toggle-expand')
+  }
 }
 
 const toneClass = computed(() => {
@@ -71,6 +95,7 @@ const timeAgo = computed(() => {
     :class="{ 'expanded': expanded, 'selected': selected }"
     @touchstart="onTouchStart"
     @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
     @click="handleMainClick"
   >
     <div class="card-header">
@@ -139,6 +164,7 @@ const timeAgo = computed(() => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.3s var(--sys-motion-spring), transform 0.3s var(--sys-motion-spring), border 0.3s;
 }
 
 .card.expanded {
@@ -148,7 +174,11 @@ const timeAgo = computed(() => {
   border-color: var(--sys-color-primary);
 }
 
-.card.selected { background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
+.card.selected { 
+  background: var(--sys-color-primary-container); 
+  border: 2px solid var(--sys-color-primary);
+  transform: scale(0.98);
+}
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
@@ -166,15 +196,14 @@ const timeAgo = computed(() => {
   text-transform: uppercase;
 }
 
-/* hit-target helper for easier mobile long-press */
 .hit-target {
   position: relative;
+  z-index: 5;
 }
 .hit-target::after {
   content: '';
   position: absolute;
-  inset: -10px;
-  z-index: 1;
+  inset: -8px;
 }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
@@ -197,13 +226,19 @@ const timeAgo = computed(() => {
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; font-weight: 900;
   font-family: var(--sys-font-family-mono);
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
-.card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
+.card-body { 
+  margin-top: 16px; 
+  padding-top: 16px; 
+  border-top: 1px solid rgba(0,0,0,0.05); 
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
 .stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
