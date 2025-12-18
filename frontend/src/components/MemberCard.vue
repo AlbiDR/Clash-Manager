@@ -32,7 +32,6 @@ function onTouchStart() {
     isScrolling.value = false
     touchStartTime.value = Date.now()
     
-    // Start a timer for Selection Mode (Long Press)
     if (longPressTimer.value) clearTimeout(longPressTimer.value)
     longPressTimer.value = window.setTimeout(() => {
         if (!isScrolling.value) {
@@ -57,36 +56,36 @@ function onTouchEnd() {
     }
 }
 
-// 🖱️ Selection Trigger (Right Click for Desktop / Native Long Press for Mobile)
 function handleContextMenu(e: Event) {
     e.preventDefault()
     if (navigator.vibrate) navigator.vibrate(40)
     emit('toggle-select')
 }
 
-// 🎯 Selection Trigger (Direct Score Click)
 function handleScoreClick(e: Event) {
     e.stopPropagation()
     if (navigator.vibrate) navigator.vibrate(20)
     emit('toggle-select')
 }
 
+function handleExpandClick(e: Event) {
+    e.stopPropagation()
+    if (navigator.vibrate) navigator.vibrate(10)
+    emit('toggle')
+}
+
 function handleMainClick(e: MouseEvent | TouchEvent) {
   if (isScrolling.value) return
   
-  // Ignore if it was a very long press that already triggered selection
   const pressDuration = touchStartTime.value > 0 ? Date.now() - touchStartTime.value : 0
   if (pressDuration > 550) return
 
   const target = e.target as HTMLElement
-  // Never expand if clicking actual actionable buttons
-  if (target.closest('.btn-action') || target.closest('a')) return
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
   
-  // If in selection mode, any click on the card toggles selection
   if (props.selectionMode) {
       emit('toggle-select')
   } else {
-      // Normal mode: Expand
       emit('toggle')
   }
 }
@@ -147,14 +146,19 @@ const trend = computed(() => {
         </div>
       </div>
 
-      <div class="score-section" @click.stop="handleScoreClick">
-        <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">
-          <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="momentum-pill hit-target" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', trend.raw) : null">
-            <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
-            <span class="trend-val">{{ trend.val }}</span>
+      <div class="header-actions">
+        <div class="score-section" @click.stop="handleScoreClick">
+          <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">
+            <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
+            <div v-if="trend" class="momentum-pill hit-target" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', trend.raw) : null">
+              <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
+              <span class="trend-val">{{ trend.val }}</span>
+            </div>
           </div>
         </div>
+        <button class="expand-btn hit-target" @click.stop="handleExpandClick" :class="{ 'is-active': expanded }">
+          <Icon name="chevron_down" size="20" />
+        </button>
       </div>
     </div>
 
@@ -215,9 +219,29 @@ const trend = computed(() => {
 
 .card.selected { 
   background: var(--sys-color-primary-container); 
-  border: 2px solid var(--sys-color-primary);
+  border: 2.5px solid var(--sys-color-primary);
   transform: scale(0.97);
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15);
+}
+
+/* 🎯 High Contrast Rules for Selection */
+.card.selected .player-name,
+.card.selected .trophy-val,
+.card.selected .stat-score,
+.card.selected .stat-item .label,
+.card.selected .stat-item .value,
+.card.selected .trend-val,
+.card.selected .expand-btn { 
+  color: var(--sys-color-on-primary-container) !important; 
+}
+
+.card.selected .badge:not(.role) { 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
+  color: var(--sys-color-on-primary-container);
+}
+
+.card.selected .stat-pod:not(.tone-high) { 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
 }
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -257,6 +281,15 @@ const trend = computed(() => {
 
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
+
+.header-actions { display: flex; align-items: center; gap: 4px; }
+
+.expand-btn {
+  background: none; border: none; padding: 8px;
+  color: var(--sys-color-outline);
+  cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expand-btn.is-active { transform: rotate(180deg); color: var(--sys-color-primary); }
 
 .stat-pod {
   position: relative;
