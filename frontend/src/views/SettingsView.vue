@@ -162,12 +162,12 @@ const apiStatusObject = computed(() => {
         </div>
         <div class="card-body">
           <div class="features-list">
-            <div class="toggle-row" @click="toggle('blitzMode')">
+            <div class="toggle-row" @click="toggle('ghostBenchmarking')">
                 <div class="row-info">
-                <div class="row-label">Blitz Mode</div>
-                <div class="row-desc">Multi-tab profile navigation engine</div>
+                <div class="row-label">Ghost Benchmarking</div>
+                <div class="row-desc">Visualize clan averages inside stat tooltips</div>
                 </div>
-                <div class="switch" :class="{ active: modules.blitzMode }">
+                <div class="switch" :class="{ active: modules.ghostBenchmarking }">
                 <div class="handle"></div>
                 </div>
             </div>
@@ -183,12 +183,12 @@ const apiStatusObject = computed(() => {
         </div>
         <div class="card-body">
           <div class="features-list">
-            <div class="toggle-row" @click="toggle('ghostBenchmarking')">
+            <div class="toggle-row" @click="toggle('blitzMode')">
                 <div class="row-info">
-                <div class="row-label">Ghost Benchmarking</div>
-                <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                <div class="row-label">Blitz Mode</div>
+                <div class="row-desc">Multi-tab profile navigation engine</div>
                 </div>
-                <div class="switch" :class="{ active: modules.ghostBenchmarking }">
+                <div class="switch" :class="{ active: modules.blitzMode }">
                 <div class="handle"></div>
                 </div>
             </div>
