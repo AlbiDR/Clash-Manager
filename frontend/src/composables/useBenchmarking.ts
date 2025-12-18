@@ -11,59 +11,64 @@ export interface BenchmarkData {
     max: number
     percent: number
     isBetter: boolean
-    unit?: string
 }
 
 export function useBenchmarking() {
     const { data } = useClanData()
 
-    const clanStats = computed(() => {
+    const getAvg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0
+    const getMax = (arr: number[]) => arr.length ? Math.max(...arr) : 0
+    const getMin = (arr: number[]) => arr.length ? Math.min(...arr) : 0
+
+    const lbStats = computed(() => {
         const lb = data.value?.lb || []
-        if (lb.length === 0) return null
-
-        const trophies = lb.map(m => m.t)
-        const warRates = lb.map(m => parseFloat(m.d.rate || '0'))
-        const donations = lb.map(m => m.d.avg)
-        const scores = lb.map(m => m.s)
-        const tenure = lb.map(m => m.d.days)
-        const momentum = lb.map(m => m.dt || 0)
-
-        const getAvg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1)
-        const getMax = (arr: number[]) => Math.max(...arr)
-        const getMin = (arr: number[]) => Math.min(...arr)
-
+        if (!lb.length) return null
         return {
-            trophies: { avg: getAvg(trophies), max: getMax(trophies), min: getMin(trophies) },
-            warRate: { avg: getAvg(warRates), max: getMax(warRates), min: getMin(warRates) },
-            donations: { avg: getAvg(donations), max: getMax(donations), min: getMin(donations) },
-            score: { avg: getAvg(scores), max: getMax(scores), min: getMin(scores) },
-            tenure: { avg: getAvg(tenure), max: getMax(tenure), min: getMin(tenure) },
-            momentum: { avg: getAvg(momentum), max: getMax(momentum), min: getMin(momentum) }
+            trophies: { avg: getAvg(lb.map(m => m.t)), max: getMax(lb.map(m => m.t)), min: getMin(lb.map(m => m.t)) },
+            warRate: { avg: getAvg(lb.map(m => parseFloat(m.d.rate || '0'))), max: getMax(lb.map(m => parseFloat(m.d.rate || '0'))), min: getMin(lb.map(m => parseFloat(m.d.rate || '0'))) },
+            donations: { avg: getAvg(lb.map(m => m.d.avg)), max: getMax(lb.map(m => m.d.avg)), min: getMin(lb.map(m => m.d.avg)) },
+            score: { avg: getAvg(lb.map(m => m.s)), max: getMax(lb.map(m => m.s)), min: getMin(lb.map(m => m.s)) },
+            tenure: { avg: getAvg(lb.map(m => m.d.days)), max: getMax(lb.map(m => m.d.days)), min: getMin(lb.map(m => m.d.days)) },
+            momentum: { avg: getAvg(lb.map(m => m.dt || 0)), max: getMax(lb.map(m => m.dt || 0)), min: getMin(lb.map(m => m.dt || 0)) }
         }
     })
 
-    function getBenchmark(metric: keyof NonNullable<typeof clanStats.value>, value: number): BenchmarkData | null {
-        const stats = clanStats.value
+    const hhStats = computed(() => {
+        const hh = data.value?.hh || []
+        if (!hh.length) return null
+        return {
+            trophies: { avg: getAvg(hh.map(m => m.t)), max: getMax(hh.map(m => m.t)), min: getMin(hh.map(m => m.t)) },
+            donations: { avg: getAvg(hh.map(m => m.d.don)), max: getMax(hh.map(m => m.d.don)), min: getMin(hh.map(m => m.d.don)) },
+            warWins: { avg: getAvg(hh.map(m => m.d.war)), max: getMax(hh.map(m => m.d.war)), min: getMin(hh.map(m => m.d.war)) },
+            score: { avg: getAvg(hh.map(m => m.s)), max: getMax(hh.map(m => m.s)), min: getMin(hh.map(m => m.s)) }
+        }
+    })
+
+    function getBenchmark(context: 'lb' | 'hh', metric: string, value: number): BenchmarkData | null {
+        const stats = context === 'lb' ? lbStats.value : hhStats.value
         if (!stats) return null
 
-        const m = stats[metric]
+        const m = (stats as any)[metric]
+        if (!m) return null
+
         const diff = value - m.avg
         const percent = Math.abs(Math.round((diff / (m.avg || 1)) * 100))
         const isBetter = diff >= 0
         
         const labels: Record<string, string> = {
-            trophies: 'Trophies',
-            warRate: 'War Rate',
-            donations: 'Avg Donos',
-            score: 'Performance',
-            tenure: 'Clan Days',
-            momentum: 'Momentum'
+            trophies: 'Trophy Rank',
+            warRate: 'War Reliability',
+            donations: context === 'lb' ? 'Daily Average' : 'Lifetime Donos',
+            warWins: 'Legacy War Wins',
+            score: context === 'lb' ? 'Performance' : 'Potential',
+            tenure: 'Clan Loyalty',
+            momentum: 'Growth Pace'
         }
 
         const tier = value >= m.max * 0.9 ? 'ELITE' : (isBetter ? 'TOP TIER' : (value < m.avg * 0.5 ? 'UNDER' : 'GROWING'))
 
         return {
-            label: labels[metric],
+            label: labels[metric] || metric,
             tier: tier as any,
             value,
             avg: m.avg,
@@ -74,9 +79,6 @@ export function useBenchmarking() {
         }
     }
 
-    return {
-        clanStats,
-        getBenchmark
-    }
+    return { getBenchmark }
 }
 
