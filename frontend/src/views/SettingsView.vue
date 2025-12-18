@@ -154,7 +154,7 @@ const apiStatusObject = computed(() => {
         </div>
       </div>
 
-      <!-- Section: Power Tools -->
+      <!-- Section: Power Tools (Ghost Benchmarking) -->
       <div class="settings-card">
         <div class="card-header">
           <Icon name="lightning" size="20" class="header-icon" />
@@ -175,7 +175,7 @@ const apiStatusObject = computed(() => {
         </div>
       </div>
 
-      <!-- Section: Experiments -->
+      <!-- Section: Experiments (Blitz Mode) -->
       <div class="settings-card">
         <div class="card-header">
           <Icon name="flask" size="20" class="header-icon" />
