@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -294,4 +293,3 @@ function handleSortUpdate(val: string) {
 }
 .btn-primary:active { transform: scale(0.95); }
 </style>
-
