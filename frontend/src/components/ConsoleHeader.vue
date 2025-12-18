@@ -176,7 +176,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 .glass-input:focus { background: var(--sys-color-surface); border-color: var(--sys-color-primary); outline: none; }
 
-.sort-container { position: relative; width: 130px; }
+.sort-container { position: relative; width: 180px; }
 .glass-select {
   width: 100%; height: 46px;
   padding: 0 12px 0 38px;
@@ -199,3 +199,4 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+
