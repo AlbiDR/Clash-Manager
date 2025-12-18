@@ -4,11 +4,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.1.3
+ * 🏷️ VERSION: 6.2.0
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.1.3';
+const VER_CONTROLLER_WEBAPP = '6.2.0';
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -50,61 +50,97 @@ function getWebAppData(forceRefresh) {
 function markRecruitsAsInvitedBulk(ids) {
   if (!ids || !Array.isArray(ids) || ids.length === 0) return { success: true };
 
-  console.time('BulkDismiss');
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-    if (!sheet) return { success: false, message: "Headhunter sheet not found." };
+  // 🔒 STRUCTURAL FIX: MUTEX LOCKING
+  // This ensures we never collide with a Scout Run (which clears/rewrites the sheet).
+  // "WRITE_HH" effectively serializes this operation with "TASK_HH" via script lock.
+  return Utils.executeSafely('WRITE_HH', () => {
+    console.time('BulkDismiss');
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+      if (!sheet) return { success: false, message: "Headhunter sheet not found." };
 
-    const lastRow = sheet.getLastRow();
-    if (lastRow < CONFIG.LAYOUT.DATA_START_ROW) return { success: true };
+      const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+      const lastRow = sheet.getLastRow();
+      
+      // Prep Tag Set (Client sends ID without #, System uses #)
+      const idsSet = new Set(ids.map(id => '#' + id));
+      let sheetUpdates = 0;
 
-    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-    const numRows = lastRow - startRow + 1;
+      // 1. UPDATE SHEET (Visual/Database)
+      if (lastRow >= startRow) {
+        const numRows = lastRow - startRow + 1;
+        const tagColIdx = 2 + CONFIG.SCHEMA.HH.TAG;
+        const invitedColIdx = 2 + CONFIG.SCHEMA.HH.INVITED;
 
-    const tagColIdx = 2 + CONFIG.SCHEMA.HH.TAG;
-    const invitedColIdx = 2 + CONFIG.SCHEMA.HH.INVITED;
+        const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
+        const invitedRange = sheet.getRange(startRow, invitedColIdx, numRows, 1);
+        const invitedValues = invitedRange.getValues();
 
-    const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
-    const invitedRange = sheet.getRange(startRow, invitedColIdx, numRows, 1);
-    const invitedValues = invitedRange.getValues();
+        const tagMap = new Map();
+        tagValues.forEach((row, idx) => {
+          if (row[0]) tagMap.set(row[0].toString(), idx);
+        });
 
-    const tagMap = new Map();
-    tagValues.forEach((row, idx) => {
-      if (row[0]) tagMap.set(row[0].toString(), idx);
-    });
+        idsSet.forEach(tag => {
+          if (tagMap.has(tag)) {
+            const idx = tagMap.get(tag);
+            // 🚨 Explicitly set to TRUE to match filter logic
+            invitedValues[idx][0] = true; 
+            sheetUpdates++;
+          }
+        });
 
-    let updatesCount = 0;
-    const idsSet = new Set(ids.map(id => '#' + id));
-
-    idsSet.forEach(tag => {
-      if (tagMap.has(tag)) {
-        const idx = tagMap.get(tag);
-        invitedValues[idx][0] = true; // Set Checkbox to TRUE
-        updatesCount++;
+        if (sheetUpdates > 0) {
+          invitedRange.setValues(invitedValues);
+        }
       }
-    });
 
-    if (updatesCount > 0) {
-      invitedRange.setValues(invitedValues);
-      
-      // 🚨 CRITICAL FIX: Force Google Sheets to write changes to disk NOW.
-      // Without this, the next line (refreshWebPayload) might read the OLD data from the sheet.
-      SpreadsheetApp.flush();
-      
-      console.log(`🌐 API Action: Bulk dismissed ${updatesCount} recruits. Flush complete.`);
-      
-      // 🔄 SYNC CACHE: Immediately regenerate the cached JSON
-      refreshWebPayload();
+      // 2. UPDATE PERSISTENT BLACKLIST (Structural/Memory)
+      // This ensures that even if the sheet is wiped/re-scanned, these IDs remain banned.
+      let blUpdates = 0;
+      try {
+          const PROP_KEY = 'HH_BLACKLIST';
+          const blacklist = Utils.Props.getChunked(PROP_KEY, {});
+          const now = Date.now();
+          const dayMs = 24 * 60 * 60 * 1000;
+          const expiry = now + (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
+          
+          idsSet.forEach(tag => {
+              // Preserve existing score data if present, otherwise default to 0
+              // This is critical to maintain the dynamic benchmark
+              const existing = blacklist[tag];
+              if (!existing) blUpdates++;
+              
+              blacklist[tag] = { 
+                e: expiry, 
+                s: existing ? existing.s : 0 
+              };
+          });
+          
+          // Save back to properties
+          Utils.Props.setChunked(PROP_KEY, blacklist);
+      } catch (blErr) {
+          console.warn("⚠️ Blacklist sync warning: " + blErr.message);
+      }
+
+      // 3. FLUSH & REGENERATE
+      if (sheetUpdates > 0 || idsSet.size > 0) {
+        SpreadsheetApp.flush();
+        console.log(`🌐 API Action: Dismissed ${sheetUpdates} rows. Synced ${idsSet.size} to blacklist.`);
+        
+        // 🔄 SYNC CACHE: Immediately regenerate the cached JSON
+        refreshWebPayload();
+      }
+
+      console.timeEnd('BulkDismiss');
+      return { success: true, count: sheetUpdates };
+
+    } catch (e) {
+      console.error(`Bulk Dismiss Error: ${e.message}`);
+      throw new Error(`Dismiss Failed: ${e.message}`);
     }
-
-    console.timeEnd('BulkDismiss');
-    return { success: true, count: updatesCount };
-
-  } catch (e) {
-    console.error(`Bulk Dismiss Error: ${e.message}`);
-    return { success: false, message: e.message };
-  }
+  });
 }
 
 // ============================================================================
