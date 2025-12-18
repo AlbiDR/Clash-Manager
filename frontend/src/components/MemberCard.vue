@@ -1,8 +1,11 @@
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
 import WarHistoryChart from './WarHistoryChart.vue'
+import { useBenchmarking } from '../composables/useBenchmarking'
+import { useModules } from '../composables/useModules'
 
 const props = defineProps<{
   id: string
@@ -17,7 +20,10 @@ const emit = defineEmits<{
   'toggle-select': []
 }>()
 
-// --- INTERACTION PROTECTION (Swipe Safety) ---
+const { getGhostTooltip } = useBenchmarking()
+const { modules } = useModules()
+
+// --- INTERACTION PROTECTION ---
 const dragThreshold = 5
 const startPos = ref({ x: 0, y: 0 })
 
@@ -52,12 +58,9 @@ const trend = computed(() => {
   const dt = props.member.dt || 0
   const currentRaw = props.member.r || 0
   if (dt === 0 || currentRaw === 0) return null
-  
   const previousRaw = currentRaw - dt
   if (previousRaw <= 0) return null 
-  
   const percentChange = (dt / previousRaw) * 100
-  
   return {
     val: Math.round(Math.abs(percentChange)) + '%',
     dir: dt > 0 ? 'up' : 'down'
@@ -74,12 +77,8 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   if (!shouldExecute(e)) return
   const target = e.target as HTMLElement
   if (target.closest('.btn-action') || target.closest('a')) return
-  
-  if (props.selectionMode) {
-    emit('toggle-select')
-  } else {
-    emit('toggle')
-  }
+  if (props.selectionMode) emit('toggle-select')
+  else emit('toggle')
 }
 </script>
 
@@ -93,7 +92,6 @@ function onContentClick(e: MouseEvent | TouchEvent) {
     @touchend="onContentClick"
   >
     <div class="card-header">
-      <!-- Zone: Identity (Selection/Standard Toggle) -->
       <div class="identity-group">
         <div class="meta-stack">
           <div class="badge tenure">{{ member.d.days }}d</div>
@@ -102,14 +100,13 @@ function onContentClick(e: MouseEvent | TouchEvent) {
         
         <div class="name-block">
           <span class="player-name">{{ member.n }}</span>
-          <div class="trophy-meta">
+          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('trophies', member.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Zone: Inspect (Score Pod always toggles expansion) -->
       <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
         <div class="stat-pod" :class="toneClass">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
@@ -123,11 +120,11 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 
     <div class="card-body" v-if="expanded">
       <div class="stats-grid">
-        <div class="stat-item">
+        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('donations', member.d.avg) : null">
           <span class="label">Daily Avg</span>
           <span class="value">{{ member.d.avg }}</span>
         </div>
-        <div class="stat-item">
+        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('warRate', parseFloat(member.d.rate || '0')) : null">
           <span class="label">War Rate</span>
           <span class="value">{{ member.d.rate }}</span>
         </div>
@@ -140,12 +137,10 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       <WarHistoryChart :history="member.d.hist" />
 
       <div class="actions">
-        <!-- RoyaleAPI on the Left -->
         <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
           <Icon name="analytics" size="16" />
           <span>RoyaleAPI</span>
         </a>
-        <!-- Open Game on the Right -->
         <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
           <Icon name="crown" size="16" />
           <span>Open Game</span>
@@ -194,7 +189,6 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   text-transform: uppercase;
 }
 
-/* Monochromatic Vibrancy Engine */
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .role-coleader { background: rgba(var(--sys-color-primary-rgb), 0.7); color: white; }
@@ -211,7 +205,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   line-height: 1.1;
 }
 
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
 .score-section { cursor: zoom-in; }
@@ -227,9 +221,6 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .stat-pod:active { transform: scale(0.92); }
-
-.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
 .momentum-pill {
   position: absolute; bottom: -8px; left: 50%;
@@ -251,7 +242,8 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
+.stat-item:hover { background: rgba(var(--sys-color-primary-rgb), 0.05); }
 .stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; opacity: 0.5; }
 .stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
 
