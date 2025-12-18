@@ -24,19 +24,28 @@ const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
 // --- INTERACTION PROTECTION ---
-const dragThreshold = 5
-const startPos = ref({ x: 0, y: 0 })
+const isScrolling = ref(false)
+const touchStartTime = ref(0)
 
-function handleInteractionStart(e: MouseEvent | TouchEvent) {
-  const touch = 'touches' in e ? e.touches[0] : (e as MouseEvent)
-  startPos.value = { x: touch.clientX, y: touch.clientY }
+function onTouchStart() {
+    isScrolling.value = false
+    touchStartTime.value = Date.now()
 }
 
-function shouldExecute(e: MouseEvent | TouchEvent): boolean {
-  const touch = 'changedTouches' in e ? e.changedTouches[0] : (e as MouseEvent)
-  const dx = Math.abs(touch.clientX - startPos.value.x)
-  const dy = Math.abs(touch.clientY - startPos.value.y)
-  return dx < dragThreshold && dy < dragThreshold
+function onTouchMove() {
+    isScrolling.value = true
+}
+
+function handleMainClick(e: MouseEvent | TouchEvent) {
+  // If user was scrolling or held too long (likely a long press for tooltip), don't expand
+  if (isScrolling.value) return
+  if (Date.now() - touchStartTime.value > 350) return
+
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.stat-pod')) return
+  
+  if (props.selectionMode) emit('toggle-select')
+  else emit('toggle')
 }
 
 const toneClass = computed(() => {
@@ -67,49 +76,34 @@ const trend = computed(() => {
     raw: dt
   }
 })
-
-function onPodClick(e: MouseEvent | TouchEvent) {
-  if (!shouldExecute(e)) return
-  e.stopPropagation()
-  emit('toggle')
-}
-
-function onContentClick(e: MouseEvent | TouchEvent) {
-  if (!shouldExecute(e)) return
-  const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a')) return
-  if (props.selectionMode) emit('toggle-select')
-  else emit('toggle')
-}
 </script>
 
 <template>
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @mousedown="handleInteractionStart"
-    @touchstart="handleInteractionStart"
-    @mouseup="onContentClick"
-    @touchend="onContentClick"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @click="handleMainClick"
   >
     <div class="card-header">
       <div class="identity-group">
         <div class="meta-stack">
-          <div class="badge tenure" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'tenure', member.d.days) : null">{{ member.d.days }}d</div>
+          <div class="badge tenure hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'tenure', member.d.days) : null">{{ member.d.days }}d</div>
           <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
         </div>
         
         <div class="name-block">
           <span class="player-name">{{ member.n }}</span>
-          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'trophies', member.t) : null">
+          <div class="trophy-meta hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'trophies', member.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
           </div>
         </div>
       </div>
 
-      <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
-        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">
+      <div class="score-section">
+        <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
           <div v-if="trend" class="momentum-pill" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', trend.raw) : null">
             <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
@@ -121,11 +115,11 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 
     <div class="card-body" v-if="expanded">
       <div class="stats-grid">
-        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
+        <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
           <span class="label">Daily Avg</span>
           <span class="value">{{ member.d.avg }}</span>
         </div>
-        <div class="stat-item" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'warRate', parseFloat(member.d.rate || '0')) : null">
+        <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'warRate', parseFloat(member.d.rate || '0')) : null">
           <span class="label">War Rate</span>
           <span class="value">{{ member.d.rate }}</span>
         </div>
@@ -163,6 +157,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   overflow: visible;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card.expanded {
@@ -188,9 +183,18 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
-  transition: background 0.2s;
 }
-.badge:hover { background: var(--sys-color-outline-variant); }
+
+/* hit-target helper for easier mobile long-press */
+.hit-target {
+  position: relative;
+}
+.hit-target::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  z-index: 1;
+}
 
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
@@ -208,10 +212,8 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   line-height: 1.1;
 }
 
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; cursor: help; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-
-.score-section { cursor: zoom-in; }
 
 .stat-pod {
   position: relative;
@@ -223,7 +225,6 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   font-family: var(--sys-font-family-mono);
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.stat-pod:active { transform: scale(0.92); }
 
 .momentum-pill {
   position: absolute; bottom: -8px; left: 50%;
@@ -235,7 +236,6 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   z-index: 2;
   border: 1px solid var(--sys-surface-glass-border);
-  cursor: help;
 }
 
 .momentum-pill.up { color: #22c55e; }
@@ -246,8 +246,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; cursor: help; }
-.stat-item:hover { background: rgba(var(--sys-color-primary-rgb), 0.05); }
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
 .stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; opacity: 0.5; }
 .stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
 
