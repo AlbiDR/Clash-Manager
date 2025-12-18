@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { useClanData } from './composables/useClanData'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
 
 const { syncStatus } = useClanData()
+const route = useRoute()
 const isOnline = ref(true)
 const isSuccessFading = ref(false)
 
@@ -41,7 +42,11 @@ const connectionState = computed(() => {
   <div class="app-shell">
     <div class="connectivity-strip" :class="connectionState"></div>
     <main class="app-container">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" :key="route.fullPath" />
+        </transition>
+      </RouterView>
     </main>
     <FloatingDock />
     <ToastContainer />
@@ -75,4 +80,15 @@ const connectionState = computed(() => {
 .connectivity-strip.success-resolve { background: #22c55e; opacity: 1; transform: scaleY(1.5); }
 
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Page Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>
