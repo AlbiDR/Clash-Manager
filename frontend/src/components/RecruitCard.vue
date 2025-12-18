@@ -23,19 +23,27 @@ const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
 // --- INTERACTION PROTECTION ---
-const dragThreshold = 5
-const startPos = ref({ x: 0, y: 0 })
+const isScrolling = ref(false)
+const touchStartTime = ref(0)
 
-function handleInteractionStart(e: MouseEvent | TouchEvent) {
-  const touch = 'touches' in e ? e.touches[0] : (e as MouseEvent)
-  startPos.value = { x: touch.clientX, y: touch.clientY }
+function onTouchStart() {
+    isScrolling.value = false
+    touchStartTime.value = Date.now()
 }
 
-function shouldExecute(e: MouseEvent | TouchEvent): boolean {
-  const touch = 'changedTouches' in e ? e.changedTouches[0] : (e as MouseEvent)
-  const dx = Math.abs(touch.clientX - startPos.value.x)
-  const dy = Math.abs(touch.clientY - startPos.value.y)
-  return dx < dragThreshold && dy < dragThreshold
+function onTouchMove() {
+    isScrolling.value = true
+}
+
+function handleMainClick(e: MouseEvent | TouchEvent) {
+  if (isScrolling.value) return
+  if (Date.now() - touchStartTime.value > 350) return
+
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.stat-pod')) return
+  
+  if (props.selectionMode) emit('toggle-select')
+  else emit('toggle-expand')
 }
 
 const toneClass = computed(() => {
@@ -55,30 +63,15 @@ const timeAgo = computed(() => {
   const h = Math.floor(m / 60)
   return h > 24 ? Math.floor(h / 24) + 'd' : h + 'h'
 })
-
-function onPodClick(e: MouseEvent | TouchEvent) {
-  if (!shouldExecute(e)) return
-  e.stopPropagation()
-  emit('toggle-expand')
-}
-
-function onContentClick(e: MouseEvent | TouchEvent) {
-  if (!shouldExecute(e)) return
-  const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a')) return
-  if (props.selectionMode) emit('toggle-select')
-  else emit('toggle-expand')
-}
 </script>
 
 <template>
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @mousedown="handleInteractionStart"
-    @touchstart="handleInteractionStart"
-    @mouseup="onContentClick"
-    @touchend="onContentClick"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @click="handleMainClick"
   >
     <div class="card-header">
       <div class="identity-group">
@@ -89,15 +82,15 @@ function onContentClick(e: MouseEvent | TouchEvent) {
         
         <div class="name-block">
           <span class="player-name">{{ recruit.n }}</span>
-          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'trophies', recruit.t) : null">
+          <div class="trophy-meta hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'trophies', recruit.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
           </div>
         </div>
       </div>
 
-      <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
-        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'score', recruit.s) : null">
+      <div class="score-section">
+        <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'score', recruit.s) : null">
           <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
         </div>
       </div>
@@ -105,11 +98,11 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 
     <div class="card-body" v-if="expanded">
       <div class="stats-row">
-        <div class="stat-cell" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'donations', recruit.d.don) : null">
+        <div class="stat-cell hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'donations', recruit.d.don) : null">
           <span class="sc-label">Donations</span>
           <span class="sc-val">{{ recruit.d.don }}</span>
         </div>
-        <div class="stat-cell border-l" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'warWins', recruit.d.war) : null">
+        <div class="stat-cell border-l hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'warWins', recruit.d.war) : null">
           <span class="sc-label">War Wins</span>
           <span class="sc-val">{{ recruit.d.war }}</span>
         </div>
@@ -145,6 +138,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   overflow: visible;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card.expanded {
@@ -172,6 +166,17 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   text-transform: uppercase;
 }
 
+/* hit-target helper for easier mobile long-press */
+.hit-target {
+  position: relative;
+}
+.hit-target::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  z-index: 1;
+}
+
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
 .player-name {
@@ -182,10 +187,8 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   line-height: 1.1;
 }
 
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; cursor: help; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-
-.score-section { cursor: zoom-in; }
 
 .stat-pod {
   width: 48px; height: 48px;
@@ -196,7 +199,6 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   font-family: var(--sys-font-family-mono);
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.stat-pod:active { transform: scale(0.92); }
 
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
@@ -204,8 +206,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; cursor: help; }
-.stat-cell:hover { background: rgba(var(--sys-color-primary-rgb), 0.05); }
+.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
 .stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
 .sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
 .sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
