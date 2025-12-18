@@ -23,29 +23,55 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// --- INTERACTION PROTECTION ---
+// --- INTERACTION ENGINE ---
 const isScrolling = ref(false)
 const touchStartTime = ref(0)
+const longPressTimer = ref<number | null>(null)
 
 function onTouchStart() {
     isScrolling.value = false
     touchStartTime.value = Date.now()
+    
+    // Start a timer for Selection Mode (Long Press on card)
+    if (longPressTimer.value) clearTimeout(longPressTimer.value)
+    longPressTimer.value = window.setTimeout(() => {
+        if (!isScrolling.value) {
+            if (navigator.vibrate) navigator.vibrate(60)
+            emit('toggle-select')
+        }
+    }, 600) // Slightly longer than tooltip to avoid accidental selects
 }
 
 function onTouchMove() {
     isScrolling.value = true
+    if (longPressTimer.value) {
+        clearTimeout(longPressTimer.value)
+        longPressTimer.value = null
+    }
+}
+
+function onTouchEnd() {
+    if (longPressTimer.value) {
+        clearTimeout(longPressTimer.value)
+        longPressTimer.value = null
+    }
 }
 
 function handleMainClick(e: MouseEvent | TouchEvent) {
-  // If user was scrolling or held too long (likely a long press for tooltip), don't expand
+  // If it was a scroll or a finished long press, don't trigger click logic
   if (isScrolling.value) return
-  if (Date.now() - touchStartTime.value > 350) return
+  const isLongPress = touchStartTime.value > 0 && (Date.now() - touchStartTime.value > 500)
+  if (isLongPress) return
 
   const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.stat-pod')) return
+  // Don't expand/select if clicking actions or specific stat areas that have their own tooltips
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
   
-  if (props.selectionMode) emit('toggle-select')
-  else emit('toggle')
+  if (props.selectionMode) {
+      emit('toggle-select')
+  } else {
+      emit('toggle')
+  }
 }
 
 const toneClass = computed(() => {
@@ -84,6 +110,7 @@ const trend = computed(() => {
     :class="{ 'expanded': expanded, 'selected': selected }"
     @touchstart="onTouchStart"
     @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
     @click="handleMainClick"
   >
     <div class="card-header">
@@ -105,7 +132,7 @@ const trend = computed(() => {
       <div class="score-section">
         <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-          <div v-if="trend" class="momentum-pill" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', trend.raw) : null">
+          <div v-if="trend" class="momentum-pill hit-target" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', trend.raw) : null">
             <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
             <span class="trend-val">{{ trend.val }}</span>
           </div>
@@ -158,6 +185,7 @@ const trend = computed(() => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.3s var(--sys-motion-spring), transform 0.3s var(--sys-motion-spring), border 0.3s;
 }
 
 .card.expanded {
@@ -167,7 +195,11 @@ const trend = computed(() => {
   border-color: var(--sys-color-primary);
 }
 
-.card.selected { background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
+.card.selected { 
+  background: var(--sys-color-primary-container); 
+  border: 2px solid var(--sys-color-primary);
+  transform: scale(0.98);
+}
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
@@ -185,15 +217,14 @@ const trend = computed(() => {
   text-transform: uppercase;
 }
 
-/* hit-target helper for easier mobile long-press */
 .hit-target {
   position: relative;
+  z-index: 5;
 }
 .hit-target::after {
   content: '';
   position: absolute;
-  inset: -10px;
-  z-index: 1;
+  inset: -8px;
 }
 
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
@@ -223,7 +254,6 @@ const trend = computed(() => {
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; font-weight: 900;
   font-family: var(--sys-font-family-mono);
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .momentum-pill {
@@ -234,7 +264,7 @@ const trend = computed(() => {
   border-radius: 10px;
   display: flex; align-items: center; gap: 2px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  z-index: 2;
+  z-index: 10;
   border: 1px solid var(--sys-surface-glass-border);
 }
 
@@ -243,7 +273,14 @@ const trend = computed(() => {
 
 .trend-val { font-size: 9px; font-weight: 900; font-family: var(--sys-font-family-mono); }
 
-.card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
+.card-body { 
+  margin-top: 16px; 
+  padding-top: 16px; 
+  border-top: 1px solid rgba(0,0,0,0.05);
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
