@@ -1,4 +1,5 @@
 
+
 @import "tailwindcss";
 
 /* ============================================================================
@@ -6,6 +7,7 @@
    ============================================================================ */
 
 :root {
+  /* Default Light Theme */
   --sys-color-primary: #0061a4;
   --sys-color-primary-rgb: 0, 97, 164;
   --sys-color-on-primary: #ffffff;
@@ -50,19 +52,20 @@
   --sys-elevation-3: 0 16px 48px rgba(0,0,0,0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sys-color-primary: #a8c7fa;
-    --sys-color-on-primary: #00315b;
-    --sys-color-surface: #0b0e14;
-    --sys-color-background: #0b0e14;
-    --sys-color-on-surface: #e1e2e8;
-    --sys-color-surface-container: #1b1f27;
-    --sys-color-surface-container-high: #242932;
-    --sys-color-surface-container-highest: #2f343e;
-    --sys-surface-glass: rgba(20, 24, 32, 0.94);
-    --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
-  }
+/* Dark Theme Overrides - Applied via JS class */
+:root.dark {
+  --sys-color-primary: #a8c7fa;
+  --sys-color-on-primary: #00315b;
+  --sys-color-surface: #0b0e14;
+  --sys-color-background: #0b0e14;
+  --sys-color-on-surface: #e1e2e8;
+  --sys-color-surface-container: #1b1f27;
+  --sys-color-surface-container-high: #242932;
+  --sys-color-surface-container-highest: #2f343e;
+  
+  --sys-surface-glass: rgba(20, 24, 32, 0.94);
+  --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
+  --sys-color-outline-variant: #44474f;
 }
 
 body {
@@ -75,6 +78,7 @@ body {
   overflow-x: hidden;
   /* Prevent context menu during long press for tooltips */
   -webkit-touch-callout: none;
+  transition: background-color 0.3s ease;
 }
 
 .squish-interaction {
