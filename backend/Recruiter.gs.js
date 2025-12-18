@@ -4,11 +4,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 6.2.6
+ * 🏷️ VERSION: 6.2.7
  * ============================================================================
  */
 
-const VER_RECRUITER = '6.2.6';
+const VER_RECRUITER = '6.2.7';
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -20,10 +20,14 @@ function scoutRecruits() {
 
   // 1. Establish Baseline
   const baselineData = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`]);
-  let avgTrophies = 4000;
-  if (baselineData && baselineData[0] && baselineData[0].items) {
+  let avgTrophies = 4000; // Default safe baseline
+  
+  if (baselineData && baselineData[0] && baselineData[0].items && baselineData[0].items.length > 0) {
     avgTrophies = baselineData[0].items.reduce((a, b) => a + b.trophies, 0) / baselineData[0].items.length;
+  } else {
+    console.warn("⚠️ Recruiter: Could not fetch baseline clan data. Defaulting to 4000 trophies.");
   }
+  
   console.log(`📊 Baseline: Clan Avg Trophies is ${Math.round(avgTrophies)}.`);
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
@@ -74,6 +78,12 @@ function scoutRecruits() {
   // 6. Final Pool Scoring & Capping
   const rawPool = Array.from(existing.values()).sort((a, b) => b.rawScore - a.rawScore);
   const finalPool = rawPool.slice(0, CONFIG.HEADHUNTER.TARGET);
+
+  // 🛑 FAILSAFE: Don't render if pool is suspiciously empty and we expected results
+  if (finalPool.length === 0 && rawPool.length === 0 && existing.size > 0) {
+      console.error("⛔ Recruiter ABORTED: Logic Error resulted in empty pool. Retaining old data.");
+      return;
+  }
 
   const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
   const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
