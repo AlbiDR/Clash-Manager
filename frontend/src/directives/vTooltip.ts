@@ -2,7 +2,6 @@
 import type { Directive } from 'vue'
 import type { BenchmarkData } from '../composables/useBenchmarking'
 
-// Singleton Tooltip State
 let tooltipEl: HTMLDivElement | null = null
 let activeElement: HTMLElement | null = null
 let hideTimer: number | null = null
@@ -34,7 +33,7 @@ function renderContent(data: BenchmarkData | string) {
     tooltipEl.innerHTML = `
         <div class="rt-header">
             <span class="rt-label">${data.label}</span>
-            <span class="rt-tier tier-${data.tier.toLowerCase()}">${data.tier}</span>
+            <span class="rt-tier tier-${data.tier.toLowerCase().replace(' ', '-')}">${data.tier}</span>
         </div>
         <div class="rt-visual">
             <div class="rt-track">
@@ -47,6 +46,10 @@ function renderContent(data: BenchmarkData | string) {
             <span class="rt-stat">AVG ${Math.round(data.avg).toLocaleString()}</span>
             <span class="rt-delta ${sentimentClass}">${delta}</span>
         </div>
+        <div class="rt-bounds">
+            <div class="rt-bound"><span>MIN</span> ${Math.round(data.min).toLocaleString()}</div>
+            <div class="rt-bound"><span>MAX</span> ${Math.round(data.max).toLocaleString()}</div>
+        </div>
     `
 }
 
@@ -58,14 +61,10 @@ function positionTooltip(el: HTMLElement) {
     const viewportWidth = window.innerWidth
     const padding = 12
 
-    // Force a paint so we can measure the rendered size
     tooltipEl.classList.add('visible')
     const tipRect = tooltipEl.getBoundingClientRect()
 
-    // 1. Calculate Horizontal (Centered by default)
     let left = rect.left + rect.width / 2
-    
-    // Horizontal Edge Safety
     const halfWidth = tipRect.width / 2
     if (left - halfWidth < padding) {
         left = halfWidth + padding
@@ -73,13 +72,11 @@ function positionTooltip(el: HTMLElement) {
         left = viewportWidth - halfWidth - padding
     }
 
-    // 2. Calculate Vertical
-    let top = rect.top + scrollY - 6 // Above element
+    let top = rect.top + scrollY - 8
     let translateY = '-100%'
 
-    // Vertical Edge Safety (Flip to bottom if too close to top)
     if (rect.top < tipRect.height + padding * 2) {
-        top = rect.bottom + scrollY + 6
+        top = rect.bottom + scrollY + 8
         translateY = '0%'
     }
 
@@ -97,8 +94,7 @@ export const vTooltip: Directive = {
                 clearTimeout(hideTimer)
                 hideTimer = null
             }
-            
-            const tip = createTooltip()
+            createTooltip()
             activeElement = el
             renderContent(binding.value)
             positionTooltip(el)
@@ -117,7 +113,6 @@ export const vTooltip: Directive = {
         el.addEventListener('mouseleave', hide)
         el.addEventListener('touchstart', (e) => {
             show()
-            // Longer persistence on mobile
             if (hideTimer) clearTimeout(hideTimer)
             hideTimer = window.setTimeout(() => {
                 if (tooltipEl) tooltipEl.classList.remove('visible')
