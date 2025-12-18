@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
 import WarHistoryChart from './WarHistoryChart.vue'
@@ -16,6 +16,22 @@ const emit = defineEmits<{
   'toggle': []
   'toggle-select': []
 }>()
+
+// --- INTERACTION PROTECTION (Swipe Safety) ---
+const dragThreshold = 5
+const startPos = ref({ x: 0, y: 0 })
+
+function handleInteractionStart(e: MouseEvent | TouchEvent) {
+  const touch = 'touches' in e ? e.touches[0] : e
+  startPos.value = { x: touch.clientX, y: touch.clientY }
+}
+
+function shouldExecute(e: MouseEvent | TouchEvent): boolean {
+  const touch = 'changedTouches' in e ? e.changedTouches[0] : e
+  const dx = Math.abs(touch.clientX - startPos.value.x)
+  const dy = Math.abs(touch.clientY - startPos.value.y)
+  return dx < dragThreshold && dy < dragThreshold
+}
 
 const toneClass = computed(() => {
   const score = props.member.s || 0
@@ -48,20 +64,15 @@ const trend = computed(() => {
   }
 })
 
-import { useLongPress } from '../composables/useLongPress'
-const { isLongPress, start: startPress, cancel: cancelPress } = useLongPress(() => {
-  emit('toggle-select')
-})
-
-function handlePodClick(e: Event) {
+function onPodClick(e: MouseEvent | TouchEvent) {
+  if (!shouldExecute(e)) return
   e.stopPropagation()
   emit('toggle')
 }
 
-function handleContentClick(e: Event) {
-  if (isLongPress.value) { isLongPress.value = false; return }
-  const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a')) return
+function onContentClick(e: MouseEvent | TouchEvent) {
+  if (!shouldExecute(e)) return
+  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
   
   if (props.selectionMode) {
     emit('toggle-select')
@@ -75,15 +86,14 @@ function handleContentClick(e: Event) {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @click="handleContentClick"
-    @mousedown="startPress"
-    @touchstart="startPress"
-    @mouseup="cancelPress"
-    @touchend="cancelPress"
+    @mousedown="handleInteractionStart"
+    @touchstart="handleInteractionStart"
+    @mouseup="onContentClick"
+    @touchend="onContentClick"
   >
     <div class="card-header">
+      <!-- Zone: Identity (Selection/Toggle) -->
       <div class="identity-group">
-        <!-- Unified 60px badge stack -->
         <div class="meta-stack">
           <div class="badge tenure">{{ member.d.days }}d</div>
           <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
@@ -98,8 +108,8 @@ function handleContentClick(e: Event) {
         </div>
       </div>
 
-      <!-- Inspect Trigger (Score Pod) -->
-      <div class="score-section" @click.stop="handlePodClick">
+      <!-- Zone: Inspect (Score Pod always toggles expansion) -->
+      <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
         <div class="stat-pod" :class="toneClass">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
           <div v-if="trend" class="momentum-pill" :class="trend.dir">
@@ -129,12 +139,10 @@ function handleContentClick(e: Event) {
       <WarHistoryChart :history="member.d.hist" />
 
       <div class="actions">
-        <!-- RoyaleAPI on the left with title -->
         <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
           <Icon name="analytics" size="16" />
           <span>RoyaleAPI</span>
         </a>
-        <!-- Primary Action on the right -->
         <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
           <Icon name="crown" size="16" />
           <span>Open Game</span>
@@ -154,6 +162,8 @@ function handleContentClick(e: Event) {
   cursor: pointer;
   position: relative;
   overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .card.expanded {
@@ -181,7 +191,7 @@ function handleContentClick(e: Event) {
   text-transform: uppercase;
 }
 
-/* Monochromatic Role Scale */
+/* Monochromatic Vibrancy Engine */
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .role-coleader { background: rgba(var(--sys-color-primary-rgb), 0.7); color: white; }
@@ -213,7 +223,7 @@ function handleContentClick(e: Event) {
   font-family: var(--sys-font-family-mono);
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.stat-pod:active { transform: scale(0.9); }
+.stat-pod:active { transform: scale(0.92); }
 
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
@@ -229,6 +239,7 @@ function handleContentClick(e: Event) {
   z-index: 2;
   border: 1px solid var(--sys-surface-glass-border);
 }
+
 .momentum-pill.up { color: #22c55e; }
 .momentum-pill.down { color: #ef4444; }
 
