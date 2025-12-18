@@ -163,13 +163,13 @@ const timeAgo = computed(() => {
       </div>
 
       <div class="actions-toolbar">
-        <button class="btn-action secondary compact" @click.stop="emit('toggle-select')">
-           <Icon :name="selected ? 'check' : 'select_all'" size="14" />
-           <span>{{ selected ? 'Deselect' : 'Select' }}</span>
-        </button>
         <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
           <Icon name="crown" size="14" />
           <span>Open Game</span>
+        </a>
+        <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
+          <Icon name="analytics" size="14" />
+          <span>RoyaleAPI</span>
         </a>
       </div>
     </div>
@@ -189,7 +189,7 @@ const timeAgo = computed(() => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.25s var(--sys-motion-spring);
+  transition: all 0.2s var(--sys-motion-spring);
 }
 
 .card.expanded {
@@ -200,7 +200,7 @@ const timeAgo = computed(() => {
 }
 
 .card.selected { 
-  background: var(--sys-color-primary-container); 
+  background: var(--sys-color-primary-container) !important; 
   border: 2.5px solid var(--sys-color-primary);
   transform: scale(0.97);
 }
@@ -213,15 +213,19 @@ const timeAgo = computed(() => {
 .card.selected .sc-val,
 .card.selected .expand-btn { 
   color: var(--sys-color-on-primary-container) !important; 
+  opacity: 1 !important;
+}
+
+/* Fix for the Score Pod bug - ensures all pods look identical when selected */
+.card.selected .stat-pod {
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important;
+  color: var(--sys-color-on-primary-container) !important;
+  border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1);
 }
 
 .card.selected .badge { 
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
-  color: var(--sys-color-on-primary-container);
-}
-
-.card.selected .stat-pod:not(.tone-high) { 
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; 
+  color: var(--sys-color-on-primary-container) !important;
 }
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
