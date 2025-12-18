@@ -6,6 +6,7 @@ import { useApiState } from '../composables/useApiState'
 import { useToast } from '../composables/useToast'
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
+import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
 
 import Icon from '../components/Icon.vue'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
@@ -24,6 +25,7 @@ const sheetUrl = computed(() => {
 })
 
 const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+const blacklist = useRecruitBlacklist()
 
 const recruits = computed(() => data.value?.hh || [])
 const loading = computed(() => !data.value && isRefreshing.value)
@@ -88,8 +90,10 @@ const statsBadge = computed(() => {
 const getTs = (str?: string) => str ? new Date(str).getTime() : 0
 
 const filteredRecruits = computed(() => {
-  // 🚨 CRITICAL: We filter by hiddenIds AND assume the data from server is already stripped of 'Invited' recruits.
-  let result = recruits.value.filter(r => !hiddenIds.value.has(r.id))
+  // 🛡️ TOMBSTONE FILTER:
+  // We remove recruits that are in the local blacklist (tombstones).
+  // This persists even if the user reloads the page before the server update is live.
+  let result = recruits.value.filter(r => !blacklist.tombstones.value.has(r.id))
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -111,19 +115,16 @@ const filteredRecruits = computed(() => {
   return result
 })
 
-// 🧹 Clean up hiddenIds when the underlying data source actually removes them
+// 🧹 CLEANUP: When new data arrives, check if we can remove tombstones.
 watch(recruits, (newRecruits) => {
-    const currentIds = new Set(newRecruits.map(r => r.id))
-    hiddenIds.value.forEach(id => {
-        if (!currentIds.has(id)) {
-            hiddenIds.value.delete(id)
-        }
-    })
-    if (newRecruits.length > 0) processDeepLink(newRecruits)
-}, { deep: true })
+    if (newRecruits.length > 0) {
+        const currentIds = newRecruits.map(r => r.id)
+        blacklist.prune(currentIds)
+        processDeepLink(newRecruits)
+    }
+}, { deep: true, immediate: true })
 
 const { undo, success, error } = useToast()
-const hiddenIds = ref<Set<string>>(new Set())
 
 function dismissBulk() {
   if (selectedIds.value.length === 0) return
@@ -133,22 +134,22 @@ function dismissBulk() {
 }
 
 function executeDismiss(ids: string[]) {
-    // 1. Instantly hide from UI
-    ids.forEach(id => hiddenIds.value.add(id))
+    // 1. Instantly hide locally (Tombstone)
+    blacklist.hide(ids)
     
     // 2. Wait for Undo period (4.5s)
     const timerId = setTimeout(() => {
         dismissRecruitsAction(ids)
             .catch(() => {
                 error('Failed to sync changes')
-                // Restore if failed
-                ids.forEach(id => hiddenIds.value.delete(id))
+                // Only un-hide if the network request specifically failed
+                blacklist.restore(ids)
             })
     }, 4500)
     
     undo(`Dismissed ${ids.length} recruits`, () => {
         clearTimeout(timerId)
-        ids.forEach(id => hiddenIds.value.delete(id))
+        blacklist.restore(ids)
         success('Dismissal cancelled')
     })
 }
@@ -284,3 +285,4 @@ function handleSortUpdate(val: string) {
 }
 .btn-primary:active { transform: scale(0.95); }
 </style>
+
