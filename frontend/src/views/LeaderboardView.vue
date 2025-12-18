@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -29,14 +28,46 @@ const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen' | 'trend'>('score')
 
 const sortOptions = [
-  { label: 'Performance', value: 'score', desc: 'Composite metric: Fame (3x) + Avg Fame (15x) + War Rate (150x) + Donations (50x) - Inactivity Decay.' },
-  { label: 'Momentum', value: 'trend', desc: 'Change in Raw Score compared to the previous snapshot.' },
-  { label: 'War Participation', value: 'war_rate', desc: 'Percentage of weeks with >0 Fame. Strict mode applies on battle days.' },
-  { label: 'Daily Donations', value: 'donations_day', desc: 'Average daily donation count over entire tenure.' },
-  { label: 'Trophies', value: 'trophies' },
-  { label: 'Tenure', value: 'tenure', desc: 'Days since first seen in the database.' },
-  { label: 'Last Active', value: 'last_seen' },
-  { label: 'Name', value: 'name' }
+  { 
+    label: 'Performance', 
+    value: 'score', 
+    desc: 'Proprietary metric measuring total clan contribution. Weighted heavily towards recent War participation, Donation consistency, and Fame history, with exponential inactivity decay.' 
+  },
+  { 
+    label: 'Momentum', 
+    value: 'trend', 
+    desc: 'The velocity of a player\'s performance score compared to the previous snapshot. Highlights rising stars and declining activity.' 
+  },
+  { 
+    label: 'War Participation', 
+    value: 'war_rate', 
+    desc: 'Consistency rating based on active war weeks vs. tenure. Strict logic applies penalties for missing Battle Days while offering grace periods for Training Days.' 
+  },
+  { 
+    label: 'Daily Donations', 
+    value: 'donations_day', 
+    desc: 'Average cards donated per day over the player\'s entire tracked tenure. A strong indicator of long-term generosity.' 
+  },
+  { 
+    label: 'Trophies', 
+    value: 'trophies',
+    desc: 'Current ladder trophy count from the Clash Royale API.'
+  },
+  { 
+    label: 'Tenure', 
+    value: 'tenure', 
+    desc: 'Number of days since the player was first indexed by the Clash Manager database.' 
+  },
+  { 
+    label: 'Last Active', 
+    value: 'last_seen',
+    desc: 'Time elapsed since the player last opened the game app.'
+  },
+  { 
+    label: 'Name', 
+    value: 'name',
+    desc: 'Alphabetical sorting by player name.'
+  }
 ]
 
 const { 
