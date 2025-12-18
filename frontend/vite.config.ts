@@ -43,19 +43,19 @@ export default defineConfig({
           }
         ],
         // 📸 RICH INSTALL UI CONFIGURATION
-        // This tells Android to show a big preview card instead of a small popup.
+        // Ensure 'screenshot-mobile.png' and 'screenshot-desktop.png' exist in /public
         screenshots: [
           {
-            src: 'screenshot-mobile.svg', // We created this file in /public
+            src: 'screenshot-mobile.png',
             sizes: '750x1334',
-            type: 'image/svg+xml',
+            type: 'image/png',
             form_factor: 'narrow',
             label: 'Mobile Dashboard'
           },
           {
-            src: 'screenshot-mobile.svg', // Reusing same image for desktop for now
-            sizes: '750x1334',
-            type: 'image/svg+xml',
+            src: 'screenshot-desktop.png',
+            sizes: '1920x1080',
+            type: 'image/png',
             form_factor: 'wide',
             label: 'Desktop Dashboard'
           }
