@@ -181,13 +181,13 @@ const trend = computed(() => {
       <WarHistoryChart :history="member.d.hist" />
 
       <div class="actions">
-        <button class="btn-action" @click.stop="emit('toggle-select')">
-          <Icon :name="selected ? 'check' : 'select_all'" size="16" />
-          <span>{{ selected ? 'Deselect' : 'Select' }}</span>
-        </button>
         <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
           <Icon name="crown" size="16" />
           <span>Open Game</span>
+        </a>
+        <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
+          <Icon name="analytics" size="16" />
+          <span>RoyaleAPI</span>
         </a>
       </div>
     </div>
@@ -207,7 +207,7 @@ const trend = computed(() => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.25s var(--sys-motion-spring);
+  transition: all 0.2s var(--sys-motion-spring);
 }
 
 .card.expanded {
@@ -218,13 +218,13 @@ const trend = computed(() => {
 }
 
 .card.selected { 
-  background: var(--sys-color-primary-container); 
+  background: var(--sys-color-primary-container) !important; 
   border: 2.5px solid var(--sys-color-primary);
   transform: scale(0.97);
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15);
 }
 
-/* 🎯 High Contrast Rules for Selection */
+/* 🎯 High Contrast Rules for Selection - Forced Legibility */
 .card.selected .player-name,
 .card.selected .trophy-val,
 .card.selected .stat-score,
@@ -233,15 +233,20 @@ const trend = computed(() => {
 .card.selected .trend-val,
 .card.selected .expand-btn { 
   color: var(--sys-color-on-primary-container) !important; 
+  opacity: 1 !important;
+}
+
+/* Fix for the Score Pod bug - ensures all pods look identical when selected */
+.card.selected .stat-pod {
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important;
+  color: var(--sys-color-on-primary-container) !important;
+  border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1);
 }
 
 .card.selected .badge:not(.role) { 
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
-  color: var(--sys-color-on-primary-container);
-}
-
-.card.selected .stat-pod:not(.tone-high) { 
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; 
+  color: var(--sys-color-on-primary-container) !important;
+  border: none;
 }
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -302,6 +307,9 @@ const trend = computed(() => {
   transition: transform 0.2s;
 }
 .stat-pod:hover { transform: scale(1.05); }
+
+.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 
 .momentum-pill {
   position: absolute; bottom: -8px; left: 50%;
