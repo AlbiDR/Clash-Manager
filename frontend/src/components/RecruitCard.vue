@@ -185,7 +185,7 @@ const timeAgo = computed(() => {
           <span class="sc-label">War Wins</span>
           <span class="sc-val">{{ recruit.d.war }}</span>
         </div>
-        <div class="stat-cell border-l">
+        <div class="stat-cell border-l hit-target" v-tooltip="getTooltip('cardsWon', recruit.d.cards)">
           <span class="sc-label">Cards Won</span>
           <span class="sc-val">{{ recruit.d.cards || '-' }}</span>
         </div>
