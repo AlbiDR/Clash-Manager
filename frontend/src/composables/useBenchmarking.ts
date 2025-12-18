@@ -2,6 +2,18 @@
 import { computed } from 'vue'
 import { useClanData } from './useClanData'
 
+export interface BenchmarkData {
+    label: string
+    tier: 'ELITE' | 'TOP TIER' | 'GROWING' | 'UNDER'
+    value: number
+    avg: number
+    min: number
+    max: number
+    percent: number
+    isBetter: boolean
+    unit?: string
+}
+
 export function useBenchmarking() {
     const { data } = useClanData()
 
@@ -26,48 +38,45 @@ export function useBenchmarking() {
             donations: { avg: getAvg(donations), max: getMax(donations), min: getMin(donations) },
             score: { avg: getAvg(scores), max: getMax(scores), min: getMin(scores) },
             tenure: { avg: getAvg(tenure), max: getMax(tenure), min: getMin(tenure) },
-            momentum: { avg: getAvg(momentum), max: getMax(momentum), min: getMin(momentum) },
-            count: lb.length
+            momentum: { avg: getAvg(momentum), max: getMax(momentum), min: getMin(momentum) }
         }
     })
 
-    function getGhostTooltip(metric: 'trophies' | 'warRate' | 'donations' | 'score' | 'tenure' | 'momentum', value: number) {
+    function getBenchmark(metric: keyof NonNullable<typeof clanStats.value>, value: number): BenchmarkData | null {
         const stats = clanStats.value
-        if (!stats) return 'Analyzing clan data...'
+        if (!stats) return null
 
         const m = stats[metric]
         const diff = value - m.avg
         const percent = Math.abs(Math.round((diff / (m.avg || 1)) * 100))
         const isBetter = diff >= 0
         
-        // Semantic Labels
         const labels: Record<string, string> = {
-            trophies: 'Trophy Standing',
-            warRate: 'War Reliability',
-            donations: 'Contribution Level',
-            score: 'Performance Tier',
-            tenure: 'Clan Loyalty',
-            momentum: 'Growth Momentum'
+            trophies: 'Trophies',
+            warRate: 'War Rate',
+            donations: 'Avg Donos',
+            score: 'Performance',
+            tenure: 'Clan Days',
+            momentum: 'Momentum'
         }
 
-        // Elegant Ghost Bar Visual (Unicode Precision)
-        const barWidth = 14
-        const playerPos = m.max === m.min ? 0 : Math.round(((value - m.min) / (m.max - m.min)) * (barWidth - 1))
-        const avgPos = m.max === m.min ? 0 : Math.round(((m.avg - m.min) / (m.max - m.min)) * (barWidth - 1))
-        
-        let bar = Array(barWidth).fill('─')
-        bar[avgPos] = '┨' // Subtle anchor for average
-        bar[playerPos] = '●' // Player point
-        
-        const delta = isBetter ? `+${percent}%` : `-${percent}%`
-        const tier = value >= m.max * 0.9 ? 'ELITE' : (isBetter ? 'TOP TIER' : 'GROWING')
+        const tier = value >= m.max * 0.9 ? 'ELITE' : (isBetter ? 'TOP TIER' : (value < m.avg * 0.5 ? 'UNDER' : 'GROWING'))
 
-        return `${labels[metric]} • ${tier}\n${bar.join('')}\nAvg: ${Math.round(m.avg).toLocaleString()} (${delta})`
+        return {
+            label: labels[metric],
+            tier: tier as any,
+            value,
+            avg: m.avg,
+            min: m.min,
+            max: m.max,
+            percent,
+            isBetter
+        }
     }
 
     return {
         clanStats,
-        getGhostTooltip
+        getBenchmark
     }
 }
 
