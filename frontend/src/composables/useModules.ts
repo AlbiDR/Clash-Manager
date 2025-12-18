@@ -10,7 +10,7 @@ export interface ModuleState {
 
 const defaultState: ModuleState = {
     blitzMode: false,
-    ghostBenchmarking: false
+    ghostBenchmarking: true
 }
 
 const modules = ref<ModuleState>({ ...defaultState })
