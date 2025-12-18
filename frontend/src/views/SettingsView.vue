@@ -192,6 +192,16 @@ const apiStatusObject = computed(() => {
                 <div class="handle"></div>
                 </div>
             </div>
+            
+            <div class="toggle-row" @click="toggle('sortExplanation')">
+                <div class="row-info">
+                <div class="row-label">Sort Explanations</div>
+                <div class="row-desc">Show logic criteria next to sort filters</div>
+                </div>
+                <div class="switch" :class="{ active: modules.sortExplanation }">
+                <div class="handle"></div>
+                </div>
+            </div>
           </div>
         </div>
       </div>
