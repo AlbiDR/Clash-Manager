@@ -21,12 +21,20 @@ const bars = computed(() => {
     const parts = entry.split(' ')
     const val = parseInt(parts[0] ?? '0')
     const fame = isNaN(val) ? 0 : val
-    const week = parts[1] || 'Unknown'
+    const rawWeek = parts[1] || 'Unknown'
+    
+    // Parse "24W05" -> "Week 5" (Year removed for leanness)
+    let readableWeek = rawWeek
+    const weekMatch = rawWeek.match(/^(\d{2})W(\d{2})$/)
+    if (weekMatch) {
+      const weekNum = parseInt(weekMatch[2], 10)
+      readableWeek = `Week ${weekNum}`
+    }
     
     return {
       fame,
-      week,
-      tooltip: `${week}: ${fame} Fame`
+      week: rawWeek,
+      tooltip: `${readableWeek}: ${fame.toLocaleString()} Fame`
     }
   })
 })
