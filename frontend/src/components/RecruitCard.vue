@@ -1,7 +1,10 @@
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { Recruit } from '../types'
 import Icon from './Icon.vue'
+import { useBenchmarking } from '../composables/useBenchmarking'
+import { useModules } from '../composables/useModules'
 
 const props = defineProps<{
   id: string
@@ -15,6 +18,9 @@ const emit = defineEmits<{
   'toggle-expand': []
   'toggle-select': []
 }>()
+
+const { getGhostTooltip } = useBenchmarking()
+const { modules } = useModules()
 
 // --- INTERACTION PROTECTION ---
 const dragThreshold = 5
@@ -60,12 +66,8 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   if (!shouldExecute(e)) return
   const target = e.target as HTMLElement
   if (target.closest('.btn-action') || target.closest('a')) return
-  
-  if (props.selectionMode) {
-    emit('toggle-select')
-  } else {
-    emit('toggle-expand')
-  }
+  if (props.selectionMode) emit('toggle-select')
+  else emit('toggle-expand')
 }
 </script>
 
@@ -87,7 +89,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
         
         <div class="name-block">
           <span class="player-name">{{ recruit.n }}</span>
-          <div class="trophy-meta">
+          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('trophies', recruit.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
           </div>
@@ -103,11 +105,11 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 
     <div class="card-body" v-if="expanded">
       <div class="stats-row">
-        <div class="stat-cell">
+        <div class="stat-cell" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('donations', recruit.d.don) : null">
           <span class="sc-label">Donations</span>
           <span class="sc-val">{{ recruit.d.don }}</span>
         </div>
-        <div class="stat-cell border-l">
+        <div class="stat-cell border-l" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('warRate', recruit.d.war) : null">
           <span class="sc-label">War Wins</span>
           <span class="sc-val">{{ recruit.d.war }}</span>
         </div>
@@ -118,12 +120,10 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       </div>
 
       <div class="actions-toolbar">
-        <!-- RoyaleAPI on the Left -->
         <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action secondary compact">
           <Icon name="analytics" size="14" />
           <span>RoyaleAPI</span>
         </a>
-        <!-- Open Game on the Right -->
         <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
           <Icon name="crown" size="14" />
           <span>Open Game</span>
@@ -182,7 +182,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
   line-height: 1.1;
 }
 
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
 .score-section { cursor: zoom-in; }
@@ -204,7 +204,8 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); }
 
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
-.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
+.stat-cell:hover { background: rgba(var(--sys-color-primary-rgb), 0.05); }
 .stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
 .sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
 .sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
