@@ -67,6 +67,12 @@ function handleScoreClick(e: Event) {
     emit('toggle-select')
 }
 
+function handleExpandClick(e: Event) {
+    e.stopPropagation()
+    if (navigator.vibrate) navigator.vibrate(10)
+    emit('toggle-expand')
+}
+
 function handleMainClick(e: MouseEvent | TouchEvent) {
   if (isScrolling.value) return
   
@@ -74,7 +80,7 @@ function handleMainClick(e: MouseEvent | TouchEvent) {
   if (pressDuration > 550) return
 
   const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a')) return
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
   
   if (props.selectionMode) {
       emit('toggle-select')
@@ -128,10 +134,15 @@ const timeAgo = computed(() => {
         </div>
       </div>
 
-      <div class="score-section" @click.stop="handleScoreClick">
-        <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'score', recruit.s) : null">
-          <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
+      <div class="header-actions">
+        <div class="score-section" @click.stop="handleScoreClick">
+          <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('hh', 'score', recruit.s) : null">
+            <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
+          </div>
         </div>
+        <button class="expand-btn hit-target" @click.stop="handleExpandClick" :class="{ 'is-active': expanded }">
+          <Icon name="chevron_down" size="20" />
+        </button>
       </div>
     </div>
 
@@ -190,8 +201,27 @@ const timeAgo = computed(() => {
 
 .card.selected { 
   background: var(--sys-color-primary-container); 
-  border: 2px solid var(--sys-color-primary);
+  border: 2.5px solid var(--sys-color-primary);
   transform: scale(0.97);
+}
+
+/* 🎯 High Contrast Rules for Selection */
+.card.selected .player-name,
+.card.selected .trophy-val,
+.card.selected .stat-score,
+.card.selected .sc-label,
+.card.selected .sc-val,
+.card.selected .expand-btn { 
+  color: var(--sys-color-on-primary-container) !important; 
+}
+
+.card.selected .badge { 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
+  color: var(--sys-color-on-primary-container);
+}
+
+.card.selected .stat-pod:not(.tone-high) { 
+  background: rgba(var(--sys-color-on-primary-container-rgb, 0,0,0), 0.1); 
 }
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -225,6 +255,15 @@ const timeAgo = computed(() => {
 
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
+
+.header-actions { display: flex; align-items: center; gap: 4px; }
+
+.expand-btn {
+  background: none; border: none; padding: 8px;
+  color: var(--sys-color-outline);
+  cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expand-btn.is-active { transform: rotate(180deg); color: var(--sys-color-primary); }
 
 .stat-pod {
   width: 48px; height: 48px;
