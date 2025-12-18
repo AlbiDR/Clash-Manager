@@ -1,5 +1,3 @@
-
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
@@ -160,7 +158,7 @@ const apiStatusObject = computed(() => {
       <div class="settings-card">
         <div class="card-header">
           <Icon name="lightning" size="20" class="header-icon" />
-          <h3>Experimental Features</h3>
+          <h3>Power Tools</h3>
         </div>
         <div class="card-body">
           <div class="features-list">
@@ -215,7 +213,7 @@ const apiStatusObject = computed(() => {
       </div>
 
       <div class="footer-info">
-        <div class="brand">CLASH MANAGER V6.2</div>
+        <div class="brand">CLASH MANAGER V6.2.0</div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
     </div>
@@ -328,4 +326,3 @@ const apiStatusObject = computed(() => {
 .brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; }
 .copy { font-size: 10px; opacity: 0.2; margin-top: 4px; }
 </style>
-
