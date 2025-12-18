@@ -1,15 +1,16 @@
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Icon from './Icon.vue'
+import { useModules } from '../composables/useModules'
 
-defineProps<{
+const props = defineProps<{
   title: string
   status?: { type: 'updated' | 'error' | 'loading' | 'ready', text: string }
   showSearch?: boolean
   sheetUrl?: string
   stats?: { label: string, value: string }
-  sortOptions?: { label: string, value: string }[]
+  sortOptions?: { label: string, value: string, desc?: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   'refresh': []
 }>()
 
+const { modules } = useModules()
 const sortValue = ref('score')
 const isScrolled = ref(false)
 
@@ -27,6 +29,12 @@ const handleScroll = () => {
 
 onMounted(() => window.addEventListener('scroll', handleScroll))
 onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+
+const activeSortDescription = computed(() => {
+  if (!modules.value.sortExplanation) return null
+  const selected = props.sortOptions?.find(opt => opt.value === sortValue.value)
+  return selected?.desc || null
+})
 </script>
 
 <template>
@@ -59,13 +67,22 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
           <input type="text" class="glass-input" placeholder="Search..." autocomplete="off" @input="e => emit('update:search', (e.target as HTMLInputElement).value)">
         </div>
         
-        <div class="sort-container">
-          <Icon name="filter" size="16" class="sort-icon" />
-          <select v-model="sortValue" class="glass-select" @change="emit('update:sort', sortValue)">
-            <template v-if="sortOptions">
-              <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </template>
-          </select>
+        <div class="sort-group">
+          <div class="sort-container">
+            <Icon name="filter" size="16" class="sort-icon" />
+            <select v-model="sortValue" class="glass-select" @change="emit('update:sort', sortValue)">
+              <template v-if="sortOptions">
+                <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </template>
+            </select>
+          </div>
+          <div 
+            v-if="activeSortDescription" 
+            class="info-dot" 
+            v-tooltip="activeSortDescription"
+          >
+            <Icon name="info" size="16" />
+          </div>
         </div>
       </div>
       
@@ -192,6 +209,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 .glass-input:focus { background: var(--sys-color-surface); border-color: var(--sys-color-primary); outline: none; }
 
+.sort-group { display: flex; align-items: center; gap: 8px; }
 .sort-container { position: relative; width: 180px; }
 .glass-select {
   width: 100%; height: 46px;
@@ -206,6 +224,18 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 .sort-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
 
+.info-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+  display: flex; align-items: center; justify-content: center;
+  cursor: help;
+  opacity: 0.8;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.info-dot:hover { transform: scale(1.1); opacity: 1; }
+
 .spinner {
   width: 12px; height: 12px;
   border: 2px solid currentColor;
@@ -215,4 +245,3 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
-
