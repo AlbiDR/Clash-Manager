@@ -29,12 +29,12 @@ const searchQuery = ref('')
 const sortBy = ref<'score' | 'trophies' | 'name' | 'donations_day' | 'war_rate' | 'tenure' | 'last_seen' | 'trend'>('score')
 
 const sortOptions = [
-  { label: 'Performance', value: 'score' },
-  { label: 'Momentum', value: 'trend' },
-  { label: 'War Participation', value: 'war_rate' },
-  { label: 'Daily Donations', value: 'donations_day' },
+  { label: 'Performance', value: 'score', desc: 'Composite metric: Fame (3x) + Avg Fame (15x) + War Rate (150x) + Donations (50x) - Inactivity Decay.' },
+  { label: 'Momentum', value: 'trend', desc: 'Change in Raw Score compared to the previous snapshot.' },
+  { label: 'War Participation', value: 'war_rate', desc: 'Percentage of weeks with >0 Fame. Strict mode applies on battle days.' },
+  { label: 'Daily Donations', value: 'donations_day', desc: 'Average daily donation count over entire tenure.' },
   { label: 'Trophies', value: 'trophies' },
-  { label: 'Tenure', value: 'tenure' },
+  { label: 'Tenure', value: 'tenure', desc: 'Days since first seen in the database.' },
   { label: 'Last Active', value: 'last_seen' },
   { label: 'Name', value: 'name' }
 ]
