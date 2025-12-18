@@ -43,18 +43,18 @@ export default defineConfig({
           }
         ],
         // 📸 RICH INSTALL UI CONFIGURATION
-        // Ensure 'screenshot-mobile.png' and 'screenshot-desktop.png' exist in /public
+        // Exact dimensions are required for the browser to accept the screenshots
         screenshots: [
           {
             src: 'screenshot-mobile.png',
-            sizes: '750x1334',
+            sizes: '1080x2235',
             type: 'image/png',
             form_factor: 'narrow',
             label: 'Mobile Dashboard'
           },
           {
             src: 'screenshot-desktop.png',
-            sizes: '1920x1080',
+            sizes: '1865x1894',
             type: 'image/png',
             form_factor: 'wide',
             label: 'Desktop Dashboard'
