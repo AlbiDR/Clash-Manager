@@ -107,7 +107,19 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
-        const envelope = await response.json()
+        // 🛡️ ROBUST PARSING: Handle GAS HTML Errors gracefully
+        const text = await response.text()
+        let envelope: any
+
+        try {
+            envelope = JSON.parse(text)
+        } catch (e) {
+            // Check for common HTML error signatures from Google
+            if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('Google Drive - Page Not Found')) {
+                throw new Error('Backend Critical Failure: The server timed out or returned an HTML error page instead of JSON.')
+            }
+            throw new Error(`Malformed JSON response from server: ${text.substring(0, 100)}...`)
+        }
 
         // --------------------------------------------------------
         // CRITICAL FIX: Normalization Pattern
