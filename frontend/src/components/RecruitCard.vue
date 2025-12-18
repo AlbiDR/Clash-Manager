@@ -163,13 +163,13 @@ const timeAgo = computed(() => {
       </div>
 
       <div class="actions-toolbar">
-        <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
-          <Icon name="crown" size="14" />
-          <span>Open Game</span>
-        </a>
         <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
           <Icon name="analytics" size="14" />
           <span>RoyaleAPI</span>
+        </a>
+        <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
+          <Icon name="crown" size="14" />
+          <span>Open Game</span>
         </a>
       </div>
     </div>
