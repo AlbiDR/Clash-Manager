@@ -40,6 +40,7 @@ export function useBenchmarking() {
             trophies: { avg: getAvg(hh.map(m => m.t)), max: getMax(hh.map(m => m.t)), min: getMin(hh.map(m => m.t)) },
             donations: { avg: getAvg(hh.map(m => m.d.don)), max: getMax(hh.map(m => m.d.don)), min: getMin(hh.map(m => m.d.don)) },
             warWins: { avg: getAvg(hh.map(m => m.d.war)), max: getMax(hh.map(m => m.d.war)), min: getMin(hh.map(m => m.d.war)) },
+            cardsWon: { avg: getAvg(hh.map(m => m.d.cards || 0)), max: getMax(hh.map(m => m.d.cards || 0)), min: getMin(hh.map(m => m.d.cards || 0)) },
             score: { avg: getAvg(hh.map(m => m.s)), max: getMax(hh.map(m => m.s)), min: getMin(hh.map(m => m.s)) }
         }
     })
@@ -60,6 +61,7 @@ export function useBenchmarking() {
             warRate: 'War Reliability',
             donations: context === 'lb' ? 'Daily Average' : 'Lifetime Donos',
             warWins: 'Legacy War Wins',
+            cardsWon: 'Cards Won',
             score: context === 'lb' ? 'Performance' : 'Potential',
             tenure: 'Clan Loyalty',
             momentum: 'Growth Pace'
