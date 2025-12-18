@@ -112,7 +112,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 
 .header-row { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
-.left-cluster { display: flex; align-items: center; gap: 12px; }
+.left-cluster { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
 
 .view-title {
   margin: 0;
@@ -121,6 +121,9 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   color: var(--sys-color-on-surface);
   letter-spacing: -0.03em;
   transition: font-size 0.3s var(--sys-motion-spring);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .is-scrolled .view-title { font-size: 18px; }
 
@@ -131,6 +134,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   border-radius: 10px;
   font-size: 12px;
   font-weight: 850;
+  flex-shrink: 0;
 }
 .sp-value { color: var(--sys-color-primary); }
 .sp-label { opacity: 0.5; text-transform: uppercase; font-size: 9px; }
@@ -142,6 +146,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   color: var(--sys-color-primary);
   background: var(--sys-color-surface-container-high);
   transition: 0.2s;
+  flex-shrink: 0;
 }
 .icon-button:active { transform: scale(0.92); }
 
@@ -155,11 +160,22 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   background: var(--sys-color-surface-container);
   color: var(--sys-color-outline);
   border: 1px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .status-pill.ready { color: var(--sys-color-success); background: var(--sys-color-success-container); }
 .status-pill.error { color: var(--sys-color-error); background: var(--sys-color-error-container); }
 
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Mobile Optimizations */
+@media (max-width: 600px) {
+  .console-glass { padding: 14px; gap: 12px; }
+  .view-title { font-size: 20px; }
+  .status-pill { padding: 6px 10px; gap: 6px; }
+  .left-cluster { gap: 8px; }
+  .stats-pill { padding: 4px 8px; }
+}
 
 .search-container { position: relative; flex: 1; }
 .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
