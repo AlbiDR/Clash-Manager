@@ -13,11 +13,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 6.0.0
+ * 🏷️ VERSION: 6.0.1
  * ============================================================================
  */
 
-const VER_UTILITIES = '6.0.0';
+const VER_UTILITIES = '6.0.1';
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -196,6 +196,7 @@ const Utils = {
     // 0. Safety Quota Check
     if (_FETCH_COUNT > MAX_FETCH_PER_EXECUTION) {
       console.error(`⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`);
+      // Return nulls explicitly so downstream knows to abort
       return new Array(urls.length).fill(null);
     }
     _FETCH_COUNT += urls.length;
