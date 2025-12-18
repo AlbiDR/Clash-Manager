@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import Icon from './Icon.vue'
@@ -31,7 +32,6 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 <template>
   <div class="header-wrapper" :class="{ 'is-scrolled': isScrolled }">
     <div class="console-glass">
-      <!-- Decorative Background Bloom -->
       <div class="bloom-effect"></div>
       
       <div class="header-row top">
@@ -84,10 +84,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   padding: 12px 0;
   transition: padding 0.3s var(--sys-motion-spring);
 }
-
-.header-wrapper.is-scrolled {
-  padding: 4px 0;
-}
+.header-wrapper.is-scrolled { padding: 4px 0; }
 
 .console-glass {
   position: relative;
@@ -96,10 +93,10 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-l);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   box-shadow: var(--sys-elevation-2);
   overflow: hidden;
 }
@@ -110,58 +107,56 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   width: 150px; height: 150px;
   background: var(--sys-color-primary);
   filter: blur(80px);
-  opacity: 0.12;
+  opacity: 0.1;
   pointer-events: none;
 }
 
 .header-row { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
-
 .left-cluster { display: flex; align-items: center; gap: 12px; }
 
 .view-title {
   margin: 0;
-  font-size: 26px;
-  font-weight: 850;
+  font-size: 24px;
+  font-weight: 900;
   color: var(--sys-color-on-surface);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   transition: font-size 0.3s var(--sys-motion-spring);
 }
-
-.is-scrolled .view-title { font-size: 20px; }
+.is-scrolled .view-title { font-size: 18px; }
 
 .stats-pill {
   display: flex; align-items: center; gap: 6px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 850;
 }
 .sp-value { color: var(--sys-color-primary); }
-.sp-label { opacity: 0.6; text-transform: uppercase; font-size: 10px; }
+.sp-label { opacity: 0.5; text-transform: uppercase; font-size: 9px; }
 
 .icon-button {
-  width: 32px; height: 32px;
-  border-radius: 50%;
+  width: 36px; height: 36px;
+  border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   color: var(--sys-color-primary);
   background: var(--sys-color-surface-container-high);
-  transition: background 0.2s;
+  transition: 0.2s;
 }
-.icon-button:active { background: var(--sys-color-surface-container-highest); }
+.icon-button:active { transform: scale(0.92); }
 
 .status-pill {
   display: flex; align-items: center; gap: 8px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 800;
   text-transform: uppercase;
   background: var(--sys-color-surface-container);
   color: var(--sys-color-outline);
   border: 1px solid transparent;
 }
-.status-pill.ready { color: var(--sys-color-success); border-color: rgba(var(--sys-color-success), 0.2); }
+.status-pill.ready { color: var(--sys-color-success); background: var(--sys-color-success-container); }
 .status-pill.error { color: var(--sys-color-error); background: var(--sys-color-error-container); }
 
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -170,7 +165,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
 
 .glass-input {
-  width: 100%; height: 44px;
+  width: 100%; height: 46px;
   padding: 0 16px 0 44px;
   border-radius: 14px;
   background: var(--sys-color-surface-container-high);
@@ -181,14 +176,14 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 }
 .glass-input:focus { background: var(--sys-color-surface); border-color: var(--sys-color-primary); outline: none; }
 
-.sort-container { position: relative; width: 140px; }
+.sort-container { position: relative; width: 130px; }
 .glass-select {
-  width: 100%; height: 44px;
+  width: 100%; height: 46px;
   padding: 0 12px 0 38px;
   border-radius: 14px;
   background: var(--sys-color-surface-container-high);
   border: none;
-  font-size: 13px; font-weight: 700;
+  font-size: 13px; font-weight: 800;
   color: var(--sys-color-on-surface);
   appearance: none;
   cursor: pointer;
