@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
@@ -56,8 +57,6 @@ const apiStatusObject = computed(() => {
     if (apiStatus.value === 'unconfigured') return { type: 'error', text: 'Setup Required' } as const
     return { type: 'loading', text: 'Ping...' } as const
 })
-
-const editorUrl = computed(() => pingData.value?.scriptId ? `https://script.google.com/home/projects/${pingData.value.scriptId}/edit` : undefined)
 </script>
 
 <template>
@@ -125,13 +124,24 @@ const editorUrl = computed(() => pingData.value?.scriptId ? `https://script.goog
           <h3>Experimental Features</h3>
         </div>
         <div class="card-body">
-          <div class="toggle-row" @click="toggle('blitzMode')">
-            <div class="row-info">
-              <div class="row-label">Blitz Mode</div>
-              <div class="row-desc">Multi-tab profile navigation engine</div>
+          <div class="features-list">
+            <div class="toggle-row" @click="toggle('blitzMode')">
+                <div class="row-info">
+                <div class="row-label">Blitz Mode</div>
+                <div class="row-desc">Multi-tab profile navigation engine</div>
+                </div>
+                <div class="switch" :class="{ active: modules.blitzMode }">
+                <div class="handle"></div>
+                </div>
             </div>
-            <div class="switch" :class="{ active: modules.blitzMode }">
-              <div class="handle"></div>
+            <div class="toggle-row" @click="toggle('ghostBenchmarking')">
+                <div class="row-info">
+                <div class="row-label">Ghost Benchmarking</div>
+                <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                </div>
+                <div class="switch" :class="{ active: modules.ghostBenchmarking }">
+                <div class="handle"></div>
+                </div>
             </div>
           </div>
         </div>
@@ -220,7 +230,9 @@ const editorUrl = computed(() => pingData.value?.scriptId ? `https://script.goog
 
 .override-pill { margin-top: 10px; padding: 8px; border-radius: 8px; background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); font-size: 11px; font-weight: 800; text-align: center; cursor: pointer; }
 
+.features-list { display: flex; flex-direction: column; gap: 16px; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+
 .row-label { font-weight: 800; font-size: 15px; color: var(--sys-color-on-surface); }
 .row-desc { font-size: 13px; opacity: 0.6; }
 
