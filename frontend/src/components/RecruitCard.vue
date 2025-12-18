@@ -19,7 +19,7 @@ const emit = defineEmits<{
   'toggle-select': []
 }>()
 
-const { getGhostTooltip } = useBenchmarking()
+const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
 // --- INTERACTION PROTECTION ---
@@ -89,7 +89,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
         
         <div class="name-block">
           <span class="player-name">{{ recruit.n }}</span>
-          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('trophies', recruit.t) : null">
+          <div class="trophy-meta" v-tooltip="modules.ghostBenchmarking ? getBenchmark('trophies', recruit.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
           </div>
@@ -97,7 +97,7 @@ function onContentClick(e: MouseEvent | TouchEvent) {
       </div>
 
       <div class="score-section" @mouseup.stop="onPodClick" @touchend.stop="onPodClick">
-        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('score', recruit.s) : null">
+        <div class="stat-pod" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('score', recruit.s) : null">
           <span class="stat-score">{{ Math.round(recruit.s || 0) }}</span>
         </div>
       </div>
@@ -105,11 +105,11 @@ function onContentClick(e: MouseEvent | TouchEvent) {
 
     <div class="card-body" v-if="expanded">
       <div class="stats-row">
-        <div class="stat-cell" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('donations', recruit.d.don) : null">
+        <div class="stat-cell" v-tooltip="modules.ghostBenchmarking ? getBenchmark('donations', recruit.d.don) : null">
           <span class="sc-label">Donations</span>
           <span class="sc-val">{{ recruit.d.don }}</span>
         </div>
-        <div class="stat-cell border-l" v-tooltip="modules.ghostBenchmarking ? getGhostTooltip('warRate', recruit.d.war) : null">
+        <div class="stat-cell border-l" v-tooltip="modules.ghostBenchmarking ? getBenchmark('warRate', recruit.d.war) : null">
           <span class="sc-label">War Wins</span>
           <span class="sc-val">{{ recruit.d.war }}</span>
         </div>
