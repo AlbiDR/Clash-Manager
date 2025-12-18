@@ -1,9 +1,11 @@
 
+
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
 import { useInstallPrompt } from '../composables/useInstallPrompt'
 import { useModules } from '../composables/useModules'
+import { useTheme } from '../composables/useTheme'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import Icon from '../components/Icon.vue'
 
@@ -13,6 +15,7 @@ const isEditing = ref(false)
 const { apiUrl, apiStatus, pingData, checkApiStatus } = useApiState()
 const { isInstallable, install } = useInstallPrompt()
 const { modules, toggle } = useModules()
+const { theme, setTheme } = useTheme()
 
 onMounted(() => {
     checkApiStatus()
@@ -117,6 +120,42 @@ const apiStatusObject = computed(() => {
         </div>
       </div>
 
+      <!-- Section: Visuals -->
+      <div class="settings-card">
+        <div class="card-header">
+          <Icon name="gear" size="20" class="header-icon" />
+          <h3>Appearance</h3>
+        </div>
+        <div class="card-body">
+          <div class="theme-switch">
+            <button 
+              class="theme-btn" 
+              :class="{ active: theme === 'light' }" 
+              @click="setTheme('light')"
+              title="Light Mode"
+            >
+              <Icon name="theme_light" size="20" />
+            </button>
+            <button 
+              class="theme-btn" 
+              :class="{ active: theme === 'auto' }" 
+              @click="setTheme('auto')"
+              title="Auto / System"
+            >
+              <Icon name="theme_auto" size="20" />
+            </button>
+            <button 
+              class="theme-btn" 
+              :class="{ active: theme === 'dark' }" 
+              @click="setTheme('dark')"
+              title="Dark Mode"
+            >
+              <Icon name="moon" size="20" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Section: Features -->
       <div class="settings-card">
         <div class="card-header">
@@ -193,6 +232,7 @@ const apiStatusObject = computed(() => {
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
   animation: card-bloom 0.4s var(--sys-motion-spring) backwards;
+  transition: background-color 0.3s ease;
 }
 
 .card-header {
@@ -230,6 +270,31 @@ const apiStatusObject = computed(() => {
 
 .override-pill { margin-top: 10px; padding: 8px; border-radius: 8px; background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); font-size: 11px; font-weight: 800; text-align: center; cursor: pointer; }
 
+/* THEME SWITCH */
+.theme-switch {
+  display: flex;
+  background: var(--sys-color-surface-container-high);
+  padding: 4px;
+  border-radius: 99px;
+  gap: 4px;
+}
+.theme-btn {
+  flex: 1;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--sys-color-outline);
+  border-radius: 99px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s var(--sys-motion-spring);
+}
+.theme-btn.active {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.2);
+}
+
 .features-list { display: flex; flex-direction: column; gap: 16px; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
 
@@ -263,3 +328,4 @@ const apiStatusObject = computed(() => {
 .brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; }
 .copy { font-size: 10px; opacity: 0.2; margin-top: 4px; }
 </style>
+
