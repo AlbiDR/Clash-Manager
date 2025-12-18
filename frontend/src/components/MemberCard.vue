@@ -38,7 +38,6 @@ const trend = computed(() => {
   if (dt === 0 || currentRaw === 0) return null
   
   const previousRaw = currentRaw - dt
-  // Avoid division by zero and illogical trends
   if (previousRaw <= 0) return null 
   
   const percentChange = (dt / previousRaw) * 100
@@ -61,7 +60,8 @@ function handlePodClick(e: Event) {
 
 function handleContentClick(e: Event) {
   if (isLongPress.value) { isLongPress.value = false; return }
-  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a')) return
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a')) return
   
   if (props.selectionMode) {
     emit('toggle-select')
@@ -82,8 +82,8 @@ function handleContentClick(e: Event) {
     @touchend="cancelPress"
   >
     <div class="card-header">
-      <!-- Zone: Selection / Info -->
       <div class="identity-group">
+        <!-- Unified 60px badge stack -->
         <div class="meta-stack">
           <div class="badge tenure">{{ member.d.days }}d</div>
           <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
@@ -98,7 +98,7 @@ function handleContentClick(e: Event) {
         </div>
       </div>
 
-      <!-- Zone: Inspect (Score Pod acts as toggle) -->
+      <!-- Inspect Trigger (Score Pod) -->
       <div class="score-section" @click.stop="handlePodClick">
         <div class="stat-pod" :class="toneClass">
           <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
@@ -129,12 +129,15 @@ function handleContentClick(e: Event) {
       <WarHistoryChart :history="member.d.hist" />
 
       <div class="actions">
+        <!-- RoyaleAPI on the left with title -->
+        <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
+          <Icon name="analytics" size="16" />
+          <span>RoyaleAPI</span>
+        </a>
+        <!-- Primary Action on the right -->
         <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
           <Icon name="crown" size="16" />
           <span>Open Game</span>
-        </a>
-        <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
-          <Icon name="analytics" size="16" />
         </a>
       </div>
     </div>
@@ -178,13 +181,12 @@ function handleContentClick(e: Event) {
   text-transform: uppercase;
 }
 
-/* monochromatic Role Vibrancy */
+/* Monochromatic Role Scale */
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
-
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .role-coleader { background: rgba(var(--sys-color-primary-rgb), 0.7); color: white; }
 .role-elder { background: rgba(var(--sys-color-primary-rgb), 0.35); color: var(--sys-color-primary); }
-.role-member { background: rgba(var(--sys-color-primary-rgb), 0.1); color: var(--sys-color-outline); }
+.role-member { background: rgba(var(--sys-color-primary-rgb), 0.12); color: var(--sys-color-outline); }
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 
@@ -227,7 +229,6 @@ function handleContentClick(e: Event) {
   z-index: 2;
   border: 1px solid var(--sys-surface-glass-border);
 }
-
 .momentum-pill.up { color: #22c55e; }
 .momentum-pill.down { color: #ef4444; }
 
