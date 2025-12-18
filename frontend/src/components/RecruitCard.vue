@@ -59,7 +59,8 @@ function handlePodClick(e: Event) {
 
 function handleContentClick(e: Event) {
   if (isLongPress.value) { isLongPress.value = false; return }
-  if ((e.target as HTMLElement).closest('.btn-action') || (e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('.btn-icon-action')) return
+  const target = e.target as HTMLElement
+  if (target.closest('.btn-action') || target.closest('a') || target.closest('.btn-icon-action')) return
   
   if (props.selectionMode) {
     emit('toggle-select')
@@ -81,6 +82,7 @@ function handleContentClick(e: Event) {
   >
     <div class="card-header">
       <div class="identity-group">
+        <!-- 60px Meta Stack -->
         <div class="meta-stack">
           <div class="badge time">{{ timeAgo }}</div>
           <div class="badge tag">#{{ recruit.id.substring(0, 5) }}</div>
@@ -119,6 +121,7 @@ function handleContentClick(e: Event) {
       </div>
 
       <div class="actions-toolbar">
+        <!-- Swapped positions to match leaderboard -->
         <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action secondary compact">
           <Icon name="analytics" size="14" />
           <span>RoyaleAPI</span>
