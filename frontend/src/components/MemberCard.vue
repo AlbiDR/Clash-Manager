@@ -124,16 +124,24 @@ const roleInfo = computed(() => {
 })
 
 const trend = computed(() => {
-  const dt = props.member.dt || 0
-  const currentRaw = props.member.r || 0
+  // Ensure we use numbers for calculation
+  const dt = Number(props.member.dt) || 0
+  const currentRaw = Number(props.member.r) || 0
   
   // Need valid data to show trend
   if (dt === 0 || currentRaw === 0) return null
   
   const previousRaw = currentRaw - dt
   
-  // Prevent division by zero or infinite growth for new members
-  if (previousRaw <= 0) return null 
+  // FILTER 1: Tiny Baseline
+  // If previous score was < 50, user was basically inactive/new. 
+  // Calculating trend against ~0 results in massive % (e.g. +1425000%) which is noise.
+  if (previousRaw < 50) return null
+
+  // FILTER 2: Absurd Percentage Cap (> 1000%)
+  // If a user jumps 10x in score, treat them as "Newly Activated" rather than "Trending Up".
+  // This catches cases where previousRaw was ~1 or 2 (mathematically valid but contextually noise).
+  if (previousRaw > 0 && (dt / previousRaw) > 10) return null
   
   const percentChange = (dt / previousRaw) * 100
   const absPercent = Math.abs(percentChange)
