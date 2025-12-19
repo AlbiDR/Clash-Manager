@@ -4,6 +4,7 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import { vTooltip } from './directives/vTooltip'
+import { vTactile } from './directives/vTactile'
 import { useModules } from './composables/useModules'
 import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
@@ -102,6 +103,7 @@ async function bootstrap() {
 
         app.use(router)
         app.directive('tooltip', vTooltip)
+        app.directive('tactile', vTactile)
 
         // Attempt mount
         app.mount('#app')
