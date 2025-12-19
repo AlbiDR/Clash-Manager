@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Icon from './Icon.vue'
@@ -70,18 +69,18 @@ const activeSortDescription = computed(() => {
         <div class="sort-group">
           <div class="sort-container">
             <Icon name="filter" size="16" class="sort-icon" />
-            <select v-model="sortValue" class="glass-select" @change="emit('update:sort', sortValue)">
+            <select v-model="sortValue" class="glass-select" :class="{ 'has-info': !!activeSortDescription }" @change="emit('update:sort', sortValue)">
               <template v-if="sortOptions">
                 <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </template>
             </select>
-          </div>
-          <div 
-            v-if="activeSortDescription" 
-            class="info-dot" 
-            v-tooltip="activeSortDescription"
-          >
-            <Icon name="info" size="16" />
+            <div 
+                v-if="activeSortDescription" 
+                class="info-dot-inline" 
+                v-tooltip="activeSortDescription"
+            >
+                <Icon name="info" size="16" />
+            </div>
           </div>
         </div>
       </div>
@@ -221,20 +220,29 @@ const activeSortDescription = computed(() => {
   color: var(--sys-color-on-surface);
   appearance: none;
   cursor: pointer;
+  transition: padding-right 0.2s;
 }
+/* If info icon is present, add padding to avoid text overlap */
+.glass-select.has-info { padding-right: 42px; }
+
 .sort-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
 
-.info-dot {
-  width: 28px; height: 28px;
+.info-dot-inline {
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  width: 24px; height: 24px;
   border-radius: 50%;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
   display: flex; align-items: center; justify-content: center;
   cursor: help;
-  opacity: 0.8;
+  opacity: 0.9;
   transition: transform 0.2s, opacity 0.2s;
+  z-index: 10;
+  pointer-events: auto; /* Ensure it captures events over select if overlapping slightly */
 }
-.info-dot:hover { transform: scale(1.1); opacity: 1; }
+.info-dot-inline:hover { transform: translateY(-50%) scale(1.1); opacity: 1; }
 
 .spinner {
   width: 12px; height: 12px;
