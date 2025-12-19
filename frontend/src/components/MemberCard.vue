@@ -1,5 +1,6 @@
+
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
 import WarHistoryChart from './WarHistoryChart.vue'
@@ -22,80 +23,20 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// --- ROBUST INTERACTION ENGINE ---
-const pointerState = {
-  startX: 0,
-  startY: 0,
-  timer: null as number | null,
-  isLongPress: false,
-  isActive: false
-}
-
-function handlePointerDown(e: PointerEvent) {
-  if (e.button !== 0) return // Only left click / touch
-  
-  const target = e.target as HTMLElement
-  // Ignore interactions on actionable children
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
-
-  pointerState.isActive = true
-  pointerState.isLongPress = false
-  pointerState.startX = e.clientX
-  pointerState.startY = e.clientY
-
-  if (pointerState.timer) clearTimeout(pointerState.timer)
-  
-  pointerState.timer = window.setTimeout(() => {
-    if (pointerState.isActive) {
-      pointerState.isLongPress = true
-      if (navigator.vibrate) navigator.vibrate(60)
-      emit('toggle-select')
-    }
-  }, 500)
-}
-
-function handlePointerMove(e: PointerEvent) {
-  if (!pointerState.isActive) return
-  
-  const moveThreshold = 10
-  const dx = Math.abs(e.clientX - pointerState.startX)
-  const dy = Math.abs(e.clientY - pointerState.startY)
-
-  if (dx > moveThreshold || dy > moveThreshold) {
-    clearInteraction()
+// --- INTERACTION HANDLERS (Used by v-tactile) ---
+function handleTap() {
+  if (props.selectionMode) {
+    emit('toggle-select')
+  } else {
+    emit('toggle')
   }
 }
 
-function handlePointerUp() {
-  if (pointerState.isActive && !pointerState.isLongPress) {
-    // Successful Tap
-    if (props.selectionMode) {
-      emit('toggle-select')
-    } else {
-      emit('toggle')
-    }
-  }
-  clearInteraction()
+function handleLongPress() {
+  emit('toggle-select')
 }
 
-function handlePointerCancel() {
-  clearInteraction()
-}
-
-function clearInteraction() {
-  pointerState.isActive = false
-  if (pointerState.timer) {
-    clearTimeout(pointerState.timer)
-    pointerState.timer = null
-  }
-}
-
-function handleContextMenu(e: Event) {
-    // Prevent context menu to avoid interference with long press
-    // but only if we are actively handling interaction or just finished long press
-    // Actually, safest to always prevent on the card body for app-like feel
-}
-
+// --- SPECIFIC CLICKS ---
 function handleScoreClick(e: Event) {
     e.stopPropagation()
     if (navigator.vibrate) navigator.vibrate(20)
@@ -169,11 +110,7 @@ const trend = computed(() => {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @pointerdown="handlePointerDown"
-    @pointermove="handlePointerMove"
-    @pointerup="handlePointerUp"
-    @pointercancel="handlePointerCancel"
-    @contextmenu.prevent
+    v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
   >
     <div class="card-header">
       <div class="identity-group">
