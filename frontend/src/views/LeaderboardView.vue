@@ -122,6 +122,7 @@ function handleSelectAll() {
 
 function handleSelectHighScores(threshold: number) {
   const ids = filteredMembers.value.filter(m => (m.s || 0) >= threshold).map(m => m.id)
+  if (ids.length === 0) return
   selectAll(ids)
 }
 
