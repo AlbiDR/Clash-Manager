@@ -188,6 +188,7 @@ function handleSelectAll() {
 
 function handleSelectHighScores(threshold: number) {
   const ids = filteredRecruits.value.filter(r => (r.s || 0) >= threshold).map(r => r.id)
+  if (ids.length === 0) return
   selectAll(ids)
 }
 
