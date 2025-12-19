@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Recruit } from '../types'
@@ -27,70 +28,17 @@ function getTooltip(metric: string, value: number | undefined) {
   return getBenchmark('hh', metric, value)
 }
 
-// --- INTERACTION ENGINE (Long Press / Tap / Scroll Guard) ---
-const pointerState = {
-  startX: 0,
-  startY: 0,
-  timer: null as number | null,
-  isLongPress: false,
-  isActive: false
-}
-
-function handlePointerDown(e: PointerEvent) {
-  if (e.button !== 0) return 
-  
-  const target = e.target as HTMLElement
-  if (target.closest('.btn-action') || target.closest('a') || target.closest('.hit-target')) return
-
-  pointerState.isActive = true
-  pointerState.isLongPress = false
-  pointerState.startX = e.clientX
-  pointerState.startY = e.clientY
-
-  if (pointerState.timer) clearTimeout(pointerState.timer)
-  
-  pointerState.timer = window.setTimeout(() => {
-    if (pointerState.isActive) {
-      pointerState.isLongPress = true
-      if (navigator.vibrate) navigator.vibrate(60)
-      emit('toggle-select')
-    }
-  }, 500)
-}
-
-function handlePointerMove(e: PointerEvent) {
-  if (!pointerState.isActive) return
-  
-  const moveThreshold = 10
-  const dx = Math.abs(e.clientX - pointerState.startX)
-  const dy = Math.abs(e.clientY - pointerState.startY)
-
-  if (dx > moveThreshold || dy > moveThreshold) {
-    clearInteraction()
+// --- INTERACTION HANDLERS (Used by v-tactile) ---
+function handleTap() {
+  if (props.selectionMode) {
+    emit('toggle-select')
+  } else {
+    emit('toggle-expand')
   }
 }
 
-function handlePointerUp() {
-  if (pointerState.isActive && !pointerState.isLongPress) {
-    if (props.selectionMode) {
-      emit('toggle-select')
-    } else {
-      emit('toggle-expand')
-    }
-  }
-  clearInteraction()
-}
-
-function handlePointerCancel() {
-  clearInteraction()
-}
-
-function clearInteraction() {
-  pointerState.isActive = false
-  if (pointerState.timer) {
-    clearTimeout(pointerState.timer)
-    pointerState.timer = null
-  }
+function handleLongPress() {
+  emit('toggle-select')
 }
 
 // --- SPECIFIC CLICKS ---
@@ -130,11 +78,7 @@ const timeAgo = computed(() => {
   <div 
     class="card squish-interaction"
     :class="{ 'expanded': expanded, 'selected': selected }"
-    @pointerdown="handlePointerDown"
-    @pointermove="handlePointerMove"
-    @pointerup="handlePointerUp"
-    @pointercancel="handlePointerCancel"
-    @contextmenu.prevent
+    v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
   >
     <div class="card-header">
       <div class="identity-group">
