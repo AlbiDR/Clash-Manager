@@ -34,7 +34,7 @@ const bars = computed(() => {
     return {
       fame,
       week: rawWeek,
-      tooltip: `${readableWeek}: ${fame.toLocaleString()} Fame`
+      tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase">${readableWeek}</span><br>${fame.toLocaleString()} Fame`
     }
   })
 })
