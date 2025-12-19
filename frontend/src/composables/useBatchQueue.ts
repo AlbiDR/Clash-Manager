@@ -19,11 +19,14 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const isBlasting = ref(false)
   const currentIndex = ref(0)
   let worker: Worker | null = null
+  
+  // Selection Mode State (Auto-derived or Forced)
+  const forceSelectionMode = ref(false)
 
   const { error } = useToast()
   const { modules } = useModules()
 
-  const isSelectionMode = computed(() => selectedIds.value.length > 0)
+  const isSelectionMode = computed(() => selectedIds.value.length > 0 || forceSelectionMode.value)
   const isProcessing = computed(() => queue.value.length > 0)
 
   // Returns props compatible with FabIsland
@@ -46,6 +49,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         } else {
             label = `Open (${total})`
         }
+    } else {
+        // Empty State (Forced Mode)
+        label = 'Select'
     }
 
     // Target Logic (For href)
@@ -87,6 +93,11 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     stopBlitz() // Emergency stop
     selectedIds.value = []
     queue.value = []
+    forceSelectionMode.value = false // Reset sticky mode
+  }
+  
+  function setForceSelectionMode(active: boolean) {
+    forceSelectionMode.value = active
   }
 
   /**
@@ -270,6 +281,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     selectAll,
     clearSelection,
     handleAction,
-    handleBlitz
+    handleBlitz,
+    setForceSelectionMode
   }
 }
