@@ -78,7 +78,8 @@ const {
   selectAll, 
   clearSelection, 
   handleAction, 
-  handleBlitz
+  handleBlitz,
+  setForceSelectionMode
 } = useBatchQueue()
 
 const { 
@@ -183,12 +184,14 @@ function executeDismiss(ids: string[]) {
 
 function handleSelectAll() {
   const ids = filteredRecruits.value.map(r => r.id)
+  setForceSelectionMode(false)
   selectAll(ids)
 }
 
 function handleSelectHighScores(threshold: number) {
   const ids = filteredRecruits.value.filter(r => (r.s || 0) >= threshold).map(r => r.id)
-  if (ids.length === 0) return
+  // Keep selection mode active if filter returns empty (Sticky Mode)
+  setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
 
