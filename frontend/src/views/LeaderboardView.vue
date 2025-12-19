@@ -79,7 +79,8 @@ const {
   selectAll, 
   clearSelection, 
   handleAction,
-  handleBlitz
+  handleBlitz,
+  setForceSelectionMode
 } = useBatchQueue()
 
 const { 
@@ -117,12 +118,14 @@ const selectedSet = computed(() => new Set(selectedIds.value))
 
 function handleSelectAll() {
   const ids = filteredMembers.value.map(i => i.id)
+  setForceSelectionMode(false)
   selectAll(ids)
 }
 
 function handleSelectHighScores(threshold: number) {
   const ids = filteredMembers.value.filter(m => (m.s || 0) >= threshold).map(m => m.id)
-  if (ids.length === 0) return
+  // Keep selection mode active if filter returns empty (Sticky Mode)
+  setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
 
