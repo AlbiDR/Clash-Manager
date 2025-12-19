@@ -11,6 +11,7 @@ import FabIsland from '../components/FabIsland.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import Icon from '../components/Icon.vue'
 
 const { pingData } = useApiState()
 
@@ -119,8 +120,8 @@ function handleSelectAll() {
   selectAll(ids)
 }
 
-function handleSelectHighScores() {
-  const ids = filteredMembers.value.filter(m => (m.s || 0) >= 50).map(m => m.id)
+function handleSelectHighScores(threshold: number) {
+  const ids = filteredMembers.value.filter(m => (m.s || 0) >= threshold).map(m => m.id)
   selectAll(ids)
 }
 
@@ -204,13 +205,24 @@ watch(members, (newVal) => {
       @refresh="refresh"
     >
       <template #extra>
-        <div v-if="isSelectionMode" class="selection-bar">
+        <div v-if="isSelectionMode" class="selection-bar animate-pop">
            <div class="sel-count">{{ selectedIds.length }} Selected</div>
+           
            <div class="sel-actions">
-             <span class="text-btn primary" @click="handleSelectAll">All</span>
-             <span class="text-btn primary" @click="handleSelectHighScores">Score ≥ 50</span>
-             <span class="text-btn" @click="clearSelection">None</span>
-             <span class="text-btn danger" @click="clearSelection">Done</span>
+             <button class="action-chip" @click="handleSelectAll">All</button>
+             <button class="action-chip" @click="clearSelection">None</button>
+             
+             <div class="v-divider"></div>
+             
+             <div class="score-group">
+                <span class="sg-label">Score:</span>
+                <button class="sg-btn" @click="handleSelectHighScores(50)">≥50</button>
+                <button class="sg-btn" @click="handleSelectHighScores(75)">≥75</button>
+             </div>
+
+             <div class="v-divider"></div>
+
+             <button class="action-chip danger" @click="clearSelection">Done</button>
            </div>
         </div>
       </template>
@@ -275,14 +287,78 @@ watch(members, (newVal) => {
 
 .selection-bar {
   display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; padding-top: 12px;
+  margin-top: 12px; padding-top: 8px;
   border-top: 1px solid var(--sys-color-outline-variant);
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
-.sel-count { font-size: 20px; font-weight: 700; white-space: nowrap; }
-.sel-actions { display: flex; gap: 12px; align-items: center; }
-.text-btn { font-weight: 700; cursor: pointer; padding: 4px 0; white-space: nowrap; font-size: 13px; }
-.text-btn.primary { color: var(--sys-color-primary); }
-.text-btn.danger { color: var(--sys-color-error); }
+
+.sel-count { 
+  font-size: 15px; font-weight: 800; 
+  color: var(--sys-color-on-surface);
+  white-space: nowrap; 
+}
+
+.sel-actions { 
+  display: flex; gap: 8px; align-items: center; 
+  overflow-x: auto; 
+  padding-bottom: 2px; /* Scrollbar spacing */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Action Chip (Text Button Replacement) */
+.action-chip {
+  background: none; border: none;
+  font-weight: 700; cursor: pointer; 
+  padding: 6px 8px; 
+  border-radius: 8px;
+  white-space: nowrap; font-size: 13px;
+  color: var(--sys-color-outline);
+  transition: all 0.2s;
+}
+.action-chip:hover { background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface); }
+.action-chip.danger { color: var(--sys-color-error); }
+.action-chip.danger:hover { background: var(--sys-color-error-container); }
+
+.v-divider {
+  width: 1px; height: 16px;
+  background: var(--sys-color-outline-variant);
+  margin: 0 4px;
+}
+
+/* Score Group Complex */
+.score-group {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--sys-color-surface-container-high);
+  padding: 2px 4px 2px 10px;
+  border-radius: 99px;
+  border: 1px solid transparent;
+}
+
+.sg-label {
+  font-size: 11px; font-weight: 800; 
+  color: var(--sys-color-outline);
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.sg-btn {
+  background: var(--sys-color-surface);
+  border: 1px solid rgba(0,0,0,0.05);
+  color: var(--sys-color-primary);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s var(--sys-motion-spring);
+}
+.sg-btn:hover { transform: scale(1.05); background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
+.sg-btn:active { transform: scale(0.95); }
+
+.animate-pop { animation: popIn 0.3s var(--sys-motion-spring); }
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
