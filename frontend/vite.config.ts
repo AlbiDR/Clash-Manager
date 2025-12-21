@@ -3,14 +3,18 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import packageJson from './package.json'
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    '__APP_VERSION__': JSON.stringify(packageJson.version)
+  },
   plugins: [
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt', 
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         id: 'clash-manager-v6',
@@ -23,7 +27,7 @@ export default defineConfig({
         display_override: ['standalone', 'window-controls-overlay', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/Clash-Manager/',
-        start_url: './index.html', 
+        start_url: './index.html',
         share_target: {
           action: './index.html',
           method: 'GET',
@@ -123,7 +127,7 @@ export default defineConfig({
               cacheName: 'gas-api-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 
+                maxAgeSeconds: 60 * 60 * 24
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -137,18 +141,18 @@ export default defineConfig({
               cacheName: 'google-fonts-stylesheets',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 
+                maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
           },
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst', 
+            handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-webfonts',
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365 
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -167,6 +171,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    exclude: ['**/node_modules/**', '**/dist/**']
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    setupFiles: './vitest.setup.ts'
   }
 })

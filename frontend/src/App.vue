@@ -1,19 +1,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { RouterView, useRoute, useRouter } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { useClanData } from './composables/useClanData'
 import { usePwaUpdate } from './composables/usePwaUpdate'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import Icon from './components/Icon.vue'
-import { useToast } from './composables/useToast'
+
+import { useShareTarget } from './composables/useShareTarget'
 
 const { syncStatus } = useClanData()
 const { needRefresh, updateServiceWorker, close: closeUpdate } = usePwaUpdate()
-const { success, error } = useToast()
+const { handleShareTarget } = useShareTarget()
 const route = useRoute()
-const router = useRouter()
 const isOnline = ref(true)
 const isSuccessFading = ref(false)
 
@@ -24,31 +24,6 @@ watch(syncStatus, (newStatus, oldStatus) => {
         setTimeout(() => { isSuccessFading.value = false }, 1800)
     }
 })
-
-// 🔗 SHARE TARGET HANDLER
-function handleShareTarget() {
-    const params = new URLSearchParams(window.location.search)
-    const text = params.get('text') || params.get('title') || params.get('url')
-    
-    if (text) {
-        // Extract Player Tag from common share formats (Clash Royale link, plain text, etc)
-        // Looks for #XXXXXX or just XXXXXX (3-9 chars)
-        const tagMatch = text.match(/(?:#|tag=)?([0-9A-Z]{3,9})/i)
-        
-        if (tagMatch) {
-            const extractedTag = tagMatch[1].toUpperCase()
-            success(`Shared Tag Found: #${extractedTag}`)
-            
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname)
-            
-            // Redirect to Recruiter with filter
-            // Note: RecruiterView needs to handle query param 'filter' or 'search' to filter the list
-            // For now, we simulate searching if the logic existed, or simply navigate
-            router.push({ path: '/recruiter', query: { pin: extractedTag } })
-        }
-    }
-}
 
 onMounted(() => {
     isOnline.value = navigator.onLine
