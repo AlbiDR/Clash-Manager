@@ -5,6 +5,8 @@ import type { Recruit } from '../types'
 import Icon from './Icon.vue'
 import { useBenchmarking } from '../composables/useBenchmarking'
 import { useModules } from '../composables/useModules'
+import { useCardMechanics } from '../composables/useCardMechanics'
+import { getScoreTone, formatTimeAgoShort } from '../utils/formatters'
 
 const props = defineProps<{
   id: string
@@ -22,56 +24,22 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// --- TOOLTIP HELPER ---
+// Reusable card interactions
+const { handleTap, handleLongPress, handleScoreClick, handleExpandClick } = useCardMechanics(
+    props,
+    {
+        'toggle-expand': () => emit('toggle-expand'),
+        'toggle-select': () => emit('toggle-select')
+    }
+)
+
 function getTooltip(metric: string, value: number | undefined) {
   if (!modules.value.ghostBenchmarking || value === undefined) return null
   return getBenchmark('hh', metric, value)
 }
 
-// --- INTERACTION HANDLERS (Used by v-tactile) ---
-function handleTap() {
-  if (props.selectionMode) {
-    emit('toggle-select')
-  } else {
-    emit('toggle-expand')
-  }
-}
-
-function handleLongPress() {
-  emit('toggle-select')
-}
-
-// --- SPECIFIC CLICKS ---
-function handleScoreClick(e: Event) {
-    e.stopPropagation()
-    if (navigator.vibrate) navigator.vibrate(20)
-    emit('toggle-select')
-}
-
-function handleExpandClick(e: Event) {
-    e.stopPropagation()
-    if (navigator.vibrate) navigator.vibrate(10)
-    emit('toggle-expand')
-}
-
-// --- COMPUTED VISUALS ---
-const toneClass = computed(() => {
-  const score = props.recruit.s || 0
-  if (score >= 80) return 'tone-high'
-  if (score >= 50) return 'tone-mid'
-  return 'tone-low'
-})
-
-const timeAgo = computed(() => {
-  const dateStr = props.recruit.d.ago
-  if (!dateStr) return '-'
-  const ts = new Date(dateStr).getTime()
-  const m = Math.floor((Date.now() - ts) / 60000)
-  if (m < 1) return 'New' 
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  return h > 24 ? Math.floor(h / 24) + 'd' : h + 'h'
-})
+const toneClass = computed(() => getScoreTone(props.recruit.s))
+const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
 </script>
 
 <template>
@@ -150,127 +118,36 @@ const timeAgo = computed(() => {
 </template>
 
 <style scoped>
-.card {
-  background: var(--sys-color-surface-container);
-  border-radius: 20px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  position: relative;
-  overflow: visible;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: pan-y;
-  transition: all 0.2s var(--sys-motion-spring);
-}
-
-.card.expanded {
-  background: var(--sys-color-surface-container-high);
-  box-shadow: var(--sys-elevation-3);
-  margin: 16px 0;
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
-}
-
-.card.selected { 
-  background: var(--sys-color-primary-container) !important; 
-  border: 2.5px solid var(--sys-color-primary);
-  transform: scale(0.97);
-}
-
-/* 🎯 High Contrast Rules for Selection */
-.card.selected .player-name,
-.card.selected .trophy-val,
-.card.selected .stat-score,
-.card.selected .sc-label,
-.card.selected .sc-val,
-.card.selected .expand-btn { 
-  color: var(--sys-color-on-primary-container) !important; 
-  opacity: 1 !important;
-}
-
-.card.selected .stat-pod {
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important;
-  color: var(--sys-color-on-primary-container) !important;
-  border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1);
-}
-
-.card.selected .badge { 
-  background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; 
-  color: var(--sys-color-on-primary-container) !important;
-}
-
+.card { background: var(--sys-color-surface-container); border-radius: 20px; padding: 12px 16px; margin-bottom: 8px; border: 1.5px solid transparent; cursor: pointer; position: relative; overflow: visible; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: pan-y; transition: all 0.2s var(--sys-motion-spring); }
+.card.expanded { background: var(--sys-color-surface-container-high); box-shadow: var(--sys-elevation-3); margin: 16px 0; border-color: rgba(var(--sys-color-primary-rgb), 0.3); }
+.card.selected { background: var(--sys-color-primary-container) !important; border: 2.5px solid var(--sys-color-primary); transform: scale(0.97); }
+.card.selected .player-name, .card.selected .trophy-val, .card.selected .stat-score, .card.selected .sc-label, .card.selected .sc-val, .card.selected .expand-btn { color: var(--sys-color-on-primary-container) !important; opacity: 1 !important; }
+.card.selected .stat-pod { background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important; color: var(--sys-color-on-primary-container) !important; border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1); }
+.card.selected .badge { background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; color: var(--sys-color-on-primary-container) !important; }
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-
 .identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-
 .meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
-
-.badge {
-  height: 18px; width: 100%;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 800; color: var(--sys-color-outline);
-  font-family: var(--sys-font-family-mono);
-  text-transform: uppercase;
-}
-
+.badge { height: 18px; width: 100%; background: var(--sys-color-surface-container-highest); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sys-color-outline); font-family: var(--sys-font-family-mono); text-transform: uppercase; }
 .hit-target { position: relative; z-index: 5; }
 .hit-target::after { content: ''; position: absolute; inset: -4px; }
-
 .name-block { display: flex; flex-direction: column; min-width: 0; }
-
-.player-name {
-  font-size: 16px; font-weight: 850;
-  color: var(--sys-color-on-surface);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
+.player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-
 .header-actions { display: flex; align-items: center; gap: 4px; }
-
-.expand-btn {
-  background: none; border: none; padding: 8px;
-  color: var(--sys-color-outline);
-  cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.expand-btn { background: none; border: none; padding: 8px; color: var(--sys-color-outline); cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .expand-btn.is-active { transform: rotate(180deg); color: var(--sys-color-primary); }
-
-.stat-pod {
-  width: 48px; height: 48px;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 900;
-  font-family: var(--sys-font-family-mono);
-  transition: transform 0.2s;
-}
+.stat-pod { width: 48px; height: 48px; background: var(--sys-color-surface-container-highest); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; font-family: var(--sys-font-family-mono); transition: transform 0.2s; }
 .stat-pod:hover { transform: scale(1.05); }
-
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
-
-.card-body { 
-  margin-top: 16px; 
-  padding-top: 16px; 
-  border-top: 1px solid rgba(0,0,0,0.05); 
-  animation: fade-in 0.3s ease;
-}
-
+.card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); animation: fade-in 0.3s ease; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
 .stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
 .stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
 .sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
 .sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
-
 .actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
 .btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
