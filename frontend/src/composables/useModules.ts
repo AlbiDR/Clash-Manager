@@ -1,17 +1,19 @@
 import { ref, watch } from 'vue'
 
-const MODULES_KEY = 'cm_modules_v2' 
+const MODULES_KEY = 'cm_modules_v2'
 
 export interface ModuleState {
     blitzMode: boolean
     ghostBenchmarking: boolean
     sortExplanation: boolean
+    backendRefresher: boolean
 }
 
 const defaultState: ModuleState = {
     blitzMode: false,
     ghostBenchmarking: true,
-    sortExplanation: false
+    sortExplanation: false,
+    backendRefresher: false
 }
 
 const modules = ref<ModuleState>({ ...defaultState })
@@ -37,7 +39,8 @@ export function useModules() {
                 modules.value = {
                     blitzMode: typeof parsed.blitzMode === 'boolean' ? parsed.blitzMode : defaultState.blitzMode,
                     ghostBenchmarking: typeof parsed.ghostBenchmarking === 'boolean' ? parsed.ghostBenchmarking : defaultState.ghostBenchmarking,
-                    sortExplanation: typeof parsed.sortExplanation === 'boolean' ? parsed.sortExplanation : defaultState.sortExplanation
+                    sortExplanation: typeof parsed.sortExplanation === 'boolean' ? parsed.sortExplanation : defaultState.sortExplanation,
+                    backendRefresher: typeof parsed.backendRefresher === 'boolean' ? parsed.backendRefresher : defaultState.backendRefresher
                 }
             } else {
                 modules.value = { ...defaultState }

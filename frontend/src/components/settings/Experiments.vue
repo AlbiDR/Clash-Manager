@@ -32,6 +32,16 @@ const { modules, toggle } = useModules()
                 <div class="handle"></div>
                 </div>
             </div>
+
+            <div class="toggle-row" @click="toggle('backendRefresher')">
+                <div class="row-info">
+                <div class="row-label">Backend Refresher</div>
+                <div class="row-desc">Force update Sheets data from PWA</div>
+                </div>
+                <div class="switch" :class="{ active: modules.backendRefresher }">
+                <div class="handle"></div>
+                </div>
+            </div>
             </div>
         </div>
     </div>

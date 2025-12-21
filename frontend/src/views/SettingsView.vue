@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
+import { useModules } from '../composables/useModules'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 
 import PwaInstallBanner from '../components/settings/PwaInstallBanner.vue'
@@ -13,6 +14,7 @@ import Recovery from '../components/settings/Recovery.vue'
 import BackendRefresher from '../components/settings/BackendRefresher.vue'
 
 const { apiStatus, checkApiStatus } = useApiState()
+const { modules } = useModules()
 const appVersion = __APP_VERSION__
 
 onMounted(() => {
@@ -43,7 +45,7 @@ const apiStatusObject = computed(() => {
 
       <Experiments />
 
-      <BackendRefresher />
+      <BackendRefresher v-if="modules.backendRefresher" />
 
       <SystemModules />
 
