@@ -1,6 +1,5 @@
 
 import { ref, computed } from 'vue'
-import type { Ref } from 'vue'
 
 export interface SortOption {
     label: string
@@ -10,8 +9,13 @@ export interface SortOption {
 
 type SortComparator<T> = (a: T, b: T) => number
 
+// Local shim to avoid 'import type' parser issues in some build environments
+interface SharedRef<T> {
+    value: T
+}
+
 export function useListFilter<T>(
-    items: Ref<T[]>,
+    items: SharedRef<T[]>,
     searchFields: (item: T) => string[],
     sortStrategies: Record<string, SortComparator<T>>,
     defaultSort: string = 'score'
@@ -41,8 +45,9 @@ export function useListFilter<T>(
     })
 
     function updateSort(val: string) {
-        if (document.startViewTransition) {
-            document.startViewTransition(() => {
+        // Cast to any to support View Transitions API without newer lib types
+        if ((document as any).startViewTransition) {
+            (document as any).startViewTransition(() => {
                 sortBy.value = val
             })
         } else {
