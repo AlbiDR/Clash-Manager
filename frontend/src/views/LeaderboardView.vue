@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -12,6 +13,7 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
 import Icon from '../components/Icon.vue'
+import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { pingData } = useApiState()
 
@@ -197,6 +199,8 @@ watch(members, (newVal) => {
 
 <template>
   <div class="view-container">
+    <PullToRefresh @refresh="refresh" />
+    
     <ConsoleHeader
       title="Leaderboard"
       :status="status"
