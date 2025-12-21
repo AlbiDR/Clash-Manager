@@ -42,6 +42,16 @@ const { modules, toggle } = useModules()
                 <div class="handle"></div>
                 </div>
             </div>
+
+            <div class="toggle-row" @click="toggle('experimentalNotifications')">
+                <div class="row-info">
+                <div class="row-label">Notification Features</div>
+                <div class="row-desc">Enable advanced app badge and sync alerts</div>
+                </div>
+                <div class="switch" :class="{ active: modules.experimentalNotifications }">
+                <div class="handle"></div>
+                </div>
+            </div>
             </div>
         </div>
     </div>
