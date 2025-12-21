@@ -11,27 +11,30 @@ export default defineConfig({
     '__APP_VERSION__': JSON.stringify(packageJson.version)
   },
   plugins: [
-    vue(),
-    tailwindcss(),
+    vue() as any,
+    tailwindcss() as any,
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'maskable-icon-512x512.png', 'pwa-192x192.png', 'pwa-512x512.png', 'logo.svg'],
       manifest: {
         id: 'clash-manager-v6',
-        name: 'Clash Manager: Clan Manager for Clash Royale',
+        name: 'Clash Manager',
         short_name: 'Clash Manager',
-        description: 'Clan Manager for Clash Royale - Track leaderboards, scout recruits, and analyze war performance.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        description: 'Clan Management System for Clash Royale Competitive Clans.',
+        theme_color: '#0b0e14',
+        background_color: '#0b0e14',
         display: 'standalone',
-        display_override: ['standalone', 'window-controls-overlay', 'minimal-ui'],
+        display_override: ['window-controls-overlay', 'standalone', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/Clash-Manager/',
-        start_url: './index.html',
+        start_url: '/Clash-Manager/index.html',
+        handle_links: 'preferred',
+        launch_handler: {
+          client_mode: 'focus-existing'
+        },
         share_target: {
-          action: './index.html',
+          action: '/Clash-Manager/',
           method: 'GET',
-          enctype: 'application/x-www-form-urlencoded',
           params: {
             title: 'title',
             text: 'text',
@@ -50,10 +53,10 @@ export default defineConfig({
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'maskable-icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'maskable'
           }
         ],
         screenshots: [
@@ -77,31 +80,27 @@ export default defineConfig({
             name: '🏆 Leaderboard',
             short_name: 'Leaderboard',
             description: 'View current clan standings',
-            url: './index.html#/leaderboard',
+            url: '/Clash-Manager/index.html#/leaderboard',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
             name: '🔭 Headhunter',
             short_name: 'Headhunter',
             description: 'Scout for new recruits',
-            url: './index.html#/recruiter',
+            url: '/Clash-Manager/index.html#/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
-        categories: ['productivity', 'games'],
-        launch_handler: {
-          client_mode: 'auto'
-        },
-        edge_side_panel: {
-          preferred_width: 400
-        }
+        categories: ['productivity', 'games', 'utilities'],
+        dir: 'ltr'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
-        navigateFallback: './index.html',
+        clientsClaim: true,
+        skipWaiting: false,
+        navigateFallback: '/Clash-Manager/index.html',
         navigateFallbackDenylist: [/^\/api/, /^https:\/\/script\.google\.com/],
-        // ⚡ PERFORMANCE: Start fetching HTML while SW boots
         navigationPreload: true,
         runtimeCaching: [
           // 📡 WRITE OPERATIONS (POST): Use Background Sync for offline reliability
@@ -161,7 +160,7 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }) as any
   ],
   base: '/Clash-Manager/',
   build: {
