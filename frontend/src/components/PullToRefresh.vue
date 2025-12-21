@@ -11,6 +11,8 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
+import { useHaptics } from '../composables/useHaptics'
+const haptics = useHaptics()
 const pulling = ref(false)
 const refreshing = ref(false)
 const pullY = ref(0)
@@ -53,6 +55,7 @@ function handleEnd() {
   if (pullY.value >= threshold) {
     refreshing.value = true
     pullY.value = threshold // Snap to threshold
+    haptics.sync()
     emit('refresh')
     
     // Auto-reset after explicit job done or timeout
@@ -138,7 +141,7 @@ const indicatorClass = computed(() =>
 .ptr-spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid var(--md-sys-color-primary);
+  border: 3px solid var(--sys-color-primary);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;

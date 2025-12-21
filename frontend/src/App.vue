@@ -4,6 +4,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import { useClanData } from './composables/useClanData'
 import { usePwaUpdate } from './composables/usePwaUpdate'
+import { useHaptics } from './composables/useHaptics'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import Icon from './components/Icon.vue'
@@ -13,6 +14,7 @@ import { useShareTarget } from './composables/useShareTarget'
 const { syncStatus } = useClanData()
 const { needRefresh, updateServiceWorker, close: closeUpdate } = usePwaUpdate()
 const { handleShareTarget } = useShareTarget()
+const haptics = useHaptics()
 const route = useRoute()
 const isOnline = ref(true)
 const isSuccessFading = ref(false)
@@ -20,7 +22,7 @@ const isSuccessFading = ref(false)
 watch(syncStatus, (newStatus, oldStatus) => {
     if (oldStatus === 'syncing' && newStatus === 'success') {
         isSuccessFading.value = true
-        if (navigator.vibrate) navigator.vibrate([10, 30])
+        haptics.success()
         setTimeout(() => { isSuccessFading.value = false }, 1800)
     }
 })
@@ -29,11 +31,11 @@ onMounted(() => {
     isOnline.value = navigator.onLine
     window.addEventListener('online', () => {
         isOnline.value = true
-        if (navigator.vibrate) navigator.vibrate([10, 30, 10])
+        haptics.success()
     })
     window.addEventListener('offline', () => {
         isOnline.value = false
-        if (navigator.vibrate) navigator.vibrate(50)
+        haptics.error()
     })
     
     // Check for share target data on mount

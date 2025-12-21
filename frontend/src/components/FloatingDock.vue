@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import { useUiCoordinator } from '../composables/useUiCoordinator'
+import { useHaptics } from '../composables/useHaptics'
 import Icon from './Icon.vue'
 
 const route = useRoute()
 const router = useRouter()
 const { dockVisible } = useUiCoordinator()
+const haptics = useHaptics()
 
 const navItems = [
   { path: '/', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
@@ -14,7 +16,7 @@ const navItems = [
 ]
 
 function navigate(path: string) {
-  if (navigator.vibrate) navigator.vibrate(10)
+  haptics.tap()
   router.push(path)
 }
 </script>

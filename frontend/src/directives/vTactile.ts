@@ -67,7 +67,7 @@ export const vTactile: Directive = {
 
     state.listeners.pointermove = (e: PointerEvent) => {
       if (!state.isActive) return
-      
+
       const moveThreshold = 10
       const dx = Math.abs(e.clientX - state.startX)
       const dy = Math.abs(e.clientY - state.startY)
@@ -79,6 +79,7 @@ export const vTactile: Directive = {
 
     state.listeners.pointerup = () => {
       if (state.isActive && !state.isLongPress) {
+        if (navigator.vibrate) navigator.vibrate(10)
         binding.value.onTap()
       }
       clearInteraction()

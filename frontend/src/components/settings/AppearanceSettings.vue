@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { useTheme } from '../../composables/useTheme'
+import { useHaptics } from '../../composables/useHaptics'
 import Icon from '../Icon.vue'
 
 const { theme, setTheme } = useTheme()
+const haptics = useHaptics()
+
+function handleThemeChange(newTheme: any) {
+    haptics.tap()
+    setTheme(newTheme)
+}
 </script>
 
 <template>
@@ -16,7 +23,7 @@ const { theme, setTheme } = useTheme()
                 <button 
                     class="theme-btn" 
                     :class="{ active: theme === 'light' }" 
-                    @click="setTheme('light')"
+                    @click="handleThemeChange('light')"
                     title="Light Mode"
                 >
                     <Icon name="theme_light" size="20" />
@@ -24,7 +31,7 @@ const { theme, setTheme } = useTheme()
                 <button 
                     class="theme-btn" 
                     :class="{ active: theme === 'auto' }" 
-                    @click="setTheme('auto')"
+                    @click="handleThemeChange('auto')"
                     title="Auto / System"
                 >
                     <Icon name="theme_auto" size="20" />
@@ -32,7 +39,7 @@ const { theme, setTheme } = useTheme()
                 <button 
                     class="theme-btn" 
                     :class="{ active: theme === 'dark' }" 
-                    @click="setTheme('dark')"
+                    @click="handleThemeChange('dark')"
                     title="Dark Mode"
                 >
                     <Icon name="moon" size="20" />
