@@ -108,14 +108,6 @@ async function bootstrap() {
         // Attempt mount
         app.mount('#app')
 
-        // 3. Register PWA Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/Clash-Manager/sw.js').catch((err) => {
-                    console.log('SW registration failed', err)
-                })
-            })
-        }
     } catch (e) {
         showFatalError(e);
     }
