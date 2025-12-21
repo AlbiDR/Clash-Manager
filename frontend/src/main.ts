@@ -10,6 +10,7 @@ import { useModules } from './composables/useModules'
 import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
 import { useTheme } from './composables/useTheme'
+import { useWakeLock } from './composables/useWakeLock'
 
 // 🚨 CRITICAL ERROR HANDLER
 // This ensures that if the app crashes (White Screen), the error is shown to the user.
@@ -94,6 +95,10 @@ async function bootstrap() {
         // Theme initialization must happen as early as possible
         const themeState = useTheme()
         themeState.init()
+
+        // Wake Lock (Keep Screen On)
+        const wakeLock = useWakeLock()
+        wakeLock.init()
 
         const clanData = useClanData()
         // We do NOT await this, as it handles its own SWR (Stale-While-Revalidate)
