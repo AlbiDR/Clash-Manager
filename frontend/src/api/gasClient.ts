@@ -13,6 +13,7 @@ import type {
     LeaderboardMember,
     Recruit
 } from '../types'
+import { idb } from '../utils/idb'
 
 // ============================================================================
 // CONFIGURATION
@@ -158,18 +159,14 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
 // ============================================================================
 
 /**
- * 1. Synchronously load data from LocalStorage (Instant Render)
+ * 1. Asynchronously load data from IndexedDB (Non-blocking hydration)
  */
-export function loadCache(): WebAppData | null {
-    const cached = localStorage.getItem(CACHE_KEY_MAIN)
-    if (!cached) return null
-
+export async function loadCache(): Promise<WebAppData | null> {
     try {
-        const parsed = JSON.parse(cached)
-        return parsed
+        const cached = await idb.get<WebAppData>(CACHE_KEY_MAIN)
+        return cached || null
     } catch (e) {
-        console.warn('Cache corrupted, clearing.')
-        localStorage.removeItem(CACHE_KEY_MAIN)
+        console.warn('Cache load failed:', e)
         return null
     }
 }
@@ -189,8 +186,8 @@ export async function fetchRemote(): Promise<WebAppData> {
 
     const inflated = inflatePayload(envelope.data)
 
-    // Save to cache
-    localStorage.setItem(CACHE_KEY_MAIN, JSON.stringify(inflated))
+    // Save to cache (Async)
+    idb.set(CACHE_KEY_MAIN, inflated).catch(e => console.warn('Cache write failed:', e))
 
     return inflated
 }
@@ -227,4 +224,3 @@ export function isConfigured(): boolean {
 export function getApiUrl(): string {
     return GAS_URL || '(not configured)'
 }
-
