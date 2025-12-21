@@ -135,6 +135,42 @@ function doPost(e) {
         }
         return respond(markRecruitsAsInvitedBulk(ids));
 
+      case 'triggerupdate':
+        const target = (payload.target || '').toLowerCase();
+        let sheetName = '';
+        let updateFn = null;
+
+        if (target === 'members') {
+          sheetName = CONFIG.SHEETS.DB;
+          updateFn = () => { updateClanDatabase(); refreshWebPayload(); };
+        } else if (target === 'leaderboard') {
+          sheetName = CONFIG.SHEETS.LB;
+          updateFn = () => { updateLeaderboard(); refreshWebPayload(); };
+        } else if (target === 'headhunters') {
+          sheetName = CONFIG.SHEETS.HH;
+          updateFn = () => { scoutRecruits(); };
+        } else {
+          return respond(null, 'INVALID_TARGET', `Unknown target: "${target}"`);
+        }
+
+        try {
+          const ss = SpreadsheetApp.getActiveSpreadsheet();
+          const sheet = ss.getSheetByName(sheetName);
+          if (sheet) {
+            sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(true);
+            SpreadsheetApp.flush(); // Force UI update
+          }
+
+          if (updateFn) updateFn();
+
+          if (sheet) {
+            sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
+          }
+          return respond({ success: true, target: target });
+        } catch (e) {
+          return respond(null, 'UPDATE_FAILED', e.message);
+        }
+
       // ========== READ OPERATIONS (POST alternative) ==========
       // Allow reads via POST for CORS flexibility
       case 'ping':
