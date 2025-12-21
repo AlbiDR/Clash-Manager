@@ -17,7 +17,7 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'maskable-icon-512x512.png', 'monochrome-icon-512x512.png', 'pwa-192x192.png', 'pwa-512x512.png', 'logo.png'],
       manifest: {
-        id: 'clash-manager-v6',
+        id: 'clash-manager-v7',
         name: 'Clash Manager',
         short_name: 'Clash Manager',
         description: 'Professional Clan Management for Clash Royale. Track performance, scout recruits, and manage your competitive clan with a native-feel experience.',
