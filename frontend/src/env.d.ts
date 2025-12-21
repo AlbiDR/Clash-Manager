@@ -1,3 +1,4 @@
+
 /**
  * TypeScript Environment Definitions
  * Defines the shape of import.meta.env and handles static assets.
@@ -5,7 +6,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string
-  readonly BASE_URL: string
+  BASE_URL: string
 }
 
 interface ImportMeta {
