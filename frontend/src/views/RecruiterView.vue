@@ -7,6 +7,9 @@ import { useToast } from '../composables/useToast'
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
+import { useListFilter } from '../composables/useListFilter'
+import { formatTimeAgo } from '../utils/formatters'
+import type { Recruit } from '../types'
 
 import Icon from '../components/Icon.vue'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
@@ -28,48 +31,39 @@ const sheetUrl = computed(() => {
 const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
 const blacklist = useRecruitBlacklist()
 
-const recruits = computed(() => data.value?.hh || [])
+// 🛡️ PRE-FILTER: Exclude Tombstones
+const recruits = computed(() => {
+    return (data.value?.hh || []).filter(r => !blacklist.tombstones.value.has(r.id))
+})
 const loading = computed(() => !data.value && isRefreshing.value)
 
-const searchQuery = ref('')
-const sortBy = ref<'score' | 'trophies' | 'name' | 'time_found' | 'donations' | 'war_wins' | 'cards_won'>('score')
+const getTs = (str?: string) => str ? new Date(str).getTime() : 0
+
+const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
+    score: (a, b) => (b.s || 0) - (a.s || 0),
+    trophies: (a, b) => (b.t || 0) - (a.t || 0),
+    name: (a, b) => a.n.localeCompare(b.n),
+    time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
+    war_wins: (a, b) => (b.d.war || 0) - (a.d.war || 0),
+    donations: (a, b) => (b.d.don || 0) - (a.d.don || 0),
+    cards_won: (a, b) => (b.d.cards || 0) - (a.d.cards || 0)
+}
+
+const { searchQuery, sortBy, filteredItems: filteredRecruits, updateSort } = useListFilter(
+    recruits,
+    (r) => [r.n, r.id],
+    sortStrategies,
+    'score'
+)
 
 const sortOptions = [
-  { 
-    label: 'Potential', 
-    value: 'score', 
-    desc: 'AI-modeled potential score comparing this recruit against current clan averages. Prioritizes War Wins and recent activity.' 
-  },
-  { 
-    label: 'War Wins', 
-    value: 'war_wins', 
-    desc: 'Lifetime War Day wins. Includes a +500 point heuristic bonus if the player participated in the current river race.' 
-  },
-  { 
-    label: 'Cards Won', 
-    value: 'cards_won',
-    desc: 'Total cards won in challenges. Indicates individual skill and tournament experience.'
-  },
-  { 
-    label: 'Donations', 
-    value: 'donations',
-    desc: 'Total lifetime donations. Used to gauge generosity and activity levels.'
-  },
-  { 
-    label: 'Trophies', 
-    value: 'trophies',
-    desc: 'Current ladder ranking.'
-  },
-  { 
-    label: 'Recency', 
-    value: 'time_found',
-    desc: 'Sorts by when the Deep Net scanner discovered this recruit.'
-  },
-  { 
-    label: 'Name', 
-    value: 'name',
-    desc: 'Alphabetical sorting.'
-  }
+  { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
+  { label: 'War Wins', value: 'war_wins', desc: 'Lifetime War Day wins. Includes heuristic bonus for active racers.' },
+  { label: 'Cards Won', value: 'cards_won', desc: 'Total cards won in challenges.' },
+  { label: 'Donations', value: 'donations', desc: 'Total lifetime donations.' },
+  { label: 'Trophies', value: 'trophies', desc: 'Current ladder ranking.' },
+  { label: 'Recency', value: 'time_found', desc: 'Sorts by discovery time.' },
+  { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
 const { 
@@ -84,70 +78,25 @@ const {
   setForceSelectionMode
 } = useBatchQueue()
 
-const { 
-  expandedIds, 
-  toggleExpand, 
-  processDeepLink 
-} = useDeepLinkHandler('recruit-')
-
-const selectedSet = computed(() => new Set(selectedIds.value))
-
-const timeAgo = computed(() => {
-  if (!lastSyncTime.value) return ''
-  const ms = Date.now() - lastSyncTime.value
-  const mins = Math.floor(ms / 60000)
-  if (mins < 1) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  return `${hours}h ago`
-})
+const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('recruit-')
 
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
   if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (recruits.value.length > 0) return { type: 'ready', text: timeAgo.value || 'Ready' } as const
+  if (recruits.value.length > 0) return { type: 'ready', text: formatTimeAgo(new Date(lastSyncTime.value || Date.now()).toISOString()) } as const
   return { type: 'ready', text: 'Empty' } as const
 })
 
-const statsBadge = computed(() => {
-  if (!recruits.value) return undefined
-  return {
+const statsBadge = computed(() => ({
     label: 'Pool',
     value: recruits.value.length.toString()
-  }
-})
+}))
 
-const getTs = (str?: string) => str ? new Date(str).getTime() : 0
+const selectedSet = computed(() => new Set(selectedIds.value))
 
-const filteredRecruits = computed(() => {
-  // 🛡️ TOMBSTONE FILTER:
-  // We remove recruits that are in the local blacklist (tombstones).
-  // This persists even if the user reloads the page before the server update is live.
-  let result = recruits.value.filter(r => !blacklist.tombstones.value.has(r.id))
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(r => (r.n.toLowerCase().includes(query) || r.id.toLowerCase().includes(query)))
-  }
-  
-  result.sort((a, b) => {
-    switch (sortBy.value) {
-      case 'score': return (b.s || 0) - (a.s || 0)
-      case 'trophies': return (b.t || 0) - (a.t || 0)
-      case 'name': return a.n.localeCompare(b.n)
-      case 'time_found': return getTs(b.d.ago) - getTs(a.d.ago)
-      case 'war_wins': return (b.d.war || 0) - (a.d.war || 0)
-      case 'donations': return (b.d.don || 0) - (a.d.don || 0)
-      case 'cards_won': return (b.d.cards || 0) - (a.d.cards || 0)
-      default: return 0
-    }
-  })
-  return result
-})
-
-// 🧹 CLEANUP: When new data arrives, check if we can remove tombstones.
-watch(recruits, (newRecruits) => {
-    if (newRecruits.length > 0) {
+// 🧹 CLEANUP
+watch(() => data.value?.hh, (newRecruits) => {
+    if (newRecruits && newRecruits.length > 0) {
         const currentIds = newRecruits.map(r => r.id)
         blacklist.prune(currentIds)
         processDeepLink(newRecruits)
@@ -164,15 +113,12 @@ function dismissBulk() {
 }
 
 function executeDismiss(ids: string[]) {
-    // 1. Instantly hide locally (Tombstone)
     blacklist.hide(ids)
     
-    // 2. Wait for Undo period (4.5s)
     const timerId = setTimeout(() => {
         dismissRecruitsAction(ids)
             .catch(() => {
                 error('Failed to sync changes')
-                // Only un-hide if the network request specifically failed
                 blacklist.restore(ids)
             })
     }, 4500)
@@ -192,19 +138,8 @@ function handleSelectAll() {
 
 function handleSelectHighScores(threshold: number) {
   const ids = filteredRecruits.value.filter(r => (r.s || 0) >= threshold).map(r => r.id)
-  // Keep selection mode active if filter returns empty (Sticky Mode)
   setForceSelectionMode(ids.length === 0)
   selectAll(ids)
-}
-
-function handleSortUpdate(val: string) {
-  if (document.startViewTransition) {
-    document.startViewTransition(() => {
-      sortBy.value = val as any
-    })
-  } else {
-    sortBy.value = val as any
-  }
 }
 </script>
 
@@ -220,7 +155,7 @@ function handleSortUpdate(val: string) {
       :stats="statsBadge"
       :sort-options="sortOptions"
       @update:search="val => searchQuery = val"
-      @update:sort="handleSortUpdate"
+      @update:sort="updateSort"
       @refresh="refresh"
     >
       <template #extra>
@@ -230,17 +165,13 @@ function handleSortUpdate(val: string) {
            <div class="sel-actions">
              <button class="action-chip" @click="handleSelectAll">All</button>
              <button class="action-chip" @click="clearSelection">None</button>
-             
              <div class="v-divider"></div>
-             
              <div class="score-group">
                 <span class="sg-label">Score:</span>
                 <button class="sg-btn" @click="handleSelectHighScores(50)">≥50</button>
                 <button class="sg-btn" @click="handleSelectHighScores(75)">≥75</button>
              </div>
-
              <div class="v-divider"></div>
-
              <button class="action-chip danger" @click="clearSelection">Done</button>
            </div>
         </div>
@@ -306,101 +237,22 @@ function handleSortUpdate(val: string) {
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
 .list-container { padding-bottom: 32px; position: relative; }
-
-.gpu-contain {
-  transform: translateZ(0);
-  will-change: transform;
-  contain: layout paint;
-}
-
-.selection-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; padding-top: 8px;
-  border-top: 1px solid var(--sys-color-outline-variant);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.sel-count { 
-  font-size: 15px; font-weight: 800; 
-  color: var(--sys-color-on-surface);
-  white-space: nowrap; 
-}
-
-.sel-actions { 
-  display: flex; gap: 8px; align-items: center; 
-  overflow-x: auto; 
-  padding-bottom: 2px; /* Scrollbar spacing */
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Action Chip (Text Button Replacement) */
-.action-chip {
-  background: none; border: none;
-  font-weight: 700; cursor: pointer; 
-  padding: 6px 8px; 
-  border-radius: 8px;
-  white-space: nowrap; font-size: 13px;
-  color: var(--sys-color-outline);
-  transition: all 0.2s;
-}
+.gpu-contain { transform: translateZ(0); will-change: transform; contain: layout paint; }
+.selection-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--sys-color-outline-variant); flex-wrap: wrap; gap: 12px; }
+.sel-count { font-size: 15px; font-weight: 800; color: var(--sys-color-on-surface); white-space: nowrap; }
+.sel-actions { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.action-chip { background: none; border: none; font-weight: 700; cursor: pointer; padding: 6px 8px; border-radius: 8px; white-space: nowrap; font-size: 13px; color: var(--sys-color-outline); transition: all 0.2s; }
 .action-chip:hover { background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface); }
 .action-chip.danger { color: var(--sys-color-error); }
 .action-chip.danger:hover { background: var(--sys-color-error-container); }
-
-.v-divider {
-  width: 1px; height: 16px;
-  background: var(--sys-color-outline-variant);
-  margin: 0 4px;
-}
-
-/* Score Group Complex */
-.score-group {
-  display: flex; align-items: center; gap: 2px;
-  background: var(--sys-color-surface-container-high);
-  padding: 2px 4px 2px 10px;
-  border-radius: 99px;
-  border: 1px solid transparent;
-}
-
-.sg-label {
-  font-size: 11px; font-weight: 800; 
-  color: var(--sys-color-outline);
-  text-transform: uppercase;
-  margin-right: 4px;
-}
-
-.sg-btn {
-  background: var(--sys-color-surface);
-  border: 1px solid rgba(0,0,0,0.05);
-  color: var(--sys-color-primary);
-  font-weight: 700;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s var(--sys-motion-spring);
-}
+.v-divider { width: 1px; height: 16px; background: var(--sys-color-outline-variant); margin: 0 4px; }
+.score-group { display: flex; align-items: center; gap: 2px; background: var(--sys-color-surface-container-high); padding: 2px 4px 2px 10px; border-radius: 99px; border: 1px solid transparent; }
+.sg-label { font-size: 11px; font-weight: 800; color: var(--sys-color-outline); text-transform: uppercase; margin-right: 4px; }
+.sg-btn { background: var(--sys-color-surface); border: 1px solid rgba(0,0,0,0.05); color: var(--sys-color-primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 12px; cursor: pointer; transition: all 0.2s var(--sys-motion-spring); }
 .sg-btn:hover { transform: scale(1.05); background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
 .sg-btn:active { transform: scale(0.95); }
-
 .animate-pop { animation: popIn 0.3s var(--sys-motion-spring); }
-@keyframes popIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.btn-primary {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 99px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 16px;
-  transition: transform 0.2s;
-}
+@keyframes popIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.btn-primary { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--sys-color-primary); color: var(--sys-color-on-primary); border: none; border-radius: 99px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: transform 0.2s; }
 .btn-primary:active { transform: scale(0.95); }
 </style>
