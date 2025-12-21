@@ -1,23 +1,15 @@
 
 import { ref, computed } from 'vue'
 
-export interface SortOption {
-    label: string
-    value: string
-    desc?: string
-}
-
-type SortComparator<T> = (a: T, b: T) => number
-
 // Local shim to avoid 'import type' parser issues in some build environments
-interface SharedRef<T> {
+type SharedRef<T> = {
     value: T
 }
 
 export function useListFilter<T>(
     items: SharedRef<T[]>,
     searchFields: (item: T) => string[],
-    sortStrategies: Record<string, SortComparator<T>>,
+    sortStrategies: Record<string, (a: T, b: T) => number>,
     defaultSort: string = 'score'
 ) {
     const searchQuery = ref('')
