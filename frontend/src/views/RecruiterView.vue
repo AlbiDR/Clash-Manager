@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -14,6 +15,7 @@ import FabIsland from '../components/FabIsland.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { pingData } = useApiState()
 
@@ -208,6 +210,8 @@ function handleSortUpdate(val: string) {
 
 <template>
   <div class="view-container">
+    <PullToRefresh @refresh="refresh" />
+
     <ConsoleHeader
       title="Headhunter"
       :status="status"
