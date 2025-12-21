@@ -1,3 +1,4 @@
+
 import { ref, watch } from 'vue'
 
 const MODULES_KEY = 'cm_modules_v2'
@@ -11,13 +12,16 @@ export interface ModuleState {
     notificationBadgeHighPotential: boolean
 }
 
+// 📱 Device Detection for Defaults
+const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+
 const defaultState: ModuleState = {
     blitzMode: false,
-    ghostBenchmarking: true,
+    ghostBenchmarking: !isMobile, // On by default on Desktop, Off on Mobile
     sortExplanation: false,
     backendRefresher: false,
-    experimentalNotifications: true,
-    notificationBadgeHighPotential: true
+    experimentalNotifications: true, // On by default
+    notificationBadgeHighPotential: true // On by default
 }
 
 const modules = ref<ModuleState>({ ...defaultState })
