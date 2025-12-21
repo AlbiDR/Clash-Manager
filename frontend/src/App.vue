@@ -10,25 +10,34 @@ import ToastContainer from './components/ToastContainer.vue'
 import Icon from './components/Icon.vue'
 
 import { useShareTarget } from './composables/useShareTarget'
+import { useAppBadge } from './composables/useAppBadge'
 
 const { syncStatus } = useClanData()
 const { needRefresh, updateServiceWorker, close: closeUpdate } = usePwaUpdate()
 const { handleShareTarget } = useShareTarget()
+const { clearBadge } = useAppBadge()
 const haptics = useHaptics()
 const route = useRoute()
 const isOnline = ref(true)
 const isSuccessFading = ref(false)
 
+const isStandalone = computed(() => {
+    return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+})
+
 watch(syncStatus, (newStatus, oldStatus) => {
     if (oldStatus === 'syncing' && newStatus === 'success') {
         isSuccessFading.value = true
         haptics.success()
+        clearBadge() // Clear any stale badges on fresh sync
         setTimeout(() => { isSuccessFading.value = false }, 1800)
     }
 })
 
 onMounted(() => {
     isOnline.value = navigator.onLine
+    clearBadge() // Clear badge when app is opened
+    
     window.addEventListener('online', () => {
         isOnline.value = true
         haptics.success()
@@ -52,7 +61,7 @@ const connectionState = computed(() => {
 
 <template>
   <div class="app-shell">
-    <div class="connectivity-strip" :class="connectionState"></div>
+    <div class="connectivity-strip" :class="[connectionState, { 'is-standalone': isStandalone }]"></div>
     
     <!-- PWA Update Notification -->
     <div v-if="needRefresh" class="pwa-update-toast">

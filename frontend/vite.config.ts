@@ -20,7 +20,7 @@ export default defineConfig({
         id: 'clash-manager-v6',
         name: 'Clash Manager',
         short_name: 'Clash Manager',
-        description: 'Clan Management System for Clash Royale Competitive Clans.',
+        description: 'Professional Clan Management for Clash Royale. Track performance, scout recruits, and manage your competitive clan with a native-feel experience.',
         theme_color: '#0b0e14',
         background_color: '#0b0e14',
         display: 'standalone',
@@ -65,14 +65,14 @@ export default defineConfig({
             sizes: '1080x2235',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'Mobile Dashboard'
+            label: 'The War Dashboard: Real-time clan stats and war logs at your fingertips.'
           },
           {
             src: 'screenshot-desktop.png',
             sizes: '1865x1894',
             type: 'image/png',
             form_factor: 'wide',
-            label: 'Desktop Dashboard'
+            label: 'Desktop Headquarters: Deep data analysis and recruitment scouting.'
           }
         ],
         shortcuts: [
@@ -89,10 +89,18 @@ export default defineConfig({
             description: 'Scout for new recruits',
             url: '/Clash-Manager/index.html#/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
+          },
+          {
+            name: '⚙️ Settings',
+            short_name: 'Settings',
+            description: 'Configure your clan and app preferences',
+            url: '/Clash-Manager/index.html#/settings',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
         categories: ['productivity', 'games', 'utilities'],
-        dir: 'ltr'
+        dir: 'ltr',
+        prefer_related_applications: false
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
