@@ -4,6 +4,8 @@ import { loadCache, fetchRemote } from '../api/gasClient'
 import type { WebAppData } from '../types'
 import { useBadge } from './useBadge'
 import { useModules } from './useModules'
+import { useDemoMode } from './useDemoMode'
+import { generateMockData } from '../utils/mockData'
 
 // Global State
 const clanData = ref<WebAppData | null>(null)
@@ -14,6 +16,7 @@ const syncError = ref<string | null>(null)
 
 const { setBadge } = useBadge()
 const { modules } = useModules()
+const { isDemoMode } = useDemoMode()
 
 // React to setting changes immediately
 watch(() => modules.value.notificationBadgeHighPotential, () => {
@@ -34,6 +37,15 @@ export function useClanData() {
     async function init() {
         // Prevent double init if data is already present
         if (clanData.value) return
+
+        if (isDemoMode.value) {
+            console.log('🌟 Demo Mode Active: Initializing with mock data.')
+            const mock = generateMockData()
+            clanData.value = mock
+            lastSyncTime.value = mock.timestamp
+            updateBadgeCount(mock)
+            return
+        }
 
         try {
             const cached = await loadCache()
@@ -72,6 +84,17 @@ export function useClanData() {
             isRefreshing.value = true
             syncStatus.value = 'syncing'
             syncError.value = null
+
+            if (isDemoMode.value) {
+                // Simulate network latency for "Demo" effect
+                await new Promise(resolve => setTimeout(resolve, 1200))
+                const mock = generateMockData()
+                clanData.value = mock
+                lastSyncTime.value = mock.timestamp
+                syncStatus.value = 'success'
+                updateBadgeCount(mock)
+                return
+            }
 
             // Network Intelligence: Check if we should do a "Lite" fetch
             const connection = (navigator as any).connection

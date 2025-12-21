@@ -13,10 +13,21 @@ import SystemModules from '../components/settings/SystemModules.vue'
 import Recovery from '../components/settings/Recovery.vue'
 import BackendRefresher from '../components/settings/BackendRefresher.vue'
 import NotificationSettings from '../components/settings/NotificationSettings.vue'
+import { useDemoMode } from '../composables/useDemoMode'
+import { useLongPress } from '../composables/useLongPress'
+import { useToast } from '../composables/useToast'
+import { vTactile } from '../directives/vTactile'
 
 const { apiStatus, checkApiStatus } = useApiState()
 const { modules } = useModules()
+const { isDemoMode, toggleDemoMode } = useDemoMode()
+const { info } = useToast()
 const appVersion = __APP_VERSION__
+
+const { start: startLongPress, cancel: cancelLongPress } = useLongPress(() => {
+    info(isDemoMode.value ? 'Switching to Live Mode...' : 'Developer Mode: Activating Demo Data...')
+    setTimeout(toggleDemoMode, 800)
+}, 1500)
 
 onMounted(() => {
     checkApiStatus()
@@ -54,8 +65,19 @@ const apiStatusObject = computed(() => {
 
       <Recovery />
 
-      <div class="footer-info">
-        <div class="brand">CLASH MANAGER V{{ appVersion }}</div>
+      <div 
+        class="footer-info"
+        v-tactile
+        @mousedown="startLongPress"
+        @mouseup="cancelLongPress"
+        @mouseleave="cancelLongPress"
+        @touchstart="startLongPress"
+        @touchend="cancelLongPress"
+      >
+        <div class="brand">
+            CLASH MANAGER V{{ appVersion }}
+            <span v-if="isDemoMode" class="demo-tag">DEMO</span>
+        </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
     </div>
@@ -66,7 +88,16 @@ const apiStatusObject = computed(() => {
 .view-container { min-height: 100vh; }
 .settings-content { padding: 12px 0 120px; display: flex; flex-direction: column; gap: 16px; }
 
-.footer-info { padding: 40px 0; text-align: center; }
-.brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; }
+.footer-info { padding: 40px 0; text-align: center; cursor: pointer; user-select: none; }
+.brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.demo-tag { 
+  background: var(--sys-color-primary); 
+  color: var(--sys-color-on-primary); 
+  font-size: 8px; 
+  padding: 2px 6px; 
+  border-radius: 4px;
+  letter-spacing: 0;
+  opacity: 1;
+}
 .copy { font-size: 10px; opacity: 0.2; margin-top: 4px; }
 </style>
