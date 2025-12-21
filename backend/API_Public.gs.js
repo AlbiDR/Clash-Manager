@@ -136,40 +136,7 @@ function doPost(e) {
         return respond(markRecruitsAsInvitedBulk(ids));
 
       case 'triggerupdate':
-        const target = (payload.target || '').toLowerCase();
-        let sheetName = '';
-        let updateFn = null;
-
-        if (target === 'members') {
-          sheetName = CONFIG.SHEETS.DB;
-          updateFn = () => { updateClanDatabase(); refreshWebPayload(); };
-        } else if (target === 'leaderboard') {
-          sheetName = CONFIG.SHEETS.LB;
-          updateFn = () => { updateLeaderboard(); refreshWebPayload(); };
-        } else if (target === 'headhunters') {
-          sheetName = CONFIG.SHEETS.HH;
-          updateFn = () => { scoutRecruits(); };
-        } else {
-          return respond(null, 'INVALID_TARGET', `Unknown target: "${target}"`);
-        }
-
-        try {
-          const ss = SpreadsheetApp.getActiveSpreadsheet();
-          const sheet = ss.getSheetByName(sheetName);
-          if (sheet) {
-            sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(true);
-            SpreadsheetApp.flush(); // Force UI update
-          }
-
-          if (updateFn) updateFn();
-
-          if (sheet) {
-            sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
-          }
-          return respond({ success: true, target: target });
-        } catch (e) {
-          return respond(null, 'UPDATE_FAILED', e.message);
-        }
+        return respond(triggerAsyncUpdate(payload.target));
 
       // ========== READ OPERATIONS (POST alternative) ==========
       // Allow reads via POST for CORS flexibility
@@ -350,34 +317,108 @@ function parseCRDateISO(t) {
 }
 
 /**
- * 🤖 HEADLESS UPDATE TRIGGER
- * Runs the update sequence without UI interactions (toast/alert) to prevent API crashes.
+ * 🤖 ASYNC UPDATE DISPATCHER (NON-BLOCKING)
+ * Queues a task and returns immediately to prevent HTTP timeouts.
  */
-function triggerHeadlessUpdate() {
-  console.log("🤖 API Trigger (Async): Scheduling Master Sequence...");
+function triggerAsyncUpdate(target) {
+  const normTarget = (target || '').toLowerCase().trim();
+  const validTargets = ['members', 'leaderboard', 'headhunters'];
 
-  return Utils.executeSafely('API_TRIGGER_ASYNC', () => {
+  if (!validTargets.includes(normTarget)) {
+    return { success: false, error: 'INVALID_TARGET', message: `Unknown target: "${normTarget}"` };
+  }
+
+  return Utils.executeSafely('ASYNC_TRIGGER_QUEUE', () => {
     try {
-      // 1. Check if already running
+      // 1. Check if already busy (System-wide lock)
       const cache = CacheService.getScriptCache();
       if (cache.get('SYSTEM_STATUS') === 'BUSY') {
-        return { success: false, status: 'BUSY', message: "Update already incorrectly in progress." };
+        return { success: false, status: 'BUSY', message: "System is already processing an update. Please wait." };
       }
 
-      // 2. Set 'Busy' flag immediately so UI reacts fast
-      cache.put('SYSTEM_STATUS', 'BUSY', 21600);
+      // 2. Queue the specific target
+      Utils.Props.set('PENDING_UPDATE_TARGET', normTarget);
 
-      // 3. Create One-Time Trigger (Fire & Forget)
-      // Runs 'sequenceFullUpdate' after 100ms
-      ScriptApp.newTrigger('sequenceFullUpdate')
+      // 3. Mark as Busy immediately
+      cache.put('SYSTEM_STATUS', 'BUSY', 1200); // 20 min lock safety
+
+      // 4. Create One-Time Trigger
+      // Delete any existing dispatchers first to clean up
+      ScriptApp.getProjectTriggers().forEach(t => {
+        if (t.getHandlerFunction() === 'dispatchAsyncUpdate') ScriptApp.deleteTrigger(t);
+      });
+
+      ScriptApp.newTrigger('dispatchAsyncUpdate')
         .timeBased()
-        .after(100)
+        .after(500)
         .create();
 
-      return { success: true, status: 'QUEUED', message: "Update queued successfully." };
+      console.log(`🚀 Async Trigger Queued: ${normTarget}`);
+      return { success: true, status: 'QUEUED', target: normTarget };
     } catch (e) {
-      console.error(`API Trigger Failed: ${e.message}`);
+      console.error(`triggerAsyncUpdate Failed: ${e.message}`);
       throw e;
     }
   });
+}
+
+/**
+ * Handle function called by the Time-Based Trigger.
+ * Runs in the background, not tied to the HTTP request.
+ */
+function dispatchAsyncUpdate() {
+  const target = Utils.Props.get('PENDING_UPDATE_TARGET');
+  if (!target) {
+    console.warn("⚠️ Async Dispatcher: No pending target found.");
+    return;
+  }
+
+  // Clear pending target immediately to prevent loops
+  Utils.Props.delete('PENDING_UPDATE_TARGET');
+
+  Utils.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheetName = '';
+      if (target === 'members') sheetName = CONFIG.SHEETS.DB;
+      else if (target === 'leaderboard') sheetName = CONFIG.SHEETS.LB;
+      else if (target === 'headhunters') sheetName = CONFIG.SHEETS.HH;
+
+      const sheet = ss.getSheetByName(sheetName);
+
+      // Visual Feedback (Tick box)
+      if (sheet) {
+        sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(true);
+        SpreadsheetApp.flush();
+      }
+
+      // Run logic
+      if (target === 'members') {
+        updateClanDatabase();
+        refreshWebPayload();
+      } else if (target === 'leaderboard') {
+        updateLeaderboard();
+        refreshWebPayload();
+      } else if (target === 'headhunters') {
+        scoutRecruits();
+      }
+
+      // Visual Feedback (Untick)
+      if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
+
+      console.log(`✅ Async Execution Perfect: ${target}`);
+    } catch (e) {
+      console.error(`❌ Async Execution Failed [${target}]: ${e.message}`);
+    } finally {
+      // Clear busy flag
+      CacheService.getScriptCache().remove('SYSTEM_STATUS');
+    }
+  });
+}
+
+/** 
+ * Legacy Trigger maintained for compatibility 
+ */
+function triggerHeadlessUpdate() {
+  return triggerAsyncUpdate('members');
 }
