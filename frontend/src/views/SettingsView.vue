@@ -1,9 +1,11 @@
+
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApiState } from '../composables/useApiState'
 import { useInstallPrompt } from '../composables/useInstallPrompt'
 import { useModules } from '../composables/useModules'
 import { useTheme } from '../composables/useTheme'
+import { useWakeLock } from '../composables/useWakeLock'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import Icon from '../components/Icon.vue'
 
@@ -14,6 +16,7 @@ const { apiUrl, apiStatus, pingData, checkApiStatus } = useApiState()
 const { isInstallable, install } = useInstallPrompt()
 const { modules, toggle } = useModules()
 const { theme, setTheme } = useTheme()
+const wakeLock = useWakeLock()
 
 onMounted(() => {
     checkApiStatus()
@@ -154,7 +157,7 @@ const apiStatusObject = computed(() => {
         </div>
       </div>
 
-      <!-- Section: Power Tools (Ghost Benchmarking) -->
+      <!-- Section: Power Tools -->
       <div class="settings-card">
         <div class="card-header">
           <Icon name="lightning" size="20" class="header-icon" />
@@ -162,6 +165,7 @@ const apiStatusObject = computed(() => {
         </div>
         <div class="card-body">
           <div class="features-list">
+            
             <div class="toggle-row" @click="toggle('ghostBenchmarking')">
                 <div class="row-info">
                 <div class="row-label">Ghost Benchmarking</div>
@@ -171,11 +175,22 @@ const apiStatusObject = computed(() => {
                 <div class="handle"></div>
                 </div>
             </div>
+
+            <div v-if="wakeLock.isSupported" class="toggle-row" @click="wakeLock.toggle()">
+                <div class="row-info">
+                <div class="row-label">Keep Screen On</div>
+                <div class="row-desc">Prevent display sleep during clan management</div>
+                </div>
+                <div class="switch" :class="{ active: wakeLock.isActive.value }">
+                <div class="handle"></div>
+                </div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      <!-- Section: Experiments (Blitz Mode) -->
+      <!-- Section: Experiments -->
       <div class="settings-card">
         <div class="card-header">
           <Icon name="flask" size="20" class="header-icon" />
