@@ -1,31 +1,36 @@
 
+export interface CardMechanicsCallbacks {
+    onExpand: () => void
+    onSelect: () => void
+}
+
 export function useCardMechanics(
     props: { selectionMode: boolean },
-    emit: { (e: 'toggle-expand'): void; (e: 'toggle-select'): void }
+    callbacks: CardMechanicsCallbacks
 ) {
     
     function handleTap() {
         if (props.selectionMode) {
-            emit('toggle-select')
+            callbacks.onSelect()
         } else {
-            emit('toggle-expand')
+            callbacks.onExpand()
         }
     }
 
     function handleLongPress() {
-        emit('toggle-select')
+        callbacks.onSelect()
     }
 
     function handleScoreClick(e: Event) {
         e.stopPropagation()
         if (navigator.vibrate) navigator.vibrate(20)
-        emit('toggle-select')
+        callbacks.onSelect()
     }
 
     function handleExpandClick(e: Event) {
         e.stopPropagation()
         if (navigator.vibrate) navigator.vibrate(10)
-        emit('toggle-expand')
+        callbacks.onExpand()
     }
 
     return {
