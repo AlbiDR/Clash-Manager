@@ -141,6 +141,10 @@ function handleSelectHighScores(threshold: number) {
   setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
+
+function handleSearchUpdate(val: string) {
+  searchQuery.value = val
+}
 </script>
 
 <template>
@@ -154,7 +158,7 @@ function handleSelectHighScores(threshold: number) {
       :sheet-url="sheetUrl"
       :stats="statsBadge"
       :sort-options="sortOptions"
-      @update:search="val => searchQuery = val"
+      @update:search="handleSearchUpdate"
       @update:sort="updateSort"
       @refresh="refresh"
     >
