@@ -15,7 +15,7 @@ export default defineConfig({
     tailwindcss() as any,
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'maskable-icon-512x512.png', 'pwa-192x192.png', 'pwa-512x512.png', 'logo.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'maskable-icon-512x512.png', 'monochrome-icon-512x512.png', 'pwa-192x192.png', 'pwa-512x512.png', 'logo.png'],
       manifest: {
         id: 'clash-manager-v6',
         name: 'Clash Manager',
@@ -57,6 +57,12 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
+          },
+          {
+            src: 'monochrome-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'monochrome'
           }
         ],
         screenshots: [
