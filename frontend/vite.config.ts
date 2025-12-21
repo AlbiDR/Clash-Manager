@@ -10,10 +10,10 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt', // Changed from autoUpdate to prompt for stability
+      registerType: 'prompt', 
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        id: 'clash-manager-v6', // Explicit stable ID
+        id: 'clash-manager-v6',
         name: 'Clash Manager: Clan Manager for Clash Royale',
         short_name: 'Clash Manager',
         description: 'Clan Manager for Clash Royale - Track leaderboards, scout recruits, and analyze war performance.',
@@ -23,8 +23,17 @@ export default defineConfig({
         display_override: ['standalone', 'window-controls-overlay', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/Clash-Manager/',
-        // Point directly to the file to avoid server-side redirect dependencies when offline
         start_url: './index.html', 
+        share_target: {
+          action: './index.html',
+          method: 'GET',
+          enctype: 'application/x-www-form-urlencoded',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url'
+          }
+        },
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -86,12 +95,29 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
-        // CRITICAL FIX: Ensure index.html is served if a route fails
         navigateFallback: './index.html',
         navigateFallbackDenylist: [/^\/api/, /^https:\/\/script\.google\.com/],
+        // ⚡ PERFORMANCE: Start fetching HTML while SW boots
+        navigationPreload: true,
         runtimeCaching: [
+          // 📡 WRITE OPERATIONS (POST): Use Background Sync for offline reliability
           {
             urlPattern: /^https:\/\/script\.google\.com\/.*/i,
+            method: 'POST',
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'gas-mutation-queue',
+                options: {
+                  maxRetentionTime: 24 * 60 // Retry for up to 24 hours
+                }
+              }
+            }
+          },
+          // 📖 READ OPERATIONS (GET): Network First (fresh data), fallback to cache
+          {
+            urlPattern: /^https:\/\/script\.google\.com\/.*/i,
+            method: 'GET',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'gas-api-cache',
