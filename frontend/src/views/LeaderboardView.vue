@@ -1,11 +1,12 @@
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, onUnmounted } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useListFilter } from '../composables/useListFilter'
+import { useUiCoordinator } from '../composables/useUiCoordinator'
 import { parseTimeAgoValue, formatTimeAgo } from '../utils/formatters'
 import type { LeaderboardMember } from '../types'
 
@@ -75,6 +76,15 @@ const {
 } = useBatchQueue()
 
 const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('member-')
+
+const { setFabVisible } = useUiCoordinator()
+watch(() => fabState.value.visible, (visible) => {
+    setFabVisible(!!visible)
+})
+
+onUnmounted(() => {
+    setFabVisible(false)
+})
 
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const

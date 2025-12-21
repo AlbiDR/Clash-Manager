@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
+import { useUiCoordinator } from '../composables/useUiCoordinator'
 import Icon from './Icon.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { dockVisible } = useUiCoordinator()
 
 const navItems = [
   { path: '/', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
@@ -18,7 +20,7 @@ function navigate(path: string) {
 </script>
 
 <template>
-  <div class="dock-container">
+  <div class="dock-container" :class="{ 'hidden': !dockVisible }">
     <div 
       v-for="item in navItems" 
       :key="item.name"
@@ -47,6 +49,13 @@ function navigate(path: string) {
   display: flex; gap: 4px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.2);
   z-index: 500;
+  transition: transform 0.4s var(--sys-motion-spring), opacity 0.3s ease;
+}
+
+.dock-container.hidden {
+  transform: translate(-50%, 120%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .dock-item {
