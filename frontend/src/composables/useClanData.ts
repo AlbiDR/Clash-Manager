@@ -16,13 +16,22 @@ const { setBadge } = useBadge()
 export function useClanData() {
 
     async function init() {
-        const cached = loadCache()
-        if (cached) {
-            clanData.value = cached
-            lastSyncTime.value = cached.timestamp
-            // Initial badge update based on cache
-            updateBadgeCount(cached)
+        // Prevent double init if data is already present
+        if (clanData.value) return 
+
+        try {
+            const cached = await loadCache()
+            if (cached) {
+                clanData.value = cached
+                lastSyncTime.value = cached.timestamp
+                // Initial badge update based on cache
+                updateBadgeCount(cached)
+            }
+        } catch (e) {
+            console.warn("Fast Cache Load Failed", e)
         }
+        
+        // Trigger background refresh after cache check
         await refresh()
     }
 
