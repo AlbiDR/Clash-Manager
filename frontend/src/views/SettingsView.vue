@@ -44,7 +44,7 @@ const apiStatusObject = computed(() => {
 
       <ExtraFeatures />
 
-      <NotificationSettings v-if="modules.experimentalNotifications" />
+      <NotificationSettings />
 
       <Experiments />
 

@@ -1,19 +1,26 @@
 <script setup lang="ts">
 import { useModules } from '../../composables/useModules'
+import { useHaptics } from '../../composables/useHaptics'
 import Icon from '../Icon.vue'
 
 const { modules, toggle } = useModules()
+const haptics = useHaptics()
+
+function handleToggle() {
+    haptics.tap()
+    toggle('notificationBadgeHighPotential')
+}
 </script>
 
 <template>
-    <div class="settings-card">
+    <div v-if="modules.experimentalNotifications" class="settings-card">
         <div class="card-header">
             <Icon name="bell" size="20" class="header-icon" />
             <h3>Notifications</h3>
         </div>
         <div class="card-body">
             <div class="features-list">
-                <div class="toggle-row" @click="toggle('notificationBadgeHighPotential')">
+                <div class="toggle-row" @click="handleToggle">
                     <div class="row-info">
                         <div class="row-label">Advanced App Badge</div>
                         <div class="row-desc">Show count of recruits with score > 75</div>
