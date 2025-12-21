@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Icon from './Icon.vue'
@@ -21,9 +22,20 @@ const emit = defineEmits<{
 const { modules } = useModules()
 const sortValue = ref('score')
 const isScrolled = ref(false)
+let debounceTimer: number | null = null
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 20
+}
+
+const handleInput = (e: Event) => {
+  const val = (e.target as HTMLInputElement).value
+  if (debounceTimer) clearTimeout(debounceTimer)
+  
+  // Debounce search by 300ms to improve rendering performance on large lists
+  debounceTimer = window.setTimeout(() => {
+    emit('update:search', val)
+  }, 300)
 }
 
 onMounted(() => window.addEventListener('scroll', handleScroll))
@@ -63,7 +75,13 @@ const activeSortDescription = computed(() => {
       <div v-if="showSearch" class="header-row bottom">
         <div class="search-container">
           <Icon name="search" class="input-icon" size="20" />
-          <input type="text" class="glass-input" placeholder="Search..." autocomplete="off" @input="e => emit('update:search', (e.target as HTMLInputElement).value)">
+          <input 
+            type="text" 
+            class="glass-input" 
+            placeholder="Search..." 
+            autocomplete="off" 
+            @input="handleInput"
+          >
         </div>
         
         <div class="sort-group">
