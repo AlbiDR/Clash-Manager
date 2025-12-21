@@ -10,6 +10,7 @@ import PowerTools from '../components/settings/PowerTools.vue'
 import Experiments from '../components/settings/Experiments.vue'
 import SystemModules from '../components/settings/SystemModules.vue'
 import Recovery from '../components/settings/Recovery.vue'
+import BackendRefresher from '../components/settings/BackendRefresher.vue'
 
 const { apiStatus, checkApiStatus } = useApiState()
 const appVersion = __APP_VERSION__
@@ -41,6 +42,8 @@ const apiStatusObject = computed(() => {
       <PowerTools />
 
       <Experiments />
+
+      <BackendRefresher />
 
       <SystemModules />
 
