@@ -25,8 +25,8 @@ const bars = computed(() => {
     
     // Parse "24W05" -> "Week 5" (Year removed for leanness)
     let readableWeek = rawWeek
-    const weekMatch = rawWeek.match(/^(\d{2})W(\d{2})$/)
-    if (weekMatch) {
+    const weekMatch = (rawWeek || '').match(/^(\d{2})W(\d{2})$/)
+    if (weekMatch && weekMatch[2]) {
       const weekNum = parseInt(weekMatch[2], 10)
       readableWeek = `Week ${weekNum}`
     }
@@ -71,23 +71,48 @@ const bars = computed(() => {
 .chart-container {
   width: 100%;
   height: 32px;
-  overflow: hidden;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: hidden;
   margin: 12px 0;
-  display: flex; align-items: flex-end;
+  display: flex;
+  align-items: flex-end;
+  scroll-behavior: smooth; /* Smooth scrolling */
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--sys-color-primary-rgb), 0.3) transparent;
+}
+
+/* Webkit scrollbar styling */
+.chart-container::-webkit-scrollbar {
+  height: 3px;
+}
+
+.chart-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chart-container::-webkit-scrollbar-thumb {
+  background: rgba(var(--sys-color-primary-rgb), 0.3);
+  border-radius: 2px;
+}
+
+.chart-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--sys-color-primary-rgb), 0.5);
 }
 
 .war-chart {
   display: flex;
   align-items: flex-end;
   height: 100%;
-  width: 100%;
-  gap: 2px; /* Reduced gap to fit 52 weeks */
+  min-width: 100%; /* Allow expansion beyond container width */
+  gap: 2px;
 }
 
 .bar {
-  flex: 1;
+  min-width: 6px; /* Minimum width to keep bars readable */
+  width: max(6px, calc((100% - var(--bar-count, 52) * 2px) / var(--bar-count, 52))); /* Responsive width */
   min-height: 4px;
-  border-radius: 2px; /* Less rounding for tighter fit */
+  border-radius: 2px;
   opacity: 0.9;
   transition: all 0.2s ease;
   background-color: var(--sys-color-surface-container-highest);
