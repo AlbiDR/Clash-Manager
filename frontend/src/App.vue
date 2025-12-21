@@ -8,6 +8,7 @@ import { useHaptics } from './composables/useHaptics'
 import FloatingDock from './components/FloatingDock.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import Icon from './components/Icon.vue'
+import ErrorBoundary from './components/ErrorBoundary.vue'
 
 import { useShareTarget } from './composables/useShareTarget'
 import { useAppBadge } from './composables/useAppBadge'
@@ -78,11 +79,13 @@ const connectionState = computed(() => {
     </div>
 
     <main class="app-container">
-      <RouterView v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" :key="route.fullPath" />
-        </transition>
-      </RouterView>
+      <ErrorBoundary>
+        <RouterView v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" :key="route.fullPath" />
+          </transition>
+        </RouterView>
+      </ErrorBoundary>
     </main>
     <FloatingDock />
     <ToastContainer />

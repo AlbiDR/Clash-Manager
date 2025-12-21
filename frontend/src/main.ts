@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import router from './router'
+import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 import { vTooltip } from './directives/vTooltip'
 import { vTactile } from './directives/vTactile'
 import { useModules } from './composables/useModules'
@@ -27,7 +28,7 @@ function showFatalError(error: any) {
     // This happens when a new version is deployed and the user's cached index.html
     // points to old hashed files (CSS/JS) that no longer exist on the server.
     if (
-        msg.includes('Unable to preload CSS') || 
+        msg.includes('Unable to preload CSS') ||
         msg.includes('Failed to fetch dynamically imported module') ||
         msg.includes('Importing a module script failed')
     ) {
@@ -46,7 +47,7 @@ function showFatalError(error: any) {
 
     // Nuke everything. Stop all scripts/rendering.
     document.body.innerHTML = '';
-    
+
     // Create error container
     const errorDiv = document.createElement('div');
     errorDiv.style.cssText = `
@@ -70,7 +71,7 @@ function showFatalError(error: any) {
     `;
 
     document.body.appendChild(errorDiv);
-    
+
     document.getElementById('reload-btn')?.addEventListener('click', () => {
         window.location.reload();
     });
@@ -102,6 +103,7 @@ async function bootstrap() {
         const app = createApp(App)
 
         app.use(router)
+        app.use(autoAnimatePlugin)
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 

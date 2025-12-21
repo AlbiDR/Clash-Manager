@@ -153,7 +153,7 @@ watch(members, (newVal) => {
     
     <EmptyState v-else-if="!loading && filteredMembers.length === 0" icon="leaf" message="No members found" />
     
-    <TransitionGroup v-else name="list" tag="div" class="list-container gpu-contain">
+    <div v-else v-auto-animate class="list-container gpu-contain">
       <MemberCard
         v-for="(member, index) in filteredMembers"
         :key="member.id"
@@ -166,7 +166,7 @@ watch(members, (newVal) => {
         @toggle="toggleExpand(member.id)"
         @toggle-select="toggleSelect(member.id)"
       />
-    </TransitionGroup>
+    </div>
 
     <FabIsland
       :visible="fabState.visible"

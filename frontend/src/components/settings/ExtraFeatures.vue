@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useModules } from '../../composables/useModules'
 import { useWakeLock } from '../../composables/useWakeLock'
+import { useDemoMode } from '../../composables/useDemoMode'
 import Icon from '../Icon.vue'
 
 const { modules, toggle } = useModules()
 const wakeLock = useWakeLock()
+const { isDemoMode, toggleDemoMode } = useDemoMode()
 </script>
 
 <template>
@@ -22,6 +24,16 @@ const wakeLock = useWakeLock()
                 <div class="row-desc">Visualize clan averages inside stat tooltips</div>
                 </div>
                 <div class="switch" :class="{ active: modules.ghostBenchmarking }">
+                <div class="handle"></div>
+                </div>
+            </div>
+
+            <div class="toggle-row" @click="toggleDemoMode">
+                <div class="row-info">
+                <div class="row-label">Portfolio Demo Mode</div>
+                <div class="row-desc">Use mock data engine for technical showcase</div>
+                </div>
+                <div class="switch" :class="{ active: isDemoMode }">
                 <div class="handle"></div>
                 </div>
             </div>

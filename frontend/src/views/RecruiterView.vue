@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { computed, watch, onUnmounted } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
 import { useToast } from '../composables/useToast'
@@ -51,9 +51,9 @@ const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
     cards_won: (a, b) => (b.d.cards || 0) - (a.d.cards || 0)
 }
 
-const { searchQuery, sortBy, filteredItems: filteredRecruits, updateSort } = useListFilter(
+const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilter(
     recruits,
-    (r) => [r.n, r.id],
+    (r: Recruit) => [r.n, r.id],
     sortStrategies,
     'score'
 )
@@ -142,13 +142,13 @@ function executeDismiss(ids: string[]) {
 }
 
 function handleSelectAll() {
-  const ids = filteredRecruits.value.map(r => r.id)
+  const ids = filteredRecruits.value.map((r: Recruit) => r.id)
   setForceSelectionMode(false)
   selectAll(ids)
 }
 
 function handleSelectHighScores(threshold: number) {
-  const ids = filteredRecruits.value.filter(r => (r.s || 0) >= threshold).map(r => r.id)
+  const ids = filteredRecruits.value.filter((r: Recruit) => (r.s || 0) >= threshold).map((r: Recruit) => r.id)
   setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
@@ -188,7 +188,7 @@ function handleSearchUpdate(val: string) {
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
     <div v-else-if="loading && recruits.length === 0" class="list-container gpu-contain">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
+      <SkeletonCard v-for="(_, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
     <EmptyState 
@@ -205,10 +205,9 @@ function handleSearchUpdate(val: string) {
       </template>
     </EmptyState>
     
-    <TransitionGroup 
+    <div 
       v-else 
-      name="list" 
-      tag="div" 
+      v-auto-animate
       class="list-container gpu-contain"
     >
       <RecruitCard
@@ -223,7 +222,7 @@ function handleSearchUpdate(val: string) {
         @toggle-expand="toggleExpand(recruit.id)"
         @toggle-select="toggleSelect(recruit.id)"
       />
-    </TransitionGroup>
+    </div>
 
     <FabIsland
       :visible="fabState.visible"
