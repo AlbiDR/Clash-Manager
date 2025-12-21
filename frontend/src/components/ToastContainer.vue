@@ -8,7 +8,7 @@ const { toastOffset } = useUiCoordinator()
 </script>
 
 <template>
-  <div class="toast-container" :style="{ bottom: toastOffset + 'px' }">
+  <div class="toast-container" :style="{ bottom: `calc(${toastOffset}px + env(safe-area-inset-bottom))` }">
     <TransitionGroup name="toast">
       <Toast
         v-for="toast in toasts"

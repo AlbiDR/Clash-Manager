@@ -5,6 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { useUiCoordinator } from '../composables/useUiCoordinator'
 import Icon from './Icon.vue'
 
 defineProps<{
@@ -18,6 +19,8 @@ defineProps<{
   blitzEnabled?: boolean
 }>()
 
+const { fabOffset } = useUiCoordinator()
+
 const emit = defineEmits<{
   action: [payload: MouseEvent]
   dismiss: []
@@ -26,7 +29,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="fab-island" :class="{ 'visible': visible }" @touchstart.stop>
+  <div 
+    class="fab-island" 
+    :class="{ 'visible': visible }" 
+    :style="{ bottom: `calc(${fabOffset}px + env(safe-area-inset-bottom))` }"
+    @touchstart.stop
+  >
     <div class="fab-content">
       
       <!-- State: BLASTING (With Controls) -->
@@ -82,9 +90,9 @@ const emit = defineEmits<{
 
 <style scoped>
 .fab-island {
-  position: fixed; bottom: 110px; left: 0; right: 0;
+  position: fixed; left: 0; right: 0;
   display: flex; justify-content: center; pointer-events: none; z-index: 300;
-  transition: opacity 0.3s ease, transform 0.3s var(--sys-motion-spring);
+  transition: opacity 0.3s ease, transform 0.3s var(--sys-motion-spring), bottom 0.4s var(--sys-motion-spring);
   opacity: 0;
   transform: translateY(20px);
 }
