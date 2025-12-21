@@ -212,8 +212,8 @@ export async function dismissRecruits(ids: string[]): Promise<ApiResponse<Dismis
     return gasRequest<ApiResponse<DismissResponse>>('dismissRecruits', { ids })
 }
 
-export async function triggerBackendUpdate(): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    return gasRequest<ApiResponse<{ success: boolean; message: string }>>('triggerUpdate')
+export async function triggerBackendUpdate(target?: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
+    return gasRequest<ApiResponse<{ success: boolean; message: string }>>('triggerUpdate', { target })
 }
 
 // Utility

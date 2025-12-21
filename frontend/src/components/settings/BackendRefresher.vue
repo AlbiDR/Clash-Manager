@@ -1,62 +1,95 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { triggerBackendUpdate } from '../../api/gasClient'
 import Icon from '../Icon.vue'
 
-const isRefreshing = ref(false)
-const cooldown = ref(0)
-const statusMessage = ref('Ready to update')
+// Types
+type TargetKey = 'members' | 'leaderboard' | 'headhunters'
 
-let cooldownTimer: number | null = null
+interface RefreshTarget {
+    key: TargetKey
+    label: string
+    desc: string
+    icon: string
+    cooldown: number
+    timer: number | null
+    status: 'idle' | 'loading' | 'success' | 'error' | 'cooldown'
+}
 
-const startCooldown = () => {
-    cooldown.value = 60
-    statusMessage.value = `Cooldown: ${cooldown.value}s`
+// State
+const targets = reactive<Record<TargetKey, RefreshTarget>>({
+    members: {
+        key: 'members',
+        label: 'Clan Members',
+        desc: 'Update member list and roles',
+        icon: 'group',
+        cooldown: 0,
+        timer: null,
+        status: 'idle'
+    },
+    leaderboard: {
+        key: 'leaderboard',
+        label: 'Leaderboard',
+        desc: 'Recalculate scores and ranks',
+        icon: 'leaderboard',
+        cooldown: 0,
+        timer: null,
+        status: 'idle'
+    },
+    headhunters: {
+        key: 'headhunters',
+        label: 'Headhunters',
+        desc: 'Refresh internal recruit data',
+        icon: 'target',
+        cooldown: 0,
+        timer: null,
+        status: 'idle'
+    }
+})
+
+// Logic
+const startCooldown = (key: TargetKey) => {
+    const target = targets[key]
+    target.cooldown = 60
+    target.status = 'cooldown'
     
-    if (cooldownTimer) clearInterval(cooldownTimer)
+    if (target.timer) clearInterval(target.timer)
     
-    cooldownTimer = window.setInterval(() => {
-        cooldown.value--
-        if (cooldown.value <= 0) {
-            if (cooldownTimer) clearInterval(cooldownTimer)
-            cooldownTimer = null
-            statusMessage.value = 'Ready to update'
-        } else {
-             statusMessage.value = `Cooldown: ${cooldown.value}s`
+    target.timer = window.setInterval(() => {
+        target.cooldown--
+        if (target.cooldown <= 0) {
+            if (target.timer) clearInterval(target.timer)
+            target.timer = null
+            target.status = 'idle'
         }
     }, 1000)
 }
 
-const refresh = async () => {
-    if (isRefreshing.value || cooldown.value > 0) return
+const refresh = async (key: TargetKey) => {
+    const target = targets[key]
+    if (target.status === 'loading' || target.cooldown > 0) return
 
-    isRefreshing.value = true
-    statusMessage.value = 'Requesting update...'
+    target.status = 'loading'
 
     try {
-        const response = await triggerBackendUpdate()
+        const response = await triggerBackendUpdate(key)
         if (response.status === 'success') {
-             // The backend trigger succeeded (the tickbox was checked)
-             // We start the cooldown now.
-             startCooldown()
+             startCooldown(key)
         } else {
-            statusMessage.value = 'Update failed'
             // Still cooldown on failure to prevent spam
-             startCooldown()
+             startCooldown(key)
         }
     } catch (e) {
-        console.error('Backend refresh failed', e)
-        statusMessage.value = 'Connection error'
-         startCooldown()
-    } finally {
-        isRefreshing.value = false
+        console.error(`Backend refresh failed [${key}]`, e)
+         startCooldown(key) // Cooldown on error too
     }
 }
 
-// Clean up timer
-import { onUnmounted } from 'vue'
+// Cleanup
 onUnmounted(() => {
-    if (cooldownTimer) clearInterval(cooldownTimer)
+    Object.values(targets).forEach(t => {
+        if (t.timer) clearInterval(t.timer)
+    })
 })
 </script>
 
@@ -67,25 +100,33 @@ onUnmounted(() => {
             <h3>Backend Refresh</h3>
         </div>
         <div class="card-body">
-            <div class="refresh-content">
-                <div class="info-text">
-                    <p class="main-desc">Trigger a manual update of the backend spreadsheet.</p>
-                    <p class="sub-desc">This ticks the hidden "mobile feature" checkboxes in A1 to force a sheet recalculation.</p>
-                </div>
-                
-                <div class="action-area">
-                    <div class="status-indicator" :class="{ active: isRefreshing, cooldown: cooldown > 0 }">
-                        {{ statusMessage }}
+            <div class="rows-container">
+                <div v-for="target in targets" :key="target.key" class="refresh-row">
+                    <div class="row-info">
+                        <div class="row-label">{{ target.label }}</div>
+                        <div class="row-desc">{{ target.desc }}</div>
                     </div>
+                    
                     <button 
-                        class="refresh-btn" 
-                        @click="refresh" 
-                        :disabled="isRefreshing || cooldown > 0"
-                        :class="{ processing: isRefreshing }"
+                        class="action-btn" 
+                        @click="refresh(target.key)" 
+                        :disabled="target.status === 'loading' || target.cooldown > 0"
+                        :class="{ 'is-loading': target.status === 'loading' }"
                     >
-                        <Icon v-if="!isRefreshing" name="refresh" size="18" />
-                        <div v-else class="spinner"></div>
-                        <span>{{ isRefreshing ? 'UPDATING' : 'REFRESH' }}</span>
+                        <!-- Normal State -->
+                        <template v-if="target.status === 'idle' || target.status === 'error'">
+                            <span>REFRESH</span>
+                        </template>
+
+                        <!-- Loading State -->
+                        <template v-else-if="target.status === 'loading'">
+                            <div class="spinner"></div>
+                        </template>
+
+                        <!-- Cooldown State -->
+                        <template v-else-if="target.status === 'cooldown'">
+                            <span class="cooldown-text">{{ target.cooldown }}s</span>
+                        </template>
                     </button>
                 </div>
             </div>
@@ -109,72 +150,50 @@ onUnmounted(() => {
 .card-header h3 { margin: 0; font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); }
 .header-icon { color: var(--sys-color-primary); }
 
-.card-body { padding: 20px; }
+.card-body { padding: 0; }
 
-.refresh-content {
+.refresh-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 20px;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
+.refresh-row:last-child { border-bottom: none; }
 
-.info-text { flex: 1; }
-.main-desc { font-weight: 700; font-size: 15px; color: var(--sys-color-on-surface); margin: 0 0 4px 0; }
-.sub-desc { font-size: 13px; opacity: 0.6; margin: 0; line-height: 1.4; }
+.row-info { display: flex; flex-direction: column; gap: 2px; }
+.row-label { font-weight: 800; font-size: 14px; color: var(--sys-color-on-surface); }
+.row-desc { font-size: 12px; opacity: 0.5; }
 
-.action-area {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-}
-
-.status-indicator {
-    font-size: 11px;
-    font-weight: 700;
-    opacity: 0.5;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: color 0.3s;
-}
-.status-indicator.active { color: var(--sys-color-primary); opacity: 1; }
-.status-indicator.cooldown { color: var(--sys-color-tertiary); opacity: 1; }
-
-.refresh-btn {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--sys-color-primary);
-    color: var(--sys-color-on-primary);
+.action-btn {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--sys-color-secondary-container);
+    color: var(--sys-color-on-secondary-container);
     border: none;
-    padding: 10px 20px;
-    border-radius: 12px;
-    font-weight: 800;
-    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 11px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 120px;
-    justify-content: center;
+    min-width: 80px;
+    height: 32px;
+    transition: all 0.2s;
 }
 
-.refresh-btn:hover:not(:disabled) {
-    background: var(--sys-color-primary-container);
-    color: var(--sys-color-on-primary-container);
-    transform: translateY(-1px);
+.action-btn:hover:not(:disabled) {
+    background: var(--sys-color-primary);
+    color: white;
 }
 
-.refresh-btn:active:not(:disabled) {
-    transform: scale(0.98);
-}
-
-.refresh-btn:disabled {
-    background: var(--sys-color-surface-container-highest);
-    color: var(--sys-color-on-surface-variant);
-    opacity: 0.6;
+.action-btn:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
+    background: var(--sys-color-surface-variant);
+    color: var(--sys-color-on-surface-variant);
 }
 
 .spinner {
-    width: 18px; height: 18px;
+    width: 14px; height: 14px;
     border: 2px solid currentColor;
     border-top-color: transparent;
     border-radius: 50%;
@@ -185,9 +204,7 @@ onUnmounted(() => {
     to { transform: rotate(360deg); }
 }
 
-@media (max-width: 600px) {
-    .refresh-content { flex-direction: column; align-items: flex-start; }
-    .action-area { width: 100%; align-items: center; margin-top: 12px; }
-    .refresh-btn { width: 100%; }
+.cooldown-text {
+    font-variant-numeric: tabular-nums;
 }
 </style>
