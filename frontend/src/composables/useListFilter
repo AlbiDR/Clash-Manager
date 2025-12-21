@@ -1,0 +1,58 @@
+
+import { ref, computed, type Ref } from 'vue'
+
+export interface SortOption {
+    label: string
+    value: string
+    desc?: string
+}
+
+type SortComparator<T> = (a: T, b: T) => number
+
+export function useListFilter<T>(
+    items: Ref<T[]>,
+    searchFields: (item: T) => string[],
+    sortStrategies: Record<string, SortComparator<T>>,
+    defaultSort: string = 'score'
+) {
+    const searchQuery = ref('')
+    const sortBy = ref(defaultSort)
+
+    const filteredItems = computed(() => {
+        let result = [...items.value]
+
+        // 1. Search Filter
+        if (searchQuery.value) {
+            const query = searchQuery.value.toLowerCase()
+            result = result.filter(item => {
+                const fields = searchFields(item)
+                return fields.some(f => f.toLowerCase().includes(query))
+            })
+        }
+
+        // 2. Sorting
+        const comparator = sortStrategies[sortBy.value]
+        if (comparator) {
+            result.sort(comparator)
+        }
+
+        return result
+    })
+
+    function updateSort(val: string) {
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                sortBy.value = val
+            })
+        } else {
+            sortBy.value = val
+        }
+    }
+
+    return {
+        searchQuery,
+        sortBy,
+        filteredItems,
+        updateSort
+    }
+}
