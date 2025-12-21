@@ -12,6 +12,7 @@ import Experiments from '../components/settings/Experiments.vue'
 import SystemModules from '../components/settings/SystemModules.vue'
 import Recovery from '../components/settings/Recovery.vue'
 import BackendRefresher from '../components/settings/BackendRefresher.vue'
+import NotificationSettings from '../components/settings/NotificationSettings.vue'
 
 const { apiStatus, checkApiStatus } = useApiState()
 const { modules } = useModules()
@@ -42,6 +43,8 @@ const apiStatusObject = computed(() => {
       <AppearanceSettings />
 
       <ExtraFeatures />
+
+      <NotificationSettings v-if="modules.experimentalNotifications" />
 
       <Experiments />
 

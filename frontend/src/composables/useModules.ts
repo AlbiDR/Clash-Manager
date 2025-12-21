@@ -7,13 +7,17 @@ export interface ModuleState {
     ghostBenchmarking: boolean
     sortExplanation: boolean
     backendRefresher: boolean
+    experimentalNotifications: boolean
+    notificationBadgeHighPotential: boolean
 }
 
 const defaultState: ModuleState = {
     blitzMode: false,
     ghostBenchmarking: true,
     sortExplanation: false,
-    backendRefresher: false
+    backendRefresher: false,
+    experimentalNotifications: true,
+    notificationBadgeHighPotential: true
 }
 
 const modules = ref<ModuleState>({ ...defaultState })
@@ -40,7 +44,9 @@ export function useModules() {
                     blitzMode: typeof parsed.blitzMode === 'boolean' ? parsed.blitzMode : defaultState.blitzMode,
                     ghostBenchmarking: typeof parsed.ghostBenchmarking === 'boolean' ? parsed.ghostBenchmarking : defaultState.ghostBenchmarking,
                     sortExplanation: typeof parsed.sortExplanation === 'boolean' ? parsed.sortExplanation : defaultState.sortExplanation,
-                    backendRefresher: typeof parsed.backendRefresher === 'boolean' ? parsed.backendRefresher : defaultState.backendRefresher
+                    backendRefresher: typeof parsed.backendRefresher === 'boolean' ? parsed.backendRefresher : defaultState.backendRefresher,
+                    experimentalNotifications: typeof parsed.experimentalNotifications === 'boolean' ? parsed.experimentalNotifications : defaultState.experimentalNotifications,
+                    notificationBadgeHighPotential: typeof parsed.notificationBadgeHighPotential === 'boolean' ? parsed.notificationBadgeHighPotential : defaultState.notificationBadgeHighPotential
                 }
             } else {
                 modules.value = { ...defaultState }

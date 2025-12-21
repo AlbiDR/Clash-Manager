@@ -3,6 +3,7 @@ import { ref, readonly, watch } from 'vue'
 import { loadCache, fetchRemote } from '../api/gasClient'
 import type { WebAppData } from '../types'
 import { useBadge } from './useBadge'
+import { useModules } from './useModules'
 
 // Global State
 const clanData = ref<WebAppData | null>(null)
@@ -12,12 +13,27 @@ const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
 const syncError = ref<string | null>(null)
 
 const { setBadge } = useBadge()
+const { modules } = useModules()
 
+// React to setting changes immediately
+watch(() => modules.value.notificationBadgeHighPotential, () => {
+    if (clanData.value) {
+        // Redefined locally or imported logic to update badge
+        if (clanData.value.hh) {
+            if (modules.value.notificationBadgeHighPotential) {
+                const highPotentialCount = clanData.value.hh.filter(r => r.s >= 75).length
+                setBadge(highPotentialCount)
+            } else {
+                setBadge(clanData.value.hh.length)
+            }
+        }
+    }
+})
 export function useClanData() {
 
     async function init() {
         // Prevent double init if data is already present
-        if (clanData.value) return 
+        if (clanData.value) return
 
         try {
             const cached = await loadCache()
@@ -30,7 +46,7 @@ export function useClanData() {
         } catch (e) {
             console.warn("Fast Cache Load Failed", e)
         }
-        
+
         // Trigger background refresh after cache check
         await refresh()
     }
@@ -38,7 +54,14 @@ export function useClanData() {
     function updateBadgeCount(data: WebAppData) {
         // Badge represents number of recruits in pool
         if (data.hh) {
-            setBadge(data.hh.length)
+            if (modules.value.notificationBadgeHighPotential) {
+                // Filter for recruits with score >= 75
+                const highPotentialCount = data.hh.filter(r => r.s >= 75).length
+                setBadge(highPotentialCount)
+            } else {
+                // Default: Count all recruits
+                setBadge(data.hh.length)
+            }
         }
     }
 
@@ -53,7 +76,7 @@ export function useClanData() {
             // Network Intelligence: Check if we should do a "Lite" fetch
             const connection = (navigator as any).connection
             const isSlow = connection && (connection.saveData || ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
-            
+
             if (isSlow) {
                 console.log('📡 Slow connection detected. Prioritizing core data.')
             }
@@ -62,7 +85,7 @@ export function useClanData() {
             clanData.value = remoteData
             lastSyncTime.value = remoteData.timestamp
             syncStatus.value = 'success'
-            
+
             updateBadgeCount(remoteData)
 
         } catch (e: any) {
@@ -86,7 +109,7 @@ export function useClanData() {
             ...clanData.value,
             hh: originalHH.filter(r => !idsSet.has(r.id))
         }
-        
+
         updateBadgeCount(clanData.value)
 
         try {
