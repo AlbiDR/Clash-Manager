@@ -30,4 +30,5 @@ jobs:
       - name: Push Code to Google Apps Script
         run: |
           cd backend
-          clasp push -fi
+          clasp push --force
+
