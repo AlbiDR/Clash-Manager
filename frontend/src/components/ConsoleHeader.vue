@@ -113,12 +113,16 @@ const activeSortDescription = computed(() => {
 <style scoped>
 .header-wrapper {
   position: sticky;
-  top: env(safe-area-inset-top);
+  top: 0;
   z-index: 100;
   padding: 12px 0;
+  padding-top: calc(12px + env(safe-area-inset-top));
   transition: padding 0.3s var(--sys-motion-spring);
 }
-.header-wrapper.is-scrolled { padding: 4px 0; }
+.header-wrapper.is-scrolled { 
+  padding: 4px 0; 
+  padding-top: calc(4px + env(safe-area-inset-top));
+}
 
 .console-glass {
   position: relative;
