@@ -24,12 +24,12 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// Reusable card interactions
+// Reusable card interactions with specific callbacks
 const { handleTap, handleLongPress, handleScoreClick, handleExpandClick } = useCardMechanics(
     props,
     {
-        'toggle-expand': () => emit('toggle-expand'),
-        'toggle-select': () => emit('toggle-select')
+        onExpand: () => emit('toggle-expand'),
+        onSelect: () => emit('toggle-select')
     }
 )
 
