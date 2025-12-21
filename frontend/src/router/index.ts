@@ -1,14 +1,35 @@
 
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-// Memory for tab scroll positions
-const scrollPositions = new Map<string, number>()
+const SCROLL_KEY = 'cm_scroll_positions'
+
+// Persistent scroll restoration logic
+function saveScrollPosition(path: string, y: number) {
+    try {
+        const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || '{}')
+        store[path] = y
+        sessionStorage.setItem(SCROLL_KEY, JSON.stringify(store))
+    } catch (e) { /* ignore */ }
+}
+
+function getSavedScroll(path: string): number {
+    try {
+        const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || '{}')
+        return store[path] || 0
+    } catch (e) { return 0 }
+}
 
 const router = createRouter({
     history: createWebHashHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
+        // 1. Browser Back/Forward: Use browser's saved position
         if (savedPosition) return savedPosition
-        if (scrollPositions.has(to.path)) return { top: scrollPositions.get(to.path) }
+        
+        // 2. Tab Navigation: Restore from our persistent SessionStorage
+        const y = getSavedScroll(to.path)
+        if (y > 0) return { top: y, behavior: 'instant' } // 'instant' prevents jumpy animation on load
+        
+        // 3. Default: Top
         return { top: 0 }
     },
     routes: [
@@ -36,9 +57,7 @@ const router = createRouter({
 // ⚡ FIX: View Transitions Support
 // This wraps every route change in a native "Resolve" animation
 router.beforeResolve(async (to, from) => {
-    // Only apply if the browser supports it
     if (!(document as any).startViewTransition) return
-
     return new Promise((resolve) => {
         (document as any).startViewTransition(async () => {
             resolve(true)
@@ -46,8 +65,9 @@ router.beforeResolve(async (to, from) => {
     })
 })
 
+// Save scroll before leaving route
 router.beforeEach((to, from) => {
-    scrollPositions.set(from.path, window.scrollY)
+    saveScrollPosition(from.path, window.scrollY)
 })
 
 router.afterEach((to) => {
