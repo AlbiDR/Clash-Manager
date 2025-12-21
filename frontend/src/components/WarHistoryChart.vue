@@ -45,6 +45,7 @@ const bars = computed(() => {
     <div 
       v-if="bars.length > 0" 
       class="war-chart"
+      :style="{ '--bar-count': bars.length }"
     >
       <div 
         v-for="(bar, i) in bars" 
