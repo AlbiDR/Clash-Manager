@@ -6,7 +6,7 @@ import ConsoleHeader from '../components/ConsoleHeader.vue'
 import PwaInstallBanner from '../components/settings/PwaInstallBanner.vue'
 import NetworkSettings from '../components/settings/NetworkSettings.vue'
 import AppearanceSettings from '../components/settings/AppearanceSettings.vue'
-import PowerTools from '../components/settings/PowerTools.vue'
+import ExtraFeatures from '../components/settings/ExtraFeatures.vue'
 import Experiments from '../components/settings/Experiments.vue'
 import SystemModules from '../components/settings/SystemModules.vue'
 import Recovery from '../components/settings/Recovery.vue'
@@ -39,7 +39,7 @@ const apiStatusObject = computed(() => {
       
       <AppearanceSettings />
 
-      <PowerTools />
+      <ExtraFeatures />
 
       <Experiments />
 

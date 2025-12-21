@@ -11,7 +11,7 @@ const wakeLock = useWakeLock()
     <div class="settings-card">
         <div class="card-header">
             <Icon name="lightning" size="20" class="header-icon" />
-            <h3>Power Tools</h3>
+            <h3>Extra Features</h3>
         </div>
         <div class="card-body">
             <div class="features-list">
