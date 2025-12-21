@@ -10,20 +10,21 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // Changed from autoUpdate to prompt for stability
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        id: '/Clash-Manager/',
+        id: 'clash-manager-v6', // Explicit stable ID
         name: 'Clash Manager: Clan Manager for Clash Royale',
         short_name: 'Clash Manager',
         description: 'Clan Manager for Clash Royale - Track leaderboards, scout recruits, and analyze war performance.',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
-        display_override: ['standalone', 'fullscreen', 'minimal-ui'],
+        display_override: ['standalone', 'window-controls-overlay', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/Clash-Manager/',
-        start_url: '/Clash-Manager/',
+        // Point directly to the file to avoid server-side redirect dependencies when offline
+        start_url: './index.html', 
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -42,8 +43,6 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        // 📸 RICH INSTALL UI CONFIGURATION
-        // Exact dimensions are required for the browser to accept the screenshots
         screenshots: [
           {
             src: 'screenshot-mobile.png',
@@ -65,25 +64,31 @@ export default defineConfig({
             name: '🏆 Leaderboard',
             short_name: 'Leaderboard',
             description: 'View current clan standings',
-            url: '/Clash-Manager/',
+            url: './index.html#/leaderboard',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
             name: '🔭 Headhunter',
             short_name: 'Headhunter',
             description: 'Scout for new recruits',
-            url: '/Clash-Manager/recruiter',
+            url: './index.html#/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
         categories: ['productivity', 'games'],
         launch_handler: {
           client_mode: 'auto'
+        },
+        edge_side_panel: {
+          preferred_width: 400
         }
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        cleanupOutdatedCaches: true, 
+        cleanupOutdatedCaches: true,
+        // CRITICAL FIX: Ensure index.html is served if a route fails
+        navigateFallback: './index.html',
+        navigateFallbackDenylist: [/^\/api/, /^https:\/\/script\.google\.com/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/script\.google\.com\/.*/i,
