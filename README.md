@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/Version-6.2.7_(Gold)-FFD700?style=flat-square&logo=clashroyale&logoColor=white)
 ![Stack](https://img.shields.io/badge/Stack-Vue_3_+_Google_Apps_Script-42b883?style=flat-square)
-[![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-green?style=flat-square)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
 
 **Clash Manager** is a high-performance clan management suite for Clash Royale leaders. It bridges the gap between raw data analysis and a **native-quality** mobile experience by combining a **Serverless Google Apps Script Backend** with a **Progressive Web App (PWA)**.
 
