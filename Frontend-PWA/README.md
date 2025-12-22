@@ -3,7 +3,7 @@
 <!-- Dynamic Badges: These update automatically based on your repo status -->
 [![Version](https://img.shields.io/github/package-json/v/albidr/Clash-Manager?filename=Frontend-PWA%2Fpackage.json&style=flat-square&color=0061a4&label=Client)](https://github.com/albidr/Clash-Manager/blob/main/Frontend-PWA/package.json)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/albidr/Clash-Manager/deploy.yml?branch=main&style=flat-square&label=Build)](https://github.com/albidr/Clash-Manager/actions)
-[![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-green?style=flat-square)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
 
 **Clash Manager Client** is the frontend PWA for the Clash Manager ecosystem. It is a "Headless" interface that consumes data from the Google Apps Script backend, designed to feel like a native app while running entirely in the browser.
 
