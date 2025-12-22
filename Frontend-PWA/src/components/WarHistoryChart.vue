@@ -9,11 +9,15 @@ const chartData = computed(() => {
   if (!props.history || props.history === '-') return { bars: [], trend: null }
   
   // 1. Parse History (Chronological)
+  // Input format: "3000 24W01 | 1500 24W02"
   const entries = (props.history || '')
     .split('|')
     .map(x => x.trim())
     .filter(Boolean)
   
+  // Backend often sends newest first, but for a graph we want oldest -> newest (Left -> Right)
+  // Check typical backend sorting. Usually history string is constructed "Newest ... Oldest" in string concat?
+  // Let's assume standard descending order from backend, so we reverse for chart.
   const chronological = entries.slice(0, 52).reverse()
   
   const rawPoints = chronological.map(entry => {
@@ -40,7 +44,7 @@ const chartData = computed(() => {
     const n = rawPoints.length
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0
     
-    // x = index, y = fame
+    // x = index (0 to n-1), y = fame
     rawPoints.forEach((p, i) => {
       sumX += i
       sumY += p.fame
@@ -55,18 +59,26 @@ const chartData = computed(() => {
     nextFame = Math.max(0, slope * n + intercept)
     
     // Calculate SVG Coordinates (Percentages)
-    // We have n points currently + 1 projection = n + 1 total slots
+    // We have n points currently + 1 projection = n + 1 total slots in the visual space
     const totalSlots = n + 1
-    const maxScale = 3200 // Consistent with bar height calc
+    const maxScale = 3200 // Consistent with bar height calc (max fame usually ~3000-3200)
     
     // Start of line (x=0)
     const startY = Math.max(0, intercept)
     
+    // End of line (x=n, the projection)
+    const endY = nextFame
+
+    // Map to %
+    // X logic: Center of bar. Bar width is 100% / totalSlots. Center is (i + 0.5) * barWidth
+    const getX = (i: number) => `${((i + 0.5) / totalSlots) * 100}%`
+    const getY = (val: number) => `${(1 - Math.min(1, val / maxScale)) * 100}%`
+
     trendLine = {
-      x1: `${(0 + 0.5) / totalSlots * 100}%`,
-      y1: `${(1 - Math.min(1, startY / maxScale)) * 100}%`,
-      x2: `${(n + 0.5) / totalSlots * 100}%`, // Center of projection slot
-      y2: `${(1 - Math.min(1, nextFame / maxScale)) * 100}%`,
+      x1: getX(0),
+      y1: getY(startY),
+      x2: getX(n), // Center of projection slot
+      y2: getY(endY),
       isPositive: slope >= 0
     }
   } else if (rawPoints.length === 1) {
