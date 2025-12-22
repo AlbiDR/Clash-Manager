@@ -3,7 +3,7 @@
 <!-- Static badges for the backend as GAS doesn't have a package.json -->
 ![Platform](https://img.shields.io/badge/Platform-Google%20Apps%20Script-4285F4?style=flat-square&logo=google&logoColor=white)
 ![Standard](https://img.shields.io/badge/API-REST%20over%20HTTPS-orange?style=flat-square&logo=json)
-[![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-green?style=flat-square)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
 
 **Clash Manager Server** is the backend engine powered by Google Apps Script. It acts as the API Gateway, ETL Pipeline, and Database (via Google Sheets) for the Clash Manager ecosystem.
 
