@@ -37,8 +37,8 @@ const LeaderboardRowSchema = z.tuple([
     z.string(),             // 4: role
     z.number(),             // 5: days tracked
     z.number(),             // 6: avg daily donations
-    z.string().nullable(),  // 7: last seen (can be null/empty in matrix sometimes)
-    z.string().nullable(),  // 8: war rate
+    z.union([z.string(), z.null()]),  // 7: last seen (can be null/empty in matrix sometimes)
+    z.union([z.string(), z.null()]),  // 8: war rate
     z.string(),             // 9: history string
     z.number().optional(),  // 10: delta trend (optional for backward compat)
     z.number().optional()   // 11: raw score (optional for backward compat)
