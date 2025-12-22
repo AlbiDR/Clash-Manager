@@ -42,7 +42,7 @@ graph LR
 | **`Leaderboard`** | **Ranking**: Aggregates member stats and calculates war history. |
 | **`Logger`** | **Database**: Handles daily snapshots and historical pruning. |
 | **`ScoringSystem`** | **Math**: Isolated algorithms for player scoring (Protected Logic). |
-| **`Orchestrator`** | **Control**: Manages triggers, menus, and update sequences. |
+| **`Orchestrator & Triggers`** | **Control**: Manages triggers, menus, and update sequences. |
 | **`Utilities`** | **Core**: Fetching, backups, and shared helpers. |
 | **`Configuration`** | **Config**: Central constants, schema definitions, and API keys. |
 
