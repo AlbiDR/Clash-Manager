@@ -1,4 +1,4 @@
-# Clash Manager: Clan Manager for Clash Royale
+# Clash Manager: Enterprise Clan Intelligence 💎
 
 ![Version](https://img.shields.io/badge/Version-6.2.7_(Gold)-FFD700?style=flat-square&logo=clashroyale&logoColor=white)
 ![Stack](https://img.shields.io/badge/Stack-Vue_3_+_Google_Apps_Script-42b883?style=flat-square)
@@ -72,8 +72,8 @@ To find clanless talent, the recruiter module implements a recursive tournament 
 
 ## 🚀 Getting Started
 
-1. **Deploy Backend**: Follow the [Backend Guide](./Backend-GAS/README%20(GAS).md).
-2. **Deploy Frontend**: Follow the [Frontend Guide](./Frontend-PWA/README%20(PWA).md).
+1. **Deploy Backend**: Follow the [Backend Guide](./Backend-GAS/README.md).
+2. **Deploy Frontend**: Follow the [Frontend Guide](./Frontend-PWA/README.md).
 3. **Demo Mode**: If you are exploring this repo for a portfolio review, toggle the "Portfolio Demo Mode" in **Settings > Extra Features** on the live site.
 
 ---
