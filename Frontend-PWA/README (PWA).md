@@ -1,7 +1,7 @@
 # Clash Manager Client (PWA)
 
 <!-- Dynamic Badges: These update automatically based on your repo status -->
-[![Version](https://img.shields.io/github/package-json/v/albidr/Clash-Manager?filename=frontend%2Fpackage.json&style=flat-square&color=0061a4&label=Client)](https://github.com/albidr/Clash-Manager/blob/main/frontend/package.json)
+[![Version](https://img.shields.io/github/package-json/v/albidr/Clash-Manager?filename=Frontend-PWA%2Fpackage.json&style=flat-square&color=0061a4&label=Client)](https://github.com/albidr/Clash-Manager/blob/main/Frontend-PWA/package.json)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/albidr/Clash-Manager/deploy.yml?branch=main&style=flat-square&label=Build)](https://github.com/albidr/Clash-Manager/actions)
 [![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
 
@@ -39,12 +39,12 @@ It prioritizes **Offline-First** usability using a Stale-While-Revalidate (SWR) 
 
 ### 2. Install Dependencies
 ```bash
-cd frontend
+cd Frontend-PWA
 npm ci
 ```
 
 ### 3. Environment Configuration
-Create a `.env` file in the `frontend` root. You need the Web App URL from your Google Apps Script deployment.
+Create a `.env` file in the `Frontend-PWA` root. You need the Web App URL from your Google Apps Script deployment.
 
 ```properties
 # .env
