@@ -14,6 +14,7 @@ import type {
     Recruit
 } from '../types'
 import { idb } from '../utils/idb'
+import { z } from 'zod'
 
 // ============================================================================
 // CONFIGURATION
@@ -24,12 +25,55 @@ const GAS_URL = localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_U
 const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' // Updated for v6 Gold Master
 
 // ============================================================================
+// SCHEMA VALIDATION (Zod)
+// ============================================================================
+
+// Leaderboard Matrix Row: [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
+const LeaderboardRowSchema = z.tuple([
+    z.string(),             // 0: id
+    z.string(),             // 1: name
+    z.number(),             // 2: trophies
+    z.number(),             // 3: performance score
+    z.string(),             // 4: role
+    z.number(),             // 5: days tracked
+    z.number(),             // 6: avg daily donations
+    z.string().nullable(),  // 7: last seen (can be null/empty in matrix sometimes)
+    z.string().nullable(),  // 8: war rate
+    z.string(),             // 9: history string
+    z.number().optional(),  // 10: delta trend (optional for backward compat)
+    z.number().optional()   // 11: raw score (optional for backward compat)
+])
+
+// Recruiter Matrix Row: [id, n, t, s, don, war, ago, cards]
+const RecruitRowSchema = z.tuple([
+    z.string(),             // 0: id
+    z.string(),             // 1: name
+    z.number(),             // 2: trophies
+    z.number(),             // 3: performance score
+    z.number(),             // 4: donations
+    z.number(),             // 5: war wins
+    z.string(),             // 6: found ago (iso date)
+    z.number().optional()   // 7: cards won (optional)
+])
+
+const PayloadSchema = z.object({
+    format: z.literal('matrix'),
+    schema: z.object({
+        lb: z.array(z.string()),
+        hh: z.array(z.string())
+    }),
+    lb: z.array(LeaderboardRowSchema),
+    hh: z.array(RecruitRowSchema),
+    timestamp: z.number()
+})
+
+// ============================================================================
 // HELPERS
 // ============================================================================
 
 /**
  * Inflates a Matrix-compressed response back into Objects.
- * Exported for testing purposes.
+ * Includes Zod validation to ensure data integrity.
  */
 export function inflatePayload(data: any): WebAppData {
     // Handle String Transport Protocol: Double-parse if data is a string
@@ -38,19 +82,31 @@ export function inflatePayload(data: any): WebAppData {
             data = JSON.parse(data)
         } catch (e) {
             console.error('Failed to parse double-encoded data:', e)
-            // fallback to original data, though likely invalid
+            throw new Error('Data corruption: Double-encoding failure')
         }
     }
 
-    // Legacy support or raw object pass-through
-    if (!data || data.format !== 'matrix' || !data.schema) {
+    // Legacy support or raw object pass-through check (skip validation if not matrix)
+    if (!data || data.format !== 'matrix') {
+        console.warn('Received non-matrix data format. Skipping validation.')
         return data as WebAppData
     }
 
-    const { lb, hh, timestamp } = data
+    // 🛡️ VALIDATION STEP
+    const result = PayloadSchema.safeParse(data)
+    
+    if (!result.success) {
+        console.error('❌ Zod Validation Failed:', result.error.format())
+        // We can choose to throw or return partial data. 
+        // For robustness, we throw to trigger the error boundary / refresh logic.
+        throw new Error('API Schema Mismatch: The backend data structure does not match the frontend expectation.')
+    }
 
-    // Inflate Leaderboard: [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
-    const inflatedLB: LeaderboardMember[] = (lb || []).map((r: any[]) => ({
+    const validData = result.data
+    const { lb, hh, timestamp } = validData
+
+    // Inflate Leaderboard
+    const inflatedLB: LeaderboardMember[] = lb.map(r => ({
         id: r[0],
         n: r[1],
         t: r[2],
@@ -59,16 +115,16 @@ export function inflatePayload(data: any): WebAppData {
             role: r[4],
             days: r[5],
             avg: r[6],
-            seen: r[7],
-            rate: r[8],
+            seen: r[7] || '',
+            rate: r[8] || '',
             hist: r[9]
         },
-        dt: r[10], // Raw Score Trend Delta
-        r: r[11]   // Raw Score Total
+        dt: r[10] ?? 0, // Default to 0 if missing
+        r: r[11] ?? 0
     }))
 
-    // Inflate Recruits: [id, n, t, s, don, war, ago, cards]
-    const inflatedHH: Recruit[] = (hh || []).map((r: any[]) => ({
+    // Inflate Recruits
+    const inflatedHH: Recruit[] = hh.map(r => ({
         id: r[0],
         n: r[1],
         t: r[2],
@@ -77,7 +133,7 @@ export function inflatePayload(data: any): WebAppData {
             don: r[4],
             war: r[5],
             ago: r[6],
-            cards: r[7]
+            cards: r[7] ?? 0
         }
     }))
 
