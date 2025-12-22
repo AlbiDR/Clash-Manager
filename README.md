@@ -1,13 +1,13 @@
-# Clash Manager: Enterprise Clan Intelligence 💎
+# Clash Manager: Clan Manager for Clash Royale
 
 ![Version](https://img.shields.io/badge/Version-6.2.7_(Gold)-FFD700?style=flat-square&logo=clashroyale&logoColor=white)
 ![Stack](https://img.shields.io/badge/Stack-Vue_3_+_Google_Apps_Script-42b883?style=flat-square)
 [![License](https://img.shields.io/github/license/albidr/Clash-Manager?style=flat-square&color=green)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
 
-**Clash Manager** is a high-performance clan management suite for Clash Royale leaders. It bridges the gap between raw data analysis and a "Posh" mobile experience by combining a **Serverless Google Apps Script Backend** with a **Progressive Web App (PWA)**.
+**Clash Manager** is a high-performance clan management suite for Clash Royale leaders. It bridges the gap between raw data analysis and a **native-quality** mobile experience by combining a **Serverless Google Apps Script Backend** with a **Progressive Web App (PWA)**.
 
 > [!IMPORTANT]
-> This project is designed for "Posh" reliability. It features a **Portfolio Demo Mode** (Settings > Extra Features) that allows recruiters to explore the full interface with realistic mock data even when backend services are offline.
+> This project is designed for high reliability. It features a **Portfolio Demo Mode** (Settings > Extra Features) that allows recruiters to explore the full interface with realistic mock data even when backend services are offline.
 
 ---
 
@@ -47,8 +47,8 @@ To find clanless talent, the recruiter module implements a recursive tournament 
 
 ## 🔥 Key Frontend Features
 
-### ✨ "Posh" Motion System
-- **Auto-Animate**: Fluid, physics-based list transitions using `@formkit/auto-animate`. Sorting members or recruits feels premium and tactile.
+### ✨ Fluid Motion System
+- **Auto-Animate**: Fluid, physics-based list transitions using `@formkit/auto-animate`. Sorting members or recruits feels responsive and tactile.
 - **Glassmorphism**: A curated M3-inspired theme with obsidian depth and tonal palettes.
 - **Haptic Feedback**: Standardized vibration patterns for selections, successes, and errors.
 
