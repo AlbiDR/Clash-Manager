@@ -60,11 +60,11 @@ To find clanless talent, the recruiter module implements a recursive tournament 
 
 ## 📂 Monorepo Structure
 
-- **[`/backend`](./backend)**: Google Apps Script source code.
+- **[`/Backend-GAS`](./Backend-GAS)**: Google Apps Script source code.
     - `Controller`: Data compression and JSON matrix generation.
     - `ScoringSystem`: Pure mathematical logic.
     - `Leaderboard`: Weekly aggregation and history rehydration.
-- **[`/frontend`](./frontend)**: Vue 3 + Vite PWA.
+- **[`/Frontend-PWA`](./Frontend-PWA)**: Vue 3 + Vite PWA.
     - `src/composables`: Logic extraction (useDemoMode, useClanData, useHaptics).
     - `src/utils/mockData`: The engine powering the Portfolio Demo Mode.
 
@@ -72,8 +72,8 @@ To find clanless talent, the recruiter module implements a recursive tournament 
 
 ## 🚀 Getting Started
 
-1. **Deploy Backend**: Follow the [Backend Guide](./backend/README(GAS).md).
-2. **Deploy Frontend**: Follow the [Frontend Guide](./frontend/README(PWA).md).
+1. **Deploy Backend**: Follow the [Backend Guide](./Backend-GAS/README(GAS).md).
+2. **Deploy Frontend**: Follow the [Frontend Guide](./Frontend-PWA/README(PWA).md).
 3. **Demo Mode**: If you are exploring this repo for a portfolio review, toggle the "Portfolio Demo Mode" in **Settings > Extra Features** on the live site.
 
 ---
