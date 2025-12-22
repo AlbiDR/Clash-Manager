@@ -16,8 +16,6 @@ const chartData = computed(() => {
     .filter(Boolean)
   
   // Backend often sends newest first, but for a graph we want oldest -> newest (Left -> Right)
-  // Check typical backend sorting. Usually history string is constructed "Newest ... Oldest" in string concat?
-  // Let's assume standard descending order from backend, so we reverse for chart.
   const chronological = entries.slice(0, 52).reverse()
   
   const rawPoints = chronological.map(entry => {
