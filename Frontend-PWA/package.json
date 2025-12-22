@@ -21,7 +21,8 @@
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
     "vue": "^3.5.24",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.3",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",
