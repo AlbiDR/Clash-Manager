@@ -7,10 +7,10 @@ describe('gasClient Data Inflation', () => {
     const rawMatrixData = {
       format: 'matrix',
       schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [id, n, t, s, role, days, avg, seen, rate, hist]
+      // [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
       lb: [
-        ['player1', 'King Arthur', 5000, 95, 'leader', 100, 50, '2023-01-01', '100%', '3000 24W01'],
-        ['player2', 'Lancelot', 4000, 80, 'member', 5, 10, '2023-01-02', '50%', '']
+        ['player1', 'King Arthur', 5000, 95, 'leader', 100, 50, '2023-01-01', '100%', '3000 24W01', 5, 9500],
+        ['player2', 'Lancelot', 4000, 80, 'member', 5, 10, '2023-01-02', '50%', '', 0, 8000]
       ],
       hh: [],
       timestamp: 123456789
@@ -24,10 +24,13 @@ describe('gasClient Data Inflation', () => {
     expect(result.lb[0].t).toBe(5000)
     expect(result.lb[0].d.role).toBe('leader')
     expect(result.lb[0].d.days).toBe(100)
+    expect(result.lb[0].dt).toBe(5)
+    expect(result.lb[0].r).toBe(9500)
     
     // Check second player
     expect(result.lb[1].id).toBe('player2')
     expect(result.lb[1].d.role).toBe('member')
+    expect(result.lb[1].dt).toBe(0)
   })
 
   it('correctly inflates Headhunter matrix', () => {
@@ -70,7 +73,8 @@ describe('gasClient Data Inflation', () => {
     const rawMatrixData = {
       format: 'matrix',
       schema: { lb: [], hh: [] },
-      lb: [['p1', 'Test', 0, 0, 'm', 0, 0, '', '', '']],
+      // Added missing columns (0, 0) to satisfy Zod schema
+      lb: [['p1', 'Test', 0, 0, 'm', 0, 0, '', '', '', 0, 0]],
       hh: [],
       timestamp: 123456789
     }
