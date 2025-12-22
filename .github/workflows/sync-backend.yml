@@ -5,7 +5,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'backend-GAS/**' # Only runs if files in your backend folder change
+      - 'Backend-GAS/**' # Only runs if files in your Backend folder change
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -30,5 +30,5 @@ jobs:
 
       - name: Push Code to Google Apps Script
         run: |
-          cd backend-GAS
+          cd Backend-GAS
           clasp push --force
