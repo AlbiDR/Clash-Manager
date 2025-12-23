@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed, watch, onUnmounted } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -147,8 +146,11 @@ function handleSelectAll() {
   selectAll(ids)
 }
 
-function handleSelectHighScores(threshold: number) {
-  const ids = filteredRecruits.value.filter((r: Recruit) => (r.s || 0) >= threshold).map((r: Recruit) => r.id)
+function handleSelectScore(threshold: number, mode: 'ge' | 'le') {
+  const ids = filteredRecruits.value.filter((r: Recruit) => {
+    const s = r.s || 0
+    return mode === 'ge' ? s >= threshold : s <= threshold
+  }).map((r: Recruit) => r.id)
   setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
@@ -180,7 +182,7 @@ function handleSearchUpdate(val: string) {
             @select-all="handleSelectAll"
             @clear="clearSelection"
             @done="clearSelection"
-            @select-score="handleSelectHighScores"
+            @select-score="handleSelectScore"
         />
       </template>
     </ConsoleHeader>
