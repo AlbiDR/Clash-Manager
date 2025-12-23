@@ -160,7 +160,7 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 .player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
 /* Darkened Trophy Color for contrast */
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #b45309; margin-top: 2px; width: fit-content; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #854d0e; margin-top: 2px; width: fit-content; }
 :root.dark .trophy-meta { color: #fbbf24; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 .header-actions { display: flex; align-items: center; gap: 4px; }
