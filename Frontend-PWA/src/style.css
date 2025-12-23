@@ -21,7 +21,8 @@
   --sys-color-error-container: #ffdad6;
   --sys-color-on-error-container: #410002;
   
-  --sys-color-success: #2e7d32;
+  /* Adjusted for WCAG AA Contrast (4.5:1 on #b9f6ca) */
+  --sys-color-success: #145218;
   --sys-color-success-container: #b9f6ca;
   --sys-color-on-success: #ffffff;
 
