@@ -64,6 +64,7 @@ const activeSortDescription = computed(() => {
             >
                <Icon name="spreadsheet" size="20" />
             </a>
+            <!-- LCP Element Candidate -->
             <h1 class="view-title">{{ title }}</h1>
             <div v-if="stats" class="stats-pill">
               <span class="sp-value">{{ stats.value }}</span>
@@ -162,7 +163,16 @@ const activeSortDescription = computed(() => {
   pointer-events: none;
 }
 
-.header-row { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
+/* 🛡️ CLS PREVENTION: Fixed minimum height prevents shifting */
+.header-row { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  width: 100%; 
+  gap: 12px;
+  min-height: 48px; 
+}
+
 .left-cluster { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
 
 .view-title {
@@ -188,7 +198,6 @@ const activeSortDescription = computed(() => {
   flex-shrink: 0;
 }
 .sp-value { color: var(--sys-color-primary); }
-/* Increased opacity or color change for better contrast */
 .sp-label { color: var(--sys-color-secondary); text-transform: uppercase; font-size: 9px; }
 
 .icon-button {
@@ -214,6 +223,9 @@ const activeSortDescription = computed(() => {
   border: 1px solid transparent;
   white-space: nowrap;
   flex-shrink: 0;
+  /* CLS Fix: Min width prevents jitter when text changes length */
+  min-width: 80px; 
+  justify-content: center;
 }
 .status-pill.ready { color: var(--sys-color-success); background: var(--sys-color-success-container); }
 .status-pill.error { color: var(--sys-color-error); background: var(--sys-color-error-container); }
@@ -224,7 +236,7 @@ const activeSortDescription = computed(() => {
 @media (max-width: 600px) {
   .console-glass { padding: 14px; gap: 12px; }
   .view-title { font-size: 20px; }
-  .status-pill { padding: 6px 10px; gap: 6px; }
+  .status-pill { padding: 6px 10px; gap: 6px; min-width: 60px; }
   .left-cluster { gap: 8px; }
   .stats-pill { padding: 4px 8px; }
 }
@@ -258,7 +270,6 @@ const activeSortDescription = computed(() => {
   cursor: pointer;
   transition: padding-right 0.2s;
 }
-/* If info icon is present, add padding to avoid text overlap */
 .glass-select.has-info { padding-right: 42px; }
 
 .sort-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sys-color-outline); pointer-events: none; }
@@ -276,7 +287,7 @@ const activeSortDescription = computed(() => {
   opacity: 0.9;
   transition: transform 0.2s, opacity 0.2s;
   z-index: 10;
-  pointer-events: auto; /* Ensure it captures events over select if overlapping slightly */
+  pointer-events: auto; 
 }
 .info-dot-inline:hover { transform: translateY(-50%) scale(1.1); opacity: 1; }
 
