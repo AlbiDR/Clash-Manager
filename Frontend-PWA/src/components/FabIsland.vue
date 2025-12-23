@@ -7,6 +7,7 @@ export default {
 
 <script setup lang="ts">
 import { useUiCoordinator } from '../composables/useUiCoordinator'
+import { computed } from 'vue'
 import Icon from './Icon.vue'
 
 defineProps<{
@@ -22,6 +23,14 @@ defineProps<{
 
 const { fabOffset } = useUiCoordinator()
 
+// GPU Optimization: TranslateY instead of 'bottom' property transition
+const styleObject = computed(() => ({
+    // Base position fixed to bottom + safe area
+    bottom: 'calc(0px + env(safe-area-inset-bottom))',
+    // Dynamic lift based on UI state (Dock visibility)
+    transform: `translateY(calc(-${fabOffset.value}px))`
+}))
+
 const emit = defineEmits<{
   action: [payload: MouseEvent]
   dismiss: []
@@ -33,7 +42,7 @@ const emit = defineEmits<{
   <div 
     class="fab-island" 
     :class="{ 'visible': visible }" 
-    :style="{ bottom: `calc(${fabOffset}px + env(safe-area-inset-bottom))` }"
+    :style="styleObject"
     @touchstart.stop
   >
     <div class="fab-content">
@@ -94,13 +103,23 @@ const emit = defineEmits<{
 .fab-island {
   position: fixed; left: 0; right: 0;
   display: flex; justify-content: center; pointer-events: none; z-index: 300;
-  transition: opacity 0.3s ease, transform 0.3s var(--sys-motion-spring), bottom 0.4s var(--sys-motion-spring);
+  /* ⚡ PERF: Transition transform instead of bottom for GPU composition */
+  transition: opacity 0.3s ease, transform 0.4s var(--sys-motion-spring);
   opacity: 0;
-  transform: translateY(20px);
+  /* Hidden state: Pushed down further */
+  transform: translateY(100px) !important; 
+  will-change: transform;
 }
+
+/* 
+   Override transform when visible. 
+   Note: The inline style binding handles the Y-offset logic.
+   When visible, we let the inline style dictate the Y position (which matches the dock height).
+   When NOT visible, this class is removed, falling back to the 100px translation above.
+*/
 .fab-island.visible { 
   opacity: 1; 
-  transform: translateY(0);
+  /* The inline style takes precedence for exact positioning */
 }
 
 .fab-content {
