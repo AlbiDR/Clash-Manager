@@ -58,8 +58,8 @@ const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilt
     'score'
 )
 
-// ⚡ PERFORMANCE: Render first 20 items immediately, defer the rest
-const { visibleItems: progressiveRecruits } = useProgressiveList(filteredRecruits, 20)
+// ⚡ PERFORMANCE: Batch size 8 for instant LCP
+const { visibleItems: progressiveRecruits } = useProgressiveList(filteredRecruits, 8)
 
 const sortOptions = [
   { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
