@@ -34,12 +34,10 @@ function bootstrap() {
         app.directive('tactile', vTactile)
 
         // 3. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
-        // This is immediate. 
         app.mount('#app')
 
         // 4. Initialize Data
-        // The View components are now rendering Skeletons because isHydrated is false.
-        // We trigger init() here. Inside init(), setTimeout(0) pushes hydration to the next tick.
+        // Hydration logic is now safe to call immediately as it internally yields the thread
         const clanData = useClanData(); 
         clanData.init();
 
