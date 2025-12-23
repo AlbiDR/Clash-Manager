@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { generateSmoothPath, type Point } from '../utils/bezier'
-import { calculatePrediction, WAR_CONSTANTS } from '../utils/warMath'
+import { calculatePrediction, parseHistoryString, WAR_CONSTANTS } from '../utils/warMath'
 
 const props = defineProps<{
   history?: string
@@ -18,37 +18,23 @@ interface BarItem {
 }
 
 const chartData = computed(() => {
-  if (!props.history || props.history === '-') {
+  // 1. Parse (Newest -> Oldest)
+  const allHistory = parseHistoryString(props.history)
+  const processedData = allHistory.slice(0, 52) // Limit to last year
+
+  if (processedData.length === 0) {
     return { bars: [], path: null, projPoint: null, lastPoint: null, isPositive: false }
   }
 
-  // 1. Parse History Data
-  // Input Format: "3000 24W01 | 2500 24W02" (Newest -> Oldest)
-  const entries = props.history.split('|').map(x => x.trim()).filter(Boolean)
-  
-  // Process latest 52 entries
-  const processedData = entries.slice(0, 52).map(entry => {
-    const [valStr, weekStr] = entry.split(' ')
-    const fame = parseInt(valStr || '0', 10) || 0
-    
-    // Parse week for tooltip (e.g. "24W05" -> "Week 5")
-    const weekMatch = (weekStr || '').match(/^(\d{2})W(\d{2})$/)
-    const readableWeek = weekMatch ? `Week ${parseInt(weekMatch[2], 10)}` : weekStr
-    
-    return { fame, readableWeek }
-  })
-
-  // 2. Calculate Prediction
-  // Pass Newest->Oldest array to the math utility
+  // 2. Predict (using Newest->Oldest data)
   const fameValues = processedData.map(d => d.fame)
   const nextFame = calculatePrediction(fameValues)
 
-  // 3. Construct Visual Bars
-  // Reverse to Oldest -> Newest for chronological chart display (Left to Right)
+  // 3. Arrange for Display (Oldest -> Newest)
   const chronologicalData = [...processedData].reverse()
   const bars: BarItem[] = []
   
-  // Actual History Bars
+  // Actuals
   chronologicalData.forEach(p => {
     bars.push({
       fame: p.fame,
@@ -58,33 +44,30 @@ const chartData = computed(() => {
     })
   })
 
-  // Projection Bar
-  if (chronologicalData.length > 0) {
-    bars.push({
-      fame: nextFame,
-      height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (nextFame / WAR_CONSTANTS.MAX_FAME) * 100))}%`,
-      isProjection: true,
-      tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:#fbbf24">Projected</span><br>${Math.round(nextFame).toLocaleString()} Fame`
-    })
-  }
+  // Projection
+  bars.push({
+    fame: nextFame,
+    height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (nextFame / WAR_CONSTANTS.MAX_FAME) * 100))}%`,
+    isProjection: true,
+    tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:#fbbf24">Projected</span><br>${Math.round(nextFame).toLocaleString()} Fame`
+  })
 
-  // 4. Generate SVG Curve Overlay
+  // 4. Geometry
   const totalSlots = bars.length
-  // Map bars to X,Y coordinates (0-100 scale for SVG viewBox)
   const curvePoints: Point[] = bars.map((bar, i) => ({
     x: ((i + 0.5) / totalSlots) * 100,
-    y: (1 - Math.min(1, bar.fame / WAR_CONSTANTS.MAX_FAME)) * 100 // Invert Y for SVG
+    y: (1 - Math.min(1, bar.fame / WAR_CONSTANTS.MAX_FAME)) * 100
   }))
 
   const path = generateSmoothPath(curvePoints)
   
-  // Identify key points for dots
-  const projPoint = curvePoints.length > 0 ? curvePoints[curvePoints.length - 1] : null
+  // Points of interest
+  const projPoint = curvePoints[curvePoints.length - 1]
   const lastPoint = curvePoints.length > 1 ? curvePoints[curvePoints.length - 2] : null
   
-  // Trend Logic: Is projection >= last actual?
-  const lastActualFame = chronologicalData.length > 0 ? chronologicalData[chronologicalData.length - 1].fame : 0
-  const isPositive = chronologicalData.length > 0 && nextFame >= lastActualFame
+  // Trend Logic: Projection vs Last Actual
+  const lastActualFame = processedData[0].fame
+  const isPositive = nextFame >= lastActualFame
 
   return { bars, path, projPoint, lastPoint, isPositive }
 })
