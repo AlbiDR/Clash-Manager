@@ -8,6 +8,7 @@ import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
 import { useListFilter } from '../composables/useListFilter'
 import { useUiCoordinator } from '../composables/useUiCoordinator'
+import { useProgressiveList } from '../composables/useProgressiveList'
 import { formatTimeAgo } from '../utils/formatters'
 import type { Recruit } from '../types'
 
@@ -56,6 +57,9 @@ const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilt
     sortStrategies,
     'score'
 )
+
+// ⚡ PERFORMANCE: Render first 20 items immediately, defer the rest
+const { visibleItems: progressiveRecruits } = useProgressiveList(filteredRecruits, 20)
 
 const sortOptions = [
   { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
@@ -213,7 +217,7 @@ function handleSearchUpdate(val: string) {
       class="list-container gpu-contain"
     >
       <RecruitCard
-        v-for="(recruit, index) in filteredRecruits"
+        v-for="(recruit, index) in progressiveRecruits"
         :key="recruit.id"
         :id="`recruit-${recruit.id}`"
         :recruit="recruit"
