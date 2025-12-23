@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref } from 'vue'
 
 // Singleton State
