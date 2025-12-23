@@ -5,114 +5,32 @@ const props = defineProps<{
   index?: number
 }>()
 
-// Deterministic variation based on index
+// Deterministic variation based on index to mimic real data diversity
 const nameWidth = computed(() => {
-  if (props.index === undefined) return '60%'
-  const widths = ['55%', '70%', '45%', '65%', '50%', '75%']
+  if (props.index === undefined) return '120px'
+  const widths = ['120px', '140px', '90px', '130px', '100px', '150px']
   return widths[props.index % widths.length]
 })
 
 const metaWidth = computed(() => {
-  if (props.index === undefined) return '40%'
-  const widths = ['35%', '45%', '30%', '40%', '38%', '42%']
+  if (props.index === undefined) return '80px'
+  const widths = ['80px', '90px', '60px', '85px', '70px', '75%']
   return widths[props.index % widths.length]
 })
 </script>
 
 <template>
-  <div class="skeleton-card">
-    <div class="skeleton-header">
-      <div class="info-stack">
-        <div class="sk-bar name-bar" :style="{ width: nameWidth }"></div>
-        <div class="sk-bar meta-bar" :style="{ width: metaWidth }"></div>
-      </div>
-      <div class="action-area">
-        <div class="sk-box stat-pod"></div>
-        <div class="sk-circle chevron"></div>
-      </div>
+  <!-- Using global classes from style.css for shell parity -->
+  <div class="sk-card skeleton-anim">
+    <div class="sk-info">
+      <div class="sk-line-l" :style="{ width: nameWidth }"></div>
+      <div class="sk-line-s" :style="{ width: metaWidth }"></div>
     </div>
+    <div class="sk-box"></div>
   </div>
 </template>
 
 <style scoped>
-.skeleton-card {
-  background: var(--sys-color-surface-container);
-  border-radius: 16px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  border: 1px solid transparent;
-  height: 58px;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
-  
-  /* 🔋 PERFORMANCE: Strict containment */
-  contain: strict;
-  /* 🛡️ CLS FIX: Prevent crushing in flex containers */
-  flex-shrink: 0; 
-  width: 100%;
-}
-
-/* Shimmer Effect */
-.skeleton-card::after {
-  content: "";
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.03) 20%,
-    rgba(255, 255, 255, 0.08) 60%,
-    rgba(255, 255, 255, 0)
-  );
-  animation: shimmer 2s infinite;
-}
-
-.skeleton-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px;
-}
-
-.info-stack {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-}
-
-.action-area {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sk-bar {
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 4px;
-}
-
-.name-bar { height: 16px; }
-.meta-bar { height: 12px; }
-
-.sk-box {
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 12px;
-}
-
-.stat-pod { width: 40px; height: 40px; }
-
-.sk-circle {
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 50%;
-}
-
-.chevron { width: 18px; height: 18px; }
-
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
-}
+/* All styles are now in style.css to share with index.html */
+/* We only keep vue-specific overrides if absolutely necessary, but here we want exact parity */
 </style>
