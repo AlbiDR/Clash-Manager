@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { ref, shallowRef, readonly, watch, triggerRef } from 'vue'
-import { loadCache, fetchRemote } from '../api/gasClient'
+import { loadCache, fetchRemote, inflatePayload } from '../api/gasClient'
 import type { WebAppData } from '../types'
 import { useBadge } from './useBadge'
 import { useModules } from './useModules'
@@ -30,8 +30,14 @@ export function useClanData() {
             return
         }
         
-        // ⚡ PERFORMANCE: Yield to main thread to allow First Paint
-        // Use requestIdleCallback if available, or a small timeout
+        // ⚡ PERFORMANCE: Parallel Execution
+        // We do NOT wait for disk read to finish before starting network request.
+        // This cuts the TTI by the time it takes to read from IDB.
+        
+        // 1. Start Network Sync (Optimistic)
+        startBackgroundSync()
+
+        // 2. Read from Disk (Immediate visual feedback)
         const yieldThread = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
 
         yieldThread(() => {
@@ -39,18 +45,19 @@ export function useClanData() {
                 const raw = localStorage.getItem(SNAPSHOT_KEY)
                 if (raw) {
                     const parsed = JSON.parse(raw)
-                    clanData.value = parsed
-                    lastSyncTime.value = parsed.timestamp || Date.now()
-                    updateBadgeCount(parsed)
-                    console.log('⚡ Instant Hydration: Success')
+                    // Only apply snapshot if we haven't already received fresh data
+                    if (!clanData.value) {
+                        clanData.value = parsed
+                        lastSyncTime.value = parsed.timestamp || Date.now()
+                        updateBadgeCount(parsed)
+                        console.log('⚡ Instant Hydration: Success')
+                    }
                 }
             } catch (e) {
                 console.warn('Hydration failed', e)
             } finally {
                 // Signal that initial data load attempt is done
                 isHydrated.value = true
-                // Continue with standard flow after hydration
-                startBackgroundSync()
             }
         })
     }
@@ -117,7 +124,24 @@ export function useClanData() {
                 return
             }
 
-            const remoteData = await fetchRemote()
+            // ⚡ DEEP NET INTEGRATION: Check for preloaded promise
+            let remoteData: WebAppData
+            
+            if ((window as any).__CM_PRELOAD__) {
+                console.log('⚡ Consuming Deep Net Preload...')
+                const preloadedEnvelope = await (window as any).__CM_PRELOAD__
+                (window as any).__CM_PRELOAD__ = null // Consume once
+                
+                if (preloadedEnvelope && preloadedEnvelope.data) {
+                    remoteData = await inflatePayload(preloadedEnvelope.data)
+                } else {
+                    // Fallback if preload failed
+                    remoteData = await fetchRemote()
+                }
+            } else {
+                remoteData = await fetchRemote()
+            }
+
             clanData.value = remoteData
             lastSyncTime.value = remoteData.timestamp
             syncStatus.value = 'success'
