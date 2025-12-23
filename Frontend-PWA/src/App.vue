@@ -65,15 +65,15 @@ const connectionState = computed(() => {
     <div class="connectivity-strip" :class="[connectionState, { 'is-standalone': isStandalone }]"></div>
     
     <!-- PWA Update Notification -->
-    <div v-if="needRefresh" class="pwa-update-toast">
+    <div v-if="needRefresh" class="pwa-update-toast" @click="updateServiceWorker()">
       <div class="update-icon-wrapper">
         <Icon name="download" size="22" />
       </div>
       <div class="update-text">New version available</div>
-      <button class="update-btn" @click="updateServiceWorker()">
+      <button class="update-btn" @click.stop="updateServiceWorker()">
         Update
       </button>
-      <button class="close-update" @click="closeUpdate()">
+      <button class="close-update" @click.stop="closeUpdate()">
         <Icon name="close" size="18" />
       </button>
     </div>
@@ -143,6 +143,13 @@ const connectionState = computed(() => {
   max-width: 94vw;
   
   animation: slide-down 0.6s var(--sys-motion-spring);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pwa-update-toast:active {
+  transform: translateX(-50%) scale(0.96);
 }
 
 .update-icon-wrapper {
