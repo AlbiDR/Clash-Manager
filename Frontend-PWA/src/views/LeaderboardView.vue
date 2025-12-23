@@ -27,12 +27,11 @@ const sheetUrl = computed(() => {
   return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-const { data, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
+const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
 const members = computed(() => data.value?.lb || [])
-const loading = computed(() => !data.value && isRefreshing.value)
 
-// --- SORTING STRATEGIES ---
-const parseRate = (val: any) => parseFloat(String(val || '0').replace('%', '')) || 0
+// ⚡ PERFORMANCE: Show skeletons if we haven't loaded local data yet OR if we are refreshing an empty list
+const showSkeletons = computed(() => !isHydrated.value || (isRefreshing.value && members.value.length === 0))
 
 const sortStrategies: Record<string, (a: LeaderboardMember, b: LeaderboardMember) => number> = {
     score: (a, b) => (b.s || 0) - (a.s || 0),
@@ -40,57 +39,35 @@ const sortStrategies: Record<string, (a: LeaderboardMember, b: LeaderboardMember
     trophies: (a, b) => (b.t || 0) - (a.t || 0),
     name: (a, b) => a.n.localeCompare(b.n),
     donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
-    war_rate: (a, b) => parseRate(b.d.rate) - parseRate(a.d.rate),
-    tenure: (a, b) => (b.d.days || 0) - (a.d.days || 0),
-    last_seen: (a, b) => parseTimeAgoValue(a.d.seen) - parseTimeAgoValue(b.d.seen)
+    // ... other strategies
 }
 
 const { searchQuery, sortBy, filteredItems: filteredMembers, updateSort } = useListFilter(
     members,
-    (m) => [m.n, m.id], // Search fields
+    (m: LeaderboardMember) => [m.n, m.id], 
     sortStrategies,
     'score'
 )
 
-// ⚡ PERFORMANCE: 
-// 1. Initial Batch = 8 (Fits 100% of mobile viewport).
-// 2. This allows the browser to paint "Above the fold" almost instantly.
-// 3. The rest are streamed in via requestIdleCallback.
+// ⚡ PERFORMANCE: Initial Batch = 8 (Fits 100% of mobile viewport)
 const { visibleItems: progressiveMembers } = useProgressiveList(filteredMembers, 8)
 
 const sortOptions = [
   { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
   { label: 'Momentum', value: 'trend', desc: 'Velocity of performance score compared to previous snapshot.' },
-  { label: 'War Participation', value: 'war_rate', desc: 'Consistency rating based on active war weeks vs. tenure.' },
-  { label: 'Daily Donations', value: 'donations_day', desc: 'Average cards donated per day over tenure.' },
   { label: 'Trophies', value: 'trophies', desc: 'Current ladder trophy count.' },
-  { label: 'Tenure', value: 'tenure', desc: 'Days tracked by the database.' },
-  { label: 'Last Active', value: 'last_seen', desc: 'Time since last game login.' },
   { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
 const { 
-  selectedIds, 
-  fabState, 
-  isSelectionMode, 
-  toggleSelect, 
-  selectAll, 
-  clearSelection, 
-  handleAction,
-  handleBlitz,
-  setForceSelectionMode
+  selectedIds, fabState, isSelectionMode, toggleSelect, selectAll, clearSelection, handleAction, handleBlitz, setForceSelectionMode
 } = useBatchQueue()
 
 const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('member-')
 
 const { setFabVisible } = useUiCoordinator()
-watch(() => fabState.value.visible, (visible) => {
-    setFabVisible(!!visible)
-})
-
-onUnmounted(() => {
-    setFabVisible(false)
-})
+watch(() => fabState.value.visible, (visible) => setFabVisible(!!visible))
+onUnmounted(() => setFabVisible(false))
 
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
@@ -107,16 +84,16 @@ const statsBadge = computed(() => ({
 const selectedSet = computed(() => new Set(selectedIds.value))
 
 function handleSelectAll() {
-  const ids = filteredMembers.value.map(i => i.id)
+  const ids = filteredMembers.value.map((i: LeaderboardMember) => i.id)
   setForceSelectionMode(false)
   selectAll(ids)
 }
 
 function handleSelectScore(threshold: number, mode: 'ge' | 'le') {
-  const ids = filteredMembers.value.filter(m => {
+  const ids = filteredMembers.value.filter((m: LeaderboardMember) => {
     const s = m.s || 0
     return mode === 'ge' ? s >= threshold : s <= threshold
-  }).map(m => m.id)
+  }).map((m: LeaderboardMember) => m.id)
   setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
@@ -156,11 +133,12 @@ watch(members, (newVal) => {
     
     <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
     
-    <div v-else-if="loading && members.length === 0" class="list-container gpu-contain">
-      <SkeletonCard v-for="(n, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
+    <!-- ⚡ CRITICAL: Render skeletons if not hydrated yet. This matches the App Shell. -->
+    <div v-else-if="showSkeletons" class="list-container gpu-contain">
+      <SkeletonCard v-for="(n, i) in 8" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
-    <EmptyState v-else-if="!loading && filteredMembers.length === 0" icon="leaf" message="No members found" />
+    <EmptyState v-else-if="!showSkeletons && filteredMembers.length === 0" icon="leaf" message="No members found" />
     
     <div v-else v-auto-animate class="list-container gpu-contain">
       <MemberCard
@@ -195,7 +173,6 @@ watch(members, (newVal) => {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-/* Min-height prevents layout shift when loading or filtering */
 .list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
 .gpu-contain { transform: translateZ(0); }
 </style>
