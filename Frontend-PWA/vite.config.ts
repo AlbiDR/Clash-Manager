@@ -17,16 +17,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    cssCodeSplit: false, // ⚡ Lighthouse: Merge all CSS into a single file
+    cssCodeSplit: true, // ⚡ Enabled splitting to prevent blocking render with unused CSS
     rollupOptions: {
       output: {
-        // ⚡ Lighthouse: Disable JS Code Splitting
-        // This forces all source modules (including lazy routes) into a single bundle
-        // to minimize network round-trips on mobile.
-        inlineDynamicImports: true, 
-        entryFileNames: 'assets/index.js',
-        assetFileNames: 'assets/index.[ext]',
-        // manualChunks is incompatible with inlineDynamicImports and is removed
+        // ⚡ Code Splitting Enabled: Allows lazy-loaded routes to be fetched on demand
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', '@formkit/auto-animate'],
+          // Zod is heavy, keep it separate so it doesn't block LCP
+          'validation': ['zod'] 
+        }
       }
     }
   },
