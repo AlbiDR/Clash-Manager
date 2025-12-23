@@ -9,6 +9,8 @@ import { generateMockData } from '../utils/mockData'
 
 // Global State
 const clanData = shallowRef<WebAppData | null>(null)
+// Initialize as hydrated=false to force Skeletons on first paint
+const isHydrated = ref(false) 
 const isRefreshing = ref(false)
 const lastSyncTime = ref<number | null>(null)
 const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
@@ -23,32 +25,40 @@ const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 export function useClanData() {
 
     function hydrateFromSnapshot() {
-        if (clanData.value || isDemoMode.value) return
+        if (clanData.value || isDemoMode.value) {
+            isHydrated.value = true
+            return
+        }
         
-        // ⚡ PERFORMANCE: Non-blocking parse
-        // We wrap the heavy JSON.parse in a Promise to allow the event loop to breathe
-        return new Promise<void>((resolve) => {
+        try {
             const raw = localStorage.getItem(SNAPSHOT_KEY)
             if (raw) {
-                // Try to parse. If it blocks for 50ms, so be it, but we are inside a deferred callback now.
-                try {
-                    const parsed = JSON.parse(raw)
-                    clanData.value = parsed
-                    lastSyncTime.value = parsed.timestamp || Date.now()
-                    updateBadgeCount(parsed)
-                    console.log('⚡ Hydration: Loaded from Snapshot')
-                } catch (e) {
-                    console.warn('Hydration JSON Corrupt', e)
-                }
+                const parsed = JSON.parse(raw)
+                clanData.value = parsed
+                lastSyncTime.value = parsed.timestamp || Date.now()
+                updateBadgeCount(parsed)
+                console.log('⚡ Instant Hydration: Success')
             }
-            resolve()
-        })
+        } catch (e) {
+            console.warn('Hydration failed', e)
+        } finally {
+            // CRITICAL: Signal that initial data load attempt is done
+            isHydrated.value = true
+        }
     }
 
     async function init() {
-        // 1. Instant Hydration attempt (LCP reduction)
-        await hydrateFromSnapshot()
+        // ⚡ PERFORMANCE: Delay hydration by a tick to allow Vue to paint the Skeletons first.
+        // If we run this synchronously, the heavy JSON.parse blocks the first paint of the component.
+        setTimeout(() => {
+            hydrateFromSnapshot()
+            
+            // Continue with standard flow
+            startBackgroundSync()
+        }, 0)
+    }
 
+    async function startBackgroundSync() {
         if (isDemoMode.value) {
             console.log('🌟 Demo Mode Active')
             const mock = generateMockData()
@@ -58,12 +68,11 @@ export function useClanData() {
             return
         }
 
-        // 2. Fast DB Path (SWR) - Only if snapshot missed or DB is newer
-        // This is async and won't block render
+        // Fast DB Path (SWR)
         try {
             const cached = await loadCache()
             if (cached) {
-                if (!clanData.value || cached.timestamp > (clanData.value.timestamp || 0)) {
+                if (!clanData.value || cached.timestamp > (clanData.value?.timestamp || 0)) {
                     clanData.value = cached
                     lastSyncTime.value = cached.timestamp
                     updateBadgeCount(cached)
@@ -73,11 +82,8 @@ export function useClanData() {
             console.warn("DB Load Failed", e)
         }
 
-        // 3. Background Sync (Network)
-        // Delay this slightly to prioritize interactivity
-        setTimeout(() => {
-            refresh()
-        }, 1000)
+        // Network Sync
+        refresh()
     }
 
     function updateBadgeCount(data: WebAppData) {
@@ -115,7 +121,6 @@ export function useClanData() {
             syncStatus.value = 'success'
 
             // Save to snapshot for next cold start LCP
-            // Use requestIdleCallback to save stringified data to prevent frame drops during scroll
             const saveTask = (window as any).requestIdleCallback || setTimeout;
             saveTask(() => {
                 localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData))
@@ -159,6 +164,7 @@ export function useClanData() {
 
     return {
         data: readonly(clanData),
+        isHydrated: readonly(isHydrated),
         isRefreshing: readonly(isRefreshing),
         syncStatus: readonly(syncStatus),
         syncError: readonly(syncError),
