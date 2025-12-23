@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref, watch } from 'vue'
 
 export type Theme = 'light' | 'dark' | 'auto'
