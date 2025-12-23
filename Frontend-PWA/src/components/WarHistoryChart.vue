@@ -84,7 +84,7 @@ const chartData = computed(() => {
       class="war-chart"
       :style="{ '--bar-count': chartData.bars.length }"
     >
-      <!-- SVG Overlay for Trend Line -->
+      <!-- SVG Overlay for Trend Line ONLY -->
       <svg class="trend-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
         <path 
           v-if="chartData.path"
@@ -93,26 +93,21 @@ const chartData = computed(() => {
           class="trend-path"
           :class="chartData.isPositive ? 'positive' : 'negative'"
         />
-        
-        <!-- Last Actual Anchor Dot -->
-        <circle 
-          v-if="chartData.lastPoint"
-          :cx="chartData.lastPoint.x" :cy="chartData.lastPoint.y" 
-          r="1.5" 
-          class="trend-dot-anchor"
-          vector-effect="non-scaling-stroke"
-        />
-        
-        <!-- Projection Dot -->
-        <circle 
-          v-if="chartData.projPoint"
-          :cx="chartData.projPoint.x" :cy="chartData.projPoint.y" 
-          r="2.5" 
-          class="trend-dot"
-          :class="chartData.isPositive ? 'positive' : 'negative'"
-          vector-effect="non-scaling-stroke"
-        />
       </svg>
+
+      <!-- HTML Overlays for Dots (Fixes Aspect Ratio Distortion) -->
+      <div 
+        v-if="chartData.lastPoint"
+        class="chart-dot anchor"
+        :style="{ left: `${chartData.lastPoint.x}%`, top: `${chartData.lastPoint.y}%` }"
+      ></div>
+
+      <div 
+        v-if="chartData.projPoint"
+        class="chart-dot projected"
+        :class="chartData.isPositive ? 'positive' : 'negative'"
+        :style="{ left: `${chartData.projPoint.x}%`, top: `${chartData.projPoint.y}%` }"
+      ></div>
 
       <!-- Bars -->
       <div 
@@ -177,7 +172,7 @@ const chartData = computed(() => {
   overflow: visible;
 }
 
-/* === TREND LINE & DOTS === */
+/* === TREND LINE === */
 
 .trend-path {
   fill: none;
@@ -202,28 +197,40 @@ const chartData = computed(() => {
   animation: dash-move 2s linear infinite;
 }
 
-.trend-dot {
-  stroke: var(--sys-color-surface-container);
-  stroke-width: 1px;
+@keyframes dash-move {
+  to { stroke-dashoffset: -12; }
 }
 
-.trend-dot.positive {
-  fill: #4ade80;
+/* === DOTS (HTML) === */
+
+.chart-dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 25; /* Above line (20), Below hovered bar (30) */
+}
+
+.chart-dot.anchor {
+  width: 4px; height: 4px;
+  background: var(--sys-color-outline);
+  opacity: 0.6;
+}
+
+.chart-dot.projected {
+  width: 6px; height: 6px;
+  border: 1px solid var(--sys-color-surface-container);
+  transition: background-color 0.3s;
+}
+
+.chart-dot.projected.positive {
+  background: #4ade80;
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 
-.trend-dot.negative {
-  fill: #f87171;
+.chart-dot.projected.negative {
+  background: #f87171;
   box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
-}
-
-.trend-dot-anchor {
-  fill: var(--sys-color-outline);
-  opacity: 0.5;
-}
-
-@keyframes dash-move {
-  to { stroke-dashoffset: -12; }
 }
 
 /* === BARS === */
