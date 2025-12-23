@@ -66,15 +66,15 @@ const connectionState = computed(() => {
     
     <!-- PWA Update Notification -->
     <div v-if="needRefresh" class="pwa-update-toast">
-      <div class="update-content">
-        <Icon name="download" size="20" />
-        <span>New version available</span>
+      <div class="update-icon-wrapper">
+        <Icon name="download" size="22" />
       </div>
+      <div class="update-text">New version available</div>
       <button class="update-btn" @click="updateServiceWorker()">
-        Refresh
+        Update
       </button>
       <button class="close-update" @click="closeUpdate()">
-        <Icon name="close" size="16" />
+        <Icon name="close" size="18" />
       </button>
     </div>
 
@@ -120,40 +120,100 @@ const connectionState = computed(() => {
 
 /* PWA Update Toast */
 .pwa-update-toast {
-  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-  border: 1px solid var(--sys-color-outline-variant);
-  padding: 8px 12px;
-  border-radius: 99px;
+  position: fixed; 
+  top: 16px; 
+  left: 50%; 
+  transform: translateX(-50%);
   z-index: 4000;
-  display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  animation: slide-down 0.4s var(--sys-motion-spring);
+  
+  /* Match Toast.vue .undo style exactly */
+  background: var(--sys-color-inverse-surface);
+  color: var(--sys-color-inverse-on-surface);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 99px;
+  padding: 12px 20px;
+  
+  display: flex; 
+  align-items: center; 
+  gap: 12px;
+  
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  
+  min-width: min(340px, 92vw);
+  max-width: 94vw;
+  
+  animation: slide-down 0.6s var(--sys-motion-spring);
 }
 
-.update-content {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 600;
+.update-icon-wrapper {
+  color: var(--sys-color-inverse-primary);
+  display: flex;
+  align-items: center;
+}
+
+.update-text {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .update-btn {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none; padding: 6px 12px;
+  background: var(--sys-color-inverse-primary);
+  color: var(--sys-color-inverse-surface);
+  border: none; 
+  padding: 8px 16px;
   border-radius: 99px;
-  font-size: 12px; font-weight: 700;
+  font-size: 12px; 
+  font-weight: 800;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.update-btn:active { 
+  transform: scale(0.95); 
+  filter: brightness(0.9);
 }
 
 .close-update {
-  background: none; border: none; padding: 4px;
-  cursor: pointer; opacity: 0.6;
-  display: flex; align-items: center;
+  background: rgba(255,255,255,0.1);
+  border: none; 
+  padding: 6px;
+  border-radius: 50%;
+  cursor: pointer; 
+  color: inherit;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  margin-left: -4px;
+  margin-right: -8px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.close-update:active { background: rgba(255,255,255,0.2); }
+
+@keyframes slide-down { 
+  from { transform: translate(-50%, -150%); opacity: 0; } 
+  to { transform: translate(-50%, 0); opacity: 1; } 
 }
 
-@keyframes slide-down { from { transform: translate(-50%, -20px); opacity: 0; } }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Mobile Tweaks */
+@media (max-width: 400px) {
+  .pwa-update-toast {
+    padding: 10px 16px;
+    gap: 8px;
+  }
+  .update-text { font-size: 13px; }
+  .update-btn { padding: 6px 12px; font-size: 11px; }
+  .close-update { padding: 4px; }
+}
 
 /* Page Transition */
 .fade-enter-active,
