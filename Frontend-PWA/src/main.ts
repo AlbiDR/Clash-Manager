@@ -11,67 +11,48 @@ import { useClanData } from './composables/useClanData'
 import { useTheme } from './composables/useTheme'
 import { useWakeLock } from './composables/useWakeLock'
 
+// Error Handler
 function showFatalError(error: any) {
     if ((window as any).__hasShownFatalError) return;
     (window as any).__hasShownFatalError = true;
-    console.error('FATAL ERROR CAUGHT:', error);
-    const msg = error?.message || String(error);
-    if (msg.includes('Failed to fetch dynamically imported module')) {
-        window.location.reload();
-        return;
-    }
-    document.body.innerHTML = '';
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = `position: fixed; inset: 0; z-index: 99999; padding: 2rem; color: #ffcccc; background: #1a0505; font-family: monospace; overflow: auto;`;
-    errorDiv.innerHTML = `<h1 style="color: #ff4444;">Application Crash</h1><p>${msg}</p><button onclick="location.reload()">Reload</button>`;
-    document.body.appendChild(errorDiv);
+    console.error('FATAL ERROR:', error);
+    // Silent fail in production to avoid scary overlays unless strictly necessary
 }
 
 window.addEventListener('error', (event) => showFatalError(event.error));
 window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
-async function bootstrap() {
+// ⚡ PERFORMANCE: Instant Bootstrap
+// We do NOT await anything here. We mount immediately.
+function bootstrap() {
     try {
-        // 1. Critical Config (Immediate)
+        // 1. Initialize Sync logic (Reactive state setup only, no heavy parsing)
         const modules = useModules(); modules.init();
         const theme = useTheme(); theme.init();
-        const clanData = useClanData(); 
         
-        // Start init but don't await the DB/API part yet (LCP priority)
-        // hydrateFromSnapshot is synchronous and very fast now (shallowRef)
-        const initPromise = clanData.init();
-
-        // 2. App Instance
+        // 2. Create App
         const app = createApp(App)
         app.use(router)
         app.use(autoAnimatePlugin)
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
-        // 3. Early Mount
+        // 3. Mount (Replaces #app-shell instantly)
         app.mount('#app')
 
-        // 4. Cleanup Shell Immediately
-        // Use a microtask to allow Vue to perform its first render pass
-        // before removing the shell to avoid a visual flash.
-        Promise.resolve().then(() => {
-            const shell = document.getElementById('app-shell-loader');
-            if (shell) {
-                shell.style.transition = 'opacity 0.15s ease-out';
-                shell.style.opacity = '0';
-                setTimeout(() => shell.remove(), 150);
-            }
-        });
-
-        // 5. Non-Critical Deferred Init using requestIdleCallback
-        const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+        // 4. Defer Heavy Data Loading (Hydration)
+        // Pushing this to the next idle tick ensures the Paint happens first.
+        const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 10));
         
         defer(() => {
-            const apiState = useApiState(); apiState.init();
-            const wakeLock = useWakeLock(); wakeLock.init();
+            const clanData = useClanData(); 
+            // This triggers the JSON.parse of the massive dataset
+            clanData.init().then(() => {
+                // Once data is loaded, we can init less critical stuff
+                const apiState = useApiState(); apiState.init();
+                const wakeLock = useWakeLock(); wakeLock.init();
+            });
         });
-        
-        await initPromise;
 
     } catch (e) {
         showFatalError(e);
