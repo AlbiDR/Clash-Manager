@@ -37,9 +37,9 @@ export function parseHistoryString(historyStr: string | undefined): HistoryEntry
       const weekMatch = (weekStr || '').match(/^(\d{2})W(\d{2})$/)
       const readableWeek = weekMatch 
         ? `Week ${parseInt(weekMatch[2], 10)}` 
-        : weekStr
+        : weekStr || '?'
         
-      return { fame, weekId: weekStr, readableWeek }
+      return { fame, weekId: weekStr || '', readableWeek }
     })
 }
 
@@ -58,12 +58,14 @@ export function calculatePrediction(fameHistory: number[]): number {
   let projection = 0
   
   for (let i = 0; i < ratios.length; i++) {
+    // Safety check for sparse arrays
     if (fameHistory[i] !== undefined) {
       projection += fameHistory[i] * ratios[i]
     }
   }
 
   // 2. Streak Bonus (Form Modifier)
+  // Must have 3+ weeks of data and all 3 most recent must be wins
   if (n >= 3) {
     if (
       fameHistory[0] > WAR_CONSTANTS.WIN_THRESHOLD && 
