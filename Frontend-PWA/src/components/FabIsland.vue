@@ -1,3 +1,4 @@
+
 <script lang="ts">
 export default {
   name: 'FabIsland'
@@ -39,7 +40,7 @@ const emit = defineEmits<{
       
       <!-- State: BLASTING (With Controls) -->
       <div v-if="isBlasting" class="blasting-controls">
-        <button class="fab-btn danger compact" @click="emit('dismiss')">
+        <button class="fab-btn danger compact" @click="emit('dismiss')" aria-label="Cancel Blitz">
           <Icon name="close" size="18" />
         </button>
 
@@ -48,17 +49,17 @@ const emit = defineEmits<{
           <span class="blast-label">{{ label }}</span>
         </div>
 
-        <a v-if="actionHref" :href="actionHref" class="fab-btn primary compact" @click="(e) => emit('action', e)">
+        <a v-if="actionHref" :href="actionHref" class="fab-btn primary compact" @click="(e) => emit('action', e)" aria-label="Open Next Profile">
           <Icon name="chevron_right" size="20" />
         </a>
-        <button v-else class="fab-btn primary compact" @click="(e) => emit('action', e)">
+        <button v-else class="fab-btn primary compact" @click="(e) => emit('action', e)" aria-label="Next">
           <Icon name="chevron_right" size="20" />
         </button>
       </div>
 
       <!-- State: NORMAL -->
       <template v-else>
-        <button class="fab-btn danger" @click="emit('dismiss')">
+        <button class="fab-btn danger" @click="emit('dismiss')" aria-label="Dismiss Selection">
           <Icon name="close" size="18" />
           <span v-if="!selectionCount">{{ dismissLabel || 'Dismiss' }}</span>
         </button>
@@ -68,6 +69,7 @@ const emit = defineEmits<{
           class="fab-btn blitz"
           @click="emit('blitz')"
           v-tooltip="'Requires Pop-ups permission'"
+          aria-label="Start Blitz Mode"
         >
           <Icon name="lightning" size="18" />
           <span>Blitz</span>
