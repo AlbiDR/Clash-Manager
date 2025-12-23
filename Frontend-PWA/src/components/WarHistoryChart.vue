@@ -1,7 +1,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { generateSmoothPath, type Point } from '../utils/bezier'
+import { generateLinearTrend, type Point } from '../utils/bezier'
 import { calculatePrediction, parseHistoryString, WAR_CONSTANTS } from '../utils/warMath'
 
 const props = defineProps<{
@@ -60,17 +60,20 @@ const chartData = computed(() => {
     y: (1 - Math.min(1, bar.fame / WAR_CONSTANTS.MAX_FAME)) * 100 // Invert Y for SVG
   }))
 
-  const path = generateSmoothPath(curvePoints)
+  // Generate Linear Trend Line (Best Fit)
+  const trend = generateLinearTrend(curvePoints)
   
-  // Identify key points for dots
+  // Identify key points for dots (These stay on the bars, not the line)
   const projPoint = curvePoints[curvePoints.length - 1]
   const lastPoint = curvePoints.length > 1 ? curvePoints[curvePoints.length - 2] : null
   
-  // Trend Logic: Is projection >= last actual?
-  const lastActualFame = processedData[0].fame
-  const isPositive = nextFame >= lastActualFame
-
-  return { bars, path, projPoint, lastPoint, isPositive }
+  return { 
+    bars, 
+    path: trend.path, 
+    projPoint, 
+    lastPoint, 
+    isPositive: trend.isPositive 
+  }
 })
 </script>
 
