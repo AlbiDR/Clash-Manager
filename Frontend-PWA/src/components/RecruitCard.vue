@@ -149,7 +149,7 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
 .stats-row { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 12px; }
 .stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 8px; transition: background 0.2s; }
 .stat-cell.border-l { border-left: 1px solid rgba(0,0,0,0.05); }
-.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-outline); font-weight: 800; margin-bottom: 2px; }
+.sc-label { font-size: 10px; text-transform: uppercase; color: var(--sys-color-secondary); font-weight: 800; margin-bottom: 2px; }
 .sc-val { font-size: 14px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); }
 .actions-toolbar { display: flex; gap: 8px; margin-top: 8px; }
 .btn-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
