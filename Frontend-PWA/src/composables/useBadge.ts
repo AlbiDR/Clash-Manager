@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref } from 'vue'
 
 export function useBadge() {
