@@ -54,18 +54,19 @@ const chartData = computed(() => {
 
   // 4. Geometry
   const totalSlots = bars.length
+  // Map bars to X,Y coordinates (0-100 scale for SVG viewBox)
   const curvePoints: Point[] = bars.map((bar, i) => ({
     x: ((i + 0.5) / totalSlots) * 100,
-    y: (1 - Math.min(1, bar.fame / WAR_CONSTANTS.MAX_FAME)) * 100
+    y: (1 - Math.min(1, bar.fame / WAR_CONSTANTS.MAX_FAME)) * 100 // Invert Y for SVG
   }))
 
   const path = generateSmoothPath(curvePoints)
   
-  // Points of interest
+  // Identify key points for dots
   const projPoint = curvePoints[curvePoints.length - 1]
   const lastPoint = curvePoints.length > 1 ? curvePoints[curvePoints.length - 2] : null
   
-  // Trend Logic: Projection vs Last Actual
+  // Trend Logic: Is projection >= last actual?
   const lastActualFame = processedData[0].fame
   const isPositive = nextFame >= lastActualFame
 
@@ -145,6 +146,7 @@ const chartData = computed(() => {
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--sys-color-primary-rgb), 0.3) transparent;
   padding-top: 10px;
+  position: relative; /* Ensure stacking context */
 }
 
 /* Custom Scrollbar for Desktop */
@@ -159,6 +161,7 @@ const chartData = computed(() => {
   min-width: 100%;
   gap: 2px;
   position: relative;
+  z-index: 1;
 }
 
 .trend-overlay {
