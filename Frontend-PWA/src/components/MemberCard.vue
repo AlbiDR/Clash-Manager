@@ -187,8 +187,8 @@ const trend = computed(() => {
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 .player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
-/* Improved Trophy Contrast (Gold -> Amber-700 equivalent for light mode) */
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #b45309; margin-top: 2px; width: fit-content; }
+/* Improved Trophy Contrast: Darker Gold for Light Mode accessibility (4.5:1+) */
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #854d0e; margin-top: 2px; width: fit-content; }
 :root.dark .trophy-meta { color: #fbbf24; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 .header-actions { display: flex; align-items: center; gap: 4px; }
@@ -208,7 +208,8 @@ const trend = computed(() => {
 @keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
-.stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; opacity: 0.5; }
+/* Replaced opacity: 0.5 with explicit secondary color for contrast compliance */
+.stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--sys-color-secondary); }
 .stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
 .actions { display: flex; gap: 8px; margin-top: 16px; }
 .btn-action { flex: 1; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
