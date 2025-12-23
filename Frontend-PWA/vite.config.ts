@@ -10,6 +10,24 @@ export default defineConfig({
   define: {
     '__APP_VERSION__': JSON.stringify(packageJson.version)
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Group core Vue dependencies into a single vendor chunk
+            if (id.includes('vue') || id.includes('vue-router') || id.includes('@vue')) {
+              return 'vendor-core';
+            }
+            // Keep other node_modules in a general vendor chunk or separate if large
+            return 'vendor-libs';
+          }
+        }
+      }
+    }
+  },
   plugins: [
     vue() as any,
     tailwindcss() as any,
@@ -173,10 +191,6 @@ export default defineConfig({
     }) as any
   ],
   base: '/Clash-Manager/',
-  build: {
-    outDir: 'dist',
-    sourcemap: false
-  },
   test: {
     environment: 'jsdom',
     globals: true,
