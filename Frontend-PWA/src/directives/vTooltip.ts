@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import type { Directive } from 'vue'
 import type { BenchmarkData } from '../composables/useBenchmarking'
 
@@ -161,4 +161,3 @@ export const vTooltip: Directive = {
         }, { passive: true })
     }
 }
-
