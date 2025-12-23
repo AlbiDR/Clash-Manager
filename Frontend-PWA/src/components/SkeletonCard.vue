@@ -46,8 +46,11 @@ const metaWidth = computed(() => {
   overflow: hidden;
   position: relative;
   
-  /* 🔋 PERFORMANCE: Layout, paint and size is fixed */
+  /* 🔋 PERFORMANCE: Strict containment */
   contain: strict;
+  /* 🛡️ CLS FIX: Prevent crushing in flex containers */
+  flex-shrink: 0; 
+  width: 100%;
 }
 
 /* Shimmer Effect */
