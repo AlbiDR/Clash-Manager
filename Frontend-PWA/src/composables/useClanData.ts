@@ -129,7 +129,8 @@ export function useClanData() {
             
             if ((window as any).__CM_PRELOAD__) {
                 console.log('⚡ Consuming Deep Net Preload...')
-                const preloadedEnvelope = await (window as any).__CM_PRELOAD__
+                // Added semicolon to prevent ASI failure with next line starting with (
+                const preloadedEnvelope = await (window as any).__CM_PRELOAD__;
                 (window as any).__CM_PRELOAD__ = null // Consume once
                 
                 if (preloadedEnvelope && preloadedEnvelope.data) {
