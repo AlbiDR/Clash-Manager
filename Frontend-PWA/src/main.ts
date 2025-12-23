@@ -38,6 +38,7 @@ async function bootstrap() {
         const clanData = useClanData(); 
         
         // Start init but don't await the DB/API part yet (LCP priority)
+        // hydrateFromSnapshot is synchronous and very fast now (shallowRef)
         const initPromise = clanData.init();
 
         // 2. App Instance
@@ -50,16 +51,25 @@ async function bootstrap() {
         // 3. Early Mount
         app.mount('#app')
 
-        // 4. Cleanup Shell
-        const shell = document.getElementById('app-shell-loader');
-        if (shell) {
-            shell.style.opacity = '0';
-            setTimeout(() => shell.remove(), 200);
-        }
+        // 4. Cleanup Shell Immediately
+        // Use a microtask to allow Vue to perform its first render pass
+        // before removing the shell to avoid a visual flash.
+        Promise.resolve().then(() => {
+            const shell = document.getElementById('app-shell-loader');
+            if (shell) {
+                shell.style.transition = 'opacity 0.15s ease-out';
+                shell.style.opacity = '0';
+                setTimeout(() => shell.remove(), 150);
+            }
+        });
 
-        // 5. Non-Critical Deferred Init
-        const apiState = useApiState(); apiState.init();
-        const wakeLock = useWakeLock(); wakeLock.init();
+        // 5. Non-Critical Deferred Init using requestIdleCallback
+        const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+        
+        defer(() => {
+            const apiState = useApiState(); apiState.init();
+            const wakeLock = useWakeLock(); wakeLock.init();
+        });
         
         await initPromise;
 
