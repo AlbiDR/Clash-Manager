@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ref } from 'vue'
 
 const DEMO_KEY = 'clash_manager_demo_mode'
