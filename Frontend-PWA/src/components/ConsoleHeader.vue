@@ -55,7 +55,14 @@ const activeSortDescription = computed(() => {
       
       <div class="header-row top">
         <div class="left-cluster">
-            <a v-if="sheetUrl" :href="sheetUrl" target="_blank" class="icon-button" title="Open in Sheets">
+            <a 
+              v-if="sheetUrl" 
+              :href="sheetUrl" 
+              target="_blank" 
+              class="icon-button" 
+              title="Open in Sheets"
+              aria-label="Open Google Sheet"
+            >
                <Icon name="spreadsheet" size="18" />
             </a>
             <h1 class="view-title">{{ title }}</h1>
@@ -81,13 +88,20 @@ const activeSortDescription = computed(() => {
             placeholder="Search..." 
             autocomplete="off" 
             @input="handleInput"
+            aria-label="Search items"
           >
         </div>
         
         <div class="sort-group">
           <div class="sort-container">
             <Icon name="filter" size="16" class="sort-icon" />
-            <select v-model="sortValue" class="glass-select" :class="{ 'has-info': !!activeSortDescription }" @change="emit('update:sort', sortValue)">
+            <select 
+              v-model="sortValue" 
+              class="glass-select" 
+              :class="{ 'has-info': !!activeSortDescription }" 
+              @change="emit('update:sort', sortValue)"
+              aria-label="Sort by"
+            >
               <template v-if="sortOptions">
                 <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </template>
