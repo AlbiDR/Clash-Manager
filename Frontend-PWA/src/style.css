@@ -1,8 +1,7 @@
-/* ... (keeping existing imports and reset) ... */
 @import "tailwindcss";
 
 /* ============================================================================
-   CLASH MANAGER - Neo-Material Design System (Consolidated v6.6)
+   CLASH MANAGER - Neo-Material Design System (Consolidated v6.7)
    ============================================================================ */
 
 :root {
@@ -56,6 +55,9 @@
   --shape-corner-l: 24px;
   --shape-corner-full: 9999px;
   --sys-elevation-3: 0 16px 48px rgba(0,0,0,0.18);
+  
+  /* SHARED SKELETON VARS (Synced with index.html) */
+  --sh-bg: #fdfcff; --sh-surf: #f3edf7; --sh-text: #1a1c1e; --sh-sk: #e6e0e9;
 }
 
 /* Dark Theme Overrides - Applied via JS class */
@@ -95,6 +97,8 @@
   --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
   --sys-color-outline: #8d9199;
   --sys-color-outline-variant: #44474f;
+  
+  --sh-bg: #0b0e14; --sh-surf: #1b1f27; --sh-text: #e1e2e8; --sh-sk: #2f343e;
 }
 
 body {
@@ -109,6 +113,39 @@ body {
   -webkit-touch-callout: none;
   transition: background-color 0.3s ease;
 }
+
+/* =========================================
+   SHARED SKELETON CLASSES (Vue + HTML Shell)
+   ========================================= */
+.sk-card {
+  height: 76px;
+  background: var(--sh-surf);
+  border-radius: 20px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(128,128,128,0.05);
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+  /* Critical for speed index: hardware accelerate these placeholders */
+  transform: translateZ(0); 
+}
+
+.sk-info { display: flex; flex-direction: column; gap: 8px; }
+.sk-line-l { width: 120px; height: 16px; background: var(--sh-sk); border-radius: 4px; }
+.sk-line-s { width: 80px; height: 12px; background: var(--sh-sk); border-radius: 4px; opacity: 0.7; }
+.sk-box { width: 48px; height: 48px; background: var(--sh-sk); border-radius: 14px; }
+
+/* Shimmer Animation */
+.skeleton-anim { animation: pulse 1.5s infinite ease-in-out; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+/* =========================================
+   UTILITIES
+   ========================================= */
 
 .squish-interaction {
   transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease;
