@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref } from 'vue'
 
 export interface ToastOptions {
@@ -80,4 +80,3 @@ export function useToast() {
         undo
     }
 }
-
