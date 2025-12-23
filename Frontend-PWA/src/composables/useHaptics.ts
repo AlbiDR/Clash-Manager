@@ -1,13 +1,27 @@
 
 export function useHaptics() {
     const isSupported = typeof navigator !== 'undefined' && 'vibrate' in navigator
+    let hasInteracted = false
+
+    // Track user interaction state to prevent browser warnings on initial load
+    if (typeof window !== 'undefined') {
+        const setInteracted = () => { 
+            hasInteracted = true
+            window.removeEventListener('click', setInteracted)
+            window.removeEventListener('touchstart', setInteracted)
+            window.removeEventListener('keydown', setInteracted)
+        }
+        window.addEventListener('click', setInteracted, { once: true, passive: true })
+        window.addEventListener('touchstart', setInteracted, { once: true, passive: true })
+        window.addEventListener('keydown', setInteracted, { once: true, passive: true })
+    }
 
     const vibrate = (pattern: number | number[]) => {
-        if (isSupported) {
+        if (isSupported && hasInteracted) {
             try {
                 navigator.vibrate(pattern)
             } catch (e) {
-                console.warn('Haptic feedback not supported or failed', e)
+                // Ignore failures (feature policy or device limitations)
             }
         }
     }
