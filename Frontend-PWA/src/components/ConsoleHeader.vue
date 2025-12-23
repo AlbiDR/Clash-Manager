@@ -131,7 +131,6 @@ const activeSortDescription = computed(() => {
   z-index: 100;
   padding: 12px 0;
   padding-top: calc(12px + env(safe-area-inset-top));
-  /* Optimization: Removed padding transition to prevent layout thrashing */
 }
 .header-wrapper.is-scrolled { 
   padding: 4px 0; 
@@ -181,8 +180,7 @@ const activeSortDescription = computed(() => {
   font-weight: 900;
   color: var(--sys-color-on-surface);
   letter-spacing: -0.03em;
-  /* Font size transition is acceptable as it's less jarring than padding, but can be removed for strict performance */
-  transition: font-size 0.3s var(--sys-motion-spring);
+  /* ⚡ PERF: Removed layout-triggering transition on font-size */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
