@@ -1,4 +1,3 @@
-
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Icon from '../Icon.vue'
@@ -20,7 +19,8 @@ describe('Icon.vue', () => {
         // Assuming Icon uses a class or data attribute based on name, or imports svg.
         // If it's a dynamic component or simpler setup, we might check props.
         // For now, minimal check.
-        expect(wrapper.props().name).toBe('gear')
-        expect(wrapper.props().size).toBe('24')
+        const props = wrapper.props() as any
+        expect(props.name).toBe('gear')
+        expect(props.size).toBe('24')
     })
 })
