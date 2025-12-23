@@ -48,109 +48,182 @@
   <link rel="shortcut icon" href="/Clash-Manager/favicon.png" />
   <link rel="apple-touch-icon" href="/Clash-Manager/apple-touch-icon.png" />
 
-  <!-- Resource Hints -->
+  <!-- Resource Hints (Optimized for LCP) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- ⚡ PRECONNECT TO DATA SOURCE: Eliminates 300ms SSL/DNS latency -->
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
   <link rel="dns-prefetch" href="https://script.google.com" />
 
   <!-- Fonts: Async Load to eliminate Render Blocking -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet" />
   </noscript>
 
   <title>Clash Manager: Clan Manager for Clash Royale</title>
 
-  <!-- CRITICAL CSS: Inlined to render App Shell immediately before JS loads -->
+  <!-- CRITICAL CSS: High-Fidelity App Shell for Instant LCP -->
   <style>
-    /* 🎨 NATIVE FEEL: Lock overscroll to prevent rubber-banding of the browser window */
-    body {
-      background-color: #fdfcff;
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      overscroll-behavior-y: none;
+    /* 🎨 SHELL VARIABLES: Matches style.css */
+    :root {
+      --sh-bg: #fdfcff;
+      --sh-glass: rgba(255, 255, 255, 0.9);
+      --sh-border: rgba(255, 255, 255, 0.7);
+      --sh-text: #1a1c1e;
+      --sh-sk-bg: rgba(128, 128, 128, 0.05);
+      --sh-sk-box: rgba(128, 128, 128, 0.1);
     }
-
     @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #0b0e14;
+      :root {
+        --sh-bg: #0b0e14;
+        --sh-glass: rgba(20, 24, 32, 0.94);
+        --sh-border: rgba(255, 255, 255, 0.12);
+        --sh-text: #e1e2e8;
+        --sh-sk-bg: rgba(255, 255, 255, 0.03);
+        --sh-sk-box: rgba(255, 255, 255, 0.08);
       }
     }
 
-    /* App Shell Skeleton */
-    #app-shell-loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 12px 16px;
-      z-index: 9999;
-      opacity: 1;
-      transition: opacity 0.3s ease-out;
-      pointer-events: none;
+    body {
+      background-color: var(--sh-bg);
+      margin: 0;
+      font-family: 'Roboto', system-ui, sans-serif;
+      overscroll-behavior-y: none;
     }
 
-    .shell-header {
-      height: 60px;
+    #app-shell-loader {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      padding: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+
+    /* 🏗️ HEADER SHELL: Exact Match for ConsoleHeader.vue */
+    .shell-wrapper {
+      padding: 12px 16px;
+      padding-top: calc(12px + env(safe-area-inset-top));
+      margin-bottom: 8px;
+    }
+
+    .shell-glass {
+      background: var(--sh-glass);
+      border: 1px solid var(--sh-border);
+      border-radius: 24px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .shell-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 48px; /* Fixed height to prevent CLS */
+    }
+
+    .shell-left {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 24px;
-      padding-top: env(safe-area-inset-top);
     }
 
-    .shell-h-box {
-      width: 100%;
-      height: 32px;
-      background: rgba(128, 128, 128, 0.1);
-      border-radius: 12px;
+    /* 🚀 LCP ELEMENT: This text paints instantly */
+    .shell-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--sh-text);
+      letter-spacing: -0.03em;
+    }
+
+    .shell-pill {
+      width: 80px;
+      height: 24px;
+      background: var(--sh-sk-box);
+      border-radius: 99px;
+    }
+
+    /* ☠️ SKELETON LIST */
+    .shell-list {
+      padding: 0 16px;
+      max-width: 720px;
+      margin: 0 auto;
     }
 
     .shell-card {
       height: 70px;
       width: 100%;
       border-radius: 20px;
-      background: rgba(128, 128, 128, 0.05);
+      background: var(--sh-sk-bg);
       margin-bottom: 8px;
-      border: 1px solid rgba(128, 128, 128, 0.05);
+      border: 1px solid var(--sh-sk-bg);
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Simple shimmer */
-    @keyframes shimmer {
-      0% {
-        opacity: 0.5;
-      }
-
-      50% {
-        opacity: 1;
-      }
-
-      100% {
-        opacity: 0.5;
-      }
+    /* Shimmer Animation */
+    .shell-card::after {
+      content: "";
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      transform: translateX(-100%);
+      background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(128, 128, 128, 0.05) 20%,
+        rgba(128, 128, 128, 0.1) 60%,
+        rgba(255, 255, 255, 0)
+      );
+      animation: shell-shimmer 2s infinite;
     }
 
-    .shell-card {
-      animation: shimmer 2s infinite ease-in-out;
+    @keyframes shell-shimmer {
+      100% { transform: translateX(100%); }
+    }
+
+    /* Mobile Adjustment */
+    @media (max-width: 600px) {
+      .shell-glass { padding: 14px; gap: 12px; }
+      .shell-title { font-size: 20px; }
     }
   </style>
 </head>
 
 <body>
   <div id="app">
-    <!-- App Shell (Disappears once Vue mounts) -->
+    <!-- 🚀 APP SHELL (LCP OPTIMIZED) -->
     <div id="app-shell-loader">
-      <div class="shell-header">
-        <div class="shell-h-box" style="width: 140px;"></div>
-        <div class="shell-h-box" style="width: 80px; margin-left: auto;"></div>
+      <div class="shell-wrapper" style="max-width: 720px; margin: 0 auto;">
+        <div class="shell-glass">
+          <div class="shell-row">
+            <div class="shell-left">
+               <!-- LCP Text Paint -->
+               <h1 class="shell-title">Clash Manager</h1>
+            </div>
+            <div class="shell-pill"></div>
+          </div>
+          <!-- Placeholder for Search/Sort row -->
+          <div class="shell-row" style="height: 46px;">
+             <div class="shell-pill" style="width: 100%; height: 100%; border-radius: 14px;"></div>
+          </div>
+        </div>
       </div>
-      <div class="shell-card"></div>
-      <div class="shell-card"></div>
-      <div class="shell-card"></div>
-      <div class="shell-card"></div>
-      <div class="shell-card"></div>
-      <div class="shell-card"></div>
+      
+      <div class="shell-list">
+        <div class="shell-card"></div>
+        <div class="shell-card"></div>
+        <div class="shell-card"></div>
+        <div class="shell-card"></div>
+        <div class="shell-card"></div>
+        <div class="shell-card"></div>
+      </div>
     </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
