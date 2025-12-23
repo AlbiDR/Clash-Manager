@@ -5,132 +5,85 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+  <!-- 🚀 PERFORMANCE: PRECONNECT & DNS PREFETCH -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://script.google.com" />
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
+  
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://script.google.com" />
+
   <!-- PWA Meta Tags -->
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfcff" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0e14" />
-  
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Clash Manager" />
-  <meta name="format-detection" content="telephone=no" />
-  <meta name="mobile-web-app-capable" content="yes" />
-
-  <!-- iOS Splash Screens (High-quality native feel) -->
-  <link rel="apple-touch-startup-image" href="/Clash-Manager/splash.png" />
-  <link rel="apple-touch-startup-image"
-    media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    href="/Clash-Manager/splash.png" />
-  <link rel="apple-touch-startup-image"
-    media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    href="/Clash-Manager/splash.png" />
-  <link rel="apple-touch-startup-image"
-    media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    href="/Clash-Manager/splash.png" />
-  <link rel="apple-touch-startup-image"
-    media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    href="/Clash-Manager/splash.png" />
-  <link rel="apple-touch-startup-image"
-    media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
-    href="/Clash-Manager/splash.png" />
-
-  <!-- SEO Meta Tags -->
-  <meta name="description"
-    content="Clash Manager: Clan Manager for Clash Royale. A modern Progressive Web App to track leaderboards, scout recruits, and analyze war performance." />
-  <meta name="keywords" content="Clash Royale, clan manager, leaderboard, recruiter, war log, PWA" />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="Clash Manager: Clan Manager for Clash Royale" />
-  <meta property="og:description" content="Manage your Clash Royale clan with a modern Progressive Web App" />
-  <meta property="og:type" content="website" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/Clash-Manager/favicon.png" />
-  <link rel="shortcut icon" href="/Clash-Manager/favicon.png" />
   <link rel="apple-touch-icon" href="/Clash-Manager/apple-touch-icon.png" />
 
-  <!-- Resource Hints (Optimized for LCP) -->
-  <!-- ⚡ PRECONNECT TO DATA SOURCE: Eliminates 300ms SSL/DNS latency -->
-  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
-  <link rel="dns-prefetch" href="https://script.google.com" />
-  
-  <!-- ⚡ PRECONNECT TO FONTS -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Optimized Google Fonts (swap enabled) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
-  <title>Clash Manager: Clan Manager for Clash Royale</title>
+  <title>Clash Manager</title>
 
-  <!-- CRITICAL CSS: High-Fidelity App Shell for Instant LCP -->
+  <!-- 🏎️ CRITICAL CSS: Instant Paint & Zero CLS -->
   <style>
-    /* 🎨 SHELL VARIABLES: Matches style.css */
     :root {
       --sh-bg: #fdfcff;
-      --sh-glass: rgba(255, 255, 255, 0.9);
-      --sh-border: rgba(255, 255, 255, 0.7);
       --sh-text: #1a1c1e;
-      --sh-sk-bg: rgba(128, 128, 128, 0.05);
-      --sh-sk-box: rgba(128, 128, 128, 0.1);
+      --sh-sk: rgba(0, 0, 0, 0.05);
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --sh-bg: #0b0e14;
-        --sh-glass: rgba(20, 24, 32, 0.94);
-        --sh-border: rgba(255, 255, 255, 0.12);
         --sh-text: #e1e2e8;
-        --sh-sk-bg: rgba(255, 255, 255, 0.03);
-        --sh-sk-box: rgba(255, 255, 255, 0.08);
+        --sh-sk: rgba(255, 255, 255, 0.05);
       }
     }
 
     body {
       background-color: var(--sh-bg);
       margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      /* ⚡ SYSTEM FONT STACK: Prevents 5s LCP Delay while Inter loads */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overscroll-behavior-y: none;
     }
 
     #app-shell-loader {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      padding: 0;
+      inset: 0;
       z-index: 9999;
       pointer-events: none;
-      opacity: 1;
-      transition: opacity 0.3s ease-out;
-    }
-
-    /* 🏗️ HEADER SHELL: Exact Match for ConsoleHeader.vue */
-    .shell-wrapper {
       padding: 12px 16px;
       padding-top: calc(12px + env(safe-area-inset-top));
-      margin-bottom: 8px;
     }
 
-    .shell-glass {
-      background: var(--sh-glass);
-      border: 1px solid var(--sh-border);
+    .shell-header {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--sh-bg);
+      border: 1px solid var(--sh-sk);
       border-radius: 24px;
       padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }
 
     .shell-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 48px; /* Fixed height to prevent CLS */
+      height: 48px;
     }
 
-    .shell-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    /* 🚀 LCP ELEMENT: This text paints instantly */
+    /* 🎯 LCP ELEMENT: Must paint with System Fonts immediately */
     .shell-title {
       margin: 0;
       font-size: 24px;
@@ -140,82 +93,54 @@
     }
 
     .shell-pill {
-      width: 80px;
-      height: 24px;
-      background: var(--sh-sk-box);
+      width: 80px; height: 24px;
+      background: var(--sh-sk);
       border-radius: 99px;
     }
 
-    /* ☠️ SKELETON LIST */
     .shell-list {
-      padding: 0 16px;
       max-width: 720px;
-      margin: 0 auto;
+      margin: 20px auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .shell-card {
-      height: 70px;
-      width: 100%;
-      border-radius: 20px;
-      background: var(--sh-sk-bg);
-      margin-bottom: 8px;
-      border: 1px solid var(--sh-sk-bg);
+      height: 60px;
+      background: var(--sh-sk);
+      border-radius: 16px;
       position: relative;
       overflow: hidden;
     }
 
-    /* Shimmer Animation */
+    /* Minimal Shimmer */
     .shell-card::after {
       content: "";
       position: absolute;
       top: 0; right: 0; bottom: 0; left: 0;
       transform: translateX(-100%);
-      background-image: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0,
-        rgba(128, 128, 128, 0.05) 20%,
-        rgba(128, 128, 128, 0.1) 60%,
-        rgba(255, 255, 255, 0)
-      );
-      animation: shell-shimmer 2s infinite;
+      background-image: linear-gradient(90deg, transparent, rgba(128,128,128,0.03), transparent);
+      animation: sh 2s infinite;
     }
-
-    @keyframes shell-shimmer {
-      100% { transform: translateX(100%); }
-    }
-
-    /* Mobile Adjustment */
-    @media (max-width: 600px) {
-      .shell-glass { padding: 14px; gap: 12px; }
-      .shell-title { font-size: 20px; }
-    }
+    @keyframes sh { 100% { transform: translateX(100%); } }
   </style>
 </head>
 
 <body>
   <div id="app">
-    <!-- 🚀 APP SHELL (LCP OPTIMIZED) -->
+    <!-- APP SHELL -->
     <div id="app-shell-loader">
-      <div class="shell-wrapper" style="max-width: 720px; margin: 0 auto;">
-        <div class="shell-glass">
-          <div class="shell-row">
-            <div class="shell-left">
-               <!-- LCP Text Paint -->
-               <h1 class="shell-title">Clash Manager</h1>
-            </div>
-            <div class="shell-pill"></div>
-          </div>
-          <!-- Placeholder for Search/Sort row -->
-          <div class="shell-row" style="height: 46px;">
-             <div class="shell-pill" style="width: 100%; height: 100%; border-radius: 14px;"></div>
-          </div>
+      <div class="shell-header">
+        <div class="shell-row">
+          <h1 class="shell-title">Clash Manager</h1>
+          <div class="shell-pill"></div>
+        </div>
+        <div class="shell-row" style="height: 46px;">
+          <div class="shell-pill" style="width: 100%; height: 100%; border-radius: 14px;"></div>
         </div>
       </div>
-      
       <div class="shell-list">
-        <div class="shell-card"></div>
-        <div class="shell-card"></div>
-        <div class="shell-card"></div>
         <div class="shell-card"></div>
         <div class="shell-card"></div>
         <div class="shell-card"></div>
