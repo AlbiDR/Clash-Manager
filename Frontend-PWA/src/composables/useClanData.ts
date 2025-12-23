@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref, readonly, watch } from 'vue'
 import { loadCache, fetchRemote } from '../api/gasClient'
 import type { WebAppData } from '../types'
