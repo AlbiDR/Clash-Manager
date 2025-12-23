@@ -30,32 +30,34 @@ export function useClanData() {
             return
         }
         
-        try {
-            const raw = localStorage.getItem(SNAPSHOT_KEY)
-            if (raw) {
-                const parsed = JSON.parse(raw)
-                clanData.value = parsed
-                lastSyncTime.value = parsed.timestamp || Date.now()
-                updateBadgeCount(parsed)
-                console.log('⚡ Instant Hydration: Success')
+        // ⚡ PERFORMANCE: Yield to main thread to allow First Paint
+        // Use requestIdleCallback if available, or a small timeout
+        const yieldThread = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+        yieldThread(() => {
+            try {
+                const raw = localStorage.getItem(SNAPSHOT_KEY)
+                if (raw) {
+                    const parsed = JSON.parse(raw)
+                    clanData.value = parsed
+                    lastSyncTime.value = parsed.timestamp || Date.now()
+                    updateBadgeCount(parsed)
+                    console.log('⚡ Instant Hydration: Success')
+                }
+            } catch (e) {
+                console.warn('Hydration failed', e)
+            } finally {
+                // Signal that initial data load attempt is done
+                isHydrated.value = true
+                // Continue with standard flow after hydration
+                startBackgroundSync()
             }
-        } catch (e) {
-            console.warn('Hydration failed', e)
-        } finally {
-            // CRITICAL: Signal that initial data load attempt is done
-            isHydrated.value = true
-        }
+        })
     }
 
     async function init() {
-        // ⚡ PERFORMANCE: Delay hydration by a tick to allow Vue to paint the Skeletons first.
-        // If we run this synchronously, the heavy JSON.parse blocks the first paint of the component.
-        setTimeout(() => {
-            hydrateFromSnapshot()
-            
-            // Continue with standard flow
-            startBackgroundSync()
-        }, 0)
+        // Trigger hydration sequence
+        hydrateFromSnapshot()
     }
 
     async function startBackgroundSync() {
@@ -68,7 +70,7 @@ export function useClanData() {
             return
         }
 
-        // Fast DB Path (SWR)
+        // Fast DB Path (SWR) via IDB
         try {
             const cached = await loadCache()
             if (cached) {
@@ -121,6 +123,7 @@ export function useClanData() {
             syncStatus.value = 'success'
 
             // Save to snapshot for next cold start LCP
+            // Use requestIdleCallback to avoid blocking input during save
             const saveTask = (window as any).requestIdleCallback || setTimeout;
             saveTask(() => {
                 localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData))
