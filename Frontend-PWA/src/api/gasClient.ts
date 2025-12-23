@@ -14,7 +14,6 @@ import type {
     Recruit
 } from '../types'
 import { idb } from '../utils/idb'
-import { z } from 'zod'
 
 // ============================================================================
 // CONFIGURATION
@@ -25,57 +24,16 @@ const GAS_URL = localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_U
 const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' // Updated for v6 Gold Master
 
 // ============================================================================
-// SCHEMA VALIDATION (Zod)
-// ============================================================================
-
-// Leaderboard Matrix Row: [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
-const LeaderboardRowSchema = z.tuple([
-    z.string(),             // 0: id
-    z.string(),             // 1: name
-    z.number(),             // 2: trophies
-    z.number(),             // 3: performance score
-    z.string(),             // 4: role
-    z.number(),             // 5: days tracked
-    z.number(),             // 6: avg daily donations
-    z.union([z.string(), z.null()]),  // 7: last seen (can be null/empty in matrix sometimes)
-    z.union([z.string(), z.null()]),  // 8: war rate
-    z.string(),             // 9: history string
-    z.number().optional(),  // 10: delta trend (optional for backward compat)
-    z.number().optional()   // 11: raw score (optional for backward compat)
-])
-
-// Recruiter Matrix Row: [id, n, t, s, don, war, ago, cards]
-const RecruitRowSchema = z.tuple([
-    z.string(),             // 0: id
-    z.string(),             // 1: name
-    z.number(),             // 2: trophies
-    z.number(),             // 3: performance score
-    z.number(),             // 4: donations
-    z.number(),             // 5: war wins
-    z.string(),             // 6: found ago (iso date)
-    z.number().optional()   // 7: cards won (optional)
-])
-
-const PayloadSchema = z.object({
-    format: z.literal('matrix'),
-    schema: z.object({
-        lb: z.array(z.string()),
-        hh: z.array(z.string())
-    }),
-    lb: z.array(LeaderboardRowSchema),
-    hh: z.array(RecruitRowSchema),
-    timestamp: z.number()
-})
-
-// ============================================================================
 // HELPERS
 // ============================================================================
 
 /**
  * Inflates a Matrix-compressed response back into Objects.
  * Includes Zod validation to ensure data integrity.
+ * 
+ * ⚡ OPTIMIZATION: Zod is loaded dynamically to save ~26KB from main bundle.
  */
-export function inflatePayload(data: any): WebAppData {
+export async function inflatePayload(data: any): Promise<WebAppData> {
     // Handle String Transport Protocol: Double-parse if data is a string
     if (typeof data === 'string') {
         try {
@@ -91,6 +49,47 @@ export function inflatePayload(data: any): WebAppData {
         console.warn('Received non-matrix data format. Skipping validation.')
         return data as WebAppData
     }
+
+    // 🛡️ DYNAMIC IMPORT: Load Zod only when we have data to validate
+    const { z } = await import('zod')
+
+    // Schema Definitions (Lazy Loaded)
+    const LeaderboardRowSchema = z.tuple([
+        z.string(),             // 0: id
+        z.string(),             // 1: name
+        z.number(),             // 2: trophies
+        z.number(),             // 3: performance score
+        z.string(),             // 4: role
+        z.number(),             // 5: days tracked
+        z.number(),             // 6: avg daily donations
+        z.union([z.string(), z.null()]),  // 7: last seen (can be null/empty in matrix sometimes)
+        z.union([z.string(), z.null()]),  // 8: war rate
+        z.string(),             // 9: history string
+        z.number().optional(),  // 10: delta trend (optional for backward compat)
+        z.number().optional()   // 11: raw score (optional for backward compat)
+    ])
+
+    const RecruitRowSchema = z.tuple([
+        z.string(),             // 0: id
+        z.string(),             // 1: name
+        z.number(),             // 2: trophies
+        z.number(),             // 3: performance score
+        z.number(),             // 4: donations
+        z.number(),             // 5: war wins
+        z.string(),             // 6: found ago (iso date)
+        z.number().optional()   // 7: cards won (optional)
+    ])
+
+    const PayloadSchema = z.object({
+        format: z.literal('matrix'),
+        schema: z.object({
+            lb: z.array(z.string()),
+            hh: z.array(z.string())
+        }),
+        lb: z.array(LeaderboardRowSchema),
+        hh: z.array(RecruitRowSchema),
+        timestamp: z.number()
+    })
 
     // 🛡️ VALIDATION STEP
     const result = PayloadSchema.safeParse(data)
@@ -240,7 +239,7 @@ export async function fetchRemote(): Promise<WebAppData> {
         throw new Error('Failed to fetch data: Invalid response structure')
     }
 
-    const inflated = inflatePayload(envelope.data)
+    const inflated = await inflatePayload(envelope.data)
 
     // Save to cache (Async)
     idb.set(CACHE_KEY_MAIN, inflated).catch(e => console.warn('Cache write failed:', e))
