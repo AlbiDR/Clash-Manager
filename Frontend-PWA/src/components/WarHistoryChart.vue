@@ -34,53 +34,51 @@ const chartData = computed(() => {
     return { fame, week: rawWeek, readableWeek }
   })
 
-  // 2. Trend & Projection (Linear Regression)
+  // 2. Trend & Projection (Weighted Moving Average)
+  // Logic: 55% Last, 30% 2nd Last, 15% 3rd Last
   let trendLine = null
   let nextFame = 0
   
-  if (rawPoints.length >= 2) {
-    const n = rawPoints.length
-    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0
-    
-    // x = index (0 to n-1), y = fame
-    rawPoints.forEach((p, i) => {
-      sumX += i
-      sumY += p.fame
-      sumXY += i * p.fame
-      sumXX += i * i
-    })
-    
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
-    const intercept = (sumY - slope * sumX) / n
-    
-    // Predict next value (at index n)
-    nextFame = Math.max(0, slope * n + intercept)
-    
-    // Calculate SVG Coordinates (Percentages)
-    // We have n points currently + 1 projection = n + 1 total slots in the visual space
-    const totalSlots = n + 1
-    const maxScale = 3200 // Consistent with bar height calc (max fame usually ~3000-3200)
-    
-    // Start of line (x=0)
-    const startY = Math.max(0, intercept)
-    
-    // End of line (x=n, the projection)
-    const endY = nextFame
+  const n = rawPoints.length
+  const maxScale = 3200 // Consistent with bar height calc
+  
+  if (n >= 1) {
+    // --- CALCULATION ---
+    if (n >= 3) {
+      const p1 = rawPoints[n - 1].fame // Newest
+      const p2 = rawPoints[n - 2].fame
+      const p3 = rawPoints[n - 3].fame
+      nextFame = (p1 * 0.55) + (p2 * 0.30) + (p3 * 0.15)
+    } else if (n === 2) {
+      // Fallback: Re-normalize 55/30 -> ~65%/35%
+      const p1 = rawPoints[n - 1].fame
+      const p2 = rawPoints[n - 2].fame
+      nextFame = (p1 * 0.65) + (p2 * 0.35)
+    } else {
+      nextFame = rawPoints[n - 1].fame
+    }
 
-    // Map to %
-    // X logic: Center of bar. Bar width is 100% / totalSlots. Center is (i + 0.5) * barWidth
+    // --- VISUALIZATION ---
+    // Connect the "Last Known" point to the "Projected" point.
+    // This visualizes the immediate "momentum" rather than a long-term regression.
+    
+    const totalSlots = n + 1
+    
+    // Helper to map index to % position
     const getX = (i: number) => `${((i + 0.5) / totalSlots) * 100}%`
     const getY = (val: number) => `${(1 - Math.min(1, val / maxScale)) * 100}%`
 
+    const lastActualIndex = n - 1
+    const projectionIndex = n
+    const startVal = rawPoints[lastActualIndex].fame
+
     trendLine = {
-      x1: getX(0),
-      y1: getY(startY),
-      x2: getX(n), // Center of projection slot
-      y2: getY(endY),
-      isPositive: slope >= 0
+      x1: getX(lastActualIndex), // Start at center of last actual bar
+      y1: getY(startVal),
+      x2: getX(projectionIndex), // End at center of projected bar
+      y2: getY(nextFame),
+      isPositive: nextFame >= startVal
     }
-  } else if (rawPoints.length === 1) {
-    nextFame = rawPoints[0].fame
   }
 
   // 3. Build Final Bars
@@ -91,11 +89,11 @@ const chartData = computed(() => {
   }))
 
   // Add Projection Bar
-  if (rawPoints.length > 0) {
+  if (n > 0) {
     bars.push({
       fame: nextFame,
       isProjection: true,
-      tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:#fbbf24">Projected</span><br>${Math.round(nextFame).toLocaleString()} Fame`
+      tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:#fbbf24">Projected (WMA)</span><br>${Math.round(nextFame).toLocaleString()} Fame`
     })
   }
 
@@ -110,7 +108,6 @@ const chartData = computed(() => {
       class="war-chart"
       :style="{ '--bar-count': chartData.bars.length }"
     >
-      <!-- Trend Overlay -->
       <svg v-if="chartData.trend" class="trend-overlay" preserveAspectRatio="none">
         <line 
           :x1="chartData.trend.x1" :y1="chartData.trend.y1" 
@@ -125,9 +122,13 @@ const chartData = computed(() => {
           class="trend-dot"
           :class="{ 'positive': chartData.trend.isPositive }"
         />
+        <circle 
+          :cx="chartData.trend.x1" :cy="chartData.trend.y1" 
+          r="1.5" 
+          class="trend-dot-anchor"
+        />
       </svg>
 
-      <!-- Bars -->
       <div 
         v-for="(bar, i) in chartData.bars" 
         :key="i"
@@ -153,7 +154,7 @@ const chartData = computed(() => {
 <style scoped>
 .chart-container {
   width: 100%;
-  height: 48px; /* Increased slightly for overlays */
+  height: 48px;
   overflow-x: auto;
   overflow-y: hidden;
   margin: 12px 0;
@@ -162,7 +163,7 @@ const chartData = computed(() => {
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--sys-color-primary-rgb), 0.3) transparent;
-  padding-top: 10px; /* Space for trend line going high */
+  padding-top: 10px;
 }
 
 .chart-container::-webkit-scrollbar { height: 3px; }
@@ -175,7 +176,7 @@ const chartData = computed(() => {
   height: 100%;
   min-width: 100%;
   gap: 2px;
-  position: relative; /* Context for SVG */
+  position: relative;
 }
 
 .trend-overlay {
@@ -189,17 +190,23 @@ const chartData = computed(() => {
 }
 
 .trend-line {
-  stroke: #fbbf24; /* Amber for projection/insight */
+  stroke: #fbbf24;
   stroke-width: 2px;
-  stroke-dasharray: 4 2;
-  opacity: 0.8;
+  stroke-dasharray: 3 2; /* Tighter dash for momentum feel */
+  opacity: 0.9;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  transition: all 0.3s ease;
 }
 
 .trend-dot {
   fill: #fbbf24;
   stroke: var(--sys-color-surface-container);
   stroke-width: 1px;
+}
+
+.trend-dot-anchor {
+  fill: var(--sys-color-outline);
+  opacity: 0.5;
 }
 
 .bar {
@@ -228,7 +235,7 @@ const chartData = computed(() => {
     rgba(251, 191, 36, 0.15) 4px,
     rgba(251, 191, 36, 0.15) 8px
   );
-  border: 1px dashed rgba(251, 191, 36, 0.5); /* Amber border */
+  border: 1px dashed rgba(251, 191, 36, 0.5);
   opacity: 0.8;
 }
 
