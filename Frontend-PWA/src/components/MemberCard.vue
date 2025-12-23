@@ -95,7 +95,12 @@ const trend = computed(() => {
             </div>
           </div>
         </div>
-        <button class="expand-btn hit-target" @click.stop="handleExpandClick" :class="{ 'is-active': expanded }">
+        <button 
+          class="expand-btn hit-target" 
+          @click.stop="handleExpandClick" 
+          :class="{ 'is-active': expanded }"
+          aria-label="Expand details"
+        >
           <Icon name="chevron_down" size="20" />
         </button>
       </div>
@@ -143,7 +148,7 @@ const trend = computed(() => {
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 .meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
-.badge { height: 18px; width: 100%; background: var(--sys-color-surface-container-highest); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sys-color-outline); font-family: var(--sys-font-family-mono); text-transform: uppercase; }
+.badge { height: 18px; width: 100%; background: var(--sys-color-surface-container-highest); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); text-transform: uppercase; }
 .hit-target { position: relative; z-index: 5; }
 .hit-target::after { content: ''; position: absolute; inset: -4px; }
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
@@ -153,7 +158,9 @@ const trend = computed(() => {
 .role-member { background: rgba(var(--sys-color-primary-rgb), 0.12); color: var(--sys-color-outline); }
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 .player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
+/* Improved Trophy Contrast (Gold -> Amber-700 equivalent for light mode) */
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #b45309; margin-top: 2px; width: fit-content; }
+:root.dark .trophy-meta { color: #fbbf24; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 .header-actions { display: flex; align-items: center; gap: 4px; }
 .expand-btn { background: none; border: none; padding: 8px; color: var(--sys-color-outline); cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -163,8 +170,10 @@ const trend = computed(() => {
 .stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 .momentum-pill { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); height: 18px; padding: 0 6px; background: var(--sys-color-surface-container-highest); border-radius: 10px; display: flex; align-items: center; gap: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); z-index: 10; border: 1px solid var(--sys-surface-glass-border); }
-.momentum-pill.up { color: #22c55e; }
-.momentum-pill.down { color: #ef4444; }
+.momentum-pill.up { color: #166534; }
+:root.dark .momentum-pill.up { color: #22c55e; }
+.momentum-pill.down { color: #991b1b; }
+:root.dark .momentum-pill.down { color: #ef4444; }
 .trend-val { font-size: 9px; font-weight: 900; font-family: var(--sys-font-family-mono); }
 .card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); animation: fade-in 0.3s ease; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
