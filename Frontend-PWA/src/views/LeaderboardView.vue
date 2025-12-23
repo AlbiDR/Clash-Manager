@@ -52,8 +52,11 @@ const { searchQuery, sortBy, filteredItems: filteredMembers, updateSort } = useL
     'score'
 )
 
-// ⚡ PERFORMANCE: Render first 20 items immediately, defer the rest
-const { visibleItems: progressiveMembers } = useProgressiveList(filteredMembers, 20)
+// ⚡ PERFORMANCE: 
+// 1. Initial Batch = 8 (Fits 100% of mobile viewport).
+// 2. This allows the browser to paint "Above the fold" almost instantly.
+// 3. The rest are streamed in via requestIdleCallback.
+const { visibleItems: progressiveMembers } = useProgressiveList(filteredMembers, 8)
 
 const sortOptions = [
   { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
