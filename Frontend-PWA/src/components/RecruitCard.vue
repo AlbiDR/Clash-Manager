@@ -134,8 +134,9 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
   transition: all 0.2s var(--sys-motion-spring);
   
   /* ⚡ PERFORMANCE */
+  contain: layout paint style;
+  contain-intrinsic-size: auto 75px; 
   content-visibility: auto;
-  contain-intrinsic-size: 1px 75px; 
 }
 
 .card.expanded { 
@@ -144,7 +145,8 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
   margin: 16px 0; 
   border-color: rgba(var(--sys-color-primary-rgb), 0.3); 
   content-visibility: visible;
-  contain-intrinsic-size: 1px 200px; 
+  contain: none;
+  contain-intrinsic-size: auto 200px; 
 }
 
 .card.selected { background: var(--sys-color-primary-container) !important; border: 2.5px solid var(--sys-color-primary); transform: scale(0.97); }
