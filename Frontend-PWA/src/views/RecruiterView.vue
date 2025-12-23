@@ -2,16 +2,18 @@
 import { computed, watch, onUnmounted } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
+import { useToast } from '../composables/useToast'
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
+import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
 import { useListFilter } from '../composables/useListFilter'
 import { useUiCoordinator } from '../composables/useUiCoordinator'
 import { useProgressiveList } from '../composables/useProgressiveList'
-import { parseTimeAgoValue, formatTimeAgo } from '../utils/formatters'
-import type { LeaderboardMember } from '../types'
+import { formatTimeAgo } from '../utils/formatters'
+import type { Recruit } from '../types'
 
 import ConsoleHeader from '../components/ConsoleHeader.vue'
-import MemberCard from '../components/MemberCard.vue'
+import RecruitCard from '../components/RecruitCard.vue'
 import SelectionBar from '../components/SelectionBar.vue'
 import FabIsland from '../components/FabIsland.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -23,40 +25,46 @@ const { pingData } = useApiState()
 
 const sheetUrl = computed(() => {
   if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
-  const gid = pingData.value.sheets['Leaderboard']
+  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
   return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
-const members = computed(() => data.value?.lb || [])
+const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+const blacklist = useRecruitBlacklist()
 
-// ⚡ PERFORMANCE: Show skeletons if we haven't loaded local data yet OR if we are refreshing an empty list
-const showSkeletons = computed(() => !isHydrated.value || (isRefreshing.value && members.value.length === 0))
+// 🛡️ PRE-FILTER: Exclude Tombstones
+const recruits = computed(() => {
+    return (data.value?.hh || []).filter(r => !blacklist.tombstones.value.has(r.id))
+})
 
-const sortStrategies: Record<string, (a: LeaderboardMember, b: LeaderboardMember) => number> = {
+// ⚡ PERFORMANCE: Show skeletons if not hydrated or refreshing empty list
+const showSkeletons = computed(() => !isHydrated.value || (isRefreshing.value && recruits.value.length === 0))
+
+const getTs = (str?: string) => str ? new Date(str).getTime() : 0
+
+const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
     score: (a, b) => (b.s || 0) - (a.s || 0),
-    trend: (a, b) => (b.dt || 0) - (a.dt || 0),
     trophies: (a, b) => (b.t || 0) - (a.t || 0),
     name: (a, b) => a.n.localeCompare(b.n),
-    donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
-    // ... other strategies
+    time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
+    donations: (a, b) => (b.d.don || 0) - (a.d.don || 0)
 }
 
-const { searchQuery, sortBy, filteredItems: filteredMembers, updateSort } = useListFilter(
-    members,
-    (m: LeaderboardMember) => [m.n, m.id], 
+const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilter(
+    recruits,
+    (r: Recruit) => [r.n, r.id],
     sortStrategies,
     'score'
 )
 
-// ⚡ PERFORMANCE: Initial Batch = 8 (Fits 100% of mobile viewport)
-const { visibleItems: progressiveMembers } = useProgressiveList(filteredMembers, 8)
+// ⚡ PERFORMANCE: Batch size 8
+const { visibleItems: progressiveRecruits } = useProgressiveList(filteredRecruits, 8)
 
 const sortOptions = [
-  { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
-  { label: 'Momentum', value: 'trend', desc: 'Velocity of performance score compared to previous snapshot.' },
-  { label: 'Trophies', value: 'trophies', desc: 'Current ladder trophy count.' },
-  { label: 'Donations', value: 'donations_day', desc: 'Average daily donations.' },
+  { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
+  { label: 'Trophies', value: 'trophies', desc: 'Current ladder ranking.' },
+  { label: 'Donations', value: 'donations', desc: 'Total lifetime donations.' },
+  { label: 'Recency', value: 'time_found', desc: 'Sorts by discovery time.' },
   { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
@@ -64,7 +72,7 @@ const {
   selectedIds, fabState, isSelectionMode, toggleSelect, selectAll, clearSelection, handleAction, handleBlitz, setForceSelectionMode
 } = useBatchQueue()
 
-const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('member-')
+const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('recruit-')
 
 const { setFabVisible } = useUiCoordinator()
 watch(() => fabState.value.visible, (visible) => setFabVisible(!!visible))
@@ -73,50 +81,85 @@ onUnmounted(() => setFabVisible(false))
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
   if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (members.value.length > 0) return { type: 'ready', text: formatTimeAgo(new Date(lastSyncTime.value || Date.now()).toISOString()) } as const
+  if (recruits.value.length > 0) return { type: 'ready', text: formatTimeAgo(new Date(lastSyncTime.value || Date.now()).toISOString()) } as const
   return { type: 'ready', text: 'Empty' } as const
 })
 
 const statsBadge = computed(() => ({
-    label: 'Clan',
-    value: members.value.length.toString()
+    label: 'Pool',
+    value: recruits.value.length.toString()
 }))
 
 const selectedSet = computed(() => new Set(selectedIds.value))
 
+// 🧹 CLEANUP
+watch(() => data.value?.hh, (newRecruits) => {
+    if (newRecruits && newRecruits.length > 0) {
+        const currentIds = newRecruits.map(r => r.id)
+        blacklist.prune(currentIds)
+        processDeepLink(newRecruits)
+    }
+}, { deep: true, immediate: true })
+
+const { undo, success, error } = useToast()
+
+function dismissBulk() {
+  if (selectedIds.value.length === 0) return
+  const ids = [...selectedIds.value]
+  clearSelection()
+  executeDismiss(ids)
+}
+
+function executeDismiss(ids: string[]) {
+    blacklist.hide(ids)
+    
+    const timerId = setTimeout(() => {
+        dismissRecruitsAction(ids)
+            .catch(() => {
+                error('Failed to sync changes')
+                blacklist.restore(ids)
+            })
+    }, 4500)
+    
+    undo(`Dismissed ${ids.length} recruits`, () => {
+        clearTimeout(timerId)
+        blacklist.restore(ids)
+        success('Dismissal cancelled')
+    })
+}
+
 function handleSelectAll() {
-  const ids = filteredMembers.value.map((i: LeaderboardMember) => i.id)
+  const ids = filteredRecruits.value.map((r: Recruit) => r.id)
   setForceSelectionMode(false)
   selectAll(ids)
 }
 
 function handleSelectScore(threshold: number, mode: 'ge' | 'le') {
-  const ids = filteredMembers.value.filter((m: LeaderboardMember) => {
-    const s = m.s || 0
+  const ids = filteredRecruits.value.filter((r: Recruit) => {
+    const s = r.s || 0
     return mode === 'ge' ? s >= threshold : s <= threshold
-  }).map((m: LeaderboardMember) => m.id)
+  }).map((r: Recruit) => r.id)
   setForceSelectionMode(ids.length === 0)
   selectAll(ids)
 }
 
-watch(members, (newVal) => {
-    if (newVal.length > 0) processDeepLink(newVal)
-}, { immediate: true })
-
+function handleSearchUpdate(val: string) {
+  searchQuery.value = val
+}
 </script>
 
 <template>
   <div class="view-container">
     <PullToRefresh @refresh="refresh" />
-    
+
     <ConsoleHeader
-      title="Leaderboard"
+      title="Headhunter"
       :status="status"
       :show-search="!isSelectionMode"
       :sheet-url="sheetUrl"
       :stats="statsBadge"
       :sort-options="sortOptions"
-      @update:search="val => searchQuery = val"
+      @update:search="handleSearchUpdate"
       @update:sort="updateSort"
       @refresh="refresh"
     >
@@ -131,28 +174,43 @@ watch(members, (newVal) => {
         />
       </template>
     </ConsoleHeader>
+
+    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
-    <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
-    
-    <!-- ⚡ CRITICAL: Render skeletons if not hydrated yet. This matches the App Shell. -->
     <div v-else-if="showSkeletons" class="list-container gpu-contain">
-      <SkeletonCard v-for="(n, i) in 8" :key="i" :index="i" :style="{ '--i': i }" />
+      <SkeletonCard v-for="(_, i) in 8" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
-    <EmptyState v-else-if="!showSkeletons && filteredMembers.length === 0" icon="leaf" message="No members found" />
+    <EmptyState 
+      v-else-if="!showSkeletons && filteredRecruits.length === 0" 
+      icon="telescope" 
+      message="No recruits found"
+      hint="Try adjusting your filters or run a new scan."
+    >
+      <template #action>
+        <button class="btn-primary" @click="refresh">
+          <Icon name="refresh" size="18" />
+          <span>Scan Again</span>
+        </button>
+      </template>
+    </EmptyState>
     
-    <div v-else v-auto-animate class="list-container gpu-contain">
-      <MemberCard
-        v-for="(member, index) in progressiveMembers"
-        :key="member.id"
-        :id="`member-${member.id}`"
-        :member="member"
-        :expanded="expandedIds.has(member.id)"
-        :selected="selectedSet.has(member.id)"
+    <div 
+      v-else 
+      v-auto-animate
+      class="list-container gpu-contain"
+    >
+      <RecruitCard
+        v-for="(recruit, index) in progressiveRecruits"
+        :key="recruit.id"
+        :id="`recruit-${recruit.id}`"
+        :recruit="recruit"
+        :expanded="expandedIds.has(recruit.id)"
+        :selected="selectedSet.has(recruit.id)"
         :selection-mode="isSelectionMode"
         :style="{ '--i': index }"
-        @toggle="toggleExpand(member.id)"
-        @toggle-select="toggleSelect(member.id)"
+        @toggle-expand="toggleExpand(recruit.id)"
+        @toggle-select="toggleSelect(recruit.id)"
       />
     </div>
 
@@ -160,14 +218,14 @@ watch(members, (newVal) => {
       :visible="fabState.visible"
       :label="fabState.label"
       :action-href="fabState.actionHref"
-      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Clear'"
+      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
       :is-processing="fabState.isProcessing"
       :is-blasting="fabState.isBlasting"
       :selection-count="fabState.selectionCount"
       :blitz-enabled="fabState.blitzEnabled"
       @action="handleAction"
       @blitz="handleBlitz"
-      @dismiss="clearSelection"
+      @dismiss="dismissBulk"
     />
   </div>
 </template>
@@ -175,5 +233,7 @@ watch(members, (newVal) => {
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
 .list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
-.gpu-contain { transform: translateZ(0); }
+.gpu-contain { transform: translateZ(0); will-change: transform; contain: layout paint; }
+.btn-primary { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--sys-color-primary); color: var(--sys-color-on-primary); border: none; border-radius: 99px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: transform 0.2s; }
+.btn-primary:active { transform: scale(0.95); }
 </style>
