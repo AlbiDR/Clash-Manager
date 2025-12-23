@@ -1,19 +1,15 @@
-
 /**
  * TypeScript Environment Definitions
  * Defines the shape of import.meta.env and handles static assets.
  */
 
+/// <reference types="vite/client" />
+
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string
-  BASE_URL: string
 }
 
 declare const __APP_VERSION__: string
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
 
 declare module '*.vue' {
   const component: any
