@@ -23,7 +23,7 @@ const chartData = computed(() => {
   const processedData = allHistory.slice(0, 52) // Limit to last year
 
   if (processedData.length === 0) {
-    return { bars: [], path: null, projPoint: null, lastPoint: null, isPositive: false }
+    return { bars: [], path: null, projPoint: null, isPositive: false }
   }
 
   // 2. Predict (using Newest->Oldest data)
@@ -65,13 +65,11 @@ const chartData = computed(() => {
   
   // Identify key points for dots (These stay on the bars, not the line)
   const projPoint = curvePoints[curvePoints.length - 1]
-  const lastPoint = curvePoints.length > 1 ? curvePoints[curvePoints.length - 2] : null
   
   return { 
     bars, 
     path: trend.path, 
     projPoint, 
-    lastPoint, 
     isPositive: trend.isPositive 
   }
 })
@@ -96,12 +94,6 @@ const chartData = computed(() => {
       </svg>
 
       <!-- HTML Overlays for Dots (Fixes Aspect Ratio Distortion) -->
-      <div 
-        v-if="chartData.lastPoint"
-        class="chart-dot anchor"
-        :style="{ left: `${chartData.lastPoint.x}%`, top: `${chartData.lastPoint.y}%` }"
-      ></div>
-
       <div 
         v-if="chartData.projPoint"
         class="chart-dot projected"
@@ -209,12 +201,6 @@ const chartData = computed(() => {
   border-radius: 50%;
   pointer-events: none;
   z-index: 25; /* Above line (20), Below hovered bar (30) */
-}
-
-.chart-dot.anchor {
-  width: 4px; height: 4px;
-  background: var(--sys-color-outline);
-  opacity: 0.6;
 }
 
 .chart-dot.projected {
