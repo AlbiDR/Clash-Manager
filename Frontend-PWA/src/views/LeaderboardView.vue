@@ -56,6 +56,7 @@ const sortOptions = [
   { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
   { label: 'Momentum', value: 'trend', desc: 'Velocity of performance score compared to previous snapshot.' },
   { label: 'Trophies', value: 'trophies', desc: 'Current ladder trophy count.' },
+  { label: 'Donations', value: 'donations_day', desc: 'Average daily donations.' },
   { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
