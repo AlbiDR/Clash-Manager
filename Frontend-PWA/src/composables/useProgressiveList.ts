@@ -1,39 +1,41 @@
 // @ts-nocheck
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 
 export function useProgressiveList<T>(
     sourceList: Ref<T[]>, 
-    pageSize: number = 20
+    initialSize: number = 10
 ) {
-    const visibleCount = ref(pageSize)
+    const visibleItems = ref<T[]>([])
 
-    watch(sourceList, () => {
-        // Reset when source changes (e.g. filter or sort)
-        visibleCount.value = pageSize
-        
-        // Schedule the rest to render in the next frame
-        // This allows the browser to paint the first `pageSize` items immediately
-        if (typeof requestAnimationFrame !== 'undefined') {
-            requestAnimationFrame(() => {
-                // If the list is massive (>500), we might want to chunk it further,
-                // but for <200 items, a single RAF update is usually optimal for UX/CLS balance.
-                visibleCount.value = sourceList.value.length
-            })
-        } else {
-            // Fallback for environments without RAF
-            setTimeout(() => {
-                visibleCount.value = sourceList.value.length
-            }, 0)
-        }
-    }, { immediate: true, flush: 'post' })
+    watch(sourceList, (newList) => {
+        // 1. Immediate Render: Critical "Above the Fold" content only.
+        // Slice gives us a new array reference, preventing reactivity leaks from the source.
+        visibleItems.value = newList.slice(0, initialSize)
 
-    const visibleItems = computed(() => {
-        // Optimization: return original array if full count is visible to preserve referential identity
-        if (visibleCount.value >= sourceList.value.length) {
-            return sourceList.value
+        // 2. Time-Sliced Hydration: Render the rest in small chunks to avoid TBT (Total Blocking Time).
+        if (newList.length > initialSize) {
+            scheduleChunk(newList, initialSize)
         }
-        return sourceList.value.slice(0, visibleCount.value)
-    })
+    }, { immediate: true })
+
+    function scheduleChunk(all: T[], currentCount: number) {
+        // Futuristic: Use requestIdleCallback if available, fall back to RAF/Timeout
+        const scheduler = (window as any).requestIdleCallback || requestAnimationFrame
+
+        scheduler(() => {
+            // Batch size: 10 items per tick. Small enough to fit in a frame (16ms).
+            const nextCount = Math.min(currentCount + 10, all.length)
+            
+            // Update the view
+            // Note: We use .slice() to ensure Vue detects the change efficiently
+            visibleItems.value = all.slice(0, nextCount)
+
+            // Recursively schedule next batch if needed
+            if (nextCount < all.length) {
+                scheduleChunk(all, nextCount)
+            }
+        })
+    }
 
     return {
         visibleItems
