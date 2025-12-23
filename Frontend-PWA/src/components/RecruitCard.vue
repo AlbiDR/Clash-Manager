@@ -81,6 +81,7 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
           class="expand-btn hit-target" 
           @click.stop="handleExpandClick" 
           :class="{ 'is-active': expanded }"
+          aria-label="Expand details"
         >
           <Icon name="chevron_down" size="20" />
         </button>
@@ -127,12 +128,14 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 .meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
-.badge { height: 18px; width: 100%; background: var(--sys-color-surface-container-highest); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sys-color-outline); font-family: var(--sys-font-family-mono); text-transform: uppercase; }
+.badge { height: 18px; width: 100%; background: var(--sys-color-surface-container-highest); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); text-transform: uppercase; }
 .hit-target { position: relative; z-index: 5; }
 .hit-target::after { content: ''; position: absolute; inset: -4px; }
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 .player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #fbbf24; margin-top: 2px; width: fit-content; }
+/* Darkened Trophy Color for contrast */
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #b45309; margin-top: 2px; width: fit-content; }
+:root.dark .trophy-meta { color: #fbbf24; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 .header-actions { display: flex; align-items: center; gap: 4px; }
 .expand-btn { background: none; border: none; padding: 8px; color: var(--sys-color-outline); cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
