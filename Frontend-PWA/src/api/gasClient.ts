@@ -1,4 +1,3 @@
-
 /**
  * GAS API Client
  * Handles all communication with the GAS backend
@@ -19,9 +18,13 @@ import { idb } from '../utils/idb'
 // CONFIGURATION
 // ============================================================================
 
-// Prioritize LocalStorage override, fall back to Build Env, default to empty
-const GAS_URL = localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
-const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' // Updated for v6 Gold Master
+// Use a getter to avoid top-level ReferenceError during Vitest imports
+const getGasUrl = () => {
+    if (typeof localStorage === 'undefined') return import.meta.env.VITE_GAS_URL || ''
+    return localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
+}
+
+const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' 
 
 // ============================================================================
 // HELPERS
@@ -62,11 +65,11 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
         z.string(),             // 4: role
         z.number(),             // 5: days tracked
         z.number(),             // 6: avg daily donations
-        z.union([z.string(), z.null()]),  // 7: last seen (can be null/empty in matrix sometimes)
+        z.union([z.string(), z.null()]),  // 7: last seen
         z.union([z.string(), z.null()]),  // 8: war rate
         z.string(),             // 9: history string
-        z.number().optional(),  // 10: delta trend (optional for backward compat)
-        z.number().optional()   // 11: raw score (optional for backward compat)
+        z.number().optional(),  // 10: delta trend
+        z.number().optional()   // 11: raw score
     ])
 
     const RecruitRowSchema = z.tuple([
@@ -96,8 +99,6 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
     
     if (!result.success) {
         console.error('❌ Zod Validation Failed:', result.error.format())
-        // We can choose to throw or return partial data. 
-        // For robustness, we throw to trigger the error boundary / refresh logic.
         throw new Error('API Schema Mismatch: The backend data structure does not match the frontend expectation.')
     }
 
@@ -118,7 +119,7 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
             rate: r[8] || '',
             hist: r[9]
         },
-        dt: r[10] ?? 0, // Default to 0 if missing
+        dt: r[10] ?? 0,
         r: r[11] ?? 0
     }))
 
@@ -148,61 +149,46 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
 // ============================================================================
 
 async function gasRequest<T>(action: string, payload?: Record<string, unknown>): Promise<T> {
-    if (!GAS_URL) {
-        throw new Error('GAS_URL not configured. Set VITE_GAS_URL environment variable or configure in Settings.')
+    const url = getGasUrl()
+    if (!url) {
+        throw new Error('GAS_URL not configured.')
     }
 
     try {
-        const response = await fetch(`${GAS_URL}?action=${action}`, {
-            method: action === 'getwebappdata' ? 'GET' : 'POST', // Use GET for reads as per v6 spec
+        const response = await fetch(`${url}?action=${action}`, {
+            method: action === 'getwebappdata' ? 'GET' : 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain' },
-            // GET requests cannot have body
             body: action === 'getwebappdata' ? undefined : JSON.stringify({ action, ...payload })
         })
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
-        // 🛡️ ROBUST PARSING: Handle GAS HTML Errors gracefully
         const text = await response.text()
         let envelope: any
 
         try {
             envelope = JSON.parse(text)
         } catch (e) {
-            // Check for common HTML error signatures from Google
-            if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('Google Drive - Page Not Found')) {
-                throw new Error('Backend Critical Failure: The server timed out or returned an HTML error page instead of JSON.')
+            if (text.includes('<!DOCTYPE html') || text.includes('<html')) {
+                throw new Error('Backend Critical Failure: Received HTML error page instead of JSON.')
             }
-            throw new Error(`Malformed JSON response from server: ${text.substring(0, 100)}...`)
+            throw new Error(`Malformed JSON response from server.`)
         }
 
-        // --------------------------------------------------------
-        // CRITICAL FIX: Normalization Pattern
-        // --------------------------------------------------------
-        // We normalize the response HERE so downstream consumers (like fetchRemote)
-        // don't need to know about legacy formats.
-
-        // 1. Detect Legacy Format (from getWebAppData)
         if (envelope.success === true && !envelope.status) {
             envelope.status = 'success'
         }
 
-        // 2. Standard Validation
         if (envelope.status === 'success') {
             return envelope as T
         }
 
-        // 3. Error Handling
         if (envelope.status === 'error' || envelope.success === false) {
-            const errorMsg = envelope.error?.message || 'Unknown Backend Error'
-            console.error(`GAS API Error [${action}]:`, errorMsg, envelope.error)
-            throw new Error(errorMsg)
+            throw new Error(envelope.error?.message || 'Unknown Backend Error')
         }
 
-        // 4. Fallback
-        console.warn(`GAS API Warning [${action}]: Unexpected response structure`, envelope)
-        throw new Error('Invalid response structure: ' + JSON.stringify(envelope).substring(0, 100))
+        throw new Error('Invalid response structure.')
     } catch (error) {
         console.error(`GAS API Error [${action}]:`, error)
         throw error
@@ -213,26 +199,16 @@ async function gasRequest<T>(action: string, payload?: Record<string, unknown>):
 // UNIFIED DATA STORE (SWR PATTERN)
 // ============================================================================
 
-/**
- * 1. Asynchronously load data from IndexedDB (Non-blocking hydration)
- */
 export async function loadCache(): Promise<WebAppData | null> {
     try {
         const cached = await idb.get<WebAppData>(CACHE_KEY_MAIN)
         return cached || null
     } catch (e) {
-        console.warn('Cache load failed:', e)
         return null
     }
 }
 
-/**
- * 2. Fetch fresh data from server and update cache (Background Sync)
- * Fetches the UNIFIED payload (LB + HH) to save bandwidth.
- */
 export async function fetchRemote(): Promise<WebAppData> {
-    // 'getwebappdata' endpoint returns both LB and HH
-    // Response Schema: { status: 'success', data: { ... } }
     const envelope = await gasRequest<ApiResponse<any>>('getwebappdata')
 
     if (envelope.status !== 'success' || !envelope.data) {
@@ -240,10 +216,7 @@ export async function fetchRemote(): Promise<WebAppData> {
     }
 
     const inflated = await inflatePayload(envelope.data)
-
-    // Save to cache (Async)
-    idb.set(CACHE_KEY_MAIN, inflated).catch(e => console.warn('Cache write failed:', e))
-
+    idb.set(CACHE_KEY_MAIN, inflated).catch(() => {})
     return inflated
 }
 
@@ -271,11 +244,10 @@ export async function triggerBackendUpdate(target?: string): Promise<ApiResponse
     return gasRequest<ApiResponse<{ success: boolean; message: string }>>('triggerUpdate', { target })
 }
 
-// Utility
 export function isConfigured(): boolean {
-    return Boolean(GAS_URL)
+    return Boolean(getGasUrl())
 }
 
 export function getApiUrl(): string {
-    return GAS_URL || '(not configured)'
+    return getGasUrl() || '(not configured)'
 }
