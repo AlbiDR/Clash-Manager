@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
-import WarHistoryChart from './WarHistoryChart.vue'
 import { useBenchmarking } from '../composables/useBenchmarking'
 import { useModules } from '../composables/useModules'
 import { useCardMechanics } from '../composables/useCardMechanics'
 import { getScoreTone, formatRole } from '../utils/formatters'
+
+const WarHistoryChart = defineAsyncComponent(() => import('./WarHistoryChart.vue'))
 
 const props = defineProps<{
   id: string
