@@ -1,5 +1,6 @@
 
 import { createRouter, createWebHashHistory } from 'vue-router'
+import LeaderboardView from '../views/LeaderboardView.vue'
 
 const SCROLL_KEY = 'cm_scroll_positions'
 
@@ -36,7 +37,7 @@ const router = createRouter({
         {
             path: '/',
             name: 'leaderboard',
-            component: () => import('../views/LeaderboardView.vue'),
+            component: LeaderboardView, // Eager load for better LCP
             meta: { title: 'Leaderboard' }
         },
         {
