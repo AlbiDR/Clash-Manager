@@ -12,6 +12,7 @@ export interface ToastOptions {
 }
 
 const toasts = ref<ToastOptions[]>([])
+const processingIds = new Set<string>()
 
 export function useToast() {
     function add(options: Omit<ToastOptions, 'id'>) {
@@ -41,15 +42,25 @@ export function useToast() {
     }
 
     function triggerAction(id: string) {
+        // 🛡️ Guard: Prevent double-execution if the ID is already being processed
+        if (processingIds.has(id)) return
+
         const idx = toasts.value.findIndex(t => t.id === id)
         if (idx !== -1) {
+            processingIds.add(id)
             const toast = toasts.value[idx]
-            // Remove immediately to prevent double-execution if events fire multiple times
+            
+            // Remove immediately
             toasts.value.splice(idx, 1)
             
             if (toast.onAction) {
                 toast.onAction()
             }
+
+            // Clean up set after a delay to ensure transition completes and no ghost clicks are registered
+            setTimeout(() => {
+                processingIds.delete(id)
+            }, 1000)
         }
     }
 
