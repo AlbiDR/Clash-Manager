@@ -8,7 +8,8 @@
   <!-- 🚀 PERFORMANCE: PRE-FETCH CRITICAL ASSETS -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  
+  <link rel="modulepreload" href="/src/main.ts" />
+
   <!-- PWA Meta Tags -->
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfcff" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0e14" />
@@ -21,25 +22,6 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" media="print" onload="this.media='all'">
 
   <title>Clash Manager</title>
-
-  <script type="importmap">
-{
-  "imports": {
-    "vue": "https://esm.sh/vue@^3.5.25",
-    "vue-router": "https://esm.sh/vue-router@^4.6.4",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "@formkit/auto-animate/vue": "https://esm.sh/@formkit/auto-animate@^0.9.0/vue",
-    "zod": "https://esm.sh/zod@^3.22.4",
-    "vitest/": "https://esm.sh/vitest@^4.0.16/",
-    "vitest": "https://esm.sh/vitest@^4.0.16",
-    "@tailwindcss/vite": "https://esm.sh/@tailwindcss/vite@^4.1.18",
-    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0",
-    "@vitejs/plugin-vue": "https://esm.sh/@vitejs/plugin-vue@^6.0.3",
-    "@vue/test-utils": "https://esm.sh/@vue/test-utils@^2.4.6",
-    "@formkit/auto-animate/": "https://esm.sh/@formkit/auto-animate@^0.9.0/"
-  }
-}
-</script>
 
   <style>
     :root { --sh-bg: #fdfcff; --sh-text: #1a1c1e; --sh-sk: rgba(0, 0, 0, 0.05); }
@@ -73,6 +55,6 @@
       </div>
     </div>
   </div>
-  <script type="module" src="/Frontend-PWA/src/main.ts"></script>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
