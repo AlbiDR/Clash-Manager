@@ -45,18 +45,14 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'maskable-icon-512x512.png',
-            sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'any'
           },
           {
             src: 'monochrome-icon-512x512.png',
