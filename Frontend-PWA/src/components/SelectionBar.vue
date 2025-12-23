@@ -7,7 +7,7 @@ defineEmits<{
     (e: 'select-all'): void
     (e: 'clear'): void
     (e: 'done'): void
-    (e: 'select-score', threshold: number): void
+    (e: 'select-score', threshold: number, mode: 'ge' | 'le'): void
 }>()
 </script>
 
@@ -21,8 +21,10 @@ defineEmits<{
             <div class="v-divider"></div>
             <div class="score-group">
             <span class="sg-label">Score:</span>
-            <button class="sg-btn" @click="$emit('select-score', 50)">≥50</button>
-            <button class="sg-btn" @click="$emit('select-score', 75)">≥75</button>
+            <button class="sg-btn" @click="$emit('select-score', 15, 'le')">≤15</button>
+            <button class="sg-btn" @click="$emit('select-score', 25, 'le')">≤25</button>
+            <button class="sg-btn" @click="$emit('select-score', 50, 'ge')">≥50</button>
+            <button class="sg-btn" @click="$emit('select-score', 75, 'ge')">≥75</button>
             </div>
             <div class="v-divider"></div>
             <button class="action-chip danger" @click="$emit('done')">Done</button>
