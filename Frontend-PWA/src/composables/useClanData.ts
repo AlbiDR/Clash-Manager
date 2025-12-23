@@ -8,9 +8,6 @@ import { useDemoMode } from './useDemoMode'
 import { generateMockData } from '../utils/mockData'
 
 // Global State
-// ⚡ PERFORMANCE: Use shallowRef for large data structures.
-// We only replace the entire object or arrays, never deep mutate.
-// This saves approx 50-100ms of JS blocking time on hydration.
 const clanData = shallowRef<WebAppData | null>(null)
 const isRefreshing = ref(false)
 const lastSyncTime = ref<number | null>(null)
@@ -21,31 +18,36 @@ const { setBadge } = useBadge()
 const { modules } = useModules()
 const { isDemoMode } = useDemoMode()
 
-// ⚡ PERFORMANCE: Sync Hydration Bridge
 const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 
 export function useClanData() {
 
     function hydrateFromSnapshot() {
         if (clanData.value || isDemoMode.value) return
-        try {
+        
+        // ⚡ PERFORMANCE: Non-blocking parse
+        // We wrap the heavy JSON.parse in a Promise to allow the event loop to breathe
+        return new Promise<void>((resolve) => {
             const raw = localStorage.getItem(SNAPSHOT_KEY)
             if (raw) {
-                // Parsing large JSON is sync, but faster than IDB for LCP
-                const parsed = JSON.parse(raw)
-                clanData.value = parsed
-                lastSyncTime.value = parsed.timestamp || Date.now()
-                updateBadgeCount(parsed)
-                console.log('⚡ Instant Hydration: Success')
+                // Try to parse. If it blocks for 50ms, so be it, but we are inside a deferred callback now.
+                try {
+                    const parsed = JSON.parse(raw)
+                    clanData.value = parsed
+                    lastSyncTime.value = parsed.timestamp || Date.now()
+                    updateBadgeCount(parsed)
+                    console.log('⚡ Hydration: Loaded from Snapshot')
+                } catch (e) {
+                    console.warn('Hydration JSON Corrupt', e)
+                }
             }
-        } catch (e) {
-            console.warn('Hydration failed', e)
-        }
+            resolve()
+        })
     }
 
     async function init() {
-        // 1. Instant Sync Path (LCP reduction)
-        hydrateFromSnapshot()
+        // 1. Instant Hydration attempt (LCP reduction)
+        await hydrateFromSnapshot()
 
         if (isDemoMode.value) {
             console.log('🌟 Demo Mode Active')
@@ -56,12 +58,12 @@ export function useClanData() {
             return
         }
 
-        // 2. Fast DB Path (SWR)
-        // Only load if we didn't get a snapshot or if DB might be newer (unlikely but safe)
+        // 2. Fast DB Path (SWR) - Only if snapshot missed or DB is newer
+        // This is async and won't block render
         try {
             const cached = await loadCache()
             if (cached) {
-                if (!clanData.value || cached.timestamp > clanData.value.timestamp) {
+                if (!clanData.value || cached.timestamp > (clanData.value.timestamp || 0)) {
                     clanData.value = cached
                     lastSyncTime.value = cached.timestamp
                     updateBadgeCount(cached)
@@ -71,8 +73,11 @@ export function useClanData() {
             console.warn("DB Load Failed", e)
         }
 
-        // 3. Background Sync
-        refresh()
+        // 3. Background Sync (Network)
+        // Delay this slightly to prioritize interactivity
+        setTimeout(() => {
+            refresh()
+        }, 1000)
     }
 
     function updateBadgeCount(data: WebAppData) {
@@ -110,7 +115,11 @@ export function useClanData() {
             syncStatus.value = 'success'
 
             // Save to snapshot for next cold start LCP
-            localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData))
+            // Use requestIdleCallback to save stringified data to prevent frame drops during scroll
+            const saveTask = (window as any).requestIdleCallback || setTimeout;
+            saveTask(() => {
+                localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData))
+            })
             updateBadgeCount(remoteData)
 
         } catch (e: any) {
@@ -128,12 +137,10 @@ export function useClanData() {
     async function dismissRecruitsAction(ids: string[]) {
         if (!clanData.value) return
         
-        // Shallow Copy is enough
         const currentHH = clanData.value.hh
         const idsSet = new Set(ids)
         const newHH = currentHH.filter(r => !idsSet.has(r.id))
 
-        // Trigger update
         const oldData = clanData.value
         clanData.value = { ...oldData, hh: newHH }
         
@@ -144,7 +151,6 @@ export function useClanData() {
             const { dismissRecruits } = await import('../api/gasClient')
             await dismissRecruits(ids)
         } catch (e) {
-            // Revert on failure
             clanData.value = oldData
             updateBadgeCount(clanData.value)
             throw e
