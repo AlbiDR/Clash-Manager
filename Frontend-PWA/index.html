@@ -14,18 +14,35 @@
 
   <title>Clash Manager</title>
 
-  <!-- ⚡ OPTIMIZATION: Async Font Loading (Non-blocking) -->
+  <!-- ⚡ OPTIMIZATION: Critical Resource Preloading -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  
-  <!-- ⚡ PERFORMANCE: Pre-warm connections to GAS Backend -->
   <link rel="preconnect" href="https://script.google.com" />
   <link rel="preconnect" href="https://script.googleusercontent.com" />
   
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" media="print" onload="this.media='all'">
+  <!-- Preload Fonts to eliminate render blocking and layout shifts (LCP Fix) -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap">
   </noscript>
+
+  <!-- ⚡ DEEP NET PRELOADER: Start fetching data before Vue boots -->
+  <script>
+    (function() {
+      try {
+        // Check for saved API URL from previous sessions
+        const storedUrl = localStorage.getItem('cm_gas_url');
+        if (storedUrl) {
+          window.__CM_PRELOAD__ = fetch(storedUrl + '?action=getwebappdata', {
+             headers: { 'Content-Type': 'text/plain' }
+          })
+          .then(r => r.ok ? r.text() : Promise.reject(r))
+          .then(t => JSON.parse(t))
+          .catch(e => { console.warn('Preload failed', e); return null; });
+        }
+      } catch(e) {}
+    })();
+  </script>
 
   <style>
     /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
