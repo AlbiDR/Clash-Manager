@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ref, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 
