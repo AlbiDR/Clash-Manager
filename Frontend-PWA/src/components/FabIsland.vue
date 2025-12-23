@@ -10,7 +10,7 @@ import { useUiCoordinator } from '../composables/useUiCoordinator'
 import { computed } from 'vue'
 import Icon from './Icon.vue'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   label?: string
   dismissLabel?: string
@@ -24,12 +24,14 @@ defineProps<{
 const { fabOffset } = useUiCoordinator()
 
 // GPU Optimization: TranslateY instead of 'bottom' property transition
-const styleObject = computed(() => ({
-    // Base position fixed to bottom + safe area
-    bottom: 'calc(0px + env(safe-area-inset-bottom))',
-    // Dynamic lift based on UI state (Dock visibility)
+const styleObject = computed(() => {
+  if (!props.visible) return {}
+
+  return {
+    // Override the CSS transform when visible
     transform: `translateY(calc(-${fabOffset.value}px))`
-}))
+  }
+})
 
 const emit = defineEmits<{
   action: [payload: MouseEvent]
@@ -102,24 +104,22 @@ const emit = defineEmits<{
 <style scoped>
 .fab-island {
   position: fixed; left: 0; right: 0;
+  bottom: calc(0px + env(safe-area-inset-bottom));
   display: flex; justify-content: center; pointer-events: none; z-index: 300;
   /* ⚡ PERF: Transition transform instead of bottom for GPU composition */
   transition: opacity 0.3s ease, transform 0.4s var(--sys-motion-spring);
   opacity: 0;
   /* Hidden state: Pushed down further */
-  transform: translateY(100px) !important; 
+  transform: translateY(100px); 
   will-change: transform;
 }
 
 /* 
    Override transform when visible. 
    Note: The inline style binding handles the Y-offset logic.
-   When visible, we let the inline style dictate the Y position (which matches the dock height).
-   When NOT visible, this class is removed, falling back to the 100px translation above.
 */
 .fab-island.visible { 
   opacity: 1; 
-  /* The inline style takes precedence for exact positioning */
 }
 
 .fab-content {
