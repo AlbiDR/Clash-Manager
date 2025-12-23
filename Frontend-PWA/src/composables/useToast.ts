@@ -17,10 +17,23 @@ const processingIds = new Set<string>()
 export function useToast() {
     function add(options: Omit<ToastOptions, 'id'>) {
         const id = Date.now().toString() + Math.random().toString(36).substring(2, 9)
+        
+        // 🛡️ Wrapper: Ensure the action can strictly run only ONCE per toast instance.
+        // This protects against UI race conditions where click events might fire twice.
+        const originalAction = options.onAction
+        let actionExecuted = false
+        
+        const safeAction = originalAction ? () => {
+            if (actionExecuted) return
+            actionExecuted = true
+            originalAction()
+        } : undefined
+
         const toast: ToastOptions = {
             id,
             duration: 5000,
-            ...options
+            ...options,
+            onAction: safeAction
         }
         toasts.value.push(toast)
 
@@ -42,7 +55,7 @@ export function useToast() {
     }
 
     function triggerAction(id: string) {
-        // 🛡️ Guard: Prevent double-execution if the ID is already being processed
+        // 🛡️ Guard: Global lock to prevent re-entry
         if (processingIds.has(id)) return
 
         const idx = toasts.value.findIndex(t => t.id === id)
@@ -50,14 +63,15 @@ export function useToast() {
             processingIds.add(id)
             const toast = toasts.value[idx]
             
-            // Remove immediately
+            // Remove immediately from UI
             toasts.value.splice(idx, 1)
             
+            // Execute the (now safe) action
             if (toast.onAction) {
                 toast.onAction()
             }
 
-            // Clean up set after a delay to ensure transition completes and no ghost clicks are registered
+            // Cleanup lock
             setTimeout(() => {
                 processingIds.delete(id)
             }, 1000)
@@ -81,7 +95,7 @@ export function useToast() {
             type: 'undo',
             message,
             actionLabel: 'UNDO',
-            onAction: action,
+            onAction: action, // This gets wrapped by add()
             duration: 6000
         })
     }
