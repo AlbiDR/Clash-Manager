@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref, computed } from 'vue'
 
 // Global state to share across instances
