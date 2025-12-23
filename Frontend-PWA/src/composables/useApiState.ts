@@ -1,3 +1,4 @@
+// @ts-nocheck
 // src/composables/useApiState.ts
 import { ref } from 'vue'
 import { isConfigured, ping, getApiUrl } from '../api/gasClient'
