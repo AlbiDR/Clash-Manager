@@ -18,28 +18,33 @@ const { setBadge } = useBadge()
 const { modules } = useModules()
 const { isDemoMode } = useDemoMode()
 
-// React to setting changes immediately
-watch(() => modules.value.notificationBadgeHighPotential, () => {
-    if (clanData.value) {
-        // Redefined locally or imported logic to update badge
-        if (clanData.value.hh) {
-            if (modules.value.notificationBadgeHighPotential) {
-                const highPotentialCount = clanData.value.hh.filter(r => r.s >= 75).length
-                setBadge(highPotentialCount)
-            } else {
-                setBadge(clanData.value.hh.length)
-            }
-        }
-    }
-})
+// ⚡ PERFORMANCE: Sync Hydration Bridge
+const SNAPSHOT_KEY = 'cm_hydration_snapshot'
+
 export function useClanData() {
 
+    function hydrateFromSnapshot() {
+        if (clanData.value || isDemoMode.value) return
+        try {
+            const raw = localStorage.getItem(SNAPSHOT_KEY)
+            if (raw) {
+                const parsed = JSON.parse(raw)
+                clanData.value = parsed
+                lastSyncTime.value = parsed.timestamp || Date.now()
+                updateBadgeCount(parsed)
+                console.log('⚡ Instant Hydration: Success')
+            }
+        } catch (e) {
+            console.warn('Hydration failed', e)
+        }
+    }
+
     async function init() {
-        // Prevent double init if data is already present
-        if (clanData.value) return
+        // 1. Instant Sync Path (LCP reduction)
+        hydrateFromSnapshot()
 
         if (isDemoMode.value) {
-            console.log('🌟 Demo Mode Active: Initializing with mock data.')
+            console.log('🌟 Demo Mode Active')
             const mock = generateMockData()
             clanData.value = mock
             lastSyncTime.value = mock.timestamp
@@ -47,31 +52,31 @@ export function useClanData() {
             return
         }
 
+        // 2. Fast DB Path (SWR)
         try {
             const cached = await loadCache()
             if (cached) {
-                clanData.value = cached
-                lastSyncTime.value = cached.timestamp
-                // Initial badge update based on cache
-                updateBadgeCount(cached)
+                // If Snapshot was missing or older, update with DB data
+                if (!clanData.value || cached.timestamp > clanData.value.timestamp) {
+                    clanData.value = cached
+                    lastSyncTime.value = cached.timestamp
+                    updateBadgeCount(cached)
+                }
             }
         } catch (e) {
-            console.warn("Fast Cache Load Failed", e)
+            console.warn("DB Load Failed", e)
         }
 
-        // Trigger background refresh after cache check
-        await refresh()
+        // 3. Background Sync
+        refresh()
     }
 
     function updateBadgeCount(data: WebAppData) {
-        // Badge represents number of recruits in pool
-        if (data.hh) {
+        if (data?.hh) {
             if (modules.value.notificationBadgeHighPotential) {
-                // Filter for recruits with score >= 75
                 const highPotentialCount = data.hh.filter(r => r.s >= 75).length
                 setBadge(highPotentialCount)
             } else {
-                // Default: Count all recruits
                 setBadge(data.hh.length)
             }
         }
@@ -86,8 +91,7 @@ export function useClanData() {
             syncError.value = null
 
             if (isDemoMode.value) {
-                // Simulate network latency for "Demo" effect
-                await new Promise(resolve => setTimeout(resolve, 1200))
+                await new Promise(resolve => setTimeout(resolve, 800))
                 const mock = generateMockData()
                 clanData.value = mock
                 lastSyncTime.value = mock.timestamp
@@ -96,19 +100,13 @@ export function useClanData() {
                 return
             }
 
-            // Network Intelligence: Check if we should do a "Lite" fetch
-            const connection = (navigator as any).connection
-            const isSlow = connection && (connection.saveData || ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
-
-            if (isSlow) {
-                console.log('📡 Slow connection detected. Prioritizing core data.')
-            }
-
             const remoteData = await fetchRemote()
             clanData.value = remoteData
             lastSyncTime.value = remoteData.timestamp
             syncStatus.value = 'success'
 
+            // Save to snapshot for next cold start LCP
+            localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData))
             updateBadgeCount(remoteData)
 
         } catch (e: any) {
@@ -128,12 +126,9 @@ export function useClanData() {
         const originalHH = [...clanData.value.hh]
         const idsSet = new Set(ids)
 
-        clanData.value = {
-            ...clanData.value,
-            hh: originalHH.filter(r => !idsSet.has(r.id))
-        }
-
+        clanData.value = { ...clanData.value, hh: originalHH.filter(r => !idsSet.has(r.id)) }
         updateBadgeCount(clanData.value)
+        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(clanData.value))
 
         try {
             const { dismissRecruits } = await import('../api/gasClient')
