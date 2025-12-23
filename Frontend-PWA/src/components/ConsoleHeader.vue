@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Icon from './Icon.vue'
@@ -189,7 +188,8 @@ const activeSortDescription = computed(() => {
   flex-shrink: 0;
 }
 .sp-value { color: var(--sys-color-primary); }
-.sp-label { opacity: 0.5; text-transform: uppercase; font-size: 9px; }
+/* Increased opacity or color change for better contrast */
+.sp-label { color: var(--sys-color-secondary); text-transform: uppercase; font-size: 9px; }
 
 .icon-button {
   width: 48px; height: 48px;
