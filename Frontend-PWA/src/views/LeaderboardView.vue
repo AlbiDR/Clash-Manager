@@ -188,6 +188,7 @@ watch(members, (newVal) => {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; }
+/* Min-height prevents layout shift when loading or filtering */
+.list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
 .gpu-contain { transform: translateZ(0); }
 </style>
