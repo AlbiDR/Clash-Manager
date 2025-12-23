@@ -17,18 +17,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    cssCodeSplit: true,
+    cssCodeSplit: false, // ⚡ Lighthouse: Merge all CSS into a single file
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('vue') || id.includes('router')) return 'v-core';
-            if (id.includes('zod')) return 'v-zod';
-            if (id.includes('auto-animate')) return 'v-ui-fx';
-            // Separate icons/heavy UI libs if added later
-            return 'v-vendor';
-          }
-        }
+        // ⚡ Lighthouse: Disable JS Code Splitting
+        // This forces all source modules (including lazy routes) into a single bundle
+        // to minimize network round-trips on mobile.
+        inlineDynamicImports: true, 
+        entryFileNames: 'assets/index.js',
+        assetFileNames: 'assets/index.[ext]',
+        // manualChunks is incompatible with inlineDynamicImports and is removed
       }
     }
   },
