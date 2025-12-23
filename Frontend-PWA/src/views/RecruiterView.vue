@@ -12,7 +12,6 @@ import { useProgressiveList } from '../composables/useProgressiveList'
 import { formatTimeAgo } from '../utils/formatters'
 import type { Recruit } from '../types'
 
-import Icon from '../components/Icon.vue'
 import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
 import SelectionBar from '../components/SelectionBar.vue'
@@ -30,14 +29,16 @@ const sheetUrl = computed(() => {
   return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
 })
 
-const { data, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
+const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
 const blacklist = useRecruitBlacklist()
 
 // 🛡️ PRE-FILTER: Exclude Tombstones
 const recruits = computed(() => {
     return (data.value?.hh || []).filter(r => !blacklist.tombstones.value.has(r.id))
 })
-const loading = computed(() => !data.value && isRefreshing.value)
+
+// ⚡ PERFORMANCE: Show skeletons if not hydrated or refreshing empty list
+const showSkeletons = computed(() => !isHydrated.value || (isRefreshing.value && recruits.value.length === 0))
 
 const getTs = (str?: string) => str ? new Date(str).getTime() : 0
 
@@ -46,9 +47,7 @@ const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
     trophies: (a, b) => (b.t || 0) - (a.t || 0),
     name: (a, b) => a.n.localeCompare(b.n),
     time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
-    war_wins: (a, b) => (b.d.war || 0) - (a.d.war || 0),
-    donations: (a, b) => (b.d.don || 0) - (a.d.don || 0),
-    cards_won: (a, b) => (b.d.cards || 0) - (a.d.cards || 0)
+    // ...
 }
 
 const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilter(
@@ -58,41 +57,25 @@ const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilt
     'score'
 )
 
-// ⚡ PERFORMANCE: Batch size 8 for instant LCP
+// ⚡ PERFORMANCE: Batch size 8
 const { visibleItems: progressiveRecruits } = useProgressiveList(filteredRecruits, 8)
 
 const sortOptions = [
   { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
-  { label: 'War Wins', value: 'war_wins', desc: 'Lifetime War Day wins. Includes heuristic bonus for active racers.' },
-  { label: 'Cards Won', value: 'cards_won', desc: 'Total cards won in challenges.' },
-  { label: 'Donations', value: 'donations', desc: 'Total lifetime donations.' },
   { label: 'Trophies', value: 'trophies', desc: 'Current ladder ranking.' },
   { label: 'Recency', value: 'time_found', desc: 'Sorts by discovery time.' },
   { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
 const { 
-  selectedIds, 
-  fabState, 
-  isSelectionMode, 
-  toggleSelect, 
-  selectAll, 
-  clearSelection, 
-  handleAction, 
-  handleBlitz,
-  setForceSelectionMode
+  selectedIds, fabState, isSelectionMode, toggleSelect, selectAll, clearSelection, handleAction, handleBlitz, setForceSelectionMode
 } = useBatchQueue()
 
 const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('recruit-')
 
 const { setFabVisible } = useUiCoordinator()
-watch(() => fabState.value.visible, (visible) => {
-    setFabVisible(!!visible)
-})
-
-onUnmounted(() => {
-    setFabVisible(false)
-})
+watch(() => fabState.value.visible, (visible) => setFabVisible(!!visible))
+onUnmounted(() => setFabVisible(false))
 
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
@@ -193,12 +176,12 @@ function handleSearchUpdate(val: string) {
 
     <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
     
-    <div v-else-if="loading && recruits.length === 0" class="list-container gpu-contain">
-      <SkeletonCard v-for="(_, i) in 6" :key="i" :index="i" :style="{ '--i': i }" />
+    <div v-else-if="showSkeletons" class="list-container gpu-contain">
+      <SkeletonCard v-for="(_, i) in 8" :key="i" :index="i" :style="{ '--i': i }" />
     </div>
     
     <EmptyState 
-      v-else-if="!loading && filteredRecruits.length === 0" 
+      v-else-if="!showSkeletons && filteredRecruits.length === 0" 
       icon="telescope" 
       message="No recruits found"
       hint="Try adjusting your filters or run a new scan."
@@ -248,7 +231,6 @@ function handleSearchUpdate(val: string) {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-/* Min-height prevents layout shift when loading or filtering */
 .list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
 .gpu-contain { transform: translateZ(0); will-change: transform; contain: layout paint; }
 .btn-primary { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--sys-color-primary); color: var(--sys-color-on-primary); border: none; border-radius: 99px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: transform 0.2s; }
