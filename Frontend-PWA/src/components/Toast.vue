@@ -1,5 +1,6 @@
+
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Icon from './Icon.vue'
 
 const props = defineProps<{
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 }>()
 
 let timer: number | undefined
+const isHandlingAction = ref(false)
 
 function startTimer() {
   if (props.duration) {
@@ -31,8 +33,14 @@ function clearTimer() {
 
 function handleMainClick() {
   if (props.actionLabel) {
-    emit('action', props.id)
+    triggerAction()
   }
+}
+
+function triggerAction() {
+  if (isHandlingAction.value) return
+  isHandlingAction.value = true
+  emit('action', props.id)
 }
 
 onMounted(startTimer)
@@ -60,7 +68,12 @@ onUnmounted(clearTimer)
     
     <div class="message">{{ message }}</div>
     
-    <button v-if="actionLabel" class="action-btn" @click.stop="$emit('action', id)">
+    <button 
+      v-if="actionLabel" 
+      class="action-btn" 
+      :disabled="isHandlingAction"
+      @click.stop="triggerAction"
+    >
       {{ actionLabel }}
     </button>
     
@@ -143,6 +156,7 @@ onUnmounted(clearTimer)
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .action-btn:active { filter: brightness(0.9); transform: translateY(1px); }
+.action-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* Standard Action Btn (Non-Undo) */
 .toast:not(.undo) .action-btn {
