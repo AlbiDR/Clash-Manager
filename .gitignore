@@ -1,26 +1,53 @@
-# Dependencies
-node_modules/
+# =================================================================
+# GOOGLE AI STUDIO SANDBOX (ROOT ONLY)
+# =================================================================
+# These files are required for AI Studio to function but should
+# NOT be part of your GitHub repository.
+# -----------------------------------------------------------------
+/index.html
+/index.tsx
+/metadata.json
+/vite.config.ts
+/postcss.config.js
+/tailwind.config.js
 
-# Build outputs
-dist/
-*.local
-
-# Environment files (contains API URL)
+# =================================================================
+# LOCAL DEVELOPMENT & SECURITY
+# =================================================================
 .env
 .env.local
 .env.*.local
+node_modules/
+dist/
+dist-ssr/
+dev-dist/
+*.local
 
-# Editor directories
+# =================================================================
+# MONOREPO SUB-FOLDER BUILD ARTIFACTS
+# =================================================================
+# This ensures that build outputs inside your folders stay out of Git
+**/node_modules/
+**/dist/
+**/build/
+**/.next/
+
+# =================================================================
+# EDITOR / SYSTEM / LOGS
+# =================================================================
 .vscode/
 .idea/
-
-# OS files
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+vitest.config.ts.timestamp-*
 
-# PWA generated files
-dev-dist/
+# OS-specific
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
