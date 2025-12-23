@@ -183,10 +183,12 @@ const chartData = computed(() => {
   transition: all 0.3s ease;
 }
 
-/* Positive State: Vibrant Green + Glow */
+/* Positive State: Vibrant Green + Glow + Animation */
 .trend-path.positive {
   stroke: #4ade80;
   filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.4));
+  stroke-dasharray: 4 2;
+  animation: dash-move 2s linear infinite;
 }
 
 /* Negative State: Coral Red + Dotted + Animation */
