@@ -106,6 +106,7 @@ const trend = computed(() => {
       </div>
     </div>
 
+    <!-- v-if ensures content is secondary and not mounted until needed -->
     <div class="card-body" v-if="expanded">
       <div class="stats-grid">
         <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
@@ -154,9 +155,12 @@ const trend = computed(() => {
   touch-action: pan-y; 
   transition: all 0.2s var(--sys-motion-spring);
   
-  /* ⚡ PERFORMANCE: Skip rendering off-screen cards */
+  /* ⚡ PERFORMANCE: Strict containment for Speed Index */
+  /* contain: strict; breaks overflow:visible for tooltips/shadows, use layout/paint */
+  contain: layout paint style;
+  /* Hardcoded collapsed height prevents layout shift during progressive load */
+  contain-intrinsic-size: auto 76px; 
   content-visibility: auto;
-  contain-intrinsic-size: 1px 75px; 
 }
 
 .card.expanded { 
@@ -164,8 +168,10 @@ const trend = computed(() => {
   box-shadow: var(--sys-elevation-3); 
   margin: 16px 0; 
   border-color: rgba(var(--sys-color-primary-rgb), 0.3); 
-  content-visibility: visible; /* Always render active card */
-  contain-intrinsic-size: 1px 300px;
+  /* Disable optimizations when expanded to allow flexible height */
+  contain: none;
+  content-visibility: visible;
+  contain-intrinsic-size: auto 300px;
 }
 
 .card.selected { background: var(--sys-color-primary-container) !important; border: 2.5px solid var(--sys-color-primary); transform: scale(0.97); box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15); }
