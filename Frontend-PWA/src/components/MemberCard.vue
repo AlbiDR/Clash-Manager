@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { LeaderboardMember } from '../types'
@@ -139,8 +138,35 @@ const trend = computed(() => {
 </template>
 
 <style scoped>
-.card { background: var(--sys-color-surface-container); border-radius: 20px; padding: 12px 16px; margin-bottom: 8px; border: 1.5px solid transparent; cursor: pointer; position: relative; overflow: visible; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: pan-y; transition: all 0.2s var(--sys-motion-spring); }
-.card.expanded { background: var(--sys-color-surface-container-high); box-shadow: var(--sys-elevation-3); margin: 16px 0; border-color: rgba(var(--sys-color-primary-rgb), 0.3); }
+.card { 
+  background: var(--sys-color-surface-container); 
+  border-radius: 20px; 
+  padding: 12px 16px; 
+  margin-bottom: 8px; 
+  border: 1.5px solid transparent; 
+  cursor: pointer; 
+  position: relative; 
+  overflow: visible; 
+  user-select: none; 
+  -webkit-user-select: none; 
+  -webkit-tap-highlight-color: transparent; 
+  touch-action: pan-y; 
+  transition: all 0.2s var(--sys-motion-spring);
+  
+  /* ⚡ PERFORMANCE: Skip rendering off-screen cards */
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 75px; 
+}
+
+.card.expanded { 
+  background: var(--sys-color-surface-container-high); 
+  box-shadow: var(--sys-elevation-3); 
+  margin: 16px 0; 
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3); 
+  content-visibility: visible; /* Always render active card */
+  contain-intrinsic-size: 1px 300px;
+}
+
 .card.selected { background: var(--sys-color-primary-container) !important; border: 2.5px solid var(--sys-color-primary); transform: scale(0.97); box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15); }
 .card.selected .player-name, .card.selected .trophy-val, .card.selected .stat-score, .card.selected .stat-item .label, .card.selected .stat-item .value, .card.selected .trend-val, .card.selected .expand-btn { color: var(--sys-color-on-primary-container) !important; opacity: 1 !important; }
 .card.selected .stat-pod { background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important; color: var(--sys-color-on-primary-container) !important; border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1); }
@@ -152,10 +178,13 @@ const trend = computed(() => {
 .hit-target { position: relative; z-index: 5; }
 .hit-target::after { content: ''; position: absolute; inset: -4px; }
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
+
+/* 🛡️ ACCESSIBILITY: Semantic Colors for Contrast Compliance (WCAG AA) */
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.role-coleader { background: rgba(var(--sys-color-primary-rgb), 0.7); color: white; }
-.role-elder { background: rgba(var(--sys-color-primary-rgb), 0.35); color: var(--sys-color-primary); }
-.role-member { background: rgba(var(--sys-color-primary-rgb), 0.12); color: var(--sys-color-outline); }
+.role-coleader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2); }
+.role-elder { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
+.role-member { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); border: 1px solid var(--sys-color-outline-variant); }
+
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 .player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
 /* Improved Trophy Contrast (Gold -> Amber-700 equivalent for light mode) */
