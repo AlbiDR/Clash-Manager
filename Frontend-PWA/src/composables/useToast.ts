@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import { ref } from 'vue'
 
@@ -40,11 +41,16 @@ export function useToast() {
     }
 
     function triggerAction(id: string) {
-        const toast = toasts.value.find(t => t.id === id)
-        if (toast && toast.onAction) {
-            toast.onAction()
+        const idx = toasts.value.findIndex(t => t.id === id)
+        if (idx !== -1) {
+            const toast = toasts.value[idx]
+            // Remove immediately to prevent double-execution if events fire multiple times
+            toasts.value.splice(idx, 1)
+            
+            if (toast.onAction) {
+                toast.onAction()
+            }
         }
-        remove(id)
     }
 
     function success(message: string) {
