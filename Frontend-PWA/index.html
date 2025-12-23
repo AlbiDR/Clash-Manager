@@ -2,12 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfcff" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0e14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -16,13 +12,15 @@
   <link rel="apple-touch-icon" href="/Clash-Manager/apple-touch-icon.png" />
   <link rel="icon" type="image/png" href="/Clash-Manager/favicon.png" />
 
-  <!-- ⚡ OPTIMIZATION: Non-blocking font load -->
+  <title>Clash Manager</title>
+
+  <!-- ⚡ OPTIMIZATION: Async Font Loading (Non-blocking) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" media="print" onload="this.media='all'">
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap">
   </noscript>
-
-  <title>Clash Manager</title>
 
   <script type="importmap">
   {
@@ -37,104 +35,163 @@
   </script>
 
   <style>
-    /* ⚡ CRITICAL INLINE CSS: Ensures Shell paints before JS loads */
+    /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
     :root {
-      --sys-color-background: #fdfcff;
-      --sys-color-surface-container: #f3edf7;
-      --sys-color-surface-container-high: #ece6f0;
-      --sys-color-surface-container-highest: #e6e0e9;
+      --sh-bg: #fdfcff;
+      --sh-surf: #fdfcff;
+      --sh-surf-c: #f3edf7;
+      --sh-surf-h: #ece6f0;
+      --sh-text: #1a1c1e;
+      --sh-outline: #73777f;
+      --sh-primary: #0061a4;
+      --sh-glass: rgba(255, 255, 255, 0.9);
+      --sh-border: rgba(255, 255, 255, 0.7);
       --sh-sk: #e6e0e9;
-      --sys-surface-glass-border: rgba(255, 255, 255, 0.7);
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --sys-color-background: #0b0e14;
-        --sys-color-surface-container: #1b1f27;
-        --sys-color-surface-container-high: #242932;
-        --sys-color-surface-container-highest: #2f343e;
+        --sh-bg: #0b0e14;
+        --sh-surf: #0b0e14;
+        --sh-surf-c: #1b1f27;
+        --sh-surf-h: #242932;
+        --sh-text: #e1e2e8;
+        --sh-outline: #8d9199;
+        --sh-primary: #a8c7fa;
+        --sh-glass: rgba(20, 24, 32, 0.94);
+        --sh-border: rgba(255, 255, 255, 0.12);
         --sh-sk: #2f343e;
-        --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
       }
     }
-    
-    body { 
-      background-color: var(--sys-color-background); 
-      margin: 0; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      overscroll-behavior-y: none; 
-    }
-    
-    #app-shell { padding: 12px 16px; max-width: 720px; margin: 0 auto; padding-top: calc(12px + env(safe-area-inset-top)); }
-    
-    /* Pre-rendered Header to match ConsoleHeader.vue */
-    .sk-header { 
-      background: var(--sys-color-surface-container); 
-      border-radius: 24px; 
-      padding: 18px; 
-      margin-bottom: 20px; 
-      height: 140px; 
-      box-sizing: border-box; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between; 
-      border: 1px solid var(--sys-surface-glass-border); 
-    }
-    .sk-row { display: flex; justify-content: space-between; align-items: center; }
-    .sk-title { width: 140px; height: 28px; background: var(--sh-sk); border-radius: 8px; }
-    .sk-pill { width: 80px; height: 24px; background: var(--sh-sk); border-radius: 12px; }
-    .sk-input { width: 100%; height: 46px; background: var(--sys-color-surface-container-highest); border-radius: 14px; margin-top: 14px; opacity: 0.6; }
-    
-    .sk-list { display: flex; flex-direction: column; gap: 8px; }
-    
-    /* Pre-rendered Cards to match MemberCard.vue collapsed state */
-    .sk-card { 
-      height: 76px; 
-      background: var(--sys-color-surface-container); 
-      border-radius: 20px; 
-      padding: 12px 16px; 
-      box-sizing: border-box; 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      border: 1px solid transparent; 
-      margin-bottom: 8px;
-    }
-    
-    .sk-info { display: flex; flex-direction: column; gap: 8px; }
-    .sk-line-l { width: 120px; height: 16px; background: var(--sh-sk); border-radius: 4px; }
-    .sk-line-s { width: 80px; height: 12px; background: var(--sh-sk); border-radius: 4px; opacity: 0.7; }
-    .sk-box { width: 48px; height: 48px; background: var(--sh-sk); border-radius: 14px; }
 
-    /* Shimmer Animation */
-    .skeleton-anim { animation: pulse 1.5s infinite ease-in-out; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    body {
+      background-color: var(--sh-bg);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* APP CONTAINER */
+    #app-shell {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 16px;
+      padding-top: calc(12px + env(safe-area-inset-top));
+      padding-bottom: 120px;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    /* HEADER */
+    .sh-header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--sh-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--sh-border);
+      border-radius: 24px;
+      padding: 18px;
+      margin-bottom: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    
+    .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
+    .sh-title { font-size: 24px; font-weight: 800; color: var(--sh-text); letter-spacing: -0.5px; margin: 0; }
+    .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
+    
+    .sh-search {
+      height: 46px; background: var(--sh-surf-h); border-radius: 14px;
+      display: flex; align-items: center; padding: 0 14px; gap: 12px;
+    }
+    .sh-s-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--sh-outline); opacity: 0.3; }
+    .sh-s-line { height: 12px; width: 80px; background: var(--sh-outline); opacity: 0.1; border-radius: 4px; }
+
+    /* LIST CARDS */
+    .sh-list { display: flex; flex-direction: column; gap: 8px; }
+    .sh-card {
+      height: 76px; background: var(--sh-surf-c); border-radius: 20px;
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      border: 1px solid rgba(128,128,128,0.05);
+    }
+    .sh-c-left { display: flex; gap: 14px; align-items: center; }
+    .sh-c-meta { display: flex; flex-direction: column; gap: 6px; width: 50px; }
+    .sh-badge { height: 18px; background: var(--sh-surf-h); border-radius: 6px; opacity: 0.6; }
+    .sh-c-info { display: flex; flex-direction: column; gap: 8px; }
+    .sh-name { width: 120px; height: 16px; background: var(--sh-sk); border-radius: 4px; }
+    .sh-sub { width: 80px; height: 12px; background: var(--sh-sk); border-radius: 4px; opacity: 0.6; }
+    .sh-score { width: 48px; height: 48px; background: var(--sh-sk); border-radius: 14px; }
+
+    /* FLOATING DOCK */
+    .sh-dock {
+      position: fixed; bottom: calc(24px + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
+      background: var(--sh-glass);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--sh-border);
+      padding: 6px; border-radius: 99px;
+      display: flex; gap: 4px; z-index: 50;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+    .sh-d-item { padding: 10px 20px; border-radius: 99px; display: flex; gap: 8px; align-items: center; }
+    .sh-d-item.active { background: var(--sh-primary); }
+    .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; mask-size: cover; -webkit-mask-size: cover; }
+    
+    /* ANIMATION */
+    .sh-pulse { animation: sh-pulse 1.5s infinite ease-in-out; }
+    @keyframes sh-pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
   <div id="app">
-    <!-- 
-      HIGH FIDELITY SHELL 
-      This renders INSTANTLY (FCP) before Vue loads.
-    -->
+    <!-- APP SHELL: Immediate Paint (0ms JS) -->
     <div id="app-shell">
-      <div class="sk-header skeleton-anim">
-        <div class="sk-row">
-          <div class="sk-title"></div>
-          <div class="sk-pill"></div>
+      
+      <!-- HEADER SHELL -->
+      <div class="sh-header">
+        <div class="sh-h-row">
+          <h1 class="sh-title">Leaderboard</h1>
+          <div class="sh-pill sh-pulse"></div>
         </div>
-        <div class="sk-input"></div>
+        <div class="sh-search">
+          <div class="sh-s-icon"></div>
+          <div class="sh-s-line"></div>
+        </div>
       </div>
-      <div class="sk-list">
-        <!-- 8 Cards to fill mobile viewport -->
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 120px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 140px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 90px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 130px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 100px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 150px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 110px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
-        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l" style="width: 125px"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+
+      <!-- LIST SHELL (8 Items for full viewport) -->
+      <div class="sh-list">
+        <div class="sh-card sh-pulse">
+          <div class="sh-c-left">
+            <div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div>
+            <div class="sh-c-info"><div class="sh-name" style="width: 140px"></div><div class="sh-sub"></div></div>
+          </div>
+          <div class="sh-score"></div>
+        </div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 110px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 160px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 90px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 130px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 120px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 100px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
+        <div class="sh-card sh-pulse"><div class="sh-c-left"><div class="sh-c-meta"><div class="sh-badge"></div><div class="sh-badge"></div></div><div class="sh-c-info"><div class="sh-name" style="width: 140px"></div><div class="sh-sub"></div></div></div><div class="sh-score"></div></div>
       </div>
+
+      <!-- DOCK SHELL -->
+      <div class="sh-dock">
+        <div class="sh-d-item active">
+          <!-- Leaderboard Icon (CSS Shape) -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z"/></svg>
+          <span style="font-size:14px;font-weight:750;color:white;font-family:sans-serif">Leaderboard</span>
+        </div>
+        <div class="sh-d-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#73777f"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,17c-2.76,0-5-2.24-5-5s2.24-5,5-5s5,2.24,5,5S14.76,17,12,17z"/></svg>
+        </div>
+        <div class="sh-d-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#73777f"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+        </div>
+      </div>
+
     </div>
   </div>
   <script type="module" src="./src/main.ts"></script>
