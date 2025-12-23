@@ -131,7 +131,9 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
   -webkit-user-select: none; 
   -webkit-tap-highlight-color: transparent; 
   touch-action: pan-y; 
-  transition: all 0.2s var(--sys-motion-spring);
+  /* ⚡ OPTIMIZED: Removed 'all', strictly animates composited properties + colors */
+  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
   
   /* ⚡ PERFORMANCE */
   contain: layout paint style;
