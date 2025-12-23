@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Recruit } from '../types'
@@ -119,8 +118,35 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
 </template>
 
 <style scoped>
-.card { background: var(--sys-color-surface-container); border-radius: 20px; padding: 12px 16px; margin-bottom: 8px; border: 1.5px solid transparent; cursor: pointer; position: relative; overflow: visible; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: pan-y; transition: all 0.2s var(--sys-motion-spring); }
-.card.expanded { background: var(--sys-color-surface-container-high); box-shadow: var(--sys-elevation-3); margin: 16px 0; border-color: rgba(var(--sys-color-primary-rgb), 0.3); }
+.card { 
+  background: var(--sys-color-surface-container); 
+  border-radius: 20px; 
+  padding: 12px 16px; 
+  margin-bottom: 8px; 
+  border: 1.5px solid transparent; 
+  cursor: pointer; 
+  position: relative; 
+  overflow: visible; 
+  user-select: none; 
+  -webkit-user-select: none; 
+  -webkit-tap-highlight-color: transparent; 
+  touch-action: pan-y; 
+  transition: all 0.2s var(--sys-motion-spring);
+  
+  /* ⚡ PERFORMANCE */
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 75px; 
+}
+
+.card.expanded { 
+  background: var(--sys-color-surface-container-high); 
+  box-shadow: var(--sys-elevation-3); 
+  margin: 16px 0; 
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3); 
+  content-visibility: visible;
+  contain-intrinsic-size: 1px 200px; 
+}
+
 .card.selected { background: var(--sys-color-primary-container) !important; border: 2.5px solid var(--sys-color-primary); transform: scale(0.97); }
 .card.selected .player-name, .card.selected .trophy-val, .card.selected .stat-score, .card.selected .sc-label, .card.selected .sc-val, .card.selected .expand-btn { color: var(--sys-color-on-primary-container) !important; opacity: 1 !important; }
 .card.selected .stat-pod { background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important; color: var(--sys-color-on-primary-container) !important; border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1); }
