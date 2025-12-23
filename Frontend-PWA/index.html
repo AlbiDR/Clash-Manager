@@ -3,26 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders. Optimize your war strategy with automated scouting and data scoring." />
+  <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
   
-  <!-- 🚀 PERFORMANCE: PRE-FETCH CRITICAL ASSETS -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <!-- PWA Meta Tags -->
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfcff" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0e14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Clash Manager" />
+  
   <link rel="apple-touch-icon" href="/Clash-Manager/apple-touch-icon.png" />
   <link rel="icon" type="image/png" href="/Clash-Manager/favicon.png" />
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" media="print" onload="this.media='all'">
 
-  <title>Clash Manager | Pro Analytics for Clan Leaders</title>
+  <title>Clash Manager</title>
 
-  <!-- Production Import Map -->
   <script type="importmap">
   {
     "imports": {
@@ -36,34 +33,56 @@
   </script>
 
   <style>
-    :root { --sh-bg: #fdfcff; --sh-text: #1a1c1e; --sh-sk: rgba(0, 0, 0, 0.05); }
-    @media (prefers-color-scheme: dark) { :root { --sh-bg: #0b0e14; --sh-text: #e1e2e8; --sh-sk: rgba(255, 255, 255, 0.05); } }
+    /* CRITICAL INLINE STYLES FOR APP SHELL (FCP < 0.2s) */
+    :root { --sh-bg: #fdfcff; --sh-surf: #f3edf7; --sh-text: #1a1c1e; --sh-sk: #e6e0e9; }
+    @media (prefers-color-scheme: dark) { :root { --sh-bg: #0b0e14; --sh-surf: #1b1f27; --sh-text: #e1e2e8; --sh-sk: #2f343e; } }
+    
     body { background-color: var(--sh-bg); margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overscroll-behavior-y: none; }
-    #app-shell-loader { position: fixed; inset: 0; z-index: 9999; pointer-events: none; padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); transition: opacity 0.2s ease-out; }
-    .shell-header { max-width: 720px; margin: 0 auto; background: var(--sh-bg); border: 1px solid var(--sh-sk); border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
-    .shell-row { display: flex; align-items: center; justify-content: space-between; height: 48px; }
-    .shell-title { margin: 0; font-size: 24px; font-weight: 900; color: var(--sh-text); letter-spacing: -0.03em; }
-    .shell-pill { width: 80px; height: 24px; background: var(--sh-sk); border-radius: 99px; }
-    .shell-list { max-width: 720px; margin: 20px auto 0; display: flex; flex-direction: column; gap: 8px; }
-    .shell-card { height: 58px; background: var(--sh-sk); border-radius: 16px; }
+    #app-shell { padding: 12px 16px; max-width: 720px; margin: 0 auto; padding-top: calc(12px + env(safe-area-inset-top)); }
+    
+    .sk-header { background: var(--sh-surf); border-radius: 24px; padding: 18px; margin-bottom: 20px; height: 140px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(128,128,128,0.1); }
+    .sk-row { display: flex; justify-content: space-between; align-items: center; }
+    .sk-title { width: 140px; height: 28px; background: var(--sh-sk); border-radius: 8px; }
+    .sk-pill { width: 80px; height: 24px; background: var(--sh-sk); border-radius: 12px; }
+    .sk-input { width: 100%; height: 46px; background: var(--sh-sk); border-radius: 14px; margin-top: 14px; opacity: 0.6; }
+    
+    .sk-list { display: flex; flex-direction: column; gap: 8px; }
+    .sk-card { height: 76px; background: var(--sh-surf); border-radius: 20px; padding: 12px 16px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(128,128,128,0.05); }
+    .sk-info { display: flex; flex-direction: column; gap: 8px; }
+    .sk-line-l { width: 120px; height: 16px; background: var(--sh-sk); border-radius: 4px; }
+    .sk-line-s { width: 80px; height: 12px; background: var(--sh-sk); border-radius: 4px; opacity: 0.7; }
+    .sk-box { width: 48px; height: 48px; background: var(--sh-sk); border-radius: 14px; }
+
+    /* Shimmer Animation */
+    .skeleton-anim { animation: pulse 1.5s infinite ease-in-out; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
   <div id="app">
-    <div id="app-shell-loader">
-      <div class="shell-header">
-        <div class="shell-row">
-          <h1 class="shell-title">Clash Manager</h1>
-          <div class="shell-pill"></div>
+    <!-- 
+      HIGH FIDELITY SHELL 
+      This HTML structure mimics the LeaderboardView perfectly.
+      Vue will hydrate over this div, replacing it seamlessly.
+    -->
+    <div id="app-shell">
+      <div class="sk-header skeleton-anim">
+        <div class="sk-row">
+          <div class="sk-title"></div>
+          <div class="sk-pill"></div>
         </div>
-        <div class="shell-row" style="height: 46px;">
-          <div class="shell-pill" style="width: 100%; height: 100%; border-radius: 14px;"></div>
-        </div>
+        <div class="sk-input"></div>
       </div>
-      <div class="shell-list">
-        <div class="shell-card"></div>
-        <div class="shell-card"></div>
-        <div class="shell-card"></div>
+      <div class="sk-list">
+        <!-- 8 Cards to fill mobile viewport -->
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
+        <div class="sk-card skeleton-anim"><div class="sk-info"><div class="sk-line-l"></div><div class="sk-line-s"></div></div><div class="sk-box"></div></div>
       </div>
     </div>
   </div>
