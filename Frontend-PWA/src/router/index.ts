@@ -58,11 +58,22 @@ const router = createRouter({
 // This wraps every route change in a native "Resolve" animation
 router.beforeResolve(async (to, from) => {
     if (!(document as any).startViewTransition) return
-    return new Promise((resolve) => {
-        (document as any).startViewTransition(async () => {
-            resolve(true)
+
+    // 🛡️ CRASH PREVENTION: Skip if document is hidden (e.g. background tab)
+    // startViewTransition throws DOMException if visibilityState is hidden
+    if (document.visibilityState !== 'visible') return
+
+    try {
+        return new Promise((resolve) => {
+            (document as any).startViewTransition(async () => {
+                resolve(true)
+            })
         })
-    })
+    } catch (e) {
+        // Fallback if transition fails to start synchronously
+        console.warn('View transition skipped:', e)
+        return
+    }
 })
 
 // Save scroll before leaving route
