@@ -6,6 +6,7 @@ import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useListFilter } from '../composables/useListFilter'
 import { useUiCoordinator } from '../composables/useUiCoordinator'
+import { useProgressiveList } from '../composables/useProgressiveList'
 import { parseTimeAgoValue, formatTimeAgo } from '../utils/formatters'
 import type { LeaderboardMember } from '../types'
 
@@ -50,6 +51,9 @@ const { searchQuery, sortBy, filteredItems: filteredMembers, updateSort } = useL
     sortStrategies,
     'score'
 )
+
+// ⚡ PERFORMANCE: Render first 20 items immediately, defer the rest
+const { visibleItems: progressiveMembers } = useProgressiveList(filteredMembers, 20)
 
 const sortOptions = [
   { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
@@ -157,7 +161,7 @@ watch(members, (newVal) => {
     
     <div v-else v-auto-animate class="list-container gpu-contain">
       <MemberCard
-        v-for="(member, index) in filteredMembers"
+        v-for="(member, index) in progressiveMembers"
         :key="member.id"
         :id="`member-${member.id}`"
         :member="member"
