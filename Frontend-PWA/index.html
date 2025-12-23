@@ -18,25 +18,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- ⚡ PERFORMANCE: Pre-warm connections to GAS Backend -->
-  <link rel="preconnect" href="https://script.google.com" />
-  <link rel="preconnect" href="https://script.googleusercontent.com" />
+  <link rel="preconnect" href="https://script.google.com" crossorigin />
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
   
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" media="print" onload="this.media='all'">
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap">
   </noscript>
-
-  <script type="importmap">
-  {
-    "imports": {
-      "vue": "https://esm.sh/vue@^3.5.25",
-      "vue-router": "https://esm.sh/vue-router@^4.6.4",
-      "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-      "@formkit/auto-animate/vue": "https://esm.sh/@formkit/auto-animate@^0.9.0/vue",
-      "zod": "https://esm.sh/zod@^3.22.4"
-    }
-  }
-  </script>
 
   <style>
     /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
@@ -101,7 +89,14 @@
     }
     
     .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
-    .sh-title { font-size: 24px; font-weight: 800; color: var(--sh-text); letter-spacing: -0.5px; margin: 0; }
+    /* LCP Optimization: Match ConsoleHeader.vue typography exactly */
+    .sh-title { 
+      font-size: 24px; 
+      font-weight: 900; 
+      color: var(--sh-text); 
+      letter-spacing: -0.03em; 
+      margin: 0; 
+    }
     .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
     
     .sh-search {
@@ -198,6 +193,6 @@
 
     </div>
   </div>
-  <script type="module" src="./src/main.ts"></script>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
