@@ -63,7 +63,7 @@ const activeSortDescription = computed(() => {
               title="Open in Sheets"
               aria-label="Open Google Sheet"
             >
-               <Icon name="spreadsheet" size="18" />
+               <Icon name="spreadsheet" size="20" />
             </a>
             <h1 class="view-title">{{ title }}</h1>
             <div v-if="stats" class="stats-pill">
@@ -192,8 +192,8 @@ const activeSortDescription = computed(() => {
 .sp-label { opacity: 0.5; text-transform: uppercase; font-size: 9px; }
 
 .icon-button {
-  width: 36px; height: 36px;
-  border-radius: 12px;
+  width: 48px; height: 48px;
+  border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
   color: var(--sys-color-primary);
   background: var(--sys-color-surface-container-high);
