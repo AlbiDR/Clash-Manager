@@ -23,6 +23,19 @@
 
   <title>Clash Manager</title>
 
+  <!-- Production Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "vue": "https://esm.sh/vue@^3.5.25",
+      "vue-router": "https://esm.sh/vue-router@^4.6.4",
+      "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+      "@formkit/auto-animate/vue": "https://esm.sh/@formkit/auto-animate@^0.9.0/vue",
+      "zod": "https://esm.sh/zod@^3.22.4"
+    }
+  }
+  </script>
+
   <style>
     :root { --sh-bg: #fdfcff; --sh-text: #1a1c1e; --sh-sk: rgba(0, 0, 0, 0.05); }
     @media (prefers-color-scheme: dark) { :root { --sh-bg: #0b0e14; --sh-text: #e1e2e8; --sh-sk: rgba(255, 255, 255, 0.05); } }
