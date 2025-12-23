@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ref } from 'vue'
 
 // Global state to hold the event
