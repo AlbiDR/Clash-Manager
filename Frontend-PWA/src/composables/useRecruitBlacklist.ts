@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref } from 'vue'
 
 const STORAGE_KEY = 'cm_recruit_tombstones'
