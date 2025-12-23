@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { inflatePayload } from '../gasClient'
 
 describe('gasClient Data Inflation', () => {
-  it('correctly inflates Leaderboard matrix', () => {
+  it('correctly inflates Leaderboard matrix', async () => {
     const rawMatrixData = {
       format: 'matrix',
       schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
@@ -16,7 +16,7 @@ describe('gasClient Data Inflation', () => {
       timestamp: 123456789
     }
 
-    const result = inflatePayload(rawMatrixData)
+    const result = await inflatePayload(rawMatrixData)
 
     // Check first player
     expect(result.lb[0].id).toBe('player1')
@@ -33,7 +33,7 @@ describe('gasClient Data Inflation', () => {
     expect(result.lb[1].dt).toBe(0)
   })
 
-  it('correctly inflates Headhunter matrix', () => {
+  it('correctly inflates Headhunter matrix', async () => {
     const rawMatrixData = {
       format: 'matrix',
       schema: { lb: [], hh: [] },
@@ -45,7 +45,7 @@ describe('gasClient Data Inflation', () => {
       timestamp: 123456789
     }
 
-    const result = inflatePayload(rawMatrixData)
+    const result = await inflatePayload(rawMatrixData)
 
     expect(result.hh).toHaveLength(1)
     expect(result.hh[0].id).toBe('recruit1')
@@ -55,7 +55,7 @@ describe('gasClient Data Inflation', () => {
     expect(result.hh[0].d.cards).toBe(1000)
   })
 
-  it('handles empty matrix gracefully', () => {
+  it('handles empty matrix gracefully', async () => {
     const rawMatrixData = {
       format: 'matrix',
       schema: { lb: [], hh: [] },
@@ -64,12 +64,12 @@ describe('gasClient Data Inflation', () => {
       timestamp: 123456789
     }
 
-    const result = inflatePayload(rawMatrixData)
+    const result = await inflatePayload(rawMatrixData)
     expect(result.lb).toEqual([])
     expect(result.hh).toEqual([])
   })
 
-  it('handles malformed string inputs (String Transport Protocol)', () => {
+  it('handles malformed string inputs (String Transport Protocol)', async () => {
     const rawMatrixData = {
       format: 'matrix',
       schema: { lb: [], hh: [] },
@@ -82,7 +82,7 @@ describe('gasClient Data Inflation', () => {
     // Simulate double-encoded JSON string
     const stringified = JSON.stringify(rawMatrixData)
     
-    const result = inflatePayload(stringified)
+    const result = await inflatePayload(stringified)
     expect(result.lb).toHaveLength(1)
     expect(result.lb[0].id).toBe('p1')
   })
