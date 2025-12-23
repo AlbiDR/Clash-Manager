@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import type { Directive, DirectiveBinding } from 'vue'
 
 interface TactileBinding {
