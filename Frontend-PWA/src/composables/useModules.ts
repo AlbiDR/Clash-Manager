@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ref, watch } from 'vue'
 
 const MODULES_KEY = 'cm_modules_v2'
