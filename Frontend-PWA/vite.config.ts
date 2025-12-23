@@ -11,14 +11,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    cssCodeSplit: true, // ⚡ REDUCE RENDER BLOCKING: Split CSS per route
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('vue')) return 'v-core';
-            if (id.includes('zod')) return 'v-zod'; // Isolate Zod for dynamic loading
+            if (id.includes('vue') || id.includes('router')) return 'v-core';
+            if (id.includes('zod')) return 'v-zod';
             if (id.includes('auto-animate')) return 'v-ui-fx';
+            // Separate icons/heavy UI libs if added later
             return 'v-vendor';
           }
         }
@@ -46,7 +47,6 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // 🎯 EFFICIENT CACHE: Only cache necessary production assets
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
         runtimeCaching: [
           {
@@ -63,7 +63,7 @@ export default defineConfig({
           },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst', // ⚡ Faster than SWR for static font CSS
+            handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-stylesheets',
               expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 30 }
