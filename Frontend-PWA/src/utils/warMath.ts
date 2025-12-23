@@ -13,6 +13,36 @@ const PREDICTION_WEIGHTS: Record<number, number[]> = {
   5: [0.40, 0.25, 0.15, 0.12, 0.08]
 }
 
+export interface HistoryEntry {
+  fame: number
+  weekId: string
+  readableWeek: string
+}
+
+/**
+ * Parses the raw history string from GAS into structured data.
+ * @param historyStr Format: "3000 24W01 | 2500 24W02" (Newest -> Oldest)
+ */
+export function parseHistoryString(historyStr: string | undefined): HistoryEntry[] {
+  if (!historyStr || historyStr === '-') return []
+  
+  return historyStr
+    .split('|')
+    .map(x => x.trim())
+    .filter(Boolean)
+    .map(entry => {
+      const [valStr, weekStr] = entry.split(' ')
+      const fame = parseInt(valStr || '0', 10) || 0
+      
+      const weekMatch = (weekStr || '').match(/^(\d{2})W(\d{2})$/)
+      const readableWeek = weekMatch 
+        ? `Week ${parseInt(weekMatch[2], 10)}` 
+        : weekStr
+        
+      return { fame, weekId: weekStr, readableWeek }
+    })
+}
+
 /**
  * Calculates the projected next fame score based on weighted history and streaks.
  * @param fameHistory Array of fame scores sorted from Newest to Oldest.
@@ -28,14 +58,12 @@ export function calculatePrediction(fameHistory: number[]): number {
   let projection = 0
   
   for (let i = 0; i < ratios.length; i++) {
-    // Safety check in case history is shorter than ratio set (though lookbackCount handles this)
     if (fameHistory[i] !== undefined) {
       projection += fameHistory[i] * ratios[i]
     }
   }
 
   // 2. Streak Bonus (Form Modifier)
-  // Checks the 3 most recent wars (indices 0, 1, 2)
   if (n >= 3) {
     if (
       fameHistory[0] > WAR_CONSTANTS.WIN_THRESHOLD && 
