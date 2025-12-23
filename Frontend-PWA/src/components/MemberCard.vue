@@ -153,12 +153,12 @@ const trend = computed(() => {
   -webkit-user-select: none; 
   -webkit-tap-highlight-color: transparent; 
   touch-action: pan-y; 
-  transition: all 0.2s var(--sys-motion-spring);
+  /* ⚡ OPTIMIZED: Removed 'all', strictly animates composited properties + colors */
+  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
   
   /* ⚡ PERFORMANCE: Strict containment for Speed Index */
-  /* contain: strict; breaks overflow:visible for tooltips/shadows, use layout/paint */
   contain: layout paint style;
-  /* Hardcoded collapsed height prevents layout shift during progressive load */
   contain-intrinsic-size: auto 76px; 
   content-visibility: auto;
 }
@@ -168,7 +168,6 @@ const trend = computed(() => {
   box-shadow: var(--sys-elevation-3); 
   margin: 16px 0; 
   border-color: rgba(var(--sys-color-primary-rgb), 0.3); 
-  /* Disable optimizations when expanded to allow flexible height */
   contain: none;
   content-visibility: visible;
   contain-intrinsic-size: auto 300px;
@@ -186,7 +185,7 @@ const trend = computed(() => {
 .hit-target::after { content: ''; position: absolute; inset: -4px; }
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
 
-/* 🛡️ ACCESSIBILITY: Semantic Colors for Contrast Compliance (WCAG AA) */
+/* 🛡️ ACCESSIBILITY: Semantic Colors */
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .role-coleader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2); }
 .role-elder { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
@@ -194,7 +193,6 @@ const trend = computed(() => {
 
 .name-block { display: flex; flex-direction: column; min-width: 0; }
 .player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
-/* Improved Trophy Contrast: Darker Gold for Light Mode accessibility (4.5:1+) */
 .trophy-meta { display: flex; align-items: center; gap: 4px; color: #854d0e; margin-top: 2px; width: fit-content; }
 :root.dark .trophy-meta { color: #fbbf24; }
 .trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
@@ -215,7 +213,6 @@ const trend = computed(() => {
 @keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
-/* Replaced opacity: 0.5 with explicit secondary color for contrast compliance */
 .stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--sys-color-secondary); }
 .stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
 .actions { display: flex; gap: 8px; margin-top: 16px; }
