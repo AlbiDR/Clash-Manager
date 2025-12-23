@@ -244,7 +244,8 @@ function handleSearchUpdate(val: string) {
 
 <style scoped>
 .view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; }
+/* Min-height prevents layout shift when loading or filtering */
+.list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
 .gpu-contain { transform: translateZ(0); will-change: transform; contain: layout paint; }
 .btn-primary { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--sys-color-primary); color: var(--sys-color-on-primary); border: none; border-radius: 99px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: transform 0.2s; }
 .btn-primary:active { transform: scale(0.95); }
