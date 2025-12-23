@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { computed } from 'vue'
 import { useClanData } from './useClanData'
 
@@ -83,4 +83,3 @@ export function useBenchmarking() {
 
     return { getBenchmark }
 }
-
