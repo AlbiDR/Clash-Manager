@@ -18,13 +18,15 @@
   --sys-color-on-secondary-container: #101c2b;
   
   --sys-color-error: #ba1a1a;
+  --sys-color-on-error: #ffffff;
   --sys-color-error-container: #ffdad6;
   --sys-color-on-error-container: #410002;
   
   /* Adjusted for WCAG AA Contrast (4.5:1 on #b9f6ca) */
   --sys-color-success: #145218;
-  --sys-color-success-container: #b9f6ca;
   --sys-color-on-success: #ffffff;
+  --sys-color-success-container: #b9f6ca;
+  --sys-color-on-success-container: #002105;
 
   --sys-color-background: #fdfcff;
   --sys-color-surface: #fdfcff;
@@ -60,6 +62,24 @@
 :root.dark {
   --sys-color-primary: #a8c7fa;
   --sys-color-on-primary: #00315b;
+  --sys-color-primary-container: #004781;
+  --sys-color-on-primary-container: #d1e4ff;
+
+  --sys-color-secondary: #bbc7db;
+  --sys-color-on-secondary: #253140;
+  --sys-color-secondary-container: #3b4858;
+  --sys-color-on-secondary-container: #d7e3f7;
+
+  --sys-color-error: #ffb4ab;
+  --sys-color-on-error: #690005;
+  --sys-color-error-container: #93000a;
+  --sys-color-on-error-container: #ffdad6;
+
+  --sys-color-success: #6dd58c;
+  --sys-color-on-success: #00390a;
+  --sys-color-success-container: #005313;
+  --sys-color-on-success-container: #b9f6ca;
+
   --sys-color-surface: #0b0e14;
   --sys-color-background: #0b0e14;
   --sys-color-on-surface: #e1e2e8;
@@ -73,6 +93,7 @@
   
   --sys-surface-glass: rgba(20, 24, 32, 0.94);
   --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
+  --sys-color-outline: #8d9199;
   --sys-color-outline-variant: #44474f;
 }
 
@@ -144,10 +165,10 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.tier-elite { background: var(--sys-color-primary); color: white; }
-.tier-top-tier { background: var(--sys-color-success); color: white; }
+.tier-elite { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
+.tier-top-tier { background: var(--sys-color-success); color: var(--sys-color-on-success); }
 .tier-growing { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); border: 1px solid var(--sys-color-outline-variant); }
-.tier-under { background: var(--sys-color-error); color: white; }
+.tier-under { background: var(--sys-color-error); color: var(--sys-color-on-error); }
 
 .rt-visual { height: 14px; display: flex; align-items: center; position: relative; }
 .rt-track { width: 100%; height: 3px; position: relative; background: var(--sys-color-outline-variant); opacity: 0.2; border-radius: 2px; }
