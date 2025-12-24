@@ -43,7 +43,6 @@ jobs:
         env:
           VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
 
-      # 🔍 NEW STEP: This creates the missing config file for Lighthouse
       - name: Create Lighthouse Config
         run: |
           echo '{
@@ -54,11 +53,10 @@ jobs:
             }
           }' > ../.lighthouserc.json
 
-      # 🔍 FIXED: Removed the invalid 'staticDistDir' input and pointed to the file
       - name: Run Lighthouse
         uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: './.lighthouserc.json'
+          configPath: '../.lighthouserc.json'
           temporaryPublicStorage: true
 
       - name: Upload Pages Artifact
