@@ -27,20 +27,21 @@ function bootstrap() {
         const modules = useModules(); modules.init();
         const theme = useTheme(); theme.init();
         
-        // 2. Create App
+        // 2. Initialize Data Store *BEFORE* Mount
+        // This ensures the initial render of App.vue has access to synchronous localStorage data
+        // skipping the Skeleton state entirely if data exists.
+        const clanData = useClanData(); 
+        clanData.init();
+
+        // 3. Create App
         const app = createApp(App)
         app.use(router)
         app.use(autoAnimatePlugin)
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
-        // 3. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
+        // 4. Mount (Seamless Visual Handover: HTML Shell -> Vue Content)
         app.mount('#app')
-
-        // 4. Initialize Data
-        // Hydration logic is now safe to call immediately as it internally yields the thread
-        const clanData = useClanData(); 
-        clanData.init();
 
         // 5. Non-Critical Systems (Deferred)
         const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 200));
