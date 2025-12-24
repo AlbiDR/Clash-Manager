@@ -64,7 +64,7 @@ const activeSortDescription = computed(() => {
             >
                <Icon name="spreadsheet" size="20" />
             </a>
-            <!-- LCP ELEMENT: No transitions, font-display swap handled by index.html critical css -->
+            <!-- LCP Element Candidate -->
             <h1 class="view-title">{{ title }}</h1>
             <div v-if="stats" class="stats-pill">
               <span class="sp-value">{{ stats.value }}</span>
@@ -125,12 +125,6 @@ const activeSortDescription = computed(() => {
 </template>
 
 <style scoped>
-/* 
- * NOTE: Critical CSS for .header-wrapper, .console-glass, .view-title 
- * is INLINED in index.html for LCP optimization.
- * Duplicate declarations here are for dev-server HMR fallback or overrides.
- */
-
 .header-wrapper {
   position: sticky;
   top: 0;
@@ -163,11 +157,9 @@ const activeSortDescription = computed(() => {
   top: -50px; left: -20px;
   width: 150px; height: 150px;
   background: var(--sys-color-primary);
-  /* ⚡ PERF: Reduced blur radius to minimize GPU paint cost on LCP */
-  filter: blur(40px);
+  filter: blur(80px);
   opacity: 0.1;
   pointer-events: none;
-  transform: translateZ(0); /* Hardware accelerate */
 }
 
 /* 🛡️ CLS PREVENTION: Fixed minimum height prevents shifting */
@@ -188,7 +180,7 @@ const activeSortDescription = computed(() => {
   font-weight: 900;
   color: var(--sys-color-on-surface);
   letter-spacing: -0.03em;
-  /* ⚡ PERF: Removed font-size transition to instant-paint the text */
+  /* ⚡ PERF: Removed layout-triggering transition on font-size */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
