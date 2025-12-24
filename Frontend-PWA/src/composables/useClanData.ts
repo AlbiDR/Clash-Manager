@@ -30,31 +30,36 @@ export function useClanData() {
             return
         }
         
-        // ⚡ PERFORMANCE: Optimistic Network Start
-        // Trigger the network request immediately in the background
+        // ⚡ PERFORMANCE: Parallel Execution
+        // We do NOT wait for disk read to finish before starting network request.
+        // This cuts the TTI by the time it takes to read from IDB.
+        
+        // 1. Start Network Sync (Optimistic)
         startBackgroundSync()
 
-        // ⚡ INSTANT LCP: Synchronous Disk Read
-        // We do NOT use requestIdleCallback here. We need this data 
-        // ready before the Vue app mounts to prevent a Skeleton Flash.
-        try {
-            const raw = localStorage.getItem(SNAPSHOT_KEY)
-            if (raw) {
-                const parsed = JSON.parse(raw)
-                // Only apply snapshot if we haven't already received fresh data
-                if (!clanData.value) {
-                    clanData.value = parsed
-                    lastSyncTime.value = parsed.timestamp || Date.now()
-                    updateBadgeCount(parsed)
-                    console.log('⚡ Instant Hydration: Success')
+        // 2. Read from Disk (Immediate visual feedback)
+        const yieldThread = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+        yieldThread(() => {
+            try {
+                const raw = localStorage.getItem(SNAPSHOT_KEY)
+                if (raw) {
+                    const parsed = JSON.parse(raw)
+                    // Only apply snapshot if we haven't already received fresh data
+                    if (!clanData.value) {
+                        clanData.value = parsed
+                        lastSyncTime.value = parsed.timestamp || Date.now()
+                        updateBadgeCount(parsed)
+                        console.log('⚡ Instant Hydration: Success')
+                    }
                 }
+            } catch (e) {
+                console.warn('Hydration failed', e)
+            } finally {
+                // Signal that initial data load attempt is done
+                isHydrated.value = true
             }
-        } catch (e) {
-            console.warn('Hydration failed', e)
-        } finally {
-            // Signal that initial data load attempt is done
-            isHydrated.value = true
-        }
+        })
     }
 
     async function init() {
@@ -72,7 +77,7 @@ export function useClanData() {
             return
         }
 
-        // Fast DB Path (SWR) via IDB - Still useful for larger datasets or binary blobs
+        // Fast DB Path (SWR) via IDB
         try {
             const cached = await loadCache()
             if (cached) {
