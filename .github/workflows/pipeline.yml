@@ -62,7 +62,8 @@ jobs:
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './Frontend-PWA/dist'
+          # Use the absolute workspace path to avoid subfolder confusion
+          path: ${{ github.workspace }}/Frontend-PWA/dist
 
       - name: Zip Assets (for Tags)
         if: startsWith(github.ref, 'refs/tags/v')
