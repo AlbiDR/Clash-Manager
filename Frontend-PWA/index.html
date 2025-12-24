@@ -34,7 +34,8 @@
       --sh-surf-c: #f3edf7;
       --sh-surf-h: #ece6f0;
       --sh-text: #1a1c1e;
-      --sh-outline: #73777f;
+      /* ACCESSIBILITY: Darkened outline color for >4.5:1 contrast */
+      --sh-outline: #5f6368; 
       --sh-primary: #0061a4;
       --sh-glass: rgba(255, 255, 255, 0.9);
       --sh-border: rgba(255, 255, 255, 0.7);
@@ -63,8 +64,9 @@
       overflow-x: hidden;
     }
 
-    /* APP CONTAINER */
+    /* APP CONTAINER - SEMANTIC MAIN TAG */
     #app-shell {
+      display: block;
       max-width: 720px;
       margin: 0 auto;
       padding: 0 16px;
@@ -145,7 +147,8 @@
 <body>
   <div id="app">
     <!-- APP SHELL: Immediate Paint (0ms JS) -->
-    <div id="app-shell">
+    <!-- Accessibility Fix: Using <main> landmark -->
+    <main id="app-shell">
       
       <!-- HEADER SHELL -->
       <div class="sh-header">
@@ -192,7 +195,7 @@
         </div>
       </div>
 
-    </div>
+    </main>
   </div>
   <script type="module" src="./src/main.ts"></script>
 </body>
