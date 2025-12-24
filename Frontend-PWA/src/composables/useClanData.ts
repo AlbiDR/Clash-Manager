@@ -124,24 +124,11 @@ export function useClanData() {
                 return
             }
 
-            // ⚡ DEEP NET INTEGRATION: Check for preloaded promise
-            let remoteData: WebAppData
+            // ⚡ DEEP NET PROTOCOL: Simplified
+            // Preloader removed to prioritize FCP.
+            // We now rely solely on standard network fetch after Vue hydration.
             
-            if ((window as any).__CM_PRELOAD__) {
-                console.log('⚡ Consuming Deep Net Preload...')
-                // Added semicolon to prevent ASI failure with next line starting with (
-                const preloadedEnvelope = await (window as any).__CM_PRELOAD__;
-                (window as any).__CM_PRELOAD__ = null // Consume once
-                
-                if (preloadedEnvelope && preloadedEnvelope.data) {
-                    remoteData = await inflatePayload(preloadedEnvelope.data)
-                } else {
-                    // Fallback if preload failed
-                    remoteData = await fetchRemote()
-                }
-            } else {
-                remoteData = await fetchRemote()
-            }
+            const remoteData = await fetchRemote()
 
             clanData.value = remoteData
             lastSyncTime.value = remoteData.timestamp
