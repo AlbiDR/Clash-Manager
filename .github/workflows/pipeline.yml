@@ -34,7 +34,7 @@ jobs:
           cache-dependency-path: './Frontend-PWA/package-lock.json'
 
       - name: Install Dependencies
-        run: npm ci --prefer-offline --no-audit --no-fund
+        run: npm install --prefer-offline --no-audit --no-fund
 
       - name: Run Unit Tests
         run: npm test -- run
