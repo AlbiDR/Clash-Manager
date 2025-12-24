@@ -9,7 +9,7 @@ import { generateMockData } from '../utils/mockData'
 
 // Global State
 const clanData = shallowRef<WebAppData | null>(null)
-// Initialize as hydrated=false to force Skeletons on first paint ONLY if we have no cache
+// Initialize as hydrated=false to force Skeletons on first paint
 const isHydrated = ref(false) 
 const isRefreshing = ref(false)
 const lastSyncTime = ref<number | null>(null)
@@ -30,34 +30,36 @@ export function useClanData() {
             return
         }
         
-        // ⚡ INSTANT PAINT: Synchronous LocalStorage Read
-        // We sacrifice ~5ms of main thread time here to ensure the very first frame 
-        // renders DATA instead of SKELETONS if we have it.
-        try {
-            const raw = localStorage.getItem(SNAPSHOT_KEY)
-            if (raw) {
-                // We assume LocalStorage contains a valid pre-parsed structure or raw matrix
-                // We use a "fast inflation" that skips Zod validation for speed.
-                const parsed = JSON.parse(raw)
-                // If it's the full WebAppData shape already (legacy) or matrix
-                inflatePayload(parsed, true).then(data => {
-                    clanData.value = data
-                    lastSyncTime.value = data.timestamp || Date.now()
-                    isHydrated.value = true // Data is ready, render immediately
-                    updateBadgeCount(data)
-                    console.log('⚡ Instant Paint: Hydrated from Snapshot')
-                })
-            }
-        } catch (e) {
-            console.warn('Snapshot hydration failed', e)
-        }
+        // ⚡ PERFORMANCE: Parallel Execution
+        // We do NOT wait for disk read to finish before starting network request.
+        // This cuts the TTI by the time it takes to read from IDB.
+        
+        // 1. Start Network Sync (Optimistic)
+        startBackgroundSync()
 
-        // ⚡ BACKGROUND SYNC: Decoupled
-        // We delay the heavy network/IDB logic until the browser has likely painted the first frame.
-        // 100ms delay ensures the UI thread is free for animations/transitions on mount.
-        setTimeout(() => {
-            startBackgroundSync()
-        }, 100)
+        // 2. Read from Disk (Immediate visual feedback)
+        const yieldThread = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+        yieldThread(() => {
+            try {
+                const raw = localStorage.getItem(SNAPSHOT_KEY)
+                if (raw) {
+                    const parsed = JSON.parse(raw)
+                    // Only apply snapshot if we haven't already received fresh data
+                    if (!clanData.value) {
+                        clanData.value = parsed
+                        lastSyncTime.value = parsed.timestamp || Date.now()
+                        updateBadgeCount(parsed)
+                        console.log('⚡ Instant Hydration: Success')
+                    }
+                }
+            } catch (e) {
+                console.warn('Hydration failed', e)
+            } finally {
+                // Signal that initial data load attempt is done
+                isHydrated.value = true
+            }
+        })
     }
 
     async function init() {
@@ -72,11 +74,10 @@ export function useClanData() {
             clanData.value = mock
             lastSyncTime.value = mock.timestamp
             updateBadgeCount(mock)
-            isHydrated.value = true
             return
         }
 
-        // Fast DB Path (SWR) via IDB - Check if IDB has newer data than LocalStorage
+        // Fast DB Path (SWR) via IDB
         try {
             const cached = await loadCache()
             if (cached) {
@@ -84,14 +85,13 @@ export function useClanData() {
                     clanData.value = cached
                     lastSyncTime.value = cached.timestamp
                     updateBadgeCount(cached)
-                    isHydrated.value = true // Ensure hydrated if we missed LS but hit IDB
                 }
             }
         } catch (e) {
             console.warn("DB Load Failed", e)
         }
 
-        // Network Sync - Always run to get fresh data
+        // Network Sync
         refresh()
     }
 
@@ -124,7 +124,7 @@ export function useClanData() {
                 return
             }
 
-            // ⚡ DEEP NET INTEGRATION: Check for preloaded promise from index.html
+            // ⚡ DEEP NET INTEGRATION: Check for preloaded promise
             let remoteData: WebAppData
             
             if ((window as any).__CM_PRELOAD__) {
@@ -134,10 +134,9 @@ export function useClanData() {
                 (window as any).__CM_PRELOAD__ = null // Consume once
                 
                 if (preloadedEnvelope && preloadedEnvelope.data) {
-                    // Preload already happened, but we still need to inflate/validate
-                    remoteData = await inflatePayload(preloadedEnvelope.data, false)
+                    remoteData = await inflatePayload(preloadedEnvelope.data)
                 } else {
-                    // Fallback if preload failed or was null
+                    // Fallback if preload failed
                     remoteData = await fetchRemote()
                 }
             } else {
@@ -147,7 +146,6 @@ export function useClanData() {
             clanData.value = remoteData
             lastSyncTime.value = remoteData.timestamp
             syncStatus.value = 'success'
-            isHydrated.value = true
 
             // Save to snapshot for next cold start LCP
             // Use requestIdleCallback to avoid blocking input during save
