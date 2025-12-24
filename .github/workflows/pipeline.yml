@@ -44,6 +44,7 @@ jobs:
           VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
 
       - name: Create Lighthouse Config
+        # We use $GITHUB_WORKSPACE to ensure the file is saved at the very root of the project
         run: |
           echo '{
             "ci": {
@@ -51,12 +52,13 @@ jobs:
                 "staticDistDir": "./Frontend-PWA/dist"
               }
             }
-          }' > ../.lighthouserc.json
+          }' > $GITHUB_WORKSPACE/.lighthouserc.json
 
       - name: Run Lighthouse
         uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: '../.lighthouserc.json'
+          # We point directly to the absolute path in the workspace root
+          configPath: './.lighthouserc.json'
           temporaryPublicStorage: true
 
       - name: Upload Pages Artifact
