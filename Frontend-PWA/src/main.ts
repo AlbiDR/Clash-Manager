@@ -26,6 +26,13 @@ function bootstrap() {
         // 1. Critical Config (Synchronous)
         const modules = useModules(); modules.init();
         const theme = useTheme(); theme.init();
+        const clanData = useClanData();
+        
+        // ⚡ INSTANT HYDRATION:
+        // Trigger hydration immediately so that if data is in LocalStorage, 
+        // `isHydrated` is true BEFORE the app mounts. 
+        // This effectively eliminates the "Skeleton Flash" for returning users.
+        clanData.init();
         
         // 2. Create App
         const app = createApp(App)
@@ -34,15 +41,10 @@ function bootstrap() {
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
-        // 3. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
+        // 3. Mount (Visual Handover: HTML Shell -> Vue App)
         app.mount('#app')
 
-        // 4. Initialize Data
-        // Hydration logic is now safe to call immediately as it internally yields the thread
-        const clanData = useClanData(); 
-        clanData.init();
-
-        // 5. Non-Critical Systems (Deferred)
+        // 4. Non-Critical Systems (Deferred)
         const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 200));
         defer(() => {
             const apiState = useApiState(); apiState.init();
