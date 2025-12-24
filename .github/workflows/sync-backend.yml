@@ -1,12 +1,17 @@
-
 name: Sync GAS Backend
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
     paths:
-      - 'Backend-GAS/**' # Only runs if files in your Backend folder change
-  workflow_dispatch: # Allows manual trigger
+      - 'Backend-GAS/**' # Only triggers if backend files change
+  workflow_dispatch: # Allows you to click "Run workflow" manually
+
+# ⚡ CONCURRENCY: If you push 3 backend changes in a row, 
+# it cancels the old ones and only pushes the latest code to Google.
+concurrency:
+  group: gas-sync-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy-gas:
@@ -20,8 +25,9 @@ jobs:
         with:
           node-version: '20'
 
+      # Using --no-fund and --no-audit makes the Clasp installation faster
       - name: Install Clasp
-        run: npm install -g @google/clasp
+        run: npm install -g @google/clasp --no-fund --no-audit
 
       - name: Create Clasp Auth File
         run: echo "$CLASPRC_JSON" > ~/.clasprc.json
