@@ -30,6 +30,7 @@
   <script>
     (function() {
       try {
+        // Check for saved API URL from previous sessions
         const storedUrl = localStorage.getItem('cm_gas_url');
         if (storedUrl) {
           window.__CM_PRELOAD__ = fetch(storedUrl + '?action=getwebappdata', {
@@ -43,93 +44,89 @@
     })();
   </script>
 
-  <style id="critical-css">
-    /* ⚡ CRITICAL INLINE CSS: Optimized for LCP */
+  <style>
+    /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
     :root {
-      --sys-color-background: #fdfcff;
-      --sys-color-surface: #fdfcff;
-      --sys-color-on-surface: #1a1c1e;
-      --sys-color-primary: #0061a4;
-      --sys-color-outline: #73777f;
-      --sys-surface-glass: rgba(255, 255, 255, 0.9);
-      --sys-surface-glass-border: rgba(255, 255, 255, 0.7);
-      --shape-corner-l: 24px;
-      --sys-elevation-2: 0 16px 32px rgba(0,0,0,0.1);
-      
-      /* Shell vars */
       --sh-bg: #fdfcff;
+      --sh-surf: #fdfcff;
       --sh-surf-c: #f3edf7;
       --sh-surf-h: #ece6f0;
+      --sh-text: #1a1c1e;
+      --sh-outline: #73777f;
+      --sh-primary: #0061a4;
+      --sh-glass: rgba(255, 255, 255, 0.9);
+      --sh-border: rgba(255, 255, 255, 0.7);
       --sh-sk: #e6e0e9;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --sys-color-background: #0b0e14;
-        --sys-color-surface: #0b0e14;
-        --sys-color-on-surface: #e1e2e8;
-        --sys-color-primary: #a8c7fa;
-        --sys-color-outline: #8d9199;
-        --sys-surface-glass: rgba(20, 24, 32, 0.94);
-        --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
-        
         --sh-bg: #0b0e14;
+        --sh-surf: #0b0e14;
         --sh-surf-c: #1b1f27;
         --sh-surf-h: #242932;
+        --sh-text: #e1e2e8;
+        --sh-outline: #8d9199;
+        --sh-primary: #a8c7fa;
+        --sh-glass: rgba(20, 24, 32, 0.94);
+        --sh-border: rgba(255, 255, 255, 0.12);
         --sh-sk: #2f343e;
       }
     }
 
     body {
-      background-color: var(--sys-color-background);
+      background-color: var(--sh-bg);
       margin: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
 
+    /* APP CONTAINER */
     #app-shell {
       max-width: 720px;
       margin: 0 auto;
       padding: 0 16px;
       padding-top: calc(12px + env(safe-area-inset-top));
       padding-bottom: 120px;
+      opacity: 1;
+      transition: opacity 0.3s ease;
     }
 
-    /* CRITICAL HEADER STYLES */
-    .header-wrapper {
-      position: sticky; top: 0; z-index: 100;
-      padding: 12px 0;
-    }
-    .console-glass {
-      position: relative;
-      background: var(--sys-surface-glass);
-      /* Use a simpler filter for shell to speed up initial paint */
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--sys-surface-glass-border);
-      border-radius: var(--shape-corner-l);
+    /* HEADER */
+    .sh-header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--sh-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--sh-border);
+      border-radius: 24px;
       padding: 18px;
+      margin-bottom: 20px;
       display: flex; flex-direction: column; gap: 14px;
-      box-shadow: var(--sys-elevation-2);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
-    .header-row { 
-      display: flex; align-items: center; justify-content: space-between; 
-      width: 100%; gap: 12px; min-height: 48px; 
+    
+    .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
+    
+    /* LCP Optimization: Match ConsoleHeader.vue typography exactly */
+    .sh-title { 
+      font-size: 24px; 
+      font-weight: 900; 
+      color: var(--sh-text); 
+      letter-spacing: -0.03em; 
+      margin: 0; 
     }
-    .view-title {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 900;
-      color: var(--sys-color-on-surface);
-      letter-spacing: -0.03em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      /* Ensure font swap happens gracefully */
-      font-family: 'Inter', system-ui, sans-serif;
+    .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
+    
+    .sh-search {
+      height: 46px; background: var(--sh-surf-h); border-radius: 14px;
+      display: flex; align-items: center; padding: 0 14px; gap: 12px;
     }
+    .sh-s-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--sh-outline); opacity: 0.3; }
+    .sh-s-line { height: 12px; width: 80px; background: var(--sh-outline); opacity: 0.1; border-radius: 4px; }
 
-    /* SKELETON LIST */
-    .sh-list { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+    /* LIST CARDS */
+    .sh-list { display: flex; flex-direction: column; gap: 8px; }
     .sh-card {
       height: 76px; background: var(--sh-surf-c); border-radius: 20px;
       padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
@@ -143,19 +140,20 @@
     .sh-sub { width: 80px; height: 12px; background: var(--sh-sk); border-radius: 4px; opacity: 0.6; }
     .sh-score { width: 48px; height: 48px; background: var(--sh-sk); border-radius: 14px; }
 
-    /* DOCK */
+    /* FLOATING DOCK */
     .sh-dock {
       position: fixed; bottom: calc(24px + env(safe-area-inset-bottom));
       left: 50%; transform: translateX(-50%);
-      background: var(--sys-surface-glass);
+      background: var(--sh-glass);
       backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--sys-surface-glass-border);
+      border: 1px solid var(--sh-border);
       padding: 6px; border-radius: 99px;
       display: flex; gap: 4px; z-index: 50;
       box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }
     .sh-d-item { padding: 10px 20px; border-radius: 99px; display: flex; gap: 8px; align-items: center; }
-    .sh-d-item.active { background: var(--sys-color-primary); }
+    .sh-d-item.active { background: var(--sh-primary); }
+    .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; mask-size: cover; -webkit-mask-size: cover; }
     
     /* ANIMATION */
     .sh-pulse { animation: sh-pulse 1.5s infinite ease-in-out; }
@@ -167,22 +165,19 @@
     <!-- APP SHELL: Immediate Paint (0ms JS) -->
     <div id="app-shell">
       
-      <!-- HEADER SHELL: Matches ConsoleHeader.vue structure exactly -->
-      <div class="header-wrapper">
-        <div class="console-glass">
-          <div class="header-row top">
-            <h1 class="view-title">Leaderboard</h1>
-            <div class="sh-badge sh-pulse" style="width: 80px; height: 28px; border-radius: 99px;"></div>
-          </div>
-          <!-- Search Placeholder -->
-          <div class="header-row" style="min-height: 46px">
-             <div style="flex:1; height:46px; background: var(--sh-surf-h); border-radius: 14px;"></div>
-             <div style="width:180px; height:46px; background: var(--sh-surf-h); border-radius: 14px;"></div>
-          </div>
+      <!-- HEADER SHELL -->
+      <div class="sh-header">
+        <div class="sh-h-row">
+          <h1 class="sh-title">Leaderboard</h1>
+          <div class="sh-pill sh-pulse"></div>
+        </div>
+        <div class="sh-search">
+          <div class="sh-s-icon"></div>
+          <div class="sh-s-line"></div>
         </div>
       </div>
 
-      <!-- LIST SHELL -->
+      <!-- LIST SHELL (8 Items for full viewport) -->
       <div class="sh-list">
         <div class="sh-card sh-pulse">
           <div class="sh-c-left">
@@ -203,6 +198,7 @@
       <!-- DOCK SHELL -->
       <div class="sh-dock">
         <div class="sh-d-item active">
+          <!-- Leaderboard Icon (CSS Shape) -->
           <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z"/></svg>
           <span style="font-size:14px;font-weight:750;color:white;font-family:sans-serif">Leaderboard</span>
         </div>
