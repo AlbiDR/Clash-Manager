@@ -62,7 +62,6 @@ jobs:
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Use the absolute workspace path to avoid subfolder confusion
           path: ${{ github.workspace }}/Frontend-PWA/dist
 
       - name: Zip Assets (for Tags)
@@ -81,30 +80,14 @@ jobs:
   deploy-pages:
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  create-release:
-    needs: build-and-test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Zip
-        uses: actions/download-artifact@v4
-        with:
-          name: release-zip
-          path: .
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: clash-manager-pwa.zip
-          generate_release_notes: true
-          body: |
-            ## 🚀 PWA Update
-            Access the web application here:
-            👉 https://albidr.github.io/Clash-Manager/
