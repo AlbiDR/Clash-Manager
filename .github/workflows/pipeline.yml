@@ -2,8 +2,12 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ] # Ensure this matches your default branch
-  workflow_dispatch:
+    branches: [ "**" ] # Triggers on EVERY branch push
+  workflow_dispatch:   # Enables the "Run workflow" manual button
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -32,15 +36,12 @@ jobs:
         env:
           VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
 
-      # 🔍 DEBUG: This checks if index.html actually exists in the dist folder
       - name: Verify Build Output
         run: ls -la Frontend-PWA/dist
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # This is the most important line. 
-          # It tells GitHub: "Take everything inside this folder and make it the website."
           path: './Frontend-PWA/dist'
 
       - name: Deploy to GitHub Pages
