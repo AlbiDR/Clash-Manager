@@ -1,0 +1,100 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ] # Triggers on version tags
+  workflow_dispatch:
+
+# ⚡ CONCURRENCY: Cancels outdated builds if you push multiple times quickly
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Frontend-PWA
+    outputs:
+      is_tag: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (with Cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './Frontend-PWA/package-lock.json'
+
+      - name: Install Dependencies
+        run: npm ci --prefer-offline # 'npm ci' is faster/cleaner for CI environments
+
+      - name: Run Unit Tests
+        run: npm test -- run
+
+      - name: Build App
+        run: npm run build
+        env:
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
+
+      # Upload for GitHub Pages
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './Frontend-PWA/dist'
+
+      # Prepare Zip ONLY if this is a Tag (Release)
+      - name: Zip Assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd dist
+          zip -r ../clash-manager-pwa.zip .
+
+      # Persist the Zip file for the next job
+      - name: Upload Zip for Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-zip
+          path: Frontend-PWA/clash-manager-pwa.zip
+
+  deploy-pages:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  create-release:
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Zip
+        uses: actions/download-artifact@v4
+        with:
+          name: release-zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: clash-manager-pwa.zip
+          generate_release_notes: true
+          body: |
+            ## 🚀 PWA Update
+            Access the web application here:
+            👉 https://albidr.github.io/Clash-Manager/
