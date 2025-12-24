@@ -20,7 +20,12 @@ const getGasUrl = () => {
 
 const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' 
 
-export async function inflatePayload(data: any): Promise<WebAppData> {
+/**
+ * Inflates the matrix-compressed payload into structured objects.
+ * @param data Raw payload
+ * @param skipValidation If true, bypasses Zod schema validation (Use ONLY for trusted local cache)
+ */
+export async function inflatePayload(data: any, skipValidation = false): Promise<WebAppData> {
     if (typeof data === 'string') {
         data = JSON.parse(data)
     }
@@ -29,30 +34,41 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
         return data as WebAppData
     }
 
-    // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
-    const { z } = await import('zod')
+    let lbRaw: any[] = []
+    let hhRaw: any[] = []
+    let ts = Date.now()
 
-    const result = z.object({
-        lb: z.array(z.array(z.any())),
-        hh: z.array(z.array(z.any())),
-        timestamp: z.number()
-    }).safeParse(data)
-    
-    if (!result.success) throw new Error('API Schema Mismatch')
-
-    const { lb, hh, timestamp } = result.data
+    if (skipValidation) {
+        // ⚡ FAST PATH: Trusted Cache (No Zod overhead)
+        lbRaw = data.lb || []
+        hhRaw = data.hh || []
+        ts = data.timestamp || Date.now()
+    } else {
+        // 🛡️ SLOW PATH: Network Data (Validate Schema)
+        const { z } = await import('zod')
+        const result = z.object({
+            lb: z.array(z.array(z.any())),
+            hh: z.array(z.array(z.any())),
+            timestamp: z.number()
+        }).safeParse(data)
+        
+        if (!result.success) throw new Error('API Schema Mismatch')
+        lbRaw = result.data.lb
+        hhRaw = result.data.hh
+        ts = result.data.timestamp
+    }
 
     return {
-        lb: lb.map(r => ({
+        lb: lbRaw.map(r => ({
             id: r[0], n: r[1], t: r[2], s: r[3],
             d: { role: r[4], days: r[5], avg: r[6], seen: r[7], rate: r[8], hist: r[9] },
             dt: r[10] ?? 0, r: r[11] ?? 0
         })),
-        hh: hh.map(r => ({
+        hh: hhRaw.map(r => ({
             id: r[0], n: r[1], t: r[2], s: r[3],
             d: { don: r[4], war: r[5], ago: r[6], cards: r[7] ?? 0 }
         })),
-        timestamp
+        timestamp: ts
     }
 }
 
@@ -91,7 +107,7 @@ export async function fetchRemote(): Promise<WebAppData> {
     // Ensure Zod is fully loaded before attempting inflation
     await zodPreload;
 
-    const inflated = await inflatePayload(envelope.data)
+    const inflated = await inflatePayload(envelope.data, false) // Validate network data
     idb.set(CACHE_KEY_MAIN, inflated).catch(() => {})
     return inflated
 }
