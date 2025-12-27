@@ -209,6 +209,12 @@ a {
   opacity: 0.7;
 }
 
+/* NEW: More specific text and value skeletons */
+.sk-text-line-s { width: 80px; height: 10px; background: var(--sh-sk); border-radius: 3px; opacity: 0.8; }
+.sk-text-line-m { width: 120px; height: 14px; background: var(--sh-sk); border-radius: 4px; }
+.sk-stat-value { width: 40px; height: 14px; background: var(--sh-sk); border-radius: 4px; }
+.sk-button-m { width: 80px; height: 32px; background: var(--sh-sk-secondary); border-radius: 8px; }
+
 
 /* Shimmer Animation */
 .skeleton-anim { animation: pulse 1.5s infinite ease-in-out; }
