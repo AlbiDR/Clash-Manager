@@ -4,7 +4,8 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import router from './router'
-import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
+// REMOVED: Synchronous import of autoAnimatePlugin
+// import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 import { vTooltip } from './directives/vTooltip'
 import { vTactile } from './directives/vTactile'
 import { useModules } from './composables/useModules'
@@ -31,7 +32,10 @@ function bootstrap() {
         // 2. Create App
         const app = createApp(App)
         app.use(router)
-        app.use(autoAnimatePlugin)
+        
+        // ⚡ PERFORMANCE: Register dummy directive first to prevent Vue warnings during hydration
+        app.directive('auto-animate', {}) 
+        
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
@@ -40,16 +44,21 @@ function bootstrap() {
 
         // 4. Initialize Data (Synchronous local load + Async remote refresh)
         const clanData = useClanData(); 
-        clanData.init(); // This now performs synchronous localStorage read
+        clanData.init(); // Synchronous read
 
-        // 5. Non-Critical Systems (Deferred)
-        // Use a simple setTimeout as requestIdleCallback might not fire quickly enough
-        // or might not be universally supported for guaranteed deferral on all platforms.
-        setTimeout(() => {
+        // 5. Defer Non-Critical Systems & Heavy Libraries
+        setTimeout(async () => {
             const apiState = useApiState(); apiState.init();
             const wakeLock = useWakeLock(); wakeLock.init();
-        }, 200); // Defer by 200ms
-        
+            
+            // ⚡ Lazy Load AutoAnimate
+            try {
+                const { autoAnimatePlugin } = await import('@formkit/auto-animate/vue')
+                app.use(autoAnimatePlugin)
+            } catch (e) {
+                console.warn('Failed to load animations', e)
+            }
+        }, 200); 
 
     } catch (e) {
         showFatalError(e);
