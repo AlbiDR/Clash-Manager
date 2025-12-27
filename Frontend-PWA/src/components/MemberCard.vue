@@ -113,8 +113,8 @@ const trend = computed(() => {
       <div class="stats-grid" :aria-busy="appIsRefreshing ? 'true' : 'false'">
         <template v-if="appIsRefreshing">
           <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
-            <div class="sk-text-line-s" style="width: 50px;"></div>
-            <div class="sk-stat-value" style="width: 60px;"></div>
+            <div class="sk-text-line-s" :style="{ width: `${50 + (i * 5)}px` }"></div>
+            <div class="sk-stat-value" :style="{ width: `${40 + (i * 5)}px` }"></div>
           </div>
         </template>
         <template v-else>
@@ -136,14 +136,20 @@ const trend = computed(() => {
       <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
 
       <div class="actions">
-        <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
-          <Icon name="analytics" size="16" />
-          <span>RoyaleAPI</span>
-        </a>
-        <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
-          <Icon name="crown" size="16" />
-          <span>Open Game</span>
-        </a>
+        <template v-if="appIsRefreshing">
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+        </template>
+        <template v-else>
+          <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
+            <Icon name="analytics" size="16" />
+            <span>RoyaleAPI</span>
+          </a>
+          <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
+            <Icon name="crown" size="16" />
+            <span>Open Game</span>
+          </a>
+        </template>
       </div>
     </div>
   </div>
