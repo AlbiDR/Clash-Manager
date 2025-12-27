@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed, watch, onUnmounted } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -116,6 +117,7 @@ watch(members, (newVal) => {
       :sheet-url="sheetUrl"
       :stats="statsBadge"
       :sort-options="sortOptions"
+      :loading="showSkeletons"
       @update:search="val => searchQuery = val"
       @update:sort="updateSort"
       @refresh="refresh"
