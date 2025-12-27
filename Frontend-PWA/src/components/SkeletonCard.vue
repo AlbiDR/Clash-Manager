@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed } from 'vue'
 
@@ -20,11 +21,17 @@ const metaWidth = computed(() => {
 </script>
 
 <template>
-  <!-- Using global classes from style.css for shell parity -->
   <div class="sk-card skeleton-anim">
-    <div class="sk-info">
-      <div class="sk-line-l" :style="{ width: nameWidth }"></div>
-      <div class="sk-line-s" :style="{ width: metaWidth }"></div>
+    <div class="sk-header-group">
+      <div class="sk-meta-stack">
+        <div class="sk-badge-s"></div>
+        <div class="sk-badge-s"></div>
+      </div>
+      
+      <div class="sk-info">
+        <div class="sk-player-name" :style="{ width: nameWidth }"></div>
+        <div class="sk-line-s" :style="{ width: metaWidth }"></div>
+      </div>
     </div>
     <div class="sk-box"></div>
   </div>
