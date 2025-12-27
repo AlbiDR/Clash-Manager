@@ -212,6 +212,7 @@ function handleSearchUpdate(val: string) {
         :selected="selectedSet.has(recruit.id)"
         :selection-mode="isSelectionMode"
         :style="{ '--i': index }"
+        :app-is-refreshing="isRefreshing"
         @toggle-expand="toggleExpand(recruit.id)"
         @toggle-select="toggleSelect(recruit.id)"
       />
