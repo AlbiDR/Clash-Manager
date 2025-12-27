@@ -153,6 +153,7 @@ watch(members, (newVal) => {
         :selected="selectedSet.has(member.id)"
         :selection-mode="isSelectionMode"
         :style="{ '--i': index }"
+        :app-is-refreshing="isRefreshing"
         @toggle="toggleExpand(member.id)"
         @toggle-select="toggleSelect(member.id)"
       />
