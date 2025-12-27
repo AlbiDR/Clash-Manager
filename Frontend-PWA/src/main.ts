@@ -39,12 +39,18 @@ function bootstrap() {
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
-        // 3. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
-        app.mount('#app')
-
-        // 4. Initialize Data (Synchronous local load + Async remote refresh)
+        // 3. Initialize Data (Synchronous local load + Async remote refresh)
         const clanData = useClanData(); 
         clanData.init(); // Synchronous read
+
+        // 4. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
+        // ⚡ CRITICAL OPTIMIZATION:
+        // Delay mounting by one animation frame. This guarantees the browser paints 
+        // the Static HTML Shell (from index.html) before Vue hydration takes over.
+        // This ensures the LCP event is recorded on the static <h1>, not the Vue component.
+        requestAnimationFrame(() => {
+            app.mount('#app')
+        })
 
         // 5. Defer Non-Critical Systems & Heavy Libraries
         setTimeout(async () => {
