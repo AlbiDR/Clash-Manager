@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Recruit } from '../types'
@@ -13,6 +14,7 @@ const props = defineProps<{
   expanded: boolean
   selected: boolean
   selectionMode: boolean
+  appIsRefreshing?: boolean // New prop
 }>()
 
 const emit = defineEmits<{
@@ -88,30 +90,44 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
     </div>
 
     <div class="card-body" v-if="expanded">
-      <div class="stats-row">
-        <div class="stat-cell hit-target" v-tooltip="getTooltip('donations', recruit.d.don)">
-          <span class="sc-label">Donations</span>
-          <span class="sc-val">{{ recruit.d.don }}</span>
-        </div>
-        <div class="stat-cell border-l hit-target" v-tooltip="getTooltip('warWins', recruit.d.war)">
-          <span class="sc-label">War Wins</span>
-          <span class="sc-val">{{ recruit.d.war }}</span>
-        </div>
-        <div class="stat-cell border-l hit-target" v-tooltip="getTooltip('cardsWon', recruit.d.cards)">
-          <span class="sc-label">Cards Won</span>
-          <span class="sc-val">{{ recruit.d.cards || '-' }}</span>
-        </div>
+      <div class="stats-row" :aria-busy="appIsRefreshing ? 'true' : 'false'">
+        <template v-if="appIsRefreshing">
+          <div v-for="i in 3" :key="i" class="stat-cell skeleton-anim">
+            <div class="sk-text-line-s" :style="{ width: `${50 + (i * 5)}px` }"></div>
+            <div class="sk-stat-value" :style="{ width: `${40 + (i * 5)}px` }"></div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="stat-cell hit-target" v-tooltip="getTooltip('donations', recruit.d.don)">
+            <span class="sc-label">Donations</span>
+            <span class="sc-val">{{ recruit.d.don }}</span>
+          </div>
+          <div class="stat-cell border-l hit-target" v-tooltip="getTooltip('warWins', recruit.d.war)">
+            <span class="sc-label">War Wins</span>
+            <span class="sc-val">{{ recruit.d.war }}</span>
+          </div>
+          <div class="stat-cell border-l hit-target" v-tooltip="getTooltip('cardsWon', recruit.d.cards)">
+            <span class="sc-label">Cards Won</span>
+            <span class="sc-val">{{ recruit.d.cards || '-' }}</span>
+          </div>
+        </template>
       </div>
 
       <div class="actions-toolbar">
-        <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
-          <Icon name="analytics" size="14" />
-          <span>RoyaleAPI</span>
-        </a>
-        <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
-          <Icon name="crown" size="14" />
-          <span>Open Game</span>
-        </a>
+        <template v-if="appIsRefreshing">
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+        </template>
+        <template v-else>
+          <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
+            <Icon name="analytics" size="14" />
+            <span>RoyaleAPI</span>
+          </a>
+          <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
+            <Icon name="crown" size="14" />
+            <span>Open Game</span>
+          </a>
+        </template>
       </div>
     </div>
   </div>

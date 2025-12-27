@@ -1,22 +1,33 @@
+
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useApiState } from '../../composables/useApiState'
 import Icon from '../Icon.vue'
 
-const { pingData } = useApiState()
+const { pingData, apiStatus } = useApiState()
+const isChecking = computed(() => apiStatus.value === 'checking')
 </script>
 
 <template>
-    <div v-if="pingData?.modules" class="settings-card">
+    <div class="settings-card" :aria-busy="isChecking ? 'true' : 'false'">
         <div class="card-header">
             <Icon name="box" size="20" class="header-icon" />
             <h3>System Modules</h3>
         </div>
         <div class="card-body">
             <div class="module-grid">
-            <div v-for="(ver, name) in pingData.modules" :key="name" class="module-item">
-                <span class="m-name">{{ name }}</span>
-                <span class="m-ver">v{{ ver }}</span>
-            </div>
+              <template v-if="isChecking">
+                <div v-for="i in 6" :key="i" class="module-item skeleton-anim">
+                  <div class="sk-text-line-s" style="width: 70px;"></div>
+                  <div class="sk-stat-value" style="width: 40px;"></div>
+                </div>
+              </template>
+              <template v-else-if="pingData?.modules">
+                <div v-for="(ver, name) in pingData.modules" :key="name" class="module-item">
+                    <span class="m-name">{{ name }}</span>
+                    <span class="m-ver">v{{ ver }}</span>
+                </div>
+              </template>
             </div>
         </div>
     </div>
