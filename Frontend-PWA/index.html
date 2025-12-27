@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
@@ -93,13 +94,7 @@
     .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
     
     /* LCP Optimization: Match ConsoleHeader.vue typography exactly */
-    .sh-title { 
-      font-size: 24px; 
-      font-weight: 900; 
-      color: var(--sh-text); 
-      letter-spacing: -0.03em; 
-      margin: 0; 
-    }
+    /* REMOVED: .sh-title as Vue component now handles title from start */
     .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
     
     .sh-search {
@@ -153,7 +148,8 @@
       <!-- HEADER SHELL -->
       <div class="sh-header">
         <div class="sh-h-row">
-          <h1 class="sh-title">Leaderboard</h1>
+          <!-- H1 title will be rendered by Vue's ConsoleHeader from the start, either as text or skeleton -->
+          <div class="sh-line-l sh-header-title skeleton-anim"></div>
           <div class="sh-pill sh-pulse"></div>
         </div>
         <div class="sh-search">
