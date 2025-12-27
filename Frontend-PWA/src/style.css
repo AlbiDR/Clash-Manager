@@ -214,6 +214,7 @@ a {
 .sk-text-line-m { width: 120px; height: 14px; background: var(--sh-sk); border-radius: 4px; }
 .sk-stat-value { width: 40px; height: 14px; background: var(--sh-sk); border-radius: 4px; }
 .sk-button-m { width: 80px; height: 32px; background: var(--sh-sk-secondary); border-radius: 8px; }
+.sk-button-s { width: 50px; height: 24px; background: var(--sh-sk-secondary); border-radius: 8px; }
 
 
 /* Shimmer Animation */
