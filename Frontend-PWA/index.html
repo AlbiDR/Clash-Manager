@@ -95,8 +95,8 @@
     
     .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
     
-    /* LCP Optimization: Exact match for ConsoleHeader.vue .view-title */
-    .sh-title {
+    /* LCP HERO: Exact match for global .view-title in style.css */
+    .view-title {
       margin: 0;
       font-size: 24px;
       font-weight: 900;
@@ -105,8 +105,9 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      /* Ensure font matches immediately */
       font-family: 'Inter', system-ui, sans-serif; 
+      /* Optimize for fast paint */
+      text-rendering: optimizeLegibility;
     }
 
     .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
@@ -165,7 +166,7 @@
       <div class="sh-header">
         <div class="sh-h-row">
           <!-- LCP HERO: Static title matches Vue component exactly -->
-          <h1 class="sh-title">Clash Manager</h1>
+          <h1 class="view-title">Clash Manager</h1>
           <div class="sh-pill sh-pulse"></div>
         </div>
         <div class="sh-search">
