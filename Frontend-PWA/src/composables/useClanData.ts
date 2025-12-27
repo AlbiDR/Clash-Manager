@@ -26,35 +26,27 @@ const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 export function useClanData() {
 
     async function init() {
-        // 1. Deferred Local Hydration
-        // Use requestIdleCallback to prevent JSON parsing from blocking the main thread 
-        // during the initial paint. This ensures the App Shell (HTML) renders instantly.
-        const performHydration = () => {
-            try {
-                const raw = localStorage.getItem(SNAPSHOT_KEY)
-                if (raw) {
-                    const parsed = JSON.parse(raw)
-                    clanData.value = parsed
-                    lastSyncTime.value = parsed.timestamp || Date.now()
-                    updateBadgeCount(parsed)
-                    console.log('⚡ Deferred Hydration: Success')
-                }
-            } catch (e) {
-                console.warn('Hydration failed', e)
-                clanData.value = null
-            } finally {
-                // Signal that local data is ready (or empty), allowing Vue to switch from skeletons
-                isHydrated.value = true
-                // Start network sync only after local data is handled
-                startBackgroundSync()
+        // 1. Synchronous Local Hydration
+        // ⚡ PERFORMANCE CRITICAL: We MUST read from localStorage synchronously here.
+        // If we defer this (e.g. requestIdleCallback), the Vue app will mount in an "empty" state,
+        // rendering skeletons that overwrite the Static App Shell (index.html). 
+        // This flash (Static -> Skeleton -> Content) destroys the Speed Index and LCP.
+        // By reading sync, Vue mounts with data immediately, matching the Static Shell perfectly.
+        try {
+            const raw = localStorage.getItem(SNAPSHOT_KEY)
+            if (raw) {
+                const parsed = JSON.parse(raw)
+                clanData.value = parsed
+                lastSyncTime.value = parsed.timestamp || Date.now()
+                updateBadgeCount(parsed)
             }
-        }
-
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            window.requestIdleCallback(performHydration, { timeout: 1000 })
-        } else {
-            // Fallback for Safari / older browsers
-            setTimeout(performHydration, 10)
+        } catch (e) {
+            console.warn('Hydration failed', e)
+            clanData.value = null
+        } finally {
+            isHydrated.value = true
+            // Start network sync only after local data is handled
+            startBackgroundSync()
         }
     }
 
