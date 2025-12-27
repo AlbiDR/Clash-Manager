@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Icon from './Icon.vue'
@@ -10,6 +11,7 @@ const props = defineProps<{
   sheetUrl?: string
   stats?: { label: string, value: string }
   sortOptions?: { label: string, value: string, desc?: string }[]
+  loading?: boolean // New prop for skeleton state
 }>()
 
 const emit = defineEmits<{
@@ -55,7 +57,7 @@ const activeSortDescription = computed(() => {
       <div class="header-row top">
         <div class="left-cluster">
             <a 
-              v-if="sheetUrl" 
+              v-if="sheetUrl && !loading" 
               :href="sheetUrl" 
               target="_blank" 
               class="icon-button" 
@@ -65,24 +67,29 @@ const activeSortDescription = computed(() => {
                <Icon name="spreadsheet" size="20" />
             </a>
             <!-- LCP Element Candidate -->
-            <h1 class="view-title">{{ title }}</h1>
-            <div v-if="stats" class="stats-pill">
+            <h1 v-if="!loading" class="view-title">{{ title }}</h1>
+            <div v-else class="sk-line-l sk-header-title skeleton-anim"></div>
+
+            <div v-if="stats && !loading" class="stats-pill">
               <span class="sp-value">{{ stats.value }}</span>
               <span class="sp-label">{{ stats.label }}</span>
             </div>
+            <div v-else-if="loading" class="sk-badge-m skeleton-anim"></div>
         </div>
         
-        <button v-if="status" class="status-pill" :class="status.type" @click="emit('refresh')">
+        <button v-if="status && !loading" class="status-pill" :class="status.type" @click="emit('refresh')">
           <div v-if="status.type === 'loading'" class="spinner"></div>
           <div v-else class="status-dot"></div>
           <span class="status-text">{{ status.text }}</span>
         </button>
+        <div v-else-if="loading" class="sk-pill skeleton-anim"></div>
       </div>
 
       <div v-if="showSearch" class="header-row bottom">
         <div class="search-container">
           <Icon name="search" class="input-icon" size="20" />
           <input 
+            v-if="!loading"
             type="text" 
             class="glass-input" 
             placeholder="Search..." 
@@ -90,12 +97,14 @@ const activeSortDescription = computed(() => {
             @input="handleInput"
             aria-label="Search items"
           >
+          <div v-else class="sk-input skeleton-anim"></div>
         </div>
         
         <div class="sort-group">
           <div class="sort-container">
             <Icon name="filter" size="16" class="sort-icon" />
             <select 
+              v-if="!loading"
               v-model="sortValue" 
               class="glass-select" 
               :class="{ 'has-info': !!activeSortDescription }" 
@@ -106,8 +115,9 @@ const activeSortDescription = computed(() => {
                 <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </template>
             </select>
+            <div v-else class="sk-select skeleton-anim"></div>
             <div 
-                v-if="activeSortDescription" 
+                v-if="activeSortDescription && !loading" 
                 class="info-dot-inline" 
                 v-tooltip="activeSortDescription"
             >
@@ -186,6 +196,15 @@ const activeSortDescription = computed(() => {
   text-overflow: ellipsis;
 }
 .is-scrolled .view-title { font-size: 18px; }
+
+/* Skeleton title style */
+.sk-header-title {
+  height: 24px; /* Matches view-title font-size */
+  width: 160px; /* Representative width */
+  margin: 0;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
 
 .stats-pill {
   display: flex; align-items: center; gap: 6px;
