@@ -6,6 +6,7 @@ import { calculatePrediction, parseHistoryString, WAR_CONSTANTS } from '../utils
 
 const props = defineProps<{
   history?: string
+  loading?: boolean // New prop to indicate loading state
 }>()
 
 const CHART_MIN_HEIGHT = 15 // Percent
@@ -18,12 +19,17 @@ interface BarItem {
 }
 
 const chartData = computed(() => {
+  // If loading, don't process real data, just show placeholder
+  if (props.loading) {
+    return { bars: [], path: null, projPoint: null, isPositive: false, isEmpty: true }
+  }
+
   // 1. Parse (Newest -> Oldest)
   const allHistory = parseHistoryString(props.history)
   const processedData = allHistory.slice(0, 52) // Limit to last year
 
   if (processedData.length === 0) {
-    return { bars: [], path: null, projPoint: null, isPositive: false }
+    return { bars: [], path: null, projPoint: null, isPositive: false, isEmpty: true }
   }
 
   // 2. Predict (using Newest->Oldest data)
@@ -70,7 +76,8 @@ const chartData = computed(() => {
     bars, 
     path: trend.path, 
     projPoint, 
-    isPositive: trend.isPositive 
+    isPositive: trend.isPositive,
+    isEmpty: false
   }
 })
 </script>
@@ -78,7 +85,7 @@ const chartData = computed(() => {
 <template>
   <div class="chart-container">
     <div 
-      v-if="chartData.bars.length > 0" 
+      v-if="chartData.bars.length > 0 && !chartData.isEmpty" 
       class="war-chart"
       :style="{ '--bar-count': chartData.bars.length }"
     >
@@ -117,8 +124,14 @@ const chartData = computed(() => {
       />
     </div>
     
-    <div v-else class="war-chart-empty">
-      No history
+    <!-- Skeleton or "No history" text -->
+    <div v-else class="war-chart-empty" :class="{'skeleton-anim sk-chart-area': loading}">
+      <template v-if="loading">
+        <div v-for="i in 10" :key="i" class="sk-chart-bar" :style="{height: `${Math.random() * 50 + 30}%`}"></div>
+      </template>
+      <template v-else>
+        No history
+      </template>
     </div>
   </div>
 </template>
@@ -255,9 +268,31 @@ const chartData = computed(() => {
 
 .war-chart-empty { 
   width: 100%; 
+  height: 100%; /* Take up full height for skeleton */
   font-size: 10px; 
   color: var(--sys-color-outline); 
   text-align: center; 
-  align-self: center; 
+  display: flex; /* Flexbox for bars */
+  justify-content: center;
+  align-items: center; 
+  background-color: transparent; /* Reset for skeleton */
+  border-radius: 8px;
+  gap: 2px; /* Gap between skeleton bars */
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.sk-chart-area {
+  background: var(--sh-sk-secondary); /* Use secondary skeleton color */
+  border-radius: 8px;
+  padding: 4px; /* Internal padding for bars */
+}
+
+.sk-chart-bar {
+  width: 8px; /* Fixed width for skeleton bars */
+  background: var(--sh-sk); /* Primary skeleton color for bars */
+  border-radius: 2px;
+  opacity: 0.7;
+  height: var(--bar-height); /* Dynamic height set in template */
 }
 </style>
