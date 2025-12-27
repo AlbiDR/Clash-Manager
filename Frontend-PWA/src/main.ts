@@ -15,19 +15,29 @@ import { useTheme } from './composables/useTheme'
 import { useWakeLock } from './composables/useWakeLock'
 
 function showFatalError(error: any) {
-    if ((window as any).__hasShownFatalError) return;
-    (window as any).__hasShownFatalError = true;
     console.error('FATAL ERROR:', error);
+    // If the app hasn't mounted, we should probably show something on screen
+    const appEl = document.getElementById('app');
+    if (appEl && !appEl.innerHTML.includes('app-container')) {
+        appEl.innerHTML = `<div style="padding:20px;color:red;text-align:center;">
+            <h1>System Error</h1>
+            <p>${error?.message || 'Unknown error during startup'}</p>
+            <button onclick="localStorage.clear();window.location.reload()">Factory Reset</button>
+        </div>`
+    }
 }
 
 window.addEventListener('error', (event) => showFatalError(event.error));
 window.addEventListener('unhandledrejection', (event) => showFatalError(event.reason));
 
-function bootstrap() {
+async function bootstrap() {
     try {
         // 1. Critical Config (Synchronous)
-        const modules = useModules(); modules.init();
-        const theme = useTheme(); theme.init();
+        const modules = useModules(); 
+        try { modules.init(); } catch(e) { console.warn('Modules init failed', e) }
+        
+        const theme = useTheme(); 
+        try { theme.init(); } catch(e) { console.warn('Theme init failed', e) }
         
         // 2. Create App
         const app = createApp(App)
@@ -39,32 +49,43 @@ function bootstrap() {
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
-        // 3. Initialize Data (Synchronous local load + Async remote refresh)
-        const clanData = useClanData(); 
-        clanData.init(); // Synchronous read
+        // 3. Mount App Immediately
+        // We mount BEFORE loading data to ensure the UI shell is interactive (even if showing skeletons)
+        app.mount('#app')
 
-        // 4. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
-        // ⚡ CRITICAL OPTIMIZATION:
-        // Delay mounting by one animation frame. This guarantees the browser paints 
-        // the Static HTML Shell (from index.html) before Vue hydration takes over.
-        // This ensures the LCP event is recorded on the static <h1>, not the Vue component.
+        // 4. Initialize Data (Post-Mount)
+        // ⚡ LCP OPTIMIZATION: Load local data in the next tick to allow first paint
         requestAnimationFrame(() => {
-            app.mount('#app')
+            try {
+                const clanData = useClanData(); 
+                clanData.loadLocal(); 
+            } catch (e) {
+                console.error("Local data load failed:", e)
+            }
         })
 
         // 5. Defer Non-Critical Systems & Heavy Libraries
+        // ⚡ Increased delay to 500ms to ensure LCP is recorded before network/main thread gets busy
         setTimeout(async () => {
-            const apiState = useApiState(); apiState.init();
-            const wakeLock = useWakeLock(); wakeLock.init();
-            
-            // ⚡ Lazy Load AutoAnimate
             try {
-                const { autoAnimatePlugin } = await import('@formkit/auto-animate/vue')
-                app.use(autoAnimatePlugin)
+                // Start Network Sync NOW, after visual settle
+                const clanData = useClanData();
+                clanData.startBackgroundSync();
+
+                const apiState = useApiState(); apiState.init();
+                const wakeLock = useWakeLock(); wakeLock.init();
+                
+                // ⚡ Lazy Load AutoAnimate
+                try {
+                    const { autoAnimatePlugin } = await import('@formkit/auto-animate/vue')
+                    app.use(autoAnimatePlugin)
+                } catch (e) {
+                    console.warn('Failed to load animations', e)
+                }
             } catch (e) {
-                console.warn('Failed to load animations', e)
+                console.error("Background sync failed:", e)
             }
-        }, 200); 
+        }, 500); 
 
     } catch (e) {
         showFatalError(e);
