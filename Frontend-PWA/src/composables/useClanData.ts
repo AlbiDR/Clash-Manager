@@ -25,13 +25,11 @@ const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 
 export function useClanData() {
 
-    async function init() {
-        // 1. Synchronous Local Hydration
-        // ⚡ PERFORMANCE CRITICAL: We MUST read from localStorage synchronously here.
-        // If we defer this (e.g. requestIdleCallback), the Vue app will mount in an "empty" state,
-        // rendering skeletons that overwrite the Static App Shell (index.html). 
-        // This flash (Static -> Skeleton -> Content) destroys the Speed Index and LCP.
-        // By reading sync, Vue mounts with data immediately, matching the Static Shell perfectly.
+    // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
+    // Call this before app.mount() to ensure data is present for first paint
+    function loadLocal() {
+        if (isHydrated.value) return // Already loaded
+        
         try {
             const raw = localStorage.getItem(SNAPSHOT_KEY)
             if (raw) {
@@ -45,11 +43,11 @@ export function useClanData() {
             clanData.value = null
         } finally {
             isHydrated.value = true
-            // Start network sync only after local data is handled
-            startBackgroundSync()
         }
     }
 
+    // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
+    // Call this inside a setTimeout after app.mount() to avoid blocking LCP
     async function startBackgroundSync() {
         if (isDemoMode.value) {
             console.log('🌟 Demo Mode Active')
@@ -167,7 +165,8 @@ export function useClanData() {
         syncStatus: readonly(syncStatus),
         syncError: readonly(syncError),
         lastSyncTime: readonly(lastSyncTime),
-        init,
+        loadLocal,          // ⚡ New Method
+        startBackgroundSync,// ⚡ New Method
         refresh,
         dismissRecruitsAction
     }
