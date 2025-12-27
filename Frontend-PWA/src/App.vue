@@ -22,6 +22,8 @@ const route = useRoute()
 const isOnline = ref(true)
 const isSuccessFading = ref(false)
 
+// `isStandalone` logic becomes less critical with direct Vue rendering of ConsoleHeader
+// but can remain for other standalone-specific UI adjustments if any.
 const isStandalone = computed(() => {
     return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
 })
@@ -62,7 +64,7 @@ const connectionState = computed(() => {
 
 <template>
   <div class="app-shell">
-    <div class="connectivity-strip" :class="[connectionState, { 'is-standalone': isStandalone }]"></div>
+    <div class="connectivity-strip" :class="connectionState"></div>
     
     <!-- PWA Update Notification -->
     <div v-if="needRefresh" class="pwa-update-toast" @click="updateServiceWorker()">
