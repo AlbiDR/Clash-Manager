@@ -1,7 +1,9 @@
+
 <script setup lang="ts">
-import { ref, reactive, onUnmounted } from 'vue'
+import { ref, reactive, onUnmounted, computed } from 'vue'
 import { triggerBackendUpdate } from '../../api/gasClient'
 import Icon from '../Icon.vue'
+import { useClanData } from '../../composables/useClanData'
 
 // Types
 type TargetKey = 'members' | 'leaderboard' | 'headhunters'
@@ -46,6 +48,8 @@ const targets = reactive<Record<TargetKey, RefreshTarget>>({
         status: 'idle'
     }
 })
+
+const { isRefreshing } = useClanData() // Get global refreshing state
 
 // Logic
 const startCooldown = (key: TargetKey) => {
@@ -94,7 +98,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="settings-card">
+    <div class="settings-card" :aria-busy="isRefreshing ? 'true' : 'false'">
         <div class="card-header">
             <Icon name="refresh" size="20" class="header-icon" />
             <h3>Backend Refresh</h3>
@@ -103,18 +107,27 @@ onUnmounted(() => {
             <div class="rows-container">
                 <div v-for="target in targets" :key="target.key" class="refresh-row">
                     <div class="row-info">
-                        <div class="row-label">{{ target.label }}</div>
-                        <div class="row-desc">{{ target.desc }}</div>
+                        <template v-if="isRefreshing">
+                          <div class="sk-text-line-m" style="width: 100px;"></div>
+                          <div class="sk-text-line-s" style="width: 150px;"></div>
+                        </template>
+                        <template v-else>
+                          <div class="row-label">{{ target.label }}</div>
+                          <div class="row-desc">{{ target.desc }}</div>
+                        </template>
                     </div>
                     
                     <button 
                         class="action-btn" 
                         @click="refresh(target.key)" 
                         :disabled="target.status === 'loading' || target.cooldown > 0"
-                        :class="{ 'is-loading': target.status === 'loading' }"
+                        :class="{ 'is-loading': target.status === 'loading', 'skeleton-anim sk-button-m': isRefreshing }"
                     >
                         <!-- Normal State -->
-                        <template v-if="target.status === 'idle' || target.status === 'error'">
+                        <template v-if="isRefreshing">
+                          <!-- Skeleton button covers button, not text -->
+                        </template>
+                        <template v-else-if="target.status === 'idle' || target.status === 'error'">
                             <span>REFRESH</span>
                         </template>
 
@@ -178,7 +191,22 @@ onUnmounted(() => {
     min-width: 80px;
     height: 32px;
     transition: all 0.2s;
+    position: relative; /* For skeleton overlay */
 }
+.action-btn.skeleton-anim.sk-button-m {
+  background: none; /* Hide native background for skeleton */
+  border: none;
+  color: transparent; /* Hide native text for skeleton */
+}
+.action-btn.skeleton-anim.sk-button-m::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sh-sk-secondary); /* Skeleton background */
+  border-radius: 8px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
 
 .action-btn:hover:not(:disabled) {
     background: var(--sys-color-primary);
@@ -198,6 +226,7 @@ onUnmounted(() => {
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    opacity: 0.6;
 }
 
 @keyframes spin {
