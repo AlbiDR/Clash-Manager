@@ -1,104 +1,61 @@
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useApiState } from '../../composables/useApiState'
+import { useModules } from '../../composables/useModules'
+import { useHaptics } from '../../composables/useHaptics'
 import Icon from '../Icon.vue'
+import { useClanData } from '../../composables/useClanData'
+import { computed } from 'vue'
 
-const { apiUrl, apiStatus, pingData } = useApiState()
-const newApiUrl = ref('')
-const isEditing = ref(false)
+const { modules, toggle } = useModules()
+const haptics = useHaptics()
+const { isRefreshing } = useClanData()
+const showSkeletons = computed(() => isRefreshing.value)
 
-const hasLocalOverride = computed(() => !!localStorage.getItem('cm_gas_url'))
-const isChecking = computed(() => apiStatus.value === 'checking')
-
-watch(apiStatus, (newVal) => {
-    if (newVal === 'unconfigured') isEditing.value = true
-}, { immediate: true })
-
-function saveApiUrl() {
-    if (newApiUrl.value.trim()) {
-        localStorage.setItem('cm_gas_url', newApiUrl.value.trim())
-        window.location.reload()
-    }
-}
-
-function resetApiUrl() {
-    if(confirm('Reset API URL to default?')) {
-        localStorage.removeItem('cm_gas_url')
-        window.location.reload()
-    }
+function handleToggle() {
+    haptics.tap()
+    toggle('notificationBadgeHighPotential')
 }
 </script>
 
 <template>
-    <div class="settings-card" :aria-busy="isChecking ? 'true' : 'false'">
+    <div v-if="modules.experimentalNotifications" class="settings-card" :aria-busy="showSkeletons ? 'true' : 'false'">
         <div class="card-header">
-            <Icon name="plug" size="20" class="header-icon" />
-            <h3>Network & API</h3>
-            <div class="status-indicator" :class="apiStatus"></div>
+            <Icon name="bell" size="20" class="header-icon" />
+            <h3>Notifications</h3>
         </div>
-        
         <div class="card-body">
-            <div class="network-stats">
-              <div class="stat-box skeleton-anim">
-                  <span class="label">Latency</span>
-                  <template v-if="isChecking">
-                    <div class="sk-stat-value"></div>
-                  </template>
-                  <template v-else>
-                    <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
-                  </template>
-              </div>
-              <div class="stat-box skeleton-anim">
-                  <span class="label">Backend</span>
-                  <template v-if="isChecking">
-                    <div class="sk-stat-value"></div>
-                  </template>
-                  <template v-else>
-                    <span class="value">v{{ pingData?.version || '0.0' }}</span>
-                  </template>
-              </div>
-              <div class="stat-box skeleton-anim">
-                  <span class="label">Cache</span>
-                  <template v-if="isChecking">
-                    <div class="sk-stat-value" style="width: 50px;"></div>
-                  </template>
-                  <template v-else>
-                    <span class="value">Ready</span>
-                  </template>
-              </div>
+            <div class="features-list">
+                <div class="toggle-row" @click="handleToggle">
+                    <div class="row-info">
+                        <template v-if="showSkeletons">
+                          <div class="sk-text-line-m" style="width: 120px;"></div>
+                          <div class="sk-text-line-s" style="width: 160px;"></div>
+                        </template>
+                        <template v-else>
+                          <div class="row-label">Advanced App Badge</div>
+                          <div class="row-desc">Show count of recruits with score > 75</div>
+                        </template>
+                    </div>
+                    <div class="switch" :class="{ active: modules.notificationBadgeHighPotential, 'skeleton-anim sk-badge-s': showSkeletons }">
+                        <div class="handle"></div>
+                    </div>
+                </div>
             </div>
-
-            <div class="url-manager">
-              <div class="field-label">API ENDPOINT</div>
-              <div v-if="!isEditing" class="url-readout skeleton-anim">
-                  <template v-if="isChecking">
-                    <div class="sk-text-line-m" style="width: 80%;"></div>
-                    <div class="sk-badge-s" style="width: 40px; height: 24px;"></div>
-                  </template>
-                  <template v-else>
-                    <span class="url-text">{{ apiUrl }}</span>
-                    <button class="edit-btn" @click="isEditing = true">Edit</button>
-                  </template>
-              </div>
-              <div v-else class="url-input-row">
-                  <input v-model="newApiUrl" type="text" placeholder="https://script.google.com/..." class="glass-input" />
-                  <button class="save-btn" @click="saveApiUrl"><Icon name="check" size="20" /></button>
-                  <button class="cancel-btn" @click="isEditing = false">X</button>
-              </div>
-              <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
-                  Running custom override • Tap to reset
-              </div>
+            <div class="badge-preview skeleton-anim" v-if="modules.notificationBadgeHighPotential" :class="{'skeleton-anim sk-url-readout': showSkeletons}">
+                <template v-if="showSkeletons">
+                  <div class="sk-icon-small"></div>
+                  <div class="sk-text-line-s" style="width: 80%;"></div>
+                </template>
+                <template v-else>
+                  <Icon name="info" size="14" />
+                  <span>Focuses your attention on high-potential talent only.</span>
+                </template>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-/* Copied styles from SettingsView, simplified for component isolation if needed, 
-   but for now we rely on the parent or global styles if they were global. 
-   However, the original styles were scoped. I need to copy them here. */
-
 .settings-card {
   background: var(--sys-color-surface-container);
   border-radius: 24px;
@@ -117,35 +74,35 @@ function resetApiUrl() {
 
 .card-body { padding: 20px; }
 
-.network-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-.stat-box {
-  background: var(--sys-color-surface-container-high);
-  padding: 12px; border-radius: 16px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+.features-list { display: flex; flex-direction: column; gap: 16px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+
+.row-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.row-label { font-weight: 800; font-size: 15px; color: var(--sys-color-on-surface); }
+.row-desc { font-size: 13px; opacity: 0.6; }
+
+.switch { width: 44px; height: 24px; background: var(--sys-color-surface-container-highest); border-radius: 12px; position: relative; transition: 0.3s; border: 1.5px solid rgba(0,0,0,0.1); }
+.switch.active { background: var(--sys-color-primary); }
+.switch .handle { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; background: white; border-radius: 50%; transition: 0.3s; }
+.switch.active .handle { left: calc(100% - 19px); }
+
+.badge-preview {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(var(--sys-color-primary-rgb), 0.05);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sys-color-on-surface-variant);
+  opacity: 0.8;
 }
-.stat-box .label { font-size: 10px; font-weight: 800; opacity: 0.6; text-transform: uppercase; }
-.stat-box .value { font-size: 15px; font-weight: 900; font-family: var(--sys-font-family-mono); color: var(--sys-color-primary); }
-
-.url-manager .field-label { font-size: 10px; font-weight: 800; opacity: 0.5; margin-bottom: 8px; }
-.url-readout {
-  background: var(--sys-color-surface-container-highest);
-  padding: 10px 14px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+.badge-preview.skeleton-anim {
+  background: none; /* Hide native background for skeleton */
 }
-.url-text { font-family: var(--sys-font-family-mono); font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.edit-btn { background: none; border: none; color: var(--sys-color-primary); font-weight: 800; font-size: 12px; cursor: pointer; }
-
-.url-input-row { display: flex; gap: 8px; }
-.glass-input { flex: 1; height: 40px; background: white; border: 1.5px solid var(--sys-color-primary); border-radius: 10px; padding: 0 12px; font-family: var(--sys-font-family-mono); font-size: 13px; }
-.save-btn { width: 40px; border-radius: 10px; background: var(--sys-color-primary); color: white; border: none; }
-.cancel-btn { width: 40px; border-radius: 10px; background: var(--sys-color-surface-container-highest); border: none; font-weight: 800; }
-
-.override-pill { margin-top: 10px; padding: 8px; border-radius: 8px; background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); font-size: 11px; font-weight: 800; text-align: center; cursor: pointer; }
-
-.status-indicator {
-    width: 8px; height: 8px; border-radius: 50%;
+.badge-preview.skeleton-anim.sk-url-readout {
+  padding: 12px; /* Ensure skeleton matches padding */
 }
-.status-indicator.online { background: #22c55e; box-shadow: 0 0 10px #22c55e66; }
-.status-indicator.offline { background: #ef4444; }
-.status-indicator.unconfigured { background: #f59e0b; animation: pulse 2s infinite; }
 </style>
