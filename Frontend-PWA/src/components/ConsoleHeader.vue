@@ -11,7 +11,7 @@ const props = defineProps<{
   sheetUrl?: string
   stats?: { label: string, value: string }
   sortOptions?: { label: string, value: string, desc?: string }[]
-  loading?: boolean // New prop for skeleton state
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -66,9 +66,9 @@ const activeSortDescription = computed(() => {
             >
                <Icon name="spreadsheet" size="20" />
             </a>
-            <!-- LCP Element Candidate -->
-            <h1 v-if="!loading" class="view-title">{{ title }}</h1>
-            <div v-else class="sk-line-l sk-header-title skeleton-anim"></div>
+            
+            <!-- ⚡ LCP OPTIMIZATION: Always render the title text. Never use a skeleton for static headers. -->
+            <h1 class="view-title">{{ title }}</h1>
 
             <div v-if="stats && !loading" class="stats-pill">
               <span class="sp-value">{{ stats.value }}</span>
