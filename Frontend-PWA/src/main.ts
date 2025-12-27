@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import { createApp } from 'vue'
 import './style.css'
@@ -37,17 +38,18 @@ function bootstrap() {
         // 3. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
         app.mount('#app')
 
-        // 4. Initialize Data
-        // Hydration logic is now safe to call immediately as it internally yields the thread
+        // 4. Initialize Data (Synchronous local load + Async remote refresh)
         const clanData = useClanData(); 
-        clanData.init();
+        clanData.init(); // This now performs synchronous localStorage read
 
         // 5. Non-Critical Systems (Deferred)
-        const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 200));
-        defer(() => {
+        // Use a simple setTimeout as requestIdleCallback might not fire quickly enough
+        // or might not be universally supported for guaranteed deferral on all platforms.
+        setTimeout(() => {
             const apiState = useApiState(); apiState.init();
             const wakeLock = useWakeLock(); wakeLock.init();
-        });
+        }, 200); // Defer by 200ms
+        
 
     } catch (e) {
         showFatalError(e);
