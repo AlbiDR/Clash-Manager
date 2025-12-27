@@ -1,6 +1,8 @@
+
 <script setup lang="ts">
 defineProps<{
     count: number
+    loading?: boolean // New prop
 }>()
 
 defineEmits<{
@@ -12,23 +14,42 @@ defineEmits<{
 </script>
 
 <template>
-    <div class="selection-bar animate-pop">
-        <div class="sel-count">{{ count }} Selected</div>
-        
-        <div class="sel-actions">
-            <button class="action-chip" @click="$emit('select-all')">All</button>
-            <button class="action-chip" @click="$emit('clear')">None</button>
-            <div class="v-divider"></div>
-            <div class="score-group">
-            <span class="sg-label">Score:</span>
-            <button class="sg-btn" @click="$emit('select-score', 15, 'le')">≤15</button>
-            <button class="sg-btn" @click="$emit('select-score', 25, 'le')">≤25</button>
-            <button class="sg-btn" @click="$emit('select-score', 50, 'ge')">≥50</button>
-            <button class="sg-btn" @click="$emit('select-score', 75, 'ge')">≥75</button>
+    <div class="selection-bar animate-pop" :aria-busy="loading ? 'true' : 'false'">
+        <template v-if="loading">
+            <div class="sk-text-line-m skeleton-anim" style="width: 100px;"></div>
+            <div class="sel-actions">
+                <div class="sk-button-s skeleton-anim"></div>
+                <div class="sk-button-s skeleton-anim"></div>
+                <div class="v-divider"></div>
+                <div class="score-group">
+                    <div class="sk-text-line-s skeleton-anim" style="width: 50px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
+                </div>
+                <div class="v-divider"></div>
+                <div class="sk-button-s skeleton-anim"></div>
             </div>
-            <div class="v-divider"></div>
-            <button class="action-chip danger" @click="$emit('done')">Done</button>
-        </div>
+        </template>
+        <template v-else>
+            <div class="sel-count">{{ count }} Selected</div>
+            
+            <div class="sel-actions">
+                <button class="action-chip" @click="$emit('select-all')">All</button>
+                <button class="action-chip" @click="$emit('clear')">None</button>
+                <div class="v-divider"></div>
+                <div class="score-group">
+                <span class="sg-label">Score:</span>
+                <button class="sg-btn" @click="$emit('select-score', 15, 'le')">≤15</button>
+                <button class="sg-btn" @click="$emit('select-score', 25, 'le')">≤25</button>
+                <button class="sg-btn" @click="$emit('select-score', 50, 'ge')">≥50</button>
+                <button class="sg-btn" @click="$emit('select-score', 75, 'ge')">≥75</button>
+                </div>
+                <div class="v-divider"></div>
+                <button class="action-chip danger" @click="$emit('done')">Done</button>
+            </div>
+        </template>
     </div>
 </template>
 
