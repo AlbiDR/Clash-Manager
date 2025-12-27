@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -26,24 +26,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap">
   </noscript>
 
-  <!-- ⚡ DEEP NET PRELOADER: Start fetching data before Vue boots -->
-  <script>
-    (function() {
-      try {
-        // Check for saved API URL from previous sessions
-        const storedUrl = localStorage.getItem('cm_gas_url');
-        if (storedUrl) {
-          window.__CM_PRELOAD__ = fetch(storedUrl + '?action=getwebappdata', {
-             headers: { 'Content-Type': 'text/plain' }
-          })
-          .then(r => r.ok ? r.text() : Promise.reject(r))
-          .then(t => JSON.parse(t))
-          .catch(e => { console.warn('Preload failed', e); return null; });
-        }
-      } catch(e) {}
-    })();
-  </script>
-
   <style>
     /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
     :root {
@@ -52,7 +34,8 @@
       --sh-surf-c: #f3edf7;
       --sh-surf-h: #ece6f0;
       --sh-text: #1a1c1e;
-      --sh-outline: #73777f;
+      /* ACCESSIBILITY: Darkened outline color for >4.5:1 contrast */
+      --sh-outline: #5f6368;
       --sh-primary: #0061a4;
       --sh-glass: rgba(255, 255, 255, 0.9);
       --sh-border: rgba(255, 255, 255, 0.7);
@@ -65,7 +48,7 @@
         --sh-surf-c: #1b1f27;
         --sh-surf-h: #242932;
         --sh-text: #e1e2e8;
-        --sh-outline: #8d9199;
+        --sh-outline: #9aa0a6;
         --sh-primary: #a8c7fa;
         --sh-glass: rgba(20, 24, 32, 0.94);
         --sh-border: rgba(255, 255, 255, 0.12);
@@ -81,8 +64,9 @@
       overflow-x: hidden;
     }
 
-    /* APP CONTAINER */
+    /* APP CONTAINER - SEMANTIC MAIN TAG */
     #app-shell {
+      display: block;
       max-width: 720px;
       margin: 0 auto;
       padding: 0 16px;
@@ -163,7 +147,8 @@
 <body>
   <div id="app">
     <!-- APP SHELL: Immediate Paint (0ms JS) -->
-    <div id="app-shell">
+    <!-- Accessibility Fix: Using <main> landmark -->
+    <main id="app-shell">
       
       <!-- HEADER SHELL -->
       <div class="sh-header">
@@ -210,7 +195,7 @@
         </div>
       </div>
 
-    </div>
+    </main>
   </div>
   <script type="module" src="./src/main.ts"></script>
 </body>

@@ -12,7 +12,7 @@ const haptics = useHaptics()
 const navItems = [
   { path: '/', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
   { path: '/recruiter', name: 'recruiter', label: 'Headhunter', icon: 'recruiter' },
-  { path: '/settings', name: 'settings', label: '', icon: 'settings' }
+  { path: '/settings', name: 'settings', label: 'Settings', icon: 'settings' }
 ]
 
 function navigate(path: string) {
@@ -23,17 +23,18 @@ function navigate(path: string) {
 
 <template>
   <div class="dock-container" :class="{ 'hidden': !dockVisible }">
-    <div 
+    <button 
       v-for="item in navItems" 
       :key="item.name"
       class="dock-item"
       :class="{ 'active': route.path === item.path }"
       @click="navigate(item.path)"
+      :aria-label="item.label"
     >
       <div v-if="route.path === item.path" class="capsule-bg"></div>
       <Icon :name="item.icon" size="22" class="dock-icon" />
-      <span v-if="item.label" class="dock-label">{{ item.label }}</span>
-    </div>
+      <span v-if="item.label && item.label !== 'Settings'" class="dock-label">{{ item.label }}</span>
+    </button>
   </div>
 </template>
 
@@ -70,6 +71,11 @@ function navigate(path: string) {
   cursor: pointer;
   transition: all 0.3s var(--sys-motion-spring);
   -webkit-tap-highlight-color: transparent;
+  
+  /* Reset button styles */
+  background: none;
+  border: none;
+  font-family: inherit;
 }
 
 .dock-item.active { color: var(--sys-color-on-primary); }
