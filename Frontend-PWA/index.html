@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://script.google.com" />
   <link rel="preconnect" href="https://script.googleusercontent.com" />
   
-  <!-- Preload Fonts to eliminate render blocking and layout shifts (LCP Fix) -->
+  <!-- Preload Fonts: Ensure 'swap' is active to prevent FOIT -->
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap">
@@ -35,10 +35,8 @@
       --sh-surf-c: #f3edf7;
       --sh-surf-h: #ece6f0;
       --sh-text: #1a1c1e;
-      /* ACCESSIBILITY: Darkened outline color for >4.5:1 contrast */
       --sh-outline: #5f6368;
       --sh-primary: #0061a4;
-      /* OPTIMIZATION: Use solid opaque colors for Shell to avoid backdrop-filter paint cost */
       --sh-glass: #fdfcff; 
       --sh-border: #e6e0e9;
       --sh-sk: #e6e0e9;
@@ -66,7 +64,6 @@
       overflow-x: hidden;
     }
 
-    /* APP CONTAINER - SEMANTIC MAIN TAG */
     #app-shell {
       display: block;
       max-width: 720px;
@@ -74,28 +71,26 @@
       padding: 0 16px;
       padding-top: calc(12px + env(safe-area-inset-top));
       padding-bottom: 120px;
-      /* PERFORMANCE: Isolate layout to prevent full-page reflows */
       contain: content; 
     }
 
-    /* HEADER */
+    /* HEADER SHELL */
     .sh-header {
       position: sticky; top: 0; z-index: 10;
       background: var(--sh-glass);
-      /* PERF: Removed backdrop-filter from shell. Vue will add it later. */
       border: 1px solid var(--sh-border);
       border-radius: 24px;
       padding: 18px;
       margin-bottom: 20px;
       display: flex; flex-direction: column; gap: 14px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-      /* PERF: Optimize painting */
       will-change: transform;
     }
     
     .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
     
     /* LCP HERO: Exact match for global .view-title in style.css */
+    /* ⚡ CRITICAL: Use 'contain: paint' to tell browser this element is stable */
     .view-title {
       margin: 0;
       font-size: 24px;
@@ -106,8 +101,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
       font-family: 'Inter', system-ui, sans-serif; 
-      /* Optimize for fast paint */
       text-rendering: optimizeLegibility;
+      contain: paint; 
     }
 
     .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
@@ -119,13 +114,12 @@
     .sh-s-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--sh-outline); opacity: 0.3; }
     .sh-s-line { height: 12px; width: 80px; background: var(--sh-outline); opacity: 0.1; border-radius: 4px; }
 
-    /* LIST CARDS */
+    /* LIST SHELL */
     .sh-list { display: flex; flex-direction: column; gap: 8px; }
     .sh-card {
       height: 76px; background: var(--sh-surf-c); border-radius: 20px;
       padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
       border: 1px solid rgba(128,128,128,0.05);
-      /* Reduce paint cost of skeleton cards */
       contain: content;
     }
     .sh-c-left { display: flex; gap: 14px; align-items: center; }
@@ -141,7 +135,6 @@
       position: fixed; bottom: calc(24px + env(safe-area-inset-bottom));
       left: 50%; transform: translateX(-50%);
       background: var(--sh-glass);
-      /* PERF: Removed backdrop-filter from shell */
       border: 1px solid var(--sh-border);
       padding: 6px; border-radius: 99px;
       display: flex; gap: 4px; z-index: 50;
@@ -151,22 +144,20 @@
     .sh-d-item.active { background: var(--sh-primary); }
     .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; mask-size: cover; -webkit-mask-size: cover; }
     
-    /* ANIMATION */
     .sh-pulse { animation: sh-pulse 1.5s infinite ease-in-out; }
     @keyframes sh-pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
   <div id="app">
-    <!-- APP SHELL: Immediate Paint (0ms JS) -->
-    <!-- Accessibility Fix: Using <main> landmark -->
     <main id="app-shell">
       
       <!-- HEADER SHELL -->
       <div class="sh-header">
         <div class="sh-h-row">
-          <!-- LCP HERO: Static title matches Vue component exactly -->
-          <h1 class="view-title">Clash Manager</h1>
+          <!-- ⚡ LCP FIX: Title matches Vue's initial state ("Leaderboard") EXACTLY. -->
+          <!-- This prevents the text swap from invalidating the LCP. -->
+          <h1 class="view-title">Leaderboard</h1>
           <div class="sh-pill sh-pulse"></div>
         </div>
         <div class="sh-search">
@@ -175,7 +166,7 @@
         </div>
       </div>
 
-      <!-- LIST SHELL (8 Items for full viewport) -->
+      <!-- LIST SHELL -->
       <div class="sh-list">
         <div class="sh-card sh-pulse">
           <div class="sh-c-left">
@@ -196,7 +187,6 @@
       <!-- DOCK SHELL -->
       <div class="sh-dock">
         <div class="sh-d-item active">
-          <!-- Leaderboard Icon (CSS Shape) -->
           <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z"/></svg>
           <span style="font-size:14px;font-weight:750;color:white;font-family:sans-serif">Leaderboard</span>
         </div>
