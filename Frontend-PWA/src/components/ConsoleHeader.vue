@@ -67,7 +67,7 @@ const activeSortDescription = computed(() => {
                <Icon name="spreadsheet" size="20" />
             </a>
             
-            <!-- ⚡ LCP OPTIMIZATION: Always render the title text. Never use a skeleton for static headers. -->
+            <!-- ⚡ LCP OPTIMIZATION: Use global .view-title class (defined in style.css) to match Static HTML Shell -->
             <h1 class="view-title">{{ title }}</h1>
 
             <div v-if="stats && !loading" class="stats-pill">
@@ -184,18 +184,7 @@ const activeSortDescription = computed(() => {
 
 .left-cluster { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
 
-.view-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 900;
-  color: var(--sys-color-on-surface);
-  letter-spacing: -0.03em;
-  /* ⚡ PERF: Removed layout-triggering transition on font-size */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.is-scrolled .view-title { font-size: 18px; }
+/* NOTE: .view-title style removed from scoped block. It is now in global style.css */
 
 /* Skeleton title style */
 .sk-header-title {
@@ -253,7 +242,7 @@ const activeSortDescription = computed(() => {
 /* Mobile Optimizations */
 @media (max-width: 600px) {
   .console-glass { padding: 14px; gap: 12px; }
-  .view-title { font-size: 20px; }
+  /* .view-title size handled globally in style.css */
   .status-pill { padding: 6px 10px; gap: 6px; min-width: 60px; }
   .left-cluster { gap: 8px; }
   .stats-pill { padding: 4px 8px; }
