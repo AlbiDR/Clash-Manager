@@ -93,8 +93,8 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
       <div class="stats-row" :aria-busy="appIsRefreshing ? 'true' : 'false'">
         <template v-if="appIsRefreshing">
           <div v-for="i in 3" :key="i" class="stat-cell skeleton-anim">
-            <div class="sk-text-line-s" style="width: 50px;"></div>
-            <div class="sk-stat-value" style="width: 60px;"></div>
+            <div class="sk-text-line-s" :style="{ width: `${50 + (i * 5)}px` }"></div>
+            <div class="sk-stat-value" :style="{ width: `${40 + (i * 5)}px` }"></div>
           </div>
         </template>
         <template v-else>
@@ -114,14 +114,20 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago))
       </div>
 
       <div class="actions-toolbar">
-        <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
-          <Icon name="analytics" size="14" />
-          <span>RoyaleAPI</span>
-        </a>
-        <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
-          <Icon name="crown" size="14" />
-          <span>Open Game</span>
-        </a>
+        <template v-if="appIsRefreshing">
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+        </template>
+        <template v-else>
+          <a :href="`https://royaleapi.com/player/${recruit.id}`" target="_blank" class="btn-action compact">
+            <Icon name="analytics" size="14" />
+            <span>RoyaleAPI</span>
+          </a>
+          <a :href="`clashroyale://playerInfo?id=${recruit.id}`" class="btn-action primary compact">
+            <Icon name="crown" size="14" />
+            <span>Open Game</span>
+          </a>
+        </template>
       </div>
     </div>
   </div>
