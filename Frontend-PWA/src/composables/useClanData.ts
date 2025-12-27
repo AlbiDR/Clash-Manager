@@ -25,34 +25,37 @@ const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 
 export function useClanData() {
 
-    // Removed hydrateFromSnapshot() as its logic is now synchronous in init()
-
     async function init() {
-        // 1. Synchronous Local Hydration for immediate LCP/FCP feedback
-        // This runs immediately upon useClanData() init(), ensuring data is available for Vue render tree.
-        try {
-            // No need for requestIdleCallback here; we want this to be as fast as possible.
-            const raw = localStorage.getItem(SNAPSHOT_KEY)
-            if (raw) {
-                const parsed = JSON.parse(raw)
-                // Always set, even if it's potentially older, for instant UI
-                clanData.value = parsed
-                lastSyncTime.value = parsed.timestamp || Date.now()
-                updateBadgeCount(parsed)
-                console.log('⚡ Synchronous Hydration: Success')
+        // 1. Deferred Local Hydration
+        // Use requestIdleCallback to prevent JSON parsing from blocking the main thread 
+        // during the initial paint. This ensures the App Shell (HTML) renders instantly.
+        const performHydration = () => {
+            try {
+                const raw = localStorage.getItem(SNAPSHOT_KEY)
+                if (raw) {
+                    const parsed = JSON.parse(raw)
+                    clanData.value = parsed
+                    lastSyncTime.value = parsed.timestamp || Date.now()
+                    updateBadgeCount(parsed)
+                    console.log('⚡ Deferred Hydration: Success')
+                }
+            } catch (e) {
+                console.warn('Hydration failed', e)
+                clanData.value = null
+            } finally {
+                // Signal that local data is ready (or empty), allowing Vue to switch from skeletons
+                isHydrated.value = true
+                // Start network sync only after local data is handled
+                startBackgroundSync()
             }
-        } catch (e) {
-            console.warn('Synchronous hydration failed', e)
-            clanData.value = null // Ensure state is clear if parsing fails
-        } finally {
-            // Signal that initial local data load attempt is done, allowing ConsoleHeader etc. to render.
-            // This is crucial for fast LCP.
-            isHydrated.value = true
         }
 
-        // 2. Asynchronous Background Sync (fetch fresh data)
-        // This is still non-blocking and happens after UI has a chance to paint.
-        startBackgroundSync()
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            window.requestIdleCallback(performHydration, { timeout: 1000 })
+        } else {
+            // Fallback for Safari / older browsers
+            setTimeout(performHydration, 10)
+        }
     }
 
     async function startBackgroundSync() {
