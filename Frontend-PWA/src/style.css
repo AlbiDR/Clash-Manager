@@ -39,7 +39,8 @@
   --sys-color-inverse-on-surface: #f4f2f7;
   --sys-color-inverse-primary: #a8c7fa;
 
-  --sys-color-outline: #73777f;
+  /* ACCESSIBILITY: Darkened from #73777f to #5f6368 for 4.5:1 contrast on white */
+  --sys-color-outline: #5f6368;
   --sys-color-outline-variant: #c4c7c5;
 
   --sys-surface-glass: rgba(255, 255, 255, 0.9);
@@ -95,7 +96,7 @@
   
   --sys-surface-glass: rgba(20, 24, 32, 0.94);
   --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
-  --sys-color-outline: #8d9199;
+  --sys-color-outline: #9aa0a6;
   --sys-color-outline-variant: #44474f;
   
   --sh-bg: #0b0e14; --sh-surf: #1b1f27; --sh-text: #e1e2e8; --sh-sk: #2f343e;
@@ -112,6 +113,19 @@ body {
   /* Prevent context menu during long press for tooltips */
   -webkit-touch-callout: none;
   transition: background-color 0.3s ease;
+}
+
+/* =========================================
+   ACCESSIBILITY: Global Link Styles
+   ========================================= */
+a {
+  text-decoration: underline;
+  color: inherit;
+}
+
+/* Remove underline for components that act as buttons */
+.btn-action, .icon-button, .fab-btn, .dock-item {
+  text-decoration: none !important;
 }
 
 /* =========================================
