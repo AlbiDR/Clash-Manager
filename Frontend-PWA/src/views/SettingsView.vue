@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
 import { useApiState } from '../composables/useApiState'
@@ -13,16 +14,19 @@ import SystemModules from '../components/settings/SystemModules.vue'
 import Recovery from '../components/settings/Recovery.vue'
 import BackendRefresher from '../components/settings/BackendRefresher.vue'
 import NotificationSettings from '../components/settings/NotificationSettings.vue'
+import SkeletonSettingsCard from '../components/SkeletonSettingsCard.vue' // Import new skeleton
 import { useDemoMode } from '../composables/useDemoMode'
 import { useLongPress } from '../composables/useLongPress'
 import { useToast } from '../composables/useToast'
 import { vTactile } from '../directives/vTactile'
+import { useClanData } from '../composables/useClanData' // Import useClanData
 
 const { apiStatus, checkApiStatus } = useApiState()
 const { modules } = useModules()
 const { isDemoMode, toggleDemoMode } = useDemoMode()
 const { info } = useToast()
 const appVersion = __APP_VERSION__
+const { isHydrated, isRefreshing } = useClanData() // Get hydration and refreshing status
 
 const { start: startLongPress, cancel: cancelLongPress } = useLongPress(() => {
     info(isDemoMode.value ? 'Switching to Live Mode...' : 'Developer Mode: Activating Demo Data...')
@@ -39,31 +43,39 @@ const apiStatusObject = computed(() => {
     if (apiStatus.value === 'unconfigured') return { type: 'error', text: 'Setup Required' } as const
     return { type: 'loading', text: 'Ping...' } as const
 })
+
+const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value)
 </script>
 
 <template>
   <div class="view-container">
-    <ConsoleHeader title="Settings" :status="apiStatusObject" />
+    <ConsoleHeader title="Settings" :status="apiStatusObject" :loading="showSkeletons" />
 
     <div class="settings-content gpu-contain">
       
-      <PwaInstallBanner />
+      <PwaInstallBanner v-if="!showSkeletons" />
 
-      <NetworkSettings />
-      
-      <AppearanceSettings />
+      <template v-if="showSkeletons">
+        <!-- Render multiple skeleton cards when loading -->
+        <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
+      </template>
+      <template v-else>
+        <NetworkSettings />
+        
+        <AppearanceSettings />
 
-      <ExtraFeatures />
+        <ExtraFeatures />
 
-      <NotificationSettings />
+        <NotificationSettings />
 
-      <Experiments />
+        <Experiments />
 
-      <BackendRefresher v-if="modules.backendRefresher" />
+        <BackendRefresher v-if="modules.backendRefresher" />
 
-      <SystemModules />
+        <SystemModules />
 
-      <Recovery />
+        <Recovery />
+      </template>
 
       <div 
         class="footer-info"
