@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed, watch, onUnmounted } from 'vue'
 import { useClanData } from '../composables/useClanData'
@@ -20,6 +21,7 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
 import PullToRefresh from '../components/PullToRefresh.vue'
+import WarHistoryChart from '../components/WarHistoryChart.vue' // Ensure this is imported for props.loading check
 
 const { pingData } = useApiState()
 
@@ -159,6 +161,7 @@ function handleSearchUpdate(val: string) {
       :sheet-url="sheetUrl"
       :stats="statsBadge"
       :sort-options="sortOptions"
+      :loading="showSkeletons"
       @update:search="handleSearchUpdate"
       @update:sort="updateSort"
       @refresh="refresh"
