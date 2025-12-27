@@ -119,6 +119,26 @@ body {
 }
 
 /* =========================================
+   GLOBAL TYPOGRAPHY (LCP Optimized)
+   ========================================= */
+/* Moved from ConsoleHeader.vue to ensure static index.html match */
+.view-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--sys-color-on-surface);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+/* Header scroll state modification */
+.header-wrapper.is-scrolled .view-title { 
+  font-size: 18px; 
+}
+
+/* =========================================
    ACCESSIBILITY: Global Link Styles
    ========================================= */
 a {
