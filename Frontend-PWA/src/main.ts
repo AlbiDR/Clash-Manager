@@ -1,9 +1,11 @@
+
 // @ts-nocheck
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import router from './router'
-import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
+// REMOVED: Synchronous import of autoAnimatePlugin
+// import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 import { vTooltip } from './directives/vTooltip'
 import { vTactile } from './directives/vTactile'
 import { useModules } from './composables/useModules'
@@ -30,24 +32,39 @@ function bootstrap() {
         // 2. Create App
         const app = createApp(App)
         app.use(router)
-        app.use(autoAnimatePlugin)
+        
+        // ⚡ PERFORMANCE: Register dummy directive first to prevent Vue warnings during hydration
+        app.directive('auto-animate', {}) 
+        
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
-        // 3. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
-        app.mount('#app')
-
-        // 4. Initialize Data
-        // Hydration logic is now safe to call immediately as it internally yields the thread
+        // 3. Initialize Data (Synchronous local load + Async remote refresh)
         const clanData = useClanData(); 
-        clanData.init();
+        clanData.init(); // Synchronous read
 
-        // 5. Non-Critical Systems (Deferred)
-        const defer = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 200));
-        defer(() => {
+        // 4. Mount (Visual Handover: HTML Shell -> Vue Skeletons)
+        // ⚡ CRITICAL OPTIMIZATION:
+        // Delay mounting by one animation frame. This guarantees the browser paints 
+        // the Static HTML Shell (from index.html) before Vue hydration takes over.
+        // This ensures the LCP event is recorded on the static <h1>, not the Vue component.
+        requestAnimationFrame(() => {
+            app.mount('#app')
+        })
+
+        // 5. Defer Non-Critical Systems & Heavy Libraries
+        setTimeout(async () => {
             const apiState = useApiState(); apiState.init();
             const wakeLock = useWakeLock(); wakeLock.init();
-        });
+            
+            // ⚡ Lazy Load AutoAnimate
+            try {
+                const { autoAnimatePlugin } = await import('@formkit/auto-animate/vue')
+                app.use(autoAnimatePlugin)
+            } catch (e) {
+                console.warn('Failed to load animations', e)
+            }
+        }, 200); 
 
     } catch (e) {
         showFatalError(e);

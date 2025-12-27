@@ -119,6 +119,26 @@ body {
 }
 
 /* =========================================
+   GLOBAL TYPOGRAPHY (LCP Optimized)
+   ========================================= */
+/* Moved from ConsoleHeader.vue to ensure static index.html match */
+.view-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--sys-color-on-surface);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+/* Header scroll state modification */
+.header-wrapper.is-scrolled .view-title { 
+  font-size: 18px; 
+}
+
+/* =========================================
    ACCESSIBILITY: Global Link Styles
    ========================================= */
 a {
@@ -208,6 +228,13 @@ a {
   border-radius: 2px;
   opacity: 0.7;
 }
+
+/* NEW: More specific text and value skeletons */
+.sk-text-line-s { width: 80px; height: 10px; background: var(--sh-sk); border-radius: 3px; opacity: 0.8; }
+.sk-text-line-m { width: 120px; height: 14px; background: var(--sh-sk); border-radius: 4px; }
+.sk-stat-value { width: 40px; height: 14px; background: var(--sh-sk); border-radius: 4px; }
+.sk-button-m { width: 80px; height: 32px; background: var(--sh-sk-secondary); border-radius: 8px; }
+.sk-button-s { width: 50px; height: 24px; background: var(--sh-sk-secondary); border-radius: 8px; }
 
 
 /* Shimmer Animation */

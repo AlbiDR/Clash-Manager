@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import type { LeaderboardMember } from '../types'
@@ -15,6 +16,7 @@ const props = defineProps<{
   expanded: boolean
   selected: boolean
   selectionMode: boolean
+  appIsRefreshing?: boolean // New prop
 }>()
 
 const emit = defineEmits<{
@@ -108,32 +110,46 @@ const trend = computed(() => {
 
     <!-- v-if ensures content is secondary and not mounted until needed -->
     <div class="card-body" v-if="expanded">
-      <div class="stats-grid">
-        <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
-          <span class="label">Daily Avg</span>
-          <span class="value">{{ member.d.avg }}</span>
-        </div>
-        <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'warRate', parseFloat(member.d.rate || '0')) : null">
-          <span class="label">War Rate</span>
-          <span class="value">{{ member.d.rate }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Last Seen</span>
-          <span class="value">{{ member.d.seen }}</span>
-        </div>
+      <div class="stats-grid" :aria-busy="appIsRefreshing ? 'true' : 'false'">
+        <template v-if="appIsRefreshing">
+          <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
+            <div class="sk-text-line-s" :style="{ width: `${50 + (i * 5)}px` }"></div>
+            <div class="sk-stat-value" :style="{ width: `${40 + (i * 5)}px` }"></div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
+            <span class="label">Daily Avg</span>
+            <span class="value">{{ member.d.avg }}</span>
+          </div>
+          <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'warRate', parseFloat(member.d.rate || '0')) : null">
+            <span class="label">War Rate</span>
+            <span class="value">{{ member.d.rate }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Last Seen</span>
+            <span class="value">{{ member.d.seen }}</span>
+          </div>
+        </template>
       </div>
       
-      <WarHistoryChart :history="member.d.hist" />
+      <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
 
       <div class="actions">
-        <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
-          <Icon name="analytics" size="16" />
-          <span>RoyaleAPI</span>
-        </a>
-        <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
-          <Icon name="crown" size="16" />
-          <span>Open Game</span>
-        </a>
+        <template v-if="appIsRefreshing">
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+        </template>
+        <template v-else>
+          <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
+            <Icon name="analytics" size="16" />
+            <span>RoyaleAPI</span>
+          </a>
+          <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
+            <Icon name="crown" size="16" />
+            <span>Open Game</span>
+          </a>
+        </template>
       </div>
     </div>
   </div>

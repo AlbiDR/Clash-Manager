@@ -1,16 +1,21 @@
+
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useModules } from '../../composables/useModules'
 import { useWakeLock } from '../../composables/useWakeLock'
 import { useDemoMode } from '../../composables/useDemoMode'
+import { useClanData } from '../../composables/useClanData' // Import useClanData
 import Icon from '../Icon.vue'
 
 const { modules, toggle } = useModules()
 const wakeLock = useWakeLock()
 const { isDemoMode, toggleDemoMode } = useDemoMode()
+const { isRefreshing } = useClanData() // Get global refreshing state
+const showSkeletons = computed(() => isRefreshing.value)
 </script>
 
 <template>
-    <div class="settings-card">
+    <div class="settings-card" :aria-busy="showSkeletons ? 'true' : 'false'">
         <div class="card-header">
             <Icon name="lightning" size="20" class="header-icon" />
             <h3>Extra Features</h3>
@@ -20,31 +25,49 @@ const { isDemoMode, toggleDemoMode } = useDemoMode()
             
             <div class="toggle-row" @click="toggle('ghostBenchmarking')">
                 <div class="row-info">
-                <div class="row-label">Ghost Benchmarking</div>
-                <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                  <template v-if="showSkeletons">
+                    <div class="sk-text-line-m" style="width: 140px;"></div>
+                    <div class="sk-text-line-s" style="width: 200px;"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Ghost Benchmarking</div>
+                    <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                  </template>
                 </div>
-                <div class="switch" :class="{ active: modules.ghostBenchmarking }">
-                <div class="handle"></div>
+                <div class="switch" :class="{ active: modules.ghostBenchmarking, 'skeleton-anim sk-badge-s': showSkeletons }">
+                  <div class="handle"></div>
                 </div>
             </div>
 
             <div class="toggle-row" @click="toggleDemoMode">
                 <div class="row-info">
-                <div class="row-label">Portfolio Demo Mode</div>
-                <div class="row-desc">Use mock data engine for technical showcase</div>
+                  <template v-if="showSkeletons">
+                    <div class="sk-text-line-m" style="width: 160px;"></div>
+                    <div class="sk-text-line-s" style="width: 220px;"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Portfolio Demo Mode</div>
+                    <div class="row-desc">Use mock data engine for technical showcase</div>
+                  </template>
                 </div>
-                <div class="switch" :class="{ active: isDemoMode }">
-                <div class="handle"></div>
+                <div class="switch" :class="{ active: isDemoMode, 'skeleton-anim sk-badge-s': showSkeletons }">
+                  <div class="handle"></div>
                 </div>
             </div>
 
             <div v-if="wakeLock.isSupported" class="toggle-row" @click="wakeLock.toggle()">
                 <div class="row-info">
-                <div class="row-label">Keep Screen On</div>
-                <div class="row-desc">Prevent display sleep during clan management</div>
+                  <template v-if="showSkeletons">
+                    <div class="sk-text-line-m" style="width: 100px;"></div>
+                    <div class="sk-text-line-s" style="width: 180px;"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Keep Screen On</div>
+                    <div class="row-desc">Prevent display sleep during clan management</div>
+                  </template>
                 </div>
-                <div class="switch" :class="{ active: wakeLock.isActive.value }">
-                <div class="handle"></div>
+                <div class="switch" :class="{ active: wakeLock.isActive.value, 'skeleton-anim sk-badge-s': showSkeletons }">
+                  <div class="handle"></div>
                 </div>
             </div>
 
@@ -75,6 +98,7 @@ const { isDemoMode, toggleDemoMode } = useDemoMode()
 .features-list { display: flex; flex-direction: column; gap: 16px; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
 
+.row-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .row-label { font-weight: 800; font-size: 15px; color: var(--sys-color-on-surface); }
 .row-desc { font-size: 13px; opacity: 0.6; }
 
@@ -82,4 +106,18 @@ const { isDemoMode, toggleDemoMode } = useDemoMode()
 .switch.active { background: var(--sys-color-primary); }
 .switch .handle { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; background: white; border-radius: 50%; transition: 0.3s; }
 .switch.active .handle { left: calc(100% - 19px); }
+.switch.skeleton-anim.sk-badge-s {
+  background: none; /* Hide native background for skeleton */
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+.switch.skeleton-anim.sk-badge-s::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sh-sk-secondary); /* Skeleton background */
+  border-radius: 12px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
 </style>

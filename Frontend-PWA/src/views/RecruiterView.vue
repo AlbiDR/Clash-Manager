@@ -84,7 +84,7 @@ const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
   if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
   if (recruits.value.length > 0) return { type: 'ready', text: formatTimeAgo(new Date(lastSyncTime.value || Date.now()).toISOString()) } as const
-  return { type: 'ready', text: 'Empty' } as const
+  return { type: 'ready', text: 'Empty' as const }
 })
 
 const statsBadge = computed(() => ({
@@ -170,6 +170,7 @@ function handleSearchUpdate(val: string) {
         <SelectionBar 
             v-if="isSelectionMode"
             :count="selectedIds.length"
+            :loading="isRefreshing"
             @select-all="handleSelectAll"
             @clear="clearSelection"
             @done="clearSelection"
@@ -212,6 +213,7 @@ function handleSearchUpdate(val: string) {
         :selected="selectedSet.has(recruit.id)"
         :selection-mode="isSelectionMode"
         :style="{ '--i': index }"
+        :app-is-refreshing="isRefreshing"
         @toggle-expand="toggleExpand(recruit.id)"
         @toggle-select="toggleSelect(recruit.id)"
       />

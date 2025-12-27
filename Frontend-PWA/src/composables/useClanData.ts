@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import { ref, shallowRef, readonly, watch, triggerRef } from 'vue'
 import { loadCache, fetchRemote, inflatePayload } from '../api/gasClient'
@@ -24,49 +25,29 @@ const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 
 export function useClanData() {
 
-    function hydrateFromSnapshot() {
-        if (clanData.value || isDemoMode.value) {
-            isHydrated.value = true
-            return
-        }
+    // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
+    // Call this before app.mount() to ensure data is present for first paint
+    function loadLocal() {
+        if (isHydrated.value) return // Already loaded
         
-        // ⚡ PERFORMANCE: Parallel Execution
-        // We do NOT wait for disk read to finish before starting network request.
-        // This cuts the TTI by the time it takes to read from IDB.
-        
-        // 1. Start Network Sync (Optimistic)
-        startBackgroundSync()
-
-        // 2. Read from Disk (Immediate visual feedback)
-        const yieldThread = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
-
-        yieldThread(() => {
-            try {
-                const raw = localStorage.getItem(SNAPSHOT_KEY)
-                if (raw) {
-                    const parsed = JSON.parse(raw)
-                    // Only apply snapshot if we haven't already received fresh data
-                    if (!clanData.value) {
-                        clanData.value = parsed
-                        lastSyncTime.value = parsed.timestamp || Date.now()
-                        updateBadgeCount(parsed)
-                        console.log('⚡ Instant Hydration: Success')
-                    }
-                }
-            } catch (e) {
-                console.warn('Hydration failed', e)
-            } finally {
-                // Signal that initial data load attempt is done
-                isHydrated.value = true
+        try {
+            const raw = localStorage.getItem(SNAPSHOT_KEY)
+            if (raw) {
+                const parsed = JSON.parse(raw)
+                clanData.value = parsed
+                lastSyncTime.value = parsed.timestamp || Date.now()
+                updateBadgeCount(parsed)
             }
-        })
+        } catch (e) {
+            console.warn('Hydration failed', e)
+            clanData.value = null
+        } finally {
+            isHydrated.value = true
+        }
     }
 
-    async function init() {
-        // Trigger hydration sequence
-        hydrateFromSnapshot()
-    }
-
+    // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
+    // Call this inside a setTimeout after app.mount() to avoid blocking LCP
     async function startBackgroundSync() {
         if (isDemoMode.value) {
             console.log('🌟 Demo Mode Active')
@@ -77,21 +58,23 @@ export function useClanData() {
             return
         }
 
-        // Fast DB Path (SWR) via IDB
+        // Fast DB Path (SWR) via IDB - still good for robust caching
         try {
             const cached = await loadCache()
             if (cached) {
+                // Only update if cached data is newer than what we got from localStorage or if no local storage data was found.
                 if (!clanData.value || cached.timestamp > (clanData.value?.timestamp || 0)) {
                     clanData.value = cached
                     lastSyncTime.value = cached.timestamp
                     updateBadgeCount(cached)
+                    console.log('⚡ IDB Cache Refresh: Applied newer data.')
                 }
             }
         } catch (e) {
-            console.warn("DB Load Failed", e)
+            console.warn("IDB Load Failed", e)
         }
 
-        // Network Sync
+        // Network Sync - always attempt to get the freshest data
         refresh()
     }
 
@@ -124,10 +107,6 @@ export function useClanData() {
                 return
             }
 
-            // ⚡ DEEP NET PROTOCOL: Simplified
-            // Preloader removed to prioritize FCP.
-            // We now rely solely on standard network fetch after Vue hydration.
-            
             const remoteData = await fetchRemote()
 
             clanData.value = remoteData
@@ -135,10 +114,11 @@ export function useClanData() {
             syncStatus.value = 'success'
 
             // Save to snapshot for next cold start LCP
-            // Use requestIdleCallback to avoid blocking input during save
+            // Use requestIdleCallback or setTimeout to avoid blocking input during save
             const saveTask = (window as any).requestIdleCallback || setTimeout;
             saveTask(() => {
                 localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData))
+                // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
             })
             updateBadgeCount(remoteData)
 
@@ -184,7 +164,8 @@ export function useClanData() {
         syncStatus: readonly(syncStatus),
         syncError: readonly(syncError),
         lastSyncTime: readonly(lastSyncTime),
-        init,
+        loadLocal,
+        startBackgroundSync,
         refresh,
         dismissRecruitsAction
     }

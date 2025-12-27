@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useApiState } from '../../composables/useApiState'
@@ -8,6 +9,7 @@ const newApiUrl = ref('')
 const isEditing = ref(false)
 
 const hasLocalOverride = computed(() => !!localStorage.getItem('cm_gas_url'))
+const isChecking = computed(() => apiStatus.value === 'checking')
 
 watch(apiStatus, (newVal) => {
     if (newVal === 'unconfigured') isEditing.value = true
@@ -29,7 +31,7 @@ function resetApiUrl() {
 </script>
 
 <template>
-    <div class="settings-card">
+    <div class="settings-card" :aria-busy="isChecking ? 'true' : 'false'">
         <div class="card-header">
             <Icon name="plug" size="20" class="header-icon" />
             <h3>Network & API</h3>
@@ -38,34 +40,62 @@ function resetApiUrl() {
         
         <div class="card-body">
             <div class="network-stats">
-            <div class="stat-box">
-                <span class="label">Latency</span>
-                <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
-            </div>
-            <div class="stat-box">
-                <span class="label">Backend</span>
-                <span class="value">v{{ pingData?.version || '0.0' }}</span>
-            </div>
-            <div class="stat-box">
-                <span class="label">Cache</span>
-                <span class="value">Ready</span>
-            </div>
+              <div class="stat-box skeleton-anim">
+                  <span class="label">Latency</span>
+                  <template v-if="isChecking">
+                    <div class="sk-stat-value"></div>
+                  </template>
+                  <template v-else>
+                    <span class="value">{{ pingData?.latency || '--' }}<small>ms</small></span>
+                  </template>
+              </div>
+              <div class="stat-box skeleton-anim">
+                  <span class="label">Backend</span>
+                  <template v-if="isChecking">
+                    <div class="sk-stat-value"></div>
+                  </template>
+                  <template v-else>
+                    <span class="value">v{{ pingData?.version || '0.0' }}</span>
+                  </template>
+              </div>
+              <div class="stat-box skeleton-anim">
+                  <span class="label">Cache</span>
+                  <template v-if="isChecking">
+                    <div class="sk-stat-value" style="width: 50px;"></div>
+                  </template>
+                  <template v-else>
+                    <span class="value">Ready</span>
+                  </template>
+              </div>
             </div>
 
             <div class="url-manager">
-            <div class="field-label">API ENDPOINT</div>
-            <div v-if="!isEditing" class="url-readout">
-                <span class="url-text">{{ apiUrl }}</span>
-                <button class="edit-btn" @click="isEditing = true">Edit</button>
-            </div>
-            <div v-else class="url-input-row">
-                <input v-model="newApiUrl" type="text" placeholder="https://script.google.com/..." class="glass-input" />
-                <button class="save-btn" @click="saveApiUrl"><Icon name="check" size="20" /></button>
-                <button class="cancel-btn" @click="isEditing = false">X</button>
-            </div>
-            <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
-                Running custom override • Tap to reset
-            </div>
+              <div class="field-label">API ENDPOINT</div>
+              <div v-if="!isEditing" class="url-readout skeleton-anim">
+                  <template v-if="isChecking">
+                    <div class="sk-text-line-m" style="width: 80%;"></div>
+                    <div class="sk-button-s"></div>
+                  </template>
+                  <template v-else>
+                    <span class="url-text">{{ apiUrl }}</span>
+                    <button class="edit-btn" @click="isEditing = true">Edit</button>
+                  </template>
+              </div>
+              <div v-else class="url-input-row">
+                  <template v-if="isChecking">
+                    <div class="sk-input skeleton-anim" style="flex: 1;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 40px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 40px;"></div>
+                  </template>
+                  <template v-else>
+                    <input v-model="newApiUrl" type="text" placeholder="https://script.google.com/..." class="glass-input" />
+                    <button class="save-btn" @click="saveApiUrl"><Icon name="check" size="20" /></button>
+                    <button class="cancel-btn" @click="isEditing = false">X</button>
+                  </template>
+              </div>
+              <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
+                  Running custom override • Tap to reset
+              </div>
             </div>
         </div>
     </div>
