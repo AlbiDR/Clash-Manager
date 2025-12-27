@@ -93,8 +93,19 @@
     
     .sh-h-row { display: flex; justify-content: space-between; align-items: center; }
     
-    /* LCP Optimization: Match ConsoleHeader.vue typography exactly */
-    /* REMOVED: .sh-title as Vue component now handles title from start */
+    /* LCP Optimization: Exact match for ConsoleHeader.vue .view-title */
+    .sh-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--sh-text);
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: 'Inter', system-ui, sans-serif; /* Explicit font backup */
+    }
+
     .sh-pill { width: 80px; height: 28px; background: var(--sh-surf-c); border-radius: 99px; }
     
     .sh-search {
@@ -148,8 +159,8 @@
       <!-- HEADER SHELL -->
       <div class="sh-header">
         <div class="sh-h-row">
-          <!-- H1 title will be rendered by Vue's ConsoleHeader from the start, either as text or skeleton -->
-          <div class="sh-line-l sh-header-title skeleton-anim"></div>
+          <!-- LCP HERO: Static title matches Vue component exactly -->
+          <h1 class="sh-title">Clash Manager</h1>
           <div class="sh-pill sh-pulse"></div>
         </div>
         <div class="sh-search">
