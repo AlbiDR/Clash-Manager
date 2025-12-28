@@ -160,8 +160,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       setTimeout(() => {
         if (isBlasting.value) {
           stopBlitz()
-          // We DO NOT clear selection here anymore. 
-          // This allows the user to dismiss the selected items after opening them.
           info('Batch sequence complete')
         }
       }, 500)

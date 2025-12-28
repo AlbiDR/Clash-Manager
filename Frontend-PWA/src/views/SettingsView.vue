@@ -16,7 +16,6 @@ import BackendRefresher from '../components/settings/BackendRefresher.vue'
 import NotificationSettings from '../components/settings/NotificationSettings.vue'
 import SkeletonSettingsCard from '../components/SkeletonSettingsCard.vue' // Import new skeleton
 import { useDemoMode } from '../composables/useDemoMode'
-import { useLongPress } from '../composables/useLongPress'
 import { useToast } from '../composables/useToast'
 import { vTactile } from '../directives/vTactile'
 import { useClanData } from '../composables/useClanData' // Import useClanData
@@ -28,10 +27,6 @@ const { info } = useToast()
 const appVersion = __APP_VERSION__
 const { isHydrated, isRefreshing } = useClanData() // Get hydration and refreshing status
 
-const { start: startLongPress, cancel: cancelLongPress } = useLongPress(() => {
-    info(isDemoMode.value ? 'Switching to Live Mode...' : 'Developer Mode: Activating Demo Data...')
-    setTimeout(toggleDemoMode, 800)
-}, 1500)
 
 onMounted(() => {
     checkApiStatus()
@@ -80,11 +75,6 @@ const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value)
       <div 
         class="footer-info"
         v-tactile
-        @mousedown="startLongPress"
-        @mouseup="cancelLongPress"
-        @mouseleave="cancelLongPress"
-        @touchstart="startLongPress"
-        @touchend="cancelLongPress"
       >
         <div class="brand">
             CLASH MANAGER V{{ appVersion }}
