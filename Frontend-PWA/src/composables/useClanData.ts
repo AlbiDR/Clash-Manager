@@ -1,7 +1,7 @@
 
 // @ts-nocheck
-import { ref, shallowRef, readonly, watch, triggerRef } from 'vue'
-import { loadCache, fetchRemote, inflatePayload } from '../api/gasClient'
+import { ref, shallowRef, readonly } from 'vue'
+import { loadCache, fetchRemote, dismissRecruits } from '../api/gasClient'
 import type { WebAppData } from '../types'
 import { useBadge } from './useBadge'
 import { useModules } from './useModules'
@@ -26,7 +26,7 @@ const SNAPSHOT_KEY = 'cm_hydration_snapshot'
 export function useClanData() {
 
     // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
-    // Call this before app.mount() to ensure data is present for first paint
+    // Call this AFTER app.mount() to avoid blocking LCP
     function loadLocal() {
         if (isHydrated.value) return // Already loaded
         
@@ -47,7 +47,6 @@ export function useClanData() {
     }
 
     // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
-    // Call this inside a setTimeout after app.mount() to avoid blocking LCP
     async function startBackgroundSync() {
         if (isDemoMode.value) {
             console.log('🌟 Demo Mode Active')
@@ -148,7 +147,6 @@ export function useClanData() {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(clanData.value))
 
         try {
-            const { dismissRecruits } = await import('../api/gasClient')
             await dismissRecruits(ids)
         } catch (e) {
             clanData.value = oldData
