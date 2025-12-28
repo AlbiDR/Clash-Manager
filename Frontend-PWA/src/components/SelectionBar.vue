@@ -1,8 +1,9 @@
-
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
     count: number
-    loading?: boolean // New prop
+    loading?: boolean
 }>()
 
 defineEmits<{
@@ -11,6 +12,8 @@ defineEmits<{
     (e: 'done'): void
     (e: 'select-score', threshold: number, mode: 'ge' | 'le'): void
 }>()
+
+const isScoreExpanded = ref(false)
 </script>
 
 <template>
@@ -21,12 +24,10 @@ defineEmits<{
                 <div class="sk-button-s skeleton-anim"></div>
                 <div class="sk-button-s skeleton-anim"></div>
                 <div class="v-divider"></div>
+                <!-- Skeleton matches collapsed state: Label + 1 Primary Button -->
                 <div class="score-group">
-                    <div class="sk-text-line-s skeleton-anim" style="width: 50px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
+                    <div class="sk-text-line-s skeleton-anim" style="width: 40px; margin-right: 4px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 40px;"></div>
                 </div>
                 <div class="v-divider"></div>
                 <div class="sk-button-s skeleton-anim"></div>
@@ -39,12 +40,19 @@ defineEmits<{
                 <button class="action-chip" @click="$emit('select-all')">All</button>
                 <button class="action-chip" @click="$emit('clear')">None</button>
                 <div class="v-divider"></div>
-                <div class="score-group">
-                <span class="sg-label">Score:</span>
-                <button class="sg-btn" @click="$emit('select-score', 15, 'le')">≤15</button>
-                <button class="sg-btn" @click="$emit('select-score', 25, 'le')">≤25</button>
-                <button class="sg-btn" @click="$emit('select-score', 50, 'ge')">≥50</button>
-                <button class="sg-btn" @click="$emit('select-score', 75, 'ge')">≥75</button>
+                <div class="score-group" :class="{ expanded: isScoreExpanded }">
+                    <button class="sg-trigger" @click="isScoreExpanded = !isScoreExpanded">
+                        Score <span class="sg-arrow" :class="{ rotated: isScoreExpanded }">›</span>
+                    </button>
+                    
+                    <template v-if="isScoreExpanded">
+                        <button class="sg-btn" @click="$emit('select-score', 15, 'le')">≤15</button>
+                        <button class="sg-btn" @click="$emit('select-score', 25, 'le')">≤25</button>
+                        <button class="sg-btn" @click="$emit('select-score', 50, 'ge')">≥50</button>
+                    </template>
+                    
+                    <!-- Primary Option always visible -->
+                    <button class="sg-btn highlight" @click="$emit('select-score', 75, 'ge')">≥75</button>
                 </div>
                 <div class="v-divider"></div>
                 <button class="action-chip danger" @click="$emit('done')">Done</button>
@@ -62,11 +70,23 @@ defineEmits<{
 .action-chip.danger { color: var(--sys-color-error); }
 .action-chip.danger:hover { background: var(--sys-color-error-container); }
 .v-divider { width: 1px; height: 16px; background: var(--sys-color-outline-variant); margin: 0 4px; }
-.score-group { display: flex; align-items: center; gap: 2px; background: var(--sys-color-surface-container-high); padding: 2px 4px 2px 10px; border-radius: 99px; border: 1px solid transparent; }
-.sg-label { font-size: 11px; font-weight: 800; color: var(--sys-color-outline); text-transform: uppercase; margin-right: 4px; }
-.sg-btn { background: var(--sys-color-surface); border: 1px solid rgba(0,0,0,0.05); color: var(--sys-color-primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 12px; cursor: pointer; transition: all 0.2s var(--sys-motion-spring); }
+
+.score-group { display: flex; align-items: center; gap: 4px; background: var(--sys-color-surface-container-high); padding: 3px; padding-left: 8px; border-radius: 99px; border: 1px solid transparent; transition: all 0.3s ease; }
+.score-group.expanded { background: var(--sys-color-surface-container-highest); padding-right: 4px; }
+
+.sg-trigger {
+    background: none; border: none; padding: 0;
+    font-size: 11px; font-weight: 800; color: var(--sys-color-outline); text-transform: uppercase;
+    cursor: pointer; display: flex; align-items: center; gap: 2px; margin-right: 2px;
+}
+.sg-arrow { display: inline-block; font-size: 14px; line-height: 1; transition: transform 0.3s ease; }
+.sg-arrow.rotated { transform: rotate(180deg); }
+
+.sg-btn { background: var(--sys-color-surface); border: 1px solid rgba(0,0,0,0.05); color: var(--sys-color-primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 12px; cursor: pointer; transition: all 0.2s var(--sys-motion-spring); white-space: nowrap; }
 .sg-btn:hover { transform: scale(1.05); background: var(--sys-color-primary-container); border-color: var(--sys-color-primary); }
 .sg-btn:active { transform: scale(0.95); }
+.sg-btn.highlight { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border-color: transparent; }
+
 .animate-pop { animation: popIn 0.3s var(--sys-motion-spring); }
 @keyframes popIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 </style>

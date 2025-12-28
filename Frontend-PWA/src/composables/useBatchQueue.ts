@@ -23,7 +23,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   // Selection Mode State (Auto-derived or Forced)
   const forceSelectionMode = ref(false)
 
-  const { error } = useToast()
+  const { error, info } = useToast()
   const { modules } = useModules()
 
   const isSelectionMode = computed(() => selectedIds.value.length > 0 || forceSelectionMode.value)
@@ -160,7 +160,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       setTimeout(() => {
         if (isBlasting.value) {
           stopBlitz()
-          clearSelection()
+          info('Batch sequence complete')
         }
       }, 500)
       return false // Ended
@@ -262,7 +262,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
       // Auto-exit when done
       if (queue.value.length === 0) {
-        selectedIds.value = []
+        // We DO NOT clear selectedIds here anymore.
+        // The queue is empty (processing done), but the selection remains for subsequent actions.
+        info('Batch complete')
       }
     }, 50)
   }
