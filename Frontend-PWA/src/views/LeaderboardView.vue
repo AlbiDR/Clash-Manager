@@ -1,24 +1,16 @@
-
 <script setup lang="ts">
-import { computed, watch, onUnmounted } from 'vue'
+import { computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
 import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useListFilter } from '../composables/useListFilter'
-import { useUiCoordinator } from '../composables/useUiCoordinator'
 import { useProgressiveList } from '../composables/useProgressiveList'
-import { parseTimeAgoValue, formatTimeAgo } from '../utils/formatters'
+import { formatTimeAgo } from '../utils/formatters'
 import type { LeaderboardMember } from '../types'
 
-import ConsoleHeader from '../components/ConsoleHeader.vue'
 import MemberCard from '../components/MemberCard.vue'
-import SelectionBar from '../components/SelectionBar.vue'
-import FabIsland from '../components/FabIsland.vue'
-import EmptyState from '../components/EmptyState.vue'
-import ErrorState from '../components/ErrorState.vue'
-import SkeletonCard from '../components/SkeletonCard.vue'
-import PullToRefresh from '../components/PullToRefresh.vue'
+import ConsoleLayout from '../components/ConsoleLayout.vue'
 
 const { pingData } = useApiState()
 
@@ -40,10 +32,9 @@ const sortStrategies: Record<string, (a: LeaderboardMember, b: LeaderboardMember
     trophies: (a, b) => (b.t || 0) - (a.t || 0),
     name: (a, b) => a.n.localeCompare(b.n),
     donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
-    // ... other strategies
 }
 
-const { searchQuery, sortBy, filteredItems: filteredMembers, updateSort } = useListFilter(
+const { searchQuery, filteredItems: filteredMembers, updateSort } = useListFilter(
     members,
     (m: LeaderboardMember) => [m.n, m.id], 
     sortStrategies,
@@ -66,10 +57,6 @@ const {
 } = useBatchQueue()
 
 const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('member-')
-
-const { setFabVisible } = useUiCoordinator()
-watch(() => fabState.value.visible, (visible) => setFabVisible(!!visible))
-onUnmounted(() => setFabVisible(false))
 
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
@@ -107,77 +94,43 @@ watch(members, (newVal) => {
 </script>
 
 <template>
-  <div class="view-container">
-    <PullToRefresh @refresh="refresh" />
-    
-    <ConsoleHeader
-      title="Leaderboard"
-      :status="status"
-      :show-search="!isSelectionMode"
-      :sheet-url="sheetUrl"
-      :stats="statsBadge"
-      :sort-options="sortOptions"
-      :loading="showSkeletons"
-      @update:search="val => searchQuery = val"
-      @update:sort="updateSort"
-      @refresh="refresh"
-    >
-      <template #extra>
-        <SelectionBar 
-            v-if="isSelectionMode"
-            :count="selectedIds.length"
-            :loading="isRefreshing"
-            @select-all="handleSelectAll"
-            @clear="clearSelection"
-            @done="clearSelection"
-            @select-score="handleSelectScore"
-        />
-      </template>
-    </ConsoleHeader>
-    
-    <ErrorState v-if="syncError && !members.length" :message="syncError" @retry="refresh" />
-    
-    <!-- ⚡ CRITICAL: Render skeletons if not hydrated yet. This matches the App Shell. -->
-    <div v-else-if="showSkeletons" class="list-container gpu-contain">
-      <SkeletonCard v-for="(n, i) in 8" :key="i" :index="i" :style="{ '--i': i }" />
-    </div>
-    
-    <EmptyState v-else-if="!showSkeletons && filteredMembers.length === 0" icon="leaf" message="No members found" />
-    
-    <div v-else v-auto-animate class="list-container gpu-contain">
-      <MemberCard
-        v-for="(member, index) in progressiveMembers"
-        :key="member.id"
-        :id="`member-${member.id}`"
-        :member="member"
-        :expanded="expandedIds.has(member.id)"
-        :selected="selectedSet.has(member.id)"
-        :selection-mode="isSelectionMode"
-        :style="{ '--i': index }"
-        :app-is-refreshing="isRefreshing"
-        @toggle="toggleExpand(member.id)"
-        @toggle-select="toggleSelect(member.id)"
-      />
-    </div>
-
-    <FabIsland
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Clear'"
-      :is-processing="fabState.isProcessing"
-      :is-blasting="fabState.isBlasting"
-      :selection-count="fabState.selectionCount"
-      :blitz-enabled="fabState.blitzEnabled"
-      @action="handleAction"
-      @blitz="handleBlitz"
-      @dismiss="clearSelection"
+  <ConsoleLayout
+    title="Leaderboard"
+    :status="status"
+    :show-search="!isSelectionMode"
+    :sheet-url="sheetUrl"
+    :stats="statsBadge"
+    :sort-options="sortOptions"
+    :loading="showSkeletons"
+    :is-selection-mode="isSelectionMode"
+    :selected-count="selectedIds.length"
+    :is-refreshing="isRefreshing"
+    :sync-error="syncError"
+    :is-empty="!showSkeletons && filteredMembers.length === 0"
+    :fab-state="fabState"
+    @refresh="refresh"
+    @update:search="val => searchQuery = val"
+    @update:sort="updateSort"
+    @select-all="handleSelectAll"
+    @clear-selection="clearSelection"
+    @select-score="handleSelectScore"
+    @fab-action="handleAction"
+    @fab-blitz="handleBlitz"
+    @fab-dismiss="clearSelection"
+  >
+    <!-- Default Slot: The List -->
+    <MemberCard
+      v-for="(member, index) in progressiveMembers"
+      :key="member.id"
+      :id="`member-${member.id}`"
+      :member="member"
+      :expanded="expandedIds.has(member.id)"
+      :selected="selectedSet.has(member.id)"
+      :selection-mode="isSelectionMode"
+      :style="{ '--i': index }"
+      :app-is-refreshing="isRefreshing"
+      @toggle="toggleExpand(member.id)"
+      @toggle-select="toggleSelect(member.id)"
     />
-  </div>
+  </ConsoleLayout>
 </template>
-
-<style scoped>
-.view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
-.gpu-contain { transform: translateZ(0); }
-</style>

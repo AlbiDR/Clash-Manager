@@ -1,22 +1,21 @@
-
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import type { LeaderboardMember } from '../types'
 import Icon from './Icon.vue'
+import BaseCard from './BaseCard.vue'
 import { useBenchmarking } from '../composables/useBenchmarking'
 import { useModules } from '../composables/useModules'
-import { useCardMechanics } from '../composables/useCardMechanics'
 import { getScoreTone, formatRole } from '../utils/formatters'
 
 const WarHistoryChart = defineAsyncComponent(() => import('./WarHistoryChart.vue'))
 
-const props = defineProps<{
+defineProps<{
   id: string
   member: LeaderboardMember
   expanded: boolean
   selected: boolean
   selectionMode: boolean
-  appIsRefreshing?: boolean // New prop
+  appIsRefreshing?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,21 +26,13 @@ const emit = defineEmits<{
 const { getBenchmark } = useBenchmarking()
 const { modules } = useModules()
 
-// Reusable card interactions with specific callbacks
-const { handleTap, handleLongPress, handleScoreClick, handleExpandClick } = useCardMechanics(
-    props,
-    {
-        onExpand: () => emit('toggle'),
-        onSelect: () => emit('toggle-select')
-    }
-)
+// Formatters
+const roleInfo = (role: string) => formatRole(role)
+const scoreTone = (score: number) => getScoreTone(score)
 
-const toneClass = computed(() => getScoreTone(props.member.s))
-const roleInfo = computed(() => formatRole(props.member.d.role))
-
-const trend = computed(() => {
-  const dt = Number(props.member.dt) || 0
-  const currentRaw = Number(props.member.r) || 0
+const trend = (member: LeaderboardMember) => {
+  const dt = Number(member.dt) || 0
+  const currentRaw = Number(member.r) || 0
   
   if (dt === 0 || currentRaw === 0) return null
   
@@ -62,175 +53,124 @@ const trend = computed(() => {
     dir: dt > 0 ? 'up' : 'down',
     raw: dt
   }
-})
+}
+
+// Helper for complex trend computation in template
+const getTrend = computed(() => (m: LeaderboardMember) => trend(m))
 </script>
 
 <template>
-  <div 
-    class="card squish-interaction"
-    :class="{ 'expanded': expanded, 'selected': selected }"
-    v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
+  <BaseCard
+    :id="id"
+    :expanded="expanded"
+    :selected="selected"
+    :selection-mode="selectionMode"
+    :tone-class="scoreTone(member.s)"
+    @toggle="emit('toggle')"
+    @toggle-select="emit('toggle-select')"
   >
-    <div class="card-header">
-      <div class="identity-group">
-        <div class="meta-stack">
-          <div class="badge tenure hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'tenure', member.d.days) : null">{{ member.d.days }}d</div>
-          <div class="badge role" :class="roleInfo.class">{{ roleInfo.label }}</div>
-        </div>
-        
-        <div class="name-block">
-          <span class="player-name">{{ member.n }}</span>
-          <div class="trophy-meta hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'trophies', member.t) : null">
+    <!-- SLOT: Meta Stack -->
+    <template #identity-meta>
+        <div class="badge tenure hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'tenure', member.d.days) : null">{{ member.d.days }}d</div>
+        <div class="badge role" :class="roleInfo(member.d.role).class">{{ roleInfo(member.d.role).label }}</div>
+    </template>
+
+    <!-- SLOT: Name Block -->
+    <template #identity-name>
+        <span class="player-name">{{ member.n }}</span>
+        <div class="trophy-meta hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'trophies', member.t) : null">
             <Icon name="trophy" size="12" />
             <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
-          </div>
         </div>
-      </div>
+    </template>
 
-      <div class="header-actions">
-        <div class="score-section" @click.stop="handleScoreClick">
-          <div class="stat-pod hit-target" :class="toneClass" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">
-            <span class="stat-score">{{ Math.round(member.s || 0) }}</span>
-            <div v-if="trend" class="momentum-pill hit-target" :class="trend.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', trend.raw) : null">
-              <Icon :name="trend.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
-              <span class="trend-val">{{ trend.val }}</span>
-            </div>
-          </div>
+    <!-- SLOT: Score Section -->
+    <template #score-section>
+        <span class="stat-score" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'score', member.s) : null">{{ Math.round(member.s || 0) }}</span>
+        <div v-if="getTrend(member)" class="momentum-pill hit-target" :class="getTrend(member)?.dir" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'momentum', getTrend(member)?.raw) : null">
+            <Icon :name="getTrend(member)?.dir === 'up' ? 'trend_up' : 'trend_down'" size="10" />
+            <span class="trend-val">{{ getTrend(member)?.val }}</span>
         </div>
-        <button 
-          class="expand-btn hit-target" 
-          @click.stop="handleExpandClick" 
-          :class="{ 'is-active': expanded }"
-          aria-label="Expand details"
-        >
-          <Icon name="chevron_down" size="20" />
-        </button>
-      </div>
-    </div>
+    </template>
 
-    <!-- v-if ensures content is secondary and not mounted until needed -->
-    <div class="card-body" v-if="expanded">
-      <div class="stats-grid" :aria-busy="appIsRefreshing ? 'true' : 'false'">
-        <template v-if="appIsRefreshing">
-          <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
-            <div class="sk-text-line-s" :style="{ width: `${50 + (i * 5)}px` }"></div>
-            <div class="sk-stat-value" :style="{ width: `${40 + (i * 5)}px` }"></div>
-          </div>
-        </template>
-        <template v-else>
-          <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
-            <span class="label">Daily Avg</span>
-            <span class="value">{{ member.d.avg }}</span>
-          </div>
-          <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'warRate', parseFloat(member.d.rate || '0')) : null">
-            <span class="label">War Rate</span>
-            <span class="value">{{ member.d.rate }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="label">Last Seen</span>
-            <span class="value">{{ member.d.seen }}</span>
-          </div>
-        </template>
-      </div>
-      
-      <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
+    <!-- SLOT: Expanded Content -->
+    <template #expanded-content>
+        <div class="stats-grid" :aria-busy="appIsRefreshing ? 'true' : 'false'">
+            <template v-if="appIsRefreshing">
+                <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
+                    <div class="sk-text-line-s" :style="{ width: `${50 + (i * 5)}px` }"></div>
+                    <div class="sk-stat-value" :style="{ width: `${40 + (i * 5)}px` }"></div>
+                </div>
+            </template>
+            <template v-else>
+                <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'donations', member.d.avg) : null">
+                    <span class="label">Daily Avg</span>
+                    <span class="value">{{ member.d.avg }}</span>
+                </div>
+                <div class="stat-item hit-target" v-tooltip="modules.ghostBenchmarking ? getBenchmark('lb', 'warRate', parseFloat(member.d.rate || '0')) : null">
+                    <span class="label">War Rate</span>
+                    <span class="value">{{ member.d.rate }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Last Seen</span>
+                    <span class="value">{{ member.d.seen }}</span>
+                </div>
+            </template>
+        </div>
+        
+        <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
 
-      <div class="actions">
-        <template v-if="appIsRefreshing">
-          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
-          <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
-        </template>
-        <template v-else>
-          <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
-            <Icon name="analytics" size="16" />
-            <span>RoyaleAPI</span>
-          </a>
-          <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
-            <Icon name="crown" size="16" />
-            <span>Open Game</span>
-          </a>
-        </template>
-      </div>
-    </div>
-  </div>
+        <div class="actions">
+            <template v-if="appIsRefreshing">
+                <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+                <div class="sk-button-m skeleton-anim" style="flex: 1;"></div>
+            </template>
+            <template v-else>
+                <a :href="`https://royaleapi.com/player/${member.id}`" target="_blank" class="btn-action">
+                    <Icon name="analytics" size="16" />
+                    <span>RoyaleAPI</span>
+                </a>
+                <a :href="`clashroyale://playerInfo?id=${member.id}`" class="btn-action primary">
+                    <Icon name="crown" size="16" />
+                    <span>Open Game</span>
+                </a>
+            </template>
+        </div>
+    </template>
+  </BaseCard>
 </template>
 
 <style scoped>
-.card { 
-  background: var(--sys-color-surface-container); 
-  border-radius: 20px; 
-  padding: 12px 16px; 
-  margin-bottom: 8px; 
-  border: 1.5px solid transparent; 
-  cursor: pointer; 
-  position: relative; 
-  overflow: visible; 
-  user-select: none; 
-  -webkit-user-select: none; 
-  -webkit-tap-highlight-color: transparent; 
-  touch-action: pan-y; 
-  /* ⚡ OPTIMIZED: Removed 'all', strictly animates composited properties + colors */
-  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  will-change: transform;
-  
-  /* ⚡ PERFORMANCE: Strict containment for Speed Index */
-  contain: layout paint style;
-  contain-intrinsic-size: auto 76px; 
-  content-visibility: auto;
-}
+/* Content specific styles only */
+.player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
+.trophy-meta { display: flex; align-items: center; gap: 4px; color: #854d0e; margin-top: 2px; width: fit-content; }
+:root.dark .trophy-meta { color: #fbbf24; }
+.trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
 
-.card.expanded { 
-  background: var(--sys-color-surface-container-high); 
-  box-shadow: var(--sys-elevation-3); 
-  margin: 16px 0; 
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3); 
-  contain: none;
-  content-visibility: visible;
-  contain-intrinsic-size: auto 300px;
-}
-
-.card.selected { background: var(--sys-color-primary-container) !important; border: 2.5px solid var(--sys-color-primary); transform: scale(0.97); box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15); }
-.card.selected .player-name, .card.selected .trophy-val, .card.selected .stat-score, .card.selected .stat-item .label, .card.selected .stat-item .value, .card.selected .trend-val, .card.selected .expand-btn { color: var(--sys-color-on-primary-container) !important; opacity: 1 !important; }
-.card.selected .stat-pod { background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.12) !important; color: var(--sys-color-on-primary-container) !important; border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1); }
-.card.selected .badge:not(.role) { background: rgba(var(--sys-color-on-primary-container-rgb, 0,29,54), 0.1) !important; color: var(--sys-color-on-primary-container) !important; border: none; }
-.card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.identity-group { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-.meta-stack { display: flex; flex-direction: column; gap: 4px; width: 60px; flex-shrink: 0; }
 .badge { height: 18px; width: 100%; background: var(--sys-color-surface-container-highest); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sys-color-on-surface); font-family: var(--sys-font-family-mono); text-transform: uppercase; }
-.hit-target { position: relative; z-index: 5; }
-.hit-target::after { content: ''; position: absolute; inset: -4px; }
 .badge.role { font-family: var(--sys-font-family-body); font-weight: 900; font-size: 9px; }
 
-/* 🛡️ ACCESSIBILITY: Semantic Colors */
+/* Role Colors */
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .role-coleader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2); }
 .role-elder { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 .role-member { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); border: 1px solid var(--sys-color-outline-variant); }
 
-.name-block { display: flex; flex-direction: column; min-width: 0; }
-.player-name { font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; line-height: 1.1; }
-.trophy-meta { display: flex; align-items: center; gap: 4px; color: #854d0e; margin-top: 2px; width: fit-content; }
-:root.dark .trophy-meta { color: #fbbf24; }
-.trophy-val { font-size: 13px; font-weight: 700; font-family: var(--sys-font-family-mono); }
-.header-actions { display: flex; align-items: center; gap: 4px; }
-.expand-btn { background: none; border: none; padding: 8px; color: var(--sys-color-outline); cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.expand-btn.is-active { transform: rotate(180deg); color: var(--sys-color-primary); }
-.stat-pod { position: relative; width: 48px; height: 48px; background: var(--sys-color-surface-container-highest); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; font-family: var(--sys-font-family-mono); transition: transform 0.2s; }
-.stat-pod:hover { transform: scale(1.05); }
-.stat-pod.tone-high { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.stat-pod.tone-mid { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
+.stat-score { font-size: 18px; font-weight: 900; font-family: var(--sys-font-family-mono); }
+
 .momentum-pill { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); height: 18px; padding: 0 6px; background: var(--sys-color-surface-container-highest); border-radius: 10px; display: flex; align-items: center; gap: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); z-index: 10; border: 1px solid var(--sys-surface-glass-border); }
 .momentum-pill.up { color: #166534; }
 :root.dark .momentum-pill.up { color: #22c55e; }
 .momentum-pill.down { color: #991b1b; }
 :root.dark .momentum-pill.down { color: #ef4444; }
 .trend-val { font-size: 9px; font-weight: 900; font-family: var(--sys-font-family-mono); }
-.card-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05); animation: fade-in 0.3s ease; }
-@keyframes fade-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Expanded Content Stats */
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; transition: background 0.2s; }
 .stat-item .label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--sys-color-secondary); }
 .stat-item .value { font-size: 14px; font-weight: 800; font-family: var(--sys-font-family-mono); }
+
 .actions { display: flex; gap: 8px; margin-top: 16px; }
 .btn-action { flex: 1; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
