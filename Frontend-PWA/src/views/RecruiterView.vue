@@ -1,6 +1,5 @@
-
 <script setup lang="ts">
-import { computed, watch, onUnmounted } from 'vue'
+import { computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
 import { useToast } from '../composables/useToast'
@@ -8,20 +7,13 @@ import { useBatchQueue } from '../composables/useBatchQueue'
 import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
 import { useListFilter } from '../composables/useListFilter'
-import { useUiCoordinator } from '../composables/useUiCoordinator'
 import { useProgressiveList } from '../composables/useProgressiveList'
 import { formatTimeAgo } from '../utils/formatters'
 import type { Recruit } from '../types'
 
-import ConsoleHeader from '../components/ConsoleHeader.vue'
 import RecruitCard from '../components/RecruitCard.vue'
-import SelectionBar from '../components/SelectionBar.vue'
-import FabIsland from '../components/FabIsland.vue'
-import EmptyState from '../components/EmptyState.vue'
-import ErrorState from '../components/ErrorState.vue'
-import SkeletonCard from '../components/SkeletonCard.vue'
-import PullToRefresh from '../components/PullToRefresh.vue'
-import WarHistoryChart from '../components/WarHistoryChart.vue' // Ensure this is imported for props.loading check
+import Icon from '../components/Icon.vue'
+import ConsoleLayout from '../components/ConsoleLayout.vue'
 
 const { pingData } = useApiState()
 
@@ -75,10 +67,6 @@ const {
 } = useBatchQueue()
 
 const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('recruit-')
-
-const { setFabVisible } = useUiCoordinator()
-watch(() => fabState.value.visible, (visible) => setFabVisible(!!visible))
-onUnmounted(() => setFabVisible(false))
 
 const status = computed(() => {
   if (syncError.value) return { type: 'error', text: 'Retry' } as const
@@ -151,94 +139,56 @@ function handleSearchUpdate(val: string) {
 </script>
 
 <template>
-  <div class="view-container">
-    <PullToRefresh @refresh="refresh" />
-
-    <ConsoleHeader
-      title="Headhunter"
-      :status="status"
-      :show-search="!isSelectionMode"
-      :sheet-url="sheetUrl"
-      :stats="statsBadge"
-      :sort-options="sortOptions"
-      :loading="showSkeletons"
-      @update:search="handleSearchUpdate"
-      @update:sort="updateSort"
-      @refresh="refresh"
-    >
-      <template #extra>
-        <SelectionBar 
-            v-if="isSelectionMode"
-            :count="selectedIds.length"
-            :loading="isRefreshing"
-            @select-all="handleSelectAll"
-            @clear="clearSelection"
-            @done="clearSelection"
-            @select-score="handleSelectScore"
-        />
-      </template>
-    </ConsoleHeader>
-
-    <ErrorState v-if="syncError && !recruits.length" :message="syncError" @retry="refresh" />
-    
-    <div v-else-if="showSkeletons" class="list-container gpu-contain">
-      <SkeletonCard v-for="(_, i) in 8" :key="i" :index="i" :style="{ '--i': i }" />
-    </div>
-    
-    <EmptyState 
-      v-else-if="!showSkeletons && filteredRecruits.length === 0" 
-      icon="telescope" 
-      message="No recruits found"
-      hint="Try adjusting your filters or run a new scan."
-    >
-      <template #action>
+  <ConsoleLayout
+    title="Headhunter"
+    :status="status"
+    :show-search="!isSelectionMode"
+    :sheet-url="sheetUrl"
+    :stats="statsBadge"
+    :sort-options="sortOptions"
+    :loading="showSkeletons"
+    :is-selection-mode="isSelectionMode"
+    :selected-count="selectedIds.length"
+    :is-refreshing="isRefreshing"
+    :sync-error="syncError"
+    :is-empty="!showSkeletons && filteredRecruits.length === 0"
+    :fab-state="fabState"
+    @refresh="refresh"
+    @update:search="handleSearchUpdate"
+    @update:sort="updateSort"
+    @select-all="handleSelectAll"
+    @clear-selection="clearSelection"
+    @select-score="handleSelectScore"
+    @fab-action="handleAction"
+    @fab-blitz="handleBlitz"
+    @fab-dismiss="dismissBulk"
+  >
+    <!-- Custom Empty Action for Recruit View -->
+    <template #empty-action>
         <button class="btn-primary" @click="refresh">
           <Icon name="refresh" size="18" />
           <span>Scan Again</span>
         </button>
-      </template>
-    </EmptyState>
-    
-    <div 
-      v-else 
-      v-auto-animate
-      class="list-container gpu-contain"
-    >
-      <RecruitCard
-        v-for="(recruit, index) in progressiveRecruits"
-        :key="recruit.id"
-        :id="`recruit-${recruit.id}`"
-        :recruit="recruit"
-        :expanded="expandedIds.has(recruit.id)"
-        :selected="selectedSet.has(recruit.id)"
-        :selection-mode="isSelectionMode"
-        :style="{ '--i': index }"
-        :app-is-refreshing="isRefreshing"
-        @toggle-expand="toggleExpand(recruit.id)"
-        @toggle-select="toggleSelect(recruit.id)"
-      />
-    </div>
+    </template>
 
-    <FabIsland
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="fabState.isProcessing ? 'Exit' : 'Dismiss'"
-      :is-processing="fabState.isProcessing"
-      :is-blasting="fabState.isBlasting"
-      :selection-count="fabState.selectionCount"
-      :blitz-enabled="fabState.blitzEnabled"
-      @action="handleAction"
-      @blitz="handleBlitz"
-      @dismiss="dismissBulk"
+    <!-- Default Slot: The List -->
+    <RecruitCard
+      v-for="(recruit, index) in progressiveRecruits"
+      :key="recruit.id"
+      :id="`recruit-${recruit.id}`"
+      :recruit="recruit"
+      :expanded="expandedIds.has(recruit.id)"
+      :selected="selectedSet.has(recruit.id)"
+      :selection-mode="isSelectionMode"
+      :style="{ '--i': index }"
+      :app-is-refreshing="isRefreshing"
+      @toggle-expand="toggleExpand(recruit.id)"
+      @toggle-select="toggleSelect(recruit.id)"
     />
-  </div>
+  </ConsoleLayout>
 </template>
 
 <style scoped>
-.view-container { min-height: 100%; padding-bottom: 24px; }
-.list-container { padding-bottom: 32px; position: relative; min-height: 60vh; }
-.gpu-contain { transform: translateZ(0); will-change: transform; contain: layout paint; }
 .btn-primary { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--sys-color-primary); color: var(--sys-color-on-primary); border: none; border-radius: 99px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: transform 0.2s; }
 .btn-primary:active { transform: scale(0.95); }
 </style>
