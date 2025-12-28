@@ -1,9 +1,9 @@
 # Clash Manager Client (PWA)
 
 <!-- Dynamic Badges: These update automatically based on your repo status -->
-[![Version](https://img.shields.io/github/package-json/v/albidr/Clash-Manager?filename=Frontend-PWA%2Fpackage.json&style=flat-square&color=0061a4&label=Client)](https://github.com/albidr/Clash-Manager/blob/main/Frontend-PWA/package.json)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/albidr/Clash-Manager/deploy.yml?branch=main&style=flat-square&label=Build)](https://github.com/albidr/Clash-Manager/actions)
-[![License](https://img.shields.io/badge/License-Proprietary-green?style=flat-square)](https://github.com/albidr/Clash-Manager/blob/main/LICENSE)
+[![Version](https://img.shields.io/github/package-json/v/albidr/Clash-Manager?filename=Frontend-PWA%2Fpackage.json&style=flat-square&color=0061a4&label=Client)](https://github.com/albidr/Clash-Manager/blob/Stable/Frontend-PWA/package.json)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/albidr/Clash-Manager/deploy.yml?branch=Stable&style=flat-square&label=Build)](https://github.com/albidr/Clash-Manager/actions)
+[![License](https://img.shields.io/badge/License-Proprietary-green?style=flat-square)](https://github.com/albidr/Clash-Manager/blob/Stable/LICENSE)
 
 **Clash Manager Client** is the frontend PWA for the Clash Manager ecosystem. It is a "Headless" interface that consumes data from the Google Apps Script backend, designed to feel like a native app while running entirely in the browser.
 
@@ -82,8 +82,8 @@ npm run build
 ## ✅ Quality & CI/CD
 
 This project is configured with GitHub Actions to ensure code quality and automate deployments.
-*   **Automated Testing**: On every push to `main` or a `v*` tag, the full test suite is run. Failed tests will block deployment, preventing regressions.
-*   **Automated Deployment**: Successful builds on the `main` branch are automatically deployed to GitHub Pages.
+*   **Automated Testing**: On every push to `Stable` or a `v*` tag, the full test suite is run. Failed tests will block deployment, preventing regressions.
+*   **Automated Deployment**: Successful builds on the `Stable` branch are automatically deployed to GitHub Pages.
 *   **Automated Releases**: Pushing a `v*` tag (e.g., `v6.2.1`) will automatically build the app, create a GitHub Release, and attach the production-ready `.zip` file.
 
 ---
