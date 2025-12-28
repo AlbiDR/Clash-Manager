@@ -74,10 +74,9 @@ export default defineConfig({
           },
           {
             urlPattern: /^https:\/\/script\.google\.com\/.*/i,
-            handler: 'NetworkFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'gas-api-cache',
-              networkTimeoutSeconds: 3,
               expiration: { maxEntries: 5 }
             }
           }
