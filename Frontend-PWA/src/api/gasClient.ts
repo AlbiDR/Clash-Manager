@@ -18,7 +18,7 @@ const getGasUrl = () => {
     return localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
 }
 
-const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6' 
+const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6'
 
 export async function inflatePayload(data: any): Promise<WebAppData> {
     if (typeof data === 'string') {
@@ -37,7 +37,7 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
         hh: z.array(z.array(z.any())),
         timestamp: z.number()
     }).safeParse(data)
-    
+
     if (!result.success) throw new Error('API Schema Mismatch')
 
     const { lb, hh, timestamp } = result.data
@@ -56,20 +56,49 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
     }
 }
 
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3, backoff = 500): Promise<Response> {
+    try {
+        const response = await fetch(url, options)
+        if (!response.ok && retries > 0 && response.status >= 500) {
+            throw new Error(`HTTP ${response.status}`)
+        }
+        return response
+    } catch (e) {
+        if (retries > 0) {
+            console.warn(`Fetch failed, retrying (${retries} left)...`, e)
+            await new Promise(r => setTimeout(r, backoff))
+            return fetchWithRetry(url, options, retries - 1, backoff * 2)
+        }
+        throw e
+    }
+}
+
 async function gasRequest<T>(action: string, payload?: Record<string, unknown>): Promise<T> {
     const url = getGasUrl()
     if (!url) throw new Error('GAS_URL not configured.')
 
-    const response = await fetch(`${url}?action=${action}`, {
+    const options: RequestInit = {
         method: action === 'getwebappdata' ? 'GET' : 'POST',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain' },
         body: action === 'getwebappdata' ? undefined : JSON.stringify({ action, ...payload })
-    })
+    }
+
+    const response = await fetchWithRetry(`${url}?action=${action}`, options)
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const text = await response.text()
-    const envelope = JSON.parse(text)
+
+    let envelope: any
+    try {
+        envelope = JSON.parse(text)
+    } catch (e) {
+        // Intelligent error sniffing for HTML error pages (common with GAS)
+        if (text.trim().toLowerCase().startsWith('<html') || text.includes('<!DOCTYPE html>')) {
+            throw new Error('Google Server Error (Received HTML instead of JSON). Try again later.')
+        }
+        throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`)
+    }
 
     if (envelope.success === true || envelope.status === 'success') return envelope as T
     throw new Error(envelope.error?.message || 'Unknown Backend Error')
@@ -87,12 +116,12 @@ export async function fetchRemote(): Promise<WebAppData> {
 
     const envelope = await gasRequest<ApiResponse<any>>('getwebappdata')
     if (!envelope.data) throw new Error('Invalid response structure')
-    
+
     // Ensure Zod is fully loaded before attempting inflation
     await zodPreload;
 
     const inflated = await inflatePayload(envelope.data)
-    idb.set(CACHE_KEY_MAIN, inflated).catch(() => {})
+    idb.set(CACHE_KEY_MAIN, inflated).catch(() => { })
     return inflated
 }
 
