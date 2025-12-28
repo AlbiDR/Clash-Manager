@@ -24,7 +24,7 @@ export default defineConfig({
         manualChunks: {
           'vendor': ['vue', 'vue-router', '@formkit/auto-animate'],
           // Zod is heavy, keep it separate so it doesn't block LCP
-          'validation': ['zod'] 
+          'validation': ['zod']
         }
       }
     }
@@ -39,8 +39,8 @@ export default defineConfig({
         id: 'clash-manager-v11',
         name: 'Clash Manager',
         short_name: 'Clash Manager',
-        theme_color: '#050505',
-        background_color: '#050505',
+        theme_color: '#0b0e14',
+        background_color: '#0b0e14',
         display: 'standalone',
         scope: '/Clash-Manager/',
         start_url: '/Clash-Manager/index.html',
