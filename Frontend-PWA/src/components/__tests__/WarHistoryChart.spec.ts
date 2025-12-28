@@ -8,7 +8,12 @@ import WarHistoryChart from '../WarHistoryChart.vue'
 describe('WarHistoryChart', () => {
   it('renders nothing when history is empty or dash', () => {
     const wrapper = mount(WarHistoryChart, {
-      props: { history: '-' }
+      props: { history: '-' },
+      global: {
+        directives: {
+          tooltip: {}
+        }
+      }
     })
     expect(wrapper.find('.war-chart').exists()).toBe(false)
     expect(wrapper.find('.war-chart-empty').exists()).toBe(true)
@@ -17,7 +22,12 @@ describe('WarHistoryChart', () => {
   it('renders correct number of bars including projection', () => {
     const history = '3000 24W01 | 1500 24W02 | 0 24W03'
     const wrapper = mount(WarHistoryChart, {
-      props: { history }
+      props: { history },
+      global: {
+        directives: {
+          tooltip: {}
+        }
+      }
     })
     const bars = wrapper.findAll('.bar')
     expect(bars).toHaveLength(4)
@@ -26,7 +36,12 @@ describe('WarHistoryChart', () => {
   it('applies correct CSS classes based on fame thresholds and projection', () => {
     const history = '3000 24W01 | 1500 24W02 | 0 24W03'
     const wrapper = mount(WarHistoryChart, {
-      props: { history }
+      props: { history },
+      global: {
+        directives: {
+          tooltip: {}
+        }
+      }
     })
     const bars = wrapper.findAll('.bar')
     expect(bars[0].classes()).toContain('bar-miss')
