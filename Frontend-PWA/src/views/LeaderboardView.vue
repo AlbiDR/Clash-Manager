@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
-import { useBatchQueue } from '../composables/useBatchQueue'
-import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
-import { useListFilter } from '../composables/useListFilter'
-import { useProgressiveList } from '../composables/useProgressiveList'
-import { formatTimeAgo } from '../utils/formatters'
+import { useConsoleLogic } from '../composables/useConsoleLogic'
 import type { LeaderboardMember } from '../types'
 
 import MemberCard from '../components/MemberCard.vue'
@@ -21,10 +17,8 @@ const sheetUrl = computed(() => {
 })
 
 const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } = useClanData()
+// Ensure we pass a Ref<LeaderboardMember[]>
 const members = computed(() => data.value?.lb || [])
-
-// ⚡ PERFORMANCE: Show skeletons if we haven't loaded local data yet OR if we are refreshing an empty list
-const showSkeletons = computed(() => !isHydrated.value || (isRefreshing.value && members.value.length === 0))
 
 const sortStrategies: Record<string, (a: LeaderboardMember, b: LeaderboardMember) => number> = {
     score: (a, b) => (b.s || 0) - (a.s || 0),
@@ -34,15 +28,23 @@ const sortStrategies: Record<string, (a: LeaderboardMember, b: LeaderboardMember
     donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
 }
 
-const { searchQuery, filteredItems: filteredMembers, updateSort } = useListFilter(
-    members,
-    (m: LeaderboardMember) => [m.n, m.id], 
+const {
+    searchQuery, visibleItems, expandedIds, selectedIds, selectedSet, fabState, isSelectionMode,
+    status, statsBadge, showSkeletons, filteredItems,
+    updateSort, toggleSelect, toggleExpand, clearSelection, handleAction, handleBlitz, handleSelectAll, handleSelectScore
+} = useConsoleLogic({
+    data: members,
+    isHydrated,
+    isRefreshing,
+    syncError,
+    lastSyncTime,
+    filterFn: (m: LeaderboardMember) => [m.n, m.id],
     sortStrategies,
-    'score'
-)
-
-// ⚡ PERFORMANCE: Initial Batch = 8 (Fits 100% of mobile viewport)
-const { visibleItems: progressiveMembers } = useProgressiveList(filteredMembers, 8)
+    defaultSort: 'score',
+    deepLinkPrefix: 'member-',
+    batchIdMapper: (m: LeaderboardMember) => m.id,
+    statsLabel: 'Clan'
+})
 
 const sortOptions = [
   { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
@@ -52,45 +54,10 @@ const sortOptions = [
   { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
-const { 
-  selectedIds, fabState, isSelectionMode, toggleSelect, selectAll, clearSelection, handleAction, handleBlitz, setForceSelectionMode
-} = useBatchQueue()
-
-const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('member-')
-
-const status = computed(() => {
-  if (syncError.value) return { type: 'error', text: 'Retry' } as const
-  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (members.value.length > 0) return { type: 'ready', text: formatTimeAgo(new Date(lastSyncTime.value || Date.now()).toISOString()) } as const
-  return { type: 'ready', text: 'Empty' as const }
-})
-
-const statsBadge = computed(() => ({
-    label: 'Clan',
-    value: members.value.length.toString()
-}))
-
-const selectedSet = computed(() => new Set(selectedIds.value))
-
-function handleSelectAll() {
-  const ids = filteredMembers.value.map((i: LeaderboardMember) => i.id)
-  setForceSelectionMode(false)
-  selectAll(ids)
+// Specific Helper for Score Selection
+function onSelectScore(threshold: number, mode: 'ge' | 'le') {
+    handleSelectScore(threshold, mode, (m) => m.s || 0)
 }
-
-function handleSelectScore(threshold: number, mode: 'ge' | 'le') {
-  const ids = filteredMembers.value.filter((m: LeaderboardMember) => {
-    const s = m.s || 0
-    return mode === 'ge' ? s >= threshold : s <= threshold
-  }).map((m: LeaderboardMember) => m.id)
-  setForceSelectionMode(ids.length === 0)
-  selectAll(ids)
-}
-
-watch(members, (newVal) => {
-    if (newVal.length > 0) processDeepLink(newVal)
-}, { immediate: true })
-
 </script>
 
 <template>
@@ -106,21 +73,21 @@ watch(members, (newVal) => {
     :selected-count="selectedIds.length"
     :is-refreshing="isRefreshing"
     :sync-error="syncError"
-    :is-empty="!showSkeletons && filteredMembers.length === 0"
+    :is-empty="!showSkeletons && filteredItems.length === 0"
     :fab-state="fabState"
     @refresh="refresh"
     @update:search="val => searchQuery = val"
     @update:sort="updateSort"
     @select-all="handleSelectAll"
     @clear-selection="clearSelection"
-    @select-score="handleSelectScore"
+    @select-score="onSelectScore"
     @fab-action="handleAction"
     @fab-blitz="handleBlitz"
     @fab-dismiss="clearSelection"
   >
     <!-- Default Slot: The List -->
     <MemberCard
-      v-for="(member, index) in progressiveMembers"
+      v-for="(member, index) in visibleItems"
       :key="member.id"
       :id="`member-${member.id}`"
       :member="member"

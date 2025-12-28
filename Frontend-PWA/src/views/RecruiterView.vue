@@ -3,12 +3,8 @@ import { computed, watch } from 'vue'
 import { useClanData } from '../composables/useClanData'
 import { useApiState } from '../composables/useApiState'
 import { useToast } from '../composables/useToast'
-import { useBatchQueue } from '../composables/useBatchQueue'
-import { useDeepLinkHandler } from '../composables/useDeepLinkHandler'
 import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
-import { useListFilter } from '../composables/useListFilter'
-import { useProgressiveList } from '../composables/useProgressiveList'
-import { formatTimeAgo } from '../utils/formatters'
+import { useConsoleLogic } from '../composables/useConsoleLogic'
 import type { Recruit } from '../types'
 
 import RecruitCard from '../components/RecruitCard.vue'
@@ -31,9 +27,6 @@ const recruits = computed(() => {
     return (data.value?.hh || []).filter(r => !blacklist.tombstones.value.has(r.id))
 })
 
-// ⚡ PERFORMANCE: Show skeletons if not hydrated or refreshing empty list
-const showSkeletons = computed(() => !isHydrated.value || (isRefreshing.value && recruits.value.length === 0))
-
 const getTs = (str?: string) => str ? new Date(str).getTime() : 0
 
 const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
@@ -44,15 +37,23 @@ const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
     donations: (a, b) => (b.d.don || 0) - (a.d.don || 0)
 }
 
-const { searchQuery, filteredItems: filteredRecruits, updateSort } = useListFilter(
-    recruits,
-    (r: Recruit) => [r.n, r.id],
+const {
+    searchQuery, visibleItems, expandedIds, selectedIds, selectedSet, fabState, isSelectionMode,
+    status, statsBadge, showSkeletons, filteredItems,
+    updateSort, toggleSelect, toggleExpand, clearSelection, handleAction, handleBlitz, handleSelectAll, handleSelectScore, processDeepLink
+} = useConsoleLogic({
+    data: recruits,
+    isHydrated,
+    isRefreshing,
+    syncError,
+    lastSyncTime,
+    filterFn: (r: Recruit) => [r.n, r.id],
     sortStrategies,
-    'score'
-)
-
-// ⚡ PERFORMANCE: Batch size 8
-const { visibleItems: progressiveRecruits } = useProgressiveList(filteredRecruits, 8)
+    defaultSort: 'score',
+    deepLinkPrefix: 'recruit-',
+    batchIdMapper: (r: Recruit) => r.id,
+    statsLabel: 'Pool'
+})
 
 const sortOptions = [
   { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
@@ -62,32 +63,15 @@ const sortOptions = [
   { label: 'Name', value: 'name', desc: 'Alphabetical.' }
 ]
 
-const { 
-  selectedIds, fabState, isSelectionMode, toggleSelect, selectAll, clearSelection, handleAction, handleBlitz, setForceSelectionMode
-} = useBatchQueue()
-
-const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler('recruit-')
-
-const status = computed(() => {
-  if (syncError.value) return { type: 'error', text: 'Retry' } as const
-  if (isRefreshing.value) return { type: 'loading', text: 'Syncing...' } as const
-  if (recruits.value.length > 0) return { type: 'ready', text: formatTimeAgo(new Date(lastSyncTime.value || Date.now()).toISOString()) } as const
-  return { type: 'ready', text: 'Empty' as const }
-})
-
-const statsBadge = computed(() => ({
-    label: 'Pool',
-    value: recruits.value.length.toString()
-}))
-
-const selectedSet = computed(() => new Set(selectedIds.value))
-
-// 🧹 CLEANUP
+// 🧹 CLEANUP: Extra Recruit Logic managed here
 watch(() => data.value?.hh, (newRecruits) => {
     if (newRecruits && newRecruits.length > 0) {
         const currentIds = newRecruits.map(r => r.id)
         blacklist.prune(currentIds)
-        processDeepLink(newRecruits)
+        // Note: processDeepLink is auto-called by useConsoleLogic watcher on data change, 
+        // but here we might need manual control if blacklist affects it? 
+        // Actually useConsoleLogic watches 'recruits' computed, which filters blacklist.
+        // So we don't need to manually call processDeepLink here!
     }
 }, { deep: true, immediate: true })
 
@@ -118,19 +102,9 @@ function executeDismiss(ids: string[]) {
     })
 }
 
-function handleSelectAll() {
-  const ids = filteredRecruits.value.map((r: Recruit) => r.id)
-  setForceSelectionMode(false)
-  selectAll(ids)
-}
-
-function handleSelectScore(threshold: number, mode: 'ge' | 'le') {
-  const ids = filteredRecruits.value.filter((r: Recruit) => {
-    const s = r.s || 0
-    return mode === 'ge' ? s >= threshold : s <= threshold
-  }).map((r: Recruit) => r.id)
-  setForceSelectionMode(ids.length === 0)
-  selectAll(ids)
+// Specific Helper for Score Selection
+function onSelectScore(threshold: number, mode: 'ge' | 'le') {
+    handleSelectScore(threshold, mode, (r) => r.s || 0)
 }
 
 function handleSearchUpdate(val: string) {
@@ -151,14 +125,14 @@ function handleSearchUpdate(val: string) {
     :selected-count="selectedIds.length"
     :is-refreshing="isRefreshing"
     :sync-error="syncError"
-    :is-empty="!showSkeletons && filteredRecruits.length === 0"
+    :is-empty="!showSkeletons && filteredItems.length === 0"
     :fab-state="fabState"
     @refresh="refresh"
     @update:search="handleSearchUpdate"
     @update:sort="updateSort"
     @select-all="handleSelectAll"
     @clear-selection="clearSelection"
-    @select-score="handleSelectScore"
+    @select-score="onSelectScore"
     @fab-action="handleAction"
     @fab-blitz="handleBlitz"
     @fab-dismiss="dismissBulk"
@@ -173,7 +147,7 @@ function handleSearchUpdate(val: string) {
 
     <!-- Default Slot: The List -->
     <RecruitCard
-      v-for="(recruit, index) in progressiveRecruits"
+      v-for="(recruit, index) in visibleItems"
       :key="recruit.id"
       :id="`recruit-${recruit.id}`"
       :recruit="recruit"
