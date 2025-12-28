@@ -5,12 +5,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 6.2.0
+ * 🏷️ VERSION: 6.2.1
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = '6.2.0';
+const VER_CONFIGURATION = '6.2.1';
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -23,14 +23,14 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: '6.2.0',
+      CONFIGURATION: '6.2.1',
       UTILITIES: '6.0.0',
       ORCHESTRATOR_TRIGGERS: '6.0.0',
       LOGGER: '6.0.0',
       LEADERBOARD: '6.1.5',
       SCORING_SYSTEM: '6.0.0',
-      RECRUITER: '6.2.6', 
-      CONTROLLER_WEBAPP: '6.1.3',
+      RECRUITER: '6.2.7',
+      CONTROLLER_WEBAPP: '6.2.2',
       API_PUBLIC: '6.0.0'
     },
 
@@ -48,7 +48,7 @@ const CONFIG = {
       { name: 'CRK8', value: _PROPS['CRK8'] },
       { name: 'CRK9', value: _PROPS['CRK9'] },
       { name: 'CRK10', value: _PROPS['CRK10'] }
-    ].filter(k => k.value && k.value.trim().length > 0), 
+    ].filter(k => k.value && k.value.trim().length > 0),
 
     TIMEZONE: 'Europe/Rome',
     API_BASE: 'https://proxy.royaleapi.dev/v1',
@@ -64,7 +64,7 @@ const CONFIG = {
 
   UI: {
     MENU_NAME: '👑 Clan Manager',
-    MOBILE_TRIGGER_CELL: 'A1', 
+    MOBILE_TRIGGER_CELL: 'A1',
     MENU_ITEMS: {
       DB: '☁️ Sync Database',
       LB: '🏆 Update Leaderboard',
@@ -86,13 +86,13 @@ const CONFIG = {
       DAYS: 4, WEEKLY_REQ: 5, AVG_DAY: 6,
       TOTAL_DON: 7, LAST_SEEN: 8, WAR_RATE: 9,
       HISTORY: 10, RAW_SCORE: 11, PERF_SCORE: 12,
-      TREND: 13 
+      TREND: 13
     }
   },
 
   HEADHUNTER: {
     TARGET: 50,
-    BLACKLIST_DAYS: 14, 
+    BLACKLIST_DAYS: 14,
     KEYWORDS: [
       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
       'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -104,8 +104,8 @@ const CONFIG = {
   LEADERBOARD: {
     WEIGHTS: { FAME: 3, AVG_FAME: 15, DONATION: 50, TROPHY: 0.0002, WAR_RATE: 150 },
     PENALTIES: {
-      INACTIVITY_GRACE_DAYS: 4, 
-      DECAY_RATE: 0.08          
+      INACTIVITY_GRACE_DAYS: 4,
+      DECAY_RATE: 0.08
     }
   }
 };
