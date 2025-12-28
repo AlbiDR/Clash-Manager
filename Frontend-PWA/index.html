@@ -16,16 +16,11 @@
   <title>Clash Manager</title>
 
   <!-- ⚡ OPTIMIZATION: Critical Resource Preloading -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://script.google.com" />
   <link rel="preconnect" href="https://script.googleusercontent.com" />
   
-  <!-- Preload Fonts: Ensure 'swap' is active to prevent FOIT -->
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap">
-  </noscript>
+  <!-- Preload Local Fonts: Inter Variable is critical for LCP -->
+  <link rel="preload" href="/Clash-Manager/fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
 
   <style>
     /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */

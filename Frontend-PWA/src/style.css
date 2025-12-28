@@ -5,6 +5,29 @@
    CLASH MANAGER - Neo-Material Design System (Consolidated v6.7)
    ============================================================================ */
 
+/* =========================================
+   LOCAL FONTS (LCP Optimized)
+   ========================================= */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/Clash-Manager/fonts/Inter-Variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/Clash-Manager/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+}
+
+/* ============================================================================
+   CLASH MANAGER - Neo-Material Design System (Consolidated v6.7)
+   ============================================================================ */
+
 :root {
   /* Default Light Theme */
   --sys-color-primary: #0061a4;
