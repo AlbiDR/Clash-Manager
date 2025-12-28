@@ -68,7 +68,8 @@
   --sys-color-outline-variant: #c4c7c5;
 
   --sys-surface-glass: rgba(255, 255, 255, 0.9);
-  --sys-surface-glass-border: rgba(255, 255, 255, 0.7);
+  /* FIXED: Darker border for light theme visibility */
+  --sys-surface-glass-border: rgba(0, 0, 0, 0.08);
   --sys-surface-glass-blur: blur(24px) saturate(180%);
 
   --sys-motion-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
@@ -79,6 +80,7 @@
 
   --shape-corner-l: 24px;
   --shape-corner-full: 9999px;
+  --sys-elevation-2: 0 4px 16px -4px rgba(0,0,0,0.1);
   --sys-elevation-3: 0 16px 48px rgba(0,0,0,0.18);
   
   /* SHARED SKELETON VARS (Synced with index.html) */
@@ -120,6 +122,7 @@
   --sys-color-inverse-primary: #0061a4;
   
   --sys-surface-glass: rgba(20, 24, 32, 0.94);
+  /* Dark Mode retains white border for contrast */
   --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
   --sys-color-outline: #9aa0a6;
   --sys-color-outline-variant: #44474f;
