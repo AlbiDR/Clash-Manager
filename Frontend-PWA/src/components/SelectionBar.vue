@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref } from 'vue'
 
@@ -25,12 +24,10 @@ const isScoreExpanded = ref(false)
                 <div class="sk-button-s skeleton-anim"></div>
                 <div class="sk-button-s skeleton-anim"></div>
                 <div class="v-divider"></div>
+                <!-- Skeleton matches collapsed state: Label + 1 Primary Button -->
                 <div class="score-group">
-                    <div class="sk-text-line-s skeleton-anim" style="width: 50px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
-                    <div class="sk-button-s skeleton-anim" style="width: 30px;"></div>
+                    <div class="sk-text-line-s skeleton-anim" style="width: 40px; margin-right: 4px;"></div>
+                    <div class="sk-button-s skeleton-anim" style="width: 40px;"></div>
                 </div>
                 <div class="v-divider"></div>
                 <div class="sk-button-s skeleton-anim"></div>
