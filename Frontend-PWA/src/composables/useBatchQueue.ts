@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, getCurrentInstance } from 'vue'
 import { useToast } from './useToast'
 import { useModules } from './useModules'
 
@@ -10,20 +10,20 @@ interface BatchQueueOptions {
 
 export function useBatchQueue(options: BatchQueueOptions = {}) {
   const { throttleMs = 750, baseScheme = 'clashroyale://playerInfo?id=' } = options
-  
+
   const selectedIds = ref<string[]>([])
   const queue = ref<string[]>([]) // Legacy queue for non-blitz manual mode
   const lastActionTime = ref(0)
-  
+
   // Blitz State
   const isBlasting = ref(false)
   const currentIndex = ref(0)
   let worker: Worker | null = null
-  
+
   // Selection Mode State (Auto-derived or Forced)
   const forceSelectionMode = ref(false)
 
-  const { error } = useToast()
+  const { error, info } = useToast()
   const { modules } = useModules()
 
   const isSelectionMode = computed(() => selectedIds.value.length > 0 || forceSelectionMode.value)
@@ -34,30 +34,30 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     if (!isSelectionMode.value) return { visible: false }
 
     const total = selectedIds.value.length
-    
+
     // Label Logic
     let label = 'Open'
-    
+
     if (isBlasting.value) {
-        // Blasting Mode: Show progress
-        label = `${currentIndex.value + 1} / ${total}`
+      // Blasting Mode: Show progress
+      label = `${currentIndex.value + 1} / ${total}`
     } else if (total > 0) {
-        // Manual Mode
-        if (isProcessing.value) {
-            const current = (total - queue.value.length) + 1
-            label = `Next (${current}/${total})`
-        } else {
-            label = `Open (${total})`
-        }
+      // Manual Mode
+      if (isProcessing.value) {
+        const current = (total - queue.value.length) + 1
+        label = `Next (${current}/${total})`
+      } else {
+        label = `Open (${total})`
+      }
     } else {
-        // Empty State (Forced Mode)
-        label = 'Select'
+      // Empty State (Forced Mode)
+      label = 'Select'
     }
 
     // Target Logic (For href)
-    const targetId = isBlasting.value 
-        ? selectedIds.value[currentIndex.value] 
-        : (isProcessing.value ? queue.value[0] : selectedIds.value[0])
+    const targetId = isBlasting.value
+      ? selectedIds.value[currentIndex.value]
+      : (isProcessing.value ? queue.value[0] : selectedIds.value[0])
 
     return {
       visible: true,
@@ -84,7 +84,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   function selectAll(ids: readonly string[]) {
-    if (isProcessing.value || isBlasting.value) return 
+    if (isProcessing.value || isBlasting.value) return
     selectedIds.value = [...ids]
     queue.value = []
   }
@@ -95,7 +95,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     queue.value = []
     forceSelectionMode.value = false // Reset sticky mode
   }
-  
+
   function setForceSelectionMode(active: boolean) {
     forceSelectionMode.value = active
   }
@@ -109,9 +109,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     link.style.display = 'none'
     link.rel = 'noopener noreferrer'
     document.body.appendChild(link)
-    
+
     link.click()
-    
+
     // Garbage collection
     setTimeout(() => {
       if (document.body.contains(link)) {
@@ -121,7 +121,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   // --- WORKER LOGIC ---
-  
+
   function createWorker(interval: number) {
     // Create a blob worker to run the timer off-thread.
     // This bypasses main-thread throttling when the tab is hidden.
@@ -144,8 +144,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     isBlasting.value = false
     currentIndex.value = 0
     if (worker) {
-        worker.terminate()
-        worker = null
+      worker.terminate()
+      worker = null
     }
   }
 
@@ -157,13 +157,15 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     currentIndex.value++
     // End Condition
     if (currentIndex.value >= selectedIds.value.length) {
-        setTimeout(() => {
-            if (isBlasting.value) {
-                stopBlitz()
-                clearSelection()
-            }
-        }, 500)
-        return false // Ended
+      setTimeout(() => {
+        if (isBlasting.value) {
+          stopBlitz()
+          // We DO NOT clear selection here anymore. 
+          // This allows the user to dismiss the selected items after opening them.
+          info('Batch sequence complete')
+        }
+      }, 500)
+      return false // Ended
     }
     return true // Continue
   }
@@ -174,31 +176,31 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    */
   function nextPulseAutomated() {
     if (!isBlasting.value) return
-    
+
     const id = selectedIds.value[currentIndex.value]
     if (id) {
-        fireDeepLink(`${baseScheme}${id}`)
-        advanceIndex()
+      fireDeepLink(`${baseScheme}${id}`)
+      advanceIndex()
     }
   }
 
   // ⚡ BLITZ MODE START
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return
-    
+
     console.log("⚡ Starting Blitz Mode")
-    
+
     isBlasting.value = true
     currentIndex.value = 0
-    
+
     // 1. Fire first shot immediately
     nextPulseAutomated()
-    
+
     // 2. Start Worker for rhythm
     worker = createWorker(throttleMs)
     worker.onmessage = () => {
-        // This runs on a separate thread's tick
-        nextPulseAutomated()
+      // This runs on a separate thread's tick
+      nextPulseAutomated()
     }
     worker.postMessage('start')
   }
@@ -207,46 +209,46 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleAction(e: MouseEvent) {
     // 1. BLITZ MODE (Manual Assist)
     if (isBlasting.value) {
-        // Check if this was a native anchor click (from FabIsland)
-        const isAnchor = (e.currentTarget as HTMLElement).tagName === 'A';
+      // Check if this was a native anchor click (from FabIsland)
+      const isAnchor = (e.currentTarget as HTMLElement).tagName === 'A';
 
-        if (isAnchor) {
-            // ✅ NATIVE NAVIGATION:
-            // The browser will handle opening the link because it's a real <a> tag with href.
-            // This bypasses the popup prompt on most browsers.
-            
-            // We just need to update our internal state to the NEXT item
-            // and reset the automation timer so it doesn't double-fire immediately.
-            console.log("⚡ Manual Native Assist")
-            advanceIndex()
-            
-            if (worker) {
-                worker.postMessage('stop')
-                worker.postMessage('start')
-            }
-            return // Let default action (navigation) proceed
-        }
+      if (isAnchor) {
+        // ✅ NATIVE NAVIGATION:
+        // The browser will handle opening the link because it's a real <a> tag with href.
+        // This bypasses the popup prompt on most browsers.
 
-        // 🛑 LEGACY FALLBACK (Button click):
-        e.preventDefault() 
-        console.log("⚡ Manual Scripted Assist")
-        nextPulseAutomated()
-        
+        // We just need to update our internal state to the NEXT item
+        // and reset the automation timer so it doesn't double-fire immediately.
+        console.log("⚡ Manual Native Assist")
+        advanceIndex()
+
         if (worker) {
-            worker.postMessage('stop')
-            worker.postMessage('start')
+          worker.postMessage('stop')
+          worker.postMessage('start')
         }
-        return
+        return // Let default action (navigation) proceed
+      }
+
+      // 🛑 LEGACY FALLBACK (Button click):
+      e.preventDefault()
+      console.log("⚡ Manual Scripted Assist")
+      nextPulseAutomated()
+
+      if (worker) {
+        worker.postMessage('stop')
+        worker.postMessage('start')
+      }
+      return
     }
 
     // 2. STANDARD MODE (Legacy sequential)
     const now = Date.now()
-    
+
     if (now - lastActionTime.value < throttleMs) {
       e.preventDefault() // Stop navigation if clicking too fast
       return
     }
-    
+
     lastActionTime.value = now
 
     // Initialize Queue if starting fresh
@@ -259,17 +261,23 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       if (queue.value.length > 0) {
         queue.value.shift()
       }
-      
+
       // Auto-exit when done
       if (queue.value.length === 0) {
-        selectedIds.value = []
+        // We DO NOT clear selectedIds here anymore.
+        // The queue is empty (processing done), but the selection remains for subsequent actions.
+        info('Batch complete')
       }
     }, 50)
   }
 
-  onUnmounted(() => {
-    stopBlitz()
-  })
+
+
+  if (getCurrentInstance()) {
+    onUnmounted(() => {
+      stopBlitz()
+    })
+  }
 
   return {
     selectedIds,
