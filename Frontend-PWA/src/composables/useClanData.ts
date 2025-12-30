@@ -11,7 +11,7 @@ import { generateMockData } from '../utils/mockData'
 // Global State
 const clanData = shallowRef<WebAppData | null>(null)
 // Initialize as hydrated=false to force Skeletons on first paint
-const isHydrated = ref(false) 
+const isHydrated = ref(false)
 const isRefreshing = ref(false)
 const lastSyncTime = ref<number | null>(null)
 const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
@@ -29,7 +29,7 @@ export function useClanData() {
     // Call this AFTER app.mount() to avoid blocking LCP
     function loadLocal() {
         if (isHydrated.value) return // Already loaded
-        
+
         try {
             const raw = localStorage.getItem(SNAPSHOT_KEY)
             if (raw) {
@@ -79,12 +79,10 @@ export function useClanData() {
 
     function updateBadgeCount(data: WebAppData) {
         if (data?.hh) {
-            if (modules.value.notificationBadgeHighPotential) {
-                const highPotentialCount = data.hh.filter(r => r.s >= 75).length
-                setBadge(highPotentialCount)
-            } else {
-                setBadge(data.hh.length)
-            }
+            const count = modules.value.notificationBadgeHighPotential
+                ? data.hh.filter(r => r.s >= 75).length
+                : data.hh.length;
+            setBadge(count);
         }
     }
 
@@ -135,14 +133,14 @@ export function useClanData() {
 
     async function dismissRecruitsAction(ids: string[]) {
         if (!clanData.value) return
-        
+
         const currentHH = clanData.value.hh
         const idsSet = new Set(ids)
         const newHH = currentHH.filter(r => !idsSet.has(r.id))
 
         const oldData = clanData.value
         clanData.value = { ...oldData, hh: newHH }
-        
+
         updateBadgeCount(clanData.value)
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(clanData.value))
 
