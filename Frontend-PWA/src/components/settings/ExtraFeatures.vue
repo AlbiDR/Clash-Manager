@@ -41,7 +41,7 @@ const showSkeletons = computed(() => isRefreshing.value)
                 <div class="sk-text-line-s" style="width: 180px;"></div>
               </template>
               <template v-else>
-                <div class="row-label">Analysis Overlay</div>
+                <div class="row-label">Sorting Descriptions</div>
                 <div class="row-desc">Explain the logic behind sorting heuristics</div>
               </template>
             </div>
