@@ -233,7 +233,13 @@ export default defineConfig({
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'gas-api-cache',
-              expiration: { maxEntries: 5 }
+              expiration: { maxEntries: 5 },
+              backgroundSync: {
+                name: 'gas-sync-queue',
+                options: {
+                  maxRetentionTime: 24 * 60 // 24 hours
+                }
+              }
             }
           }
         ]
