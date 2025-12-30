@@ -50,7 +50,8 @@ export default defineConfig({
         display_override: ['window-controls-overlay', 'standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'portrait-primary',
         scope: '/Clash-Manager/',
-        start_url: '/Clash-Manager/index.html',
+        // Syncing start_url with TWA manifest for coherence
+        start_url: '/Clash-Manager/index.html#/leaderboard',
         categories: ['productivity', 'utilities', 'games'],
         icons: [
           {
@@ -87,8 +88,9 @@ export default defineConfig({
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
-            name: 'Recruits',
-            short_name: 'Recruits',
+            // Renamed from Recruits to Headhunter for consistency
+            name: 'Headhunter',
+            short_name: 'Headhunter',
             description: 'Browse potential recruits',
             url: '/Clash-Manager/index.html#/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
@@ -223,7 +225,6 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         importScripts: ['sw-badge-handler.js'],
-        // 🔒 SECURITY: Force a manifest revision update on every build to trigger WebAPK refresh
         manifestTransforms: [
           (manifestEntries) => {
             const timestamp = new Date().getTime();
@@ -266,7 +267,7 @@ export default defineConfig({
               backgroundSync: {
                 name: 'gas-sync-queue',
                 options: {
-                  maxRetentionTime: 24 * 60 // 24 hours
+                  maxRetentionTime: 24 * 60
                 }
               }
             }
