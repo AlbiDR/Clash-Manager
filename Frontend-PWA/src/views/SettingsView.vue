@@ -14,18 +14,18 @@ import SystemModules from '../components/settings/SystemModules.vue'
 import Recovery from '../components/settings/Recovery.vue'
 import BackendRefresher from '../components/settings/BackendRefresher.vue'
 import NotificationSettings from '../components/settings/NotificationSettings.vue'
-import SkeletonSettingsCard from '../components/SkeletonSettingsCard.vue' // Import new skeleton
+import SkeletonSettingsCard from '../components/SkeletonSettingsCard.vue'
 import { useDemoMode } from '../composables/useDemoMode'
 import { useToast } from '../composables/useToast'
 import { vTactile } from '../directives/vTactile'
-import { useClanData } from '../composables/useClanData' // Import useClanData
+import { useClanData } from '../composables/useClanData'
 
 const { apiStatus, checkApiStatus } = useApiState()
 const { modules } = useModules()
 const { isDemoMode, toggleDemoMode } = useDemoMode()
 const { info } = useToast()
 const appVersion = __APP_VERSION__
-const { isHydrated, isRefreshing } = useClanData() // Get hydration and refreshing status
+const { isHydrated, isRefreshing } = useClanData()
 
 
 onMounted(() => {
@@ -48,28 +48,41 @@ const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value)
 
     <div class="settings-content gpu-contain">
       
-      <PwaInstallBanner v-if="!showSkeletons" />
-
       <template v-if="showSkeletons">
         <!-- Render multiple skeleton cards when loading -->
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
-        <NetworkSettings />
-        
-        <AppearanceSettings />
+        <!-- TIER 1: Core User Settings (Most Frequently Used) -->
+        <div class="settings-tier tier-core">
+          <AppearanceSettings />
+          <NotificationSettings />
+          <PwaInstallBanner />
+        </div>
 
-        <ExtraFeatures />
+        <div class="tier-divider" />
 
-        <NotificationSettings />
+        <!-- TIER 2: Feature Toggles -->
+        <div class="settings-tier tier-features">
+          <ExtraFeatures />
+          <Experiments />
+        </div>
 
-        <Experiments />
+        <div class="tier-divider" />
 
-        <BackendRefresher v-if="modules.backendRefresher" />
+        <!-- TIER 3: System & Advanced -->
+        <div class="settings-tier tier-system">
+          <NetworkSettings />
+          <SystemModules />
+          <BackendRefresher v-if="modules.backendRefresher" />
+        </div>
 
-        <SystemModules />
+        <div class="tier-divider" />
 
-        <Recovery />
+        <!-- TIER 4: Danger Zone (Isolated) -->
+        <div class="settings-tier tier-danger">
+          <Recovery />
+        </div>
       </template>
 
       <div 
@@ -88,7 +101,32 @@ const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value)
 
 <style scoped>
 .view-container { min-height: 100vh; }
-.settings-content { padding: 12px 0 120px; display: flex; flex-direction: column; gap: 16px; }
+
+.settings-content { 
+  padding: 12px 0 120px; 
+  display: flex; 
+  flex-direction: column;
+}
+
+/* Tier-based visual hierarchy */
+.settings-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Tight within tier */
+}
+
+.tier-divider {
+  height: 32px; /* Visual breathing room between tiers */
+}
+
+.tier-danger {
+  margin-top: 8px; /* Extra isolation for destructive action */
+}
+
+/* Skeleton fallback maintains spacing */
+.settings-content > :deep(.skeleton-settings-card) {
+  margin-bottom: 16px;
+}
 
 .footer-info { padding: 40px 0; text-align: center; cursor: pointer; user-select: none; }
 .brand { font-size: 12px; font-weight: 900; opacity: 0.2; letter-spacing: 0.1em; display: flex; align-items: center; justify-content: center; gap: 8px; }

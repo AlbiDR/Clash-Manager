@@ -27,7 +27,7 @@ async function handleRequestPermission() {
 </script>
 
 <template>
-    <SettingsCard v-if="modules.experimentalNotifications" title="Notifications" icon="bell">
+    <SettingsCard title="Notifications" icon="bell">
         <!-- Permission Status Section -->
         <div v-if="isSupported" class="permission-section">
             <div class="permission-header">
