@@ -207,16 +207,8 @@ function respondRaw(jsonString) {
  * @return {Object} Map of module names to versions
  */
 function getModuleVersions() {
-  return {
-    API_PUBLIC: typeof VER_API_PUBLIC !== 'undefined' ? VER_API_PUBLIC : 'N/A',
-    CONFIGURATION: typeof VER_CONFIGURATION !== 'undefined' ? VER_CONFIGURATION : 'N/A',
-    CONTROLLER_WEBAPP: typeof VER_CONTROLLER_WEBAPP !== 'undefined' ? VER_CONTROLLER_WEBAPP : 'N/A',
-    UTILITIES: typeof VER_UTILITIES !== 'undefined' ? VER_UTILITIES : 'N/A',
-    LEADERBOARD: typeof VER_LEADERBOARD !== 'undefined' ? VER_LEADERBOARD : 'N/A',
-    LOGGER: typeof VER_LOGGER !== 'undefined' ? VER_LOGGER : 'N/A',
-    RECRUITER: typeof VER_RECRUITER !== 'undefined' ? VER_RECRUITER : 'N/A',
-    SCORING_SYSTEM: typeof VER_SCORING_SYSTEM !== 'undefined' ? VER_SCORING_SYSTEM : 'N/A'
-  };
+  const modules = ['API_PUBLIC', 'CONFIGURATION', 'CONTROLLER_WEBAPP', 'UTILITIES', 'LEADERBOARD', 'LOGGER', 'RECRUITER', 'SCORING_SYSTEM'];
+  return Object.fromEntries(modules.map(m => [m, typeof globalThis[`VER_${m}`] !== 'undefined' ? globalThis[`VER_${m}`] : 'N/A']));
 }
 
 // ============================================================================
@@ -300,12 +292,7 @@ function getWarLog() {
  * Helper: Formats API role string to Title Case 
  * e.g. "coLeader" -> "Co-Leader"
  */
-function formatRole(role) {
-  if (role === 'leader') return 'Leader';
-  if (role === 'coLeader') return 'Co-Leader';
-  if (role === 'elder') return 'Elder';
-  return 'Member';
-}
+const formatRole = (role) => ({ leader: 'Leader', coLeader: 'Co-Leader', elder: 'Elder' }[role] || 'Member');
 
 /**
  * Helper: Parses RoyaleAPI ISO dates (YYYYMMDDThhmmss.000Z) to readable YYYY-MM-DD
