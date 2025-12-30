@@ -11,6 +11,7 @@ const props = defineProps<{
   sheetUrl?: string
   stats?: { label: string, value: string }
   sortOptions?: { label: string, value: string, desc?: string }[]
+  currentSort?: string
   loading?: boolean
 }>()
 
@@ -21,8 +22,8 @@ const emit = defineEmits<{
 }>()
 
 const { modules } = useModules()
-const sortValue = ref('score')
 const isScrolled = ref(false)
+const showInfoOverlay = ref(false)
 let debounceTimer: number | null = null
 
 const handleScroll = () => {
@@ -44,7 +45,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 
 const activeSortDescription = computed(() => {
   if (!modules.value.sortExplanation) return null
-  const selected = props.sortOptions?.find(opt => opt.value === sortValue.value)
+  const selected = props.sortOptions?.find(opt => opt.value === props.currentSort)
   return selected?.desc || null
 })
 
@@ -52,6 +53,8 @@ function formatDescription(text: string) {
   if (!text) return ''
   
   return text
+    // Section headers (Key: Value or Title:)
+    .replace(/^(\*\*.*?\*\*|.*?:)$/gm, '<div class="desc-section-title">$1</div>')
     // Bold text (**text**)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     // Bullet points (• item)
@@ -119,10 +122,10 @@ function formatDescription(text: string) {
             <Icon name="filter" size="16" class="sort-icon" />
             <select 
               v-if="!loading"
-              v-model="sortValue" 
+              :value="currentSort" 
               class="glass-select" 
               :class="{ 'has-info': !!activeSortDescription }" 
-              @change="emit('update:sort', sortValue)"
+              @change="(e) => emit('update:sort', (e.target as HTMLSelectElement).value)"
               aria-label="Sort by"
             >
               <template v-if="sortOptions">
@@ -130,16 +133,32 @@ function formatDescription(text: string) {
               </template>
             </select>
             <div v-else class="sk-select skeleton-anim"></div>
-            <div 
+            <button 
                 v-if="activeSortDescription && !loading" 
                 class="info-dot-inline" 
-                v-tooltip="activeSortDescription"
+                @click="showInfoOverlay = true"
+                aria-label="Sort Information"
             >
                 <Icon name="info" size="16" />
-            </div>
+            </button>
           </div>
         </div>
       </div>
+      
+      <!-- Rich Info Overlay -->
+      <Transition name="overlay-fade">
+        <div v-if="showInfoOverlay && activeSortDescription" class="info-overlay" @click.self="showInfoOverlay = false">
+            <div class="info-card glassmorphic">
+                <div class="info-header">
+                    <h3>Sorting Explanation</h3>
+                    <button class="close-btn" @click="showInfoOverlay = false">
+                        <Icon name="close" size="20" />
+                    </button>
+                </div>
+                <div class="info-content scrollable-area" v-html="formatDescription(activeSortDescription)"></div>
+            </div>
+        </div>
+      </Transition>
       
       <div v-if="$slots.extra" class="header-row extra">
         <slot name="extra"></slot>
@@ -304,13 +323,106 @@ function formatDescription(text: string) {
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
   display: flex; align-items: center; justify-content: center;
-  cursor: help;
+  cursor: pointer;
+  border: none;
   opacity: 0.9;
   transition: transform 0.2s, opacity 0.2s;
   z-index: 10;
-  pointer-events: auto; 
 }
 .info-dot-inline:hover { transform: translateY(-50%) scale(1.1); opacity: 1; }
+
+/* Info Overlay Styles */
+.info-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.info-card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--sys-surface-glass);
+    border: 1px solid var(--sys-surface-glass-border);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--sys-elevation-4);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 80vh;
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 850;
+    color: var(--sys-color-primary);
+    letter-spacing: -0.01em;
+}
+
+.info-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--sys-color-on-surface-variant);
+}
+
+:deep(.desc-section-title) {
+    font-weight: 850;
+    color: var(--sys-color-on-surface);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    opacity: 0.8;
+}
+
+:deep(.bullet-item) {
+    margin-left: 12px;
+    padding-left: 4px;
+}
+
+:deep(.desc-list) {
+    margin: 8px 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+:deep(strong) {
+    color: var(--sys-color-on-surface);
+    font-weight: 700;
+}
+
+.close-btn {
+    background: var(--sys-color-surface-container-high);
+    border: none;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sys-color-outline);
+    cursor: pointer;
+    transition: 0.2s;
+}
+.close-btn:hover { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
+
+/* Transitions */
+.overlay-fade-enter-active, .overlay-fade-leave-active { transition: opacity 0.3s ease; }
+.overlay-fade-enter-from, .overlay-fade-leave-to { opacity: 0; }
+.overlay-fade-enter-active .info-card { transition: transform 0.3s var(--sys-motion-spring); }
+.overlay-fade-enter-from .info-card { transform: scale(0.9) translateY(20px); }
 
 .spinner {
   width: 12px; height: 12px;
