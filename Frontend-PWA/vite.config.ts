@@ -242,9 +242,10 @@ export default defineConfig({
       srcDir: undefined,
       filename: undefined,
       strategies: 'generateSW',
-      injectRegister: 'auto',
+      injectRegister: 'script',
       devOptions: {
-        enabled: false
+        enabled: true,
+        type: 'classic'
       }
     }) as any
   ],
