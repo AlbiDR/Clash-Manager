@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useModules } from '../../composables/useModules'
 import { useHaptics } from '../../composables/useHaptics'
+import SettingsCard from '../SettingsCard.vue'
 import Icon from '../Icon.vue'
 
 const { modules, toggle } = useModules()
@@ -13,50 +14,26 @@ function handleToggle() {
 </script>
 
 <template>
-    <div v-if="modules.experimentalNotifications" class="settings-card">
-        <div class="card-header">
-            <Icon name="bell" size="20" class="header-icon" />
-            <h3>Notifications</h3>
-        </div>
-        <div class="card-body">
-            <div class="features-list">
-                <div class="toggle-row" @click="handleToggle">
-                    <div class="row-info">
-                        <div class="row-label">Advanced App Badge</div>
-                        <div class="row-desc">Show count of recruits with score > 75</div>
-                    </div>
-                    <div class="switch" :class="{ active: modules.notificationBadgeHighPotential }">
-                        <div class="handle"></div>
-                    </div>
+    <SettingsCard v-if="modules.experimentalNotifications" title="Notifications" icon="bell">
+        <div class="features-list">
+            <div class="toggle-row" @click="handleToggle">
+                <div class="row-info">
+                   <div class="row-label">Advanced App Badge</div>
+                    <div class="row-desc">Show count of recruits with score > 75</div>
+                </div>
+                <div class="switch" :class="{ active: modules.notificationBadgeHighPotential }">
+                    <div class="handle"></div>
                 </div>
             </div>
-            <div class="badge-preview" v-if="modules.notificationBadgeHighPotential">
-                <Icon name="info" size="14" />
-                <span>Focuses your attention on high-potential talent only.</span>
-            </div>
         </div>
-    </div>
+        <div class="badge-preview" v-if="modules.notificationBadgeHighPotential">
+            <Icon name="info" size="14" />
+            <span>Focuses your attention on high-potential talent only.</span>
+        </div>
+    </SettingsCard>
 </template>
 
 <style scoped>
-.settings-card {
-  background: var(--sys-color-surface-container);
-  border-radius: 24px;
-  border: 1px solid var(--sys-surface-glass-border);
-  overflow: hidden;
-  transition: background-color 0.3s ease;
-}
-
-.card-header {
-  padding: 16px 20px;
-  display: flex; align-items: center; gap: 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-.card-header h3 { margin: 0; font-size: 16px; font-weight: 850; color: var(--sys-color-on-surface); }
-.header-icon { color: var(--sys-color-primary); }
-
-.card-body { padding: 20px; }
-
 .features-list { display: flex; flex-direction: column; gap: 16px; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
 
@@ -66,7 +43,7 @@ function handleToggle() {
 .switch { width: 44px; height: 24px; background: var(--sys-color-surface-container-highest); border-radius: 12px; position: relative; transition: 0.3s; border: 1.5px solid rgba(0,0,0,0.1); }
 .switch.active { background: var(--sys-color-primary); }
 .switch .handle { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; background: white; border-radius: 50%; transition: 0.3s; }
-.switch.active .handle { left: calc(100% - 19px); }
+.switch.active .handle{ left: calc(100% - 19px); }
 
 .badge-preview {
   margin-top: 16px;
