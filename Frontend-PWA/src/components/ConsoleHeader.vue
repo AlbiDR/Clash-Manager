@@ -352,7 +352,8 @@ function formatDescription(text: string) {
     z-index: 2000;
     display: flex;
     justify-content: center;
-    padding: 0; /* Full screen alignment */
+    padding: 16px; 
+    padding-top: calc(16px + env(safe-area-inset-top));
 }
 
 .info-card-expanded {
@@ -362,10 +363,8 @@ function formatDescription(text: string) {
     max-height: 85vh; /* Safe cap for very long lists */
     background: var(--sys-surface-glass);
     border: 1px solid var(--sys-surface-glass-border);
-    border-top: none; 
-    border-radius: 0 0 32px 32px;
+    border-radius: 32px;
     padding: 24px;
-    padding-top: calc(24px + env(safe-area-inset-top));
     box-shadow: var(--sys-elevation-4);
     display: flex;
     flex-direction: column;
@@ -373,7 +372,6 @@ function formatDescription(text: string) {
     transform-origin: top;
     position: relative;
     overflow: hidden;
-    margin-top: -1px; /* Align perfectly with possible header artifacts */
 }
 
 .expansion-header {
