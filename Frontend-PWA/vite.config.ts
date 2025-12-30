@@ -122,7 +122,11 @@ export default defineConfig({
             form_factor: 'wide',
             label: 'Clash Manager Desktop Analytics'
           }
-        ]
+        ],
+        iarc_rating_id: 'e58c704a-579c-4f01-831e-45814545d625', // Placeholder for store requirements
+        lang: 'en-US',
+        dir: 'ltr',
+        prefer_related_applications: false
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
@@ -130,6 +134,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        importScripts: ['sw-badge-handler.js'],
         // 🔒 SECURITY: Force a manifest revision update on every build to trigger WebAPK refresh
         manifestTransforms: [
           (manifestEntries) => {
