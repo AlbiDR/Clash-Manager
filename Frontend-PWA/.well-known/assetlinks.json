@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.albidr.clashmanager",
+        "sha256_cert_fingerprints": ["83:97:F1:7B:AE:D3:85:3E:DB:A9:4A:AF:E6:DA:33:CE:01:BD:43:37:99:96:3B:D1:AF:F4:A8:99:35:E6:10:3B"]
+      }
+    }]
