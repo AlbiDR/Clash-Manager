@@ -1,7 +1,7 @@
 {
     "packageId": "com.albidr.clashmanager",
     "host": "albidr.github.io",
-    "name": "Clash Manager",
+    "name": "Clash Manager: Clan Manager for Clash Royale",
     "launcherName": "Clash Manager",
     "display": "standalone",
     "themeColor": "#0B0E14",
