@@ -47,6 +47,20 @@ const activeSortDescription = computed(() => {
   const selected = props.sortOptions?.find(opt => opt.value === sortValue.value)
   return selected?.desc || null
 })
+
+function formatDescription(text: string) {
+  if (!text) return ''
+  
+  return text
+    // Bold text (**text**)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Bullet points (• item)
+    .replace(/^• (.+)$/gm, '<li class="bullet-item">$1</li>')
+    // Line breaks
+    .replace(/\\n/g, '<br>')
+    // Wrap lists in ul
+    .replace(/(<li class="bullet-item">.*<\/li>\s*)+/g, '<ul class="desc-list">$&</ul>')
+}
 </script>
 
 <template>
