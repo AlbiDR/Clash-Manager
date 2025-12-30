@@ -79,10 +79,12 @@ export function useClanData() {
 
     function updateBadgeCount(data: WebAppData) {
         if (data?.hh) {
+            const threshold = modules.value.notificationThreshold || 75
             const count = modules.value.notificationBadgeHighPotential
-                ? data.hh.filter(r => r.s >= 75).length
+                ? data.hh.filter(r => r.s >= threshold).length
                 : data.hh.length;
             setBadge(count);
+            console.log(`[Badge] Updated to ${count} recruits (threshold: ≥${threshold})`)
         }
     }
 

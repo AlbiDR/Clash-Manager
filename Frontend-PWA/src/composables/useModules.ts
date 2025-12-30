@@ -10,6 +10,7 @@ export interface ModuleState {
     backendRefresher: boolean
     experimentalNotifications: boolean
     notificationBadgeHighPotential: boolean
+    notificationThreshold: 50 | 75
 }
 
 // 📱 Device Detection for Defaults
@@ -21,7 +22,8 @@ const defaultState: ModuleState = {
     sortExplanation: false,
     backendRefresher: false,
     experimentalNotifications: true, // On by default
-    notificationBadgeHighPotential: true // On by default
+    notificationBadgeHighPotential: true, // On by default
+    notificationThreshold: 75 // Default to high-potential (≥75)
 }
 
 const modules = ref<ModuleState>({ ...defaultState })
@@ -50,7 +52,8 @@ export function useModules() {
                     sortExplanation: typeof parsed.sortExplanation === 'boolean' ? parsed.sortExplanation : defaultState.sortExplanation,
                     backendRefresher: typeof parsed.backendRefresher === 'boolean' ? parsed.backendRefresher : defaultState.backendRefresher,
                     experimentalNotifications: typeof parsed.experimentalNotifications === 'boolean' ? parsed.experimentalNotifications : defaultState.experimentalNotifications,
-                    notificationBadgeHighPotential: typeof parsed.notificationBadgeHighPotential === 'boolean' ? parsed.notificationBadgeHighPotential : defaultState.notificationBadgeHighPotential
+                    notificationBadgeHighPotential: typeof parsed.notificationBadgeHighPotential === 'boolean' ? parsed.notificationBadgeHighPotential : defaultState.notificationBadgeHighPotential,
+                    notificationThreshold: (parsed.notificationThreshold === 50 || parsed.notificationThreshold === 75) ? parsed.notificationThreshold : defaultState.notificationThreshold
                 }
             } else {
                 modules.value = { ...defaultState }

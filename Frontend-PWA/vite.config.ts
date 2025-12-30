@@ -51,6 +51,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
+        // Add badge support for mobile PWAs
+        additionalManifestEntries: [],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
@@ -81,6 +86,15 @@ export default defineConfig({
             }
           }
         ]
+      },
+      // Inject custom Service Worker code for badge handling
+      injectManifest: false,
+      srcDir: undefined,
+      filename: undefined,
+      strategies: 'generateSW',
+      injectRegister: 'auto',
+      devOptions: {
+        enabled: false
       }
     }) as any
   ],
