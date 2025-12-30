@@ -36,17 +36,47 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo.png'],
       manifest: {
-        id: 'clash-manager-v11',
+        id: '/Clash-Manager/', // Unique ID for Android to treat as separate app
         name: 'Clash Manager',
         short_name: 'Clash Manager',
-        theme_color: '#0b0e14',
+        description: 'Advanced analytics and recruitment tool for Clash Royale clans',
+        theme_color: '#6750a4',
         background_color: '#0b0e14',
-        display: 'standalone',
+        display: 'standalone', // Critical: removes browser UI
+        orientation: 'portrait-primary', // Lock to portrait for mobile
         scope: '/Clash-Manager/',
         start_url: '/Clash-Manager/index.html',
+        categories: ['productivity', 'utilities', 'games'], // Helps OS categorize the app
         icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable' // Android adaptive icon support
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ],
+        // App shortcuts for long-press menu (Android)
+        shortcuts: [
+          {
+            name: 'Leaderboard',
+            short_name: 'Leaderboard',
+            description: 'View clan member rankings',
+            url: '/Clash-Manager/index.html#/leaderboard',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Recruits',
+            short_name: 'Recruits',
+            description: 'Browse potential recruits',
+            url: '/Clash-Manager/index.html#/recruiter',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
         ]
       },
       workbox: {
