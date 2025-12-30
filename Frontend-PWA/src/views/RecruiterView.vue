@@ -59,27 +59,27 @@ const sortOptions = [
   { 
     label: 'Potential', 
     value: 'score', 
-    desc: `**Predictive quality score** based on Fame potential and account progression.\n\n**Algorithm:**\nCompares the recruit's Trophies, King Tower Level, and Lifetime Donations against your clan's median.\n\n**Signal:**\nRecruits with high potential are more likely to win Duels and earn maximum Medals in the River Race.` 
+    desc: `**Predictive quality score** based on account progression and historical reliability.\n\n**Algorithm:**\nCompares the candidate's Trophies, Lifetime Donations, and War Win count against your current Clan baseline.\n\n**Signal:**\nRecruits with high potential often demonstrate a developed card pool and a history of active Clan War contribution.` 
   },
   { 
     label: 'Trophies', 
     value: 'trophies', 
-    desc: `**Current rank** on Trophy Road or Path of Legends.\n\n**Why prioritize:**\nHigher trophies often mean a more developed card pool and better understanding of the current Meta.` 
+    desc: `**Current ladder ranking** pull via Supercell API.\n\n**Insight:**\nReflects mechanical skill and King Tower progression on Trophy Road or Path of Legends.` 
   },
   { 
     label: 'Donations', 
     value: 'donations', 
-    desc: `**Lifetime card donations** from previous clan history.\n\n**Insight:**\n• **High**: Dedicated team player. Reliable for Clan Chat activity.\n• **Low**: Potentially a solo-focused player or a fresh King Tower level.\n\n**Note:** Past generosity is the best predictor of future Clan support.` 
+    desc: `**Lifetime card donations** from previous Clan history.\n\n**Logic:**\nMeasures long-term generosity. High lifetime donations are the most reliable predictor of a player's team-oriented mindset.` 
   },
   { 
     label: 'Recency', 
     value: 'time_found', 
-    desc: `**Discovery timestamp** from the latest tournament scan.\n\n**Use case:**\nIdentifying 'Fresh Talent'. New recruits are often looking for a home immediately after leaving their previous clan.` 
+    desc: `**Timestamp of discovery** during recent tournament scans.\n\n**Use case:**\nIdentifying fresh talent who have recently gone clanless and are likely seeking a new home immediately.` 
   },
   { 
     label: 'Name', 
     value: 'name', 
-    desc: `**Alphabetical ordering** by display name.\n\n**Use case:**\nTracking specific players across multiple Headhunter scans.` 
+    desc: `**Alphabetical ordering** by display name.` 
   }
 ]
 

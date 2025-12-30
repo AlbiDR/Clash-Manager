@@ -359,20 +359,21 @@ function formatDescription(text: string) {
     width: 100%;
     max-width: var(--sys-layout-max-width);
     height: auto;
-    max-height: 90vh;
+    max-height: 85vh; /* Safe cap for very long lists */
     background: var(--sys-surface-glass);
     border: 1px solid var(--sys-surface-glass-border);
-    border-top: none; /* Flow from top */
+    border-top: none; 
     border-radius: 0 0 32px 32px;
     padding: 24px;
     padding-top: calc(24px + env(safe-area-inset-top));
     box-shadow: var(--sys-elevation-4);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     transform-origin: top;
     position: relative;
     overflow: hidden;
+    margin-top: -1px; /* Align perfectly with possible header artifacts */
 }
 
 .expansion-header {
