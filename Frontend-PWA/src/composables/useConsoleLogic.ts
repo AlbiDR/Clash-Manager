@@ -27,7 +27,7 @@ export function useConsoleLogic<T extends { id: string }>(options: ConsoleLogicO
     } = options
 
     // 1. Filtering & Sorting
-    const { searchQuery, filteredItems, updateSort } = useListFilter(
+    const { searchQuery, sortBy, filteredItems, updateSort } = useListFilter(
         data,
         filterFn,
         sortStrategies,
@@ -96,6 +96,7 @@ export function useConsoleLogic<T extends { id: string }>(options: ConsoleLogicO
     return {
         // State
         searchQuery,
+        sortBy,
         visibleItems,
         expandedIds,
         selectedIds,

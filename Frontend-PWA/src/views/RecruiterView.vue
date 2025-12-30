@@ -38,7 +38,7 @@ const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
 }
 
 const {
-    searchQuery, visibleItems, expandedIds, selectedIds, selectedSet, fabState, isSelectionMode,
+    searchQuery, sortBy, visibleItems, expandedIds, selectedIds, selectedSet, fabState, isSelectionMode,
     status, statsBadge, showSkeletons, filteredItems,
     updateSort, toggleSelect, toggleExpand, clearSelection, handleAction, handleBlitz, handleSelectAll, handleSelectScore, processDeepLink
 } = useConsoleLogic({
@@ -140,6 +140,7 @@ function handleSearchUpdate(val: string) {
     :sheet-url="sheetUrl"
     :stats="statsBadge"
     :sort-options="sortOptions"
+    :current-sort="sortBy"
     :loading="showSkeletons"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"

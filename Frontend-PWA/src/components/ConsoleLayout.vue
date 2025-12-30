@@ -23,6 +23,7 @@ const props = defineProps<{
   // Selection/Fab state
   isSelectionMode?: boolean
   selectedCount?: number
+  currentSort?: string
   isRefreshing?: boolean
   
   // Sync Status
@@ -65,6 +66,7 @@ if (props.fabState) {
       :sheet-url="sheetUrl"
       :stats="stats"
       :sort-options="sortOptions"
+      :current-sort="currentSort"
       :loading="loading"
       @update:search="(val) => $emit('update:search', val)"
       @update:sort="(val) => $emit('update:sort', val)"
