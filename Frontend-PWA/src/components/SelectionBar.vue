@@ -24,8 +24,8 @@ const isScoreExpanded = ref(false)
                 <div class="sk-button-s skeleton-anim"></div>
                 <div class="sk-button-s skeleton-anim"></div>
                 <div class="v-divider"></div>
-                <!-- Skeleton matches collapsed state: Label + 1 Primary Button -->
-                <div class="score-group">
+                <!-- Skeleton matches collapsed state: Label + 1 Primary Button, pushed right -->
+                <div class="score-group" style="margin-left: auto;">
                     <div class="sk-text-line-s skeleton-anim" style="width: 40px; margin-right: 4px;"></div>
                     <div class="sk-button-s skeleton-anim" style="width: 40px;"></div>
                 </div>
@@ -40,7 +40,9 @@ const isScoreExpanded = ref(false)
                 <button class="action-chip" @click="$emit('select-all')">All</button>
                 <button class="action-chip" @click="$emit('clear')">None</button>
                 <div class="v-divider"></div>
-                <div class="score-group" :class="{ expanded: isScoreExpanded }">
+                
+                <!-- Pushed to the right -->
+                <div class="score-group" :class="{ expanded: isScoreExpanded }" style="margin-left: auto;">
                     <button class="sg-trigger" @click="isScoreExpanded = !isScoreExpanded">
                         Score <span class="sg-arrow" :class="{ rotated: isScoreExpanded }">›</span>
                     </button>
@@ -54,6 +56,7 @@ const isScoreExpanded = ref(false)
                     <!-- Primary Option always visible -->
                     <button class="sg-btn highlight" @click="$emit('select-score', 75, 'ge')">≥75</button>
                 </div>
+                
                 <div class="v-divider"></div>
                 <button class="action-chip danger" @click="$emit('done')">Done</button>
             </div>
@@ -64,7 +67,7 @@ const isScoreExpanded = ref(false)
 <style scoped>
 .selection-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--sys-color-outline-variant); flex-wrap: wrap; gap: 12px; }
 .sel-count { font-size: 15px; font-weight: 800; color: var(--sys-color-on-surface); white-space: nowrap; }
-.sel-actions { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.sel-actions { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; flex: 1; }
 .action-chip { background: none; border: none; font-weight: 700; cursor: pointer; padding: 6px 8px; border-radius: 8px; white-space: nowrap; font-size: 13px; color: var(--sys-color-outline); transition: all 0.2s; }
 .action-chip:hover { background: var(--sys-color-surface-container-high); color: var(--sys-color-on-surface); }
 .action-chip.danger { color: var(--sys-color-error); }
