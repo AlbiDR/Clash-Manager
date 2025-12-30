@@ -47,11 +47,31 @@ const {
 })
 
 const sortOptions = [
-  { label: 'Performance', value: 'score', desc: 'Proprietary metric measuring total clan contribution.' },
-  { label: 'Momentum', value: 'trend', desc: 'Velocity of performance score compared to previous snapshot.' },
-  { label: 'Trophies', value: 'trophies', desc: 'Current ladder trophy count.' },
-  { label: 'Donations', value: 'donations_day', desc: 'Average daily donations.' },
-  { label: 'Name', value: 'name', desc: 'Alphabetical.' }
+  { 
+    label: 'Performance', 
+    value: 'score', 
+    desc: `**Hybrid performance metric** combining war participation, fame generation, donations, and trophies.\n\n**Components:**\n• Raw Score: Fame + Donations + (Trophies ÷ 3)\n• War Rate: Active weeks ÷ Weeks tracked\n• Inactivity Decay: -10% per week absent\n\n**Final:** Raw × (War Rate ÷ 100) × Decay Multiplier` 
+  },
+  { 
+    label: 'Momentum', 
+    value: 'trend', 
+    desc: `**Weekly velocity** of performance score change.\n\n**Logic:**\nΔ Score = Current Score − Last Week's Score\n\n**Interpretation:**\n• Positive: Improving contribution\n• Negative: Declining activity\n• Zero: Stable performance` 
+  },
+  { 
+    label: 'Trophies', 
+    value: 'trophies', 
+    desc: `**Current ladder ranking** (King Level Tower trophies).\n\n**Context:**\nHigher trophies generally indicate skill, but don't directly reflect clan contribution. Useful for identifying strong 1v1 players.` 
+  },
+  { 
+    label: 'Donations', 
+    value: 'donations_day', 
+    desc: `**Average daily card donations** to clanmates.\n\n**Calculation:**\nTotal Lifetime Donations ÷ Days in Clan\n\n**Why it matters:**\nGenerosity metric. High donators strengthen clan economy and morale.` 
+  },
+  { 
+    label: 'Name', 
+    value: 'name', 
+    desc: `**Alphabetical ordering** (A → Z) by display name.\n\n**Use case:**\nQuickly locating specific members when you know their name.` 
+  }
 ]
 
 // Specific Helper for Score Selection

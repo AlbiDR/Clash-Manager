@@ -56,11 +56,31 @@ const {
 })
 
 const sortOptions = [
-  { label: 'Potential', value: 'score', desc: 'AI-modeled potential score comparing recruit against clan averages.' },
-  { label: 'Trophies', value: 'trophies', desc: 'Current ladder ranking.' },
-  { label: 'Donations', value: 'donations', desc: 'Total lifetime donations.' },
-  { label: 'Recency', value: 'time_found', desc: 'Sorts by discovery time.' },
-  { label: 'Name', value: 'name', desc: 'Alphabetical.' }
+  { 
+    label: 'Potential', 
+    value: 'score', 
+    desc: `**Predictive recruit quality score** comparing against clan averages.\n\n**Algorithm:**\nRecruits with trophies/donations/level exceeding your clan's median receive bonus points.\n\n**Signal:**\nHigh scores = likely to integrate well and perform above average if recruited.` 
+  },
+  { 
+    label: 'Trophies', 
+    value: 'trophies', 
+    desc: `**Current King Level Tower** ranking.\n\n**Why prioritize:**\nHigher trophies often correlate with game knowledge, skill ceiling, and competitive mindset.` 
+  },
+  { 
+    label: 'Donations', 
+    value: 'donations', 
+    desc: `**Lifetime total donations** from previous clans.\n\n**Interpretation:**\n• High donations: Generous, team-oriented\n• Low donations: Potentially selfish or new player\n\n**Note:** History doesn't guarantee future behavior.` 
+  },
+  { 
+    label: 'Recency', 
+    value: 'time_found', 
+    desc: `**Discovery timestamp** (newest first).\n\n**Use case:**\nSee latest recruits from most recent tournament scans. Useful for catching fresh talent before competitors.` 
+  },
+  { 
+    label: 'Name', 
+    value: 'name', 
+    desc: `**Alphabetical ordering** (A → Z) by recruit display name.\n\n**Use case:**\nLocating specific recruits when tracking across multiple scans.` 
+  }
 ]
 
 // 🧹 CLEANUP: Extra Recruit Logic managed here
