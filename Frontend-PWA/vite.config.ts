@@ -17,13 +17,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    cssCodeSplit: true, // ⚡ Enabled splitting to prevent blocking render with unused CSS
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // ⚡ Code Splitting Enabled: Allows lazy-loaded routes to be fetched on demand
         manualChunks: {
           'vendor': ['vue', 'vue-router', '@formkit/auto-animate'],
-          // Zod is heavy, keep it separate so it doesn't block LCP
           'validation': ['zod']
         }
       }
@@ -36,23 +34,25 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo.png'],
       manifest: {
-        id: '/Clash-Manager/', // Unique ID for Android to treat as separate app
+        id: '/Clash-Manager/',
         name: 'Clash Manager',
         short_name: 'Clash Manager',
         description: 'Advanced analytics and recruitment tool for Clash Royale clans',
         theme_color: '#6750a4',
         background_color: '#0b0e14',
-        display: 'standalone', // Critical: removes browser UI
-        orientation: 'portrait-primary', // Lock to portrait for mobile
+        display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone'],
+        orientation: 'portrait-primary',
         scope: '/Clash-Manager/',
         start_url: '/Clash-Manager/index.html',
-        categories: ['productivity', 'utilities', 'games'], // Helps OS categorize the app
+        categories: ['productivity', 'utilities', 'games'],
+        prefer_related_applications: false,
         icons: [
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable' // Android adaptive icon support
+            purpose: 'any maskable'
           },
           {
             src: 'pwa-512x512.png',
@@ -61,7 +61,6 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        // App shortcuts for long-press menu (Android)
         shortcuts: [
           {
             name: 'Leaderboard',
@@ -77,11 +76,22 @@ export default defineConfig({
             url: '/Clash-Manager/index.html#/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           }
-        ]
+        ],
+        share_target: {
+          action: '/Clash-Manager/share',
+          method: 'GET',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url'
+          }
+        },
+        launch_handler: {
+          client_mode: 'navigate-existing'
+        }
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
-        // Add badge support for mobile PWAs
         additionalManifestEntries: [],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
@@ -117,7 +127,6 @@ export default defineConfig({
           }
         ]
       },
-      // Inject custom Service Worker code for badge handling
       injectManifest: false,
       srcDir: undefined,
       filename: undefined,
