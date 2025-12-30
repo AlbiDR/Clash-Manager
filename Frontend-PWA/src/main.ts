@@ -13,6 +13,18 @@ import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
 import { useTheme } from './composables/useTheme'
 import { useWakeLock } from './composables/useWakeLock'
+import { registerSW } from 'virtual:pwa-register'
+
+// 🔄 PWA Update Logic: Automatically refresh when new content is available
+const updateSW = registerSW({
+    onNeedRefresh() {
+        console.log('🔄 New content available, reloading...');
+        updateSW(true); // Force update and reload
+    },
+    onOfflineReady() {
+        console.log('📶 App is ready for offline use.');
+    }
+})
 
 function showFatalError(error: any) {
     console.error('FATAL ERROR:', error);
@@ -33,19 +45,19 @@ window.addEventListener('unhandledrejection', (event) => showFatalError(event.re
 async function bootstrap() {
     try {
         // 1. Critical Config (Synchronous)
-        const modules = useModules(); 
-        try { modules.init(); } catch(e) { console.warn('Modules init failed', e) }
-        
-        const theme = useTheme(); 
-        try { theme.init(); } catch(e) { console.warn('Theme init failed', e) }
-        
+        const modules = useModules();
+        try { modules.init(); } catch (e) { console.warn('Modules init failed', e) }
+
+        const theme = useTheme();
+        try { theme.init(); } catch (e) { console.warn('Theme init failed', e) }
+
         // 2. Create App
         const app = createApp(App)
         app.use(router)
-        
+
         // ⚡ PERFORMANCE: Register dummy directive first to prevent Vue warnings during hydration
-        app.directive('auto-animate', {}) 
-        
+        app.directive('auto-animate', {})
+
         app.directive('tooltip', vTooltip)
         app.directive('tactile', vTactile)
 
@@ -57,8 +69,8 @@ async function bootstrap() {
         // ⚡ LCP OPTIMIZATION: Load local data in the next tick to allow first paint
         requestAnimationFrame(() => {
             try {
-                const clanData = useClanData(); 
-                clanData.loadLocal(); 
+                const clanData = useClanData();
+                clanData.loadLocal();
             } catch (e) {
                 console.error("Local data load failed:", e)
             }
@@ -74,7 +86,7 @@ async function bootstrap() {
 
                 const apiState = useApiState(); apiState.init();
                 const wakeLock = useWakeLock(); wakeLock.init();
-                
+
                 // ⚡ Lazy Load AutoAnimate
                 try {
                     const { autoAnimatePlugin } = await import('@formkit/auto-animate/vue')
@@ -85,7 +97,7 @@ async function bootstrap() {
             } catch (e) {
                 console.error("Background sync failed:", e)
             }
-        }, 500); 
+        }, 500);
 
     } catch (e) {
         showFatalError(e);
