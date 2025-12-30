@@ -19,7 +19,7 @@ const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 
 const defaultState: ModuleState = {
     blitzMode: false,
     ghostBenchmarking: !isMobile, // On by default on Desktop, Off on Mobile
-    sortExplanation: false,
+    sortExplanation: true,
     backendRefresher: false,
     experimentalNotifications: true, // On by default
     notificationBadgeHighPotential: true, // On by default

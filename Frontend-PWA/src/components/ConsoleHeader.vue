@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import Icon from './Icon.vue'
 import { useModules } from '../composables/useModules'
 
@@ -41,7 +41,18 @@ const handleInput = (e: Event) => {
 }
 
 onMounted(() => window.addEventListener('scroll', handleScroll))
-onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll)
+    document.body.style.overflow = ''
+})
+
+watch(showInfoOverlay, (val) => {
+    if (val) {
+        document.body.style.overflow = 'hidden'
+    } else {
+        document.body.style.overflow = ''
+    }
+})
 
 const activeSortDescription = computed(() => {
   if (!modules.value.sortExplanation) return null
@@ -161,11 +172,6 @@ function formatDescription(text: string) {
                   </div>
                   
                   <div class="expansion-content scrollable-area" v-html="formatDescription(activeSortDescription)"></div>
-                  
-                  <div class="expansion-footer">
-                    <div class="swipe-hint"></div>
-                    <span>Tap outside to collapse</span>
-                  </div>
               </div>
           </div>
         </Transition>
@@ -355,6 +361,7 @@ function formatDescription(text: string) {
     align-items: flex-start;
     padding: 16px; 
     padding-top: calc(16px + env(safe-area-inset-top));
+    touch-action: none;
 }
 
 .info-card-expanded {
@@ -406,6 +413,13 @@ function formatDescription(text: string) {
     padding-right: 12px;
     -webkit-overflow-scrolling: touch;
     flex: 1;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+.expansion-content :deep(*) {
+    user-select: text !important;
+    -webkit-user-select: text !important;
 }
 
 /* Custom Scrollbar for Posh look */
@@ -414,32 +428,6 @@ function formatDescription(text: string) {
 .expansion-content::-webkit-scrollbar-thumb { 
     background: var(--sys-color-outline-variant); 
     border-radius: 10px; 
-}
-
-.expansion-footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding-top: 16px;
-    border-top: 1px solid var(--sys-surface-glass-border);
-    flex-shrink: 0;
-}
-
-.swipe-hint {
-    width: 36px;
-    height: 4px;
-    background: var(--sys-color-outline-variant);
-    border-radius: 2px;
-    opacity: 0.4;
-}
-
-.expansion-footer span {
-    font-size: 10px;
-    font-weight: 850;
-    text-transform: uppercase;
-    color: var(--sys-color-outline);
-    letter-spacing: 0.1em;
 }
 
 :deep(.desc-section-title) {
