@@ -16,7 +16,7 @@ export function useBadge() {
     }
 
     try {
-      // Layer 1: Standard Badge API (Chrome, Edge, Samsung Internet)
+      // Layer 1: Standard Badge API (Native)
       if (hasStandardBadge) {
         if (count > 0) {
           await (navigator as any).setAppBadge(count)
@@ -24,41 +24,36 @@ export function useBadge() {
           await (navigator as any).clearAppBadge()
         }
         console.log(`[Badge] Set via standard API: ${count}`)
-        return
+        // We continue to SW layer because on some mobile browsers setAppBadge exists but does nothing for the home screen icon
       }
 
-      // Layer 2: Experimental Badge API (older browsers)
-      if (hasExperimentalBadge) {
+      // Layer 2: Experimental Badge API
+      if (hasExperimentalBadge && !hasStandardBadge) {
         if (count > 0) {
           await (navigator as any).setExperimentalAppBadge(count)
         } else {
           await (navigator as any).clearExperimentalAppBadge()
         }
         console.log(`[Badge] Set via experimental API: ${count}`)
-        return
       }
 
-      // Layer 3: Service Worker Badge (mobile PWAs, iOS fallback)
-      if (hasServiceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'SET_BADGE',
-          count: count > 0 ? count : 0
-        })
-        console.log(`[Badge] Set via Service Worker: ${count}`)
-        return
-      }
-
-      // Layer 4: Service Worker not ready, queue for later
+      // Layer 3: Service Worker Badge (CRITICAL FOR ANDROID FALLBACK)
       if (hasServiceWorker) {
-        navigator.serviceWorker.ready.then(registration => {
-          if (registration.active) {
-            registration.active.postMessage({
+        const sendToSW = (reg: ServiceWorkerRegistration) => {
+          if (reg.active) {
+            reg.active.postMessage({
               type: 'SET_BADGE',
               count: count > 0 ? count : 0
             })
-            console.log(`[Badge] Set via ready Service Worker: ${count}`)
+            console.log(`[Badge] Message sent to Service Worker: ${count}`)
           }
-        })
+        }
+
+        if (navigator.serviceWorker.controller) {
+          sendToSW({ active: navigator.serviceWorker.controller } as any)
+        } else {
+          navigator.serviceWorker.ready.then(sendToSW)
+        }
       }
     } catch (e) {
       console.error('[Badge] Failed to update app badge:', e)
