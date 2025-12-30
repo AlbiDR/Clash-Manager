@@ -18,7 +18,7 @@ export function usePwaFeatures() {
 
             if (status.state === 'granted') {
                 await (registration as any).periodicSync.register('content-sync', {
-                    minInterval: 24 * 60 * 60 * 1000, // 24 hours
+                    minInterval: 12 * 60 * 60 * 1000, // 12 hours
                 });
                 console.log('[PWA] Periodic Sync registered successfully.');
             } else {
