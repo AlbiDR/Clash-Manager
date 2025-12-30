@@ -29,7 +29,25 @@ self.addEventListener('message', (event) => {
                     .catch((e: Error) => console.error('[SW] Failed to clear experimental badge:', e))
             }
         } else {
-            console.warn('[SW] Badge API not available in Service Worker')
+            console.warn('[SW] Badge API not available in Service Worker, using notification fallback')
+            // Android Chrome fallback: Show a silent notification to trigger the badge/dot
+            if ('showNotification' in self.registration) {
+                if (count > 0) {
+                    const options = {
+                        tag: 'badge-count',
+                        icon: '/Clash-Manager/pwa-192x192.png',
+                        badge: '/Clash-Manager/monochrome-icon-512x512.png',
+                        silent: true,
+                        renotify: true,
+                        data: { count }
+                    };
+                    self.registration.showNotification(`${count} New Recruits`, options);
+                } else {
+                    self.registration.getNotifications({ tag: 'badge-count' }).then(notifications => {
+                        notifications.forEach(n => n.close());
+                    });
+                }
+            }
         }
     }
 })

@@ -11,12 +11,10 @@ import Icon from './components/Icon.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 
 import { useShareTarget } from './composables/useShareTarget'
-import { useAppBadge } from './composables/useAppBadge'
 
 const { syncStatus } = useClanData()
 const { needRefresh, updateServiceWorker, close: closeUpdate } = usePwaUpdate()
 const { handleShareTarget } = useShareTarget()
-const { clearBadge } = useAppBadge()
 const haptics = useHaptics()
 const route = useRoute()
 const isOnline = ref(true)
@@ -32,14 +30,12 @@ watch(syncStatus, (newStatus, oldStatus) => {
     if (oldStatus === 'syncing' && newStatus === 'success') {
         isSuccessFading.value = true
         haptics.success()
-        clearBadge() // Clear any stale badges on fresh sync
         setTimeout(() => { isSuccessFading.value = false }, 1800)
     }
 })
 
 onMounted(() => {
     isOnline.value = navigator.onLine
-    clearBadge() // Clear badge when app is opened
     
     window.addEventListener('online', () => {
         isOnline.value = true
