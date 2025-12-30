@@ -50,27 +50,27 @@ const sortOptions = [
   { 
     label: 'Performance', 
     value: 'score', 
-    desc: `**Hybrid performance metric** combining war participation, fame generation, donations, and trophies.\n\n**Components:**\n• Raw Score: Fame + Donations + (Trophies ÷ 3)\n• War Rate: Active weeks ÷ Weeks tracked\n• Inactivity Decay: -10% per week absent\n\n**Final:** Raw × (War Rate ÷ 100) × Decay Multiplier` 
+    desc: `**Clan War performance metric** based on Fame generation, Medal output, and consistency.\n\n**Components:**\n• **War Fame**: Total Fame earned in the current River Race.\n• **Medal Multiplier**: Bonus for high performance in Duel and 1v1 battles.\n• **Participation**: Ratio of used vs available War Decks across tracked weeks.\n\n**Result:** Higher scores indicate reliable 'War Warriors' who maximize Clan Boat progress.` 
   },
   { 
     label: 'Momentum', 
     value: 'trend', 
-    desc: `**Weekly velocity** of performance score change.\n\n**Logic:**\nΔ Score = Current Score − Last Week's Score\n\n**Interpretation:**\n• Positive: Improving contribution\n• Negative: Declining activity\n• Zero: Stable performance` 
+    desc: `**Weekly velocity** of Fame and Medal contribution changes.\n\n**Logic:**\nΔ Contribution = Current Week Fame − Previous Week Fame.\n\n**Signal:**\n• **Climbing**: Players peaking for the Coliseum.\n• **Dipping**: Potential burnout or missed War Days.\n• **Stable**: Consistent River Race contributors.` 
   },
   { 
     label: 'Trophies', 
     value: 'trophies', 
-    desc: `**Current ladder ranking** (King Level Tower trophies).\n\n**Context:**\nHigher trophies generally indicate skill, but don't directly reflect clan contribution. Useful for identifying strong 1v1 players.` 
+    desc: `**Current competitive ranking** from Trophy Road or Path of Legends.\n\n**Context:**\nHigher trophies indicate strong 1v1 mechanics and high King Tower progression, but don't always track with Clan War dedication.` 
   },
   { 
     label: 'Donations', 
     value: 'donations_day', 
-    desc: `**Average daily card donations** to clanmates.\n\n**Calculation:**\nTotal Lifetime Donations ÷ Days in Clan\n\n**Why it matters:**\nGenerosity metric. High donators strengthen clan economy and morale.` 
+    desc: `**Average daily card donations** to clanmates.\n\n**Impact:**\nMeasures generosity and activity within the Clan Chat. High donators are essential for supporting mid-ladder player progression.` 
   },
   { 
     label: 'Name', 
     value: 'name', 
-    desc: `**Alphabetical ordering** (A → Z) by display name.\n\n**Use case:**\nQuickly locating specific members when you know their name.` 
+    desc: `**Alphabetical ordering** by display name.\n\n**Use case:**\nLocating specific members during promotions or Clan War deck checks.` 
   }
 ]
 

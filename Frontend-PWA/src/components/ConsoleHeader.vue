@@ -151,7 +151,7 @@ function formatDescription(text: string) {
             <div class="info-card glassmorphic">
                 <div class="info-header">
                     <h3>Sorting Explanation</h3>
-                    <button class="close-btn" @click="showInfoOverlay = false">
+                    <button class="close-btn" @click="showInfoOverlay = false" aria-label="Close">
                         <Icon name="close" size="20" />
                     </button>
                 </div>
@@ -346,37 +346,41 @@ function formatDescription(text: string) {
 }
 
 .info-card {
-    width: 100%;
+    width: 92%;
     max-width: 480px;
     background: var(--sys-surface-glass);
     border: 1px solid var(--sys-surface-glass-border);
-    border-radius: 24px;
+    border-radius: 28px;
     padding: 24px;
     box-shadow: var(--sys-elevation-4);
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: 80vh;
+    max-height: 85vh;
 }
 
 .info-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .info-header h3 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 850;
+    font-size: 19px;
+    font-weight: 900;
     color: var(--sys-color-primary);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
 }
 
 .info-content {
     font-size: 14px;
     line-height: 1.6;
     color: var(--sys-color-on-surface-variant);
+    overflow-y: auto;
+    padding-right: 8px; /* Space for scrollbar */
+    -webkit-overflow-scrolling: touch;
 }
 
 :deep(.desc-section-title) {

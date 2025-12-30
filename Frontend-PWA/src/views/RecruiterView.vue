@@ -59,27 +59,27 @@ const sortOptions = [
   { 
     label: 'Potential', 
     value: 'score', 
-    desc: `**Predictive recruit quality score** comparing against clan averages.\n\n**Algorithm:**\nRecruits with trophies/donations/level exceeding your clan's median receive bonus points.\n\n**Signal:**\nHigh scores = likely to integrate well and perform above average if recruited.` 
+    desc: `**Predictive quality score** based on Fame potential and account progression.\n\n**Algorithm:**\nCompares the recruit's Trophies, King Tower Level, and Lifetime Donations against your clan's median.\n\n**Signal:**\nRecruits with high potential are more likely to win Duels and earn maximum Medals in the River Race.` 
   },
   { 
     label: 'Trophies', 
     value: 'trophies', 
-    desc: `**Current King Level Tower** ranking.\n\n**Why prioritize:**\nHigher trophies often correlate with game knowledge, skill ceiling, and competitive mindset.` 
+    desc: `**Current rank** on Trophy Road or Path of Legends.\n\n**Why prioritize:**\nHigher trophies often mean a more developed card pool and better understanding of the current Meta.` 
   },
   { 
     label: 'Donations', 
     value: 'donations', 
-    desc: `**Lifetime total donations** from previous clans.\n\n**Interpretation:**\n• High donations: Generous, team-oriented\n• Low donations: Potentially selfish or new player\n\n**Note:** History doesn't guarantee future behavior.` 
+    desc: `**Lifetime card donations** from previous clan history.\n\n**Insight:**\n• **High**: Dedicated team player. Reliable for Clan Chat activity.\n• **Low**: Potentially a solo-focused player or a fresh King Tower level.\n\n**Note:** Past generosity is the best predictor of future Clan support.` 
   },
   { 
     label: 'Recency', 
     value: 'time_found', 
-    desc: `**Discovery timestamp** (newest first).\n\n**Use case:**\nSee latest recruits from most recent tournament scans. Useful for catching fresh talent before competitors.` 
+    desc: `**Discovery timestamp** from the latest tournament scan.\n\n**Use case:**\nIdentifying 'Fresh Talent'. New recruits are often looking for a home immediately after leaving their previous clan.` 
   },
   { 
     label: 'Name', 
     value: 'name', 
-    desc: `**Alphabetical ordering** (A → Z) by recruit display name.\n\n**Use case:**\nLocating specific recruits when tracking across multiple scans.` 
+    desc: `**Alphabetical ordering** by display name.\n\n**Use case:**\nTracking specific players across multiple Headhunter scans.` 
   }
 ]
 
