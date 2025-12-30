@@ -189,8 +189,10 @@ async function handleRequestPermission() {
 
 .notification-section {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 
 .section-header {
