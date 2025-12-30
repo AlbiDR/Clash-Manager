@@ -24,6 +24,49 @@
   src: url('/Clash-Manager/fonts/JetBrainsMono-Bold.woff2') format('woff2');
 }
 
+/* =========================================
+   NATIVE APP GESTURES (Maximum Native Feel)
+   ========================================= */
+
+/* Prevent pull-to-refresh (native apps don't have this) */
+body {
+  overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
+}
+
+/* Prevent text selection globally (more app-like) */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+/* Allow selection for inputs/content areas */
+input,
+textarea,
+[contenteditable],
+.selectable {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+/* Prevent iOS context menus */
+* {
+  -webkit-touch-callout: none;
+}
+
+/* Prevent tap highlight (more native feel) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS momentum scrolling (native feel) */
+.view-container,
+.scrollable {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ============================================================================
    CLASH MANAGER - Neo-Material Design System (Consolidated v6.7)
    ============================================================================ */
