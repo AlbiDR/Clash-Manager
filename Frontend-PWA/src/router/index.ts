@@ -25,17 +25,21 @@ const router = createRouter({
     scrollBehavior(to, from, savedPosition) {
         // 1. Browser Back/Forward: Use browser's saved position
         if (savedPosition) return savedPosition
-        
+
         // 2. Tab Navigation: Restore from our persistent SessionStorage
         const y = getSavedScroll(to.path)
         if (y > 0) return { top: y, behavior: 'instant' } // 'instant' prevents jumpy animation on load
-        
+
         // 3. Default: Top
         return { top: 0 }
     },
     routes: [
         {
             path: '/',
+            redirect: '/leaderboard'
+        },
+        {
+            path: '/leaderboard',
             name: 'leaderboard',
             component: LeaderboardView, // Eager load for better LCP
             meta: { title: 'Leaderboard' }

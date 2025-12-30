@@ -10,7 +10,7 @@ const { dockVisible } = useUiCoordinator()
 const haptics = useHaptics()
 
 const navItems = [
-  { path: '/', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
+  { path: '/leaderboard', name: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
   { path: '/recruiter', name: 'recruiter', label: 'Headhunter', icon: 'recruiter' },
   { path: '/settings', name: 'settings', label: 'Settings', icon: 'settings' }
 ]
