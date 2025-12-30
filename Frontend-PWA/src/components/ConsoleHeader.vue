@@ -59,8 +59,8 @@ function formatDescription(text: string) {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     // Bullet points (• item)
     .replace(/^• (.+)$/gm, '<li class="bullet-item">$1</li>')
-    // Line breaks
-    .replace(/\\n/g, '<br>')
+    // Actual Line breaks (handle both literal \n and encoded ones)
+    .replace(/\n/g, '<br>')
     // Wrap lists in ul
     .replace(/(<li class="bullet-item">.*<\/li>\s*)+/g, '<ul class="desc-list">$&</ul>')
 }
@@ -145,20 +145,31 @@ function formatDescription(text: string) {
         </div>
       </div>
       
-      <!-- Rich Info Overlay -->
-      <Transition name="overlay-fade">
-        <div v-if="showInfoOverlay && activeSortDescription" class="info-overlay" @click.self="showInfoOverlay = false">
-            <div class="info-card glassmorphic">
-                <div class="info-header">
-                    <h3>Sorting Explanation</h3>
-                    <button class="close-btn" @click="showInfoOverlay = false" aria-label="Close">
-                        <Icon name="close" size="20" />
-                    </button>
-                </div>
-                <div class="info-content scrollable-area" v-html="formatDescription(activeSortDescription)"></div>
-            </div>
-        </div>
-      </Transition>
+      <!-- Rich Info Overlay (Integrated Console Expansion) -->
+      <Teleport to="body">
+        <Transition name="console-expand">
+          <div v-if="showInfoOverlay && activeSortDescription" class="info-overlay" @click.self="showInfoOverlay = false">
+              <div class="info-card-expanded glassmorphic">
+                  <div class="expansion-header">
+                      <div class="expansion-title-group">
+                        <Icon name="info" size="18" class="ext-icon" />
+                        <h3>Heuristic Analysis</h3>
+                      </div>
+                      <button class="close-btn-round" @click="showInfoOverlay = false" aria-label="Close">
+                          <Icon name="close" size="20" />
+                      </button>
+                  </div>
+                  
+                  <div class="expansion-content scrollable-area" v-html="formatDescription(activeSortDescription)"></div>
+                  
+                  <div class="expansion-footer">
+                    <div class="swipe-hint"></div>
+                    <span>Tap outside to collapse</span>
+                  </div>
+              </div>
+          </div>
+        </Transition>
+      </Teleport>
       
       <div v-if="$slots.extra" class="header-row extra">
         <slot name="extra"></slot>
@@ -331,102 +342,178 @@ function formatDescription(text: string) {
 }
 .info-dot-inline:hover { transform: translateY(-50%) scale(1.1); opacity: 1; }
 
-/* Info Overlay Styles */
+/* Info Overlay Styles - Expanded Native Feel */
 .info-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 1000;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 2000;
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 0; /* Full screen alignment */
 }
 
-.info-card {
-    width: 92%;
-    max-width: 480px;
+.info-card-expanded {
+    width: 100%;
+    max-width: var(--sys-layout-max-width);
+    height: auto;
+    max-height: 90vh;
     background: var(--sys-surface-glass);
     border: 1px solid var(--sys-surface-glass-border);
-    border-radius: 28px;
+    border-top: none; /* Flow from top */
+    border-radius: 0 0 32px 32px;
     padding: 24px;
+    padding-top: calc(24px + env(safe-area-inset-top));
     box-shadow: var(--sys-elevation-4);
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    max-height: 85vh;
+    gap: 20px;
+    transform-origin: top;
+    position: relative;
+    overflow: hidden;
 }
 
-.info-header {
+.expansion-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
 }
 
-.info-header h3 {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 900;
-    color: var(--sys-color-primary);
-    letter-spacing: -0.02em;
+.expansion-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.info-content {
-    font-size: 14px;
-    line-height: 1.6;
+.ext-icon { color: var(--sys-color-primary); }
+
+.expansion-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 950;
+    color: var(--sys-color-on-surface);
+    letter-spacing: -0.03em;
+}
+
+.expansion-content {
+    font-size: 15px;
+    line-height: 1.7;
     color: var(--sys-color-on-surface-variant);
     overflow-y: auto;
-    padding-right: 8px; /* Space for scrollbar */
+    padding-right: 12px;
     -webkit-overflow-scrolling: touch;
+    flex: 1;
+}
+
+/* Custom Scrollbar for Posh look */
+.expansion-content::-webkit-scrollbar { width: 4px; }
+.expansion-content::-webkit-scrollbar-track { background: transparent; }
+.expansion-content::-webkit-scrollbar-thumb { 
+    background: var(--sys-color-outline-variant); 
+    border-radius: 10px; 
+}
+
+.expansion-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sys-surface-glass-border);
+    flex-shrink: 0;
+}
+
+.swipe-hint {
+    width: 36px;
+    height: 4px;
+    background: var(--sys-color-outline-variant);
+    border-radius: 2px;
+    opacity: 0.4;
+}
+
+.expansion-footer span {
+    font-size: 10px;
+    font-weight: 850;
+    text-transform: uppercase;
+    color: var(--sys-color-outline);
+    letter-spacing: 0.1em;
 }
 
 :deep(.desc-section-title) {
-    font-weight: 850;
-    color: var(--sys-color-on-surface);
+    font-weight: 900;
+    color: var(--sys-color-primary);
     text-transform: uppercase;
     font-size: 11px;
-    letter-spacing: 0.05em;
-    margin-top: 16px;
-    margin-bottom: 8px;
-    opacity: 0.8;
+    letter-spacing: 0.08em;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+:deep(.desc-section-title)::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--sys-color-outline-variant);
+    margin-left: 12px;
+    opacity: 0.3;
 }
 
 :deep(.bullet-item) {
-    margin-left: 12px;
-    padding-left: 4px;
+    margin-left: 4px;
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+:deep(.bullet-item)::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--sys-color-primary);
+    font-weight: 900;
+    opacity: 0.6;
 }
 
 :deep(.desc-list) {
-    margin: 8px 0;
+    margin: 12px 0;
     padding: 0;
     list-style-type: none;
 }
 
 :deep(strong) {
     color: var(--sys-color-on-surface);
-    font-weight: 700;
+    font-weight: 850;
 }
 
-.close-btn {
-    background: var(--sys-color-surface-container-high);
+.close-btn-round {
+    background: var(--sys-color-surface-container-highest);
     border: none;
-    width: 36px; height: 36px;
+    width: 40px; height: 40px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    color: var(--sys-color-outline);
+    color: var(--sys-color-on-surface);
     cursor: pointer;
     transition: 0.2s;
 }
-.close-btn:hover { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); }
+.close-btn-round:active { transform: scale(0.9); }
 
-/* Transitions */
-.overlay-fade-enter-active, .overlay-fade-leave-active { transition: opacity 0.3s ease; }
-.overlay-fade-enter-from, .overlay-fade-leave-to { opacity: 0; }
-.overlay-fade-enter-active .info-card { transition: transform 0.3s var(--sys-motion-spring); }
-.overlay-fade-enter-from .info-card { transform: scale(0.9) translateY(20px); }
+/* Expansion Transition */
+.console-expand-enter-active, .console-expand-leave-active { 
+    transition: opacity 0.4s ease, transform 0.4s var(--sys-motion-spring); 
+}
+.console-expand-enter-from, .console-expand-leave-to { 
+    opacity: 0;
+    transform: translateY(-20px) scaleY(0.95);
+}
+.console-expand-enter-active .info-card-expanded {
+    transition: transform 0.5s var(--sys-motion-spring);
+}
+.console-expand-enter-from .info-card-expanded {
+    transform: translateY(-100%);
+}
 
 .spinner {
   width: 12px; height: 12px;
