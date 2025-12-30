@@ -44,7 +44,7 @@ export default defineConfig({
         name: 'Clash Manager',
         short_name: 'Clash Manager',
         description: 'Advanced analytics and recruitment tool for Clash Royale clans',
-        theme_color: '#6750a4',
+        theme_color: '#0b0e14',
         background_color: '#0b0e14',
         display: 'standalone',
         display_override: ['window-controls-overlay', 'standalone'],
@@ -106,7 +106,23 @@ export default defineConfig({
         },
         launch_handler: {
           client_mode: 'navigate-existing'
-        }
+        },
+        screenshots: [
+          {
+            src: 'screenshot-mobile.png',
+            sizes: '1080x1920',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Clash Manager Mobile Dashboard'
+          },
+          {
+            src: 'screenshot-desktop.png',
+            sizes: '1920x1080',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Clash Manager Desktop Analytics'
+          }
+        ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
