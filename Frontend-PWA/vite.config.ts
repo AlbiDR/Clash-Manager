@@ -130,6 +130,19 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        // 🔒 SECURITY: Force a manifest revision update on every build to trigger WebAPK refresh
+        manifestTransforms: [
+          (manifestEntries) => {
+            const timestamp = new Date().getTime();
+            const manifest = manifestEntries.map((entry) => {
+              if (entry.url === 'manifest.webmanifest' || entry.url === 'index.html') {
+                entry.revision = `${entry.revision || 'v1'}-${timestamp}`;
+              }
+              return entry;
+            });
+            return { manifest, warnings: [] };
+          }
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
