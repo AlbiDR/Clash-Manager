@@ -34,6 +34,22 @@ const showSkeletons = computed(() => isRefreshing.value)
             </div>
         </div>
 
+        <div class="toggle-row" @click="toggle('sortExplanation')">
+            <div class="row-info">
+              <template v-if="showSkeletons">
+                <div class="sk-text-line-m" style="width: 150px;"></div>
+                <div class="sk-text-line-s" style="width: 180px;"></div>
+              </template>
+              <template v-else>
+                <div class="row-label">Analysis Overlay</div>
+                <div class="row-desc">Explain the logic behind sorting heuristics</div>
+              </template>
+            </div>
+            <div class="switch" :class="{ active: modules.sortExplanation, 'skeleton-anim sk-badge-s': showSkeletons }">
+              <div class="handle"></div>
+            </div>
+        </div>
+
         <div class="toggle-row" @click="toggleDemoMode">
             <div class="row-info">
               <template v-if="showSkeletons">

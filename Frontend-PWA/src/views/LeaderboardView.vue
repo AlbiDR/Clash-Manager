@@ -50,27 +50,27 @@ const sortOptions = [
   { 
     label: 'Performance', 
     value: 'score', 
-    desc: `**Clan War performance metric** based on Fame generation, Medal output, and consistency.\n\n**Components:**\n• **War Fame**: Total Fame earned in the current River Race.\n• **Medal Multiplier**: Bonus for high performance in Duel and 1v1 battles.\n• **Participation**: Ratio of used vs available War Decks across tracked weeks.\n\n**Result:** Higher scores indicate reliable 'War Warriors' who maximize Clan Boat progress.` 
+    desc: `**Hybrid ranking metric** combining War contribution, donations, and ladder progress.\n\n**Components:**\n• **War Fame**: Both current and average historical contribution.\n• **Donations**: Average daily card support to clanmates.\n• **Progression**: Current trophies and King Tower influence.\n• **Inactivity Decay**: Scoring drops by 10% for every day of absence beyond the grace period.\n\n**Final:** An all-encompassing value reflecting current status and reliability.` 
   },
   { 
     label: 'Momentum', 
     value: 'trend', 
-    desc: `**Weekly velocity** of Fame and Medal contribution changes.\n\n**Logic:**\nΔ Contribution = Current Week Fame − Previous Week Fame.\n\n**Signal:**\n• **Climbing**: Players peaking for the Coliseum.\n• **Dipping**: Potential burnout or missed War Days.\n• **Stable**: Consistent River Race contributors.` 
+    desc: `**Factual velocity** representing the change in Raw Score since the last server refresh.\n\n**Logic:**\nΔ Score = [Current Snapshot] − [Last Database Snapshot].\n\n**Context:**\nSnapshots occur approximately every 6 hours. Scaling positive values indicate immediate peaking activity, while negative values suggest declining engagement.` 
   },
   { 
     label: 'Trophies', 
     value: 'trophies', 
-    desc: `**Current competitive ranking** from Trophy Road or Path of Legends.\n\n**Context:**\nHigher trophies indicate strong 1v1 mechanics and high King Tower progression, but don't always track with Clan War dedication.` 
+    desc: `**Current competitive ranking** from Trophy Road or Path of Legends.\n\n**Logic:**\nDirect pull from the Supercell API. Reflects 1v1 mechanics and King Tower progression.` 
   },
   { 
     label: 'Donations', 
     value: 'donations_day', 
-    desc: `**Average daily card donations** to clanmates.\n\n**Impact:**\nMeasures generosity and activity within the Clan Chat. High donators are essential for supporting mid-ladder player progression.` 
+    desc: `**Average daily card donations** during the player's tenure.\n\n**Impact:**\nMeasures social generosity. High donators are vital for the Clan's card leveling economy.` 
   },
   { 
     label: 'Name', 
     value: 'name', 
-    desc: `**Alphabetical ordering** by display name.\n\n**Use case:**\nLocating specific members during promotions or Clan War deck checks.` 
+    desc: `**Alphabetical ordering** by display name.` 
   }
 ]
 
