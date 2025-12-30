@@ -352,6 +352,7 @@ function formatDescription(text: string) {
     z-index: 2000;
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     padding: 16px; 
     padding-top: calc(16px + env(safe-area-inset-top));
 }
