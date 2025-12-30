@@ -24,7 +24,7 @@ function getWebAppData(forceRefresh) {
 
     if (payloadStr) {
       console.log("🌐 API Request: Serving from cache.");
-      return payloadStr; 
+      return payloadStr;
     }
 
     console.log(forceRefresh ? "🌐 API Request: Force-refreshing payload." : "🌐 API Request: Cache miss.");
@@ -61,7 +61,7 @@ function markRecruitsAsInvitedBulk(ids) {
 
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const lastRow = sheet.getLastRow();
-      
+
       const idsSet = new Set(ids.map(id => '#' + id));
       let sheetUpdates = 0;
 
@@ -75,15 +75,12 @@ function markRecruitsAsInvitedBulk(ids) {
         const invitedRange = sheet.getRange(startRow, invitedColIdx, numRows, 1);
         const invitedValues = invitedRange.getValues();
 
-        const tagMap = new Map();
-        tagValues.forEach((row, idx) => {
-          if (row[0]) tagMap.set(row[0].toString(), idx);
-        });
+        const tagMap = new Map(tagValues.map((row, idx) => row[0] ? [row[0].toString(), idx] : null).filter(Boolean));
 
         idsSet.forEach(tag => {
-          if (tagMap.has(tag)) {
-            const idx = tagMap.get(tag);
-            invitedValues[idx][0] = true; 
+          const idx = tagMap.get(tag);
+          if (idx !== undefined) {
+            invitedValues[idx][0] = true;
             sheetUpdates++;
           }
         });
@@ -98,49 +95,40 @@ function markRecruitsAsInvitedBulk(ids) {
       // indefinitely if the main Recruiter task stops running.
       let blUpdates = 0;
       try {
-          const PROP_KEY = 'HH_BLACKLIST';
-          const blacklist = Utils.Props.getChunked(PROP_KEY, {});
-          const now = Date.now();
-          const dayMs = 24 * 60 * 60 * 1000;
-          const expiry = now + (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
-          
-          // A. Prune Old
-          const cleanedBlacklist = {};
-          let pruneCount = 0;
-          
-          Object.keys(blacklist).forEach(k => {
-             const item = blacklist[k];
-             // Safety check: Ensure item has expiry structure
-             if (item && item.e && item.e > now) {
-               cleanedBlacklist[k] = item;
-             } else {
-               pruneCount++;
-             }
-          });
+        const PROP_KEY = 'HH_BLACKLIST';
+        const blacklist = Utils.Props.getChunked(PROP_KEY, {});
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        const expiry = now + (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
 
-          if (pruneCount > 0) {
-             console.log(`🧹 Self-Healing: Pruned ${pruneCount} expired blacklist entries during write.`);
-             blUpdates++; // Mark dirty
-          }
+        // A. Prune Old
+        const entries = Object.entries(blacklist).filter(([k, item]) => item?.e > now);
+        const pruneCount = Object.keys(blacklist).length - entries.length;
+        const cleanedBlacklist = Object.fromEntries(entries);
 
-          // B. Add New
-          idsSet.forEach(tag => {
-              const existing = cleanedBlacklist[tag];
-              if (!existing) blUpdates++;
-              
-              cleanedBlacklist[tag] = { 
-                e: expiry, 
-                s: existing ? existing.s : 0 
-              };
-          });
-          
-          // Save back only if changed or pruned
-          if (blUpdates > 0 || pruneCount > 0) {
-             Utils.Props.setChunked(PROP_KEY, cleanedBlacklist);
-          }
+        if (pruneCount > 0) {
+          console.log(`🧹 Self-Healing: Pruned ${pruneCount} expired entries.`);
+          blUpdates++;
+        }
+
+        // B. Add New
+        idsSet.forEach(tag => {
+          const existing = cleanedBlacklist[tag];
+          if (!existing) blUpdates++;
+
+          cleanedBlacklist[tag] = {
+            e: expiry,
+            s: existing ? existing.s : 0
+          };
+        });
+
+        // Save back only if changed or pruned
+        if (blUpdates > 0 || pruneCount > 0) {
+          Utils.Props.setChunked(PROP_KEY, cleanedBlacklist);
+        }
 
       } catch (blErr) {
-          console.warn("⚠️ Blacklist sync warning: " + blErr.message);
+        console.warn("⚠️ Blacklist sync warning: " + blErr.message);
       }
 
       // 3. FLUSH & REGENERATE
@@ -185,7 +173,7 @@ function refreshWebPayload() {
 
       Utils.CacheHandler.putLarge(CONFIG.SYSTEM.JSON_STORE_KEY, payloadStr, 21600);
       Utils.Props.set('LAST_PAYLOAD_TIMESTAMP', data.timestamp);
-      
+
       console.log(`🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`);
 
       return payloadStr;
@@ -225,14 +213,10 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
   const blacklistSet = new Set();
   if (isHeadhunter) {
     try {
-        const raw = Utils.Props.getChunked('HH_BLACKLIST', {});
-        const now = Date.now();
-        Object.keys(raw).forEach(tag => {
-            if (raw[tag].e > now) blacklistSet.add(tag);
-        });
-    } catch(e) { 
-        console.warn("Blacklist passive check failed:", e); 
-    }
+      const raw = Utils.Props.getChunked('HH_BLACKLIST', {});
+      const now = Date.now();
+      Object.entries(raw).filter(([_, v]) => v.e > now).forEach(([tag]) => blacklistSet.add(tag));
+    } catch (e) { console.warn("Blacklist check failed:", e); }
   }
 
   const sanitizeNum = (v) => {
@@ -248,7 +232,7 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
 
       // 🛡️ PASSIVE HIDING: Check Blacklist Property
       if (isHeadhunter && blacklistSet.has(tagRaw)) {
-          return null;
+        return null;
       }
 
       const id = tagRaw.replace('#', '').trim();
@@ -258,9 +242,9 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
       if (isHeadhunter) {
         const rawInvited = r[SCHEMA.INVITED];
         const isActuallyInvited = (
-           rawInvited === true || 
-           String(rawInvited).toUpperCase() === 'TRUE' ||
-           String(rawInvited) === '1'
+          rawInvited === true ||
+          String(rawInvited).toUpperCase() === 'TRUE' ||
+          String(rawInvited) === '1'
         );
         if (isActuallyInvited) return null;
       }
@@ -274,7 +258,7 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         const ago = (fd instanceof Date && !isNaN(fd.getTime())) ? fd.toISOString() : '';
         const don = sanitizeNum(r[SCHEMA.DONATIONS]);
         const war = sanitizeNum(r[SCHEMA.WAR_WINS]);
-        const cards = sanitizeNum(r[SCHEMA.CARDS]); 
+        const cards = sanitizeNum(r[SCHEMA.CARDS]);
 
         return [id, name, trophies, score, don, war, ago, cards];
 
@@ -301,8 +285,8 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
         const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || '-');
         const hist = sanitizeStr(r[SCHEMA.HISTORY]);
-        const trend = sanitizeNum(r[SCHEMA.TREND]); 
-        const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]); 
+        const trend = sanitizeNum(r[SCHEMA.TREND]);
+        const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
 
         return [id, name, trophies, score, role, days, avg, seen, rateDisplay, hist, trend, raw];
       }
