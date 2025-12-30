@@ -41,9 +41,9 @@ export default defineConfig({
       ],
       manifest: {
         id: '/Clash-Manager/',
-        name: 'Clash Manager',
+        name: 'Clash Manager: Clan Manager for Clash Royale',
         short_name: 'Clash Manager',
-        description: 'Advanced analytics and recruitment tool for Clash Royale clans',
+        description: 'Advanced analytics, recruitment and clan management tool for Clash Royale',
         theme_color: '#0b0e14',
         background_color: '#0b0e14',
         display: 'standalone',
@@ -92,6 +92,20 @@ export default defineConfig({
             description: 'Browse potential recruits',
             url: '/Clash-Manager/index.html#/recruiter',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
+          },
+          {
+            name: 'Settings',
+            short_name: 'Settings',
+            description: 'App configuration and GAS URL',
+            url: '/Clash-Manager/index.html#/settings',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
+          },
+          {
+            name: 'Clash Royale',
+            short_name: 'CR',
+            description: 'Open Clash Royale Official Site',
+            url: 'https://clashroyale.com',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
         screenshots: [
@@ -134,6 +148,10 @@ export default defineConfig({
           {
             protocol: 'web+clashroyale',
             url: '/Clash-Manager/?cr=%s'
+          },
+          {
+            protocol: 'web+cr',
+            url: '/Clash-Manager/?cr=%s'
           }
         ],
         related_applications: [
@@ -141,6 +159,15 @@ export default defineConfig({
             platform: 'play',
             url: 'https://play.google.com/store/apps/details?id=com.albidr.clashmanager',
             id: 'com.albidr.clashmanager'
+          },
+          {
+            platform: 'play',
+            url: 'https://play.google.com/store/apps/details?id=com.supercell.clashroyale',
+            id: 'com.supercell.clashroyale'
+          },
+          {
+            platform: 'itunes',
+            url: 'https://apps.apple.com/app/clash-royale/id1053012308'
           },
           {
             platform: 'webapp',
@@ -168,7 +195,9 @@ export default defineConfig({
         },
         scope_extensions: [
           { origin: 'https://albidr.github.io' },
-          { origin: 'https://clashroyale.com' }
+          { origin: 'https://clashroyale.com' },
+          { origin: 'https://*.clashroyale.com' },
+          { origin: 'https://supercell.com' }
         ],
         share_target: {
           action: '/Clash-Manager/share',
