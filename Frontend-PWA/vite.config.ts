@@ -47,12 +47,11 @@ export default defineConfig({
         theme_color: '#0b0e14',
         background_color: '#0b0e14',
         display: 'standalone',
-        display_override: ['window-controls-overlay', 'standalone'],
+        display_override: ['window-controls-overlay', 'standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'portrait-primary',
         scope: '/Clash-Manager/',
         start_url: '/Clash-Manager/index.html',
         categories: ['productivity', 'utilities', 'games'],
-        prefer_related_applications: false,
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -85,28 +84,16 @@ export default defineConfig({
             short_name: 'Leaderboard',
             description: 'View clan member rankings',
             url: '/Clash-Manager/index.html#/leaderboard',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
             name: 'Recruits',
             short_name: 'Recruits',
             description: 'Browse potential recruits',
             url: '/Clash-Manager/index.html#/recruiter',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           }
         ],
-        share_target: {
-          action: '/Clash-Manager/share',
-          method: 'GET',
-          params: {
-            title: 'title',
-            text: 'text',
-            url: 'url'
-          }
-        },
-        launch_handler: {
-          client_mode: 'navigate-existing'
-        },
         screenshots: [
           {
             src: 'screenshot-mobile.png',
@@ -123,7 +110,79 @@ export default defineConfig({
             label: 'Clash Manager Desktop Analytics'
           }
         ],
-        iarc_rating_id: 'e58c704a-579c-4f01-831e-45814545d625', // Placeholder for store requirements
+        file_handlers: [
+          {
+            action: '/Clash-Manager/',
+            accept: {
+              'application/json': ['.clashmgr', '.json']
+            },
+            icons: [
+              {
+                src: 'pwa-192x192.png',
+                sizes: '192x192',
+                type: 'image/png'
+              }
+            ],
+            launch_type: 'single-client'
+          }
+        ],
+        protocol_handlers: [
+          {
+            protocol: 'web+cm',
+            url: '/Clash-Manager/?p=%s'
+          },
+          {
+            protocol: 'web+clashroyale',
+            url: '/Clash-Manager/?cr=%s'
+          }
+        ],
+        related_applications: [
+          {
+            platform: 'play',
+            url: 'https://play.google.com/store/apps/details?id=com.albidr.clashmanager',
+            id: 'com.albidr.clashmanager'
+          },
+          {
+            platform: 'webapp',
+            url: 'https://albidr.github.io/Clash-Manager/manifest.webmanifest'
+          }
+        ],
+        widgets: [
+          {
+            name: 'Clan Status',
+            short_name: 'Status',
+            description: 'Quick view of clan performance',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
+            ms_widget: {
+              template: 'widget-template.json',
+              data: 'widget-data.json',
+              type: 'text/json'
+            }
+          }
+        ],
+        edge_side_panel: {
+          preferred_width: 400
+        },
+        note_taking: {
+          new_note_url: '/Clash-Manager/index.html#/notes'
+        },
+        scope_extensions: [
+          { origin: 'https://albidr.github.io' },
+          { origin: 'https://clashroyale.com' }
+        ],
+        share_target: {
+          action: '/Clash-Manager/share',
+          method: 'GET',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url'
+          }
+        },
+        launch_handler: {
+          client_mode: 'navigate-existing'
+        },
+        iarc_rating_id: 'e58c704a-579c-4f01-831e-45814545d625',
         lang: 'en-US',
         dir: 'ltr',
         prefer_related_applications: false
