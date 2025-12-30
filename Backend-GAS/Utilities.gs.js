@@ -354,10 +354,7 @@ const Utils = {
     }
   },
 
-  formatDate: function (date) {
-    if (!date || isNaN(date.getTime())) return "";
-    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, 'yyyy-MM-dd');
-  },
+  formatDate: (date) => (!date || isNaN(date.getTime())) ? "" : Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, 'yyyy-MM-dd'),
 
   parseRoyaleApiDate: function (dateStr) {
     if (!dateStr) return new Date();
@@ -385,9 +382,9 @@ const Utils = {
     return `${yearShort}W${weekNum.toString().padStart(2, '0')}`;
   },
 
-  parseWarHistory: function (histStr) {
+  parseWarHistory: (histStr) => {
+    if (!histStr || histStr === "-" || typeof histStr !== 'string') return new Map();
     const historyMap = new Map();
-    if (!histStr || histStr === "-" || typeof histStr !== 'string') return historyMap;
     histStr.split(' | ').forEach(entry => {
       const parts = entry.trim().split(' ');
       if (parts.length === 2) historyMap.set(parts[1], Number(parts[0]));
@@ -395,7 +392,7 @@ const Utils = {
     return historyMap;
   },
 
-  shuffleArray: function (array) {
+  shuffleArray: (array) => {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];

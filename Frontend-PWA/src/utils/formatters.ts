@@ -10,45 +10,24 @@ export function getScoreTone(score: number | undefined): string {
     return 'tone-low'
 }
 
-export function formatTimeAgo(dateStr: string | null | undefined): string {
+const formatTime = (dateStr: string | null | undefined, shortMode: boolean): string => {
     if (!dateStr) return '-'
-    
-    // Check for GAS/RoyaleAPI specific "Just now" or pre-formatted strings if needed
-    if (dateStr === 'Just now') return dateStr
+    if (!shortMode && dateStr === 'Just now') return dateStr
 
     const ts = new Date(dateStr).getTime()
     if (isNaN(ts)) return '-'
 
-    const ms = Date.now() - ts
-    const mins = Math.floor(ms / 60000)
+    const units = [{ ms: 86400000, s: 'd', l: 'd ago' }, { ms: 3600000, s: 'h', l: 'h ago' }, { ms: 60000, s: 'm', l: 'm ago' }]
+    const elapsed = Date.now() - ts
+    const match = units.find(u => elapsed >= u.ms)
 
-    if (mins < 1) return 'Just now'
-    if (mins < 60) return `${mins}m ago`
-    
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}h ago`
-    
-    const days = Math.floor(hours / 24)
-    return `${days}d ago`
+    if (!match) return shortMode ? 'New' : 'Just now'
+    const val = Math.floor(elapsed / match.ms)
+    return shortMode ? `${val}${match.s}` : `${val}${match.l}`
 }
 
-export function formatTimeAgoShort(dateStr: string | null | undefined): string {
-    if (!dateStr) return '-'
-    const ts = new Date(dateStr).getTime()
-    if (isNaN(ts)) return '-'
-
-    const ms = Date.now() - ts
-    const mins = Math.floor(ms / 60000)
-
-    if (mins < 1) return 'New'
-    if (mins < 60) return `${mins}m`
-    
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}h`
-    
-    const days = Math.floor(hours / 24)
-    return `${days}d`
-}
+export const formatTimeAgo = (dateStr: string | null | undefined): string => formatTime(dateStr, false)
+export const formatTimeAgoShort = (dateStr: string | null | undefined): string => formatTime(dateStr, true)
 
 export function parseTimeAgoValue(val: string | null | undefined): number {
     if (!val || val === '-' || val === 'Just now') return 0
@@ -56,12 +35,12 @@ export function parseTimeAgoValue(val: string | null | undefined): number {
     if (!match) return 99999999
     const num = parseInt(match[1])
     const unit = match[2]
-    switch(unit) {
-      case 'm': return num
-      case 'h': return num * 60
-      case 'd': return num * 1440
-      case 'y': return num * 525600
-      default: return num
+    switch (unit) {
+        case 'm': return num
+        case 'h': return num * 60
+        case 'd': return num * 1440
+        case 'y': return num * 525600
+        default: return num
     }
 }
 

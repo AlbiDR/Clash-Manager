@@ -32,20 +32,20 @@ function updateLeaderboard() {
     const lastRow = lbSheet.getLastRow();
     const maxCols = lbSheet.getMaxColumns();
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-    
+
     // Ensure we have enough data to read
     if (lastRow >= startRow && maxCols > 2) {
-      
+
       const colsToRead = Math.min(20, maxCols - 1);
-      
+
       const oldData = lbSheet.getRange(
-        startRow, 
-        2, 
-        lastRow - startRow + 1, 
+        startRow,
+        2,
+        lastRow - startRow + 1,
         colsToRead
       ).getValues();
-      
-      const tagIdx = L.TAG; 
+
+      const tagIdx = L.TAG;
       const scoreIdx = L.RAW_SCORE; // ✨ CHANGED BACK: Tracking Raw Score (Index 11)
 
       oldData.forEach(row => {
@@ -53,22 +53,22 @@ function updateLeaderboard() {
         if (row.length > scoreIdx) {
           const rawTag = String(row[tagIdx]);
           const score = row[scoreIdx];
-          
+
           if (rawTag && rawTag.startsWith('#')) {
             const cleanKey = rawTag.replace('#', '').trim().toLowerCase();
             const scoreVal = Number(score);
-            
+
             if (!isNaN(scoreVal)) {
               previousScores.set(cleanKey, scoreVal);
             }
           }
         }
       });
-      
+
       console.log(`📉 Snapshot: Loaded ${previousScores.size} previous scores.`);
     }
-  } catch (e) { 
-    console.warn("⚠️ Snapshot Warning (Trend data may be incomplete): " + e.message); 
+  } catch (e) {
+    console.warn("⚠️ Snapshot Warning (Trend data may be incomplete): " + e.message);
   }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
@@ -172,7 +172,7 @@ function updateLeaderboard() {
 
       const h = memberDbData.get(tag);
       if (date < h.firstSeen) h.firstSeen = date;
-      
+
       const currentMax = h.weeklyMax.get(weekId) || 0;
       if (donGiven > currentMax) h.weeklyMax.set(weekId, donGiven);
     });
@@ -251,7 +251,7 @@ function updateLeaderboard() {
   rawMemberResults.forEach(r => {
     // Normalize Performance Score (0-100)
     const normalizedPerf = maxPerfScore > 0 ? Math.round((r.scores.perf / maxPerfScore) * 100) : 0;
-    
+
     // 📈 CALCULATE TREND (RAW SCORE DELTA)
     let trend = 0;
     if (previousScores.has(r.cleanKey)) {
@@ -284,7 +284,7 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
-  
+
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
   const HEADERS = ['Tag', 'Name', 'Role', 'Trophies', 'Days Tracked', 'Received Weekly', 'Average Daily Donations', 'Total Donations', 'Last Seen', 'War Rate', 'War History', 'Raw Score', 'Performance Score', 'Trend'];
@@ -303,11 +303,11 @@ function updateLeaderboard() {
       .setGradientMaxpointWithValue('#6aa84f', SpreadsheetApp.InterpolationType.NUMBER, "100")
       .setRanges([lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, scoreColIndex, rows.length, 1)])
       .build();
-    
+
     // Format Trend Column (Red/Green text in Sheet)
     const trendColIndex = 2 + L.TREND;
     const trendRange = lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, trendColIndex, rows.length, 1);
-    
+
     const trendPos = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThan(0)
       .setFontColor("#2e7d32").setBold(true).setRanges([trendRange]).build();
@@ -317,7 +317,7 @@ function updateLeaderboard() {
     const trendNeu = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberEqualTo(0)
       .setFontColor("#cccccc").setRanges([trendRange]).build();
-      
+
     lbSheet.setConditionalFormatRules([rule, trendPos, trendNeg, trendNeu]);
   }
 
@@ -329,17 +329,9 @@ function updateLeaderboard() {
 
 function timeAgo(date) {
   if (!date) return "-";
-  const seconds = Math.floor((new Date() - date) / 1000);
-  let interval = seconds / 31536000;
-  if (interval > 1) return Math.floor(interval) + "y ago";
-  interval = seconds / 2592000;
-  if (interval > 1) return Math.floor(interval) + "mo ago";
-  interval = seconds / 86400;
-  if (interval > 1) return Math.floor(interval) + "d ago";
-  interval = seconds / 3600;
-  if (interval > 1) return Math.floor(interval) + "h ago";
-  interval = seconds / 60;
-  if (interval > 1) return Math.floor(interval) + "m ago";
-  return "Just now";
+  const units = [{ s: 31536000, t: 'y' }, { s: 2592000, t: 'mo' }, { s: 86400, t: 'd' }, { s: 3600, t: 'h' }, { s: 60, t: 'm' }];
+  const sec = Math.floor((new Date() - date) / 1000);
+  const match = units.find(u => sec >= u.s);
+  return match ? `${Math.floor(sec / match.s)}${match.t} ago` : "Just now";
 }
 
