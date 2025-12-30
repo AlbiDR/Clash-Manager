@@ -13,6 +13,7 @@ import { useApiState } from './composables/useApiState'
 import { useClanData } from './composables/useClanData'
 import { useTheme } from './composables/useTheme'
 import { useWakeLock } from './composables/useWakeLock'
+import { usePwaFeatures } from './composables/usePwaFeatures'
 import { registerSW } from 'virtual:pwa-register'
 
 // 🔄 PWA Update Logic: Automatically refresh when new content is available
@@ -86,6 +87,12 @@ async function bootstrap() {
 
                 const apiState = useApiState(); apiState.init();
                 const wakeLock = useWakeLock(); wakeLock.init();
+
+                // ⚡ STATE OF THE ART PWA: Init background features
+                const pwa = usePwaFeatures();
+                pwa.initMessageListener();
+                pwa.initPush();
+                pwa.initPeriodicSync();
 
                 // ⚡ Lazy Load AutoAnimate
                 try {
