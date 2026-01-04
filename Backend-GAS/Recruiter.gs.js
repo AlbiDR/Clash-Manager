@@ -178,7 +178,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   const lotteryPool = Array.from(uniqueTourneys.values()).sort((a, b) => (b.capacity || 0) - (a.capacity || 0)).slice(0, 800);
   Utils.shuffleArray(lotteryPool);
-  const tourneyTags = lotteryPool.slice(0, 150).map(t => t.tag);
+  const tourneyTags = lotteryPool.slice(0, 300).map(t => t.tag);
 
   console.log(`📡 Discovery: Deep-scanning ${tourneyTags.length} selected tournaments...`);
 
@@ -202,7 +202,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   const candidatePool = Array.from(uniqueCandidates.values()).sort((a, b) => (b.trophies || 0) - (a.trophies || 0)).slice(0, 200);
   Utils.shuffleArray(candidatePool);
-  const tagsToFetch = candidatePool.slice(0, 100).map(p => p.tag);
+  const tagsToFetch = candidatePool.slice(0, 250).map(p => p.tag);
 
   if (tagsToFetch.length === 0) return [];
   console.log(`👥 Filtering: Retrieving full profiles for ${tagsToFetch.length} final candidates...`);
