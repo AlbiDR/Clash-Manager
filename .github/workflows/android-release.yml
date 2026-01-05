@@ -56,13 +56,9 @@ jobs:
           
           cat <<EOF > ~/.bubblewrap/config.json
           {
-            "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${ANDROID_SDK_ROOT}"
+            "jdkPath": "${JAVA_HOME}"
           }
           EOF
-          
-          # Explicitly accept licenses just in case
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
           yes | bubblewrap build --skipPwaValidation
         env:
