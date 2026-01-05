@@ -1,55 +1,53 @@
 {
-    "packageId": "com.albidr.clashmanager",
-    "host": "albidr.github.io",
-    "name": "Clash Manager: Clan Manager for Clash Royale",
-    "launcherName": "Clash Manager",
-    "display": "standalone",
-    "themeColor": "#0B0E14",
-    "navigationColor": "#0B0E14",
-    "navigationColorDark": "#0B0E14",
-    "navigationDividerColor": "#0B0E14",
-    "navigationDividerColorDark": "#0B0E14",
-    "backgroundColor": "#0B0E14",
-    "enableNotifications": true,
-    "startUrl": "/Clash-Manager/index.html#/leaderboard",
-    "webManifestUrl": "https://albidr.github.io/Clash-Manager/manifest.webmanifest",
-    "maskableIconUrl": "https://albidr.github.io/Clash-Manager/maskable-icon-512x512.png",
-    "splashScreenFadeOutDuration": 300,
-    "shortcuts": [
-        {
-            "name": "Leaderboard",
-            "short_name": "Leaderboard",
-            "url": "https://albidr.github.io/Clash-Manager/index.html#/leaderboard",
-            "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png",
-            "chosenIconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png"
-        },
-        {
-            "name": "Headhunter",
-            "short_name": "Headhunter",
-            "url": "https://albidr.github.io/Clash-Manager/index.html#/recruiter",
-            "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png",
-            "chosenIconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png"
-        }
-    ],
-    "generatorApp": "bubblewrap-cli",
-    "appVersionCode": 1,
-    "appVersionName": "6.2.1",
-    "fallbackType": "customtabs",
-    "features": {
-        "locationDelegation": true,
-        "playBilling": false
+  "packageId": "com.albidr.clashmanager",
+  "host": "albidr.github.io",
+  "name": "Clash Manager: Clan Manager for Clash Royale",
+  "launcherName": "Clash Manager",
+  "display": "standalone",
+  "themeColor": "#0B0E14",
+  "navigationColor": "#0B0E14",
+  "navigationColorDark": "#0B0E14",
+  "navigationDividerColor": "#0B0E14",
+  "navigationDividerColorDark": "#0B0E14",
+  "backgroundColor": "#0B0E14",
+  "enableNotifications": true,
+  "startUrl": "/Clash-Manager/index.html#/leaderboard",
+  "webManifestUrl": "https://albidr.github.io/Clash-Manager/manifest.webmanifest",
+  "maskableIconUrl": "https://albidr.github.io/Clash-Manager/maskable-icon-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "shortcuts": [
+    {
+      "name": "Leaderboard",
+      "short_name": "Leaderboard",
+      "url": "https://albidr.github.io/Clash-Manager/index.html#/leaderboard",
+      "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png"
     },
-    "alphaNumericId": "clashmanager",
-    "intentFilters": [
-        {
-            "action": "android.intent.action.VIEW",
-            "scheme": "https",
-            "host": "albidr.github.io",
-            "pathPrefix": "/Clash-Manager/"
-        }
-    ],
-    "signingKey": {
-        "path": "./signing.keystore",
-        "alias": "clash_manager_release"
+    {
+      "name": "Headhunter",
+      "short_name": "Headhunter",
+      "url": "https://albidr.github.io/Clash-Manager/index.html#/recruiter",
+      "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png"
     }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "appVersionCode": 1,
+  "appVersionName": "6.2.1",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": true,
+    "playBilling": false
+  },
+  "alphaNumericId": "clashmanager",
+  "intentFilters": [
+    {
+      "action": "android.intent.action.VIEW",
+      "scheme": "https",
+      "host": "albidr.github.io",
+      "pathPrefix": "/Clash-Manager/"
+    }
+  ],
+  "signingKey": {
+    "path": "./signing.keystore",
+    "alias": "clash_manager_release"
+  }
 }
