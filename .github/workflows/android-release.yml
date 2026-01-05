@@ -62,7 +62,7 @@ jobs:
           
           yes | bubblewrap doctor
           
-          bubblewrap build --skipPwaValidation
+          yes | bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
