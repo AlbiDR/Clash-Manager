@@ -60,9 +60,22 @@ jobs:
           }
           EOF
           
-          yes | bubblewrap doctor
+          echo "Setting up Android SDK..."
+          echo "ANDROID_HOME: ${ANDROID_HOME}"
           
-          yes | bubblewrap build --skipPwaValidation
+          # Manually accept licenses using the system SDK manager to avoid Bubblewrap doing it
+          # We use '|| true' because sometimes it returns non-zero even on success if pipes close early
+          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          
+          mkdir -p ~/.bubblewrap
+          cat <<EOF > ~/.bubblewrap/config.json
+          {
+            "jdkPath": "${JAVA_HOME}",
+            "androidSdkPath": "${ANDROID_HOME}"
+          }
+          EOF
+          
+          bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
