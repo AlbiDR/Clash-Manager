@@ -56,11 +56,11 @@ jobs:
           cat <<EOF > ~/.bubblewrap/config.json
           {
             "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "/usr/local/lib/android/sdk"
+            "androidSdkPath": "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           }
           EOF
           
-          bubblewrap build --skipPwaValidation
+          yes n | bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
