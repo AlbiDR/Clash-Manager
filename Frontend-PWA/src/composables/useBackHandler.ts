@@ -1,5 +1,3 @@
-import { onMounted, onUnmounted } from 'vue'
-
 /**
  * useBackHandler
  * 
@@ -14,7 +12,7 @@ export function useBackHandler(onClose: () => void) {
     // Unique ID for this history state to identify our own push
     const stateId = Date.now().toString()
 
-    function handlePopState(event: PopStateEvent) {
+    function handlePopState() {
         // If we receive a popstate, it means the user pressed back (or forward)
         // Check if we are "open".
         // Actually, the simpler pattern is:
