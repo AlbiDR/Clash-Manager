@@ -35,7 +35,7 @@ jobs:
         run: |
           cd Frontend-PWA
           # Decode the base64 keystore secret to the path defined in twa-manifest.json
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > clash-manager.keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > signing.keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
