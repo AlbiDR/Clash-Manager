@@ -20,13 +20,15 @@
             "name": "Leaderboard",
             "short_name": "Leaderboard",
             "url": "https://albidr.github.io/Clash-Manager/index.html#/leaderboard",
-            "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-192x192.png"
+            "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png",
+            "chosenIconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png"
         },
         {
             "name": "Headhunter",
             "short_name": "Headhunter",
             "url": "https://albidr.github.io/Clash-Manager/index.html#/recruiter",
-            "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-192x192.png"
+            "iconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png",
+            "chosenIconUrl": "https://albidr.github.io/Clash-Manager/pwa-512x512.png"
         }
     ],
     "generatorApp": "bubblewrap-cli",
