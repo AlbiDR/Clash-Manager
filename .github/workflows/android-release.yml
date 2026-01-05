@@ -51,18 +51,23 @@ jobs:
 
       - name: Build APK/AAB
         run: |
-          echo "🔧 Setting up Android SDK..."
+          echo "🔧 Debugging Environment..."
+          echo "ANDROID_HOME: ${ANDROID_HOME}"
+          echo "JAVA_HOME: ${JAVA_HOME}"
 
-          # Accept licenses and install specific build tools non-interactively
-          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
+          # 1. Install ESSENTIAL SDK Components
+          # 'platform-tools' is required for validation. 'cmdline-tools' is required for operation.
+          echo "⬇️ Installing SDK Components..."
+          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platform-tools" "cmdline-tools;latest" "build-tools;34.0.0" "platforms;android-34" > /dev/null
 
-          # Install Build Tools 34.0.0 and Platform 34 (Android 14) explicitly to match standard Bubblewrap defaults
-          # This prevents Bubblewrap from asking to install them
-          echo "⬇️ Installing Build Tools & Platforms..."
-          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" > /dev/null
+          # 2. Verify Installation
+          echo "📂 Listing Installed SDK Packages:"
+          ls -F ${ANDROID_HOME}/build-tools/ || echo "No build-tools found"
+          ls -F ${ANDROID_HOME}/platforms/ || echo "No platforms found"
+          ls -F ${ANDROID_HOME}/platform-tools/ || echo "No platform-tools found"
 
-          # Configure Bubblewrap non-interactively
-          echo "⚙️ Configuring Bubblewrap..."
+          # 3. Configure Bubblewrap
+          # We manually create the config to point to the existing system SDK
           mkdir -p ~/.bubblewrap
           cat <<EOF > ~/.bubblewrap/config.json
           {
@@ -73,9 +78,15 @@ jobs:
 
           cd Frontend-PWA
 
+          # 4. Doctor Check (Ensure environment is valid)
+          echo "👨‍⚕️ Running Bubblewrap Doctor..."
+          bubblewrap doctor
+
+          # 5. Build
           echo "📦 Building Android App..."
-          # Run build. We pipe 'yes' just in case, but the pre-installation above should make it unnecessary.
-          yes | bubblewrap build --skipPwaValidation
+          # Removing 'yes |' to verify if prompts are truly eliminated. 
+          # If prompts persist, build will fail, but we will see the prompt in logs.
+          bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
