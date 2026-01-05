@@ -2,7 +2,7 @@ name: Android Release
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "Stable" ]
   workflow_dispatch:
 
 jobs:
