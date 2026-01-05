@@ -52,6 +52,7 @@ jobs:
         run: |
           cd Frontend-PWA
           # Using environment variables BUBBLEWRAP_... makes this non-interactive
+          bubblewrap doctor --init --jdkPath "${JAVA_HOME}" --androidSdkPath "/usr/local/lib/android/sdk"
           bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
