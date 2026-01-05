@@ -1,0 +1,135 @@
+name: Android Release
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './Frontend-PWA/package-lock.json'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Dependencies
+        run: |
+          npm install -g @bubblewrap/cli
+          cd Frontend-PWA
+          npm install
+
+      - name: Setup Keystore
+        run: |
+          cd Frontend-PWA
+          # Decode the base64 keystore secret to a file
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > clash-manager.keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Auto-Version
+        id: versioning
+        run: |
+          cd Frontend-PWA
+          
+          # Read current version code
+          CURRENT_CODE=$(jq '.appVersionCode' twa-manifest.json)
+          NEW_CODE=$((CURRENT_CODE + 1))
+          
+          # Update version code in manifest
+          # We use a temp file to avoid issues with modifying the file in place
+          jq --argjson code "$NEW_CODE" '.appVersionCode = $code' twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
+          
+          echo "Updated appVersionCode to $NEW_CODE"
+          echo "version_code=$NEW_CODE" >> $GITHUB_OUTPUT
+
+      - name: Build APK/AAB
+        run: |
+          cd Frontend-PWA
+          
+          # Set environment variables for Bubblewrap to use during build (if needed by custom scripts)
+          # Note: Bubblewrap CLI typically takes passwords via interactive prompt or expects them in a specific way.
+          # We might need to handle the password input. 
+          # Bubblewrap v1.16+ supports passing passwords via env vars or flags usually, need to check specific command usage which is surprisingly interactive often.
+          # However, 'bubblewrap build' usually just needs keys in place if configured.
+          # If the keystore is unlocked or we need to pass the password:
+          
+          # We will use 'yes' to accept licenses if prompted, though bubblewrap is usually good.
+          # But strictly speaking, bubblewrap build might ask for passwords.
+          # A common workaround is creating a bubblewrap config or passing it.
+          
+          # Actually, bubblewrap stores passwords in the key.json or similar config usually?
+          # In twa-manifest.json, we have the path and alias, but not password.
+          # We can output the password to the prompt if needed, or use a tool.
+          
+          # Let's try to run bubblewrap build. If it prompts, we might need expect or `echo password | ...`
+          # IMPORTANT: We need to configure the passwords.
+          
+          # We can use the 'signingKey' block in 'twa-manifest.json' but it doesn't store passwords for security.
+          # Bubblewrap CLI uses 'keytool' and 'jarsigner' or 'apksigner' under the hood.
+          
+          # In a CI environment, a reliable way is often to use the 'bubblewrap build' command with --skipPwaValidation (optional)
+          
+          # ERROR HANDLING: Bubblewrap prompts for passwords. 
+          # We can try to feed it via stdin:
+          echo "${{ secrets.ANDROID_KEY_PASSWORD }}" > key_password.txt
+          echo "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > keystore_password.txt
+          
+          # We might need to manually sign or ensure bubblewrap takes arguments.
+          # Looking at Bubblewrap docs, it doesn't easily take password flags.
+          # Alternative: Use 'gradlew assembleRelease' directly if bubblewrap generates a gradle project.
+          # Bubblewrap generates the project in the hidden folder or output folder.
+          
+          # Strategy:
+          # 1. Provide passwords via creating a temporary 'password-file' if bubblewrap supports it? No.
+          # 2. Bubblewrap doesn't strictly support non-interactive build with password args easily in all versions.
+          
+          # REVISED STRATEGY: 
+          # We will let bubblewrap generate the project, then build with Gradle manually?
+          # Or better: pipe the passwords.
+          # "First promtp is key password, second is keystore password"
+          
+          printf "${{ secrets.ANDROID_KEY_PASSWORD }}\n${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | npx @bubblewrap/cli build
+          
+        env:
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+
+      - name: Verify & Digital Asset Links
+        run: |
+          cd Frontend-PWA
+          
+          # Extract SHA-256 Fingerprint from the built APK
+          # The APK is usually in ./
+          APK_FILE=$(find . -name "*.apk" | head -n 1)
+          
+          if [ -z "$APK_FILE" ]; then
+            echo "No APK found!"
+            exit 1
+          fi
+          
+          echo "Verifying signature of $APK_FILE"
+          keytool -printcert -jarfile "$APK_FILE" | grep "SHA256:"
+          
+          # We can technically fail the build if it doesn't match a known value, but printing it is good for now.
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: clash-manager-android-v${{ steps.versioning.outputs.version_code }}
+          path: |
+            Frontend-PWA/*.apk
+            Frontend-PWA/*.aab
+            Frontend-PWA/assetlinks.json

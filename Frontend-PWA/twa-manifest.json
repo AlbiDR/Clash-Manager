@@ -38,6 +38,14 @@
         "playBilling": false
     },
     "alphaNumericId": "clashmanager",
+    "intentFilters": [
+        {
+            "action": "android.intent.action.VIEW",
+            "scheme": "https",
+            "host": "albidr.github.io",
+            "pathPrefix": "/Clash-Manager/"
+        }
+    ],
     "signingKey": {
         "path": "./clash-manager.keystore",
         "alias": "clashmanager"
