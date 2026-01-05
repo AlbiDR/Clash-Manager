@@ -1,49 +1,39 @@
-# =================================================================
-# GOOGLE AI STUDIO SANDBOX (ROOT ONLY)
-# =================================================================
-# These files are required for AI Studio to function but should
-# NOT be part of your GitHub repository.
-# -----------------------------------------------------------------
-/index.html
-/index.tsx
-/metadata.json
-/vite.config.ts
-/postcss.config.js
-/tailwind.config.js
-
-# =================================================================
-# LOCAL DEVELOPMENT & SECURITY
-# =================================================================
-.env
-.env.local
-.env.*.local
+# General
 node_modules/
-dist/
-dist-ssr/
-dev-dist/
-*.local
-
-# =================================================================
-# MONOREPO SUB-FOLDER BUILD ARTIFACTS
-# =================================================================
-# This ensures that build outputs inside your folders stay out of Git
-**/node_modules/
-**/dist/
-**/build/
-**/.next/
-
-# =================================================================
-# EDITOR / SYSTEM / LOGS
-# =================================================================
-.vscode/
-.idea/
 .DS_Store
 Thumbs.db
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-vitest.config.ts.timestamp-*
+
+# Environment & Secrets
+.env
+.env.*
+*.local
+signing.keystore
+
+# Build Outputs
+dist/
+dist-ssr/
+dev-dist/
+build/
+.next/
+**/node_modules/
+**/dist/
+**/build/
+
+# IDE & Agent Rules
+.vscode/
+.idea/
+.agent/
+.antigravity/
+.vibe/
+
+# Root Configs (Cleaned from Sandbox)
+index.html
+index.tsx
+metadata.json
+vite.config.ts
+postcss.config.js
+tailwind.config.js
 
 # OS-specific
 *.suo
