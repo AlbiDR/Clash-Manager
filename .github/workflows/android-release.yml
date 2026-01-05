@@ -56,10 +56,11 @@ jobs:
           
           cat <<EOF > ~/.bubblewrap/config.json
           {
-            "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${ANDROID_HOME}"
+            "jdkPath": "${JAVA_HOME}"
           }
           EOF
+          
+          yes | bubblewrap doctor
           
           bubblewrap build --skipPwaValidation
         env:
