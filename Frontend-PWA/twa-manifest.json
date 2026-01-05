@@ -47,7 +47,7 @@
         }
     ],
     "signingKey": {
-        "path": "./clash-manager.keystore",
-        "alias": "clashmanager"
+        "path": "./signing.keystore",
+        "alias": "clash_manager_release"
     }
 }
