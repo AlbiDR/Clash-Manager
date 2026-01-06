@@ -8,10 +8,30 @@ const README_PATH = path.join(__dirname, '..', 'README.md');
 const configText = fs.readFileSync(CONFIG_PATH, 'utf8');
 const readmeText = fs.readFileSync(README_PATH, 'utf8');
 
-function extractWeightsFromConfig(text) {
-  const match = text.match(/WEIGHTS:\s*\{([^}]+)\}/m);
-  if (!match) return null;
-  const body = match[1];
+function extractWeightsFromConfig(text, section = 'LEADERBOARD') {
+  // Find the requested SECTION (e.g., LEADERBOARD) and then locate the WEIGHTS object
+  // Use the last occurrence of the section name to avoid matching names in manifest or other places
+  const secIdx = text.lastIndexOf(section + ':');
+  if (secIdx === -1) return null;
+  const weightsIdx = text.indexOf('WEIGHTS', secIdx);
+  if (weightsIdx === -1) return null;
+  const braceStart = text.indexOf('{', weightsIdx);
+  if (braceStart === -1) return null;
+
+  // Find matching closing brace for the WEIGHTS object
+  let i = braceStart;
+  let depth = 0;
+  while (i < text.length) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') {
+      depth--;
+      if (depth === 0) break;
+    }
+    i++;
+  }
+  if (depth !== 0) return null;
+
+  const body = text.slice(braceStart + 1, i);
   const re = /([A-Z_]+)\s*:\s*([0-9.eE+-]+)/g;
   const weights = {};
   let m;
@@ -22,7 +42,10 @@ function extractWeightsFromConfig(text) {
 }
 
 function extractWeightsFromReadme(text) {
-  // Look for pattern like (Current Fame × 3) or (\text{Current Fame} \times 3)
+  // Prefer extracting from the canonical formula line that contains "Current Fame".
+  const formulaIdx = text.indexOf('Current Fame');
+  const snippet = formulaIdx === -1 ? text : text.slice(formulaIdx, formulaIdx + 400);
+
   const mapping = {
     FAME: /Current Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
     AVG_FAME: /Avg Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
@@ -32,7 +55,7 @@ function extractWeightsFromReadme(text) {
   };
   const out = {};
   Object.keys(mapping).forEach(k => {
-    const m = text.match(mapping[k]);
+    const m = snippet.match(mapping[k]);
     if (m) out[k] = Number(m[1]);
   });
   return out;
