@@ -53,6 +53,8 @@ const CONFIG = {
 
     TIMEZONE: "Europe/Rome",
     API_BASE: "https://proxy.royaleapi.dev/v1",
+    REMOTE_WORKER_URL: _PROPS["RemoteWorkerUrl"] || "",
+    REMOTE_WORKER_SECRET: _PROPS["RemoteWorkerSecret"] || "",
     WEB_APP_URL: "https://albidr.github.io/Clash-Manager/",
     RETRY_MAX: 3,
     JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined" ? VER_API_PUBLIC : "6.0.0").replace(/\./g, "_")}`,

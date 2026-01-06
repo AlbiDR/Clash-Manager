@@ -285,7 +285,14 @@ const Utils = {
         });
 
         try {
-          const responses = UrlFetchApp.fetchAll(requests);
+          let responses;
+          if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
+            // Offload to remote worker - pass keyPool for worker to use
+            responses = Utils.remoteFetchChunk(chunkUrls, keyPool);
+          } else {
+            responses = UrlFetchApp.fetchAll(requests);
+          }
+
           let retryChunk = false;
 
           responses.forEach((r, i) => {
@@ -306,19 +313,25 @@ const Utils = {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url).forEach((idx) => (finalResults[idx] = null));
             } else if (code === 403 || code === 429) {
-              const badKeyVal = requests[i].headers["Authorization"].replace(
-                "Bearer ",
-                "",
-              );
-              const keyObj = keyPool.find((k) => k.value === badKeyVal);
-              const keyName = keyObj ? keyObj.name : "Unknown Key";
-              console.warn(`⚠️ API ${code} on key ${keyName}. Removing.`);
-              keyPool = keyPool.filter((k) => k.value !== badKeyVal);
-              const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(
-                (k) => k.value === badKeyVal,
-              );
-              if (gIdx > -1) CONFIG.SYSTEM.API_KEYS.splice(gIdx, 1);
-              retryChunk = true;
+              if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
+                // If using remote worker, the worker manages key rotation.
+                console.warn(`⚠️ Remote worker reported ${code} for ${url}. Worker manages keys; will retry chunk.`);
+                retryChunk = true;
+              } else {
+                const badKeyVal = requests[i].headers["Authorization"].replace(
+                  "Bearer ",
+                  "",
+                );
+                const keyObj = keyPool.find((k) => k.value === badKeyVal);
+                const keyName = keyObj ? keyObj.name : "Unknown Key";
+                console.warn(`⚠️ API ${code} on key ${keyName}. Removing.`);
+                keyPool = keyPool.filter((k) => k.value !== badKeyVal);
+                const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(
+                  (k) => k.value === badKeyVal,
+                );
+                if (gIdx > -1) CONFIG.SYSTEM.API_KEYS.splice(gIdx, 1);
+                retryChunk = true;
+              }
             } else {
               if (code >= 500) retryChunk = true;
               console.warn(`API ${code} for ${url}`);
@@ -355,6 +368,41 @@ const Utils = {
     }
 
     return finalResults;
+  },
+
+  // Remote worker fetch delegate (uses configured remote worker to offload bulk fetches)
+  remoteFetchChunk: function (chunkUrls, keyPool) {
+    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("No remote worker configured.");
+    try {
+      const payload = { urls: chunkUrls, apiKeys: (keyPool || []).map((k) => k.value) };
+      const headers = { "Content-Type": "application/json" };
+      if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+      const options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true,
+        headers: headers,
+      };
+      const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + "/fetch", options);
+      const code = res.getResponseCode();
+      if (code !== 200) throw new Error("Remote worker returned " + code);
+      const body = JSON.parse(res.getContentText());
+      if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote worker response");
+      // Normalize into response-like objects
+      return body.results.map((r) => {
+        return {
+          getResponseCode: function () {
+            return r.code;
+          },
+          getContentText: function () {
+            return typeof r.content === "string" ? r.content : JSON.stringify(r.content);
+          },
+        };
+      });
+    } catch (e) {
+      throw e;
+    }
   },
 
   /**
