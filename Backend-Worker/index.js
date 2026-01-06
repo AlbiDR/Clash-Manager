@@ -71,9 +71,28 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
   return results;
 }
 
+// Simple auth middleware - check Bearer token if WORKER_SECRET is set
+function checkAuth(req, res, next) {
+  const secret = process.env.WORKER_SECRET;
+  if (!secret) return next();
+  const auth = (req.get('authorization') || '').trim();
+  if (auth !== `Bearer ${secret}`) return res.status(401).json({ error: 'unauthorized' });
+  return next();
+}
+
 app.get('/', (req, res) => res.send('Clash Manager Worker is running'));
 
-app.post('/fetch', async (req, res) => {
+// Capabilities endpoint for health and config (simple) - used by GAS preflight
+app.get('/capabilities', checkAuth, (req, res) => {
+  return res.json({
+    version: '0.1.0',
+    concurrency: DEFAULT_CONCURRENCY,
+    timeoutMs: DEFAULT_TIMEOUT,
+    maxRetries: MAX_RETRIES,
+  });
+});
+
+app.post('/fetch', checkAuth, async (req, res) => {
   try {
     const { urls, apiKeys } = req.body;
     if (!Array.isArray(urls)) return res.status(400).json({ error: 'urls must be array' });
