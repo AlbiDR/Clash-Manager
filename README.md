@@ -1,17 +1,29 @@
 # Clash Manager
 
-A compact, production-grade toolkit for clan leaders and recruiters. It pairs a Google Apps Script backend with a Vue Progressive Web App to compute performance, manage recruitment, and present an offline-capable admin UI.
+[![Version](https://img.shields.io/badge/Version-6.2.7-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager)
 
-## Contents
-- `Backend-GAS/` — Server-side logic, ETL, and API generation.
-- `Frontend-PWA/` — Vue PWA, UI components, and client logic.
+A concise, production-focused toolkit for clan leadership and recruitment. Backend (GAS) processes and normalizes data; the Vue PWA provides an offline-capable administrative UI.
+
+## Table of contents
+- Overview
+- Quick start
+- Scoring (collapsed)
+- Architecture
+- Highlights
+- Contributing
+- License
+
+---
+
+## Overview
+Clash Manager aggregates activity (war fame, donations, trophies) and produces a normalized performance score used to rank members and identify recruit candidates. It is designed for reliability: scheduled ETL, safe concurrency, and compact payloads for fast client rendering.
 
 ## Quick start
-1. Deploy the backend: `Backend-GAS/README.md`.
-2. Configure and run the frontend: `Frontend-PWA/README.md`.
+1. Deploy backend: follow `Backend-GAS/README.md`.
+2. Configure frontend: `Frontend-PWA/README.md` (set `VITE_GAS_URL` in `.env`).
+3. Validate: run the backend "health check" and open the PWA in development mode.
 
 ## Scoring (expand for details)
-
 <details>
 <summary>Performance model and rationale</summary>
 
@@ -22,20 +34,36 @@ Canonical formula (implemented in `Backend-GAS/ScoringSystem.gs.js`):
 \times \left(0.92^{\max(0, \text{Days Inactive} - 4)}\right)
 \]
 
-Configuration values are in `Backend-GAS/Configuration.gs.js`. Summary rationale:
-- War Rate (×150): reliability signal (0–100) prioritized.
-- Donations (×50): community contribution indicator.
-- Avg Fame (×15) vs Current Fame (×3): stability vs recency balance.
-- Trophies (×0.0002): normalized tie-breaker.
-- Decay: exponential reduction after a 4-day grace period.
-
-Example: Current Fame=40, Avg Fame=30, Donations=120, Trophies=5000, War Rate=90, Days Inactive=6 → Performance ≈ 16,987.
+Key points:
+- Parameters live in `Backend-GAS/Configuration.gs.js` (WEIGHTS and PENALTIES).
+- War Rate emphasizes reliability; Donations reward contribution; Avg Fame stabilizes volatility.
+- Decay reduces score for inactivity after a short grace period.
 
 </details>
 
-## Links
-- Backend: `Backend-GAS/README.md` — deployment & API.
-- Frontend: `Frontend-PWA/README.md` — development, build, and CI.
+---
+
+## Architecture
+```mermaid
+flowchart TD
+  CRAPI[Clash Royale API] --> GAS[Backend (GAS)]
+  GAS --> GS[(Google Sheets DB)]
+  GAS --> API[Headless JSON API]
+  API --> PWA[Frontend PWA]
+  subgraph Services
+    GAS --> Scoring[ScoringSystem]
+    GAS --> Recruiter[Recruiter]
+  end
+```
+
+## Highlights
+- Multi-dimensional performance score (impact, stability, reliability, contribution)
+- Scheduled ETL and trend analysis
+- Recruitment scanning pipeline
+- Offline-first PWA with background sync
+
+## Contributing
+See `CONTRIBUTING.md` and the subproject READMEs for development workflows and contribution guidelines.
 
 ## License
-Proprietary. © 2026 AlbiDR.
+Proprietary. © 2026 AlbiDR
