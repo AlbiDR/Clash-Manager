@@ -49,7 +49,7 @@ See `docs/DEPLOYMENT.md` for a step-by-step Quick Start and deployment instructi
 ### CI/CD
 
 - Tests, linting, and security scans run on pushed branches. Only merge to `Stable`/`main` after green CI.
-- Security scans: run TruffleHog with `--exclude-paths=.git` for filesystem scans and `--only-verified` for git scans to reduce false positives.
+- Security scans: automated secret scanning was previously used but has been removed; consider adding a scheduled non-failing scan or using external scanning tools and configuration to reduce false positives.
 
 ### Rollbacks and versioning
 
@@ -58,7 +58,7 @@ See `docs/DEPLOYMENT.md` for a step-by-step Quick Start and deployment instructi
 
 ## Troubleshooting
 
-- TruffleHog/GitHub Actions false positives: runner tokens may appear in `.git/config`; see `docs/REMEDIATION.md` for guidance (we now exclude `.git`).
+- Secret scanner false positives: runner tokens may appear in `.git/config`; see `docs/REMEDIATION.md` for guidance on triage.
 - Google Apps Script quotas: large ETL jobs may hit execution or API quotas—break jobs into smaller batches and add retries.
 - Offline cache issues (PWA): clear site data or unregister service worker when testing updates.
 
@@ -128,7 +128,7 @@ The system uses a focused GAS backend to perform scheduled ETL and scoring, Goog
 
 - Small attack surface: minimal backend surface area and read-only public endpoints for data.
 - Reliability: ETL runs are idempotent with retries and batching to avoid hitting Apps Script quotas.
-- Observability: logs and artifacts (TruffleHog results, health checks) are persisted via CI artifacts and Apps Script logs.
+- Observability: logs and artifacts (security scan artifacts, health checks) are persisted via CI artifacts and Apps Script logs.
 
 ### Scaling notes
 
@@ -138,7 +138,7 @@ The system uses a focused GAS backend to perform scheduled ETL and scoring, Goog
 ### Security considerations
 
 - Keep secrets out of source control. Use script properties and secure storage for any credentials.
-- TruffleHog/Gitleaks are run in CI; ignore the `.git` folder when scanning filesystem to avoid runner token false positives (see `docs/REMEDIATION.md`).
+- Secret scanning is not enforced by default in CI; follow the guidance in `docs/REMEDIATION.md` when triaging any findings from external scans.
 
 ## Highlights
 
