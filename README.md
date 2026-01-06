@@ -39,6 +39,18 @@ Key points:
 - War Rate emphasizes reliability; Donations reward contribution; Avg Fame stabilizes volatility.
 - Decay reduces score for inactivity after a short grace period.
 
+Weights (canonical)
+
+| Metric | Weight |
+|---|---:|
+| Current Fame | 3 |
+| Avg Fame | 15 |
+| Donations | 50 |
+| Trophies | 0.0002 |
+| War Rate | 150 |
+
+> Note: These are the canonical weights used in the score implementation and mirrored in `Backend-GAS/Configuration.gs.js` (see `LEADERBOARD.WEIGHTS`). For security scanning and incident response guidance, see `docs/SECRETS.md` and `docs/REMEDIATION.md`.
+
 </details>
 
 ---
