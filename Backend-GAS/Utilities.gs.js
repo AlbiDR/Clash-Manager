@@ -206,15 +206,13 @@ const Utils = {
   fetchRoyaleAPI: function (urls) {
     if (!urls || urls.length === 0) return [];
 
-    // 0. Safety Quota Check
-    if (_FETCH_COUNT > MAX_FETCH_PER_EXECUTION) {
-      console.error(
-        `⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`,
+    // Quick exit if platform already signaled daily UrlFetch exhaustion
+    if (_URLFETCH_DAILY_EXHAUSTED) {
+      console.warn(
+        `⚠️ URLFetch daily quota is marked exhausted for this execution. Skipping ${urls.length} fetches.`,
       );
-      // Return nulls explicitly so downstream knows to abort
       return new Array(urls.length).fill(null);
     }
-    _FETCH_COUNT += urls.length;
 
     // 1. Initialize Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
@@ -225,7 +223,7 @@ const Utils = {
     }
 
     const finalResults = new Array(urls.length).fill(null);
-    const urlsToFetch = [];
+    let urlsToFetch = [];
     const urlIndices = new Map();
 
     // 2. Cache Check & Deduplication
@@ -242,6 +240,25 @@ const Utils = {
     });
 
     if (urlsToFetch.length === 0) return finalResults;
+
+    // Post-deduplication quota accounting: don't exceed API budget
+    const remainingQuota = MAX_FETCH_PER_EXECUTION - _FETCH_COUNT;
+    if (remainingQuota <= 0) {
+      console.error(
+        `⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`,
+      );
+      return finalResults;
+    }
+
+    if (urlsToFetch.length > remainingQuota) {
+      console.warn(
+        `⚠️ Truncating fetch list from ${urlsToFetch.length} to ${remainingQuota} to avoid exceeding API budget.`,
+      );
+      urlsToFetch = urlsToFetch.slice(0, remainingQuota);
+    }
+
+    // Account for the permitted fetches
+    _FETCH_COUNT += urlsToFetch.length;
 
     // 3. Batch Processing
     const BATCH_SIZE = 10;
@@ -313,12 +330,27 @@ const Utils = {
             Utilities.sleep(1000 * (attempt + 1));
           }
         } catch (e) {
+          // If platform reports URLFETCH daily quota reached, mark and abort
+          if (
+            e &&
+            e.message &&
+            e.message.indexOf("Service invoked too many times for one day: urlfetch") > -1
+          ) {
+            console.error(
+              `Fetch Network Error: URLFetch daily quota reached. Aborting remaining fetches.`,
+            );
+            _URLFETCH_DAILY_EXHAUSTED = true;
+            return finalResults;
+          }
+
           console.error(
             `Fetch Network Error (Attempt ${attempt + 1}): ${e.message}`,
           );
           if (attempt < CONFIG.SYSTEM.RETRY_MAX - 1) Utilities.sleep(2000);
         }
       }
+
+      // Small pause between batches to reduce chance of hitting backend burst limits
       Utilities.sleep(200);
     }
 
