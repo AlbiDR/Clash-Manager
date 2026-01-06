@@ -48,6 +48,37 @@ graph LR
 
 ---
 
+## 🧠 Scoring System — Heuristics & Formula
+The `ScoringSystem` is intentionally isolated from I/O and contains the canonical logic used to compute both a player's **Raw Score** and the **Performance Score** (after decay). Key implementation files:
+
+- `Backend-GAS/ScoringSystem.gs.js` — algorithm: `computeScores()` and `calculateWarRate()`.
+- `Backend-GAS/Configuration.gs.js` — weights and penalties (single source of truth).
+
+Canonical (LaTeX) formula used across the system:
+
+$$
+\text{Performance Score} = \left[ (\text{Current Fame} \times 3) + (\text{Avg Fame} \times 15) + (\text{Donations} \times 50) + (\text{Trophies} \times 0.0002) + (\text{War Rate} \times 150) \right] \\
+\times \left(0.92^{\max(0, \text{Days Inactive} - 4)}\right)
+$$
+
+Produced values reflect both **impact** (fame), **stability** (avg fame), **contribution** (donations), **reliability** (war rate), and a tiny popularity signal (trophies). The numeric parameters are defined in `CONFIG.LEADERBOARD`:
+
+- `WEIGHTS: { FAME: 3, AVG_FAME: 15, DONATION: 50, TROPHY: 0.0002, WAR_RATE: 150 }`
+- `PENALTIES: { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08 }`
+
+Design rationale:
+
+- **War Rate (×150)** is intentionally large because it operates on a 0–100 scale and captures reliability; this ensures consistent participants rank highly even when short-term metrics fluctuate.
+- **Donations (×50)** incentivize clan-support behaviors; a high donations weight ensures community-first players are visible.
+- **Avg Fame (×15) vs Current Fame (×3)** balances stability and recency: average reduces noise, current captures bursts.
+- **Trophy (×0.0002)** is normalized to avoid overwhelming the score (trophies are large absolute numbers).
+
+Tuning guidance:
+- Adjust `CONFIG.LEADERBOARD.WEIGHTS` to emphasize or de-emphasize signals; run a validation snapshot (compare `raw` vs `perf`) to verify intended effects.
+- Modify `PENALTIES.DECAY_RATE` and `INACTIVITY_GRACE_DAYS` to control how quickly inactive players are deprioritized.
+
+For the exact computation flow, refer to `ScoringSystem.computeScores()` (raw score + decay) and `Leaderboard` which normalizes to a 0–100 `Performance Score` for display.
+
 ## 🚀 Setup Guide
 
 <details>

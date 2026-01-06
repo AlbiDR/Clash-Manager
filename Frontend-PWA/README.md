@@ -99,6 +99,7 @@ A custom visual language designed for clarity and aesthetics.
 ### 🏆 Leaderboard
 *   **Hybrid Data**: Merges real-time API data (current trophies) with historical database records (tenure).
 *   **War Visualization**: Includes micro-charts rendering 52 weeks of war performance history.
+*   **Performance Score (Backend-driven)**: The score shown is computed server-side using the Gold Standard formula (weights live in `Backend-GAS/Configuration.gs.js`). See the root `README.md` and `Backend-GAS/README.md` for the LaTeX-formatted formula and rationale.
 
 ### 🔭 Headhunter
 *   **Recruitment**: Visualizes the backend's "Deep Net" search results.
