@@ -1,4 +1,3 @@
-
 /**
  * ============================================================================
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
@@ -8,7 +7,7 @@
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = '6.2.2';
+const VER_CONTROLLER_WEBAPP = "6.2.2";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -27,18 +26,21 @@ function getWebAppData(forceRefresh) {
       return payloadStr;
     }
 
-    console.log(forceRefresh ? "🌐 API Request: Force-refreshing payload." : "🌐 API Request: Cache miss.");
+    console.log(
+      forceRefresh
+        ? "🌐 API Request: Force-refreshing payload."
+        : "🌐 API Request: Cache miss.",
+    );
     return refreshWebPayload();
-
   } catch (e) {
     console.error(`getWebAppData CRITICAL FAILURE: ${e.stack}`);
     return JSON.stringify({
       success: false,
       data: null,
       error: {
-        code: 'GET_APP_DATA_FAILED',
-        message: `The server encountered a critical error: ${e.message}`
-      }
+        code: "GET_APP_DATA_FAILED",
+        message: `The server encountered a critical error: ${e.message}`,
+      },
     });
   }
 }
@@ -52,17 +54,18 @@ function markRecruitsAsInvitedBulk(ids) {
 
   // 🔒 STRUCTURAL FIX: MUTEX LOCKING
   // This ensures we never collide with a Scout Run (which clears/rewrites the sheet).
-  return Utils.executeSafely('WRITE_HH', () => {
-    console.time('BulkDismiss');
+  return Utils.executeSafely("WRITE_HH", () => {
+    console.time("BulkDismiss");
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-      if (!sheet) return { success: false, message: "Headhunter sheet not found." };
+      if (!sheet)
+        return { success: false, message: "Headhunter sheet not found." };
 
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const lastRow = sheet.getLastRow();
 
-      const idsSet = new Set(ids.map(id => '#' + id));
+      const idsSet = new Set(ids.map((id) => "#" + id));
       let sheetUpdates = 0;
 
       // 1. UPDATE SHEET (Visual/Database)
@@ -71,13 +74,24 @@ function markRecruitsAsInvitedBulk(ids) {
         const tagColIdx = 2 + CONFIG.SCHEMA.HH.TAG;
         const invitedColIdx = 2 + CONFIG.SCHEMA.HH.INVITED;
 
-        const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
-        const invitedRange = sheet.getRange(startRow, invitedColIdx, numRows, 1);
+        const tagValues = sheet
+          .getRange(startRow, tagColIdx, numRows, 1)
+          .getValues();
+        const invitedRange = sheet.getRange(
+          startRow,
+          invitedColIdx,
+          numRows,
+          1,
+        );
         const invitedValues = invitedRange.getValues();
 
-        const tagMap = new Map(tagValues.map((row, idx) => row[0] ? [row[0].toString(), idx] : null).filter(Boolean));
+        const tagMap = new Map(
+          tagValues
+            .map((row, idx) => (row[0] ? [row[0].toString(), idx] : null))
+            .filter(Boolean),
+        );
 
-        idsSet.forEach(tag => {
+        idsSet.forEach((tag) => {
           const idx = tagMap.get(tag);
           if (idx !== undefined) {
             invitedValues[idx][0] = true;
@@ -91,18 +105,20 @@ function markRecruitsAsInvitedBulk(ids) {
       }
 
       // 2. UPDATE PERSISTENT BLACKLIST (Structural/Memory)
-      // SELF-HEALING: We also prune expired entries here to ensure the list doesn't bloat 
+      // SELF-HEALING: We also prune expired entries here to ensure the list doesn't bloat
       // indefinitely if the main Recruiter task stops running.
       let blUpdates = 0;
       try {
-        const PROP_KEY = 'HH_BLACKLIST';
+        const PROP_KEY = "HH_BLACKLIST";
         const blacklist = Utils.Props.getChunked(PROP_KEY, {});
         const now = Date.now();
         const dayMs = 24 * 60 * 60 * 1000;
         const expiry = now + (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
 
         // A. Prune Old
-        const entries = Object.entries(blacklist).filter(([k, item]) => item?.e > now);
+        const entries = Object.entries(blacklist).filter(
+          ([k, item]) => item?.e > now,
+        );
         const pruneCount = Object.keys(blacklist).length - entries.length;
         const cleanedBlacklist = Object.fromEntries(entries);
 
@@ -112,13 +128,13 @@ function markRecruitsAsInvitedBulk(ids) {
         }
 
         // B. Add New
-        idsSet.forEach(tag => {
+        idsSet.forEach((tag) => {
           const existing = cleanedBlacklist[tag];
           if (!existing) blUpdates++;
 
           cleanedBlacklist[tag] = {
             e: expiry,
-            s: existing ? existing.s : 0
+            s: existing ? existing.s : 0,
           };
         });
 
@@ -126,7 +142,6 @@ function markRecruitsAsInvitedBulk(ids) {
         if (blUpdates > 0 || pruneCount > 0) {
           Utils.Props.setChunked(PROP_KEY, cleanedBlacklist);
         }
-
       } catch (blErr) {
         console.warn("⚠️ Blacklist sync warning: " + blErr.message);
       }
@@ -134,13 +149,14 @@ function markRecruitsAsInvitedBulk(ids) {
       // 3. FLUSH & REGENERATE
       if (sheetUpdates > 0 || idsSet.size > 0) {
         SpreadsheetApp.flush();
-        console.log(`🌐 API Action: Dismissed ${sheetUpdates} rows. Synced blacklist.`);
+        console.log(
+          `🌐 API Action: Dismissed ${sheetUpdates} rows. Synced blacklist.`,
+        );
         refreshWebPayload();
       }
 
-      console.timeEnd('BulkDismiss');
+      console.timeEnd("BulkDismiss");
       return { success: true, count: sheetUpdates };
-
     } catch (e) {
       console.error(`Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
@@ -153,40 +169,68 @@ function markRecruitsAsInvitedBulk(ids) {
 // ============================================================================
 
 function refreshWebPayload() {
-  return Utils.executeSafely('PAYLOAD_GEN', () => {
+  return Utils.executeSafely("PAYLOAD_GEN", () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
 
       const data = {
-        format: 'matrix',
+        format: "matrix",
         schema: {
-          lb: ['id', 'n', 't', 's', 'role', 'days', 'avg', 'seen', 'rate', 'hist', 'dt', 'r'],
-          hh: ['id', 'n', 't', 's', 'don', 'war', 'ago', 'cards']
+          lb: [
+            "id",
+            "n",
+            "t",
+            "s",
+            "role",
+            "days",
+            "avg",
+            "seen",
+            "rate",
+            "hist",
+            "dt",
+            "r",
+          ],
+          hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
         },
-        lb: extractSheetDataMatrix(ss, CONFIG.SHEETS.LB, CONFIG.SCHEMA.LB, false),
-        hh: extractSheetDataMatrix(ss, CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, true),
-        timestamp: new Date().getTime()
+        lb: extractSheetDataMatrix(
+          ss,
+          CONFIG.SHEETS.LB,
+          CONFIG.SCHEMA.LB,
+          false,
+        ),
+        hh: extractSheetDataMatrix(
+          ss,
+          CONFIG.SHEETS.HH,
+          CONFIG.SCHEMA.HH,
+          true,
+        ),
+        timestamp: new Date().getTime(),
       };
 
       const payload = { success: true, data: data, error: null };
       const payloadStr = JSON.stringify(payload);
 
-      Utils.CacheHandler.putLarge(CONFIG.SYSTEM.JSON_STORE_KEY, payloadStr, 21600);
-      Utils.Props.set('LAST_PAYLOAD_TIMESTAMP', data.timestamp);
+      Utils.CacheHandler.putLarge(
+        CONFIG.SYSTEM.JSON_STORE_KEY,
+        payloadStr,
+        21600,
+      );
+      Utils.Props.set("LAST_PAYLOAD_TIMESTAMP", data.timestamp);
 
-      console.log(`🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`);
+      console.log(
+        `🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`,
+      );
 
       return payloadStr;
-
     } catch (e) {
       console.error(`refreshWebPayload FAILED: ${e.stack}`);
       return JSON.stringify({
         success: false,
         data: null,
         error: {
-          code: 'PAYLOAD_GENERATION_FAILED',
-          message: `Failed to generate data from Sheets: ${e.message}`
-        }
+          code: "PAYLOAD_GENERATION_FAILED",
+          message: `Failed to generate data from Sheets: ${e.message}`,
+        },
       });
     }
   });
@@ -213,88 +257,109 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
   const blacklistSet = new Set();
   if (isHeadhunter) {
     try {
-      const raw = Utils.Props.getChunked('HH_BLACKLIST', {});
+      const raw = Utils.Props.getChunked("HH_BLACKLIST", {});
       const now = Date.now();
-      Object.entries(raw).filter(([_, v]) => v.e > now).forEach(([tag]) => blacklistSet.add(tag));
-    } catch (e) { console.warn("Blacklist check failed:", e); }
+      Object.entries(raw)
+        .filter(([_, v]) => v.e > now)
+        .forEach(([tag]) => blacklistSet.add(tag));
+    } catch (e) {
+      console.warn("Blacklist check failed:", e);
+    }
   }
 
   const sanitizeNum = (v) => {
     const n = Number(v);
     return isFinite(n) ? n : 0;
   };
-  const sanitizeStr = (v) => (v === null || v === undefined) ? '' : String(v).trim();
+  const sanitizeStr = (v) =>
+    v === null || v === undefined ? "" : String(v).trim();
 
-  return vals.map((r, index) => {
-    try {
-      const tagRaw = r[SCHEMA.TAG];
-      if (!tagRaw || typeof tagRaw !== 'string' || !tagRaw.startsWith('#')) return null;
+  return vals
+    .map((r, index) => {
+      try {
+        const tagRaw = r[SCHEMA.TAG];
+        if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#"))
+          return null;
 
-      // 🛡️ PASSIVE HIDING: Check Blacklist Property
-      if (isHeadhunter && blacklistSet.has(tagRaw)) {
-        return null;
-      }
-
-      const id = tagRaw.replace('#', '').trim();
-      if (id.length < 3) return null;
-
-      // 🚨 AIRTIGHT FILTER: Check "Invited" status
-      if (isHeadhunter) {
-        const rawInvited = r[SCHEMA.INVITED];
-        const isActuallyInvited = (
-          rawInvited === true ||
-          String(rawInvited).toUpperCase() === 'TRUE' ||
-          String(rawInvited) === '1'
-        );
-        if (isActuallyInvited) return null;
-      }
-
-      const name = sanitizeStr(r[SCHEMA.NAME]).replace(/^=HYPERLINK.*"(.*)".*$/, '$1');
-      const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
-      const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
-
-      if (isHeadhunter) {
-        const fd = r[SCHEMA.FOUND_DATE];
-        const ago = (fd instanceof Date && !isNaN(fd.getTime())) ? fd.toISOString() : '';
-        const don = sanitizeNum(r[SCHEMA.DONATIONS]);
-        const war = sanitizeNum(r[SCHEMA.WAR_WINS]);
-        const cards = sanitizeNum(r[SCHEMA.CARDS]);
-
-        return [id, name, trophies, score, don, war, ago, cards];
-
-      } else {
-        // LEADERBOARD logic remains same...
-        let role = sanitizeStr(r[SCHEMA.ROLE] || 'Member');
-        if (role === 'coLeader') role = 'Co-Leader';
-
-        let rateDisplay = '0%';
-        const visualRate = displayVals[index][SCHEMA.WAR_RATE];
-        const rawRate = r[SCHEMA.WAR_RATE];
-
-        if (visualRate && visualRate.includes('%')) {
-          rateDisplay = visualRate.trim();
-        } else {
-          let val = parseFloat(String(rawRate));
-          if (!isNaN(val)) {
-            if (val <= 1.0) val = val * 100;
-            rateDisplay = `${Math.round(val)}%`;
-          }
+        // 🛡️ PASSIVE HIDING: Check Blacklist Property
+        if (isHeadhunter && blacklistSet.has(tagRaw)) {
+          return null;
         }
 
-        const days = sanitizeNum(r[SCHEMA.DAYS]);
-        const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
-        const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || '-');
-        const hist = sanitizeStr(r[SCHEMA.HISTORY]);
-        const trend = sanitizeNum(r[SCHEMA.TREND]);
-        const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
+        const id = tagRaw.replace("#", "").trim();
+        if (id.length < 3) return null;
 
-        return [id, name, trophies, score, role, days, avg, seen, rateDisplay, hist, trend, raw];
+        // 🚨 AIRTIGHT FILTER: Check "Invited" status
+        if (isHeadhunter) {
+          const rawInvited = r[SCHEMA.INVITED];
+          const isActuallyInvited =
+            rawInvited === true ||
+            String(rawInvited).toUpperCase() === "TRUE" ||
+            String(rawInvited) === "1";
+          if (isActuallyInvited) return null;
+        }
+
+        const name = sanitizeStr(r[SCHEMA.NAME]).replace(
+          /^=HYPERLINK.*"(.*)".*$/,
+          "$1",
+        );
+        const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
+        const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
+
+        if (isHeadhunter) {
+          const fd = r[SCHEMA.FOUND_DATE];
+          const ago =
+            fd instanceof Date && !isNaN(fd.getTime()) ? fd.toISOString() : "";
+          const don = sanitizeNum(r[SCHEMA.DONATIONS]);
+          const war = sanitizeNum(r[SCHEMA.WAR_WINS]);
+          const cards = sanitizeNum(r[SCHEMA.CARDS]);
+
+          return [id, name, trophies, score, don, war, ago, cards];
+        } else {
+          // LEADERBOARD logic remains same...
+          let role = sanitizeStr(r[SCHEMA.ROLE] || "Member");
+          if (role === "coLeader") role = "Co-Leader";
+
+          let rateDisplay = "0%";
+          const visualRate = displayVals[index][SCHEMA.WAR_RATE];
+          const rawRate = r[SCHEMA.WAR_RATE];
+
+          if (visualRate && visualRate.includes("%")) {
+            rateDisplay = visualRate.trim();
+          } else {
+            let val = parseFloat(String(rawRate));
+            if (!isNaN(val)) {
+              if (val <= 1.0) val = val * 100;
+              rateDisplay = `${Math.round(val)}%`;
+            }
+          }
+
+          const days = sanitizeNum(r[SCHEMA.DAYS]);
+          const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
+          const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || "-");
+          const hist = sanitizeStr(r[SCHEMA.HISTORY]);
+          const trend = sanitizeNum(r[SCHEMA.TREND]);
+          const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
+
+          return [
+            id,
+            name,
+            trophies,
+            score,
+            role,
+            days,
+            avg,
+            seen,
+            rateDisplay,
+            hist,
+            trend,
+            raw,
+          ];
+        }
+      } catch (err) {
+        console.warn(`Row extraction error in ${sheetName}: ${err.message}`);
+        return null;
       }
-
-    } catch (err) {
-      console.warn(`Row extraction error in ${sheetName}: ${err.message}`);
-      return null;
-    }
-  }).filter(Boolean);
+    })
+    .filter(Boolean);
 }
-

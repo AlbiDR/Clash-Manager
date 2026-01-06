@@ -1,134 +1,169 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useClanData } from '../composables/useClanData'
-import { useApiState } from '../composables/useApiState'
-import { useToast } from '../composables/useToast'
-import { useRecruitBlacklist } from '../composables/useRecruitBlacklist'
-import { useConsoleLogic } from '../composables/useConsoleLogic'
-import type { Recruit } from '../types'
+import { computed, watch } from "vue";
+import { useClanData } from "../composables/useClanData";
+import { useApiState } from "../composables/useApiState";
+import { useToast } from "../composables/useToast";
+import { useRecruitBlacklist } from "../composables/useRecruitBlacklist";
+import { useConsoleLogic } from "../composables/useConsoleLogic";
+import type { Recruit } from "../types";
 
-import RecruitCard from '../components/RecruitCard.vue'
-import Icon from '../components/Icon.vue'
-import ConsoleLayout from '../components/ConsoleLayout.vue'
+import RecruitCard from "../components/RecruitCard.vue";
+import Icon from "../components/Icon.vue";
+import ConsoleLayout from "../components/ConsoleLayout.vue";
 
-const { pingData } = useApiState()
+const { pingData } = useApiState();
 
 const sheetUrl = computed(() => {
-  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets) return undefined
-  const gid = pingData.value.sheets['Headhunter'] ?? pingData.value.sheets['Recruiter']
-  return gid !== undefined ? `${pingData.value.spreadsheetUrl}#gid=${gid}` : pingData.value.spreadsheetUrl
-})
+  if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets)
+    return undefined;
+  const gid =
+    pingData.value.sheets["Headhunter"] ?? pingData.value.sheets["Recruiter"];
+  return gid !== undefined
+    ? `${pingData.value.spreadsheetUrl}#gid=${gid}`
+    : pingData.value.spreadsheetUrl;
+});
 
-const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh, dismissRecruitsAction } = useClanData()
-const blacklist = useRecruitBlacklist()
+const {
+  data,
+  isHydrated,
+  isRefreshing,
+  syncError,
+  lastSyncTime,
+  refresh,
+  dismissRecruitsAction,
+} = useClanData();
+const blacklist = useRecruitBlacklist();
 
 // 🛡️ PRE-FILTER: Exclude Tombstones
 const recruits = computed(() => {
-    return (data.value?.hh || []).filter(r => !blacklist.tombstones.value.has(r.id))
-})
+  return (data.value?.hh || []).filter(
+    (r) => !blacklist.tombstones.value.has(r.id),
+  );
+});
 
-const getTs = (str?: string) => str ? new Date(str).getTime() : 0
+const getTs = (str?: string) => (str ? new Date(str).getTime() : 0);
 
 const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
-    score: (a, b) => (b.s || 0) - (a.s || 0),
-    trophies: (a, b) => (b.t || 0) - (a.t || 0),
-    name: (a, b) => a.n.localeCompare(b.n),
-    time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
-    donations: (a, b) => (b.d.don || 0) - (a.d.don || 0)
-}
+  score: (a, b) => (b.s || 0) - (a.s || 0),
+  trophies: (a, b) => (b.t || 0) - (a.t || 0),
+  name: (a, b) => a.n.localeCompare(b.n),
+  time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
+  donations: (a, b) => (b.d.don || 0) - (a.d.don || 0),
+};
 
 const {
-    searchQuery, sortBy, visibleItems, expandedIds, selectedIds, selectedSet, fabState, isSelectionMode,
-    status, statsBadge, showSkeletons, filteredItems,
-    updateSort, toggleSelect, toggleExpand, clearSelection, handleAction, handleBlitz, handleSelectAll, handleSelectScore, processDeepLink
+  searchQuery,
+  sortBy,
+  visibleItems,
+  expandedIds,
+  selectedIds,
+  selectedSet,
+  fabState,
+  isSelectionMode,
+  status,
+  statsBadge,
+  showSkeletons,
+  filteredItems,
+  updateSort,
+  toggleSelect,
+  toggleExpand,
+  clearSelection,
+  handleAction,
+  handleBlitz,
+  handleSelectAll,
+  handleSelectScore,
+  processDeepLink,
 } = useConsoleLogic({
-    data: recruits,
-    isHydrated,
-    isRefreshing,
-    syncError,
-    lastSyncTime,
-    filterFn: (r: Recruit) => [r.n, r.id],
-    sortStrategies,
-    defaultSort: 'score',
-    deepLinkPrefix: 'recruit-',
-    batchIdMapper: (r: Recruit) => r.id,
-    statsLabel: 'Pool'
-})
+  data: recruits,
+  isHydrated,
+  isRefreshing,
+  syncError,
+  lastSyncTime,
+  filterFn: (r: Recruit) => [r.n, r.id],
+  sortStrategies,
+  defaultSort: "score",
+  deepLinkPrefix: "recruit-",
+  batchIdMapper: (r: Recruit) => r.id,
+  statsLabel: "Pool",
+});
 
 const sortOptions = [
-  { 
-    label: 'Potential', 
-    value: 'score', 
-    desc: `**Predictive quality score** based on account progression and historical reliability.\n\n**Algorithm:**\nCompares the candidate's Trophies, Lifetime Donations, and War Win count against your current Clan baseline.\n\n**Signal:**\nRecruits with high potential often demonstrate a developed card pool and a history of active Clan War contribution.` 
+  {
+    label: "Potential",
+    value: "score",
+    desc: `**Predictive quality score** based on account progression and historical reliability.\n\n**Algorithm:**\nCompares the candidate's Trophies, Lifetime Donations, and War Win count against your current Clan baseline.\n\n**Signal:**\nRecruits with high potential often demonstrate a developed card pool and a history of active Clan War contribution.`,
   },
-  { 
-    label: 'Trophies', 
-    value: 'trophies', 
-    desc: `**Current ladder ranking** pull via Supercell API.\n\n**Insight:**\nReflects mechanical skill and King Tower progression on Trophy Road or Path of Legends.` 
+  {
+    label: "Trophies",
+    value: "trophies",
+    desc: `**Current ladder ranking** pull via Supercell API.\n\n**Insight:**\nReflects mechanical skill and King Tower progression on Trophy Road or Path of Legends.`,
   },
-  { 
-    label: 'Donations', 
-    value: 'donations', 
-    desc: `**Lifetime card donations** from previous Clan history.\n\n**Logic:**\nMeasures long-term generosity. High lifetime donations are the most reliable predictor of a player's team-oriented mindset.` 
+  {
+    label: "Donations",
+    value: "donations",
+    desc: `**Lifetime card donations** from previous Clan history.\n\n**Logic:**\nMeasures long-term generosity. High lifetime donations are the most reliable predictor of a player's team-oriented mindset.`,
   },
-  { 
-    label: 'Recency', 
-    value: 'time_found', 
-    desc: `**Timestamp of discovery** during recent tournament scans.\n\n**Use case:**\nIdentifying fresh talent who have recently gone clanless and are likely seeking a new home immediately.` 
+  {
+    label: "Recency",
+    value: "time_found",
+    desc: `**Timestamp of discovery** during recent tournament scans.\n\n**Use case:**\nIdentifying fresh talent who have recently gone clanless and are likely seeking a new home immediately.`,
   },
-  { 
-    label: 'Name', 
-    value: 'name', 
-    desc: `**Alphabetical ordering** by display name.` 
-  }
-]
+  {
+    label: "Name",
+    value: "name",
+    desc: `**Alphabetical ordering** by display name.`,
+  },
+];
 
 // 🧹 CLEANUP: Extra Recruit Logic managed here
-watch(() => data.value?.hh, (newRecruits) => {
+watch(
+  () => data.value?.hh,
+  (newRecruits) => {
     if (newRecruits && newRecruits.length > 0) {
-        const currentIds = newRecruits.map(r => r.id)
-        blacklist.prune(currentIds)
-        // Note: processDeepLink is auto-called by useConsoleLogic watcher on data change, 
-        // but here we might need manual control if blacklist affects it? 
-        // Actually useConsoleLogic watches 'recruits' computed, which filters blacklist.
-        // So we don't need to manually call processDeepLink here!
+      const currentIds = newRecruits.map((r) => r.id);
+      blacklist.prune(currentIds);
+      // Note: processDeepLink is auto-called by useConsoleLogic watcher on data change,
+      // but here we might need manual control if blacklist affects it?
+      // Actually useConsoleLogic watches 'recruits' computed, which filters blacklist.
+      // So we don't need to manually call processDeepLink here!
     }
-}, { deep: true, immediate: true })
+  },
+  { deep: true, immediate: true },
+);
 
-const { undo, success, error } = useToast()
+const { undo, success, error } = useToast();
 
 function dismissBulk() {
-  if (selectedIds.value.length === 0) return
-  const ids = [...selectedIds.value]
-  clearSelection()
-  executeDismiss(ids)
+  if (selectedIds.value.length === 0) return;
+  const ids = [...selectedIds.value];
+  clearSelection();
+  executeDismiss(ids);
 }
 
 function executeDismiss(ids: string[]) {
-    blacklist.hide(ids)
-    
-    const timerId = setTimeout(() => {
-        dismissRecruitsAction(ids)
-            .catch(() => {
-                error('Failed to sync changes')
-                blacklist.restore(ids)
-            })
-    }, 4500)
-    
-    undo(`Dismissed ${ids.length} recruits`, () => {
-        clearTimeout(timerId)
-        blacklist.restore(ids)
-        success('Dismissal cancelled')
-    })
+  blacklist.hide(ids);
+
+  const timerId = setTimeout(() => {
+    dismissRecruitsAction(ids).catch(() => {
+      error("Failed to sync changes");
+      blacklist.restore(ids);
+    });
+  }, 4500);
+
+  undo(`Dismissed ${ids.length} recruits`, () => {
+    clearTimeout(timerId);
+    blacklist.restore(ids);
+    success("Dismissal cancelled");
+  });
 }
 
 // Specific Helper for Score Selection
-function onSelectScore(threshold: number, mode: 'ge' | 'le') {
-    handleSelectScore(threshold, mode, (r) => r.s || 0)
+function onSelectScore(threshold: number, mode: "ge" | "le") {
+  handleSelectScore(threshold, mode, (r) => r.s || 0);
 }
 
 function handleSearchUpdate(val: string) {
-  searchQuery.value = val
+  searchQuery.value = val;
 }
 </script>
 
@@ -160,10 +195,10 @@ function handleSearchUpdate(val: string) {
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
-        <button class="btn-primary" @click="refresh">
-          <Icon name="refresh" size="18" />
-          <span>Scan Again</span>
-        </button>
+      <button class="btn-primary" @click="refresh">
+        <Icon name="refresh" size="18" />
+        <span>Scan Again</span>
+      </button>
     </template>
 
     <!-- Default Slot: The List -->
@@ -184,6 +219,21 @@ function handleSearchUpdate(val: string) {
 </template>
 
 <style scoped>
-.btn-primary { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--sys-color-primary); color: var(--sys-color-on-primary); border: none; border-radius: 99px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: transform 0.2s; }
-.btn-primary:active { transform: scale(0.95); }
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 99px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: transform 0.2s;
+}
+.btn-primary:active {
+  transform: scale(0.95);
+}
 </style>
