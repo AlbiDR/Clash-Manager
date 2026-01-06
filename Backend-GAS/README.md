@@ -1,94 +1,34 @@
-# Clash Manager Server (GAS)
+# Clash Manager — Backend (GAS)
 
-<!-- Static badges for the backend as GAS doesn't have a package.json -->
-![Platform](https://img.shields.io/badge/Platform-Google%20Apps%20Script-4285F4?style=flat-square&logo=google&logoColor=white)
-![Standard](https://img.shields.io/badge/API-REST%20over%20HTTPS-orange?style=flat-square&logo=json)
-[![License](https://img.shields.io/badge/License-Proprietary-green?style=flat-square)](https://github.com/albidr/Clash-Manager/blob/Stable/LICENSE)
+Small, focused server that performs ETL, computes scores, and serves a compact JSON payload consumed by the PWA.
 
-**Clash Manager Server** is the backend engine powered by Google Apps Script. It acts as the API Gateway, ETL Pipeline, and Database (via Google Sheets) for the Clash Manager ecosystem.
+## Quick overview
+- Scheduled ETL and scoring
+- Headless JSON API for the client
+- Recruitment scanning and scoring
 
-Instead of serving HTML directly (standard GAS Web App), it operates as a **Headless API**, serving compressed JSON to the PWA frontend.
+## Modules
+| File | Purpose |
+| --- | --- |
+| `API_Public.gs.js` | Router and public endpoints |
+| `Controller_Webapp.gs.js` | Payload generation and caching |
+| `Leaderboard.gs.js` | War history aggregation and normalization |
+| `ScoringSystem.gs.js` | Scoring algorithms (isolated logic) |
+| `Recruiter.gs.js` | Tournament scanning and candidate scoring |
+| `Configuration.gs.js` | Weights, penalties, and schema constants |
 
----
-
-## Architecture
-
-```mermaid
-graph LR
-    CR[Clash Royale API] -->|Proxy| GAS[GAS Backend]
-    GAS <-->|Read/Write| DB[(Google Sheets)]
-    GAS -->|JSON Response| PWA[Client PWA]
-    
-    subgraph "Backend Cycle"
-    Trigger[Time-Based Trigger] --> ETL[ETL & Scoring]
-    ETL --> DB
-    end
-```
-
-### Core Concepts
-1.  **Cycle-Based Execution**: The system updates data on a schedule (Time-based triggers) or on-demand, rather than on every request.
-2.  **Mutex Locking**: Uses `LockService` to prevents race conditions. If an update is running, subsequent requests wait or abort safely to prevent database corruption.
-3.  **Key Rotation**: Rotates through a pool of API keys to respect Clash Royale API rate limits during heavy scanning operations.
-
----
-
-## Module ecosystem
-
-| File | Responsibility |
-| :--- | :--- |
-| **`API_Public`** | **Router**: Handles `doGet`/`doPost` and standardized JSON responses. |
-| **`Controller_Webapp`** | **Data Layer**: Generates, compresses, and caches the frontend payload. |
-| **`Recruiter`** | **Intelligence**: Runs the "Deep Net" tournament scan to find recruits. |
-| **`Leaderboard`** | **Ranking**: Aggregates member stats and calculates war history. |
-| **`Logger`** | **Database**: Handles daily snapshots and historical pruning. |
-| **`ScoringSystem`** | **Math**: Isolated algorithms for player scoring (Protected Logic). |
-| **`Orchestrator & Triggers`** | **Control**: Manages triggers, menus, and update sequences. |
-| **`Utilities`** | **Core**: Fetching, backups, and shared helpers. |
-| **`Configuration`** | **Config**: Central constants, schema definitions, and API keys. |
-
----
-
-## Scoring
-Performance scoring is implemented in `ScoringSystem.gs.js`. Parameters live in `Configuration.gs.js`. See the repository `README.md` (Scoring section) for a concise formula and rationale.
-
-## Setup
-
-Create a new Google Sheet and open Apps Script. Copy the `.gs.js` files into the project (rename to `.gs`) and set these Script Properties:
-
-```text
-ClanTag=<your-clan-tag>
-CRK1=<royaleapi-key-1>
-CRK2=<royaleapi-key-2>
-# ... CRK3..CRK10 (optional)
-WebAppUrl=<optional-frontend-url>
-```
-
-Deploy as a Web App (Execute as: you; Access: Anyone) and run the built-in health check to validate permissions and configuration.
-
----
+## Setup (short)
+1. Create a Google Sheet and open Apps Script.
+2. Copy `.gs.js` files into the project (rename to `.gs`).
+3. Add project script properties: `ClanTag`, `CRK1..CRKn`, `WebAppUrl`.
+4. Deploy as Web App and run the health check.
 
 ## API
+- `GET ?action=getwebappdata` — compressed leaderboard + recruits
+- `GET ?action=ping` — health and version
+- `POST` — management actions (example: `dismissRecruits`)
 
-The backend exposes a single HTTP endpoint.
-
-### Standard Envelope
-```json
-{
-  "status": "success",
-  "data": { ... },
-  "error": null,
-  "timestamp": "ISO_DATE_STRING"
-}
-```
-
-### Endpoints
-*   `GET ?action=getwebappdata`: Returns the monolithic, compressed data payload (Leaderboard + Recruits).
-*   `GET ?action=ping`: System health check (returns version and status).
-*   `POST`: Accepts JSON body `{ "action": "dismissRecruits", "ids": [...] }` to update the blacklist.
-
----
+For scoring details see the main `README.md` (Scoring section).
 
 ## License
-
-Proprietary.
-Copyright © 2026 AlbiDR.
+Proprietary. © 2026 AlbiDR
