@@ -1,40 +1,44 @@
 // @ts-nocheck
-import { ref } from 'vue'
+import { ref } from "vue";
 
 export function useBadge() {
   // Check multiple badge API support levels
-  const hasStandardBadge = typeof navigator !== 'undefined' && 'setAppBadge' in navigator
-  const hasExperimentalBadge = typeof navigator !== 'undefined' && 'setExperimentalAppBadge' in navigator
-  const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator
+  const hasStandardBadge =
+    typeof navigator !== "undefined" && "setAppBadge" in navigator;
+  const hasExperimentalBadge =
+    typeof navigator !== "undefined" && "setExperimentalAppBadge" in navigator;
+  const hasServiceWorker =
+    typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
-  const isSupported = hasStandardBadge || hasExperimentalBadge || hasServiceWorker
+  const isSupported =
+    hasStandardBadge || hasExperimentalBadge || hasServiceWorker;
 
   async function setBadge(count: number) {
     if (!isSupported) {
-      console.warn('[Badge] No badge API available')
-      return
+      console.warn("[Badge] No badge API available");
+      return;
     }
 
     try {
       // Layer 1: Standard Badge API (Native)
       if (hasStandardBadge) {
         if (count > 0) {
-          await (navigator as any).setAppBadge(count)
+          await (navigator as any).setAppBadge(count);
         } else {
-          await (navigator as any).clearAppBadge()
+          await (navigator as any).clearAppBadge();
         }
-        console.log(`[Badge] Set via standard API: ${count}`)
+        console.log(`[Badge] Set via standard API: ${count}`);
         // We continue to SW layer because on some mobile browsers setAppBadge exists but does nothing for the home screen icon
       }
 
       // Layer 2: Experimental Badge API
       if (hasExperimentalBadge && !hasStandardBadge) {
         if (count > 0) {
-          await (navigator as any).setExperimentalAppBadge(count)
+          await (navigator as any).setExperimentalAppBadge(count);
         } else {
-          await (navigator as any).clearExperimentalAppBadge()
+          await (navigator as any).clearExperimentalAppBadge();
         }
-        console.log(`[Badge] Set via experimental API: ${count}`)
+        console.log(`[Badge] Set via experimental API: ${count}`);
       }
 
       // Layer 3: Service Worker Badge (CRITICAL FOR ANDROID FALLBACK)
@@ -42,31 +46,31 @@ export function useBadge() {
         const sendToSW = (reg: ServiceWorkerRegistration) => {
           if (reg.active) {
             reg.active.postMessage({
-              type: 'SET_BADGE',
-              count: count > 0 ? count : 0
-            })
-            console.log(`[Badge] Message sent to Service Worker: ${count}`)
+              type: "SET_BADGE",
+              count: count > 0 ? count : 0,
+            });
+            console.log(`[Badge] Message sent to Service Worker: ${count}`);
           }
-        }
+        };
 
         if (navigator.serviceWorker.controller) {
-          sendToSW({ active: navigator.serviceWorker.controller } as any)
+          sendToSW({ active: navigator.serviceWorker.controller } as any);
         } else {
-          navigator.serviceWorker.ready.then(sendToSW)
+          navigator.serviceWorker.ready.then(sendToSW);
         }
       }
     } catch (e) {
-      console.error('[Badge] Failed to update app badge:', e)
+      console.error("[Badge] Failed to update app badge:", e);
     }
   }
 
   async function clearBadge() {
-    await setBadge(0)
+    await setBadge(0);
   }
 
   return {
     isSupported,
     setBadge,
-    clearBadge
-  }
+    clearBadge,
+  };
 }

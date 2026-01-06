@@ -1,68 +1,72 @@
 // @ts-nocheck
-import { ref } from 'vue'
+import { ref } from "vue";
 
 // Singleton State
-const isSupported = typeof navigator !== 'undefined' && 'wakeLock' in navigator
-const isActive = ref(false)
+const isSupported = typeof navigator !== "undefined" && "wakeLock" in navigator;
+const isActive = ref(false);
 // Track user intent to persist lock across visibility changes. Default to TRUE.
-let shouldBeActive = true 
-let wakeLockSentinel: WakeLockSentinel | null = null
+let shouldBeActive = true;
+let wakeLockSentinel: WakeLockSentinel | null = null;
 
 async function request() {
-  if (!isSupported) return
+  if (!isSupported) return;
   try {
-    wakeLockSentinel = await navigator.wakeLock.request('screen')
-    isActive.value = true
-    shouldBeActive = true
-    
-    wakeLockSentinel.addEventListener('release', () => {
+    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    isActive.value = true;
+    shouldBeActive = true;
+
+    wakeLockSentinel.addEventListener("release", () => {
       // If released by system (tab hidden, low battery), isActive becomes false visually.
       // We rely on visibilitychange listener to re-acquire if shouldBeActive is true.
       if (wakeLockSentinel !== null) {
-          isActive.value = false
-          wakeLockSentinel = null
+        isActive.value = false;
+        wakeLockSentinel = null;
       }
-    })
-    console.log('Wake Lock acquired')
+    });
+    console.log("Wake Lock acquired");
   } catch (err) {
-    console.warn(`WakeLock request failed: ${(err as Error).message}`)
-    isActive.value = false
+    console.warn(`WakeLock request failed: ${(err as Error).message}`);
+    isActive.value = false;
   }
 }
 
 async function release() {
-  shouldBeActive = false // User explicitly turned it off
+  shouldBeActive = false; // User explicitly turned it off
   if (wakeLockSentinel) {
-    await wakeLockSentinel.release()
-    wakeLockSentinel = null
+    await wakeLockSentinel.release();
+    wakeLockSentinel = null;
   }
-  isActive.value = false
-  console.log('Wake Lock released manually')
+  isActive.value = false;
+  console.log("Wake Lock released manually");
 }
 
 async function toggle() {
   if (isActive.value) {
-    await release()
+    await release();
   } else {
-    await request()
+    await request();
   }
 }
 
 // Auto-reacquire on visibility change if it should be active
-if (isSupported && typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', async () => {
-      if (document.visibilityState === 'visible' && shouldBeActive && !isActive.value) {
-          await request()
-      }
-  })
+if (isSupported && typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", async () => {
+    if (
+      document.visibilityState === "visible" &&
+      shouldBeActive &&
+      !isActive.value
+    ) {
+      await request();
+    }
+  });
 }
 
 export function useWakeLock() {
   function init() {
-      // Attempt to auto-start if default is On and supported
-      if (isSupported && shouldBeActive && !isActive.value) {
-          request()
-      }
+    // Attempt to auto-start if default is On and supported
+    if (isSupported && shouldBeActive && !isActive.value) {
+      request();
+    }
   }
 
   return {
@@ -71,6 +75,6 @@ export function useWakeLock() {
     request,
     release,
     toggle,
-    init
-  }
+    init,
+  };
 }

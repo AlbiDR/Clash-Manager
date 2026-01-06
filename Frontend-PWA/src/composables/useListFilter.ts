@@ -1,50 +1,50 @@
 // @ts-nocheck
-import { ref, computed } from 'vue'
+import { ref, computed } from "vue";
 
 export function useListFilter(
-    items,
-    searchFields,
-    sortStrategies,
-    defaultSort = 'score'
+  items,
+  searchFields,
+  sortStrategies,
+  defaultSort = "score",
 ) {
-    const searchQuery = ref('')
-    const sortBy = ref(defaultSort)
+  const searchQuery = ref("");
+  const sortBy = ref(defaultSort);
 
-    const filteredItems = computed(() => {
-        let result = [...(items.value || [])]
+  const filteredItems = computed(() => {
+    let result = [...(items.value || [])];
 
-        // 1. Search Filter
-        if (searchQuery.value) {
-            const query = searchQuery.value.toLowerCase()
-            result = result.filter(item => {
-                const fields = searchFields(item)
-                return fields.some(f => f.toLowerCase().includes(query))
-            })
-        }
-
-        // 2. Sorting
-        const comparator = sortStrategies[sortBy.value]
-        if (comparator) {
-            result.sort(comparator)
-        }
-
-        return result
-    })
-
-    function updateSort(val) {
-        if (document.startViewTransition) {
-            document.startViewTransition(() => {
-                sortBy.value = val
-            })
-        } else {
-            sortBy.value = val
-        }
+    // 1. Search Filter
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      result = result.filter((item) => {
+        const fields = searchFields(item);
+        return fields.some((f) => f.toLowerCase().includes(query));
+      });
     }
 
-    return {
-        searchQuery,
-        sortBy,
-        filteredItems,
-        updateSort
+    // 2. Sorting
+    const comparator = sortStrategies[sortBy.value];
+    if (comparator) {
+      result.sort(comparator);
     }
+
+    return result;
+  });
+
+  function updateSort(val) {
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        sortBy.value = val;
+      });
+    } else {
+      sortBy.value = val;
+    }
+  }
+
+  return {
+    searchQuery,
+    sortBy,
+    filteredItems,
+    updateSort,
+  };
 }

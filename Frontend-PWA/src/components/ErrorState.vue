@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import Icon from './Icon.vue'
+import Icon from "./Icon.vue";
 
 defineProps<{
-  message: string
-}>()
+  message: string;
+}>();
 
 defineEmits<{
-  retry: []
-}>()
+  retry: [];
+}>();
 </script>
 
 <template>
