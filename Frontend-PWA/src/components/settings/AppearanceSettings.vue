@@ -1,47 +1,47 @@
 <script setup lang="ts">
-import { useTheme } from '../../composables/useTheme'
-import { useHaptics } from '../../composables/useHaptics'
-import SettingsCard from '../SettingsCard.vue'
-import Icon from '../Icon.vue'
+import { useTheme } from "../../composables/useTheme";
+import { useHaptics } from "../../composables/useHaptics";
+import SettingsCard from "../SettingsCard.vue";
+import Icon from "../Icon.vue";
 
-const { theme, setTheme } = useTheme()
-const haptics = useHaptics()
+const { theme, setTheme } = useTheme();
+const haptics = useHaptics();
 
 function handleThemeChange(newTheme: any) {
-    haptics.tap()
-    setTheme(newTheme)
+  haptics.tap();
+  setTheme(newTheme);
 }
 </script>
 
 <template>
-    <SettingsCard title="Appearance" icon="gear">
-        <div class="theme-switch">
-            <button 
-                class="theme-btn" 
-                :class="{ active: theme === 'light' }" 
-                @click="handleThemeChange('light')"
-                title="Light Mode"
-            >
-                <Icon name="theme_light" size="20" />
-            </button>
-            <button 
-                class="theme-btn" 
-                :class="{ active: theme === 'auto' }" 
-                @click="handleThemeChange('auto')"
-                title="Auto / System"
-            >
-                <Icon name="theme_auto" size="20" />
-            </button>
-            <button 
-                class="theme-btn" 
-                :class="{ active: theme === 'dark' }" 
-                @click="handleThemeChange('dark')"
-                title="Dark Mode"
-            >
-                <Icon name="moon" size="20" />
-            </button>
-        </div>
-    </SettingsCard>
+  <SettingsCard title="Appearance" icon="gear">
+    <div class="theme-switch">
+      <button
+        class="theme-btn"
+        :class="{ active: theme === 'light' }"
+        @click="handleThemeChange('light')"
+        title="Light Mode"
+      >
+        <Icon name="theme_light" size="20" />
+      </button>
+      <button
+        class="theme-btn"
+        :class="{ active: theme === 'auto' }"
+        @click="handleThemeChange('auto')"
+        title="Auto / System"
+      >
+        <Icon name="theme_auto" size="20" />
+      </button>
+      <button
+        class="theme-btn"
+        :class="{ active: theme === 'dark' }"
+        @click="handleThemeChange('dark')"
+        title="Dark Mode"
+      >
+        <Icon name="moon" size="20" />
+      </button>
+    </div>
+  </SettingsCard>
 </template>
 
 <style scoped>
@@ -60,7 +60,9 @@ function handleThemeChange(newTheme: any) {
   color: var(--sys-color-outline);
   border-radius: 99px;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s var(--sys-motion-spring);
 }
 .theme-btn.active {

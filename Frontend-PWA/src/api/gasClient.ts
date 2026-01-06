@@ -3,139 +3,186 @@
  */
 
 import type {
-    ApiResponse,
-    WebAppData,
-    ClanMember,
-    PingResponse,
-    DismissResponse,
-    LeaderboardMember,
-    Recruit
-} from '../types'
-import { idb } from '../utils/idb'
+  ApiResponse,
+  WebAppData,
+  ClanMember,
+  PingResponse,
+  DismissResponse,
+  LeaderboardMember,
+  Recruit,
+} from "../types";
+import { idb } from "../utils/idb";
 
 const getGasUrl = () => {
-    if (typeof localStorage === 'undefined') return import.meta.env.VITE_GAS_URL || ''
-    return localStorage.getItem('cm_gas_url') || import.meta.env.VITE_GAS_URL || ''
-}
+  if (typeof localStorage === "undefined")
+    return import.meta.env.VITE_GAS_URL || "";
+  return (
+    localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || ""
+  );
+};
 
-const CACHE_KEY_MAIN = 'CLAN_MANAGER_DATA_V6'
+const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V6";
 
 export async function inflatePayload(data: any): Promise<WebAppData> {
-    if (typeof data === 'string') {
-        data = JSON.parse(data)
-    }
+  if (typeof data === "string") {
+    data = JSON.parse(data);
+  }
 
-    if (!data || data.format !== 'matrix') {
-        return data as WebAppData
-    }
+  if (!data || data.format !== "matrix") {
+    return data as WebAppData;
+  }
 
-    // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
-    const { z } = await import('zod')
+  // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
+  const { z } = await import("zod");
 
-    const result = z.object({
-        lb: z.array(z.array(z.any())),
-        hh: z.array(z.array(z.any())),
-        timestamp: z.number()
-    }).safeParse(data)
+  const result = z
+    .object({
+      lb: z.array(z.array(z.any())),
+      hh: z.array(z.array(z.any())),
+      timestamp: z.number(),
+    })
+    .safeParse(data);
 
-    if (!result.success) throw new Error('API Schema Mismatch')
+  if (!result.success) throw new Error("API Schema Mismatch");
 
-    const { lb, hh, timestamp } = result.data
+  const { lb, hh, timestamp } = result.data;
 
-    return {
-        lb: lb.map(r => ({
-            id: r[0], n: r[1], t: r[2], s: r[3],
-            d: { role: r[4], days: r[5], avg: r[6], seen: r[7], rate: r[8], hist: r[9] },
-            dt: r[10] ?? 0, r: r[11] ?? 0
-        })),
-        hh: hh.map(r => ({
-            id: r[0], n: r[1], t: r[2], s: r[3],
-            d: { don: r[4], war: r[5], ago: r[6], cards: r[7] ?? 0 }
-        })),
-        timestamp
-    }
+  return {
+    lb: lb.map((r) => ({
+      id: r[0],
+      n: r[1],
+      t: r[2],
+      s: r[3],
+      d: {
+        role: r[4],
+        days: r[5],
+        avg: r[6],
+        seen: r[7],
+        rate: r[8],
+        hist: r[9],
+      },
+      dt: r[10] ?? 0,
+      r: r[11] ?? 0,
+    })),
+    hh: hh.map((r) => ({
+      id: r[0],
+      n: r[1],
+      t: r[2],
+      s: r[3],
+      d: { don: r[4], war: r[5], ago: r[6], cards: r[7] ?? 0 },
+    })),
+    timestamp,
+  };
 }
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 3, backoff = 500): Promise<Response> {
-    try {
-        const response = await fetch(url, options)
-        if (!response.ok && retries > 0 && response.status >= 500) {
-            throw new Error(`HTTP ${response.status}`)
-        }
-        return response
-    } catch (e) {
-        if (retries > 0) {
-            console.warn(`Fetch failed, retrying (${retries} left)...`, e)
-            await new Promise(r => setTimeout(r, backoff))
-            return fetchWithRetry(url, options, retries - 1, backoff * 2)
-        }
-        throw e
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 3,
+  backoff = 500,
+): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok && retries > 0 && response.status >= 500) {
+      throw new Error(`HTTP ${response.status}`);
     }
+    return response;
+  } catch (e) {
+    if (retries > 0) {
+      console.warn(`Fetch failed, retrying (${retries} left)...`, e);
+      await new Promise((r) => setTimeout(r, backoff));
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    throw e;
+  }
 }
 
-async function gasRequest<T>(action: string, payload?: Record<string, unknown>): Promise<T> {
-    const url = getGasUrl()
-    if (!url) throw new Error('GAS_URL not configured.')
+async function gasRequest<T>(
+  action: string,
+  payload?: Record<string, unknown>,
+): Promise<T> {
+  const url = getGasUrl();
+  if (!url) throw new Error("GAS_URL not configured.");
 
-    const options: RequestInit = {
-        method: action === 'getwebappdata' ? 'GET' : 'POST',
-        redirect: 'follow',
-        headers: { 'Content-Type': 'text/plain' },
-        body: action === 'getwebappdata' ? undefined : JSON.stringify({ action, ...payload })
+  const options: RequestInit = {
+    method: action === "getwebappdata" ? "GET" : "POST",
+    redirect: "follow",
+    headers: { "Content-Type": "text/plain" },
+    body:
+      action === "getwebappdata"
+        ? undefined
+        : JSON.stringify({ action, ...payload }),
+  };
+
+  const response = await fetchWithRetry(`${url}?action=${action}`, options);
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const text = await response.text();
+
+  let envelope: any;
+  try {
+    envelope = JSON.parse(text);
+  } catch (e) {
+    // Intelligent error sniffing for HTML error pages (common with GAS)
+    if (
+      text.trim().toLowerCase().startsWith("<html") ||
+      text.includes("<!DOCTYPE html>")
+    ) {
+      throw new Error(
+        "Google Server Error (Received HTML instead of JSON). Try again later.",
+      );
     }
+    throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`);
+  }
 
-    const response = await fetchWithRetry(`${url}?action=${action}`, options)
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const text = await response.text()
-
-    let envelope: any
-    try {
-        envelope = JSON.parse(text)
-    } catch (e) {
-        // Intelligent error sniffing for HTML error pages (common with GAS)
-        if (text.trim().toLowerCase().startsWith('<html') || text.includes('<!DOCTYPE html>')) {
-            throw new Error('Google Server Error (Received HTML instead of JSON). Try again later.')
-        }
-        throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`)
-    }
-
-    if (envelope.success === true || envelope.status === 'success') return envelope as T
-    throw new Error(envelope.error?.message || 'Unknown Backend Error')
+  if (envelope.success === true || envelope.status === "success")
+    return envelope as T;
+  throw new Error(envelope.error?.message || "Unknown Backend Error");
 }
 
 export async function loadCache(): Promise<WebAppData | null> {
-    return idb.get<WebAppData>(CACHE_KEY_MAIN)
+  return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
 export async function fetchRemote(): Promise<WebAppData> {
-    // ⚡ PERFORMANCE: Start Zod library download in parallel with Network Request.
-    // This eliminates the waterfall effect where Zod is requested only after the JSON payload arrives.
-    // The previous critical chain audit showed v-zod blocked for ~4.2s.
-    const zodPreload = import('zod');
+  // ⚡ PERFORMANCE: Start Zod library download in parallel with Network Request.
+  // This eliminates the waterfall effect where Zod is requested only after the JSON payload arrives.
+  // The previous critical chain audit showed v-zod blocked for ~4.2s.
+  const zodPreload = import("zod");
 
-    const envelope = await gasRequest<ApiResponse<any>>('getwebappdata')
-    if (!envelope.data) throw new Error('Invalid response structure')
+  const envelope = await gasRequest<ApiResponse<any>>("getwebappdata");
+  if (!envelope.data) throw new Error("Invalid response structure");
 
-    // Ensure Zod is fully loaded before attempting inflation
-    await zodPreload;
+  // Ensure Zod is fully loaded before attempting inflation
+  await zodPreload;
 
-    const inflated = await inflatePayload(envelope.data)
-    idb.set(CACHE_KEY_MAIN, inflated).catch(() => { })
-    return inflated
+  const inflated = await inflatePayload(envelope.data);
+  idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+  return inflated;
 }
 
 export async function ping(): Promise<ApiResponse<PingResponse>> {
-    return gasRequest<ApiResponse<PingResponse>>('ping')
+  return gasRequest<ApiResponse<PingResponse>>("ping");
 }
 
-export async function dismissRecruits(ids: string[]): Promise<ApiResponse<DismissResponse>> {
-    return gasRequest<ApiResponse<DismissResponse>>('dismissRecruits', { ids })
+export async function dismissRecruits(
+  ids: string[],
+): Promise<ApiResponse<DismissResponse>> {
+  return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { ids });
 }
 
-export async function triggerBackendUpdate(target?: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    return gasRequest<ApiResponse<{ success: boolean; message: string }>>('triggerUpdate', { target })
+export async function triggerBackendUpdate(
+  target?: string,
+): Promise<ApiResponse<{ success: boolean; message: string }>> {
+  return gasRequest<ApiResponse<{ success: boolean; message: string }>>(
+    "triggerUpdate",
+    { target },
+  );
 }
 
-export function isConfigured(): boolean { return Boolean(getGasUrl()) }
-export function getApiUrl(): string { return getGasUrl() || '(not configured)' }
+export function isConfigured(): boolean {
+  return Boolean(getGasUrl());
+}
+export function getApiUrl(): string {
+  return getGasUrl() || "(not configured)";
+}

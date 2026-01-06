@@ -4,12 +4,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
  *                 Replaces the legacy google.script.run bridge.
- * ⚙️ ARCHITECTURE: 
+ * ⚙️ ARCHITECTURE:
  *    - doGet(e): Handles all READ operations via ?action= parameter
  *    - doPost(e): Handles all WRITE operations via JSON body { action: ... }
  *    - Standard Envelope: { status, data, error, timestamp }
  * 🏷️ VERSION: 6.0.0
- * 
+ *
  * 🧠 REASONING:
  *    - Headless architecture enables hosting frontend on GitHub Pages as PWA
  *    - All responses are JSON with consistent envelope for easy client parsing
@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-const VER_API_PUBLIC = '6.0.0';
+const VER_API_PUBLIC = "6.0.0";
 
 // ============================================================================
 // 🌐 HTTP HANDLERS (Entry Points)
@@ -26,86 +26,98 @@ const VER_API_PUBLIC = '6.0.0';
 /**
  * GET Handler - Read Operations
  * Supports both ?action= query params and POST body for flexibility.
- * 
+ *
  * Endpoints:
  *   ?action=ping          - Health check
  *   ?action=getLeaderboard - Full leaderboard + recruiter data (cached)
  *   ?action=getRecruits   - Recruiter pool only
  *   ?action=getMembers    - Real-time clan members from Clash Royale API
  *   ?action=getWarLog     - River Race history
- * 
+ *
  * @param {Object} e - Event object with parameters
  * @return {TextOutput} JSON response
  */
 function doGet(e) {
   try {
-    const action = (e?.parameter?.action || '').toLowerCase().trim();
+    const action = (e?.parameter?.action || "").toLowerCase().trim();
 
     switch (action) {
-      case 'ping':
+      case "ping":
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const sheetsMap = {};
-        ss.getSheets().forEach(s => sheetsMap[s.getName()] = s.getSheetId());
+        ss.getSheets().forEach(
+          (s) => (sheetsMap[s.getName()] = s.getSheetId()),
+        );
 
         return respond({
           version: VER_API_PUBLIC,
-          status: 'online',
+          status: "online",
           scriptId: ScriptApp.getScriptId(),
           spreadsheetUrl: ss.getUrl(),
           // Map of SheetName -> GID for direct linking
           sheets: sheetsMap,
-          modules: getModuleVersions()
+          modules: getModuleVersions(),
         });
 
-      case 'getleaderboard':
-      case 'getwebappdata':
+      case "getleaderboard":
+      case "getwebappdata":
         // Returns cached leaderboard + recruiter data
         const webData = getWebAppData(false);
         // getWebAppData returns a JSON string, parse and re-wrap in envelope
         return respondRaw(webData);
 
-      case 'getrecruits':
+      case "getrecruits":
         const recruitData = getWebAppData(false);
         const parsed = JSON.parse(recruitData);
         if (parsed.success && parsed.data) {
-          return respond({ hh: parsed.data.hh, timestamp: parsed.data.timestamp });
+          return respond({
+            hh: parsed.data.hh,
+            timestamp: parsed.data.timestamp,
+          });
         }
-        return respond(null, 'NO_DATA', 'Recruit data not available');
+        return respond(null, "NO_DATA", "Recruit data not available");
 
-      case 'getmembers':
+      case "getmembers":
         return respond(getMembers());
 
-      case 'getwarlog':
+      case "getwarlog":
         return respond(getWarLog());
 
-      case 'refresh':
+      case "refresh":
         // Force refresh the cache
         const freshData = getWebAppData(true);
         return respondRaw(freshData);
 
-      case '':
-        return respond(null, 'NO_ACTION', 'Missing ?action= parameter. Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh');
+      case "":
+        return respond(
+          null,
+          "NO_ACTION",
+          "Missing ?action= parameter. Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh",
+        );
 
       default:
-        return respond(null, 'INVALID_ACTION', `Unknown action: "${action}". Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh`);
+        return respond(
+          null,
+          "INVALID_ACTION",
+          `Unknown action: "${action}". Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh`,
+        );
     }
-
   } catch (err) {
     console.error(`doGet CRITICAL ERROR: ${err.stack}`);
-    return respond(null, 'SERVER_ERROR', err.message);
+    return respond(null, "SERVER_ERROR", err.message);
   }
 }
 
 /**
  * POST Handler - Write Operations & Alternative Read
  * Body format: { "action": "...", ...params }
- * 
+ *
  * Write Endpoints:
  *   action: "dismissRecruits" - Mark recruits as invited (ids: string[])
- * 
+ *
  * Read Endpoints (POST alternative for CORS):
  *   action: "getLeaderboard", "getRecruits", etc.
- * 
+ *
  * @param {Object} e - Event object with postData
  * @return {TextOutput} JSON response
  */
@@ -114,52 +126,55 @@ function doPost(e) {
     // Parse JSON body
     const body = e?.postData?.contents;
     if (!body) {
-      return respond(null, 'EMPTY_BODY', 'POST request requires JSON body');
+      return respond(null, "EMPTY_BODY", "POST request requires JSON body");
     }
 
     let payload;
     try {
       payload = JSON.parse(body);
     } catch (parseErr) {
-      return respond(null, 'PARSE_ERROR', `Invalid JSON: ${parseErr.message}`);
+      return respond(null, "PARSE_ERROR", `Invalid JSON: ${parseErr.message}`);
     }
 
-    const action = (payload.action || '').toLowerCase().trim();
+    const action = (payload.action || "").toLowerCase().trim();
 
     switch (action) {
       // ========== WRITE OPERATIONS ==========
-      case 'dismissrecruits':
+      case "dismissrecruits":
         const ids = payload.ids;
         if (!ids || !Array.isArray(ids)) {
-          return respond(null, 'INVALID_PARAMS', 'dismissRecruits requires "ids" array');
+          return respond(
+            null,
+            "INVALID_PARAMS",
+            'dismissRecruits requires "ids" array',
+          );
         }
         return respond(markRecruitsAsInvitedBulk(ids));
 
-      case 'triggerupdate':
+      case "triggerupdate":
         return respond(triggerAsyncUpdate(payload.target));
 
       // ========== READ OPERATIONS (POST alternative) ==========
       // Allow reads via POST for CORS flexibility
-      case 'ping':
-      case 'getleaderboard':
-      case 'getwebappdata':
-      case 'getrecruits':
-      case 'getmembers':
-      case 'getwarlog':
-      case 'refresh':
+      case "ping":
+      case "getleaderboard":
+      case "getwebappdata":
+      case "getrecruits":
+      case "getmembers":
+      case "getwarlog":
+      case "refresh":
         // Delegate to doGet logic by constructing a fake event
         return doGet({ parameter: { action: action } });
 
-      case '':
-        return respond(null, 'NO_ACTION', 'Missing "action" in POST body');
+      case "":
+        return respond(null, "NO_ACTION", 'Missing "action" in POST body');
 
       default:
-        return respond(null, 'INVALID_ACTION', `Unknown action: "${action}"`);
+        return respond(null, "INVALID_ACTION", `Unknown action: "${action}"`);
     }
-
   } catch (err) {
     console.error(`doPost CRITICAL ERROR: ${err.stack}`);
-    return respond(null, 'SERVER_ERROR', err.message);
+    return respond(null, "SERVER_ERROR", err.message);
   }
 }
 
@@ -169,7 +184,7 @@ function doPost(e) {
 
 /**
  * Creates a standardized JSON response envelope.
- * 
+ *
  * @param {any} data - Response data (null on error)
  * @param {string|null} errorCode - Error code (null on success)
  * @param {string|null} errorMessage - Human-readable error message
@@ -177,38 +192,54 @@ function doPost(e) {
  */
 function respond(data, errorCode = null, errorMessage = null) {
   const envelope = {
-    status: errorCode ? 'error' : 'success',
+    status: errorCode ? "error" : "success",
     data: errorCode ? null : data,
     error: errorCode ? { code: errorCode, message: errorMessage } : null,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
-  return ContentService
-    .createTextOutput(JSON.stringify(envelope))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(
+    ContentService.MimeType.JSON,
+  );
 }
 
 /**
  * Passes through a pre-formatted JSON string.
  * Used when getWebAppData already returns a properly formatted response.
- * 
+ *
  * @param {string} jsonString - Pre-formatted JSON string
  * @return {TextOutput} GAS ContentService text output
  */
 function respondRaw(jsonString) {
-  return ContentService
-    .createTextOutput(jsonString)
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(jsonString).setMimeType(
+    ContentService.MimeType.JSON,
+  );
 }
 
 /**
  * Collects version numbers from all modules for health monitoring.
- * 
+ *
  * @return {Object} Map of module names to versions
  */
 function getModuleVersions() {
-  const modules = ['API_PUBLIC', 'CONFIGURATION', 'CONTROLLER_WEBAPP', 'UTILITIES', 'LEADERBOARD', 'LOGGER', 'RECRUITER', 'SCORING_SYSTEM'];
-  return Object.fromEntries(modules.map(m => [m, typeof globalThis[`VER_${m}`] !== 'undefined' ? globalThis[`VER_${m}`] : 'N/A']));
+  const modules = [
+    "API_PUBLIC",
+    "CONFIGURATION",
+    "CONTROLLER_WEBAPP",
+    "UTILITIES",
+    "LEADERBOARD",
+    "LOGGER",
+    "RECRUITER",
+    "SCORING_SYSTEM",
+  ];
+  return Object.fromEntries(
+    modules.map((m) => [
+      m,
+      typeof globalThis[`VER_${m}`] !== "undefined"
+        ? globalThis[`VER_${m}`]
+        : "N/A",
+    ]),
+  );
 }
 
 // ============================================================================
@@ -218,50 +249,58 @@ function getModuleVersions() {
 /**
  * Fetches the current member list from the Clash Royale API.
  * Maps 'expLevel' (King Level) to 'kingLevel' to satisfy the UI interface.
- * 
+ *
  * @return {Array} List of clan members
  */
 function getMembers() {
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`]);
+  const data = Utils.fetchRoyaleAPI([
+    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
+  ]);
 
   if (!data || !data[0] || !data[0].items) {
     console.warn("API: getMembers returned no data.");
     return [];
   }
 
-  return data[0].items.map(m => ({
+  return data[0].items.map((m) => ({
     tag: m.tag,
     name: m.name,
     role: formatRole(m.role),
     kingLevel: m.expLevel,
     donations: m.donations,
-    donationsReceived: m.donationsReceived
+    donationsReceived: m.donationsReceived,
   }));
 }
 
 /**
  * Fetches the recent River Race Log (War Log).
  * Transforms complex RoyaleAPI standings into a simplified Win/Loss/Score format.
- * 
+ *
  * @return {Array} List of war log entries
  */
 function getWarLog() {
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`]);
+  const data = Utils.fetchRoyaleAPI([
+    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
+  ]);
 
   if (!data || !data[0] || !data[0].items) {
     console.warn("API: getWarLog returned no data.");
     return [];
   }
 
-  return data[0].items.map(r => {
+  return data[0].items.map((r) => {
     let myStanding = null;
     let opponents = [];
 
     if (r.standings) {
-      myStanding = r.standings.find(s => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG);
-      opponents = r.standings.filter(s => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG);
+      myStanding = r.standings.find(
+        (s) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
+      );
+      opponents = r.standings.filter(
+        (s) => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG,
+      );
     }
 
     const myFame = myStanding ? myStanding.clan.fame : 0;
@@ -269,17 +308,17 @@ function getWarLog() {
 
     const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
 
-    let result = 'lose';
-    if (myRank === 1) result = 'win';
-    if (myRank === null) result = 'n/a';
+    let result = "lose";
+    if (myRank === 1) result = "win";
+    if (myRank === null) result = "n/a";
 
     return {
       result: result,
       endTime: parseCRDateISO(r.createdDate),
-      opponent: bestRival ? bestRival.clan.name : 'No Opponent',
+      opponent: bestRival ? bestRival.clan.name : "No Opponent",
       teamSize: 50,
       score: myFame,
-      opponentScore: bestRival ? bestRival.clan.fame : 0
+      opponentScore: bestRival ? bestRival.clan.fame : 0,
     };
   });
 }
@@ -288,18 +327,25 @@ function getWarLog() {
 // 🛠️ HELPER FUNCTIONS
 // ============================================================================
 
-/** 
- * Helper: Formats API role string to Title Case 
+/**
+ * Helper: Formats API role string to Title Case
  * e.g. "coLeader" -> "Co-Leader"
  */
-const formatRole = (role) => ({ leader: 'Leader', coLeader: 'Co-Leader', elder: 'Elder' }[role] || 'Member');
+const formatRole = (role) =>
+  ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ||
+  "Member";
 
 /**
  * Helper: Parses RoyaleAPI ISO dates (YYYYMMDDThhmmss.000Z) to readable YYYY-MM-DD
  */
 function parseCRDateISO(t) {
-  if (!t) return new Date().toISOString().split('T')[0];
-  const d = new Date(t.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/, '$1-$2-$3T$4:$5:$6Z'));
+  if (!t) return new Date().toISOString().split("T")[0];
+  const d = new Date(
+    t.replace(
+      /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
+      "$1-$2-$3T$4:$5:$6Z",
+    ),
+  );
   return Utils.formatDate(d);
 }
 
@@ -308,40 +354,49 @@ function parseCRDateISO(t) {
  * Queues a task and returns immediately to prevent HTTP timeouts.
  */
 function triggerAsyncUpdate(target) {
-  const normTarget = (target || '').toLowerCase().trim();
-  const validTargets = ['members', 'leaderboard', 'headhunters'];
+  const normTarget = (target || "").toLowerCase().trim();
+  const validTargets = ["members", "leaderboard", "headhunters"];
 
   if (!validTargets.includes(normTarget)) {
-    return { success: false, error: 'INVALID_TARGET', message: `Unknown target: "${normTarget}"` };
+    return {
+      success: false,
+      error: "INVALID_TARGET",
+      message: `Unknown target: "${normTarget}"`,
+    };
   }
 
-  return Utils.executeSafely('ASYNC_TRIGGER_QUEUE', () => {
+  return Utils.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
     try {
       // 1. Check if already busy (System-wide lock)
       const cache = CacheService.getScriptCache();
-      if (cache.get('SYSTEM_STATUS') === 'BUSY') {
-        return { success: false, status: 'BUSY', message: "System is already processing an update. Please wait." };
+      if (cache.get("SYSTEM_STATUS") === "BUSY") {
+        return {
+          success: false,
+          status: "BUSY",
+          message: "System is already processing an update. Please wait.",
+        };
       }
 
       // 2. Queue the specific target
-      Utils.Props.set('PENDING_UPDATE_TARGET', normTarget);
+      Utils.Props.set("PENDING_UPDATE_TARGET", normTarget);
 
       // 3. Mark as Busy immediately
-      cache.put('SYSTEM_STATUS', 'BUSY', 1200); // 20 min lock safety
+      cache.put("SYSTEM_STATUS", "BUSY", 1200); // 20 min lock safety
 
       // 4. Create One-Time Trigger
       // Delete any existing dispatchers first to clean up
-      ScriptApp.getProjectTriggers().forEach(t => {
-        if (t.getHandlerFunction() === 'dispatchAsyncUpdate') ScriptApp.deleteTrigger(t);
+      ScriptApp.getProjectTriggers().forEach((t) => {
+        if (t.getHandlerFunction() === "dispatchAsyncUpdate")
+          ScriptApp.deleteTrigger(t);
       });
 
-      ScriptApp.newTrigger('dispatchAsyncUpdate')
+      ScriptApp.newTrigger("dispatchAsyncUpdate")
         .timeBased()
         .after(500)
         .create();
 
       console.log(`🚀 Async Trigger Queued: ${normTarget}`);
-      return { success: true, status: 'QUEUED', target: normTarget };
+      return { success: true, status: "QUEUED", target: normTarget };
     } catch (e) {
       console.error(`triggerAsyncUpdate Failed: ${e.message}`);
       throw e;
@@ -354,22 +409,22 @@ function triggerAsyncUpdate(target) {
  * Runs in the background, not tied to the HTTP request.
  */
 function dispatchAsyncUpdate() {
-  const target = Utils.Props.get('PENDING_UPDATE_TARGET');
+  const target = Utils.Props.get("PENDING_UPDATE_TARGET");
   if (!target) {
     console.warn("⚠️ Async Dispatcher: No pending target found.");
     return;
   }
 
   // Clear pending target immediately to prevent loops
-  Utils.Props.delete('PENDING_UPDATE_TARGET');
+  Utils.Props.delete("PENDING_UPDATE_TARGET");
 
   Utils.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheetName = '';
-      if (target === 'members') sheetName = CONFIG.SHEETS.DB;
-      else if (target === 'leaderboard') sheetName = CONFIG.SHEETS.LB;
-      else if (target === 'headhunters') sheetName = CONFIG.SHEETS.HH;
+      let sheetName = "";
+      if (target === "members") sheetName = CONFIG.SHEETS.DB;
+      else if (target === "leaderboard") sheetName = CONFIG.SHEETS.LB;
+      else if (target === "headhunters") sheetName = CONFIG.SHEETS.HH;
 
       const sheet = ss.getSheetByName(sheetName);
 
@@ -380,13 +435,13 @@ function dispatchAsyncUpdate() {
       }
 
       // Run logic
-      if (target === 'members') {
+      if (target === "members") {
         updateClanDatabase();
         refreshWebPayload();
-      } else if (target === 'leaderboard') {
+      } else if (target === "leaderboard") {
         updateLeaderboard();
         refreshWebPayload();
-      } else if (target === 'headhunters') {
+      } else if (target === "headhunters") {
         scoutRecruits();
       }
 
@@ -398,14 +453,14 @@ function dispatchAsyncUpdate() {
       console.error(`❌ Async Execution Failed [${target}]: ${e.message}`);
     } finally {
       // Clear busy flag
-      CacheService.getScriptCache().remove('SYSTEM_STATUS');
+      CacheService.getScriptCache().remove("SYSTEM_STATUS");
     }
   });
 }
 
-/** 
- * Legacy Trigger maintained for compatibility 
+/**
+ * Legacy Trigger maintained for compatibility
  */
 function triggerHeadlessUpdate() {
-  return triggerAsyncUpdate('members');
+  return triggerAsyncUpdate("members");
 }

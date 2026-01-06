@@ -1,111 +1,106 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from "vue";
 
-defineOptions({ name: 'PullToRefresh' })
+defineOptions({ name: "PullToRefresh" });
 
 const props = defineProps<{
-  disabled?: boolean
-}>()
+  disabled?: boolean;
+}>();
 
 const emit = defineEmits<{
-  refresh: []
-}>()
+  refresh: [];
+}>();
 
-import { useHaptics } from '../composables/useHaptics'
-const haptics = useHaptics()
-const pulling = ref(false)
-const refreshing = ref(false)
-const pullY = ref(0)
-const threshold = 100
-let startY = 0
+import { useHaptics } from "../composables/useHaptics";
+const haptics = useHaptics();
+const pulling = ref(false);
+const refreshing = ref(false);
+const pullY = ref(0);
+const threshold = 100;
+let startY = 0;
 
 function handleStart(e: TouchEvent) {
-  if (props.disabled || refreshing.value) return
-  if (window.scrollY > 0) return
-  if (!e.touches[0]) return
-  
-  startY = e.touches[0].clientY
-  pulling.value = true
+  if (props.disabled || refreshing.value) return;
+  if (window.scrollY > 0) return;
+  if (!e.touches[0]) return;
+
+  startY = e.touches[0].clientY;
+  pulling.value = true;
 }
 
 function handleMove(e: TouchEvent) {
-  if (!pulling.value || refreshing.value) return
-  if (!e.touches[0]) return
-  
-  const y = e.touches[0].clientY
-  const diff = y - startY
-  
+  if (!pulling.value || refreshing.value) return;
+  if (!e.touches[0]) return;
+
+  const y = e.touches[0].clientY;
+  const diff = y - startY;
+
   if (window.scrollY === 0 && diff > 0) {
     // Apply resistance
-    pullY.value = Math.pow(diff, 0.8)
-    
+    pullY.value = Math.pow(diff, 0.8);
+
     // Prevent default scroll if we're pulling to refresh
     if (pullY.value > 10) {
-      if (e.cancelable) e.preventDefault()
+      if (e.cancelable) e.preventDefault();
     }
   } else {
-    pulling.value = false
-    pullY.value = 0
+    pulling.value = false;
+    pullY.value = 0;
   }
 }
 
 function handleEnd() {
-  if (!pulling.value || refreshing.value) return
-  
+  if (!pulling.value || refreshing.value) return;
+
   if (pullY.value >= threshold) {
-    refreshing.value = true
-    pullY.value = threshold // Snap to threshold
-    haptics.sync()
-    emit('refresh')
-    
+    refreshing.value = true;
+    pullY.value = threshold; // Snap to threshold
+    haptics.sync();
+    emit("refresh");
+
     // Auto-reset after explicit job done or timeout
     setTimeout(() => {
-      refreshing.value = false
-      pullY.value = 0
-    }, 2000)
+      refreshing.value = false;
+      pullY.value = 0;
+    }, 2000);
   } else {
-    pullY.value = 0
+    pullY.value = 0;
   }
-  
-  pulling.value = false
+
+  pulling.value = false;
 }
 
 // Global listeners for better touch handling
 onMounted(() => {
-  document.addEventListener('touchstart', handleStart, { passive: true })
-  document.addEventListener('touchmove', handleMove, { passive: false })
-  document.addEventListener('touchend', handleEnd)
-})
+  document.addEventListener("touchstart", handleStart, { passive: true });
+  document.addEventListener("touchmove", handleMove, { passive: false });
+  document.addEventListener("touchend", handleEnd);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('touchstart', handleStart)
-  document.removeEventListener('touchmove', handleMove)
-  document.removeEventListener('touchend', handleEnd)
-})
+  document.removeEventListener("touchstart", handleStart);
+  document.removeEventListener("touchmove", handleMove);
+  document.removeEventListener("touchend", handleEnd);
+});
 // Computed styles to avoid template object parsing issues in vue-tsc
-const indicatorStyle = computed(() => ({ 
-  transform: `translateY(${pullY.value}px)` 
-}))
+const indicatorStyle = computed(() => ({
+  transform: `translateY(${pullY.value}px)`,
+}));
 
-const iconStyle = computed(() => ({ 
-  opacity: Math.min(1, pullY.value / threshold) 
-}))
+const iconStyle = computed(() => ({
+  opacity: Math.min(1, pullY.value / threshold),
+}));
 
-const indicatorClass = computed(() => 
-  refreshing.value ? 'ptr-indicator refreshing' : 'ptr-indicator'
-)
+const indicatorClass = computed(() =>
+  refreshing.value ? "ptr-indicator refreshing" : "ptr-indicator",
+);
 </script>
 
 <template>
-  <div 
-    :class="indicatorClass"
-    :style="indicatorStyle"
-  >
+  <div :class="indicatorClass" :style="indicatorStyle">
     <div class="ptr-content">
       <div v-if="refreshing" class="ptr-spinner"></div>
-      <div v-else class="ptr-icon" :style="iconStyle">
-        ⬇️
-      </div>
+      <div v-else class="ptr-icon" :style="iconStyle">⬇️</div>
     </div>
   </div>
 </template>
@@ -148,6 +143,8 @@ const indicatorClass = computed(() =>
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
