@@ -49,6 +49,15 @@ This section provides a step-by-step guide to deploy and operate the backend.
 - If ETL fails due to timeouts, reduce batch sizes and add exponential backoff on retries.
 - Check Apps Script execution logs and Stackdriver (if enabled) for detailed errors.
 
+Remote worker (optional)
+
+- For heavy scanning you can offload bulk URL fetching to an external worker (e.g., Cloud Run). Set the following Project Script Properties to enable:
+  - `RemoteWorkerUrl` — the worker endpoint (e.g. `https://<service>-<hash}.run.app`)
+  - `RemoteWorkerSecret` — optional shared secret to include as a Bearer token on requests
+- When configured, the GAS fetch engine will call the worker with batched URLs so Apps Script only makes one call per batch (far fewer UrlFetch calls and lower chance of hitting daily quota).
+- See `Backend-Worker/README.md` for a minimal Cloud Run worker scaffold.
+
+
 ## Deployment notes
 
 - Keep production script properties in a secure storage and avoid checking secrets into git. For CI-driven deployments, prefer ephemeral deploy tokens or a controlled service account.
