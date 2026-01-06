@@ -251,14 +251,19 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   console.log(`📡 Discovery: Found ${uniqueTourneys.size} open tournaments.`);
 
+  // Decide scan depth based on remote worker availability and a user toggle
+  const remoteAvailable = Utils.remoteWorkerHealthy();
+  const remoteExpandEnabled = Utils.Props.get('HH_REMOTE_EXPAND', '1') === '1';
+  const scanCfg = remoteAvailable && remoteExpandEnabled ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
+
   const lotteryPool = Array.from(uniqueTourneys.values())
     .sort((a, b) => (b.capacity || 0) - (a.capacity || 0))
-    .slice(0, 800);
+    .slice(0, Math.min(scanCfg.TOURNEYS || 300, CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000));
   Utils.shuffleArray(lotteryPool);
-  const tourneyTags = lotteryPool.slice(0, 300).map((t) => t.tag);
+  const tourneyTags = lotteryPool.slice(0, scanCfg.TOURNEYS || 300).map((t) => t.tag);
 
   console.log(
-    `📡 Discovery: Deep-scanning ${tourneyTags.length} selected tournaments...`,
+    `📡 Discovery: Deep-scanning ${tourneyTags.length} selected tournaments... (remote=${remoteAvailable}, expand=${remoteExpandEnabled})`,
   );
 
   if (tourneyTags.length === 0) return [];
@@ -292,15 +297,16 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     `👥 Filtering: Extracted ${candidates.length} clanless players. ${uniqueCandidates.size} unique above trophy threshold.`,
   );
 
+  const playerLimit = Math.min(CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000, scanCfg.PLAYERS || 250);
   const candidatePool = Array.from(uniqueCandidates.values())
     .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
-    .slice(0, 200);
+    .slice(0, playerLimit);
   Utils.shuffleArray(candidatePool);
-  const tagsToFetch = candidatePool.slice(0, 250).map((p) => p.tag);
+  const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
 
   if (tagsToFetch.length === 0) return [];
   console.log(
-    `👥 Filtering: Retrieving full profiles for ${tagsToFetch.length} final candidates...`,
+    `👥 Filtering: Retrieving full profiles for ${tagsToFetch.length} final candidates... (limit=${playerLimit})`,
   );
   const playersData = Utils.fetchRoyaleAPI(
     tagsToFetch.map(

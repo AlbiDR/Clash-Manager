@@ -162,6 +162,12 @@ const CONFIG = {
       "z",
     ],
     WEIGHTS: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
+    DEEP_SCAN: {
+      LOCAL: { TOURNEYS: 300, PLAYERS: 250 },
+      REMOTE: { TOURNEYS: 1000, PLAYERS: 1000 },
+      MAX_TOURNEYS: 2000,
+      MAX_PLAYERS: 2000
+    },
   },
 
   LEADERBOARD: {

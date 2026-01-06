@@ -195,6 +195,17 @@ const Utils = {
       }
     },
 
+    // ---- Fetch state persistence (to coordinate quota across runs)
+    _fetchStateKey: 'FETCH_STATE',
+
+    getFetchState: function () {
+      return this.getJSON(this._fetchStateKey, {});
+    },
+
+    setFetchState: function (stateObj) {
+      return this.setJSON(this._fetchStateKey, stateObj);
+    },
+
     delete: function (key) {
       this._service.deleteProperty(key);
     },
@@ -205,6 +216,22 @@ const Utils = {
    */
   fetchRoyaleAPI: function (urls) {
     if (!urls || urls.length === 0) return [];
+
+    // Load persisted fetch state to coordinate across executions
+    try {
+      const st = this.Props.getFetchState();
+      const today = new Date().toISOString().slice(0, 10);
+      if (st && st.date === today) {
+        _FETCH_COUNT = Number(st.count || 0);
+        _URLFETCH_DAILY_EXHAUSTED = Boolean(st.exhausted || false);
+      } else {
+        // New day -> reset
+        _FETCH_COUNT = 0;
+        _URLFETCH_DAILY_EXHAUSTED = false;
+      }
+    } catch (e) {
+      // ignore state load errors
+    }
 
     // Quick exit if platform already signaled daily UrlFetch exhaustion
     if (_URLFETCH_DAILY_EXHAUSTED) {
@@ -259,12 +286,23 @@ const Utils = {
 
     // Account for the permitted fetches
     _FETCH_COUNT += urlsToFetch.length;
+    // Persist fetch state (date, count, exhausted)
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      this.Props.setFetchState({ date: today, count: _FETCH_COUNT, exhausted: _URLFETCH_DAILY_EXHAUSTED });
+    } catch (e) {}
+
 
     // 3. Batch Processing
     const BATCH_SIZE = 10;
 
     for (let c = 0; c < urlsToFetch.length; c += BATCH_SIZE) {
       const chunkUrls = urlsToFetch.slice(c, c + BATCH_SIZE);
+
+      // If remote worker is configured but unhealthy, attempt a quick health check and fall back
+      if (CONFIG.SYSTEM.REMOTE_WORKER_URL && !this.remoteWorkerHealthy()) {
+        console.warn('⚠️ Remote worker configured but appears unhealthy. Falling back to local fetches for this batch.');
+      }
 
       for (let attempt = 0; attempt < CONFIG.SYSTEM.RETRY_MAX; attempt++) {
         if (keyPool.length === 0)
@@ -353,6 +391,11 @@ const Utils = {
               `Fetch Network Error: URLFetch daily quota reached. Aborting remaining fetches.`,
             );
             _URLFETCH_DAILY_EXHAUSTED = true;
+            // Persist exhaustion flag so future invocations can skip futile attempts
+            try {
+              const today = new Date().toISOString().slice(0, 10);
+              this.Props.setFetchState({ date: today, count: _FETCH_COUNT, exhausted: true });
+            } catch (err) {}
             return finalResults;
           }
 
@@ -403,6 +446,30 @@ const Utils = {
     } catch (e) {
       throw e;
     }
+  },
+
+  // Check remote worker health & capabilities
+  remoteWorkerHealthy: function () {
+    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return false;
+    if (_EXECUTION_CACHE.has('worker_health')) return _EXECUTION_CACHE.get('worker_health');
+
+    try {
+      const headers = {};
+      if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
+        headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+      const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + '/capabilities', {
+        method: 'get',
+        muteHttpExceptions: true,
+        headers: headers,
+      });
+      if (res.getResponseCode() === 200) {
+        _EXECUTION_CACHE.set('worker_health', true);
+        return true;
+      }
+    } catch (e) {}
+
+    _EXECUTION_CACHE.set('worker_health', false);
+    return false;
   },
 
   /**
