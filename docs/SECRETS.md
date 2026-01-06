@@ -25,7 +25,7 @@ If a key was leaked
 2. If the key was committed to Git history, contact me before proceeding — we can purge history with `git filter-repo` or BFG, but that rewrites history and requires coordination.
 
 Automation
-- A secrets-scan workflow (`.github/workflows/secrets-scan.yml`) has been added to scan PRs and pushes using TruffleHog.
+- A secrets-scan workflow (`.github/workflows/secrets-scan.yml`) has been added to scan PRs and pushes using TruffleHog (installed and run directly in the workflow since the original GitHub Action was removed).
 
 Tips
 - Use least privilege when creating API keys and set expiry or restrictions where available.
