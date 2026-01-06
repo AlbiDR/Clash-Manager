@@ -1,0 +1,24 @@
+name: Validate Scoring Documentation
+
+on:
+  push:
+    paths:
+      - 'Backend-GAS/Configuration.gs.js'
+      - 'README.md'
+      - '.github/workflows/validate-scoring.yml'
+  pull_request:
+    paths:
+      - 'Backend-GAS/Configuration.gs.js'
+      - 'README.md'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Validate scoring docs vs configuration
+        run: node scripts/validate_scoring.js
