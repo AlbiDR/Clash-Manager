@@ -1,6 +1,6 @@
 # Remediation plan for leaked secrets
 
-If TruffleHog or other scanners report secrets in the repo, follow these steps.
+If automated secret scanners report findings, follow these steps to triage them (TruffleHog was previously used but the scan has been removed):
 
 ## Immediate actions (first 5–15 minutes)
 
@@ -12,7 +12,7 @@ If TruffleHog or other scanners report secrets in the repo, follow these steps.
 
 ## Determine scope
 
-- Download the TruffleHog artifacts (`trufflehog-git.json` and `trufflehog.json`) from the CI run and inspect findings.
+- Download any scanner artifacts (e.g., `trufflehog-git.json`, `trufflehog.json`, or equivalent) from the CI run and inspect findings if available.
 - Identify filenames, commits, commit SHAs, and authors associated with each finding.
 
 ## If secrets appear in commit history (recommended approach)
@@ -70,7 +70,7 @@ git push --force
 ## Preventative measures
 
 - Add pre-commit hooks to block secrets (e.g., `pre-commit` + `detect-secrets` or `git-secrets`).
-- Keep TruffleHog/Gitleaks in CI with artifacts uploaded for triage.
+- Keep secret scanners (TruffleHog, Gitleaks, or alternatives) in CI if desired, and upload artifacts for triage.
 - Educate contributors about never committing secrets and using environment variables.
 
 ## Example PR/Issue template
