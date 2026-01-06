@@ -22,8 +22,32 @@ Clash Manager aggregates activity (war fame, donations, trophies) and produces a
 See `docs/DEPLOYMENT.md` for a step-by-step Quick Start and deployment instructions for both backend and frontend.
 
 ## Deployment
-- Backend (Apps Script): deploy the project as a Web App (execute as `Me`, access `Anyone`), set required script properties (see `Backend-GAS/README.md`), and add time-based triggers for scheduled ETL.
-- Frontend (PWA): build (`npm run build`) and deploy to your static host (Netlify, Vercel, Firebase Hosting, or GitHub Pages). For mobile PWAs, see `Frontend-PWA/scripts/build-android.sh` for TWA packaging.
+
+### Backend (Google Apps Script)
+1. Use `clasp` for local development and versioned deployments:
+   - Install: `npm i -g @google/clasp`
+   - Login and clone your Apps Script project, or create a new one.
+2. Script properties (Project Settings > Script Properties):
+   - `ClanTag` (required)
+   - `WebAppUrl` (set after first deploy)
+   - Any API keys or integration settings (store in CI secrets when deploying automatically)
+3. Deploy as Web App:
+   - Execute as: **Me**
+   - Access: **Anyone** (or restrict to your org)
+4. Triggers: configure time-based triggers for ETL operations; prefer smaller batches and backoff.
+
+### Frontend (PWA)
+- Build: `npm run build` (produces `dist/`)
+- Hosts: Netlify, Vercel, Firebase Hosting, GitHub Pages. Configure redirects and caching appropriately.
+- Web App Manifest: ensure icons and TWA settings are provided when building Android packages.
+
+### CI/CD
+- Tests, linting, and security scans run on pushed branches. Only merge to `Stable`/`main` after green CI.
+- Security scans: run TruffleHog with `--exclude-paths=.git` for filesystem scans and `--only-verified` for git scans to reduce false positives.
+
+### Rollbacks and versioning
+- Tag releases with `vX.Y.Z` and keep a changelog for notable changes.
+- For backend critical fixes, redeploy a previous Apps Script version as needed.
 
 ## Troubleshooting
 - TruffleHog/GitHub Actions false positives: runner tokens may appear in `.git/config`; see `docs/REMEDIATION.md` for guidance (we now exclude `.git`).
@@ -78,6 +102,28 @@ flowchart TD
   end
 ```
 
+### Overview
+The system uses a focused GAS backend to perform scheduled ETL and scoring, Google Sheets as a lightweight structured store, and a Vue 3 PWA for offline-first admin workflows.
+
+### Data flow
+1. Scheduled ETL fetches clan and member activity from the Clash Royale API.
+2. Data is normalized and aggregated (war history, donations, trophies).
+3. ScoringSystem computes a normalized performance score per member.
+4. The headless JSON API serves compact payloads for the PWA.
+
+### Design goals
+- Small attack surface: minimal backend surface area and read-only public endpoints for data.
+- Reliability: ETL runs are idempotent with retries and batching to avoid hitting Apps Script quotas.
+- Observability: logs and artifacts (TruffleHog results, health checks) are persisted via CI artifacts and Apps Script logs.
+
+### Scaling notes
+- For large clans or many recruits, shard ETL jobs by member ranges and increase cadence with smaller batch sizes.
+- Consider moving to a proper datastore if data volume or query complexity increases.
+
+### Security considerations
+- Keep secrets out of source control. Use script properties and secure storage for any credentials.
+- TruffleHog/Gitleaks are run in CI; ignore the `.git` folder when scanning filesystem to avoid runner token false positives (see `docs/REMEDIATION.md`).
+
 ## Highlights
 - Multi-dimensional performance score (impact, stability, reliability, contribution)
 - Scheduled ETL and trend analysis
@@ -85,7 +131,24 @@ flowchart TD
 - Offline-first PWA with background sync
 
 ## Contributing
-See `CONTRIBUTING.md` and the subproject READMEs for development workflows and contribution guidelines.
+Thanks for considering contributing — this project values clear, small, and testable changes.
+
+### How to contribute
+1. Fork and create a branch named `fix/` or `feat/` from `Stable`.
+2. Run tests and linters locally before opening a PR.
+3. Keep PRs focused and add a clear description and test plan.
+
+### Coding conventions
+- JavaScript/TypeScript: follow project ESLint rules.
+- Commit messages: use conventional commits (e.g., `fix:`, `feat:`, `chore:`).
+
+### Tests
+- Add unit tests for new logic (Vitest used in PWA).
+- For backend, test scoring calculations on a sandbox Google Sheet before deploying.
+
+### Review process
+- PRs should include a summary, testing steps, and ideally a screenshot or artifact when applicable.
+- Maintain backward compatibility with stored leaderboard format unless a migration is documented.
 
 ## License
 Proprietary. © 2026 AlbiDR
