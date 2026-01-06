@@ -58,13 +58,14 @@ Weights (canonical)
 ## Architecture
 ```mermaid
 flowchart TD
-  CRAPI[Clash Royale API] --> GAS[Backend (GAS)]
-  GAS --> GS[(Google Sheets DB)]
-  GAS --> API[Headless JSON API]
-  API --> PWA[Frontend PWA]
+  CRAPI["Clash Royale API"] --> GAS["Backend (GAS)"]
+  GAS --> GS["Google Sheets DB"]
+  GAS --> API["Headless JSON API"]
+  API --> PWA["Frontend PWA"]
+
   subgraph Services
-    GAS --> Scoring[ScoringSystem]
-    GAS --> Recruiter[Recruiter]
+    GAS --> Scoring["ScoringSystem"]
+    GAS --> Recruiter["Recruiter"]
   end
 ```
 
