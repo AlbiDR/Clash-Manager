@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import Icon from './Icon.vue'
+import Icon from "./Icon.vue";
 
 defineProps<{
-  title: string
-  icon: string
-  loading?: boolean
-  bodyClass?: string
-}>()
+  title: string;
+  icon: string;
+  loading?: boolean;
+  bodyClass?: string;
+}>();
 </script>
 
 <template>
@@ -35,7 +35,7 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .card-header h3 {

@@ -1,63 +1,68 @@
 // @ts-nocheck
-import { ref, computed, onUnmounted, getCurrentInstance } from 'vue'
-import { useToast } from './useToast'
-import { useModules } from './useModules'
+import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
+import { useToast } from "./useToast";
+import { useModules } from "./useModules";
 
 interface BatchQueueOptions {
-  throttleMs?: number
-  baseScheme?: string
+  throttleMs?: number;
+  baseScheme?: string;
 }
 
 export function useBatchQueue(options: BatchQueueOptions = {}) {
-  const { throttleMs = 750, baseScheme = 'clashroyale://playerInfo?id=' } = options
+  const { throttleMs = 750, baseScheme = "clashroyale://playerInfo?id=" } =
+    options;
 
-  const selectedIds = ref<string[]>([])
-  const queue = ref<string[]>([]) // Legacy queue for non-blitz manual mode
-  const lastActionTime = ref(0)
+  const selectedIds = ref<string[]>([]);
+  const queue = ref<string[]>([]); // Legacy queue for non-blitz manual mode
+  const lastActionTime = ref(0);
 
   // Blitz State
-  const isBlasting = ref(false)
-  const currentIndex = ref(0)
-  let worker: Worker | null = null
+  const isBlasting = ref(false);
+  const currentIndex = ref(0);
+  let worker: Worker | null = null;
 
   // Selection Mode State (Auto-derived or Forced)
-  const forceSelectionMode = ref(false)
+  const forceSelectionMode = ref(false);
 
-  const { error, info } = useToast()
-  const { modules } = useModules()
+  const { error, info } = useToast();
+  const { modules } = useModules();
 
-  const isSelectionMode = computed(() => selectedIds.value.length > 0 || forceSelectionMode.value)
-  const isProcessing = computed(() => queue.value.length > 0)
+  const isSelectionMode = computed(
+    () => selectedIds.value.length > 0 || forceSelectionMode.value,
+  );
+  const isProcessing = computed(() => queue.value.length > 0);
 
   // Returns props compatible with FabIsland
   const fabState = computed(() => {
-    if (!isSelectionMode.value) return { visible: false }
+    if (!isSelectionMode.value) return { visible: false };
 
-    const total = selectedIds.value.length
+    const total = selectedIds.value.length;
 
     // Label Logic
-    let label = 'Open'
+    let label = "Open";
 
     if (isBlasting.value) {
       // Blasting Mode: Show progress
-      label = `${currentIndex.value + 1} / ${total}`
+      label = `${currentIndex.value + 1} / ${total}`;
     } else if (total > 0) {
       // Manual Mode
       if (isProcessing.value) {
-        const current = (total - queue.value.length) + 1
-        label = `Next (${current}/${total})`
+        const current = total - queue.value.length + 1;
+        label = `Next (${current}/${total})`;
       } else {
-        label = `Open (${total})`
+        label = `Open (${total})`;
       }
     } else {
       // Empty State (Forced Mode)
-      label = 'Select'
+      label = "Select";
     }
 
     // Target Logic (For href)
     const targetId = isBlasting.value
       ? selectedIds.value[currentIndex.value]
-      : (isProcessing.value ? queue.value[0] : selectedIds.value[0])
+      : isProcessing.value
+        ? queue.value[0]
+        : selectedIds.value[0];
 
     return {
       visible: true,
@@ -67,57 +72,57 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       isProcessing: isProcessing.value,
       isBlasting: isBlasting.value,
       selectionCount: total,
-      blitzEnabled: modules.value.blitzMode
-    }
-  })
+      blitzEnabled: modules.value.blitzMode,
+    };
+  });
 
   function toggleSelect(id: string) {
     // 🛡️ Guard: Prevent modifying selection while a batch run is in progress
-    if (isProcessing.value || isBlasting.value) return
+    if (isProcessing.value || isBlasting.value) return;
 
-    const index = selectedIds.value.indexOf(id)
+    const index = selectedIds.value.indexOf(id);
     if (index !== -1) {
-      selectedIds.value.splice(index, 1)
+      selectedIds.value.splice(index, 1);
     } else {
-      selectedIds.value.push(id)
+      selectedIds.value.push(id);
     }
   }
 
   function selectAll(ids: readonly string[]) {
-    if (isProcessing.value || isBlasting.value) return
-    selectedIds.value = [...ids]
-    queue.value = []
+    if (isProcessing.value || isBlasting.value) return;
+    selectedIds.value = [...ids];
+    queue.value = [];
   }
 
   function clearSelection() {
-    stopBlitz() // Emergency stop
-    selectedIds.value = []
-    queue.value = []
-    forceSelectionMode.value = false // Reset sticky mode
+    stopBlitz(); // Emergency stop
+    selectedIds.value = [];
+    queue.value = [];
+    forceSelectionMode.value = false; // Reset sticky mode
   }
 
   function setForceSelectionMode(active: boolean) {
-    forceSelectionMode.value = active
+    forceSelectionMode.value = active;
   }
 
   /**
    * 💉 DOM INJECTION: Anchor Click (Most robust for deep links)
    */
   function fireDeepLink(url: string) {
-    const link = document.createElement('a')
-    link.href = url
-    link.style.display = 'none'
-    link.rel = 'noopener noreferrer'
-    document.body.appendChild(link)
+    const link = document.createElement("a");
+    link.href = url;
+    link.style.display = "none";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
 
-    link.click()
+    link.click();
 
     // Garbage collection
     setTimeout(() => {
       if (document.body.contains(link)) {
-        document.body.removeChild(link)
+        document.body.removeChild(link);
       }
-    }, 1500)
+    }, 1500);
   }
 
   // --- WORKER LOGIC ---
@@ -125,7 +130,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function createWorker(interval: number) {
     // Create a blob worker to run the timer off-thread.
     // This bypasses main-thread throttling when the tab is hidden.
-    const blob = new Blob([`
+    const blob = new Blob(
+      [
+        `
       let timer = null;
       self.onmessage = function(e) {
         if (e.data === 'start') {
@@ -136,16 +143,19 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
           timer = null;
         }
       };
-    `], { type: 'text/javascript' });
+    `,
+      ],
+      { type: "text/javascript" },
+    );
     return new Worker(URL.createObjectURL(blob));
   }
 
   function stopBlitz() {
-    isBlasting.value = false
-    currentIndex.value = 0
+    isBlasting.value = false;
+    currentIndex.value = 0;
     if (worker) {
-      worker.terminate()
-      worker = null
+      worker.terminate();
+      worker = null;
     }
   }
 
@@ -154,18 +164,18 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * Checks for completion.
    */
   function advanceIndex() {
-    currentIndex.value++
+    currentIndex.value++;
     // End Condition
     if (currentIndex.value >= selectedIds.value.length) {
       setTimeout(() => {
         if (isBlasting.value) {
-          stopBlitz()
-          info('Batch sequence complete')
+          stopBlitz();
+          info("Batch sequence complete");
         }
-      }, 500)
-      return false // Ended
+      }, 500);
+      return false; // Ended
     }
-    return true // Continue
+    return true; // Continue
   }
 
   /**
@@ -173,34 +183,34 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * This triggers the JS injection. This WILL cause prompts on strict browsers.
    */
   function nextPulseAutomated() {
-    if (!isBlasting.value) return
+    if (!isBlasting.value) return;
 
-    const id = selectedIds.value[currentIndex.value]
+    const id = selectedIds.value[currentIndex.value];
     if (id) {
-      fireDeepLink(`${baseScheme}${id}`)
-      advanceIndex()
+      fireDeepLink(`${baseScheme}${id}`);
+      advanceIndex();
     }
   }
 
   // ⚡ BLITZ MODE START
   function handleBlitz() {
-    if (isBlasting.value || selectedIds.value.length === 0) return
+    if (isBlasting.value || selectedIds.value.length === 0) return;
 
-    console.log("⚡ Starting Blitz Mode")
+    console.log("⚡ Starting Blitz Mode");
 
-    isBlasting.value = true
-    currentIndex.value = 0
+    isBlasting.value = true;
+    currentIndex.value = 0;
 
     // 1. Fire first shot immediately
-    nextPulseAutomated()
+    nextPulseAutomated();
 
     // 2. Start Worker for rhythm
-    worker = createWorker(throttleMs)
+    worker = createWorker(throttleMs);
     worker.onmessage = () => {
       // This runs on a separate thread's tick
-      nextPulseAutomated()
-    }
-    worker.postMessage('start')
+      nextPulseAutomated();
+    };
+    worker.postMessage("start");
   }
 
   // MAIN ACTION HANDLER
@@ -208,7 +218,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     // 1. BLITZ MODE (Manual Assist)
     if (isBlasting.value) {
       // Check if this was a native anchor click (from FabIsland)
-      const isAnchor = (e.currentTarget as HTMLElement).tagName === 'A';
+      const isAnchor = (e.currentTarget as HTMLElement).tagName === "A";
 
       if (isAnchor) {
         // ✅ NATIVE NAVIGATION:
@@ -217,64 +227,62 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
         // We just need to update our internal state to the NEXT item
         // and reset the automation timer so it doesn't double-fire immediately.
-        console.log("⚡ Manual Native Assist")
-        advanceIndex()
+        console.log("⚡ Manual Native Assist");
+        advanceIndex();
 
         if (worker) {
-          worker.postMessage('stop')
-          worker.postMessage('start')
+          worker.postMessage("stop");
+          worker.postMessage("start");
         }
-        return // Let default action (navigation) proceed
+        return; // Let default action (navigation) proceed
       }
 
       // 🛑 LEGACY FALLBACK (Button click):
-      e.preventDefault()
-      console.log("⚡ Manual Scripted Assist")
-      nextPulseAutomated()
+      e.preventDefault();
+      console.log("⚡ Manual Scripted Assist");
+      nextPulseAutomated();
 
       if (worker) {
-        worker.postMessage('stop')
-        worker.postMessage('start')
+        worker.postMessage("stop");
+        worker.postMessage("start");
       }
-      return
+      return;
     }
 
     // 2. STANDARD MODE (Legacy sequential)
-    const now = Date.now()
+    const now = Date.now();
 
     if (now - lastActionTime.value < throttleMs) {
-      e.preventDefault() // Stop navigation if clicking too fast
-      return
+      e.preventDefault(); // Stop navigation if clicking too fast
+      return;
     }
 
-    lastActionTime.value = now
+    lastActionTime.value = now;
 
     // Initialize Queue if starting fresh
     if (queue.value.length === 0) {
-      queue.value = [...selectedIds.value]
+      queue.value = [...selectedIds.value];
     }
 
     // "Consume" the current item logic
     setTimeout(() => {
       if (queue.value.length > 0) {
-        queue.value.shift()
+        queue.value.shift();
       }
 
       // Auto-exit when done
       if (queue.value.length === 0) {
         // We DO NOT clear selectedIds here anymore.
         // The queue is empty (processing done), but the selection remains for subsequent actions.
-        info('Batch complete')
+        info("Batch complete");
       }
-    }, 50)
+    }, 50);
   }
-
-
 
   if (getCurrentInstance()) {
     onUnmounted(() => {
-      stopBlitz()
-    })
+      stopBlitz();
+    });
   }
 
   return {
@@ -288,6 +296,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     clearSelection,
     handleAction,
     handleBlitz,
-    setForceSelectionMode
-  }
+    setForceSelectionMode,
+  };
 }

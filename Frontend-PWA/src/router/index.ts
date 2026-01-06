@@ -1,94 +1,99 @@
+import { createRouter, createWebHashHistory } from "vue-router";
+import LeaderboardView from "../views/LeaderboardView.vue";
 
-import { createRouter, createWebHashHistory } from 'vue-router'
-import LeaderboardView from '../views/LeaderboardView.vue'
-
-const SCROLL_KEY = 'cm_scroll_positions'
+const SCROLL_KEY = "cm_scroll_positions";
 
 // Persistent scroll restoration logic
 function saveScrollPosition(path: string, y: number) {
-    try {
-        const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || '{}')
-        store[path] = y
-        sessionStorage.setItem(SCROLL_KEY, JSON.stringify(store))
-    } catch (e) { /* ignore */ }
+  try {
+    const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "{}");
+    store[path] = y;
+    sessionStorage.setItem(SCROLL_KEY, JSON.stringify(store));
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 function getSavedScroll(path: string): number {
-    try {
-        const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || '{}')
-        return store[path] || 0
-    } catch (e) { return 0 }
+  try {
+    const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "{}");
+    return store[path] || 0;
+  } catch (e) {
+    return 0;
+  }
 }
 
 const router = createRouter({
-    history: createWebHashHistory(import.meta.env.BASE_URL),
-    scrollBehavior(to, from, savedPosition) {
-        // 1. Browser Back/Forward: Use browser's saved position
-        if (savedPosition) return savedPosition
+  history: createWebHashHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from, savedPosition) {
+    // 1. Browser Back/Forward: Use browser's saved position
+    if (savedPosition) return savedPosition;
 
-        // 2. Tab Navigation: Restore from our persistent SessionStorage
-        const y = getSavedScroll(to.path)
-        if (y > 0) return { top: y, behavior: 'instant' } // 'instant' prevents jumpy animation on load
+    // 2. Tab Navigation: Restore from our persistent SessionStorage
+    const y = getSavedScroll(to.path);
+    if (y > 0) return { top: y, behavior: "instant" }; // 'instant' prevents jumpy animation on load
 
-        // 3. Default: Top
-        return { top: 0 }
+    // 3. Default: Top
+    return { top: 0 };
+  },
+  routes: [
+    {
+      path: "/",
+      redirect: "/leaderboard",
     },
-    routes: [
-        {
-            path: '/',
-            redirect: '/leaderboard'
-        },
-        {
-            path: '/leaderboard',
-            name: 'leaderboard',
-            component: LeaderboardView, // Eager load for better LCP
-            meta: { title: 'Leaderboard' }
-        },
-        {
-            path: '/recruiter',
-            name: 'recruiter',
-            component: () => import('../views/RecruiterView.vue'),
-            meta: { title: 'Headhunter' }
-        },
-        {
-            path: '/settings',
-            name: 'settings',
-            component: () => import('../views/SettingsView.vue'),
-            meta: { title: 'Settings' }
-        }
-    ]
-})
+    {
+      path: "/leaderboard",
+      name: "leaderboard",
+      component: LeaderboardView, // Eager load for better LCP
+      meta: { title: "Leaderboard" },
+    },
+    {
+      path: "/recruiter",
+      name: "recruiter",
+      component: () => import("../views/RecruiterView.vue"),
+      meta: { title: "Headhunter" },
+    },
+    {
+      path: "/settings",
+      name: "settings",
+      component: () => import("../views/SettingsView.vue"),
+      meta: { title: "Settings" },
+    },
+  ],
+});
 
 // ⚡ FIX: View Transitions Support
 // This wraps every route change in a native "Resolve" animation
 router.beforeResolve(async (to, from) => {
-    if (!(document as any).startViewTransition) return
+  if (!(document as any).startViewTransition) return;
 
-    // 🛡️ CRASH PREVENTION: Skip if document is hidden (e.g. background tab)
-    // startViewTransition throws DOMException if visibilityState is hidden
-    if (document.visibilityState !== 'visible') return
+  // 🛡️ CRASH PREVENTION: Skip if document is hidden (e.g. background tab)
+  // startViewTransition throws DOMException if visibilityState is hidden
+  if (document.visibilityState !== "visible") return;
 
-    try {
-        return new Promise((resolve) => {
-            (document as any).startViewTransition(async () => {
-                resolve(true)
-            })
-        })
-    } catch (e) {
-        // Fallback if transition fails to start synchronously
-        console.warn('View transition skipped:', e)
-        return
-    }
-})
+  try {
+    return new Promise((resolve) => {
+      (document as any).startViewTransition(async () => {
+        resolve(true);
+      });
+    });
+  } catch (e) {
+    // Fallback if transition fails to start synchronously
+    console.warn("View transition skipped:", e);
+    return;
+  }
+});
 
 // Save scroll before leaving route
 router.beforeEach((to, from) => {
-    saveScrollPosition(from.path, window.scrollY)
-})
+  saveScrollPosition(from.path, window.scrollY);
+});
 
 router.afterEach((to) => {
-    const baseTitle = 'Clash Manager: Clan Manager for Clash Royale'
-    document.title = to.meta.title ? `${to.meta.title} | ${baseTitle}` : baseTitle
-})
+  const baseTitle = "Clash Manager: Clan Manager for Clash Royale";
+  document.title = to.meta.title
+    ? `${to.meta.title} | ${baseTitle}`
+    : baseTitle;
+});
 
-export default router
+export default router;

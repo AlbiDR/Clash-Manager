@@ -1,51 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
+  <head>
     <style>
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: transparent;
-        }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+      }
 
-        .container {
-            width: 512px;
-            height: 512px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
+      .container {
+        width: 512px;
+        height: 512px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
 
-        .maskable {
-            background: #0b0e14;
-        }
+      .maskable {
+        background: #0b0e14;
+      }
 
-        .logo {
-            width: 256px;
-            /* 50% of 512px */
-            height: 256px;
-            object-fit: contain;
-        }
+      .logo {
+        width: 256px;
+        /* 50% of 512px */
+        height: 256px;
+        object-fit: contain;
+      }
 
-        .monochrome .logo {
-            filter: brightness(0) invert(1);
-        }
+      .monochrome .logo {
+        filter: brightness(0) invert(1);
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="icon" class="container maskable">
-        <img src="logo.png" class="logo">
+      <img src="logo.png" class="logo" />
     </div>
     <script>
-        function setVariant(name) {
-            document.getElementById('icon').className = 'container ' + name;
-        }
+      function setVariant(name) {
+        document.getElementById("icon").className = "container " + name;
+      }
     </script>
-</body>
-
+  </body>
 </html>

@@ -1,57 +1,59 @@
-
 <script lang="ts">
 export default {
-  name: 'FabIsland'
-}
+  name: "FabIsland",
+};
 </script>
 
 <script setup lang="ts">
-import { useUiCoordinator } from '../composables/useUiCoordinator'
-import { computed } from 'vue'
-import Icon from './Icon.vue'
+import { useUiCoordinator } from "../composables/useUiCoordinator";
+import { computed } from "vue";
+import Icon from "./Icon.vue";
 
 const props = defineProps<{
-  visible: boolean
-  label?: string
-  dismissLabel?: string
-  actionHref?: string
-  isProcessing?: boolean
-  isBlasting?: boolean
-  selectionCount?: number
-  blitzEnabled?: boolean
-}>()
+  visible: boolean;
+  label?: string;
+  dismissLabel?: string;
+  actionHref?: string;
+  isProcessing?: boolean;
+  isBlasting?: boolean;
+  selectionCount?: number;
+  blitzEnabled?: boolean;
+}>();
 
-const { fabOffset } = useUiCoordinator()
+const { fabOffset } = useUiCoordinator();
 
 // GPU Optimization: TranslateY instead of 'bottom' property transition
 const styleObject = computed(() => {
-  if (!props.visible) return {}
+  if (!props.visible) return {};
 
   return {
     // Override the CSS transform when visible
-    transform: `translateY(calc(-${fabOffset.value}px))`
-  }
-})
+    transform: `translateY(calc(-${fabOffset.value}px))`,
+  };
+});
 
 const emit = defineEmits<{
-  action: [payload: MouseEvent]
-  dismiss: []
-  blitz: []
-}>()
+  action: [payload: MouseEvent];
+  dismiss: [];
+  blitz: [];
+}>();
 </script>
 
 <template>
-  <div 
-    class="fab-island" 
-    :class="{ 'visible': visible }" 
+  <div
+    class="fab-island"
+    :class="{ visible: visible }"
     :style="styleObject"
     @touchstart.stop
   >
     <div class="fab-content">
-      
       <!-- State: BLASTING (With Controls) -->
       <div v-if="isBlasting" class="blasting-controls">
-        <button class="fab-btn danger compact" @click="emit('dismiss')" aria-label="Cancel Blitz">
+        <button
+          class="fab-btn danger compact"
+          @click="emit('dismiss')"
+          aria-label="Cancel Blitz"
+        >
           <Icon name="close" size="18" />
         </button>
 
@@ -60,23 +62,43 @@ const emit = defineEmits<{
           <span class="blast-label">{{ label }}</span>
         </div>
 
-        <a v-if="actionHref" :href="actionHref" class="fab-btn primary compact" @click="(e) => emit('action', e)" aria-label="Open Next Profile">
+        <a
+          v-if="actionHref"
+          :href="actionHref"
+          class="fab-btn primary compact"
+          @click="(e) => emit('action', e)"
+          aria-label="Open Next Profile"
+        >
           <Icon name="chevron_right" size="20" />
         </a>
-        <button v-else class="fab-btn primary compact" @click="(e) => emit('action', e)" aria-label="Next">
+        <button
+          v-else
+          class="fab-btn primary compact"
+          @click="(e) => emit('action', e)"
+          aria-label="Next"
+        >
           <Icon name="chevron_right" size="20" />
         </button>
       </div>
 
       <!-- State: NORMAL -->
       <template v-else>
-        <button class="fab-btn danger" @click="emit('dismiss')" aria-label="Dismiss Selection">
+        <button
+          class="fab-btn danger"
+          @click="emit('dismiss')"
+          aria-label="Dismiss Selection"
+        >
           <Icon name="close" size="18" />
-          <span v-if="!selectionCount">{{ dismissLabel || 'Dismiss' }}</span>
+          <span v-if="!selectionCount">{{ dismissLabel || "Dismiss" }}</span>
         </button>
 
-        <button 
-          v-if="blitzEnabled && selectionCount && selectionCount > 1 && !isProcessing"
+        <button
+          v-if="
+            blitzEnabled &&
+            selectionCount &&
+            selectionCount > 1 &&
+            !isProcessing
+          "
           class="fab-btn blitz"
           @click="emit('blitz')"
           v-tooltip="'Requires Pop-ups permission'"
@@ -86,31 +108,46 @@ const emit = defineEmits<{
           <span>Blitz</span>
         </button>
 
-        <a v-if="actionHref" :href="actionHref" class="fab-btn primary" @click="(e) => emit('action', e)">
+        <a
+          v-if="actionHref"
+          :href="actionHref"
+          class="fab-btn primary"
+          @click="(e) => emit('action', e)"
+        >
           <Icon name="check" size="18" />
-          <span>{{ label || 'Open' }}</span>
+          <span>{{ label || "Open" }}</span>
         </a>
-        
-        <button v-else class="fab-btn primary" @click="(e) => emit('action', e)">
+
+        <button
+          v-else
+          class="fab-btn primary"
+          @click="(e) => emit('action', e)"
+        >
           <Icon name="check" size="18" />
-          <span>{{ label || 'Open' }}</span>
+          <span>{{ label || "Open" }}</span>
         </button>
       </template>
-
     </div>
   </div>
 </template>
 
 <style scoped>
 .fab-island {
-  position: fixed; left: 0; right: 0;
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: calc(0px + env(safe-area-inset-bottom));
-  display: flex; justify-content: center; pointer-events: none; z-index: 300;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 300;
   /* ⚡ PERF: Transition transform instead of bottom for GPU composition */
-  transition: opacity 0.3s ease, transform 0.4s var(--sys-motion-spring);
+  transition:
+    opacity 0.3s ease,
+    transform 0.4s var(--sys-motion-spring);
   opacity: 0;
   /* Hidden state: Pushed down further */
-  transform: translateY(100px); 
+  transform: translateY(100px);
   will-change: transform;
 }
 
@@ -118,8 +155,8 @@ const emit = defineEmits<{
    Override transform when visible. 
    Note: The inline style binding handles the Y-offset logic.
 */
-.fab-island.visible { 
-  opacity: 1; 
+.fab-island.visible {
+  opacity: 1;
 }
 
 .fab-content {
@@ -128,46 +165,86 @@ const emit = defineEmits<{
   backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
-  padding: 8px; border-radius: var(--shape-corner-full);
-  display: flex; gap: 8px;
+  padding: 8px;
+  border-radius: var(--shape-corner-full);
+  display: flex;
+  gap: 8px;
   box-shadow: var(--sys-elevation-3);
   align-items: center;
 }
 
 .fab-btn {
-  padding: 14px 20px; border-radius: var(--shape-corner-full);
-  font-weight: 800; font-size: 15px; text-decoration: none;
-  display: flex; align-items: center; gap: 8px; cursor: pointer; border: none;
-  transition: transform 0.2s, background 0.2s;
+  padding: 14px 20px;
+  border-radius: var(--shape-corner-full);
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  transition:
+    transform 0.2s,
+    background 0.2s;
   color: var(--sys-color-on-surface);
 }
-.fab-btn:active { transform: scale(0.95); }
+.fab-btn:active {
+  transform: scale(0.95);
+}
 
 .fab-btn.compact {
   padding: 14px;
 }
 
-.fab-btn.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.fab-btn.danger { background: var(--sys-color-error-container); color: var(--sys-color-on-error-container); }
+.fab-btn.primary {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+.fab-btn.danger {
+  background: var(--sys-color-error-container);
+  color: var(--sys-color-on-error-container);
+}
 
 .fab-btn.blitz {
   background: linear-gradient(135deg, #6b5778, #4a3b55);
   color: #f2daff;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 0 12px rgba(107, 87, 120, 0.4);
 }
 
-.blasting-controls { display: flex; align-items: center; gap: 12px; }
-.blast-status { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 80px; }
-.blast-label { font-family: var(--sys-font-family-mono); font-size: 12px; font-weight: 700; color: var(--sys-color-on-surface); }
+.blasting-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.blast-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 80px;
+}
+.blast-label {
+  font-family: var(--sys-font-family-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sys-color-on-surface);
+}
 
 .spinner-small {
-  width: 14px; height: 14px;
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--sys-color-primary);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   opacity: 0.6;
 }
-@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
 </style>
