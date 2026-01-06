@@ -29,7 +29,7 @@ If a key was leaked
 
 Automation
 
-- A secrets-scan workflow (`.github/workflows/secrets-scan.yml`) has been added to scan PRs and pushes using TruffleHog (installed and run directly in the workflow since the original GitHub Action was removed).
+- A secrets-scan workflow (`.github/workflows/secrets-scan.yml`) was previously used to scan PRs and pushes using TruffleHog; it has been removed. Consider adding a non-failing or scheduled scan, or using external tooling, if you want to retain automated scanning.
 
 Tips
 
