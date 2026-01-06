@@ -53,17 +53,17 @@ Performance scoring is implemented in `ScoringSystem.gs.js`. Parameters live in 
 
 ## Setup
 
-<details>
-<summary>Deployment</summary>
+Create a new Google Sheet and open Apps Script. Copy the `.gs.js` files into the project (rename to `.gs`) and set these Script Properties:
 
-1. Create a Google Sheet and open Apps Script.
-2. Copy the `.gs.js` files (rename to `.gs`).
-3. Add Script Properties: `ClanTag`, `CRK1...CRK10`, `WebAppUrl`.
-4. Deploy as a Web App and run the health check.
+```text
+ClanTag=<your-clan-tag>
+CRK1=<royaleapi-key-1>
+CRK2=<royaleapi-key-2>
+# ... CRK3..CRK10 (optional)
+WebAppUrl=<optional-frontend-url>
+```
 
-</details>
-
-
+Deploy as a Web App (Execute as: you; Access: Anyone) and run the built-in health check to validate permissions and configuration.
 
 ---
 

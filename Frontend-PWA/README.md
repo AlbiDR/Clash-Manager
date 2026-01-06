@@ -30,52 +30,35 @@ It prioritizes **Offline-First** usability using a Stale-While-Revalidate (SWR) 
 
 ## Getting started
 
-<details>
-<summary><strong>Click to view Installation Steps</strong></summary>
+Prerequisites: Node.js v20+ and npm v10+.
 
-### 1. Prerequisites
-*   Node.js v20+
-*   npm v10+
+Install and run locally:
 
-### 2. Install Dependencies
 ```bash
 cd Frontend-PWA
 npm ci
-```
-
-### 3. Environment Configuration
-Create a `.env` file in the `Frontend-PWA` root. You need the Web App URL from your Google Apps Script deployment.
-
-```properties
-# .env
-VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-```
-
-### 4. Run Development Server
-```bash
 npm run dev
 ```
 
-### 5. Run Tests
-The project is configured with Vitest for unit and component testing.
+Environment (.env):
+
+```env
+VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+```
+
+Run tests:
 
 ```bash
-# Run tests once in the terminal
-npm test
-
-# Run tests in watch mode with a UI
-npm run test:ui
-
-# Run tests and generate a coverage report
+npm test         # run once
+npm run test:ui  # watch with UI
 npm run test:coverage
 ```
 
-### 6. Build for Production
-This generates the `dist` folder ready for GitHub Pages or static hosting.
+Build for production:
+
 ```bash
 npm run build
 ```
-</details>
 
 ---
 
