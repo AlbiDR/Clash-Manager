@@ -14,7 +14,7 @@ It prioritizes **Offline-First** usability using a Stale-While-Revalidate (SWR) 
 
 ---
 
-## 🛠️ Tech Stack
+## Tech stack
 
 | Category | Technology | Context |
 | :--- | :--- | :--- |
@@ -28,7 +28,7 @@ It prioritizes **Offline-First** usability using a Stale-While-Revalidate (SWR) 
 
 ---
 
-## 🚀 Getting Started
+## Getting started
 
 <details>
 <summary><strong>Click to view Installation Steps</strong></summary>
@@ -79,7 +79,7 @@ npm run build
 
 ---
 
-## ✅ Quality & CI/CD
+## CI / CD
 
 This project is configured with GitHub Actions to ensure code quality and automate deployments.
 *   **Automated Testing**: On every push to `Stable` or a `v*` tag, the full test suite is run. Failed tests will block deployment, preventing regressions.
@@ -88,27 +88,24 @@ This project is configured with GitHub Actions to ensure code quality and automa
 
 ---
 
-## 🛡️ Key Features
+## Key features
 
-### 🎨 Neo-Material Design
-A custom visual language designed for clarity and aesthetics.
-*   **Glassmorphism**: Context-aware blur overlays (`backdrop-filter`).
-*   **Tonal Palettes**: UI colors adapt based on performance metrics (e.g., Red/Green scores).
-*   **Physics**: Lists utilize spring-based animations for a "heavy", premium feel.
+### Design
+A clean, responsive visual system with motion and adaptive palettes for clarity.
 
-### 🏆 Leaderboard
-*   **Hybrid Data**: Merges real-time API data (current trophies) with historical database records (tenure).
-*   **War Visualization**: Includes micro-charts rendering 52 weeks of war performance history.
-*   **Performance Score (Backend-driven)**: The score shown is computed server-side using the Gold Standard formula (weights live in `Backend-GAS/Configuration.gs.js`). See the root `README.md` and `Backend-GAS/README.md` for the LaTeX-formatted formula and rationale.
+### Leaderboard
+*   Hybrid data (live + historical).
+*   War history visualization.
+*   Performance scores are computed server-side; see the repository `README.md` (Scoring section) for the formula and rationale.
 
-### 🔭 Headhunter
+### Recruitment
 *   **Recruitment**: Visualizes the backend's "Deep Net" search results.
 *   **Scoring**: Auto-sorts players by a calculated "Potential Score" vs. the clan's average.
 *   **Deep Linking**: Supports direct links to open player profiles in Clash Royale.
 
 ---
 
-## 📄 License
+## License
 
 Proprietary.
 Copyright © 2026 AlbiDR.
