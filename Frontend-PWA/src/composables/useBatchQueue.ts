@@ -272,8 +272,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
       // Auto-exit when done
       if (queue.value.length === 0) {
-        // We DO NOT clear selectedIds here anymore.
-        // The queue is empty (processing done), but the selection remains for subsequent actions.
+        // Completed processing: clear selection and reset modes.
+        clearSelection();
         info("Batch complete");
       }
     }, 50);
