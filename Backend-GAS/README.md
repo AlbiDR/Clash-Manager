@@ -1,11 +1,13 @@
 # Clash Manager — Backend (GAS)
 
-Small, focused server that performs ETL, computes scores, and serves a compact JSON payload consumed by the PWA.
+A lean Apps Script backend that performs scheduled ETL, computes member performance scores, and exposes a compact headless API for the PWA.
 
-## Quick overview
-- Scheduled ETL and scoring
-- Headless JSON API for the client
-- Recruitment scanning and scoring
+## Table of contents
+- Overview
+- Modules
+- Setup
+- API
+- Testing & Troubleshooting
 
 ## Modules
 | File | Purpose |

@@ -1,11 +1,16 @@
 # Clash Manager — Client (PWA)
 
-Compact Vue PWA that consumes the backend payload, provides offline-first UX, and supports recruitment workflows.
+A compact, offline-first Vue 3 PWA that consumes the backend's headless payload and provides fast, resilient administrative workflows.
 
-## Quick facts
-- Stack: Vue 3, Vite, Tailwind
-- Tests: Vitest
-- PWA: Service Worker + background sync
+## Table of contents
+- Local development
+- Environment
+- Testing
+- Build & deployment
+- Android / TWA
+- PWA & Service worker
+- CI / CD
+- Troubleshooting
 
 ## Local development
 ```bash
@@ -50,7 +55,7 @@ CI / CD
 - CORS / API errors: verify `VITE_GAS_URL` is set to your deployed WebApp URL and that the Web App allows requests from the host.
 - Offline Cache: If new assets aren't loading, check service worker registration and cache invalidation logic.
 
-See the root `README.md` for architecture and scoring information.
+See the root `README.md` and `docs/DEPLOYMENT.md` for architecture, deployment, and release notes.
 
 ## License
 Proprietary. © 2026 AlbiDR

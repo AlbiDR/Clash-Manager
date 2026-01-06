@@ -1,8 +1,8 @@
 # Clash Manager
 
-[![Version](https://img.shields.io/badge/Version-6.2.7-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager)
+[![Version](https://img.shields.io/badge/Version-6.2.7-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
-A concise, production-focused toolkit for clan leadership and recruitment. Backend (GAS) processes and normalizes data; the Vue PWA provides an offline-capable administrative UI.
+A concise, production-focused toolkit for clan leadership and recruitment. The **Backend (GAS)** normalizes and aggregates Clash Royale data; the **Vue PWA** provides an offline-capable administrative UI for recruitment and leaderboard workflows.
 
 ## Table of contents
 - Overview
@@ -19,23 +19,7 @@ A concise, production-focused toolkit for clan leadership and recruitment. Backe
 Clash Manager aggregates activity (war fame, donations, trophies) and produces a normalized performance score used to rank members and identify recruit candidates. It is designed for reliability: scheduled ETL, safe concurrency, and compact payloads for fast client rendering.
 
 ## Quick start
-Follow these steps to get a local development environment running and to deploy to production.
-
-1. Clone the repo and install frontend deps:
-   ```bash
-   git clone https://github.com/AlbiDR/Clash-Manager.git
-   cd Clash-Manager/Frontend-PWA
-   npm ci
-   ```
-2. Backend (Google Apps Script): follow `Backend-GAS/README.md` for step-by-step deployment (create a sheet, import scripts, set script properties, deploy as Web App).
-3. Configure the frontend environment:
-   ```env
-   VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-   ```
-4. Run locally:
-   - Backend: use the Apps Script editor or `clasp` for iterative development.
-   - Frontend: `npm run dev` and visit `http://localhost:5173`.
-5. Validate: hit `?action=ping` on your deployed WebApp URL (health check) and exercise the PWA in dev mode.
+See `docs/DEPLOYMENT.md` for a step-by-step Quick Start and deployment instructions for both backend and frontend.
 
 ## Deployment
 - Backend (Apps Script): deploy the project as a Web App (execute as `Me`, access `Anyone`), set required script properties (see `Backend-GAS/README.md`), and add time-based triggers for scheduled ETL.
@@ -47,21 +31,6 @@ Follow these steps to get a local development environment running and to deploy 
 - Offline cache issues (PWA): clear site data or unregister service worker when testing updates.
 
 ---
-
-## Architecture
-```mermaid
-flowchart TD
-  CRAPI["Clash Royale API"] --> GAS["Backend (GAS)"]
-  GAS --> GS["Google Sheets DB"]
-  GAS --> API["Headless JSON API"]
-  API --> PWA["Frontend PWA"]
-
-  subgraph Services
-    GAS --> Scoring["ScoringSystem"]
-    GAS --> Recruiter["Recruiter"]
-  end
-```
-
 
 ## Scoring (expand for details)
 <details>
