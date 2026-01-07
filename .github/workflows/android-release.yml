@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
+    defaults:
+      run:
+        working-directory: Frontend-PWA
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -27,26 +31,26 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "21"
+          cache: "gradle"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
-      - name: Install Tauri CLI
-        run: npm install -g @tauri-apps/cli@latest
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "Frontend-PWA/src-tauri -> target"
 
       - name: Setup Keystore
-        run: |
-          cd Frontend-PWA
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > signing.keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > signing.keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
       - name: Auto-Version
         id: versioning
         run: |
-          cd Frontend-PWA
           V_NAME="8.12.${{ github.run_number }}"
           V_CODE=$((1000 + ${{ github.run_number }}))
 
@@ -67,13 +71,10 @@ jobs:
           cat src-tauri/tauri.conf.json
 
       - name: Install Dependencies
-        run: |
-          cd Frontend-PWA
-          npm install
+        run: npm install
 
       - name: Build Android App
         run: |
-          cd Frontend-PWA
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           export TAURI_ANDROID_KEYSTORE=$GITHUB_WORKSPACE/Frontend-PWA/signing.keystore
           export TAURI_ANDROID_KEY_ALIAS=clash_manager_release
@@ -92,7 +93,6 @@ jobs:
 
       - name: Verify & Prepare APK
         run: |
-          cd Frontend-PWA
           echo "🔍 Searching for APK..."
           # We prefer aarch64 (arm64-v8a) as it covers 99% of modern devices
           APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release.apk" | head -n 1)
