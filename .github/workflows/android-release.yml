@@ -66,6 +66,11 @@ jobs:
           echo "📝 Modified Tauri Config:"
           cat src-tauri/tauri.conf.json
 
+      - name: Install Dependencies
+        run: |
+          cd Frontend-PWA
+          npm install
+
       - name: Build Android App
         run: |
           cd Frontend-PWA
