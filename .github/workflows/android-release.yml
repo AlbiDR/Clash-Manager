@@ -54,39 +54,28 @@ jobs:
           echo "🔧 Debugging Environment..."
           echo "ANDROID_HOME: ${ANDROID_HOME}"
           echo "JAVA_HOME: ${JAVA_HOME}"
-
-          # 1. Install ESSENTIAL SDK Components
-          # 'platform-tools' is required for validation. 'cmdline-tools' is required for operation.
-          echo "⬇️ Installing SDK Components..."
-          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platform-tools" "cmdline-tools;latest" "build-tools;34.0.0" "platforms;android-34" > /dev/null
-
-          # 2. Verify Installation
-          echo "📂 Listing Installed SDK Packages:"
-          ls -F ${ANDROID_HOME}/build-tools/ || echo "No build-tools found"
-          ls -F ${ANDROID_HOME}/platforms/ || echo "No platforms found"
-          ls -F ${ANDROID_HOME}/platform-tools/ || echo "No platform-tools found"
-
-          # 3. Configure Bubblewrap
-          # We manually create the config to point to the existing system SDK
-          mkdir -p ~/.bubblewrap
-          cat <<EOF > ~/.bubblewrap/config.json
-          {
-            "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${ANDROID_HOME}"
-          }
-          EOF
+          
+          # 1. Bubblewrap Configuration
+          # Use updateConfig to ensure paths are set correctly in the tool's preferred format
+          bubblewrap updateConfig --jdkPath "${JAVA_HOME}" --androidSdkPath "${ANDROID_HOME}"
+          
+          # 2. SDK component verification/installation
+          # We check if build-tools are present; if not, we install them.
+          if [ ! -d "${ANDROID_HOME}/build-tools/34.0.0" ]; then
+            echo "⬇️ Installing missing build-tools..."
+            yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" > /dev/null
+          fi
 
           cd Frontend-PWA
-
-          # 4. Doctor Check (Ensure environment is valid)
+          
+          # 3. Doctor Check (Ensure environment is valid)
           echo "👨‍⚕️ Running Bubblewrap Doctor..."
           bubblewrap doctor
-
-          # 5. Build
+          
+          # 4. Build
           echo "📦 Building Android App..."
-          # Removing 'yes |' to verify if prompts are truly eliminated. 
-          # If prompts persist, build will fail, but we will see the prompt in logs.
-          bubblewrap build --skipPwaValidation
+          # Use --yes to automatically accept prompts if any remain
+          bubblewrap build --skipPwaValidation --yes
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
