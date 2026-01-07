@@ -108,6 +108,7 @@ android {
         targetSdk 35
         versionCode ${manifest.appVersionCode}
         versionName "${manifest.appVersionName || '1.0.0'}"
+        manifestPlaceholders = [launcherName: "${manifest.launcherName}"]
     }
 
     signingConfigs {
@@ -173,10 +174,11 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
+        tools:replace="android:label"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="@string/app_name"
+        android:label="\${launcherName}"
         android:theme="@style/Theme.ClashManager"
         android:supportsRtl="true">
 
@@ -186,8 +188,9 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
 
         <activity
             android:name=".LauncherActivity"
+            tools:replace="android:label"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="\${launcherName}"
             android:taskAffinity="com.albidr.clashmanager.sovereign"
             android:launchMode="singleTask"
             android:documentLaunchMode="always"
