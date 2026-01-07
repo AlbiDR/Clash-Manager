@@ -731,15 +731,27 @@ const Utils = {
     });
 
     // 3. ENFORCE ORDER (1, 2, 3...)
-    // We only care about sorting the visible main tabs.
-    // Hidden tabs can be anywhere, it doesn't matter visually.
-    VISIBLE_WHITELIST.forEach((name, index) => {
+    // We sort visible main tabs first, then hidden backup clusters.
+    const ALL_SORT_ORDER = [...VISIBLE_WHITELIST];
+    
+    // Add backup patterns for each main sheet (1-5)
+    VISIBLE_WHITELIST.forEach(baseName => {
+      for (let i = 1; i <= 5; i++) {
+        ALL_SORT_ORDER.push(`Backup ${i} ${baseName}`);
+      }
+    });
+
+    ALL_SORT_ORDER.forEach((name, index) => {
       const sheet = ss.getSheetByName(name);
       if (sheet) {
         const targetIndex = index + 1; // 1-based index
         if (sheet.getIndex() !== targetIndex) {
           try {
-            ss.setActiveSheet(sheet); // Must activate to move reliably
+            // Optimization: If sheet is hidden, we don't NEED to activate it to move it in modern GAS,
+            // but moveActiveSheet is more reliable across different environment states. 
+            // However, setActiveSheet on a hidden sheet can be problematic.
+            // Let's use the spreadsheet.moveSheet() method if available, or stay with moveActiveSheet safely.
+            ss.setActiveSheet(sheet); 
             ss.moveActiveSheet(targetIndex);
           } catch (e) {
             console.warn(
