@@ -138,8 +138,4 @@ include ':app'
 rootProject.name = "Clash Manager"
 `);
 
-// Generate gradlew wrapper
-fs.writeFileSync('gradlew', fs.readFileSync('/dev/stdin', 'utf8'));
-fs.chmodSync('gradlew', 0o755);
-
 console.log('✅ Android project structure generated successfully!');
