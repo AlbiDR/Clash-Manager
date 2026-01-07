@@ -139,15 +139,19 @@ function scoutRecruits() {
  * 🚫 BLACKLIST & HISTORY MANAGER
  */
 function updateAndGetBlacklist(sheet) {
-  const PROP_KEY = "HH_BLACKLIST";
-  const rawBlacklist = Utils.Props.getChunked(PROP_KEY, {});
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
   const now = Date.now();
-  const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * 86400000;
+  const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
 
-  // Reassemble valid entries from storage
-  let validEntries = Object.entries(rawBlacklist)
-    .map(([t, e]) => ({ t, e: Number(e.e) || 0, s: Number(e.s) || 0 }))
-    .filter((entry) => entry.e > now);
+  // 1. Read blacklist from sheet
+  let validEntries = [];
+  if (blSheet.getLastRow() >= 1) {
+    const rawData = blSheet.getDataRange().getValues();
+    validEntries = rawData
+      .map((row) => ({ t: String(row[0]), e: Number(row[1]) || 0, s: Number(row[2]) || 0 }))
+      .filter((entry) => entry.e > now);
+  }
 
   const rowsToDelete = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -180,12 +184,11 @@ function updateAndGetBlacklist(sheet) {
   const benchmarkHigh = validEntries
     .slice(0, 3)
     .reduce((acc, c, i, arr) => acc + c.s / arr.length, 0);
-  const sortedBlacklist = Object.fromEntries(
-    validEntries.map((e) => [e.t, { e: e.e, s: e.s }]),
-  );
-
-  if (Object.keys(sortedBlacklist).length || Object.keys(rawBlacklist).length) {
-    Utils.Props.setChunked(PROP_KEY, sortedBlacklist);
+  // 3. Write back to sheet (Overwrite)
+  blSheet.clear();
+  if (validEntries.length > 0) {
+    const output = validEntries.map((e) => [e.t, e.e, e.s]);
+    blSheet.getRange(1, 1, output.length, 3).setValues(output);
   }
 
   if (rowsToDelete.length > 0) {
@@ -310,61 +313,85 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   if (tagsToFetch.length === 0) return [];
   console.log(
-    `👥 Filtering: Retrieving full profiles for ${tagsToFetch.length} final candidates... (limit=${playerLimit})`,
+    `👥 Filtering: Retrieving full profiles${remoteAvailable ? " (Scoring-as-a-Service)" : ""} for ${tagsToFetch.length} candidates...`,
   );
+
   const playersData = Utils.fetchRoyaleAPI(
     tagsToFetch.map(
       (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
     ),
+    remoteAvailable ? W : null,
   );
 
   const validCandidates = [];
-  playersData.forEach((p, idx) => {
-    if (p && p.trophies >= minTrophies) {
-      validCandidates.push(p);
+  playersData.forEach((p) => {
+    if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
+      if (p.rawScore !== undefined) {
+        // Data already scored by worker
+        validCandidates.push(p);
+      } else {
+        // Local fallback scoring needed
+        validCandidates.push(p);
+      }
     }
   });
 
   if (validCandidates.length > 0) {
-    const logUrls = validCandidates.map(
-      (p) =>
-        `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
-    );
-    const logs = Utils.fetchRoyaleAPI(logUrls);
-
-    validCandidates.forEach((p, idx) => {
-      let warBonus = 0;
-      if (logs[idx]) {
-        const hasWar = logs[idx].some(
-          (b) =>
-            b.type === "riverRacePvP" ||
-            b.type === "boatBattle" ||
-            b.type === "riverRaceDuel",
-        );
-        if (hasWar) warBonus = 500;
-      }
-      let totalWarScore = (p.warDayWins || 0) + warBonus;
-      if (existingRecruits?.has(p.tag))
-        totalWarScore = Math.max(
-          totalWarScore,
-          existingRecruits.get(p.tag).war || 0,
-        );
-      const rawScore = Math.round(
-        p.trophies * W.TROPHY +
-          p.totalDonations * W.DON +
-          totalWarScore * W.WAR,
+    // Determine which candidates need logs (only if not already scored by remote)
+    const candidatesToScoreLocally = validCandidates.filter(c => c.rawScore === undefined);
+    
+    if (candidatesToScoreLocally.length > 0) {
+      console.log(`📡 Local Scoring: Fetching battle logs for ${candidatesToScoreLocally.length} players...`);
+      const logUrls = candidatesToScoreLocally.map(
+        (p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
       );
-      p._computed = {
-        tag: p.tag,
-        name: p.name,
-        trophies: p.trophies,
-        donations: p.totalDonations,
-        cards: p.challengeCardsWon,
-        war: totalWarScore,
-        foundDate: new Date(),
-        invited: false,
-        rawScore: rawScore,
-      };
+      const logs = Utils.fetchRoyaleAPI(logUrls);
+
+      candidatesToScoreLocally.forEach((p, idx) => {
+        let warBonus = 0;
+        if (logs[idx]) {
+          const hasWar = logs[idx].some(
+            (b) =>
+              b.type === "riverRacePvP" ||
+              b.type === "boatBattle" ||
+              b.type === "riverRaceDuel",
+          );
+          if (hasWar) warBonus = 500;
+        }
+        let totalWarScore = (p.warDayWins || 0) + warBonus;
+        if (existingRecruits?.has(p.tag))
+          totalWarScore = Math.max(
+            totalWarScore,
+            existingRecruits.get(p.tag).war || 0,
+          );
+        const rawScore = Math.round(
+          p.trophies * W.TROPHY +
+            p.totalDonations * W.DON +
+            totalWarScore * W.WAR,
+        );
+        p._computed = {
+          tag: p.tag,
+          name: p.name,
+          trophies: p.trophies,
+          donations: p.totalDonations,
+          cards: p.challengeCardsWon,
+          war: totalWarScore,
+          foundDate: new Date(),
+          invited: false,
+          rawScore: rawScore,
+        };
+      });
+    }
+
+    // Map scored data
+    validCandidates.forEach(p => {
+      if (p.rawScore !== undefined) {
+        p._computed = {
+          ...p,
+          foundDate: new Date(),
+          invited: false
+        };
+      }
     });
   }
 

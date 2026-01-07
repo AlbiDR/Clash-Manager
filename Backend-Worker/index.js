@@ -40,7 +40,7 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
   return { code: 520, content: `Fetch failed: ${lastErr ? lastErr.message : 'unknown'}` };
 }
 
-async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY) {
+async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
   const results = new Array(urls.length);
   let idx = 0;
 
@@ -59,8 +59,52 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
         headers.Authorization = `Bearer ${key}`;
       }
 
-      const res = await fetchWithRetries(url, { method: 'GET', headers });
-      results[i] = res;
+      // ⚡ SCORING OPTIMIZATION: If we are fetching a player profile, optionally fetch battlelog too
+      if (scoring && url.includes('/players/') && !url.includes('/battlelog')) {
+        try {
+          const profile = await fetchWithRetries(url, { method: 'GET', headers });
+          if (profile.code === 200 && profile.content && profile.content.tag) {
+            const logUrl = url + '/battlelog';
+            const logs = await fetchWithRetries(logUrl, { method: 'GET', headers });
+            
+            let warBonus = 0;
+            if (logs.code === 200 && Array.isArray(logs.content)) {
+              const hasWar = logs.content.some(b => 
+                ['riverRacePvP', 'boatBattle', 'riverRaceDuel'].includes(b.type)
+              );
+              if (hasWar) warBonus = 500;
+            }
+
+            const p = profile.content;
+            const totalWarScore = (p.warDayWins || 0) + warBonus;
+            const rawScore = Math.round(
+              (p.trophies || 0) * (scoring.TROPHY || 0) +
+              (p.totalDonations || 0) * (scoring.DON || 0) +
+              totalWarScore * (scoring.WAR || 0)
+            );
+
+            results[i] = {
+              code: 200,
+              content: {
+                tag: p.tag,
+                name: p.name,
+                trophies: p.trophies,
+                donations: p.totalDonations,
+                cards: p.challengeCardsWon,
+                war: totalWarScore,
+                rawScore: rawScore
+              }
+            };
+          } else {
+            results[i] = profile;
+          }
+        } catch (e) {
+          results[i] = { code: 500, content: `Scoring fetch failed: ${e.message}` };
+        }
+      } else {
+        const res = await fetchWithRetries(url, { method: 'GET', headers });
+        results[i] = res;
+      }
     }
   }
 
@@ -68,6 +112,15 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
   const spawn = Math.min(concurrency, urls.length);
   for (let i = 0; i < spawn; i++) workers.push(worker());
   await Promise.all(workers);
+
+  // If scoring was requested, sort and potentially cap to save bandwidth
+  if (scoring) {
+    return results
+      .filter(r => r && r.code === 200 && r.content && r.content.rawScore !== undefined)
+      .sort((a, b) => b.content.rawScore - a.content.rawScore)
+      .slice(0, 200); // Return top 200 candidates to GAS
+  }
+
   return results;
 }
 
@@ -94,11 +147,11 @@ app.get('/capabilities', checkAuth, (req, res) => {
 
 app.post('/fetch', checkAuth, async (req, res) => {
   try {
-    const { urls, apiKeys } = req.body;
+    const { urls, apiKeys, scoring } = req.body;
     if (!Array.isArray(urls)) return res.status(400).json({ error: 'urls must be array' });
     const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
 
-    const results = await processBatch(urls, apiKeys || [], concurrency);
+    const results = await processBatch(urls, apiKeys || [], concurrency, scoring);
     return res.json({ results });
   } catch (e) {
     console.error('Failed /fetch', e);
