@@ -18,6 +18,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     cssCodeSplit: true,
+    target: 'es2020',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -132,13 +133,6 @@ export default defineConfig({
             accept: {
               'application/json': ['.clashmgr', '.json']
             },
-            icons: [
-              {
-                src: 'pwa-192x192.png',
-                sizes: '192x192',
-                type: 'image/png'
-              }
-            ],
             launch_type: 'single-client'
           }
         ],
@@ -274,7 +268,6 @@ export default defineConfig({
           }
         ]
       },
-      injectManifest: false,
       srcDir: undefined,
       filename: undefined,
       strategies: 'generateSW',
