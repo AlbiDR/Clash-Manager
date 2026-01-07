@@ -17,8 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "./Frontend-PWA/package-lock.json"
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -26,16 +24,9 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Install Dependencies
-        run: |
-          npm install -g @bubblewrap/cli
-          cd Frontend-PWA
-          npm install
-
       - name: Setup Keystore
         run: |
           cd Frontend-PWA
-          # Decode the base64 keystore secret to the path defined in twa-manifest.json
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > signing.keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -49,46 +40,34 @@ jobs:
           jq --argjson code "$NEW_CODE" '.appVersionCode = $code' twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
           echo "version_code=$NEW_CODE" >> $GITHUB_OUTPUT
 
-      - name: Build APK/AAB
+      - name: Generate Android Project
         run: |
-          echo "🔧 Environment Setup..."
-          echo "ANDROID_HOME: ${ANDROID_HOME}"
-          echo "JAVA_HOME: ${JAVA_HOME}"
-
-          # 1. Configure Bubblewrap with system paths (answer 'N' to JDK installation prompt)
-          echo "N" | bubblewrap updateConfig --jdkPath "${JAVA_HOME}" --androidSdkPath "${ANDROID_HOME}"
-
-          # 2. Ensure build-tools are present
-          if [ ! -d "${ANDROID_HOME}/build-tools/34.0.0" ]; then
-            echo "⬇️ Installing build-tools..."
-            yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" > /dev/null
-          fi
-
           cd Frontend-PWA
 
-          # 3. Build
-          echo "📦 Building Android App..."
-          bubblewrap build --skipPwaValidation
+          # Download gradle wrapper
+          curl -L https://services.gradle.org/distributions/gradle-8.5-bin.zip -o gradle.zip
+          unzip -q gradle.zip
+          gradle-8.5/bin/gradle wrapper
+          rm -rf gradle-8.5 gradle.zip
+
+          # Generate Android project structure from twa-manifest.json
+          node generate-android-project.js
+
+      - name: Build APK
+        run: |
+          cd Frontend-PWA
+          ./gradlew assembleRelease
         env:
-          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Verify & Digital Asset Links
+      - name: Verify Build
         run: |
           cd Frontend-PWA
-          APK_FILE=$(find . -name "*.apk" | head -n 1)
-          if [ -z "$APK_FILE" ]; then
-            echo "No APK found!"
-            exit 1
-          fi
-          echo "Verifying signature of $APK_FILE"
-          keytool -printcert -jarfile "$APK_FILE" | grep "SHA256:"
+          ls -lh app/build/outputs/apk/release/
 
-      - name: Upload Artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: clash-manager-android-v${{ steps.versioning.outputs.version_code }}
-          path: |
-            Frontend-PWA/*.apk
-            Frontend-PWA/*.aab
-            Frontend-PWA/assetlinks.json
+          path: Frontend-PWA/app/build/outputs/apk/release/*.apk
