@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useApiState } from "../../composables/useApiState";
 import Icon from "../Icon.vue";
 
