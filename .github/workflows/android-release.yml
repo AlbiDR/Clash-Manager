@@ -54,10 +54,10 @@ jobs:
           echo "🔧 Environment Setup..."
           echo "ANDROID_HOME: ${ANDROID_HOME}"
           echo "JAVA_HOME: ${JAVA_HOME}"
-          
-          # 1. Configure Bubblewrap with system paths
-          bubblewrap updateConfig --jdkPath "${JAVA_HOME}" --androidSdkPath "${ANDROID_HOME}"
-          
+
+          # 1. Configure Bubblewrap with system paths (answer 'N' to JDK installation prompt)
+          echo "N" | bubblewrap updateConfig --jdkPath "${JAVA_HOME}" --androidSdkPath "${ANDROID_HOME}"
+
           # 2. Ensure build-tools are present
           if [ ! -d "${ANDROID_HOME}/build-tools/34.0.0" ]; then
             echo "⬇️ Installing build-tools..."
@@ -65,10 +65,10 @@ jobs:
           fi
 
           cd Frontend-PWA
-          
-          # 3. Build (skip doctor check, use --yes to auto-accept any remaining prompts)
+
+          # 3. Build
           echo "📦 Building Android App..."
-          echo "N" | bubblewrap build --skipPwaValidation
+          bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
