@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-const VER_LOGGER = "6.0.1";
+const VER_LOGGER = "6.3.0";
 
 function updateClanDatabase() {
   console.time("ETL");

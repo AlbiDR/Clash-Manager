@@ -4,12 +4,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 6.2.1
+ * 🏷️ VERSION: 6.3.0
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = "6.2.1";
+const VER_CONFIGURATION = "6.3.0";
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -17,22 +17,22 @@ try {
   _PROPS = PropertiesService.getScriptProperties().getProperties();
 } catch (e) {
   console.warn(
-    "Could not fetch Script Properties (likely missing permissions). Defaulting to empty config.",
+    "Could not fetch Script Properties (likely missing permissions). Defaulting to empty config."
   );
 }
 
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: "6.2.1",
-      UTILITIES: "6.0.0",
-      ORCHESTRATOR_TRIGGERS: "6.0.0",
-      LOGGER: "6.0.0",
-      LEADERBOARD: "6.1.5",
-      SCORING_SYSTEM: "6.0.0",
-      RECRUITER: "6.2.7",
-      CONTROLLER_WEBAPP: "6.2.2",
-      API_PUBLIC: "6.0.0",
+      CONFIGURATION: "6.3.0",
+      UTILITIES: "6.3.0",
+      ORCHESTRATOR_TRIGGERS: "6.3.0",
+      LOGGER: "6.3.0",
+      LEADERBOARD: "6.3.0",
+      SCORING_SYSTEM: "6.3.0",
+      RECRUITER: "6.3.0",
+      CONTROLLER_WEBAPP: "6.3.0",
+      API_PUBLIC: "6.3.0",
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",
@@ -57,12 +57,20 @@ const CONFIG = {
     REMOTE_WORKER_SECRET: _PROPS["RemoteWorkerSecret"] || "",
     WEB_APP_URL: "https://albidr.github.io/Clash-Manager/",
     RETRY_MAX: 3,
-    JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined" ? VER_API_PUBLIC : "6.0.0").replace(/\./g, "_")}`,
+    JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined"
+      ? VER_API_PUBLIC
+      : "6.0.0"
+    ).replace(/\./g, "_")}`,
     DB_PURGE_DAYS: 7,
     DB_ROW_LIMIT: 20000,
   },
 
-  SHEETS: { DB: "Clan Database", LB: "Leaderboard", HH: "Headhunter", BL: "HH_BLACKLIST" },
+  SHEETS: {
+    DB: "Clan Database",
+    LB: "Leaderboard",
+    HH: "Headhunter",
+    BL: "HH_BLACKLIST",
+  },
   LAYOUT: { BUFFER_SIZE: 25, DATA_START_ROW: 3 },
 
   UI: {
@@ -166,7 +174,7 @@ const CONFIG = {
       LOCAL: { TOURNEYS: 300, PLAYERS: 250 },
       REMOTE: { TOURNEYS: 1000, PLAYERS: 1000 },
       MAX_TOURNEYS: 2000,
-      MAX_PLAYERS: 2000
+      MAX_PLAYERS: 2000,
     },
   },
 
