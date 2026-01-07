@@ -35,10 +35,12 @@ jobs:
         id: versioning
         run: |
           cd Frontend-PWA
-          CURRENT_CODE=$(jq '.appVersionCode' twa-manifest.json)
-          NEW_CODE=$((CURRENT_CODE + 1))
+          V_NAME=$(jq -r '.appVersionName' twa-manifest.json)
+          V_CODE=$(jq -r '.appVersionCode' twa-manifest.json)
+          NEW_CODE=$((V_CODE + 1))
           jq --argjson code "$NEW_CODE" '.appVersionCode = $code' twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
           echo "version_code=$NEW_CODE" >> $GITHUB_OUTPUT
+          echo "build_tag=v${V_NAME}-build${NEW_CODE}" >> $GITHUB_OUTPUT
 
       - name: Generate Android Project
         run: |
@@ -117,6 +119,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: clash-manager-android-v${{ steps.versioning.outputs.version_code }}
+          name: clash-manager-android-${{ steps.versioning.outputs.build_tag }}
           path: Frontend-PWA/app/build/outputs/apk/release/*.apk
           if-no-files-found: error

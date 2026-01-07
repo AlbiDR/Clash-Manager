@@ -189,15 +189,34 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   /**
    * 🤖 AUTO PULSE (Worker/Script Initiated)
-   * This triggers the JS injection. This WILL cause prompts on strict browsers.
    */
   function nextPulseAutomated() {
     if (!isBlasting.value) return;
 
+    // Check if we already reached the end
+    if (currentIndex.value >= selectedIds.value.length) {
+      stopBlitz();
+      info("Batch sequence complete");
+      return;
+    }
+
     const id = selectedIds.value[currentIndex.value];
     if (id) {
+      console.log(`⚡ Blasting item ${currentIndex.value + 1}: ${id}`);
       fireDeepLink(`${baseScheme}${id}`);
-      advanceIndex();
+      
+      // Advance to NEXT
+      currentIndex.value++;
+      
+      // Check if we just finished
+      if (currentIndex.value >= selectedIds.value.length) {
+        setTimeout(() => {
+          if (isBlasting.value) {
+            stopBlitz();
+            info("Batch sequence complete");
+          }
+        }, 1000);
+      }
     }
   }
 
@@ -210,16 +229,17 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     isBlasting.value = true;
     currentIndex.value = 0;
 
-    // 1. Fire first shot immediately
-    nextPulseAutomated();
-
-    // 2. Start Worker for rhythm
-    // Using a slightly higher throttle for Blitz to allow external app to handle intent
-    const blitzThrottle = Math.max(throttleMs, 2000); 
+    // 1. Kick off automation loop (Worker handles the rest)
+    // We delay the first fire slightly to let transitions settle
+    const blitzThrottle = Math.max(throttleMs, 2500); // 2.5s minimum for intent reliability
+    
     worker = createWorker(blitzThrottle);
     worker.onmessage = () => {
       nextPulseAutomated();
     };
+    
+    // Fire the first one immediately, then start the worker interval
+    nextPulseAutomated();
     worker.postMessage("start");
   }
 
@@ -227,19 +247,18 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleAction(e: MouseEvent) {
     // 1. BLITZ MODE (Manual Assist)
     if (isBlasting.value) {
-      // Manual click in Blitz mode acts as a "skip to next" or "manual trigger"
-      // without double-advancing.
+      // Manual click in Blitz mode acts as an emergency "Manual fire + Skip"
       e.preventDefault();
       
+      console.log("⚡ Manual Assist Click");
       const id = selectedIds.value[currentIndex.value];
       if (id) {
-        // Manual trigger for the CURRENT item (in case auto-fire was blocked)
+        // Direct anchor click (most reliable for manual gesture)
         const link = document.createElement("a");
         link.href = `${baseScheme}${id}`;
         link.click();
         
-        // Advance only after the interaction
-        advanceIndex();
+        currentIndex.value++;
       }
 
       if (worker) {
