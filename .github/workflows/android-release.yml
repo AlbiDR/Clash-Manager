@@ -45,7 +45,7 @@ jobs:
           cd Frontend-PWA
 
           echo "📦 Generating Android project from twa-manifest.json..."
-          node generate-android-project.js
+          node generate-android-project.cjs
 
           echo ""
           echo "🔍 Verifying generated files..."
