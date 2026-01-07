@@ -31,7 +31,7 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "21"
-          cache: "gradle"
+          # cache: "gradle" removed because src-tauri/gen/android is not committed
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
