@@ -75,6 +75,8 @@ jobs:
         run: |
           cd Frontend-PWA
           export ANDROID_HOME=$ANDROID_SDK_ROOT
+          export TAURI_ANDROID_KEYSTORE=$GITHUB_WORKSPACE/Frontend-PWA/signing.keystore
+          export TAURI_ANDROID_KEY_ALIAS=clash_manager_release
 
           echo "🏗️  Initializing Android Support (if needed)..."
           npx tauri android init --ci
@@ -85,24 +87,30 @@ jobs:
           echo "📁 Directory State after build:"
           find src-tauri/gen/android -name "*.apk"
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          TAURI_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          TAURI_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Verify & Prepare APK
         run: |
           cd Frontend-PWA
           echo "🔍 Searching for APK..."
-          APK_PATH=$(find src-tauri/gen/android -name "*.apk" | grep "release" | head -n 1)
+          # We prefer aarch64 (arm64-v8a) as it covers 99% of modern devices
+          APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release.apk" | head -n 1)
+
+          if [ -z "$APK_PATH" ]; then
+            echo "⚠️  Falling back to any release APK..."
+            APK_PATH=$(find src-tauri/gen/android -name "*release.apk" | grep "release" | head -n 1)
+          fi
 
           if [ -z "$APK_PATH" ]; then
             echo "❌ ERROR: No APK found!"
             exit 1
           fi
 
-          echo "✅ APK built successfully!"
+          echo "✅ APK built successfully: $APK_PATH"
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
-          echo "✓ Prepared: $DESCRIPTIVE_NAME"
+          echo "✓ Prepared correctly signed APK: $DESCRIPTIVE_NAME"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
