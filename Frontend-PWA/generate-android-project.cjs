@@ -52,13 +52,10 @@ try {
 // Create directory structure
 console.log('📁 Creating directory structure...');
 const dirs = [
-  'app/src/main/java/com/albidr/clashmanager',
-  'app/src/main/res/values',
-  'app/src/main/res/mipmap-mdpi',
-  'app/src/main/res/mipmap-hdpi',
-  'app/src/main/res/mipmap-xhdpi',
   'app/src/main/res/mipmap-xxhdpi',
   'app/src/main/res/mipmap-xxxhdpi',
+  'app/src/main/java/com/albidr/clashmanager',
+  'app/src/main/res/values',
   'gradle/wrapper'
 ];
 
@@ -120,7 +117,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -133,6 +132,13 @@ android {
 dependencies {
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
 }
+`);
+
+// Generate proguard-rules.pro
+writeFileWithVerification('app/proguard-rules.pro', `
+# Keep the TWA/Android Browser Helper classes
+-keep class com.google.androidbrowserhelper.** { *; }
+-keep class androidx.browser.** { *; }
 `);
 
 // Generate AndroidManifest.xml
@@ -157,7 +163,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
             android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:taskAffinity=""
+            android:taskAffinity="com.albidr.clashmanager"
             android:launchMode="singleTask">
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
@@ -189,7 +195,8 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
 // Generate values/strings.xml
 // We include the SHA256 fingerprint if provided via ANDROID_SHA256 env var.
 // This is critical for Digital Asset Links (DAL) verification.
-// Standard TWA Handshake (Bubblewrap Method):
+// Standard TWA Handshake (Bi-directional Hardening):
+const fingerprint = process.env.ANDROID_SHA256 || "";
 const assetStatements = [
   {
     relation: ["delegate_permission/common.handle_all_urls"],
@@ -199,6 +206,17 @@ const assetStatements = [
     }
   }
 ];
+
+if (fingerprint) {
+  assetStatements.push({
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: manifest.packageId,
+      sha256_cert_fingerprints: [fingerprint.toUpperCase().replace(/[^A-F0-9]/g, ':')]
+    }
+  });
+}
 
 // We must double-escape quotes for Android XML string resources
 const assetStatementsEscaped = JSON.stringify(assetStatements).replace(/"/g, '\\"');

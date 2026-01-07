@@ -35,30 +35,26 @@ jobs:
         id: versioning
         run: |
           cd Frontend-PWA
-          # 1. Get Base Values
-          V_NAME=$(jq -r '.appVersionName' twa-manifest.json)
-          V_CODE=$(jq -r '.appVersionCode' twa-manifest.json)
+          # 1. Force Dynamic Versioning (100% certainty)
+          # We use 8.0 as the major.minor to signify the Next-Gen/Bleeding Edge stack
+          V_NAME="8.0.${{ github.run_number }}"
+          V_CODE=$((1000 + ${{ github.run_number }}))
 
-          # 2. Override version name with Git Tag if present
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            V_NAME="${{ github.ref_name }}"
-            V_NAME="${V_NAME#v}" # Remove 'v' prefix
-          fi
+          BUILD_TAG="v${V_NAME}-build${V_CODE}"
+          APK_FILENAME="clash-manager-${BUILD_TAG}.apk"
 
-          # 3. Scale Build Code using Run Number to ensure uniqueness
-          # We use 1000 + run_number to avoid overlapping with legacy manual codes
-          FINAL_CODE=$((1000 + github.run_number))
-          BUILD_TAG="v${V_NAME}-b${FINAL_CODE}"
-
-          # 4. Update manifest ephemerally for this build
-          jq --arg name "$V_NAME" --argjson code "$FINAL_CODE" \
+          # 2. Update manifest ephemerally for this build
+          # This ensures the APK metadata is actually correct
+          jq --arg name "$V_NAME" --argjson code "$V_CODE" \
              '.appVersionName = $name | .appVersionCode = $code' \
              twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
 
-          echo "version_code=$FINAL_CODE" >> $GITHUB_OUTPUT
+          echo "version_code=$V_CODE" >> $GITHUB_OUTPUT
           echo "v_name=$V_NAME" >> $GITHUB_OUTPUT
           echo "build_tag=$BUILD_TAG" >> $GITHUB_OUTPUT
-          echo "apk_filename=clash-manager-$BUILD_TAG.apk" >> $GITHUB_OUTPUT
+          echo "apk_filename=$APK_FILENAME" >> $GITHUB_OUTPUT
+
+          echo "🚀 Build Info: $BUILD_TAG"
 
       - name: Generate Android Project
         run: |
