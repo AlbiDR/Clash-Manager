@@ -14,7 +14,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR_TRIGGERS = "6.0.0";
+const VER_ORCHESTRATOR_TRIGGERS = "6.3.0";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.

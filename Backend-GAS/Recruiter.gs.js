@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-const VER_RECRUITER = "6.2.7";
+const VER_RECRUITER = "6.3.0";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

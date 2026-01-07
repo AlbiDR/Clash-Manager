@@ -16,7 +16,7 @@
  * ============================================================================
  */
 
-const VER_UTILITIES = "6.0.1";
+const VER_UTILITIES = "6.3.0";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -24,7 +24,7 @@ const _EXECUTION_CACHE = new Map();
 // 🛡️ API BUDGET: Prevents runaway execution from burning daily quotas.
 // UPDATED (v5.2.0): Increased from 400 to 600 to allow "Deep Net Level 2" scans.
 let _FETCH_COUNT = 0;
-const MAX_FETCH_PER_EXECUTION = 3000;
+const MAX_FETCH_PER_EXECUTION = 100000;
 
 const Utils = {
   /**
@@ -472,12 +472,27 @@ const Utils = {
     }
   },
 
-  // Check remote worker health & capabilities
+  // Check remote worker health & capabilities (with 5-min persistent caching)
   remoteWorkerHealthy: function () {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return false;
+
+    // 1. Tier 1: Per-execution cache
     if (_EXECUTION_CACHE.has("worker_health"))
       return _EXECUTION_CACHE.get("worker_health");
 
+    // 2. Tier 2: Persistent cache (5-minute TTL)
+    const CACHE_KEY = "WORKER_HEALTH_CACHE";
+    const now = Date.now();
+    try {
+      const cached = this.Props.getJSON(CACHE_KEY, null);
+      if (cached && (now - cached.time) < 300000) { // 5 minutes
+        _EXECUTION_CACHE.set("worker_health", cached.status);
+        return cached.status;
+      }
+    } catch (e) {}
+
+    // 3. Tier 3: Live check
+    let isHealthy = false;
     try {
       const headers = {};
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
@@ -491,15 +506,21 @@ const Utils = {
         }
       );
       if (res.getResponseCode() === 200) {
-        _EXECUTION_CACHE.set("worker_health", true);
-        return true;
+        isHealthy = true;
       } else {
         console.warn(`⚠️ Remote worker health check failed: ${res.getResponseCode()}`);
       }
+    } catch (e) {
+      console.warn(`⚠️ Remote worker connection error: ${e.message}`);
+    }
+
+    // Save to all caches
+    _EXECUTION_CACHE.set("worker_health", isHealthy);
+    try {
+      this.Props.setJSON(CACHE_KEY, { status: isHealthy, time: now });
     } catch (e) {}
 
-    _EXECUTION_CACHE.set("worker_health", false);
-    return false;
+    return isHealthy;
   },
 
   /**

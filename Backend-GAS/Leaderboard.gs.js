@@ -12,7 +12,7 @@
  * ============================================================================
  */
 
-const VER_LEADERBOARD = "6.1.5";
+const VER_LEADERBOARD = "6.3.0";
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
