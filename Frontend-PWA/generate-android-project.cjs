@@ -148,7 +148,7 @@ writeFileWithVerification('app/proguard-rules.pro', `
 // Generate LauncherActivity.java
 writeFileWithVerification('app/src/main/java/com/albidr/clashmanager/LauncherActivity.java', `package com.albidr.clashmanager;
 
-import com.google.androidbrowserhelper.trusted.LauncherActivity;
+
 
 /**
  * Custom LauncherActivity to force a unique identity in Android Recents.
@@ -297,6 +297,6 @@ console.log('\n📊 Summary:');
 console.log(`   - Package: com.albidr.clashmanager`);
 console.log(`   - Version: ${manifest.appVersionCode} (${manifest.appVersionName || '1.0.0'})`);
 console.log(`   - Target URL: https://${manifest.host}${manifest.startUrl}`);
-console.log(`   - Min SDK: 23, Target SDK: 34`);
+console.log(`   - Min SDK: 23, Target SDK: 35`);
 console.log(`   - Icon: ${localIconPath}`);
 
