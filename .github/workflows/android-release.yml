@@ -26,6 +26,16 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+          override: true
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@latest
+
       - name: Setup Keystore
         run: |
           cd Frontend-PWA
@@ -36,20 +46,15 @@ jobs:
       - name: Auto-Version
         id: versioning
         run: |
-          cd Frontend-PWA
-          # 1. Force Dynamic Versioning (100% certainty)
-          # We use 8.0 as the major.minor to signify the Next-Gen/Bleeding Edge stack
-          V_NAME="8.0.${{ github.run_number }}"
+          V_NAME="8.11.${{ github.run_number }}"
           V_CODE=$((1000 + ${{ github.run_number }}))
 
           BUILD_TAG="v${V_NAME}-build${V_CODE}"
           APK_FILENAME="clash-manager-${BUILD_TAG}.apk"
 
-          # 2. Update manifest ephemerally for this build
-          # This ensures the APK metadata is actually correct
-          jq --arg name "$V_NAME" --argjson code "$V_CODE" \
-             '.appVersionName = $name | .appVersionCode = $code' \
-             twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
+          # 2. Update Tauri manifest
+          jq --arg name "$V_NAME" '.version = $name' \
+             tauri.conf.json > tauri.tmp && mv tauri.tmp tauri.conf.json
 
           echo "version_code=$V_CODE" >> $GITHUB_OUTPUT
           echo "v_name=$V_NAME" >> $GITHUB_OUTPUT
@@ -57,85 +62,31 @@ jobs:
           echo "apk_filename=$APK_FILENAME" >> $GITHUB_OUTPUT
 
           echo "🚀 Build Info: $BUILD_TAG"
-          echo "📝 Modified Manifest:"
-          cat twa-manifest.json
+          echo "📝 Modified Tauri Config:"
+          cat tauri.conf.json
 
-      - name: Generate Android Project
+      - name: Build Android App
         run: |
           cd Frontend-PWA
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
 
-          echo "🔑 Extracting SHA256 fingerprint from keystore..."
-          SHA256=$(keytool -list -v -keystore signing.keystore -alias clash_manager_release -storepass "$KEYSTORE_PASSWORD" | grep SHA256 | awk '{print $2}')
-          echo "   Fingerprint: $SHA256"
-          export ANDROID_SHA256=$SHA256
+          echo "🏗️  Initializing Android Support (if needed)..."
+          tauri android init --ci
 
-          echo "📦 Generating Android project from twa-manifest.json..."
-          node generate-android-project.cjs
-
-          echo ""
-          echo "🔍 Verifying generated files..."
-          for file in "build.gradle" "settings.gradle" "app/build.gradle" "app/src/main/AndroidManifest.xml"; do
-            if [ ! -f "$file" ]; then
-              echo "❌ ERROR: Required file missing: $file"
-              exit 1
-            fi
-            echo "✓ Found: $file"
-          done
-
-          echo ""
-          echo "⬇️  Setting up Gradle wrapper..."
-          mkdir -p gradle/wrapper
-          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
-
-          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip
-          networkTimeout=10000
-          validateDistributionUrl=true
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
-
-          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradlew -o gradlew
-          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradlew.bat -o gradlew.bat
-          chmod +x gradlew
-          echo "✓ Gradle wrapper ready"
-
-          echo ""
-          echo "--------------------------------------------------------"
-          echo "🌐 DIGITAL ASSET LINKS (Action Required)"
-          echo "To remove 'Vivaldi' and 'Open with' prompts, host this at:"
-          echo "https://albidr.github.io/.well-known/assetlinks.json"
-          echo ""
-          echo '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.albidr.clashmanager","sha256_cert_fingerprints":["'$SHA256'"]}}]'
-          echo "--------------------------------------------------------"
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
-      - name: Build APK
-        run: |
-          cd Frontend-PWA
-
-          echo "🔨 Building Android APK..."
-          echo "   Version Code: $(jq '.appVersionCode' twa-manifest.json)"
-          echo "   Keystore: signing.keystore"
-          echo ""
-
-          ./gradlew assembleRelease --stacktrace
+          echo "🔨 Building Sovereign APK..."
+          tauri android build --apk
 
           echo "📁 Directory State after build:"
-          ls -R app/build/outputs/apk/
+          find src-tauri/gen/android -name "*.apk"
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Verify Build
+      - name: Verify & Prepare APK
         run: |
           cd Frontend-PWA
           echo "🔍 Searching for APK..."
-          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          APK_PATH=$(find src-tauri/gen/android -name "*.apk" | grep "release" | head -n 1)
 
           if [ -z "$APK_PATH" ]; then
             echo "❌ ERROR: No APK found!"
@@ -143,16 +94,15 @@ jobs:
           fi
 
           echo "✅ APK built successfully!"
-          # Use the filename calculated in the versioning step
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
-          mv "$APK_PATH" "app/build/outputs/apk/release/$DESCRIPTIVE_NAME"
-          echo "✓ Renamed to: $DESCRIPTIVE_NAME"
+          cp "$APK_PATH" "$DESCRIPTIVE_NAME"
+          echo "✓ Prepared: $DESCRIPTIVE_NAME"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: clash-manager-android-${{ steps.versioning.outputs.build_tag }}
-          path: Frontend-PWA/app/build/outputs/apk/release/${{ steps.versioning.outputs.apk_filename }}
+          path: Frontend-PWA/${{ steps.versioning.outputs.apk_filename }}
           if-no-files-found: error
           compression-level: 0
 
@@ -161,7 +111,7 @@ jobs:
         with:
           tag_name: ${{ steps.versioning.outputs.build_tag }}
           name: Clash Manager ${{ steps.versioning.outputs.build_tag }}
-          files: Frontend-PWA/app/build/outputs/apk/release/${{ steps.versioning.outputs.apk_filename }}
+          files: Frontend-PWA/${{ steps.versioning.outputs.apk_filename }}
           generate_release_notes: true
           draft: false
           prerelease: false
