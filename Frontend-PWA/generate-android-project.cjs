@@ -74,7 +74,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.5.0'
+        classpath 'com.android.tools.build:gradle:9.0.0'
     }
 }
 
@@ -131,7 +131,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
 }
 `);
 
