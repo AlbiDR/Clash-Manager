@@ -39,9 +39,8 @@ const Utils = {
   executeSafely: function (lockKey, callback) {
     const lock = LockService.getScriptLock();
     try {
-      // Attempt to acquire lock for 30 seconds.
-      // If locked by ANOTHER execution, it waits.
-      const success = lock.tryLock(30000);
+      // Attempt to acquire lock for 60 seconds.
+      const success = lock.tryLock(60000);
 
       if (!success) {
         console.warn(
