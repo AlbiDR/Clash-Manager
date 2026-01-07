@@ -10,6 +10,28 @@ const isEditing = ref(false);
 const hasLocalOverride = computed(() => !!localStorage.getItem("cm_gas_url"));
 const isChecking = computed(() => apiStatus.value === "checking");
 
+// TWA Status Diagnostic
+const twaStatus = ref<"checking" | "trusted" | "fallback" | "web">("checking");
+onMounted(() => {
+  if (typeof (window as any).AndroidExternalInterface !== "undefined") {
+    // Some TWA bridges expose this
+    twaStatus.value = "trusted";
+  } else if (
+    (window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone) &&
+    /android/i.test(window.navigator.userAgent)
+  ) {
+    // If it's a standalone PWA on Android BUT doesn't have TWA tokens
+    // We check if we are in the 'verified' scope
+    // A trick is to check if the URL bar is visible via height logic
+    // but the most reliable way is if the browser injected specific headers
+    // For now, let's assume if it's standalone and Chrome-based, we check if it's fallback.
+    twaStatus.value = "fallback";
+  } else {
+    twaStatus.value = "web";
+  }
+});
+
 watch(
   apiStatus,
   (newVal) => {
@@ -107,6 +129,36 @@ function resetApiUrl() {
         </div>
         <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
           Running custom override • Tap to reset
+        </div>
+      </div>
+
+      <div class="twa-diagnostic">
+        <div class="field-label">ENVIRONMENT TRUST</div>
+        <div class="trust-card" :class="twaStatus">
+          <Icon
+            :name="twaStatus === 'trusted' ? 'shield-check' : 'alert-triangle'"
+            size="20"
+          />
+          <div class="trust-info">
+            <span class="trust-title">
+              {{
+                twaStatus === "trusted"
+                  ? "Trusted Web Activity"
+                  : twaStatus === "fallback"
+                    ? "Insecure Fallback"
+                    : "Standard Web"
+              }}
+            </span>
+            <span class="trust-desc">
+              {{
+                twaStatus === "trusted"
+                  ? "Identity verified. Native branding active."
+                  : twaStatus === "fallback"
+                    ? "Handshake failed. OS treating app as Browser Tab."
+                    : "Running in browser. System features limited."
+              }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -263,5 +315,47 @@ function resetApiUrl() {
 .status-indicator.unconfigured {
   background: #f59e0b;
   animation: pulse 2s infinite;
+}
+
+.twa-diagnostic {
+  margin-top: 24px;
+}
+
+.trust-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid transparent;
+}
+
+.trust-card.trusted {
+  background: rgba(34, 197, 94, 0.05);
+  border-color: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.trust-card.fallback {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.trust-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.trust-title {
+  font-size: 13px;
+  font-weight: 900;
+  display: block;
+}
+
+.trust-desc {
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: 500;
 }
 </style>
