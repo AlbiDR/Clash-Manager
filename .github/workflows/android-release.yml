@@ -85,7 +85,7 @@ jobs:
 
           echo "🔧 Applying Build Fixes..."
           
-          # 1. Proguard Rules
+          # 1. Proguard Rules - CRITICAL for preventing startup crash
           PROGUARD_FILE="src-tauri/gen/android/app/proguard-rules.pro"
           # Ensure directory exists just in case
           mkdir -p $(dirname $PROGUARD_FILE)
@@ -97,6 +97,7 @@ jobs:
             touch "$PROGUARD_FILE"
           fi
           
+          # Add comprehensive rules to prevent class stripping
           echo "# Added by CI pipeline" >> "$PROGUARD_FILE"
           echo "-dontwarn org.tauri.internal.**" >> "$PROGUARD_FILE"
           echo "-keep class org.tauri.internal.** { *; }" >> "$PROGUARD_FILE"
@@ -106,18 +107,21 @@ jobs:
           echo "-keep interface org.tauri.** { *; }" >> "$PROGUARD_FILE"
           echo "-keep class **.R" >> "$PROGUARD_FILE"
           echo "-keep class **.R$*" >> "$PROGUARD_FILE"
+          # Keep main activity to ensure launcher finds it
+          echo "-keep class com.albidr.clashmanager.** { *; }" >> "$PROGUARD_FILE"
+          echo "-keep class **.MainActivity { *; }" >> "$PROGUARD_FILE"
+          # General safety
+          echo "-keepattributes *Annotation*" >> "$PROGUARD_FILE"
           
-          # 2. Minify Configuration (Detect Kotlin vs Groovy DSL)
+          # 2. Minify Configuration (Attempt disable, but rely on ProGuard rules above if it fails)
           GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
           GRADLE_GROOVY="src-tauri/gen/android/app/build.gradle"
           
           if [ -f "$GRADLE_KTS" ]; then
             echo "Patching $GRADLE_KTS..."
-            # Ensure minify is disabled for release (Kotlin DSL) - Use Regex for robustness
             sed -i -E 's/isMinifyEnabled\s*=\s*true/isMinifyEnabled = false/g' "$GRADLE_KTS"
           elif [ -f "$GRADLE_GROOVY" ]; then
              echo "Patching $GRADLE_GROOVY..."
-             # Ensure minify is disabled for release (Groovy DSL)
              sed -i -E 's/minifyEnabled\s+true/minifyEnabled false/g' "$GRADLE_GROOVY"
           else
              echo "⚠️ Could not find build.gradle to patch"
@@ -128,8 +132,13 @@ jobs:
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           export TAURI_ANDROID_KEYSTORE=$GITHUB_WORKSPACE/Frontend-PWA/signing.keystore
           export TAURI_ANDROID_KEY_ALIAS=clash_manager_release
+          
+          # IMPORTANT: Signal Vite to use '/' base path for native build
+          export VITE_IS_TAURI_BUILD=true
 
           echo "🔨 Building Sovereign APK..."
+          # Build specifically for arm64 to reduce ambiguity, or universal if preferred. 
+          # Defaulting to standard build which usually produces universal or splits.
           npx tauri android build --apk true
 
           echo "📁 Directory State after build:"
@@ -155,12 +164,11 @@ jobs:
           
           echo "🛠️  Using build-tools: $LATEST_BUILD_TOOLS"
 
-          # 1. Search for UNIVERSAL APK first (Highest Priority for compatibility)
-          # "universal" usually indicates it contains all ABIs
+          # 1. Search for UNIVERSAL APK first
           APK_PATH=$(find src-tauri/gen/android -name "*universal*release*.apk" | head -n 1)
 
           if [ -z "$APK_PATH" ]; then
-            # 2. Fallback to arm64-v8a (Most common modern android)
+            # 2. Fallback to arm64-v8a
             echo "⚠️  Universal APK not found. Looking for arm64..."
             APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release*.apk" | head -n 1)
           fi
@@ -179,12 +187,9 @@ jobs:
 
           echo "📍 Selected APK: $APK_PATH"
 
-          # Check if signed. If name contains 'unsigned', we must sign it.
-          # Even if not named 'unsigned', we verify.
-          
-          echo "✍️  Re-signing/Aligning manually to ensure validity..."
+          echo "✍️  Re-signing/Aligning manually..."
             
-          # Align (Required for release)
+          # Align
           echo "   Running zipalign..."
           "$ZIPALIGN" -v -f -p 4 "$APK_PATH" aligned.apk
           
@@ -200,7 +205,7 @@ jobs:
           echo "✅ Manual signing complete."
           APK_PATH="final-signed.apk"
 
-          # Verify Signature (Sanity Check)
+          # Verify Signature
           echo "🔍 Verifying signature..."
           "$APKSIGNER" verify "$APK_PATH" || echo "⚠️ Warning: Signature verification failed. Device installation might fail."
 
