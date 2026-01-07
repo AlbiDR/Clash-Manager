@@ -120,10 +120,34 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   /**
    * 💉 DEEP LINK IGNITION
    */
-  function fireDeepLink(url: string) {
-    // For Blitz mode/background automation, window.open is often more permissive 
-    // on some Android browser implementations than anchor clicks.
-    if (isBlasting.value) {
+  let iframe: HTMLIFrameElement | null = null;
+  
+  function getIframe() {
+    if (iframe) return iframe;
+    iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+    return iframe;
+  }
+
+  function fireDeepLink(url: string, isAutomated = false) {
+    const isAndroid = /android/i.test(navigator.userAgent);
+    
+    // 🛡️ Bypassing security prompts for automated pulses
+    if (isAutomated && isAndroid) {
+      const tag = url.split("id=")[1];
+      if (tag) {
+        // Official Android Intent URI: Bypasses browser confirmation and targets CR directly
+        const intentUrl = `intent://playerInfo?id=${tag}#Intent;scheme=clashroyale;package=com.supercell.clashroyale;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;end`;
+        
+        // Iframe source update is significantly less restricted than window.open in TWA
+        getIframe().src = intentUrl;
+        return;
+      }
+    }
+
+    // Default/Manual Interaction: Standard methods
+    if (isBlasting.value && !isAutomated) {
       const win = window.open(url, "_blank");
       if (win) {
         setTimeout(() => win.close(), 100);
@@ -131,7 +155,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       }
     }
 
-    // Default: Native anchor click (Best for manual interaction)
     const link = document.createElement("a");
     link.href = url;
     link.style.display = "none";
@@ -177,7 +200,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     // 2. Fire current item
     const id = selectedIds.value[currentIndex.value];
     if (id) {
-      fireDeepLink(`${baseScheme}${id}`);
+      fireDeepLink(`${baseScheme}${id}`, true);
       
       // 3. Schedule next pulse if not finished
       const delay = Math.max(throttleMs, 2500);
