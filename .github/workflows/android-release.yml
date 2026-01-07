@@ -48,6 +48,7 @@ jobs:
           # 3. Scale Build Code using Run Number to ensure uniqueness
           # We use 1000 + run_number to avoid overlapping with legacy manual codes
           FINAL_CODE=$((1000 + github.run_number))
+          BUILD_TAG="v${V_NAME}-b${FINAL_CODE}"
 
           # 4. Update manifest ephemerally for this build
           jq --arg name "$V_NAME" --argjson code "$FINAL_CODE" \
@@ -56,7 +57,8 @@ jobs:
 
           echo "version_code=$FINAL_CODE" >> $GITHUB_OUTPUT
           echo "v_name=$V_NAME" >> $GITHUB_OUTPUT
-          echo "build_tag=v${V_NAME}-b${FINAL_CODE}" >> $GITHUB_OUTPUT
+          echo "build_tag=$BUILD_TAG" >> $GITHUB_OUTPUT
+          echo "apk_filename=clash-manager-$BUILD_TAG.apk" >> $GITHUB_OUTPUT
 
       - name: Generate Android Project
         run: |
@@ -127,33 +129,26 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Verify Build
-        id: verify
         run: |
           cd Frontend-PWA
-
           echo "🔍 Searching for APK..."
           APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
 
           if [ -z "$APK_PATH" ]; then
             echo "❌ ERROR: No APK found!"
-            echo "Directory contents:"
-            ls -R app/build/outputs/ || echo "Build outputs directory doesn't exist"
             exit 1
           fi
 
           echo "✅ APK built successfully!"
-          echo "   Path: $APK_PATH"
-          echo "   Size: $(du -h "$APK_PATH" | cut -f1)"
-
-          # Rename file to be descriptive
-          DESCRIPTIVE_NAME="clash-manager-v${{ steps.versioning.outputs.v_name }}-b${{ steps.versioning.outputs.version_code }}.apk"
+          # Use the filename calculated in the versioning step
+          DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           mv "$APK_PATH" "app/build/outputs/apk/release/$DESCRIPTIVE_NAME"
-          echo "apk_filename=$DESCRIPTIVE_NAME" >> $GITHUB_OUTPUT
+          echo "✓ Renamed to: $DESCRIPTIVE_NAME"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: clash-manager-android-${{ steps.versioning.outputs.build_tag }}
-          path: Frontend-PWA/app/build/outputs/apk/release/${{ steps.verify.outputs.apk_filename }}
+          path: Frontend-PWA/app/build/outputs/apk/release/${{ steps.versioning.outputs.apk_filename }}
           if-no-files-found: error
           compression-level: 0
