@@ -14,19 +14,14 @@ const isChecking = computed(() => apiStatus.value === "checking");
 // TWA Status Diagnostic
 const twaStatus = ref<"checking" | "trusted" | "fallback" | "web">("checking");
 onMounted(() => {
-  if (typeof (window as any).AndroidExternalInterface !== "undefined") {
-    // Some TWA bridges expose this
+  const isAndroid = /android/i.test(window.navigator.userAgent);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+  const hasInterface = typeof (window as any).AndroidExternalInterface !== "undefined";
+  const hasAppReferrer = document.referrer.includes("android-app://");
+
+  if (hasInterface || hasAppReferrer) {
     twaStatus.value = "trusted";
-  } else if (
-    (window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone) &&
-    /android/i.test(window.navigator.userAgent)
-  ) {
-    // If it's a standalone PWA on Android BUT doesn't have TWA tokens
-    // We check if we are in the 'verified' scope
-    // A trick is to check if the URL bar is visible via height logic
-    // but the most reliable way is if the browser injected specific headers
-    // For now, let's assume if it's standalone and Chrome-based, we check if it's fallback.
+  } else if (isAndroid && isStandalone) {
     twaStatus.value = "fallback";
   } else {
     twaStatus.value = "web";

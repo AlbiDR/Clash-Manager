@@ -179,7 +179,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
                 <data
                     android:scheme="https"
                     android:host="${manifest.host}"
-                    android:pathPrefix="/Clash-Manager" />
+                    android:pathPrefix="/" />
             </intent-filter>
         </activity>
     </application>
@@ -189,7 +189,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
 // Generate values/strings.xml
 // We include the SHA256 fingerprint if provided via ANDROID_SHA256 env var.
 // This is critical for Digital Asset Links (DAL) verification.
-const fingerprint = process.env.ANDROID_SHA256 || "";
+// Standard TWA Handshake (Bubblewrap Method):
 const assetStatements = [
   {
     relation: ["delegate_permission/common.handle_all_urls"],
@@ -200,24 +200,13 @@ const assetStatements = [
   }
 ];
 
-if (fingerprint) {
-  assetStatements.push({
-    relation: ["delegate_permission/common.handle_all_urls"],
-    target: {
-      namespace: "android_app",
-      package_name: manifest.packageId,
-      sha256_cert_fingerprints: [fingerprint.toUpperCase().replace(/[^A-F0-9]/g, ':')]
-    }
-  });
-}
-
-// Android values resources require double escaping for meta-data strings if they contain quotes
-const assetStatementsString = JSON.stringify(assetStatements);
+// We must double-escape quotes for Android XML string resources
+const assetStatementsEscaped = JSON.stringify(assetStatements).replace(/"/g, '\\"');
 
 writeFileWithVerification('app/src/main/res/values/strings.xml', `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">${manifest.launcherName}</string>
-    <string name="asset_statements"><![CDATA[${assetStatementsString}]]></string>
+    <string name="asset_statements">${assetStatementsEscaped}</string>
 </resources>
 `);
 

@@ -32,6 +32,18 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   );
   const isProcessing = computed(() => queue.value.length > 0);
 
+  // Trust Verification (Gate for Blitz)
+  const isTrusted = computed(() => {
+    // If not on Android, we allow it (development/desktop)
+    if (!/android/i.test(navigator.userAgent)) return true;
+    
+    // On Android, we require TWA signals
+    return (
+      typeof (window as any).AndroidExternalInterface !== "undefined" ||
+      document.referrer.includes("android-app://")
+    );
+  });
+
   // Returns props compatible with FabIsland
   const fabState = computed(() => {
     if (!isSelectionMode.value) return { visible: false };
@@ -72,7 +84,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       isProcessing: isProcessing.value,
       isBlasting: isBlasting.value,
       selectionCount: total,
-      blitzEnabled: modules.value.blitzMode,
+      blitzEnabled: modules.value.blitzMode && isTrusted.value,
     };
   });
 
@@ -217,6 +229,11 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   // ⚡ BLITZ MODE START
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return;
+
+    if (!isTrusted.value) {
+      error("Blitz requires Trusted Web Activity");
+      return;
+    }
 
     console.log("⚡ Initiating Blitz Mode");
     isBlasting.value = true;
