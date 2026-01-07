@@ -9,6 +9,8 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -153,3 +155,15 @@ jobs:
           path: Frontend-PWA/app/build/outputs/apk/release/${{ steps.versioning.outputs.apk_filename }}
           if-no-files-found: error
           compression-level: 0
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versioning.outputs.build_tag }}
+          name: Clash Manager ${{ steps.versioning.outputs.build_tag }}
+          files: Frontend-PWA/app/build/outputs/apk/release/${{ steps.versioning.outputs.apk_filename }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
