@@ -98,12 +98,12 @@ plugins {
 
 android {
     namespace 'com.albidr.clashmanager'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.albidr.clashmanager"
         minSdk 23
-        targetSdk 34
+        targetSdk 35
         versionCode ${manifest.appVersionCode}
         versionName "${manifest.appVersionName || '1.0.0'}"
     }
@@ -133,7 +133,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
 }
 `);
 
