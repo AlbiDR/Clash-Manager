@@ -35,12 +35,28 @@ jobs:
         id: versioning
         run: |
           cd Frontend-PWA
+          # 1. Get Base Values
           V_NAME=$(jq -r '.appVersionName' twa-manifest.json)
           V_CODE=$(jq -r '.appVersionCode' twa-manifest.json)
-          NEW_CODE=$((V_CODE + 1))
-          jq --argjson code "$NEW_CODE" '.appVersionCode = $code' twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
-          echo "version_code=$NEW_CODE" >> $GITHUB_OUTPUT
-          echo "build_tag=v${V_NAME}-build${NEW_CODE}" >> $GITHUB_OUTPUT
+
+          # 2. Override version name with Git Tag if present
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            V_NAME="${{ github.ref_name }}"
+            V_NAME="${V_NAME#v}" # Remove 'v' prefix
+          fi
+
+          # 3. Scale Build Code using Run Number to ensure uniqueness
+          # We use 1000 + run_number to avoid overlapping with legacy manual codes
+          FINAL_CODE=$((1000 + github.run_number))
+
+          # 4. Update manifest ephemerally for this build
+          jq --arg name "$V_NAME" --argjson code "$FINAL_CODE" \
+             '.appVersionName = $name | .appVersionCode = $code' \
+             twa-manifest.json > twa-manifest.tmp && mv twa-manifest.tmp twa-manifest.json
+
+          echo "version_code=$FINAL_CODE" >> $GITHUB_OUTPUT
+          echo "v_name=$V_NAME" >> $GITHUB_OUTPUT
+          echo "build_tag=v${V_NAME}-b${FINAL_CODE}" >> $GITHUB_OUTPUT
 
       - name: Generate Android Project
         run: |
@@ -111,6 +127,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Verify Build
+        id: verify
         run: |
           cd Frontend-PWA
 
@@ -128,10 +145,15 @@ jobs:
           echo "   Path: $APK_PATH"
           echo "   Size: $(du -h "$APK_PATH" | cut -f1)"
 
+          # Rename file to be descriptive
+          DESCRIPTIVE_NAME="clash-manager-v${{ steps.versioning.outputs.v_name }}-b${{ steps.versioning.outputs.version_code }}.apk"
+          mv "$APK_PATH" "app/build/outputs/apk/release/$DESCRIPTIVE_NAME"
+          echo "apk_filename=$DESCRIPTIVE_NAME" >> $GITHUB_OUTPUT
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: clash-manager-android-${{ steps.versioning.outputs.build_tag }}
-          path: Frontend-PWA/app/build/outputs/apk/release/app-release.apk
+          path: Frontend-PWA/app/build/outputs/apk/release/${{ steps.verify.outputs.apk_filename }}
           if-no-files-found: error
           compression-level: 0
