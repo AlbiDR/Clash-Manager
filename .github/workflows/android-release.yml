@@ -44,14 +44,14 @@ jobs:
         run: |
           cd Frontend-PWA
 
-          # Download gradle wrapper
+          # Generate Android project structure from twa-manifest.json FIRST
+          node generate-android-project.js
+
+          # THEN download gradle and initialize wrapper
           curl -L https://services.gradle.org/distributions/gradle-8.5-bin.zip -o gradle.zip
           unzip -q gradle.zip
           gradle-8.5/bin/gradle wrapper
           rm -rf gradle-8.5 gradle.zip
-
-          # Generate Android project structure from twa-manifest.json
-          node generate-android-project.js
 
       - name: Build APK
         run: |
