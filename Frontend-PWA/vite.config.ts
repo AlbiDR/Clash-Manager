@@ -18,7 +18,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     cssCodeSplit: true,
-    target: 'es2020',
+    target: 'es2015',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -132,8 +132,7 @@ export default defineConfig({
             action: '/Clash-Manager/',
             accept: {
               'application/json': ['.clashmgr', '.json']
-            },
-            launch_type: 'single-client'
+            }
           }
         ],
         protocol_handlers: [
