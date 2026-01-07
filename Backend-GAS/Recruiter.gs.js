@@ -153,23 +153,27 @@ function updateAndGetBlacklist(sheet) {
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-    const data = sheet
-      .getRange(startRow, 2, sheet.getLastRow() - (startRow - 1), 10)
-      .getValues();
+    const lastRow = sheet.getLastRow();
+    const numRows = lastRow - startRow + 1;
+    
+    // Fetch only the columns we need: Tag (B), Invited (C), Raw Score (J)
+    // Map to relative indices for easier processing
+    const tagValues = sheet.getRange(startRow, 2, numRows, 1).getValues();
+    const invitedValues = sheet.getRange(startRow, 2 + H.INVITED, numRows, 1).getValues();
+    const rawScoreValues = sheet.getRange(startRow, 2 + H.RAW_SCORE, numRows, 1).getValues();
 
-    data.forEach((row, idx) => {
-      const tag = String(row[H.TAG] || "").trim();
-      const isInvited =
-        row[H.INVITED] === true ||
-        String(row[H.INVITED]).toUpperCase() === "TRUE";
+    for (let i = 0; i < numRows; i++) {
+      const tag = String(tagValues[i][0] || "").trim();
+      const isInvited = invitedValues[i][0] === true || String(invitedValues[i][0]).toUpperCase() === "TRUE";
+      
       if (tag && isInvited) {
-        const raw = Number(row[H.RAW_SCORE]) || 0;
+        const raw = Number(rawScoreValues[i][0]) || 0;
         const existing = validEntries.find((v) => v.t === tag);
         if (existing) existing.s = Math.max(existing.s, raw);
         else validEntries.push({ t: tag, e: now + expiryDuration, s: raw });
-        rowsToDelete.push(startRow + idx);
+        rowsToDelete.push(startRow + i);
       }
-    });
+    }
   }
 
   validEntries.sort((a, b) => b.s - a.s);

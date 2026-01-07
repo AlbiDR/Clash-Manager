@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
-const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '8', 10);
+const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '20', 10);
 const DEFAULT_TIMEOUT = parseInt(process.env.WORKER_TIMEOUT_SEC || '45', 10) * 1000;
 const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || '2', 10);
 
