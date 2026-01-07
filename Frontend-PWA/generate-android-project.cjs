@@ -147,13 +147,18 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:taskAffinity="">
+
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
 
         <activity
             android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:taskAffinity="${manifest.packageId}"
+            android:taskAffinity=""
             android:launchMode="singleTask">
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
@@ -183,16 +188,36 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
 `);
 
 // Generate values/strings.xml
+// We include the SHA256 fingerprint if provided via ANDROID_SHA256 env var.
+// This is critical for Digital Asset Links (DAL) verification.
+const fingerprint = process.env.ANDROID_SHA256 || "";
+const assetStatements = [
+  {
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "web",
+      site: `https://${manifest.host}`
+    }
+  }
+];
+
+if (fingerprint) {
+  assetStatements.push({
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: manifest.packageId,
+      sha256_cert_fingerprints: [fingerprint.toUpperCase().replace(/[^A-F0-9]/g, ':')]
+    }
+  });
+}
+
+const assetStatementsEscaped = JSON.stringify(assetStatements).replace(/"/g, '&quot;');
+
 writeFileWithVerification('app/src/main/res/values/strings.xml', `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">${manifest.launcherName}</string>
-    <string name="asset_statements">[{
-        "relation": ["delegate_permission/common.handle_all_urls"],
-        "target": {
-            "namespace": "web",
-            "site": "https://${manifest.host}"
-        }
-    }]</string>
+    <string name="asset_statements">${assetStatementsEscaped}</string>
 </resources>
 `);
 

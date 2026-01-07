@@ -46,6 +46,11 @@ jobs:
         run: |
           cd Frontend-PWA
 
+          echo "🔑 Extracting SHA256 fingerprint from keystore..."
+          SHA256=$(keytool -list -v -keystore signing.keystore -alias clash_manager_release -storepass "$KEYSTORE_PASSWORD" | grep SHA256 | awk '{print $2}')
+          echo "   Fingerprint: $SHA256"
+          export ANDROID_SHA256=$SHA256
+
           echo "📦 Generating Android project from twa-manifest.json..."
           node generate-android-project.cjs
 
@@ -61,12 +66,9 @@ jobs:
 
           echo ""
           echo "⬇️  Setting up Gradle wrapper..."
-
-          # Download gradle wrapper jar
           mkdir -p gradle/wrapper
           curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
 
-          # Create gradle-wrapper.properties
           cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
@@ -77,12 +79,13 @@ jobs:
           zipStorePath=wrapper/dists
           EOF
 
-          # Download gradlew scripts
           curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew -o gradlew
           curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew.bat -o gradlew.bat
           chmod +x gradlew
-
           echo "✓ Gradle wrapper ready"
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Build APK
         run: |

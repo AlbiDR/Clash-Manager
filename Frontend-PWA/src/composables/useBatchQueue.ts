@@ -167,13 +167,13 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     if (id) {
       fireDeepLink(`${baseScheme}${id}`);
       
-      // 3. Move to next index for the NEXT tick
-      currentIndex.value++;
-      
-      // 4. Schedule next if not finished
-      if (currentIndex.value < selectedIds.value.length) {
-        const delay = Math.max(throttleMs, 2500);
-        blitzTimer = setTimeout(advanceBlitz, delay);
+      // 3. Schedule next pulse if not finished
+      const delay = Math.max(throttleMs, 2500);
+      if (currentIndex.value < selectedIds.value.length - 1) {
+        blitzTimer = setTimeout(() => {
+          currentIndex.value++; // Increment ONLY when we are ready for the next one
+          advanceBlitz();
+        }, delay);
       } else {
         // Last one reached
         setTimeout(() => {
@@ -182,10 +182,15 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
           info("Blitz complete");
         }, 1500);
       }
-    } else if (currentIndex.value < selectedIds.value.length) {
-      // Skip null item and continue immediately
-      currentIndex.value++;
-      advanceBlitz();
+    } else {
+      // Logic for handling null/missing items
+      if (currentIndex.value < selectedIds.value.length - 1) {
+        currentIndex.value++;
+        advanceBlitz();
+      } else {
+        stopBlitz();
+        clearSelection();
+      }
     }
   }
 
