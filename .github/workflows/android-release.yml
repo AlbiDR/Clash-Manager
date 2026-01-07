@@ -73,14 +73,61 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Initialize & Patch Android
+        run: |
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          
+          echo "🏗️  Initializing Android Support..."
+          npx tauri android init --ci
+
+          echo "🔧 Applying Build Fixes..."
+          
+          # 1. Proguard Rules
+          PROGUARD_FILE="src-tauri/gen/android/app/proguard-rules.pro"
+          # Ensure directory exists just in case
+          mkdir -p $(dirname $PROGUARD_FILE)
+          
+          if [ -f "$PROGUARD_FILE" ]; then
+            echo "Appending to existing Proguard rules..."
+          else
+            echo "Creating Proguard rules file..."
+            touch "$PROGUARD_FILE"
+          fi
+          
+          echo "# Added by CI pipeline" >> "$PROGUARD_FILE"
+          echo "-dontwarn org.tauri.internal.**" >> "$PROGUARD_FILE"
+          echo "-keep class org.tauri.internal.** { *; }" >> "$PROGUARD_FILE"
+          
+          # 2. ABI Filters (Detect Kotlin vs Groovy DSL)
+          GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
+          GRADLE_GROOVY="src-tauri/gen/android/app/build.gradle"
+          
+          if [ -f "$GRADLE_KTS" ]; then
+            echo "Patching $GRADLE_KTS..."
+            if ! grep -q "abiFilters" "$GRADLE_KTS"; then
+               # Inject ndk abiFilters into defaultConfig using sed
+               # Matches "versionName" and appends the ndk block after it
+               sed -i '/versionName/a \        ndk {\n            abiFilters.add("armeabi-v7a")\n            abiFilters.add("arm64-v8a")\n            abiFilters.add("x86")\n            abiFilters.add("x86_64")\n        }' "$GRADLE_KTS"
+            fi
+            # Ensure minify is disabled for release (Kotlin DSL)
+            sed -i 's/isMinifyEnabled = true/isMinifyEnabled = false/g' "$GRADLE_KTS"
+          elif [ -f "$GRADLE_GROOVY" ]; then
+             echo "Patching $GRADLE_GROOVY..."
+             if ! grep -q "abiFilters" "$GRADLE_GROOVY"; then
+                # Inject ndk abiFilters using single quotes as per draft fixes
+                sed -i "/versionName/a \        ndk { abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64' }" "$GRADLE_GROOVY"
+             fi
+             # Ensure minify is disabled for release (Groovy DSL)
+             sed -i 's/minifyEnabled true/minifyEnabled false/g' "$GRADLE_GROOVY"
+          else
+             echo "⚠️ Could not find build.gradle to patch ABI filters"
+          fi
+
       - name: Build Android App
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           export TAURI_ANDROID_KEYSTORE=$GITHUB_WORKSPACE/Frontend-PWA/signing.keystore
           export TAURI_ANDROID_KEY_ALIAS=clash_manager_release
-
-          echo "🏗️  Initializing Android Support (if needed)..."
-          npx tauri android init --ci
 
           echo "🔨 Building Sovereign APK..."
           npx tauri android build --apk true
