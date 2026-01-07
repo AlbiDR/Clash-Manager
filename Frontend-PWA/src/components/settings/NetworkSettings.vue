@@ -134,21 +134,26 @@ function resetApiUrl() {
 
       <div class="twa-diagnostic">
         <div class="field-label">ENVIRONMENT TRUST</div>
-        <div class="trust-card" :class="twaStatus">
-          <Icon
-            :name="twaStatus === 'trusted' ? 'shield-check' : 'alert-triangle'"
-            size="20"
-          />
+        <div class="trust-card" :class="twaStatus" v-tactile>
+          <div class="trust-icon-container">
+            <Icon
+              :name="twaStatus === 'trusted' ? 'shield-check' : 'alert-triangle'"
+              :size="24"
+            />
+          </div>
           <div class="trust-info">
-            <span class="trust-title">
-              {{
-                twaStatus === "trusted"
-                  ? "Trusted Web Activity"
-                  : twaStatus === "fallback"
-                    ? "Insecure Fallback"
-                    : "Standard Web"
-              }}
-            </span>
+            <div class="trust-header">
+              <span class="trust-title">
+                {{
+                  twaStatus === "trusted"
+                    ? "Trusted Web Activity"
+                    : twaStatus === "fallback"
+                      ? "Insecure Fallback"
+                      : "Standard Web"
+                }}
+              </span>
+              <div v-if="twaStatus === 'checking'" class="checking-dot"></div>
+            </div>
             <span class="trust-desc">
               {{
                 twaStatus === "trusted"
@@ -318,44 +323,102 @@ function resetApiUrl() {
 }
 
 .twa-diagnostic {
-  margin-top: 24px;
+  margin-top: 28px;
+  position: relative;
 }
 
 .trust-card {
   display: flex;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--sys-color-surface-container-highest);
-  border: 1px solid transparent;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  background: var(--sys-color-surface-container-high);
+  border: 1px solid var(--sys-outline-variant);
+  transition: all 0.4s var(--sys-motion-spring);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Trust State: Trusted (Success) */
 .trust-card.trusted {
-  background: rgba(34, 197, 94, 0.05);
-  border-color: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  background: var(--sys-color-success-container);
+  border-color: rgba(var(--sys-color-success-rgb), 0.1);
+  color: var(--sys-color-on-success-container);
+}
+.trust-card.trusted .trust-icon-container {
+  color: var(--sys-color-success);
 }
 
+/* Trust State: Fallback (Warning) */
 .trust-card.fallback {
-  background: rgba(245, 158, 11, 0.05);
-  border-color: rgba(245, 158, 11, 0.2);
-  color: #f59e0b;
+  background: var(--sys-color-error-container);
+  border-color: rgba(var(--sys-color-error-rgb), 0.1);
+  color: var(--sys-color-on-error-container);
+  animation: subtle-pulse 3s infinite ease-in-out;
+}
+.trust-card.fallback .trust-icon-container {
+  color: var(--sys-color-error);
+}
+
+/* Trust State: Web (Neutral) */
+.trust-card.web {
+  opacity: 0.8;
+}
+
+.trust-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.03);
+  flex-shrink: 0;
 }
 
 .trust-info {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.trust-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .trust-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
-  display: block;
+  letter-spacing: -0.01em;
 }
 
 .trust-desc {
-  font-size: 11px;
+  font-size: 12px;
   opacity: 0.7;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.checking-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sys-color-primary);
+  animation: pulse 1s infinite;
+}
+
+@keyframes subtle-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--sys-color-error-rgb), 0);
+  }
+  50% {
+    box-shadow: 0 0 15px 0 rgba(var(--sys-color-error-rgb), 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--sys-color-error-rgb), 0);
+  }
 }
 </style>
