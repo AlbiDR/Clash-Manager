@@ -141,37 +141,71 @@ jobs:
           TAURI_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           TAURI_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Verify & Prepare APK
+      - name: Verify & Sign APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: clash_manager_release
         run: |
           echo "🔍 Searching for APK..."
           
-          # 1. Try finding specific arm64 release apk (most desirable)
-          APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release.apk" | head -n 1)
+          # Setup Build Tools
+          BUILD_TOOLS_PATH="$ANDROID_SDK_ROOT/build-tools"
+          # Get latest version directory
+          LATEST_BUILD_TOOLS=$(ls -1 "$BUILD_TOOLS_PATH" | sort -V | tail -n 1)
+          ZIPALIGN="$BUILD_TOOLS_PATH/$LATEST_BUILD_TOOLS/zipalign"
+          APKSIGNER="$BUILD_TOOLS_PATH/$LATEST_BUILD_TOOLS/apksigner"
+          
+          echo "🛠️  Using build-tools: $LATEST_BUILD_TOOLS"
 
-          # 2. Fallback to any release apk (including unsigned/universal)
-          # Note: 'release*' matches both 'release.apk' and 'release-unsigned.apk'
-          if [ -z "$APK_PATH" ]; then
-            echo "⚠️  Falling back to generic release APK search..."
-            APK_PATH=$(find src-tauri/gen/android -name "*release*.apk" | head -n 1)
+          # 1. Check for unsigned APK first (This is what usually happens in CI without perfect config)
+          UNSIGNED_APK=$(find src-tauri/gen/android -name "*-unsigned.apk" | head -n 1)
+
+          if [ -n "$UNSIGNED_APK" ]; then
+            echo "⚠️ Found unsigned APK: $UNSIGNED_APK"
+            echo "✍️  Signing manually..."
+            
+            # Align (Required for release)
+            echo "   Running zipalign..."
+            "$ZIPALIGN" -v -p 4 "$UNSIGNED_APK" aligned.apk
+            
+            # Sign
+            echo "   Running apksigner..."
+            "$APKSIGNER" sign --ks signing.keystore \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+              --key-pass env:ANDROID_KEY_PASSWORD \
+              --ks-key-alias "$KEY_ALIAS" \
+              --out final-signed.apk \
+              aligned.apk
+            
+            echo "✅ Manual signing complete."
+            APK_PATH="final-signed.apk"
+          else
+            # 2. Fallback: Check for any release APK (maybe it was signed automatically?)
+            echo "ℹ️  No unsigned APK found. Checking for existing signed release..."
+            APK_PATH=$(find src-tauri/gen/android -name "*release.apk" | head -n 1)
           fi
-
-          # 3. Last resort: any APK found in the output directory
+          
+          # 3. Last Resort Fallback (Generic)
           if [ -z "$APK_PATH" ]; then
              echo "⚠️  Falling back to ANY APK found..."
              APK_PATH=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
           fi
 
-          if [ -z "$APK_PATH" ]; then
-            echo "❌ ERROR: No APK found in src-tauri/gen/android!"
-            # Debug: List all files to help diagnose
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "❌ ERROR: No usable APK found!"
             find src-tauri/gen/android -type f | grep "\.apk" || echo "No .apk files found"
             exit 1
           fi
 
-          echo "✅ APK identified: $APK_PATH"
+          # 4. Verify Signature (Sanity Check)
+          echo "🔍 Verifying signature..."
+          "$APKSIGNER" verify "$APK_PATH" || echo "⚠️ Warning: Signature verification failed (or APK is unsigned). Device installation might fail."
+
+          echo "✅ Final APK identified: $APK_PATH"
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
-          echo "✓ Prepared APK: $DESCRIPTIVE_NAME"
+          echo "✓ Prepared Artifact: $DESCRIPTIVE_NAME"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
