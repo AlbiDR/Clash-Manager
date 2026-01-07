@@ -57,8 +57,10 @@ const dirs = [
   'app/src/main/res/mipmap-xhdpi',
   'app/src/main/res/mipmap-xxhdpi',
   'app/src/main/res/mipmap-xxxhdpi',
+  'app/src/main/res/mipmap-anydpi-v26',
   'app/src/main/java/com/albidr/clashmanager',
   'app/src/main/res/values',
+  'app/src/main/res/drawable',
   'gradle/wrapper'
 ];
 
@@ -173,8 +175,9 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:theme="@style/Theme.ClashManager"
         android:supportsRtl="true">
 
         <meta-data
@@ -185,8 +188,9 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
             android:name=".LauncherActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:taskAffinity="com.albidr.clashmanager"
+            android:taskAffinity="com.albidr.clashmanager.sovereign"
             android:launchMode="singleTask"
+            android:documentLaunchMode="always"
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
@@ -232,17 +236,6 @@ const assetStatements = [
   }
 ];
 
-if (fingerprint) {
-  assetStatements.push({
-    relation: ["delegate_permission/common.handle_all_urls"],
-    target: {
-      namespace: "android_app",
-      package_name: manifest.packageId,
-      sha256_cert_fingerprints: [fingerprint.toUpperCase().replace(/[^A-F0-9]/g, ':')]
-    }
-  });
-}
-
 // We must double-escape quotes for Android XML string resources
 const assetStatementsEscaped = JSON.stringify(assetStatements).replace(/"/g, '\\"');
 
@@ -250,6 +243,40 @@ writeFileWithVerification('app/src/main/res/values/strings.xml', `<?xml version=
 <resources>
     <string name="app_name">${manifest.launcherName}</string>
     <string name="asset_statements">${assetStatementsEscaped}</string>
+</resources>
+`);
+
+// Generate values/styles.xml (Sovereign Theme)
+writeFileWithVerification('app/src/main/res/values/styles.xml', `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ClashManager" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">${manifest.backgroundColor || '#0B0E14'}</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:colorPrimary">${manifest.themeColor || '#0B0E14'}</item>
+    </style>
+</resources>
+`);
+
+// Generate Adaptive Icon XMLs
+writeFileWithVerification('app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml', `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+`);
+
+writeFileWithVerification('app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml', `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+`);
+
+// Generate colors.xml (for icon background)
+writeFileWithVerification('app/src/main/res/values/colors.xml', `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">${manifest.backgroundColor || '#0B0E14'}</color>
 </resources>
 `);
 
@@ -284,9 +311,11 @@ console.log(`✓ Found local icon: ${localIconPath}`);
 const iconDirs = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
 iconDirs.forEach(dpi => {
   const iconPath = `app/src/main/res/mipmap-${dpi}/ic_launcher.png`;
+  const foregroundPath = `app/src/main/res/mipmap-${dpi}/ic_launcher_foreground.png`;
   try {
     fs.copyFileSync(localIconPath, iconPath);
-    console.log(`✓ Created ${iconPath}`);
+    fs.copyFileSync(localIconPath, foregroundPath);
+    console.log(`✓ Created ${iconPath} and foreground`);
   } catch (err) {
     exitWithError(`Failed to create icon for ${dpi}: ${err.message}`);
   }
