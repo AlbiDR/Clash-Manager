@@ -16,7 +16,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
@@ -37,6 +38,7 @@
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^1.6.0",
-    "vue-tsc": "^3.1.4"
+    "vue-tsc": "^3.1.4",
+    "@tauri-apps/cli": "latest"
   }
 }
