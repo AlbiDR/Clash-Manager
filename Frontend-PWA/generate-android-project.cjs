@@ -172,6 +172,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="com.google.android.cct.notifications.NOTIFICATION_DELEGATION" />
 
     <application
         tools:replace="android:label,android:icon,android:roundIcon"
@@ -195,6 +196,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
             android:roundIcon="@mipmap/ic_launcher_round"
             android:taskAffinity="com.albidr.clashmanager.sovereign"
             android:launchMode="singleTask"
+            android:screenOrientation="${manifest.orientation || 'unspecified'}"
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
@@ -220,7 +222,24 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
                     android:host="${manifest.host}"
                     android:pathPrefix="/" />
             </intent-filter>
+
+            <meta-data
+                android:name="android.support.customtabs.trusted.DISPLAY_MODE"
+                android:value="immersive" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
+                android:value="${manifest.orientation || 'default'}" />
         </activity>
+
+        <service
+            android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+            android:exported="true"
+            tools:node="merge">
+            <intent-filter>
+                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
 `);
@@ -255,6 +274,9 @@ writeFileWithVerification('app/src/main/res/values/styles.xml', `<?xml version="
 <resources>
     <style name="Theme.ClashManager" parent="android:Theme.Translucent.NoTitleBar">
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>
 `);
