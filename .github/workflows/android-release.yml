@@ -120,5 +120,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: clash-manager-android-${{ steps.versioning.outputs.build_tag }}
-          path: Frontend-PWA/app/build/outputs/apk/release/*.apk
+          path: Frontend-PWA/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+          compression-level: 0
