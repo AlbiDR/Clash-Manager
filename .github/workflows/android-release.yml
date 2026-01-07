@@ -58,23 +58,28 @@ jobs:
           done
 
           echo ""
-          echo "⬇️  Downloading Gradle 8.5..."
-          curl -L https://services.gradle.org/distributions/gradle-8.5-bin.zip -o gradle.zip
-          unzip -q gradle.zip
+          echo "⬇️  Setting up Gradle wrapper..."
 
-          echo "🔧 Initializing Gradle wrapper..."
-          gradle-8.5/bin/gradle wrapper --gradle-version 8.5
+          # Download gradle wrapper jar
+          mkdir -p gradle/wrapper
+          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
 
-          echo "🧹 Cleaning up..."
-          rm -rf gradle-8.5 gradle.zip
+          # Create gradle-wrapper.properties
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+          networkTimeout=10000
+          validateDistributionUrl=true
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
 
-          echo ""
-          echo "🔍 Verifying Gradle wrapper..."
-          if [ ! -f "gradlew" ]; then
-            echo "❌ ERROR: gradlew not created"
-            exit 1
-          fi
+          # Download gradlew scripts
+          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew -o gradlew
+          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew.bat -o gradlew.bat
           chmod +x gradlew
+
           echo "✓ Gradle wrapper ready"
 
       - name: Build APK
