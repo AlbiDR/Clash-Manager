@@ -147,8 +147,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
-        android:supportsRtl="true"
-        android:taskAffinity="">
+        android:supportsRtl="true">
 
         <meta-data
             android:name="asset_statements"
@@ -180,7 +179,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
                 <data
                     android:scheme="https"
                     android:host="${manifest.host}"
-                    android:pathPrefix="${manifest.startUrl.split('#')[0]}" />
+                    android:pathPrefix="/Clash-Manager" />
             </intent-filter>
         </activity>
     </application>
@@ -212,12 +211,13 @@ if (fingerprint) {
   });
 }
 
-const assetStatementsEscaped = JSON.stringify(assetStatements).replace(/"/g, '&quot;');
+// Android values resources require double escaping for meta-data strings if they contain quotes
+const assetStatementsString = JSON.stringify(assetStatements);
 
 writeFileWithVerification('app/src/main/res/values/strings.xml', `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">${manifest.launcherName}</string>
-    <string name="asset_statements">${assetStatementsEscaped}</string>
+    <string name="asset_statements"><![CDATA[${assetStatementsString}]]></string>
 </resources>
 `);
 
