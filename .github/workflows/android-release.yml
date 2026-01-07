@@ -75,7 +75,7 @@ jobs:
           npx tauri android init --ci
 
           echo "🔨 Building Sovereign APK..."
-          npx tauri android build --apk
+          npx tauri android build --apk true
 
           echo "📁 Directory State after build:"
           find src-tauri/gen/android -name "*.apk"
