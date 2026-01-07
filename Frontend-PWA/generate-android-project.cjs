@@ -205,22 +205,84 @@ include ':app'
 rootProject.name = "Clash Manager"
 `);
 
-// Create a simple launcher icon (1x1 transparent PNG)
-const transparentPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(dpi => {
-  const iconPath = `app/src/main/res/mipmap-${dpi}/ic_launcher.png`;
-  try {
-    fs.writeFileSync(iconPath, transparentPng);
-    console.log(`✓ Created ${iconPath}`);
-  } catch (err) {
-    console.warn(`⚠ Failed to create icon for ${dpi}: ${err.message}`);
-  }
-});
+// Download and create launcher icons from the maskable icon
+console.log('📥 Downloading app icon...');
+const https = require('https');
+const { createWriteStream } = require('fs');
 
-console.log('\n✅ Android project structure generated successfully!');
-console.log('\n📊 Summary:');
-console.log(`   - Package: com.albidr.clashmanager`);
-console.log(`   - Version: ${manifest.appVersionCode} (${manifest.appVersionName || '1.0.0'})`);
-console.log(`   - Target URL: https://${manifest.host}${manifest.startUrl}`);
-console.log(`   - Min SDK: 23, Target SDK: 34`);
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const file = createWriteStream(dest);
+    https.get(url, (response) => {
+      if (response.statusCode === 200) {
+        response.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          resolve();
+        });
+      } else {
+        fs.unlink(dest, () => {}); // Delete the file async
+        reject(new Error(`Failed to download: ${response.statusCode}`));
+      }
+    }).on('error', (err) => {
+      fs.unlink(dest, () => {}); // Delete the file async
+      reject(err);
+    });
+  });
+}
+
+// Download the icon once
+const iconUrl = manifest.maskableIconUrl || manifest.iconUrl || 'https://albidr.github.io/Clash-Manager/pwa-512x512.png';
+const tempIconPath = 'temp-icon.png';
+
+downloadFile(iconUrl, tempIconPath)
+  .then(() => {
+    console.log(`✓ Downloaded icon from: ${iconUrl}`);
+    
+    // Copy the downloaded icon to all mipmap directories
+    const iconDirs = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+    iconDirs.forEach(dpi => {
+      const iconPath = `app/src/main/res/mipmap-${dpi}/ic_launcher.png`;
+      try {
+        fs.copyFileSync(tempIconPath, iconPath);
+        console.log(`✓ Created ${iconPath}`);
+      } catch (err) {
+        console.warn(`⚠ Failed to create icon for ${dpi}: ${err.message}`);
+      }
+    });
+    
+    // Clean up temp file
+    fs.unlinkSync(tempIconPath);
+    
+    console.log('\n✅ Android project structure generated successfully!');
+    console.log('\n📊 Summary:');
+    console.log(`   - Package: com.albidr.clashmanager`);
+    console.log(`   - Version: ${manifest.appVersionCode} (${manifest.appVersionName || '1.0.0'})`);
+    console.log(`   - Target URL: https://${manifest.host}${manifest.startUrl}`);
+    console.log(`   - Min SDK: 23, Target SDK: 34`);
+    console.log(`   - Icon: ${iconUrl}`);
+  })
+  .catch((err) => {
+    console.warn(`⚠ Failed to download icon: ${err.message}`);
+    console.log('   Using default placeholder icons instead');
+    
+    // Fallback to transparent placeholder
+    const transparentPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(dpi => {
+      const iconPath = `app/src/main/res/mipmap-${dpi}/ic_launcher.png`;
+      try {
+        fs.writeFileSync(iconPath, transparentPng);
+        console.log(`✓ Created ${iconPath}`);
+      } catch (err) {
+        console.warn(`⚠ Failed to create icon for ${dpi}: ${err.message}`);
+      }
+    });
+    
+    console.log('\n✅ Android project structure generated successfully!');
+    console.log('\n📊 Summary:');
+    console.log(`   - Package: com.albidr.clashmanager`);
+    console.log(`   - Version: ${manifest.appVersionCode} (${manifest.appVersionName || '1.0.0'})`);
+    console.log(`   - Target URL: https://${manifest.host}${manifest.startUrl}`);
+    console.log(`   - Min SDK: 23, Target SDK: 34`);
+  });
 
