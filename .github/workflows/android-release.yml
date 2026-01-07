@@ -46,7 +46,8 @@ jobs:
       - name: Auto-Version
         id: versioning
         run: |
-          V_NAME="8.11.${{ github.run_number }}"
+          cd Frontend-PWA
+          V_NAME="8.12.${{ github.run_number }}"
           V_CODE=$((1000 + ${{ github.run_number }}))
 
           BUILD_TAG="v${V_NAME}-build${V_CODE}"
@@ -54,7 +55,7 @@ jobs:
 
           # 2. Update Tauri manifest
           jq --arg name "$V_NAME" '.version = $name' \
-             tauri.conf.json > tauri.tmp && mv tauri.tmp tauri.conf.json
+             src-tauri/tauri.conf.json > tauri.tmp && mv tauri.tmp src-tauri/tauri.conf.json
 
           echo "version_code=$V_CODE" >> $GITHUB_OUTPUT
           echo "v_name=$V_NAME" >> $GITHUB_OUTPUT
@@ -63,7 +64,7 @@ jobs:
 
           echo "🚀 Build Info: $BUILD_TAG"
           echo "📝 Modified Tauri Config:"
-          cat tauri.conf.json
+          cat src-tauri/tauri.conf.json
 
       - name: Build Android App
         run: |
@@ -71,10 +72,10 @@ jobs:
           export ANDROID_HOME=$ANDROID_SDK_ROOT
 
           echo "🏗️  Initializing Android Support (if needed)..."
-          tauri android init --ci
+          npx tauri android init --ci
 
           echo "🔨 Building Sovereign APK..."
-          tauri android build --apk
+          npx tauri android build --apk
 
           echo "📁 Directory State after build:"
           find src-tauri/gen/android -name "*.apk"
