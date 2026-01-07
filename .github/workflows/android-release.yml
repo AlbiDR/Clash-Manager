@@ -100,6 +100,12 @@ jobs:
           echo "# Added by CI pipeline" >> "$PROGUARD_FILE"
           echo "-dontwarn org.tauri.internal.**" >> "$PROGUARD_FILE"
           echo "-keep class org.tauri.internal.** { *; }" >> "$PROGUARD_FILE"
+          echo "-keep class app.tauri.** { *; }" >> "$PROGUARD_FILE"
+          echo "-keep class org.tauri.** { *; }" >> "$PROGUARD_FILE"
+          echo "-keep interface app.tauri.** { *; }" >> "$PROGUARD_FILE"
+          echo "-keep interface org.tauri.** { *; }" >> "$PROGUARD_FILE"
+          echo "-keep class **.R" >> "$PROGUARD_FILE"
+          echo "-keep class **.R$*" >> "$PROGUARD_FILE"
           
           # 2. Minify Configuration (Detect Kotlin vs Groovy DSL)
           GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
@@ -107,12 +113,12 @@ jobs:
           
           if [ -f "$GRADLE_KTS" ]; then
             echo "Patching $GRADLE_KTS..."
-            # Ensure minify is disabled for release (Kotlin DSL)
-            sed -i 's/isMinifyEnabled = true/isMinifyEnabled = false/g' "$GRADLE_KTS"
+            # Ensure minify is disabled for release (Kotlin DSL) - Use Regex for robustness
+            sed -i -E 's/isMinifyEnabled\s*=\s*true/isMinifyEnabled = false/g' "$GRADLE_KTS"
           elif [ -f "$GRADLE_GROOVY" ]; then
              echo "Patching $GRADLE_GROOVY..."
              # Ensure minify is disabled for release (Groovy DSL)
-             sed -i 's/minifyEnabled true/minifyEnabled false/g' "$GRADLE_GROOVY"
+             sed -i -E 's/minifyEnabled\s+true/minifyEnabled false/g' "$GRADLE_GROOVY"
           else
              echo "⚠️ Could not find build.gradle to patch"
           fi
