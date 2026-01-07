@@ -142,6 +142,23 @@ writeFileWithVerification('app/proguard-rules.pro', `
 # Keep the TWA/Android Browser Helper classes
 -keep class com.google.androidbrowserhelper.** { *; }
 -keep class androidx.browser.** { *; }
+-keep class com.albidr.clashmanager.LauncherActivity { *; }
+`);
+
+// Generate LauncherActivity.java
+writeFileWithVerification('app/src/main/java/com/albidr/clashmanager/LauncherActivity.java', `package com.albidr.clashmanager;
+
+import com.google.androidbrowserhelper.trusted.LauncherActivity;
+
+/**
+ * Custom LauncherActivity to force a unique identity in Android Recents.
+ * Extends the library class to maintain TWA functionality.
+ */
+public class LauncherActivity extends com.google.androidbrowserhelper.trusted.LauncherActivity {
+    // No additional logic needed; inheriting from the library class
+    // provides all standard TWA launch behavior while ensuring
+    // a unique class name for OS-level task management.
+}
 `);
 
 // Generate AndroidManifest.xml
@@ -150,6 +167,8 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:allowBackup="true"
@@ -163,11 +182,14 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
             android:resource="@string/asset_statements" />
 
         <activity
-            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:name=".LauncherActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:taskAffinity="com.albidr.clashmanager"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
                 android:value="https://${manifest.host}${manifest.startUrl}" />
