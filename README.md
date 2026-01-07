@@ -18,11 +18,7 @@ A concise, production-focused toolkit for clan leadership and recruitment. The *
 
 ## Overview
 
-Clash Manager aggregates activity (war fame, donations, trophies) and produces a normalized performance score used to rank members and identify recruit candidates. It is designed for reliability: scheduled ETL, safe concurrency, and compact payloads for fast client rendering.
-
-## Quick start
-
-See `docs/DEPLOYMENT.md` for a step-by-step Quick Start and deployment instructions for both backend and frontend.
+Clash Manager aggregates activity (war fame, donations, trophies, etc.) and produces a normalized performance score used to rank members and identify recruit candidates. It is designed for reliability: scheduled ETL, safe concurrency, and compact payloads for fast client rendering.
 
 ## Deployment
 
