@@ -144,23 +144,34 @@ jobs:
       - name: Verify & Prepare APK
         run: |
           echo "🔍 Searching for APK..."
-          # We prefer aarch64 (arm64-v8a) as it covers 99% of modern devices
+          
+          # 1. Try finding specific arm64 release apk (most desirable)
           APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release.apk" | head -n 1)
 
+          # 2. Fallback to any release apk (including unsigned/universal)
+          # Note: 'release*' matches both 'release.apk' and 'release-unsigned.apk'
           if [ -z "$APK_PATH" ]; then
-            echo "⚠️  Falling back to any release APK..."
-            APK_PATH=$(find src-tauri/gen/android -name "*release.apk" | grep "release" | head -n 1)
+            echo "⚠️  Falling back to generic release APK search..."
+            APK_PATH=$(find src-tauri/gen/android -name "*release*.apk" | head -n 1)
+          fi
+
+          # 3. Last resort: any APK found in the output directory
+          if [ -z "$APK_PATH" ]; then
+             echo "⚠️  Falling back to ANY APK found..."
+             APK_PATH=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
           fi
 
           if [ -z "$APK_PATH" ]; then
-            echo "❌ ERROR: No APK found!"
+            echo "❌ ERROR: No APK found in src-tauri/gen/android!"
+            # Debug: List all files to help diagnose
+            find src-tauri/gen/android -type f | grep "\.apk" || echo "No .apk files found"
             exit 1
           fi
 
-          echo "✅ APK built successfully: $APK_PATH"
+          echo "✅ APK identified: $APK_PATH"
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
-          echo "✓ Prepared correctly signed APK: $DESCRIPTIVE_NAME"
+          echo "✓ Prepared APK: $DESCRIPTIVE_NAME"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
