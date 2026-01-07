@@ -178,8 +178,8 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="\${launcherName}"
-        android:theme="@style/Theme.ClashManager"
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:supportsRtl="true">
 
         <meta-data
@@ -190,10 +190,9 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
             android:name=".LauncherActivity"
             tools:replace="android:label"
             android:exported="true"
-            android:label="\${launcherName}"
+            android:label="@string/app_name"
             android:taskAffinity="com.albidr.clashmanager.sovereign"
             android:launchMode="singleTask"
-            android:documentLaunchMode="always"
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
@@ -249,14 +248,11 @@ writeFileWithVerification('app/src/main/res/values/strings.xml', `<?xml version=
 </resources>
 `);
 
-// Generate values/styles.xml (Sovereign Theme)
+// Generate values/styles.xml (Standard TWA Bridge Theme)
 writeFileWithVerification('app/src/main/res/values/styles.xml', `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ClashManager" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">${manifest.backgroundColor || '#0B0E14'}</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsTranslucent">false</item>
-        <item name="android:colorPrimary">${manifest.themeColor || '#0B0E14'}</item>
+    <style name="Theme.ClashManager" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 </resources>
 `);
