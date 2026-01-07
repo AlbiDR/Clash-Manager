@@ -145,19 +145,25 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="${manifest.launcherName}"
-        android:theme="@android:style/Theme.Translucent.NoTitleBar">
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:supportsRtl="true">
 
         <activity
             android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
             android:exported="true"
-            android:label="${manifest.launcherName}">
+            android:label="@string/app_name"
+            android:taskAffinity="${manifest.packageId}"
+            android:launchMode="singleTask">
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
                 android:value="https://${manifest.host}${manifest.startUrl}" />
             <meta-data
                 android:name="android.support.customtabs.trusted.FALLBACK_STRATEGY"
                 android:value="customtabs" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                android:resource="@android:color/transparent" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
