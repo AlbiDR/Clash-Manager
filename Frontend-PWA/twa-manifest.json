@@ -30,8 +30,8 @@
     }
   ],
   "generatorApp": "bubblewrap-cli",
-  "appVersionCode": 5,
-  "appVersionName": "6.3.0",
+  "appVersionCode": 1000,
+  "appVersionName": "8.0.0",
   "fallbackType": "customtabs",
   "features": {
     "locationDelegation": true,

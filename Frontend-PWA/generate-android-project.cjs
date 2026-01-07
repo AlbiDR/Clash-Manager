@@ -52,6 +52,9 @@ try {
 // Create directory structure
 console.log('📁 Creating directory structure...');
 const dirs = [
+  'app/src/main/res/mipmap-mdpi',
+  'app/src/main/res/mipmap-hdpi',
+  'app/src/main/res/mipmap-xhdpi',
   'app/src/main/res/mipmap-xxhdpi',
   'app/src/main/res/mipmap-xxxhdpi',
   'app/src/main/java/com/albidr/clashmanager',

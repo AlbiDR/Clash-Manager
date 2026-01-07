@@ -55,6 +55,8 @@ jobs:
           echo "apk_filename=$APK_FILENAME" >> $GITHUB_OUTPUT
 
           echo "🚀 Build Info: $BUILD_TAG"
+          echo "📝 Modified Manifest:"
+          cat twa-manifest.json
 
       - name: Generate Android Project
         run: |
@@ -120,6 +122,9 @@ jobs:
           echo ""
 
           ./gradlew assembleRelease --stacktrace
+
+          echo "📁 Directory State after build:"
+          ls -R app/build/outputs/apk/
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
