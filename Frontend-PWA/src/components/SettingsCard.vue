@@ -12,8 +12,11 @@ defineProps<{
 <template>
   <div class="settings-card" :aria-busy="loading ? 'true' : 'false'">
     <div class="card-header">
-      <Icon :name="icon" size="20" class="header-icon" />
-      <h3>{{ title }}</h3>
+      <div class="header-main">
+        <Icon :name="icon" size="20" class="header-icon" />
+        <h3>{{ title }}</h3>
+      </div>
+      <slot name="header-extra" />
     </div>
     <div class="card-body" :class="bodyClass">
       <slot />
@@ -34,8 +37,15 @@ defineProps<{
   padding: 16px 20px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .card-header h3 {

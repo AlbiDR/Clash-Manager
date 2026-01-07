@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { useApiState } from "../../composables/useApiState";
+import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
 const { apiUrl, apiStatus, pingData } = useApiState();
@@ -56,118 +57,114 @@ function resetApiUrl() {
 </script>
 
 <template>
-  <div class="settings-card" :aria-busy="isChecking ? 'true' : 'false'">
-    <div class="card-header">
-      <Icon name="plug" size="20" class="header-icon" />
-      <h3>Network & API</h3>
+  <SettingsCard title="Network & API" icon="plug" :loading="isChecking">
+    <template #header-extra>
       <div class="status-indicator" :class="apiStatus"></div>
+    </template>
+
+    <div class="network-stats">
+      <div class="stat-box skeleton-anim">
+        <span class="label">Latency</span>
+        <template v-if="isChecking">
+          <div class="sk-stat-value"></div>
+        </template>
+        <template v-else>
+          <span class="value"
+            >{{ pingData?.latency || "--" }}<small>ms</small></span
+          >
+        </template>
+      </div>
+      <div class="stat-box skeleton-anim">
+        <span class="label">Backend</span>
+        <template v-if="isChecking">
+          <div class="sk-stat-value"></div>
+        </template>
+        <template v-else>
+          <span class="value">v{{ pingData?.version || "0.0" }}</span>
+        </template>
+      </div>
+      <div class="stat-box skeleton-anim">
+        <span class="label">Cache</span>
+        <template v-if="isChecking">
+          <div class="sk-stat-value" style="width: 50px"></div>
+        </template>
+        <template v-else>
+          <span class="value">Ready</span>
+        </template>
+      </div>
     </div>
 
-    <div class="card-body">
-      <div class="network-stats">
-        <div class="stat-box skeleton-anim">
-          <span class="label">Latency</span>
-          <template v-if="isChecking">
-            <div class="sk-stat-value"></div>
-          </template>
-          <template v-else>
-            <span class="value"
-              >{{ pingData?.latency || "--" }}<small>ms</small></span
-            >
-          </template>
-        </div>
-        <div class="stat-box skeleton-anim">
-          <span class="label">Backend</span>
-          <template v-if="isChecking">
-            <div class="sk-stat-value"></div>
-          </template>
-          <template v-else>
-            <span class="value">v{{ pingData?.version || "0.0" }}</span>
-          </template>
-        </div>
-        <div class="stat-box skeleton-anim">
-          <span class="label">Cache</span>
-          <template v-if="isChecking">
-            <div class="sk-stat-value" style="width: 50px"></div>
-          </template>
-          <template v-else>
-            <span class="value">Ready</span>
-          </template>
-        </div>
+    <div class="url-manager">
+      <div class="field-label">API Endpoint</div>
+      <div v-if="!isEditing" class="url-readout skeleton-anim">
+        <template v-if="isChecking">
+          <div class="sk-text-line-m" style="width: 80%"></div>
+          <div class="sk-button-s"></div>
+        </template>
+        <template v-else>
+          <span class="url-text">{{ apiUrl }}</span>
+          <button class="edit-btn" @click="isEditing = true">Edit</button>
+        </template>
       </div>
-
-      <div class="url-manager">
-        <div class="field-label">API ENDPOINT</div>
-        <div v-if="!isEditing" class="url-readout skeleton-anim">
-          <template v-if="isChecking">
-            <div class="sk-text-line-m" style="width: 80%"></div>
-            <div class="sk-button-s"></div>
-          </template>
-          <template v-else>
-            <span class="url-text">{{ apiUrl }}</span>
-            <button class="edit-btn" @click="isEditing = true">Edit</button>
-          </template>
-        </div>
-        <div v-else class="url-input-row">
-          <template v-if="isChecking">
-            <div class="sk-input skeleton-anim" style="flex: 1"></div>
-            <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
-            <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
-          </template>
-          <template v-else>
-            <input
-              v-model="newApiUrl"
-              type="text"
-              placeholder="https://script.google.com/..."
-              class="glass-input"
-            />
-            <button class="save-btn" @click="saveApiUrl">
-              <Icon name="check" size="20" />
-            </button>
-            <button class="cancel-btn" @click="isEditing = false">X</button>
-          </template>
-        </div>
-        <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
-          Running custom override • Tap to reset
-        </div>
+      <div v-else class="url-input-row">
+        <template v-if="isChecking">
+          <div class="sk-input skeleton-anim" style="flex: 1"></div>
+          <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
+          <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
+        </template>
+        <template v-else>
+          <input
+            v-model="newApiUrl"
+            type="text"
+            placeholder="https://script.google.com/..."
+            class="glass-input"
+          />
+          <button class="save-btn" @click="saveApiUrl">
+            <Icon name="check" size="20" />
+          </button>
+          <button class="cancel-btn" @click="isEditing = false">X</button>
+        </template>
       </div>
+      <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
+        Running custom override • Tap to reset
+      </div>
+    </div>
 
-      <div class="twa-diagnostic">
-        <div class="field-label">ENVIRONMENT TRUST</div>
-        <div class="trust-card" :class="twaStatus" v-tactile>
-          <div class="trust-icon-container">
-            <Icon
-              :name="twaStatus === 'trusted' ? 'shield-check' : 'alert-triangle'"
-              :size="24"
-            />
-          </div>
-          <div class="trust-info">
-            <div class="trust-header">
-              <span class="trust-title">
-                {{
-                  twaStatus === "trusted"
-                    ? "Trusted Web Activity"
-                    : twaStatus === "fallback"
-                      ? "Insecure Fallback"
-                      : "Standard Web"
-                }}
-              </span>
-              <div v-if="twaStatus === 'checking'" class="checking-dot"></div>
-            </div>
-            <span class="trust-desc">
+    <div class="twa-diagnostic">
+      <div class="field-label">Environment Trust</div>
+      <div class="trust-card" :class="twaStatus" v-tactile>
+        <div class="trust-icon-container">
+          <Icon
+            :name="twaStatus === 'trusted' ? 'shield-check' : 'alert-triangle'"
+            :size="24"
+          />
+        </div>
+        <div class="trust-info">
+          <div class="trust-header">
+            <span class="trust-title">
               {{
                 twaStatus === "trusted"
-                  ? "Identity verified. Native branding active."
+                  ? "Trusted Web Activity"
                   : twaStatus === "fallback"
-                    ? "Handshake failed. OS treating app as Browser Tab."
-                    : "Running in browser. System features limited."
+                    ? "Insecure Fallback"
+                    : "Standard Web"
               }}
             </span>
+            <div v-if="twaStatus === 'checking'" class="checking-dot"></div>
           </div>
+          <span class="trust-desc">
+            {{
+              twaStatus === "trusted"
+                ? "Identity verified. Native branding active."
+                : twaStatus === "fallback"
+                  ? "Handshake failed. OS treating app as Browser Tab."
+                  : "Running in browser. System features limited."
+            }}
+          </span>
         </div>
       </div>
     </div>
-  </div>
+  </SettingsCard>
 </template>
 
 <style scoped>
@@ -175,40 +172,11 @@ function resetApiUrl() {
    but for now we rely on the parent or global styles if they were global. 
    However, the original styles were scoped. I need to copy them here. */
 
-.settings-card {
-  background: var(--sys-color-surface-container);
-  border-radius: 24px;
-  border: 1px solid var(--sys-surface-glass-border);
-  overflow: hidden;
-  transition: background-color 0.3s ease;
-}
-
-.card-header {
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-.card-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface);
-}
-.header-icon {
-  color: var(--sys-color-primary);
-}
-
-.card-body {
-  padding: 20px;
-}
-
 .network-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .stat-box {
   background: var(--sys-color-surface-container-high);
@@ -232,11 +200,13 @@ function resetApiUrl() {
   color: var(--sys-color-primary);
 }
 
-.url-manager .field-label {
-  font-size: 10px;
-  font-weight: 800;
+.field-label {
+  font-size: 11px;
+  font-weight: 900;
   opacity: 0.5;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  font-family: var(--sys-font-family-body);
+  letter-spacing: 0.02em;
 }
 .url-readout {
   background: var(--sys-color-surface-container-highest);
