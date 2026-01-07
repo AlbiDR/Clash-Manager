@@ -44,19 +44,49 @@ jobs:
         run: |
           cd Frontend-PWA
 
-          # Generate Android project structure from twa-manifest.json FIRST
+          echo "📦 Generating Android project from twa-manifest.json..."
           node generate-android-project.js
 
-          # THEN download gradle and initialize wrapper
+          echo ""
+          echo "🔍 Verifying generated files..."
+          for file in "build.gradle" "settings.gradle" "app/build.gradle" "app/src/main/AndroidManifest.xml"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ ERROR: Required file missing: $file"
+              exit 1
+            fi
+            echo "✓ Found: $file"
+          done
+
+          echo ""
+          echo "⬇️  Downloading Gradle 8.5..."
           curl -L https://services.gradle.org/distributions/gradle-8.5-bin.zip -o gradle.zip
           unzip -q gradle.zip
-          gradle-8.5/bin/gradle wrapper
+
+          echo "🔧 Initializing Gradle wrapper..."
+          gradle-8.5/bin/gradle wrapper --gradle-version 8.5
+
+          echo "🧹 Cleaning up..."
           rm -rf gradle-8.5 gradle.zip
+
+          echo ""
+          echo "🔍 Verifying Gradle wrapper..."
+          if [ ! -f "gradlew" ]; then
+            echo "❌ ERROR: gradlew not created"
+            exit 1
+          fi
+          chmod +x gradlew
+          echo "✓ Gradle wrapper ready"
 
       - name: Build APK
         run: |
           cd Frontend-PWA
-          ./gradlew assembleRelease
+
+          echo "🔨 Building Android APK..."
+          echo "   Version Code: $(jq '.appVersionCode' twa-manifest.json)"
+          echo "   Keystore: signing.keystore"
+          echo ""
+
+          ./gradlew assembleRelease --stacktrace
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -64,10 +94,24 @@ jobs:
       - name: Verify Build
         run: |
           cd Frontend-PWA
-          ls -lh app/build/outputs/apk/release/
+
+          echo "🔍 Searching for APK..."
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ ERROR: No APK found!"
+            echo "Directory contents:"
+            ls -R app/build/outputs/ || echo "Build outputs directory doesn't exist"
+            exit 1
+          fi
+
+          echo "✅ APK built successfully!"
+          echo "   Path: $APK_PATH"
+          echo "   Size: $(du -h "$APK_PATH" | cut -f1)"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: clash-manager-android-v${{ steps.versioning.outputs.version_code }}
           path: Frontend-PWA/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
