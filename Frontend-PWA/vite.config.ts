@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import packageJson from './package.json'
 
+// Determine if we are building for a native app environment (Tauri) or web
+const isTauriBuild = process.env.VITE_IS_TAURI_BUILD === 'true';
+
 export default defineConfig({
   define: {
     '__APP_VERSION__': JSON.stringify(packageJson.version)
@@ -14,6 +17,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  // Critical Fix: Use root path '/' for Android/Tauri to ensure assets load correctly.
+  // Use '/Clash-Manager/' only for GitHub Pages hosting.
+  base: isTauriBuild ? '/' : '/Clash-Manager/',
   build: {
     outDir: 'dist',
     sourcemap: false,
@@ -51,7 +57,6 @@ export default defineConfig({
         display_override: ['window-controls-overlay', 'standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'portrait-primary',
         scope: '/Clash-Manager/',
-        // Syncing start_url with TWA manifest for coherence
         start_url: '/Clash-Manager/index.html#/leaderboard',
         categories: ['productivity', 'utilities', 'games'],
         icons: [
@@ -89,7 +94,6 @@ export default defineConfig({
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
           },
           {
-            // Renamed from Recruits to Headhunter for consistency
             name: 'Headhunter',
             short_name: 'Headhunter',
             description: 'Browse potential recruits',
@@ -210,7 +214,7 @@ export default defineConfig({
         lang: 'en-US',
         dir: 'ltr',
         prefer_related_applications: false
-      },
+      } as any,
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
         additionalManifestEntries: [],
@@ -276,6 +280,5 @@ export default defineConfig({
         type: 'classic'
       }
     }) as any
-  ],
-  base: '/Clash-Manager/'
+  ]
 })
