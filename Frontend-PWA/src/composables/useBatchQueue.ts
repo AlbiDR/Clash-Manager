@@ -106,18 +106,27 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   /**
-   * 💉 DOM INJECTION: Anchor Click (Most robust for deep links)
+   * 💉 DEEP LINK IGNITION
    */
   function fireDeepLink(url: string) {
+    // For Blitz mode/background automation, window.open is often more permissive 
+    // on some Android browser implementations than anchor clicks.
+    if (isBlasting.value) {
+      const win = window.open(url, "_blank");
+      if (win) {
+        setTimeout(() => win.close(), 100);
+        return;
+      }
+    }
+
+    // Default: Native anchor click (Best for manual interaction)
     const link = document.createElement("a");
     link.href = url;
     link.style.display = "none";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
-
     link.click();
 
-    // Garbage collection
     setTimeout(() => {
       if (document.body.contains(link)) {
         document.body.removeChild(link);
@@ -205,9 +214,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     nextPulseAutomated();
 
     // 2. Start Worker for rhythm
-    worker = createWorker(throttleMs);
+    // Using a slightly higher throttle for Blitz to allow external app to handle intent
+    const blitzThrottle = Math.max(throttleMs, 2000); 
+    worker = createWorker(blitzThrottle);
     worker.onmessage = () => {
-      // This runs on a separate thread's tick
       nextPulseAutomated();
     };
     worker.postMessage("start");
@@ -217,30 +227,20 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleAction(e: MouseEvent) {
     // 1. BLITZ MODE (Manual Assist)
     if (isBlasting.value) {
-      // Check if this was a native anchor click (from FabIsland)
-      const isAnchor = (e.currentTarget as HTMLElement).tagName === "A";
-
-      if (isAnchor) {
-        // ✅ NATIVE NAVIGATION:
-        // The browser will handle opening the link because it's a real <a> tag with href.
-        // This bypasses the popup prompt on most browsers.
-
-        // We just need to update our internal state to the NEXT item
-        // and reset the automation timer so it doesn't double-fire immediately.
-        console.log("⚡ Manual Native Assist");
-        advanceIndex();
-
-        if (worker) {
-          worker.postMessage("stop");
-          worker.postMessage("start");
-        }
-        return; // Let default action (navigation) proceed
-      }
-
-      // 🛑 LEGACY FALLBACK (Button click):
+      // Manual click in Blitz mode acts as a "skip to next" or "manual trigger"
+      // without double-advancing.
       e.preventDefault();
-      console.log("⚡ Manual Scripted Assist");
-      nextPulseAutomated();
+      
+      const id = selectedIds.value[currentIndex.value];
+      if (id) {
+        // Manual trigger for the CURRENT item (in case auto-fire was blocked)
+        const link = document.createElement("a");
+        link.href = `${baseScheme}${id}`;
+        link.click();
+        
+        // Advance only after the interaction
+        advanceIndex();
+      }
 
       if (worker) {
         worker.postMessage("stop");
