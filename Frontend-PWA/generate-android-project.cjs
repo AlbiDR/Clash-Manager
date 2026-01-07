@@ -174,7 +174,7 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        tools:replace="android:label"
+        tools:replace="android:label,android:icon,android:roundIcon"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -191,6 +191,8 @@ writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.
             tools:replace="android:label"
             android:exported="true"
             android:label="@string/app_name"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:taskAffinity="com.albidr.clashmanager.sovereign"
             android:launchMode="singleTask"
             android:supportsPictureInPicture="true"
