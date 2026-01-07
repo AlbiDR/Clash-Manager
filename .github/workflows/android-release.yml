@@ -101,29 +101,20 @@ jobs:
           echo "-dontwarn org.tauri.internal.**" >> "$PROGUARD_FILE"
           echo "-keep class org.tauri.internal.** { *; }" >> "$PROGUARD_FILE"
           
-          # 2. ABI Filters (Detect Kotlin vs Groovy DSL)
+          # 2. Minify Configuration (Detect Kotlin vs Groovy DSL)
           GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
           GRADLE_GROOVY="src-tauri/gen/android/app/build.gradle"
           
           if [ -f "$GRADLE_KTS" ]; then
             echo "Patching $GRADLE_KTS..."
-            if ! grep -q "abiFilters" "$GRADLE_KTS"; then
-               # Inject ndk abiFilters into defaultConfig using sed
-               # Matches "versionName" and appends the ndk block after it
-               sed -i '/versionName/a \        ndk {\n            abiFilters.add("armeabi-v7a")\n            abiFilters.add("arm64-v8a")\n            abiFilters.add("x86")\n            abiFilters.add("x86_64")\n        }' "$GRADLE_KTS"
-            fi
             # Ensure minify is disabled for release (Kotlin DSL)
             sed -i 's/isMinifyEnabled = true/isMinifyEnabled = false/g' "$GRADLE_KTS"
           elif [ -f "$GRADLE_GROOVY" ]; then
              echo "Patching $GRADLE_GROOVY..."
-             if ! grep -q "abiFilters" "$GRADLE_GROOVY"; then
-                # Inject ndk abiFilters using single quotes as per draft fixes
-                sed -i "/versionName/a \        ndk { abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64' }" "$GRADLE_GROOVY"
-             fi
              # Ensure minify is disabled for release (Groovy DSL)
              sed -i 's/minifyEnabled true/minifyEnabled false/g' "$GRADLE_GROOVY"
           else
-             echo "⚠️ Could not find build.gradle to patch ABI filters"
+             echo "⚠️ Could not find build.gradle to patch"
           fi
 
       - name: Build Android App
@@ -158,51 +149,56 @@ jobs:
           
           echo "🛠️  Using build-tools: $LATEST_BUILD_TOOLS"
 
-          # 1. Check for unsigned APK first (This is what usually happens in CI without perfect config)
-          UNSIGNED_APK=$(find src-tauri/gen/android -name "*-unsigned.apk" | head -n 1)
+          # 1. Search for UNIVERSAL APK first (Highest Priority for compatibility)
+          # "universal" usually indicates it contains all ABIs
+          APK_PATH=$(find src-tauri/gen/android -name "*universal*release*.apk" | head -n 1)
 
-          if [ -n "$UNSIGNED_APK" ]; then
-            echo "⚠️ Found unsigned APK: $UNSIGNED_APK"
-            echo "✍️  Signing manually..."
-            
-            # Align (Required for release)
-            echo "   Running zipalign..."
-            "$ZIPALIGN" -v -p 4 "$UNSIGNED_APK" aligned.apk
-            
-            # Sign
-            echo "   Running apksigner..."
-            "$APKSIGNER" sign --ks signing.keystore \
-              --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
-              --key-pass env:ANDROID_KEY_PASSWORD \
-              --ks-key-alias "$KEY_ALIAS" \
-              --out final-signed.apk \
-              aligned.apk
-            
-            echo "✅ Manual signing complete."
-            APK_PATH="final-signed.apk"
-          else
-            # 2. Fallback: Check for any release APK (maybe it was signed automatically?)
-            echo "ℹ️  No unsigned APK found. Checking for existing signed release..."
-            APK_PATH=$(find src-tauri/gen/android -name "*release.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            # 2. Fallback to arm64-v8a (Most common modern android)
+            echo "⚠️  Universal APK not found. Looking for arm64..."
+            APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release*.apk" | head -n 1)
+          fi
+
+          if [ -z "$APK_PATH" ]; then
+             # 3. Last Resort: Any release apk
+             echo "⚠️  Specific APK not found. Falling back to ANY release APK..."
+             APK_PATH=$(find src-tauri/gen/android -name "*release*.apk" | head -n 1)
           fi
           
-          # 3. Last Resort Fallback (Generic)
-          if [ -z "$APK_PATH" ]; then
-             echo "⚠️  Falling back to ANY APK found..."
-             APK_PATH=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
-          fi
-
           if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
             echo "❌ ERROR: No usable APK found!"
             find src-tauri/gen/android -type f | grep "\.apk" || echo "No .apk files found"
             exit 1
           fi
 
-          # 4. Verify Signature (Sanity Check)
-          echo "🔍 Verifying signature..."
-          "$APKSIGNER" verify "$APK_PATH" || echo "⚠️ Warning: Signature verification failed (or APK is unsigned). Device installation might fail."
+          echo "📍 Selected APK: $APK_PATH"
 
-          echo "✅ Final APK identified: $APK_PATH"
+          # Check if signed. If name contains 'unsigned', we must sign it.
+          # Even if not named 'unsigned', we verify.
+          
+          echo "✍️  Re-signing/Aligning manually to ensure validity..."
+            
+          # Align (Required for release)
+          echo "   Running zipalign..."
+          "$ZIPALIGN" -v -f -p 4 "$APK_PATH" aligned.apk
+          
+          # Sign
+          echo "   Running apksigner..."
+          "$APKSIGNER" sign --ks signing.keystore \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" \
+            --out final-signed.apk \
+            aligned.apk
+          
+          echo "✅ Manual signing complete."
+          APK_PATH="final-signed.apk"
+
+          # Verify Signature (Sanity Check)
+          echo "🔍 Verifying signature..."
+          "$APKSIGNER" verify "$APK_PATH" || echo "⚠️ Warning: Signature verification failed. Device installation might fail."
+
+          echo "✅ Final APK ready: $APK_PATH"
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
           echo "✓ Prepared Artifact: $DESCRIPTIVE_NAME"
