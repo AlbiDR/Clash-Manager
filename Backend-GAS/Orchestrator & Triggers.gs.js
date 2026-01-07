@@ -171,8 +171,8 @@ function handleMobileEdit(e) {
 
   console.log(`📱 Mobile Trigger: ${sheetName}`);
 
-  Utils.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
-    try {
+  try {
+    Utils.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
       if (sheetName === CONFIG.SHEETS.LB) {
         updateLeaderboard();
         refreshWebPayload();
@@ -185,11 +185,12 @@ function handleMobileEdit(e) {
       sheet
         .getRange("B1")
         .setValue(`✅ Done ${new Date().toLocaleTimeString()}`);
-    } catch (err) {
-      console.error(`📱 Mobile Error: ${err.message}`);
-      sheet.getRange("B1").setValue(`ERROR: ${err.message}`);
-    }
-  });
+    });
+  } catch (err) {
+    console.error(`📱 Mobile Error: ${err.message}`);
+    const msg = err.message.indexOf("System Busy") > -1 ? "⚠️ System Busy (Retry in 60s)" : `ERROR: ${err.message}`;
+    sheet.getRange("B1").setValue(msg);
+  }
 }
 
 // ----------------------------------------------------------------------------
