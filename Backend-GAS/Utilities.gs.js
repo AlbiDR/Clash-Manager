@@ -24,7 +24,7 @@ const _EXECUTION_CACHE = new Map();
 // 🛡️ API BUDGET: Prevents runaway execution from burning daily quotas.
 // UPDATED (v5.2.0): Increased from 400 to 600 to allow "Deep Net Level 2" scans.
 let _FETCH_COUNT = 0;
-const MAX_FETCH_PER_EXECUTION = 600;
+const MAX_FETCH_PER_EXECUTION = 3000;
 
 const Utils = {
   /**
@@ -214,7 +214,7 @@ const Utils = {
   /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
    */
-  fetchRoyaleAPI: function (urls) {
+  fetchRoyaleAPI: function (urls, scoring = null) {
     if (!urls || urls.length === 0) return [];
 
     // Load persisted fetch state to coordinate across executions
@@ -331,7 +331,7 @@ const Utils = {
           let responses;
           if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
             // Offload to remote worker - pass keyPool for worker to use
-            responses = Utils.remoteFetchChunk(chunkUrls, keyPool);
+            responses = Utils.remoteFetchChunk(chunkUrls, keyPool, scoring);
           } else {
             responses = UrlFetchApp.fetchAll(requests);
           }
@@ -427,13 +427,14 @@ const Utils = {
   },
 
   // Remote worker fetch delegate (uses configured remote worker to offload bulk fetches)
-  remoteFetchChunk: function (chunkUrls, keyPool) {
+  remoteFetchChunk: function (chunkUrls, keyPool, scoring = null) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL)
       throw new Error("No remote worker configured.");
     try {
       const payload = {
         urls: chunkUrls,
         apiKeys: (keyPool || []).map((k) => k.value),
+        scoring: scoring,
       };
       const headers = { "Content-Type": "application/json" };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
@@ -493,6 +494,8 @@ const Utils = {
       if (res.getResponseCode() === 200) {
         _EXECUTION_CACHE.set("worker_health", true);
         return true;
+      } else {
+        console.warn(`⚠️ Remote worker health check failed: ${res.getResponseCode()}`);
       }
     } catch (e) {}
 

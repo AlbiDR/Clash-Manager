@@ -62,7 +62,7 @@ const CONFIG = {
     DB_ROW_LIMIT: 20000,
   },
 
-  SHEETS: { DB: "Clan Database", LB: "Leaderboard", HH: "Headhunter" },
+  SHEETS: { DB: "Clan Database", LB: "Leaderboard", HH: "Headhunter", BL: "HH_BLACKLIST" },
   LAYOUT: { BUFFER_SIZE: 25, DATA_START_ROW: 3 },
 
   UI: {
@@ -122,7 +122,7 @@ const CONFIG = {
 
   HEADHUNTER: {
     TARGET: 50,
-    BLACKLIST_DAYS: 14,
+    BLACKLIST_DAYS: 30,
     KEYWORDS: [
       "0",
       "1",
