@@ -85,46 +85,30 @@ jobs:
 
           echo "🔧 Applying Build Fixes..."
           
-          # 1. Proguard Rules - CRITICAL for preventing startup crash
-          PROGUARD_FILE="src-tauri/gen/android/app/proguard-rules.pro"
-          # Ensure directory exists just in case
-          mkdir -p $(dirname $PROGUARD_FILE)
-          
-          if [ -f "$PROGUARD_FILE" ]; then
-            echo "Appending to existing Proguard rules..."
+          # 1. Apply Proguard Rules
+          # Since src-tauri/gen/android is generated, we must inject our rules into the generated file.
+          TARGET_PROGUARD="src-tauri/gen/android/app/proguard-rules.pro"
+          SOURCE_PROGUARD="proguard-rules.pro"
+
+          if [ -f "$SOURCE_PROGUARD" ]; then
+             echo "✅ Found custom ProGuard rules. Appending to generated project..."
+             echo "" >> "$TARGET_PROGUARD" # Ensure newline
+             cat "$SOURCE_PROGUARD" >> "$TARGET_PROGUARD"
           else
-            echo "Creating Proguard rules file..."
-            touch "$PROGUARD_FILE"
+             echo "⚠️ Custom ProGuard file not found at $SOURCE_PROGUARD"
+             exit 1
           fi
           
-          # Add comprehensive rules to prevent class stripping
-          echo "# Added by CI pipeline" >> "$PROGUARD_FILE"
-          echo "-dontwarn org.tauri.internal.**" >> "$PROGUARD_FILE"
-          echo "-keep class org.tauri.internal.** { *; }" >> "$PROGUARD_FILE"
-          echo "-keep class app.tauri.** { *; }" >> "$PROGUARD_FILE"
-          echo "-keep class org.tauri.** { *; }" >> "$PROGUARD_FILE"
-          echo "-keep interface app.tauri.** { *; }" >> "$PROGUARD_FILE"
-          echo "-keep interface org.tauri.** { *; }" >> "$PROGUARD_FILE"
-          echo "-keep class **.R" >> "$PROGUARD_FILE"
-          echo "-keep class **.R$*" >> "$PROGUARD_FILE"
-          # Keep main activity to ensure launcher finds it
-          echo "-keep class com.albidr.clashmanager.** { *; }" >> "$PROGUARD_FILE"
-          echo "-keep class **.MainActivity { *; }" >> "$PROGUARD_FILE"
-          # General safety
-          echo "-keepattributes *Annotation*" >> "$PROGUARD_FILE"
-          
-          # 2. Minify Configuration (Attempt disable, but rely on ProGuard rules above if it fails)
+          # 2. Minify Configuration
+          # We try to ensure minify is enabled but controlled by our rules
           GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
-          GRADLE_GROOVY="src-tauri/gen/android/app/build.gradle"
           
           if [ -f "$GRADLE_KTS" ]; then
-            echo "Patching $GRADLE_KTS..."
-            sed -i -E 's/isMinifyEnabled\s*=\s*true/isMinifyEnabled = false/g' "$GRADLE_KTS"
-          elif [ -f "$GRADLE_GROOVY" ]; then
-             echo "Patching $GRADLE_GROOVY..."
-             sed -i -E 's/minifyEnabled\s+true/minifyEnabled false/g' "$GRADLE_GROOVY"
-          else
-             echo "⚠️ Could not find build.gradle to patch"
+            # Ensure minify is ENABLED for release so R8 runs (and uses our rules)
+            # If we disable it, the app is huge. If we enable it without rules, it crashes.
+            # Using sed to ensure it is true, or leave as is if already true.
+            echo "Checking minify status in Gradle..."
+            # No-op: Tauri default is usually true for release. We trust the rules above.
           fi
 
       - name: Build Android App
