@@ -83,6 +83,15 @@ jobs:
           curl -L https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew.bat -o gradlew.bat
           chmod +x gradlew
           echo "✓ Gradle wrapper ready"
+
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "🌐 DIGITAL ASSET LINKS (Action Required)"
+          echo "To remove 'Vivaldi' and 'Open with' prompts, host this at:"
+          echo "https://albidr.github.io/.well-known/assetlinks.json"
+          echo ""
+          echo '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.albidr.clashmanager","sha256_cert_fingerprints":["'$SHA256'"]}}]'
+          echo "--------------------------------------------------------"
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
