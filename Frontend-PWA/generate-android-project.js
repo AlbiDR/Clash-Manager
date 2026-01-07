@@ -8,20 +8,66 @@
 const fs = require('fs');
 const path = require('path');
 
-const manifest = JSON.parse(fs.readFileSync('twa-manifest.json', 'utf8'));
+function exitWithError(message) {
+  console.error(`❌ ERROR: ${message}`);
+  process.exit(1);
+}
+
+function ensureDir(dir) {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`✓ Created directory: ${dir}`);
+  } catch (err) {
+    exitWithError(`Failed to create directory ${dir}: ${err.message}`);
+  }
+}
+
+function writeFileWithVerification(filePath, content) {
+  try {
+    fs.writeFileSync(filePath, content);
+    if (!fs.existsSync(filePath)) {
+      exitWithError(`File was not created: ${filePath}`);
+    }
+    const size = fs.statSync(filePath).size;
+    console.log(`✓ Created ${filePath} (${size} bytes)`);
+  } catch (err) {
+    exitWithError(`Failed to write ${filePath}: ${err.message}`);
+  }
+}
+
+console.log('🚀 Starting Android project generation...\n');
+
+// Load and validate manifest
+let manifest;
+try {
+  if (!fs.existsSync('twa-manifest.json')) {
+    exitWithError('twa-manifest.json not found');
+  }
+  manifest = JSON.parse(fs.readFileSync('twa-manifest.json', 'utf8'));
+  console.log(`✓ Loaded twa-manifest.json (version code: ${manifest.appVersionCode})\n`);
+} catch (err) {
+  exitWithError(`Failed to read twa-manifest.json: ${err.message}`);
+}
 
 // Create directory structure
+console.log('📁 Creating directory structure...');
 const dirs = [
   'app/src/main/java/com/albidr/clashmanager',
   'app/src/main/res/values',
-  'app/src/main/res/drawable',
+  'app/src/main/res/mipmap-mdpi',
+  'app/src/main/res/mipmap-hdpi',
+  'app/src/main/res/mipmap-xhdpi',
+  'app/src/main/res/mipmap-xxhdpi',
+  'app/src/main/res/mipmap-xxxhdpi',
   'gradle/wrapper'
 ];
 
-dirs.forEach(dir => fs.mkdirSync(dir, { recursive: true }));
+dirs.forEach(ensureDir);
+console.log('');
 
 // Generate build.gradle (project level)
-fs.writeFileSync('build.gradle', `
+console.log('📝 Generating build files...');
+writeFileWithVerification('build.gradle', `
 buildscript {
     repositories {
         google()
@@ -29,7 +75,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.1.0'
-        classpath 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
     }
 }
 
@@ -39,10 +84,14 @@ allprojects {
         mavenCentral()
     }
 }
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
 `);
 
 // Generate app/build.gradle
-fs.writeFileSync('app/build.gradle', `
+writeFileWithVerification('app/build.gradle', `
 plugins {
     id 'com.android.application'
 }
@@ -87,7 +136,7 @@ dependencies {
 `);
 
 // Generate AndroidManifest.xml
-fs.writeFileSync('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encoding="utf-8"?>
+writeFileWithVerification('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -97,8 +146,7 @@ fs.writeFileSync('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encodi
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="${manifest.launcherName}"
-        android:theme="@android:style/Theme.Translucent.NoTitleBar"
-        tools:ignore="MissingApplicationIcon">
+        android:theme="@android:style/Theme.Translucent.NoTitleBar">
 
         <activity
             android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
@@ -107,6 +155,9 @@ fs.writeFileSync('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encodi
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
                 android:value="https://${manifest.host}${manifest.startUrl}" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.FALLBACK_STRATEGY"
+                android:value="customtabs" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -125,17 +176,51 @@ fs.writeFileSync('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encodi
 </manifest>
 `);
 
+// Generate values/strings.xml
+writeFileWithVerification('app/src/main/res/values/strings.xml', `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">${manifest.launcherName}</string>
+    <string name="asset_statements">[{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "web",
+            "site": "https://${manifest.host}"
+        }
+    }]</string>
+</resources>
+`);
+
 // Generate gradle.properties
-fs.writeFileSync('gradle.properties', `
+writeFileWithVerification('gradle.properties', `
 org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 android.useAndroidX=true
 android.enableJetifier=true
+android.defaults.buildfeatures.buildconfig=true
+android.nonTransitiveRClass=false
 `);
 
 // Generate settings.gradle
-fs.writeFileSync('settings.gradle', `
+writeFileWithVerification('settings.gradle', `
 include ':app'
 rootProject.name = "Clash Manager"
 `);
 
-console.log('✅ Android project structure generated successfully!');
+// Create a simple launcher icon (1x1 transparent PNG)
+const transparentPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(dpi => {
+  const iconPath = `app/src/main/res/mipmap-${dpi}/ic_launcher.png`;
+  try {
+    fs.writeFileSync(iconPath, transparentPng);
+    console.log(`✓ Created ${iconPath}`);
+  } catch (err) {
+    console.warn(`⚠ Failed to create icon for ${dpi}: ${err.message}`);
+  }
+});
+
+console.log('\n✅ Android project structure generated successfully!');
+console.log('\n📊 Summary:');
+console.log(`   - Package: com.albidr.clashmanager`);
+console.log(`   - Version: ${manifest.appVersionCode} (${manifest.appVersionName || '1.0.0'})`);
+console.log(`   - Target URL: https://${manifest.host}${manifest.startUrl}`);
+console.log(`   - Min SDK: 23, Target SDK: 34`);
+
