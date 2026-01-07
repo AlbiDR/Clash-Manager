@@ -134,37 +134,58 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }, 1500);
   }
 
-  // --- WORKER LOGIC ---
-
-  function createWorker(interval: number) {
-    // Create a blob worker to run the timer off-thread.
-    // This bypasses main-thread throttling when the tab is hidden.
-    const blob = new Blob(
-      [
-        `
-      let timer = null;
-      self.onmessage = function(e) {
-        if (e.data === 'start') {
-          if (timer) clearInterval(timer);
-          timer = setInterval(() => self.postMessage('tick'), ${interval});
-        } else if (e.data === 'stop') {
-          clearInterval(timer);
-          timer = null;
-        }
-      };
-    `,
-      ],
-      { type: "text/javascript" },
-    );
-    return new Worker(URL.createObjectURL(blob));
-  }
+  let blitzTimer: any = null;
 
   function stopBlitz() {
+    console.log("⚡ Stopping Blitz Mode");
     isBlasting.value = false;
-    currentIndex.value = 0;
+    if (blitzTimer) {
+      clearTimeout(blitzTimer);
+      blitzTimer = null;
+    }
     if (worker) {
       worker.terminate();
       worker = null;
+    }
+  }
+
+  function advanceBlitz() {
+    if (!isBlasting.value) return;
+
+    // 1. Check bounds
+    if (currentIndex.value >= selectedIds.value.length) {
+      setTimeout(() => {
+        stopBlitz();
+        clearSelection();
+        info("Blitz complete");
+      }, 500);
+      return;
+    }
+
+    // 2. Fire current item
+    const id = selectedIds.value[currentIndex.value];
+    if (id) {
+      fireDeepLink(`${baseScheme}${id}`);
+      
+      // 3. Move to next index for the NEXT tick
+      currentIndex.value++;
+      
+      // 4. Schedule next if not finished
+      if (currentIndex.value < selectedIds.value.length) {
+        const delay = Math.max(throttleMs, 2500);
+        blitzTimer = setTimeout(advanceBlitz, delay);
+      } else {
+        // Last one reached
+        setTimeout(() => {
+          stopBlitz();
+          clearSelection();
+          info("Blitz complete");
+        }, 1500);
+      }
+    } else if (currentIndex.value < selectedIds.value.length) {
+      // Skip null item and continue immediately
+      currentIndex.value++;
+      advanceBlitz();
     }
   }
 
@@ -187,60 +208,17 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     return true; // Continue
   }
 
-  /**
-   * 🤖 AUTO PULSE (Worker/Script Initiated)
-   */
-  function nextPulseAutomated() {
-    if (!isBlasting.value) return;
-
-    // Check if we already reached the end
-    if (currentIndex.value >= selectedIds.value.length) {
-      stopBlitz();
-      info("Batch sequence complete");
-      return;
-    }
-
-    const id = selectedIds.value[currentIndex.value];
-    if (id) {
-      console.log(`⚡ Blasting item ${currentIndex.value + 1}: ${id}`);
-      fireDeepLink(`${baseScheme}${id}`);
-      
-      // Advance to NEXT
-      currentIndex.value++;
-      
-      // Check if we just finished
-      if (currentIndex.value >= selectedIds.value.length) {
-        setTimeout(() => {
-          if (isBlasting.value) {
-            stopBlitz();
-            info("Batch sequence complete");
-          }
-        }, 1000);
-      }
-    }
-  }
 
   // ⚡ BLITZ MODE START
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return;
 
-    console.log("⚡ Starting Blitz Mode");
-
+    console.log("⚡ Initiating Blitz Mode");
     isBlasting.value = true;
     currentIndex.value = 0;
 
-    // 1. Kick off automation loop (Worker handles the rest)
-    // We delay the first fire slightly to let transitions settle
-    const blitzThrottle = Math.max(throttleMs, 2500); // 2.5s minimum for intent reliability
-    
-    worker = createWorker(blitzThrottle);
-    worker.onmessage = () => {
-      nextPulseAutomated();
-    };
-    
-    // Fire the first one immediately, then start the worker interval
-    nextPulseAutomated();
-    worker.postMessage("start");
+    // Start the recursive loop
+    advanceBlitz();
   }
 
   // MAIN ACTION HANDLER
@@ -259,11 +237,13 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         link.click();
         
         currentIndex.value++;
-      }
 
-      if (worker) {
-        worker.postMessage("stop");
-        worker.postMessage("start");
+        // Reset the timer to prevent double-firing immediately after manual assist
+        if (blitzTimer) {
+          clearTimeout(blitzTimer);
+          const delay = Math.max(throttleMs, 2500);
+          blitzTimer = setTimeout(advanceBlitz, delay);
+        }
       }
       return;
     }
