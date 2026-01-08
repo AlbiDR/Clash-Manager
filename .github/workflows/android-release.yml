@@ -192,6 +192,31 @@ jobs:
                 echo "❌ Signature Verification FAILED"
                 exit 1
              fi
+             
+             # --- ZIPALIGN VERIFICATION ---
+             # Although usually handled by build, explicit verification ensures it wasn't unaligned by aggressive processing
+             echo "📏 Verifying Check Alignment..."
+             if [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
+                BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
+                ZIPALIGN="$BUILD_TOOLS_PATH/zipalign"
+             else
+                ZIPALIGN="zipalign"
+             fi
+             
+             if [ -x "$ZIPALIGN" ] || command -v zipalign &> /dev/null; then
+                 if [ ! -x "$ZIPALIGN" ]; then ZIPALIGN="zipalign"; fi
+                 
+                 echo "Running: $ZIPALIGN -c -v 4 \"$APK_PATH\""
+                 if "$ZIPALIGN" -c -v 4 "$APK_PATH"; then
+                    echo "✅ Zipalign Verification PASSED"
+                 else
+                    echo "❌ Zipalign Verification FAILED"
+                    exit 1
+                 fi
+             else
+                 echo "⚠️ zipalign tool not found. Skipping check."
+             fi
+             # -----------------------------
           else
              echo "⚠️ apksigner tool not found. Skipping verification (RISKY)."
              # We don't fail hard here if tool is missing to avoid breaking CI if environment changes, 
@@ -203,6 +228,17 @@ jobs:
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
           echo "✓ Prepared Artifact: $DESCRIPTIVE_NAME"
+
+      - name: Upload Debug Artifacts
+        if: always() # Always upload even if previous steps failed (to debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-${{ steps.versioning.outputs.build_tag }}
+          path: |
+            Frontend-PWA/src-tauri/gen/android/app/build/outputs/mapping/release/mapping.txt
+            Frontend-PWA/src-tauri/gen/android/app/build/intermediates/merged_manifests/release/AndroidManifest.xml
+          if-no-files-found: warn
+          compression-level: 6
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
