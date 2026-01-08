@@ -102,6 +102,10 @@ const sortOptions = [
 function onSelectScore(threshold: number, mode: "ge" | "le") {
   handleSelectScore(threshold, mode, (m) => m.s || 0);
 }
+
+function handleSearch(val: string) {
+  searchQuery.value = val;
+}
 </script>
 
 <template>
@@ -121,7 +125,7 @@ function onSelectScore(threshold: number, mode: "ge" | "le") {
     :is-empty="!showSkeletons && filteredItems.length === 0"
     :fab-state="fabState"
     @refresh="refresh"
-    @update:search="(val) => (searchQuery = val)"
+    @update:search="handleSearch"
     @update:sort="updateSort"
     @select-all="handleSelectAll"
     @clear-selection="clearSelection"

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useToast } from "./useToast";
 import { useModules } from "./useModules";
@@ -228,26 +227,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       }
     }
   }
-
-  /**
-   * Advances the state index.
-   * Checks for completion.
-   */
-  function advanceIndex() {
-    currentIndex.value++;
-    // End Condition
-    if (currentIndex.value >= selectedIds.value.length) {
-      setTimeout(() => {
-        if (isBlasting.value) {
-          stopBlitz();
-          info("Batch sequence complete");
-        }
-      }, 500);
-      return false; // Ended
-    }
-    return true; // Continue
-  }
-
 
   // ⚡ BLITZ MODE START
   function handleBlitz() {
