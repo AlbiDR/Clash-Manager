@@ -13,8 +13,6 @@ jobs:
       contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SCCACHE_GHA_ENABLED: "true"
-      RUSTC_WRAPPER: "sccache"
 
     defaults:
       run:
@@ -52,12 +50,9 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
-      - name: Install sccache
-        uses: mozilla-actions/sccache-action@v0.0.6
-
       - name: Auto-Version
         id: versioning
-        # ... (lines 53-71 content remains same)
+        # ... (lines remains same)
         run: |
           V_NAME="8.12.${{ github.run_number }}"
           V_CODE=$((1000 + ${{ github.run_number }}))
