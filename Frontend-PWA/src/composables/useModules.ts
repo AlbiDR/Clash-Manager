@@ -111,3 +111,9 @@ export function useModules() {
     init,
   };
 }
+
+export type UseModulesReturn = {
+  modules: typeof modules;
+  toggle: (key: keyof ModuleState) => void;
+  init: () => void;
+};

@@ -10,10 +10,10 @@ const haptics = useHaptics();
 
 const threshold = computed(() => modules.value.notificationThreshold);
 
-function setThreshold(value: 50 | 75) {
+const setThreshold = (value: 50 | 75) => {
   haptics.tap();
   modules.value.notificationThreshold = value;
-}
+};
 </script>
 
 <template>
