@@ -205,6 +205,14 @@ function handleSearchUpdate(val: string) {
     <RecruitCard
       v-for="(recruit, index) in visibleItems"
       :key="recruit.id"
+      v-memo="[
+        recruit.s,
+        recruit.t,
+        expandedIds.has(recruit.id),
+        selectedSet.has(recruit.id),
+        isSelectionMode,
+        isRefreshing,
+      ]"
       :id="`recruit-${recruit.id}`"
       :recruit="recruit"
       :expanded="expandedIds.has(recruit.id)"

@@ -134,6 +134,14 @@ function onSelectScore(threshold: number, mode: "ge" | "le") {
     <MemberCard
       v-for="(member, index) in visibleItems"
       :key="member.id"
+      v-memo="[
+        member.s,
+        member.dt,
+        expandedIds.has(member.id),
+        selectedSet.has(member.id),
+        isSelectionMode,
+        isRefreshing,
+      ]"
       :id="`member-${member.id}`"
       :member="member"
       :expanded="expandedIds.has(member.id)"
