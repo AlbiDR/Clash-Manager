@@ -8,14 +8,13 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_deep_link::init())
-    .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
+    .plugin(
+      tauri_plugin_log::Builder::default()
+        .level(log::LevelFilter::Info)
+        .build(),
+    )
+    .setup(|_app| {
+      log::info!("🚀 Sovereign App Core Started");
       Ok(())
     })
     .run(tauri::generate_context!())
