@@ -148,8 +148,8 @@ jobs:
           echo "✅ Found unsigned APK: $UNSIGNED_APK"
 
           # Prepare paths
-          SIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-signed.apk"
-          ALIGNED_APK="${UNSIGNED_APK%-unsigned.apk}.apk"
+          ALIGNED_UNSIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-aligned-unsigned.apk"
+          FINAL_APK="${UNSIGNED_APK%-unsigned.apk}.apk"
 
           # Locate build tools
           BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
@@ -158,47 +158,47 @@ jobs:
 
           echo "🔧 Using build tools from: $BUILD_TOOLS_PATH"
 
-          # Step 1: Sign the APK
-          echo "📝 Signing APK..."
-          "$APKSIGNER" sign \
-            --ks signing.keystore \
-            --ks-key-alias clash_manager_release \
-            --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
-            --out "$SIGNED_APK" \
-            "$UNSIGNED_APK"
+          # Step 1: Zipalign the UNSIGNED APK first (CRITICAL: must be done BEFORE signing)
+          echo "📏 Zipaligning unsigned APK..."
+          "$ZIPALIGN" -f -v 4 "$UNSIGNED_APK" "$ALIGNED_UNSIGNED_APK"
 
-          if [ ! -f "$SIGNED_APK" ]; then
-            echo "❌ Signing failed!"
-            exit 1
-          fi
-
-          echo "✅ APK signed successfully"
-
-          # Step 2: Zipalign the signed APK
-          echo "📏 Zipaligning APK..."
-          "$ZIPALIGN" -f -v 4 "$SIGNED_APK" "$ALIGNED_APK"
-
-          if [ ! -f "$ALIGNED_APK" ]; then
+          if [ ! -f "$ALIGNED_UNSIGNED_APK" ]; then
             echo "❌ Zipalign failed!"
             exit 1
           fi
 
           echo "✅ APK zipaligned successfully"
 
+          # Step 2: Sign the zipaligned APK (signing must be LAST)
+          echo "📝 Signing APK..."
+          "$APKSIGNER" sign \
+            --ks signing.keystore \
+            --ks-key-alias clash_manager_release \
+            --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
+            --out "$FINAL_APK" \
+            "$ALIGNED_UNSIGNED_APK"
+
+          if [ ! -f "$FINAL_APK" ]; then
+            echo "❌ Signing failed!"
+            exit 1
+          fi
+
+          echo "✅ APK signed successfully"
+
           # Step 3: Verify the final APK
           echo "🔍 Verifying final APK..."
-          "$APKSIGNER" verify --verbose --print-certs "$ALIGNED_APK"
+          "$APKSIGNER" verify --verbose --print-certs "$FINAL_APK"
 
           if [ $? -ne 0 ]; then
             echo "❌ Verification failed!"
             exit 1
           fi
 
-          echo "✅ Final APK verified: $ALIGNED_APK"
+          echo "✅ Final APK verified: $FINAL_APK"
 
           # Cleanup intermediate files
-          rm -f "$SIGNED_APK"
+          rm -f "$ALIGNED_UNSIGNED_APK"
 
           echo "📦 Final signed & aligned APK ready!"
 
