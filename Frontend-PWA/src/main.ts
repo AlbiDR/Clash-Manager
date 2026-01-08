@@ -26,10 +26,21 @@ function showFatalError(error: any) {
   }
 }
 
-window.addEventListener("error", (event) => showFatalError(event.error));
-window.addEventListener("unhandledrejection", (event) =>
-  showFatalError(event.reason)
-);
+// Enhanced Global Error Trap for Logcat Visibility
+window.addEventListener("error", (event) => {
+  console.error(
+    `[GLOBAL ERROR] Msg: ${event.message} | File: ${event.filename} | Line: ${event.lineno}:${event.colno}`,
+  );
+  if (event.error && event.error.stack) {
+    console.error(`[STACK]: ${event.error.stack}`);
+  }
+  showFatalError(event.error);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error(`[UNHANDLED PROMISE]: ${event.reason}`);
+  showFatalError(event.reason);
+});
 
 async function bootstrap() {
   try {
