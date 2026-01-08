@@ -78,14 +78,19 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Cache Android Project
+        id: cache-android-gen
+        uses: actions/cache@v4
+        with:
+          path: Frontend-PWA/src-tauri/gen/android
+          key: android-gen-${{ hashFiles('Frontend-PWA/src-tauri/tauri.conf.json') }}
+
       - name: Initialize Android Support
+        if: steps.cache-android-gen.outputs.cache-hit != 'true'
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           
-          echo "🧹 Cleaning Android build artifacts for fresh initialization..."
-          rm -rf src-tauri/gen/android
-          
-          echo "🏗️  Initializing Android Support (Clean)..."
+          echo "🏗️  Initializing Android Support..."
           npx tauri android init --ci
 
       - name: Audit Assets
