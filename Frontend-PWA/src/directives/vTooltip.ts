@@ -132,14 +132,21 @@ if (typeof window !== "undefined") {
 
 export const vTooltip: Directive = {
   mounted(el, binding) {
-    if (!binding.value) return;
-    el.setAttribute("data-v-tooltip", "true");
     el._tooltipValue = binding.value;
+    if (binding.value) {
+      el.setAttribute("data-v-tooltip", "true");
+    }
   },
   updated(el, binding) {
     el._tooltipValue = binding.value;
+    if (binding.value) {
+      el.setAttribute("data-v-tooltip", "true");
+    } else {
+      el.removeAttribute("data-v-tooltip");
+    }
   },
   unmounted(el) {
     if (activeTarget === el) globalHide();
+    delete el._tooltipValue;
   }
 };
