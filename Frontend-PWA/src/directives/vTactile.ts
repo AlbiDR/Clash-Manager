@@ -65,7 +65,9 @@ export const vTactile: Directive = {
         if (state.isActive) {
           state.isLongPress = true;
           if (navigator.vibrate) navigator.vibrate(60);
-          binding.value.onLongPress();
+          if (binding.value?.onLongPress) {
+            binding.value.onLongPress();
+          }
         }
       }, 500);
     };
@@ -85,7 +87,9 @@ export const vTactile: Directive = {
     state.listeners.pointerup = () => {
       if (state.isActive && !state.isLongPress) {
         if (navigator.vibrate) navigator.vibrate(10);
-        binding.value.onTap();
+        if (binding.value?.onTap) {
+          binding.value.onTap();
+        }
       }
       clearInteraction();
     };

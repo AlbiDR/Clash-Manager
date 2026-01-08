@@ -25,7 +25,7 @@ function getSavedScroll(path: string): number {
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(to, _from, savedPosition) {
     // 1. Browser Back/Forward: Use browser's saved position
     if (savedPosition) return savedPosition;
 
@@ -63,12 +63,12 @@ const router = createRouter({
 });
 
 // ⚡ FIX: View Transitions Support with Safety Timeout
-router.beforeResolve(async (to, from) => {
+router.beforeResolve(async (_to, _from) => {
   if (!(document as any).startViewTransition) return;
   if (document.visibilityState !== "visible") return;
 
   try {
-    return await Promise.race([
+    return await Promise.race<boolean | void>([
       new Promise((resolve) => {
         (document as any).startViewTransition(async () => {
           resolve(true);
@@ -84,7 +84,7 @@ router.beforeResolve(async (to, from) => {
 });
 
 // Save scroll before leaving route
-router.beforeEach((to, from) => {
+router.beforeEach((_to, from) => {
   saveScrollPosition(from.path, window.scrollY);
 });
 
