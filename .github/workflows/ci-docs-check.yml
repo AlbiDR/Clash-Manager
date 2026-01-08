@@ -1,4 +1,4 @@
-name: Validate Scoring Documentation
+name: CI: Scoring Docs Check
 
 on:
   push:
