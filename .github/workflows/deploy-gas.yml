@@ -1,4 +1,4 @@
-name: Deploy Backend (GAS)
+name: Deploy GAS
 
 on:
   push:

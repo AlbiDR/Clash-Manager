@@ -1,4 +1,4 @@
-name: Deploy Android App
+name: Deploy APK
 
 on:
   push:
@@ -102,14 +102,13 @@ jobs:
           ls -R Frontend-PWA/dist | grep -E "index.html|main.js|style.css|fonts" || echo "⚠️ Some assets missing in dist!"
 
       - name: Build Android App
+        env:
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
 
           # Signal Vite to use root base path
           export VITE_IS_TAURI_BUILD=true
-
-        env:
-          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
 
           echo "🔨 Building Release APK..."
           # Standard build - Tauri manages minification safely via its own internal config

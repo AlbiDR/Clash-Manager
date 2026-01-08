@@ -1,4 +1,4 @@
-name: CI: Scoring Docs Check
+name: Validate Project
 
 on:
   push:
@@ -20,5 +20,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Validate scoring docs vs configuration
-        run: node scripts/validate_scoring.js
+      - name: Run Project Integrity Check
+        run: node scripts/validate_project.js

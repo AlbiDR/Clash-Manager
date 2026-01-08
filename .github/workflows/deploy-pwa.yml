@@ -1,4 +1,4 @@
-name: Deploy PWA (GitHub Pages)
+name: Deploy PWA
 
 on:
   push:
