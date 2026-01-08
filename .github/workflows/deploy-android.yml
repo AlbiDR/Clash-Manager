@@ -365,19 +365,17 @@ jobs:
           
           if [ -z "$LATEST_TAG" ]; then
             echo "📝 First release - generating initial changelog"
-            cat >> "$CHANGELOG_FILE" << 'EOF'
-## 🎉 Initial Release
-
-Welcome to the first release of **Clash Manager**!
-
-This is the initial production build with all core features implemented.
-
----
-
-**Build Information**:
-- Version: `${{ steps.versioning.outputs.v_name }}`
-- Build Code: `${{ steps.versioning.outputs.version_code }}`
-EOF
+            echo "## 🎉 Initial Release" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "Welcome to the first release of **Clash Manager**!" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "This is the initial production build with all core features implemented." >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "---" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "**Build Information**:" >> "$CHANGELOG_FILE"
+            echo "- Version: \`${{ steps.versioning.outputs.v_name }}\`" >> "$CHANGELOG_FILE"
+            echo "- Build Code: \`${{ steps.versioning.outputs.version_code }}\`" >> "$CHANGELOG_FILE"
           else
             echo "📝 Generating changelog from $LATEST_TAG to $CURRENT_TAG..."
             
@@ -387,16 +385,14 @@ EOF
             COMMIT_COUNT=$(grep -c "." "$COMMITS_FILE" 2>/dev/null || echo "0")
             
             # Write header
-            cat >> "$CHANGELOG_FILE" << EOF
-## 📊 Release Summary
-
-**Version**: \`${VERSION}\` (${BUMP_TYPE} bump)  
-**Commits**: ${COMMIT_COUNT} changes since \`${LATEST_TAG}\`  
-**Build Code**: \`${{ steps.versioning.outputs.version_code }}\`
-
----
-
-EOF
+            echo "## 📊 Release Summary" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "**Version**: \`${VERSION}\` (${BUMP_TYPE} bump)  " >> "$CHANGELOG_FILE"
+            echo "**Commits**: ${COMMIT_COUNT} changes since \`${LATEST_TAG}\`  " >> "$CHANGELOG_FILE"
+            echo "**Build Code**: \`${{ steps.versioning.outputs.version_code }}\`" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "---" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
             
             # Helper function to add category
             add_category() {
@@ -476,11 +472,9 @@ EOF
             fi
             
             # Footer
-            cat >> "$CHANGELOG_FILE" << EOF
----
-
-**Full Changelog**: [\`${LATEST_TAG}...${CURRENT_TAG}\`](https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${CURRENT_TAG})
-EOF
+            echo "---" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "**Full Changelog**: [\`${LATEST_TAG}...${CURRENT_TAG}\`](https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${CURRENT_TAG})" >> "$CHANGELOG_FILE"
             
             # Cleanup temp files
             rm -f "$COMMITS_FILE" "$CATEGORIZED_FILE" "$OTHER_FILE"
