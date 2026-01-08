@@ -91,7 +91,7 @@ jobs:
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           
           echo "🧹 Ensuring clean slate for initialization..."
-          rm -rf Frontend-PWA/src-tauri/gen/android
+          rm -rf src-tauri/gen/android
           
           echo "🏗️  Initializing Android Support..."
           npx tauri android init --ci
