@@ -37,20 +37,13 @@
   },
   "plugins": {
     "deep-link": {
-      "schemes": [
-        "clashmanager"
-      ],
+      "schemes": ["clashmanager"],
       "host": "albidr.github.io"
     },
     "notification": {},
     "fs": {},
     "os": {},
-    "shell": {
-      "allow": [
-        { "name": "open", "cmd": "open" },
-        { "name": "shell", "cmd": "sh" }
-      ]
-    },
+    "shell": {},
     "http": {},
     "dialog": {}
   }
