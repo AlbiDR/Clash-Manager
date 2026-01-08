@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self' https://script.google.com https://script.googleusercontent.com https://lh3.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://sheets.googleapis.com;"
+      content="default-src 'self' tauri://* blob: https://script.google.com https://script.googleusercontent.com https://lh3.googleusercontent.com; img-src 'self' data: tauri: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://sheets.googleapis.com;"
     />
     <meta
       name="viewport"
@@ -43,36 +43,33 @@
     <link rel="preconnect" href="https://script.googleusercontent.com" />
     <link rel="dns-prefetch" href="https://script.googleusercontent.com" />
 
-    <link rel="apple-touch-icon" href="/Clash-Manager/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" href="/Clash-Manager/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
 
     <title>Clash Manager</title>
 
     <!-- ⚡ OPTIMIZATION: Critical Resource Preloading -->
     <link
       rel="preload"
-      href="/Clash-Manager/fonts/Inter-Variable.woff2"
+      href="/fonts/Inter-Variable.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
     <link
       rel="preload"
-      href="/Clash-Manager/fonts/JetBrainsMono-Bold.woff2"
+      href="/fonts/JetBrainsMono-Bold.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
 
-    <!-- ⚡ SPEED WIZARD: Preload modules for instant tab switching -->
-    <link rel="modulepreload" href="/Clash-Manager/src/main.ts" />
-    <link rel="modulepreload" href="/Clash-Manager/src/router/index.ts" />
 
     <style>
       /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
       @font-face {
         font-family: "Inter";
-        src: url("/Clash-Manager/fonts/Inter-Variable.woff2")
+        src: url("/fonts/Inter-Variable.woff2")
           format("woff2-variations");
         font-weight: 100 900;
         font-display: swap;

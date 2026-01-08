@@ -32,9 +32,9 @@ tauri-plugin-os = "2.3.2"
 tauri-plugin-deep-link = "2.4.5"
 
 [profile.release]
-opt-level = "z"      # Optimize for size
+opt-level = "s"      # Optimize for size (standard)
 lto = true           # Enable Link Time Optimization
-codegen-units = 16   # Balanced parallel compilation (faster) with LTO
-panic = "abort"      # Remove stack unwinding to save space
-strip = true         # Automatically strip symbols from the binary
+codegen-units = 1    # Better optimization with single unit for release
+panic = "unwind"     # Standard panic behavior for stability
+strip = false        # Keep symbols for better JNI compatibility
 
