@@ -10,6 +10,7 @@ on:
     paths:
       - 'Backend-GAS/Configuration.gs.js'
       - 'README.md'
+  workflow_dispatch:
 
 jobs:
   validate:
