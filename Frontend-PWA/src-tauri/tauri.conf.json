@@ -39,12 +39,6 @@
     "deep-link": {
       "schemes": ["clashmanager"],
       "host": "albidr.github.io"
-    },
-    "notification": {},
-    "fs": {},
-    "os": {},
-    "shell": {},
-    "http": {},
-    "dialog": {}
+    }
   }
 }
