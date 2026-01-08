@@ -108,6 +108,9 @@ jobs:
           # Signal Vite to use root base path
           export VITE_IS_TAURI_BUILD=true
 
+        env:
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
+
           echo "🔨 Building Release APK..."
           # Standard build - Tauri manages minification safely via its own internal config
           npx tauri android build --apk true
