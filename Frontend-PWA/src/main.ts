@@ -12,19 +12,8 @@ import { useApiState } from "./composables/useApiState";
 import { useClanData } from "./composables/useClanData";
 import { useTheme } from "./composables/useTheme";
 import { useWakeLock } from "./composables/useWakeLock";
-import { usePwaFeatures } from "./composables/usePwaFeatures";
-import { registerSW } from "virtual:pwa-register";
+import { useWakeLock } from "./composables/useWakeLock";
 
-// 🔄 PWA Update Logic: Automatically refresh when new content is available
-const updateSW = registerSW({
-  onNeedRefresh() {
-    console.log("🔄 New content available, reloading...");
-    updateSW(true); // Force update and reload
-  },
-  onOfflineReady() {
-    console.log("📶 App is ready for offline use.");
-  },
-});
 
 function showFatalError(error: any) {
   console.error("FATAL ERROR:", error);
@@ -99,11 +88,8 @@ async function bootstrap() {
         const wakeLock = useWakeLock();
         wakeLock.init();
 
-        // ⚡ STATE OF THE ART PWA: Init background features
-        const pwa = usePwaFeatures();
-        pwa.initMessageListener();
-        pwa.initPush();
-        pwa.initPeriodicSync();
+        const wakeLock = useWakeLock();
+        wakeLock.init();
 
         // ⚡ Lazy Load AutoAnimate
         try {

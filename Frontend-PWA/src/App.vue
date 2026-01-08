@@ -2,7 +2,6 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useClanData } from "./composables/useClanData";
-import { usePwaUpdate } from "./composables/usePwaUpdate";
 import { useHaptics } from "./composables/useHaptics";
 import FloatingDock from "./components/FloatingDock.vue";
 import ToastContainer from "./components/ToastContainer.vue";
@@ -12,7 +11,6 @@ import ErrorBoundary from "./components/ErrorBoundary.vue";
 import { useShareTarget } from "./composables/useShareTarget";
 
 const { syncStatus } = useClanData();
-const { needRefresh, updateServiceWorker, close: closeUpdate } = usePwaUpdate();
 const { handleShareTarget } = useShareTarget();
 const haptics = useHaptics();
 const route = useRoute();
@@ -66,23 +64,6 @@ const connectionState = computed(() => {
   <div class="app-shell">
     <div class="connectivity-strip" :class="connectionState"></div>
 
-    <!-- PWA Update Notification -->
-    <div
-      v-if="needRefresh"
-      class="pwa-update-toast"
-      @click="updateServiceWorker()"
-    >
-      <div class="update-icon-wrapper">
-        <Icon name="download" size="22" />
-      </div>
-      <div class="update-text">New version available</div>
-      <button class="update-btn" @click.stop="updateServiceWorker()">
-        Update
-      </button>
-      <button class="close-update" @click.stop="closeUpdate()">
-        <Icon name="close" size="18" />
-      </button>
-    </div>
 
     <main class="app-container">
       <ErrorBoundary>
@@ -141,107 +122,6 @@ const connectionState = computed(() => {
   transform: scaleY(1.5);
 }
 
-/* PWA Update Toast */
-.pwa-update-toast {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4000;
-
-  /* Match Toast.vue .undo style exactly */
-  background: var(--sys-color-inverse-surface);
-  color: var(--sys-color-inverse-on-surface);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 99px;
-  padding: 12px 20px;
-
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-
-  min-width: min(340px, 92vw);
-  max-width: 94vw;
-
-  animation: slide-down 0.6s var(--sys-motion-spring);
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.pwa-update-toast:active {
-  transform: translateX(-50%) scale(0.96);
-}
-
-.update-icon-wrapper {
-  color: var(--sys-color-inverse-primary);
-  display: flex;
-  align-items: center;
-}
-
-.update-text {
-  flex: 1;
-  font-weight: 700;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.update-btn {
-  background: var(--sys-color-inverse-primary);
-  color: var(--sys-color-inverse-surface);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    filter 0.2s,
-    transform 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.update-btn:active {
-  transform: scale(0.95);
-  filter: brightness(0.9);
-}
-
-.close-update {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  padding: 6px;
-  border-radius: 50%;
-  cursor: pointer;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: -4px;
-  margin-right: -8px;
-  flex-shrink: 0;
-  transition: background 0.2s;
-}
-.close-update:active {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-@keyframes slide-down {
-  from {
-    transform: translate(-50%, -150%);
-    opacity: 0;
-  }
-  to {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
@@ -251,23 +131,6 @@ const connectionState = computed(() => {
   }
 }
 
-/* Mobile Tweaks */
-@media (max-width: 400px) {
-  .pwa-update-toast {
-    padding: 10px 16px;
-    gap: 8px;
-  }
-  .update-text {
-    font-size: 13px;
-  }
-  .update-btn {
-    padding: 6px 12px;
-    font-size: 11px;
-  }
-  .close-update {
-    padding: 4px;
-  }
-}
 
 /* Page Transition */
 .fade-enter-active,

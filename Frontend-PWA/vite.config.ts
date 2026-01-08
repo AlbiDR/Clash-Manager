@@ -2,11 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa'
 import packageJson from './package.json'
-
-// Determine if we are building for a native app environment (Tauri) or web
-const isTauriBuild = process.env.VITE_IS_TAURI_BUILD === 'true';
 
 export default defineConfig({
   define: {
@@ -17,14 +13,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  // Critical Fix: Use root path '/' for Android/Tauri to ensure assets load correctly.
-  // Use '/Clash-Manager/' only for GitHub Pages hosting.
-  base: isTauriBuild ? '/' : '/Clash-Manager/',
+  // Use root path '/' for Tauri to ensure assets load correctly.
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,
     cssCodeSplit: true,
-    target: isTauriBuild ? 'chrome100' : 'es2015',
+    target: 'chrome100',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -36,248 +31,6 @@ export default defineConfig({
   },
   plugins: [
     vue() as any,
-    tailwindcss() as any,
-    !isTauriBuild && VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: [
-        'favicon.png',
-        'apple-touch-icon.png',
-        'logo.png',
-        'maskable-icon-512x512.png',
-        'monochrome-icon-512x512.png'
-      ],
-      manifest: {
-        id: isTauriBuild ? '/' : '/Clash-Manager/',
-        name: 'Clash Manager',
-        short_name: 'Clash Manager',
-        description: 'Advanced analytics and clan management tool',
-        theme_color: '#0b0e14',
-        background_color: '#0b0e14',
-        display: 'standalone',
-        orientation: 'portrait-primary',
-        scope: isTauriBuild ? '/' : '/Clash-Manager/',
-        start_url: isTauriBuild ? '/index.html#/leaderboard' : '/Clash-Manager/index.html#/leaderboard',
-        categories: ['productivity', 'utilities', 'games'],
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'maskable-icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: 'monochrome-icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'monochrome'
-          }
-        ],
-        shortcuts: [
-          {
-            name: 'Leaderboard',
-            short_name: 'Leaderboard',
-            description: 'View clan member rankings',
-            url: '/Clash-Manager/index.html#/leaderboard',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
-          },
-          {
-            name: 'Headhunter',
-            short_name: 'Headhunter',
-            description: 'Browse potential recruits',
-            url: '/Clash-Manager/index.html#/recruiter',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
-          },
-          {
-            name: 'Settings',
-            short_name: 'Settings',
-            description: 'App configuration and GAS URL',
-            url: '/Clash-Manager/index.html#/settings',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
-          },
-          {
-            name: 'Clash Royale',
-            short_name: 'CR',
-            description: 'Open Clash Royale Official Site',
-            url: 'https://clashroyale.com',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
-          }
-        ],
-        screenshots: [
-          {
-            src: 'screenshot-mobile.png',
-            sizes: '1080x1920',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'Clash Manager Mobile Dashboard'
-          },
-          {
-            src: 'screenshot-desktop.png',
-            sizes: '1920x1080',
-            type: 'image/png',
-            form_factor: 'wide',
-            label: 'Clash Manager Desktop Analytics'
-          }
-        ],
-        file_handlers: [
-          {
-            action: '/Clash-Manager/',
-            accept: {
-              'application/json': ['.clashmgr', '.json']
-            }
-          }
-        ],
-        protocol_handlers: [
-          {
-            protocol: 'web+cm',
-            url: '/Clash-Manager/?p=%s'
-          },
-          {
-            protocol: 'web+clashroyale',
-            url: '/Clash-Manager/?cr=%s'
-          },
-          {
-            protocol: 'web+cr',
-            url: '/Clash-Manager/?cr=%s'
-          }
-        ],
-        related_applications: [
-          {
-            platform: 'play',
-            url: 'https://play.google.com/store/apps/details?id=com.albidr.clashmanager',
-            id: 'com.albidr.clashmanager'
-          },
-          {
-            platform: 'play',
-            url: 'https://play.google.com/store/apps/details?id=com.supercell.clashroyale',
-            id: 'com.supercell.clashroyale'
-          },
-          {
-            platform: 'itunes',
-            url: 'https://apps.apple.com/app/clash-royale/id1053012308'
-          },
-          {
-            platform: 'webapp',
-            url: 'https://albidr.github.io/Clash-Manager/manifest.webmanifest'
-          }
-        ],
-        widgets: [
-          {
-            name: 'Clan Status',
-            short_name: 'Status',
-            description: 'Quick view of clan performance',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
-            ms_widget: {
-              template: 'widget-template.json',
-              data: 'widget-data.json',
-              type: 'text/json'
-            }
-          }
-        ],
-        edge_side_panel: {
-          preferred_width: 400
-        },
-        note_taking: {
-          new_note_url: '/Clash-Manager/index.html#/notes'
-        },
-        scope_extensions: [
-          { origin: 'https://albidr.github.io' },
-          { origin: 'https://clashroyale.com' },
-          { origin: 'https://*.clashroyale.com' },
-          { origin: 'https://supercell.com' }
-        ],
-        share_target: {
-          action: '/Clash-Manager/share',
-          method: 'GET',
-          params: {
-            title: 'title',
-            text: 'text',
-            url: 'url'
-          }
-        },
-        launch_handler: {
-          client_mode: 'navigate-existing'
-        },
-        iarc_rating_id: 'e58c704a-579c-4f01-831e-45814545d625',
-        lang: 'en-US',
-        dir: 'ltr',
-        prefer_related_applications: false
-      } as any,
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,png,woff2}'],
-        additionalManifestEntries: [],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
-        importScripts: ['sw-badge-handler.js'],
-        manifestTransforms: [
-          (manifestEntries) => {
-            const timestamp = new Date().getTime();
-            const manifest = manifestEntries.map((entry) => {
-              if (entry.url === 'manifest.webmanifest' || entry.url === 'index.html') {
-                entry.revision = `${entry.revision || 'v1'}-${timestamp}`;
-              }
-              return entry;
-            });
-            return { manifest, warnings: [] };
-          }
-        ],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-stylesheets',
-              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 30 }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/script\.google\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'gas-api-cache',
-              expiration: { maxEntries: 5 },
-              backgroundSync: {
-                name: 'gas-sync-queue',
-                options: {
-                  maxRetentionTime: 24 * 60
-                }
-              }
-            }
-          }
-        ]
-      },
-      srcDir: undefined,
-      filename: undefined,
-      strategies: 'generateSW',
-      injectRegister: 'script',
-      devOptions: {
-        enabled: true,
-        type: 'classic'
-      }
-    }) as any
-  ].filter(Boolean)
+    tailwindcss() as any
+  ]
 })
