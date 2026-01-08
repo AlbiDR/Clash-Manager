@@ -76,7 +76,7 @@ jobs:
       - name: Initialize & Patch Android
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
-          
+
           echo "🧹 Cleaning Android build artifacts..."
           rm -rf src-tauri/gen/android
 
@@ -84,7 +84,7 @@ jobs:
           npx tauri android init --ci
 
           echo "🔧 Applying Build Fixes..."
-          
+
           # 1. Apply Proguard Rules
           # Since src-tauri/gen/android is generated, we must inject our rules into the generated file.
           TARGET_PROGUARD="src-tauri/gen/android/app/proguard-rules.pro"
@@ -98,11 +98,11 @@ jobs:
              echo "⚠️ Custom ProGuard file not found at $SOURCE_PROGUARD"
              exit 1
           fi
-          
+
           # 2. Minify Configuration
           # We try to ensure minify is enabled but controlled by our rules
           GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
-          
+
           if [ -f "$GRADLE_KTS" ]; then
             # Ensure minify is ENABLED for release so R8 runs (and uses our rules)
             # If we disable it, the app is huge. If we enable it without rules, it crashes.
@@ -116,7 +116,7 @@ jobs:
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           export TAURI_ANDROID_KEYSTORE=$GITHUB_WORKSPACE/Frontend-PWA/signing.keystore
           export TAURI_ANDROID_KEY_ALIAS=clash_manager_release
-          
+
           # IMPORTANT: Signal Vite to use '/' base path for native build
           export VITE_IS_TAURI_BUILD=true
 
