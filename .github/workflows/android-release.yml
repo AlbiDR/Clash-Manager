@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
 
     defaults:
       run:
@@ -78,9 +82,6 @@ jobs:
         run: npm ci
 
       - name: Initialize & Patch Android
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: "sccache"
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
 

@@ -32,33 +32,25 @@ const { modules } = useModules();
 const roleInfo = (role: string) => formatRole(role);
 const scoreTone = (score: number) => getScoreTone(score);
 
-const trend = (member: LeaderboardMember) => {
-  const dt = Number(member.dt) || 0;
-  const currentRaw = Number(member.r) || 0;
-
+const trendInfo = computed(() => {
+  const dt = Number(props.member.dt) || 0;
+  const currentRaw = Number(props.member.r) || 0;
   if (dt === 0 || currentRaw === 0) return null;
-
   const previousRaw = currentRaw - dt;
   if (previousRaw < 50) return null;
   if (previousRaw > 0 && dt / previousRaw > 10) return null;
-
   const percentChange = (dt / previousRaw) * 100;
   const absPercent = Math.abs(percentChange);
-
   let valStr = "";
   if (absPercent < 0.1 && absPercent > 0) valStr = "<0.1%";
   else if (absPercent < 10) valStr = absPercent.toFixed(1) + "%";
   else valStr = Math.round(absPercent) + "%";
-
   return {
     val: valStr,
     dir: dt > 0 ? "up" : "down",
     raw: dt,
   };
-};
-
-// Helper for complex trend computation in template
-const getTrend = computed(() => (m: LeaderboardMember) => trend(m));
+});
 </script>
 
 <template>
@@ -116,20 +108,20 @@ const getTrend = computed(() => (m: LeaderboardMember) => trend(m));
         >{{ Math.round(member.s || 0) }}</span
       >
       <div
-        v-if="getTrend(member)"
+        v-if="trendInfo"
         class="momentum-pill hit-target"
-        :class="getTrend(member)?.dir"
+        :class="trendInfo.dir"
         v-tooltip="
           modules.ghostBenchmarking
-            ? getBenchmark('lb', 'momentum', getTrend(member)?.raw)
+            ? getBenchmark('lb', 'momentum', trendInfo.raw)
             : null
         "
       >
         <Icon
-          :name="getTrend(member)?.dir === 'up' ? 'trend_up' : 'trend_down'"
+          :name="trendInfo.dir === 'up' ? 'trend_up' : 'trend_down'"
           size="10"
         />
-        <span class="trend-val">{{ getTrend(member)?.val }}</span>
+        <span class="trend-val">{{ trendInfo.val }}</span>
       </div>
     </template>
 
