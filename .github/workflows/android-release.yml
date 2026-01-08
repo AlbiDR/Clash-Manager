@@ -99,17 +99,22 @@ jobs:
              exit 1
           fi
 
-          # 2. Minify Configuration
-          # We try to ensure minify is enabled but controlled by our rules
-          GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
-
-          if [ -f "$GRADLE_KTS" ]; then
-            # Ensure minify is ENABLED for release so R8 runs (and uses our rules)
-            # If we disable it, the app is huge. If we enable it without rules, it crashes.
-            # Using sed to ensure it is true, or leave as is if already true.
-            echo "Checking minify status in Gradle..."
-            # No-op: Tauri default is usually true for release. We trust the rules above.
-          fi
+            # 2. Minify & Shrink Configuration
+            GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
+            
+            if [ -f "$GRADLE_KTS" ]; then
+              echo "✨ Patching Gradle for maximum shrinkage..."
+              # Enable shrinkResources and ensure isMinifyEnabled is true in release block
+              # Note: Tauri 2 uses Kotlin DSL (.kts)
+              sed -i 's/isMinifyEnabled = false/isMinifyEnabled = true/g' "$GRADLE_KTS"
+              # We inject shrinkResources if it's missing or set to false
+              if ! grep -q "isShrinkResources =" "$GRADLE_KTS"; then
+                sed -i '/isMinifyEnabled = true/a \            isShrinkResources = true' "$GRADLE_KTS"
+              else
+                sed -i 's/isShrinkResources = false/isShrinkResources = true/g' "$GRADLE_KTS"
+              fi
+              echo "✅ Patch applied to $GRADLE_KTS"
+            fi
 
       - name: Build Android App
         run: |
