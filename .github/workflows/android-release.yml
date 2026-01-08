@@ -212,13 +212,45 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
+      - name: Build Changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          configuration: |
+            {
+              "template": "#{{CHANGELOG}}",
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feat", "new", "add", "feature"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bug", "patch"]
+                },
+                {
+                    "title": "## 💎 Refactors & Improvements",
+                    "labels": ["refactor", "perf", "improve", "clean", "style"]
+                },
+                {
+                    "title": "## 📦 Dependencies",
+                    "labels": ["deps", "dependencies"]
+                }
+              ],
+              "ignore_labels": ["ignore", "skip-changelog"],
+              "sort": "run_number" 
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.versioning.outputs.build_tag }}
           name: Clash Manager ${{ steps.versioning.outputs.build_tag }}
+          body: ${{ steps.build_changelog.outputs.changelog }}
           files: Frontend-PWA/${{ steps.versioning.outputs.apk_filename }}
-          generate_release_notes: true
+          generate_release_notes: false
           draft: false
           prerelease: false
         env:
