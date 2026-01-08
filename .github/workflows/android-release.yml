@@ -76,61 +76,27 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Initialize & Patch Android
+      - name: Initialize Android Support
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
-
-          echo "🧹 Cleaning Android build artifacts..."
-          rm -rf src-tauri/gen/android
-
-          echo "🏗️  Initializing Android Support..."
-          npx tauri android init --ci
-
-          echo "🔧 Applying Build Fixes..."
-
-          # 1. Apply Proguard Rules
-          # Since src-tauri/gen/android is generated, we must inject our rules into the generated file.
-          TARGET_PROGUARD="src-tauri/gen/android/app/proguard-rules.pro"
-          SOURCE_PROGUARD="proguard-rules.pro"
-
-          if [ -f "$SOURCE_PROGUARD" ]; then
-             echo "✅ Found custom ProGuard rules. Appending to generated project..."
-             echo "" >> "$TARGET_PROGUARD" # Ensure newline
-             cat "$SOURCE_PROGUARD" >> "$TARGET_PROGUARD"
+          # Only init if not present; this prevents overwriting customizations
+          if [ ! -d "src-tauri/gen/android" ]; then
+            echo "🏗️  Initializing Android Support..."
+            npx tauri android init --ci
           else
-             echo "⚠️ Custom ProGuard file not found at $SOURCE_PROGUARD"
-             exit 1
+            echo "✅ Android Project exists."
           fi
-
-            # 2. Minify & Shrink Configuration
-            GRADLE_KTS="src-tauri/gen/android/app/build.gradle.kts"
-            
-            if [ -f "$GRADLE_KTS" ]; then
-              echo "✨ Patching Gradle for maximum shrinkage..."
-              # Enable shrinkResources and ensure isMinifyEnabled is true in release block
-              # Note: Tauri 2 uses Kotlin DSL (.kts)
-              sed -i 's/isMinifyEnabled = false/isMinifyEnabled = true/g' "$GRADLE_KTS"
-              # We inject shrinkResources if it's missing or set to false
-              if ! grep -q "isShrinkResources =" "$GRADLE_KTS"; then
-                sed -i '/isMinifyEnabled = true/a \            isShrinkResources = true' "$GRADLE_KTS"
-              else
-                sed -i 's/isShrinkResources = false/isShrinkResources = true/g' "$GRADLE_KTS"
-              fi
-              echo "✅ Patch applied to $GRADLE_KTS"
-            fi
 
       - name: Build Android App
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
 
-          # IMPORTANT: Signal Vite to use '/' base path for native build
+          # Signal Vite to use root base path
           export VITE_IS_TAURI_BUILD=true
 
-          echo "🔨 Building APK..."
+          echo "🔨 Building Release APK..."
+          # Standard build - Tauri manages minification safely via its own internal config
           npx tauri android build --apk true
-
-          echo "📁 Directory State after build:"
-          find src-tauri/gen/android -name "*.apk"
 
       - name: Sign APK
         run: |
