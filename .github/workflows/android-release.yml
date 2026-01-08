@@ -122,120 +122,120 @@ jobs:
       - name: Build Android App
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
-          export TAURI_ANDROID_KEYSTORE=$GITHUB_WORKSPACE/Frontend-PWA/signing.keystore
-          export TAURI_ANDROID_KEY_ALIAS=clash_manager_release
 
           # IMPORTANT: Signal Vite to use '/' base path for native build
           export VITE_IS_TAURI_BUILD=true
 
-          echo "🔨 Building Sovereign APK..."
-          # Build specifically for arm64 to reduce ambiguity, or universal if preferred. 
-          # Defaulting to standard build which usually produces universal or splits.
+          echo "🔨 Building APK..."
           npx tauri android build --apk true
 
           echo "📁 Directory State after build:"
           find src-tauri/gen/android -name "*.apk"
-        env:
-          TAURI_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          TAURI_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Sign APK
+        run: |
+          echo "🔐 Signing APK manually for bulletproof reliability..."
+
+          # Find the unsigned APK
+          UNSIGNED_APK=$(find src-tauri/gen/android -name "*-unsigned.apk" | head -n 1)
+
+          if [ -z "$UNSIGNED_APK" ] || [ ! -f "$UNSIGNED_APK" ]; then
+            echo "❌ ERROR: Unsigned APK not found!"
+            find src-tauri/gen/android -name "*.apk"
+            exit 1
+          fi
+
+          echo "✅ Found unsigned APK: $UNSIGNED_APK"
+
+          # Prepare paths
+          SIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-signed.apk"
+          ALIGNED_APK="${UNSIGNED_APK%-unsigned.apk}.apk"
+
+          # Locate build tools
+          BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
+          APKSIGNER="$BUILD_TOOLS_PATH/apksigner"
+          ZIPALIGN="$BUILD_TOOLS_PATH/zipalign"
+
+          echo "🔧 Using build tools from: $BUILD_TOOLS_PATH"
+
+          # Step 1: Sign the APK
+          echo "📝 Signing APK..."
+          "$APKSIGNER" sign \
+            --ks signing.keystore \
+            --ks-key-alias clash_manager_release \
+            --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
+            --out "$SIGNED_APK" \
+            "$UNSIGNED_APK"
+
+          if [ ! -f "$SIGNED_APK" ]; then
+            echo "❌ Signing failed!"
+            exit 1
+          fi
+
+          echo "✅ APK signed successfully"
+
+          # Step 2: Zipalign the signed APK
+          echo "📏 Zipaligning APK..."
+          "$ZIPALIGN" -f -v 4 "$SIGNED_APK" "$ALIGNED_APK"
+
+          if [ ! -f "$ALIGNED_APK" ]; then
+            echo "❌ Zipalign failed!"
+            exit 1
+          fi
+
+          echo "✅ APK zipaligned successfully"
+
+          # Step 3: Verify the final APK
+          echo "🔍 Verifying final APK..."
+          "$APKSIGNER" verify --verbose --print-certs "$ALIGNED_APK"
+
+          if [ $? -ne 0 ]; then
+            echo "❌ Verification failed!"
+            exit 1
+          fi
+
+          echo "✅ Final APK verified: $ALIGNED_APK"
+
+          # Cleanup intermediate files
+          rm -f "$SIGNED_APK"
+
+          echo "📦 Final signed & aligned APK ready!"
 
       - name: Verify & Prepare APK
         run: |
-          echo "🔍 Searching for APK..."
+          echo "🔍 Locating final signed APK..."
 
-          # Debug: List all APKs found
-          find src-tauri/gen/android -name "*.apk"
-
-          # Helper function to find signed release APKs (excluding unsigned)
-          find_apk() {
-             find src-tauri/gen/android -name "$1" ! -name "*-unsigned.apk" | head -n 1
-          }
-
-          # 1. Search for UNIVERSAL APK first
-          APK_PATH=$(find_apk "*universal*release*.apk")
-
-          if [ -z "$APK_PATH" ]; then
-            # 2. Fallback to arm64-v8a
-            echo "⚠️  Universal APK not found. Looking for arm64..."
-            APK_PATH=$(find_apk "*arm64-v8a*release*.apk")
-          fi
-
-          if [ -z "$APK_PATH" ]; then
-             # 3. Last Resort: Any release apk that is NOT unsigned
-             echo "⚠️  Specific APK not found. Falling back to ANY signed release APK..."
-             APK_PATH=$(find_apk "*release*.apk")
-          fi
+          # Find the signed APK (exclude unsigned)
+          APK_PATH=$(find src-tauri/gen/android -name "*.apk" ! -name "*-unsigned.apk" ! -name "*-signed.apk" | head -n 1)
 
           if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
-            echo "❌ ERROR: No usable APK found!"
+            echo "❌ ERROR: Final APK not found!"
             echo "Available APKs:"
             find src-tauri/gen/android -name "*.apk"
             exit 1
           fi
 
-          echo "✅ Candidate APK found: $APK_PATH"
+          echo "✅ Found final APK: $APK_PATH"
 
-          # --- VERIFICATION STEP ---
-          echo "🔐 Verifying APK Signature..."
+          # Final verification
+          BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
+          APKSIGNER="$BUILD_TOOLS_PATH/apksigner"
 
-          # Locate apksigner in the Android SDK Build Tools
-          # We pick the latest version available.
-          if [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
-             BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
-             APKSIGNER="$BUILD_TOOLS_PATH/apksigner"
-          else
-             echo "⚠️ Build tools directory not found. Trying PATH..."
-             APKSIGNER="apksigner"
+          echo "🔐 Final Signature Check..."
+          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
+
+          if [ $? -ne 0 ]; then
+            echo "❌ Final verification failed!"
+            exit 1
           fi
 
-          if [ -x "$APKSIGNER" ] || command -v apksigner &> /dev/null; then
-             # If exact path didn't work, try bare command if in path
-             if [ ! -x "$APKSIGNER" ]; then APKSIGNER="apksigner"; fi
-             
-             echo "Running: $APKSIGNER verify --verbose --print-certs \"$APK_PATH\""
-             
-             if "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"; then
-                echo "✅ Signature Verification PASSED"
-             else
-                echo "❌ Signature Verification FAILED"
-                exit 1
-             fi
-             
-             # --- ZIPALIGN VERIFICATION ---
-             # Although usually handled by build, explicit verification ensures it wasn't unaligned by aggressive processing
-             echo "📏 Verifying Check Alignment..."
-             if [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
-                BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
-                ZIPALIGN="$BUILD_TOOLS_PATH/zipalign"
-             else
-                ZIPALIGN="zipalign"
-             fi
-             
-             if [ -x "$ZIPALIGN" ] || command -v zipalign &> /dev/null; then
-                 if [ ! -x "$ZIPALIGN" ]; then ZIPALIGN="zipalign"; fi
-                 
-                 echo "Running: $ZIPALIGN -c -v 4 \"$APK_PATH\""
-                 if "$ZIPALIGN" -c -v 4 "$APK_PATH"; then
-                    echo "✅ Zipalign Verification PASSED"
-                 else
-                    echo "❌ Zipalign Verification FAILED"
-                    exit 1
-                 fi
-             else
-                 echo "⚠️ zipalign tool not found. Skipping check."
-             fi
-             # -----------------------------
-          else
-             echo "⚠️ apksigner tool not found. Skipping verification (RISKY)."
-             # We don't fail hard here if tool is missing to avoid breaking CI if environment changes, 
-             # but we log a heavy warning.
-          fi
-          # -------------------------
+          echo "✅ APK is properly signed and verified"
 
-          echo "✅ Final APK ready: $APK_PATH"
+          # Prepare for release
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
-          echo "✓ Prepared Artifact: $DESCRIPTIVE_NAME"
+          echo "✓ Prepared Release Artifact: $DESCRIPTIVE_NAME"
 
       - name: Upload Debug Artifacts
         if: always() # Always upload even if previous steps failed (to debug)
