@@ -134,29 +134,72 @@ jobs:
       - name: Verify & Prepare APK
         run: |
           echo "🔍 Searching for APK..."
-          
+
+          # Debug: List all APKs found
+          find src-tauri/gen/android -name "*.apk"
+
+          # Helper function to find signed release APKs (excluding unsigned)
+          find_apk() {
+             find src-tauri/gen/android -name "$1" ! -name "*-unsigned.apk" | head -n 1
+          }
+
           # 1. Search for UNIVERSAL APK first
-          APK_PATH=$(find src-tauri/gen/android -name "*universal*release*.apk" | head -n 1)
+          APK_PATH=$(find_apk "*universal*release*.apk")
 
           if [ -z "$APK_PATH" ]; then
             # 2. Fallback to arm64-v8a
             echo "⚠️  Universal APK not found. Looking for arm64..."
-            APK_PATH=$(find src-tauri/gen/android -name "*arm64-v8a*release*.apk" | head -n 1)
+            APK_PATH=$(find_apk "*arm64-v8a*release*.apk")
           fi
 
           if [ -z "$APK_PATH" ]; then
-             # 3. Last Resort: Any release apk
-             echo "⚠️  Specific APK not found. Falling back to ANY release APK..."
-             APK_PATH=$(find src-tauri/gen/android -name "*release*.apk" | head -n 1)
+             # 3. Last Resort: Any release apk that is NOT unsigned
+             echo "⚠️  Specific APK not found. Falling back to ANY signed release APK..."
+             APK_PATH=$(find_apk "*release*.apk")
           fi
-          
+
           if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
             echo "❌ ERROR: No usable APK found!"
-            find src-tauri/gen/android -type f | grep "\.apk" || echo "No .apk files found"
+            echo "Available APKs:"
+            find src-tauri/gen/android -name "*.apk"
             exit 1
           fi
 
-          echo "✅ Final APK built successfully: $APK_PATH"
+          echo "✅ Candidate APK found: $APK_PATH"
+
+          # --- VERIFICATION STEP ---
+          echo "🔐 Verifying APK Signature..."
+
+          # Locate apksigner in the Android SDK Build Tools
+          # We pick the latest version available.
+          if [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
+             BUILD_TOOLS_PATH=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | sort -V | tail -n 1)
+             APKSIGNER="$BUILD_TOOLS_PATH/apksigner"
+          else
+             echo "⚠️ Build tools directory not found. Trying PATH..."
+             APKSIGNER="apksigner"
+          fi
+
+          if [ -x "$APKSIGNER" ] || command -v apksigner &> /dev/null; then
+             # If exact path didn't work, try bare command if in path
+             if [ ! -x "$APKSIGNER" ]; then APKSIGNER="apksigner"; fi
+             
+             echo "Running: $APKSIGNER verify --verbose --print-certs \"$APK_PATH\""
+             
+             if "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"; then
+                echo "✅ Signature Verification PASSED"
+             else
+                echo "❌ Signature Verification FAILED"
+                exit 1
+             fi
+          else
+             echo "⚠️ apksigner tool not found. Skipping verification (RISKY)."
+             # We don't fail hard here if tool is missing to avoid breaking CI if environment changes, 
+             # but we log a heavy warning.
+          fi
+          # -------------------------
+
+          echo "✅ Final APK ready: $APK_PATH"
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
           echo "✓ Prepared Artifact: $DESCRIPTIVE_NAME"
