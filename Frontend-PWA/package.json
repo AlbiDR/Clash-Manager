@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",
+    "@tauri-apps/cli": "latest",
     "@types/node": "^24.10.1",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-vue": "^6.0.1",
@@ -38,7 +39,6 @@
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^1.6.0",
-    "vue-tsc": "^3.1.4",
-    "@tauri-apps/cli": "latest"
+    "vue-tsc": "^3.1.4"
   }
 }
