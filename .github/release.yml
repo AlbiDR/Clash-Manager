@@ -3,29 +3,91 @@ changelog:
     labels:
       - ignore
       - skip-changelog
+    authors:
+      - dependabot
+      - github-actions
   categories:
-    - title: 🚀 Features
+    - title: ✨ Features & Enhancements
       labels:
         - feat
-        - new
-        - add
         - feature
-    - title: 🐛 Fixes
+        - enhancement
+      # Automatically matches commits starting with feat:, feature:, add:, new:
+      commits:
+        patterns:
+          - '^feat(\(.+\))?:'
+          - '^feature(\(.+\))?:'
+          - '^add(\(.+\))?:'
+          - '^new(\(.+\))?:'
+          - '^[Aa]dds?\s'
+          - '^[Ee]nhances?\s'
+          - '^[Ii]mproves?\s'
+    
+    - title: 🐛 Bug Fixes
       labels:
         - fix
         - bug
-        - patch
-    - title: 💎 Refactors & Improvements
+        - bugfix
+      commits:
+        patterns:
+          - '^fix(\(.+\))?:'
+          - '^bug(\(.+\))?:'
+          - '^bugfix(\(.+\))?:'
+          - '^[Ff]ixes?\s'
+          - '^[Rr]esolves?\s'
+          - '^[Cc]orrects?\s'
+    
+    - title: 🔧 Refactors & Code Quality
       labels:
         - refactor
         - perf
-        - improve
-        - clean
         - style
+        - clean
+      commits:
+        patterns:
+          - '^refactor(\(.+\))?:'
+          - '^perf(\(.+\))?:'
+          - '^style(\(.+\))?:'
+          - '^clean(\(.+\))?:'
+          - '^[Rr]efactors?\s'
+          - '^[Cc]leans?\s'
+          - '^[Oo]ptimizes?\s'
+    
     - title: 📦 Dependencies
       labels:
         - deps
         - dependencies
+      commits:
+        patterns:
+          - '^deps(\(.+\))?:'
+          - '^build(\(.+\))?:'
+          - '^[Uu]pdates?\s.*dependen'
+          - '^[Bb]umps?\s'
+    
+    - title: 📝 Documentation
+      labels:
+        - docs
+        - documentation
+      commits:
+        patterns:
+          - '^docs(\(.+\))?:'
+          - '^documentation(\(.+\))?:'
+          - '^[Uu]pdates?\s.*README'
+          - '^[Uu]pdates?\s.*docs?'
+    
+    - title: 🔨 CI/CD & Build
+      labels:
+        - ci
+        - build
+        - workflow
+      commits:
+        patterns:
+          - '^ci(\(.+\))?:'
+          - '^build(\(.+\))?:'
+          - '^workflow(\(.+\))?:'
+          - '^[Uu]pdates?\s.*workflow'
+          - '^[Ii]mproves?\s.*release'
+    
     - title: 🗒️ Other Changes
       labels:
         - "*"
