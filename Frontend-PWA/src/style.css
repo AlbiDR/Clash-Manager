@@ -12,7 +12,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("/Clash-Manager/fonts/Inter-Variable.woff2") format("woff2");
+  src: url("/fonts/Inter-Variable.woff2") format("woff2");
 }
 
 @font-face {
@@ -20,7 +20,7 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/Clash-Manager/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+  src: url("/fonts/JetBrainsMono-Bold.woff2") format("woff2");
 }
 
 /* =========================================
@@ -442,10 +442,8 @@ a {
 
 .squish-interaction {
   /* ⚡ PERF: Removed 'all' transition to avoid animating expensive properties like box-shadow */
-  transition:
-    transform 0.2s var(--sys-motion-spring),
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+  transition: transform 0.2s var(--sys-motion-spring),
+    background-color 0.2s ease, border-color 0.2s ease;
   will-change: transform;
 }
 .squish-interaction:active {
@@ -467,11 +465,8 @@ a {
   z-index: 10000;
   border: 1px solid var(--sys-surface-glass-border);
   box-shadow: var(--sys-elevation-3);
-  transition:
-    opacity 0.2s ease,
-    transform 0.25s var(--sys-motion-spring),
-    top 0.2s ease,
-    left 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.25s var(--sys-motion-spring),
+    top 0.2s ease, left 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 10px;
