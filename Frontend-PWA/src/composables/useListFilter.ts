@@ -1,11 +1,10 @@
-// @ts-nocheck
-import { ref, computed } from "vue";
+import { ref, computed, type Ref, type ComputedRef } from "vue";
 
-export function useListFilter(
-  items,
-  searchFields,
-  sortStrategies,
-  defaultSort = "score",
+export function useListFilter<T>(
+  items: Ref<readonly T[]> | ComputedRef<readonly T[]>,
+  searchFields: (item: T) => string[],
+  sortStrategies: Record<string, (a: T, b: T) => number>,
+  defaultSort: string = "score",
 ) {
   const searchQuery = ref("");
   const sortBy = ref(defaultSort);
@@ -31,9 +30,9 @@ export function useListFilter(
     return result;
   });
 
-  function updateSort(val) {
-    if (document.startViewTransition) {
-      document.startViewTransition(() => {
+  function updateSort(val: string) {
+    if ((document as any).startViewTransition) {
+      (document as any).startViewTransition(() => {
         sortBy.value = val;
       });
     } else {

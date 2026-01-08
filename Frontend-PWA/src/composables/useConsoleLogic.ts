@@ -7,11 +7,11 @@ import { useProgressiveList } from "./useProgressiveList";
 import { formatTimeAgo } from "../utils/formatters";
 
 interface ConsoleLogicOptions<T> {
-  data: Ref<T[]>;
-  isHydrated: Ref<boolean>;
-  isRefreshing: Ref<boolean>;
-  syncError: Ref<string | null>;
-  lastSyncTime: Ref<number | null>;
+  data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
+  isHydrated: Ref<boolean> | ComputedRef<boolean>;
+  isRefreshing: Ref<boolean> | ComputedRef<boolean>;
+  syncError: Ref<string | null> | ComputedRef<string | null>;
+  lastSyncTime: Ref<number | null> | ComputedRef<number | null>;
   filterFn: (item: T) => string[];
   sortStrategies: Record<string, (a: T, b: T) => number>;
   defaultSort: string;
@@ -78,7 +78,7 @@ export function useConsoleLogic<T extends { id: string }>(
   watch(
     data,
     (newVal) => {
-      if (newVal.length > 0) processDeepLink(newVal);
+      if (newVal && newVal.length > 0) processDeepLink(newVal as T[]);
     },
     { immediate: true },
   );
@@ -88,7 +88,7 @@ export function useConsoleLogic<T extends { id: string }>(
     if (syncError.value) return { type: "error", text: "Retry" } as const;
     if (isRefreshing.value)
       return { type: "loading", text: "Syncing..." } as const;
-    if (data.value.length > 0)
+    if (data.value && data.value.length > 0)
       return {
         type: "ready",
         text: formatTimeAgo(
@@ -101,12 +101,12 @@ export function useConsoleLogic<T extends { id: string }>(
   // 8. Stats Badge
   const statsBadge = computed(() => ({
     label: statsLabel,
-    value: data.value.length.toString(),
+    value: data.value ? data.value.length.toString() : "0",
   }));
 
   // 9. Skeleton State
   const showSkeletons = computed(
-    () => !isHydrated.value || (isRefreshing.value && data.value.length === 0),
+    () => !isHydrated.value || (isRefreshing.value && (!data.value || data.value.length === 0)),
   );
 
   // 10. Helper for Selection
@@ -146,7 +146,7 @@ export function useConsoleLogic<T extends { id: string }>(
     status,
     statsBadge,
     showSkeletons,
-    filteredItems, // exposed for specific checks
+    filteredItems,
 
     // Actions
     updateSort,
@@ -158,5 +158,6 @@ export function useConsoleLogic<T extends { id: string }>(
     handleSelectAll,
     handleSelectScore,
     setForceSelectionMode,
+    processDeepLink,
   };
 }
