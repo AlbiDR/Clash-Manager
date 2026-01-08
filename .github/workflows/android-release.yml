@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -246,14 +248,20 @@ jobs:
                     "title": "## 💎 Refactors & Improvements",
                     "labels": ["refactor", "perf", "improve", "clean", "style"]
                 },
-                {
+                  {
                     "title": "## 📦 Dependencies",
                     "labels": ["deps", "dependencies"]
-                }
-              ],
-              "ignore_labels": ["ignore", "skip-changelog"],
-              "sort": "run_number" 
-            }
+                  },
+                  {
+                    "title": "## 🗒️ Other Changes",
+                    "labels": []
+                  }
+                ],
+                "ignore_labels": ["ignore", "skip-changelog"],
+                "sort": "run_number",
+                "pr_template": "- #{{TITLE}} (#{{NUMBER}})",
+                "empty_summary": "## 🗒️ Other Changes\n- No specific categories matched; check commit history."
+              }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -264,7 +272,7 @@ jobs:
           name: Clash Manager ${{ steps.versioning.outputs.build_tag }}
           body: ${{ steps.build_changelog.outputs.changelog }}
           files: Frontend-PWA/${{ steps.versioning.outputs.apk_filename }}
-          generate_release_notes: false
+          generate_release_notes: true
           draft: false
           prerelease: false
         env:
