@@ -131,23 +131,10 @@ jobs:
           TAURI_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           TAURI_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Verify & Sign APK
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          KEY_ALIAS: clash_manager_release
+      - name: Verify & Prepare APK
         run: |
           echo "🔍 Searching for APK..."
           
-          # Setup Build Tools
-          BUILD_TOOLS_PATH="$ANDROID_SDK_ROOT/build-tools"
-          # Get latest version directory
-          LATEST_BUILD_TOOLS=$(ls -1 "$BUILD_TOOLS_PATH" | sort -V | tail -n 1)
-          ZIPALIGN="$BUILD_TOOLS_PATH/$LATEST_BUILD_TOOLS/zipalign"
-          APKSIGNER="$BUILD_TOOLS_PATH/$LATEST_BUILD_TOOLS/apksigner"
-          
-          echo "🛠️  Using build-tools: $LATEST_BUILD_TOOLS"
-
           # 1. Search for UNIVERSAL APK first
           APK_PATH=$(find src-tauri/gen/android -name "*universal*release*.apk" | head -n 1)
 
@@ -169,31 +156,7 @@ jobs:
             exit 1
           fi
 
-          echo "📍 Selected APK: $APK_PATH"
-
-          echo "✍️  Re-signing/Aligning manually..."
-            
-          # Align
-          echo "   Running zipalign..."
-          "$ZIPALIGN" -v -f -p 4 "$APK_PATH" aligned.apk
-          
-          # Sign
-          echo "   Running apksigner..."
-          "$APKSIGNER" sign --ks signing.keystore \
-            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
-            --key-pass env:ANDROID_KEY_PASSWORD \
-            --ks-key-alias "$KEY_ALIAS" \
-            --out final-signed.apk \
-            aligned.apk
-          
-          echo "✅ Manual signing complete."
-          APK_PATH="final-signed.apk"
-
-          # Verify Signature
-          echo "🔍 Verifying signature..."
-          "$APKSIGNER" verify "$APK_PATH" || echo "⚠️ Warning: Signature verification failed. Device installation might fail."
-
-          echo "✅ Final APK ready: $APK_PATH"
+          echo "✅ Final APK built successfully: $APK_PATH"
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
           echo "✓ Prepared Artifact: $DESCRIPTIVE_NAME"

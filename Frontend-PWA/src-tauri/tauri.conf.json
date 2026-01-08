@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Clash Manager",
+  "productName": "ClashManager",
   "version": "8.11.0",
   "identifier": "com.albidr.clashmanager",
   "build": {
@@ -17,8 +17,6 @@
         "height": 600,
         "resizable": true,
         "fullscreen": false,
-        "transparent": true,
-        "decorations": false,
         "theme": "Dark"
       }
     ],
@@ -44,6 +42,16 @@
       ],
       "host": "albidr.github.io"
     },
-    "notification": {}
+    "notification": {},
+    "fs": {},
+    "os": {},
+    "shell": {
+      "allow": [
+        { "name": "open", "cmd": "open" },
+        { "name": "shell", "cmd": "sh" }
+      ]
+    },
+    "http": {},
+    "dialog": {}
   }
 }

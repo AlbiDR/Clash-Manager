@@ -24,7 +24,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     cssCodeSplit: true,
-    target: 'es2015',
+    target: isTauriBuild ? 'chrome100' : 'es2015',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -37,7 +37,7 @@ export default defineConfig({
   plugins: [
     vue() as any,
     tailwindcss() as any,
-    VitePWA({
+    !isTauriBuild && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.png',
@@ -47,17 +47,16 @@ export default defineConfig({
         'monochrome-icon-512x512.png'
       ],
       manifest: {
-        id: '/Clash-Manager/',
-        name: 'Clash Manager: Clan Manager for Clash Royale',
+        id: isTauriBuild ? '/' : '/Clash-Manager/',
+        name: 'Clash Manager',
         short_name: 'Clash Manager',
-        description: 'Advanced analytics, recruitment and clan management tool for Clash Royale',
+        description: 'Advanced analytics and clan management tool',
         theme_color: '#0b0e14',
         background_color: '#0b0e14',
         display: 'standalone',
-        display_override: ['window-controls-overlay', 'standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'portrait-primary',
-        scope: '/Clash-Manager/',
-        start_url: '/Clash-Manager/index.html#/leaderboard',
+        scope: isTauriBuild ? '/' : '/Clash-Manager/',
+        start_url: isTauriBuild ? '/index.html#/leaderboard' : '/Clash-Manager/index.html#/leaderboard',
         categories: ['productivity', 'utilities', 'games'],
         icons: [
           {
@@ -280,5 +279,5 @@ export default defineConfig({
         type: 'classic'
       }
     }) as any
-  ]
+  ].filter(Boolean)
 })
