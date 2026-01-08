@@ -12,8 +12,6 @@ import { useApiState } from "./composables/useApiState";
 import { useClanData } from "./composables/useClanData";
 import { useTheme } from "./composables/useTheme";
 import { useWakeLock } from "./composables/useWakeLock";
-import { useWakeLock } from "./composables/useWakeLock";
-
 
 function showFatalError(error: any) {
   console.error("FATAL ERROR:", error);
@@ -30,7 +28,7 @@ function showFatalError(error: any) {
 
 window.addEventListener("error", (event) => showFatalError(event.error));
 window.addEventListener("unhandledrejection", (event) =>
-  showFatalError(event.reason),
+  showFatalError(event.reason)
 );
 
 async function bootstrap() {
@@ -88,13 +86,11 @@ async function bootstrap() {
         const wakeLock = useWakeLock();
         wakeLock.init();
 
-        const wakeLock = useWakeLock();
-        wakeLock.init();
-
         // ⚡ Lazy Load AutoAnimate
         try {
-          const { autoAnimatePlugin } =
-            await import("@formkit/auto-animate/vue");
+          const { autoAnimatePlugin } = await import(
+            "@formkit/auto-animate/vue"
+          );
           app.use(autoAnimatePlugin);
         } catch (e) {
           console.warn("Failed to load animations", e);
