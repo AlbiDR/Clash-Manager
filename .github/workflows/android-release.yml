@@ -79,13 +79,17 @@ jobs:
       - name: Initialize Android Support
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
-          # Only init if not present; this prevents overwriting customizations
-          if [ ! -d "src-tauri/gen/android" ]; then
-            echo "🏗️  Initializing Android Support..."
-            npx tauri android init --ci
-          else
-            echo "✅ Android Project exists."
-          fi
+          
+          echo "🧹 Cleaning Android build artifacts for fresh initialization..."
+          rm -rf src-tauri/gen/android
+          
+          echo "🏗️  Initializing Android Support (Clean)..."
+          npx tauri android init --ci
+
+      - name: Audit Assets
+        run: |
+          echo "🔍 Auditing critical assets..."
+          ls -R Frontend-PWA/dist | grep -E "index.html|main.js|style.css|fonts" || echo "⚠️ Some assets missing in dist!"
 
       - name: Build Android App
         run: |

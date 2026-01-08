@@ -62,25 +62,24 @@ const router = createRouter({
   ],
 });
 
-// ⚡ FIX: View Transitions Support
-// This wraps every route change in a native "Resolve" animation
+// ⚡ FIX: View Transitions Support with Safety Timeout
 router.beforeResolve(async (to, from) => {
   if (!(document as any).startViewTransition) return;
-
-  // 🛡️ CRASH PREVENTION: Skip if document is hidden (e.g. background tab)
-  // startViewTransition throws DOMException if visibilityState is hidden
   if (document.visibilityState !== "visible") return;
 
   try {
-    return new Promise((resolve) => {
-      (document as any).startViewTransition(async () => {
-        resolve(true);
-      });
-    });
+    return await Promise.race([
+      new Promise((resolve) => {
+        (document as any).startViewTransition(async () => {
+          resolve(true);
+        });
+      }),
+      // Safety timeout: 500ms
+      new Promise((resolve) => setTimeout(() => resolve(true), 500)),
+    ]);
   } catch (e) {
-    // Fallback if transition fails to start synchronously
-    console.warn("View transition skipped:", e);
-    return;
+    console.warn("View transition failed:", e);
+    return true;
   }
 });
 
