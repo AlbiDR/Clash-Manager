@@ -8,7 +8,14 @@
   "permissions": [
     "core:default",
     "notification:default",
-    "shell:default",
+    {
+      "identifier": "shell:allow-open",
+      "allow": [
+        {
+          "schemes": ["http", "https"]
+        }
+      ]
+    },
     "http:default",
     "fs:default",
     "dialog:default",
