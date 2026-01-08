@@ -1,0 +1,31 @@
+changelog:
+  exclude:
+    labels:
+      - ignore
+      - skip-changelog
+  categories:
+    - title: 🚀 Features
+      labels:
+        - feat
+        - new
+        - add
+        - feature
+    - title: 🐛 Fixes
+      labels:
+        - fix
+        - bug
+        - patch
+    - title: 💎 Refactors & Improvements
+      labels:
+        - refactor
+        - perf
+        - improve
+        - clean
+        - style
+    - title: 📦 Dependencies
+      labels:
+        - deps
+        - dependencies
+    - title: 🗒️ Other Changes
+      labels:
+        - "*"
