@@ -48,8 +48,12 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+
       - name: Auto-Version
         id: versioning
+        # ... (lines 53-71 content remains same)
         run: |
           V_NAME="8.12.${{ github.run_number }}"
           V_CODE=$((1000 + ${{ github.run_number }}))
@@ -71,9 +75,12 @@ jobs:
           cat src-tauri/tauri.conf.json
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Initialize & Patch Android
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
 
