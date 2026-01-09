@@ -147,7 +147,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     return iframe;
   }
 
-  function fireDeepLink(url: string) {
+  function fireDeepLink(url: string, isBlitz: boolean = false) {
     const userAgent = navigator.userAgent;
     const isAndroid = /android/i.test(userAgent);
     const isTauri = typeof window.__TAURI__ !== 'undefined';

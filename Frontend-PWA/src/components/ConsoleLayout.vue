@@ -240,4 +240,48 @@ onUnmounted(() => {
   will-change: transform;
   contain: layout paint;
 }
+.ptr-indicator {
+  position: absolute;
+  top: calc(-1 * var(--ptr-offset, 0px));
+  left: 0;
+  right: 0;
+  height: var(--ptr-offset, 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: var(--ptr-opacity, 0);
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.1s;
+}
+
+.ptr-spinner {
+  width: 36px;
+  height: 36px;
+  background: var(--sys-surface-glass);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  border: 1px solid var(--sys-surface-glass-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sys-elevation-2);
+}
+
+.ptr-icon {
+  color: var(--sys-color-primary);
+  transition: transform 0.2s;
+}
+
+.is-pulling .ptr-icon {
+  transform: rotate(var(--ptr-rotate, 0deg));
+}
+
+.is-refreshing .ptr-spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>

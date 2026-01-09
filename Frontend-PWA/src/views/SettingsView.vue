@@ -23,7 +23,7 @@ const haptics = useHaptics();
 const wakeLock = useWakeLock();
 const { isDemoMode, toggleDemoMode } = useDemoMode();
 const { isHydrated, isRefreshing } = useClanData();
-const appVersion = __APP_VERSION__;
+const appVersion = (typeof __APP_VERSION__ !== 'undefined') ? __APP_VERSION__ : '0.0.0';
 
 const { status: unifiedStatus } = useConnectionStatus();
 
