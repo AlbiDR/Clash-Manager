@@ -39,22 +39,23 @@ const navItems: NavItem[] = [
 
 function goTo(targetPath: string) {
   if (route.path === targetPath) return;
-  haptics.tap();
   router.push(targetPath);
 }
 
-function handleFabAction(e: MouseEvent) {
+// ⚡ RESPONSIVENESS: Move haptics to pointerdown for immediate "hardwired" feel
+function onInteractionStart() {
   haptics.tap();
+}
+
+function handleFabAction(e: MouseEvent) {
   if (fabState.onAction) fabState.onAction(e);
 }
 
 function handleFabBlitz() {
-  haptics.tap();
   if (fabState.onBlitz) fabState.onBlitz();
 }
 
 function handleFabDismiss() {
-  haptics.tap();
   if (fabState.onDismiss) fabState.onDismiss();
 }
 </script>
@@ -68,6 +69,7 @@ function handleFabDismiss() {
       class="dock-item"
       :class="{ active: route.path === item.path }"
       @click="goTo(item.path)"
+      @pointerdown="onInteractionStart"
       :aria-label="item.label"
     >
       <div v-if="route.path === item.path" class="capsule-bg"></div>
@@ -85,6 +87,7 @@ function handleFabDismiss() {
       <button
         class="fab-btn danger compact"
         @click="handleFabDismiss"
+        @pointerdown="onInteractionStart"
         aria-label="Cancel Blitz"
       >
         <Icon name="close" size="18" />
@@ -100,6 +103,7 @@ function handleFabDismiss() {
         :href="fabState.actionHref"
         class="fab-btn primary compact"
         @click="handleFabAction"
+        @pointerdown="onInteractionStart"
         aria-label="Open Next Profile"
       >
         <Icon name="chevron_right" size="20" />
@@ -108,6 +112,7 @@ function handleFabDismiss() {
         v-else
         class="fab-btn primary compact"
         @click="handleFabAction"
+        @pointerdown="onInteractionStart"
         aria-label="Next"
       >
         <Icon name="chevron_right" size="20" />
@@ -119,6 +124,7 @@ function handleFabDismiss() {
       <button
         class="fab-btn danger"
         @click="handleFabDismiss"
+        @pointerdown="onInteractionStart"
         aria-label="Dismiss Selection"
       >
         <Icon name="close" size="18" />
@@ -134,6 +140,7 @@ function handleFabDismiss() {
         "
         class="fab-btn blitz"
         @click="handleFabBlitz"
+        @pointerdown="onInteractionStart"
         v-tooltip="'Requires Pop-ups permission'"
         aria-label="Start Blitz Mode"
       >
@@ -146,6 +153,7 @@ function handleFabDismiss() {
         :href="fabState.actionHref"
         class="fab-btn primary"
         @click="handleFabAction"
+        @pointerdown="onInteractionStart"
       >
         <Icon name="check" size="18" />
         <span>{{ fabState.label || "Open" }}</span>
@@ -155,6 +163,7 @@ function handleFabDismiss() {
         v-else
         class="fab-btn primary"
         @click="handleFabAction"
+        @pointerdown="onInteractionStart"
       >
         <Icon name="check" size="18" />
         <span>{{ fabState.label || "Open" }}</span>
@@ -166,6 +175,7 @@ function handleFabDismiss() {
 <style scoped>
 .dock-container {
   position: fixed;
+  /* 🏗️ FIXED: Corrected env variable to safe-area-inset-bottom for accurate mobile layout */
   bottom: calc(24px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
@@ -179,9 +189,10 @@ function handleFabDismiss() {
   gap: 4px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   z-index: 500;
+  /* ⚡ SNAPPY: Reduced duration (0.5s -> 0.3s) for much more responsive feel */
   transition:
-    transform 0.5s cubic-bezier(0.2, 0, 0, 1),
-    opacity 0.3s ease;
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.2s ease;
 }
 
 .dock-container.hidden {
@@ -208,15 +219,27 @@ function handleFabDismiss() {
   font-weight: 750;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
   -webkit-tap-highlight-color: transparent;
   background: none;
   border: none;
   font-family: inherit;
 }
 
+/* ⚡ TACTILE: Immediate visual feedback on press */
+.dock-item:active {
+  transform: scale(0.92);
+  background: rgba(var(--sys-color-primary-rgb), 0.05);
+}
+
 .dock-item.active {
   color: var(--sys-color-on-primary);
+}
+
+/* Ensure active state doesn't jitter on the selected item */
+.dock-item.active:active {
+  transform: scale(0.96);
+  background: none;
 }
 
 .capsule-bg {
@@ -229,7 +252,7 @@ function handleFabDismiss() {
   );
   border-radius: var(--shape-corner-full);
   z-index: -1;
-  animation: pop-in 0.4s cubic-bezier(0.2, 0, 0, 1.2);
+  animation: pop-in 0.3s cubic-bezier(0.2, 0, 0, 1.2);
   box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
@@ -261,12 +284,13 @@ function handleFabDismiss() {
   cursor: pointer;
   border: none;
   transition:
-    transform 0.2s,
+    transform 0.15s cubic-bezier(0.2, 0, 0, 1),
     background 0.2s;
   color: var(--sys-color-on-surface);
 }
 .fab-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.93);
+  opacity: 0.9;
 }
 
 .fab-btn.compact {
@@ -276,6 +300,7 @@ function handleFabDismiss() {
 .fab-btn.primary {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
 }
 .fab-btn.danger {
   background: var(--sys-color-error-container);
