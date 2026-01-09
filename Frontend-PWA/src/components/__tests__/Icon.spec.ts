@@ -14,7 +14,7 @@ describe("Icon.vue", () => {
       },
     });
     expect(wrapper.exists()).toBe(true);
-    const props = wrapper.props() as any;
+    const props = wrapper.props() as { name: string; size?: number | string; filled?: boolean };
     expect(props.name).toBe("gear");
     expect(props.size).toBe("24");
   });
