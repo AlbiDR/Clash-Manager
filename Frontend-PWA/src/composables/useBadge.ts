@@ -13,6 +13,14 @@ export function useBadge() {
   const isSupported =
     hasStandardBadge || hasExperimentalBadge || hasServiceWorker;
 
+  // Extended Navigator Interface for Badge API
+  interface NavigatorWithBadge extends Navigator {
+    setAppBadge(count: number): Promise<void>;
+    clearAppBadge(): Promise<void>;
+    setExperimentalAppBadge(count: number): Promise<void>;
+    clearExperimentalAppBadge(): Promise<void>;
+  }
+
   async function setBadge(count: number) {
     if (!isSupported) {
       console.warn("[Badge] No badge API available");
@@ -23,22 +31,22 @@ export function useBadge() {
       // Layer 1: Standard Badge API (Native)
       if (hasStandardBadge) {
         if (count > 0) {
-          await (navigator as any).setAppBadge(count);
+          await (navigator as NavigatorWithBadge).setAppBadge(count);
         } else {
-          await (navigator as any).clearAppBadge();
+          await (navigator as NavigatorWithBadge).clearAppBadge();
         }
-        console.log(`[Badge] Set via standard API: ${count}`);
+        // console.log(`[Badge] Set via standard API: ${count}`);
         // We continue to SW layer because on some mobile browsers setAppBadge exists but does nothing for the home screen icon
       }
 
       // Layer 2: Experimental Badge API
       if (hasExperimentalBadge && !hasStandardBadge) {
         if (count > 0) {
-          await (navigator as any).setExperimentalAppBadge(count);
+          await (navigator as NavigatorWithBadge).setExperimentalAppBadge(count);
         } else {
-          await (navigator as any).clearExperimentalAppBadge();
+          await (navigator as NavigatorWithBadge).clearExperimentalAppBadge();
         }
-        console.log(`[Badge] Set via experimental API: ${count}`);
+        // console.log(`[Badge] Set via experimental API: ${count}`);
       }
 
       // Layer 3: Service Worker Badge (CRITICAL FOR ANDROID FALLBACK)
@@ -49,12 +57,12 @@ export function useBadge() {
               type: "SET_BADGE",
               count: count > 0 ? count : 0,
             });
-            console.log(`[Badge] Message sent to Service Worker: ${count}`);
+            // console.log(`[Badge] Message sent to Service Worker: ${count}`);
           }
         };
 
         if (navigator.serviceWorker.controller) {
-          sendToSW({ active: navigator.serviceWorker.controller } as any);
+          sendToSW(navigator.serviceWorker.controller);
         } else {
           navigator.serviceWorker.ready.then(sendToSW);
         }
