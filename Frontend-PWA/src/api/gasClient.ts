@@ -200,17 +200,17 @@ export async function loadCache(): Promise<WebAppData | null> {
 
 export async function fetchRemote(): Promise<WebAppData> {
   // ⚡ PERFORMANCE: Start Zod library download in parallel with Network Request.
-  // This eliminates the waterfall effect where Zod is requested only after the JSON payload arrives.
-  // The previous critical chain audit showed v-zod blocked for ~4.2s.
   const zodPreload = import("zod");
 
-  const envelope = await gasRequest<ApiResponse<Record<string, unknown>>>("getwebappdata");
-  if (!envelope.data) throw new Error("Invalid response structure");
+  // gasRequest already unwraps the { data: ... } envelope if it exists
+  const data = await gasRequest<any>("getwebappdata");
+  
+  if (!data) throw new Error("Invalid response structure: No data returned");
 
   // Ensure Zod is fully loaded before attempting inflation
   await zodPreload;
 
-  const inflated = await inflatePayload(envelope.data);
+  const inflated = await inflatePayload(data);
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
   return inflated;
 }
