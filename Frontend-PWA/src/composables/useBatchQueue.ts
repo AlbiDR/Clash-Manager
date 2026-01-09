@@ -37,8 +37,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     if (!/android/i.test(navigator.userAgent)) return true;
     
     // On Android, we require TWA signals
+    const win = window as unknown as { AndroidExternalInterface?: unknown };
     return (
-      typeof (window as any).AndroidExternalInterface !== "undefined" ||
+      typeof win.AndroidExternalInterface !== "undefined" ||
       document.referrer.includes("android-app://")
     );
   });
@@ -168,10 +169,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }, 1500);
   }
 
-  let blitzTimer: any = null;
+  let blitzTimer: ReturnType<typeof setTimeout> | null = null;
 
   function stopBlitz() {
-    console.log("⚡ Stopping Blitz Mode");
+    // console.log("⚡ Stopping Blitz Mode");
     isBlasting.value = false;
     if (blitzTimer) {
       clearTimeout(blitzTimer);
@@ -237,7 +238,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       return;
     }
 
-    console.log("⚡ Initiating Blitz Mode");
+    // console.log("⚡ Initiating Blitz Mode");
     isBlasting.value = true;
     currentIndex.value = 0;
 
@@ -252,7 +253,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       // Manual click in Blitz mode acts as an emergency "Manual fire + Skip"
       e.preventDefault();
       
-      console.log("⚡ Manual Assist Click");
+      // console.log("⚡ Manual Assist Click");
       const id = selectedIds.value[currentIndex.value];
       if (id) {
         // Direct anchor click (most reliable for manual gesture)
