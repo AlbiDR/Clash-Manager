@@ -20,8 +20,15 @@ changelog:
           - '^add(\(.+\))?:'
           - '^new(\(.+\))?:'
           - '^[Aa]dds?\s'
+          - '^[Aa]dded\s'
+          - '^[Cc]reates?\s'
+          - '^[Cc]reated\s'
           - '^[Ee]nhances?\s'
+          - '^[Ee]nhanced\s'
           - '^[Ii]mproves?\s'
+          - '^[Ii]mproved\s'
+          - '^[Ii]mplements?\s'
+          - '^[Ii]mplemented\s'
     
     - title: 🐛 Bug Fixes
       labels:
@@ -34,8 +41,13 @@ changelog:
           - '^bug(\(.+\))?:'
           - '^bugfix(\(.+\))?:'
           - '^[Ff]ixes?\s'
+          - '^[Ff]ixed\s'
           - '^[Rr]esolves?\s'
+          - '^[Rr]esolved\s'
           - '^[Cc]orrects?\s'
+          - '^[Cc]orrected\s'
+          - '^[Pp]atches?\s'
+          - '^[Pp]atched\s'
     
     - title: 🔧 Refactors & Code Quality
       labels:
@@ -50,8 +62,11 @@ changelog:
           - '^style(\(.+\))?:'
           - '^clean(\(.+\))?:'
           - '^[Rr]efactors?\s'
+          - '^[Rr]efactored\s'
           - '^[Cc]leans?\s'
+          - '^[Cc]leaned\s'
           - '^[Oo]ptimizes?\s'
+          - '^[Oo]ptimized\s'
     
     - title: 📦 Dependencies
       labels:
@@ -62,7 +77,9 @@ changelog:
           - '^deps(\(.+\))?:'
           - '^build(\(.+\))?:'
           - '^[Uu]pdates?\s.*dependen'
+          - '^[Uu]pdated\s.*dependen'
           - '^[Bb]umps?\s'
+          - '^[Bb]umped\s'
     
     - title: 📝 Documentation
       labels:
@@ -74,6 +91,7 @@ changelog:
           - '^documentation(\(.+\))?:'
           - '^[Uu]pdates?\s.*README'
           - '^[Uu]pdates?\s.*docs?'
+          - '^[Uu]pdated\s.*docs?'
     
     - title: 🔨 CI/CD & Build
       labels:
@@ -86,6 +104,7 @@ changelog:
           - '^build(\(.+\))?:'
           - '^workflow(\(.+\))?:'
           - '^[Uu]pdates?\s.*workflow'
+          - '^[Uu]pdated\s.*workflow'
           - '^[Ii]mproves?\s.*release'
     
     - title: 🗒️ Other Changes
