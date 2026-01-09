@@ -1,11 +1,12 @@
-<script setup lang="ts">
-import { watch, onUnmounted } from "vue";
+import { ref, watch, onUnmounted, computed } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import SkeletonCard from "./SkeletonCard.vue";
+import Icon from "./Icon.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
+import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   title: string;
@@ -45,6 +46,63 @@ const emit = defineEmits<{
 }>();
 
 const { setFabVisible, updateFabState } = useUiCoordinator();
+const haptics = useHaptics();
+
+// --- Pull to Refresh Logic ---
+const touchStartY = ref(0);
+const pullOffset = ref(0);
+const threshold = 120;
+const isPulling = ref(false);
+
+const ptrStyle = computed(() => ({
+  "--ptr-offset": `${Math.min(pullOffset.value, threshold)}px`,
+  "--ptr-opacity": Math.min(pullOffset.value / 60, 1),
+}));
+
+let hapticFeedbackTriggered = false;
+
+function onTouchStart(e: TouchEvent) {
+  if (window.scrollY > 0 || props.isRefreshing) return;
+  touchStartY.value = e.touches[0].clientY;
+  isPulling.value = true;
+  hapticFeedbackTriggered = false;
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!isPulling.value) return;
+  const currentY = e.touches[0].clientY;
+  const rawDiff = currentY - touchStartY.value;
+  
+  // Only allow pulling down
+  if (rawDiff <= 0) {
+    pullOffset.value = 0;
+    return;
+  }
+
+  // Apply resistance (clamped logarithmic-like curve)
+  pullOffset.value = Math.pow(rawDiff, 0.85) * 2;
+
+  // Haptic feedback when crossing threshold
+  if (pullOffset.value >= threshold && !hapticFeedbackTriggered) {
+    haptics.heavy();
+    hapticFeedbackTriggered = true;
+  } else if (pullOffset.value < threshold && hapticFeedbackTriggered) {
+    hapticFeedbackTriggered = false;
+  }
+}
+
+function onTouchEnd() {
+  if (!isPulling.value) return;
+  
+  if (pullOffset.value >= threshold) {
+    emit("refresh");
+    haptics.success();
+  }
+  
+  isPulling.value = false;
+  pullOffset.value = 0;
+}
+// -----------------------------
 
 // Sync fabState visibility with global coordinator
 watch(
@@ -85,60 +143,78 @@ onUnmounted(() => {
   <div class="view-container">
 
 
-    <ConsoleHeader
-      :title="title"
-      :status="status"
-      :show-search="showSearch"
-      :sheet-url="sheetUrl"
-      :stats="stats"
-      :sort-options="sortOptions"
-      :current-sort="currentSort"
-      :loading="loading"
-      @update:search="(val: string) => $emit('update:search', val)"
-      @update:sort="(val: string) => $emit('update:sort', val)"
-      @refresh="$emit('refresh')"
+    <div 
+      class="view-content"
+      :style="ptrStyle"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
     >
-      <template #extra>
-        <SelectionBar
-          v-if="isSelectionMode"
-          :count="selectedCount || 0"
-          :loading="isRefreshing"
-          @select-all="$emit('select-all')"
-          @clear="$emit('clear-selection')"
-          @done="$emit('clear-selection')"
-          @select-score="(t: number, m: string) => $emit('select-score', t, m)"
-        />
-        <slot name="extra-header" v-else></slot>
-      </template>
-    </ConsoleHeader>
+      <!-- Pull to Refresh Indicator -->
+      <div 
+        class="ptr-indicator"
+        :class="{ 'is-refreshing': isRefreshing, 'is-pulling': isPulling }"
+      >
+        <div class="ptr-spinner">
+          <Icon v-if="!isRefreshing" name="refresh" size="18" class="ptr-icon" />
+        </div>
+      </div>
 
-    <!-- Error State -->
-    <ErrorState
-      v-if="syncError && isEmpty"
-      :message="syncError"
-      @retry="$emit('refresh')"
-    />
+      <ConsoleHeader
+        :title="title"
+        :status="status"
+        :show-search="showSearch"
+        :sheet-url="sheetUrl"
+        :stats="stats"
+        :sort-options="sortOptions"
+        :current-sort="currentSort"
+        :loading="loading"
+        @update:search="(val: string) => $emit('update:search', val)"
+        @update:sort="(val: string) => $emit('update:sort', val)"
+        @refresh="$emit('refresh')"
+      >
+        <template #extra>
+          <SelectionBar
+            v-if="isSelectionMode"
+            :count="selectedCount || 0"
+            :loading="isRefreshing"
+            @select-all="$emit('select-all')"
+            @clear="$emit('clear-selection')"
+            @done="$emit('clear-selection')"
+            @select-score="(t: number, m: string) => $emit('select-score', t, m)"
+          />
+          <slot name="extra-header" v-else></slot>
+        </template>
+      </ConsoleHeader>
 
-    <!-- Loading State (Skeletons) -->
-    <div v-else-if="loading" class="list-container gpu-contain">
-      <SkeletonCard
-        v-for="i in 8"
-        :key="i"
-        :index="i"
-        :style="{ '--i': i }"
+      <!-- Error State -->
+      <ErrorState
+        v-if="syncError && isEmpty"
+        :message="syncError"
+        @retry="$emit('refresh')"
       />
-    </div>
 
-    <!-- Empty State -->
-    <EmptyState v-else-if="isEmpty" icon="telescope" message="No items found">
-      <template #action>
-        <slot name="empty-action"></slot>
-      </template>
-    </EmptyState>
+      <!-- Loading State (Skeletons) -->
+      <div v-else-if="loading" class="list-container gpu-contain">
+        <SkeletonCard
+          v-for="i in 8"
+          :key="i"
+          :index="i"
+          :style="{ '--i': i }"
+        />
+      </div>
 
-    <!-- Content State -->
-    <div v-else v-auto-animate class="list-container gpu-contain">
-      <slot></slot>
+      <!-- Empty State -->
+      <EmptyState v-else-if="isEmpty" icon="telescope" message="No items found">
+        <template #action>
+          <slot name="empty-action"></slot>
+        </template>
+      </EmptyState>
+
+      <!-- Content State -->
+      <div v-else v-auto-animate class="list-container gpu-contain">
+        <slot></slot>
+      </div>
     </div>
 
     <!-- FAB is now rendered by FloatingDock -->
@@ -149,6 +225,10 @@ onUnmounted(() => {
 .view-container {
   min-height: 100%;
   padding-bottom: 24px;
+}
+.view-content {
+  transition: transform 0.2s var(--sys-motion-spring);
+  transform: translateY(calc(var(--ptr-offset, 0px) / 2));
 }
 .list-container {
   padding-bottom: 32px;
