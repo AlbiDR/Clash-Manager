@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 
-defineProps<{
+const props = defineProps<{
   icon?: string;
   message: string;
   hint?: string;
