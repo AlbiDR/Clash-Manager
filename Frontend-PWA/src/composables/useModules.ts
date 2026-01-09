@@ -113,7 +113,10 @@ export function useModules() {
   );
 
   function toggle(key: keyof ModuleState) {
-    modules.value[key] = !modules.value[key];
+    const val = modules.value[key];
+    if (typeof val === "boolean") {
+      (modules.value as any)[key] = !val;
+    }
   }
 
   return {
