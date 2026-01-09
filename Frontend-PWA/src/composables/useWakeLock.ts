@@ -23,7 +23,7 @@ async function request() {
         wakeLockSentinel = null;
       }
     });
-    console.log("Wake Lock acquired");
+// console.log("Wake Lock acquired");
   } catch (err) {
     console.warn(`WakeLock request failed: ${(err as Error).message}`);
     isActive.value = false;
@@ -37,7 +37,7 @@ async function release() {
     wakeLockSentinel = null;
   }
   isActive.value = false;
-  console.log("Wake Lock released manually");
+// console.log("Wake Lock released manually");
 }
 
 async function toggle() {
