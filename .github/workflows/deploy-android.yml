@@ -9,7 +9,7 @@ on:
       - "Beta"
     paths:
       - "Frontend-PWA/src-tauri/**"
-      - ".github/workflows/deploy-apk.yml"
+      - ".github/workflows/deploy-android.yml"
     paths-ignore:
       - "Frontend-PWA/src/**"
       - "Frontend-PWA/public/**"
