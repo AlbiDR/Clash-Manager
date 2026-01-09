@@ -1,3 +1,4 @@
+<script setup lang="ts">
 import { ref, watch, onUnmounted, computed } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
