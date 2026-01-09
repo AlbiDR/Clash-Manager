@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 
-const props = defineProps<{
+defineProps<{
   title: string;
   icon: string;
   loading?: boolean;
