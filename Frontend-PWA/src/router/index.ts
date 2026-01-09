@@ -64,13 +64,13 @@ const router = createRouter({
 
 // ⚡ FIX: View Transitions Support with Safety Timeout
 router.beforeResolve(async (_to, _from) => {
-  if (!(document as any).startViewTransition) return;
+  if (!document.startViewTransition) return;
   if (document.visibilityState !== "visible") return;
 
   try {
     return await Promise.race<boolean | void>([
       new Promise((resolve) => {
-        (document as any).startViewTransition(async () => {
+        document.startViewTransition(async () => {
           resolve(true);
         });
       }),
