@@ -5,6 +5,7 @@ import { useHaptics } from "../composables/useHaptics";
 import Icon from "./Icon.vue";
 
 const route = useRoute();
+const currentRoute = computed(() => route);
 const router = useRouter();
 const { dockVisible } = useUiCoordinator();
 const haptics = useHaptics();
@@ -38,11 +39,11 @@ function navigate(path: string) {
       v-for="item in navItems"
       :key="item.name"
       class="dock-item"
-      :class="{ active: route.path === item.path }"
+      :class="{ active: currentRoute.path === item.path }"
       @click="navigate(item.path)"
       :aria-label="item.label"
     >
-      <div v-if="route.path === item.path" class="capsule-bg"></div>
+      <div v-if="currentRoute.path === item.path" class="capsule-bg"></div>
       <Icon :name="item.icon" size="22" class="dock-icon" />
       <span v-if="item.label && item.label !== 'Settings'" class="dock-label">{{
         item.label

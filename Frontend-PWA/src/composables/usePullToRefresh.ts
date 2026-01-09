@@ -16,6 +16,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
 
   const handleStart = (e: TouchEvent) => {
     if (window.scrollY > 0 || isRefreshing.value) return;
+    if (!e.touches[0]) return;
     startY = e.touches[0].clientY;
   };
 
@@ -25,6 +26,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
         return;
     }
 
+    if (!e.touches[0]) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY;
 

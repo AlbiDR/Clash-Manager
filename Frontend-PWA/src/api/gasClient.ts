@@ -5,11 +5,8 @@
 import type {
   ApiResponse,
   WebAppData,
-  ClanMember,
   PingResponse,
   DismissResponse,
-  LeaderboardMember,
-  Recruit,
 } from "../types";
 import { idb } from "../utils/idb";
 
@@ -141,7 +138,7 @@ async function fetchWithRetry(
 }
 
 
-type GenericEnvelope<T> = ApiResponse<T> & { success?: boolean; status?: string };
+type GenericEnvelope<T> = ApiResponse<T> & { success?: boolean; status?: string; message?: string };
 
 async function gasRequest<T>(
   action: string,

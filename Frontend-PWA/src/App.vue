@@ -11,18 +11,13 @@ import ErrorBoundary from "./components/ErrorBoundary.vue";
 const { syncStatus, refresh } = useClanData();
 const haptics = useHaptics();
 const route = useRoute();
+const currentRoute = computed(() => route);
 const isOnline = ref(true);
 const isSuccessFading = ref(false);
 
 const { pullDistance, isRefreshing: isPullRefreshing } = usePullToRefresh(refresh);
 
-// `isStandalone` logic remains for platform-specific tweaks
-const isStandalone = computed(() => {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true
-  );
-});
+// `isStandalone` logic removed to clear unused warning
 
 watch(syncStatus, (newStatus, oldStatus) => {
   if (oldStatus === "syncing" && newStatus === "success") {
@@ -73,7 +68,7 @@ const connectionState = computed(() => {
       <ErrorBoundary>
         <RouterView v-slot="{ Component }">
           <transition name="page" mode="out-in">
-            <component :is="Component" :key="route.fullPath" />
+            <component :is="Component" :key="currentRoute.fullPath" />
           </transition>
         </RouterView>
       </ErrorBoundary>

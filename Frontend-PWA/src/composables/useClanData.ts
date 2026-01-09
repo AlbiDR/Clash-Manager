@@ -1,4 +1,4 @@
-import { ref, shallowRef, readonly } from "vue";
+import { ref, shallowRef, readonly, watch } from "vue";
 import { loadCache, fetchRemote, dismissRecruits } from "../api/gasClient";
 import type { WebAppData } from "../types";
 import { useBadge } from "./useBadge";
@@ -174,7 +174,7 @@ export function useClanData() {
     }
   }
 
-  watch(syncStatus, (status) => {
+  watch(syncStatus, (status: string) => {
     if (status === "syncing") requestWakeLock();
     else releaseWakeLock();
   });
