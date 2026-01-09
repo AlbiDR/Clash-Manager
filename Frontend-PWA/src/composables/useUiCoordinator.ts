@@ -20,7 +20,7 @@ const fabState = reactive({
 /**
  * 🎨 USE UI COORDINATOR
  * Orchestrates global UI spacing and visibility to prevent component overlap.
- * Ensures the FloatingDock and FabIsland respect each other's boundaries.
+ * Ensures the FloatingDock and FAB elements respect each other's boundaries.
  */
 export function useUiCoordinator() {
   /**
