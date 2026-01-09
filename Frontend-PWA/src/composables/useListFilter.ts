@@ -31,8 +31,8 @@ export function useListFilter<T>(
   });
 
   function updateSort(val: string) {
-    if ((document as any).startViewTransition) {
-      (document as any).startViewTransition(() => {
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
         sortBy.value = val;
       });
     } else {
