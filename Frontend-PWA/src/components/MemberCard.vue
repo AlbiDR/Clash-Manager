@@ -200,7 +200,7 @@ async function openExternalLink(url: string) {
         </template>
         <template v-else>
           <button
-            @click="openExternalLink(`https://royaleapi.com/player/${member.id}`)"
+            @click="openExternal(`https://royaleapi.com/player/${member.id}`)"
             class="btn-action"
           >
             <Icon name="analytics" size="16" />
