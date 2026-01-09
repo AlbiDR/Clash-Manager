@@ -10,7 +10,7 @@ import Icon from "../Icon.vue";
 const { modules, toggle } = useModules();
 const haptics = useHaptics();
 const { requestPermission, sendLocalNotification } = useBadge();
-const { startBackgroundSync, lastSync } = useClanData();
+const { startBackgroundSync, lastSyncTime: lastSync } = useClanData();
 
 const permissionState = ref<NotificationPermission | "unsupported">("default");
 // Improvement #10: Time formatting
@@ -30,7 +30,7 @@ onMounted(() => {
 
 const threshold = computed(() => modules.value.notificationThreshold);
 
-const setThreshold = (value: number) => {
+const setThreshold = (value: 50 | 75) => {
   haptics.tap();
   modules.value.notificationThreshold = value;
   // Trigger update immediately
