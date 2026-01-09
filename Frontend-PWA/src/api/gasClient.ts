@@ -281,8 +281,8 @@ export async function fetchRemote(): Promise<WebAppData> {
   return inflated;
 }
 
-export async function ping(): Promise<ApiResponse<PingResponse>> {
-  return gasRequest<ApiResponse<PingResponse>>("ping");
+export async function ping(): Promise<PingResponse> {
+  return gasRequest<PingResponse>("ping");
 }
 
 export async function dismissRecruits(
