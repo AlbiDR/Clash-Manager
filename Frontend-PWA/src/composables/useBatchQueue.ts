@@ -1,6 +1,7 @@
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useToast } from "./useToast";
 import { useModules } from "./useModules";
+import { useExternalLink } from "./useExternalLink";
 
 interface BatchQueueOptions {
   throttleMs?: number;
@@ -29,6 +30,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   const { error, info } = useToast();
   const { modules } = useModules();
+  const { openInGame } = useExternalLink();
 
   const isSelectionMode = computed(
     () => selectedIds.value.length > 0 || forceSelectionMode.value,
@@ -139,59 +141,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    */
   let iframe: HTMLIFrameElement | null = null;
   
-  function getIframe() {
-    if (iframe) return iframe;
-    iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    document.body.appendChild(iframe);
-    return iframe;
-  }
-
-  function fireDeepLink(url: string) {
-    const userAgent = navigator.userAgent;
-    const isAndroid = /android/i.test(userAgent);
-    const isTauri = typeof window.__TAURI__ !== 'undefined';
-    
-    if (isAndroid) {
-      // Extract player ID from clashroyale://playerInfo?id=XXXXXX
-      const match = url.match(/id=([A-Z0-9]+)/);
-      if (match && match[1]) {
-        const playerId = match[1];
-        
-        // Android Intent URI that will open Clash Royale app
-        // If app not installed, falls back to Play Store
-        const intentUrl = `intent://playerInfo?id=${playerId}#Intent;` +
-          `scheme=clashroyale;` +
-          `package=com.supercell.clashroyale;` +
-          `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
-          `end`;
-        
-        // In Tauri, we can directly navigate to the Intent URL
-        // The Android WebView will handle it properly
-        if (isTauri) {
-          window.location.href = intentUrl;
-          return;
-        }
-        
-        // Fallback: use iframe for browser/PWA
-        getIframe().src = intentUrl;
-        return;
-      }
-    }
-
-    // Fallback for non-Android or malformed URLs
-    const link = document.createElement("a");
-    link.href = url;
-    link.style.display = "none";
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-
-    setTimeout(() => {
-      if (link.parentNode) link.parentNode.removeChild(link);
-    }, 1000);
-  }
 
   function stopBlitz() {
     isBlasting.value = false;
@@ -212,7 +161,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
     const id = selectedIds.value[currentIndex.value];
     if (id) {
-      fireDeepLink(`${baseScheme}${id}`);
+      openInGame(id);
       
       const delay = Math.max(throttleMs, 2000);
       if (currentIndex.value < selectedIds.value.length - 1) {
@@ -254,7 +203,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       e.preventDefault();
       const id = selectedIds.value[currentIndex.value];
       if (id) {
-        fireDeepLink(`${baseScheme}${id}`);
+        openInGame(id);
         currentIndex.value++;
 
         if (blitzTimer) {

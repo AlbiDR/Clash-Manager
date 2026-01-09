@@ -6,6 +6,7 @@ import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
 import { useModules } from "../composables/useModules";
 import { getScoreTone, formatRole } from "../utils/formatters";
+import { useExternalLink } from "../composables/useExternalLink";
 
 const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
@@ -34,6 +35,7 @@ const emit = defineEmits<{
 
 const { getBenchmark } = useBenchmarking();
 const { modules } = useModules();
+const { openExternal, openInGame } = useExternalLink();
 
 // Formatters
 const roleInfo = (role: string) => formatRole(role);
@@ -59,20 +61,6 @@ const trendInfo = computed(() => {
   };
 });
 
-async function openExternal(url: string) {
-  try {
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      // Use Tauri Shell API
-      const { open } = await import('@tauri-apps/plugin-shell');
-      await open(url);
-    } else {
-      // Fallback for PWA/browser
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  } catch (error) {
-    console.error('Failed to open external link:', error);
-  }
-}
 </script>
 
 <template>
@@ -213,13 +201,13 @@ async function openExternal(url: string) {
             <Icon name="analytics" size="16" />
             <span>RoyaleAPI</span>
           </button>
-          <a
-            :href="`clashroyale://playerInfo?id=${member.id}`"
+          <button
+            @click="openInGame(member.id)"
             class="btn-action primary"
           >
             <Icon name="crown" size="16" />
             <span>Open Game</span>
-          </a>
+          </button>
         </template>
       </div>
     </template>
