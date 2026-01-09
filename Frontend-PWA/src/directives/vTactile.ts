@@ -31,7 +31,13 @@ export const vTactile: Directive = {
       timer: null,
       isActive: false,
       isLongPress: false,
-      listeners: {} as any,
+      listeners: {
+        pointerdown: () => {},
+        pointermove: () => {},
+        pointerup: () => {},
+        pointercancel: () => {},
+        contextmenu: () => {},
+      }, // Will be assigned below
     };
 
     const clearInteraction = () => {
