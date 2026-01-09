@@ -56,6 +56,7 @@ describe("useBatchQueue", () => {
     selectedIds.value = ["A", "B"];
 
     // Initial FAB state should show first selected item
+    expect(fabState.value.visible).toBe(true);
     expect(fabState.value.actionHref).toContain("id=A");
 
     // Simulate Click Action (Open A)

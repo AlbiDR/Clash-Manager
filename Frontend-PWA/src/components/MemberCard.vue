@@ -11,7 +11,14 @@ const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
 );
 
-const props = defineProps<{
+const {
+  id,
+  member,
+  expanded,
+  selected,
+  selectionMode,
+  appIsRefreshing = false,
+} = defineProps<{
   id: string;
   member: LeaderboardMember;
   expanded: boolean;
@@ -33,8 +40,8 @@ const roleInfo = (role: string) => formatRole(role);
 const scoreTone = (score: number) => getScoreTone(score);
 
 const trendInfo = computed(() => {
-  const dt = Number(props.member.dt) || 0;
-  const currentRaw = Number(props.member.r) || 0;
+  const dt = Number(member.dt) || 0;
+  const currentRaw = Number(member.r) || 0;
   if (dt === 0 || currentRaw === 0) return null;
   const previousRaw = currentRaw - dt;
   if (previousRaw < 50) return null;
@@ -52,9 +59,9 @@ const trendInfo = computed(() => {
   };
 });
 
-async function openExternalLink(url: string) {
+async function openExternal(url: string) {
   try {
-    if (typeof window.__TAURI__ !== 'undefined') {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       // Use Tauri Shell API
       const { open } = await import('@tauri-apps/plugin-shell');
       await open(url);
@@ -70,12 +77,12 @@ async function openExternalLink(url: string) {
 
 <template>
   <BaseCard
-    :id="props.id"
-    :expanded="props.expanded"
-    :selected="props.selected"
-    :selection-mode="props.selectionMode"
-    :tone-class="scoreTone(props.member.s)"
-    :aria-label="`${props.member.n}, score ${Math.round(props.member.s)}, ${roleInfo(props.member.d.role).label}`"
+    :id="id"
+    :expanded="expanded"
+    :selected="selected"
+    :selection-mode="selectionMode"
+    :tone-class="scoreTone(member.s)"
+    :aria-label="`${member.n}, score ${Math.round(member.s)}, ${roleInfo(member.d.role).label}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
@@ -144,7 +151,7 @@ async function openExternalLink(url: string) {
 
     <!-- SLOT: Expanded Content -->
     <template #expanded-content>
-      <div class="stats-grid" :aria-busy="props.appIsRefreshing">
+      <div class="stats-grid" :aria-busy="appIsRefreshing">
         <template v-if="appIsRefreshing">
           <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
             <div
@@ -191,10 +198,10 @@ async function openExternalLink(url: string) {
         </template>
       </div>
 
-      <WarHistoryChart :history="props.member.d.hist" :loading="props.appIsRefreshing" />
+      <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
 
       <div class="actions">
-        <template v-if="props.appIsRefreshing">
+        <template v-if="appIsRefreshing">
           <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
           <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
         </template>

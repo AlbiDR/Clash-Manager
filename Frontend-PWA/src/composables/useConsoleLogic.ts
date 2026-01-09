@@ -104,13 +104,13 @@ export function useConsoleLogic<T extends { id: string }>(
     // Priority 3: Data Ready
     if (data.value && data.value.length > 0)
       return {
-        type: "ready",
+        type: "ready" as const,
         text: formatTimeAgo(
           new Date(lastSyncTime.value || Date.now()).toISOString(),
         ),
-      } as const;
+      };
       
-    return { type: "ready", text: "Empty" as const };
+    return { type: "ready" as const, text: "Empty" };
   });
 
   // 8. Stats Badge
