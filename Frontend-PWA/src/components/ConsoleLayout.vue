@@ -13,11 +13,11 @@ import { watch, onUnmounted } from "vue";
 const props = defineProps<{
   // Wrapper for ConsoleHeader props
   title: string;
-  status: any;
+  status: { type: "updated" | "error" | "loading" | "ready"; text: string };
   showSearch?: boolean;
   sheetUrl?: string;
-  stats?: any;
-  sortOptions?: any[];
+  stats?: { label: string; value: string };
+  sortOptions?: { label: string; value: string; desc?: string }[];
   loading?: boolean;
 
   // Selection/Fab state
@@ -31,17 +31,25 @@ const props = defineProps<{
   isEmpty?: boolean;
 
   // FAB Props
-  fabState?: any;
+  fabState?: {
+    visible: boolean;
+    label: string;
+    actionHref?: string;
+    isProcessing: boolean;
+    isBlasting: boolean;
+    selectionCount: number;
+    blitzEnabled: boolean;
+  };
 }>();
 
 const emit = defineEmits<{
   refresh: [];
   "update:search": [string];
-  "update:sort": [any];
+  "update:sort": [string];
   "select-all": [];
-  "select-score": [any, any];
+  "select-score": [number, string]; // Assuming threshold and mode
   "clear-selection": [];
-  "fab-action": [any];
+  "fab-action": [MouseEvent];
   "fab-blitz": [];
   "fab-dismiss": [];
   // We need to re-emit these from ConsoleHeader if they are used there
