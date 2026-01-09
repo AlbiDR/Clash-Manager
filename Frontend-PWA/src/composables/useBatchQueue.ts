@@ -48,7 +48,17 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   });
 
   const fabState = computed(() => {
-    if (!isSelectionMode.value) return { visible: false };
+    console.log('[useBatchQueue] fabState recompute:', {
+      isSelectionMode: isSelectionMode.value,
+      selectedCount: selectedIds.value.length,
+      selectedIds: selectedIds.value,
+      forceSelectionMode: forceSelectionMode.value
+    });
+    
+    if (!isSelectionMode.value) {
+      console.log('[useBatchQueue] FAB hidden - not in selection mode');
+      return { visible: false };
+    }
 
     const total = selectedIds.value.length;
     let label = "Open";
@@ -72,7 +82,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         ? queue.value[0]
         : selectedIds.value[0];
 
-    return {
+    const fabData = {
       visible: true,
       label,
       actionHref: targetId ? `${baseScheme}${targetId}` : undefined,
@@ -81,13 +91,32 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       selectionCount: total,
       blitzEnabled: modules.blitzMode && isTrusted.value,
     };
+    
+    console.log('[useBatchQueue] FAB visible:', fabData);
+    return fabData;
   });
 
   function toggleSelect(id: string) {
-    if (isProcessing.value || isBlasting.value) return;
+    console.log('[useBatchQueue] toggleSelect called:', {
+      id,
+      isProcessing: isProcessing.value,
+      isBlasting: isBlasting.value,
+      currentSelectedIds: selectedIds.value
+    });
+    
+    if (isProcessing.value || isBlasting.value) {
+      console.log('[useBatchQueue] toggleSelect blocked - processing or blasting');
+      return;
+    }
+    
     const index = selectedIds.value.indexOf(id);
-    if (index !== -1) selectedIds.value.splice(index, 1);
-    else selectedIds.value.push(id);
+    if (index !== -1) {
+      selectedIds.value.splice(index, 1);
+      console.log('[useBatchQueue] Deselected:', id, 'Remaining:', selectedIds.value);
+    } else {
+      selectedIds.value.push(id);
+      console.log('[useBatchQueue] Selected:', id, 'Total:', selectedIds.value);
+    }
   }
 
   function selectAll(ids: readonly string[]) {

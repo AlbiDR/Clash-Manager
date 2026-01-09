@@ -25,15 +25,15 @@ const { fabOffset } = useUiCoordinator();
 // GPU Optimization: TranslateY instead of 'bottom' property transition
 const styleObject = computed(() => {
   // ⚡ Positioning Logic: 
-  // Base bottom is env(safe-area-inset-bottom).
-  // We offset UP by fabOffset (usually 24px) when visible.
-  // We offset DOWN when hidden.
+  // When visible: offset UP by fabOffset (24px) from bottom
+  // When hidden: translate DOWN beyond viewport
+  const bottomOffset = 24; // px from bottom of viewport when visible
+  
   return {
     transform: props.visible 
-      ? `translateY(calc(-${fabOffset.value}px))` 
+      ? `translateY(-${bottomOffset}px)` 
       : 'translateY(120px)',
     opacity: props.visible ? 1 : 0,
-    pointerEvents: props.visible ? 'auto' : 'none'
   } as const;
 });
 
@@ -141,15 +141,21 @@ const emit = defineEmits<{
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(0px + env(safe-area-inset-bottom));
+  bottom: 0;
   display: flex;
   justify-content: center;
-  z-index: 300;
+  z-index: 1000; /* Increased from 300 to ensure it's above all content */
+  padding-bottom: env(safe-area-inset-bottom);
   /* ⚡ PERF: Transition transform instead of bottom for GPU composition */
   transition:
     opacity 0.3s ease,
     transform 0.4s var(--sys-motion-spring);
   will-change: transform;
+  pointer-events: none; /* Allow clicks through the container */
+}
+
+.fab-island > * {
+  pointer-events: auto; /* Re-enable clicks on the actual FAB content */
 }
 
 
