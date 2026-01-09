@@ -1,4 +1,4 @@
-import { ref, computed, readonly, onMounted, onUnmounted } from "vue";
+import { ref, computed, readonly } from "vue";
 import { useApiState } from "./useApiState";
 
 export type ConnectionStatus = "online" | "offline" | "syncing" | "success-resolve";
@@ -10,6 +10,28 @@ const isSyncing = ref(false);
 // Fix 19: Debounce Offline
 let offlineTimeout: any = null;
 
+// Module-level event listener initialization
+let listenersAttached = false;
+
+function handleOnline() {
+  if (offlineTimeout) clearTimeout(offlineTimeout);
+  isOnline.value = true;
+}
+
+function handleOffline() { 
+  // Fix 19: Debounce (2s buffer before showing offline UI)
+  offlineTimeout = setTimeout(() => {
+     isOnline.value = false;
+  }, 2000);
+}
+
+// Attach listeners once at module level
+if (!listenersAttached && typeof window !== 'undefined') {
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+  listenersAttached = true;
+}
+
 /**
  * 🌐 USE CONNECTION STATUS
  * Unifies physical network status (navigator.onLine) and logical API status.
@@ -17,29 +39,6 @@ let offlineTimeout: any = null;
  */
 export function useConnectionStatus() {
   const { apiStatus } = useApiState();
-
-  function handleOnline() {
-    if (offlineTimeout) clearTimeout(offlineTimeout);
-    isOnline.value = true;
-    // REVERTED Fix 20: Removed circular dependency - refresh() should be called by App.vue instead
-  }
-  
-  function handleOffline() { 
-    // Fix 19: Debounce (2s buffer before showing offline UI)
-    offlineTimeout = setTimeout(() => {
-       isOnline.value = false;
-    }, 2000);
-  }
-
-  onMounted(() => {
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-  });
-
-  onUnmounted(() => {
-    window.removeEventListener("online", handleOnline);
-    window.removeEventListener("offline", handleOffline);
-  });
 
   function setSyncing(val: boolean) {
     isSyncing.value = val;
