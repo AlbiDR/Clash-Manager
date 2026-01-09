@@ -25,7 +25,7 @@ export function useProgressiveList<T>(
   function scheduleChunk(all: T[], currentCount: number) {
     // Futuristic: Use requestIdleCallback if available, fall back to RAF/Timeout
     const scheduler =
-      (window as any).requestIdleCallback || requestAnimationFrame;
+    const scheduler = window.requestIdleCallback || requestAnimationFrame;
 
     scheduler(() => {
       // Batch size: 10 items per tick. Small enough to fit in a frame (16ms).
