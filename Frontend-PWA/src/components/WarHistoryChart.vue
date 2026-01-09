@@ -53,11 +53,12 @@ const chartData = computed(() => {
 
   // 3. Arrange for Display (Oldest -> Newest)
   const chronologicalData = [...processedData].reverse();
-  const bars: BarItem[] = [];
+  const bars: (BarItem & { id: string })[] = [];
 
   // Actuals
-  chronologicalData.forEach((p) => {
+  chronologicalData.forEach((p, index) => {
     bars.push({
+      id: `h-${p.readableWeek}-${index}`,
       fame: p.fame,
       height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (p.fame / WAR_CONSTANTS.MAX_FAME) * 100))}%`,
       isProjection: false,
@@ -67,6 +68,7 @@ const chartData = computed(() => {
 
   // Projection
   bars.push({
+    id: 'proj-next-week',
     fame: nextFame,
     height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (nextFame / WAR_CONSTANTS.MAX_FAME) * 100))}%`,
     isProjection: true,
@@ -132,8 +134,8 @@ const chartData = computed(() => {
 
       <!-- Bars -->
       <div
-        v-for="(bar, i) in chartData.bars"
-        :key="i"
+        v-for="bar in chartData.bars"
+        :key="bar.id"
         class="bar hit-target"
         :class="{
           'bar-win':
