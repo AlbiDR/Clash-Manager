@@ -170,6 +170,7 @@ onUnmounted(() => {
         :sort-options="sortOptions"
         :current-sort="currentSort"
         :loading="loading"
+        reserve-extra-space
         @update:search="(val: string) => $emit('update:search', val)"
         @update:sort="(val: string) => $emit('update:sort', val)"
         @refresh="$emit('refresh')"

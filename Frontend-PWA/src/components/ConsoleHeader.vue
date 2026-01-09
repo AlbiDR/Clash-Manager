@@ -12,6 +12,7 @@ const props = defineProps<{
   sortOptions?: { label: string; value: string; desc?: string }[];
   currentSort?: string;
   loading?: boolean;
+  reserveExtraSpace?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -213,7 +214,11 @@ function formatDescription(text: string) {
         </Transition>
       </Teleport>
 
-      <div v-if="$slots.extra" class="header-row extra">
+      <div
+        v-if="$slots.extra || reserveExtraSpace"
+        class="header-row extra"
+        :class="{ reserved: reserveExtraSpace }"
+      >
         <slot name="extra"></slot>
       </div>
     </div>
@@ -268,6 +273,18 @@ function formatDescription(text: string) {
   width: 100%;
   gap: 12px;
   min-height: 48px;
+}
+.header-row.extra {
+  /* 🏗️ LAYOUT STABILITY: Reserved space matching SelectionBar footprint */
+  min-height: 52px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sys-color-outline-variant);
+  transition: opacity 0.3s ease;
+}
+/* Hide the border if the row is actually empty and not reserved */
+.header-row.extra:empty:not(.reserved) {
+  display: none;
 }
 
 .left-cluster {

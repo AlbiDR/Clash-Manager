@@ -89,9 +89,6 @@ const isScoreExpanded = ref(false);
 .selection-bar {
   display: flex;
   align-items: center;
-  margin-top: 12px;
-  padding-top: 8px;
-  border-top: 1px solid var(--sys-color-outline-variant);
   gap: 8px;
   overflow-x: auto;
   flex-wrap: nowrap;
