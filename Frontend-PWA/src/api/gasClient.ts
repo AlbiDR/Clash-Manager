@@ -114,22 +114,50 @@ async function fetchWithRetry(
   // 🛡️ Resilience: Avoid immediate failure if offline (Resilience #62)
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     console.warn("[Network] Device is offline. Waiting for connectivity...");
-    await new Promise((resolve) => {
-      window.addEventListener("online", resolve, { once: true });
-    });
+    try {
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("Network offline: Timeout waiting for connectivity"));
+        }, 10000); // 10s wait for online
+
+        const onOnline = () => {
+          clearTimeout(timeout);
+          resolve(true);
+        };
+        
+        window.addEventListener("online", onOnline, { once: true });
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 
   try {
-    const response = await fetch(url, options);
+    // 🛡️ Resilience: Add timeout to fetch requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s request timeout
+    const fetchOptions = {
+      ...options,
+      signal: options.signal || controller.signal,
+    };
+
+    const response = await fetch(url, fetchOptions);
+    clearTimeout(timeoutId);
+
     if (!response.ok && retries > 0 && response.status >= 500) {
       throw new Error(`HTTP ${response.status}`);
     }
     return response;
   } catch (e) {
-    const isNetworkError = e instanceof TypeError || (e instanceof Error && e.name === "TypeError");
-    
+    const isNetworkError =
+      e instanceof TypeError ||
+      (e instanceof Error && e.name === "TypeError") ||
+      (e instanceof Error && e.name === "AbortError"); // Treat timeout as network error for retry
+
     if (retries > 0) {
-      console.warn(`Fetch failed (Network: ${isNetworkError}), retrying (${retries} left)...`);
+      console.warn(
+        `Fetch failed (Network: ${isNetworkError}), retrying (${retries} left)...`,
+      );
       await new Promise((r) => setTimeout(r, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 2);
     }
