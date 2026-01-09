@@ -25,7 +25,7 @@ const { getBenchmark } = useBenchmarking();
 const { modules } = useModules();
 
 function getTooltip(metric: string, value: number | undefined) {
-  if (!modules.value.ghostBenchmarking || value === undefined) return null;
+  if (!modules.ghostBenchmarking || value === undefined) return null;
   return getBenchmark("hh", metric, value);
 }
 
