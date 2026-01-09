@@ -56,8 +56,15 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     });
     
     if (!isSelectionMode.value) {
-      console.log('[useBatchQueue] FAB hidden - not in selection mode');
-      return { visible: false };
+      return {
+        visible: false,
+        label: "",
+        actionHref: undefined,
+        isProcessing: false,
+        isBlasting: false,
+        selectionCount: 0,
+        blitzEnabled: false,
+      };
     }
 
     const total = selectedIds.value.length;
@@ -92,17 +99,12 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       blitzEnabled: modules.blitzMode && isTrusted.value,
     };
     
-    console.log('[useBatchQueue] FAB visible:', fabData);
+    // console.log('[useBatchQueue] FAB visible:', fabData);
     return fabData;
   });
 
   function toggleSelect(id: string) {
-    console.log('[useBatchQueue] toggleSelect called:', {
-      id,
-      isProcessing: isProcessing.value,
-      isBlasting: isBlasting.value,
-      currentSelectedIds: selectedIds.value
-    });
+    // console.log('[useBatchQueue] toggleSelect called:', { id });
     
     if (isProcessing.value || isBlasting.value) {
       console.log('[useBatchQueue] toggleSelect blocked - processing or blasting');
@@ -145,7 +147,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     return iframe;
   }
 
-  function fireDeepLink(url: string, isAutomated = false) {
+  function fireDeepLink(url: string) {
     const userAgent = navigator.userAgent;
     const isAndroid = /android/i.test(userAgent);
     const isTauri = typeof window.__TAURI__ !== 'undefined';

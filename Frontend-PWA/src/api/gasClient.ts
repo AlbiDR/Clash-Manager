@@ -90,7 +90,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   // Strict bounds checking for matrix columns
   return {
-    lb: lb.map((r) => {
+    lb: lb.map((r: any) => {
       if (r.length < 10) throw new Error("Matrix Row (LB) underflow");
       return {
         id: String(r[0]),
@@ -109,7 +109,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
         r: Number(r[11] ?? 0),
       };
     }),
-    hh: hh.map((r) => {
+    hh: hh.map((r: any) => {
       if (r.length < 7) throw new Error("Matrix Row (HH) underflow");
       return {
         id: String(r[0]),
