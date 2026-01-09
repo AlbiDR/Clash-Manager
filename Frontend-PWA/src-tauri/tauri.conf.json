@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ClashManager",
+  "productName": "Clash Manager",
   "version": "8.11.0",
   "identifier": "com.albidr.clashmanager",
   "build": {
