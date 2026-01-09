@@ -10,11 +10,10 @@ on:
     paths:
       - "Frontend-PWA/src-tauri/**"
       - ".github/workflows/deploy-apk.yml"
-    paths-ignore:
-      - "Frontend-PWA/src/**"
-      - "Frontend-PWA/public/**"
-      - "Backend-GAS/**"
-      - "**.md"
+      - "!Frontend-PWA/src/**"
+      - "!Frontend-PWA/public/**"
+      - "!Backend-GAS/**"
+      - "!**.md"
   workflow_dispatch:
     inputs:
       architecture:
