@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from "vue";
-import { useApiState } from "../composables/useApiState";
 import { useModules } from "../composables/useModules";
 import { useTheme } from "../composables/useTheme";
 import { useHaptics } from "../composables/useHaptics";
@@ -18,7 +17,6 @@ import NotificationSettings from "../components/settings/NotificationSettings.vu
 import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
 import { vTactile } from "../directives/vTactile";
 
-const { apiStatus, checkApiStatus } = useApiState();
 const { modules, toggle } = useModules();
 const { theme, setTheme } = useTheme();
 const haptics = useHaptics();
@@ -26,10 +24,6 @@ const wakeLock = useWakeLock();
 const { isDemoMode, toggleDemoMode } = useDemoMode();
 const { isHydrated, isRefreshing } = useClanData();
 const appVersion = __APP_VERSION__;
-
-onMounted(() => {
-  checkApiStatus();
-});
 
 const { status: unifiedStatus } = useConnectionStatus();
 
@@ -43,10 +37,7 @@ const apiStatusObject = computed(() => {
   if (unifiedStatus.value === "success-resolve")
     return { type: "ready", text: "Verified" } as const;
   
-  if (apiStatus.value === "unconfigured")
-    return { type: "error", text: "Setup Required" } as const;
-
-  return { type: "loading", text: "Ping..." } as const;
+  return { type: "loading", text: "Connecting..." } as const;
 });
 
 const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value);

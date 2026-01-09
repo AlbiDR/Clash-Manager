@@ -53,10 +53,26 @@ export function useConnectionStatus() {
   }
 
   const status = computed((): ConnectionStatus => {
-    if (!isOnline.value || apiStatus.value === "offline") return "offline";
-    if (isSuccessFading.value) return "success-resolve";
-    if (isSyncing.value || apiStatus.value === "checking") return "syncing";
-    return "online";
+    const result = !isOnline.value || apiStatus.value === "offline" 
+      ? "offline"
+      : isSuccessFading.value 
+      ? "success-resolve"
+      : isSyncing.value || apiStatus.value === "checking" 
+      ? "syncing"
+      : "online";
+    
+    // Debug: log status changes in development
+    if (import.meta.env.DEV) {
+      console.log('[ConnectionStatus]', {
+        isOnline: isOnline.value,
+        apiStatus: apiStatus.value,
+        isSyncing: isSyncing.value,
+        isSuccessFading: isSuccessFading.value,
+        computed: result
+      });
+    }
+    
+    return result;
   });
 
   return {

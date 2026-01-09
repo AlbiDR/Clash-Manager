@@ -22,7 +22,8 @@
     ],
     "security": {
       "csp": null
-    }
+    },
+    "withGlobalTauri": true
   },
   "bundle": {
     "active": true,
@@ -33,12 +34,14 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "android": {
+      "minSdkVersion": 24
+    }
   },
   "plugins": {
-    "deep-link": {
-      "schemes": ["clashmanager"],
-      "host": "albidr.github.io"
+    "shell": {
+      "open": true
     }
   }
 }

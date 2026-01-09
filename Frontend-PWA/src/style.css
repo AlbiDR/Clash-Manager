@@ -27,11 +27,13 @@
    NATIVE APP GESTURES (Maximum Native Feel)
    ========================================= */
 
-/* Prevent pull-to-refresh (native apps don't have this) 
-   UPDATE: Restored for web/PWA native-like behavior as per architect preference */
+/* Android Performance Optimization */
 body {
-  overscroll-behavior-y: auto;
+  /* Disable overscroll for better Android performance */
+  overscroll-behavior-y: contain;
   overscroll-behavior-x: none;
+  /* Optimize touch event handling */
+  touch-action: pan-y;
 }
 
 /* Prevent text selection globally (more app-like) */
@@ -59,12 +61,29 @@ textarea,
 /* Prevent tap highlight (more native feel) */
 * {
   -webkit-tap-highlight-color: transparent;
+  /* Improve touch responsiveness */
+  touch-action: manipulation;
 }
 
-/* iOS momentum scrolling (native feel) */
+/* Allow specific gestures for interactive elements */
+.card,
+.hit-target,
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
+}
+
+/* Scrolling optimizations (native feel) */
 .view-container,
-.scrollable {
+.scrollable-area,
+.list-container {
   -webkit-overflow-scrolling: touch;
+  /* Re-enable overscroll for scrollable containers */
+  overscroll-behavior-y: auto;
+  /* Optimize scroll performance */
+  will-change: scroll-position;
 }
 
 /* ============================================================================

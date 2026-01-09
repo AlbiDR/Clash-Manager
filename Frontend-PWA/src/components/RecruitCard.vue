@@ -31,6 +31,21 @@ function getTooltip(metric: string, value: number | undefined) {
 
 const toneClass = computed(() => getScoreTone(props.recruit.s));
 const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago));
+
+async function openExternalLink(url: string) {
+  try {
+    if (typeof window.__TAURI__ !== 'undefined') {
+      // Use Tauri Shell API
+      const { open } = await import('@tauri-apps/plugin-shell');
+      await open(url);
+    } else {
+      // Fallback for PWA/browser
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  } catch (error) {
+    console.error('Failed to open external link:', error);
+  }
+}
 </script>
 
 <template>
@@ -115,15 +130,13 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago));
           <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
         </template>
         <template v-else>
-          <a
-            :href="`https://royaleapi.com/player/${recruit.id}`"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            @click="openExternalLink(`https://royaleapi.com/player/${recruit.id}`)"
             class="btn-action compact"
           >
             <Icon name="analytics" size="14" />
             <span>RoyaleAPI</span>
-          </a>
+          </button>
           <a
             :href="`clashroyale://playerInfo?id=${recruit.id}`"
             class="btn-action primary compact"
