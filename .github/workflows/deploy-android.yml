@@ -257,11 +257,6 @@ jobs:
           # Standard build - Tauri manages minification safely via its own internal config
           npx tauri android build $ARCH_ARG --apk true
 
-      - name: Audit Assets
-        run: |
-          echo "🔍 Auditing critical assets..."
-          ls -R Frontend-PWA/dist | grep -E "index.html|main.js|style.css|fonts" || echo "⚠️ Some assets missing in dist!"
-
       - name: Sign APK
         run: |
           echo "🔐 Signing APK manually for bulletproof reliability..."
@@ -393,7 +388,7 @@ jobs:
         run: |
           # Find latest STABLE release (skipping automated builds)
           LATEST_TAG=$(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | contains("-build") | not) | .tagName' | head -n 1 2>/dev/null || echo "")
-          
+
           if [ -z "$LATEST_TAG" ]; then
              echo "⚠️  No stable release found. Falling back to latest build tag..."
              LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
