@@ -5,7 +5,6 @@ import SelectionBar from "./SelectionBar.vue";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import SkeletonCard from "./SkeletonCard.vue";
-import FabIsland from "./FabIsland.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 
 const props = defineProps<{
@@ -45,14 +44,41 @@ const emit = defineEmits<{
   "fab-dismiss": [];
 }>();
 
-const { setFabVisible } = useUiCoordinator();
-if (props.fabState) {
-  watch(
-    () => props.fabState.visible,
-    (visible: boolean) => setFabVisible(!!visible),
-  );
-  onUnmounted(() => setFabVisible(false));
-}
+const { setFabVisible, updateFabState } = useUiCoordinator();
+
+// Sync fabState visibility with global coordinator
+watch(
+  () => props.fabState?.visible,
+  (visible) => {
+    setFabVisible(!!visible);
+  },
+  { immediate: true }
+);
+
+// Sync fabState content with global coordinator
+watch(
+  () => props.fabState,
+  (state) => {
+    if (state) {
+      updateFabState({
+        label: state.label,
+        actionHref: state.actionHref,
+        isProcessing: state.isProcessing,
+        isBlasting: state.isBlasting,
+        selectionCount: state.selectionCount,
+        blitzEnabled: state.blitzEnabled,
+        onAction: (e: MouseEvent) => emit("fab-action", e),
+        onBlitz: () => emit("fab-blitz"),
+        onDismiss: () => emit("fab-dismiss"),
+      });
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+onUnmounted(() => {
+  setFabVisible(false);
+});
 </script>
 
 <template>
@@ -115,27 +141,7 @@ if (props.fabState) {
       <slot></slot>
     </div>
 
-    <!-- FAB -->
-    <FabIsland
-      v-if="fabState"
-      :visible="fabState.visible"
-      :label="fabState.label"
-      :action-href="fabState.actionHref"
-      :dismiss-label="
-        fabState.isProcessing
-          ? 'Exit'
-          : title === 'Headhunter'
-            ? 'Dismiss'
-            : 'Clear'
-      "
-      :is-processing="fabState.isProcessing"
-      :is-blasting="fabState.isBlasting"
-      :selection-count="fabState.selectionCount"
-      :blitz-enabled="fabState.blitzEnabled"
-      @action="(x) => $emit('fab-action', x)"
-      @blitz="$emit('fab-blitz')"
-      @dismiss="$emit('fab-dismiss')"
-    />
+    <!-- FAB is now rendered by FloatingDock -->
   </div>
 </template>
 
