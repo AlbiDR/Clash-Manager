@@ -50,85 +50,58 @@ async function bootstrap() {
   try {
     // 1. Critical Config (Synchronous)
     const modules = useModules();
-    try {
-      modules.init();
-    } catch (e) {
-      console.warn("Modules init failed", e);
-    }
+    modules.init();
 
     const theme = useTheme();
-    try {
-      theme.init();
-    } catch (e) {
-      console.warn("Theme init failed", e);
-    }
+    theme.init();
 
     // 2. Create App
     const app = createApp(App);
     app.use(router);
 
-    // ⚡ PERFORMANCE: Register dummy directive first to prevent Vue warnings during hydration
-    app.directive("auto-animate", {});
-
+    // ⚡ PERFORMANCE: Register directives before mount
     app.directive("tooltip", vTooltip);
     app.directive("tactile", vTactile);
 
-    // 3. Mount App Immediately
-    // We mount BEFORE loading data to ensure the UI shell is interactive (even if showing skeletons)
+    // ⚡ PRE-MOUNT: Register critical plugins
+    try {
+      const { autoAnimatePlugin } = await import("@formkit/auto-animate/vue");
+      app.use(autoAnimatePlugin);
+    } catch (e) {
+      console.warn("Failed to load animations", e);
+      // Fallback dummy to prevent errors
+      app.directive("auto-animate", {});
+    }
+
+    // 3. Mount App
     app.mount("#app");
 
-    // 4. Initialize Data (Post-Mount)
-    // ⚡ LCP OPTIMIZATION: Load local data in the next tick to allow first paint
-    requestAnimationFrame(() => {
-      try {
-        const clanData = useClanData();
-        clanData.loadLocal();
-      } catch (e) {
-        console.error("Local data load failed:", e);
-      }
-    });
+    // 4. Initialize Systems (Post-Mount)
+    const clanData = useClanData();
+    const apiState = useApiState();
+    const wakeLock = useWakeLock();
 
-    // 5. Defer Non-Critical Systems & Heavy Libraries
-    // ⚡ Increased delay to 500ms to ensure LCP is recorded before network/main thread gets busy
+    clanData.loadLocal();
+    
+    // Defer network and heavy systems
     setTimeout(async () => {
-      try {
-        // Register Service Worker for Badging & PWA features
-        if ("serviceWorker" in navigator) {
-          try {
-            await navigator.serviceWorker.register("/sw.js", {
-              scope: "/",
-            });
-          } catch (err) {
+      apiState.init();
+      clanData.startBackgroundSync();
+      wakeLock.init();
 
-            console.error("SW Register Failed", err);
-          }
-        }
-
-        // Start Network Sync NOW, after visual settle
-        const clanData = useClanData();
-        clanData.startBackgroundSync();
-
-        const apiState = useApiState();
-        apiState.init();
-        const wakeLock = useWakeLock();
-        wakeLock.init();
-
-        // ⚡ Lazy Load AutoAnimate
+      if ("serviceWorker" in navigator) {
         try {
-          const { autoAnimatePlugin } = await import(
-            "@formkit/auto-animate/vue"
-          );
-          app.use(autoAnimatePlugin);
-        } catch (e) {
-          console.warn("Failed to load animations", e);
+          await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        } catch (err) {
+          console.error("SW Register Failed", err);
         }
-      } catch (e) {
-        console.error("Background sync failed:", e);
       }
-    }, 500);
+    }, 400);
+
   } catch (error) {
     showFatalError(error);
   }
 }
+
 
 bootstrap();

@@ -33,6 +33,7 @@ const sortStrategies: Record<
   trophies: (a, b) => (b.t || 0) - (a.t || 0),
   name: (a, b) => a.n.localeCompare(b.n),
   donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
+  tenure: (a, b) => (b.d.days || 0) - (a.d.days || 0),
 };
 
 const {
@@ -90,6 +91,11 @@ const sortOptions = [
     label: "Donations",
     value: "donations_day",
     desc: `**Average daily card donations** during the player's tenure.\n\n**Impact:**\nMeasures social generosity. High donators are vital for the Clan's card leveling economy.`,
+  },
+  {
+    label: "Tenure",
+    value: "tenure",
+    desc: `**Total days within the Clan** for the current membership period.\n\n**Logic:**\nCalculated from the join date stored in the Clan database. High tenure indicates loyalty and consistency.`,
   },
   {
     label: "Name",

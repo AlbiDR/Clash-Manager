@@ -66,8 +66,8 @@ describe("useBatchQueue", () => {
     expect(queue.value).toEqual(["A", "B"]);
     expect(isProcessing.value).toBe(true);
 
-    // Fast forward passed the processing timeout (50ms)
-    vi.advanceTimersByTime(50);
+    // Fast forward passed the processing timeout (150ms)
+    vi.advanceTimersByTime(150);
 
     // A should be shifted out, B should be next
     expect(queue.value).toEqual(["B"]);
@@ -76,7 +76,7 @@ describe("useBatchQueue", () => {
 
     // Simulate Click Action (Open B)
     handleAction(mockEvent);
-    vi.advanceTimersByTime(50);
+    vi.advanceTimersByTime(150);
 
     // Queue empty, selection cleared
     expect(queue.value).toEqual([]);

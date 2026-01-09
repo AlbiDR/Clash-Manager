@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { computed } from "vue"; // Removed unused onUmounted and watch
+import { computed, watch, onUnmounted } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
-import PullToRefresh from "./PullToRefresh.vue";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import SkeletonCard from "./SkeletonCard.vue";
 import FabIsland from "./FabIsland.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
-import { watch, onUnmounted } from "vue";
 
 const props = defineProps<{
-  // Wrapper for ConsoleHeader props
   title: string;
   status: { type: "updated" | "error" | "loading" | "ready"; text: string };
   showSearch?: boolean;
@@ -19,18 +16,12 @@ const props = defineProps<{
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string }[];
   loading?: boolean;
-
-  // Selection/Fab state
   isSelectionMode?: boolean;
   selectedCount?: number;
   currentSort?: string;
   isRefreshing?: boolean;
-
-  // Sync Status
   syncError?: string;
   isEmpty?: boolean;
-
-  // FAB Props
   fabState?: {
     visible: boolean;
     label: string;
@@ -47,15 +38,13 @@ const emit = defineEmits<{
   "update:search": [string];
   "update:sort": [string];
   "select-all": [];
-  "select-score": [number, string]; // Assuming threshold and mode
+  "select-score": [number, string];
   "clear-selection": [];
   "fab-action": [MouseEvent];
   "fab-blitz": [];
   "fab-dismiss": [];
-  // We need to re-emit these from ConsoleHeader if they are used there
 }>();
 
-// FAB Visibility Logic
 const { setFabVisible } = useUiCoordinator();
 if (props.fabState) {
   watch(
@@ -68,7 +57,7 @@ if (props.fabState) {
 
 <template>
   <div class="view-container">
-    <PullToRefresh @refresh="$emit('refresh')" />
+
 
     <ConsoleHeader
       :title="title"

@@ -7,6 +7,7 @@ import { useHaptics } from "../composables/useHaptics";
 import { useWakeLock } from "../composables/useWakeLock";
 import { useDemoMode } from "../composables/useDemoMode";
 import { useClanData } from "../composables/useClanData";
+import { useConnectionStatus } from "../composables/useConnectionStatus";
 import ConsoleHeader from "../components/ConsoleHeader.vue";
 import SettingsCard from "../components/SettingsCard.vue";
 import Icon from "../components/Icon.vue";
@@ -29,13 +30,21 @@ onMounted(() => {
   checkApiStatus();
 });
 
+const { status: unifiedStatus } = useConnectionStatus();
+
 const apiStatusObject = computed(() => {
-  if (apiStatus.value === "online")
+  if (unifiedStatus.value === "online")
     return { type: "ready", text: "Systems Online" } as const;
-  if (apiStatus.value === "offline")
+  if (unifiedStatus.value === "offline")
     return { type: "error", text: "Disconnected" } as const;
+  if (unifiedStatus.value === "syncing")
+    return { type: "loading", text: "Syncing..." } as const;
+  if (unifiedStatus.value === "success-resolve")
+    return { type: "ready", text: "Verified" } as const;
+  
   if (apiStatus.value === "unconfigured")
     return { type: "error", text: "Setup Required" } as const;
+
   return { type: "loading", text: "Ping..." } as const;
 });
 
