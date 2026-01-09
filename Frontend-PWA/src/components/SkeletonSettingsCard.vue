@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-const props = const props = defineProps<{
+const props = defineProps<{
   index?: number; // For subtle variations
 }>();
 
