@@ -89,6 +89,18 @@ async function bootstrap() {
     // ⚡ Increased delay to 500ms to ensure LCP is recorded before network/main thread gets busy
     setTimeout(async () => {
       try {
+        // Register Service Worker for Badging & PWA features
+        if ("serviceWorker" in navigator) {
+          try {
+            const reg = await navigator.serviceWorker.register("/sw.js", {
+              scope: "/",
+            });
+            // console.log("SW Registered", reg);
+          } catch (err) {
+            console.error("SW Register Failed", err);
+          }
+        }
+
         // Start Network Sync NOW, after visual settle
         const clanData = useClanData();
         clanData.startBackgroundSync();
@@ -111,9 +123,5 @@ async function bootstrap() {
         console.error("Background sync failed:", e);
       }
     }, 500);
-  } catch (e) {
-    showFatalError(e);
-  }
-}
 
-bootstrap();
+    bootstrap();

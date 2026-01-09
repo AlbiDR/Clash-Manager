@@ -11,6 +11,8 @@ export interface ModuleState {
   experimentalNotifications: boolean;
   notificationBadgeHighPotential: boolean;
   notificationThreshold: 50 | 75;
+  notificationSound: boolean; // Improvement #11
+  notificationQuietMode: boolean; // Improvement #5
 }
 
 // 📱 Device Detection for Defaults
@@ -27,6 +29,8 @@ const defaultState: ModuleState = {
   experimentalNotifications: true, // On by default
   notificationBadgeHighPotential: true, // On by default
   notificationThreshold: 75, // Default to high-potential (≥75)
+  notificationSound: true,
+  notificationQuietMode: false,
 };
 
 const modules = ref<ModuleState>({ ...defaultState });
@@ -79,6 +83,14 @@ export function useModules() {
             parsed.notificationThreshold === 75
               ? parsed.notificationThreshold
               : defaultState.notificationThreshold,
+          notificationSound:
+            typeof parsed.notificationSound === "boolean"
+              ? parsed.notificationSound
+              : defaultState.notificationSound,
+          notificationQuietMode:
+            typeof parsed.notificationQuietMode === "boolean"
+              ? parsed.notificationQuietMode
+              : defaultState.notificationQuietMode,
         };
       } else {
         modules.value = { ...defaultState };

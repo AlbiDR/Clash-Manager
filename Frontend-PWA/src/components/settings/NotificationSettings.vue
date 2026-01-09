@@ -1,19 +1,54 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useModules } from "../../composables/useModules";
 import { useHaptics } from "../../composables/useHaptics";
+import { useBadge } from "../../composables/useBadge";
+import { useClanData } from "../../composables/useClanData";
 import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
-const { modules } = useModules();
+const { modules, toggle } = useModules();
 const haptics = useHaptics();
+const { requestPermission, sendLocalNotification } = useBadge();
+const { startBackgroundSync, lastSync } = useClanData();
+
+const permissionState = ref<NotificationPermission | "unsupported">("default");
+// Improvement #10: Time formatting
+const lastSyncTime = computed(() => {
+    if (!lastSync?.value) return "Never";
+    const date = new Date(lastSync.value);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+});
+
+onMounted(() => {
+  if (typeof Notification !== "undefined") {
+    permissionState.value = Notification.permission;
+  } else {
+    permissionState.value = "unsupported";
+  }
+});
 
 const threshold = computed(() => modules.value.notificationThreshold);
 
-const setThreshold = (value: 50 | 75) => {
+const setThreshold = (value: number) => {
   haptics.tap();
   modules.value.notificationThreshold = value;
+  // Trigger update immediately
+  startBackgroundSync();
 };
+
+const enableNotifications = async () => {
+  haptics.tap();
+  // Improvement #13 was implemented in template (UI rationale)
+  const res = await requestPermission();
+  permissionState.value = res;
+};
+
+// Improvement #9: Test Logic
+const sendTest = async () => {
+    haptics.heavy();
+    await sendLocalNotification("Clash Manager", "This is a test notification from the new system.");
+}
 </script>
 
 <template>
@@ -25,11 +60,13 @@ const setThreshold = (value: 50 | 75) => {
         <div class="row-desc">Sync alerts for recruits with score</div>
       </div>
 
-      <div class="threshold-selector">
+      <div class="threshold-selector" role="group" aria-label="Notification Threshold">
         <button
           :class="{ active: threshold === 50 }"
           @click="setThreshold(50)"
           class="threshold-btn"
+          aria-label="Set threshold to 50"
+          :aria-pressed="threshold === 50"
         >
           <span class="threshold-symbol">≥</span>50
         </button>
@@ -37,10 +74,61 @@ const setThreshold = (value: 50 | 75) => {
           :class="{ active: threshold === 75 }"
           @click="setThreshold(75)"
           class="threshold-btn"
+          aria-label="Set threshold to 75"
+          :aria-pressed="threshold === 75"
         >
           <span class="threshold-symbol">≥</span>75
         </button>
       </div>
+    </div>
+
+    <!-- Improvement #13: Permission Rationale & Grant -->
+    <div v-if="permissionState === 'default'" class="perm-section">
+        <div class="perm-rationale">
+          <Icon name="bell" size="16" />
+          <span>Enable notifications to get updates on high-potential recruits even when the app is closed.</span>
+        </div>
+        <button class="enable-btn" @click="enableNotifications">
+            Enable Notifications & Badges
+        </button>
+    </div>
+
+    <!-- Toggles Section -->
+    <div class="toggles-grid" v-if="permissionState === 'granted'">
+       <!-- Improvement #5: Quiet Mode -->
+       <div class="toggle-row" @click="toggle('notificationQuietMode')">
+          <div class="row-info">
+             <div class="row-label">Quiet Mode</div>
+             <div class="row-desc">Update badge without sound or popups</div>
+          </div>
+          <div class="switch" :class="{ active: modules.notificationQuietMode }">
+             <div class="handle"></div>
+          </div>
+       </div>
+
+       <!-- Improvement #11: Sound Control -->
+       <div class="toggle-row" @click="toggle('notificationSound')">
+          <div class="row-info">
+             <div class="row-label">Sound</div>
+             <div class="row-desc">Play system sound on sync</div>
+          </div>
+          <div class="switch" :class="{ active: modules.notificationSound }">
+             <div class="handle"></div>
+          </div>
+       </div>
+    </div>
+
+    <!-- Actions Row -->
+    <div class="actions-row" v-if="permissionState === 'granted'">
+        <!-- Improvement #9: Test Notification -->
+        <button class="action-btn" @click="sendTest">
+           <Icon name="bell" size="14" />
+           <span>Test Alert</span>
+        </button>
+        <div class="sync-info">
+           <!-- Improvement #10: Last Sync Time -->
+           Last synced: {{ lastSyncTime }}
+        </div>
     </div>
 
     <div class="badge-preview">
@@ -61,6 +149,129 @@ const setThreshold = (value: 50 | 75) => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.perm-section {
+    margin-top: 16px;
+}
+
+.enable-btn {
+    width: 100%;
+    height: 36px;
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.perm-section {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.perm-rationale {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--sys-color-on-surface-variant);
+    background: var(--sys-color-surface-container);
+    padding: 12px;
+    border-radius: 8px;
+    align-items: center;
+}
+
+.enable-btn {
+    width: 100%;
+    height: 40px;
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* Toggles Grid */
+.toggles-grid {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(128,128,128, 0.1);
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.switch {
+  width: 44px;
+  height: 24px;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 12px;
+  position: relative;
+  transition: 0.3s;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+}
+.switch.active {
+  background: var(--sys-color-primary);
+  border-color: var(--sys-color-primary);
+}
+.switch .handle {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.switch.active .handle {
+  left: calc(100% - 19px);
+}
+
+/* Actions Row */
+.actions-row {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid rgba(128,128,128, 0.1);
+}
+
+.action-btn {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 99px;
+    border: 1px solid var(--sys-color-outline-variant);
+    background: transparent;
+    color: var(--sys-color-on-surface);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.sync-info {
+    font-size: 11px;
+    opacity: 0.5;
+    font-family: var(--sys-font-family-mono);
 }
 
 .section-header {
@@ -138,14 +349,14 @@ const setThreshold = (value: 50 | 75) => {
 .badge-preview {
   margin-top: 16px;
   padding: 12px;
-  background: rgba(var(--sys-color-primary-rgb), 0.05);
+  background: rgba(var(--sys-color-primary-rgb), 0.08); /* Fixed opacity */
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--sys-color-on-surface-variant);
-  opacity: 0.8;
+  color: var(--sys-color-on-surface);
+  /* opacity: 0.8; Removed to improve contrast */
 }
 </style>
