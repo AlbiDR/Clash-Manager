@@ -86,7 +86,8 @@ export function useConsoleLogic<T extends { id: string }>(
   // 7. Computed Status
   const status = computed(() => {
     if (syncError.value) return { type: "error", text: "Retry" } as const;
-    if (isRefreshing.value)
+    // Fix 22: Empty State vs Loading State
+    if (isRefreshing.value && (!data.value || data.value.length === 0))
       return { type: "loading", text: "Syncing..." } as const;
     if (data.value && data.value.length > 0)
       return {
@@ -106,7 +107,8 @@ export function useConsoleLogic<T extends { id: string }>(
 
   // 9. Skeleton State
   const showSkeletons = computed(
-    () => !isHydrated.value || (isRefreshing.value && (!data.value || data.value.length === 0)),
+    // Fix 21: Skeleton Logic (Prevent skeletons if error exists, so error state is visible)
+    () => !syncError.value && (!isHydrated.value || (isRefreshing.value && (!data.value || data.value.length === 0))),
   );
 
   // 10. Helper for Selection

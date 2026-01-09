@@ -1,11 +1,15 @@
 import { ref, computed, readonly, onMounted, onUnmounted } from "vue";
 import { useApiState } from "./useApiState";
+import { useClanData } from "./useClanData"; // Fix 20
 
 export type ConnectionStatus = "online" | "offline" | "syncing" | "success-resolve";
 
 const isOnline = ref(navigator.onLine);
 const isSuccessFading = ref(false);
 const isSyncing = ref(false);
+
+// Fix 19: Debounce Offline
+let offlineTimeout: any = null;
 
 /**
  * 🌐 USE CONNECTION STATUS
@@ -14,9 +18,21 @@ const isSyncing = ref(false);
  */
 export function useConnectionStatus() {
   const { apiStatus } = useApiState();
+  const { refresh } = useClanData(); // Fix 20
 
-  function handleOnline() { isOnline.value = true; }
-  function handleOffline() { isOnline.value = false; }
+  function handleOnline() {
+    if (offlineTimeout) clearTimeout(offlineTimeout);
+    isOnline.value = true;
+    // Fix 20: Reconnection Trigger
+    refresh();
+  }
+  
+  function handleOffline() { 
+    // Fix 19: Debounce (2s buffer before showing offline UI)
+    offlineTimeout = setTimeout(() => {
+       isOnline.value = false;
+    }, 2000);
+  }
 
   onMounted(() => {
     window.addEventListener("online", handleOnline);

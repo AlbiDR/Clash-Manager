@@ -18,6 +18,18 @@ const getGasUrl = () => {
     url = import.meta.env.VITE_GAS_URL || "";
   }
   
+  // Fix 24: Url Sanitization
+  if (url) url = url.trim();
+
+  // Fix 25: Protocol Enforcement
+  if (url && !url.startsWith("https://")) {
+    if (url.startsWith("http://")) {
+      url = url.replace("http://", "https://");
+    } else {
+      url = `https://${url}`;
+    }
+  }
+  
   // 🛡️ SECURITY: Basic format validation to prevent injection or malformed requests
   if (url && !url.startsWith("https://") && !url.includes("google.com/macros")) {
     console.warn("[Security] Suspicious GAS URL detected:", url);
@@ -28,7 +40,8 @@ const getGasUrl = () => {
 };
 
 
-const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V6";
+// Fix 8: Cache Versioning
+const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
   let parsedData: any;
@@ -51,7 +64,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   }
 
   // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
-  const { z } = await import("zod");
+  // Fix 6: Zod Import Retry
+  let z: any;
+  try {
+     const mod = await import("zod");
+     z = mod.z;
+  } catch(e) {
+     console.warn("Zod load failed, retrying...");
+     await new Promise(r => setTimeout(r, 200));
+     const mod = await import("zod");
+     z = mod.z;
+  }
 
   const result = z
     .object({
@@ -116,11 +139,14 @@ async function fetchWithRetry(
     console.warn("[Network] Device is offline. Waiting for connectivity...");
     try {
       await new Promise((resolve, reject) => {
+        let onOnline: () => void;
+        
         const timeout = setTimeout(() => {
+          window.removeEventListener("online", onOnline); // Fix 9: Listener Cleanup
           reject(new Error("Network offline: Timeout waiting for connectivity"));
         }, 10000); // 10s wait for online
 
-        const onOnline = () => {
+        onOnline = () => {
           clearTimeout(timeout);
           resolve(true);
         };
@@ -158,8 +184,12 @@ async function fetchWithRetry(
       console.warn(
         `Fetch failed (Network: ${isNetworkError}), retrying (${retries} left)...`,
       );
-      await new Promise((r) => setTimeout(r, backoff));
-      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+      // Fix 12: Jitter in Exponential Backoff
+  const jitter = Math.random() * 200; 
+  const nextBackoff = (backoff * 2) + jitter;
+  
+  await new Promise((r) => setTimeout(r, backoff));
+  return fetchWithRetry(url, options, retries - 1, nextBackoff);
     }
     throw e;
   }
@@ -190,13 +220,21 @@ async function gasRequest<T>(
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const text = await response.text();
 
+  // Fix 16: Empty Response Handling
+  if (!text || !text.trim()) {
+    throw new Error("Empty Response from Server");
+  }
+
   let envelope: GenericEnvelope<T>;
   try {
     envelope = JSON.parse(text);
   } catch (e) {
+// Fix 14: HTML Detection (Enhanced)
+    const lowerText = text.trim().toLowerCase();
     if (
-      text.trim().toLowerCase().startsWith("<html") ||
-      text.includes("<!DOCTYPE html>")
+      lowerText.startsWith("<html") ||
+      lowerText.includes("<!doctype html>") ||
+      lowerText.includes("google accounts")
     ) {
       throw new Error(
         "Google Server Error (Received HTML instead of JSON). Try again later.",
@@ -205,10 +243,10 @@ async function gasRequest<T>(
     throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`);
   }
 
-  // Robust status check across multiple GAS response versions
+// Fix 13: Status Check (Case Insensitive)
   const isSuccess = 
     envelope.success === true || 
-    envelope.status === "success" || 
+    (envelope.status && envelope.status.toLowerCase() === "success") || 
     (envelope.data && !envelope.error);
 
   if (isSuccess) {

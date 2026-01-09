@@ -8,6 +8,7 @@ import { useWakeLock } from "../composables/useWakeLock";
 import { useDemoMode } from "../composables/useDemoMode";
 import { useClanData } from "../composables/useClanData";
 import { useConnectionStatus } from "../composables/useConnectionStatus";
+import { idb } from "../utils/idb"; // Fix 23: Import IDB
 import ConsoleHeader from "../components/ConsoleHeader.vue";
 import SettingsCard from "../components/SettingsCard.vue";
 import Icon from "../components/Icon.vue";
@@ -55,14 +56,20 @@ function handleThemeChange(newTheme: any) {
   setTheme(newTheme);
 }
 
-function factoryReset() {
+// Fix 23: Enhanced Factory Reset
+async function factoryReset() {
   if (
     confirm(
-      "Reset Application Data?\n\nThis will clear local cache and settings. Data on the Google Sheet will NOT be affected.",
+      "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Data on the Google Sheet will NOT be affected.",
     )
   ) {
     localStorage.clear();
     sessionStorage.clear();
+    try {
+      await idb.clear();
+    } catch (e) {
+      console.warn("IDB clear failed", e);
+    }
     window.location.reload();
   }
 }
