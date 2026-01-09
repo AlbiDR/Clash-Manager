@@ -36,7 +36,8 @@ export function useClanData() {
         updateBadgeCount(parsed);
       }
     } catch (e) {
-      console.warn("Hydration failed", e);
+      console.warn("Hydration failed (Corrupt Data), purging...", e);
+      localStorage.removeItem(SNAPSHOT_KEY);
       clanData.value = null;
     } finally {
       isHydrated.value = true;
@@ -44,6 +45,8 @@ export function useClanData() {
   }
 
   // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
+  let refreshAbortController: AbortController | null = null;
+
   async function startBackgroundSync() {
     if (isDemoMode.value) {
       // console.log("🌟 Demo Mode Active");
@@ -56,7 +59,13 @@ export function useClanData() {
 
     // Fast DB Path (SWR) via IDB - still good for robust caching
     try {
-      const cached = await loadCache();
+      const cached = await Promise.race([
+        loadCache(),
+        new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error("IDB Timeout")), 2000)
+        )
+      ]);
+
       if (cached) {
         // Only update if cached data is newer than what we got from localStorage or if no local storage data was found.
         if (
@@ -90,6 +99,12 @@ export function useClanData() {
   async function refresh() {
     if (isRefreshing.value) return;
 
+    // Fix 5: Cancel previous pending request
+    if (refreshAbortController) {
+      refreshAbortController.abort();
+    }
+    refreshAbortController = new AbortController();
+
     try {
       isRefreshing.value = true;
       syncStatus.value = "syncing";
@@ -120,11 +135,14 @@ export function useClanData() {
       });
       updateBadgeCount(remoteData);
     } catch (e: unknown) {
+      if (e instanceof Error && e.name === 'AbortError') return; // Ignore aborts
+
       console.error("Sync failed:", e);
       syncStatus.value = "error";
       syncError.value = e instanceof Error ? e.message : "Sync failed";
     } finally {
       isRefreshing.value = false;
+      refreshAbortController = null;
       setTimeout(() => {
         if (syncStatus.value === "success") syncStatus.value = "idle";
       }, 2000);

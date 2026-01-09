@@ -11,6 +11,7 @@ const apiStatus = ref<ApiStatus>("checking");
 const pingData = ref<PingResponse | null>(null);
 
 let isInitialized = false;
+let retryAttempted = false; // Fix 18: State Recovery Retry State
 
 async function checkApiStatus() {
   apiStatus.value = "checking";
@@ -24,7 +25,12 @@ async function checkApiStatus() {
 
   try {
     const start = Date.now();
-    const response = await ping();
+    
+    // Fix 17: Ping Timeout (5s)
+    const response = await Promise.race([
+      ping(),
+      new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Ping Timeout")), 5000))
+    ]);
     const latency = Date.now() - start;
 
     if (response.status === "success" && response.data) {
@@ -37,8 +43,14 @@ async function checkApiStatus() {
       apiStatus.value = "offline";
     }
   } catch (e) {
-    console.error("API Status Check Failed:", e);
+    console.warn("API Status Check Failed:", e);
     apiStatus.value = "offline";
+
+    // Fix 18: State Recovery (Auto-retry once)
+    if (!retryAttempted) {
+       retryAttempted = true;
+       setTimeout(checkApiStatus, 2000);
+    }
   }
 }
 

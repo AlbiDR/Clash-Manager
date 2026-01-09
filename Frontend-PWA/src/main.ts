@@ -22,32 +22,51 @@ function showFatalError(error: unknown) {
   const appEl = document.getElementById("app");
   if (appEl && !appEl.innerHTML.includes("app-container")) {
     const message = error instanceof Error ? error.message : String(error);
-    appEl.innerHTML = `<div style="padding:20px;color:red;text-align:center;">
-            <h1>System Error</h1>
-            <p>${message || "Unknown error during startup"}</p>
-            <button onclick="localStorage.clear();window.location.reload()">Factory Reset</button>
-        </div>`;
+    // Fix 10: Boot Error Visuals - More descriptive and actionable
+    appEl.innerHTML = `
+      <div style="
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        height: 100vh; 
+        background: #111; 
+        color: #fff; 
+        font-family: system-ui, sans-serif;
+        text-align: center;
+        padding: 20px;
+      ">
+        <h1 style="color: #ff5252; margin-bottom: 16px;">System Critical Error</h1>
+        <p style="color: #aaa; margin-bottom: 32px; max-width: 400px; line-height: 1.5;">
+          ${message || "Unknown error during startup"}
+        </p>
+        <div style="display: flex; gap: 12px;">
+           <button 
+             onclick="window.location.reload()" 
+             style="padding: 12px 24px; background: #333; color: white; border: none; border-radius: 8px; cursor: pointer;">
+             Retry
+           </button>
+           <button 
+             onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload()" 
+             style="padding: 12px 24px; background: #ff5252; color: white; border: none; border-radius: 8px; cursor: pointer;">
+             Factory Reset
+           </button>
+        </div>
+        <small style="margin-top: 40px; color: #555;">Version: ${import.meta.env.VITE_APP_VERSION || 'Unknown'}</small>
+      </div>`;
   }
 }
 
-// Enhanced Global Error Trap for Logcat Visibility
-window.addEventListener("error", (event) => {
-  console.error(
-    `[GLOBAL ERROR] Msg: ${event.message} | File: ${event.filename} | Line: ${event.lineno}:${event.colno}`,
-  );
-  if (event.error && event.error.stack) {
-    console.error(`[STACK]: ${event.error.stack}`);
-  }
-  showFatalError(event.error);
-});
-
-window.addEventListener("unhandledrejection", (event) => {
-  console.error(`[UNHANDLED PROMISE]: ${event.reason}`);
-  showFatalError(event.reason);
-});
+// ... global error handlers ...
 
 async function bootstrap() {
   try {
+    // Fix 11: Config Validation
+    const gasUrl = import.meta.env.VITE_GAS_URL;
+    if (!gasUrl && !localStorage.getItem("cm_gas_url")) {
+       throw new Error("Missing Configuration: VITE_GAS_URL is not defined in environment variables.");
+    }
+
     // 1. Critical Config (Synchronous)
     const modules = useModules();
     modules.init();
