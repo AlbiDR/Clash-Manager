@@ -47,7 +47,7 @@ export function useClanData() {
   // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
   async function startBackgroundSync() {
     if (isDemoMode.value) {
-      console.log("🌟 Demo Mode Active");
+      // console.log("🌟 Demo Mode Active");
       const mock = generateMockData();
       clanData.value = mock;
       lastSyncTime.value = mock.timestamp;
@@ -67,7 +67,7 @@ export function useClanData() {
           clanData.value = cached;
           lastSyncTime.value = cached.timestamp;
           updateBadgeCount(cached);
-          console.log("⚡ IDB Cache Refresh: Applied newer data.");
+          // console.log("⚡ IDB Cache Refresh: Applied newer data.");
         }
       }
     } catch (e) {
@@ -85,9 +85,9 @@ export function useClanData() {
         ? data.hh.filter((r) => r.s >= threshold).length
         : data.hh.length;
       setBadge(count);
-      console.log(
-        `[Badge] Updated to ${count} recruits (threshold: ≥${threshold})`,
-      );
+      // console.log(
+      //  `[Badge] Updated to ${count} recruits (threshold: ≥${threshold})`,
+      // );
     }
   }
 
@@ -117,16 +117,16 @@ export function useClanData() {
 
       // Save to snapshot for next cold start LCP
       // Use requestIdleCallback or setTimeout to avoid blocking input during save
-      const saveTask = (window as any).requestIdleCallback || setTimeout;
+      const saveTask = window.requestIdleCallback || setTimeout;
       saveTask(() => {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
         // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
       });
       updateBadgeCount(remoteData);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Sync failed:", e);
       syncStatus.value = "error";
-      syncError.value = e.message || "Sync failed";
+      syncError.value = e instanceof Error ? e.message : "Sync failed";
     } finally {
       isRefreshing.value = false;
       setTimeout(() => {
