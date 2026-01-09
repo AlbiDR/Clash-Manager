@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useClanData } from "./composables/useClanData";
 import { useHaptics } from "./composables/useHaptics";
-import { useConnectionStatus } from "./composables/useConnectionStatus";
+import { useConnectionStatus } from "./composables/useConnectionStatus"; 
 import FloatingDock from "./components/FloatingDock.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ErrorBoundary from "./components/ErrorBoundary.vue";
@@ -13,7 +13,7 @@ const haptics = useHaptics();
 const route = useRoute();
 const currentRoute = computed(() => route);
 
-const { status: connectionState, setSuccess, setSyncing } = useConnectionStatus();
+const { status: connectionState, setSuccess, setSyncing, isOnline } = useConnectionStatus();
 
 watch(syncStatus, (newStatus, oldStatus) => {
   if (oldStatus === "syncing" && newStatus === "success") {
@@ -24,6 +24,13 @@ watch(syncStatus, (newStatus, oldStatus) => {
 
 watch(syncStatus, (sStatus) => {
   setSyncing(sStatus === "syncing");
+});
+
+// Fix 20 (relocated): Trigger refresh when connection returns
+watch(isOnline, (online, wasOnline) => {
+  if (online && !wasOnline) {
+    refresh();
+  }
 });
 </script>
 

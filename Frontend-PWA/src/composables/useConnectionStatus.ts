@@ -1,6 +1,5 @@
 import { ref, computed, readonly, onMounted, onUnmounted } from "vue";
 import { useApiState } from "./useApiState";
-import { useClanData } from "./useClanData"; // Fix 20
 
 export type ConnectionStatus = "online" | "offline" | "syncing" | "success-resolve";
 
@@ -18,13 +17,11 @@ let offlineTimeout: any = null;
  */
 export function useConnectionStatus() {
   const { apiStatus } = useApiState();
-  const { refresh } = useClanData(); // Fix 20
 
   function handleOnline() {
     if (offlineTimeout) clearTimeout(offlineTimeout);
     isOnline.value = true;
-    // Fix 20: Reconnection Trigger
-    refresh();
+    // REVERTED Fix 20: Removed circular dependency - refresh() should be called by App.vue instead
   }
   
   function handleOffline() { 
