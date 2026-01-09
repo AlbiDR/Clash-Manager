@@ -325,12 +325,16 @@ function formatDescription(text: string) {
   transform: scale(0.92);
 }
 
-  min-width: 80px;
-  justify-content: center;
-  transition: all 0.2s var(--sys-motion-spring);
-  cursor: pointer;
-  user-select: none;
-}
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--sys-color-surface-container-high);
+  border-radius: 99px;
+  border: 1px solid var(--sys-surface-glass-border);
+  font-size: 13px;
+  font-weight: 800;
 .status-pill:hover {
   background: var(--sys-color-surface-container-high);
   border-color: var(--sys-color-outline-variant);
