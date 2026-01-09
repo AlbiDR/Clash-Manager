@@ -55,12 +55,12 @@ const trendInfo = computed(() => {
 
 <template>
   <BaseCard
-    :id="id"
-    :expanded="expanded"
-    :selected="selected"
-    :selection-mode="selectionMode"
-    :tone-class="scoreTone(member.s)"
-    :aria-label="`${member.n}, score ${Math.round(member.s)}, ${roleInfo(member.d.role).label}`"
+    :id="props.id"
+    :expanded="props.expanded"
+    :selected="props.selected"
+    :selection-mode="props.selectionMode"
+    :tone-class="scoreTone(props.member.s)"
+    :aria-label="`${props.member.n}, score ${Math.round(props.member.s)}, ${roleInfo(props.member.d.role).label}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
@@ -129,7 +129,7 @@ const trendInfo = computed(() => {
 
     <!-- SLOT: Expanded Content -->
     <template #expanded-content>
-      <div class="stats-grid" :aria-busy="appIsRefreshing ? 'true' : 'false'">
+      <div class="stats-grid" :aria-busy="props.appIsRefreshing">
         <template v-if="appIsRefreshing">
           <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
             <div
@@ -176,10 +176,10 @@ const trendInfo = computed(() => {
         </template>
       </div>
 
-      <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
+      <WarHistoryChart :history="props.member.d.hist" :loading="props.appIsRefreshing" />
 
       <div class="actions">
-        <template v-if="appIsRefreshing">
+        <template v-if="props.appIsRefreshing">
           <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
           <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
         </template>

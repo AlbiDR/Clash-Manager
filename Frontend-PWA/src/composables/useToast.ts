@@ -66,7 +66,7 @@ export function useToast() {
     const idx = toasts.value.findIndex((t) => t.id === id);
     if (idx !== -1) {
       const toast = toasts.value[idx];
-      if (toast.timer) clearTimeout(toast.timer);
+      if (toast && toast.timer) clearTimeout(toast.timer);
       toasts.value.splice(idx, 1);
     }
   }
@@ -80,14 +80,15 @@ export function useToast() {
       const toast = toasts.value[idx];
 
       // Stop dismissal timer
-      if (toast.timer) clearTimeout(toast.timer);
+      if (toast && toast.timer) clearTimeout(toast.timer);
       
       // Remove from UI
       toasts.value.splice(idx, 1);
 
-      if (toast.onAction) {
+      if (toast && toast.onAction) {
         toast.onAction();
       }
+
 
       // Lock to prevent multi-fire in rapid succession
       setTimeout(() => {

@@ -95,11 +95,11 @@ async function bootstrap() {
         // Register Service Worker for Badging & PWA features
         if ("serviceWorker" in navigator) {
           try {
-            const reg = await navigator.serviceWorker.register("/sw.js", {
+            await navigator.serviceWorker.register("/sw.js", {
               scope: "/",
             });
-            // console.log("SW Registered", reg);
           } catch (err) {
+
             console.error("SW Register Failed", err);
           }
         }

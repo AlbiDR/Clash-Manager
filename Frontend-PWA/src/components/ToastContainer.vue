@@ -8,7 +8,7 @@ const { toasts, remove, triggerAction } = useToast();
 const { toastOffset } = useUiCoordinator();
 
 // GPU Optimization: TranslateY instead of 'bottom' property transition
-const styleObject = computed(() => ({
+const containerStyle = computed(() => ({
   // Base position fixed to bottom + safe area
   bottom: "calc(0px + env(safe-area-inset-bottom))",
   // Dynamic lift based on UI state (Fab/Dock visibility)
@@ -19,7 +19,7 @@ const styleObject = computed(() => ({
 <template>
   <div 
     class="toast-container" 
-    :style="styleObject"
+    :style="containerStyle"
     role="status"
     aria-live="polite"
     aria-atomic="false"

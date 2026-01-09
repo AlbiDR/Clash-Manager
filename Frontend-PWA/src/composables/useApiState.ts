@@ -27,7 +27,7 @@ async function checkApiStatus() {
     const response = await ping();
     const latency = Date.now() - start;
 
-    if (response.success && response.data) {
+    if (response.status === "success" && response.data) {
       apiStatus.value = "online";
       pingData.value = {
         ...response.data,
