@@ -5,6 +5,18 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: "Target Architecture (for test builds)"
+        required: true
+        default: "all"
+        type: select
+        options:
+          - all
+          - aarch64
+          - armv7
+          - i686
+          - x86_64
 
 jobs:
   build-android:
@@ -13,6 +25,7 @@ jobs:
       contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 16
 
     defaults:
       run:
@@ -35,12 +48,19 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "21"
-          # cache: "gradle" removed because src-tauri/gen/android is not committed
+          cache: "gradle"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+          targets: >-
+            ${{ 
+              (github.event.inputs.architecture == 'all' || github.event_name == 'push') && 'aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android' ||
+              (github.event.inputs.architecture == 'aarch64' && 'aarch64-linux-android') ||
+              (github.event.inputs.architecture == 'armv7' && 'armv7-linux-androideabi') ||
+              (github.event.inputs.architecture == 'i686' && 'i686-linux-android') ||
+              (github.event.inputs.architecture == 'x86_64' && 'x86_64-linux-android') 
+            }}
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -58,10 +78,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e  # Exit on error
-          
+
           echo "🔍 Fetching latest release from GitHub API..."
           LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
-          
+
           if [ -z "$LATEST_TAG" ]; then
             # No previous release found, start fresh
             MAJOR=8
@@ -148,13 +168,16 @@ jobs:
               fi
             fi
           fi
-          
+
           # Generate version strings
           V_NAME="${MAJOR}.${MINOR}.${PATCH}"
           V_CODE=$(date -u +%s)
-          
+
           # Validate version is not downgrading (sanity check)
           if [ -n "$VERSION_ONLY" ]; then
+            MAJOR_OLD=$(echo "$VERSION_ONLY" | cut -d. -f1)
+            MINOR_OLD=$(echo "$VERSION_ONLY" | cut -d. -f2)
+            PATCH_OLD=$(echo "$VERSION_ONLY" | cut -d. -f3)
             OLD_NUMERIC=$((MAJOR_OLD * 1000000 + MINOR_OLD * 1000 + PATCH_OLD))
             NEW_NUMERIC=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
             if [ "$NEW_NUMERIC" -le "$OLD_NUMERIC" ]; then
@@ -163,21 +186,21 @@ jobs:
               V_NAME="${MAJOR}.${MINOR}.${PATCH}"
             fi
           fi
-          
+
           BUILD_TAG="v${V_NAME}-build${V_CODE}"
           APK_FILENAME="clash-manager-${BUILD_TAG}.apk"
-          
+
           # Update Tauri manifest
           jq --arg name "$V_NAME" '.version = $name' \
              src-tauri/tauri.conf.json > tauri.tmp && mv tauri.tmp src-tauri/tauri.conf.json
-          
+
           # Output for GitHub Actions
           echo "version_code=$V_CODE" >> $GITHUB_OUTPUT
           echo "v_name=$V_NAME" >> $GITHUB_OUTPUT
           echo "build_tag=$BUILD_TAG" >> $GITHUB_OUTPUT
           echo "apk_filename=$APK_FILENAME" >> $GITHUB_OUTPUT
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
-          
+
           # Summary
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -200,10 +223,10 @@ jobs:
         if: steps.cache-android-gen.outputs.cache-hit != 'true'
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
-          
+
           echo "🧹 Ensuring clean slate for initialization..."
           rm -rf src-tauri/gen/android
-          
+
           echo "🏗️  Initializing Android Support..."
           npx tauri android init --ci
 
@@ -222,8 +245,14 @@ jobs:
           export VITE_IS_TAURI_BUILD=true
 
           echo "🔨 Building Release APK..."
+
+          ARCH_ARG=""
+          if [ "${{ github.event.inputs.architecture }}" != "all" ] && [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ARCH_ARG="${{ github.event.inputs.architecture }}"
+          fi
+
           # Standard build - Tauri manages minification safely via its own internal config
-          npx tauri android build --apk true
+          npx tauri android build $ARCH_ARG --apk true
 
       - name: Sign APK
         run: |
@@ -358,11 +387,11 @@ jobs:
           CURRENT_TAG="${{ steps.versioning.outputs.build_tag }}"
           BUMP_TYPE="${{ steps.versioning.outputs.bump_type }}"
           VERSION="${{ steps.versioning.outputs.v_name }}"
-          
+
           # Create changelog file
           CHANGELOG_FILE="changelog.md"
           > "$CHANGELOG_FILE"  # Clear file
-          
+
           if [ -z "$LATEST_TAG" ]; then
             echo "📝 First release - generating initial changelog"
             echo "## 🎉 Initial Release" >> "$CHANGELOG_FILE"
@@ -479,9 +508,9 @@ jobs:
             # Cleanup temp files
             rm -f "$COMMITS_FILE" "$CATEGORIZED_FILE" "$OTHER_FILE"
           fi
-          
+
           echo "changelog_file=$CHANGELOG_FILE" >> $GITHUB_OUTPUT
-          
+
           echo ""
           echo "✅ Changelog generated successfully:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
