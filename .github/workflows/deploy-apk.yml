@@ -238,6 +238,19 @@ jobs:
           echo "🏗️  Initializing Android Support..."
           npx tauri android init --ci
 
+      - name: Patch Android Project
+        run: |
+          cd Frontend-PWA/src-tauri/gen/android
+          
+          echo "🔧 Patching gradle.properties..."
+          # Suppress Java 8 source/target deprecation warnings appearing on JDK 21
+          echo "android.javaCompile.suppressSourceTargetDeprecationWarning=true" >> gradle.properties
+          
+          echo "🩹 Patching build.gradle.kts (Java 11 Modernization)..."
+          # Modernize Java compatibility to Java 11 (better for JDK 21 environment)
+          # Tauri 2.0 generates build.gradle.kts in the app folder
+          find . -name "build.gradle.kts" -exec sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_11/g' {} +
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
