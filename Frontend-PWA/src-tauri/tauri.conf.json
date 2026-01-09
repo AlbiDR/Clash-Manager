@@ -6,8 +6,7 @@
   "build": {
     "frontendDist": "https://albidr.github.io/Clash-Manager/",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "npm run dev"
   },
   "app": {
     "windows": [
