@@ -22,21 +22,6 @@ const props = defineProps<{
 
 const { fabOffset } = useUiCoordinator();
 
-// GPU Optimization: TranslateY instead of 'bottom' property transition
-const styleObject = computed(() => {
-  // ⚡ Positioning Logic: 
-  // When visible: offset UP by fabOffset (24px) from bottom
-  // When hidden: translate DOWN beyond viewport
-  const bottomOffset = 24; // px from bottom of viewport when visible
-  
-  return {
-    transform: props.visible 
-      ? `translateY(-${bottomOffset}px)` 
-      : 'translateY(120px)',
-    opacity: props.visible ? 1 : 0,
-  } as const;
-});
-
 const emit = defineEmits<{
   action: [payload: MouseEvent];
   dismiss: [];
@@ -48,7 +33,6 @@ const emit = defineEmits<{
   <div
     class="fab-island"
     :class="{ visible: visible }"
-    :style="styleObject"
     @touchstart.stop
   >
     <div class="fab-content">
@@ -139,23 +123,29 @@ const emit = defineEmits<{
 <style scoped>
 .fab-island {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
-  z-index: 1000; /* Increased from 300 to ensure it's above all content */
-  padding-bottom: env(safe-area-inset-bottom);
-  /* ⚡ PERF: Transition transform instead of bottom for GPU composition */
+  z-index: 1000;
   transition:
-    opacity 0.3s ease,
-    transform 0.4s var(--sys-motion-spring);
-  will-change: transform;
-  pointer-events: none; /* Allow clicks through the container */
+    transform 0.5s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.fab-island.visible {
+  pointer-events: auto;
+}
+
+.fab-island:not(.visible) {
+  transform: translate(-50%, 150%);
+  opacity: 0;
 }
 
 .fab-island > * {
-  pointer-events: auto; /* Re-enable clicks on the actual FAB content */
+  pointer-events: auto;
 }
 
 
