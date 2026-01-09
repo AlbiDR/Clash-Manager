@@ -98,7 +98,7 @@ export function useBenchmarking() {
     const stats = context === "lb" ? lbStats.value : hhStats.value;
     if (!stats) return null;
 
-    const m = (stats as any)[metric];
+    const m = (stats as Record<string, { avg: number; max: number; min: number }>)[metric];
     if (!m) return null;
 
     const diff = value - m.avg;
@@ -127,7 +127,7 @@ export function useBenchmarking() {
 
     return {
       label: labels[metric] || metric,
-      tier: tier as any,
+      tier: tier as BenchmarkData["tier"],
       value,
       avg: m.avg,
       min: m.min,
