@@ -336,9 +336,9 @@ jobs:
         with:
           name: debug-artifacts-${{ steps.versioning.outputs.build_tag }}
           path: |
-            Frontend-PWA/src-tauri/gen/android/app/build/outputs/mapping/release/mapping.txt
-            Frontend-PWA/src-tauri/gen/android/app/build/intermediates/merged_manifests/release/AndroidManifest.xml
-          if-no-files-found: warn
+            Frontend-PWA/src-tauri/gen/android/app/build/outputs/mapping/release/**/mapping.txt
+            Frontend-PWA/src-tauri/gen/android/app/build/intermediates/merged_manifests/release/**/AndroidManifest.xml
+          if-no-files-found: ignore
           compression-level: 6
 
       - name: Upload APK
