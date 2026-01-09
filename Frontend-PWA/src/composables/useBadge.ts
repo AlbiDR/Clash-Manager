@@ -22,10 +22,6 @@ export function useBadge() {
     typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
   // We should also check for Notification permissions as Badges often require it
-  const hasPermission = () => {
-    if (typeof Notification === "undefined") return true; // Optimistic if API missing
-    return Notification.permission === "granted";
-  };
 
   const isSupported =
     hasStandardBadge || hasExperimentalBadge || hasServiceWorker;
