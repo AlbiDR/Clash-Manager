@@ -26,6 +26,7 @@ build/
 .agent/
 .antigravity/
 .vibe/
+*.code-workspace
 
 # Root Configs (Cleaned from Sandbox)
 index.html
