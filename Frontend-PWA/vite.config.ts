@@ -50,4 +50,9 @@ export default defineConfig({
 
   },
   plugins: [vue() as any, tailwindcss() as any],
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["vitest.setup.ts"],
+  },
 });
