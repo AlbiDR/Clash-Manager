@@ -6,7 +6,7 @@ import Icon from "./Icon.vue";
 
 const route = useRoute();
 const router = useRouter();
-const { dockVisible } = useUiCoordinator();
+const { dockVisible, isFabVisible, fabState } = useUiCoordinator();
 const haptics = useHaptics();
 
 interface NavItem {
@@ -42,10 +42,26 @@ function goTo(targetPath: string) {
   haptics.tap();
   router.push(targetPath);
 }
+
+function handleFabAction(e: MouseEvent) {
+  haptics.tap();
+  if (fabState.onAction) fabState.onAction(e);
+}
+
+function handleFabBlitz() {
+  haptics.tap();
+  if (fabState.onBlitz) fabState.onBlitz();
+}
+
+function handleFabDismiss() {
+  haptics.tap();
+  if (fabState.onDismiss) fabState.onDismiss();
+}
 </script>
 
 <template>
-  <div class="dock-container" :class="{ hidden: !dockVisible }">
+  <!-- Navigation Dock Mode -->
+  <div v-if="dockVisible" class="dock-container">
     <button
       v-for="item in navItems"
       :key="item.name"
@@ -60,6 +76,90 @@ function goTo(targetPath: string) {
         {{ item.label }}
       </span>
     </button>
+  </div>
+
+  <!-- Selection FAB Mode -->
+  <div v-else class="dock-container fab-mode">
+    <!-- State: BLASTING (With Controls) -->
+    <template v-if="fabState.isBlasting">
+      <button
+        class="fab-btn danger compact"
+        @click="handleFabDismiss"
+        aria-label="Cancel Blitz"
+      >
+        <Icon name="close" size="18" />
+      </button>
+
+      <div class="blast-status">
+        <div class="spinner-small"></div>
+        <span class="blast-label">{{ fabState.label }}</span>
+      </div>
+
+      <a
+        v-if="fabState.actionHref"
+        :href="fabState.actionHref"
+        class="fab-btn primary compact"
+        @click="handleFabAction"
+        aria-label="Open Next Profile"
+      >
+        <Icon name="chevron_right" size="20" />
+      </a>
+      <button
+        v-else
+        class="fab-btn primary compact"
+        @click="handleFabAction"
+        aria-label="Next"
+      >
+        <Icon name="chevron_right" size="20" />
+      </button>
+    </template>
+
+    <!-- State: NORMAL Selection -->
+    <template v-else>
+      <button
+        class="fab-btn danger"
+        @click="handleFabDismiss"
+        aria-label="Dismiss Selection"
+      >
+        <Icon name="close" size="18" />
+        <span v-if="!fabState.selectionCount">Clear</span>
+      </button>
+
+      <button
+        v-if="
+          fabState.blitzEnabled &&
+          fabState.selectionCount &&
+          fabState.selectionCount > 1 &&
+          !fabState.isProcessing
+        "
+        class="fab-btn blitz"
+        @click="handleFabBlitz"
+        v-tooltip="'Requires Pop-ups permission'"
+        aria-label="Start Blitz Mode"
+      >
+        <Icon name="lightning" size="18" />
+        <span>Blitz</span>
+      </button>
+
+      <a
+        v-if="fabState.actionHref"
+        :href="fabState.actionHref"
+        class="fab-btn primary"
+        @click="handleFabAction"
+      >
+        <Icon name="check" size="18" />
+        <span>{{ fabState.label || "Open" }}</span>
+      </a>
+
+      <button
+        v-else
+        class="fab-btn primary"
+        @click="handleFabAction"
+      >
+        <Icon name="check" size="18" />
+        <span>{{ fabState.label || "Open" }}</span>
+      </button>
+    </template>
   </div>
 </template>
 
@@ -88,6 +188,12 @@ function goTo(targetPath: string) {
   transform: translate(-50%, 150%);
   opacity: 0;
   pointer-events: none;
+}
+
+/* FAB Mode Styling */
+.dock-container.fab-mode {
+  padding: 8px;
+  gap: 8px;
 }
 
 .dock-item {
@@ -140,6 +246,77 @@ function goTo(targetPath: string) {
 
 .dock-label {
   transition: opacity 0.3s;
+}
+
+/* FAB Buttons */
+.fab-btn {
+  padding: 14px 20px;
+  border-radius: var(--shape-corner-full);
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+  color: var(--sys-color-on-surface);
+}
+.fab-btn:active {
+  transform: scale(0.95);
+}
+
+.fab-btn.compact {
+  padding: 14px;
+}
+
+.fab-btn.primary {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+.fab-btn.danger {
+  background: var(--sys-color-error-container);
+  color: var(--sys-color-on-error-container);
+}
+
+.fab-btn.blitz {
+  background: linear-gradient(135deg, #6b5778, #4a3b55);
+  color: #f2daff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 12px rgba(107, 87, 120, 0.4);
+}
+
+.blast-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 80px;
+}
+.blast-label {
+  font-family: var(--sys-font-family-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sys-color-on-surface);
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--sys-color-primary);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  opacity: 0.6;
+}
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 480px) {
