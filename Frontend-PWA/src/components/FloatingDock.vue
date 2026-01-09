@@ -9,7 +9,14 @@ const router = useRouter();
 const { dockVisible } = useUiCoordinator();
 const haptics = useHaptics();
 
-const navItems = [
+interface NavItem {
+  path: string;
+  name: string;
+  label: string;
+  icon: string;
+}
+
+const navItems: NavItem[] = [
   {
     path: "/leaderboard",
     name: "leaderboard",
@@ -22,13 +29,18 @@ const navItems = [
     label: "Headhunter",
     icon: "recruiter",
   },
-  { path: "/settings", name: "settings", label: "Settings", icon: "settings" },
+  {
+    path: "/settings",
+    name: "settings",
+    label: "Settings",
+    icon: "settings",
+  },
 ];
 
-function navigate(path: string) {
-  if (route.path === path) return;
+function goTo(targetPath: string) {
+  if (route.path === targetPath) return;
   haptics.tap();
-  router.push(path);
+  router.push(targetPath);
 }
 </script>
 
@@ -39,14 +51,14 @@ function navigate(path: string) {
       :key="item.name"
       class="dock-item"
       :class="{ active: route.path === item.path }"
-      @click="navigate(item.path)"
+      @click="goTo(item.path)"
       :aria-label="item.label"
     >
       <div v-if="route.path === item.path" class="capsule-bg"></div>
       <Icon :name="item.icon" size="22" class="dock-icon" />
-      <span v-if="item.label && item.label !== 'Settings'" class="dock-label">{{
-        item.label
-      }}</span>
+      <span v-if="item.label && item.label !== 'Settings'" class="dock-label">
+        {{ item.label }}
+      </span>
     </button>
   </div>
 </template>
@@ -92,7 +104,6 @@ function navigate(path: string) {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
   -webkit-tap-highlight-color: transparent;
-
   background: none;
   border: none;
   font-family: inherit;
@@ -105,7 +116,11 @@ function navigate(path: string) {
 .capsule-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--sys-color-primary), var(--sys-color-primary-variant, var(--sys-color-primary)));
+  background: linear-gradient(
+    135deg,
+    var(--sys-color-primary),
+    var(--sys-color-primary-variant, var(--sys-color-primary))
+  );
   border-radius: var(--shape-corner-full);
   z-index: -1;
   animation: pop-in 0.4s cubic-bezier(0.2, 0, 0, 1.2);
@@ -139,4 +154,3 @@ function navigate(path: string) {
   }
 }
 </style>
-
