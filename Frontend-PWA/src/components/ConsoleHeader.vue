@@ -335,6 +335,9 @@ function formatDescription(text: string) {
   border: 1px solid var(--sys-surface-glass-border);
   font-size: 13px;
   font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
 .status-pill:hover {
   background: var(--sys-color-surface-container-high);
   border-color: var(--sys-color-outline-variant);
