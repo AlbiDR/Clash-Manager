@@ -13,8 +13,8 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-  // Use root path '/' for Tauri to ensure assets load correctly.
-  base: "/",
+  // GitHub Pages deployment requires the repo name in the base path
+  base: "/Clash-Manager/",
   build: {
     outDir: "dist",
     sourcemap: false,
