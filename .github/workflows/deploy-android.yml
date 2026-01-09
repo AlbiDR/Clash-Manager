@@ -4,6 +4,16 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - "Beta"
+    paths:
+      - "Frontend-PWA/src-tauri/**"
+      - ".github/workflows/deploy-android.yml"
+    paths-ignore:
+      - "Frontend-PWA/src/**"
+      - "Frontend-PWA/public/**"
+      - "Backend-GAS/**"
+      - "**.md"
   workflow_dispatch:
     inputs:
       architecture:
