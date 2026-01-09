@@ -119,29 +119,40 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function fireDeepLink(url: string, isAutomated = false) {
     const userAgent = navigator.userAgent;
     const isAndroid = /android/i.test(userAgent);
+    const isTauri = typeof window.__TAURI__ !== 'undefined';
     
-    if (isAutomated && isAndroid) {
-      const tag = url.split("id=")[1];
-      if (tag) {
-        // High-level Intent URI for seamless TWA integration
-        const intentUrl = `intent://playerInfo?id=${tag}#Intent;scheme=clashroyale;package=com.supercell.clashroyale;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;end`;
+    if (isAndroid) {
+      // Extract player ID from clashroyale://playerInfo?id=XXXXXX
+      const match = url.match(/id=([A-Z0-9]+)/);
+      if (match && match[1]) {
+        const playerId = match[1];
+        
+        // Android Intent URI that will open Clash Royale app
+        // If app not installed, falls back to Play Store
+        const intentUrl = `intent://playerInfo?id=${playerId}#Intent;` +
+          `scheme=clashroyale;` +
+          `package=com.supercell.clashroyale;` +
+          `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
+          `end`;
+        
+        // In Tauri, we can directly navigate to the Intent URL
+        // The Android WebView will handle it properly
+        if (isTauri) {
+          window.location.href = intentUrl;
+          return;
+        }
+        
+        // Fallback: use iframe for browser/PWA
         getIframe().src = intentUrl;
         return;
       }
     }
 
-    // Manual or Fallback Path
-    if (isBlasting.value && !isAutomated) {
-      const win = window.open(url, "_blank");
-      if (win) {
-        setTimeout(() => { try { win.close(); } catch(e) {} }, 100);
-        return;
-      }
-    }
-
+    // Fallback for non-Android or malformed URLs
     const link = document.createElement("a");
     link.href = url;
     link.style.display = "none";
+    link.target = "_blank";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
