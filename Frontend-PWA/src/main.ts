@@ -1,4 +1,7 @@
-// @ts-nocheck
+/**
+ * 🚀 CLASH MANAGER PWA
+ * Lead Full-Stack Architect & UI/UX Engineer Implementation
+ */
 import { createApp } from "vue";
 import "./style.css";
 import App from "./App.vue";

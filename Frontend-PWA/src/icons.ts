@@ -1,4 +1,5 @@
-export const ICONS: Record<string, string> = {
+export const ICONS: Record<string, string> = Object.freeze({
+
   // Navigation
   leaderboard:
     "M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z",
@@ -80,4 +81,5 @@ export const ICONS: Record<string, string> = {
     "M16,6l2.29,2.29l-4.88,4.88l-4-4L2,16.59L3.41,18l6-6l4,4l6.3-6.29L22,12V6H16z",
   trend_down:
     "M16,18l2.29-2.29l-4.88-4.88l-4,4L2,7.41L3.41,6l6,6l4-4l6.3,6.29L22,12v6H16z",
-};
+});
+

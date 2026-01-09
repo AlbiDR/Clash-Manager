@@ -1,5 +1,21 @@
-// @ts-nocheck
-export function useCardMechanics(props, callbacks) {
+import { useHaptics } from "./useHaptics";
+
+interface CardCallbacks {
+  onSelect: () => void;
+  onExpand: () => void;
+}
+
+interface CardProps {
+  selectionMode: boolean;
+}
+
+/**
+ * 🃏 USE CARD MECHANICS
+ * Standardized interaction handlers for List Items (Members/Recruits).
+ */
+export function useCardMechanics(props: CardProps, callbacks: CardCallbacks) {
+  const haptics = useHaptics();
+
   function handleTap() {
     if (props.selectionMode) {
       callbacks.onSelect();
@@ -12,15 +28,15 @@ export function useCardMechanics(props, callbacks) {
     callbacks.onSelect();
   }
 
-  function handleScoreClick(e) {
+  function handleScoreClick(e: MouseEvent | TouchEvent) {
     e.stopPropagation();
-    if (navigator.vibrate) navigator.vibrate(20);
+    haptics.tap();
     callbacks.onSelect();
   }
 
-  function handleExpandClick(e) {
+  function handleExpandClick(e: MouseEvent | TouchEvent) {
     e.stopPropagation();
-    if (navigator.vibrate) navigator.vibrate(10);
+    haptics.tap();
     callbacks.onExpand();
   }
 
@@ -31,3 +47,4 @@ export function useCardMechanics(props, callbacks) {
     handleExpandClick,
   };
 }
+

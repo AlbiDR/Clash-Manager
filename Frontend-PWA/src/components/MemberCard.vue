@@ -60,9 +60,11 @@ const trendInfo = computed(() => {
     :selected="selected"
     :selection-mode="selectionMode"
     :tone-class="scoreTone(member.s)"
+    :aria-label="`${member.n}, score ${Math.round(member.s)}, ${roleInfo(member.d.role).label}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
+
     <!-- SLOT: Meta Stack -->
     <template #identity-meta>
       <div

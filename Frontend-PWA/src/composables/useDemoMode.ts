@@ -1,4 +1,7 @@
-// @ts-nocheck
+/**
+ * 🛠️ USE DEMO MODE
+ * Global toggle for mock data demonstration.
+ */
 import { ref } from "vue";
 
 const DEMO_KEY = "clash_manager_demo_mode";

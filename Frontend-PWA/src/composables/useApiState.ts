@@ -1,15 +1,13 @@
-// @ts-nocheck
-// src/composables/useApiState.ts
-import { ref } from "vue";
+import { ref, readonly } from "vue";
 import { isConfigured, ping, getApiUrl } from "../api/gasClient";
 import type { PingResponse } from "../types";
+
+export type ApiStatus = "checking" | "online" | "offline" | "unconfigured";
 
 // Global Shared State
 const apiUrl = ref("");
 const apiConfigured = ref(false);
-const apiStatus = ref<"checking" | "online" | "offline" | "unconfigured">(
-  "checking",
-);
+const apiStatus = ref<ApiStatus>("checking");
 const pingData = ref<PingResponse | null>(null);
 
 let isInitialized = false;
@@ -29,7 +27,7 @@ async function checkApiStatus() {
     const response = await ping();
     const latency = Date.now() - start;
 
-    if (response.status === "success" && response.data) {
+    if (response.success && response.data) {
       apiStatus.value = "online";
       pingData.value = {
         ...response.data,
@@ -38,11 +36,16 @@ async function checkApiStatus() {
     } else {
       apiStatus.value = "offline";
     }
-  } catch {
+  } catch (e) {
+    console.error("API Status Check Failed:", e);
     apiStatus.value = "offline";
   }
 }
 
+/**
+ * 📡 USE API STATE
+ * Centralized singleton state for backend connectivity and configuration.
+ */
 export function useApiState() {
   function init() {
     if (!isInitialized) {
@@ -52,11 +55,12 @@ export function useApiState() {
   }
 
   return {
-    apiUrl,
-    apiConfigured,
-    apiStatus,
-    pingData,
+    apiUrl: readonly(apiUrl),
+    apiConfigured: readonly(apiConfigured),
+    apiStatus: readonly(apiStatus),
+    pingData: readonly(pingData),
     checkApiStatus,
     init,
   };
 }
+

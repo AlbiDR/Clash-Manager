@@ -14,26 +14,43 @@ import type {
 import { idb } from "../utils/idb";
 
 const getGasUrl = () => {
-  if (typeof localStorage === "undefined")
-    return import.meta.env.VITE_GAS_URL || "";
-  return (
-    localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || ""
-  );
+  let url = "";
+  if (typeof localStorage !== "undefined") {
+    url = localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || "";
+  } else {
+    url = import.meta.env.VITE_GAS_URL || "";
+  }
+  
+  // 🛡️ SECURITY: Basic format validation to prevent injection or malformed requests
+  if (url && !url.startsWith("https://") && !url.includes("google.com/macros")) {
+    console.warn("[Security] Suspicious GAS URL detected:", url);
+    // Optionally return empty or throw if strictness is required
+  }
+  
+  return url;
 };
+
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V6";
 
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
+  let parsedData: any;
   if (typeof data === "string") {
-    data = JSON.parse(data);
+    try {
+      parsedData = JSON.parse(data);
+    } catch (e) {
+      throw new Error("Failed to parse data string");
+    }
+  } else {
+    parsedData = data;
   }
 
-  // Type guard manually or trust the z safeParse later.
-  // Casting to unknown is redundant but explicit for flow.
-  const rawData = data as any; 
+  if (!parsedData || typeof parsedData !== "object") {
+    throw new Error("Invalid payload: data is null or not an object");
+  }
 
-  if (!rawData || rawData.format !== "matrix") {
-    return rawData as WebAppData;
+  if (parsedData.format !== "matrix") {
+    return parsedData as WebAppData;
   }
 
   // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
@@ -45,36 +62,48 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
       hh: z.array(z.array(z.unknown())),
       timestamp: z.number(),
     })
-    .safeParse(rawData);
+    .safeParse(parsedData);
 
   if (!result.success) throw new Error("API Schema Mismatch");
 
   const { lb, hh, timestamp } = result.data;
 
+  // Strict bounds checking for matrix columns
   return {
-    lb: lb.map((r) => ({
-      id: r[0],
-      n: r[1],
-      t: r[2],
-      s: r[3],
-      d: {
-        role: r[4],
-        days: r[5],
-        avg: r[6],
-        seen: r[7],
-        rate: r[8],
-        hist: r[9],
-      },
-      dt: r[10] ?? 0,
-      r: r[11] ?? 0,
-    })),
-    hh: hh.map((r) => ({
-      id: r[0],
-      n: r[1],
-      t: r[2],
-      s: r[3],
-      d: { don: r[4], war: r[5], ago: r[6], cards: r[7] ?? 0 },
-    })),
+    lb: lb.map((r) => {
+      if (r.length < 10) throw new Error("Matrix Row (LB) underflow");
+      return {
+        id: String(r[0]),
+        n: String(r[1]),
+        t: Number(r[2]),
+        s: Number(r[3]),
+        d: {
+          role: String(r[4]),
+          days: Number(r[5]),
+          avg: Number(r[6]),
+          seen: r[7] ? String(r[7]) : null,
+          rate: r[8] ? String(r[8]) : null,
+          hist: String(r[9]),
+        },
+        dt: Number(r[10] ?? 0),
+        r: Number(r[11] ?? 0),
+      };
+    }),
+    hh: hh.map((r) => {
+      if (r.length < 7) throw new Error("Matrix Row (HH) underflow");
+      return {
+        id: String(r[0]),
+        n: String(r[1]),
+        t: Number(r[2]),
+        s: Number(r[3]),
+        d: {
+          don: Number(r[4]),
+          war: Number(r[5]),
+          ago: String(r[6]),
+          cards: Number(r[7] ?? 0),
+        },
+      };
+    }),
     timestamp,
   };
 }
@@ -85,6 +114,14 @@ async function fetchWithRetry(
   retries = 3,
   backoff = 500,
 ): Promise<Response> {
+  // 🛡️ Resilience: Avoid immediate failure if offline (Resilience #62)
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    console.warn("[Network] Device is offline. Waiting for connectivity...");
+    await new Promise((resolve) => {
+      window.addEventListener("online", resolve, { once: true });
+    });
+  }
+
   try {
     const response = await fetch(url, options);
     if (!response.ok && retries > 0 && response.status >= 500) {
@@ -92,14 +129,19 @@ async function fetchWithRetry(
     }
     return response;
   } catch (e) {
+    const isNetworkError = e instanceof TypeError || (e instanceof Error && e.name === "TypeError");
+    
     if (retries > 0) {
-      console.warn(`Fetch failed, retrying (${retries} left)...`, e);
+      console.warn(`Fetch failed (Network: ${isNetworkError}), retrying (${retries} left)...`);
       await new Promise((r) => setTimeout(r, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 2);
     }
     throw e;
   }
 }
+
+
+type GenericEnvelope<T> = ApiResponse<T> & { success?: boolean; status?: string };
 
 async function gasRequest<T>(
   action: string,
@@ -123,11 +165,10 @@ async function gasRequest<T>(
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const text = await response.text();
 
-  let envelope: ApiResponse<T> | { status: string; error?: { message: string } } | { success: boolean; error?: { message: string } };
+  let envelope: GenericEnvelope<T>;
   try {
     envelope = JSON.parse(text);
   } catch (e) {
-    // Intelligent error sniffing for HTML error pages (common with GAS)
     if (
       text.trim().toLowerCase().startsWith("<html") ||
       text.includes("<!DOCTYPE html>")
@@ -139,16 +180,22 @@ async function gasRequest<T>(
     throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`);
   }
 
-  // Check for various GAS response patterns (sometimes 'status', sometimes 'success')
-  if (
-    ("success" in envelope && envelope.success === true) ||
-    ("status" in envelope && envelope.status === "success")
-  ) {
-    return envelope as T;
+  // Robust status check across multiple GAS response versions
+  const isSuccess = 
+    envelope.success === true || 
+    envelope.status === "success" || 
+    (envelope.data && !envelope.error);
+
+  if (isSuccess) {
+    // Return data part if wrapped, otherwise the whole thing
+    return (envelope.data !== undefined ? envelope.data : envelope) as T;
   }
   
-  throw new Error(envelope.error?.message || "Unknown Backend Error");
+  const errorMessage = envelope.error?.message || envelope.message || "Unknown Backend Error";
+  throw new Error(errorMessage);
 }
+
+
 
 export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);

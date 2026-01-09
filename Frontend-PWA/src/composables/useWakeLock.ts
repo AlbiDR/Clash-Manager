@@ -1,7 +1,23 @@
-// @ts-nocheck
-import { ref } from "vue";
+import { ref, readonly } from "vue";
 
-// Singleton State
+/**
+ * 💡 USE WAKE LOCK
+ * Prevents device sleep during heavy tasks (Batch Blitz, Sync).
+ * Stability #15: Re-acquires lock automatically on visibility change.
+ */
+
+// Native API Types (Global/Polyfilled if needed)
+interface WakeLockSentinel extends EventTarget {
+  readonly released: boolean;
+  readonly type: "screen";
+  release(): Promise<void>;
+  onrelease: ((this: WakeLockSentinel, ev: Event) => any) | null;
+}
+
+interface WakeLock {
+  request(type: "screen"): Promise<WakeLockSentinel>;
+}
+
 const isSupported = typeof navigator !== "undefined" && "wakeLock" in navigator;
 const isActive = ref(false);
 // Track user intent to persist lock across visibility changes. Default to TRUE.
@@ -11,7 +27,9 @@ let wakeLockSentinel: WakeLockSentinel | null = null;
 async function request() {
   if (!isSupported) return;
   try {
-    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    wakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+    if (!wakeLockSentinel) return;
+
     isActive.value = true;
     shouldBeActive = true;
 
@@ -23,7 +41,6 @@ async function request() {
         wakeLockSentinel = null;
       }
     });
-// console.log("Wake Lock acquired");
   } catch (err) {
     console.warn(`WakeLock request failed: ${(err as Error).message}`);
     isActive.value = false;
@@ -37,7 +54,6 @@ async function release() {
     wakeLockSentinel = null;
   }
   isActive.value = false;
-// console.log("Wake Lock released manually");
 }
 
 async function toggle() {
@@ -71,10 +87,11 @@ export function useWakeLock() {
 
   return {
     isSupported,
-    isActive,
+    isActive: readonly(isActive),
     request,
     release,
     toggle,
     init,
   };
 }
+

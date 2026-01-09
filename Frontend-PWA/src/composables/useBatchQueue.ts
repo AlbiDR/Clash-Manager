@@ -7,20 +7,24 @@ interface BatchQueueOptions {
   baseScheme?: string;
 }
 
+/**
+ * ⚡ USE BATCH QUEUE
+ * Manages sequential or automated deep-linking to the host application.
+ * Memory safety: Ensures iframe and timer cleanup on unmount.
+ */
 export function useBatchQueue(options: BatchQueueOptions = {}) {
-  const { throttleMs = 750, baseScheme = "clashroyale://playerInfo?id=" } =
-    options;
+  const { throttleMs = 850, baseScheme = "clashroyale://playerInfo?id=" } = options;
 
   const selectedIds = ref<string[]>([]);
-  const queue = ref<string[]>([]); // Legacy queue for non-blitz manual mode
+  const queue = ref<string[]>([]);
   const lastActionTime = ref(0);
 
   // Blitz State
   const isBlasting = ref(false);
   const currentIndex = ref(0);
-  let worker: Worker | null = null;
+  let blitzTimer: any = null;
 
-  // Selection Mode State (Auto-derived or Forced)
+  // Selection Mode State
   const forceSelectionMode = ref(false);
 
   const { error, info } = useToast();
@@ -31,33 +35,30 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   );
   const isProcessing = computed(() => queue.value.length > 0);
 
-  // Trust Verification (Gate for Blitz)
+  // 🛡️ Logic: Robust Trust Verification (Bug #11)
   const isTrusted = computed(() => {
-    // If not on Android, we allow it (development/desktop)
+    if (typeof navigator === "undefined") return false;
+    // Desktop/Dev is always trusted
     if (!/android/i.test(navigator.userAgent)) return true;
     
-    // On Android, we require TWA signals
-    const win = window as unknown as { AndroidExternalInterface?: unknown };
+    // TWA / Native Signal detection
+    const win = window as any;
     return (
-      typeof win.AndroidExternalInterface !== "undefined" ||
+      !!win.AndroidExternalInterface || 
+      !!win.clashRoyaleBridge || 
       document.referrer.includes("android-app://")
     );
   });
 
-  // Returns props compatible with FabIsland
   const fabState = computed(() => {
     if (!isSelectionMode.value) return { visible: false };
 
     const total = selectedIds.value.length;
-
-    // Label Logic
     let label = "Open";
 
     if (isBlasting.value) {
-      // Blasting Mode: Show progress
       label = `${currentIndex.value + 1} / ${total}`;
     } else if (total > 0) {
-      // Manual Mode
       if (isProcessing.value) {
         const current = total - queue.value.length + 1;
         label = `Next (${current}/${total})`;
@@ -65,11 +66,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         label = `Open (${total})`;
       }
     } else {
-      // Empty State (Forced Mode)
       label = "Select";
     }
 
-    // Target Logic (For href)
     const targetId = isBlasting.value
       ? selectedIds.value[currentIndex.value]
       : isProcessing.value
@@ -79,25 +78,19 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     return {
       visible: true,
       label,
-      // Dynamic HREF updates based on state
       actionHref: targetId ? `${baseScheme}${targetId}` : undefined,
       isProcessing: isProcessing.value,
       isBlasting: isBlasting.value,
       selectionCount: total,
-      blitzEnabled: modules.value.blitzMode && isTrusted.value,
+      blitzEnabled: modules.blitzMode && isTrusted.value,
     };
   });
 
   function toggleSelect(id: string) {
-    // 🛡️ Guard: Prevent modifying selection while a batch run is in progress
     if (isProcessing.value || isBlasting.value) return;
-
     const index = selectedIds.value.indexOf(id);
-    if (index !== -1) {
-      selectedIds.value.splice(index, 1);
-    } else {
-      selectedIds.value.push(id);
-    }
+    if (index !== -1) selectedIds.value.splice(index, 1);
+    else selectedIds.value.push(id);
   }
 
   function selectAll(ids: readonly string[]) {
@@ -107,14 +100,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   function clearSelection() {
-    stopBlitz(); // Emergency stop
+    stopBlitz();
     selectedIds.value = [];
     queue.value = [];
-    forceSelectionMode.value = false; // Reset sticky mode
-  }
-
-  function setForceSelectionMode(active: boolean) {
-    forceSelectionMode.value = active;
+    forceSelectionMode.value = false;
   }
 
   /**
@@ -131,26 +120,24 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   function fireDeepLink(url: string, isAutomated = false) {
-    const isAndroid = /android/i.test(navigator.userAgent);
+    const userAgent = navigator.userAgent;
+    const isAndroid = /android/i.test(userAgent);
     
-    // 🛡️ Bypassing security prompts for automated pulses
     if (isAutomated && isAndroid) {
       const tag = url.split("id=")[1];
       if (tag) {
-        // Official Android Intent URI: Bypasses browser confirmation and targets CR directly
+        // High-level Intent URI for seamless TWA integration
         const intentUrl = `intent://playerInfo?id=${tag}#Intent;scheme=clashroyale;package=com.supercell.clashroyale;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;end`;
-        
-        // Iframe source update is significantly less restricted than window.open in TWA
         getIframe().src = intentUrl;
         return;
       }
     }
 
-    // Default/Manual Interaction: Standard methods
+    // Manual or Fallback Path
     if (isBlasting.value && !isAutomated) {
       const win = window.open(url, "_blank");
       if (win) {
-        setTimeout(() => win.close(), 100);
+        setTimeout(() => { try { win.close(); } catch(e) {} }, 100);
         return;
       }
     }
@@ -163,62 +150,47 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     link.click();
 
     setTimeout(() => {
-      if (document.body.contains(link)) {
-        document.body.removeChild(link);
-      }
-    }, 1500);
+      if (link.parentNode) link.parentNode.removeChild(link);
+    }, 1000);
   }
 
-  let blitzTimer: ReturnType<typeof setTimeout> | null = null;
-
   function stopBlitz() {
-    // console.log("⚡ Stopping Blitz Mode");
     isBlasting.value = false;
     if (blitzTimer) {
       clearTimeout(blitzTimer);
       blitzTimer = null;
-    }
-    if (worker) {
-      worker.terminate();
-      worker = null;
     }
   }
 
   function advanceBlitz() {
     if (!isBlasting.value) return;
 
-    // 1. Check bounds
     if (currentIndex.value >= selectedIds.value.length) {
-      setTimeout(() => {
-        stopBlitz();
-        clearSelection();
-        info("Blitz complete");
-      }, 500);
+      stopBlitz();
+      clearSelection();
+      info("Blitz complete");
       return;
     }
 
-    // 2. Fire current item
     const id = selectedIds.value[currentIndex.value];
     if (id) {
       fireDeepLink(`${baseScheme}${id}`, true);
       
-      // 3. Schedule next pulse if not finished
-      const delay = Math.max(throttleMs, 2500);
+      const delay = Math.max(throttleMs, 2000);
       if (currentIndex.value < selectedIds.value.length - 1) {
         blitzTimer = setTimeout(() => {
-          currentIndex.value++; // Increment ONLY when we are ready for the next one
+          currentIndex.value++;
           advanceBlitz();
         }, delay);
       } else {
-        // Last one reached
-        setTimeout(() => {
+        blitzTimer = setTimeout(() => {
           stopBlitz();
           clearSelection();
           info("Blitz complete");
         }, 1500);
       }
     } else {
-      // Logic for handling null/missing items
+      // Handle skip
       if (currentIndex.value < selectedIds.value.length - 1) {
         currentIndex.value++;
         advanceBlitz();
@@ -229,83 +201,64 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }
   }
 
-  // ⚡ BLITZ MODE START
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return;
-
     if (!isTrusted.value) {
-      error("Blitz requires Trusted Web Activity");
+      error("TWA verification failed");
       return;
     }
 
-    // console.log("⚡ Initiating Blitz Mode");
     isBlasting.value = true;
     currentIndex.value = 0;
-
-    // Start the recursive loop
     advanceBlitz();
   }
 
-  // MAIN ACTION HANDLER
   function handleAction(e: MouseEvent) {
-    // 1. BLITZ MODE (Manual Assist)
     if (isBlasting.value) {
-      // Manual click in Blitz mode acts as an emergency "Manual fire + Skip"
       e.preventDefault();
-      
-      // console.log("⚡ Manual Assist Click");
       const id = selectedIds.value[currentIndex.value];
       if (id) {
-        // Direct anchor click (most reliable for manual gesture)
-        const link = document.createElement("a");
-        link.href = `${baseScheme}${id}`;
-        link.click();
-        
+        fireDeepLink(`${baseScheme}${id}`, false);
         currentIndex.value++;
 
-        // Reset the timer to prevent double-firing immediately after manual assist
         if (blitzTimer) {
           clearTimeout(blitzTimer);
-          const delay = Math.max(throttleMs, 2500);
-          blitzTimer = setTimeout(advanceBlitz, delay);
+          blitzTimer = setTimeout(advanceBlitz, Math.max(throttleMs, 2000));
         }
       }
       return;
     }
 
-    // 2. STANDARD MODE (Legacy sequential)
     const now = Date.now();
-
     if (now - lastActionTime.value < throttleMs) {
-      e.preventDefault(); // Stop navigation if clicking too fast
+      e.preventDefault();
       return;
     }
-
     lastActionTime.value = now;
 
-    // Initialize Queue if starting fresh
     if (queue.value.length === 0) {
       queue.value = [...selectedIds.value];
     }
 
-    // "Consume" the current item logic
     setTimeout(() => {
       if (queue.value.length > 0) {
         queue.value.shift();
       }
-
-      // Auto-exit when done
       if (queue.value.length === 0) {
-        // Completed processing: clear selection and reset modes.
         clearSelection();
         info("Batch complete");
       }
-    }, 50);
+    }, 150);
   }
 
   if (getCurrentInstance()) {
     onUnmounted(() => {
       stopBlitz();
+      // Cleanup Memory (Bug #8)
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+        iframe = null;
+      }
     });
   }
 
@@ -320,6 +273,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     clearSelection,
     handleAction,
     handleBlitz,
-    setForceSelectionMode,
+    setForceSelectionMode: (val: boolean) => { forceSelectionMode.value = val; },
   };
 }
+

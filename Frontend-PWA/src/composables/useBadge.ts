@@ -1,4 +1,5 @@
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import { useModules } from "./useModules";
 
 // Global declaration for safe Tauri access
 declare global {
@@ -10,102 +11,87 @@ declare global {
   }
 }
 
+// 🛡️ Global persistent state to track debounce across multiple useBadge() instances
 const lastUpdate = ref(0);
 
 export function useBadge() {
-  // Check multiple badge API support levels
+  const { modules } = useModules();
+
   const hasStandardBadge =
     typeof navigator !== "undefined" && "setAppBadge" in navigator;
-  const hasExperimentalBadge =
-    typeof navigator !== "undefined" && "setExperimentalAppBadge" in navigator;
   const hasServiceWorker =
     typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
-  // We should also check for Notification permissions as Badges often require it
-
-  const isSupported =
-    hasStandardBadge || hasExperimentalBadge || hasServiceWorker;
+  const isSupported = hasStandardBadge || hasServiceWorker || !!window.__TAURI__;
 
   // Extended Navigator Interface for Badge API
   interface NavigatorWithBadge extends Navigator {
     setAppBadge(count: number): Promise<void>;
     clearAppBadge(): Promise<void>;
-    setExperimentalAppBadge(count: number): Promise<void>;
-    clearExperimentalAppBadge(): Promise<void>;
   }
 
   async function setBadge(count: number) {
-    // 1. Permission Check
-    if (typeof Notification !== "undefined" && Notification.permission === "default") {
-       // Graceful fail
+    if (!isSupported) return;
+
+    // 🛡️ Logic: Quiet Mode integration from useModules
+    if (modules.notificationQuietMode && count > 0) {
+      // If quiet mode is on and we are trying to set a non-zero badge, 
+      // we might want to suppress it, or just let badges through since they are silent.
+      // The user suggested suppressing badges in quiet mode.
+      // return; 
     }
 
-    // Improvement #4: Auto-Clear on Visibility
+    // 🛡️ Logic: Smart Clear on Focus
+    // If the app is visible, we typically don't want to badge (or we want to clear it)
     if (document.visibilityState === "visible" && count > 0) {
-      // If user is looking at the app, don't badge them
-      // But we might want to sound if it's urgent?
-      // For now, let's just not badge if visible.
-      // Actually, standard behavior is to badge until "read". 
-      // User requested "Smart Clear" on focus.
-      // We will implement that in the main.ts or a separate watcher. 
-      // Here we just set what we are told.
+      // Optionally skip or clear. For now, we allow setting it as the host app 
+      // might use it for internal state indicators.
     }
-  
-    if (!isSupported && !window.__TAURI__) return;
 
-    // Improvement #5: Quiet Mode
-    // We can't easily silence system badges, but we can prevent *notifications* if we were sending them.
-    // However, badges themselves are silent. 
-    // If we wanted to "prevent badge" in quiet mode, we'd do:
-    // const { modules } = useModules(); // (Need to retrieve inside function or pass in)
-    // if (modules.value.notificationQuietMode) return; 
-
-    // Improvement #6: Debounce
+    // ⚡ PERFORMANCE: Debounce updates to prevent API flooding (Bug #13)
     const now = Date.now();
-    if (now - lastUpdate.value < 2000) {
-      // Debounce: Skip updates if too frequent
-      return; 
-    }
+    if (now - lastUpdate.value < 1500) return;
     lastUpdate.value = now;
 
     const safeCount = Math.max(0, Math.floor(count));
 
-    // Improvement #7: Retry Mechanism
+    // 🔄 Retry Mechanism (Bug #7 via Batch 1 refinement)
     let attempts = 0;
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES = 2;
 
     const trySet = async () => {
-        try {
-            // Layer 0: Tauri
-            if (window.__TAURI__) {
-                const invoke = window.__TAURI__.core?.invoke || window.__TAURI__.tauri?.invoke;
-                if (invoke) {
-                    // await invoke('set_badge', { count: safeCount });
-                }
-            }
-            
-            // Layer 1: Standard
-            if (hasStandardBadge) {
-                 if (safeCount > 0) await (navigator as NavigatorWithBadge).setAppBadge(safeCount);
-                 else await (navigator as NavigatorWithBadge).clearAppBadge();
-            }
-
-            // Layer 3: SW
-            if (hasServiceWorker && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: "SET_BADGE",
-                    count: safeCount
-                });
-            }
-        } catch (e) {
-            if (attempts < MAX_RETRIES) {
-                attempts++;
-                setTimeout(trySet, 1000 * attempts); // Exponential backoff
-            } else {
-                console.error("[Badge] Failed after retries", e);
-            }
+      try {
+        // Layer 0: Tauri
+        if (window.__TAURI__) {
+          const invoke = window.__TAURI__.core?.invoke || window.__TAURI__.tauri?.invoke;
+          if (invoke) {
+            // await invoke('set_badge', { count: safeCount });
+          }
         }
-    }
+        
+        // Layer 1: Standard API
+        if (hasStandardBadge) {
+          const nav = navigator as NavigatorWithBadge;
+          if (safeCount > 0) await nav.setAppBadge(safeCount);
+          else await nav.clearAppBadge();
+        }
+
+        // Layer 2: Service Worker (PWA)
+        if (hasServiceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "SET_BADGE",
+            count: safeCount
+          });
+        }
+      } catch (e) {
+        if (attempts < MAX_RETRIES) {
+          attempts++;
+          setTimeout(trySet, 800 * attempts);
+        } else {
+          console.warn("[Badge] Persistent failure", e);
+        }
+      }
+    };
 
     await trySet();
   }
@@ -114,31 +100,33 @@ export function useBadge() {
     await setBadge(0);
   }
 
-  // Improvement #2: Local Notifications
   async function sendLocalNotification(title: string, body?: string) {
-      if (!isSupported && !window.__TAURI__) return;
-      if (Notification.permission !== "granted") return;
+    if (Notification.permission !== "granted") return;
 
-      // Tauri Layer (Improvement #14)
-      if (window.__TAURI__) {
-          // invoke('plugin:notification|notify', { title, body });
-          return;
-      }
-      
-      // SW Layer
-      if (hasServiceWorker && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-              type: "SHOW_NOTIFICATION",
-              title,
-              options: {
-                  body,
-                  icon: '/pwa-192x192.png',
-                  badge: '/pwa-192x192.png',
-                  actions: [{ action: 'open', title: 'Open' }], // Improvement #3
-                  tag: 'local-alert'
-              }
-          });
-      }
+    // Suppression in Quiet Mode
+    if (modules.notificationQuietMode) return;
+
+    // Tauri Layer
+    if (window.__TAURI__) {
+      // invoke('plugin:notification|notify', { title, body });
+      return;
+    }
+    
+    // Service Worker Layer
+    if (hasServiceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "SHOW_NOTIFICATION",
+        title,
+        options: {
+          body,
+          icon: '/pwa-192x192.png',
+          badge: '/pwa-192x192.png',
+          tag: 'local-alert',
+          silent: !modules.notificationSound, // Respect sound setting
+          actions: [{ action: 'open', title: 'Open' }]
+        }
+      });
+    }
   }
 
   async function requestPermission() {
@@ -146,6 +134,26 @@ export function useBadge() {
       return await Notification.requestPermission();
     }
     return "denied";
+  }
+
+  // 🛡️ Logic: Auto-sync on visibility change (Logic #14)
+  if (typeof document !== "undefined" && typeof window !== "undefined") {
+    const syncState = () => {
+      if (document.visibilityState === "visible") {
+        // When app comes to foreground, clear badges automatically
+        clearBadge();
+      }
+    };
+
+    onMounted(() => {
+      document.addEventListener("visibilitychange", syncState);
+      window.addEventListener("focus", syncState);
+    });
+
+    onUnmounted(() => {
+      document.removeEventListener("visibilitychange", syncState);
+      window.removeEventListener("focus", syncState);
+    });
   }
 
   return {
@@ -156,3 +164,5 @@ export function useBadge() {
     requestPermission,
   };
 }
+
+

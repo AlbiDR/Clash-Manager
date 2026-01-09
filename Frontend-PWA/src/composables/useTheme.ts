@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { ref, watch } from "vue";
+import { ref } from "vue";
 
 export type Theme = "light" | "dark" | "auto";
 
@@ -7,6 +6,10 @@ const STORAGE_KEY = "cm_theme_preference";
 const theme = ref<Theme>("auto");
 const isInitialized = ref(false);
 
+/**
+ * 🎨 USE THEME
+ * Manages system-aware dark mode and persistent theme preferences.
+ */
 export function useTheme() {
   const mediaQuery =
     typeof window !== "undefined"
@@ -26,8 +29,7 @@ export function useTheme() {
       root.classList.remove("dark");
     }
 
-    // Update PWA theme color meta tag to match the new background
-    // Colors derived from style.css: #0b0e14 (dark) / #fdfcff (light)
+    // Update PWA theme color meta tag to match the background color
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute("content", isDark ? "#0b0e14" : "#fdfcff");
@@ -48,7 +50,7 @@ export function useTheme() {
       theme.value = cached;
     }
 
-    // Listener for system changes to auto-update when in 'auto' mode
+    // 🛡️ Logic: Memory-safe singleton listener for system changes (Memory #10)
     if (mediaQuery) {
       mediaQuery.addEventListener("change", () => {
         if (theme.value === "auto") applyTheme();
@@ -65,3 +67,4 @@ export function useTheme() {
     init,
   };
 }
+
