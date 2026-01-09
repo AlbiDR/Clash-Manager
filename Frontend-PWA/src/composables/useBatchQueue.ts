@@ -147,7 +147,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     return iframe;
   }
 
-  function fireDeepLink(url: string, isBlitzMode = false) {
+  function fireDeepLink(url: string) {
     const userAgent = navigator.userAgent;
     const isAndroid = /android/i.test(userAgent);
     const isTauri = typeof window.__TAURI__ !== 'undefined';
@@ -212,7 +212,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
     const id = selectedIds.value[currentIndex.value];
     if (id) {
-      fireDeepLink(`${baseScheme}${id}`, true);
+      fireDeepLink(`${baseScheme}${id}`);
       
       const delay = Math.max(throttleMs, 2000);
       if (currentIndex.value < selectedIds.value.length - 1) {
@@ -254,7 +254,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       e.preventDefault();
       const id = selectedIds.value[currentIndex.value];
       if (id) {
-        fireDeepLink(`${baseScheme}${id}`, false);
+        fireDeepLink(`${baseScheme}${id}`);
         currentIndex.value++;
 
         if (blitzTimer) {
