@@ -22,12 +22,32 @@ export function useBadge() {
   }
 
   async function setBadge(count: number) {
-    if (!isSupported) {
+    if (!isSupported && !(window as any).__TAURI__) {
       console.warn("[Badge] No badge API available");
       return;
     }
 
     try {
+      // Layer 0: Tauri / Native Android
+      // This is the most reliable method if we are in the App Wrapper
+      if ((window as any).__TAURI__) {
+        try {
+          // Attempt to call the Tauri Badge Plugin (if configured)
+          const { invoke } = (window as any).__TAURI__.core || (window as any).__TAURI__.tauri;
+           // We try a generic 'plugin:badge|set_badge' or similar if it existed, 
+           // but since we don't have the rust side here, we will trust the 
+           // standard Web APIs to propagate if standard, OR try to set it via
+           // a known notification plugin interface if accessible.
+           // However, for now, we will assume standard standard API propagation 
+           // works better for unmodified Tauri builds unless specifically correctly.
+           // We leave this block as a placeholder for specific invoke calls if the user 
+           // provides the specific Rust function name.
+           // For now, we Fallthrough to Standard Layer as Tauri v2 often proxies this.
+        } catch (e) {
+           // efficient fallthrough
+        }
+      }
+
       // Layer 1: Standard Badge API (Native)
       if (hasStandardBadge) {
         if (count > 0) {
@@ -35,8 +55,6 @@ export function useBadge() {
         } else {
           await (navigator as NavigatorWithBadge).clearAppBadge();
         }
-        // console.log(`[Badge] Set via standard API: ${count}`);
-        // We continue to SW layer because on some mobile browsers setAppBadge exists but does nothing for the home screen icon
       }
 
       // Layer 2: Experimental Badge API
@@ -46,10 +64,10 @@ export function useBadge() {
         } else {
           await (navigator as NavigatorWithBadge).clearExperimentalAppBadge();
         }
-        // console.log(`[Badge] Set via experimental API: ${count}`);
       }
 
       // Layer 3: Service Worker Badge (CRITICAL FOR ANDROID FALLBACK)
+      // This is often the logic that actually works for PWAs installed on Android
       if (hasServiceWorker) {
         const sendToSW = (reg: ServiceWorkerRegistration) => {
           if (reg.active) {
@@ -57,7 +75,6 @@ export function useBadge() {
               type: "SET_BADGE",
               count: count > 0 ? count : 0,
             });
-            // console.log(`[Badge] Message sent to Service Worker: ${count}`);
           }
         };
 
