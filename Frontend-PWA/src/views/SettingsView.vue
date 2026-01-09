@@ -16,7 +16,7 @@ import NotificationSettings from "../components/settings/NotificationSettings.vu
 import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
 import { vTactile } from "../directives/vTactile";
 
-const { apiStatus, checkApiStatus, pingData } = useApiState();
+const { apiStatus, checkApiStatus } = useApiState();
 const { modules, toggle } = useModules();
 const { theme, setTheme } = useTheme();
 const haptics = useHaptics();
@@ -40,7 +40,6 @@ const apiStatusObject = computed(() => {
 });
 
 const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value);
-const isCheckingModules = computed(() => apiStatus.value === "checking");
 
 function handleThemeChange(newTheme: any) {
   haptics.tap();
@@ -206,22 +205,7 @@ function factoryReset() {
         <div class="settings-tier tier-system">
           <NetworkSettings />
           
-          <SettingsCard title="System Modules" icon="box" :loading="isCheckingModules">
-            <div class="module-grid">
-              <template v-if="isCheckingModules">
-                <div v-for="i in 6" :key="i" class="module-item skeleton-anim">
-                  <div class="sk-text-line-s" style="width: 70px"></div>
-                  <div class="sk-stat-value" style="width: 40px"></div>
-                </div>
-              </template>
-              <template v-else-if="pingData?.modules">
-                <div v-for="(ver, name) in pingData.modules" :key="name" class="module-item">
-                  <span class="m-name">{{ name }}</span>
-                  <span class="m-ver">v{{ ver }}</span>
-                </div>
-              </template>
-            </div>
-          </SettingsCard>
+          <!-- System Modules Removed -->
 
           <BackendRefresher v-if="modules.backendRefresher" />
         </div>
