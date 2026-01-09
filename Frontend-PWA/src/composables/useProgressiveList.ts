@@ -24,7 +24,6 @@ export function useProgressiveList<T>(
 
   function scheduleChunk(all: T[], currentCount: number) {
     // Futuristic: Use requestIdleCallback if available, fall back to RAF/Timeout
-    const scheduler =
     const scheduler = window.requestIdleCallback || requestAnimationFrame;
 
     scheduler(() => {
