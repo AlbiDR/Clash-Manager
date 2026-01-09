@@ -119,8 +119,7 @@ const sendTest = async () => {
            <span>Test Alert</span>
         </button>
         <div class="sync-info">
-           <!-- Improvement #10: Last Sync Time -->
-           Last synced: {{ lastSyncTime }}
+           Last synced: {{ lastSyncFormatted }}
         </div>
     </div>
 
