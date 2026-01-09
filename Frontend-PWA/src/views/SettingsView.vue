@@ -72,6 +72,7 @@ async function factoryReset() {
       title="Settings"
       :status="apiStatusObject"
       :loading="showSkeletons"
+      @refresh="useClanData().refresh()"
     />
 
     <div class="settings-content gpu-contain">

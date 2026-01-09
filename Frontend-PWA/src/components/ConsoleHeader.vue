@@ -117,9 +117,10 @@ function formatDescription(text: string) {
 
         <button
           v-if="status && !loading"
-          class="status-pill"
-          :class="status.type"
+          class="status-pill hit-target"
+          :class="[status.type, { 'is-refreshing': status.type === 'loading' }]"
           @click="emit('refresh')"
+          aria-label="Refresh Data"
         >
           <div v-if="status.type === 'loading'" class="spinner"></div>
           <div v-else class="status-dot"></div>
@@ -324,23 +325,23 @@ function formatDescription(text: string) {
   transform: scale(0.92);
 }
 
-.status-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 99px;
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  background: var(--sys-color-surface-container);
-  color: var(--sys-color-outline);
-  border: 1px solid transparent;
-  white-space: nowrap;
-  flex-shrink: 0;
-  /* CLS Fix: Min width prevents jitter when text changes length */
   min-width: 80px;
   justify-content: center;
+  transition: all 0.2s var(--sys-motion-spring);
+  cursor: pointer;
+  user-select: none;
+}
+.status-pill:hover {
+  background: var(--sys-color-surface-container-high);
+  border-color: var(--sys-color-outline-variant);
+}
+.status-pill:active {
+  transform: scale(0.94);
+  background: var(--sys-color-surface-container-highest);
+}
+.status-pill.is-refreshing {
+  pointer-events: none;
+  opacity: 0.8;
 }
 .status-pill.ready {
   color: var(--sys-color-success);
