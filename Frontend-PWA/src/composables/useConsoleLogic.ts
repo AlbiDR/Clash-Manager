@@ -1,9 +1,10 @@
-import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
+import { onMounted, computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
 import { useBatchQueue } from "./useBatchQueue";
 import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useListFilter } from "./useListFilter";
 import { useUiCoordinator } from "./useUiCoordinator";
 import { useProgressiveList } from "./useProgressiveList";
+import { useConnectionStatus } from "./useConnectionStatus"; // Fix 24: Unify Status
 import { formatTimeAgo } from "../utils/formatters";
 
 interface ConsoleLogicOptions<T> {
@@ -84,11 +85,23 @@ export function useConsoleLogic<T extends { id: string }>(
   );
 
   // 7. Computed Status
+  // Fix 24: Unified Status Source of Truth
+  const { status: connectionStatus } = useConnectionStatus();
+
   const status = computed(() => {
+    // Priority 0: Hard Offline (Match SettingsView)
+    if (connectionStatus.value === "offline")
+      return { type: "error", text: "Offline" } as const;
+
+    // Priority 1: Sync Error
     if (syncError.value) return { type: "error", text: "Retry" } as const;
+    
+    // Priority 2: Empty/First Load
     // Fix 22: Empty State vs Loading State
     if (isRefreshing.value && (!data.value || data.value.length === 0))
       return { type: "loading", text: "Syncing..." } as const;
+
+    // Priority 3: Data Ready
     if (data.value && data.value.length > 0)
       return {
         type: "ready",
@@ -96,6 +109,7 @@ export function useConsoleLogic<T extends { id: string }>(
           new Date(lastSyncTime.value || Date.now()).toISOString(),
         ),
       } as const;
+      
     return { type: "ready", text: "Empty" as const };
   });
 

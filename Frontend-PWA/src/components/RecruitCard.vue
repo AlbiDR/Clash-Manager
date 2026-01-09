@@ -7,6 +7,8 @@ import { useBenchmarking } from "../composables/useBenchmarking";
 import { useModules } from "../composables/useModules";
 import { getScoreTone, formatTimeAgoShort } from "../utils/formatters";
 
+import { useExternalLink } from "../composables/useExternalLink";
+
 const props = defineProps<{
   id: string;
   recruit: Recruit;
@@ -23,6 +25,7 @@ const emit = defineEmits<{
 
 const { getBenchmark } = useBenchmarking();
 const { modules } = useModules();
+const { openExternal } = useExternalLink();
 
 function getTooltip(metric: string, value: number | undefined) {
   if (!modules.ghostBenchmarking || value === undefined) return null;
@@ -31,21 +34,6 @@ function getTooltip(metric: string, value: number | undefined) {
 
 const toneClass = computed(() => getScoreTone(props.recruit.s));
 const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago));
-
-async function openExternalLink(url: string) {
-  try {
-    if (typeof window.__TAURI__ !== 'undefined') {
-      // Use Tauri Shell API
-      const { open } = await import('@tauri-apps/plugin-shell');
-      await open(url);
-    } else {
-      // Fallback for PWA/browser
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  } catch (error) {
-    console.error('Failed to open external link:', error);
-  }
-}
 </script>
 
 <template>
@@ -131,7 +119,7 @@ async function openExternalLink(url: string) {
         </template>
         <template v-else>
           <button
-            @click="openExternalLink(`https://royaleapi.com/player/${recruit.id}`)"
+            @click="openExternal(`https://royaleapi.com/player/${recruit.id}`)"
             class="btn-action compact"
           >
             <Icon name="analytics" size="14" />
