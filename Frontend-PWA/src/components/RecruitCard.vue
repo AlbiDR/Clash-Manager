@@ -118,6 +118,7 @@ const timeAgo = computed(() => formatTimeAgoShort(props.recruit.d.ago));
           <a
             :href="`https://royaleapi.com/player/${recruit.id}`"
             target="_blank"
+            rel="noopener noreferrer"
             class="btn-action compact"
           >
             <Icon name="analytics" size="14" />
