@@ -26,8 +26,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.3.1",
-    "@commitlint/config-conventional": "^20.3.1",
     "@tailwindcss/vite": "^4.1.17",
     "@tauri-apps/cli": "latest",
     "@types/node": "^24.10.1",
