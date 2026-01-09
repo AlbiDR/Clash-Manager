@@ -91,7 +91,7 @@ function extractWeightsFromReadme(text) {
 
   const mapping = {
     FAME: /Current Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
-    AVG_FAME: /Avg Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
+    AVG_FAME: /(?:Avg|Average) Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
     DONATION: /Donations[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
     TROPHY: /Trophies[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
     WAR_RATE: /War Rate[^0-9]*([0-9]+\.?[0-9eE-]*)/i,

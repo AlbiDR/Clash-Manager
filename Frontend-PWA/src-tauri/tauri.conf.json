@@ -4,10 +4,9 @@
   "version": "8.11.0",
   "identifier": "com.albidr.clashmanager",
   "build": {
-    "frontendDist": "../dist",
+    "frontendDist": "https://albidr.github.io/Clash-Manager/",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "npm run dev"
   },
   "app": {
     "windows": [
