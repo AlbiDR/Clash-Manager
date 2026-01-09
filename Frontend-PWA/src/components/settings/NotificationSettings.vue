@@ -14,7 +14,7 @@ const { startBackgroundSync, lastSyncTime: lastSync } = useClanData();
 
 const permissionState = ref<NotificationPermission | "unsupported">("default");
 // Improvement #10: Time formatting
-const lastSyncTime = computed(() => {
+const lastSyncFormatted = computed(() => {
     if (!lastSync?.value) return "Never";
     const date = new Date(lastSync.value);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -62,22 +62,15 @@ const sendTest = async () => {
 
       <div class="threshold-selector" role="group" aria-label="Notification Threshold">
         <button
-          :class="{ active: threshold === 50 }"
-          @click="setThreshold(50)"
+          v-for="val in ([50, 75] as const)"
+          :key="val"
+          :class="{ active: threshold === val }"
+          @click="setThreshold(val)"
           class="threshold-btn"
-          aria-label="Set threshold to 50"
-          :aria-pressed="threshold === 50"
+          :aria-label="`Set threshold to ${val}`"
+          :aria-pressed="threshold === val"
         >
-          <span class="threshold-symbol">≥</span>50
-        </button>
-        <button
-          :class="{ active: threshold === 75 }"
-          @click="setThreshold(75)"
-          class="threshold-btn"
-          aria-label="Set threshold to 75"
-          :aria-pressed="threshold === 75"
-        >
-          <span class="threshold-symbol">≥</span>75
+          <span class="threshold-symbol">≥</span>{{ val }}
         </button>
       </div>
     </div>
