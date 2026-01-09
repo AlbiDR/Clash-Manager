@@ -28,11 +28,11 @@ onMounted(() => {
   }
 });
 
-const threshold = computed(() => modules.value.notificationThreshold);
+const threshold = computed(() => modules.notificationThreshold);
 
 const setThreshold = (value: 50 | 75) => {
   haptics.tap();
-  modules.value.notificationThreshold = value;
+  modules.notificationThreshold = value;
   // Trigger update immediately
   startBackgroundSync();
 };
