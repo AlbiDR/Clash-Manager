@@ -546,7 +546,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/v') # Only create releases for real version tags
+        if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/Stable'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.versioning.outputs.build_tag }}
