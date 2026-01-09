@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ref } from "vue";
 
 // Global declaration for safe Tauri access
@@ -10,6 +9,8 @@ declare global {
     };
   }
 }
+
+const lastUpdate = ref(0);
 
 export function useBadge() {
   // Check multiple badge API support levels
@@ -65,11 +66,11 @@ export function useBadge() {
 
     // Improvement #6: Debounce
     const now = Date.now();
-    if (now - lastUpdate < 2000) {
+    if (now - lastUpdate.value < 2000) {
       // Debounce: Skip updates if too frequent
       return; 
     }
-    lastUpdate = now;
+    lastUpdate.value = now;
 
     const safeCount = Math.max(0, Math.floor(count));
 

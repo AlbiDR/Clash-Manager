@@ -153,22 +153,6 @@ const sendTest = async () => {
 
 .perm-section {
     margin-top: 16px;
-}
-
-.enable-btn {
-    width: 100%;
-    height: 36px;
-    background: var(--sys-color-primary);
-    color: var(--sys-color-on-primary);
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.perm-section {
-    margin-top: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -196,7 +180,7 @@ const sendTest = async () => {
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: 0.2s var(--sys-motion-standard);
 }
 
 /* Toggles Grid */
