@@ -17,7 +17,13 @@ const styleObject = computed(() => ({
 </script>
 
 <template>
-  <div class="toast-container" :style="styleObject">
+  <div 
+    class="toast-container" 
+    :style="styleObject"
+    role="status"
+    aria-live="polite"
+    aria-atomic="false"
+  >
     <TransitionGroup name="toast">
       <Toast
         v-for="toast in toasts"
@@ -29,6 +35,7 @@ const styleObject = computed(() => ({
     </TransitionGroup>
   </div>
 </template>
+
 
 <style scoped>
 .toast-container {

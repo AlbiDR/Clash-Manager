@@ -1,7 +1,10 @@
-// @ts-nocheck
 import { ref, nextTick } from "vue";
 import { useRoute } from "vue-router";
 
+/**
+ * 🔗 USE DEEP LINK HANDLER
+ * Manages item expansion and auto-scroll based on URL query parameters.
+ */
 export function useDeepLinkHandler(domIdPrefix: string) {
   const route = useRoute();
   const expandedIds = ref<Set<string>>(new Set());
@@ -23,7 +26,7 @@ export function useDeepLinkHandler(domIdPrefix: string) {
     // Only run once per session/reload to avoid jarring resets
     if (deepLinkHandled.value) return;
 
-    const pinId = route.query.pin as string;
+    const pinId = route.query.pin as string | undefined;
 
     // Check if the pinned ID exists in the current dataset
     if (pinId && items.some((item) => item.id === pinId)) {
@@ -35,7 +38,10 @@ export function useDeepLinkHandler(domIdPrefix: string) {
 
       nextTick(() => {
         const el = document.getElementById(`${domIdPrefix}${pinId}`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Highlight the element briefly? (Optional future optimization)
+        }
       });
     }
   }
@@ -46,3 +52,4 @@ export function useDeepLinkHandler(domIdPrefix: string) {
     processDeepLink,
   };
 }
+

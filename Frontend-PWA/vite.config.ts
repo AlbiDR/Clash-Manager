@@ -24,17 +24,19 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (
-              id.includes("vue") ||
-              id.includes("vue-router") ||
-              id.includes("@formkit/auto-animate")
-            ) {
+            if (id.includes("vue") || id.includes("vue-router")) {
               return "vendor-core";
             }
             if (id.includes("zod")) {
               return "vendor-validation";
             }
+            if (id.includes("lucide") || id.includes("@formkit")) {
+              return "vendor-ui-deps";
+            }
             return "vendor-stable";
+          }
+          if (id.includes("/src/api/") || id.includes("/src/types/")) {
+            return "core-api";
           }
           if (id.includes("/src/components/")) {
             return "ui-components";
@@ -45,6 +47,7 @@ export default defineConfig({
         },
       },
     },
+
   },
   plugins: [vue() as any, tailwindcss() as any],
 });

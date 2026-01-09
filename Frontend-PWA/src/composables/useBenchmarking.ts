@@ -1,4 +1,7 @@
-// @ts-nocheck
+/**
+ * 📊 USE BENCHMARKING
+ * Statistical engine for comparing player performance against clan averages.
+ */
 import { computed } from "vue";
 import { useClanData } from "./useClanData";
 

@@ -1,15 +1,19 @@
-// @ts-nocheck
 import { ref } from "vue";
 
+/**
+ * 👆 USE LONG PRESS
+ * Provides a standardized long-press gesture with built-in haptic feedback.
+ */
 export function useLongPress(callback: () => void, duration = 400) {
-  const isLongPress = ref(false);
+  const isLongPressActive = ref(false);
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   function start() {
-    isLongPress.value = false;
+    isLongPressActive.value = false;
     timer = setTimeout(() => {
-      isLongPress.value = true;
-      // Native Frontier: Standardized Selection Haptic (Medium)
+      isLongPressActive.value = true;
+      
+      // Standardized Selection Haptic (Medium pulse)
       if (typeof navigator !== "undefined" && navigator.vibrate) {
         navigator.vibrate(60);
       }
@@ -22,11 +26,13 @@ export function useLongPress(callback: () => void, duration = 400) {
       clearTimeout(timer);
       timer = null;
     }
+    isLongPressActive.value = false;
   }
 
   return {
-    isLongPress,
+    isLongPressActive,
     start,
     cancel,
   };
 }
+

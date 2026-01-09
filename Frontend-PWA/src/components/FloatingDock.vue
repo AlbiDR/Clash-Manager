@@ -26,6 +26,7 @@ const navItems = [
 ];
 
 function navigate(path: string) {
+  if (route.path === path) return;
   haptics.tap();
   router.push(path);
 }
@@ -57,22 +58,22 @@ function navigate(path: string) {
   left: 50%;
   transform: translateX(-50%);
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--sys-surface-glass-border);
   padding: 6px;
   border-radius: var(--shape-corner-full);
   display: flex;
   gap: 4px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   z-index: 500;
   transition:
-    transform 0.4s var(--sys-motion-spring),
+    transform 0.5s cubic-bezier(0.2, 0, 0, 1),
     opacity 0.3s ease;
 }
 
 .dock-container.hidden {
-  transform: translate(-50%, 120%);
+  transform: translate(-50%, 150%);
   opacity: 0;
   pointer-events: none;
 }
@@ -83,15 +84,15 @@ function navigate(path: string) {
   border-radius: var(--shape-corner-full);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-size: 14px;
   font-weight: 750;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all 0.3s var(--sys-motion-spring);
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
   -webkit-tap-highlight-color: transparent;
 
-  /* Reset button styles */
   background: none;
   border: none;
   font-family: inherit;
@@ -104,16 +105,16 @@ function navigate(path: string) {
 .capsule-bg {
   position: absolute;
   inset: 0;
-  background: var(--sys-color-primary);
+  background: linear-gradient(135deg, var(--sys-color-primary), var(--sys-color-primary-variant, var(--sys-color-primary)));
   border-radius: var(--shape-corner-full);
   z-index: -1;
-  animation: slide-in 0.3s var(--sys-motion-spring);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
+  animation: pop-in 0.4s cubic-bezier(0.2, 0, 0, 1.2);
+  box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
-@keyframes slide-in {
+@keyframes pop-in {
   from {
-    transform: scale(0.8);
+    transform: scale(0.6);
     opacity: 0;
   }
   to {
@@ -125,12 +126,17 @@ function navigate(path: string) {
 .dock-label {
   transition: opacity 0.3s;
 }
-@media (max-width: 450px) {
+
+@media (max-width: 480px) {
   .dock-item:not(.active) .dock-label {
     display: none;
   }
   .dock-item {
-    padding: 12px;
+    padding: 12px 16px;
+  }
+  .dock-item.active {
+    padding: 12px 24px;
   }
 }
 </style>
+

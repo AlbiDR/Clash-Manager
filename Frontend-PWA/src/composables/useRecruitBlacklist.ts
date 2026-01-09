@@ -1,4 +1,7 @@
-// @ts-nocheck
+/**
+ * 🧹 USE RECRUIT BLACKLIST
+ * Manages local "tombstones" for recruits who have been dismissed but might still appear in cached server payloads.
+ */
 import { ref } from "vue";
 
 const STORAGE_KEY = "cm_recruit_tombstones";

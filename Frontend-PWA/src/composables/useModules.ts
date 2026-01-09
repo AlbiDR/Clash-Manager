@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { ref, watch, reactive, toRaw } from "vue";
 
 const MODULES_KEY = "cm_modules_v2";
 
@@ -10,112 +10,102 @@ export interface ModuleState {
   experimentalNotifications: boolean;
   notificationBadgeHighPotential: boolean;
   notificationThreshold: 50 | 75;
-  notificationSound: boolean; // Improvement #11
-  notificationQuietMode: boolean; // Improvement #5
+  notificationSound: boolean;
+  notificationQuietMode: boolean;
 }
 
-// 📱 Device Detection for Defaults
 const isMobile =
   typeof window !== "undefined"
     ? window.matchMedia("(max-width: 768px)").matches
     : false;
 
-const defaultState: ModuleState = {
+const DEFAULT_STATE: ModuleState = {
   blitzMode: false,
-  ghostBenchmarking: !isMobile, // On by default on Desktop, Off on Mobile
+  ghostBenchmarking: !isMobile,
   sortExplanation: true,
   backendRefresher: false,
-  experimentalNotifications: true, // On by default
-  notificationBadgeHighPotential: true, // On by default
-  notificationThreshold: 75, // Default to high-potential (≥75)
+  experimentalNotifications: true,
+  notificationBadgeHighPotential: true,
+  notificationThreshold: 75,
   notificationSound: true,
   notificationQuietMode: false,
 };
 
-const modules = ref<ModuleState>({ ...defaultState });
+// ⚡ PERFORMANCE: Use reactive object for direct property access instead of .value
+const modules = reactive<ModuleState>({ ...DEFAULT_STATE });
 const isInitialized = ref(false);
+
+/**
+ * Robustly merge stored data with default schema to handle upgrades/regressions.
+ */
+function mergeStorage(stored: any): ModuleState {
+  const result = { ...DEFAULT_STATE };
+  if (!stored || typeof stored !== "object") return result;
+
+  // Type-safe merging for all keys in ModuleState
+  (Object.keys(DEFAULT_STATE) as (keyof ModuleState)[]).forEach((key) => {
+    const val = stored[key];
+    const expectedType = typeof DEFAULT_STATE[key];
+    
+    if (key === "notificationThreshold") {
+      if (val === 50 || val === 75) result[key] = val;
+    } else if (typeof val === expectedType) {
+      (result as any)[key] = val;
+    }
+  });
+
+  return result;
+}
 
 export function useModules() {
   function init() {
     if (isInitialized.value) return;
-    loadFromStorage();
+    
+    // Load local storage
+    try {
+      const raw = localStorage.getItem(MODULES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        Object.assign(modules, mergeStorage(parsed));
+      }
+    } catch (e) {
+      console.warn("[Modules] Storage hydration failed", e);
+    }
+
+    // Sync across tabs
     window.addEventListener("storage", (event) => {
-      if (event.key === MODULES_KEY) {
-        loadFromStorage();
+      if (event.key === MODULES_KEY && event.newValue) {
+        try {
+          Object.assign(modules, mergeStorage(JSON.parse(event.newValue)));
+        } catch (e) {
+          /* fail silent on sync */
+        }
       }
     });
+
     isInitialized.value = true;
   }
 
-  function loadFromStorage() {
-    try {
-      const stored = localStorage.getItem(MODULES_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        modules.value = {
-          blitzMode:
-            typeof parsed.blitzMode === "boolean"
-              ? parsed.blitzMode
-              : defaultState.blitzMode,
-          ghostBenchmarking:
-            typeof parsed.ghostBenchmarking === "boolean"
-              ? parsed.ghostBenchmarking
-              : defaultState.ghostBenchmarking,
-          sortExplanation:
-            typeof parsed.sortExplanation === "boolean"
-              ? parsed.sortExplanation
-              : defaultState.sortExplanation,
-          backendRefresher:
-            typeof parsed.backendRefresher === "boolean"
-              ? parsed.backendRefresher
-              : defaultState.backendRefresher,
-          experimentalNotifications:
-            typeof parsed.experimentalNotifications === "boolean"
-              ? parsed.experimentalNotifications
-              : defaultState.experimentalNotifications,
-          notificationBadgeHighPotential:
-            typeof parsed.notificationBadgeHighPotential === "boolean"
-              ? parsed.notificationBadgeHighPotential
-              : defaultState.notificationBadgeHighPotential,
-          notificationThreshold:
-            parsed.notificationThreshold === 50 ||
-            parsed.notificationThreshold === 75
-              ? parsed.notificationThreshold
-              : defaultState.notificationThreshold,
-          notificationSound:
-            typeof parsed.notificationSound === "boolean"
-              ? parsed.notificationSound
-              : defaultState.notificationSound,
-          notificationQuietMode:
-            typeof parsed.notificationQuietMode === "boolean"
-              ? parsed.notificationQuietMode
-              : defaultState.notificationQuietMode,
-        };
-      } else {
-        modules.value = { ...defaultState };
-      }
-    } catch (e) {
-      console.error("Failed to load modules", e);
-      modules.value = { ...defaultState };
-    }
-  }
-
+  // ⚡ PERFORMANCE: Single deep watch for persistence instead of ad-hoc saves
   watch(
     modules,
     (newVal) => {
       try {
-        localStorage.setItem(MODULES_KEY, JSON.stringify(newVal));
+        localStorage.setItem(MODULES_KEY, JSON.stringify(toRaw(newVal)));
       } catch (e) {
-        console.error("Failed to save module state", e);
+        console.error("[Modules] Failed to persist", e);
       }
     },
     { deep: true },
   );
 
+  /**
+   * Toggle a boolean feature flag safely.
+   */
   function toggle(key: keyof ModuleState) {
-    const val = modules.value[key];
+    const val = modules[key];
     if (typeof val === "boolean") {
-      (modules.value as any)[key] = !val;
+      (modules as any)[key] = !val;
     }
   }
 
@@ -126,8 +116,5 @@ export function useModules() {
   };
 }
 
-export type UseModulesReturn = {
-  modules: typeof modules;
-  toggle: (key: keyof ModuleState) => void;
-  init: () => void;
-};
+export type UseModulesReturn = ReturnType<typeof useModules>;
+

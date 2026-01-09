@@ -64,13 +64,11 @@
       crossorigin
     />
 
-
     <style>
       /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
       @font-face {
         font-family: "Inter";
-        src: url("/fonts/Inter-Variable.woff2")
-          format("woff2-variations");
+        src: url("/fonts/Inter-Variable.woff2") format("woff2-variations");
         font-weight: 100 900;
         font-display: swap;
         font-style: normal;
@@ -481,6 +479,21 @@
         </div>
       </main>
     </div>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Clash Manager",
+        "alternateName": "Ruby Bohr Dashboard",
+        "url": "https://ruby-bohr.vercel.app",
+        "description": "Professional recruitment and performance analytics dashboard for Clash Royale clan leaders.",
+        "applicationCategory": "BusinessApplication",
+        "browserRequirements": "Requires JavaScript and HTML5 support.",
+        "permissions": "Notifications, App Badging",
+        "softwareVersion": "6.3.0",
+        "operatingSystem": "Android, iOS, Windows, macOS"
+      }
+    </script>
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

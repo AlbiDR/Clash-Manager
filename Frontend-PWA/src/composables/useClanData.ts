@@ -79,14 +79,11 @@ export function useClanData() {
 
   function updateBadgeCount(data: WebAppData) {
     if (data?.hh) {
-      const threshold = modules.value.notificationThreshold || 75;
-      const count = modules.value.notificationBadgeHighPotential
+      const threshold = modules.notificationThreshold || 75;
+      const count = modules.notificationBadgeHighPotential
         ? data.hh.filter((r) => r.s >= threshold).length
         : data.hh.length;
       setBadge(count);
-      // console.log(
-      //  `[Badge] Updated to ${count} recruits (threshold: ≥${threshold})`,
-      // );
     }
   }
 
@@ -156,6 +153,32 @@ export function useClanData() {
     }
   }
 
+  // 🛡️ Logic: Screen Wake Lock (Logic #15)
+  // Prevents device sleep during critical synchronization cycles
+  let wakeLock: any = null;
+
+  async function requestWakeLock() {
+    if ("wakeLock" in navigator && syncStatus.value === "syncing") {
+      try {
+        wakeLock = await (navigator as any).wakeLock.request("screen");
+      } catch (err) {
+        console.warn("Wake Lock failed", err);
+      }
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock) {
+      await wakeLock.release();
+      wakeLock = null;
+    }
+  }
+
+  watch(syncStatus, (status) => {
+    if (status === "syncing") requestWakeLock();
+    else releaseWakeLock();
+  });
+
   return {
     data: readonly(clanData),
     isHydrated: readonly(isHydrated),
@@ -169,3 +192,4 @@ export function useClanData() {
     dismissRecruitsAction,
   };
 }
+

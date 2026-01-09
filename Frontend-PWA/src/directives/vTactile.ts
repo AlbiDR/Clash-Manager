@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Directive, DirectiveBinding } from "vue";
 
 interface TactileBinding {
@@ -23,8 +22,12 @@ interface TactileState {
 
 const stateMap = new WeakMap<HTMLElement, TactileState>();
 
-export const vTactile: Directive = {
-  mounted(el: HTMLElement, binding: DirectiveBinding<TactileBinding>) {
+/**
+ * 🖱️ V-TACTILE DIRECTIVE
+ * Provides high-performance tap and long-press haptic interaction.
+ */
+export const vTactile: Directive<HTMLElement, TactileBinding> = {
+  mounted(el, binding) {
     const state: TactileState = {
       startX: 0,
       startY: 0,
@@ -32,12 +35,68 @@ export const vTactile: Directive = {
       isActive: false,
       isLongPress: false,
       listeners: {
-        pointerdown: () => {},
-        pointermove: () => {},
-        pointerup: () => {},
-        pointercancel: () => {},
-        contextmenu: () => {},
-      }, // Will be assigned below
+        pointerdown: (e: PointerEvent) => {
+          if (e.button !== 0) return;
+
+          const target = e.target as HTMLElement;
+          // 🛡️ Logic: Ignore interactions on actionable children
+          if (
+            target.closest(".btn-action") ||
+            target.closest("a") ||
+            target.closest(".hit-target")
+          )
+            return;
+
+          state.isActive = true;
+          state.isLongPress = false;
+          state.startX = e.clientX;
+          state.startY = e.clientY;
+
+          if (state.timer) clearTimeout(state.timer);
+
+          state.timer = window.setTimeout(() => {
+            if (state.isActive) {
+              state.isLongPress = true;
+              if (navigator.vibrate) navigator.vibrate(60);
+              if (binding.value?.onLongPress) {
+                binding.value.onLongPress();
+              }
+            }
+          }, 500);
+        },
+
+        pointermove: (e: PointerEvent) => {
+          if (!state.isActive) return;
+
+          // ⚡ OPTIMIZATION: High-DPI aware threshold (Bug #16)
+          const moveThreshold = 10 * (window.devicePixelRatio || 1);
+          const dx = Math.abs(e.clientX - state.startX);
+          const dy = Math.abs(e.clientY - state.startY);
+
+          if (dx > moveThreshold || dy > moveThreshold) {
+            clearInteraction();
+          }
+        },
+
+        pointerup: () => {
+          if (state.isActive && !state.isLongPress) {
+            if (navigator.vibrate) navigator.vibrate(12);
+            if (binding.value?.onTap) {
+              binding.value.onTap();
+            }
+          }
+          clearInteraction();
+        },
+
+        pointercancel: () => {
+          clearInteraction();
+        },
+
+        contextmenu: (e: Event) => {
+          // Prevent browser context menu during long-press scenarios
+          e.preventDefault();
+        },
+      },
     };
 
     const clearInteraction = () => {
@@ -46,66 +105,6 @@ export const vTactile: Directive = {
         clearTimeout(state.timer);
         state.timer = null;
       }
-    };
-
-    state.listeners.pointerdown = (e: PointerEvent) => {
-      if (e.button !== 0) return;
-
-      const target = e.target as HTMLElement;
-      // Ignore interactions on actionable children defined in components
-      if (
-        target.closest(".btn-action") ||
-        target.closest("a") ||
-        target.closest(".hit-target")
-      )
-        return;
-
-      state.isActive = true;
-      state.isLongPress = false;
-      state.startX = e.clientX;
-      state.startY = e.clientY;
-
-      if (state.timer) clearTimeout(state.timer);
-
-      state.timer = window.setTimeout(() => {
-        if (state.isActive) {
-          state.isLongPress = true;
-          if (navigator.vibrate) navigator.vibrate(60);
-          if (binding.value?.onLongPress) {
-            binding.value.onLongPress();
-          }
-        }
-      }, 500);
-    };
-
-    state.listeners.pointermove = (e: PointerEvent) => {
-      if (!state.isActive) return;
-
-      const moveThreshold = 10;
-      const dx = Math.abs(e.clientX - state.startX);
-      const dy = Math.abs(e.clientY - state.startY);
-
-      if (dx > moveThreshold || dy > moveThreshold) {
-        clearInteraction();
-      }
-    };
-
-    state.listeners.pointerup = () => {
-      if (state.isActive && !state.isLongPress) {
-        if (navigator.vibrate) navigator.vibrate(10);
-        if (binding.value?.onTap) {
-          binding.value.onTap();
-        }
-      }
-      clearInteraction();
-    };
-
-    state.listeners.pointercancel = () => {
-      clearInteraction();
-    };
-
-    state.listeners.contextmenu = (e: Event) => {
-      e.preventDefault();
     };
 
     el.addEventListener("pointerdown", state.listeners.pointerdown);
@@ -117,7 +116,7 @@ export const vTactile: Directive = {
     stateMap.set(el, state);
   },
 
-  unmounted(el: HTMLElement) {
+  unmounted(el) {
     const state = stateMap.get(el);
     if (state) {
       el.removeEventListener("pointerdown", state.listeners.pointerdown);
@@ -130,3 +129,4 @@ export const vTactile: Directive = {
     }
   },
 };
+

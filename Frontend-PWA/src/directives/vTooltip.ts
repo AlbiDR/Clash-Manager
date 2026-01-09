@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Directive } from "vue";
 import type { BenchmarkData } from "../composables/useBenchmarking";
 
@@ -6,12 +5,21 @@ import type { BenchmarkData } from "../composables/useBenchmarking";
 let tooltipEl: HTMLDivElement | null = null;
 let activeTarget: HTMLElement | null = null;
 let hideTimer: number | null = null;
-let pressTimer: number | null = null;
+let pressTimer: any = null;
 
+/**
+ * 🛠️ Internal UI: Create or retrieve the singleton tooltip element
+ */
 function createTooltip() {
   if (tooltipEl) return tooltipEl;
   const el = document.createElement("div");
   el.className = "rich-tooltip";
+  
+  // ⚡ OPTIMIZATION: Use Popover API if available (Optimization #54)
+  if ("showPopover" in el) {
+    (el as any).popover = "manual";
+  }
+  
   document.body.appendChild(el);
   tooltipEl = el;
   return el;
@@ -23,6 +31,7 @@ function renderContent(data: BenchmarkData | string) {
     tooltipEl.innerHTML = `<div class="rt-simple">${data}</div>`;
     return;
   }
+  
   const range = data.max - data.min || 1;
   const playerPos = Math.min(100, Math.max(0, ((data.value - data.min) / range) * 100));
   const avgPos = Math.min(100, Math.max(0, ((data.avg - data.min) / range) * 100));
@@ -32,7 +41,7 @@ function renderContent(data: BenchmarkData | string) {
   tooltipEl.innerHTML = `
     <div class="rt-header">
         <span class="rt-label">${data.label}</span>
-        <span class="rt-tier tier-${data.tier.toLowerCase().replace(" ", "-")}">${data.tier}</span>
+        <span class="rt-tier tier-${data.tier.toLowerCase().replace(/\s+/g, "-")}">${data.tier}</span>
     </div>
     <div class="rt-visual"><div class="rt-track">
         <div class="rt-line"></div>
@@ -57,6 +66,12 @@ function positionTooltip(el: HTMLElement) {
   const padding = 12;
 
   tooltipEl.classList.add("visible");
+  
+  // Show via Popover API if supported for better layering
+  if ("showPopover" in tooltipEl) {
+    try { (tooltipEl as any).showPopover(); } catch (e) { /* fallback */ }
+  }
+
   const tipRect = tooltipEl.getBoundingClientRect();
 
   let left = rect.left + rect.width / 2;
@@ -80,14 +95,21 @@ function globalHide() {
   if (tooltipEl) {
     tooltipEl.classList.remove("visible");
     tooltipEl.style.transform = tooltipEl.style.transform.replace("scale(1)", "scale(0.8)");
+    if ("hidePopover" in tooltipEl) {
+      try { (tooltipEl as any).hidePopover(); } catch (e) { /* ignore */ }
+    }
   }
   activeTarget = null;
 }
 
+// Typing for element-bound values to fix any usage
+interface TooltipHTMLElement extends HTMLElement {
+  _tooltipValue?: BenchmarkData | string;
+}
+
 // ⚡ SPEED WIZARD: Unified Delegated Listeners
-// Instead of attaching listeners to hundreds of elements, we use a single global controller.
 if (typeof window !== "undefined") {
-  const handleShow = (el: HTMLElement) => {
+  const handleShow = (el: TooltipHTMLElement) => {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     const value = el._tooltipValue;
     if (!value) return;
@@ -104,19 +126,20 @@ if (typeof window !== "undefined") {
 
   // Mouse Delegation
   document.body.addEventListener("mouseover", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-v-tooltip]");
+    const target = (e.target as HTMLElement).closest("[data-v-tooltip]") as TooltipHTMLElement | null;
     if (target) handleShow(target);
   });
+  
   document.body.addEventListener("mouseout", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-v-tooltip]");
+    const target = (e.target as HTMLElement).closest("[data-v-tooltip]") as TooltipHTMLElement | null;
     if (target) handleHide();
   });
 
   // Touch Delegation (Long Press)
   document.body.addEventListener("touchstart", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-v-tooltip]");
+    const target = (e.target as HTMLElement).closest("[data-v-tooltip]") as TooltipHTMLElement | null;
     if (!target) {
-        if (tooltipEl?.classList.contains("visible") && !e.target.closest(".rich-tooltip")) globalHide();
+        if (tooltipEl?.classList.contains("visible") && !((e.target as HTMLElement).closest(".rich-tooltip"))) globalHide();
         return;
     }
     if (pressTimer) clearTimeout(pressTimer);
@@ -130,7 +153,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("scroll", globalHide, { passive: true });
 }
 
-export const vTooltip: Directive = {
+export const vTooltip: Directive<TooltipHTMLElement, BenchmarkData | string> = {
   mounted(el, binding) {
     el._tooltipValue = binding.value;
     if (binding.value) {
@@ -150,3 +173,4 @@ export const vTooltip: Directive = {
     delete el._tooltipValue;
   }
 };
+

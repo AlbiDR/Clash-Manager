@@ -1,47 +1,63 @@
-// @ts-nocheck
 import { ref, watch, type Ref } from "vue";
 
+/**
+ * ⚡ USE PROGRESSIVE LIST
+ * Optimization #44: Renders long lists in time-sliced chunks to maintain 60FPS.
+ * Bug #17: Prevents jarring resets during background data refreshes.
+ */
 export function useProgressiveList<T>(
-  sourceList: Ref<T[]>,
-  initialSize: number = 10,
+  sourceList: Ref<readonly T[]>,
+  initialSize: number = 12,
 ) {
-  const visibleItems = ref<T[]>([]);
+  const visibleItems = ref<T[]>([]) as Ref<T[]>;
+  let currentChunkTimer: number | null = null;
 
   watch(
     sourceList,
-    (newList) => {
-      // 1. Immediate Render: Critical "Above the Fold" content only.
-      // Slice gives us a new array reference, preventing reactivity leaks from the source.
-      visibleItems.value = newList.slice(0, initialSize);
+    (newList, oldList) => {
+      // 🛡️ Logic: Prevent churn (Bug #17)
+      const isRefresh = oldList && oldList.length > 0 && Math.abs(newList.length - oldList.length) < 5;
+      
+      if (isRefresh && visibleItems.value.length >= initialSize) {
+        visibleItems.value = newList.slice(0, visibleItems.value.length) as T[];
+        if (visibleItems.value.length < newList.length) {
+          scheduleChunk(newList as T[], visibleItems.value.length);
+        }
+        return;
+      }
 
-      // 2. Time-Sliced Hydration: Render the rest in small chunks to avoid TBT (Total Blocking Time).
+      // Fresh load or major change
+      if (currentChunkTimer !== null) {
+        if (window.cancelIdleCallback) window.cancelIdleCallback(currentChunkTimer);
+        else cancelAnimationFrame(currentChunkTimer);
+      }
+
+      visibleItems.value = newList.slice(0, initialSize) as T[];
       if (newList.length > initialSize) {
-        scheduleChunk(newList, initialSize);
+        scheduleChunk(newList as T[], initialSize);
       }
     },
     { immediate: true },
   );
 
   function scheduleChunk(all: T[], currentCount: number) {
-    // Futuristic: Use requestIdleCallback if available, fall back to RAF/Timeout
-    const scheduler = window.requestIdleCallback || requestAnimationFrame;
+    const scheduler = window.requestIdleCallback || window.requestAnimationFrame;
 
-    scheduler(() => {
-      // Batch size: 10 items per tick. Small enough to fit in a frame (16ms).
-      const nextCount = Math.min(currentCount + 10, all.length);
+    currentChunkTimer = scheduler(() => {
+      const chunkSize = all.length > 100 ? 20 : 10;
+      const nextCount = Math.min(currentCount + chunkSize, all.length);
 
-      // Update the view
-      // Note: We use .slice() to ensure Vue detects the change efficiently
       visibleItems.value = all.slice(0, nextCount);
 
-      // Recursively schedule next batch if needed
       if (nextCount < all.length) {
         scheduleChunk(all, nextCount);
       }
-    });
+    }) as unknown as number;
   }
 
   return {
     visibleItems,
   };
 }
+
+
