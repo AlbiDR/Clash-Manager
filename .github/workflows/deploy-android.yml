@@ -9,7 +9,7 @@ on:
       architecture:
         description: "Target Architecture (for test builds)"
         required: true
-        default: "all"
+        default: "aarch64"
         type: choice
         options:
           - all
@@ -123,16 +123,16 @@ jobs:
                 
                 # MAJOR: Breaking changes (weight: 100)
                 MAJOR_PATTERNS='(BREAKING CHANGE:|^breaking:|^feat!:|^fix!:|\[breaking\]|^[Bb]reaking\s|^[Rr]emoves?\s|^[Dd]eletes?\s.*API|^[Cc]hanges?\s.*API|major release|version [0-9]+\.0\.0)'
-                MAJOR_COUNT=$(echo "$COMMITS" | grep -ciE "$MAJOR_PATTERNS" || echo "0")
-                if [ "$MAJOR_COUNT" -gt 0 ]; then
+                MAJOR_COUNT=$(echo "$COMMITS" | grep -ciE "$MAJOR_PATTERNS" | tr -d '\r' || echo "0")
+                if [[ $MAJOR_COUNT -gt 0 ]]; then
                   MAJOR_SCORE=$((MAJOR_COUNT * 100))
                   echo "  🚨 Found $MAJOR_COUNT breaking change indicator(s) (score: $MAJOR_SCORE)"
                 fi
                 
                 # MINOR: New features (weight: 10)
                 MINOR_PATTERNS='(^feat(\(.+\))?:|^feature(\(.+\))?:|^add(\(.+\))?:|^new(\(.+\))?:|^[Aa]dds?\s|^[Nn]ew\s|^[Ii]ntroduces?\s|^[Ii]mplements?\s.*feature|^[Cc]reates?\s.*feature|^[Ee]nhances?\s|^[Ee]xpands?\s)'
-                MINOR_COUNT=$(echo "$COMMITS" | grep -ciE "$MINOR_PATTERNS" || echo "0")
-                if [ "$MINOR_COUNT" -gt 0 ]; then
+                MINOR_COUNT=$(echo "$COMMITS" | grep -ciE "$MINOR_PATTERNS" | tr -d '\r' || echo "0")
+                if [[ $MINOR_COUNT -gt 0 ]]; then
                   MINOR_SCORE=$((MINOR_COUNT * 10))
                   echo "  ✨ Found $MINOR_COUNT feature indicator(s) (score: $MINOR_SCORE)"
                 fi
@@ -142,13 +142,13 @@ jobs:
                 echo "  🔧 Total commits: $COMMIT_COUNT (base score: $PATCH_SCORE)"
                 
                 # Determine bump type based on highest score
-                if [ "$MAJOR_SCORE" -gt 0 ]; then
+                if [[ $MAJOR_SCORE -gt 0 ]]; then
                   MAJOR=$((MAJOR + 1))
                   MINOR=0
                   PATCH=0
                   BUMP_TYPE="major"
                   echo "🚨 BREAKING CHANGE detected → MAJOR bump to ${MAJOR}.${MINOR}.${PATCH}"
-                elif [ "$MINOR_SCORE" -gt 0 ]; then
+                elif [[ $MINOR_SCORE -gt 0 ]]; then
                   MINOR=$((MINOR + 1))
                   PATCH=0
                   BUMP_TYPE="minor"
@@ -233,11 +233,6 @@ jobs:
             Frontend-PWA/src-tauri/gen/android/**/*.gradle*
             Frontend-PWA/src-tauri/gen/android/**/gradle-wrapper.properties
 
-      - name: Audit Assets
-        run: |
-          echo "🔍 Auditing critical assets..."
-          ls -R Frontend-PWA/dist | grep -E "index.html|main.js|style.css|fonts" || echo "⚠️ Some assets missing in dist!"
-
       - name: Build Android App
         env:
           VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
@@ -251,11 +246,16 @@ jobs:
 
           ARCH_ARG=""
           if [ "${{ github.event.inputs.architecture }}" != "all" ] && [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            ARCH_ARG="${{ github.event.inputs.architecture }}"
+            ARCH_ARG="--target ${{ github.event.inputs.architecture }}"
           fi
 
           # Standard build - Tauri manages minification safely via its own internal config
           npx tauri android build $ARCH_ARG --apk true
+
+      - name: Audit Assets
+        run: |
+          echo "🔍 Auditing critical assets..."
+          ls -R Frontend-PWA/dist | grep -E "index.html|main.js|style.css|fonts" || echo "⚠️ Some assets missing in dist!"
 
       - name: Sign APK
         run: |
