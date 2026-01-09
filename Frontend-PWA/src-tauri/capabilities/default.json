@@ -12,7 +12,8 @@
       "identifier": "shell:allow-open",
       "allow": [
         {
-          "schemes": ["http", "https"]
+          "schemes": ["http", "https"],
+          "urls": ["https://albidr.github.io/Clash-Manager/*"]
         }
       ]
     },
