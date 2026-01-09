@@ -1,4 +1,4 @@
-name: Deploy APK (Beta)
+name: Deploy APK
 
 on:
   push:
