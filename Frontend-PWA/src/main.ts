@@ -13,14 +13,15 @@ import { useClanData } from "./composables/useClanData";
 import { useTheme } from "./composables/useTheme";
 import { useWakeLock } from "./composables/useWakeLock";
 
-function showFatalError(error: any) {
+function showFatalError(error: unknown) {
   console.error("FATAL ERROR:", error);
   // If the app hasn't mounted, we should probably show something on screen
   const appEl = document.getElementById("app");
   if (appEl && !appEl.innerHTML.includes("app-container")) {
+    const message = error instanceof Error ? error.message : String(error);
     appEl.innerHTML = `<div style="padding:20px;color:red;text-align:center;">
             <h1>System Error</h1>
-            <p>${error?.message || "Unknown error during startup"}</p>
+            <p>${message || "Unknown error during startup"}</p>
             <button onclick="localStorage.clear();window.location.reload()">Factory Reset</button>
         </div>`;
   }
