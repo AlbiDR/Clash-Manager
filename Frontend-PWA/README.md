@@ -1,71 +1,84 @@
-# Clash Manager — Client (PWA)
+# Clash Manager — Client Core (Tauri & PWA)
 
-A compact, offline-first Vue 3 PWA that consumes the backend's headless payload and provides fast, resilient administrative workflows.
+The heart of the Clash Manager interface. This is a high-performance Vue 3 application built for **Dual-Mode Deployment**: a **Tauri 2.0** native mobile core and a **Progressive Web App (PWA)** for desktop-class administrative excellence.
 
-## Table of contents
+---
 
-- Local development
-- Environment
-- Testing
-- Build & deployment
-- Android / TWA
-- PWA & Service worker
-- CI / CD
-- Troubleshooting
+## 🏗️ Architectural Versatility
 
-## Local development
+- **PWA Mode**: Optimized for desktop/Mac browser usage, featuring full offline support, service worker caching, and rapid LCP.
+- **Native Mode**: Uses Tauri 2.0 (Rust) for deep Android integration, including native deep-link handling and system-level performance.
+
+* **Logic**: Vue 3 + TypeScript
+* **Aesthetics**: Vanilla CSS (Sovereign Design System)
+* **Native Bridge**: Tauri 2.0 (Rust)
+* **State**: Reactive Composables + IndexedDB (Local Cache)
+* **Validation**: Zod (Dynamic API Inflation)
+* **Testing**: Vitest + JSDOM
+
+---
+
+## 🛠️ Development Lifecycle
+
+### Native Development (Tauri)
+
+To run the application with native Android features:
 
 ```bash
-cd Frontend-PWA
-npm ci
+# Debug in the browser
 npm run dev
+
+# Debug on a tethered Android device
+npm run tauri android dev
 ```
 
-Environment
+### Environment Configuration
+
+Create a `.env` in this directory:
 
 ```env
 VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-# Optional for analytics or other integrations
-# VITE_SENTRY_DSN=
 ```
 
-Testing
+---
+
+## 🧪 Quality Assurance
+
+We maintain a 100% logic coverage goal for all business logic and reactive states.
 
 ```bash
-npm test        # unit tests via Vitest
-npm run test:ui # ui / integration tests
-npm run test:coverage
-npm run lint     # runs ESLint and style checks
+npm test                # Run unit tests
+npm run test:ui         # Visual test runner
+npm run test:coverage   # Generate coverage reports
 ```
 
-Build & Release
+> [!NOTE] > **Test Environment**: The project is configured with a `jsdom` global setup. Ensure `vitest.setup.ts` is present for hardware/API mocking.
 
-```bash
-npm run build    # produces production assets in dist/
-# Deploy to Netlify / Vercel / Firebase Hosting / GitHub Pages
-```
+---
 
-Android / TWA
+## 📦 Distribution & CI/CD
 
-- Use `scripts/build-android.sh` to create a Trusted Web Activity bundle.
-- Follow the `Frontend-PWA/README.md` steps in your Android build pipeline to sign and publish.
+The Android build process is fully automated via GitHub Actions (`deploy-android.yml`).
 
-PWA & Service Worker
+### Distribution Workflow
 
-- Service worker is in `dev-dist/sw.js` — update carefully and bump the cache version when changing caching strategies.
-- For troubleshooting updates, instruct users to hard refresh and clear site data.
+1.  **Tag Push**: Pushing a tag (`v*`) triggers the build.
+2.  **Environment Sync**: Secrets (Keystore, Alias, Passwords) are injected into the Google Cloud / Android build environment.
+3.  **Cross-Compilation**: Tauri compiles the Rust core and optimizes the Vue assets.
+4.  **Artifact Generation**: A production-signed APK and AAB are generated and uploaded to the GitHub Release.
 
-CI / CD
+---
 
-- GitHub Actions run tests and produce artifacts. Production deploys should trigger only after a successful main/Stable build and release tag.
+## 🛡️ System Resilience
 
-## Troubleshooting
+The client implements several "Self-Healing" patterns:
 
-- CORS / API errors: verify `VITE_GAS_URL` is set to your deployed WebApp URL and that the Web App allows requests from the host.
-- Offline Cache: If new assets aren't loading, check service worker registration and cache invalidation logic.
+- **Reactive Integrity**: Direct reactive state access without `.value` pitfalls.
+- **Double-Unwrap Protection**: Robust API envelope handling in `gasClient.ts`.
+- **Offline Persistence**: Automatic SWR (Stale-While-Revalidate) caching via IndexedDB.
 
-See the root `README.md` and `docs/DEPLOYMENT.md` for architecture, deployment, and release notes.
+---
 
-## License
+## 📜 License
 
-Proprietary. © 2026 AlbiDR
+Proprietary. © 2026 AlbiDR. All rights reserved.

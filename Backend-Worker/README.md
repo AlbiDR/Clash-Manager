@@ -1,24 +1,68 @@
-Clash Manager Worker (Cloud Run)
+# Clash Manager — Remote Worker (Cloud Run)
 
-Overview
-- Small Express app designed to perform bulk URL fetches with controlled concurrency and retries.
-- Intended to be deployed to Cloud Run and invoked by Google Apps Script as a proxy/offloader for many UrlFetch calls.
+The **Scaling Engine**. A high-concurrency Express.js proxy designed to offload bulk URL fetching from the Google Apps Script environment, circumventing platform quotas and execution timeouts.
 
-Usage
-1. Build + push:
-   gcloud builds submit --tag gcr.io/PROJECT_ID/clash-manager-worker
+---
 
-2. Deploy to Cloud Run:
-   gcloud run deploy clash-manager-worker --image gcr.io/PROJECT_ID/clash-manager-worker --region us-central1 --platform managed --allow-unauthenticated
+## 🏗️ Technical Specifications
 
-3. Configuration:
-- Set WORKER_CONCURRENCY (default 8) and WORKER_TIMEOUT_SEC (default 45) as needed.
-- If you need authentication, restrict invocation and use an auth header (e.g. provide `Authorization: Bearer <secret>` in Apps Script).
+- **Runtime**: Node.js (Express)
+- **Capacity**: Configurable concurrency (default `8`) with automatic retries.
+- **Security**: Supports Bearer token authentication and IAM-restricted invocation.
 
-Endpoint
-- GET / -> health check
-- POST /fetch { urls: string[], apiKeys?: string[] } -> { results: [{ code: number, content: object|string }, ...] }
+---
 
-Notes
-- This service should be protected in production; use IAM, signed tokens, or restrict to internal traffic.
-- The worker returns numeric `code` and `content` (parsed JSON or string) per URL to keep the GAS side logic simple.
+## 🚀 Deployment Workflow
+
+### 1. Build & Push
+
+Deploy the container to Google Container Registry:
+
+```bash
+gcloud builds submit --tag gcr.io/PROJECT_ID/clash-manager-worker
+```
+
+### 2. Provisioning
+
+Deploy to Cloud Run with optimal scaling parameters:
+
+```bash
+gcloud run deploy clash-manager-worker \
+  --image gcr.io/PROJECT_ID/clash-manager-worker \
+  --region us-central1 \
+  --platform managed \
+  --allow-unauthenticated
+```
+
+---
+
+## 📡 Protocol Interface
+
+The worker operates as a transparent bulk-fetching proxy for the GAS `RemoteWorker` engine.
+
+### `POST /fetch`
+
+**Payload**:
+
+```json
+{
+  "urls": ["https://api.clashroyale.com/...", ...],
+  "apiKeys": ["sk_...", ...]
+}
+```
+
+**Response**:
+A serialized result set containing status codes and parsed JSON/string content for each target URI.
+
+---
+
+## 🛠️ Configuration
+
+- `WORKER_CONCURRENCY`: Adjust based on target API rate limits.
+- `WORKER_TIMEOUT_SEC`: Standardized at `45` seconds to respect serverless request windows.
+
+---
+
+## 📜 License
+
+Proprietary. © 2026 AlbiDR. All rights reserved.
