@@ -24,12 +24,17 @@ const { fabOffset } = useUiCoordinator();
 
 // GPU Optimization: TranslateY instead of 'bottom' property transition
 const styleObject = computed(() => {
-  if (!props.visible) return {};
-
+  // ⚡ Positioning Logic: 
+  // Base bottom is env(safe-area-inset-bottom).
+  // We offset UP by fabOffset (usually 24px) when visible.
+  // We offset DOWN when hidden.
   return {
-    // Override the CSS transform when visible
-    transform: `translateY(calc(-${fabOffset.value}px))`,
-  };
+    transform: props.visible 
+      ? `translateY(calc(-${fabOffset.value}px))` 
+      : 'translateY(120px)',
+    opacity: props.visible ? 1 : 0,
+    pointerEvents: props.visible ? 'auto' : 'none'
+  } as const;
 });
 
 const emit = defineEmits<{
@@ -139,25 +144,14 @@ const emit = defineEmits<{
   bottom: calc(0px + env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
-  pointer-events: none;
   z-index: 300;
   /* ⚡ PERF: Transition transform instead of bottom for GPU composition */
   transition:
     opacity 0.3s ease,
     transform 0.4s var(--sys-motion-spring);
-  opacity: 0;
-  /* Hidden state: Pushed down further */
-  transform: translateY(100px);
   will-change: transform;
 }
 
-/* 
-   Override transform when visible. 
-   Note: The inline style binding handles the Y-offset logic.
-*/
-.fab-island.visible {
-  opacity: 1;
-}
 
 .fab-content {
   pointer-events: auto;

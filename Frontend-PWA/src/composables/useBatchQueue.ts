@@ -35,19 +35,16 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   );
   const isProcessing = computed(() => queue.value.length > 0);
 
-  // 🛡️ Logic: Robust Trust Verification (Bug #11)
   const isTrusted = computed(() => {
     if (typeof navigator === "undefined") return false;
-    // Desktop/Dev is always trusted
-    if (!/android/i.test(navigator.userAgent)) return true;
     
-    // TWA / Native Signal detection
-    const win = window as any;
-    return (
-      !!win.AndroidExternalInterface || 
-      !!win.clashRoyaleBridge || 
-      document.referrer.includes("android-app://")
-    );
+    // ⚡ Android Reliability: If we're on Android, we trust the intent system 
+    // to handle the fallback if NOT in TWA. This prevents the FAB from disappearing 
+    // when TWA signal is not detected but the user still wants to open players.
+    if (/android/i.test(navigator.userAgent)) return true;
+    
+    // Desktop/Dev is always trusted
+    return true;
   });
 
   const fabState = computed(() => {

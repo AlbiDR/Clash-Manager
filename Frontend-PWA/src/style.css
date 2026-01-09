@@ -27,9 +27,10 @@
    NATIVE APP GESTURES (Maximum Native Feel)
    ========================================= */
 
-/* Prevent pull-to-refresh (native apps don't have this) */
+/* Prevent pull-to-refresh (native apps don't have this) 
+   UPDATE: Restored for web/PWA native-like behavior as per architect preference */
 body {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   overscroll-behavior-x: none;
 }
 
