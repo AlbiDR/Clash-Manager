@@ -123,5 +123,9 @@ async function bootstrap() {
         console.error("Background sync failed:", e);
       }
     }, 500);
+  } catch (error) {
+    showFatalError(error);
+  }
+}
 
-    bootstrap();
+bootstrap();
