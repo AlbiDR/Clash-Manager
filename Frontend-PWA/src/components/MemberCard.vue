@@ -185,6 +185,7 @@ const trendInfo = computed(() => {
           <a
             :href="`https://royaleapi.com/player/${member.id}`"
             target="_blank"
+            rel="noopener noreferrer"
             class="btn-action"
           >
             <Icon name="analytics" size="16" />

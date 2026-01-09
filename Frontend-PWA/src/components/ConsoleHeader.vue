@@ -97,6 +97,7 @@ function formatDescription(text: string) {
             v-if="sheetUrl && !loading"
             :href="sheetUrl"
             target="_blank"
+            rel="noopener noreferrer"
             class="icon-button"
             title="Open in Sheets"
             aria-label="Open Google Sheet"
