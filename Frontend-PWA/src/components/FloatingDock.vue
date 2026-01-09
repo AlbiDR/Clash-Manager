@@ -6,7 +6,7 @@ import Icon from "./Icon.vue";
 
 const route = useRoute();
 const router = useRouter();
-const { dockVisible, isFabVisible, fabState } = useUiCoordinator();
+const { dockVisible, fabState } = useUiCoordinator();
 const haptics = useHaptics();
 
 interface NavItem {

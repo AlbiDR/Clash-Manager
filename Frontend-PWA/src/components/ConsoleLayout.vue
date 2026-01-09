@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, onUnmounted } from "vue";
+import { watch, onUnmounted } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
 import EmptyState from "./EmptyState.vue";
@@ -86,27 +86,27 @@ onUnmounted(() => {
 
 
     <ConsoleHeader
-      :title="title"
-      :status="status"
-      :show-search="showSearch"
-      :sheet-url="sheetUrl"
-      :stats="stats"
-      :sort-options="sortOptions"
-      :current-sort="currentSort"
-      :loading="loading"
-      @update:search="(val) => $emit('update:search', val)"
-      @update:sort="(val) => $emit('update:sort', val)"
-      @refresh="$emit('refresh')"
+      :title="props.title"
+      :status="props.status"
+      :show-search="props.showSearch"
+      :sheet-url="props.sheetUrl"
+      :stats="props.stats"
+      :sort-options="props.sortOptions"
+      :current-sort="props.currentSort"
+      :loading="props.loading"
+      @update:search="(val: string) => emit('update:search', val)"
+      @update:sort="(val: string) => emit('update:sort', val)"
+      @refresh="emit('refresh')"
     >
       <template #extra>
         <SelectionBar
-          v-if="isSelectionMode"
-          :count="selectedCount || 0"
-          :loading="isRefreshing"
-          @select-all="$emit('select-all')"
-          @clear="$emit('clear-selection')"
-          @done="$emit('clear-selection')"
-          @select-score="(t, m) => $emit('select-score', t, m)"
+          v-if="props.isSelectionMode"
+          :count="props.selectedCount || 0"
+          :loading="props.isRefreshing"
+          @select-all="emit('select-all')"
+          @clear="emit('clear-selection')"
+          @done="emit('clear-selection')"
+          @select-score="(t: number, m: string) => emit('select-score', t, m)"
         />
         <slot name="extra-header" v-else></slot>
       </template>
@@ -114,15 +114,15 @@ onUnmounted(() => {
 
     <!-- Error State -->
     <ErrorState
-      v-if="syncError && isEmpty"
-      :message="syncError"
-      @retry="$emit('refresh')"
+      v-if="props.syncError && props.isEmpty"
+      :message="props.syncError"
+      @retry="emit('refresh')"
     />
 
     <!-- Loading State (Skeletons) -->
-    <div v-else-if="loading" class="list-container gpu-contain">
+    <div v-else-if="props.loading" class="list-container gpu-contain">
       <SkeletonCard
-        v-for="(n, i) in 8"
+        v-for="i in 8"
         :key="i"
         :index="i"
         :style="{ '--i': i }"
@@ -130,7 +130,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Empty State -->
-    <EmptyState v-else-if="isEmpty" icon="telescope" message="No items found">
+    <EmptyState v-else-if="props.isEmpty" icon="telescope" message="No items found">
       <template #action>
         <slot name="empty-action"></slot>
       </template>
