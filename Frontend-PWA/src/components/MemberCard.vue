@@ -11,7 +11,7 @@ const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
 );
 
-defineProps<{
+const props = defineProps<{
   id: string;
   member: LeaderboardMember;
   expanded: boolean;
