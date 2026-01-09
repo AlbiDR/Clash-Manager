@@ -67,3 +67,12 @@ export function formatRole(roleStr: string): { label: string; class: string } {
   if (r.includes("elder")) return { label: "Elder", class: "role-elder" };
   return { label: "Member", class: "role-member" };
 }
+
+/**
+ * 🧹 CLEAN TAG
+ * Removes leading '#' and converts to uppercase for API/Deep Link compatibility.
+ */
+export function cleanTag(tag: string | undefined): string {
+  if (!tag) return "";
+  return tag.replace(/^#/, "").toUpperCase().trim();
+}
