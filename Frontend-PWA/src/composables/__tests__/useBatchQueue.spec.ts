@@ -78,9 +78,9 @@ describe("useBatchQueue", () => {
     handleAction(mockEvent);
     vi.advanceTimersByTime(150);
 
-    // Queue empty, selection cleared
+    // Queue empty, selection REMAINS (New Requirement)
     expect(queue.value).toEqual([]);
-    expect(selectedIds.value).toEqual([]);
+    expect(selectedIds.value).toEqual(["A", "B"]);
     expect(isProcessing.value).toBe(false);
 
     vi.useRealTimers();
