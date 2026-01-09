@@ -10,7 +10,7 @@ on:
         description: "Target Architecture (for test builds)"
         required: true
         default: "all"
-        type: select
+        type: choice
         options:
           - all
           - aarch64
