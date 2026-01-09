@@ -22,7 +22,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   // Blitz State
   const isBlasting = ref(false);
   const currentIndex = ref(0);
-  let blitzTimer: any = null;
+  let blitzTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Selection Mode State
   const forceSelectionMode = ref(false);
