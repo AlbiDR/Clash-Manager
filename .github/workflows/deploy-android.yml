@@ -76,6 +76,11 @@ jobs:
           LATEST_TAG=$(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | contains("-build") | not) | .tagName' | head -n 1 2>/dev/null || echo "")
 
           if [ -z "$LATEST_TAG" ]; then
+            echo "⚠️  No stable release found. Falling back to latest build tag..."
+            LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          fi
+
+          if [ -z "$LATEST_TAG" ]; then
             # No previous release found, start fresh
             MAJOR=8
             MINOR=12
@@ -388,6 +393,11 @@ jobs:
         run: |
           # Find latest STABLE release (skipping automated builds)
           LATEST_TAG=$(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | contains("-build") | not) | .tagName' | head -n 1 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+             echo "⚠️  No stable release found. Falling back to latest build tag..."
+             LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          fi
           CURRENT_TAG="${{ steps.versioning.outputs.build_tag }}"
           BUMP_TYPE="${{ steps.versioning.outputs.bump_type }}"
           VERSION="${{ steps.versioning.outputs.v_name }}"
