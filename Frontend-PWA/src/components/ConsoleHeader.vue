@@ -54,7 +54,7 @@ watch(showInfoOverlay, (val) => {
 });
 
 const activeSortDescription = computed(() => {
-  if (!modules.value.sortExplanation) return null;
+  if (!modules.sortExplanation) return null;
   const selected = props.sortOptions?.find(
     (opt) => opt.value === props.currentSort,
   );
