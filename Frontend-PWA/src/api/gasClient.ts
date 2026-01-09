@@ -23,13 +23,17 @@ const getGasUrl = () => {
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V6";
 
-export async function inflatePayload(data: any): Promise<WebAppData> {
+export async function inflatePayload(data: unknown): Promise<WebAppData> {
   if (typeof data === "string") {
     data = JSON.parse(data);
   }
 
-  if (!data || data.format !== "matrix") {
-    return data as WebAppData;
+  // Type guard manually or trust the z safeParse later.
+  // Casting to unknown is redundant but explicit for flow.
+  const rawData = data as any; 
+
+  if (!rawData || rawData.format !== "matrix") {
+    return rawData as WebAppData;
   }
 
   // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
@@ -37,11 +41,11 @@ export async function inflatePayload(data: any): Promise<WebAppData> {
 
   const result = z
     .object({
-      lb: z.array(z.array(z.any())),
-      hh: z.array(z.array(z.any())),
+      lb: z.array(z.array(z.unknown())),
+      hh: z.array(z.array(z.unknown())),
       timestamp: z.number(),
     })
-    .safeParse(data);
+    .safeParse(rawData);
 
   if (!result.success) throw new Error("API Schema Mismatch");
 
@@ -119,7 +123,7 @@ async function gasRequest<T>(
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const text = await response.text();
 
-  let envelope: any;
+  let envelope: ApiResponse<T> | { status: string; error?: { message: string } } | { success: boolean; error?: { message: string } };
   try {
     envelope = JSON.parse(text);
   } catch (e) {
@@ -135,8 +139,14 @@ async function gasRequest<T>(
     throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`);
   }
 
-  if (envelope.success === true || envelope.status === "success")
+  // Check for various GAS response patterns (sometimes 'status', sometimes 'success')
+  if (
+    ("success" in envelope && envelope.success === true) ||
+    ("status" in envelope && envelope.status === "success")
+  ) {
     return envelope as T;
+  }
+  
   throw new Error(envelope.error?.message || "Unknown Backend Error");
 }
 
@@ -150,7 +160,7 @@ export async function fetchRemote(): Promise<WebAppData> {
   // The previous critical chain audit showed v-zod blocked for ~4.2s.
   const zodPreload = import("zod");
 
-  const envelope = await gasRequest<ApiResponse<any>>("getwebappdata");
+  const envelope = await gasRequest<ApiResponse<Record<string, unknown>>>("getwebappdata");
   if (!envelope.data) throw new Error("Invalid response structure");
 
   // Ensure Zod is fully loaded before attempting inflation
