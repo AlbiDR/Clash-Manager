@@ -20,6 +20,6 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
       - name: Run Project Integrity Check
         run: node scripts/validate_project.js
