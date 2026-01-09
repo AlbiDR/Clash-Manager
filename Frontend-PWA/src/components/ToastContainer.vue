@@ -12,7 +12,7 @@ const containerStyle = computed(() => ({
   // Base position fixed to bottom + safe area
   bottom: "calc(0px + env(safe-area-inset-bottom))",
   // Dynamic lift based on UI state (Fab/Dock visibility)
-  transform: `translateY(calc(-${toastOffset.value}px))`,
+  transform: `translate(-50%, calc(-${toastOffset.value}px))`,
 }));
 </script>
 
@@ -41,9 +41,9 @@ const containerStyle = computed(() => ({
 .toast-container {
   position: fixed;
   left: 50%;
-  /* Center horizontally, but use margin-left to avoid conflict with transform logic */
-  margin-left: -50%;
-  width: 100%;
+  /* Center horizontally using transform instead of full-width overlay */
+  /* margin-left: -50%; removed */
+  /* width: 100%; removed */
   display: flex;
   flex-direction: column;
   align-items: center;
