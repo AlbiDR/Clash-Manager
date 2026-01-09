@@ -53,6 +53,7 @@ watch(syncStatus, (sStatus) => {
   overflow-x: hidden;
 }
 
+/* ⚡ TRANSITION: Smooth transform for page container */
 .app-container {
   max-width: var(--sys-layout-max-width);
   margin: 0 auto;
@@ -61,12 +62,7 @@ watch(syncStatus, (sStatus) => {
   will-change: transform;
 }
 
-.app-container {
-  max-width: var(--sys-layout-max-width);
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
+.connectivity-strip {
   position: fixed;
   top: 0;
   left: 0;
