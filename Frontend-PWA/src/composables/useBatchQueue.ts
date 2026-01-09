@@ -204,7 +204,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
     if (currentIndex.value >= selectedIds.value.length) {
       stopBlitz();
-      clearSelection();
       info("Blitz complete");
       return;
     }
@@ -222,7 +221,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       } else {
         blitzTimer = setTimeout(() => {
           stopBlitz();
-          clearSelection();
           info("Blitz complete");
         }, 1500);
       }
@@ -233,7 +231,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         advanceBlitz();
       } else {
         stopBlitz();
-        clearSelection();
       }
     }
   }
@@ -282,7 +279,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         queue.value.shift();
       }
       if (queue.value.length === 0) {
-        clearSelection();
         info("Batch complete");
       }
     }, 150);
