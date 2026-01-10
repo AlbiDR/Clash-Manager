@@ -72,11 +72,15 @@ function onTouchStart(e: TouchEvent) {
 function onTouchMove(e: TouchEvent) {
   if (!isPulling.value) return;
   const currentY = e.touches[0].clientY;
-  const rawDiff = currentY - touchStartY.value;
-  
-  // Only allow pulling down
-  if (rawDiff <= 0) {
-    pullOffset.value = 0;
+  const currentX = e.touches[0].clientX; // Get current X position
+
+  const rawDiff = Math.max(0, currentY - touchStartY.value); // Only allow pulling down
+  const xDiff = Math.abs(currentX - touchStartX.value);
+
+  // 🛡️ PTR PROTECTION: Ignore if moving sideways more than down (prevents stutter on diagonal scroll)
+  if (xDiff > rawDiff * 0.5) {
+    pullOffset.value = 0; // Reset pullOffset if predominantly horizontal
+    isPulling.value = false; // Stop pulling
     return;
   }
 
