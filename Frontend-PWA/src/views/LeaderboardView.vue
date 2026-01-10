@@ -118,7 +118,7 @@ function handleSearch(val: string) {
   <ConsoleLayout
     title="Leaderboard"
     :status="status"
-    :show-search="!isSelectionMode"
+    :show-search="true"
     :sheet-url="sheetUrl"
     :stats="statsBadge"
     :sort-options="sortOptions"
