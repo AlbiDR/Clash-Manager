@@ -171,7 +171,7 @@ function handleSearchUpdate(val: string) {
   <ConsoleLayout
     title="Headhunter"
     :status="status"
-    :show-search="!isSelectionMode"
+    :show-search="true"
     :sheet-url="sheetUrl"
     :stats="statsBadge"
     :sort-options="sortOptions"

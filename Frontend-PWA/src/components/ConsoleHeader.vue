@@ -280,8 +280,8 @@ function formatDescription(text: string) {
   /* 🏗️ LAYOUT STABILITY: Reserved space perfectly matching SelectionBar footprint */
   height: 44px;
   min-height: 44px;
-  margin-top: 14px;
-  padding-top: 10px;
+  /* Removed margin-top: 14px; as gap: 14px handles it now */
+  padding-top: 6px; /* Adjusted from 10px to account for margin removal and center alignment */
   border-top: 1px solid var(--sys-color-outline-variant);
   transition: opacity 0.3s ease;
   overflow: hidden;
