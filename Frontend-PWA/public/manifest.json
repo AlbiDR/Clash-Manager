@@ -5,18 +5,18 @@
   "theme_color": "#0b0e14",
   "background_color": "#0b0e14",
   "display": "standalone",
-  "scope": "/Clash-Manager/",
-  "start_url": "/Clash-Manager/#/leaderboard",
-  "id": "/Clash-Manager/",
+  "scope": "./",
+  "start_url": "./#/leaderboard",
+  "id": "clash-manager-pwa",
   "icons": [
     {
-      "src": "/Clash-Manager/logo.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/Clash-Manager/logo.png",
+      "src": "logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
