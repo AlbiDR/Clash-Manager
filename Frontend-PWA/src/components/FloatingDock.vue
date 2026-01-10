@@ -137,21 +137,13 @@ function handleFabDismiss() {
           <span>Blitz</span>
         </button>
 
-        <button
-          v-if="fabState.actionHref"
-          class="fab-btn primary"
-          @click="handleFabAction"
-          @pointerdown="onInteractionStart"
-        >
-          <Icon name="check" size="18" />
-          <span>{{ fabState.label || "Open" }}</span>
-        </button>
 
+        <!-- Action Button (Always Visible) -->
         <button
-          v-else
           class="fab-btn primary"
           @click="handleFabAction"
           @pointerdown="onInteractionStart"
+          :aria-label="fabState.label || 'Open'"
         >
           <Icon name="check" size="18" />
           <span>{{ fabState.label || "Open" }}</span>
