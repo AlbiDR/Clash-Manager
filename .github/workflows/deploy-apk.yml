@@ -240,7 +240,7 @@ jobs:
 
       - name: Patch Android Project
         run: |
-          cd Frontend-PWA/src-tauri/gen/android
+          cd src-tauri/gen/android
           
           echo "🔧 Patching gradle.properties..."
           # Suppress Java 8 source/target deprecation warnings appearing on JDK 21
