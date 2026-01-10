@@ -155,16 +155,15 @@ function handleFabDismiss() {
           <span>Blitz</span>
         </button>
 
-        <a
+        <button
           v-if="fabState.actionHref"
-          :href="fabState.actionHref"
           class="fab-btn primary"
           @click="handleFabAction"
           @pointerdown="onInteractionStart"
         >
           <Icon name="check" size="18" />
           <span>{{ fabState.label || "Open" }}</span>
-        </a>
+        </button>
 
         <button
           v-else

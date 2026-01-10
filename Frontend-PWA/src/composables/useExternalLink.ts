@@ -23,16 +23,23 @@ export function useExternalLink() {
   }
 
   async function openInGame(tag: string) {
-    const url = buildDeepLink(tag);
-    if (!url) return;
+    const id = cleanTag(tag);
+    if (!id) return;
 
+    const isTauri = typeof window !== "undefined" && (window as any).__TAURI__;
+    
+    // 🏛️ TAURI COMPATIBILITY: 
+    // Always use the shell plugin for custom schemes within the Tauri app.
+    // Setting window.location.href to custom schemes in a WebView triggers ERR_UNKNOWN_URL_SCHEME.
+    if (isTauri) {
+      await openExternal(`clashroyale://playerInfo?id=${id}`);
+      return;
+    }
+
+    // 🚀 BROWSER / PWA COMPATIBILITY:
+    const url = buildDeepLink(tag);
     if (url.startsWith("intent://")) {
-      const isTauri = typeof window !== "undefined" && (window as any).__TAURI__;
-      if (isTauri) {
-        window.location.href = url;
-      } else {
-        window.location.assign(url);
-      }
+      window.location.assign(url);
     } else {
       await openExternal(url);
     }
@@ -41,7 +48,7 @@ export function useExternalLink() {
   return {
     openExternal,
     openInGame,
-    buildDeepLink, // Exposed for use in useBatchQueue
+    buildDeepLink,
   };
 }
 

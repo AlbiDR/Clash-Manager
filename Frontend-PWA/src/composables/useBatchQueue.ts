@@ -225,6 +225,12 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       queue.value = [...selectedIds.value];
     }
 
+    // ⚡ ACTION IGNITION
+    const id = queue.value[0];
+    if (id) {
+      openInGame(id);
+    }
+
     setTimeout(() => {
       if (queue.value.length > 0) {
         queue.value.shift();
