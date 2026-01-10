@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 import packageJson from "./package.json";
 
 export default defineConfig({
@@ -49,7 +50,26 @@ export default defineConfig({
     },
 
   },
-  plugins: [vue() as any, tailwindcss() as any],
+  plugins: [
+    vue() as any,
+    tailwindcss() as any,
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
+      manifest: false, // Already exists in public/manifest.json
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
+      devOptions: {
+        enabled: true,
+        type: "module",
+      },
+    }),
+  ],
   test: {
     globals: true,
     environment: "jsdom",
