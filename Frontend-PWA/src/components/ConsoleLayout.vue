@@ -81,7 +81,8 @@ function onTouchMove(e: TouchEvent) {
   }
 
   // Apply resistance (clamped logarithmic-like curve)
-  pullOffset.value = Math.pow(rawDiff, 0.85) * 2;
+  // ⚡ ANDROID OPTIMIZATION: More sensitive curve (0.85 -> 0.9) to allow easier pull
+  pullOffset.value = Math.pow(rawDiff, 0.9) * 2;
 
   // Haptic feedback when crossing threshold
   if (pullOffset.value >= threshold && !hapticFeedbackTriggered) {
