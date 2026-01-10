@@ -121,6 +121,7 @@ function handleFabDismiss() {
       <!-- Normal Selection State -->
       <template v-else>
         <!-- Blitz Button (Only if enabled and multiple selected) -->
+        <button
           v-if="
             fabState.blitzEnabled &&
             fabState.selectionCount &&
@@ -136,7 +137,6 @@ function handleFabDismiss() {
           <Icon name="lightning" size="18" />
           <span>Blitz</span>
         </button>
-
 
         <!-- Action Button (Always Visible) -->
         <button
