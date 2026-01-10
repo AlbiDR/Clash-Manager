@@ -45,12 +45,8 @@ export function useExternalLink() {
       if (isTauri) {
         window.location.href = intentUrl;
       } else {
-        // Fallback for PWA: Use hidden iframe to avoid leaving the app context
-        const iframe = document.createElement("iframe");
-        iframe.style.display = "none";
-        iframe.src = intentUrl;
-        document.body.appendChild(iframe);
-        setTimeout(() => document.body.removeChild(iframe), 1000);
+        // Direct navigation for mobile browsers to ensure reliability
+        window.location.assign(intentUrl);
       }
       return;
     }

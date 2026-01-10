@@ -209,14 +209,15 @@ function handleFabDismiss() {
 
 .dock-item {
   position: relative;
-  padding: 10px 20px;
+  /* 🎯 HIT TARGET: Increased vertical padding for better mobile reliability */
+  padding: 12px 24px;
   border-radius: var(--shape-corner-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 750;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 850;
   color: var(--sys-color-on-surface);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
@@ -224,12 +225,13 @@ function handleFabDismiss() {
   background: none;
   border: none;
   font-family: inherit;
+  min-width: 64px;
 }
 
 /* ⚡ TACTILE: Immediate visual feedback on press */
 .dock-item:active {
   transform: scale(0.92);
-  background: rgba(var(--sys-color-primary-rgb), 0.05);
+  background: rgba(var(--sys-color-primary-rgb), 0.1);
 }
 
 .dock-item.active {
@@ -269,18 +271,23 @@ function handleFabDismiss() {
 
 .dock-label {
   transition: opacity 0.3s;
+  /* 🏷️ LEGIBILITY: More weighted text for mobile glanceability */
+  letter-spacing: -0.01em;
 }
 
 /* FAB Buttons */
 .fab-btn {
-  padding: 14px 20px;
+  /* 🏗️ PROPORTIONS: Balanced padding for better mobile feel */
+  padding: 14px 24px;
+  min-height: 52px;
   border-radius: var(--shape-corner-full);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 15px;
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
   cursor: pointer;
   border: none;
   transition:
@@ -295,12 +302,13 @@ function handleFabDismiss() {
 
 .fab-btn.compact {
   padding: 14px;
+  min-width: 52px;
 }
 
 .fab-btn.primary {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
+  box-shadow: 0 4px 16px rgba(var(--sys-color-primary-rgb), 0.35);
 }
 .fab-btn.danger {
   background: var(--sys-color-error-container);
@@ -320,12 +328,12 @@ function handleFabDismiss() {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-width: 80px;
+  min-width: 90px;
 }
 .blast-label {
   font-family: var(--sys-font-family-mono);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
   color: var(--sys-color-on-surface);
 }
 
@@ -349,10 +357,10 @@ function handleFabDismiss() {
     display: none;
   }
   .dock-item {
-    padding: 12px 16px;
+    padding: 14px 20px;
   }
   .dock-item.active {
-    padding: 12px 24px;
+    padding: 14px 28px;
   }
 }
 </style>

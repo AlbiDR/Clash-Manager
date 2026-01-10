@@ -232,10 +232,12 @@ function formatDescription(text: string) {
   z-index: 100;
   padding: 12px 0;
   padding-top: calc(12px + env(safe-area-inset-top));
+  /* 🏗️ LAYOUT STABILITY: Fixed content-box prevents border/padding expansion */
+  box-sizing: content-box;
 }
 .header-wrapper.is-scrolled {
-  padding: 4px 0;
-  padding-top: calc(4px + env(safe-area-inset-top));
+  padding: 2px 0;
+  padding-top: calc(2px + env(safe-area-inset-top));
 }
 
 .console-glass {
@@ -275,12 +277,13 @@ function formatDescription(text: string) {
   min-height: 48px;
 }
 .header-row.extra {
-  /* 🏗️ LAYOUT STABILITY: Reserved space matching SelectionBar footprint */
-  min-height: 52px;
-  margin-top: 4px;
-  padding-top: 12px;
+  /* 🏗️ LAYOUT STABILITY: Reserved space perfectly matching SelectionBar footprint */
+  min-height: 44px;
+  margin-top: 14px;
+  padding-top: 10px;
   border-top: 1px solid var(--sys-color-outline-variant);
   transition: opacity 0.3s ease;
+  overflow: hidden;
 }
 /* Hide the border if the row is actually empty and not reserved */
 .header-row.extra:empty:not(.reserved) {
