@@ -238,14 +238,14 @@ jobs:
           echo "🏗️  Initializing Android Support..."
           npx tauri android init --ci
 
-      - name: Patch Android Project
+      - name: Patch Android Configuration
+        working-directory: src-tauri/gen/android
         run: |
-          cd src-tauri/gen/android
-          
           echo "🔧 Patching gradle.properties..."
           # Suppress Java 8 source/target deprecation warnings appearing on JDK 21
-          echo "android.javaCompile.suppressSourceTargetDeprecationWarning=true" >> gradle.properties
-          
+          # Use printf to ensure proper newline
+          printf '\nandroid.javaCompile.suppressSourceTargetDeprecationWarning=true\n' >> gradle.properties
+
           echo "🩹 Patching build.gradle.kts (Java 11 Modernization)..."
           # Modernize Java compatibility to Java 11 (better for JDK 21 environment)
           # Tauri 2.0 generates build.gradle.kts in the app folder
