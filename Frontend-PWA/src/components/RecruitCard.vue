@@ -32,7 +32,7 @@ const emit = defineEmits<{
 
 const { getBenchmark } = useBenchmarking();
 const { modules } = useModules();
-const { openExternal } = useExternalLink();
+const { openExternal, openInGame } = useExternalLink();
 
 function getTooltip(metric: string, value: number | undefined) {
   if (!modules.ghostBenchmarking || value === undefined) return null;
