@@ -61,113 +61,121 @@ function handleFabDismiss() {
 </script>
 
 <template>
-  <!-- Navigation Dock Mode -->
-  <div v-if="dockVisible" class="dock-container">
-    <button
-      v-for="item in navItems"
-      :key="item.name"
-      class="dock-item"
-      :class="{ active: route.path === item.path }"
-      @click="goTo(item.path)"
-      @pointerdown="onInteractionStart"
-      :aria-label="item.label"
-    >
-      <div v-if="route.path === item.path" class="capsule-bg"></div>
-      <Icon :name="item.icon" size="22" class="dock-icon" />
-      <span v-if="item.label" class="dock-label">
-        {{ item.label }}
-      </span>
-    </button>
-  </div>
-
-  <!-- Selection FAB Mode -->
-  <div v-else class="dock-container fab-mode">
-    <!-- State: BLASTING (With Controls) -->
-    <template v-if="fabState.isBlasting">
+  <div 
+    class="dock-container" 
+    :class="{ 
+      'fab-mode': !dockVisible, 
+      'hidden': !dockVisible && !fabState.selectionCount && !fabState.isBlasting 
+    }"
+  >
+    <!-- Navigation Dock Mode -->
+    <template v-if="dockVisible">
       <button
-        class="fab-btn danger compact"
-        @click="handleFabDismiss"
+        v-for="item in navItems"
+        :key="item.name"
+        class="dock-item"
+        :class="{ active: route.path === item.path }"
+        @click="goTo(item.path)"
         @pointerdown="onInteractionStart"
-        aria-label="Cancel Blitz"
+        :aria-label="item.label"
       >
-        <Icon name="close" size="18" />
-      </button>
-
-      <div class="blast-status">
-        <div class="spinner-small"></div>
-        <span class="blast-label">{{ fabState.label }}</span>
-      </div>
-
-      <a
-        v-if="fabState.actionHref"
-        :href="fabState.actionHref"
-        class="fab-btn primary compact"
-        @click="handleFabAction"
-        @pointerdown="onInteractionStart"
-        aria-label="Open Next Profile"
-      >
-        <Icon name="chevron_right" size="20" />
-      </a>
-      <button
-        v-else
-        class="fab-btn primary compact"
-        @click="handleFabAction"
-        @pointerdown="onInteractionStart"
-        aria-label="Next"
-      >
-        <Icon name="chevron_right" size="20" />
+        <div v-if="route.path === item.path" class="capsule-bg"></div>
+        <Icon :name="item.icon" size="22" class="dock-icon" />
+        <span v-if="item.label" class="dock-label">
+          {{ item.label }}
+        </span>
       </button>
     </template>
 
-    <!-- State: NORMAL Selection -->
+    <!-- Selection FAB Mode -->
     <template v-else>
-      <button
-        class="fab-btn danger"
-        @click="handleFabDismiss"
-        @pointerdown="onInteractionStart"
-        aria-label="Dismiss Selection"
-      >
-        <Icon name="close" size="18" />
-        <span v-if="!fabState.selectionCount">Clear</span>
-      </button>
+      <!-- State: BLASTING (With Controls) -->
+      <template v-if="fabState.isBlasting">
+        <button
+          class="fab-btn danger compact"
+          @click="handleFabDismiss"
+          @pointerdown="onInteractionStart"
+          aria-label="Cancel Blitz"
+        >
+          <Icon name="close" size="18" />
+        </button>
 
-      <button
-        v-if="
-          fabState.blitzEnabled &&
-          fabState.selectionCount &&
-          fabState.selectionCount > 1 &&
-          !fabState.isProcessing
-        "
-        class="fab-btn blitz"
-        @click="handleFabBlitz"
-        @pointerdown="onInteractionStart"
-        v-tooltip="'Requires Pop-ups permission'"
-        aria-label="Start Blitz Mode"
-      >
-        <Icon name="lightning" size="18" />
-        <span>Blitz</span>
-      </button>
+        <div class="blast-status">
+          <div class="spinner-small"></div>
+          <span class="blast-label">{{ fabState.label }}</span>
+        </div>
 
-      <a
-        v-if="fabState.actionHref"
-        :href="fabState.actionHref"
-        class="fab-btn primary"
-        @click="handleFabAction"
-        @pointerdown="onInteractionStart"
-      >
-        <Icon name="check" size="18" />
-        <span>{{ fabState.label || "Open" }}</span>
-      </a>
+        <a
+          v-if="fabState.actionHref"
+          :href="fabState.actionHref"
+          class="fab-btn primary compact"
+          @click="handleFabAction"
+          @pointerdown="onInteractionStart"
+          aria-label="Open Next Profile"
+        >
+          <Icon name="chevron_right" size="20" />
+        </a>
+        <button
+          v-else
+          class="fab-btn primary compact"
+          @click="handleFabAction"
+          @pointerdown="onInteractionStart"
+          aria-label="Next"
+        >
+          <Icon name="chevron_right" size="20" />
+        </button>
+      </template>
 
-      <button
-        v-else
-        class="fab-btn primary"
-        @click="handleFabAction"
-        @pointerdown="onInteractionStart"
-      >
-        <Icon name="check" size="18" />
-        <span>{{ fabState.label || "Open" }}</span>
-      </button>
+      <!-- State: NORMAL Selection -->
+      <template v-else>
+        <button
+          class="fab-btn danger"
+          @click="handleFabDismiss"
+          @pointerdown="onInteractionStart"
+          aria-label="Dismiss Selection"
+        >
+          <Icon name="close" size="18" />
+          <span v-if="!fabState.selectionCount">Clear</span>
+        </button>
+
+        <button
+          v-if="
+            fabState.blitzEnabled &&
+            fabState.selectionCount &&
+            fabState.selectionCount > 1 &&
+            !fabState.isProcessing
+          "
+          class="fab-btn blitz"
+          @click="handleFabBlitz"
+          @pointerdown="onInteractionStart"
+          v-tooltip="'Requires Pop-ups permission'"
+          aria-label="Start Blitz Mode"
+        >
+          <Icon name="lightning" size="18" />
+          <span>Blitz</span>
+        </button>
+
+        <a
+          v-if="fabState.actionHref"
+          :href="fabState.actionHref"
+          class="fab-btn primary"
+          @click="handleFabAction"
+          @pointerdown="onInteractionStart"
+        >
+          <Icon name="check" size="18" />
+          <span>{{ fabState.label || "Open" }}</span>
+        </a>
+
+        <button
+          v-else
+          class="fab-btn primary"
+          @click="handleFabAction"
+          @pointerdown="onInteractionStart"
+        >
+          <Icon name="check" size="18" />
+          <span>{{ fabState.label || "Open" }}</span>
+        </button>
+      </template>
     </template>
   </div>
 </template>
@@ -297,6 +305,7 @@ function handleFabDismiss() {
     background 0.2s;
   color: var(--sys-color-on-surface);
 }
+
 .fab-btn:active {
   transform: scale(0.93);
   opacity: 0.9;

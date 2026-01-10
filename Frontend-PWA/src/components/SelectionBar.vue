@@ -94,6 +94,7 @@ const isScoreExpanded = ref(false);
   flex-wrap: nowrap;
   -webkit-overflow-scrolling: touch;
   width: 100%;
+  height: 34px; /* 🏗️ LAYOUT STABILITY: Locked height to match ConsoleHeader reserved space */
 }
 .sel-count {
   font-size: 14px;
