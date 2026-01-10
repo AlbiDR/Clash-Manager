@@ -10,11 +10,29 @@ export function useExternalLink() {
 
   async function openExternal(url: string) {
     try {
-      if (typeof window !== "undefined" && (window as any).__TAURI__) {
-        const { open } = await import("@tauri-apps/plugin-shell");
-        await open(url);
-        return;
+      // 🏛️ TAURI 2.0: Optimized global API access for remote WebViews
+      const tauri = (window as any).__TAURI__;
+      if (typeof window !== "undefined" && tauri) {
+        // Use global shell if available to avoid dynamic import failures on remote origins
+        const shell = tauri.shell || (tauri.plugins && tauri.plugins.shell);
+        if (shell && shell.open) {
+          await shell.open(url);
+          return;
+        }
+        
+        // Fallback to dynamic import
+        try {
+          const { open } = await import("@tauri-apps/plugin-shell");
+          await open(url);
+          return;
+        } catch (innerErr) {
+          console.warn("[Tauri] Shell plugin import failed, falling back to window.open");
+        }
       }
+
+      // 🚀 BROWSER / PWA FALLBACK:
+      // Note: On Android WebView, window.open with custom schemes often triggers ERR_UNKNOWN_URL_SCHEME.
+      // We prioritize the system browser for deep links if possible.
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
       console.error("Failed to open external link:", e);
@@ -26,23 +44,23 @@ export function useExternalLink() {
     const id = cleanTag(tag);
     if (!id) return;
 
+    // 200IQ UNIVERSAL LINK STRATEGY:
+    // Instead of using clashroyale:// which is blocked by WebViews, we use the official HTTPS App-Link.
+    // This leverages Android/iOS Universal Links to trigger the app via a standard HTTPS navigation.
+    // If the app is installed, it opens; if not, it gracefully degrades to a webpage.
+    const universalUrl = `https://link.clashroyale.com/en?playerInfo?id=${id}`;
+    
     const isTauri = typeof window !== "undefined" && (window as any).__TAURI__;
     
-    // 🏛️ TAURI COMPATIBILITY: 
-    // Always use the shell plugin for custom schemes within the Tauri app.
-    // Setting window.location.href to custom schemes in a WebView triggers ERR_UNKNOWN_URL_SCHEME.
     if (isTauri) {
-      await openExternal(`clashroyale://playerInfo?id=${id}`);
+      // For Tauri, we still prefer the Shell plugin to ensure it opens in the OS browser/handler
+      // This prevents the WebView from trying (and potentially failing) to load the link itself.
+      await openExternal(universalUrl);
       return;
     }
 
-    // 🚀 BROWSER / PWA COMPATIBILITY:
-    const url = buildDeepLink(tag);
-    if (url.startsWith("intent://")) {
-      window.location.assign(url);
-    } else {
-      await openExternal(url);
-    }
+    // For Browsers/PWA: Standard navigation works best as the system will intercept the App-Link.
+    window.location.assign(universalUrl);
   }
 
   return {
