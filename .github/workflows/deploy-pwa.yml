@@ -2,7 +2,7 @@ name: Deploy PWA
 
 on:
   push:
-    branches: [ "**" ] # Triggers on EVERY branch push
+    branches: [ "Stable", "Beta" ] # Restricted to prevent race conditions from feature branch pushes
   workflow_dispatch:   # Enables the "Run workflow" manual button
 
 concurrency:

@@ -47,6 +47,10 @@ function handleThemeChange(newTheme: any) {
   setTheme(newTheme);
 }
 
+// 🔄 SMART UPDATE INTEGRATION
+import { useRegisterSW } from "virtual:pwa-register/vue";
+const { updateServiceWorker } = useRegisterSW();
+
 // Fix 23: Enhanced Factory Reset
 async function factoryReset() {
   if (
@@ -229,10 +233,15 @@ async function factoryReset() {
         </div>
       </template>
 
-      <div class="footer-info" v-tactile>
-        <div class="brand">
+      <div class="footer-info">
+        <div class="brand" @click="haptics.heavy(); window.location.reload();" v-tactile>
           CLASH MANAGER V{{ appVersion }}
           <span v-if="isDemoMode" class="demo-tag">DEMO</span>
+        </div>
+        <div class="footer-actions">
+          <button class="footer-link" @click="updateServiceWorker(true)">Force Update</button>
+          <span class="v-divider-s"></span>
+          <button class="footer-link danger" @click="factoryReset">Kill Cache</button>
         </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
@@ -396,19 +405,56 @@ async function factoryReset() {
 .footer-info {
   padding: 40px 0;
   text-align: center;
-  cursor: pointer;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 .brand {
   font-size: 12px;
-  font-weight: 900;
-  opacity: 0.2;
+  font-weight: 950;
+  opacity: 0.3;
   letter-spacing: 0.1em;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
+.brand:active {
+  opacity: 0.6;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.4;
+}
+
+.footer-link {
+  background: none;
+  border: none;
+  color: var(--sys-color-primary);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.footer-link.danger {
+  color: var(--sys-color-error);
+}
+
+.v-divider-s {
+  width: 1px;
+  height: 10px;
+  background: var(--sys-color-outline-variant);
+}
+
 .demo-tag {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
@@ -421,6 +467,5 @@ async function factoryReset() {
 .copy {
   font-size: 10px;
   opacity: 0.2;
-  margin-top: 4px;
 }
 </style>
