@@ -70,15 +70,38 @@ export function useExternalLink() {
         `package=com.supercell.clashroyale;` +
         `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
         `end`;
-      console.log('[openInGame] Android mode - using Intent URL via system browser:', intentUrl);
+      console.log('[openInGame] Android mode - using programmatic link click:', intentUrl);
       
-      // CRITICAL FIX: Open in system browser instead of WebView
-      // WebViews often don't handle intents properly, but the system browser does
+      // NUCLEAR SOLUTION: Create a hidden anchor and click it programmatically
+      // This is the most reliable way to trigger intents in WebViews because:
+      // 1. It simulates a real user click
+      // 2. WebViews trust user-initiated navigation
+      // 3. It bypasses popup blockers and security restrictions
       try {
-        window.open(intentUrl, '_blank');
-        console.log('[openInGame] Opened in system browser');
+        const anchor = document.createElement('a');
+        anchor.href = intentUrl;
+        anchor.style.display = 'none';
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        
+        // Add to DOM (required for some browsers)
+        document.body.appendChild(anchor);
+        
+        // Programmatically click
+        console.log('[openInGame] Clicking hidden anchor');
+        anchor.click();
+        
+        // Cleanup after a short delay
+        setTimeout(() => {
+          document.body.removeChild(anchor);
+          console.log('[openInGame] Anchor cleaned up');
+        }, 1000);
+        
+        console.log('[openInGame] Intent triggered successfully');
       } catch (err) {
-        console.error('[openInGame] window.open failed, trying location.href:', err);
+        console.error('[openInGame] Programmatic click failed:', err);
+        // Final fallback
+        console.log('[openInGame] Trying direct location.href as last resort');
         window.location.href = intentUrl;
       }
       return;
