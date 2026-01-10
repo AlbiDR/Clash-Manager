@@ -89,56 +89,38 @@ function handleFabDismiss() {
 
     <!-- Selection FAB Mode -->
     <template v-else>
-      <!-- State: BLASTING (With Controls) -->
-      <template v-if="fabState.isBlasting">
-        <button
-          class="fab-btn danger compact"
-          @click="handleFabDismiss"
-          @pointerdown="onInteractionStart"
-          aria-label="Cancel Blitz"
-        >
-          <Icon name="close" size="18" />
-        </button>
+      <!-- Dismiss Button (Always Visible) -->
+      <button
+        class="fab-btn danger"
+        :class="{ 'compact': fabState.isBlasting }"
+        @click="handleFabDismiss"
+        @pointerdown="onInteractionStart"
+        :aria-label="fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
+      >
+        <Icon name="close" size="18" />
+        <span v-if="!fabState.selectionCount && !fabState.isBlasting">Clear</span>
+      </button>
 
+      <!-- Blasting State: Progress Indicator -->
+      <template v-if="fabState.isBlasting">
         <div class="blast-status">
           <div class="spinner-small"></div>
           <span class="blast-label">{{ fabState.label }}</span>
         </div>
-
-        <a
-          v-if="fabState.actionHref"
-          :href="fabState.actionHref"
+        
+        <button
           class="fab-btn primary compact"
           @click="handleFabAction"
           @pointerdown="onInteractionStart"
           aria-label="Open Next Profile"
         >
           <Icon name="chevron_right" size="20" />
-        </a>
-        <button
-          v-else
-          class="fab-btn primary compact"
-          @click="handleFabAction"
-          @pointerdown="onInteractionStart"
-          aria-label="Next"
-        >
-          <Icon name="chevron_right" size="20" />
         </button>
       </template>
 
-      <!-- State: NORMAL Selection -->
+      <!-- Normal Selection State -->
       <template v-else>
-        <button
-          class="fab-btn danger"
-          @click="handleFabDismiss"
-          @pointerdown="onInteractionStart"
-          aria-label="Dismiss Selection"
-        >
-          <Icon name="close" size="18" />
-          <span v-if="!fabState.selectionCount">Clear</span>
-        </button>
-
-        <button
+        <!-- Blitz Button (Only if enabled and multiple selected) -->
           v-if="
             fabState.blitzEnabled &&
             fabState.selectionCount &&
