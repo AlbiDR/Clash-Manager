@@ -74,7 +74,7 @@ function handleFabDismiss() {
     >
       <div v-if="route.path === item.path" class="capsule-bg"></div>
       <Icon :name="item.icon" size="22" class="dock-icon" />
-      <span v-if="item.label && item.label !== 'Settings'" class="dock-label">
+      <span v-if="item.label" class="dock-label">
         {{ item.label }}
       </span>
     </button>
@@ -189,6 +189,8 @@ function handleFabDismiss() {
   gap: 4px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   z-index: 500;
+  /* ⚡ INTERACTION: manipulation prevents double-tap zoom delay */
+  touch-action: manipulation;
   /* ⚡ SNAPPY: Reduced duration (0.5s -> 0.3s) for much more responsive feel */
   transition:
     transform 0.3s cubic-bezier(0.2, 0, 0, 1),
@@ -356,11 +358,18 @@ function handleFabDismiss() {
   .dock-item:not(.active) .dock-label {
     display: none;
   }
+  /* 🏗️ MOBILE FIX: Narrower padding to prevent overflow on small devices */
   .dock-item {
-    padding: 14px 20px;
+    padding: 14px 16px;
+    min-width: 56px;
   }
   .dock-item.active {
-    padding: 14px 28px;
+    padding: 14px 24px;
+    min-width: 100px;
+  }
+  /* 🏷️ SETTINGS FIX: Ensure settings icon hit target is large even without label */
+  .dock-item[aria-label="Settings"] {
+    padding: 14px 22px;
   }
 }
 </style>
