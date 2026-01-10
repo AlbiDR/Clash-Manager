@@ -239,8 +239,9 @@ jobs:
           npx tauri android init --ci
 
       - name: Patch Android Configuration
-        working-directory: src-tauri/gen/android
         run: |
+          cd src-tauri/gen/android
+
           echo "🔧 Patching gradle.properties..."
           # Suppress Java 8 source/target deprecation warnings appearing on JDK 21
           # Use printf to ensure proper newline
