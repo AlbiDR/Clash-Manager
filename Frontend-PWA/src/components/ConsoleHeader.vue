@@ -278,12 +278,14 @@ function formatDescription(text: string) {
 }
 .header-row.extra {
   /* 🏗️ LAYOUT STABILITY: Reserved space perfectly matching SelectionBar footprint */
+  height: 44px;
   min-height: 44px;
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid var(--sys-color-outline-variant);
   transition: opacity 0.3s ease;
   overflow: hidden;
+  align-items: center;
 }
 /* Hide the border if the row is actually empty and not reserved */
 .header-row.extra:empty:not(.reserved) {
