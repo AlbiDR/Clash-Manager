@@ -70,8 +70,17 @@ export function useExternalLink() {
         `package=com.supercell.clashroyale;` +
         `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
         `end`;
-      console.log('[openInGame] Android mode - using Intent URL:', intentUrl);
-      window.location.href = intentUrl;
+      console.log('[openInGame] Android mode - using Intent URL via system browser:', intentUrl);
+      
+      // CRITICAL FIX: Open in system browser instead of WebView
+      // WebViews often don't handle intents properly, but the system browser does
+      try {
+        window.open(intentUrl, '_blank');
+        console.log('[openInGame] Opened in system browser');
+      } catch (err) {
+        console.error('[openInGame] window.open failed, trying location.href:', err);
+        window.location.href = intentUrl;
+      }
       return;
     }
 
