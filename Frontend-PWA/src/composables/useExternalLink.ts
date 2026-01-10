@@ -46,92 +46,63 @@ export function useExternalLink() {
 
     console.log('[openInGame] Starting with tag:', tag, 'cleaned:', id);
 
-    const isTauri = typeof window !== "undefined" && (window as any).__TAURI__;
-    console.log('[openInGame] Environment - Tauri:', isTauri, 'UserAgent:', navigator.userAgent);
+    const userAgent = navigator.userAgent;
+    console.log('[openInGame] UserAgent:', userAgent);
 
-    // STRATEGY 1: Direct clashroyale:// scheme (most reliable if Shell plugin works)
-    const directUrl = `clashroyale://playerInfo?id=${id}`;
+    // CRITICAL: Detect if we're in Tauri even when __TAURI__ is undefined
+    // This happens when the app loads from a remote URL (GitHub Pages)
+    const isTauri = typeof window !== "undefined" && (
+      (window as any).__TAURI__ !== undefined ||
+      userAgent.includes('Tauri') ||
+      // Android WebView in Tauri has specific patterns
+      (userAgent.includes('wv') && userAgent.includes('Android'))
+    );
     
-    if (isTauri) {
-      console.log('[openInGame] Tauri detected - trying Shell plugin with URL:', directUrl);
-      
-      try {
-        // Try accessing global Tauri API
-        const tauri = (window as any).__TAURI__;
-        console.log('[openInGame] Global __TAURI__ object:', tauri ? 'Found' : 'Missing');
-        
-        if (tauri) {
-          // Method 1: Try global shell directly
-          const shell = tauri.shell || (tauri.plugins?.shell);
-          console.log('[openInGame] Shell API:', shell ? 'Found' : 'Missing');
-          
-          if (shell?.open) {
-            console.log('[openInGame] Attempting shell.open() with:', directUrl);
-            await shell.open(directUrl);
-            console.log('[openInGame] shell.open() succeeded');
-            return;
-          }
+    const isAndroid = /android/i.test(userAgent);
+    console.log('[openInGame] Environment - Tauri:', isTauri, 'Android:', isAndroid);
 
-          // Method 2: Try dynamic import
-          console.log('[openInGame] Trying dynamic import of @tauri-apps/plugin-shell');
-          try {
-            const { open } = await import("@tauri-apps/plugin-shell");
-            console.log('[openInGame] Dynamic import succeeded, calling open()');
-            await open(directUrl);
-            console.log('[openInGame] Dynamic import open() succeeded');
-            return;
-          } catch (importErr) {
-            console.error('[openInGame] Dynamic import failed:', importErr);
-          }
-        }
-
-        // Method 3: Try invoking through Tauri core
-        if (tauri?.core?.invoke) {
-          console.log('[openInGame] Trying tauri.core.invoke()');
-          try {
-            await tauri.core.invoke('plugin:shell|open', { path: directUrl });
-            console.log('[openInGame] core.invoke succeeded');
-            return;
-          } catch (invokeErr) {
-            console.error('[openInGame] core.invoke failed:', invokeErr);
-          }
-        }
-
-        console.warn('[openInGame] All Tauri methods failed, falling back to window.location');
-      } catch (tauriErr) {
-        console.error('[openInGame] Tauri error:', tauriErr);
-      }
-
-      // Fallback for Tauri: Try direct window.location (might trigger OS handler)
-      console.log('[openInGame] Tauri fallback: trying window.location.href');
-      try {
-        window.location.href = directUrl;
-        return;
-      } catch (locationErr) {
-        console.error('[openInGame] window.location.href failed:', locationErr);
-        error(`Failed to open game: ${locationErr}`);
-        return;
-      }
-    }
-
-    // For Web/PWA: Use Android Intent on Android, clashroyale:// on iOS
-    console.log('[openInGame] Web/PWA mode');
-    const isAndroid = /android/i.test(navigator.userAgent);
-    
+    // STRATEGY: On Android (app or browser), ALWAYS use intent:// URLs
+    // They work reliably in both Tauri WebView and Chrome
     if (isAndroid) {
-      // Android Intent (works in mobile browsers)
       const intentUrl =
         `intent://playerInfo?id=${id}#Intent;` +
         `scheme=clashroyale;` +
         `package=com.supercell.clashroyale;` +
         `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
         `end`;
-      console.log('[openInGame] Using Android Intent:', intentUrl);
-      window.location.assign(intentUrl);
-    } else {
-      // iOS or other platforms
-      console.log('[openInGame] Using direct scheme:', directUrl);
-      await openExternal(directUrl);
+      console.log('[openInGame] Android mode - using Intent URL:', intentUrl);
+      window.location.href = intentUrl;
+      return;
+    }
+
+    // For iOS/Desktop: Try multiple fallbacks
+    const directUrl = `clashroyale://playerInfo?id=${id}`;
+    
+    // If Tauri is detected and APIs are available, use Shell plugin
+    if (isTauri) {
+      console.log('[openInGame] Tauri detected, attempting Shell plugin');
+      try {
+        const tauri = (window as any).__TAURI__;
+        if (tauri) {
+          const shell = tauri.shell || (tauri.plugins?.shell);
+          if (shell?.open) {
+            console.log('[openInGame] Using Tauri shell.open()');
+            await shell.open(directUrl);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('[openInGame] Tauri shell failed:', err);
+      }
+    }
+
+    // Final fallback: Try direct window.location (works on iOS)
+    console.log('[openInGame] Fallback: using window.location.href');
+    try {
+      window.location.href = directUrl;
+    } catch (err) {
+      console.error('[openInGame] window.location failed:', err);
+      error('Failed to open game - app may not be installed');
     }
   }
 
