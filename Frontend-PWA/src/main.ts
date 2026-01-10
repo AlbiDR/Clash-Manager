@@ -108,13 +108,10 @@ async function bootstrap() {
       clanData.startBackgroundSync();
       wakeLock.init();
 
-      if ("serviceWorker" in navigator) {
-        try {
-          await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-        } catch (err) {
-          console.error("SW Register Failed", err);
-        }
-      }
+      /* 
+      // 🔄 AUTO-UPDATE: vite-plugin-pwa handles registration via virtual:pwa-register
+      // if (isSupported) { ... }
+      */
     }, 400);
 
   } catch (error) {

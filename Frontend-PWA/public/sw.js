@@ -1,5 +1,9 @@
 // Service Worker for Clash Manager
 // Handles background tasks and badging offload
+import { precacheAndRoute } from 'workbox-precaching';
+
+// 📦 PRECACHE: This list is injected automatically by workbox-build
+precacheAndRoute(self.__WB_MANIFEST || []);
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

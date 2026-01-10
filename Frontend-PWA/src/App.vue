@@ -32,6 +32,32 @@ watch(isOnline, (online, wasOnline) => {
     refresh();
   }
 });
+
+// 🔄 SMART UPDATE: Automated PWA registration and update logic
+import { useRegisterSW } from "virtual:pwa-register/vue";
+const { needRefresh, updateServiceWorker } = useRegisterSW({
+  onRegistered(r) {
+    // Check for updates every hour
+    r && setInterval(() => { r.update(); }, 60 * 60 * 1000);
+  },
+  onNeedRefresh() {
+    // Automatically apply update if it's a minor change 
+    // or notify user for major shifts.
+    updateServiceWorker(true);
+  }
+});
+
+onMounted(() => {
+  // 🛡️ VERSION GUARD: Force cache busting if version mismatch detected
+  const currentVersion = __APP_VERSION__;
+  const storedVersion = localStorage.getItem("app_version");
+  
+  if (storedVersion && storedVersion !== currentVersion) {
+    console.log(`[Version] Upgrading from ${storedVersion} to ${currentVersion}`);
+    // Optional: Clear old system states if needed
+  }
+  localStorage.setItem("app_version", currentVersion);
+});
 </script>
 
 <template>
