@@ -22,41 +22,50 @@ export function useExternalLink() {
     }
   }
 
-  /**
-   * 👑 OPEN IN GAME
-   * Robust deep-linking to Clash Royale using Android Intent fallback.
-   */
   async function openInGame(tag: string) {
-    const id = cleanTag(tag);
-    if (!id) return;
+    const url = buildDeepLink(tag);
+    if (!url) return;
 
-    const isAndroid = /android/i.test(navigator.userAgent);
-    const isTauri = typeof window !== "undefined" && (window as any).__TAURI__;
-
-    if (isAndroid) {
-      // 🚀 Android Intent protocol: Most reliable way to open apps from browser/Webview
-      const intentUrl =
-        `intent://playerInfo?id=${id}#Intent;` +
-        `scheme=clashroyale;` +
-        `package=com.supercell.clashroyale;` +
-        `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
-        `end`;
-
+    if (url.startsWith("intent://")) {
+      const isTauri = typeof window !== "undefined" && (window as any).__TAURI__;
       if (isTauri) {
-        window.location.href = intentUrl;
+        window.location.href = url;
       } else {
-        // Direct navigation for mobile browsers to ensure reliability
-        window.location.assign(intentUrl);
+        window.location.assign(url);
       }
-      return;
+    } else {
+      await openExternal(url);
     }
-
-    // Fallback for iOS/Desktop: Standard scheme
-    await openExternal(`clashroyale://playerInfo?id=${id}`);
   }
 
   return {
     openExternal,
     openInGame,
+    buildDeepLink, // Exposed for use in useBatchQueue
   };
+}
+
+/**
+ * 🔗 BUILD DEEP LINK
+ * Generates the correct URL for Clash Royale based on platform.
+ */
+export function buildDeepLink(tag: string): string {
+  const id = cleanTag(tag);
+  if (!id) return "";
+
+  const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+  
+  if (isAndroid) {
+    // 🚀 Android Intent protocol: Most reliable way to open apps from browser/Webview
+    return (
+      `intent://playerInfo?id=${id}#Intent;` +
+      `scheme=clashroyale;` +
+      `package=com.supercell.clashroyale;` +
+      `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
+      `end`
+    );
+  }
+
+  // Fallback for iOS/Desktop: Standard scheme
+  return `clashroyale://playerInfo?id=${id}`;
 }

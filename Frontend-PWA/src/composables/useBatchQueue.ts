@@ -1,7 +1,7 @@
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useToast } from "./useToast";
 import { useModules } from "./useModules";
-import { useExternalLink } from "./useExternalLink";
+import { useExternalLink, buildDeepLink } from "./useExternalLink";
 
 interface BatchQueueOptions {
   throttleMs?: number;
@@ -14,7 +14,7 @@ interface BatchQueueOptions {
  * Memory safety: Ensures iframe and timer cleanup on unmount.
  */
 export function useBatchQueue(options: BatchQueueOptions = {}) {
-  const { throttleMs = 850, baseScheme = "clashroyale://playerInfo?id=" } = options;
+  const { throttleMs = 850 } = options;
 
   const selectedIds = ref<string[]>([]);
   const queue = ref<string[]>([]);
@@ -94,7 +94,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     const fabData = {
       visible: true,
       label,
-      actionHref: targetId ? `${baseScheme}${targetId}` : undefined,
+      actionHref: targetId ? buildDeepLink(targetId) : undefined,
       isProcessing: isProcessing.value,
       isBlasting: isBlasting.value,
       selectionCount: total,
