@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [ Stable ]
     types: [ opened, synchronize ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -15,7 +16,6 @@ permissions:
 
 jobs:
   audit:
-    # Coherent bot detection logic
     if: |
       contains(github.event.pull_request.labels.*.name, 'jules') || 
       github.event.pull_request.user.type == 'Bot'
