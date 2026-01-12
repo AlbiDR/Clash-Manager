@@ -39,24 +39,18 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   const isTrusted = computed(() => {
     if (typeof navigator === "undefined") return false;
-    
-    // ⚡ Android Reliability: If we're on Android, we trust the intent system 
-    // to handle the fallback if NOT in TWA. This prevents the FAB from disappearing 
-    // when TWA signal is not detected but the user still wants to open players.
-    if (/android/i.test(navigator.userAgent)) return true;
-    
-    // Desktop/Dev is always trusted
+    // Always trust browser environment for standard PWA usage
     return true;
   });
 
   const fabState = computed(() => {
-    console.log('[useBatchQueue] fabState recompute:', {
+    console.log("[useBatchQueue] fabState recompute:", {
       isSelectionMode: isSelectionMode.value,
       selectedCount: selectedIds.value.length,
       selectedIds: selectedIds.value,
-      forceSelectionMode: forceSelectionMode.value
+      forceSelectionMode: forceSelectionMode.value,
     });
-    
+
     if (!isSelectionMode.value) {
       return {
         visible: false,
@@ -100,26 +94,33 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       selectionCount: total,
       blitzEnabled: modules.blitzMode && isTrusted.value,
     };
-    
+
     // console.log('[useBatchQueue] FAB visible:', fabData);
     return fabData;
   });
 
   function toggleSelect(id: string) {
     // console.log('[useBatchQueue] toggleSelect called:', { id });
-    
+
     if (isProcessing.value || isBlasting.value) {
-      console.log('[useBatchQueue] toggleSelect blocked - processing or blasting');
+      console.log(
+        "[useBatchQueue] toggleSelect blocked - processing or blasting",
+      );
       return;
     }
-    
+
     const index = selectedIds.value.indexOf(id);
     if (index !== -1) {
       selectedIds.value.splice(index, 1);
-      console.log('[useBatchQueue] Deselected:', id, 'Remaining:', selectedIds.value);
+      console.log(
+        "[useBatchQueue] Deselected:",
+        id,
+        "Remaining:",
+        selectedIds.value,
+      );
     } else {
       selectedIds.value.push(id);
-      console.log('[useBatchQueue] Selected:', id, 'Total:', selectedIds.value);
+      console.log("[useBatchQueue] Selected:", id, "Total:", selectedIds.value);
     }
   }
 
@@ -140,7 +141,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * 💉 DEEP LINK IGNITION
    */
   let iframe: HTMLIFrameElement | null = null;
-  
 
   function stopBlitz() {
     isBlasting.value = false;
@@ -162,7 +162,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     const id = selectedIds.value[currentIndex.value];
     if (id) {
       openInGame(id);
-      
+
       const delay = Math.max(throttleMs, 2000);
       if (currentIndex.value < selectedIds.value.length - 1) {
         blitzTimer = setTimeout(() => {
@@ -189,7 +189,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return;
     if (!isTrusted.value) {
-      error("TWA verification failed");
+      error("Environment verification failed");
       return;
     }
 
@@ -263,7 +263,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     clearSelection,
     handleAction,
     handleBlitz,
-    setForceSelectionMode: (val: boolean) => { forceSelectionMode.value = val; },
+    setForceSelectionMode: (val: boolean) => {
+      forceSelectionMode.value = val;
+    },
   };
 }
-
