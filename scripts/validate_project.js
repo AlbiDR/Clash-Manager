@@ -4,13 +4,10 @@ const path = require("path");
 // --- Configuration & Paths ---
 const ROOT_DIR = path.resolve(__dirname, "..");
 const PWA_DIR = path.join(ROOT_DIR, "Frontend-PWA");
-const TAURI_DIR = path.join(PWA_DIR, "src-tauri");
 const GAS_DIR = path.join(ROOT_DIR, "Backend-GAS");
 
 const PATHS = {
   packageJson: path.join(PWA_DIR, "package.json"),
-  tauriConf: path.join(TAURI_DIR, "tauri.conf.json"),
-  cargoToml: path.join(TAURI_DIR, "Cargo.toml"),
   backendConfig: path.join(GAS_DIR, "Configuration.gs.js"),
   readme: path.join(ROOT_DIR, "README.md"),
   env: path.join(PWA_DIR, ".env"),
@@ -27,33 +24,7 @@ const log = {
 
 let hasFailure = false;
 
-// --- 1. Version Sync Check ---
-function checkVersionSync() {
-  log.header("1. Version Synchronization");
-
-  if (!fs.existsSync(PATHS.packageJson) || !fs.existsSync(PATHS.tauriConf)) {
-    log.fail("Missing package.json or tauri.conf.json");
-    hasFailure = true;
-    return;
-  }
-
-  const pkg = require(PATHS.packageJson);
-  const tauri = require(PATHS.tauriConf);
-
-  log.info(`Package Version: ${pkg.version}`);
-  log.info(`Tauri Version:   ${tauri.version}`);
-
-  if (pkg.version === tauri.version) {
-    log.pass("Versions are synchronized.");
-  } else {
-    log.warn(
-      `Version mismatch! Standardize before release. (Package: ${pkg.version} vs Tauri: ${tauri.version})`
-    );
-    // Warning only, strictly speaking they don't *have* to match for dev, but good for release.
-  }
-}
-
-// --- 2. Scoring Integrity Check ---
+// --- 1. Scoring Integrity Check ---
 function extractWeightsFromConfig(text, section = "LEADERBOARD") {
   const secIdx = text.lastIndexOf(section + ":");
   if (secIdx === -1) return null;
@@ -105,7 +76,7 @@ function extractWeightsFromReadme(text) {
 }
 
 function checkScoringIntegrity() {
-  log.header("2. Scoring Logic Integrity");
+  log.header("1. Scoring Logic Integrity");
 
   if (!fs.existsSync(PATHS.backendConfig) || !fs.existsSync(PATHS.readme)) {
     log.fail("Missing Backend Configuration or README for scoring check.");
@@ -149,48 +120,9 @@ function checkScoringIntegrity() {
   }
 }
 
-// --- 3. Tauri Configuration Health ---
-function checkTauriConfig() {
-  log.header("3. Tauri Configuration Health");
-
-  if (!fs.existsSync(PATHS.tauriConf)) return;
-  const tauri = require(PATHS.tauriConf);
-  const plugins = tauri.plugins || {};
-
-  const emptyPlugins = Object.entries(plugins).filter(
-    ([_, config]) =>
-      typeof config === "object" &&
-      config !== null &&
-      Object.keys(config).length === 0
-  );
-
-  if (emptyPlugins.length > 0) {
-    log.fail(
-      `Found empty plugin configurations: ${emptyPlugins.map((e) => e[0]).join(", ")}`
-    );
-    log.fail(
-      "Empty plugin objects cause crashes in Tauri v2. Remove them from tauri.conf.json."
-    );
-    hasFailure = true;
-  } else {
-    log.pass("Plugin configuration looks clean (no empty objects).");
-  }
-
-  if (
-    tauri.identifier === "com.tauri.dev" ||
-    tauri.identifier === "com.your.app"
-  ) {
-    log.warn(
-      `Generic Bundle ID detected: "${tauri.identifier}". Change before releasing.`
-    );
-  } else {
-    log.pass(`Bundle ID validated: ${tauri.identifier}`);
-  }
-}
-
-// --- 4. URL Safety Check ---
+// --- 2. URL Safety Check ---
 function checkUrlSafety() {
-  log.header("4. Environment URL Safety");
+  log.header("2. Environment URL Safety");
 
   let gasUrl = process.env.VITE_GAS_URL;
 
@@ -212,7 +144,7 @@ function checkUrlSafety() {
     log.pass("Targeting PRODUCTION deployment (/exec).");
   } else if (gasUrl.includes("/dev") || gasUrl.includes("/test")) {
     log.warn(
-      "⚠️  Targeting DEVELOPMENT deployment (/dev or /test). Be careful!"
+      "⚠️  Targeting DEVELOPMENT deployment (/dev or /test). Be careful!",
     );
   } else {
     log.info("URL endpoint type unknown (not standard /exec or /dev).");
@@ -225,37 +157,9 @@ function checkUrlSafety() {
   }
 }
 
-// --- 5. Asset Health Check ---
-function checkAssets() {
-  log.header("5. Asset Integrity Check");
-
-  const tauri = require(PATHS.tauriConf);
-  const iconConfig = tauri.bundle?.icon || [];
-  let allAssetsFound = true;
-
-  if (!Array.isArray(iconConfig)) {
-    log.warn("Tauri icon config is not an array. Skipping check.");
-    return;
-  }
-
-  iconConfig.forEach((iconPath) => {
-    // Icons are relative to src-tauri root (usually) or local path
-    const fullPath = path.join(TAURI_DIR, iconPath);
-    if (!fs.existsSync(fullPath)) {
-      log.fail(`Missing Icon: ${iconPath} (Expected at: ${fullPath})`);
-      hasFailure = true;
-      allAssetsFound = false;
-    }
-  });
-
-  if (allAssetsFound) {
-    log.pass(`Verified ${iconConfig.length} icon assets exist.`);
-  }
-}
-
-// --- 6. Environment Documentation Check ---
+// --- 3. Environment Documentation Check ---
 function checkEnvDocumentation() {
-  log.header("6. Environment Data Sync");
+  log.header("3. Environment Data Sync");
 
   const envExamplePath = path.join(PWA_DIR, ".env.example");
 
@@ -284,9 +188,7 @@ function checkEnvDocumentation() {
   const missingInExample = [...envKeys].filter((k) => !exampleKeys.has(k));
 
   if (missingInExample.length > 0) {
-    log.warn(
-      `Undocumented secrets in .env: ${missingInExample.join(", ")}`
-    );
+    log.warn(`Undocumented secrets in .env: ${missingInExample.join(", ")}`);
     log.warn("👉 Add these to .env.example to keep project healthy.");
   } else {
     log.pass(".env.example fully documents all active secrets.");
@@ -297,11 +199,8 @@ function checkEnvDocumentation() {
 console.log("🚀 Starting Project Integrity Check...\n");
 
 try {
-  checkVersionSync();
   checkScoringIntegrity();
-  checkTauriConfig();
   checkUrlSafety();
-  checkAssets();
   checkEnvDocumentation();
 } catch (e) {
   log.fail(`Crash during validation: ${e.message}`);
