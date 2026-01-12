@@ -5,14 +5,17 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      # Use an action to check if the specific files changed
-      - uses: dorny/paths-filter@v3
+      - name: Check file changes
+        uses: dorny/paths-filter@v3
         id: changes
         with:
           filters: |
@@ -26,6 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Run Project Integrity Check
         if: steps.changes.outputs.sync_files == 'true'
