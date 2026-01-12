@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
-**Sovereign Clan Intelligence Engine.** A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as both a **Rust-powered Tauri 2.0 Native App** and a **Standalone Progressive Web App (PWA)** for desktop and browser-based workflows.
+**Sovereign Clan Intelligence Engine.** A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as a **Standalone Progressive Web App (PWA)** for desktop and browser-based workflows.
 
 ---
 
@@ -13,8 +13,6 @@
 
 The system is designed for high data integrity and low-latency interaction.
 
-```mermaid
-flowchart TD
     subgraph "External Data"
         CRAPI["Clash Royale API"]
     end
@@ -26,30 +24,20 @@ flowchart TD
         Recruiter["Recruiter.gs"]
     end
 
-    subgraph "Native Client (Tauri 2.0)"
-        RustCore["Rust Entry Point"]
+    subgraph "Client Core (Vue 3 PWA)"
         VueUI["Vue 3 Frontend"]
         IDB[(IndexedDB Cache)]
-    end
-
-    subgraph "CI/CD & Distribution"
-        GA["GitHub Actions"]
-        APK["Android APK/AAB"]
     end
 
     CRAPI -->|ETL| GAS
     GAS <--> GS
     GAS -->|Headless JSON| VueUI
     VueUI <--> IDB
-    RustCore <--> VueUI
-    GA -->|Build & Sign| APK
-```
 
 ### Strategic Components
 
 - **Backend (GAS)**: Handles scheduled ETL, matrix normalization, and the canonical scoring algorithm.
-- **Client (Vite/Vue/Tauri)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
-- **Rust Core**: Provides native system hooks, deep-link handling, and crash diagnostics for the Android runtime.
+- **Client (Vite/Vue)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
 
 </details>
 
@@ -67,17 +55,12 @@ flowchart TD
 
 ```bash
 cd Frontend-PWA
-npm ci
-npm run tauri android dev  # For local mobile tethering
+pnpm install
 ```
 
-### 3. Automated Android Deployment
+### 3. Automated PWA Deployment
 
-The project uses a sophisticated GitHub Actions pipeline (`deploy-android.yml`) that:
-
-- Increments Semantic Versioning based on commit analysis.
-- Authenticates and Signs the APK with dedicated keystores.
-- Generates categorization-aware changelogs in GitHub Releases.
+The project uses a sophisticated GitHub Actions pipeline (`deploy-pwa.yml`) that deploys the application to GitHub Pages.
 
 ---
 
