@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Check file changes
         uses: dorny/paths-filter@v3
         id: changes
@@ -24,17 +24,20 @@ jobs:
               - 'README.md'
               - '.github/workflows/validate-scoring.yml'
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Use Node.js
         if: steps.changes.outputs.sync_files == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Run Project Integrity Check
         if: steps.changes.outputs.sync_files == 'true'
         run: node scripts/validate_project.js
-        
+
       - name: No-op Success
         if: steps.changes.outputs.sync_files == 'false'
         run: echo "No sync-critical files changed. Skipping validation but marking as success."
