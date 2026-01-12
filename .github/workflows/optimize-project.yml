@@ -1,0 +1,59 @@
+name: Optimize Project
+
+on:
+  pull_request:
+    branches: [Stable]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  audit-and-merge:
+    name: Audit & Auto-Merge
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'jules') || 
+      github.event.pull_request.user.type == 'Bot' ||
+      github.event.pull_request.user.login == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Project Validation
+        run: |
+          if [ -f scripts/validate_project.js ]; then
+            node scripts/validate_project.js
+          else
+            echo "⚠️ Validation script not found. Skipping."
+          fi
+
+      - name: Auto-Merge
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge --auto --merge --delete-branch "${{ github.event.pull_request.html_url }}"
