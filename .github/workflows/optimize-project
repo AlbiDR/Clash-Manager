@@ -5,33 +5,44 @@ on:
     branches: [ Stable ]
     types: [ opened, synchronize ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
   audit:
+    # Coherent bot detection logic
     if: |
       contains(github.event.pull_request.labels.*.name, 'jules') || 
       github.event.pull_request.user.type == 'Bot'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Install & Test
-        run: |
-          pnpm install
-          pnpm test
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Run Tests
+        run: pnpm test
 
       - name: Performance Regression Check
         run: |
-          # Ensuring the script exists before running to prevent "ugly" failures
           if [ -f scripts/check_perf_thresholds.js ]; then
             node scripts/check_perf_thresholds.js
           else
