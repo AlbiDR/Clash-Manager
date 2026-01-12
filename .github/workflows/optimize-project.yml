@@ -33,18 +33,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: "./Frontend-PWA/package-lock.json"
+          cache: "pnpm"
+          cache-dependency-path: "./Frontend-PWA/pnpm-lock.yaml"
 
       - name: Install Dependencies
         run: |
           cd Frontend-PWA
-          npm ci
+          pnpm install
 
       - name: Run Tests
         run: |
           cd Frontend-PWA
-          npm test
+          pnpm test
 
       - name: Project Validation
         run: |

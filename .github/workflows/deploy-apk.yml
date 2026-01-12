@@ -50,8 +50,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: Frontend-PWA/package-lock.json
+          cache: "pnpm"
+          cache-dependency-path: Frontend-PWA/pnpm-lock.yaml
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -218,7 +218,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Install Dependencies
-        run: npm install @tauri-apps/cli
+        run: pnpm add -g @tauri-apps/cli
 
       - name: Cache Android Project
         id: cache-android-gen
@@ -236,7 +236,7 @@ jobs:
           rm -rf src-tauri/gen/android
 
           echo "🏗️  Initializing Android Support..."
-          npx tauri android init --ci
+          pnpm tauri android init --ci
 
       - name: Patch Android Configuration
         run: |
@@ -283,7 +283,7 @@ jobs:
           fi
 
           # Standard build - Tauri manages minification safely via its own internal config
-          npx tauri android build $ARCH_ARG --apk true
+          pnpm tauri android build $ARCH_ARG --apk true
 
       - name: Sign APK
         run: |
@@ -389,7 +389,6 @@ jobs:
           DESCRIPTIVE_NAME="${{ steps.versioning.outputs.apk_filename }}"
           cp "$APK_PATH" "$DESCRIPTIVE_NAME"
           echo "✓ Prepared Release Artifact: $DESCRIPTIVE_NAME"
-
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
