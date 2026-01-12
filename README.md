@@ -62,8 +62,8 @@ flowchart TD
 
 ```bash
 cd Frontend-PWA
-npm ci
-npm run tauri android dev  # For local mobile tethering
+pnpm install
+pnpm tauri android dev  # For local mobile tethering
 ```
 
 ### 3. Automated Android Deployment

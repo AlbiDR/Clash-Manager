@@ -28,14 +28,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: "./Frontend-PWA/package-lock.json"
+          cache: "pnpm"
+          cache-dependency-path: "./Frontend-PWA/pnpm-lock.yaml"
 
       - name: Install & Build
         run: |
           cd Frontend-PWA
-          npm install
-          npm run build
+          pnpm install
+          pnpm run build
         env:
           VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
 

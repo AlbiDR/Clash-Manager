@@ -12,7 +12,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run type-check && vite build",
+    "build": "pnpm run type-check && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

@@ -26,10 +26,10 @@ To run the application with native Android features:
 
 ```bash
 # Debug in the browser
-npm run dev
+pnpm dev
 
 # Debug on a tethered Android device
-npm run tauri android dev
+pnpm tauri android dev
 ```
 
 ### Environment Configuration
@@ -47,9 +47,9 @@ VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 We maintain a 100% logic coverage goal for all business logic and reactive states.
 
 ```bash
-npm test                # Run unit tests
-npm run test:ui         # Visual test runner
-npm run test:coverage   # Generate coverage reports
+pnpm test                # Run unit tests
+pnpm test:ui             # Visual test runner
+pnpm test:coverage       # Generate coverage reports
 ```
 
 > [!NOTE] > **Test Environment**: The project is configured with a `jsdom` global setup. Ensure `vitest.setup.ts` is present for hardware/API mocking.
