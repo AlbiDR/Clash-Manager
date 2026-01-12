@@ -2,8 +2,8 @@ name: Deploy PWA
 
 on:
   push:
-    branches: [ "Stable", "Beta" ] # Restricted to prevent race conditions from feature branch pushes
-  workflow_dispatch:   # Enables the "Run workflow" manual button
+    branches: [ "Stable", "Beta" ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
