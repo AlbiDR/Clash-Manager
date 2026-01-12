@@ -51,6 +51,7 @@ const haptics = useHaptics();
 
 // --- Pull to Refresh Logic ---
 const touchStartY = ref(0);
+const touchStartX = ref(0);
 const pullOffset = ref(0);
 const threshold = 120;
 const isPulling = ref(false);
@@ -65,6 +66,7 @@ let hapticFeedbackTriggered = false;
 function onTouchStart(e: TouchEvent) {
   if (window.scrollY > 0 || props.isRefreshing) return;
   touchStartY.value = e.touches[0].clientY;
+  touchStartX.value = e.touches[0].clientX;
   isPulling.value = true;
   hapticFeedbackTriggered = false;
 }
