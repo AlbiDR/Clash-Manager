@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
-          cache-dependency-path: "./Frontend-PWA/pnpm-lock.yaml"
+          cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
 
       - name: Install & Build
         run: |
