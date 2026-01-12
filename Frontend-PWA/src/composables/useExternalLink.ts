@@ -10,28 +10,6 @@ export function useExternalLink() {
 
   async function openExternal(url: string) {
     try {
-      // 🏛️ TAURI 2.0: Optimized global API access for remote WebViews
-      const tauri = (window as any).__TAURI__;
-      if (typeof window !== "undefined" && tauri) {
-        // Use global shell if available to avoid dynamic import failures on remote origins
-        const shell = tauri.shell || (tauri.plugins && tauri.plugins.shell);
-        if (shell && shell.open) {
-          await shell.open(url);
-          return;
-        }
-
-        // Fallback to dynamic import
-        try {
-          const { open } = await import("@tauri-apps/plugin-shell");
-          await open(url);
-          return;
-        } catch (innerErr) {
-          console.warn(
-            "[Tauri] Shell plugin import failed, falling back to window.open",
-          );
-        }
-      }
-
       // 🚀 BROWSER / PWA FALLBACK:
       // Note: On Android WebView, window.open with custom schemes often triggers ERR_UNKNOWN_URL_SCHEME.
       // We prioritize the system browser for deep links if possible.
@@ -54,22 +32,8 @@ export function useExternalLink() {
     const userAgent = navigator.userAgent;
     console.log("[openInGame] UserAgent:", userAgent);
 
-    // CRITICAL: Detect if we're in Tauri even when __TAURI__ is undefined
-    // This happens when the app loads from a remote URL (GitHub Pages)
-    const isTauri =
-      typeof window !== "undefined" &&
-      ((window as any).__TAURI__ !== undefined ||
-        userAgent.includes("Tauri") ||
-        // Android WebView in Tauri has specific patterns
-        (userAgent.includes("wv") && userAgent.includes("Android")));
-
     const isAndroid = /android/i.test(userAgent);
-    console.log(
-      "[openInGame] Environment - Tauri:",
-      isTauri,
-      "Android:",
-      isAndroid,
-    );
+    console.log("[openInGame] Environment - Android:", isAndroid);
 
     // STRATEGY: On Android (app or browser), ALWAYS use intent:// URLs
     // They work reliably in both Tauri WebView and Chrome
@@ -122,24 +86,6 @@ export function useExternalLink() {
 
     // For iOS/Desktop: Try multiple fallbacks
     const directUrl = `clashroyale://playerInfo?id=${id}`;
-
-    // If Tauri is detected and APIs are available, use Shell plugin
-    if (isTauri) {
-      console.log("[openInGame] Tauri detected, attempting Shell plugin");
-      try {
-        const tauri = (window as any).__TAURI__;
-        if (tauri) {
-          const shell = tauri.shell || tauri.plugins?.shell;
-          if (shell?.open) {
-            console.log("[openInGame] Using Tauri shell.open()");
-            await shell.open(directUrl);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error("[openInGame] Tauri shell failed:", err);
-      }
-    }
 
     // Final fallback: Try direct window.location (works on iOS)
     console.log("[openInGame] Fallback: using window.location.href");

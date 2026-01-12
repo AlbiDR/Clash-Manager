@@ -1,13 +1,10 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useModules } from "./useModules";
 
-// Global declaration for safe Tauri access
+// Global declaration for safe PWA usage
 declare global {
   interface Window {
-    __TAURI__?: {
-      core?: { invoke: (cmd: string, args?: any) => Promise<any> };
-      tauri?: { invoke: (cmd: string, args?: any) => Promise<any> };
-    };
+    __TAURI__?: undefined;
   }
 }
 
@@ -22,7 +19,7 @@ export function useBadge() {
   const hasServiceWorker =
     typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
-  const isSupported = hasStandardBadge || hasServiceWorker || !!window.__TAURI__;
+  const isSupported = hasStandardBadge || hasServiceWorker;
 
   // Extended Navigator Interface for Badge API
   interface NavigatorWithBadge extends Navigator {
@@ -35,16 +32,16 @@ export function useBadge() {
 
     // 🛡️ Logic: Quiet Mode integration from useModules
     if (modules.notificationQuietMode && count > 0) {
-      // If quiet mode is on and we are trying to set a non-zero badge, 
+      // If quiet mode is on and we are trying to set a non-zero badge,
       // we might want to suppress it, or just let badges through since they are silent.
       // The user suggested suppressing badges in quiet mode.
-      // return; 
+      // return;
     }
 
     // 🛡️ Logic: Smart Clear on Focus
     // If the app is visible, we typically don't want to badge (or we want to clear it)
     if (document.visibilityState === "visible" && count > 0) {
-      // Optionally skip or clear. For now, we allow setting it as the host app 
+      // Optionally skip or clear. For now, we allow setting it as the host app
       // might use it for internal state indicators.
     }
 
@@ -61,14 +58,6 @@ export function useBadge() {
 
     const trySet = async () => {
       try {
-        // Layer 0: Tauri
-        if (window.__TAURI__) {
-          const invoke = window.__TAURI__.core?.invoke || window.__TAURI__.tauri?.invoke;
-          if (invoke) {
-            // await invoke('set_badge', { count: safeCount });
-          }
-        }
-        
         // Layer 1: Standard API
         if (hasStandardBadge) {
           const nav = navigator as NavigatorWithBadge;
@@ -80,7 +69,7 @@ export function useBadge() {
         if (hasServiceWorker && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
             type: "SET_BADGE",
-            count: safeCount
+            count: safeCount,
           });
         }
       } catch (e) {
@@ -106,12 +95,6 @@ export function useBadge() {
     // Suppression in Quiet Mode
     if (modules.notificationQuietMode) return;
 
-    // Tauri Layer
-    if (window.__TAURI__) {
-      // invoke('plugin:notification|notify', { title, body });
-      return;
-    }
-    
     // Service Worker Layer
     if (hasServiceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
@@ -119,12 +102,12 @@ export function useBadge() {
         title,
         options: {
           body,
-          icon: '/pwa-192x192.png',
-          badge: '/pwa-192x192.png',
-          tag: 'local-alert',
+          icon: "/pwa-192x192.png",
+          badge: "/pwa-192x192.png",
+          tag: "local-alert",
           silent: !modules.notificationSound, // Respect sound setting
-          actions: [{ action: 'open', title: 'Open' }]
-        }
+          actions: [{ action: "open", title: "Open" }],
+        },
       });
     }
   }
@@ -164,5 +147,3 @@ export function useBadge() {
     requestPermission,
   };
 }
-
-

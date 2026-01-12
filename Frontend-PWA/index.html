@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self' tauri://* blob: https://script.google.com https://script.googleusercontent.com https://lh3.googleusercontent.com; img-src 'self' data: tauri: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://sheets.googleapis.com;"
+      content="default-src 'self' blob: https://script.google.com https://script.googleusercontent.com https://lh3.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://sheets.googleapis.com;"
     />
     <meta
       name="viewport"
@@ -107,8 +107,15 @@
       body {
         background-color: var(--sh-bg);
         margin: 0;
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Helvetica, Arial, sans-serif;
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
       }
