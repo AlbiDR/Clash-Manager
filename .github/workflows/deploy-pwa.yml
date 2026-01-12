@@ -2,7 +2,7 @@ name: Deploy PWA
 
 on:
   push:
-    branches: [ "Stable", "Beta" ]
+    branches: ["Stable", "Beta"]
   workflow_dispatch:
 
 concurrency:
@@ -17,6 +17,9 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -24,9 +27,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: './Frontend-PWA/package-lock.json'
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "./Frontend-PWA/package-lock.json"
 
       - name: Install & Build
         run: |
@@ -42,7 +45,7 @@ jobs:
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './Frontend-PWA/dist'
+          path: "./Frontend-PWA/dist"
 
       - name: Deploy to GitHub Pages
         id: deployment
