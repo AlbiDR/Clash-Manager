@@ -1,13 +1,6 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useModules } from "./useModules";
 
-// Global declaration for safe PWA usage
-declare global {
-  interface Window {
-    __TAURI__?: undefined;
-  }
-}
-
 // 🛡️ Global persistent state to track debounce across multiple useBadge() instances
 const lastUpdate = ref(0);
 

@@ -22,7 +22,7 @@ describe("useExternalLink", () => {
     vi.unstubAllGlobals();
   });
 
-  it("uses standard window.open when not in Tauri", async () => {
+  it("uses standard window.open", async () => {
     const { openExternal } = useExternalLink();
     await openExternal("https://example.com");
 
