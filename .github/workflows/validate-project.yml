@@ -24,8 +24,10 @@ jobs:
               - 'README.md'
               - '.github/workflows/validate-scoring.yml'
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Use Node.js
         if: steps.changes.outputs.sync_files == 'true'
