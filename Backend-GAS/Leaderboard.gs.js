@@ -321,6 +321,7 @@ function updateLeaderboard() {
     row[L.RAW_SCORE] = r.scores.raw;
     row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score
     row[L.TREND] = trend; // ✨ Raw Score Delta
+    row[L.AVG_WAR_FAME] = r.avgWarFame;
 
     rows.push(row);
   });
@@ -349,6 +350,7 @@ function updateLeaderboard() {
     "Raw Score",
     "Performance Score",
     "Trend",
+    "Average War Fame",
   ];
 
   lbSheet.clear();

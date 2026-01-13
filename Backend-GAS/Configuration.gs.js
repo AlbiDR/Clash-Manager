@@ -17,7 +17,7 @@ try {
   _PROPS = PropertiesService.getScriptProperties().getProperties();
 } catch (e) {
   console.warn(
-    "Could not fetch Script Properties (likely missing permissions). Defaulting to empty config."
+    "Could not fetch Script Properties (likely missing permissions). Defaulting to empty config.",
   );
 }
 
@@ -125,6 +125,7 @@ const CONFIG = {
       RAW_SCORE: 11,
       PERF_SCORE: 12,
       TREND: 13,
+      AVG_WAR_FAME: 14,
     },
   },
 

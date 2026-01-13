@@ -189,6 +189,7 @@ function refreshWebPayload() {
             "hist",
             "dt",
             "r",
+            "wfame",
           ],
           hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
         },
@@ -340,6 +341,7 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           const hist = sanitizeStr(r[SCHEMA.HISTORY]);
           const trend = sanitizeNum(r[SCHEMA.TREND]);
           const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
+          const wfame = sanitizeNum(r[SCHEMA.AVG_WAR_FAME]);
 
           return [
             id,
@@ -354,6 +356,7 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
             hist,
             trend,
             raw,
+            wfame,
           ];
         }
       } catch (err) {
