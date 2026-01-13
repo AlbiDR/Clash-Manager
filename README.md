@@ -20,8 +20,10 @@ The system is designed for high data integrity and low-latency interaction.
     subgraph "Cloud Core (Google Apps Script)"
         GAS["Backend Engine"]
         GS["Sheet Data Store"]
-        Scoring["ScoringSystem.gs"]
-        Recruiter["Recruiter.gs"]
+    end
+
+    subgraph "Cloud Worker (Cloud Run)"
+        Worker["Remote Worker"]
     end
 
     subgraph "Client Core (Vue 3 PWA)"
@@ -29,7 +31,8 @@ The system is designed for high data integrity and low-latency interaction.
         IDB[(IndexedDB Cache)]
     end
 
-    CRAPI -->|ETL| GAS
+    GAS -->|Bulk Fetch| Worker
+    Worker -->|Proxy| CRAPI
     GAS <--> GS
     GAS -->|Headless JSON| VueUI
     VueUI <--> IDB
@@ -37,6 +40,7 @@ The system is designed for high data integrity and low-latency interaction.
 ### Strategic Components
 
 - **Backend (GAS)**: Handles scheduled ETL, matrix normalization, and the canonical scoring algorithm.
+- **Backend Worker (Cloud Run)**: A high-concurrency proxy that offloads bulk URL fetching from the GAS environment to circumvent platform quotas.
 - **Client (Vite/Vue)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
 
 </details>
