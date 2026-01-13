@@ -23,7 +23,8 @@ const haptics = useHaptics();
 const wakeLock = useWakeLock();
 const { isDemoMode, toggleDemoMode } = useDemoMode();
 const { isHydrated, isRefreshing } = useClanData();
-const appVersion = (typeof __APP_VERSION__ !== 'undefined') ? __APP_VERSION__ : '0.0.0';
+const appVersion =
+  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
 const { status: unifiedStatus } = useConnectionStatus();
 
@@ -36,7 +37,7 @@ const apiStatusObject = computed(() => {
     return { type: "loading", text: "Syncing..." } as const;
   if (unifiedStatus.value === "success-resolve")
     return { type: "ready", text: "Verified" } as const;
-  
+
   return { type: "loading", text: "Connecting..." } as const;
 });
 
@@ -51,8 +52,33 @@ function handleThemeChange(newTheme: any) {
 import { useRegisterSW } from "virtual:pwa-register/vue";
 const { updateServiceWorker } = useRegisterSW();
 
+async function forceUpdate() {
+  haptics.heavy();
+  updateServiceWorker(true);
+}
+
+async function clearCache() {
+  haptics.medium();
+  if (
+    confirm(
+      "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
+    )
+  ) {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+      }
+    }
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    window.location.reload();
+  }
+}
+
 // Fix 23: Enhanced Factory Reset
 async function factoryReset() {
+  haptics.heavy();
   if (
     confirm(
       "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Data on the Google Sheet will NOT be affected.",
@@ -122,7 +148,11 @@ async function factoryReset() {
 
         <!-- TIER 2: Feature Toggles -->
         <div class="settings-tier tier-features">
-          <SettingsCard title="Extra Features" icon="lightning" :loading="isRefreshing">
+          <SettingsCard
+            title="Extra Features"
+            icon="lightning"
+            :loading="isRefreshing"
+          >
             <div class="features-list">
               <div class="toggle-row" @click="toggle('ghostBenchmarking')">
                 <div class="row-info">
@@ -132,10 +162,18 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Ghost Benchmarking</div>
-                    <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                    <div class="row-desc">
+                      Visualize clan averages inside stat tooltips
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: modules.ghostBenchmarking, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.ghostBenchmarking,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
@@ -148,10 +186,18 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Sorting Descriptions</div>
-                    <div class="row-desc">Explain the logic behind sorting heuristics</div>
+                    <div class="row-desc">
+                      Explain the logic behind sorting heuristics
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: modules.sortExplanation, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.sortExplanation,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
@@ -164,15 +210,27 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Portfolio Demo Mode</div>
-                    <div class="row-desc">Use mock data engine for technical showcase</div>
+                    <div class="row-desc">
+                      Use mock data engine for technical showcase
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: isDemoMode, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: isDemoMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
 
-              <div v-if="wakeLock.isSupported" class="toggle-row" @click="wakeLock.toggle()">
+              <div
+                v-if="wakeLock.isSupported"
+                class="toggle-row"
+                @click="wakeLock.toggle()"
+              >
                 <div class="row-info">
                   <template v-if="isRefreshing">
                     <div class="sk-text-line-m" style="width: 100px"></div>
@@ -180,17 +238,29 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Keep Screen On</div>
-                    <div class="row-desc">Prevent display sleep during clan management</div>
+                    <div class="row-desc">
+                      Prevent display sleep during clan management
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: wakeLock.isActive.value, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: wakeLock.isActive.value,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
             </div>
           </SettingsCard>
 
-          <SettingsCard title="Experiments" icon="flask" :loading="isRefreshing">
+          <SettingsCard
+            title="Experiments"
+            icon="flask"
+            :loading="isRefreshing"
+          >
             <div class="features-list">
               <div class="toggle-row" @click="toggle('blitzMode')">
                 <div class="row-info">
@@ -200,10 +270,18 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Blitz Mode</div>
-                    <div class="row-desc">Batch operations without confirmation dialogs</div>
+                    <div class="row-desc">
+                      Batch operations without confirmation dialogs
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: modules.blitzMode, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.blitzMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
@@ -216,7 +294,7 @@ async function factoryReset() {
         <!-- TIER 3: System & Advanced -->
         <div class="settings-tier tier-system">
           <NetworkSettings />
-          
+
           <!-- System Modules Removed -->
 
           <BackendRefresher v-if="modules.backendRefresher" />
@@ -227,21 +305,56 @@ async function factoryReset() {
         <!-- TIER 4: Danger Zone -->
         <div class="settings-tier tier-danger">
           <SettingsCard title="Troubleshooting" icon="undo">
-            <p class="trouble-text">If data sync is inconsistent, a local reset will re-initialize the app cache.</p>
-            <button class="reset-btn" @click="factoryReset">Reset Application Data</button>
+            <div class="trouble-list">
+              <div class="trouble-row" @click="forceUpdate" v-tactile>
+                <div class="row-icon">
+                  <Icon name="download_done" size="20" />
+                </div>
+                <div class="row-info">
+                  <div class="row-label">Force Update</div>
+                  <div class="row-desc">
+                    Bypass cache to fetch latest version
+                  </div>
+                </div>
+              </div>
+
+              <div class="trouble-row" @click="clearCache" v-tactile>
+                <div class="row-icon">
+                  <Icon name="layers_clear" size="20" />
+                </div>
+                <div class="row-info">
+                  <div class="row-label">Purge Assets</div>
+                  <div class="row-desc">Clear UI cache without losing data</div>
+                </div>
+              </div>
+
+              <div class="trouble-row danger" @click="factoryReset" v-tactile>
+                <div class="row-icon">
+                  <Icon name="restore" size="20" />
+                </div>
+                <div class="row-info">
+                  <div class="row-label">Factory Reset</div>
+                  <div class="row-desc">
+                    Full wipe of all local application data
+                  </div>
+                </div>
+              </div>
+            </div>
           </SettingsCard>
         </div>
       </template>
 
       <div class="footer-info">
-        <div class="brand" @click="haptics.heavy(); window.location.reload();" v-tactile>
+        <div
+          class="brand"
+          @click="
+            haptics.heavy();
+            window.location.reload();
+          "
+          v-tactile
+        >
           CLASH MANAGER V{{ appVersion }}
           <span v-if="isDemoMode" class="demo-tag">DEMO</span>
-        </div>
-        <div class="footer-actions">
-          <button class="footer-link" @click="updateServiceWorker(true)">Force Update</button>
-          <span class="v-divider-s"></span>
-          <button class="footer-link danger" @click="factoryReset">Kill Cache</button>
         </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
@@ -384,22 +497,37 @@ async function factoryReset() {
 }
 
 /* Recovery Styles */
-.trouble-text {
-  font-size: 13px;
-  opacity: 0.6;
-  line-height: 1.5;
-  margin-bottom: 16px;
+.trouble-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.reset-btn {
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--sys-color-surface-container-highest);
-  border: 1.5px solid rgba(0, 0, 0, 0.05);
-  font-weight: 800;
-  font-size: 14px;
-  color: var(--sys-color-on-surface);
+.trouble-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   cursor: pointer;
+  padding: 8px 0;
+  transition: opacity 0.2s;
+}
+.trouble-row:active {
+  opacity: 0.7;
+}
+.trouble-row.danger .row-icon {
+  color: var(--sys-color-error);
+}
+.trouble-row.danger .row-label {
+  color: var(--sys-color-error);
+}
+.row-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--sys-color-surface-container-high);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sys-color-primary);
 }
 
 .footer-info {
