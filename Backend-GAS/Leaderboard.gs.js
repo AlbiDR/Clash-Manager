@@ -277,6 +277,7 @@ function updateLeaderboard() {
       totalDonations,
       lastSeen,
       warRateVal,
+      avgWarFame,
       historyString,
       scores,
       cleanKey: m.tag.replace("#", "").trim().toLowerCase(),
