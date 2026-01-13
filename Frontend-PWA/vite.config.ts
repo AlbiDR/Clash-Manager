@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { visualizer } from "rollup-plugin-visualizer";
 import packageJson from "./package.json";
 
 export default defineConfig({
@@ -69,6 +70,14 @@ export default defineConfig({
         type: "module",
       },
     }),
+    ...(process.env.ANALYZE
+      ? [
+          visualizer({
+            filename: "dist/stats.html",
+            open: true,
+          }),
+        ]
+      : []),
   ],
   test: {
     globals: true,
