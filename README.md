@@ -53,10 +53,22 @@ The system is designed for high data integrity and low-latency interaction.
 
 ### 2. Client Setup
 
-```bash
-cd Frontend-PWA
-pnpm install
-```
+1.  **Navigate to the Frontend Directory**:
+    ```bash
+    cd Frontend-PWA
+    ```
+
+2.  **Install Dependencies**:
+    ```bash
+    pnpm install
+    ```
+
+3.  **Configure Environment**:
+    Create a `.env` file in the `Frontend-PWA/` directory.
+
+    ```env
+    VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+    ```
 
 ### 3. Automated PWA Deployment
 
