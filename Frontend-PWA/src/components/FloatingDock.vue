@@ -42,7 +42,7 @@ function goTo(targetPath: string) {
   router.push(targetPath);
 }
 
-// ⚡ RESPONSIVENESS: Move haptics to pointerdown for immediate "hardwired" feel
+// Trigger haptic feedback on pointerdown to minimize latency perception.
 function onInteractionStart() {
   haptics.tap();
 }
@@ -156,7 +156,7 @@ function handleFabDismiss() {
 <style scoped>
 .dock-container {
   position: fixed;
-  /* 🏗️ FIXED: Corrected env variable to safe-area-inset-bottom for accurate mobile layout */
+  /* Respect safe area insets for notched devices */
   bottom: calc(24px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
@@ -170,9 +170,9 @@ function handleFabDismiss() {
   gap: 4px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   z-index: 500;
-  /* ⚡ INTERACTION: manipulation prevents double-tap zoom delay */
+  /* Disable double-tap zoom delay */
   touch-action: manipulation;
-  /* ⚡ SNAPPY: Reduced duration (0.5s -> 0.3s) for much more responsive feel */
+  /* Optimize transition timing for responsiveness */
   transition:
     transform 0.3s cubic-bezier(0.2, 0, 0, 1),
     opacity 0.2s ease;
@@ -188,11 +188,13 @@ function handleFabDismiss() {
 .dock-container.fab-mode {
   padding: 8px;
   gap: 8px;
+  /* Prevent flex items from wrapping on smaller screens */
+  flex-wrap: nowrap;
 }
 
 .dock-item {
   position: relative;
-  /* 🎯 HIT TARGET: Increased vertical padding for better mobile reliability */
+  /* Ensure sufficient touch target size */
   padding: 12px 24px;
   border-radius: var(--shape-corner-full);
   display: flex;
@@ -211,7 +213,7 @@ function handleFabDismiss() {
   min-width: 64px;
 }
 
-/* ⚡ TACTILE: Immediate visual feedback on press */
+/* Active state feedback */
 .dock-item:active {
   transform: scale(0.92);
   background: rgba(var(--sys-color-primary-rgb), 0.1);
@@ -221,7 +223,7 @@ function handleFabDismiss() {
   color: var(--sys-color-on-primary);
 }
 
-/* Ensure active state doesn't jitter on the selected item */
+/* Maintain scale stability on active selected item */
 .dock-item.active:active {
   transform: scale(0.96);
   background: none;
@@ -254,13 +256,12 @@ function handleFabDismiss() {
 
 .dock-label {
   transition: opacity 0.3s;
-  /* 🏷️ LEGIBILITY: More weighted text for mobile glanceability */
   letter-spacing: -0.01em;
 }
 
 /* FAB Buttons */
 .fab-btn {
-  /* 🏗️ PROPORTIONS: Balanced padding for better mobile feel */
+  /* Maintain minimum height for touch targets */
   padding: 14px 24px;
   min-height: 52px;
   border-radius: var(--shape-corner-full);
@@ -277,6 +278,8 @@ function handleFabDismiss() {
     transform 0.15s cubic-bezier(0.2, 0, 0, 1),
     background 0.2s;
   color: var(--sys-color-on-surface);
+  /* Prevent text wrapping on constrained mobile viewports */
+  white-space: nowrap;
 }
 
 .fab-btn:active {
@@ -340,7 +343,7 @@ function handleFabDismiss() {
   .dock-item:not(.active) .dock-label {
     display: none;
   }
-  /* 🏗️ MOBILE FIX: Narrower padding to prevent overflow on small devices */
+  /* Reduce padding on small screens to prevent layout overflow */
   .dock-item {
     padding: 14px 16px;
     min-width: 56px;
@@ -349,7 +352,7 @@ function handleFabDismiss() {
     padding: 14px 24px;
     min-width: 100px;
   }
-  /* 🏷️ SETTINGS FIX: Ensure settings icon hit target is large even without label */
+  /* Ensure padding consistency for icon-only items like Settings */
   .dock-item[aria-label="Settings"] {
     padding: 14px 22px;
   }
