@@ -1,9 +1,28 @@
 import { config } from "@vue/test-utils";
+import { vi } from "vitest";
 
 // Global mocks or config
 config.global.mocks = {
   $t: (msg: string) => msg,
 };
+
+// 1. Fix JSDOM Navigation Error
+// JSDOM does not implement navigation. We mock it to prevent "Error: Not implemented: navigation"
+const mockSafeLocation = {
+  ...window.location,
+  assign: vi.fn(),
+  replace: vi.fn(),
+  reload: vi.fn(),
+};
+delete (window as any).location;
+window.location = mockSafeLocation as any;
+
+// 2. Fix Network Fetch Failures
+// Mock global fetch to prevent real network requests and retry loops in CI
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({}),
+});
 
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
