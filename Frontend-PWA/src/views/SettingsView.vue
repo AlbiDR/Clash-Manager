@@ -231,51 +231,6 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-            </div>
-          </SettingsCard>
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 3: Infrastructure -->
-        <div class="settings-tier tier-infrastructure">
-          <NetworkSettings />
-          <BackendRefresher v-if="modules.backendRefresher" />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 4: System & Recovery -->
-        <div class="settings-tier tier-system">
-          <SettingsCard title="System & Recovery" icon="gear">
-            <div class="features-list">
-              <!-- Experimental Blitz Mode -->
-              <div class="toggle-row" @click="toggle('blitzMode')">
-                <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 140px"></div>
-                    <div class="sk-text-line-s" style="width: 200px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label flex align-center gap-8">
-                      Blitz Mode
-                      <span class="exp-badge">EXP</span>
-                    </div>
-                    <div class="row-desc">
-                      Batch operations without confirmation (Broken)
-                    </div>
-                  </template>
-                </div>
-                <div
-                  class="switch"
-                  :class="{
-                    active: modules.blitzMode,
-                    'skeleton-anim sk-badge-s': isRefreshing,
-                  }"
-                >
-                  <div class="handle"></div>
-                </div>
-              </div>
 
               <!-- Portfolio Demo Mode Moved Here -->
               <div class="toggle-row" @click="toggleDemoMode">
@@ -302,41 +257,75 @@ async function factoryReset() {
                 </div>
               </div>
             </div>
+          </SettingsCard>
+        </div>
+
+        <div class="tier-divider" />
+
+        <!-- TIER 3: Infrastructure -->
+        <div class="settings-tier tier-infrastructure">
+          <NetworkSettings />
+          <BackendRefresher v-if="modules.backendRefresher" />
+        </div>
+
+        <div class="tier-divider" />
+
+        <!-- TIER 4: System & Recovery (EXPERIMENTAL) -->
+        <div class="settings-tier tier-system">
+          <SettingsCard title="System & Recovery" icon="gear">
+            <template #header-extra>
+              <span class="exp-badge">EXPERIMENTAL</span>
+            </template>
+
+            <div class="features-list">
+              <div class="toggle-row" @click="toggle('blitzMode')">
+                <div class="row-info">
+                  <template v-if="isRefreshing">
+                    <div class="sk-text-line-m" style="width: 140px"></div>
+                    <div class="sk-text-line-s" style="width: 200px"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label flex align-center gap-8">
+                      Blitz Mode
+                    </div>
+                    <div class="row-desc">
+                      Batch operations without confirmation (Broken)
+                    </div>
+                  </template>
+                </div>
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.blitzMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
+                  <div class="handle"></div>
+                </div>
+              </div>
+            </div>
 
             <div class="card-divider-s" />
 
-            <div class="trouble-list">
-              <div class="trouble-row" @click="forceUpdate" v-tactile>
-                <div class="row-icon">
-                  <Icon name="download_done" size="20" />
-                </div>
-                <div class="row-info">
-                  <div class="row-label">Force Update</div>
-                  <div class="row-desc">Fetch latest version immediately</div>
-                </div>
-              </div>
+            <div class="trouble-grid">
+              <button class="trouble-btn" @click="forceUpdate" v-tactile>
+                <Icon name="download_done" size="18" />
+                <span>Force Update</span>
+              </button>
 
-              <div class="trouble-row" @click="clearCache" v-tactile>
-                <div class="row-icon">
-                  <Icon name="layers_clear" size="20" />
-                </div>
-                <div class="row-info">
-                  <div class="row-label">Purge Assets</div>
-                  <div class="row-desc">Clear UI cache without losing data</div>
-                </div>
-              </div>
+              <button class="trouble-btn" @click="clearCache" v-tactile>
+                <Icon name="layers_clear" size="18" />
+                <span>Purge Assets</span>
+              </button>
 
-              <div class="trouble-row danger" @click="factoryReset" v-tactile>
-                <div class="row-icon">
-                  <Icon name="restore" size="20" />
-                </div>
-                <div class="row-info">
-                  <div class="row-label">Factory Reset</div>
-                  <div class="row-desc">
-                    Full wipe of all local application data
-                  </div>
-                </div>
-              </div>
+              <button
+                class="trouble-btn danger"
+                @click="factoryReset"
+                v-tactile
+              >
+                <Icon name="restore" size="18" />
+                <span>Factory Reset</span>
+              </button>
             </div>
           </SettingsCard>
         </div>
@@ -509,38 +498,36 @@ async function factoryReset() {
   color: var(--sys-color-primary);
 }
 
-/* Recovery Styles */
-.trouble-list {
+.trouble-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
-.trouble-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
-  padding: 8px 0;
-  transition: opacity 0.2s;
-}
-.trouble-row:active {
-  opacity: 0.7;
-}
-.trouble-row.danger .row-icon {
-  color: var(--sys-color-error);
-}
-.trouble-row.danger .row-label {
-  color: var(--sys-color-error);
-}
-.row-icon {
-  width: 40px;
-  height: 40px;
-  background: var(--sys-color-surface-container-high);
-  border-radius: 12px;
+.trouble-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  height: 44px;
+  background: var(--sys-color-surface-container-high);
+  border: none;
+  border-radius: 12px;
   color: var(--sys-color-primary);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.trouble-btn:active {
+  transform: scale(0.98);
+  opacity: 0.8;
+}
+.trouble-btn.danger {
+  color: var(--sys-color-error);
+}
+.trouble-btn i,
+.trouble-btn svg {
+  opacity: 0.8;
 }
 
 .footer-info {

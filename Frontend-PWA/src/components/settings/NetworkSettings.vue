@@ -54,7 +54,7 @@ function resetApiUrl() {
       </div>
       <span class="v-sep"></span>
       <div class="stat-item">
-        <span class="label">BE</span>
+        <span class="label">Backend</span>
         <template v-if="isChecking">
           <div class="sk-stat-value" style="width: 25px"></div>
         </template>
