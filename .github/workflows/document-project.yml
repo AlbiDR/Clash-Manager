@@ -26,6 +26,17 @@ permissions:
 jobs:
   document:
     name: Document
+    if: |
+      (github.event_name == 'pull_request' && (
+        contains(github.event.pull_request.labels.*.name, 'jules') || 
+        github.event.pull_request.user.type == 'Bot' ||
+        github.event.pull_request.user.login == 'github-actions[bot]'
+      )) ||
+      (github.event_name == 'push' && (
+        github.actor == 'github-actions[bot]' ||
+        github.event.pusher.name == 'github-actions[bot]'
+      )) ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
