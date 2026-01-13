@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   audit-and-merge:
-    name: Audit
+    name: Audit & Auto-Merge
     if: |
       (github.event_name == 'pull_request' && (
         contains(github.event.pull_request.labels.*.name, 'jules') || 
