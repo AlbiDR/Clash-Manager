@@ -17,18 +17,16 @@ const localStorageMock = {
 };
 Object.defineProperty(global, "localStorage", { value: localStorageMock });
 
-// Mock Zod (since inflatePayload uses it dynamically)
-vi.mock("zod", () => ({
-  z: {
-    object: () => ({
-      safeParse: () => ({
-        success: true,
-        data: { lb: [], hh: [], timestamp: 123 },
-      }),
-    }),
-    array: () => ({}),
-    any: () => ({}),
-  },
+// Mock Valibot (since inflatePayload uses it dynamically)
+vi.mock("valibot", () => ({
+  object: () => ({}),
+  array: () => ({}),
+  unknown: () => ({}),
+  number: () => ({}),
+  safeParse: () => ({
+    success: true,
+    data: { lb: [], hh: [], timestamp: 123 },
+  }),
 }));
 
 // Mock IDB
