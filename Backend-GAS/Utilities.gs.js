@@ -44,7 +44,7 @@ const Utils = {
 
       if (!success) {
         console.warn(
-          `🔒 RACE PREVENTED: Could not acquire lock for '${lockKey}'. System is busy.`
+          `🔒 RACE PREVENTED: Could not acquire lock for '${lockKey}'. System is busy.`,
         );
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         try {
@@ -88,7 +88,7 @@ const Utils = {
         return JSON.parse(raw);
       } catch (e) {
         console.warn(
-          `⚠️ Props: JSON Parse error for key '${key}'. Resetting to default.`
+          `⚠️ Props: JSON Parse error for key '${key}'. Resetting to default.`,
         );
         return defaultVal;
       }
@@ -100,7 +100,7 @@ const Utils = {
         // Check size limit (9KB per value)
         if (str.length > 9000) {
           console.warn(
-            `⚠️ Props: Value for '${key}' exceeds 9KB limit. Use setChunked instead.`
+            `⚠️ Props: Value for '${key}' exceeds 9KB limit. Use setChunked instead.`,
           );
           return false;
         }
@@ -108,7 +108,7 @@ const Utils = {
         return true;
       } catch (e) {
         console.error(
-          `⚠️ Props: JSON Stringify error for '${key}': ${e.message}`
+          `⚠️ Props: JSON Stringify error for '${key}': ${e.message}`,
         );
         return false;
       }
@@ -124,7 +124,7 @@ const Utils = {
         const simple = this._service.getProperty(baseKey);
         if (simple) {
           console.log(
-            `🧩 Props: Found legacy key for '${baseKey}'. Migrating on next save.`
+            `🧩 Props: Found legacy key for '${baseKey}'. Migrating on next save.`,
           );
           return JSON.parse(simple);
         }
@@ -149,7 +149,7 @@ const Utils = {
         return JSON.parse(fullString);
       } catch (e) {
         console.error(
-          `🧩 Props: Chunk read error for '${baseKey}': ${e.message}`
+          `🧩 Props: Chunk read error for '${baseKey}': ${e.message}`,
         );
         return defaultVal;
       }
@@ -188,7 +188,7 @@ const Utils = {
         return true;
       } catch (e) {
         console.error(
-          `🧩 Props: Chunk write error for '${baseKey}': ${e.message}`
+          `🧩 Props: Chunk write error for '${baseKey}': ${e.message}`,
         );
         return false;
       }
@@ -222,29 +222,16 @@ const Utils = {
       const today = new Date().toISOString().slice(0, 10);
       if (st && st.date === today) {
         _FETCH_COUNT = Number(st.count || 0);
-        _URLFETCH_DAILY_EXHAUSTED = Boolean(st.exhausted || false);
       } else {
-        // New day -> reset
         _FETCH_COUNT = 0;
-        _URLFETCH_DAILY_EXHAUSTED = false;
       }
-    } catch (e) {
-      // ignore state load errors
-    }
-
-    // Quick exit if platform already signaled daily UrlFetch exhaustion
-    if (_URLFETCH_DAILY_EXHAUSTED) {
-      console.warn(
-        `⚠️ URLFetch daily quota is marked exhausted for this execution. Skipping ${urls.length} fetches.`
-      );
-      return new Array(urls.length).fill(null);
-    }
+    } catch (e) {}
 
     // 1. Initialize Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
     if (!keyPool || keyPool.length === 0) {
       throw new Error(
-        "CRITICAL: No API Keys (CRK1-CRK10) found in Configuration."
+        "CRITICAL: No API Keys (CRK1-CRK10) found in Configuration.",
       );
     }
 
@@ -271,14 +258,14 @@ const Utils = {
     const remainingQuota = MAX_FETCH_PER_EXECUTION - _FETCH_COUNT;
     if (remainingQuota <= 0) {
       console.error(
-        `⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`
+        `⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`,
       );
       return finalResults;
     }
 
     if (urlsToFetch.length > remainingQuota) {
       console.warn(
-        `⚠️ Truncating fetch list from ${urlsToFetch.length} to ${remainingQuota} to avoid exceeding API budget.`
+        `⚠️ Truncating fetch list from ${urlsToFetch.length} to ${remainingQuota} to avoid exceeding API budget.`,
       );
       urlsToFetch = urlsToFetch.slice(0, remainingQuota);
     }
@@ -291,7 +278,6 @@ const Utils = {
       this.Props.setFetchState({
         date: today,
         count: _FETCH_COUNT,
-        exhausted: _URLFETCH_DAILY_EXHAUSTED,
       });
     } catch (e) {}
 
@@ -304,7 +290,7 @@ const Utils = {
       // If remote worker is configured but unhealthy, attempt a quick health check and fall back
       if (CONFIG.SYSTEM.REMOTE_WORKER_URL && !this.remoteWorkerHealthy()) {
         console.warn(
-          "⚠️ Remote worker configured but appears unhealthy. Falling back to local fetches for this batch."
+          "⚠️ Remote worker configured but appears unhealthy. Falling back to local fetches for this batch.",
         );
       }
 
@@ -358,20 +344,20 @@ const Utils = {
               if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
                 // If using remote worker, the worker manages key rotation.
                 console.warn(
-                  `⚠️ Remote worker reported ${code} for ${url}. Worker manages keys; will retry chunk.`
+                  `⚠️ Remote worker reported ${code} for ${url}. Worker manages keys; will retry chunk.`,
                 );
                 retryChunk = true;
               } else {
                 const badKeyVal = requests[i].headers["Authorization"].replace(
                   "Bearer ",
-                  ""
+                  "",
                 );
                 const keyObj = keyPool.find((k) => k.value === badKeyVal);
                 const keyName = keyObj ? keyObj.name : "Unknown Key";
                 console.warn(`⚠️ API ${code} on key ${keyName}. Removing.`);
                 keyPool = keyPool.filter((k) => k.value !== badKeyVal);
                 const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(
-                  (k) => k.value === badKeyVal
+                  (k) => k.value === badKeyVal,
                 );
                 if (gIdx > -1) CONFIG.SYSTEM.API_KEYS.splice(gIdx, 1);
                 retryChunk = true;
@@ -392,27 +378,15 @@ const Utils = {
             e &&
             e.message &&
             e.message.indexOf(
-              "Service invoked too many times for one day: urlfetch"
+              "Service invoked too many times for one day: urlfetch",
             ) > -1
           ) {
-            console.error(
-              `Fetch Network Error: URLFetch daily quota reached. Aborting remaining fetches.`
-            );
-            _URLFETCH_DAILY_EXHAUSTED = true;
-            // Persist exhaustion flag so future invocations can skip futile attempts
-            try {
-              const today = new Date().toISOString().slice(0, 10);
-              this.Props.setFetchState({
-                date: today,
-                count: _FETCH_COUNT,
-                exhausted: true,
-              });
-            } catch (err) {}
+            // Abort current batch but don't latch for the whole day
             return finalResults;
           }
 
           console.error(
-            `Fetch Network Error (Attempt ${attempt + 1}): ${e.message}`
+            `Fetch Network Error (Attempt ${attempt + 1}): ${e.message}`,
           );
           if (attempt < CONFIG.SYSTEM.RETRY_MAX - 1) Utilities.sleep(2000);
         }
@@ -447,7 +421,7 @@ const Utils = {
       };
       const res = UrlFetchApp.fetch(
         CONFIG.SYSTEM.REMOTE_WORKER_URL + "/fetch",
-        options
+        options,
       );
       const code = res.getResponseCode();
       if (code !== 200) throw new Error("Remote worker returned " + code);
@@ -485,7 +459,8 @@ const Utils = {
     const now = Date.now();
     try {
       const cached = this.Props.getJSON(CACHE_KEY, null);
-      if (cached && (now - cached.time) < 300000) { // 5 minutes
+      if (cached && now - cached.time < 300000) {
+        // 5 minutes
         _EXECUTION_CACHE.set("worker_health", cached.status);
         return cached.status;
       }
@@ -503,12 +478,14 @@ const Utils = {
           method: "get",
           muteHttpExceptions: true,
           headers: headers,
-        }
+        },
       );
       if (res.getResponseCode() === 200) {
         isHealthy = true;
       } else {
-        console.warn(`⚠️ Remote worker health check failed: ${res.getResponseCode()}`);
+        console.warn(
+          `⚠️ Remote worker health check failed: ${res.getResponseCode()}`,
+        );
       }
     } catch (e) {
       console.warn(`⚠️ Remote worker connection error: ${e.message}`);
@@ -545,7 +522,7 @@ const Utils = {
       cache.put(
         key + "_meta",
         JSON.stringify({ count: chunks.length }),
-        expirationSec
+        expirationSec,
       );
       cache.remove(key);
     },
@@ -613,7 +590,7 @@ const Utils = {
         ((date.getTime() - week1.getTime()) / 86400000 -
           3 +
           ((week1.getDay() + 6) % 7)) /
-          7
+          7,
       );
     const yearShort = date.getFullYear().toString().slice(-2);
     return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
@@ -679,7 +656,7 @@ const Utils = {
             // Fast Stringify comparison
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
               console.log(
-                `🛡️ Backup: Skipped for '${sheetName}' (Content matches Backup 1).`
+                `🛡️ Backup: Skipped for '${sheetName}' (Content matches Backup 1).`,
               );
               // Even if skipped, we MUST run the Global Hygiene logic to fix any sorting errors
               this.enforceGlobalTabHygiene(ss);
@@ -754,9 +731,9 @@ const Utils = {
     // 3. ENFORCE ORDER (1, 2, 3...)
     // We sort visible main tabs first, then hidden backup clusters.
     const ALL_SORT_ORDER = [...VISIBLE_WHITELIST];
-    
+
     // Add backup patterns for each main sheet (1-5)
-    VISIBLE_WHITELIST.forEach(baseName => {
+    VISIBLE_WHITELIST.forEach((baseName) => {
       for (let i = 1; i <= 5; i++) {
         ALL_SORT_ORDER.push(`Backup ${i} ${baseName}`);
       }
@@ -769,14 +746,14 @@ const Utils = {
         if (sheet.getIndex() !== targetIndex) {
           try {
             // Optimization: If sheet is hidden, we don't NEED to activate it to move it in modern GAS,
-            // but moveActiveSheet is more reliable across different environment states. 
+            // but moveActiveSheet is more reliable across different environment states.
             // However, setActiveSheet on a hidden sheet can be problematic.
             // Let's use the spreadsheet.moveSheet() method if available, or stay with moveActiveSheet safely.
-            ss.setActiveSheet(sheet); 
+            ss.setActiveSheet(sheet);
             ss.moveActiveSheet(targetIndex);
           } catch (e) {
             console.warn(
-              `Hygiene: Could not move '${name}' to ${targetIndex} - ${e.message}`
+              `Hygiene: Could not move '${name}' to ${targetIndex} - ${e.message}`,
             );
           }
         }
@@ -803,7 +780,7 @@ const Utils = {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle")
       .setNote(
-        '⚡ QUICK UPDATE:\nClick/Tap this checkbox to run the update for this specific tab.\n(Requires "Enable Mobile Controls" setup once).'
+        '⚡ QUICK UPDATE:\nClick/Tap this checkbox to run the update for this specific tab.\n(Requires "Enable Mobile Controls" setup once).',
       );
   },
 
@@ -822,7 +799,7 @@ const Utils = {
     sheet,
     contentRows,
     contentCols,
-    optHeaders = null
+    optHeaders = null,
   ) {
     if (!sheet) return;
 
@@ -887,7 +864,7 @@ const Utils = {
         STATUS_ROW,
         COL_DATA_START,
         1,
-        contentCols
+        contentCols,
       );
       statusRange
         .merge()
@@ -901,14 +878,14 @@ const Utils = {
         HEADER_ROW,
         COL_DATA_START,
         tableRows,
-        contentCols
+        contentCols,
       );
       const existingBandings = sheet.getBandings();
       if (existingBandings) existingBandings.forEach((b) => b.remove());
       tableRange.applyRowBanding(
         SpreadsheetApp.BandingTheme.LIGHT_GREY,
         true,
-        false
+        false,
       );
       tableRange.setBorder(true, true, true, true, null, null);
 
@@ -916,7 +893,7 @@ const Utils = {
         HEADER_ROW,
         COL_DATA_START,
         1,
-        contentCols
+        contentCols,
       );
       if (Array.isArray(optHeaders) && optHeaders.length > 0) {
         headerRange.setValues([optHeaders]);
@@ -933,7 +910,7 @@ const Utils = {
           DATA_START_ROW,
           COL_DATA_START,
           contentRows,
-          contentCols
+          contentCols,
         );
         dataRange
           .setHorizontalAlignment("center")
