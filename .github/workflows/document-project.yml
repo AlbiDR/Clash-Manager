@@ -20,7 +20,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   document:
@@ -61,6 +62,9 @@ jobs:
         if: steps.changes.outputs.docs == 'true'
         run: echo "Documentation changes detected. Validating formatting..."
 
-      - name: No-op Success
-        if: steps.changes.outputs.sync_files == 'false' && steps.changes.outputs.docs == 'false'
-        run: echo "No documentation or sync-critical files changed. Marking as success."
+      - name: Auto-Merge
+        if: success() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge --auto --merge --delete-branch "${{ github.event.pull_request.html_url }}"
