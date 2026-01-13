@@ -63,26 +63,26 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return parsedData as WebAppData;
   }
 
-  // ⚡ OPTIMIZATION: Only load Zod for validation on full remote syncs, not hydration
-  // Fix 6: Zod Import Retry
-  let z: any;
+  // ⚡ OPTIMIZATION: Only load Valibot for validation on full remote syncs, not hydration
+  // Fix 6: Valibot Import Retry
+  let v: any;
   try {
-     const mod = await import("zod");
-     z = mod.z;
-  } catch(e) {
-     console.warn("Zod load failed, retrying...");
-     await new Promise(r => setTimeout(r, 200));
-     const mod = await import("zod");
-     z = mod.z;
+    const mod = await import("valibot");
+    v = mod;
+  } catch (e) {
+    console.warn("Valibot load failed, retrying...");
+    await new Promise((r) => setTimeout(r, 200));
+    const mod = await import("valibot");
+    v = mod;
   }
 
-  const result = z
-    .object({
-      lb: z.array(z.array(z.unknown())),
-      hh: z.array(z.array(z.unknown())),
-      timestamp: z.number(),
-    })
-    .safeParse(parsedData);
+  const WebAppDataSchema = v.object({
+    lb: v.array(v.array(v.unknown())),
+    hh: v.array(v.array(v.unknown())),
+    timestamp: v.number(),
+  });
+  const result = v.safeParse(WebAppDataSchema, parsedData);
+
 
   if (!result.success) throw new Error("API Schema Mismatch");
 
@@ -265,16 +265,16 @@ export async function loadCache(): Promise<WebAppData | null> {
 }
 
 export async function fetchRemote(): Promise<WebAppData> {
-  // ⚡ PERFORMANCE: Start Zod library download in parallel with Network Request.
-  const zodPreload = import("zod");
+  // ⚡ PERFORMANCE: Start Valibot library download in parallel with Network Request.
+  const valibotPreload = import("valibot");
 
   // gasRequest already unwraps the { data: ... } envelope if it exists
   const data = await gasRequest<any>("getwebappdata");
   
   if (!data) throw new Error("Invalid response structure: No data returned");
 
-  // Ensure Zod is fully loaded before attempting inflation
-  await zodPreload;
+  // Ensure Valibot is fully loaded before attempting inflation
+  await valibotPreload;
 
   const inflated = await inflatePayload(data);
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
