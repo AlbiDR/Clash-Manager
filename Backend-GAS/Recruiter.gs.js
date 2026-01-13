@@ -140,7 +140,8 @@ function scoutRecruits() {
  */
 function updateAndGetBlacklist(sheet) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
+  const blSheet =
+    ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
   const now = Date.now();
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
 
@@ -149,7 +150,11 @@ function updateAndGetBlacklist(sheet) {
   if (blSheet.getLastRow() >= 1) {
     const rawData = blSheet.getDataRange().getValues();
     validEntries = rawData
-      .map((row) => ({ t: String(row[0]), e: Number(row[1]) || 0, s: Number(row[2]) || 0 }))
+      .map((row) => ({
+        t: String(row[0]),
+        e: Number(row[1]) || 0,
+        s: Number(row[2]) || 0,
+      }))
       .filter((entry) => entry.e > now);
   }
 
@@ -159,17 +164,23 @@ function updateAndGetBlacklist(sheet) {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
     const lastRow = sheet.getLastRow();
     const numRows = lastRow - startRow + 1;
-    
+
     // Fetch only the columns we need: Tag (B), Invited (C), Raw Score (J)
     // Map to relative indices for easier processing
     const tagValues = sheet.getRange(startRow, 2, numRows, 1).getValues();
-    const invitedValues = sheet.getRange(startRow, 2 + H.INVITED, numRows, 1).getValues();
-    const rawScoreValues = sheet.getRange(startRow, 2 + H.RAW_SCORE, numRows, 1).getValues();
+    const invitedValues = sheet
+      .getRange(startRow, 2 + H.INVITED, numRows, 1)
+      .getValues();
+    const rawScoreValues = sheet
+      .getRange(startRow, 2 + H.RAW_SCORE, numRows, 1)
+      .getValues();
 
     for (let i = 0; i < numRows; i++) {
       const tag = String(tagValues[i][0] || "").trim();
-      const isInvited = invitedValues[i][0] === true || String(invitedValues[i][0]).toUpperCase() === "TRUE";
-      
+      const isInvited =
+        invitedValues[i][0] === true ||
+        String(invitedValues[i][0]).toUpperCase() === "TRUE";
+
       if (tag && isInvited) {
         const raw = Number(rawScoreValues[i][0]) || 0;
         const existing = validEntries.find((v) => v.t === tag);
@@ -260,14 +271,25 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   // Decide scan depth based on remote worker availability and a user toggle
   const remoteAvailable = Utils.remoteWorkerHealthy();
-  const remoteExpandEnabled = Utils.Props.get('HH_REMOTE_EXPAND', '1') === '1';
-  const scanCfg = remoteAvailable && remoteExpandEnabled ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
+  const remoteExpandEnabled = Utils.Props.get("HH_REMOTE_EXPAND", "1") === "1";
+  const scanCfg =
+    remoteAvailable && remoteExpandEnabled
+      ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
+      : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
 
   const lotteryPool = Array.from(uniqueTourneys.values())
     .sort((a, b) => (b.capacity || 0) - (a.capacity || 0))
-    .slice(0, Math.min(scanCfg.TOURNEYS || 300, CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000));
+    .slice(
+      0,
+      Math.min(
+        scanCfg.TOURNEYS || 300,
+        CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000,
+      ),
+    );
   Utils.shuffleArray(lotteryPool);
-  const tourneyTags = lotteryPool.slice(0, scanCfg.TOURNEYS || 300).map((t) => t.tag);
+  const tourneyTags = lotteryPool
+    .slice(0, scanCfg.TOURNEYS || 300)
+    .map((t) => t.tag);
 
   console.log(
     `📡 Discovery: Deep-scanning ${tourneyTags.length} selected tournaments... (remote=${remoteAvailable}, expand=${remoteExpandEnabled})`,
@@ -304,7 +326,10 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     `👥 Filtering: Extracted ${candidates.length} clanless players. ${uniqueCandidates.size} unique above trophy threshold.`,
   );
 
-  const playerLimit = Math.min(CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000, scanCfg.PLAYERS || 250);
+  const playerLimit = Math.min(
+    CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000,
+    scanCfg.PLAYERS || 250,
+  );
   const candidatePool = Array.from(uniqueCandidates.values())
     .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
     .slice(0, playerLimit);
@@ -338,12 +363,17 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   if (validCandidates.length > 0) {
     // Determine which candidates need logs (only if not already scored by remote)
-    const candidatesToScoreLocally = validCandidates.filter(c => c.rawScore === undefined);
-    
+    const candidatesToScoreLocally = validCandidates.filter(
+      (c) => c.rawScore === undefined,
+    );
+
     if (candidatesToScoreLocally.length > 0) {
-      console.log(`📡 Local Scoring: Fetching battle logs for ${candidatesToScoreLocally.length} players...`);
+      console.log(
+        `📡 Local Scoring: Fetching battle logs for ${candidatesToScoreLocally.length} players...`,
+      );
       const logUrls = candidatesToScoreLocally.map(
-        (p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
+        (p) =>
+          `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
       );
       const logs = Utils.fetchRoyaleAPI(logUrls);
 
@@ -376,7 +406,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
           donations: p.totalDonations,
           cards: p.challengeCardsWon,
           war: totalWarScore,
-          foundDate: new Date(),
+          foundDate: new Date(), // Always fresh Date
           invited: false,
           rawScore: rawScore,
         };
@@ -384,12 +414,12 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     }
 
     // Map scored data
-    validCandidates.forEach(p => {
+    validCandidates.forEach((p) => {
       if (p.rawScore !== undefined) {
         p._computed = {
           ...p,
-          foundDate: new Date(),
-          invited: false
+          foundDate: new Date(), // Always fresh Date
+          invited: false,
         };
       }
     });
@@ -421,7 +451,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     c.donations,
     c.cards,
     c.war,
-    new Date(c.foundDate),
+    c.foundDate instanceof Date ? c.foundDate : new Date(c.foundDate),
     c.rawScore,
     c.perfScore,
   ]);
@@ -461,7 +491,7 @@ function renderHeadhunterView(sheet, list, baseline) {
         rows.length,
         1,
       )
-      .setNumberFormat("yyyy-mm-dd hh:mm:ss");
+      .setNumberFormat("yyyy-mm-dd HH:mm:ss"); // 24h format HH instead of hh
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMinpointWithValue(
         "#ffffff",
