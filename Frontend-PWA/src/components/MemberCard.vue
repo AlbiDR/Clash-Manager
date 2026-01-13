@@ -60,7 +60,6 @@ const trendInfo = computed(() => {
     raw: dt,
   };
 });
-
 </script>
 
 <template>
@@ -74,7 +73,6 @@ const trendInfo = computed(() => {
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
-
     <!-- SLOT: Meta Stack -->
     <template #identity-meta>
       <div
@@ -180,6 +178,12 @@ const trendInfo = computed(() => {
             <span class="value">{{ member.d.rate }}</span>
           </div>
           <div class="stat-item">
+            <span class="label">Avg Fame</span>
+            <span class="value">{{
+              (member.d.wfame || 0).toLocaleString()
+            }}</span>
+          </div>
+          <div class="stat-item">
             <span class="label">Last Seen</span>
             <span class="value">{{ member.d.seen }}</span>
           </div>
@@ -201,10 +205,7 @@ const trendInfo = computed(() => {
             <Icon name="analytics" size="16" />
             <span>RoyaleAPI</span>
           </button>
-          <button
-            @click="openInGame(member.id)"
-            class="btn-action primary"
-          >
+          <button @click="openInGame(member.id)" class="btn-action primary">
             <Icon name="crown" size="16" />
             <span>Open Game</span>
           </button>
