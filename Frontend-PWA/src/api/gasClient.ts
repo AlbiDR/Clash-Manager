@@ -73,7 +73,8 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   if (!result.success) throw new Error("API Schema Mismatch");
 
-  const { lb, hh, timestamp } = result.data;
+  // Valibot v1+ uses .output instead of .data for success result
+  const { lb, hh, timestamp } = result.output;
 
   // Strict bounds checking for matrix columns
   return {
