@@ -71,9 +71,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     } else if (total > 0) {
       if (isProcessing.value) {
         const current = total - queue.value.length + 1;
-        label = `Next (${current}/${total})`;
+        label = `Open (${current}/${total})`;
       } else {
-        label = `Open (${total})`;
+        label = `Open (1/${total})`;
       }
     } else {
       label = "Select";
