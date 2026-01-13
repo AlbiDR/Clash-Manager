@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useClanData } from "../composables/useClanData";
 import { useApiState } from "../composables/useApiState";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
+import { parseTimeAgoValue } from "../utils/formatters";
 import type { LeaderboardMember } from "../types";
 
 import MemberCard from "../components/MemberCard.vue";
@@ -34,6 +35,8 @@ const sortStrategies: Record<
   name: (a, b) => a.n.localeCompare(b.n),
   donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
   tenure: (a, b) => (b.d.days || 0) - (a.d.days || 0),
+  last_seen: (a, b) =>
+    parseTimeAgoValue(a.d.seen) - parseTimeAgoValue(b.d.seen),
 };
 
 const {
@@ -101,6 +104,11 @@ const sortOptions = [
     label: "Name",
     value: "name",
     desc: `**Alphabetical ordering** by display name.`,
+  },
+  {
+    label: "Last Seen",
+    value: "last_seen",
+    desc: `**Player activity timestamp** representing the elapsed time since the last detected in-game interaction.\n\n**Logic:**\nDirect pull from the most recent API snapshot. Values like "Just now" or "2h ago" indicate immediate presence, while longer durations suggest idling.\n\n**Utility:**\nCritical for identifying active contributors versus members who may be drifting away from engagement.`,
   },
 ];
 
