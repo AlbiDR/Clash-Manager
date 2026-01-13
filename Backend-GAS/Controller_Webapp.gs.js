@@ -353,10 +353,10 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
             avg,
             seen,
             rateDisplay,
+            wfame,
             hist,
             trend,
             raw,
-            wfame,
           ];
         }
       } catch (err) {
