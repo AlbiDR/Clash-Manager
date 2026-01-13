@@ -3,6 +3,9 @@ name: Deploy PWA
 on:
   push:
     branches: ["Stable", "Beta"]
+    paths:
+      - "Frontend-PWA/**"
+      - ".github/workflows/deploy-pwa.yml"
   workflow_dispatch:
 
 concurrency:
