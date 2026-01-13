@@ -14,7 +14,6 @@ permissions:
   contents: write
   pull-requests: write
 
-# This ensures all 'run' commands happen in the correct folder automatically
 defaults:
   run:
     working-directory: Frontend-PWA
@@ -34,7 +33,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          # Necessary if validation scripts are in the root but tests are in Frontend-PWA
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -47,7 +45,6 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
-          # Adjusted to point exactly to your lockfile
           cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
 
       - name: Install Dependencies
@@ -57,8 +54,7 @@ jobs:
         run: pnpm test
 
       - name: Project Validation
-        # We jump back to root just for this script since it's in /scripts/
-        working-directory: . 
+        working-directory: .
         run: |
           if [ -f scripts/validate_project.js ]; then
             node scripts/validate_project.js
