@@ -3,8 +3,20 @@ name: Document
 on:
   push:
     branches: ["Stable", "Beta"]
+    paths:
+      - "README.md"
+      - "docs/**"
+      - "**/*.md"
+      - "Backend-GAS/Configuration.gs.js"
+      - ".github/workflows/document-project.yml"
   pull_request:
     branches: ["Stable"]
+    paths:
+      - "README.md"
+      - "docs/**"
+      - "**/*.md"
+      - "Backend-GAS/Configuration.gs.js"
+      - ".github/workflows/document-project.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +40,7 @@ jobs:
               - '**/*.md'
             sync_files:
               - 'Backend-GAS/Configuration.gs.js'
-              - '.github/workflows/validate-scoring.yml'
+              - '.github/workflows/document-project.yml'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
