@@ -1,4 +1,4 @@
-name: Optimize Project
+name: Optimize
 
 on:
   pull_request:
