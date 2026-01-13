@@ -20,8 +20,8 @@ interface WakeLock {
 
 const isSupported = typeof navigator !== "undefined" && "wakeLock" in navigator;
 const isActive = ref(false);
-// Track user intent to persist lock across visibility changes. Default to TRUE.
-let shouldBeActive = true;
+// Track user intent to persist lock across visibility changes. Default to FALSE.
+let shouldBeActive = false;
 let wakeLockSentinel: WakeLockSentinel | null = null;
 
 async function request() {

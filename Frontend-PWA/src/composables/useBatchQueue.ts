@@ -1,6 +1,7 @@
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useToast } from "./useToast";
 import { useModules } from "./useModules";
+import { useExternalLink, buildDeepLink } from "./useExternalLink";
 
 interface BatchQueueOptions {
   throttleMs?: number;
@@ -13,7 +14,7 @@ interface BatchQueueOptions {
  * Memory safety: Ensures iframe and timer cleanup on unmount.
  */
 export function useBatchQueue(options: BatchQueueOptions = {}) {
-  const { throttleMs = 850, baseScheme = "clashroyale://playerInfo?id=" } = options;
+  const { throttleMs = 850 } = options;
 
   const selectedIds = ref<string[]>([]);
   const queue = ref<string[]>([]);
@@ -29,6 +30,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   const { error, info } = useToast();
   const { modules } = useModules();
+  const { openInGame } = useExternalLink();
 
   const isSelectionMode = computed(
     () => selectedIds.value.length > 0 || forceSelectionMode.value,
@@ -37,24 +39,18 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   const isTrusted = computed(() => {
     if (typeof navigator === "undefined") return false;
-    
-    // ⚡ Android Reliability: If we're on Android, we trust the intent system 
-    // to handle the fallback if NOT in TWA. This prevents the FAB from disappearing 
-    // when TWA signal is not detected but the user still wants to open players.
-    if (/android/i.test(navigator.userAgent)) return true;
-    
-    // Desktop/Dev is always trusted
+    // Always trust browser environment for standard PWA usage
     return true;
   });
 
   const fabState = computed(() => {
-    console.log('[useBatchQueue] fabState recompute:', {
+    console.log("[useBatchQueue] fabState recompute:", {
       isSelectionMode: isSelectionMode.value,
       selectedCount: selectedIds.value.length,
       selectedIds: selectedIds.value,
-      forceSelectionMode: forceSelectionMode.value
+      forceSelectionMode: forceSelectionMode.value,
     });
-    
+
     if (!isSelectionMode.value) {
       return {
         visible: false,
@@ -92,32 +88,39 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     const fabData = {
       visible: true,
       label,
-      actionHref: targetId ? `${baseScheme}${targetId}` : undefined,
+      actionHref: targetId ? buildDeepLink(targetId) : undefined,
       isProcessing: isProcessing.value,
       isBlasting: isBlasting.value,
       selectionCount: total,
       blitzEnabled: modules.blitzMode && isTrusted.value,
     };
-    
+
     // console.log('[useBatchQueue] FAB visible:', fabData);
     return fabData;
   });
 
   function toggleSelect(id: string) {
     // console.log('[useBatchQueue] toggleSelect called:', { id });
-    
+
     if (isProcessing.value || isBlasting.value) {
-      console.log('[useBatchQueue] toggleSelect blocked - processing or blasting');
+      console.log(
+        "[useBatchQueue] toggleSelect blocked - processing or blasting",
+      );
       return;
     }
-    
+
     const index = selectedIds.value.indexOf(id);
     if (index !== -1) {
       selectedIds.value.splice(index, 1);
-      console.log('[useBatchQueue] Deselected:', id, 'Remaining:', selectedIds.value);
+      console.log(
+        "[useBatchQueue] Deselected:",
+        id,
+        "Remaining:",
+        selectedIds.value,
+      );
     } else {
       selectedIds.value.push(id);
-      console.log('[useBatchQueue] Selected:', id, 'Total:', selectedIds.value);
+      console.log("[useBatchQueue] Selected:", id, "Total:", selectedIds.value);
     }
   }
 
@@ -138,60 +141,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * 💉 DEEP LINK IGNITION
    */
   let iframe: HTMLIFrameElement | null = null;
-  
-  function getIframe() {
-    if (iframe) return iframe;
-    iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    document.body.appendChild(iframe);
-    return iframe;
-  }
-
-  function fireDeepLink(url: string) {
-    const userAgent = navigator.userAgent;
-    const isAndroid = /android/i.test(userAgent);
-    const isTauri = typeof window.__TAURI__ !== 'undefined';
-    
-    if (isAndroid) {
-      // Extract player ID from clashroyale://playerInfo?id=XXXXXX
-      const match = url.match(/id=([A-Z0-9]+)/);
-      if (match && match[1]) {
-        const playerId = match[1];
-        
-        // Android Intent URI that will open Clash Royale app
-        // If app not installed, falls back to Play Store
-        const intentUrl = `intent://playerInfo?id=${playerId}#Intent;` +
-          `scheme=clashroyale;` +
-          `package=com.supercell.clashroyale;` +
-          `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
-          `end`;
-        
-        // In Tauri, we can directly navigate to the Intent URL
-        // The Android WebView will handle it properly
-        if (isTauri) {
-          window.location.href = intentUrl;
-          return;
-        }
-        
-        // Fallback: use iframe for browser/PWA
-        getIframe().src = intentUrl;
-        return;
-      }
-    }
-
-    // Fallback for non-Android or malformed URLs
-    const link = document.createElement("a");
-    link.href = url;
-    link.style.display = "none";
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-
-    setTimeout(() => {
-      if (link.parentNode) link.parentNode.removeChild(link);
-    }, 1000);
-  }
 
   function stopBlitz() {
     isBlasting.value = false;
@@ -212,8 +161,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
     const id = selectedIds.value[currentIndex.value];
     if (id) {
-      fireDeepLink(`${baseScheme}${id}`);
-      
+      openInGame(id);
+
       const delay = Math.max(throttleMs, 2000);
       if (currentIndex.value < selectedIds.value.length - 1) {
         blitzTimer = setTimeout(() => {
@@ -240,7 +189,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return;
     if (!isTrusted.value) {
-      error("TWA verification failed");
+      error("Environment verification failed");
       return;
     }
 
@@ -254,7 +203,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       e.preventDefault();
       const id = selectedIds.value[currentIndex.value];
       if (id) {
-        fireDeepLink(`${baseScheme}${id}`);
+        openInGame(id);
         currentIndex.value++;
 
         if (blitzTimer) {
@@ -274,6 +223,12 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
     if (queue.value.length === 0) {
       queue.value = [...selectedIds.value];
+    }
+
+    // ⚡ ACTION IGNITION
+    const id = queue.value[0];
+    if (id) {
+      openInGame(id);
     }
 
     setTimeout(() => {
@@ -308,7 +263,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     clearSelection,
     handleAction,
     handleBlitz,
-    setForceSelectionMode: (val: boolean) => { forceSelectionMode.value = val; },
+    setForceSelectionMode: (val: boolean) => {
+      forceSelectionMode.value = val;
+    },
   };
 }
-

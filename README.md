@@ -2,16 +2,17 @@
 
 [![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
-**Sovereign Clan Intelligence Engine.** A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as both a **Rust-powered Tauri 2.0 Native App** and a **Standalone Progressive Web App (PWA)** for desktop and browser-based workflows.
+**Sovereign Clan Intelligence Engine.** A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as a **Standalone Progressive Web App (PWA)** for desktop and browser-based workflows.
 
 ---
 
 ## 🏛️ Architecture
 
+<details>
+<summary>View System Diagram</summary>
+
 The system is designed for high data integrity and low-latency interaction.
 
-```mermaid
-flowchart TD
     subgraph "External Data"
         CRAPI["Clash Royale API"]
     end
@@ -23,30 +24,22 @@ flowchart TD
         Recruiter["Recruiter.gs"]
     end
 
-    subgraph "Native Client (Tauri 2.0)"
-        RustCore["Rust Entry Point"]
+    subgraph "Client Core (Vue 3 PWA)"
         VueUI["Vue 3 Frontend"]
         IDB[(IndexedDB Cache)]
-    end
-
-    subgraph "CI/CD & Distribution"
-        GA["GitHub Actions"]
-        APK["Android APK/AAB"]
     end
 
     CRAPI -->|ETL| GAS
     GAS <--> GS
     GAS -->|Headless JSON| VueUI
     VueUI <--> IDB
-    RustCore <--> VueUI
-    GA -->|Build & Sign| APK
-```
 
 ### Strategic Components
 
 - **Backend (GAS)**: Handles scheduled ETL, matrix normalization, and the canonical scoring algorithm.
-- **Client (Vite/Vue/Tauri)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
-- **Rust Core**: Provides native system hooks, deep-link handling, and crash diagnostics for the Android runtime.
+- **Client (Vite/Vue)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
+
+</details>
 
 ---
 
@@ -60,23 +53,33 @@ flowchart TD
 
 ### 2. Client Setup
 
-```bash
-cd Frontend-PWA
-npm ci
-npm run tauri android dev  # For local mobile tethering
-```
+1.  **Navigate to the Frontend Directory**:
+    ```bash
+    cd Frontend-PWA
+    ```
 
-### 3. Automated Android Deployment
+2.  **Install Dependencies**:
+    ```bash
+    pnpm install
+    ```
 
-The project uses a sophisticated GitHub Actions pipeline (`deploy-android.yml`) that:
+3.  **Configure Environment**:
+    Create a `.env` file in the `Frontend-PWA/` directory.
 
-- Increments Semantic Versioning based on commit analysis.
-- Authenticates and Signs the APK with dedicated keystores.
-- Generates categorization-aware changelogs in GitHub Releases.
+    ```env
+    VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+    ```
+
+### 3. Automated PWA Deployment
+
+The project uses a sophisticated GitHub Actions pipeline (`deploy-pwa.yml`) that deploys the application to GitHub Pages.
 
 ---
 
 ## ⚖️ The Performance Model
+
+<details>
+<summary>Explore the Scoring Algorithm</summary>
 
 The core value of Clash Manager is its multi-dimensional scoring algorithm (implemented in `ScoringSystem.gs.js`). It transforms raw metrics into a single, actionable **Performance Score**.
 
@@ -89,6 +92,8 @@ The core value of Clash Manager is its multi-dimensional scoring algorithm (impl
 | **War Rate**     |  `150x`   | Reliability & Participation  |
 
 > [!IMPORTANT] > **Exponential Decay**: Inactivity is penalized after a 4-day grace period using the formula: $Score \times 0.92^{\max(0, \text{Days Inactive} - 4)}$.
+
+</details>
 
 ---
 

@@ -1,4 +1,11 @@
 {
+  "compilerOptions": {
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "virtual:pwa-register/vue"
+    ]
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

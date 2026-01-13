@@ -1,27 +1,21 @@
 import { useToast } from "./useToast";
+import { cleanTag } from "../utils/formatters";
 
 /**
  * 🔗 USE EXTERNAL LINK
- * Centralized logic for opening external URLs.
- * Handles Tauri Shell API vs Standard Window handling.
+ * Centralized logic for opening external URLs and deep links.
  */
 export function useExternalLink() {
   const { error } = useToast();
 
   async function openExternal(url: string) {
     try {
-      // Check for Tauri environment
-      if (typeof window.__TAURI__ !== 'undefined') {
-        const { open } = await import('@tauri-apps/plugin-shell');
-        await open(url);
-        return;
-      }
-      
-      // Fallback: Standard Web/PWA
-      const win = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!win) {
-         // Pop-up blocker detection
-         console.warn("External link blocked or failed to open");
+      // 🚀 BROWSER / PWA FALLBACK:
+      // Note: On Android WebView, window.open with custom schemes often triggers ERR_UNKNOWN_URL_SCHEME.
+      // We prioritize the system browser for deep links if possible.
+      const newWindow = window.open(url, "_blank", "noopener,noreferrer");
+      if (!newWindow) {
+        console.warn("External link blocked or failed to open");
       }
     } catch (e) {
       console.error("Failed to open external link:", e);
@@ -29,7 +23,109 @@ export function useExternalLink() {
     }
   }
 
+  async function openInGame(tag: string) {
+    const id = cleanTag(tag);
+    if (!id) return;
+
+    console.log("[openInGame] Starting with tag:", tag, "cleaned:", id);
+
+    const userAgent = navigator.userAgent;
+    console.log("[openInGame] UserAgent:", userAgent);
+
+    const isAndroid = /android/i.test(userAgent);
+    console.log("[openInGame] Environment - Android:", isAndroid);
+
+    // STRATEGY: On Android (app or browser), ALWAYS use intent:// URLs
+    // They work reliably in both Tauri WebView and Chrome
+    if (isAndroid) {
+      const intentUrl =
+        `intent://playerInfo?id=${id}#Intent;` +
+        `scheme=clashroyale;` +
+        `package=com.supercell.clashroyale;` +
+        `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
+        `end`;
+      console.log(
+        "[openInGame] Android mode - using programmatic link click:",
+        intentUrl,
+      );
+
+      // NUCLEAR SOLUTION: Create a hidden anchor and click it programmatically
+      // This is the most reliable way to trigger intents in WebViews because:
+      // 1. It simulates a real user click
+      // 2. WebViews trust user-initiated navigation
+      // 3. It bypasses popup blockers and security restrictions
+      try {
+        const anchor = document.createElement("a");
+        anchor.href = intentUrl;
+        anchor.style.display = "none";
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+
+        // Add to DOM (required for some browsers)
+        document.body.appendChild(anchor);
+
+        // Programmatically click
+        console.log("[openInGame] Clicking hidden anchor");
+        anchor.click();
+
+        // Cleanup after a short delay
+        setTimeout(() => {
+          document.body.removeChild(anchor);
+          console.log("[openInGame] Anchor cleaned up");
+        }, 1000);
+
+        console.log("[openInGame] Intent triggered successfully");
+      } catch (err) {
+        console.error("[openInGame] Programmatic click failed:", err);
+        // Final fallback
+        console.log("[openInGame] Trying direct location.href as last resort");
+        window.location.href = intentUrl;
+      }
+      return;
+    }
+
+    // For iOS/Desktop: Try multiple fallbacks
+    const directUrl = `clashroyale://playerInfo?id=${id}`;
+
+    // Final fallback: Try direct window.location (works on iOS)
+    console.log("[openInGame] Fallback: using window.location.href");
+    try {
+      window.location.href = directUrl;
+    } catch (err) {
+      console.error("[openInGame] window.location failed:", err);
+      error("Failed to open game - app may not be installed");
+    }
+  }
+
   return {
-    openExternal
+    openExternal,
+    openInGame,
+    buildDeepLink,
   };
+}
+
+/**
+ * 🔗 BUILD DEEP LINK
+ * Generates the correct URL for Clash Royale based on platform.
+ */
+export function buildDeepLink(tag: string): string {
+  const id = cleanTag(tag);
+  if (!id) return "";
+
+  const isAndroid =
+    typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+
+  if (isAndroid) {
+    // 🚀 Android Intent protocol: Most reliable way to open apps from browser/Webview
+    return (
+      `intent://playerInfo?id=${id}#Intent;` +
+      `scheme=clashroyale;` +
+      `package=com.supercell.clashroyale;` +
+      `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
+      `end`
+    );
+  }
+
+  // Fallback for iOS/Desktop: Standard scheme
+  return `clashroyale://playerInfo?id=${id}`;
 }

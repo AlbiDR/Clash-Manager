@@ -12,6 +12,7 @@ const props = defineProps<{
   sortOptions?: { label: string; value: string; desc?: string }[];
   currentSort?: string;
   loading?: boolean;
+  reserveExtraSpace?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -213,7 +214,11 @@ function formatDescription(text: string) {
         </Transition>
       </Teleport>
 
-      <div v-if="$slots.extra" class="header-row extra">
+      <div
+        v-if="$slots.extra || reserveExtraSpace"
+        class="header-row extra"
+        :class="{ reserved: reserveExtraSpace }"
+      >
         <slot name="extra"></slot>
       </div>
     </div>
@@ -227,10 +232,12 @@ function formatDescription(text: string) {
   z-index: 100;
   padding: 12px 0;
   padding-top: calc(12px + env(safe-area-inset-top));
+  /* 🏗️ LAYOUT STABILITY: Fixed content-box prevents border/padding expansion */
+  box-sizing: content-box;
 }
 .header-wrapper.is-scrolled {
-  padding: 4px 0;
-  padding-top: calc(4px + env(safe-area-inset-top));
+  padding: 2px 0;
+  padding-top: calc(2px + env(safe-area-inset-top));
 }
 
 .console-glass {
@@ -268,6 +275,21 @@ function formatDescription(text: string) {
   width: 100%;
   gap: 12px;
   min-height: 48px;
+}
+.header-row.extra {
+  /* 🏗️ LAYOUT STABILITY: Reserved space perfectly matching SelectionBar footprint */
+  height: 44px;
+  min-height: 44px;
+  /* Removed margin-top: 14px; as gap: 14px handles it now */
+  padding-top: 6px; /* Adjusted from 10px to account for margin removal and center alignment */
+  border-top: 1px solid var(--sys-color-outline-variant);
+  transition: opacity 0.3s ease;
+  overflow: hidden;
+  align-items: center;
+}
+/* Hide the border if the row is actually empty and not reserved */
+.header-row.extra:empty:not(.reserved) {
+  display: none;
 }
 
 .left-cluster {

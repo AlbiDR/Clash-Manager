@@ -51,6 +51,7 @@ const haptics = useHaptics();
 
 // --- Pull to Refresh Logic ---
 const touchStartY = ref(0);
+const touchStartX = ref(0);
 const pullOffset = ref(0);
 const threshold = 120;
 const isPulling = ref(false);
@@ -65,6 +66,7 @@ let hapticFeedbackTriggered = false;
 function onTouchStart(e: TouchEvent) {
   if (window.scrollY > 0 || props.isRefreshing) return;
   touchStartY.value = e.touches[0].clientY;
+  touchStartX.value = e.touches[0].clientX;
   isPulling.value = true;
   hapticFeedbackTriggered = false;
 }
@@ -72,16 +74,21 @@ function onTouchStart(e: TouchEvent) {
 function onTouchMove(e: TouchEvent) {
   if (!isPulling.value) return;
   const currentY = e.touches[0].clientY;
-  const rawDiff = currentY - touchStartY.value;
-  
-  // Only allow pulling down
-  if (rawDiff <= 0) {
-    pullOffset.value = 0;
+  const currentX = e.touches[0].clientX; // Get current X position
+
+  const rawDiff = Math.max(0, currentY - touchStartY.value); // Only allow pulling down
+  const xDiff = Math.abs(currentX - touchStartX.value);
+
+  // 🛡️ PTR PROTECTION: Ignore if moving sideways more than down (prevents stutter on diagonal scroll)
+  if (xDiff > rawDiff * 0.5) {
+    pullOffset.value = 0; // Reset pullOffset if predominantly horizontal
+    isPulling.value = false; // Stop pulling
     return;
   }
 
   // Apply resistance (clamped logarithmic-like curve)
-  pullOffset.value = Math.pow(rawDiff, 0.85) * 2;
+  // ⚡ ANDROID OPTIMIZATION: More sensitive curve (0.85 -> 0.9) to allow easier pull
+  pullOffset.value = Math.pow(rawDiff, 0.9) * 2;
 
   // Haptic feedback when crossing threshold
   if (pullOffset.value >= threshold && !hapticFeedbackTriggered) {
@@ -170,6 +177,7 @@ onUnmounted(() => {
         :sort-options="sortOptions"
         :current-sort="currentSort"
         :loading="loading"
+        reserve-extra-space
         @update:search="(val: string) => $emit('update:search', val)"
         @update:sort="(val: string) => $emit('update:sort', val)"
         @refresh="$emit('refresh')"

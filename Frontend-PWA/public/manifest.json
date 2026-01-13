@@ -1,24 +1,25 @@
 {
   "name": "Clash Manager",
-  "short_name": "Clash Mgr",
+  "short_name": "Clash Manager",
   "description": "Professional recruitment and performance analytics dashboard for Clash Royale clan leaders.",
   "theme_color": "#0b0e14",
   "background_color": "#0b0e14",
   "display": "standalone",
-  "scope": "/",
-  "start_url": "/",
+  "scope": "./",
+  "start_url": "./#/leaderboard",
+  "id": "clash-manager-pwa",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "512x512",
+      "src": "logo.png",
+      "sizes": "192x192 512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "sizes": "192x192",
+      "src": "logo-maskable.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }

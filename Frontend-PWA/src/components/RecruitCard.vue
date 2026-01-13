@@ -32,7 +32,7 @@ const emit = defineEmits<{
 
 const { getBenchmark } = useBenchmarking();
 const { modules } = useModules();
-const { openExternal } = useExternalLink();
+const { openExternal, openInGame } = useExternalLink();
 
 function getTooltip(metric: string, value: number | undefined) {
   if (!modules.ghostBenchmarking || value === undefined) return null;
@@ -132,13 +132,13 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
             <Icon name="analytics" size="14" />
             <span>RoyaleAPI</span>
           </button>
-          <a
-            :href="`clashroyale://playerInfo?id=${recruit.id}`"
+          <button
+            @click="openInGame(recruit.id)"
             class="btn-action primary compact"
           >
             <Icon name="crown" size="14" />
             <span>Open Game</span>
-          </a>
+          </button>
         </template>
       </div>
     </template>

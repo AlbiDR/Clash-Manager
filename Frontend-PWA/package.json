@@ -12,24 +12,23 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run type-check && vite build",
+    "build": "pnpm run type-check && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "type-check": "vue-tsc --noEmit",
-    "tauri": "tauri"
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
-    "@tauri-apps/plugin-shell": "^2.3.4",
     "vue": "^3.5.24",
     "vue-router": "^4.6.3",
+    "workbox-precaching": "^7.4.0",
+    "workbox-window": "^7.4.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",
-    "@tauri-apps/cli": "latest",
     "@types/node": "^24.10.1",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-vue": "^6.0.1",
