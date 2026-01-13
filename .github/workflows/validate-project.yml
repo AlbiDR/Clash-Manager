@@ -1,16 +1,18 @@
-name: Validate Project
+name: Document
 
 on:
   push:
+    branches: ["Stable", "Beta"]
   pull_request:
+    branches: ["Stable"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate
+  document:
+    name: Document
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +22,12 @@ jobs:
         id: changes
         with:
           filters: |
+            docs:
+              - 'README.md'
+              - 'docs/**'
+              - '**/*.md'
             sync_files:
               - 'Backend-GAS/Configuration.gs.js'
-              - 'README.md'
               - '.github/workflows/validate-scoring.yml'
 
       - name: Setup pnpm
@@ -31,7 +36,7 @@ jobs:
           version: 10
 
       - name: Use Node.js
-        if: steps.changes.outputs.sync_files == 'true'
+        if: steps.changes.outputs.sync_files == 'true' || steps.changes.outputs.docs == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -40,6 +45,10 @@ jobs:
         if: steps.changes.outputs.sync_files == 'true'
         run: node scripts/validate_project.js
 
+      - name: Documentation Cleanup
+        if: steps.changes.outputs.docs == 'true'
+        run: echo "Documentation changes detected. Validating formatting..."
+
       - name: No-op Success
-        if: steps.changes.outputs.sync_files == 'false'
-        run: echo "No sync-critical files changed. Skipping validation but marking as success."
+        if: steps.changes.outputs.sync_files == 'false' && steps.changes.outputs.docs == 'false'
+        run: echo "No documentation or sync-critical files changed. Marking as success."
