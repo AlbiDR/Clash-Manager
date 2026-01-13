@@ -347,11 +347,11 @@ function updateLeaderboard() {
     "Total Donations",
     "Last Seen",
     "War Rate",
+    "Average War Fame",
     "War History",
     "Raw Score",
     "Performance Score",
     "Trend",
-    "Average War Fame",
   ];
 
   lbSheet.clear();

@@ -16,11 +16,12 @@ const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const getGasUrl = () => {
   let url = "";
   if (typeof localStorage !== "undefined") {
-    url = localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || "";
+    url =
+      localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || "";
   } else {
     url = import.meta.env.VITE_GAS_URL || "";
   }
-  
+
   if (url) url = url.trim();
 
   if (url && !url.startsWith("https://")) {
@@ -30,7 +31,7 @@ const getGasUrl = () => {
       url = `https://${url}`;
     }
   }
-  
+
   return url;
 };
 
@@ -91,10 +92,11 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
           avg: Number(r[6]),
           seen: r[7] ? String(r[7]) : null,
           rate: r[8] ? String(r[8]) : null,
-          hist: String(r[9]),
+          wfame: Number(r[9] ?? 0),
+          hist: String(r[10]),
         },
-        dt: Number(r[10] ?? 0),
-        r: Number(r[11] ?? 0),
+        dt: Number(r[11] ?? 0),
+        r: Number(r[12] ?? 0),
       };
     }),
     hh: hh.map((r: any) => {
@@ -131,11 +133,11 @@ async function fetchWithRetry(
 
     // We do NOT retry on 4xx (client errors) usually, but 429 (rate limit) is an exception.
     if (!response.ok) {
-       if (response.status >= 500 || response.status === 429) {
-         throw new Error(`HTTP ${response.status}`);
-       }
-       // For other errors (400, 401, 403), we return the response so the caller handles it
-       return response;
+      if (response.status >= 500 || response.status === 429) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      // For other errors (400, 401, 403), we return the response so the caller handles it
+      return response;
     }
     return response;
   } catch (e: any) {
@@ -147,7 +149,12 @@ async function fetchWithRetry(
   }
 }
 
-type GenericEnvelope<T> = ApiResponse<T> & { success?: boolean; status?: string; message?: string; error?: any };
+type GenericEnvelope<T> = ApiResponse<T> & {
+  success?: boolean;
+  status?: string;
+  message?: string;
+  error?: any;
+};
 
 async function gasRequest<T>(
   action: string,
@@ -185,16 +192,17 @@ async function gasRequest<T>(
     throw new Error("Invalid JSON Response");
   }
 
-  const isSuccess = 
-    envelope.success === true || 
-    (envelope.status && envelope.status.toLowerCase() === "success") || 
+  const isSuccess =
+    envelope.success === true ||
+    (envelope.status && envelope.status.toLowerCase() === "success") ||
     (envelope.data && !envelope.error);
 
   if (isSuccess) {
     return (envelope.data !== undefined ? envelope.data : envelope) as T;
   }
-  
-  const errorMessage = envelope.error?.message || envelope.message || "Unknown Backend Error";
+
+  const errorMessage =
+    envelope.error?.message || envelope.message || "Unknown Backend Error";
   throw new Error(errorMessage);
 }
 
@@ -207,7 +215,7 @@ export async function fetchRemote(): Promise<WebAppData> {
 
   // gasRequest will THROW if it fails, which satisfies expect(fetchRemote()).rejects...
   const data = await gasRequest<any>("getwebappdata");
-  
+
   if (!data) throw new Error("Invalid response structure");
 
   await valibotPreload;
