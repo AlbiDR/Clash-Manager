@@ -7,7 +7,7 @@ import {
 
 // Mock fetch global
 const fetchMock = vi.fn();
-global.fetch = fetchMock;
+vi.stubGlobal("fetch", fetchMock);
 
 // Mock localStorage
 const localStorageMock = {
@@ -15,7 +15,7 @@ const localStorageMock = {
   setItem: vi.fn(),
   clear: vi.fn(),
 };
-Object.defineProperty(global, "localStorage", { value: localStorageMock });
+vi.stubGlobal("localStorage", localStorageMock);
 
 // Mock Valibot (since inflatePayload uses it dynamically)
 vi.mock("valibot", () => ({
