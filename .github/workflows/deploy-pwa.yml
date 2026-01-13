@@ -5,7 +5,7 @@ on:
     branches: ["Stable", "Beta"]
     paths:
       - "Frontend-PWA/**"
-      - ".github/workflows/pwa-workflow.yml"
+      - ".github/workflows/deploy-pwa.yml"
   pull_request:
     branches: ["Stable"]
     types: [opened, synchronize, reopened]
@@ -61,26 +61,6 @@ jobs:
           else
             echo "⚠️ Validation script not found."
           fi
-
-  optimize:
-    name: Optimize
-    needs: verify
-    if: |
-      github.event_name == 'pull_request' && (
-        contains(github.event.pull_request.labels.*.name, 'jules') || 
-        github.event.pull_request.user.type == 'Bot' ||
-        github.event.pull_request.user.login == 'github-actions[bot]'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Auto-Merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr merge --auto --merge --delete-branch "${{ github.event.pull_request.html_url }}"
 
   deploy:
     name: Deploy
