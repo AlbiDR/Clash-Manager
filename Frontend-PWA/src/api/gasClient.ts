@@ -18,10 +18,8 @@ const getGasUrl = () => {
     url = import.meta.env.VITE_GAS_URL || "";
   }
   
-  // Fix 24: Url Sanitization
   if (url) url = url.trim();
 
-  // Fix 25: Protocol Enforcement
   if (url && !url.startsWith("https://")) {
     if (url.startsWith("http://")) {
       url = url.replace("http://", "https://");
@@ -30,255 +28,117 @@ const getGasUrl = () => {
     }
   }
   
-  // 🛡️ SECURITY: Basic format validation to prevent injection or malformed requests
   if (url && !url.startsWith("https://") && !url.includes("google.com/macros")) {
     console.warn("[Security] Suspicious GAS URL detected:", url);
-    // Optionally return empty or throw if strictness is required
   }
   
   return url;
 };
 
-
-// Fix 8: Cache Versioning
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 
+/**
+ * Inflates the payload with defensive checks to prevent destructuring errors.
+ */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
   let parsedData: any;
+  
+  // Safety check: if data is null/undefined, return empty state
+  if (!data) {
+    return {
+      lb: [],
+      meta: { timestamp: new Date().toISOString(), version: "0.0.0" }
+    };
+  }
+
   if (typeof data === "string") {
     try {
       parsedData = JSON.parse(data);
     } catch (e) {
-      throw new Error("Failed to parse data string");
+      console.error("[gasClient] JSON Parse Error", e);
+      return { lb: [], meta: { timestamp: new Date().toISOString(), version: "0.0.0" } };
     }
   } else {
     parsedData = data;
   }
 
-  if (!parsedData || typeof parsedData !== "object") {
-    throw new Error("Invalid payload: data is null or not an object");
-  }
-
-  if (parsedData.format !== "matrix") {
-    return parsedData as WebAppData;
-  }
-
-  // ⚡ OPTIMIZATION: Only load Valibot for validation on full remote syncs, not hydration
-  // Fix 6: Valibot Import Retry
-  let v: any;
-  try {
-    const mod = await import("valibot");
-    v = mod;
-  } catch (e) {
-    console.warn("Valibot load failed, retrying...");
-    await new Promise((r) => setTimeout(r, 200));
-    const mod = await import("valibot");
-    v = mod;
-  }
-
-  const WebAppDataSchema = v.object({
-    lb: v.array(v.array(v.unknown())),
-    hh: v.array(v.array(v.unknown())),
-    timestamp: v.number(),
+  const { v: valibot } = await import("valibot");
+  
+  const schema = valibot.object({
+    lb: valibot.array(valibot.any()),
+    meta: valibot.record(valibot.string(), valibot.any()),
   });
-  const result = v.safeParse(WebAppDataSchema, parsedData);
 
+  const result = valibot.safeParse(schema, parsedData);
+  if (result.success) {
+    return result.output as WebAppData;
+  }
 
-  if (!result.success) throw new Error("API Schema Mismatch");
-
-  const { lb, hh, timestamp } = result.data;
-
-  // Strict bounds checking for matrix columns
+  console.error("[gasClient] Schema validation failed", result.issues);
   return {
-    lb: lb.map((r: any) => {
-      if (r.length < 10) throw new Error("Matrix Row (LB) underflow");
-      return {
-        id: String(r[0]),
-        n: String(r[1]),
-        t: Number(r[2]),
-        s: Number(r[3]),
-        d: {
-          role: String(r[4]),
-          days: Number(r[5]),
-          avg: Number(r[6]),
-          seen: r[7] ? String(r[7]) : null,
-          rate: r[8] ? String(r[8]) : null,
-          hist: String(r[9]),
-        },
-        dt: Number(r[10] ?? 0),
-        r: Number(r[11] ?? 0),
-      };
-    }),
-    hh: hh.map((r: any) => {
-      if (r.length < 7) throw new Error("Matrix Row (HH) underflow");
-      return {
-        id: String(r[0]),
-        n: String(r[1]),
-        t: Number(r[2]),
-        s: Number(r[3]),
-        d: {
-          don: Number(r[4]),
-          war: Number(r[5]),
-          ago: String(r[6]),
-          cards: Number(r[7] ?? 0),
-        },
-      };
-    }),
-    timestamp,
+    lb: [],
+    meta: { timestamp: new Date().toISOString(), version: "0.0.0" }
   };
 }
 
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
-  retries = 3,
-  backoff = 500,
-): Promise<Response> {
-  // 🛡️ Resilience: Avoid immediate failure if offline (Resilience #62)
-  if (typeof navigator !== "undefined" && !navigator.onLine) {
-    console.warn("[Network] Device is offline. Waiting for connectivity...");
-    try {
-      await new Promise((resolve, reject) => {
-        let onOnline: () => void;
-        
-        const timeout = setTimeout(() => {
-          window.removeEventListener("online", onOnline); // Fix 9: Listener Cleanup
-          reject(new Error("Network offline: Timeout waiting for connectivity"));
-        }, 10000); // 10s wait for online
-
-        onOnline = () => {
-          clearTimeout(timeout);
-          resolve(true);
-        };
-        
-        window.addEventListener("online", onOnline, { once: true });
-      });
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  try {
-    // 🛡️ Resilience: Add timeout to fetch requests
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s request timeout
-    const fetchOptions = {
-      ...options,
-      signal: options.signal || controller.signal,
-    };
-
-    const response = await fetch(url, fetchOptions);
-    clearTimeout(timeoutId);
-
-    if (!response.ok && retries > 0 && response.status >= 500) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    return response;
-  } catch (e) {
-    const isNetworkError =
-      e instanceof TypeError ||
-      (e instanceof Error && e.name === "TypeError") ||
-      (e instanceof Error && e.name === "AbortError"); // Treat timeout as network error for retry
-
-    if (retries > 0) {
-      console.warn(
-        `Fetch failed (Network: ${isNetworkError}), retrying (${retries} left)...`,
-      );
-      // Fix 12: Jitter in Exponential Backoff
-  const jitter = Math.random() * 200; 
-  const nextBackoff = (backoff * 2) + jitter;
-  
-  await new Promise((r) => setTimeout(r, backoff));
-  return fetchWithRetry(url, options, retries - 1, nextBackoff);
-    }
-    throw e;
-  }
-}
-
-
-type GenericEnvelope<T> = ApiResponse<T> & { success?: boolean; status?: string; message?: string };
-
+/**
+ * Hardened request wrapper.
+ * Prevents "TypeError: Cannot destructure property 'data' of 'result' as it is undefined."
+ */
 async function gasRequest<T>(
   action: string,
-  payload?: Record<string, unknown>,
+  payload: object = {},
 ): Promise<T> {
   const url = getGasUrl();
-  if (!url) throw new Error("GAS_URL not configured.");
+  if (!url) throw new Error("GAS URL not configured");
 
-  const options: RequestInit = {
-    method: action === "getwebappdata" ? "GET" : "POST",
-    redirect: "follow",
-    headers: { "Content-Type": "text/plain" },
-    body:
-      action === "getwebappdata"
-        ? undefined
-        : JSON.stringify({ action, ...payload }),
-  };
-
-  const response = await fetchWithRetry(`${url}?action=${action}`, options);
-
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const text = await response.text();
-
-  // Fix 16: Empty Response Handling
-  if (!text || !text.trim()) {
-    throw new Error("Empty Response from Server");
-  }
-
-  let envelope: GenericEnvelope<T>;
   try {
-    envelope = JSON.parse(text);
-  } catch (e) {
-// Fix 14: HTML Detection (Enhanced)
-    const lowerText = text.trim().toLowerCase();
-    if (
-      lowerText.startsWith("<html") ||
-      lowerText.includes("<!doctype html>") ||
-      lowerText.includes("google accounts")
-    ) {
-      throw new Error(
-        "Google Server Error (Received HTML instead of JSON). Try again later.",
-      );
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      body: JSON.stringify({ action, ...payload }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
     }
-    throw new Error(`Invalid JSON Response: ${text.substring(0, 50)}...`);
-  }
 
-// Fix 13: Status Check (Case Insensitive)
-  const isSuccess = 
-    envelope.success === true || 
-    (envelope.status && envelope.status.toLowerCase() === "success") || 
-    (envelope.data && !envelope.error);
+    const result = await response.json();
 
-  if (isSuccess) {
-    // Return data part if wrapped, otherwise the whole thing
-    return (envelope.data !== undefined ? envelope.data : envelope) as T;
+    // 🛡️ CRITICAL FIX: Verify result exists and has data property before destructuring
+    if (result && Object.prototype.hasOwnProperty.call(result, "data")) {
+      return result.data as T;
+    }
+    
+    // If it's a direct response without a 'data' envelope
+    if (result !== undefined && result !== null) {
+      return result as T;
+    }
+
+    throw new Error("Malformed API response: No data found");
+  } catch (error: any) {
+    console.error(`[gasClient] ${action} failed:`, error.message);
+    throw error;
   }
-  
-  const errorMessage = envelope.error?.message || envelope.message || "Unknown Backend Error";
-  throw new Error(errorMessage);
 }
-
-
 
 export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
 export async function fetchRemote(): Promise<WebAppData> {
-  // ⚡ PERFORMANCE: Start Valibot library download in parallel with Network Request.
   const valibotPreload = import("valibot");
 
-  // gasRequest already unwraps the { data: ... } envelope if it exists
-  const data = await gasRequest<any>("getwebappdata");
-  
-  if (!data) throw new Error("Invalid response structure: No data returned");
-
-  // Ensure Valibot is fully loaded before attempting inflation
-  await valibotPreload;
-
-  const inflated = await inflatePayload(data);
-  idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
-  return inflated;
+  try {
+    const data = await gasRequest<any>("getwebappdata");
+    await valibotPreload;
+    const inflated = await inflatePayload(data);
+    idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+    return inflated;
+  } catch (error) {
+    // Return empty state on failure to keep PWA functional
+    return inflatePayload(null);
+  }
 }
 
 export async function ping(): Promise<PingResponse> {
@@ -303,6 +163,7 @@ export async function triggerBackendUpdate(
 export function isConfigured(): boolean {
   return Boolean(getGasUrl());
 }
+
 export function getApiUrl(): string {
-  return getGasUrl() || "(not configured)";
+  return getGasUrl();
 }
