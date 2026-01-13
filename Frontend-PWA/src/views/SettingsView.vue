@@ -190,7 +190,7 @@ async function factoryReset() {
         <!-- TIER 3: Intelligence & Logic -->
         <div class="settings-tier tier-intelligence">
           <SettingsCard
-            title="Visual Intelligence"
+            title="Application Features"
             icon="analytics"
             :loading="isRefreshing"
           >
@@ -218,15 +218,7 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-            </div>
-          </SettingsCard>
 
-          <SettingsCard
-            title="Process Optimization"
-            icon="filter"
-            :loading="isRefreshing"
-          >
-            <div class="features-list">
               <div class="toggle-row" @click="toggle('sortExplanation')">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -252,9 +244,14 @@ async function factoryReset() {
               </div>
             </div>
           </SettingsCard>
+        </div>
 
+        <div class="tier-divider" />
+
+        <!-- TIER 4: Laboratory & Showcase -->
+        <div class="settings-tier tier-laboratory">
           <SettingsCard
-            title="Execution Speed"
+            title="Experimental Laboratory"
             icon="flask"
             :loading="isRefreshing"
           >
@@ -282,20 +279,7 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-            </div>
-          </SettingsCard>
-        </div>
 
-        <div class="tier-divider" />
-
-        <!-- TIER 4: Environment & Recovery -->
-        <div class="settings-tier tier-recovery">
-          <SettingsCard
-            title="Technical Showcase"
-            icon="box"
-            :loading="isRefreshing"
-          >
-            <div class="features-list">
               <div class="toggle-row" @click="toggleDemoMode">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -321,7 +305,12 @@ async function factoryReset() {
               </div>
             </div>
           </SettingsCard>
+        </div>
 
+        <div class="tier-divider" />
+
+        <!-- TIER 5: Recovery -->
+        <div class="settings-tier tier-recovery">
           <SettingsCard title="Troubleshooting" icon="undo">
             <div class="trouble-list">
               <div class="trouble-row" @click="forceUpdate" v-tactile>
