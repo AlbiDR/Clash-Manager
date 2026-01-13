@@ -8,6 +8,9 @@
 
 ## 🏛️ Architecture
 
+<details>
+<summary>View System Diagram</summary>
+
 The system is designed for high data integrity and low-latency interaction.
 
     subgraph "External Data"
@@ -36,6 +39,8 @@ The system is designed for high data integrity and low-latency interaction.
 - **Backend (GAS)**: Handles scheduled ETL, matrix normalization, and the canonical scoring algorithm.
 - **Client (Vite/Vue)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
 
+</details>
+
 ---
 
 ## 🚀 Quick Start
@@ -61,6 +66,9 @@ The project uses a sophisticated GitHub Actions pipeline (`deploy-pwa.yml`) that
 
 ## ⚖️ The Performance Model
 
+<details>
+<summary>Explore the Scoring Algorithm</summary>
+
 The core value of Clash Manager is its multi-dimensional scoring algorithm (implemented in `ScoringSystem.gs.js`). It transforms raw metrics into a single, actionable **Performance Score**.
 
 | Metric           |  Factor   | Influence                    |
@@ -72,6 +80,8 @@ The core value of Clash Manager is its multi-dimensional scoring algorithm (impl
 | **War Rate**     |  `150x`   | Reliability & Participation  |
 
 > [!IMPORTANT] > **Exponential Decay**: Inactivity is penalized after a 4-day grace period using the formula: $Score \times 0.92^{\max(0, \text{Days Inactive} - 4)}$.
+
+</details>
 
 ---
 
