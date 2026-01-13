@@ -16,18 +16,6 @@ The heart of the Clash Manager interface. This is a high-performance Vue 3 appli
 
 ---
 
-## 🛠️ Development Lifecycle
-
-### Environment Configuration
-
-Create a `.env` in this directory:
-
-```env
-VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-```
-
----
-
 ## 🧪 Quality Assurance
 
 We maintain a 100% logic coverage goal for all business logic and reactive states.
