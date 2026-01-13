@@ -61,11 +61,11 @@ function handleFabDismiss() {
 </script>
 
 <template>
-  <div 
-    class="dock-container" 
-    :class="{ 
-      'fab-mode': !dockVisible, 
-      'hidden': !dockVisible && !fabState.selectionCount && !fabState.isBlasting 
+  <div
+    class="dock-container"
+    :class="{
+      'fab-mode': !dockVisible,
+      hidden: !dockVisible && !fabState.selectionCount && !fabState.isBlasting,
     }"
   >
     <!-- Navigation Dock Mode -->
@@ -92,13 +92,15 @@ function handleFabDismiss() {
       <!-- Dismiss Button (Always Visible) -->
       <button
         class="fab-btn danger"
-        :class="{ 'compact': fabState.isBlasting }"
+        :class="{ compact: fabState.isBlasting }"
         @click="handleFabDismiss"
         @pointerdown="onInteractionStart"
         :aria-label="fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
       >
         <Icon name="close" size="18" />
-        <span v-if="!fabState.selectionCount && !fabState.isBlasting">Clear</span>
+        <span v-if="!fabState.selectionCount && !fabState.isBlasting"
+          >Clear</span
+        >
       </button>
 
       <!-- Blasting State: Progress Indicator -->
@@ -107,7 +109,7 @@ function handleFabDismiss() {
           <div class="spinner-small"></div>
           <span class="blast-label">{{ fabState.label }}</span>
         </div>
-        
+
         <button
           class="fab-btn primary compact"
           @click="handleFabAction"
@@ -188,6 +190,8 @@ function handleFabDismiss() {
 .dock-container.fab-mode {
   padding: 8px;
   gap: 8px;
+  flex-direction: row;
+  align-items: center;
   /* Prevent flex items from wrapping on smaller screens */
   flex-wrap: nowrap;
 }
@@ -280,6 +284,7 @@ function handleFabDismiss() {
   color: var(--sys-color-on-surface);
   /* Prevent text wrapping on constrained mobile viewports */
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .fab-btn:active {
@@ -355,6 +360,28 @@ function handleFabDismiss() {
   /* Ensure padding consistency for icon-only items like Settings */
   .dock-item[aria-label="Settings"] {
     padding: 14px 22px;
+  }
+
+  /* FAB specific mobile adjustments to prevent wrapping */
+  .dock-container.fab-mode {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .fab-btn {
+    padding: 12px 16px;
+    min-height: 48px;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .fab-btn.compact {
+    padding: 12px;
+    min-width: 48px;
+  }
+
+  .blast-status {
+    min-width: 70px;
   }
 }
 </style>
