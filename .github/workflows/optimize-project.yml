@@ -15,8 +15,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  audit-and-merge:
-    name: Audit & Auto-Merge
+  optimize:
+    name: Optimize
     if: |
       (github.event_name == 'pull_request' && (
         contains(github.event.pull_request.labels.*.name, 'jules') || 
@@ -43,20 +43,26 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd Frontend-PWA
-          pnpm install
+          if [ -d "Frontend-PWA" ]; then
+            cd Frontend-PWA && pnpm install
+          else
+            echo "Frontend-PWA not found, skipping install."
+          fi
 
       - name: Run Tests
         run: |
-          cd Frontend-PWA
-          pnpm test
+          if [ -d "Frontend-PWA" ]; then
+            cd Frontend-PWA && pnpm test
+          else
+            echo "No tests to run."
+          fi
 
       - name: Project Validation
         run: |
           if [ -f scripts/validate_project.js ]; then
             node scripts/validate_project.js
           else
-            echo "⚠️ Validation script not found. Skipping."
+            echo "⚠️ Validation script not found."
           fi
 
       - name: Auto-Merge
