@@ -110,9 +110,9 @@ async function factoryReset() {
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
-        <!-- TIER 1: Interface & Experience -->
+        <!-- TIER 1: Interface & Display -->
         <div class="settings-tier tier-interface">
-          <SettingsCard title="Appearance" icon="gear">
+          <SettingsCard title="Appearance & Utility" icon="gear">
             <div class="theme-switch">
               <button
                 class="theme-btn"
@@ -139,17 +139,12 @@ async function factoryReset() {
                 <Icon name="moon" size="20" />
               </button>
             </div>
-          </SettingsCard>
 
-          <NotificationSettings />
-
-          <SettingsCard
-            v-if="wakeLock.isSupported"
-            title="Display Utility"
-            icon="lightning"
-            :loading="isRefreshing"
-          >
-            <div class="features-list">
+            <div
+              v-if="wakeLock.isSupported"
+              class="features-list"
+              style="margin-top: 24px"
+            >
               <div class="toggle-row" @click="wakeLock.toggle()">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -175,20 +170,14 @@ async function factoryReset() {
               </div>
             </div>
           </SettingsCard>
+
+          <NotificationSettings />
         </div>
 
         <div class="tier-divider" />
 
-        <!-- TIER 2: Infrastructure & Data -->
-        <div class="settings-tier tier-infrastructure">
-          <NetworkSettings />
-          <BackendRefresher v-if="modules.backendRefresher" />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 3: Intelligence & Logic -->
-        <div class="settings-tier tier-intelligence">
+        <!-- TIER 2: Application Features -->
+        <div class="settings-tier tier-features">
           <SettingsCard
             title="Application Features"
             icon="analytics"
@@ -248,14 +237,19 @@ async function factoryReset() {
 
         <div class="tier-divider" />
 
-        <!-- TIER 4: Laboratory & Showcase -->
-        <div class="settings-tier tier-laboratory">
-          <SettingsCard
-            title="Experimental Laboratory"
-            icon="flask"
-            :loading="isRefreshing"
-          >
+        <!-- TIER 3: Infrastructure -->
+        <div class="settings-tier tier-infrastructure">
+          <NetworkSettings />
+          <BackendRefresher v-if="modules.backendRefresher" />
+        </div>
+
+        <div class="tier-divider" />
+
+        <!-- TIER 4: System & Recovery -->
+        <div class="settings-tier tier-system">
+          <SettingsCard title="System & Recovery" icon="gear">
             <div class="features-list">
+              <!-- Experimental Blitz Mode -->
               <div class="toggle-row" @click="toggle('blitzMode')">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -263,9 +257,12 @@ async function factoryReset() {
                     <div class="sk-text-line-s" style="width: 200px"></div>
                   </template>
                   <template v-else>
-                    <div class="row-label">Blitz Mode</div>
+                    <div class="row-label flex align-center gap-8">
+                      Blitz Mode
+                      <span class="exp-badge">EXP</span>
+                    </div>
                     <div class="row-desc">
-                      Batch operations without confirmation dialogs
+                      Batch operations without confirmation (Broken)
                     </div>
                   </template>
                 </div>
@@ -280,6 +277,7 @@ async function factoryReset() {
                 </div>
               </div>
 
+              <!-- Portfolio Demo Mode Moved Here -->
               <div class="toggle-row" @click="toggleDemoMode">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -304,14 +302,9 @@ async function factoryReset() {
                 </div>
               </div>
             </div>
-          </SettingsCard>
-        </div>
 
-        <div class="tier-divider" />
+            <div class="card-divider-s" />
 
-        <!-- TIER 5: Recovery -->
-        <div class="settings-tier tier-recovery">
-          <SettingsCard title="Troubleshooting" icon="undo">
             <div class="trouble-list">
               <div class="trouble-row" @click="forceUpdate" v-tactile>
                 <div class="row-icon">
@@ -319,9 +312,7 @@ async function factoryReset() {
                 </div>
                 <div class="row-info">
                   <div class="row-label">Force Update</div>
-                  <div class="row-desc">
-                    Bypass cache to fetch latest version
-                  </div>
+                  <div class="row-desc">Fetch latest version immediately</div>
                 </div>
               </div>
 
@@ -447,6 +438,21 @@ async function factoryReset() {
 .row-desc {
   font-size: 13px;
   opacity: 0.6;
+}
+.exp-badge {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--sys-color-primary);
+  background: var(--sys-color-surface-container-highest);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.card-divider-s {
+  height: 1.5px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.1;
+  margin: 20px 0;
 }
 .switch {
   width: 44px;
