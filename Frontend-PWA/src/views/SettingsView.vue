@@ -110,8 +110,8 @@ async function factoryReset() {
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
-        <!-- TIER 1: Core User Settings -->
-        <div class="settings-tier tier-core">
+        <!-- TIER 1: Interface & Experience -->
+        <div class="settings-tier tier-interface">
           <SettingsCard title="Appearance" icon="gear">
             <div class="theme-switch">
               <button
@@ -142,15 +142,56 @@ async function factoryReset() {
           </SettingsCard>
 
           <NotificationSettings />
+
+          <SettingsCard
+            v-if="wakeLock.isSupported"
+            title="Display Utility"
+            icon="lightning"
+            :loading="isRefreshing"
+          >
+            <div class="features-list">
+              <div class="toggle-row" @click="wakeLock.toggle()">
+                <div class="row-info">
+                  <template v-if="isRefreshing">
+                    <div class="sk-text-line-m" style="width: 100px"></div>
+                    <div class="sk-text-line-s" style="width: 180px"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Keep Screen On</div>
+                    <div class="row-desc">
+                      Prevent display sleep during clan management
+                    </div>
+                  </template>
+                </div>
+                <div
+                  class="switch"
+                  :class="{
+                    active: wakeLock.isActive.value,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
+                  <div class="handle"></div>
+                </div>
+              </div>
+            </div>
+          </SettingsCard>
         </div>
 
         <div class="tier-divider" />
 
-        <!-- TIER 2: Feature Toggles -->
-        <div class="settings-tier tier-features">
+        <!-- TIER 2: Infrastructure & Data -->
+        <div class="settings-tier tier-infrastructure">
+          <NetworkSettings />
+          <BackendRefresher v-if="modules.backendRefresher" />
+        </div>
+
+        <div class="tier-divider" />
+
+        <!-- TIER 3: Intelligence & Logic -->
+        <div class="settings-tier tier-intelligence">
           <SettingsCard
-            title="Extra Features"
-            icon="lightning"
+            title="Visual Intelligence"
+            icon="analytics"
             :loading="isRefreshing"
           >
             <div class="features-list">
@@ -177,7 +218,15 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
+            </div>
+          </SettingsCard>
 
+          <SettingsCard
+            title="Process Optimization"
+            icon="filter"
+            :loading="isRefreshing"
+          >
+            <div class="features-list">
               <div class="toggle-row" @click="toggle('sortExplanation')">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -201,63 +250,11 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-
-              <div class="toggle-row" @click="toggleDemoMode">
-                <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 160px"></div>
-                    <div class="sk-text-line-s" style="width: 220px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Portfolio Demo Mode</div>
-                    <div class="row-desc">
-                      Use mock data engine for technical showcase
-                    </div>
-                  </template>
-                </div>
-                <div
-                  class="switch"
-                  :class="{
-                    active: isDemoMode,
-                    'skeleton-anim sk-badge-s': isRefreshing,
-                  }"
-                >
-                  <div class="handle"></div>
-                </div>
-              </div>
-
-              <div
-                v-if="wakeLock.isSupported"
-                class="toggle-row"
-                @click="wakeLock.toggle()"
-              >
-                <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 100px"></div>
-                    <div class="sk-text-line-s" style="width: 180px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Keep Screen On</div>
-                    <div class="row-desc">
-                      Prevent display sleep during clan management
-                    </div>
-                  </template>
-                </div>
-                <div
-                  class="switch"
-                  :class="{
-                    active: wakeLock.isActive.value,
-                    'skeleton-anim sk-badge-s': isRefreshing,
-                  }"
-                >
-                  <div class="handle"></div>
-                </div>
-              </div>
             </div>
           </SettingsCard>
 
           <SettingsCard
-            title="Experiments"
+            title="Execution Speed"
             icon="flask"
             :loading="isRefreshing"
           >
@@ -291,19 +288,40 @@ async function factoryReset() {
 
         <div class="tier-divider" />
 
-        <!-- TIER 3: System & Advanced -->
-        <div class="settings-tier tier-system">
-          <NetworkSettings />
+        <!-- TIER 4: Environment & Recovery -->
+        <div class="settings-tier tier-recovery">
+          <SettingsCard
+            title="Technical Showcase"
+            icon="box"
+            :loading="isRefreshing"
+          >
+            <div class="features-list">
+              <div class="toggle-row" @click="toggleDemoMode">
+                <div class="row-info">
+                  <template v-if="isRefreshing">
+                    <div class="sk-text-line-m" style="width: 160px"></div>
+                    <div class="sk-text-line-s" style="width: 220px"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Portfolio Demo Mode</div>
+                    <div class="row-desc">
+                      Use mock data engine for technical showcase
+                    </div>
+                  </template>
+                </div>
+                <div
+                  class="switch"
+                  :class="{
+                    active: isDemoMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
+                  <div class="handle"></div>
+                </div>
+              </div>
+            </div>
+          </SettingsCard>
 
-          <!-- System Modules Removed -->
-
-          <BackendRefresher v-if="modules.backendRefresher" />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 4: Danger Zone -->
-        <div class="settings-tier tier-danger">
           <SettingsCard title="Troubleshooting" icon="undo">
             <div class="trouble-list">
               <div class="trouble-row" @click="forceUpdate" v-tactile>
