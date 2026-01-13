@@ -1,9 +1,15 @@
 name: Optimize
 
 on:
+  push:
+    branches: [Stable, Beta]
+    paths:
+      - "Frontend-PWA/**"
   pull_request:
     branches: [Stable]
     types: [opened, synchronize, reopened]
+    paths:
+      - "Frontend-PWA/**"
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +32,10 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'jules') || 
         github.event.pull_request.user.type == 'Bot' ||
         github.event.pull_request.user.login == 'github-actions[bot]'
+      )) ||
+      (github.event_name == 'push' && (
+        github.actor == 'github-actions[bot]' ||
+        github.event.pusher.name == 'github-actions[bot]'
       )) ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
