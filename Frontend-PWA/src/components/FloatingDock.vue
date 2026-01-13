@@ -148,7 +148,9 @@ function handleFabDismiss() {
           :aria-label="fabState.label || 'Open'"
         >
           <Icon name="check" size="18" />
-          <span>{{ fabState.label || "Open" }}</span>
+          <Transition name="fade-fast" mode="out-in">
+            <span :key="fabState.label">{{ fabState.label || "Open" }}</span>
+          </Transition>
         </button>
       </template>
     </template>
@@ -285,6 +287,7 @@ function handleFabDismiss() {
   /* Prevent text wrapping on constrained mobile viewports */
   white-space: nowrap;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .fab-btn:active {
@@ -342,6 +345,15 @@ function handleFabDismiss() {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.fade-fast-enter-active,
+.fade-fast-leave-active {
+  transition: opacity 0.1s ease;
+}
+.fade-fast-enter-from,
+.fade-fast-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 480px) {

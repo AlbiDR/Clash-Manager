@@ -73,7 +73,7 @@ describe("useBatchQueue", () => {
     // A should be shifted out, B should be next
     expect(queue.value).toEqual(["B"]);
     expect(fabState.value.actionHref).toContain("id=B");
-    expect(fabState.value.label).toContain("Next (2/2)");
+    expect(fabState.value.label).toContain("Open (2/2)");
 
     // Simulate Click Action (Open B)
     handleAction(mockEvent);
