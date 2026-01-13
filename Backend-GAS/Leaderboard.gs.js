@@ -41,7 +41,7 @@ function updateLeaderboard() {
         .getValues();
 
       const tagIdx = L.TAG;
-      const scoreIdx = L.RAW_SCORE; // ✨ CHANGED BACK: Tracking Raw Score (Index 11)
+      const scoreIdx = L.RAW_SCORE; // ✨ Tracking Raw Score (Index 12)
 
       oldData.forEach((row) => {
         // Safe read: check if column exists in this row data
