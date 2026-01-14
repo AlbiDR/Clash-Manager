@@ -3,10 +3,12 @@ import { computed } from "vue";
 import { useClanData } from "../composables/useClanData";
 import { useApiState } from "../composables/useApiState";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
+import { useExhibitionMode } from "../composables/useExhibitionMode";
 import { parseTimeAgoValue } from "../utils/formatters";
 import type { LeaderboardMember } from "../types";
 
 import MemberCard from "../components/MemberCard.vue";
+import SkeletonCard from "../components/SkeletonCard.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
 const { pingData } = useApiState();
@@ -20,6 +22,7 @@ const sheetUrl = computed(() => {
     : pingData.value.spreadsheetUrl;
 });
 
+const { isExhibitionMode } = useExhibitionMode();
 const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } =
   useClanData();
 // Ensure we pass a Ref<LeaderboardMember[]>
@@ -170,5 +173,8 @@ function handleSearch(val: string) {
       @toggle="toggleExpand(member.id)"
       @toggle-select="toggleSelect(member.id)"
     />
+    <template v-if="isExhibitionMode">
+      <SkeletonCard v-for="i in 7" :key="i" :style="{ '--i': i + 1 }" />
+    </template>
   </ConsoleLayout>
 </template>
