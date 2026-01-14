@@ -326,8 +326,7 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-            </div>
-          </SettingsCard>
+            </SettingsCard>
         </div>
 
         <div class="tier-divider" />
