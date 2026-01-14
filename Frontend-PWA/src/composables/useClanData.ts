@@ -54,15 +54,9 @@ export function useClanData() {
   async function startBackgroundSync() {
     if (isExhibitionMode.value) {
       const mock = generateMockData();
-      updateBadgeCount(mock); // Update with full count first
-      // In Exhibition, show only the first member
-      const exhibitionMock = JSON.parse(JSON.stringify(mock)); // Deep copy
-      if (exhibitionMock.lb.length > 0)
-        exhibitionMock.lb = [exhibitionMock.lb[0]];
-      if (exhibitionMock.hh.length > 0)
-        exhibitionMock.hh = [exhibitionMock.hh[0]];
-      clanData.value = exhibitionMock;
-      lastSyncTime.value = exhibitionMock.timestamp;
+      updateBadgeCount(mock);
+      clanData.value = mock;
+      lastSyncTime.value = mock.timestamp;
       return;
     }
 

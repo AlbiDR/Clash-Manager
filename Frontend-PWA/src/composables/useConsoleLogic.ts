@@ -51,7 +51,16 @@ export function useConsoleLogic<T extends { id: string }>(
 
   // 2. Progressive Rendering (Batch size 8 matches skeletons)
   // ⚡ PERFORMANCE: Only render what's needed initially
-  const { visibleItems } = useProgressiveList(filteredItems, 8);
+  const { visibleItems: allVisibleItems } = useProgressiveList(
+    filteredItems,
+    8,
+  );
+  const visibleItems = computed(() => {
+    if (useExhibitionMode().isExhibitionMode.value) {
+      return allVisibleItems.value.slice(0, 1);
+    }
+    return allVisibleItems.value;
+  });
 
   // 3. Batch Actions / Selection
   const {
@@ -142,6 +151,7 @@ export function useConsoleLogic<T extends { id: string }>(
   const { isExhibitionMode } = useExhibitionMode();
   const showSkeletons = computed(() => {
     if (isBlueprintMode.value) return true;
+    if (isExhibitionMode.value) return false;
     // Original logic
     return (
       !syncError.value &&
