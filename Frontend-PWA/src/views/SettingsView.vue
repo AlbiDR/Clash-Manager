@@ -242,10 +242,8 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-            </div>
-          </SettingsCard>
 
-              <!-- Portfolio Demo Mode Moved Here -->
+              <!-- Portfolio Demo Mode -->
               <div
                 class="toggle-row"
                 :class="{ disabled: isExhibitionMode }"
@@ -273,6 +271,7 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
+
               <!-- Blueprint Mode -->
               <div
                 class="toggle-row"
@@ -326,7 +325,8 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-            </SettingsCard>
+            </div>
+          </SettingsCard>
         </div>
 
         <div class="tier-divider" />
