@@ -13,6 +13,8 @@ A high-precision, production-grade toolkit for elite Clash Royale clan leadershi
 
 The system is designed for high data integrity and low-latency interaction.
 
+```mermaid
+graph TD
     subgraph "External Data"
         CRAPI["Clash Royale API"]
     end
@@ -36,6 +38,7 @@ The system is designed for high data integrity and low-latency interaction.
     GAS <--> GS
     GAS -->|Headless JSON| VueUI
     VueUI <--> IDB
+```
 
 ### Strategic Components
 
