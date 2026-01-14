@@ -242,32 +242,33 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
+            </div>
+          </SettingsCard>
+        </div>
 
-              <!-- Portfolio Demo Mode -->
+        <div class="tier-divider" />
+
+        <!-- TIER 2.5: Display Preferences -->
+        <div class="settings-tier tier-display">
+          <SettingsCard
+            title="Display Preferences"
+            icon="visibility"
+            :loading="isRefreshing"
+          >
+            <div class="features-list">
+              <!-- Demo Mode -->
               <div
                 class="toggle-row"
                 :class="{ disabled: isExhibitionMode }"
                 @click="!isExhibitionMode && toggleDemoMode()"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 160px"></div>
-                    <div class="sk-text-line-s" style="width: 220px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Demo Mode</div>
-                    <div class="row-desc">
-                      Use mock data engine for technical showcase
-                    </div>
-                  </template>
+                  <div class="row-label">Demo Mode</div>
+                  <div class="row-desc">
+                    Use mock data engine for technical showcase
+                  </div>
                 </div>
-                <div
-                  class="switch"
-                  :class="{
-                    active: isDemoMode,
-                    'skeleton-anim sk-badge-s': isRefreshing,
-                  }"
-                >
+                <div class="switch" :class="{ active: isDemoMode }">
                   <div class="handle"></div>
                 </div>
               </div>
@@ -279,49 +280,25 @@ async function factoryReset() {
                 @click="!isExhibitionMode && toggleBlueprintMode()"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 160px"></div>
-                    <div class="sk-text-line-s" style="width: 220px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Blueprint Mode</div>
-                    <div class="row-desc">
-                      Force skeleton view for UI structural analysis
-                    </div>
-                  </template>
+                  <div class="row-label">Blueprint Mode</div>
+                  <div class="row-desc">
+                    Force skeleton view for UI structural analysis
+                  </div>
                 </div>
-                <div
-                  class="switch"
-                  :class="{
-                    active: isBlueprintMode,
-                    'skeleton-anim sk-badge-s': isRefreshing,
-                  }"
-                >
+                <div class="switch" :class="{ active: isBlueprintMode }">
                   <div class="handle"></div>
                 </div>
               </div>
 
               <!-- Exhibition Mode -->
-              <div class="toggle-row" @click="toggleExhibitionMode">
+              <div class="toggle-row" @click="toggleExhibitionMode()">
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 160px"></div>
-                    <div class="sk-text-line-s" style="width: 220px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Exhibition Mode</div>
-                    <div class="row-desc">
-                      Showcase a single mock entry with skeletons
-                    </div>
-                  </template>
+                  <div class="row-label">Exhibition Mode</div>
+                  <div class="row-desc">
+                    Showcase a single mock entry with skeletons
+                  </div>
                 </div>
-                <div
-                  class="switch"
-                  :class="{
-                    active: isExhibitionMode,
-                    'skeleton-anim sk-badge-s': isRefreshing,
-                  }"
-                >
+                <div class="switch" :class="{ active: isExhibitionMode }">
                   <div class="handle"></div>
                 </div>
               </div>
