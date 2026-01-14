@@ -1,4 +1,4 @@
-# Clash Manager - Sovereign Clan Intelligence Engine
+# Clash Manager: Clan Manager for Clash Royale
 
 [![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
