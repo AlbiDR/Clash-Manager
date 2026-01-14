@@ -2,11 +2,11 @@
 
 [![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
-**Sovereign Clan Intelligence Engine.** A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as a **Standalone Progressive Web App (PWA)** for desktop and browser-based workflows.
+A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as a **Standalone Progressive Web App (PWA)** which supports virtually any platform.
 
 ---
 
-## 🏛️ Architecture
+## Architecture
 
 <details>
 <summary>View System Diagram</summary>
@@ -47,7 +47,7 @@ The system is designed for high data integrity and low-latency interaction.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 The project is composed of a Google Apps Script backend and a Vue 3 frontend. Follow the steps below for local setup.
 
@@ -83,7 +83,7 @@ The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-
 
 ---
 
-## ⚖️ The Performance Model
+## The Performance Model
 
 <details>
 <summary>Explore the Scoring Algorithm</summary>
@@ -104,7 +104,7 @@ The core value of Clash Manager is its multi-dimensional scoring algorithm (impl
 
 ---
 
-## 🛠️ Development & Contributing
+## Development & Contributing
 
 We prioritize technical purity and architectural coherence.
 
@@ -114,6 +114,6 @@ We prioritize technical purity and architectural coherence.
 
 ---
 
-## 📜 License
+## License
 
 Proprietary. © 2026 AlbiDR. All rights reserved.
