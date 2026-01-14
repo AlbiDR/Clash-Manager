@@ -245,13 +245,7 @@ async function factoryReset() {
             </div>
           </SettingsCard>
 
-          <SettingsCard
-            title="Display Preferences"
-            icon="visibility"
-            :loading="isRefreshing"
-          >
-            <div class="features-list">
-              <!-- Demo Mode -->
+              <!-- Portfolio Demo Mode Moved Here -->
               <div
                 class="toggle-row"
                 :class="{ disabled: isExhibitionMode }"
@@ -279,7 +273,6 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
-
               <!-- Blueprint Mode -->
               <div
                 class="toggle-row"
