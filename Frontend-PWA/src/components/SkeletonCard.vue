@@ -29,7 +29,10 @@ const metaWidth = computed(() => {
 
       <div class="sk-info">
         <div class="sk-player-name" :style="{ width: nameWidth }"></div>
-        <div class="sk-line-s" :style="{ width: metaWidth }"></div>
+        <div class="sk-trophy-meta">
+          <div class="sk-icon-dot"></div>
+          <div class="sk-text-line-s" :style="{ width: metaWidth }"></div>
+        </div>
       </div>
     </div>
     <div class="sk-box"></div>

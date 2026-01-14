@@ -684,4 +684,3 @@ function formatDescription(text: string) {
   }
 }
 </style>
-
