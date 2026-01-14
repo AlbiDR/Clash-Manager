@@ -20,7 +20,10 @@ onErrorCaptured((err) => {
 async function copyError() {
   if (!error.value) return;
 
-  const content = `Message: ${error.value.message}\n\nStack: ${error.value.stack || "N/A"}`;
+  const title = "System Resilience";
+  const description =
+    "A rendering anomaly was detected. Our self-healing systems are standing by.";
+  const content = `[${title}]\nAnomaly: ${description}\n\nMessage: ${error.value.message}\n\nStack: ${error.value.stack || "N/A"}`;
 
   try {
     await navigator.clipboard.writeText(content);
@@ -114,6 +117,7 @@ function reset() {
   width: 100%;
   border: 1px solid var(--sys-surface-glass-border);
   box-shadow: var(--sys-shadow-xl);
+  user-select: text; /* Enable selection on entire content */
 }
 
 .error-icon-wrapper {
@@ -127,6 +131,7 @@ function reset() {
   justify-content: center;
   margin: 0 auto 24px;
   transform: rotate(-5deg);
+  user-select: none; /* Keep icon non-selectable */
 }
 
 h2 {
@@ -179,6 +184,7 @@ p {
   cursor: pointer;
   transition: all 0.2s var(--sys-motion-spring);
   padding: 0;
+  user-select: none; /* Keep button non-selectable */
 }
 
 .copy-btn:hover {
@@ -216,5 +222,9 @@ p {
 
 .recover-btn:active {
   transform: scale(0.96);
+}
+
+.recover-btn span {
+  user-select: none;
 }
 </style>
