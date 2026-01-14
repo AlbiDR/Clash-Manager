@@ -4,6 +4,8 @@ import type { WebAppData } from "../types";
 import { useBadge } from "./useBadge";
 import { useModules } from "./useModules";
 import { useDemoMode } from "./useDemoMode";
+import { useBlueprintMode } from "./useBlueprintMode";
+import { useExhibitionMode } from "./useExhibitionMode";
 import { generateMockData } from "../utils/mockData";
 
 // Global State
@@ -18,6 +20,8 @@ const syncError = ref<string | null>(null);
 const { setBadge } = useBadge();
 const { modules } = useModules();
 const { isDemoMode } = useDemoMode();
+const { isBlueprintMode } = useBlueprintMode();
+const { isExhibitionMode } = useExhibitionMode();
 
 const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
@@ -48,6 +52,28 @@ export function useClanData() {
   let refreshAbortController: AbortController | null = null;
 
   async function startBackgroundSync() {
+    if (isExhibitionMode.value) {
+      const mock = generateMockData();
+      updateBadgeCount(mock); // Update with full count first
+      // In Exhibition, show only the first member
+      const exhibitionMock = JSON.parse(JSON.stringify(mock)); // Deep copy
+      if (exhibitionMock.lb.length > 0)
+        exhibitionMock.lb = [exhibitionMock.lb[0]];
+      if (exhibitionMock.hh.length > 0)
+        exhibitionMock.hh = [exhibitionMock.hh[0]];
+      clanData.value = exhibitionMock;
+      lastSyncTime.value = exhibitionMock.timestamp;
+      return;
+    }
+
+    if (isBlueprintMode.value) {
+      const mock = generateMockData();
+      updateBadgeCount(mock); // Update with full count
+      clanData.value = null; // Then force skeleton state
+      lastSyncTime.value = Date.now();
+      return;
+    }
+
     if (isDemoMode.value) {
       // console.log("🌟 Demo Mode Active");
       const mock = generateMockData();
@@ -110,13 +136,12 @@ export function useClanData() {
       syncStatus.value = "syncing";
       syncError.value = null;
 
-      if (isDemoMode.value) {
+      // No-op guard for special modes
+      if (isDemoMode.value || isBlueprintMode.value || isExhibitionMode.value) {
         await new Promise((resolve) => setTimeout(resolve, 800));
-        const mock = generateMockData();
-        clanData.value = mock;
-        lastSyncTime.value = mock.timestamp;
+        startBackgroundSync(); // Re-run the appropriate mock logic
         syncStatus.value = "success";
-        updateBadgeCount(mock);
+        isRefreshing.value = false;
         return;
       }
 
