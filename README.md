@@ -101,7 +101,7 @@ The core value of Clash Manager is its multi-dimensional scoring algorithm (impl
 | **Trophies**     | `0.0002x` | Skill Weighting (Normalized) |
 | **War Rate**     |  `150x`   | Reliability & Participation  |
 
-> [!IMPORTANT] > **Exponential Decay**: Inactivity is penalized after a 4-day grace period using the formula: $Score \times 0.92^{\max(0, \text{Days Inactive} - 4)}$.
+> **Exponential Decay**: Inactivity is penalized after a 4-day grace period using the formula: $Score \times 0.92^{\max(0, \text{Days Inactive} - 4)}$.
 
 </details>
 
