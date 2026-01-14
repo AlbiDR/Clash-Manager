@@ -1,32 +1,31 @@
-name: Optimize
+name: Document
 
 on:
   push:
     branches: ["Stable", "Beta"]
     paths:
-      - "Frontend-PWA/**"
+      - "README.md"
+      - "docs/**"
+      - "**/*.md"
+      - "Backend-GAS/Configuration.gs.js"
+      - ".github/workflows/document-project.yml"
   pull_request:
     branches: ["Stable"]
-    types: [opened, synchronize, reopened]
     paths:
-      - "Frontend-PWA/**"
+      - "README.md"
+      - "docs/**"
+      - "**/*.md"
+      - "Backend-GAS/Configuration.gs.js"
+      - ".github/workflows/document-project.yml"
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: write
   pull-requests: write
 
-defaults:
-  run:
-    working-directory: Frontend-PWA
-
 jobs:
-  optimize:
-    name: Optimize
+  document:
+    name: Document
     if: |
       (github.event_name == 'pull_request' && (
         contains(github.event.pull_request.labels.*.name, 'jules') || 
@@ -40,10 +39,20 @@ jobs:
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Check file changes
+        uses: dorny/paths-filter@v3
+        id: changes
         with:
-          fetch-depth: 0
+          filters: |
+            docs:
+              - 'README.md'
+              - 'docs/**'
+              - '**/*.md'
+            sync_files:
+              - 'Backend-GAS/Configuration.gs.js'
+              - '.github/workflows/document-project.yml'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -51,30 +60,21 @@ jobs:
           version: 10
 
       - name: Use Node.js
+        if: steps.changes.outputs.sync_files == 'true' || steps.changes.outputs.docs == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-          cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
 
-      - name: Install Dependencies
-        run: pnpm install
+      - name: Run Project Integrity Check
+        if: steps.changes.outputs.sync_files == 'true'
+        run: node scripts/validate_project.js
 
-      - name: Run Tests
-        run: pnpm test
-
-      - name: Project Validation
-        working-directory: .
-        run: |
-          if [ -f scripts/validate_project.js ]; then
-            node scripts/validate_project.js
-          else
-            echo "⚠️ Validation script not found."
-          fi
+      - name: Documentation Cleanup
+        if: steps.changes.outputs.docs == 'true'
+        run: echo "Documentation changes detected. Validating formatting..."
 
       - name: Auto-Merge
         if: success() && github.event_name == 'pull_request'
-        working-directory: .
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

@@ -31,6 +31,7 @@ export interface LeaderboardMember {
     avg: number;
     seen?: string | null; // Made optional
     rate?: string | null; // Made optional
+    wfame?: number;
     hist: string;
   };
 }

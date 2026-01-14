@@ -41,10 +41,10 @@ function resetApiUrl() {
     </template>
 
     <div class="network-stats">
-      <div class="stat-box skeleton-anim">
-        <span class="label">Latency</span>
+      <div class="stat-item">
+        <span class="label">Ping</span>
         <template v-if="isChecking">
-          <div class="sk-stat-value"></div>
+          <div class="sk-stat-value" style="width: 30px"></div>
         </template>
         <template v-else>
           <span class="value"
@@ -52,19 +52,21 @@ function resetApiUrl() {
           >
         </template>
       </div>
-      <div class="stat-box skeleton-anim">
+      <span class="v-sep"></span>
+      <div class="stat-item">
         <span class="label">Backend</span>
         <template v-if="isChecking">
-          <div class="sk-stat-value"></div>
+          <div class="sk-stat-value" style="width: 25px"></div>
         </template>
         <template v-else>
           <span class="value">v{{ pingData?.version || "0.0" }}</span>
         </template>
       </div>
-      <div class="stat-box skeleton-anim">
-        <span class="label">Cache</span>
+      <span class="v-sep"></span>
+      <div class="stat-item">
+        <span class="label">Link</span>
         <template v-if="isChecking">
-          <div class="sk-stat-value" style="width: 50px"></div>
+          <div class="sk-stat-value" style="width: 35px"></div>
         </template>
         <template v-else>
           <span class="value">Ready</span>
@@ -112,40 +114,46 @@ function resetApiUrl() {
 
 <style scoped>
 .network-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 24px;
-}
-.stat-box {
-  background: var(--sys-color-surface-container-high);
-  padding: 12px;
-  border-radius: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  background: var(--sys-color-surface-container-high);
+  padding: 8px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
-.stat-box .label {
-  font-size: 10px;
-  font-weight: 800;
-  opacity: 0.6;
-  text-transform: uppercase;
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
-.stat-box .value {
-  font-size: 15px;
+.stat-item .label {
+  font-size: 9px;
   font-weight: 900;
+  opacity: 0.4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.stat-item .value {
+  font-size: 13px;
+  font-weight: 800;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-primary);
 }
+.v-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.3;
+}
 
 .field-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
-  opacity: 0.5;
-  margin-bottom: 10px;
-  font-family: var(--sys-font-family-body);
-  letter-spacing: 0.02em;
+  opacity: 0.4;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .url-readout {
   background: var(--sys-color-surface-container-highest);

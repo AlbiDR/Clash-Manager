@@ -60,7 +60,6 @@ const trendInfo = computed(() => {
     raw: dt,
   };
 });
-
 </script>
 
 <template>
@@ -74,7 +73,6 @@ const trendInfo = computed(() => {
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
-
     <!-- SLOT: Meta Stack -->
     <template #identity-meta>
       <div
@@ -141,29 +139,12 @@ const trendInfo = computed(() => {
     <template #expanded-content>
       <div class="stats-grid" :aria-busy="appIsRefreshing">
         <template v-if="appIsRefreshing">
-          <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
-            <div
-              class="sk-text-line-s"
-              :style="{ width: `${50 + i * 5}px` }"
-            ></div>
-            <div
-              class="sk-stat-value"
-              :style="{ width: `${40 + i * 5}px` }"
-            ></div>
+          <div v-for="i in 4" :key="i" class="stat-item skeleton-anim">
+            <div class="sk-label-box"></div>
+            <div class="sk-value-box"></div>
           </div>
         </template>
         <template v-else>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="
-              modules.ghostBenchmarking
-                ? getBenchmark('lb', 'donations', member.d.avg)
-                : null
-            "
-          >
-            <span class="label">Daily Avg</span>
-            <span class="value">{{ member.d.avg }}</span>
-          </div>
           <div
             class="stat-item hit-target"
             v-tooltip="
@@ -178,6 +159,23 @@ const trendInfo = computed(() => {
           >
             <span class="label">War Rate</span>
             <span class="value">{{ member.d.rate }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Average Fame</span>
+            <span class="value">{{
+              (member.d.wfame || 0).toLocaleString()
+            }}</span>
+          </div>
+          <div
+            class="stat-item hit-target"
+            v-tooltip="
+              modules.ghostBenchmarking
+                ? getBenchmark('lb', 'donations', member.d.avg)
+                : null
+            "
+          >
+            <span class="label">Daily Donations</span>
+            <span class="value">{{ member.d.avg }}</span>
           </div>
           <div class="stat-item">
             <span class="label">Last Seen</span>
@@ -201,10 +199,7 @@ const trendInfo = computed(() => {
             <Icon name="analytics" size="16" />
             <span>RoyaleAPI</span>
           </button>
-          <button
-            @click="openInGame(member.id)"
-            class="btn-action primary"
-          >
+          <button @click="openInGame(member.id)" class="btn-action primary">
             <Icon name="crown" size="16" />
             <span>Open Game</span>
           </button>
@@ -326,7 +321,7 @@ const trendInfo = computed(() => {
 /* Expanded Content Stats */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -335,20 +330,55 @@ const trendInfo = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 4px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid var(--sys-surface-glass-border);
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.stat-item:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: var(--sys-color-surface-container-high);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 2;
 }
 .stat-item .label {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
-  font-weight: 800;
+  font-weight: 850;
   color: var(--sys-color-secondary);
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  text-align: center;
+  line-height: 1.1;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-word;
 }
 .stat-item .value {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
+  color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
+  line-height: 1;
+}
+
+@media (max-width: 360px) {
+  .stats-grid {
+    gap: 6px;
+  }
+  .stat-item {
+    padding: 4px 2px;
+  }
+  .stat-item .value {
+    font-size: 13px;
+  }
 }
 
 .actions {

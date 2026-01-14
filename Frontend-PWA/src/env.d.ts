@@ -5,6 +5,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string;
+  readonly VITE_APP_VERSION: string;
   BASE_URL: string;
   MODE: string;
   DEV: boolean;
@@ -29,21 +30,19 @@ declare module "*.css" {
   export default content;
 }
 
-declare global {
-  interface Window {
-    requestIdleCallback: (
-      callback: (deadline: IdleDeadline) => void,
-      options?: IdleRequestOptions,
-    ) => number;
-    cancelIdleCallback: (handle: number) => void;
-  }
+interface Window {
+  requestIdleCallback: (
+    callback: (deadline: IdleDeadline) => void,
+    options?: IdleRequestOptions,
+  ) => number;
+  cancelIdleCallback: (handle: number) => void;
+}
 
-  interface Document {
-    startViewTransition(callback: () => Promise<void> | void): {
-      finished: Promise<void>;
-      ready: Promise<void>;
-      updateCallbackDone: Promise<void>;
-      skipTransition: () => void;
-    };
-  }
+interface Document {
+  startViewTransition(callback: () => Promise<void> | void): {
+    finished: Promise<void>;
+    ready: Promise<void>;
+    updateCallbackDone: Promise<void>;
+    skipTransition: () => void;
+  };
 }

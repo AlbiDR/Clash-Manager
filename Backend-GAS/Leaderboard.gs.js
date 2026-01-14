@@ -41,7 +41,7 @@ function updateLeaderboard() {
         .getValues();
 
       const tagIdx = L.TAG;
-      const scoreIdx = L.RAW_SCORE; // ✨ CHANGED BACK: Tracking Raw Score (Index 11)
+      const scoreIdx = L.RAW_SCORE; // ✨ Tracking Raw Score (Index 12)
 
       oldData.forEach((row) => {
         // Safe read: check if column exists in this row data
@@ -277,6 +277,7 @@ function updateLeaderboard() {
       totalDonations,
       lastSeen,
       warRateVal,
+      avgWarFame,
       historyString,
       scores,
       cleanKey: m.tag.replace("#", "").trim().toLowerCase(),
@@ -321,6 +322,7 @@ function updateLeaderboard() {
     row[L.RAW_SCORE] = r.scores.raw;
     row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score
     row[L.TREND] = trend; // ✨ Raw Score Delta
+    row[L.AVG_WAR_FAME] = r.avgWarFame;
 
     rows.push(row);
   });
@@ -345,6 +347,7 @@ function updateLeaderboard() {
     "Total Donations",
     "Last Seen",
     "War Rate",
+    "Average War Fame",
     "War History",
     "Raw Score",
     "Performance Score",

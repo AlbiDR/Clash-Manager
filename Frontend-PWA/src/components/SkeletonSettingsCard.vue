@@ -34,28 +34,15 @@ const toggleWidth = computed(() => {
     </div>
     <div class="card-body">
       <div class="features-list">
-        <div class="toggle-row">
+        <div v-for="i in 3" :key="i" class="toggle-row">
           <div class="row-info">
-            <div class="sk-line-m-w" :style="{ width: descWidth }"></div>
+            <div class="sk-text-line-m" :style="{ width: descWidth }"></div>
             <div
-              class="sk-line-s-w"
+              class="sk-text-line-s"
               :style="{ width: `calc(${descWidth} * 0.7)` }"
             ></div>
           </div>
-          <div class="sk-badge-s" :style="{ width: toggleWidth }"></div>
-        </div>
-        <div class="toggle-row">
-          <div class="row-info">
-            <div
-              class="sk-line-m-w"
-              :style="{ width: `calc(${descWidth} * 0.9)` }"
-            ></div>
-            <div
-              class="sk-line-s-w"
-              :style="{ width: `calc(${descWidth} * 0.6)` }"
-            ></div>
-          </div>
-          <div class="sk-badge-s" :style="{ width: toggleWidth }"></div>
+          <div class="sk-badge-s" style="width: 44px"></div>
         </div>
       </div>
     </div>
@@ -68,6 +55,7 @@ const toggleWidth = computed(() => {
   border-radius: 24px;
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
+  margin-bottom: 16px;
 
   /* CLS Fix: Min height to prevent layout shifts */
   min-height: 180px; /* Roughly the height of a typical settings card */

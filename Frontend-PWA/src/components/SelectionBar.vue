@@ -22,23 +22,21 @@ const isScoreExpanded = ref(false);
     :aria-busy="loading ? 'true' : 'false'"
   >
     <template v-if="loading">
+      <div class="sk-text-line-m skeleton-anim" style="width: 80px"></div>
+      <div class="sk-button-s skeleton-anim" style="width: 50px"></div>
+      <div class="sk-button-s skeleton-anim" style="width: 50px"></div>
+      <div class="v-divider"></div>
       <div
-        class="sk-text-line-m skeleton-anim"
-        style="width: 100px; flex-shrink: 0"
+        class="score-group skeleton-anim"
+        style="
+          margin-left: auto;
+          width: 85px;
+          height: 30px;
+          border-radius: 99px;
+          background: var(--sh-surf-h);
+          opacity: 0.6;
+        "
       ></div>
-      <div class="sk-button-s skeleton-anim" style="flex-shrink: 0"></div>
-      <div class="sk-button-s skeleton-anim" style="flex-shrink: 0"></div>
-      <div class="v-divider" style="flex-shrink: 0"></div>
-      <!-- Skeleton matches collapsed state: Label + 1 Primary Button, pushed right -->
-      <div class="score-group" style="margin-left: auto; flex-shrink: 0">
-        <div
-          class="sk-text-line-s skeleton-anim"
-          style="width: 40px; margin-right: 4px"
-        ></div>
-        <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
-      </div>
-      <div class="v-divider" style="flex-shrink: 0"></div>
-      <div class="sk-button-s skeleton-anim" style="flex-shrink: 0"></div>
     </template>
     <template v-else>
       <div class="sel-count">{{ count }} Selected</div>

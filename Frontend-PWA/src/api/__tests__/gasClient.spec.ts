@@ -18,6 +18,7 @@ describe("gasClient Data Inflation", () => {
           50,
           "2023-01-01",
           "100%",
+          1500, // wfame
           "3000 24W01",
           5,
           9500,
@@ -32,6 +33,7 @@ describe("gasClient Data Inflation", () => {
           10,
           "2023-01-02",
           "50%",
+          0, // wfame
           "",
           0,
           8000,
@@ -97,7 +99,7 @@ describe("gasClient Data Inflation", () => {
       format: "matrix",
       schema: { lb: [], hh: [] },
       // Added missing columns (0, 0) to satisfy Zod schema
-      lb: [["p1", "Test", 0, 0, "m", 0, 0, "", "", "", 0, 0]],
+      lb: [["p1", "Test", 0, 0, "m", 0, 0, "", "", 0, "", 0, 0]],
       hh: [],
       timestamp: 123456789,
     };

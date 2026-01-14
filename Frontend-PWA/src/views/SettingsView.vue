@@ -23,7 +23,8 @@ const haptics = useHaptics();
 const wakeLock = useWakeLock();
 const { isDemoMode, toggleDemoMode } = useDemoMode();
 const { isHydrated, isRefreshing } = useClanData();
-const appVersion = (typeof __APP_VERSION__ !== 'undefined') ? __APP_VERSION__ : '0.0.0';
+const appVersion =
+  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
 const { status: unifiedStatus } = useConnectionStatus();
 
@@ -36,7 +37,7 @@ const apiStatusObject = computed(() => {
     return { type: "loading", text: "Syncing..." } as const;
   if (unifiedStatus.value === "success-resolve")
     return { type: "ready", text: "Verified" } as const;
-  
+
   return { type: "loading", text: "Connecting..." } as const;
 });
 
@@ -51,8 +52,33 @@ function handleThemeChange(newTheme: any) {
 import { useRegisterSW } from "virtual:pwa-register/vue";
 const { updateServiceWorker } = useRegisterSW();
 
+async function forceUpdate() {
+  haptics.heavy();
+  updateServiceWorker(true);
+}
+
+async function clearCache() {
+  haptics.medium();
+  if (
+    confirm(
+      "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
+    )
+  ) {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+      }
+    }
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    window.location.reload();
+  }
+}
+
 // Fix 23: Enhanced Factory Reset
 async function factoryReset() {
+  haptics.heavy();
   if (
     confirm(
       "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Data on the Google Sheet will NOT be affected.",
@@ -84,9 +110,9 @@ async function factoryReset() {
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
-        <!-- TIER 1: Core User Settings -->
-        <div class="settings-tier tier-core">
-          <SettingsCard title="Appearance" icon="gear">
+        <!-- TIER 1: Interface & Display -->
+        <div class="settings-tier tier-interface">
+          <SettingsCard title="Appearance & Utility" icon="gear">
             <div class="theme-switch">
               <button
                 class="theme-btn"
@@ -113,6 +139,36 @@ async function factoryReset() {
                 <Icon name="moon" size="20" />
               </button>
             </div>
+
+            <div
+              v-if="wakeLock.isSupported"
+              class="features-list"
+              style="margin-top: 24px"
+            >
+              <div class="toggle-row" @click="wakeLock.toggle()">
+                <div class="row-info">
+                  <template v-if="isRefreshing">
+                    <div class="sk-text-line-m" style="width: 100px"></div>
+                    <div class="sk-text-line-s" style="width: 180px"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Keep Screen On</div>
+                    <div class="row-desc">
+                      Prevent display sleep during clan management
+                    </div>
+                  </template>
+                </div>
+                <div
+                  class="switch"
+                  :class="{
+                    active: wakeLock.isActive.value,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
+                  <div class="handle"></div>
+                </div>
+              </div>
+            </div>
           </SettingsCard>
 
           <NotificationSettings />
@@ -120,9 +176,13 @@ async function factoryReset() {
 
         <div class="tier-divider" />
 
-        <!-- TIER 2: Feature Toggles -->
+        <!-- TIER 2: Application Features -->
         <div class="settings-tier tier-features">
-          <SettingsCard title="Extra Features" icon="lightning" :loading="isRefreshing">
+          <SettingsCard
+            title="Application Features"
+            icon="analytics"
+            :loading="isRefreshing"
+          >
             <div class="features-list">
               <div class="toggle-row" @click="toggle('ghostBenchmarking')">
                 <div class="row-info">
@@ -132,10 +192,18 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Ghost Benchmarking</div>
-                    <div class="row-desc">Visualize clan averages inside stat tooltips</div>
+                    <div class="row-desc">
+                      Visualize clan averages inside stat tooltips
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: modules.ghostBenchmarking, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.ghostBenchmarking,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
@@ -148,14 +216,23 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Sorting Descriptions</div>
-                    <div class="row-desc">Explain the logic behind sorting heuristics</div>
+                    <div class="row-desc">
+                      Explain the logic behind sorting heuristics
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: modules.sortExplanation, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.sortExplanation,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
 
+              <!-- Portfolio Demo Mode Moved Here -->
               <div class="toggle-row" @click="toggleDemoMode">
                 <div class="row-info">
                   <template v-if="isRefreshing">
@@ -164,33 +241,42 @@ async function factoryReset() {
                   </template>
                   <template v-else>
                     <div class="row-label">Portfolio Demo Mode</div>
-                    <div class="row-desc">Use mock data engine for technical showcase</div>
+                    <div class="row-desc">
+                      Use mock data engine for technical showcase
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: isDemoMode, 'skeleton-anim sk-badge-s': isRefreshing }">
-                  <div class="handle"></div>
-                </div>
-              </div>
-
-              <div v-if="wakeLock.isSupported" class="toggle-row" @click="wakeLock.toggle()">
-                <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 100px"></div>
-                    <div class="sk-text-line-s" style="width: 180px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Keep Screen On</div>
-                    <div class="row-desc">Prevent display sleep during clan management</div>
-                  </template>
-                </div>
-                <div class="switch" :class="{ active: wakeLock.isActive.value, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: isDemoMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
             </div>
           </SettingsCard>
+        </div>
 
-          <SettingsCard title="Experiments" icon="flask" :loading="isRefreshing">
+        <div class="tier-divider" />
+
+        <!-- TIER 3: Infrastructure -->
+        <div class="settings-tier tier-infrastructure">
+          <NetworkSettings />
+          <BackendRefresher v-if="modules.backendRefresher" />
+        </div>
+
+        <div class="tier-divider" />
+
+        <!-- TIER 4: System & Recovery (EXPERIMENTAL) -->
+        <div class="settings-tier tier-system">
+          <SettingsCard title="System & Recovery" icon="gear">
+            <template #header-extra>
+              <span class="exp-badge">EXPERIMENTAL</span>
+            </template>
+
             <div class="features-list">
               <div class="toggle-row" @click="toggle('blitzMode')">
                 <div class="row-info">
@@ -199,49 +285,63 @@ async function factoryReset() {
                     <div class="sk-text-line-s" style="width: 200px"></div>
                   </template>
                   <template v-else>
-                    <div class="row-label">Blitz Mode</div>
-                    <div class="row-desc">Batch operations without confirmation dialogs</div>
+                    <div class="row-label flex align-center gap-8">
+                      Blitz Mode
+                    </div>
+                    <div class="row-desc">
+                      Batch operations without confirmation (Broken)
+                    </div>
                   </template>
                 </div>
-                <div class="switch" :class="{ active: modules.blitzMode, 'skeleton-anim sk-badge-s': isRefreshing }">
+                <div
+                  class="switch"
+                  :class="{
+                    active: modules.blitzMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
                   <div class="handle"></div>
                 </div>
               </div>
             </div>
-          </SettingsCard>
-        </div>
 
-        <div class="tier-divider" />
+            <div class="card-divider-s" />
 
-        <!-- TIER 3: System & Advanced -->
-        <div class="settings-tier tier-system">
-          <NetworkSettings />
-          
-          <!-- System Modules Removed -->
+            <div class="trouble-grid">
+              <button class="trouble-btn" @click="forceUpdate" v-tactile>
+                <Icon name="download_done" size="18" />
+                <span>Force Update</span>
+              </button>
 
-          <BackendRefresher v-if="modules.backendRefresher" />
-        </div>
+              <button class="trouble-btn" @click="clearCache" v-tactile>
+                <Icon name="layers_clear" size="18" />
+                <span>Purge Assets</span>
+              </button>
 
-        <div class="tier-divider" />
-
-        <!-- TIER 4: Danger Zone -->
-        <div class="settings-tier tier-danger">
-          <SettingsCard title="Troubleshooting" icon="undo">
-            <p class="trouble-text">If data sync is inconsistent, a local reset will re-initialize the app cache.</p>
-            <button class="reset-btn" @click="factoryReset">Reset Application Data</button>
+              <button
+                class="trouble-btn danger"
+                @click="factoryReset"
+                v-tactile
+              >
+                <Icon name="restore" size="18" />
+                <span>Factory Reset</span>
+              </button>
+            </div>
           </SettingsCard>
         </div>
       </template>
 
       <div class="footer-info">
-        <div class="brand" @click="haptics.heavy(); window.location.reload();" v-tactile>
+        <div
+          class="brand"
+          @click="
+            haptics.heavy();
+            window.location.reload();
+          "
+          v-tactile
+        >
           CLASH MANAGER V{{ appVersion }}
           <span v-if="isDemoMode" class="demo-tag">DEMO</span>
-        </div>
-        <div class="footer-actions">
-          <button class="footer-link" @click="updateServiceWorker(true)">Force Update</button>
-          <span class="v-divider-s"></span>
-          <button class="footer-link danger" @click="factoryReset">Kill Cache</button>
         </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
@@ -328,6 +428,21 @@ async function factoryReset() {
   font-size: 13px;
   opacity: 0.6;
 }
+.exp-badge {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--sys-color-primary);
+  background: var(--sys-color-surface-container-highest);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.card-divider-s {
+  height: 1.5px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.1;
+  margin: 20px 0;
+}
 .switch {
   width: 44px;
   height: 24px;
@@ -383,23 +498,36 @@ async function factoryReset() {
   color: var(--sys-color-primary);
 }
 
-/* Recovery Styles */
-.trouble-text {
-  font-size: 13px;
-  opacity: 0.6;
-  line-height: 1.5;
-  margin-bottom: 16px;
+.trouble-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.reset-btn {
-  width: 100%;
+.trouble-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   height: 44px;
+  background: var(--sys-color-surface-container-high);
+  border: none;
   border-radius: 12px;
-  background: var(--sys-color-surface-container-highest);
-  border: 1.5px solid rgba(0, 0, 0, 0.05);
+  color: var(--sys-color-primary);
+  font-size: 13px;
   font-weight: 800;
-  font-size: 14px;
-  color: var(--sys-color-on-surface);
   cursor: pointer;
+  transition: all 0.2s;
+}
+.trouble-btn:active {
+  transform: scale(0.98);
+  opacity: 0.8;
+}
+.trouble-btn.danger {
+  color: var(--sys-color-error);
+}
+.trouble-btn i,
+.trouble-btn svg {
+  opacity: 0.8;
 }
 
 .footer-info {

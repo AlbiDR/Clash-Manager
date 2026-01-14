@@ -1,4 +1,4 @@
-# Accelerator Journal
+# Optimize Journal
 
 > "Tracking the daily pursuit of performance."
 

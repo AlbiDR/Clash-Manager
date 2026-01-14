@@ -147,16 +147,16 @@ function markRecruitsAsInvitedBulk(ids) {
       }
 
       // 3. FLUSH & REGENERATE
-      if (sheetUpdates > 0 || idsSet.size > 0) {
+      if (sheetUpdates > 0 || blUpdates > 0 || pruneCount > 0) {
         SpreadsheetApp.flush();
         console.log(
-          `🌐 API Action: Dismissed ${sheetUpdates} rows. Synced blacklist.`,
+          `🌐 API Action: Dismissed ${sheetUpdates} rows. Synced blacklist (${blUpdates} added, ${pruneCount} pruned).`,
         );
         refreshWebPayload();
       }
 
       console.timeEnd("BulkDismiss");
-      return { success: true, count: sheetUpdates };
+      return { success: true, count: sheetUpdates, blCount: blUpdates };
     } catch (e) {
       console.error(`Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
@@ -186,6 +186,7 @@ function refreshWebPayload() {
             "avg",
             "seen",
             "rate",
+            "wfame",
             "hist",
             "dt",
             "r",
@@ -340,6 +341,7 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           const hist = sanitizeStr(r[SCHEMA.HISTORY]);
           const trend = sanitizeNum(r[SCHEMA.TREND]);
           const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
+          const wfame = sanitizeNum(r[SCHEMA.AVG_WAR_FAME]);
 
           return [
             id,
@@ -351,6 +353,7 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
             avg,
             seen,
             rateDisplay,
+            wfame,
             hist,
             trend,
             raw,

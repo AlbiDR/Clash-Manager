@@ -102,7 +102,9 @@ select {
   z-index: 1001;
   transform: translateY(var(--ptr-offset, 0px));
   opacity: var(--ptr-opacity, 0);
-  transition: transform 0.1s linear, opacity 0.1s linear;
+  transition:
+    transform 0.1s linear,
+    opacity 0.1s linear;
 }
 
 .ptr-spinner {
@@ -122,6 +124,27 @@ select {
   color: var(--sys-color-primary);
   transform: rotate(calc(var(--ptr-offset, 0px) * 2deg));
   transition: transform 0.1s linear;
+}
+
+/* =========================================
+   GLOBAL ANIMATIONS
+   ========================================= */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 /* ============================================================================
@@ -289,6 +312,11 @@ a {
 /* =========================================
    SHARED SKELETON CLASSES (Vue + HTML Shell)
    ========================================= */
+.skeleton-anim {
+  animation: pulse 1.5s infinite ease-in-out;
+  pointer-events: none;
+}
+
 .sk-card {
   height: 76px;
   background: var(--sh-surf);
@@ -310,34 +338,9 @@ a {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.sk-line-l {
-  width: 120px;
-  height: 16px;
-  background: var(--sh-sk);
-  border-radius: 4px;
-}
-.sk-line-m {
-  width: 100%;
-  height: 14px;
-  background: var(--sh-sk);
-  border-radius: 4px;
-}
-.sk-line-s {
-  width: 80px;
-  height: 12px;
-  background: var(--sh-sk);
-  border-radius: 4px;
-  opacity: 0.7;
-}
-.sk-box {
-  width: 48px;
-  height: 48px;
-  background: var(--sh-sk);
-  border-radius: 14px;
+  min-width: 0;
 }
 
-/* New granular skeleton shapes */
 .sk-header-group {
   display: flex;
   align-items: center;
@@ -345,6 +348,7 @@ a {
   flex: 1;
   min-width: 0;
 }
+
 .sk-meta-stack {
   display: flex;
   flex-direction: column;
@@ -352,80 +356,106 @@ a {
   width: 60px;
   flex-shrink: 0;
 }
+
+.sk-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sk-box {
+  width: 48px;
+  height: 48px;
+  background: var(--sh-sk);
+  border-radius: 14px;
+}
+
 .sk-badge-s {
   height: 18px;
   width: 100%;
   background: var(--sh-sk-secondary);
   border-radius: 6px;
 }
+
 .sk-badge-m {
   height: 24px;
   width: 80px;
   background: var(--sh-sk-secondary);
   border-radius: 8px;
 }
-.sk-icon-small {
-  width: 12px;
-  height: 12px;
+
+.sk-pill {
+  height: 32px;
+  width: 100px;
+  background: var(--sh-sk-secondary);
+  border-radius: 99px;
+  opacity: 0.8;
+}
+
+.sk-label-box {
+  width: 60px;
+  height: 10px;
+  background: var(--sh-sk);
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+.sk-value-box {
+  width: 40px;
+  height: 14px;
+  background: var(--sh-sk);
+  border-radius: 4px;
+}
+
+.sk-trophy-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.sk-icon-dot {
+  width: 10px;
+  height: 10px;
   background: var(--sh-sk-secondary);
   border-radius: 50%;
-  opacity: 0.6;
+  opacity: 0.5;
 }
+
 .sk-player-name {
   height: 16px;
   background: var(--sh-sk);
   border-radius: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.sk-role-pill {
-  height: 18px;
-  width: 50px;
-  background: var(--sh-sk-secondary);
-  border-radius: 6px;
-}
-.sk-stat-box {
-  background: var(--sh-sk-secondary);
-  padding: 12px;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.sk-url-readout {
-  background: var(--sh-sk-secondary);
-  padding: 10px 14px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.sk-module-item {
-  background: var(--sh-sk-secondary);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+
 .sk-input {
   width: 100%;
   height: 46px;
-  padding: 0 16px 0 44px;
   border-radius: 14px;
   background: var(--sh-sk-secondary);
-  border: 1.5px solid transparent;
 }
+
 .sk-select {
   width: 100%;
   height: 46px;
-  padding: 0 12px 0 38px;
   border-radius: 14px;
   background: var(--sh-sk-secondary);
-  border: none;
 }
+
+.sk-button-m {
+  width: 100%;
+  height: 44px;
+  background: var(--sh-sk-secondary);
+  border-radius: 12px;
+}
+
+.sk-button-s {
+  width: 60px;
+  height: 28px;
+  background: var(--sh-sk-secondary);
+  border-radius: 8px;
+}
+
 .sk-chart-area {
   width: 100%;
   height: 48px;
@@ -433,65 +463,47 @@ a {
   border-radius: 8px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
   gap: 2px;
   padding: 4px;
   box-sizing: border-box;
 }
+
 .sk-chart-bar {
-  width: 8px;
+  flex: 1;
   background: var(--sh-sk);
   border-radius: 2px;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
-/* NEW: More specific text and value skeletons */
 .sk-text-line-s {
   width: 80px;
   height: 10px;
   background: var(--sh-sk);
   border-radius: 3px;
-  opacity: 0.8;
+  opacity: 0.6;
 }
-.sk-text-line-m {
-  width: 120px;
-  height: 14px;
-  background: var(--sh-sk);
-  border-radius: 4px;
-}
+
 .sk-stat-value {
   width: 40px;
   height: 14px;
   background: var(--sh-sk);
   border-radius: 4px;
 }
-.sk-button-m {
-  width: 80px;
-  height: 32px;
+
+.sk-icon-btn-s {
+  width: 36px;
+  height: 36px;
   background: var(--sh-sk-secondary);
-  border-radius: 8px;
-}
-.sk-button-s {
-  width: 50px;
-  height: 24px;
-  background: var(--sh-sk-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
+  opacity: 0.6;
 }
 
-/* Shimmer Animation */
-.skeleton-anim {
-  animation: pulse 1.5s infinite ease-in-out;
-}
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    opacity: 1;
-  }
+.sk-text-line-m {
+  width: 120px;
+  height: 14px;
+  background: var(--sh-sk);
+  border-radius: 4px;
 }
 
 /* =========================================
@@ -500,8 +512,10 @@ a {
 
 .squish-interaction {
   /* ⚡ PERF: Removed 'all' transition to avoid animating expensive properties like box-shadow */
-  transition: transform 0.2s var(--sys-motion-spring),
-    background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s var(--sys-motion-spring),
+    background-color 0.2s ease,
+    border-color 0.2s ease;
   will-change: transform;
 }
 .squish-interaction:active {
@@ -523,8 +537,11 @@ a {
   z-index: 10000;
   border: 1px solid var(--sys-surface-glass-border);
   box-shadow: var(--sys-elevation-3);
-  transition: opacity 0.2s ease, transform 0.25s var(--sys-motion-spring),
-    top 0.2s ease, left 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.25s var(--sys-motion-spring),
+    top 0.2s ease,
+    left 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 10px;
