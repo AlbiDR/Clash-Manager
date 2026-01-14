@@ -80,9 +80,9 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
 
     <!-- SLOT: Expanded Content -->
     <template #expanded-content>
-      <div class="stats-row" :aria-busy="appIsRefreshing">
+      <div class="stats-grid" :aria-busy="appIsRefreshing">
         <template v-if="appIsRefreshing">
-          <div v-for="i in 3" :key="i" class="stat-cell skeleton-anim">
+          <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
             <div
               class="sk-text-line-s"
               :style="{ width: `${50 + i * 5}px` }"
@@ -95,26 +95,25 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
         </template>
         <template v-else>
           <div
-            class="stat-cell hit-target"
+            class="stat-item hit-target"
             v-tooltip="getTooltip('donations', recruit.d.don)"
           >
-            <span class="sc-label">Donations</span>
-            <span class="sc-val">{{ recruit.d.don }}</span>
+            <span class="label">Donations</span>
+            <span class="value">{{ recruit.d.don }}</span>
           </div>
-          <!-- Vertical Divider is handled by border-l class in CSS -->
           <div
-            class="stat-cell border-l hit-target"
+            class="stat-item hit-target"
             v-tooltip="getTooltip('warWins', recruit.d.war)"
           >
-            <span class="sc-label">War Wins</span>
-            <span class="sc-val">{{ recruit.d.war }}</span>
+            <span class="label">War Wins</span>
+            <span class="value">{{ recruit.d.war }}</span>
           </div>
           <div
-            class="stat-cell border-l hit-target"
+            class="stat-item hit-target"
             v-tooltip="getTooltip('cardsWon', recruit.d.cards)"
           >
-            <span class="sc-label">Cards Won</span>
-            <span class="sc-val">{{ recruit.d.cards || "-" }}</span>
+            <span class="label">Cards Won</span>
+            <span class="value">{{ recruit.d.cards || "-" }}</span>
           </div>
         </template>
       </div>
@@ -196,37 +195,70 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
 }
 
 /* Recruit Specific Stats Layout */
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 4px;
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 12px;
 }
-.stat-cell {
-  flex: 1;
+.stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid var(--sys-surface-glass-border);
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
-.stat-cell.border-l {
-  border-left: 1px solid rgba(0, 0, 0, 0.05);
+.stat-item:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: var(--sys-color-surface-container-high);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 2;
 }
 
-.sc-label {
-  font-size: 10px;
+.label {
+  font-size: 9px;
   text-transform: uppercase;
+  font-weight: 850;
   color: var(--sys-color-secondary);
-  font-weight: 800;
-  margin-bottom: 2px;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  text-align: center;
+  line-height: 1.1;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-word;
 }
-.sc-val {
+.value {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
+  line-height: 1;
+}
+
+@media (max-width: 380px) {
+  .stats-grid {
+    gap: 4px;
+  }
+  .stat-item {
+    padding: 4px 2px;
+  }
+  .value {
+    font-size: 12px;
+  }
+  .label {
+    font-size: 8px;
+  }
 }
 
 .actions-toolbar {
