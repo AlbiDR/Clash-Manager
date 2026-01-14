@@ -83,14 +83,8 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
       <div class="stats-grid" :aria-busy="appIsRefreshing">
         <template v-if="appIsRefreshing">
           <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
-            <div
-              class="sk-text-line-s"
-              :style="{ width: `${50 + i * 5}px` }"
-            ></div>
-            <div
-              class="sk-stat-value"
-              :style="{ width: `${40 + i * 5}px` }"
-            ></div>
+            <div class="sk-label-box"></div>
+            <div class="sk-value-box"></div>
           </div>
         </template>
         <template v-else>
