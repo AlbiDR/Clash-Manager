@@ -338,6 +338,29 @@ a {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+}
+
+.sk-header-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sk-meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.sk-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .sk-box {
@@ -458,6 +481,21 @@ a {
   height: 10px;
   background: var(--sh-sk);
   border-radius: 3px;
+  opacity: 0.6;
+}
+
+.sk-stat-value {
+  width: 40px;
+  height: 14px;
+  background: var(--sh-sk);
+  border-radius: 4px;
+}
+
+.sk-icon-btn-s {
+  width: 36px;
+  height: 36px;
+  background: var(--sh-sk-secondary);
+  border-radius: 12px;
   opacity: 0.6;
 }
 
