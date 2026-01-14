@@ -35,7 +35,10 @@ const metaWidth = computed(() => {
         </div>
       </div>
     </div>
-    <div class="sk-box"></div>
+    <div class="sk-header-actions">
+      <div class="sk-box"></div>
+      <div class="sk-icon-btn-s"></div>
+    </div>
   </div>
 </template>
 
