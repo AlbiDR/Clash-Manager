@@ -8,6 +8,7 @@ import { useConnectionStatus } from "./useConnectionStatus"; // Fix 24: Unify St
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useExhibitionMode } from "./useExhibitionMode";
 import { formatTimeAgo } from "../utils/formatters";
+import { generateMockData } from "../utils/mockData";
 
 interface ConsoleLogicOptions<T> {
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
@@ -116,10 +117,25 @@ export function useConsoleLogic<T extends { id: string }>(
   });
 
   // 8. Stats Badge
-  const statsBadge = computed(() => ({
-    label: statsLabel,
-    value: data.value ? data.value.length.toString() : "0",
-  }));
+  const statsBadge = computed(() => {
+    const { isBlueprintMode } = useBlueprintMode();
+    const { isExhibitionMode } = useExhibitionMode();
+
+    if (isBlueprintMode.value || isExhibitionMode.value) {
+      const mockData = generateMockData();
+      const count =
+        statsLabel === "Clan" ? mockData.lb.length : mockData.hh.length;
+      return {
+        label: statsLabel,
+        value: count.toString(),
+      };
+    }
+
+    return {
+      label: statsLabel,
+      value: data.value ? data.value.length.toString() : "0",
+    };
+  });
 
   // 9. Skeleton State
   const { isBlueprintMode } = useBlueprintMode();
