@@ -8,6 +8,7 @@ import SkeletonCard from "./SkeletonCard.vue";
 import Icon from "./Icon.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 import { useHaptics } from "../composables/useHaptics";
+import { useExhibitionMode } from "../composables/useExhibitionMode";
 
 const props = defineProps<{
   title: string;
@@ -48,6 +49,7 @@ const emit = defineEmits<{
 
 const { setFabVisible, updateFabState } = useUiCoordinator();
 const haptics = useHaptics();
+const { isExhibitionMode } = useExhibitionMode();
 
 // --- Pull to Refresh Logic ---
 const touchStartY = ref(0);
@@ -223,6 +225,14 @@ onUnmounted(() => {
       <!-- Content State -->
       <div v-else v-auto-animate class="list-container gpu-contain">
         <slot></slot>
+        <template v-if="isExhibitionMode">
+          <SkeletonCard
+            v-for="i in 7"
+            :key="i"
+            :index="i"
+            :style="{ '--i': i }"
+          />
+        </template>
       </div>
     </div>
 
