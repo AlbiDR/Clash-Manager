@@ -23,17 +23,18 @@ const isScoreExpanded = ref(false);
   >
     <template v-if="loading">
       <div class="sk-text-line-m skeleton-anim" style="width: 80px"></div>
-      <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
-      <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
+      <div class="sk-button-s skeleton-anim" style="width: 50px"></div>
+      <div class="sk-button-s skeleton-anim" style="width: 50px"></div>
       <div class="v-divider"></div>
       <div
         class="score-group skeleton-anim"
         style="
           margin-left: auto;
-          width: 80px;
-          height: 28px;
+          width: 85px;
+          height: 30px;
           border-radius: 99px;
-          background: var(--sh-sk-secondary);
+          background: var(--sh-surf-h);
+          opacity: 0.6;
         "
       ></div>
     </template>
