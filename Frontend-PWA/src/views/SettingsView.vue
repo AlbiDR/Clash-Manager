@@ -242,6 +242,8 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
+            </div>
+          </SettingsCard>
 
               <!-- Portfolio Demo Mode Moved Here -->
               <div
