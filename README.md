@@ -1,4 +1,4 @@
-# Clash Manager
+# Clash Manager - Sovereign Clan Intelligence Engine
 
 [![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
@@ -49,15 +49,21 @@ The system is designed for high data integrity and low-latency interaction.
 
 ## 🚀 Quick Start
 
-### 1. Backend Engine (GAS)
+The project is composed of a Google Apps Script backend and a Vue 3 frontend. Follow the steps below for local setup.
 
-1. Deploy the code in `Backend-GAS/` via `clasp` or the Apps Script Editor.
-2. Set Script Properties: `ClanTag`, `WebAppUrl`.
-3. Configure time-based triggers for `hourlyUpdate`.
+<details>
+<summary><strong>Backend Setup (Google Apps Script)</strong></summary>
 
-### 2. Client Setup
+1.  **Deploy Engine**: Deploy the code in `Backend-GAS/` via `clasp` or the online script editor.
+2.  **Set Properties**: In the script editor, set the required `Script Properties`: `ClanTag` and `WebAppUrl`.
+3.  **Configure Triggers**: Configure a time-based trigger for the `hourlyUpdate` function for automated data fetching.
 
-1.  **Navigate to the Frontend Directory**:
+</details>
+
+<details>
+<summary><strong>Frontend Setup (PWA)</strong></summary>
+
+1.  **Navigate to Directory**:
     ```bash
     cd Frontend-PWA
     ```
@@ -67,16 +73,13 @@ The system is designed for high data integrity and low-latency interaction.
     pnpm install
     ```
 
-3.  **Configure Environment**:
-    Create a `.env` file in the `Frontend-PWA/` directory.
-
+3.  **Configure Environment**: Create a `.env` file in `Frontend-PWA/` and add the `VITE_GAS_URL` from your backend deployment.
     ```env
     VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
     ```
+</details>
 
-### 3. Automated PWA Deployment
-
-The project uses a sophisticated GitHub Actions pipeline (`deploy-pwa.yml`) that deploys the application to GitHub Pages.
+The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-pwa.yml`).
 
 ---
 
