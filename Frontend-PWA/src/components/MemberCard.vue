@@ -139,7 +139,7 @@ const trendInfo = computed(() => {
     <template #expanded-content>
       <div class="stats-grid" :aria-busy="appIsRefreshing">
         <template v-if="appIsRefreshing">
-          <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
+          <div v-for="i in 4" :key="i" class="stat-item skeleton-anim">
             <div
               class="sk-text-line-s"
               :style="{ width: `${50 + i * 5}px` }"
@@ -151,17 +151,6 @@ const trendInfo = computed(() => {
           </div>
         </template>
         <template v-else>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="
-              modules.ghostBenchmarking
-                ? getBenchmark('lb', 'donations', member.d.avg)
-                : null
-            "
-          >
-            <span class="label">Daily Avg</span>
-            <span class="value">{{ member.d.avg }}</span>
-          </div>
           <div
             class="stat-item hit-target"
             v-tooltip="
@@ -178,10 +167,21 @@ const trendInfo = computed(() => {
             <span class="value">{{ member.d.rate }}</span>
           </div>
           <div class="stat-item">
-            <span class="label">Avg Fame</span>
+            <span class="label">Average Fame</span>
             <span class="value">{{
               (member.d.wfame || 0).toLocaleString()
             }}</span>
+          </div>
+          <div
+            class="stat-item hit-target"
+            v-tooltip="
+              modules.ghostBenchmarking
+                ? getBenchmark('lb', 'donations', member.d.avg)
+                : null
+            "
+          >
+            <span class="label">Daily Donations</span>
+            <span class="value">{{ member.d.avg }}</span>
           </div>
           <div class="stat-item">
             <span class="label">Last Seen</span>
@@ -327,28 +327,43 @@ const trendInfo = computed(() => {
 /* Expanded Content Stats */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   margin-bottom: 12px;
 }
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid var(--sys-surface-glass-border);
+  transition: all 0.2s ease;
+}
+.stat-item:hover {
+  transform: translateY(-2px);
+  background: var(--sys-color-surface-container-high);
 }
 .stat-item .label {
   font-size: 10px;
   text-transform: uppercase;
-  font-weight: 800;
+  font-weight: 850;
   color: var(--sys-color-secondary);
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  text-align: center;
+  line-height: 1.2;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .stat-item .value {
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
 }
 
