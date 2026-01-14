@@ -5,6 +5,8 @@ import { useTheme } from "../composables/useTheme";
 import { useHaptics } from "../composables/useHaptics";
 import { useWakeLock } from "../composables/useWakeLock";
 import { useDemoMode } from "../composables/useDemoMode";
+import { useBlueprintMode } from "../composables/useBlueprintMode";
+import { useExhibitionMode } from "../composables/useExhibitionMode";
 import { useClanData } from "../composables/useClanData";
 import { useConnectionStatus } from "../composables/useConnectionStatus";
 import { idb } from "../utils/idb"; // Fix 23: Import IDB
@@ -22,11 +24,20 @@ const { theme, setTheme } = useTheme();
 const haptics = useHaptics();
 const wakeLock = useWakeLock();
 const { isDemoMode, toggleDemoMode } = useDemoMode();
+const { isBlueprintMode, toggleBlueprintMode } = useBlueprintMode();
+const { isExhibitionMode, toggleExhibitionMode } = useExhibitionMode();
 const { isHydrated, isRefreshing } = useClanData();
 const appVersion =
   typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
 const { status: unifiedStatus } = useConnectionStatus();
+
+const footerBadgeText = computed(() => {
+  if (isExhibitionMode.value) return "EXHIBITION";
+  if (isBlueprintMode.value) return "BLUEPRINT";
+  if (isDemoMode.value) return "DEMO";
+  return "";
+});
 
 const apiStatusObject = computed(() => {
   if (unifiedStatus.value === "online")
@@ -140,12 +151,12 @@ async function factoryReset() {
               </button>
             </div>
 
-            <div
-              v-if="wakeLock.isSupported"
-              class="features-list"
-              style="margin-top: 24px"
-            >
-              <div class="toggle-row" @click="wakeLock.toggle()">
+            <div class="features-list" style="margin-top: 24px">
+              <div
+                v-if="wakeLock.isSupported"
+                class="toggle-row"
+                @click="wakeLock.toggle()"
+              >
                 <div class="row-info">
                   <template v-if="isRefreshing">
                     <div class="sk-text-line-m" style="width: 100px"></div>
@@ -231,16 +242,28 @@ async function factoryReset() {
                   <div class="handle"></div>
                 </div>
               </div>
+            </div>
+          </SettingsCard>
 
-              <!-- Portfolio Demo Mode Moved Here -->
-              <div class="toggle-row" @click="toggleDemoMode">
+          <SettingsCard
+            title="Display Preferences"
+            icon="visibility"
+            :loading="isRefreshing"
+          >
+            <div class="features-list">
+              <!-- Demo Mode -->
+              <div
+                class="toggle-row"
+                :class="{ disabled: isExhibitionMode }"
+                @click="!isExhibitionMode && toggleDemoMode()"
+              >
                 <div class="row-info">
                   <template v-if="isRefreshing">
                     <div class="sk-text-line-m" style="width: 160px"></div>
                     <div class="sk-text-line-s" style="width: 220px"></div>
                   </template>
                   <template v-else>
-                    <div class="row-label">Portfolio Demo Mode</div>
+                    <div class="row-label">Demo Mode</div>
                     <div class="row-desc">
                       Use mock data engine for technical showcase
                     </div>
@@ -250,6 +273,60 @@ async function factoryReset() {
                   class="switch"
                   :class="{
                     active: isDemoMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
+                  <div class="handle"></div>
+                </div>
+              </div>
+
+              <!-- Blueprint Mode -->
+              <div
+                class="toggle-row"
+                :class="{ disabled: isExhibitionMode }"
+                @click="!isExhibitionMode && toggleBlueprintMode()"
+              >
+                <div class="row-info">
+                  <template v-if="isRefreshing">
+                    <div class="sk-text-line-m" style="width: 160px"></div>
+                    <div class="sk-text-line-s" style="width: 220px"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Blueprint Mode</div>
+                    <div class="row-desc">
+                      Force skeleton view for UI structural analysis
+                    </div>
+                  </template>
+                </div>
+                <div
+                  class="switch"
+                  :class="{
+                    active: isBlueprintMode,
+                    'skeleton-anim sk-badge-s': isRefreshing,
+                  }"
+                >
+                  <div class="handle"></div>
+                </div>
+              </div>
+
+              <!-- Exhibition Mode -->
+              <div class="toggle-row" @click="toggleExhibitionMode">
+                <div class="row-info">
+                  <template v-if="isRefreshing">
+                    <div class="sk-text-line-m" style="width: 160px"></div>
+                    <div class="sk-text-line-s" style="width: 220px"></div>
+                  </template>
+                  <template v-else>
+                    <div class="row-label">Exhibition Mode</div>
+                    <div class="row-desc">
+                      Showcase a single mock entry with skeletons
+                    </div>
+                  </template>
+                </div>
+                <div
+                  class="switch"
+                  :class="{
+                    active: isExhibitionMode,
                     'skeleton-anim sk-badge-s': isRefreshing,
                   }"
                 >
@@ -341,7 +418,7 @@ async function factoryReset() {
           v-tactile
         >
           CLASH MANAGER V{{ appVersion }}
-          <span v-if="isDemoMode" class="demo-tag">DEMO</span>
+          <span v-if="footerBadgeText" class="demo-tag">{{ footerBadgeText }}</span>
         </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
