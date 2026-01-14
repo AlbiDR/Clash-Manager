@@ -15,24 +15,25 @@ The system is designed for high data integrity and low-latency interaction.
 
 ```mermaid
 graph TD
-    subgraph "External Data"
+    subgraph "External"
         CRAPI["Clash Royale API"]
     end
 
-    subgraph "Cloud Core (Google Apps Script)"
-        GAS["Backend Engine"]
-        GS["Sheet Data Store"]
+    subgraph "Cloud Core"
+        GAS["Backend Engine<br/>(Google Apps Script)"]
+        GS["Sheet Data Store<br/>(Google Sheets)"]
     end
 
-    subgraph "Cloud Worker (Cloud Run)"
-        Worker["Remote Worker"]
+    subgraph "Cloud Worker"
+        Worker["Remote Worker<br/>(Cloud Run)"]
     end
 
-    subgraph "Client Core (Vue 3 PWA)"
-        VueUI["Vue 3 Frontend"]
+    subgraph "Client Core"
+        VueUI["Vue 3 Frontend<br/>(PWA)"]
         IDB[(IndexedDB Cache)]
     end
 
+    %% Connections
     GAS -->|Bulk Fetch| Worker
     Worker -->|Proxy| CRAPI
     GAS <--> GS
