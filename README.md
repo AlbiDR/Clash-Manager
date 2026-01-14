@@ -14,8 +14,8 @@ A high-precision, production-grade toolkit for elite Clash Royale clan leadershi
 The system is designed for high data integrity and low-latency interaction.
 
 ```mermaid
-graph TD
-    subgraph "External"
+flowchart TD
+    subgraph External
         CRAPI["Clash Royale API"]
     end
 
@@ -33,7 +33,6 @@ graph TD
         IDB[(IndexedDB Cache)]
     end
 
-    %% Connections
     GAS -->|Bulk Fetch| Worker
     Worker -->|Proxy| CRAPI
     GAS <--> GS
