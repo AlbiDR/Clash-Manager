@@ -256,16 +256,22 @@ async function factoryReset() {
             :loading="isRefreshing"
           >
             <div class="features-list">
+              <!-- Base Layer Group -->
+              <div class="mode-group-header">
+                <span class="mg-label">PROTOTYPE BASES</span>
+                <div class="mg-line"></div>
+              </div>
+
               <!-- Demo Mode -->
               <div
-                class="toggle-row"
+                class="toggle-row mini"
                 :class="{ disabled: isExhibitionMode }"
                 @click="!isExhibitionMode && toggleDemoMode()"
               >
                 <div class="row-info">
-                  <div class="row-label">Demo Mode</div>
+                  <div class="row-label">Synthetic Engine</div>
                   <div class="row-desc">
-                    Use mock data engine for technical showcase
+                    Populate the interface with high-fidelity mock data
                   </div>
                 </div>
                 <div class="switch" :class="{ active: isDemoMode }">
@@ -275,14 +281,14 @@ async function factoryReset() {
 
               <!-- Blueprint Mode -->
               <div
-                class="toggle-row"
+                class="toggle-row mini"
                 :class="{ disabled: isExhibitionMode }"
                 @click="!isExhibitionMode && toggleBlueprintMode()"
               >
                 <div class="row-info">
-                  <div class="row-label">Blueprint Mode</div>
+                  <div class="row-label">Structural Blueprint</div>
                   <div class="row-desc">
-                    Force skeleton view for UI structural analysis
+                    Strip UI to geometric skeletons to audit layout stability
                   </div>
                 </div>
                 <div class="switch" :class="{ active: isBlueprintMode }">
@@ -290,16 +296,32 @@ async function factoryReset() {
                 </div>
               </div>
 
-              <!-- Exhibition Mode -->
-              <div class="toggle-row" @click="toggleExhibitionMode()">
-                <div class="row-info">
-                  <div class="row-label">Exhibition Mode</div>
-                  <div class="row-desc">
-                    Showcase a single mock entry with skeletons
+              <div class="mode-connector">
+                <div class="connector-line"></div>
+                <Icon name="expand" size="14" class="connector-icon" />
+              </div>
+
+              <!-- Master Showcase Group -->
+              <div
+                class="mode-master-container"
+                :class="{ active: isExhibitionMode }"
+              >
+                <div class="toggle-row" @click="toggleExhibitionMode()">
+                  <div class="row-info">
+                    <div class="row-label flex align-center gap-8">
+                      Master Showcase
+                      <span v-if="isExhibitionMode" class="hybrid-badge"
+                        >HYBRID</span
+                      >
+                    </div>
+                    <div class="row-desc">
+                      A curated fusion environment leveraging both synthetic
+                      data and structural skeletons
+                    </div>
                   </div>
-                </div>
-                <div class="switch" :class="{ active: isExhibitionMode }">
-                  <div class="handle"></div>
+                  <div class="switch" :class="{ active: isExhibitionMode }">
+                    <div class="handle"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -387,7 +409,9 @@ async function factoryReset() {
           v-tactile
         >
           CLASH MANAGER V{{ appVersion }}
-          <span v-if="footerBadgeText" class="demo-tag">{{ footerBadgeText }}</span>
+          <span v-if="footerBadgeText" class="demo-tag">{{
+            footerBadgeText
+          }}</span>
         </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
@@ -638,6 +662,107 @@ async function factoryReset() {
   letter-spacing: 0;
   opacity: 1;
 }
+
+/* Mode Grouping Polish */
+.mode-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.mg-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--sys-color-primary);
+  opacity: 0.6;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.mg-line {
+  flex: 1;
+  height: 1px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.15;
+}
+
+.toggle-row.mini {
+  padding-left: 8px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+.toggle-row.mini:hover {
+  opacity: 1;
+}
+.toggle-row.mini .row-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.toggle-row.mini .row-desc {
+  font-size: 12px;
+}
+.toggle-row.mini .switch {
+  transform: scale(0.85);
+}
+
+.mode-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  position: relative;
+  margin: -8px 0;
+}
+.connector-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 28px;
+  width: 1.5px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.1;
+}
+.connector-icon {
+  color: var(--sys-color-outline-variant);
+  opacity: 0.3;
+  background: var(--sys-color-surface-container);
+  z-index: 1;
+  padding: 2px;
+}
+
+.mode-master-container {
+  padding: 14px;
+  margin: 0 -4px;
+  border-radius: 16px;
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid transparent;
+  transition: all 0.3s var(--sys-motion-spring);
+}
+.mode-master-container.active {
+  background: var(--sys-color-primary-container);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.2);
+  box-shadow: var(--sys-elevation-1);
+}
+
+.hybrid-badge {
+  font-size: 9px;
+  font-weight: 950;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  padding: 2px 6px;
+  border-radius: 99px;
+  letter-spacing: 0.04em;
+}
+
+.flex {
+  display: flex;
+}
+.align-center {
+  align-items: center;
+}
+.gap-8 {
+  gap: 8px;
+}
+
 .copy {
   font-size: 10px;
   opacity: 0.2;
