@@ -159,7 +159,6 @@ function handleSearch(val: string) {
     @fab-dismiss="clearSelection"
   >
     <!-- Default Slot: The List -->
-    <MemberCard
     <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
     <template v-if="isShowcaseMode">
       <MemberCard

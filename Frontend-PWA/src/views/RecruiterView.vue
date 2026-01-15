@@ -210,29 +210,7 @@ function handleSearchUpdate(val: string) {
         <span>Scan Again</span>
       </button>
     </template>
-
     <!-- Default Slot: The List -->
-    <RecruitCard
-      v-for="(recruit, index) in listItems"
-      :key="recruit.id"
-      v-memo="[
-        recruit.s,
-        recruit.t,
-        expandedIds.has(recruit.id),
-        selectedSet.has(recruit.id),
-        isSelectionMode,
-        isRefreshing,
-      ]"
-      :id="`recruit-${recruit.id}`"
-      :recruit="recruit"
-      :expanded="expandedIds.has(recruit.id)"
-      :selected="selectedSet.has(recruit.id)"
-      :selection-mode="isSelectionMode"
-      :style="{ '--i': index }"
-      :app-is-refreshing="isRefreshing"
-      @toggle-expand="toggleExpand(recruit.id)"
-      @toggle-select="toggleSelect(recruit.id)"
-    />
     <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
     <template v-if="isShowcaseMode">
       <RecruitCard
@@ -245,6 +223,29 @@ function handleSearchUpdate(val: string) {
         @dismiss="dismissRecruitsAction([visibleItems[0].id])"
       />
       <SkeletonCard v-for="i in 7" :key="'ex-' + i" />
+    </template>
+    <template v-else>
+      <RecruitCard
+        v-for="(recruit, index) in visibleItems"
+        :key="recruit.id"
+        v-memo="[
+          recruit.s,
+          recruit.t,
+          expandedIds.has(recruit.id),
+          selectedSet.has(recruit.id),
+          isSelectionMode,
+          isRefreshing,
+        ]"
+        :id="`recruit-${recruit.id}`"
+        :recruit="recruit"
+        :expanded="expandedIds.has(recruit.id)"
+        :selected="selectedSet.has(recruit.id)"
+        :selection-mode="isSelectionMode"
+        :style="{ '--i': index }"
+        :app-is-refreshing="isRefreshing"
+        @toggle-expand="toggleExpand(recruit.id)"
+        @toggle-select="toggleSelect(recruit.id)"
+      />
     </template>
   </ConsoleLayout>
 </template>
