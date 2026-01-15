@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { useClanData } from "../composables/useClanData";
 import { useApiState } from "../composables/useApiState";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
-import { useExhibitionMode } from "../composables/useExhibitionMode";
+import { useShowcaseMode } from "../composables/useShowcaseMode";
 import { parseTimeAgoValue } from "../utils/formatters";
 import type { LeaderboardMember } from "../types";
 
@@ -22,7 +22,7 @@ const sheetUrl = computed(() => {
     : pingData.value.spreadsheetUrl;
 });
 
-const { isExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode } = useShowcaseMode();
 const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } =
   useClanData();
 // Ensure we pass a Ref<LeaderboardMember[]>
@@ -160,27 +160,42 @@ function handleSearch(val: string) {
   >
     <!-- Default Slot: The List -->
     <MemberCard
-      v-for="(member, index) in listItems"
-      :key="member.id"
-      v-memo="[
-        member.s,
-        member.dt,
-        expandedIds.has(member.id),
-        selectedSet.has(member.id),
-        isSelectionMode,
-        isRefreshing,
-      ]"
-      :id="`member-${member.id}`"
-      :member="member"
-      :expanded="expandedIds.has(member.id)"
-      :selected="selectedSet.has(member.id)"
-      :selection-mode="isSelectionMode"
-      :style="{ '--i': index }"
-      :app-is-refreshing="isRefreshing"
-      @toggle="toggleExpand(member.id)"
-      @toggle-select="toggleSelect(member.id)"
-    />
-    <template v-if="isExhibitionMode">
+    <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
+    <template v-if="isShowcaseMode">
+      <MemberCard
+        v-if="visibleItems.length > 0"
+        :member="visibleItems[0]"
+        :expanded="expandedIds.has(visibleItems[0].id)"
+        :selected="selectedSet.has(visibleItems[0].id)"
+        :selection-mode="isSelectionMode"
+        :app-is-refreshing="isRefreshing"
+        @toggle="toggleExpand(visibleItems[0].id)"
+        @toggle-select="toggleSelect(visibleItems[0].id)"
+      />
+      <SkeletonCard v-for="i in 7" :key="'ex-' + i" :style="{ '--i': i + 1 }" />
+    </template>
+    <template v-else>
+      <MemberCard
+        v-for="(member, index) in visibleItems"
+        :key="member.id"
+        v-memo="[
+          member.s,
+          member.dt,
+          expandedIds.has(member.id),
+          selectedSet.has(member.id),
+          isSelectionMode,
+          isRefreshing,
+        ]"
+        :id="`member-${member.id}`"
+        :member="member"
+        :expanded="expandedIds.has(member.id)"
+        :selected="selectedSet.has(member.id)"
+        :selection-mode="isSelectionMode"
+        :style="{ '--i': index }"
+        :app-is-refreshing="isRefreshing"
+        @toggle="toggleExpand(member.id)"
+        @toggle-select="toggleSelect(member.id)"
+      />
       <SkeletonCard v-for="i in 7" :key="i" :style="{ '--i': i + 1 }" />
     </template>
   </ConsoleLayout>

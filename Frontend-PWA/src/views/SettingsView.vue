@@ -4,9 +4,9 @@ import { useModules } from "../composables/useModules";
 import { useTheme } from "../composables/useTheme";
 import { useHaptics } from "../composables/useHaptics";
 import { useWakeLock } from "../composables/useWakeLock";
-import { useDemoMode } from "../composables/useDemoMode";
+import { useSyntheticMode } from "../composables/useSyntheticMode";
 import { useBlueprintMode } from "../composables/useBlueprintMode";
-import { useExhibitionMode } from "../composables/useExhibitionMode";
+import { useShowcaseMode } from "../composables/useShowcaseMode";
 import { useClanData } from "../composables/useClanData";
 import { useConnectionStatus } from "../composables/useConnectionStatus";
 import { idb } from "../utils/idb"; // Fix 23: Import IDB
@@ -23,9 +23,9 @@ const { modules, toggle } = useModules();
 const { theme, setTheme } = useTheme();
 const haptics = useHaptics();
 const wakeLock = useWakeLock();
-const { isDemoMode, toggleDemoMode } = useDemoMode();
+const { isSyntheticMode, toggleSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode, toggleBlueprintMode } = useBlueprintMode();
-const { isExhibitionMode, toggleExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode, toggleShowcaseMode } = useShowcaseMode();
 const { isHydrated, isRefreshing } = useClanData();
 const appVersion =
   typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
@@ -33,9 +33,9 @@ const appVersion =
 const { status: unifiedStatus } = useConnectionStatus();
 
 const footerBadgeText = computed(() => {
-  if (isExhibitionMode.value) return "EXHIBITION";
+  if (isShowcaseMode.value) return "SHOWCASE";
   if (isBlueprintMode.value) return "BLUEPRINT";
-  if (isDemoMode.value) return "DEMO";
+  if (isSyntheticMode.value) return "SYNTHETIC";
   return "";
 });
 
@@ -155,6 +155,7 @@ async function factoryReset() {
               <div
                 v-if="wakeLock.isSupported"
                 class="toggle-row"
+                :class="{ 'active-row': wakeLock.isActive.value }"
                 @click="wakeLock.toggle()"
               >
                 <div class="row-info">
@@ -195,7 +196,11 @@ async function factoryReset() {
             :loading="isRefreshing"
           >
             <div class="features-list">
-              <div class="toggle-row" @click="toggle('ghostBenchmarking')">
+              <div
+                class="toggle-row"
+                :class="{ 'active-row': modules.ghostBenchmarking }"
+                @click="toggle('ghostBenchmarking')"
+              >
                 <div class="row-info">
                   <template v-if="isRefreshing">
                     <div class="sk-text-line-m" style="width: 140px"></div>
@@ -219,7 +224,11 @@ async function factoryReset() {
                 </div>
               </div>
 
-              <div class="toggle-row" @click="toggle('sortExplanation')">
+              <div
+                class="toggle-row"
+                :class="{ 'active-row': modules.sortExplanation }"
+                @click="toggle('sortExplanation')"
+              >
                 <div class="row-info">
                   <template v-if="isRefreshing">
                     <div class="sk-text-line-m" style="width: 150px"></div>
@@ -256,17 +265,13 @@ async function factoryReset() {
             :loading="isRefreshing"
           >
             <div class="features-list">
-              <!-- Base Layer Group -->
-              <div class="mode-group-header">
-                <span class="mg-label">PROTOTYPE BASES</span>
-                <div class="mg-line"></div>
-              </div>
-
-              <!-- Demo Mode -->
               <div
                 class="toggle-row mini"
-                :class="{ disabled: isExhibitionMode }"
-                @click="!isExhibitionMode && toggleDemoMode()"
+                :class="{
+                  disabled: isShowcaseMode,
+                  'active-row': isSyntheticMode && !isShowcaseMode,
+                }"
+                @click="!isShowcaseMode && toggleSyntheticMode()"
               >
                 <div class="row-info">
                   <div class="row-label">Synthetic Engine</div>
@@ -274,7 +279,7 @@ async function factoryReset() {
                     Populate the interface with high-fidelity mock data
                   </div>
                 </div>
-                <div class="switch" :class="{ active: isDemoMode }">
+                <div class="switch" :class="{ active: isSyntheticMode }">
                   <div class="handle"></div>
                 </div>
               </div>
@@ -282,8 +287,11 @@ async function factoryReset() {
               <!-- Blueprint Mode -->
               <div
                 class="toggle-row mini"
-                :class="{ disabled: isExhibitionMode }"
-                @click="!isExhibitionMode && toggleBlueprintMode()"
+                :class="{
+                  disabled: isShowcaseMode,
+                  'active-row': isBlueprintMode && !isShowcaseMode,
+                }"
+                @click="!isShowcaseMode && toggleBlueprintMode()"
               >
                 <div class="row-info">
                   <div class="row-label">Structural Blueprint</div>
@@ -296,7 +304,7 @@ async function factoryReset() {
                 </div>
               </div>
 
-              <div class="mode-connector">
+              <div class="mode-connector" style="height: 12px; margin: 4px 0">
                 <div class="connector-line"></div>
                 <Icon name="expand" size="14" class="connector-icon" />
               </div>
@@ -304,13 +312,17 @@ async function factoryReset() {
               <!-- Master Showcase Group -->
               <div
                 class="mode-master-container"
-                :class="{ active: isExhibitionMode }"
+                :class="{ active: isShowcaseMode }"
               >
-                <div class="toggle-row" @click="toggleExhibitionMode()">
+                <div
+                  class="toggle-row"
+                  :class="{ 'active-row': isShowcaseMode }"
+                  @click="toggleShowcaseMode()"
+                >
                   <div class="row-info">
                     <div class="row-label flex align-center gap-8">
                       Master Showcase
-                      <span v-if="isExhibitionMode" class="hybrid-badge"
+                      <span v-if="isShowcaseMode" class="hybrid-badge"
                         >HYBRID</span
                       >
                     </div>
@@ -319,7 +331,7 @@ async function factoryReset() {
                       data and structural skeletons
                     </div>
                   </div>
-                  <div class="switch" :class="{ active: isExhibitionMode }">
+                  <div class="switch" :class="{ active: isShowcaseMode }">
                     <div class="handle"></div>
                   </div>
                 </div>
@@ -346,7 +358,12 @@ async function factoryReset() {
             </template>
 
             <div class="features-list">
-              <div class="toggle-row" @click="toggle('blitzMode')">
+              <div
+                v-if="modules.blitzMode"
+                class="toggle-row"
+                :class="{ 'active-row': modules.blitzMode }"
+                @click="toggle('blitzMode')"
+              >
                 <div class="row-info">
                   <template v-if="isRefreshing">
                     <div class="sk-text-line-m" style="width: 140px"></div>
@@ -493,11 +510,30 @@ async function factoryReset() {
   font-weight: 800;
   font-size: 15px;
   color: var(--sys-color-on-surface);
+  transition: color 0.3s ease;
 }
 .row-desc {
   font-size: 13px;
   opacity: 0.6;
+  transition: opacity 0.3s ease;
 }
+
+.toggle-row .row-label,
+.toggle-row .row-desc {
+  color: var(--sys-color-outline);
+  opacity: 0.5;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-row.active-row .row-label {
+  color: var(--sys-color-on-surface);
+  opacity: 1;
+}
+.toggle-row.active-row .row-desc {
+  color: var(--sys-color-on-surface);
+  opacity: 0.8;
+}
+
 .exp-badge {
   font-size: 9px;
   font-weight: 900;
@@ -730,8 +766,8 @@ async function factoryReset() {
 }
 
 .mode-master-container {
-  padding: 14px;
-  margin: 0 -4px;
+  padding: 10px 14px;
+  margin: -12px -4px 0;
   border-radius: 16px;
   background: var(--sys-color-surface-container-highest);
   border: 1px solid transparent;
@@ -741,6 +777,13 @@ async function factoryReset() {
   background: var(--sys-color-primary-container);
   border-color: rgba(var(--sys-color-primary-rgb), 0.2);
   box-shadow: var(--sys-elevation-1);
+}
+.mode-master-container.active .toggle-row .row-label {
+  color: var(--sys-color-on-primary-container) !important;
+}
+.mode-master-container.active .toggle-row .row-desc {
+  color: var(--sys-color-on-primary-container) !important;
+  opacity: 0.7;
 }
 
 .hybrid-badge {

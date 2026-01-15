@@ -3,9 +3,9 @@ import { loadCache, fetchRemote, dismissRecruits } from "../api/gasClient";
 import type { WebAppData } from "../types";
 import { useBadge } from "./useBadge";
 import { useModules } from "./useModules";
-import { useDemoMode } from "./useDemoMode";
+import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
-import { useExhibitionMode } from "./useExhibitionMode";
+import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
 
 // Global State
@@ -19,9 +19,9 @@ const syncError = ref<string | null>(null);
 
 const { setBadge } = useBadge();
 const { modules } = useModules();
-const { isDemoMode } = useDemoMode();
+const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
-const { isExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode } = useShowcaseMode();
 
 const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
@@ -52,7 +52,7 @@ export function useClanData() {
   let refreshAbortController: AbortController | null = null;
 
   async function startBackgroundSync() {
-    if (isExhibitionMode.value) {
+    if (isShowcaseMode.value) {
       const mock = generateMockData();
       updateBadgeCount(mock);
       clanData.value = mock;
@@ -68,8 +68,8 @@ export function useClanData() {
       return;
     }
 
-    if (isDemoMode.value) {
-      // console.log("🌟 Demo Mode Active");
+    if (isSyntheticMode.value) {
+      // console.log("🌟 Synthetic Mode Active");
       const mock = generateMockData();
       clanData.value = mock;
       lastSyncTime.value = mock.timestamp;
@@ -77,6 +77,21 @@ export function useClanData() {
       return;
     }
 
+    // Default: Return to network data if no mode active
+    refresh();
+  }
+
+  function updateBadgeCount(data: WebAppData) {
+    if (data?.hh) {
+      const threshold = modules.notificationThreshold || 75;
+      const count = modules.notificationBadgeHighPotential
+        ? data.hh.filter((r) => r.s >= threshold).length
+        : data.hh.length;
+      setBadge(count);
+    }
+  }
+
+  async function loadFromNetwork() {
     // Fast DB Path (SWR) via IDB - still good for robust caching
     try {
       const cached = await Promise.race([
@@ -131,7 +146,11 @@ export function useClanData() {
       syncError.value = null;
 
       // No-op guard for special modes
-      if (isDemoMode.value || isBlueprintMode.value || isExhibitionMode.value) {
+      if (
+        isSyntheticMode.value ||
+        isBlueprintMode.value ||
+        isShowcaseMode.value
+      ) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         startBackgroundSync(); // Re-run the appropriate mock logic
         syncStatus.value = "success";
@@ -170,7 +189,7 @@ export function useClanData() {
 
   // Synchronize data source when special modes change
   watch(
-    [isDemoMode, isBlueprintMode, isExhibitionMode],
+    [isSyntheticMode, isBlueprintMode, isShowcaseMode],
     () => {
       startBackgroundSync();
     },
