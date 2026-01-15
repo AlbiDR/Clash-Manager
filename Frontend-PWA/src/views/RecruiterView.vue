@@ -217,7 +217,7 @@ function handleSearchUpdate(val: string) {
         v-if="visibleItems.length > 0"
         :recruit="visibleItems[0]"
         :expanded="expandedIds.has(visibleItems[0].id)"
-        :selected="selectedIds.has(visibleItems[0].id)"
+        :selected="selectedSet.has(visibleItems[0].id)"
         @toggle-expand="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
         @dismiss="dismissRecruitsAction([visibleItems[0].id])"
