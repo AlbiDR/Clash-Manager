@@ -52,7 +52,8 @@ const apiStatusObject = computed(() => {
   return { type: "loading", text: "Connecting..." } as const;
 });
 
-const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value);
+const showInitialSkeletons = computed(() => !isHydrated.value);
+const showInlineSkeletons = computed(() => isRefreshing.value);
 
 function handleThemeChange(newTheme: any) {
   haptics.tap();
@@ -112,12 +113,12 @@ async function factoryReset() {
     <ConsoleHeader
       title="Settings"
       :status="apiStatusObject"
-      :loading="showSkeletons"
+      :loading="isRefreshing"
       @refresh="useClanData().refresh()"
     />
 
     <div class="settings-content gpu-contain">
-      <template v-if="showSkeletons">
+      <template v-if="showInitialSkeletons">
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
