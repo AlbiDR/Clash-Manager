@@ -160,16 +160,10 @@ async function factoryReset() {
                 @click="wakeLock.toggle()"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 100px"></div>
-                    <div class="sk-text-line-s" style="width: 180px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Keep Screen On</div>
-                    <div class="row-desc">
-                      Prevent display sleep during clan management
-                    </div>
-                  </template>
+                  <div class="row-label">Keep Screen On</div>
+                  <div class="row-desc">
+                    Prevent display sleep during clan management
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -203,16 +197,10 @@ async function factoryReset() {
                 @click="toggle('ghostBenchmarking')"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 140px"></div>
-                    <div class="sk-text-line-s" style="width: 200px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Ghost Benchmarking</div>
-                    <div class="row-desc">
-                      Visualize clan averages inside stat tooltips
-                    </div>
-                  </template>
+                  <div class="row-label">Ghost Benchmarking</div>
+                  <div class="row-desc">
+                    Visualize clan averages inside stat tooltips
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -231,16 +219,10 @@ async function factoryReset() {
                 @click="toggle('sortExplanation')"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 150px"></div>
-                    <div class="sk-text-line-s" style="width: 180px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Sorting Descriptions</div>
-                    <div class="row-desc">
-                      Explain the logic behind sorting heuristics
-                    </div>
-                  </template>
+                  <div class="row-label">Sorting Descriptions</div>
+                  <div class="row-desc">
+                    Explain the logic behind sorting heuristics
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -366,18 +348,12 @@ async function factoryReset() {
                 @click="toggle('blitzMode')"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 140px"></div>
-                    <div class="sk-text-line-s" style="width: 200px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label flex align-center gap-8">
-                      Blitz Mode
-                    </div>
-                    <div class="row-desc">
-                      Batch operations without confirmation (Broken)
-                    </div>
-                  </template>
+                  <div class="row-label flex align-center gap-8">
+                    Blitz Mode
+                  </div>
+                  <div class="row-desc">
+                    Batch operations without confirmation (Broken)
+                  </div>
                 </div>
                 <div
                   class="switch"
