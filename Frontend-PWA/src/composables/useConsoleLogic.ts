@@ -5,8 +5,9 @@ import { useListFilter } from "./useListFilter";
 import { useUiCoordinator } from "./useUiCoordinator";
 import { useProgressiveList } from "./useProgressiveList";
 import { useConnectionStatus } from "./useConnectionStatus"; // Fix 24: Unify Status
+import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
-import { useExhibitionMode } from "./useExhibitionMode";
+import { useShowcaseMode } from "./useShowcaseMode";
 import { formatTimeAgo } from "../utils/formatters";
 import { generateMockData } from "../utils/mockData";
 
@@ -56,7 +57,7 @@ export function useConsoleLogic<T extends { id: string }>(
     8,
   );
   const visibleItems = computed(() => {
-    if (useExhibitionMode().isExhibitionMode.value) {
+    if (useShowcaseMode().isShowcaseMode.value) {
       return filteredItems.value;
     }
     return allVisibleItems.value;
@@ -128,9 +129,9 @@ export function useConsoleLogic<T extends { id: string }>(
   // 8. Stats Badge
   const statsBadge = computed(() => {
     const { isBlueprintMode } = useBlueprintMode();
-    const { isExhibitionMode } = useExhibitionMode();
+    const { isShowcaseMode } = useShowcaseMode();
 
-    if (isBlueprintMode.value || isExhibitionMode.value) {
+    if (isBlueprintMode.value || isShowcaseMode.value) {
       const mockData = generateMockData();
       const count =
         statsLabel === "Clan" ? mockData.lb.length : mockData.hh.length;
@@ -147,13 +148,16 @@ export function useConsoleLogic<T extends { id: string }>(
   });
 
   // 9. Skeleton State
+  const { isSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode } = useBlueprintMode();
-  const { isExhibitionMode } = useExhibitionMode();
+  const { isShowcaseMode } = useShowcaseMode();
+
   const showSkeletons = computed(() => {
-    if (isExhibitionMode.value) return false;
+    if (isShowcaseMode.value) return false; // In showcase, we show real card
     if (isBlueprintMode.value) return true;
-    // Original logic
+    // Original logic, now combined with synthetic mode check
     return (
+      !isSyntheticMode.value && // Only show skeletons if not in synthetic mode
       !syncError.value &&
       (!isHydrated.value ||
         (isRefreshing.value && (!data.value || data.value.length === 0)))

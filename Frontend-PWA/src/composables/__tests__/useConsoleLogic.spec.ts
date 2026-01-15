@@ -59,10 +59,10 @@ vi.mock("../useBlueprintMode", () => ({
   })),
 }));
 
-const mockExhibitionMode = ref(false);
-vi.mock("../useExhibitionMode", () => ({
-  useExhibitionMode: vi.fn(() => ({
-    isExhibitionMode: mockExhibitionMode,
+const mockShowcaseMode = ref(false);
+vi.mock("../useShowcaseMode", () => ({
+  useShowcaseMode: vi.fn(() => ({
+    isShowcaseMode: mockShowcaseMode,
   })),
 }));
 
@@ -83,7 +83,7 @@ describe("useConsoleLogic", () => {
 
   beforeEach(() => {
     mockBlueprintMode.value = false;
-    mockExhibitionMode.value = false;
+    mockShowcaseMode.value = false;
     vi.clearAllMocks();
   });
 
@@ -93,9 +93,9 @@ describe("useConsoleLogic", () => {
     expect(showSkeletons.value).toBe(true);
   });
 
-  it("does NOT show skeletons when Exhibition Mode is active, even if Blueprint Mode is also active", () => {
+  it("does NOT show skeletons when Showcase Mode is active, even if Blueprint Mode is also active", () => {
     mockBlueprintMode.value = true;
-    mockExhibitionMode.value = true;
+    mockShowcaseMode.value = true;
     const { showSkeletons } = useConsoleLogic(defaultOptions);
     expect(showSkeletons.value).toBe(false);
   });

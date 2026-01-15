@@ -15,9 +15,9 @@ const { startBackgroundSync, lastSyncTime: lastSync } = useClanData();
 const permissionState = ref<NotificationPermission | "unsupported">("default");
 // Improvement #10: Time formatting
 const lastSyncFormatted = computed(() => {
-    if (!lastSync?.value) return "Never";
-    const date = new Date(lastSync.value);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (!lastSync?.value) return "Never";
+  const date = new Date(lastSync.value);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 });
 
 onMounted(() => {
@@ -46,9 +46,12 @@ const enableNotifications = async () => {
 
 // Improvement #9: Test Logic
 const sendTest = async () => {
-    haptics.heavy();
-    await sendLocalNotification("Clash Manager", "This is a test notification from the new system.");
-}
+  haptics.heavy();
+  await sendLocalNotification(
+    "Clash Manager",
+    "This is a test notification from the new system.",
+  );
+};
 </script>
 
 <template>
@@ -60,9 +63,13 @@ const sendTest = async () => {
         <div class="row-desc">Sync alerts for recruits with score</div>
       </div>
 
-      <div class="threshold-selector" role="group" aria-label="Notification Threshold">
+      <div
+        class="threshold-selector"
+        role="group"
+        aria-label="Notification Threshold"
+      >
         <button
-          v-for="val in ([50, 75] as const)"
+          v-for="val in [50, 75] as const"
           :key="val"
           :class="{ active: threshold === val }"
           @click="setThreshold(val)"
@@ -77,50 +84,59 @@ const sendTest = async () => {
 
     <!-- Improvement #13: Permission Rationale & Grant -->
     <div v-if="permissionState === 'default'" class="perm-section">
-        <div class="perm-rationale">
-          <Icon name="bell" size="16" />
-          <span>Enable notifications to get updates on high-potential recruits even when the app is closed.</span>
-        </div>
-        <button class="enable-btn" @click="enableNotifications">
-            Enable Notifications & Badges
-        </button>
+      <div class="perm-rationale">
+        <Icon name="bell" size="16" />
+        <span
+          >Enable notifications to get updates on high-potential recruits even
+          when the app is closed.</span
+        >
+      </div>
+      <button class="enable-btn" @click="enableNotifications">
+        Enable Notifications & Badges
+      </button>
     </div>
 
     <!-- Toggles Section -->
     <div class="toggles-grid" v-if="permissionState === 'granted'">
-       <!-- Improvement #5: Quiet Mode -->
-       <div class="toggle-row" @click="toggle('notificationQuietMode')">
-          <div class="row-info">
-             <div class="row-label">Quiet Mode</div>
-             <div class="row-desc">Update badge without sound or popups</div>
-          </div>
-          <div class="switch" :class="{ active: modules.notificationQuietMode }">
-             <div class="handle"></div>
-          </div>
-       </div>
+      <!-- Improvement #5: Quiet Mode -->
+      <div
+        class="toggle-row"
+        :class="{ 'active-row': modules.notificationQuietMode }"
+        @click="toggle('notificationQuietMode')"
+      >
+        <div class="row-info">
+          <div class="row-label">Quiet Mode</div>
+          <div class="row-desc">Update badge without sound or popups</div>
+        </div>
+        <div class="switch" :class="{ active: modules.notificationQuietMode }">
+          <div class="handle"></div>
+        </div>
+      </div>
 
-       <!-- Improvement #11: Sound Control -->
-       <div class="toggle-row" @click="toggle('notificationSound')">
-          <div class="row-info">
-             <div class="row-label">Sound</div>
-             <div class="row-desc">Play system sound on sync</div>
-          </div>
-          <div class="switch" :class="{ active: modules.notificationSound }">
-             <div class="handle"></div>
-          </div>
-       </div>
+      <!-- Improvement #11: Sound Control -->
+      <div
+        class="toggle-row"
+        :class="{ 'active-row': modules.notificationSound }"
+        @click="toggle('notificationSound')"
+      >
+        <div class="row-info">
+          <div class="row-label">Sound</div>
+          <div class="row-desc">Play system sound on sync</div>
+        </div>
+        <div class="switch" :class="{ active: modules.notificationSound }">
+          <div class="handle"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Actions Row -->
     <div class="actions-row" v-if="permissionState === 'granted'">
-        <!-- Improvement #9: Test Notification -->
-        <button class="action-btn" @click="sendTest">
-           <Icon name="bell" size="14" />
-           <span>Test Alert</span>
-        </button>
-        <div class="sync-info">
-           Last synced: {{ lastSyncFormatted }}
-        </div>
+      <!-- Improvement #9: Test Notification -->
+      <button class="action-btn" @click="sendTest">
+        <Icon name="bell" size="14" />
+        <span>Test Alert</span>
+      </button>
+      <div class="sync-info">Last synced: {{ lastSyncFormatted }}</div>
     </div>
 
     <div class="badge-preview">
@@ -144,45 +160,45 @@ const sendTest = async () => {
 }
 
 .perm-section {
-    margin-top: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .perm-rationale {
-    display: flex;
-    gap: 12px;
-    font-size: 13px;
-    line-height: 1.4;
-    color: var(--sys-color-on-surface-variant);
-    background: var(--sys-color-surface-container);
-    padding: 12px;
-    border-radius: 8px;
-    align-items: center;
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--sys-color-on-surface-variant);
+  background: var(--sys-color-surface-container);
+  padding: 12px;
+  border-radius: 8px;
+  align-items: center;
 }
 
 .enable-btn {
-    width: 100%;
-    height: 40px;
-    background: var(--sys-color-primary);
-    color: var(--sys-color-on-primary);
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: 0.2s var(--sys-motion-standard);
+  width: 100%;
+  height: 40px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s var(--sys-motion-standard);
 }
 
 /* Toggles Grid */
 .toggles-grid {
-    margin-top: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(128,128,128, 0.1);
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(128, 128, 128, 0.1);
 }
 
 .toggle-row {
@@ -221,33 +237,33 @@ const sendTest = async () => {
 
 /* Actions Row */
 .actions-row {
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 16px;
-    border-top: 1px solid rgba(128,128,128, 0.1);
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid rgba(128, 128, 128, 0.1);
 }
 
 .action-btn {
-    height: 32px;
-    padding: 0 16px;
-    border-radius: 99px;
-    border: 1px solid var(--sys-color-outline-variant);
-    background: transparent;
-    color: var(--sys-color-on-surface);
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 99px;
+  border: 1px solid var(--sys-color-outline-variant);
+  background: transparent;
+  color: var(--sys-color-on-surface);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
 }
 
 .sync-info {
-    font-size: 11px;
-    opacity: 0.5;
-    font-family: var(--sys-font-family-mono);
+  font-size: 11px;
+  opacity: 0.5;
+  font-family: var(--sys-font-family-mono);
 }
 
 .section-header {
@@ -259,12 +275,26 @@ const sendTest = async () => {
 .row-label {
   font-weight: 800;
   font-size: 15px;
-  color: var(--sys-color-on-surface);
+  color: var(--sys-color-outline);
+  opacity: 0.5;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .row-desc {
   font-size: 13px;
-  opacity: 0.6;
+  opacity: 0.5;
+  color: var(--sys-color-outline);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-row.active-row .row-label {
+  color: var(--sys-color-on-surface);
+  opacity: 1;
+}
+
+.toggle-row.active-row .row-desc {
+  color: var(--sys-color-on-surface);
+  opacity: 0.8;
 }
 
 /* Elegant threshold selector matching Console Header pill style */

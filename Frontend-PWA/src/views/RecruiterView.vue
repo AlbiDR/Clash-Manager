@@ -5,7 +5,7 @@ import { useApiState } from "../composables/useApiState";
 import { useToast } from "../composables/useToast";
 import { useRecruitBlacklist } from "../composables/useRecruitBlacklist";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
-import { useExhibitionMode } from "../composables/useExhibitionMode";
+import { useShowcaseMode } from "../composables/useShowcaseMode";
 import type { Recruit } from "../types";
 
 import RecruitCard from "../components/RecruitCard.vue";
@@ -25,7 +25,7 @@ const sheetUrl = computed(() => {
     : pingData.value.spreadsheetUrl;
 });
 
-const { isExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode } = useShowcaseMode();
 const {
   data,
   isHydrated,
@@ -233,8 +233,18 @@ function handleSearchUpdate(val: string) {
       @toggle-expand="toggleExpand(recruit.id)"
       @toggle-select="toggleSelect(recruit.id)"
     />
-    <template v-if="isExhibitionMode">
-      <SkeletonCard v-for="i in 7" :key="i" :style="{ '--i': i + 1 }" />
+    <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
+    <template v-if="isShowcaseMode">
+      <RecruitCard
+        v-if="visibleItems.length > 0"
+        :recruit="visibleItems[0]"
+        :expanded="expandedIds.has(visibleItems[0].id)"
+        :selected="selectedIds.has(visibleItems[0].id)"
+        @toggle-expand="toggleExpand(visibleItems[0].id)"
+        @toggle-select="toggleSelect(visibleItems[0].id)"
+        @dismiss="dismissRecruitsAction([visibleItems[0].id])"
+      />
+      <SkeletonCard v-for="i in 7" :key="'ex-' + i" />
     </template>
   </ConsoleLayout>
 </template>
