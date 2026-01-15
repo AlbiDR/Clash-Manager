@@ -116,7 +116,7 @@ const sortOptions = [
 ];
 
 const listItems = computed(() => {
-  if (isExhibitionMode.value) {
+  if (isShowcaseMode.value) {
     return visibleItems.value.length > 0 ? visibleItems.value.slice(0, 1) : [];
   }
   return visibleItems.value;
