@@ -231,7 +231,7 @@ const Utils = {
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
     if (!keyPool || keyPool.length === 0) {
       throw new Error(
-        "CRITICAL: No API Keys (CRK1-CRK10) found in Configuration.",
+        "CRITICAL: No API Keys found in Script Properties. Add at least one key (CRK1, CRK2, etc.) to Configuration.",
       );
     }
 
