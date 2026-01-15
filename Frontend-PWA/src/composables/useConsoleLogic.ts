@@ -107,7 +107,7 @@ export function useConsoleLogic<T extends { id: string }>(
 
     // Priority 1: Sync Error
     if (syncError.value) return { type: "error", text: "Retry" } as const;
-    
+
     // Priority 2: Empty/First Load
     // Fix 22: Empty State vs Loading State
     if (isRefreshing.value && (!data.value || data.value.length === 0))
@@ -121,7 +121,7 @@ export function useConsoleLogic<T extends { id: string }>(
           new Date(lastSyncTime.value || Date.now()).toISOString(),
         ),
       };
-      
+
     return { type: "ready" as const, text: "Empty" };
   });
 
@@ -150,8 +150,8 @@ export function useConsoleLogic<T extends { id: string }>(
   const { isBlueprintMode } = useBlueprintMode();
   const { isExhibitionMode } = useExhibitionMode();
   const showSkeletons = computed(() => {
-    if (isBlueprintMode.value) return true;
     if (isExhibitionMode.value) return false;
+    if (isBlueprintMode.value) return true;
     // Original logic
     return (
       !syncError.value &&
