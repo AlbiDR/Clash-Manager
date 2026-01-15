@@ -10,15 +10,15 @@
   "id": "clash-manager-pwa",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "logo.webp",
       "sizes": "192x192 512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any"
     },
     {
-      "src": "logo-maskable.png",
+      "src": "logo-maskable.webp",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "maskable"
     }
   ],
