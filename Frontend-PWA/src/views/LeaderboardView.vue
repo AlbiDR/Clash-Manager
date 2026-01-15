@@ -115,6 +115,13 @@ const sortOptions = [
   },
 ];
 
+const listItems = computed(() => {
+  if (isExhibitionMode.value) {
+    return visibleItems.value.length > 0 ? visibleItems.value.slice(0, 1) : [];
+  }
+  return visibleItems.value;
+});
+
 // Specific Helper for Score Selection
 function onSelectScore(threshold: number, mode: "ge" | "le") {
   handleSelectScore(threshold, mode, (m) => m.s || 0);
@@ -153,7 +160,7 @@ function handleSearch(val: string) {
   >
     <!-- Default Slot: The List -->
     <MemberCard
-      v-for="(member, index) in visibleItems"
+      v-for="(member, index) in listItems"
       :key="member.id"
       v-memo="[
         member.s,
