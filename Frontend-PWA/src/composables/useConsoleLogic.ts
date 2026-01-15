@@ -57,7 +57,7 @@ export function useConsoleLogic<T extends { id: string }>(
   );
   const visibleItems = computed(() => {
     if (useExhibitionMode().isExhibitionMode.value) {
-      return allVisibleItems.value.slice(0, 1);
+      return filteredItems.value;
     }
     return allVisibleItems.value;
   });
