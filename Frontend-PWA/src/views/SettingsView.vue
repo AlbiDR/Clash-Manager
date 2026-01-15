@@ -510,19 +510,19 @@ async function factoryReset() {
   font-weight: 800;
   font-size: 15px;
   color: var(--sys-color-on-surface);
-  transition: color 0.3s ease;
 }
 .row-desc {
   font-size: 13px;
   opacity: 0.6;
-  transition: opacity 0.3s ease;
 }
 
 .toggle-row .row-label,
 .toggle-row .row-desc {
   color: var(--sys-color-outline);
   opacity: 0.5;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toggle-row.active-row .row-label {
@@ -723,8 +723,8 @@ async function factoryReset() {
 
 .toggle-row.mini {
   padding-left: 8px;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
+  opacity: 0.7;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .toggle-row.mini:hover {
   opacity: 1;
