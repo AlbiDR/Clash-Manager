@@ -13,9 +13,6 @@ export function useBlueprintMode() {
   function toggleBlueprintMode() {
     isBlueprintMode.value = !isBlueprintMode.value;
     localStorage.setItem(BLUEPRINT_KEY, String(isBlueprintMode.value));
-
-    // Reload to ensure all stores re-initialize with the correct state
-    window.location.reload();
   }
 
   function setBlueprintMode(val: boolean) {

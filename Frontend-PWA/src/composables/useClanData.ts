@@ -81,9 +81,9 @@ export function useClanData() {
     try {
       const cached = await Promise.race([
         loadCache(),
-        new Promise<null>((_, reject) => 
-          setTimeout(() => reject(new Error("IDB Timeout")), 2000)
-        )
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("IDB Timeout")), 2000),
+        ),
       ]);
 
       if (cached) {
@@ -154,7 +154,7 @@ export function useClanData() {
       });
       updateBadgeCount(remoteData);
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === 'AbortError') return; // Ignore aborts
+      if (e instanceof Error && e.name === "AbortError") return; // Ignore aborts
 
       console.error("Sync failed:", e);
       syncStatus.value = "error";
@@ -167,6 +167,15 @@ export function useClanData() {
       }, 2000);
     }
   }
+
+  // Synchronize data source when special modes change
+  watch(
+    [isDemoMode, isBlueprintMode, isExhibitionMode],
+    () => {
+      startBackgroundSync();
+    },
+    { flush: "post" },
+  );
 
   async function dismissRecruitsAction(ids: string[]) {
     if (!clanData.value) return;
@@ -229,4 +238,3 @@ export function useClanData() {
     dismissRecruitsAction,
   };
 }
-

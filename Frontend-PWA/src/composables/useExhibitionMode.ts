@@ -37,9 +37,6 @@ export function useExhibitionMode() {
     // Use setters to avoid reload loops
     setDemoMode(newValue);
     setBlueprintMode(newValue);
-
-    // Reload to apply changes globally
-    window.location.reload();
   }
 
   function setExhibitionMode(val: boolean) {
