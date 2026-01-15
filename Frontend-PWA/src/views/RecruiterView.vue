@@ -118,6 +118,13 @@ const sortOptions = [
   },
 ];
 
+const listItems = computed(() => {
+  if (isExhibitionMode.value) {
+    return visibleItems.value.length > 0 ? visibleItems.value.slice(0, 1) : [];
+  }
+  return visibleItems.value;
+});
+
 // 🧹 CLEANUP: Extra Recruit Logic managed here
 watch(
   () => data.value?.hh,
@@ -206,7 +213,7 @@ function handleSearchUpdate(val: string) {
 
     <!-- Default Slot: The List -->
     <RecruitCard
-      v-for="(recruit, index) in visibleItems"
+      v-for="(recruit, index) in listItems"
       :key="recruit.id"
       v-memo="[
         recruit.s,
