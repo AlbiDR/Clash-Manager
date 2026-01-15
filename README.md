@@ -107,7 +107,18 @@ The core value of Clash Manager is its multi-dimensional scoring algorithm (impl
 
 ---
 
-## Development & Contributing
+## Development
+
+After completing the setup, run the development server:
+
+```bash
+cd Frontend-PWA
+pnpm dev
+```
+
+This will start the Vite development server, typically available at `http://localhost:5173`.
+
+## Contributing
 
 We prioritize technical purity and architectural coherence.
 
