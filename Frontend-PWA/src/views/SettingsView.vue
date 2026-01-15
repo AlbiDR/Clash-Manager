@@ -724,12 +724,8 @@ async function factoryReset() {
 
 .toggle-row.mini {
   padding-left: 8px;
-  opacity: 0.7;
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: -4px;
-}
-.toggle-row.mini:hover {
   opacity: 1;
+  margin-bottom: -4px;
 }
 .toggle-row.mini .row-label {
   font-size: 14px;
