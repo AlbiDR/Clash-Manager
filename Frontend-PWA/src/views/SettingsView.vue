@@ -305,7 +305,7 @@ async function factoryReset() {
                 </div>
               </div>
 
-              <div class="mode-connector" style="height: 12px; margin: 4px 0">
+              <div class="mode-connector">
                 <div class="connector-line"></div>
                 <Icon name="expand" size="14" class="connector-icon" />
               </div>
@@ -726,6 +726,7 @@ async function factoryReset() {
   padding-left: 8px;
   opacity: 0.7;
   transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: -4px;
 }
 .toggle-row.mini:hover {
   opacity: 1;
@@ -745,9 +746,9 @@ async function factoryReset() {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 24px;
+  height: 8px;
   position: relative;
-  margin: -8px 0;
+  margin: -4px 0;
 }
 .connector-line {
   position: absolute;
@@ -767,8 +768,8 @@ async function factoryReset() {
 }
 
 .mode-master-container {
-  padding: 10px 14px;
-  margin: -12px -4px 0;
+  padding: 8px 12px;
+  margin: -8px -2px 0;
   border-radius: 16px;
   background: var(--sys-color-surface-container-highest);
   border: 1px solid transparent;
