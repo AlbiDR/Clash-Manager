@@ -32,6 +32,9 @@ jobs:
     name: Verify
     runs-on: ubuntu-latest
     steps:
+      - name: Suppress Git Advice
+        run: git config --global advice.defaultBranchName false
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -66,11 +69,14 @@ jobs:
     name: Deploy
     needs: verify
     if: github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Suppress Git Advice
+        run: git config --global advice.defaultBranchName false
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -97,6 +103,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./Frontend-PWA/dist"
+          compression-level: 1
 
       - name: Deploy to GitHub Pages
         id: deployment
