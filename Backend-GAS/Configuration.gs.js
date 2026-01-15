@@ -38,18 +38,16 @@ const CONFIG = {
     CLAN_TAG: _PROPS["ClanTag"] || "",
     PLAYER_TAG: _PROPS["PlayerTag"] || "",
 
-    API_KEYS: [
-      { name: "CRK1", value: _PROPS["CRK1"] },
-      { name: "CRK2", value: _PROPS["CRK2"] },
-      { name: "CRK3", value: _PROPS["CRK3"] },
-      { name: "CRK4", value: _PROPS["CRK4"] },
-      { name: "CRK5", value: _PROPS["CRK5"] },
-      { name: "CRK6", value: _PROPS["CRK6"] },
-      { name: "CRK7", value: _PROPS["CRK7"] },
-      { name: "CRK8", value: _PROPS["CRK8"] },
-      { name: "CRK9", value: _PROPS["CRK9"] },
-      { name: "CRK10", value: _PROPS["CRK10"] },
-    ].filter((k) => k.value && k.value.trim().length > 0),
+    API_KEYS: Object.keys(_PROPS)
+      .filter((key) => /^CRK\d+$/.test(key)) // Match CRK followed by one or more digits
+      .sort((a, b) => {
+        // Sort numerically by the number part (CRK2 before CRK10)
+        const numA = parseInt(a.replace("CRK", ""), 10);
+        const numB = parseInt(b.replace("CRK", ""), 10);
+        return numA - numB;
+      })
+      .map((key) => ({ name: key, value: _PROPS[key] }))
+      .filter((k) => k.value && k.value.trim().length > 0),
 
     TIMEZONE: "Europe/Rome",
     API_BASE: "https://proxy.royaleapi.dev/v1",
