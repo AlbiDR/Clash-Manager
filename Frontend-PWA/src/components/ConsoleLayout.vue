@@ -8,7 +8,7 @@ import SkeletonCard from "./SkeletonCard.vue";
 import Icon from "./Icon.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 import { useHaptics } from "../composables/useHaptics";
-import { useExhibitionMode } from "../composables/useExhibitionMode";
+import { useShowcaseMode } from "../composables/useShowcaseMode";
 
 const props = defineProps<{
   title: string;
@@ -49,7 +49,7 @@ const emit = defineEmits<{
 
 const { setFabVisible, updateFabState } = useUiCoordinator();
 const haptics = useHaptics();
-const { isExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode } = useShowcaseMode();
 
 // --- Pull to Refresh Logic ---
 const touchStartY = ref(0);
@@ -103,12 +103,12 @@ function onTouchMove(e: TouchEvent) {
 
 function onTouchEnd() {
   if (!isPulling.value) return;
-  
+
   if (pullOffset.value >= threshold) {
     emit("refresh");
     haptics.success();
   }
-  
+
   isPulling.value = false;
   pullOffset.value = 0;
 }
@@ -120,7 +120,7 @@ watch(
   (visible) => {
     setFabVisible(!!visible);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Sync fabState content with global coordinator
@@ -141,7 +141,7 @@ watch(
       });
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 onUnmounted(() => {
@@ -151,9 +151,7 @@ onUnmounted(() => {
 
 <template>
   <div class="view-container">
-
-
-    <div 
+    <div
       class="view-content"
       :style="ptrStyle"
       @touchstart="onTouchStart"
@@ -161,12 +159,17 @@ onUnmounted(() => {
       @touchend="onTouchEnd"
     >
       <!-- Pull to Refresh Indicator -->
-      <div 
+      <div
         class="ptr-indicator"
         :class="{ 'is-refreshing': isRefreshing, 'is-pulling': isPulling }"
       >
         <div class="ptr-spinner">
-          <Icon v-if="!isRefreshing" name="refresh" size="18" class="ptr-icon" />
+          <Icon
+            v-if="!isRefreshing"
+            name="refresh"
+            size="18"
+            class="ptr-icon"
+          />
         </div>
       </div>
 
@@ -192,7 +195,9 @@ onUnmounted(() => {
             @select-all="$emit('select-all')"
             @clear="$emit('clear-selection')"
             @done="$emit('clear-selection')"
-            @select-score="(t: number, m: string) => $emit('select-score', t, m)"
+            @select-score="
+              (t: number, m: string) => $emit('select-score', t, m)
+            "
           />
           <slot name="extra-header" v-else></slot>
         </template>
@@ -293,6 +298,8 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
