@@ -192,10 +192,46 @@ function updateAndGetBlacklist(sheet) {
   }
 
   validEntries.sort((a, b) => b.s - a.s);
-  const benchmarkHigh = validEntries
-    .slice(0, 3)
-    .reduce((acc, c, i, arr) => acc + c.s / arr.length, 0);
-  // 3. Write back to sheet (Overwrite)
+
+  // 2. DYNAMIC BENCHMARK (Decay + Percentile)
+  // Calculate decayed scores for benchmark purposes (does not affect saved raw score)
+  const scoredEntries = validEntries.map((e) => {
+    const msSinceAdded = now - (e.e - expiryDuration); // e.e is expiry (future), so e.e - duration = added time
+    // ^ Wait, e.e is set to now + duration when added/updated.
+    // If we want age, we need (ExpiryTimestamp - CurrentTimestamp) inverted?
+    // No, existing logic sets `e: now + expiryDuration`.
+    // So `e - now` is remaining time.
+    // `expiryDuration - (e - now)` is elapsed time (age).
+    const remainingMs = e.e - now;
+    const ageMs = expiryDuration - remainingMs;
+    const ageDays = Math.max(0, ageMs / 86400000);
+    const decayFactor = Math.pow(
+      1 - CONFIG.HEADHUNTER.BENCHMARK_DECAY,
+      ageDays,
+    );
+    return { ...e, decayed: e.s * decayFactor };
+  });
+
+  // Sort by DECAYED score to find the current effective top tier
+  scoredEntries.sort((a, b) => b.decayed - a.decayed);
+
+  // Determine Pool Size (Top 5%, Minimum 3)
+  const poolSize = Math.max(
+    CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL,
+    Math.ceil(scoredEntries.length * CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE),
+  );
+
+  const pool = scoredEntries.slice(0, poolSize);
+  const benchmarkHigh =
+    pool.length > 0
+      ? pool.reduce((acc, c) => acc + c.decayed, 0) / pool.length
+      : 0;
+
+  console.log(
+    `🚫 Blacklist: ${validEntries.length} active. Benchmark Pool: Top ${poolSize} (Avg: ${Math.round(benchmarkHigh)}).`,
+  );
+
+  // 3. Write back to sheet (Overwrite) - We save Raw Score 's', not decayed
   blSheet.clear();
   if (validEntries.length > 0) {
     const output = validEntries.map((e) => [e.t, e.e, e.s]);
@@ -208,9 +244,6 @@ function updateAndGetBlacklist(sheet) {
     SpreadsheetApp.flush();
   }
 
-  console.log(
-    `🚫 Blacklist: ${validEntries.length} active. Benchmark: ${Math.round(benchmarkHigh)}.`,
-  );
   return {
     ids: new Set(validEntries.map((e) => e.t)),
     highScore: benchmarkHigh,
