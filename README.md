@@ -4,6 +4,8 @@
 
 A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as a **Standalone Progressive Web App (PWA)** which supports virtually any platform.
 
+RUNNING TEST
+
 ---
 
 ## Visual Experience
