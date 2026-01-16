@@ -10,58 +10,38 @@
   "id": "clash-manager-pwa",
   "icons": [
     {
-      "src": "logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "pwa-64x64.png",
+      "sizes": "64x64",
+      "type": "image/png"
     },
     {
-      "src": "logo.svg",
+      "src": "pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "pwa-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "pwa-icon-monochrome.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "monochrome"
-    },
-    {
-      "src": "pwa-icon-monochrome.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "monochrome"
-    },
-    {
-      "src": "pwa-icon-maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    },
-    {
-      "src": "pwa-icon-maskable.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    },
-    {
-      "src": "logo.webp",
-      "sizes": "192x192 512x512",
-      "type": "image/webp",
-      "purpose": "any"
-    },
-    {
-      "src": "logo-maskable.webp",
-      "sizes": "512x512",
-      "type": "image/webp",
-      "purpose": "maskable"
-    },
-    {
-      "src": "apple-touch-icon.png",
-      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "pwa-icon-monochrome.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
+    },
+    {
+      "src": "pwa-icon-monochrome.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
     }
   ],
   "screenshots": [
