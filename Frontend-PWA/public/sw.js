@@ -31,6 +31,50 @@ self.addEventListener("message", async (event) => {
     }
   }
 
+  // 🤖 ANDROID: Badge via persistent notification
+  // Android doesn't support direct Badge API - only notifications create app icon badges
+  if (event.data.type === "BADGE_NOTIFICATION_ANDROID") {
+    const { count, threshold = 75 } = event.data;
+    try {
+      // ⚡ OVERRIDE ATTEMPT 1: Set badge BEFORE notification
+      if (self.navigator.setAppBadge) {
+        await self.navigator.setAppBadge(count);
+      }
+
+      if (count > 0) {
+        // Show persistent silent notification to trigger Android badge
+        await self.registration.showNotification("Elite Recruits Available", {
+          body: `${count} candidate${count > 1 ? "s" : ""} above ${threshold} score threshold`,
+          icon: "pwa-192.png",
+          badge: "pwa-64.png",
+          tag: "badge-persistent", // Always replaces previous badge notification
+          silent: true,
+          requireInteraction: false,
+          data: { type: "badge", count, timestamp: Date.now() },
+        });
+
+        // ⚡ OVERRIDE ATTEMPT 2: Set badge AFTER notification (with delay)
+        // Some launchers re-evaluate badge count when a notification arrives.
+        // We wait for the launcher to finish its "auto-count" and then try to nudge it.
+        setTimeout(async () => {
+          if (self.navigator.setAppBadge) {
+             await self.navigator.setAppBadge(count);
+          }
+        }, 300);
+
+      } else {
+        // Clear badge by closing the persistent notification
+        const notifications = await self.registration.getNotifications({
+          tag: "badge-persistent",
+        });
+        notifications.forEach((n) => n.close());
+        if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+      }
+    } catch (e) {
+      console.warn("[SW] Android badge notification failed", e);
+    }
+  }
+
   if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, options } = event.data;
     self.registration.showNotification(title, {
@@ -74,8 +118,38 @@ async function handleBackgroundSync() {
       if (data.hh && self.navigator.setAppBadge) {
         const threshold = 75; // Default threshold
         const count = data.hh.filter((r) => r.s >= threshold).length;
-        if (count > 0) await self.navigator.setAppBadge(count);
-        else await self.navigator.clearAppBadge();
+        // 🤖 ANDROID: Use persistent notification (creates app icon badge)
+        if (count > 0) {
+          // ⚡ OVERRIDE ATTEMPT 1: Set badge BEFORE notification
+          if (self.navigator.setAppBadge) {
+            await self.navigator.setAppBadge(count);
+          }
+
+          await self.registration.showNotification("Elite Recruits Available", {
+            body: `${count} candidate${count > 1 ? "s" : ""} above ${threshold} score threshold`,
+            icon: "pwa-192.png",
+            badge: "pwa-64.png",
+            tag: "badge-persistent",
+            silent: true,
+            requireInteraction: false,
+            data: { type: "badge", count, timestamp: Date.now() },
+          });
+
+          // ⚡ OVERRIDE ATTEMPT 2: Set badge AFTER notification (with delay)
+          setTimeout(async () => {
+            if (self.navigator.setAppBadge) {
+              await self.navigator.setAppBadge(count);
+            }
+          }, 300);
+
+        } else {
+          // Clear badge notification
+          const notifications = await self.registration.getNotifications({
+            tag: "badge-persistent",
+          });
+          notifications.forEach((n) => n.close());
+          if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+        }
       }
     }
   } catch (e) {
