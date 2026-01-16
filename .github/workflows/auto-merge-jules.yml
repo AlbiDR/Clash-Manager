@@ -1,0 +1,47 @@
+name: Auto-Merge Jules PRs
+
+on:
+  schedule:
+    # 8:00 AM CET is 7:00 AM UTC (Standard Time) or 6:00 AM UTC (Summer Time).
+    # Italy switches between CET (UTC+1) and CEST (UTC+2).
+    # Cron uses UTC.
+    # To cover 8AM Italy consistently, we'd theoretically need to adjust, but typically we pick one.
+    # UTC 7:00 is 8:00 CET.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Jules branch
+        uses: actions/checkout@v4
+        with:
+          ref: Jules
+          fetch-depth: 0 # Need full history for changelog management might be overkill but safe
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run Merge Script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/merge-jules-prs.js
+
+      - name: Commit and Push Changelog
+        run: |
+          if [[ `git status --porcelain .jules/CHANGELOG.md` ]]; then
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add .jules/CHANGELOG.md
+            git commit -m "docs: update changelog [skip ci]"
+            git push origin Jules
+          else
+            echo "No changelog updates."
+          fi
