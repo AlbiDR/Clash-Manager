@@ -54,6 +54,7 @@ export interface Recruit {
 export interface WebAppData {
   lb: LeaderboardMember[];
   hh: Recruit[];
+  playerTag?: string; // Player tag without # to highlight
   timestamp: number;
 }
 

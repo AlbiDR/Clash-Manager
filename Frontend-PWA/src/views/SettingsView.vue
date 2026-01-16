@@ -4,9 +4,9 @@ import { useModules } from "../composables/useModules";
 import { useTheme } from "../composables/useTheme";
 import { useHaptics } from "../composables/useHaptics";
 import { useWakeLock } from "../composables/useWakeLock";
-import { useDemoMode } from "../composables/useDemoMode";
+import { useSyntheticMode } from "../composables/useSyntheticMode";
 import { useBlueprintMode } from "../composables/useBlueprintMode";
-import { useExhibitionMode } from "../composables/useExhibitionMode";
+import { useShowcaseMode } from "../composables/useShowcaseMode";
 import { useClanData } from "../composables/useClanData";
 import { useConnectionStatus } from "../composables/useConnectionStatus";
 import { idb } from "../utils/idb"; // Fix 23: Import IDB
@@ -20,12 +20,12 @@ import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
 import { vTactile } from "../directives/vTactile";
 
 const { modules, toggle } = useModules();
-const { theme, setTheme } = useTheme();
+const { theme, setTheme, clearManifestCache } = useTheme();
 const haptics = useHaptics();
 const wakeLock = useWakeLock();
-const { isDemoMode, toggleDemoMode } = useDemoMode();
+const { isSyntheticMode, toggleSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode, toggleBlueprintMode } = useBlueprintMode();
-const { isExhibitionMode, toggleExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode, toggleShowcaseMode } = useShowcaseMode();
 const { isHydrated, isRefreshing } = useClanData();
 const appVersion =
   typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
@@ -33,9 +33,9 @@ const appVersion =
 const { status: unifiedStatus } = useConnectionStatus();
 
 const footerBadgeText = computed(() => {
-  if (isExhibitionMode.value) return "EXHIBITION";
+  if (isShowcaseMode.value) return "SHOWCASE";
   if (isBlueprintMode.value) return "BLUEPRINT";
-  if (isDemoMode.value) return "DEMO";
+  if (isSyntheticMode.value) return "SYNTHETIC";
   return "";
 });
 
@@ -52,7 +52,8 @@ const apiStatusObject = computed(() => {
   return { type: "loading", text: "Connecting..." } as const;
 });
 
-const showSkeletons = computed(() => !isHydrated.value || isRefreshing.value);
+const showInitialSkeletons = computed(() => !isHydrated.value);
+const showInlineSkeletons = computed(() => isRefreshing.value);
 
 function handleThemeChange(newTheme: any) {
   haptics.tap();
@@ -83,6 +84,7 @@ async function clearCache() {
     }
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    clearManifestCache();
     window.location.reload();
   }
 }
@@ -112,12 +114,12 @@ async function factoryReset() {
     <ConsoleHeader
       title="Settings"
       :status="apiStatusObject"
-      :loading="showSkeletons"
+      :loading="isRefreshing"
       @refresh="useClanData().refresh()"
     />
 
     <div class="settings-content gpu-contain">
-      <template v-if="showSkeletons">
+      <template v-if="showInitialSkeletons">
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
@@ -155,19 +157,14 @@ async function factoryReset() {
               <div
                 v-if="wakeLock.isSupported"
                 class="toggle-row"
+                :class="{ 'active-row': wakeLock.isActive.value }"
                 @click="wakeLock.toggle()"
               >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 100px"></div>
-                    <div class="sk-text-line-s" style="width: 180px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Keep Screen On</div>
-                    <div class="row-desc">
-                      Prevent display sleep during clan management
-                    </div>
-                  </template>
+                  <div class="row-label">Keep Screen On</div>
+                  <div class="row-desc">
+                    Prevent display sleep during clan management
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -195,18 +192,16 @@ async function factoryReset() {
             :loading="isRefreshing"
           >
             <div class="features-list">
-              <div class="toggle-row" @click="toggle('ghostBenchmarking')">
+              <div
+                class="toggle-row"
+                :class="{ 'active-row': modules.ghostBenchmarking }"
+                @click="toggle('ghostBenchmarking')"
+              >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 140px"></div>
-                    <div class="sk-text-line-s" style="width: 200px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Ghost Benchmarking</div>
-                    <div class="row-desc">
-                      Visualize clan averages inside stat tooltips
-                    </div>
-                  </template>
+                  <div class="row-label">Ghost Benchmarking</div>
+                  <div class="row-desc">
+                    Visualize clan averages inside stat tooltips
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -219,18 +214,16 @@ async function factoryReset() {
                 </div>
               </div>
 
-              <div class="toggle-row" @click="toggle('sortExplanation')">
+              <div
+                class="toggle-row"
+                :class="{ 'active-row': modules.sortExplanation }"
+                @click="toggle('sortExplanation')"
+              >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 150px"></div>
-                    <div class="sk-text-line-s" style="width: 180px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label">Sorting Descriptions</div>
-                    <div class="row-desc">
-                      Explain the logic behind sorting heuristics
-                    </div>
-                  </template>
+                  <div class="row-label">Sorting Descriptions</div>
+                  <div class="row-desc">
+                    Explain the logic behind sorting heuristics
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -256,33 +249,38 @@ async function factoryReset() {
             :loading="isRefreshing"
           >
             <div class="features-list">
-              <!-- Demo Mode -->
               <div
-                class="toggle-row"
-                :class="{ disabled: isExhibitionMode }"
-                @click="!isExhibitionMode && toggleDemoMode()"
+                class="toggle-row mini"
+                :class="{
+                  disabled: isShowcaseMode,
+                  'active-row': isSyntheticMode && !isShowcaseMode,
+                }"
+                @click="!isShowcaseMode && toggleSyntheticMode()"
               >
                 <div class="row-info">
-                  <div class="row-label">Demo Mode</div>
+                  <div class="row-label">Synthetic Engine</div>
                   <div class="row-desc">
-                    Use mock data engine for technical showcase
+                    Populate the interface with high-fidelity mock data
                   </div>
                 </div>
-                <div class="switch" :class="{ active: isDemoMode }">
+                <div class="switch" :class="{ active: isSyntheticMode }">
                   <div class="handle"></div>
                 </div>
               </div>
 
               <!-- Blueprint Mode -->
               <div
-                class="toggle-row"
-                :class="{ disabled: isExhibitionMode }"
-                @click="!isExhibitionMode && toggleBlueprintMode()"
+                class="toggle-row mini"
+                :class="{
+                  disabled: isShowcaseMode,
+                  'active-row': isBlueprintMode && !isShowcaseMode,
+                }"
+                @click="!isShowcaseMode && toggleBlueprintMode()"
               >
                 <div class="row-info">
-                  <div class="row-label">Blueprint Mode</div>
+                  <div class="row-label">Structural Blueprint</div>
                   <div class="row-desc">
-                    Force skeleton view for UI structural analysis
+                    Strip UI to geometric skeletons to audit layout stability
                   </div>
                 </div>
                 <div class="switch" :class="{ active: isBlueprintMode }">
@@ -290,16 +288,36 @@ async function factoryReset() {
                 </div>
               </div>
 
-              <!-- Exhibition Mode -->
-              <div class="toggle-row" @click="toggleExhibitionMode()">
-                <div class="row-info">
-                  <div class="row-label">Exhibition Mode</div>
-                  <div class="row-desc">
-                    Showcase a single mock entry with skeletons
+              <div class="mode-connector">
+                <div class="connector-line"></div>
+                <Icon name="expand" size="14" class="connector-icon" />
+              </div>
+
+              <!-- Master Showcase Group -->
+              <div
+                class="mode-master-container"
+                :class="{ active: isShowcaseMode }"
+              >
+                <div
+                  class="toggle-row"
+                  :class="{ 'active-row': isShowcaseMode }"
+                  @click="toggleShowcaseMode()"
+                >
+                  <div class="row-info">
+                    <div class="row-label flex align-center gap-8">
+                      Master Showcase
+                      <span v-if="isShowcaseMode" class="hybrid-badge"
+                        >HYBRID</span
+                      >
+                    </div>
+                    <div class="row-desc">
+                      A curated fusion environment leveraging both synthetic
+                      data and structural skeletons
+                    </div>
                   </div>
-                </div>
-                <div class="switch" :class="{ active: isExhibitionMode }">
-                  <div class="handle"></div>
+                  <div class="switch" :class="{ active: isShowcaseMode }">
+                    <div class="handle"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -324,20 +342,18 @@ async function factoryReset() {
             </template>
 
             <div class="features-list">
-              <div class="toggle-row" @click="toggle('blitzMode')">
+              <div
+                class="toggle-row"
+                :class="{ 'active-row': modules.blitzMode }"
+                @click="toggle('blitzMode')"
+              >
                 <div class="row-info">
-                  <template v-if="isRefreshing">
-                    <div class="sk-text-line-m" style="width: 140px"></div>
-                    <div class="sk-text-line-s" style="width: 200px"></div>
-                  </template>
-                  <template v-else>
-                    <div class="row-label flex align-center gap-8">
-                      Blitz Mode
-                    </div>
-                    <div class="row-desc">
-                      Batch operations without confirmation (Broken)
-                    </div>
-                  </template>
+                  <div class="row-label flex align-center gap-8">
+                    Blitz Mode
+                  </div>
+                  <div class="row-desc">
+                    Batch operations without confirmation
+                  </div>
                 </div>
                 <div
                   class="switch"
@@ -387,7 +403,9 @@ async function factoryReset() {
           v-tactile
         >
           CLASH MANAGER V{{ appVersion }}
-          <span v-if="footerBadgeText" class="demo-tag">{{ footerBadgeText }}</span>
+          <span v-if="footerBadgeText" class="demo-tag">{{
+            footerBadgeText
+          }}</span>
         </div>
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
@@ -474,6 +492,25 @@ async function factoryReset() {
   font-size: 13px;
   opacity: 0.6;
 }
+
+.toggle-row .row-label,
+.toggle-row .row-desc {
+  color: var(--sys-color-outline);
+  opacity: 0.5;
+  transition:
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-row.active-row .row-label {
+  color: var(--sys-color-on-surface);
+  opacity: 1;
+}
+.toggle-row.active-row .row-desc {
+  color: var(--sys-color-on-surface);
+  opacity: 0.8;
+}
+
 .exp-badge {
   font-size: 9px;
   font-weight: 900;
@@ -638,6 +675,111 @@ async function factoryReset() {
   letter-spacing: 0;
   opacity: 1;
 }
+
+/* Mode Grouping Polish */
+.mode-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.mg-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--sys-color-primary);
+  opacity: 0.6;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.mg-line {
+  flex: 1;
+  height: 1px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.15;
+}
+
+.toggle-row.mini {
+  padding-left: 8px;
+  opacity: 1;
+  margin-bottom: -4px;
+}
+.toggle-row.mini .row-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.toggle-row.mini .row-desc {
+  font-size: 12px;
+}
+.toggle-row.mini .switch {
+  transform: scale(0.85);
+}
+
+.mode-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 8px;
+  position: relative;
+  margin: -4px 0;
+}
+.connector-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 28px;
+  width: 1.5px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.1;
+}
+.connector-icon {
+  color: var(--sys-color-outline-variant);
+  opacity: 0.3;
+  background: var(--sys-color-surface-container);
+  z-index: 1;
+  padding: 2px;
+}
+
+.mode-master-container {
+  padding: 8px 12px;
+  margin: -8px -2px 0;
+  border-radius: 16px;
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid transparent;
+  transition: all 0.3s var(--sys-motion-spring);
+}
+.mode-master-container.active {
+  background: var(--sys-color-primary-container);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.2);
+  box-shadow: var(--sys-elevation-1);
+}
+.mode-master-container.active .toggle-row .row-label {
+  color: var(--sys-color-on-primary-container) !important;
+}
+.mode-master-container.active .toggle-row .row-desc {
+  color: var(--sys-color-on-primary-container) !important;
+  opacity: 0.7;
+}
+
+.hybrid-badge {
+  font-size: 9px;
+  font-weight: 950;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  padding: 2px 6px;
+  border-radius: 99px;
+  letter-spacing: 0.04em;
+}
+
+.flex {
+  display: flex;
+}
+.align-center {
+  align-items: center;
+}
+.gap-8 {
+  gap: 8px;
+}
+
 .copy {
   font-size: 10px;
   opacity: 0.2;

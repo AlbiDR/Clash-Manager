@@ -8,6 +8,7 @@ const props = defineProps<{
   expanded: boolean;
   selected: boolean;
   selectionMode?: boolean;
+  isTagged?: boolean;
   // Optional tonal class for the score pod (e.g. 'tone-high', 'tone-mid')
   toneClass?: string;
   // For accessibility
@@ -40,7 +41,7 @@ function handleScoreClick(e: Event) {
 <template>
   <div
     class="card squish-interaction"
-    :class="{ expanded: expanded, selected: selected }"
+    :class="{ expanded: expanded, selected: selected, tagged: isTagged }"
     v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
   >
     <div class="card-header">
@@ -126,6 +127,16 @@ function handleScoreClick(e: Event) {
   border: 2.5px solid var(--sys-color-primary);
   transform: scale(0.97);
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15);
+}
+
+.card.tagged:not(.selected) {
+  border: 1.5px solid rgba(var(--sys-color-primary-rgb), 0.4);
+  background: linear-gradient(
+    135deg,
+    var(--sys-color-surface-container),
+    rgba(var(--sys-color-primary-rgb), 0.03)
+  );
+  box-shadow: 0 2px 8px rgba(var(--sys-color-primary-rgb), 0.05);
 }
 
 /* Deep selectors to style slotted content when selected */

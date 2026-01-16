@@ -6,45 +6,35 @@ The heart of the Clash Manager interface. This is a high-performance Vue 3 appli
 
 ---
 
-## Getting Started
+---
 
-This guide provides instructions for setting up and running the frontend application locally.
+## Visual Experience
 
-### 1. Setup (One-Time)
+<p align="center">
+  The interface adapts fluidly to your device and system theme preferences.
+</p>
 
-Complete these steps to configure your local environment.
+<p align="center">
+  <strong>Desktop Command Center</strong>
+</p>
 
-1.  **Navigate to Directory**:
-    ```bash
-    cd Frontend-PWA
-    ```
+<p align="center">
+  <img src="public/screenshot-desktop-light.webp" width="48%" />
+  &nbsp;
+  <img src="public/screenshot-desktop-dark.webp" width="48%" />
+</p>
 
-2.  **Install Dependencies**:
-    ```bash
-    pnpm install
-    ```
+<br />
 
-3.  **Configure Environment**:
-    <details>
-    <summary>Create a `.env` file and set the `VITE_GAS_URL` variable.</summary>
+<p align="center">
+  <strong>Mobile Operations</strong>
+</p>
 
-    Create a file named `.env` in the `Frontend-PWA/` directory. You will need to add the deployment URL of your Google Apps Script backend to this file.
-
-    ```env
-    VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-    ```
-
-    </details>
-
-### 2. Development (Recurring)
-
-Once the initial setup is complete, use the following command to start the development server:
-
-```bash
-pnpm dev
-```
-
-This will start the Vite development server, typically available at `http://localhost:5173`.
+<p align="center">
+  <img src="public/screenshot-mobile-light.webp" width="28%" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="public/screenshot-mobile-dark.webp" width="28%" />
+</p>
 
 ---
 
