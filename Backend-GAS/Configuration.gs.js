@@ -176,6 +176,9 @@ const CONFIG = {
       MAX_TOURNEYS: 2000,
       MAX_PLAYERS: 2000,
     },
+    BENCHMARK_DECAY: 0.0096, // ~1% Daily Decay (Day 30 = ~75% Value)
+    BENCHMARK_PERCENTILE: 0.05, // Top 5% of valid pool
+    BENCHMARK_MIN_POOL: 3, // Minimum 3 players for average
   },
 
   LEADERBOARD: {
