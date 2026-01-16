@@ -3,7 +3,7 @@ import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
 export default defineConfig({
   preset: {
     ...minimalPreset,
-    // Renaming to v2 to force cache busting
+    // Using 0 padding here because padding is now BAKED INTO THE SVG SOURCE
     transparent: {
       sizes: [64, 192, 512],
       favicons: [[64, "favicon.ico"]],
@@ -11,7 +11,7 @@ export default defineConfig({
         background: "#0b0e14",
         fit: "contain",
       },
-      padding: 0.2, // Aggressive 20% padding
+      padding: 0,
     },
     maskable: {
       sizes: [512],
@@ -19,17 +19,17 @@ export default defineConfig({
         background: "#0b0e14",
         fit: "contain",
       },
-      padding: 0.2, // Matching standard icons for consistency
+      padding: 0, // Relying on source SVG padding for safe-zone
     },
     apple: {
       sizes: [180],
       resizeOptions: { background: "#0b0e14" },
-      padding: 0.1,
+      padding: 0,
     },
   },
   images: ["public/logo.svg"],
-  // Custom naming to ensure cache busting at the manifest level
-  manifestIconName: "icon-v2",
-  maskableIconName: "maskable-v2",
-  appleIconName: "apple-v2",
+  // Standard naming to match the manifest
+  manifestIconName: "pwa",
+  maskableIconName: "pwa-maskable",
+  appleIconName: "pwa-apple",
 });
