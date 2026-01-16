@@ -19,6 +19,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("message", async (event) => {
   if (!event.data) return;
 
+  // 🖥️ NON-ANDROID: Standard Badge API (Windows, macOS, iOS Safari)
   if (event.data.type === "SET_BADGE") {
     const count = event.data.count;
     try {
@@ -58,10 +59,9 @@ self.addEventListener("message", async (event) => {
         // We wait for the launcher to finish its "auto-count" and then try to nudge it.
         setTimeout(async () => {
           if (self.navigator.setAppBadge) {
-             await self.navigator.setAppBadge(count);
+            await self.navigator.setAppBadge(count);
           }
         }, 300);
-
       } else {
         // Clear badge by closing the persistent notification
         const notifications = await self.registration.getNotifications({
@@ -87,6 +87,67 @@ self.addEventListener("message", async (event) => {
 });
 
 /**
+ * 📲 PUSH NOTIFICATIONS (Server-initiated badge updates)
+ * Enables future integration with push notification services
+ */
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  const payload = event.data.json?.() ?? {};
+
+  // Handle server-sent badge updates
+  if (payload.badgeCount !== undefined) {
+    event.waitUntil(handlePushBadge(payload));
+  } else if (payload.title) {
+    // Standard push notification
+    event.waitUntil(
+      self.registration.showNotification(payload.title, {
+        body: payload.body || "",
+        icon: "pwa-192.png",
+        badge: "pwa-64.png",
+        tag: payload.tag || "push-alert",
+        data: payload.data || {},
+      }),
+    );
+  }
+});
+
+/**
+ * 🔢 Handle push-initiated badge updates
+ */
+async function handlePushBadge(payload) {
+  const { badgeCount, title, body, threshold = 75 } = payload;
+
+  // Always show notification for Android (creates badge)
+  // Also good UX for other platforms
+  if (badgeCount > 0) {
+    await self.registration.showNotification(
+      title || "Elite Recruits Available",
+      {
+        body:
+          body ||
+          `${badgeCount} candidate${badgeCount > 1 ? "s" : ""} above ${threshold} score threshold`,
+        icon: "pwa-192.png",
+        badge: "pwa-64.png",
+        tag: "badge-persistent",
+        silent: true,
+        data: { type: "badge", count: badgeCount },
+      },
+    );
+  }
+
+  // Also try standard Badge API for platforms that support it
+  try {
+    if (self.navigator.setAppBadge) {
+      if (badgeCount > 0) await self.navigator.setAppBadge(badgeCount);
+      else await self.navigator.clearAppBadge();
+    }
+  } catch (e) {
+    // Silent fail - notification is primary on Android anyway
+  }
+}
+
+/**
  * ⚡ PERIODIC BACKGROUND SYNC
  * Registered via the frontend, this allows the WebAPK to refresh recruiter
  * data even when the app is in the background.
@@ -99,10 +160,13 @@ self.addEventListener("periodicsync", (event) => {
 
 async function handleBackgroundSync() {
   try {
-    // 1. Recover GAS URL from IndexedDB
+    // 1. Recover GAS URL and settings from IndexedDB
     const db = await openDB();
     const gasUrl = await getValue(db, "cm_gas_url");
     if (!gasUrl) return;
+
+    // Read configurable threshold (defaults to 75)
+    const threshold = (await getValue(db, "cm_notification_threshold")) || 75;
 
     // 2. Fetch Fresh Data (Silent)
     const response = await fetch(gasUrl, {
@@ -113,10 +177,9 @@ async function handleBackgroundSync() {
 
     const json = await response.json();
     if (json?.status === "success" && json?.data) {
-      // 3. Update Badge (Android Home Screen integration)
+      // 3. Update Badge (Android-compatible via notification)
       const data = json.data;
-      if (data.hh && self.navigator.setAppBadge) {
-        const threshold = 75; // Default threshold
+      if (data.hh) {
         const count = data.hh.filter((r) => r.s >= threshold).length;
         // 🤖 ANDROID: Use persistent notification (creates app icon badge)
         if (count > 0) {
@@ -141,18 +204,17 @@ async function handleBackgroundSync() {
               await self.navigator.setAppBadge(count);
             }
           }, 300);
-
         } else {
           // Clear badge notification
           const notifications = await self.registration.getNotifications({
             tag: "badge-persistent",
           });
           notifications.forEach((n) => n.close());
-          if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+          if (self.navigator.clearAppBadge)
+            await self.navigator.clearAppBadge();
         }
       }
     }
-  } catch (e) {
   } catch (e) {
     console.error("[SW] Background sync failed", e);
   }
@@ -178,7 +240,7 @@ async function processOfflineQueue() {
 
     // Process serial or parallel? Serial to preserve order usually better for state.
     const remaining = [];
-    
+
     for (const req of queue) {
       try {
         await fetch(gasUrl, {
