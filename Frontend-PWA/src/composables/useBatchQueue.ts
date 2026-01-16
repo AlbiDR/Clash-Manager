@@ -163,7 +163,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     if (id) {
       openInGame(id);
 
-      const delay = Math.max(throttleMs, 1200);
+      const delay = Math.max(throttleMs, 2000);
       if (currentIndex.value < selectedIds.value.length - 1) {
         blitzTimer = setTimeout(() => {
           currentIndex.value++;
