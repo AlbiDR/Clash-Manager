@@ -12,6 +12,19 @@
   "categories": ["productivity", "games", "utilities"],
   "lang": "en",
   "dir": "ltr",
+  "handle_links": "preferred",
+  "share_target": {
+    "action": "./#/recruiter",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "icons": [
     {
       "src": "pwa-64.png",
