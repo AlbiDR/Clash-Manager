@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useClanData } from "../composables/useClanData";
 import { useApiState } from "../composables/useApiState";
 import { useToast } from "../composables/useToast";
@@ -139,6 +140,29 @@ watch(
     }
   },
   { deep: true, immediate: true },
+);
+
+// ⚡ SHORTCUT ACTION: High Potential (from App Shortcut)
+const route = useRoute();
+const router = useRouter();
+
+watch(
+  () => isHydrated.value,
+  (hydrated) => {
+    if (hydrated && route.query.action === "high_potential") {
+      // 1. Force a fresh scan to get latest data
+      refresh();
+
+      // 2. Apply the filter immediately (optimistic)
+      onSelectScore(75, "ge");
+
+      // 3. Clear the action to prevent stuck state
+      router.replace({ query: { ...route.query, action: undefined } });
+
+      success("Showing High Potential candidates");
+    }
+  },
+  { immediate: true },
 );
 
 const { undo, success, error } = useToast();

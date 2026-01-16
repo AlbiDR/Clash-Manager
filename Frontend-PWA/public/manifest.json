@@ -88,21 +88,48 @@
       "short_name": "Leaders",
       "description": "View clan performance leaderboard",
       "url": "./#/leaderboard",
-      "icons": [{ "src": "pwa-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icons/leaderboard.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     },
     {
       "name": "Headhunter",
       "short_name": "Recruits",
       "description": "Research potential recruits",
       "url": "./#/recruiter",
-      "icons": [{ "src": "pwa-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icons/recruiter.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "description": "Configure dashboard preferences",
       "url": "./#/settings",
-      "icons": [{ "src": "pwa-192.png", "sizes": "192x192" }]
+      "icons": [
+        { "src": "icons/settings.svg", "sizes": "any", "type": "image/svg+xml" }
+      ]
+    },
+    {
+      "name": "High Potential",
+      "short_name": "Top Recruits",
+      "description": "Show recruits with >75 potential",
+      "url": "./#/recruiter?action=high_potential",
+      "icons": [
+        {
+          "src": "icons/high-potential.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ]
 }
