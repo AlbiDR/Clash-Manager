@@ -44,7 +44,7 @@ jobs:
       - name: Run Merge Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/merge-jules-prs.js
+        run: node .github/scripts/merge-jules-prs.js
 
       - name: Commit and Push Changelog
         run: |
