@@ -1,4 +1,4 @@
-name: Sync Branches
+name: Sync Branches (Round-Trip)
 
 on:
   workflow_dispatch:
@@ -7,54 +7,60 @@ permissions:
   contents: write
 
 jobs:
-  sync-branches:
+  full-sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history for all branches
+          fetch-depth: 0
 
       - name: Setup Git User
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Sync Jules to Beta
-        run: |
-          echo "Fetching latest origin..."
-          git fetch origin
+      - name: Fetch all branches
+        run: git fetch origin
 
-          echo "Ensuring Beta branch exists..."
+      - name: Forward Sync (Jules -> Beta -> Stable)
+        run: |
+          # 1. Jules -> Beta
+          echo "==== SYNC: Jules -> Beta ===="
           if git show-ref --verify --quiet refs/remotes/origin/Beta; then
-            echo "Branch 'Beta' exists. Checking out..."
             git checkout Beta
             git pull origin Beta
           else
-            echo "Branch 'Beta' does not exist. Creating from current HEAD (Jules)."
-            # Create Beta from the current HEAD (which we assume is Jules or we should explicitly checkout Jules start)
-            # Actually steps merge origin/Jules. So if we create Beta, we should base it on Jules.
-            # But we are currently on 'fetch-depth: 0' checkout (usually defaults to default branch or sha).
-            # Let's ensure we have Jules reference.
-            
             git checkout -b Beta origin/Jules
             git push origin Beta
           fi
-
-          echo "Merging Jules into Beta..."
           git merge origin/Jules --no-edit
-
-          echo "Pushing Beta..."
           git push origin Beta
 
-      - name: Sync Beta to Stable
-        run: |
-          echo "Checking out Stable..."
+          # 2. Beta -> Stable
+          echo "==== SYNC: Beta -> Stable ===="
           git checkout Stable
           git pull origin Stable
-
-          echo "Merging Beta into Stable..."
           git merge Beta --no-edit
-
-          echo "Pushing Stable..."
           git push origin Stable
+
+      - name: Reverse Sync (Stable -> Beta -> Jules)
+        run: |
+          # 1. Stable -> Beta
+          echo "==== SYNC: Stable -> Beta ===="
+          git checkout Beta
+          git pull origin Beta
+          git merge origin/Stable --no-edit
+          git push origin Beta
+
+          # 2. Beta -> Jules
+          echo "==== SYNC: Beta -> Jules ===="
+          git checkout Jules
+          git pull origin Jules
+          git merge Beta --no-edit
+          git push origin Jules
+
+      - name: Final Status
+        run: |
+          echo "Successfully completed full round-trip synchronization."
+          echo "Path: Jules <-> Beta <-> Stable"
