@@ -66,20 +66,8 @@ The project is composed of a Google Apps Script backend and a Vue 3 frontend. Fo
 <details>
 <summary><strong>Frontend Setup (PWA)</strong></summary>
 
-1.  **Navigate to Directory**:
-    ```bash
-    cd Frontend-PWA
-    ```
+> For detailed setup and development instructions, please see the **[Frontend README](./Frontend-PWA/README.md)**.
 
-2.  **Install Dependencies**:
-    ```bash
-    pnpm install
-    ```
-
-3.  **Configure Environment**: Create a `.env` file in `Frontend-PWA/` and add the `VITE_GAS_URL` from your backend deployment.
-    ```env
-    VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-    ```
 </details>
 
 The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-pwa.yml`).
@@ -106,17 +94,6 @@ The core value of Clash Manager is its multi-dimensional scoring algorithm (impl
 </details>
 
 ---
-
-## Development
-
-After completing the setup, run the development server:
-
-```bash
-cd Frontend-PWA
-pnpm dev
-```
-
-This will start the Vite development server, typically available at `http://localhost:5173`.
 
 ## Contributing
 
