@@ -1,4 +1,4 @@
-name: Sync Branches (Round-Trip)
+name: Sync Branches
 
 on:
   workflow_dispatch:
