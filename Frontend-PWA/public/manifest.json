@@ -1,13 +1,13 @@
 {
   "name": "Clash Manager",
-  "short_name": "Clash Manager",
+  "short_name": "CM Manager",
   "description": "Professional recruitment and performance analytics dashboard for Clash Royale clan leaders.",
   "theme_color": "#0b0e14",
   "background_color": "#0b0e14",
   "display": "standalone",
   "scope": "./",
   "start_url": "./#/leaderboard",
-  "id": "clash-manager-pwa",
+  "id": "clash-manager-pwa-v3",
   "icons": [
     {
       "src": "icon-v2-64.png",
