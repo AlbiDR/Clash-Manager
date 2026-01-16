@@ -352,7 +352,7 @@ async function factoryReset() {
                     Blitz Mode
                   </div>
                   <div class="row-desc">
-                    Batch operations without confirmation (Broken)
+                    Batch operations without confirmation
                   </div>
                 </div>
                 <div
