@@ -1,5 +1,6 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useModules } from "./useModules";
+import { useBroadcastChannel } from "./useBroadcastChannel";
 
 // 🛡️ Global persistent state to track debounce across multiple useBadge() instances
 const lastUpdate = ref(0);
@@ -11,6 +12,14 @@ const isAndroid =
 
 export function useBadge() {
   const { modules } = useModules();
+
+  // 📡 Broadcast Channel Integration
+  const { post: broadcast } = useBroadcastChannel((msg) => {
+    if (msg.type === "BADGE_UPDATE") {
+      // Don't recurse - just set internal state or notify SW if needed
+      // For now, we trust the sender also updated the SW/Badge API
+    }
+  });
 
   const hasStandardBadge =
     typeof navigator !== "undefined" && "setAppBadge" in navigator;
@@ -106,6 +115,9 @@ export function useBadge() {
     };
 
     await trySet();
+
+    // 📡 Broadcast to other tabs so they know the badge count changed
+    broadcast({ type: "BADGE_UPDATE", count: safeCount });
   }
 
   async function clearBadge() {

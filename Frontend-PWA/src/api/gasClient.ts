@@ -175,41 +175,67 @@ async function gasRequest<T>(
     body: JSON.stringify({ action, ...payload }),
   };
 
-  // If fetching fails after retries, this throws, which is correct for tests.
-  const response = await fetchWithRetry(url, options);
-
-  // Handle HTTP errors that weren't retried (like 400 Bad Request)
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  const text = await response.text();
-  if (!text || !text.trim()) {
-    throw new Error("Empty Response from Server");
-  }
-
-  let envelope: GenericEnvelope<T>;
+  // If fetching fails after retries, this throws.
   try {
-    envelope = JSON.parse(text);
-  } catch (e) {
-    if (text.toLowerCase().includes("<html")) {
-      throw new Error("Google Server Error");
+    const response = await fetchWithRetry(url, options);
+
+    // Handle HTTP errors that weren't retried (like 400 Bad Request)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
-    throw new Error("Invalid JSON Response");
+
+    const text = await response.text();
+    if (!text || !text.trim()) {
+      throw new Error("Empty Response from Server");
+    }
+
+    let envelope: GenericEnvelope<T>;
+    try {
+      envelope = JSON.parse(text);
+    } catch (e) {
+      if (text.toLowerCase().includes("<html")) {
+        throw new Error("Google Server Error");
+      }
+      throw new Error("Invalid JSON Response");
+    }
+
+    const isSuccess =
+      envelope.success === true ||
+      (envelope.status && envelope.status.toLowerCase() === "success") ||
+      (envelope.data && !envelope.error);
+
+    if (isSuccess) {
+      return (envelope.data !== undefined ? envelope.data : envelope) as T;
+    }
+
+    const errorMessage =
+      envelope.error?.message || envelope.message || "Unknown Backend Error";
+    throw new Error(errorMessage);
+  } catch (e) {
+    // 🛡️ BACKGROUND SYNC: Queue failed requests if they are retryable (network/server issues)
+    // Don't queue 4xx errors (client faults) unless it's 429
+    console.warn("GAS Request Failed, attempting background sync queue", e);
+
+    await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
+
+    // Register One-Time Sync
+    if ("serviceWorker" in navigator && "SyncManager" in window) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.sync.register("offline-queue-sync");
+      } catch (syncErr) {
+        console.warn("Background Sync registration failed", syncErr);
+      }
+    }
+
+    throw e; // Re-throw so UI knows it failed (and can show "Offline/Syncing" state)
   }
+}
 
-  const isSuccess =
-    envelope.success === true ||
-    (envelope.status && envelope.status.toLowerCase() === "success") ||
-    (envelope.data && !envelope.error);
-
-  if (isSuccess) {
-    return (envelope.data !== undefined ? envelope.data : envelope) as T;
-  }
-
-  const errorMessage =
-    envelope.error?.message || envelope.message || "Unknown Backend Error";
-  throw new Error(errorMessage);
+async function enqueueOfflineRequest(request: any) {
+  const queue = (await idb.get<any[]>("offline_queue")) || [];
+  queue.push(request);
+  await idb.set("offline_queue", queue);
 }
 
 export async function loadCache(): Promise<WebAppData | null> {
