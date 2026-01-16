@@ -57,8 +57,8 @@ jobs:
       - name: Project Validation
         working-directory: .
         run: |
-          if [ -f scripts/validate_project.js ]; then
-            node scripts/validate_project.js
+          if [ -f .github/scripts/validate_project.js ]; then
+            node .github/scripts/validate_project.js
           else
             echo "⚠️ Validation script not found."
           fi
