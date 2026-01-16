@@ -3,7 +3,7 @@ import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
 export default defineConfig({
   preset: {
     ...minimalPreset,
-    // Override standard icons to be OPAQUE (fixes Vivaldi "no background" issue)
+    // Add padding to standard icons to prevent clipping on Smart Launcher/Vivaldi
     transparent: {
       sizes: [64, 192, 512],
       favicons: [[64, "favicon.ico"]],
@@ -11,16 +11,16 @@ export default defineConfig({
         background: "#0b0e14",
         fit: "contain",
       },
-      padding: 0,
+      padding: 0.1, // 10% padding to prevent edge bleed
     },
-    // Tune maskable icons to be LARGER (fixes Chrome "small icon" issue)
+    // Maintain maskable padding for safe-zone compliance
     maskable: {
       sizes: [512],
       resizeOptions: {
         background: "#0b0e14",
         fit: "contain",
       },
-      padding: 0.15, // Reduced from 0.3 to 0.15 for ~20% larger logo
+      padding: 0.15, // 15% padding for a balanced logo size
     },
     apple: {
       sizes: [180],
