@@ -16,14 +16,32 @@
       "purpose": "any"
     },
     {
+      "src": "logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "pwa-icon-monochrome.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "monochrome"
     },
     {
+      "src": "pwa-icon-monochrome.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
+    },
+    {
       "src": "pwa-icon-maskable.svg",
       "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "pwa-icon-maskable.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
@@ -38,7 +56,7 @@
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "maskable"
-    }
+    },
     {
       "src": "apple-touch-icon.png",
       "sizes": "180x180",
