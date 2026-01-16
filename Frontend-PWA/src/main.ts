@@ -11,10 +11,11 @@ import router from "./router";
 import { vTooltip } from "./directives/vTooltip";
 import { vTactile } from "./directives/vTactile";
 import { useModules } from "./composables/useModules";
-import { useApiState } from "./composables/useApiState";
 import { useClanData } from "./composables/useClanData";
 import { useTheme } from "./composables/useTheme";
 import { useWakeLock } from "./composables/useWakeLock";
+import { useStoragePersistence } from "./composables/useStoragePersistence";
+import { idb } from "./utils/idb";
 
 function showFatalError(error: unknown) {
   console.error("FATAL ERROR:", error);
@@ -101,6 +102,7 @@ async function bootstrap() {
     const clanData = useClanData();
     const apiState = useApiState();
     const wakeLock = useWakeLock();
+    const storagePersistence = useStoragePersistence();
 
     clanData.loadLocal();
 
@@ -109,6 +111,17 @@ async function bootstrap() {
       apiState.init();
       clanData.startBackgroundSync();
       wakeLock.init();
+
+      // 💾 PERSISTENCE: Request durable storage
+      storagePersistence.requestPersistence();
+
+      // 🛡️ SYNC SETTINGS: Ensure SW has access to latest threshold
+      if (modules.notificationThreshold) {
+        await idb.set(
+          "cm_notification_threshold",
+          modules.notificationThreshold,
+        );
+      }
 
       // ⚡ NATIVE: Register Periodic Sync for WebAPK
       // This allows the app to update its badge in the background.

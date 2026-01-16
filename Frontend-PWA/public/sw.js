@@ -79,8 +79,65 @@ async function handleBackgroundSync() {
       }
     }
   } catch (e) {
+  } catch (e) {
     console.error("[SW] Background sync failed", e);
   }
+}
+
+/**
+ * 🔄 ONE-TIME BACKGROUND SYNC (Recovery)
+ * Retries failed API requests when connectivity returns.
+ */
+self.addEventListener("sync", (event) => {
+  if (event.tag === "offline-queue-sync") {
+    event.waitUntil(processOfflineQueue());
+  }
+});
+
+async function processOfflineQueue() {
+  try {
+    const db = await openDB();
+    const queue = (await getValue(db, "offline_queue")) || [];
+    const gasUrl = await getValue(db, "cm_gas_url");
+
+    if (!queue.length || !gasUrl) return;
+
+    // Process serial or parallel? Serial to preserve order usually better for state.
+    const remaining = [];
+    
+    for (const req of queue) {
+      try {
+        await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(req),
+        });
+      } catch (e) {
+        // Prepare to retry if still failing
+        if (remaining.length < 50) remaining.push(req); // Cap queue size
+      }
+    }
+
+    // Update queue in IDB
+    // We need a helper to set values - adding it now
+    await setValue(db, "offline_queue", remaining);
+
+    if (remaining.length === 0) {
+      // Notify client tabs? Optionally via postMessage
+    }
+  } catch (e) {
+    console.error("[SW] Queue sync failed", e);
+  }
+}
+
+function setValue(db, key, value) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(["keyval"], "readwrite");
+    const store = transaction.objectStore("keyval");
+    const request = store.put(value, key);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
 }
 
 /**
