@@ -4,6 +4,11 @@ import { useModules } from "./useModules";
 // 🛡️ Global persistent state to track debounce across multiple useBadge() instances
 const lastUpdate = ref(0);
 
+// 🤖 ANDROID DETECTION: Android doesn't support navigator.setAppBadge() directly
+// Badges on Android only appear via active notifications
+const isAndroid =
+  typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+
 export function useBadge() {
   const { modules } = useModules();
 
@@ -12,7 +17,8 @@ export function useBadge() {
   const hasServiceWorker =
     typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
-  const isSupported = hasStandardBadge || hasServiceWorker;
+  // Android has setAppBadge but it doesn't work - only notifications create badges
+  const isSupported = hasServiceWorker || (!isAndroid && hasStandardBadge);
 
   // Extended Navigator Interface for Badge API
   interface NavigatorWithBadge extends Navigator {
@@ -20,15 +26,46 @@ export function useBadge() {
     clearAppBadge(): Promise<void>;
   }
 
+  /**
+   * 🤖 ANDROID: Set badge via persistent notification
+   * Android doesn't support direct Badge API - only notifications create app icon badges
+   */
+  async function setBadgeViaNotification(count: number) {
+    if (!hasServiceWorker || !navigator.serviceWorker.controller) return;
+
+    navigator.serviceWorker.controller.postMessage({
+      type: "BADGE_NOTIFICATION_ANDROID",
+      count,
+      threshold: modules.notificationThreshold || 75,
+    });
+  }
+
+  /**
+   * 🖥️ NON-ANDROID: Use standard Badge API
+   */
+  async function setDirectBadge(count: number) {
+    if (hasStandardBadge) {
+      const nav = navigator as NavigatorWithBadge;
+      if (count > 0) await nav.setAppBadge(count);
+      else await nav.clearAppBadge();
+    }
+
+    // Also notify service worker for consistency
+    if (hasServiceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "SET_BADGE",
+        count,
+      });
+    }
+  }
+
   async function setBadge(count: number) {
     if (!isSupported) return;
 
     // 🛡️ Logic: Quiet Mode integration from useModules
     if (modules.notificationQuietMode && count > 0) {
-      // If quiet mode is on and we are trying to set a non-zero badge,
-      // we might want to suppress it, or just let badges through since they are silent.
-      // The user suggested suppressing badges in quiet mode.
-      // return;
+      // Suppress badges in quiet mode on Android (since they require notifications)
+      if (isAndroid) return;
     }
 
     // 🛡️ Logic: Smart Clear on Focus
@@ -51,19 +88,12 @@ export function useBadge() {
 
     const trySet = async () => {
       try {
-        // Layer 1: Standard API
-        if (hasStandardBadge) {
-          const nav = navigator as NavigatorWithBadge;
-          if (safeCount > 0) await nav.setAppBadge(safeCount);
-          else await nav.clearAppBadge();
-        }
-
-        // Layer 2: Service Worker (PWA)
-        if (hasServiceWorker && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: "SET_BADGE",
-            count: safeCount,
-          });
+        // 🤖 ANDROID: Use notification-based badges
+        if (isAndroid) {
+          await setBadgeViaNotification(safeCount);
+        } else {
+          // 🖥️ OTHER PLATFORMS: Use direct Badge API
+          await setDirectBadge(safeCount);
         }
       } catch (e) {
         if (attempts < MAX_RETRIES) {
