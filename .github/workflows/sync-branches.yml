@@ -25,9 +25,21 @@ jobs:
           echo "Fetching latest origin..."
           git fetch origin
 
-          echo "Checking out Beta..."
-          git checkout Beta
-          git pull origin Beta
+          echo "Ensuring Beta branch exists..."
+          if git show-ref --verify --quiet refs/remotes/origin/Beta; then
+            echo "Branch 'Beta' exists. Checking out..."
+            git checkout Beta
+            git pull origin Beta
+          else
+            echo "Branch 'Beta' does not exist. Creating from current HEAD (Jules)."
+            # Create Beta from the current HEAD (which we assume is Jules or we should explicitly checkout Jules start)
+            # Actually steps merge origin/Jules. So if we create Beta, we should base it on Jules.
+            # But we are currently on 'fetch-depth: 0' checkout (usually defaults to default branch or sha).
+            # Let's ensure we have Jules reference.
+            
+            git checkout -b Beta origin/Jules
+            git push origin Beta
+          fi
 
           echo "Merging Jules into Beta..."
           git merge origin/Jules --no-edit
