@@ -343,7 +343,6 @@ async function factoryReset() {
 
             <div class="features-list">
               <div
-                v-if="modules.blitzMode"
                 class="toggle-row"
                 :class="{ 'active-row': modules.blitzMode }"
                 @click="toggle('blitzMode')"
