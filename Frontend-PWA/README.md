@@ -6,6 +6,20 @@ The heart of the Clash Manager interface. This is a high-performance Vue 3 appli
 
 ---
 
+## Visual Experience
+
+The interface adapts fluidly to your device and system theme preferences.
+
+|                    Desktop (Light)                     |                    Desktop (Dark)                    |
+| :----------------------------------------------------: | :--------------------------------------------------: |
+| ![Desktop Light](public/screenshot-desktop-light.webp) | ![Desktop Dark](public/screenshot-desktop-dark.webp) |
+
+|                    Mobile (Light)                    |                   Mobile (Dark)                    |
+| :--------------------------------------------------: | :------------------------------------------------: |
+| ![Mobile Light](public/screenshot-mobile-light.webp) | ![Mobile Dark](public/screenshot-mobile-dark.webp) |
+
+---
+
 ## Architectural Components
 
 - **Logic**: Vue 3 + TypeScript
