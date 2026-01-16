@@ -22,7 +22,11 @@ const getGasUrl = () => {
     url = import.meta.env.VITE_GAS_URL || "";
   }
 
-  if (url) url = url.trim();
+  if (url) {
+    url = url.trim();
+    // 🛡️ SYNC: Ensure SW can see the URL via IDB
+    idb.set("cm_gas_url", url).catch(() => {});
+  }
 
   if (url && !url.startsWith("https://")) {
     if (url.startsWith("http://")) {
@@ -76,6 +80,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   // Valibot v1+ uses .output instead of .data for success result
   const { lb, hh, timestamp } = result.output;
+  const playerTag = (parsedData as any).playerTag;
 
   // Strict bounds checking for matrix columns
   return {
@@ -114,6 +119,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
         },
       };
     }),
+    playerTag,
     timestamp,
   };
 }

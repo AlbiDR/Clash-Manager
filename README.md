@@ -6,6 +6,36 @@ A high-precision, production-grade toolkit for elite Clash Royale clan leadershi
 
 ---
 
+## Visual Experience
+
+<p align="center">
+  The interface adapts fluidly to your device and system theme preferences.
+</p>
+
+<p align="center">
+  <strong>Desktop Command Center</strong>
+</p>
+
+<p align="center">
+  <img src="Frontend-PWA/public/screenshot-desktop-light.webp" width="48%" />
+  &nbsp;
+  <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="48%" />
+</p>
+
+<br />
+
+<p align="center">
+  <strong>Mobile Operations</strong>
+</p>
+
+<p align="center">
+  <img src="Frontend-PWA/public/screenshot-mobile-light.webp" width="28%" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="28%" />
+</p>
+
+---
+
 ## Architecture
 
 <details>
@@ -66,8 +96,22 @@ The project is composed of a Google Apps Script backend and a Vue 3 frontend. Fo
 <details>
 <summary><strong>Frontend Setup (PWA)</strong></summary>
 
-> For detailed setup and development instructions, please see the **[Frontend README](./Frontend-PWA/README.md)**.
+1.  **Navigate to Directory**:
 
+    ```bash
+    cd Frontend-PWA
+    ```
+
+2.  **Install Dependencies**:
+
+    ```bash
+    pnpm install
+    ```
+
+3.  **Configure Environment**: Create a `.env` file in `Frontend-PWA/` and add the `VITE_GAS_URL` from your backend deployment.
+`env
+    VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+    `
 </details>
 
 The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-pwa.yml`).

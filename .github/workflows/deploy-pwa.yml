@@ -1,4 +1,4 @@
-name: PWA Pipeline
+name: Deploy PWA
 
 on:
   push:
@@ -28,10 +28,17 @@ defaults:
     working-directory: Frontend-PWA
 
 jobs:
-  verify:
-    name: Verify
+  build:
+    name: Build & Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
     steps:
+      - name: Suppress Git Advice
+        run: git config --global advice.defaultBranchName false
+        working-directory: .
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -46,12 +53,6 @@ jobs:
           node-version: "22"
           cache: "pnpm"
           cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
-
-      - name: Install Dependencies
-        run: pnpm install
-
-      - name: Run Tests
-        run: pnpm test
 
       - name: Project Validation
         working-directory: .
@@ -62,42 +63,33 @@ jobs:
             echo "⚠️ Validation script not found."
           fi
 
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Build Project
+        run: pnpm run build
+        # env: VITE_GAS_URL is now global to the job
+
+      - name: Upload Pages Artifact
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./Frontend-PWA/dist"
+          compression-level: 1
+
   deploy:
     name: Deploy
-    needs: verify
+    needs: build
     if: github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "pnpm"
-          cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
-
-      - name: Install & Build
-        run: |
-          pnpm install
-          pnpm run build
-        env:
-          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "./Frontend-PWA/dist"
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

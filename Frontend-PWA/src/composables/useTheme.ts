@@ -34,6 +34,9 @@ export function useTheme() {
     if (metaThemeColor) {
       metaThemeColor.setAttribute("content", isDark ? "#0b0e14" : "#fdfcff");
     }
+
+    // Update manifest screenshots
+    updateManifest();
   }
 
   function setTheme(newTheme: Theme) {
@@ -58,13 +61,105 @@ export function useTheme() {
     }
 
     applyTheme();
+    updateManifest(); // Initial manifest update
     isInitialized.value = true;
+  }
+
+  // 🧠 Cache Storage
+  let baseManifestCache: any = null;
+  const manifestBlobCache: Record<string, string> = {};
+
+  // 🧩 MANIFEST SWAPPER: Dynamic injection of theme-aware screenshots
+  async function updateManifest() {
+    if (typeof document === "undefined") return;
+
+    // 1. Determine current visual state
+    const isDark = document.documentElement.classList.contains("dark");
+    const suffix = isDark ? "dark" : "light";
+
+    // ⚡ OPTIMIZATION: Return cached Blob URI if already generated
+    if (manifestBlobCache[suffix]) {
+      const link = document.querySelector(
+        'link[rel="manifest"]',
+      ) as HTMLLinkElement;
+      if (link && link.href !== manifestBlobCache[suffix]) {
+        link.href = manifestBlobCache[suffix];
+        console.log(`[PWA] Swapped to cached manifest for ${suffix}`);
+      }
+      return;
+    }
+
+    // 2. Define targeted screenshots
+    const manualScreenshots = [
+      {
+        src: `screenshot-mobile-${suffix}.webp`,
+        sizes: "1080x1920",
+        type: "image/webp",
+        form_factor: "narrow",
+        label: `Clash Manager Mobile (${suffix})`,
+      },
+      {
+        src: `screenshot-desktop-${suffix}.webp`,
+        sizes: "1920x1080",
+        type: "image/webp",
+        form_factor: "wide",
+        label: `Clash Manager Desktop (${suffix})`,
+      },
+    ];
+
+    try {
+      // 3. Find existing link
+      const link = document.querySelector(
+        'link[rel="manifest"]',
+      ) as HTMLLinkElement;
+      if (!link) return;
+
+      // 4. Fetch or use cached base manifest
+      if (!baseManifestCache) {
+        baseManifestCache = await fetch("/manifest.json").then((res) =>
+          res.json(),
+        );
+      }
+
+      // 5. Construct new manifest
+      const newManifest = {
+        ...baseManifestCache,
+        screenshots: manualScreenshots,
+      };
+
+      // 6. Create Blob URI
+      const stringManifest = JSON.stringify(newManifest);
+      const blob = new Blob([stringManifest], { type: "application/json" });
+      const manifestURL = URL.createObjectURL(blob);
+
+      // 7. Cache and Swap
+      manifestBlobCache[suffix] = manifestURL;
+      link.href = manifestURL;
+
+      console.log(`[PWA] Generated and updated manifest for ${suffix} theme`);
+    } catch (e) {
+      console.warn("[PWA] Failed to update dynamic manifest", e);
+    }
+  }
+
+  /**
+   * 🧹 MANIFEST PURGE
+   * Explicitly clears the manifest URI cache to force re-generation.
+   * satisfying user recovery requirements for icon/pwa reloading.
+   */
+  function clearManifestCache() {
+    Object.keys(manifestBlobCache).forEach((key) => {
+      URL.revokeObjectURL(manifestBlobCache[key]);
+      delete manifestBlobCache[key];
+    });
+    baseManifestCache = null;
+    console.log("[PWA] Manifest cache cleared");
   }
 
   return {
     theme,
     setTheme,
     init,
+    clearManifestCache,
   };
 }
-
