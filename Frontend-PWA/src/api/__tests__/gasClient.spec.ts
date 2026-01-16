@@ -60,6 +60,20 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[1].dt).toBe(0);
   });
 
+  it("extracts playerTag from payload", async () => {
+    const rawMatrixData = {
+      format: "matrix",
+      schema: { lb: [], hh: [] },
+      lb: [],
+      hh: [],
+      playerTag: "player1",
+      timestamp: 123456789,
+    };
+
+    const result = await inflatePayload(rawMatrixData);
+    expect(result.playerTag).toBe("player1");
+  });
+
   it("correctly inflates Headhunter matrix", async () => {
     const rawMatrixData = {
       format: "matrix",

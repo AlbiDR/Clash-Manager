@@ -52,7 +52,7 @@ function showFatalError(error: unknown) {
              Factory Reset
            </button>
         </div>
-        <small style="margin-top: 40px; color: #555;">Version: ${import.meta.env.VITE_APP_VERSION || 'Unknown'}</small>
+        <small style="margin-top: 40px; color: #555;">Version: ${import.meta.env.VITE_APP_VERSION || "Unknown"}</small>
       </div>`;
   }
 }
@@ -64,7 +64,9 @@ async function bootstrap() {
     // Fix 11: Config Validation
     const gasUrl = import.meta.env.VITE_GAS_URL;
     if (!gasUrl && !localStorage.getItem("cm_gas_url")) {
-       throw new Error("Missing Configuration: VITE_GAS_URL is not defined in environment variables.");
+      throw new Error(
+        "Missing Configuration: VITE_GAS_URL is not defined in environment variables.",
+      );
     }
 
     // 1. Critical Config (Synchronous)
@@ -101,23 +103,41 @@ async function bootstrap() {
     const wakeLock = useWakeLock();
 
     clanData.loadLocal();
-    
+
     // Defer network and heavy systems
     setTimeout(async () => {
       apiState.init();
       clanData.startBackgroundSync();
       wakeLock.init();
 
-      /* 
-      // 🔄 AUTO-UPDATE: vite-plugin-pwa handles registration via virtual:pwa-register
-      // if (isSupported) { ... }
-      */
-    }, 400);
+      // ⚡ NATIVE: Register Periodic Sync for WebAPK
+      // This allows the app to update its badge in the background.
+      if (
+        "serviceWorker" in navigator &&
+        "periodicSync" in (navigator as any).serviceWorker
+      ) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const status = await (navigator as any).permissions.query({
+            name: "periodic-background-sync",
+          });
 
+          if (status.state === "granted") {
+            await (registration as any).periodicSync.register(
+              "update-recruit-badge",
+              {
+                minInterval: 12 * 60 * 60 * 1000, // 12 hours
+              },
+            );
+          }
+        } catch (e) {
+          console.warn("Periodic Sync registration failed", e);
+        }
+      }
+    }, 400);
   } catch (error) {
     showFatalError(error);
   }
 }
-
 
 bootstrap();

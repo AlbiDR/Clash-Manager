@@ -5,7 +5,7 @@ import { useApiState } from "../composables/useApiState";
 import { useToast } from "../composables/useToast";
 import { useRecruitBlacklist } from "../composables/useRecruitBlacklist";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
-import { useExhibitionMode } from "../composables/useExhibitionMode";
+import { useShowcaseMode } from "../composables/useShowcaseMode";
 import type { Recruit } from "../types";
 
 import RecruitCard from "../components/RecruitCard.vue";
@@ -25,7 +25,7 @@ const sheetUrl = computed(() => {
     : pingData.value.spreadsheetUrl;
 });
 
-const { isExhibitionMode } = useExhibitionMode();
+const { isShowcaseMode } = useShowcaseMode();
 const {
   data,
   isHydrated,
@@ -119,7 +119,7 @@ const sortOptions = [
 ];
 
 const listItems = computed(() => {
-  if (isExhibitionMode.value) {
+  if (isShowcaseMode.value) {
     return visibleItems.value.length > 0 ? visibleItems.value.slice(0, 1) : [];
   }
   return visibleItems.value;
@@ -210,31 +210,42 @@ function handleSearchUpdate(val: string) {
         <span>Scan Again</span>
       </button>
     </template>
-
     <!-- Default Slot: The List -->
-    <RecruitCard
-      v-for="(recruit, index) in listItems"
-      :key="recruit.id"
-      v-memo="[
-        recruit.s,
-        recruit.t,
-        expandedIds.has(recruit.id),
-        selectedSet.has(recruit.id),
-        isSelectionMode,
-        isRefreshing,
-      ]"
-      :id="`recruit-${recruit.id}`"
-      :recruit="recruit"
-      :expanded="expandedIds.has(recruit.id)"
-      :selected="selectedSet.has(recruit.id)"
-      :selection-mode="isSelectionMode"
-      :style="{ '--i': index }"
-      :app-is-refreshing="isRefreshing"
-      @toggle-expand="toggleExpand(recruit.id)"
-      @toggle-select="toggleSelect(recruit.id)"
-    />
-    <template v-if="isExhibitionMode">
-      <SkeletonCard v-for="i in 7" :key="i" :style="{ '--i': i + 1 }" />
+    <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
+    <template v-if="isShowcaseMode">
+      <RecruitCard
+        v-if="visibleItems.length > 0"
+        :recruit="visibleItems[0]"
+        :expanded="expandedIds.has(visibleItems[0].id)"
+        :selected="selectedSet.has(visibleItems[0].id)"
+        @toggle-expand="toggleExpand(visibleItems[0].id)"
+        @toggle-select="toggleSelect(visibleItems[0].id)"
+        @dismiss="dismissRecruitsAction([visibleItems[0].id])"
+      />
+      <SkeletonCard v-for="i in 7" :key="'ex-' + i" />
+    </template>
+    <template v-else>
+      <RecruitCard
+        v-for="(recruit, index) in visibleItems"
+        :key="recruit.id"
+        v-memo="[
+          recruit.s,
+          recruit.t,
+          expandedIds.has(recruit.id),
+          selectedSet.has(recruit.id),
+          isSelectionMode,
+          isRefreshing,
+        ]"
+        :id="`recruit-${recruit.id}`"
+        :recruit="recruit"
+        :expanded="expandedIds.has(recruit.id)"
+        :selected="selectedSet.has(recruit.id)"
+        :selection-mode="isSelectionMode"
+        :style="{ '--i': index }"
+        :app-is-refreshing="isRefreshing"
+        @toggle-expand="toggleExpand(recruit.id)"
+        @toggle-select="toggleSelect(recruit.id)"
+      />
     </template>
   </ConsoleLayout>
 </template>

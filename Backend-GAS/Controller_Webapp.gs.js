@@ -104,59 +104,15 @@ function markRecruitsAsInvitedBulk(ids) {
         }
       }
 
-      // 2. UPDATE PERSISTENT BLACKLIST (Structural/Memory)
-      // SELF-HEALING: We also prune expired entries here to ensure the list doesn't bloat
-      // indefinitely if the main Recruiter task stops running.
-      let blUpdates = 0;
-      try {
-        const PROP_KEY = "HH_BLACKLIST";
-        const blacklist = Utils.Props.getChunked(PROP_KEY, {});
-        const now = Date.now();
-        const dayMs = 24 * 60 * 60 * 1000;
-        const expiry = now + (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 14) * dayMs;
-
-        // A. Prune Old
-        const entries = Object.entries(blacklist).filter(
-          ([k, item]) => item?.e > now,
-        );
-        const pruneCount = Object.keys(blacklist).length - entries.length;
-        const cleanedBlacklist = Object.fromEntries(entries);
-
-        if (pruneCount > 0) {
-          console.log(`🧹 Self-Healing: Pruned ${pruneCount} expired entries.`);
-          blUpdates++;
-        }
-
-        // B. Add New
-        idsSet.forEach((tag) => {
-          const existing = cleanedBlacklist[tag];
-          if (!existing) blUpdates++;
-
-          cleanedBlacklist[tag] = {
-            e: expiry,
-            s: existing ? existing.s : 0,
-          };
-        });
-
-        // Save back only if changed or pruned
-        if (blUpdates > 0 || pruneCount > 0) {
-          Utils.Props.setChunked(PROP_KEY, cleanedBlacklist);
-        }
-      } catch (blErr) {
-        console.warn("⚠️ Blacklist sync warning: " + blErr.message);
-      }
-
-      // 3. FLUSH & REGENERATE
-      if (sheetUpdates > 0 || blUpdates > 0 || pruneCount > 0) {
+      // 2. FLUSH & FORCE REFRESH
+      if (sheetUpdates > 0) {
         SpreadsheetApp.flush();
-        console.log(
-          `🌐 API Action: Dismissed ${sheetUpdates} rows. Synced blacklist (${blUpdates} added, ${pruneCount} pruned).`,
-        );
+        console.log(`🌐 API Action: Dismissed ${sheetUpdates} candidates.`);
         refreshWebPayload();
       }
 
       console.timeEnd("BulkDismiss");
-      return { success: true, count: sheetUpdates, blCount: blUpdates };
+      return { success: true, count: sheetUpdates };
     } catch (e) {
       console.error(`Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
@@ -205,6 +161,7 @@ function refreshWebPayload() {
           CONFIG.SCHEMA.HH,
           true,
         ),
+        playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
       };
 
@@ -254,20 +211,6 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
-  // 🕵️‍♀️ PRE-FETCH BLACKLIST (Passive Hiding Enforcement)
-  const blacklistSet = new Set();
-  if (isHeadhunter) {
-    try {
-      const raw = Utils.Props.getChunked("HH_BLACKLIST", {});
-      const now = Date.now();
-      Object.entries(raw)
-        .filter(([_, v]) => v.e > now)
-        .forEach(([tag]) => blacklistSet.add(tag));
-    } catch (e) {
-      console.warn("Blacklist check failed:", e);
-    }
-  }
-
   const sanitizeNum = (v) => {
     const n = Number(v);
     return isFinite(n) ? n : 0;
@@ -281,11 +224,6 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         const tagRaw = r[SCHEMA.TAG];
         if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#"))
           return null;
-
-        // 🛡️ PASSIVE HIDING: Check Blacklist Property
-        if (isHeadhunter && blacklistSet.has(tagRaw)) {
-          return null;
-        }
 
         const id = tagRaw.replace("#", "").trim();
         if (id.length < 3) return null;

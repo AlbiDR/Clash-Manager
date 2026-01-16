@@ -163,7 +163,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     if (id) {
       openInGame(id);
 
-      const delay = Math.max(throttleMs, 2000);
+      // Increased delay for split screen mode compatibility
+      // In split screen, both apps remain active and need more processing time
+      const delay = Math.max(throttleMs, 4000);
       if (currentIndex.value < selectedIds.value.length - 1) {
         blitzTimer = setTimeout(() => {
           currentIndex.value++;
