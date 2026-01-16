@@ -35,43 +35,38 @@ export function useExternalLink() {
     const isAndroid = /android/i.test(userAgent);
     console.log("[openInGame] Environment - Android:", isAndroid);
 
-    // STRATEGY: On Android (app or browser), we try multiple layers of escalation
+    // STRATEGY: On Android, use Intent URL directly for maximum reliability
     if (isAndroid) {
-      const directUrl = `clashroyale://playerInfo?id=${id}`;
       const intentUrl =
         `intent://playerInfo?id=${id}#Intent;` +
         `scheme=clashroyale;` +
         `package=com.supercell.clashroyale;` +
         `end`;
 
-      console.log("[openInGame] Android mode - attempting escalation");
+      console.log("[openInGame] Android mode - using direct intent");
 
       try {
-        // Layer 1: The direct anchor click (No _blank, to keep it in context)
+        // Create a temporary anchor for the intent
         const anchor = document.createElement("a");
-        anchor.href = directUrl; // Try direct scheme first
+        anchor.href = intentUrl;
         anchor.style.display = "none";
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
 
         document.body.appendChild(anchor);
         anchor.click();
 
-        // ⚡ FALLBACK: If the direct scheme fails to trigger, the page usually stays still.
-        // We wait 150ms and if no visibility change happened, we fire the Intent layer.
+        // Clean up immediately - the intent will handle the app launch
         setTimeout(() => {
           if (document.body.contains(anchor)) {
-            anchor.href = intentUrl;
-            anchor.click();
-
-            setTimeout(() => {
-              if (document.body.contains(anchor))
-                document.body.removeChild(anchor);
-            }, 500);
+            document.body.removeChild(anchor);
           }
-        }, 150);
+        }, 100);
 
-        console.log("[openInGame] Direct/Intent escalation fired");
+        console.log("[openInGame] Intent triggered successfully");
       } catch (err) {
-        console.error("[openInGame] Escalated click failed:", err);
+        console.error("[openInGame] Intent click failed:", err);
+        // Last resort: direct location change
         window.location.href = intentUrl;
       }
       return;
