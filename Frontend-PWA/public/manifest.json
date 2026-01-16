@@ -16,10 +16,22 @@
       "purpose": "any"
     },
     {
+      "src": "logo-monochrome.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
+    },
+    {
       "src": "logo.webp",
       "sizes": "192x192 512x512",
       "type": "image/webp",
       "purpose": "any"
+    },
+    {
+      "src": "logo-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
       "src": "logo-maskable.webp",
