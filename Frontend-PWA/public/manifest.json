@@ -16,20 +16,38 @@
       "purpose": "any"
     },
     {
+      "src": "logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "logo.webp",
       "sizes": "192x192 512x512",
       "type": "image/webp",
       "purpose": "any"
     },
     {
-      "src": "logo-monochrome.svg",
+      "src": "pwa-icon-monochrome.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "monochrome"
     },
     {
-      "src": "logo-maskable.svg",
+      "src": "pwa-icon-monochrome.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
+    },
+    {
+      "src": "pwa-icon-maskable.svg",
       "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "pwa-icon-maskable.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
