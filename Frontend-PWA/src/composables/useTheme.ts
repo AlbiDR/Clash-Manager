@@ -65,6 +65,10 @@ export function useTheme() {
     isInitialized.value = true;
   }
 
+  // 🧠 Cache Storage
+  let baseManifestCache: any = null;
+  const manifestBlobCache: Record<string, string> = {};
+
   // 🧩 MANIFEST SWAPPER: Dynamic injection of theme-aware screenshots
   async function updateManifest() {
     if (typeof document === "undefined") return;
@@ -72,6 +76,18 @@ export function useTheme() {
     // 1. Determine current visual state
     const isDark = document.documentElement.classList.contains("dark");
     const suffix = isDark ? "dark" : "light";
+
+    // ⚡ OPTIMIZATION: Return cached Blob URI if already generated
+    if (manifestBlobCache[suffix]) {
+      const link = document.querySelector(
+        'link[rel="manifest"]',
+      ) as HTMLLinkElement;
+      if (link && link.href !== manifestBlobCache[suffix]) {
+        link.href = manifestBlobCache[suffix];
+        console.log(`[PWA] Swapped to cached manifest for ${suffix}`);
+      }
+      return;
+    }
 
     // 2. Define targeted screenshots
     const manualScreenshots = [
@@ -98,15 +114,16 @@ export function useTheme() {
       ) as HTMLLinkElement;
       if (!link) return;
 
-      // 4. Fetch original manifest if we haven't cached the base yet
-      // (Simplified: Re-fetching is cheap for small JSON and ensures freshness)
-      const initialManifest = await fetch("/manifest.json").then((res) =>
-        res.json(),
-      );
+      // 4. Fetch or use cached base manifest
+      if (!baseManifestCache) {
+        baseManifestCache = await fetch("/manifest.json").then((res) =>
+          res.json(),
+        );
+      }
 
       // 5. Construct new manifest
       const newManifest = {
-        ...initialManifest,
+        ...baseManifestCache,
         screenshots: manualScreenshots,
       };
 
@@ -115,10 +132,11 @@ export function useTheme() {
       const blob = new Blob([stringManifest], { type: "application/json" });
       const manifestURL = URL.createObjectURL(blob);
 
-      // 7. Swap (forcing browser re-read)
+      // 7. Cache and Swap
+      manifestBlobCache[suffix] = manifestURL;
       link.href = manifestURL;
 
-      console.log(`[PWA] Manifest updated for ${suffix} theme`);
+      console.log(`[PWA] Generated and updated manifest for ${suffix} theme`);
     } catch (e) {
       console.warn("[PWA] Failed to update dynamic manifest", e);
     }
