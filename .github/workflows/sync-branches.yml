@@ -1,0 +1,48 @@
+name: Sync Branches
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches
+
+      - name: Setup Git User
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Sync Jules to Beta
+        run: |
+          echo "Fetching latest origin..."
+          git fetch origin
+
+          echo "Checking out Beta..."
+          git checkout Beta
+          git pull origin Beta
+
+          echo "Merging Jules into Beta..."
+          git merge origin/Jules --no-edit
+
+          echo "Pushing Beta..."
+          git push origin Beta
+
+      - name: Sync Beta to Stable
+        run: |
+          echo "Checking out Stable..."
+          git checkout Stable
+          git pull origin Stable
+
+          echo "Merging Beta into Stable..."
+          git merge Beta --no-edit
+
+          echo "Pushing Stable..."
+          git push origin Stable
