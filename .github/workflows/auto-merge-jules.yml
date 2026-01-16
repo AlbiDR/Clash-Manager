@@ -18,11 +18,23 @@ jobs:
   merge-prs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Jules branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: Jules
-          fetch-depth: 0 # Need full history for changelog management might be overkill but safe
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Ensure Jules Branch Exists and Checkout
+        run: |
+          git fetch origin
+          if git show-ref --verify --quiet refs/remotes/origin/Jules; then
+            echo "Branch 'Jules' exists. Checking out..."
+            git checkout Jules
+            git pull origin Jules
+          else
+            echo "Branch 'Jules' does not exist. Creating from current HEAD."
+            git checkout -b Jules
+            git push origin Jules
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
