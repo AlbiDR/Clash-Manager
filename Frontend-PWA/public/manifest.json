@@ -67,5 +67,28 @@
       "form_factor": "wide",
       "label": "Clash Manager Desktop (Dark)"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Leaderboard",
+      "short_name": "Leaders",
+      "description": "View clan performance leaderboard",
+      "url": "./#/leaderboard",
+      "icons": [{ "src": "pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Headhunter",
+      "short_name": "Recruits",
+      "description": "Research potential recruits",
+      "url": "./#/recruiter",
+      "icons": [{ "src": "pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Configure dashboard preferences",
+      "url": "./#/settings",
+      "icons": [{ "src": "pwa-192.png", "sizes": "192x192" }]
+    }
   ]
 }

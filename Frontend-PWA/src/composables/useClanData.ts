@@ -17,13 +17,45 @@ const lastSyncTime = ref<number | null>(null);
 const syncStatus = ref<"idle" | "syncing" | "success" | "error">("idle");
 const syncError = ref<string | null>(null);
 
-const { setBadge } = useBadge();
+const { setBadge, sendLocalNotification } = useBadge();
 const { modules } = useModules();
 const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
 
 const SNAPSHOT_KEY = "cm_hydration_snapshot";
+
+/**
+ * 🛠 RECRUIT NOTIFICATION ENGINE
+ * Compares current pool with new incoming data to detect high-potential recruits.
+ */
+function processRecruitChanges(
+  oldData: WebAppData | null,
+  newData: WebAppData,
+) {
+  if (!newData?.hh || !modules.experimentalNotifications) return;
+
+  const threshold = modules.notificationThreshold || 75;
+  const oldIds = new Set(oldData?.hh?.map((r) => r.id) || []);
+
+  const newEliteRecruits = newData.hh.filter(
+    (r) => r.s >= threshold && !oldIds.has(r.id),
+  );
+
+  if (newEliteRecruits.length > 0) {
+    const count = newEliteRecruits.length;
+    const topScore = Math.max(...newEliteRecruits.map((r) => r.s));
+
+    const title =
+      count === 1 ? "Elite Recruit Found" : "Elite Recruits Located";
+    const body =
+      count === 1
+        ? `A candidate with score ${topScore} just entered the pool.`
+        : `${count} candidates with scores up to ${topScore} detected.`;
+
+    sendLocalNotification(title, body);
+  }
+}
 
 export function useClanData() {
   // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
@@ -91,46 +123,6 @@ export function useClanData() {
     }
   }
 
-  async function loadFromNetwork() {
-    // Fast DB Path (SWR) via IDB - still good for robust caching
-    try {
-      const cached = await Promise.race([
-        loadCache(),
-        new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error("IDB Timeout")), 2000),
-        ),
-      ]);
-
-      if (cached) {
-        // Only update if cached data is newer than what we got from localStorage or if no local storage data was found.
-        if (
-          !clanData.value ||
-          cached.timestamp > (clanData.value?.timestamp || 0)
-        ) {
-          clanData.value = cached;
-          lastSyncTime.value = cached.timestamp;
-          updateBadgeCount(cached);
-          // console.log("⚡ IDB Cache Refresh: Applied newer data.");
-        }
-      }
-    } catch (e) {
-      console.warn("IDB Load Failed", e);
-    }
-
-    // Network Sync - always attempt to get the freshest data
-    refresh();
-  }
-
-  function updateBadgeCount(data: WebAppData) {
-    if (data?.hh) {
-      const threshold = modules.notificationThreshold || 75;
-      const count = modules.notificationBadgeHighPotential
-        ? data.hh.filter((r) => r.s >= threshold).length
-        : data.hh.length;
-      setBadge(count);
-    }
-  }
-
   async function refresh() {
     if (isRefreshing.value) return;
 
@@ -159,6 +151,9 @@ export function useClanData() {
       }
 
       const remoteData = await fetchRemote();
+
+      // Trigger notification check before overwriting state
+      processRecruitChanges(clanData.value, remoteData);
 
       clanData.value = remoteData;
       lastSyncTime.value = remoteData.timestamp;

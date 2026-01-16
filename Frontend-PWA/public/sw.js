@@ -1,11 +1,11 @@
 // Service Worker for Clash Manager
-// Handles background tasks and badging offload
-import { precacheAndRoute } from 'workbox-precaching';
+// Optimized for Native System Compatibility (WebAPK)
+import { precacheAndRoute } from "workbox-precaching";
 
 // 📦 PRECACHE: This list is injected automatically by workbox-build
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -13,62 +13,112 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+/**
+ * 🛠 NATIVE ICON BADGE & NOTIFICATION HANDLERS
+ */
 self.addEventListener("message", async (event) => {
   if (!event.data) return;
 
-  // Handle Badge Updates
   if (event.data.type === "SET_BADGE") {
     const count = event.data.count;
     try {
-      if (navigator.setAppBadge) {
-        if (count > 0) {
-          await navigator.setAppBadge(count);
-        } else {
-          await navigator.clearAppBadge();
-        }
+      if (self.navigator.setAppBadge) {
+        if (count > 0) await self.navigator.setAppBadge(count);
+        else await self.navigator.clearAppBadge();
       }
     } catch (e) {
-      console.error("[SW] Failed to set badge", e);
+      console.warn("[SW] Badge update failed", e);
     }
   }
 
-  // Handle Local Notifications (Improvement #2)
   if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, options } = event.data;
-    self.registration.showNotification(title, options);
+    self.registration.showNotification(title, {
+      icon: "pwa-192.png",
+      badge: "pwa-64.png",
+      tag: "clash-manager-alert",
+      ...options,
+    });
   }
 });
 
-// Periodic Sync for Background Updates (Improvement #1)
+/**
+ * ⚡ PERIODIC BACKGROUND SYNC
+ * Registered via the frontend, this allows the WebAPK to refresh recruiter
+ * data even when the app is in the background.
+ */
 self.addEventListener("periodicsync", (event) => {
-  if (event.tag === "update-badge") {
-    // Logic to fetch new data would go here
-    // For now we just keep the service active
-    // console.log("[SW] Periodic sync triggered");
+  if (event.tag === "update-recruit-badge") {
+    event.waitUntil(handleBackgroundSync());
   }
 });
 
-// Deep Linking (Improvement #8)
+async function handleBackgroundSync() {
+  try {
+    // 1. Recover GAS URL from IndexedDB
+    const db = await openDB();
+    const gasUrl = await getValue(db, "cm_gas_url");
+    if (!gasUrl) return;
+
+    // 2. Fetch Fresh Data (Silent)
+    const response = await fetch(gasUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "getwebappdata" }),
+    });
+
+    const json = await response.json();
+    if (json?.status === "success" && json?.data) {
+      // 3. Update Badge (Android Home Screen integration)
+      const data = json.data;
+      if (data.hh && self.navigator.setAppBadge) {
+        const threshold = 75; // Default threshold
+        const count = data.hh.filter((r) => r.s >= threshold).length;
+        if (count > 0) await self.navigator.setAppBadge(count);
+        else await self.navigator.clearAppBadge();
+      }
+    }
+  } catch (e) {
+    console.error("[SW] Background sync failed", e);
+  }
+}
+
+/**
+ * 🎲 MINIMAL IDB HELPER FOR SW
+ */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("keyval-store", 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+function getValue(db, key) {
+  return new Promise((resolve) => {
+    const transaction = db.transaction(["keyval"], "readonly");
+    const store = transaction.objectStore("keyval");
+    const request = store.get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => resolve(null);
+  });
+}
+
+/**
+ * 🔗 NATIVE DEEP LINKING
+ */
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  // Action Button handling (Improvement #3)
-  if (event.action === "open") {
-    // Specific logic for open action if needed
-  }
-
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {
-      // Focus existing window
+      // If a window is already open, focus it
       for (const client of clientList) {
-        if (client.url && "focus" in client) {
-          return client.focus();
-        }
+        if ("focus" in client) return client.focus();
       }
-      // Open new window if none
-      if (clients.openWindow) {
-        return clients.openWindow("/");
-      }
-    })
+      // Otherwise open the app
+      if (clients.openWindow)
+        return clients.openWindow("/Clash-Manager/#/recruiter");
+    }),
   );
 });
