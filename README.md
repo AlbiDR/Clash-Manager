@@ -8,15 +8,31 @@ A high-precision, production-grade toolkit for elite Clash Royale clan leadershi
 
 ## Visual Experience
 
-The interface adapts fluidly to your device and system theme preferences.
+<p align="center">
+  The interface adapts fluidly to your device and system theme preferences.
+</p>
 
-|                           Desktop (Light)                           |                          Desktop (Dark)                           |
-| :-----------------------------------------------------------------: | :---------------------------------------------------------------: |
-| ![Desktop Light](Frontend-PWA/public/screenshot-desktop-light.webp) | ![Desktop Dark](Frontend-PWA/public/screenshot-desktop-dark.webp) |
+<p align="center">
+  <strong>Desktop Command Center</strong>
+</p>
 
-|                          Mobile (Light)                           |                          Mobile (Dark)                          |
-| :---------------------------------------------------------------: | :-------------------------------------------------------------: |
-| ![Mobile Light](Frontend-PWA/public/screenshot-mobile-light.webp) | ![Mobile Dark](Frontend-PWA/public/screenshot-mobile-dark.webp) |
+<p align="center">
+  <img src="Frontend-PWA/public/screenshot-desktop-light.webp" width="48%" />
+  &nbsp;
+  <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="48%" />
+</p>
+
+<br />
+
+<p align="center">
+  <strong>Mobile Operations</strong>
+</p>
+
+<p align="center">
+  <img src="Frontend-PWA/public/screenshot-mobile-light.webp" width="28%" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="28%" />
+</p>
 
 ---
 
