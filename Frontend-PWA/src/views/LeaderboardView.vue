@@ -198,7 +198,6 @@ function handleSearch(val: string) {
         @toggle="toggleExpand(member.id)"
         @toggle-select="toggleSelect(member.id)"
       />
-      <SkeletonCard v-for="i in 7" :key="i" :style="{ '--i': i + 1 }" />
     </template>
   </ConsoleLayout>
 </template>
