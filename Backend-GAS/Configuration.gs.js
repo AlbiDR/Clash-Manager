@@ -80,6 +80,7 @@ const CONFIG = {
       HH: "🔭 Scout Recruits",
       ALL: "🚀 Run Master Sequence",
       MOBILE: "📱 Enable Mobile Controls",
+      KEYS: "🔑 Verify API Keys",
       HEALTH: "🛡️ Health Check",
     },
   },

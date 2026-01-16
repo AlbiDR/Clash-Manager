@@ -34,6 +34,7 @@ function onOpen(e) {
     .addItem(ITEMS.MOBILE, "setupMobileTriggers")
     .addSeparator()
     // ZONE 3: MAINTENANCE
+    .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
     .addToUi();
 }
@@ -188,7 +189,10 @@ function handleMobileEdit(e) {
     });
   } catch (err) {
     console.error(`📱 Mobile Error: ${err.message}`);
-    const msg = err.message.indexOf("System Busy") > -1 ? "⚠️ System Busy (Retry in 60s)" : `ERROR: ${err.message}`;
+    const msg =
+      err.message.indexOf("System Busy") > -1
+        ? "⚠️ System Busy (Retry in 60s)"
+        : `ERROR: ${err.message}`;
     sheet.getRange("B1").setValue(msg);
   }
 }
@@ -247,6 +251,25 @@ function checkSystemHealth() {
   ss.toast("Verifying System...", "Health Check", 5);
 
   const manifest = CONFIG.SYSTEM.MANIFEST;
+
+  // 🛡️ API KEY CHECK
+  const keys = CONFIG.SYSTEM.API_KEYS;
+  let keyStatusReport = "";
+  let keysHealthy = true;
+
+  if (keys.length === 0) {
+    keysHealthy = false;
+    keyStatusReport = "❌ No API Keys configured.\n";
+  } else {
+    // Perform a quick verification of keys using the first found clan (cache-friendly)
+    const verificationResults = verifyApiKeysInternal(false); // Silent mode
+    const activeCount = verificationResults.filter((r) => r.success).length;
+    keysHealthy = activeCount > 0;
+    keyStatusReport = `🔑 API KEYS: ${activeCount}/${keys.length} Active${
+      activeCount === keys.length ? " (Perfect)" : ""
+    }\n`;
+  }
+
   // Module Check
   const modules = [
     {
@@ -280,6 +303,9 @@ function checkSystemHealth() {
   let report = `📂 FILE SYSTEM\n`;
   let healthy = true;
 
+  if (!keysHealthy) healthy = false;
+  report += keyStatusReport;
+
   modules.forEach((m) => {
     if (m.current === m.expected) report += `✅ ${m.name}: v${m.current}\n`;
     else {
@@ -290,10 +316,87 @@ function checkSystemHealth() {
 
   const ui = SpreadsheetApp.getUi();
   ui.alert(
-    healthy ? "System Healthy" : "⚠️ Version Mismatch",
+    healthy ? "System Healthy" : "⚠️ System Issues Detected",
     report,
     ui.ButtonSet.OK,
   );
+}
+
+/**
+ * Trigger for the manual API Key Verification from the menu.
+ */
+function triggerVerifyApiKeys() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.toast("Verifying API Keys...", "Security Audit", 10);
+
+  const results = verifyApiKeysInternal(true); // User-facing mode
+
+  let report = "🔑 API KEY SECURITY AUDIT\n---------------------------\n";
+  let activeCount = 0;
+
+  results.forEach((r) => {
+    if (r.success) {
+      activeCount++;
+      report += `✅ ${r.name}: Active\n`;
+    } else {
+      report += `❌ ${r.name}: ${r.error}\n`;
+    }
+  });
+
+  report += "---------------------------\n";
+  report += `📊 SUMMARY: ${activeCount}/${results.length} Keys Operational`;
+
+  ui.alert("API Key Verification", report, ui.ButtonSet.OK);
+}
+
+/**
+ * Core logic for verifying API keys.
+ * Performs a simple request (clan info) for each key to verify validity.
+ */
+function verifyApiKeysInternal(isUserFacing) {
+  const keys = CONFIG.SYSTEM.API_KEYS;
+  const baseUrl = CONFIG.SYSTEM.API_BASE;
+  const clanTag = CONFIG.SYSTEM.CLAN_TAG;
+
+  if (!clanTag) {
+    if (isUserFacing) {
+      SpreadsheetApp.getUi().alert(
+        "Missing Clan Tag",
+        "Please configure a ClanTag in Script Properties to verify keys.",
+        SpreadsheetApp.getUi().ButtonSet.OK,
+      );
+    }
+    return [];
+  }
+
+  const encodedTag = encodeURIComponent(clanTag.replace("#", ""));
+  const url = `${baseUrl}/clans/%23${encodedTag}`;
+
+  return keys.map((keyObj) => {
+    try {
+      const response = UrlFetchApp.fetch(url, {
+        method: "get",
+        headers: {
+          Authorization: `Bearer ${keyObj.value}`,
+          "User-Agent": "ClanManagerBot/6.0 (GAS)",
+        },
+        muteHttpExceptions: true,
+      });
+
+      const code = response.getResponseCode();
+      if (code === 200) {
+        return { name: keyObj.name, success: true };
+      } else {
+        let errorMsg = `Error ${code}`;
+        if (code === 403) errorMsg = "Invalid/IP Restricted";
+        if (code === 429) errorMsg = "Rate Limited";
+        return { name: keyObj.name, success: false, error: errorMsg };
+      }
+    } catch (e) {
+      return { name: keyObj.name, success: false, error: "Network/CORS Error" };
+    }
+  });
 }
 
 // DEPRECATED: Legacy Monolith (Preserved for compatibility)
