@@ -76,6 +76,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   // Valibot v1+ uses .output instead of .data for success result
   const { lb, hh, timestamp } = result.output;
+  const playerTag = (parsedData as any).playerTag;
 
   // Strict bounds checking for matrix columns
   return {
@@ -114,6 +115,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
         },
       };
     }),
+    playerTag,
     timestamp,
   };
 }

@@ -167,6 +167,7 @@ function handleSearch(val: string) {
         :expanded="expandedIds.has(visibleItems[0].id)"
         :selected="selectedSet.has(visibleItems[0].id)"
         :selection-mode="isSelectionMode"
+        :is-tagged="data?.playerTag === visibleItems[0].id"
         :app-is-refreshing="isRefreshing"
         @toggle="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
@@ -184,12 +185,14 @@ function handleSearch(val: string) {
           selectedSet.has(member.id),
           isSelectionMode,
           isRefreshing,
+          data?.playerTag === member.id,
         ]"
         :id="`member-${member.id}`"
         :member="member"
         :expanded="expandedIds.has(member.id)"
         :selected="selectedSet.has(member.id)"
         :selection-mode="isSelectionMode"
+        :is-tagged="data?.playerTag === member.id"
         :style="{ '--i': index }"
         :app-is-refreshing="isRefreshing"
         @toggle="toggleExpand(member.id)"

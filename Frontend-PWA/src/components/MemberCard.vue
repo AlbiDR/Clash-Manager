@@ -25,6 +25,7 @@ const {
   expanded: boolean;
   selected: boolean;
   selectionMode: boolean;
+  isTagged?: boolean;
   appIsRefreshing?: boolean;
 }>();
 
@@ -68,6 +69,7 @@ const trendInfo = computed(() => {
     :expanded="expanded"
     :selected="selected"
     :selection-mode="selectionMode"
+    :is-tagged="isTagged"
     :tone-class="scoreTone(member.s)"
     :aria-label="`${member.n}, score ${Math.round(member.s)}, ${roleInfo(member.d.role).label}`"
     @toggle="emit('toggle')"

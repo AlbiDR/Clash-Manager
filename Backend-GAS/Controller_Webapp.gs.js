@@ -205,6 +205,7 @@ function refreshWebPayload() {
           CONFIG.SCHEMA.HH,
           true,
         ),
+        playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
       };
 
