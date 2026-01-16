@@ -22,7 +22,11 @@ const getGasUrl = () => {
     url = import.meta.env.VITE_GAS_URL || "";
   }
 
-  if (url) url = url.trim();
+  if (url) {
+    url = url.trim();
+    // 🛡️ SYNC: Ensure SW can see the URL via IDB
+    idb.set("cm_gas_url", url).catch(() => {});
+  }
 
   if (url && !url.startsWith("https://")) {
     if (url.startsWith("http://")) {
