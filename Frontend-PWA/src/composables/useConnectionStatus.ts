@@ -1,7 +1,13 @@
 import { ref, computed, readonly } from "vue";
 import { useApiState } from "./useApiState";
+import { useNetworkInfo } from "./useNetworkInfo";
 
-export type ConnectionStatus = "online" | "offline" | "syncing" | "success-resolve";
+export type ConnectionStatus =
+  | "online"
+  | "offline"
+  | "syncing"
+  | "success-resolve"
+  | "slow";
 
 const isOnline = ref(navigator.onLine);
 const isSuccessFading = ref(false);
@@ -18,15 +24,15 @@ function handleOnline() {
   isOnline.value = true;
 }
 
-function handleOffline() { 
+function handleOffline() {
   // Fix 19: Debounce (2s buffer before showing offline UI)
   offlineTimeout = setTimeout(() => {
-     isOnline.value = false;
+    isOnline.value = false;
   }, 2000);
 }
 
 // Attach listeners once at module level
-if (!listenersAttached && typeof window !== 'undefined') {
+if (!listenersAttached && typeof window !== "undefined") {
   window.addEventListener("online", handleOnline);
   window.addEventListener("offline", handleOffline);
   listenersAttached = true;
@@ -39,6 +45,7 @@ if (!listenersAttached && typeof window !== 'undefined') {
  */
 export function useConnectionStatus() {
   const { apiStatus } = useApiState();
+  const { isSlowConnection, effectiveType } = useNetworkInfo();
 
   function setSyncing(val: boolean) {
     isSyncing.value = val;
@@ -52,31 +59,36 @@ export function useConnectionStatus() {
   }
 
   const status = computed((): ConnectionStatus => {
-    const result = !isOnline.value || apiStatus.value === "offline" 
-      ? "offline"
-      : isSuccessFading.value 
-      ? "success-resolve"
-      : isSyncing.value || apiStatus.value === "checking" 
-      ? "syncing"
-      : "online";
-    
+    const result =
+      !isOnline.value || apiStatus.value === "offline"
+        ? "offline"
+        : isSuccessFading.value
+          ? "success-resolve"
+          : isSyncing.value || apiStatus.value === "checking"
+            ? "syncing"
+            : isSlowConnection.value
+              ? "slow"
+              : "online";
+
     // Debug: log status changes in development
     if (import.meta.env.DEV) {
-      console.log('[ConnectionStatus]', {
+      console.log("[ConnectionStatus]", {
         isOnline: isOnline.value,
         apiStatus: apiStatus.value,
         isSyncing: isSyncing.value,
         isSuccessFading: isSuccessFading.value,
-        computed: result
+        computed: result,
       });
     }
-    
+
     return result;
   });
 
   return {
     status,
     isOnline: readonly(isOnline),
+    isSlow: isSlowConnection,
+    type: effectiveType,
     setSyncing,
     setSuccess,
   };

@@ -7,6 +7,7 @@ import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
+import { useBroadcastChannel } from "./useBroadcastChannel";
 
 // Global State
 const clanData = shallowRef<WebAppData | null>(null);
@@ -22,6 +23,26 @@ const { modules } = useModules();
 const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
+
+// 📡 Broadcast Channel Integration
+const { post: broadcast } = useBroadcastChannel((msg) => {
+  if (msg.type === "DATA_SYNC_SUCCESS") {
+    // Another tab brought fresh data. Reload from local storage/IDB to sync.
+    // We can just trigger loadLocal() again or force a soft re-hydration.
+    // Ensure we don't loop endlessly.
+    if (!isRefreshing.value) {
+      const raw = localStorage.getItem(SNAPSHOT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.timestamp > (lastSyncTime.value || 0)) {
+           clanData.value = parsed;
+           lastSyncTime.value = parsed.timestamp;
+           updateBadgeCount(parsed);
+        }
+      }
+    }
+  }
+});
 
 const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
@@ -166,7 +187,11 @@ export function useClanData() {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
         // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
       });
+      });
       updateBadgeCount(remoteData);
+
+      // 📡 Broadcast success to other tabs
+      broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") return; // Ignore aborts
 
