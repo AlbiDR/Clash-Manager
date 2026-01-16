@@ -142,9 +142,24 @@ export function useTheme() {
     }
   }
 
+  /**
+   * 🧹 MANIFEST PURGE
+   * Explicitly clears the manifest URI cache to force re-generation.
+   * satisfying user recovery requirements for icon/pwa reloading.
+   */
+  function clearManifestCache() {
+    Object.keys(manifestBlobCache).forEach((key) => {
+      URL.revokeObjectURL(manifestBlobCache[key]);
+      delete manifestBlobCache[key];
+    });
+    baseManifestCache = null;
+    console.log("[PWA] Manifest cache cleared");
+  }
+
   return {
     theme,
     setTheme,
     init,
+    clearManifestCache,
   };
 }

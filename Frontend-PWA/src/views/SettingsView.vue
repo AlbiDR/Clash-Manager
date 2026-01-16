@@ -20,7 +20,7 @@ import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
 import { vTactile } from "../directives/vTactile";
 
 const { modules, toggle } = useModules();
-const { theme, setTheme } = useTheme();
+const { theme, setTheme, clearManifestCache } = useTheme();
 const haptics = useHaptics();
 const wakeLock = useWakeLock();
 const { isSyntheticMode, toggleSyntheticMode } = useSyntheticMode();
@@ -84,6 +84,7 @@ async function clearCache() {
     }
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    clearManifestCache();
     window.location.reload();
   }
 }
