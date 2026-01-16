@@ -19,10 +19,13 @@ window.location = mockSafeLocation as any;
 
 // 2. Fix Network Fetch Failures
 // Mock global fetch to prevent real network requests and retry loops in CI
-vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-  ok: true,
-  json: async () => ({}),
-}));
+vi.stubGlobal(
+  "fetch",
+  vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({}),
+  }),
+);
 
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
