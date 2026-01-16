@@ -32,6 +32,8 @@ jobs:
     name: Build & Verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
     steps:
       - name: Suppress Git Advice
         run: git config --global advice.defaultBranchName false
@@ -52,12 +54,6 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
 
-      - name: Install Dependencies
-        run: pnpm install
-
-      - name: Run Tests
-        run: pnpm test
-
       - name: Project Validation
         working-directory: .
         run: |
@@ -67,10 +63,15 @@ jobs:
             echo "⚠️ Validation script not found."
           fi
 
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Run Tests
+        run: pnpm test
+
       - name: Build Project
         run: pnpm run build
-        env:
-          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
+        # env: VITE_GAS_URL is now global to the job
 
       - name: Upload Pages Artifact
         if: github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
