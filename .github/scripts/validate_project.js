@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 // --- Configuration & Paths ---
-const ROOT_DIR = path.resolve(__dirname, "..");
+const ROOT_DIR = path.resolve(__dirname, "../..");
 const PWA_DIR = path.join(ROOT_DIR, "Frontend-PWA");
 const GAS_DIR = path.join(ROOT_DIR, "Backend-GAS");
 
