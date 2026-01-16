@@ -42,7 +42,6 @@ export function useExternalLink() {
         `intent://playerInfo?id=${id}#Intent;` +
         `scheme=clashroyale;` +
         `package=com.supercell.clashroyale;` +
-        `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
         `end`;
 
       console.log("[openInGame] Android mode - attempting escalation");
@@ -115,7 +114,6 @@ export function buildDeepLink(tag: string): string {
       `intent://playerInfo?id=${id}#Intent;` +
       `scheme=clashroyale;` +
       `package=com.supercell.clashroyale;` +
-      `S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.supercell.clashroyale;` +
       `end`
     );
   }

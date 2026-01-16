@@ -7,7 +7,11 @@
   "display": "standalone",
   "scope": "./",
   "start_url": "./#/leaderboard",
-  "id": "clash-manager-pwa",
+  "id": "clash-manager",
+  "orientation": "portrait",
+  "categories": ["productivity", "games", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "pwa-64.png",
@@ -68,6 +72,16 @@
       "label": "Clash Manager Desktop (Dark)"
     }
   ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.supercell.clashroyale",
+      "id": "com.supercell.clashroyale"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
   "shortcuts": [
     {
       "name": "Leaderboard",
