@@ -28,6 +28,15 @@
 
 ---
 
+## [2026-01-17] ❌ FAILED MERGE: PR #43: Optimize Bundle Chunking and Lazy-Loading Strategy
+> [!CAUTION]
+> **Status**: Auto-merge failed after 5 attempts.
+> **Error**: `API Error: 405 Method Not Allowed - {"message":"Pull Request is not mergeable","documentation_url":"https://docs.github.com/rest/pulls/pulls#merge-a-pull-request","status":"405"}`  
+> **Requirement**: Manual intervention (likely a merge conflict) is required.
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/43)
+
+---
+
 ## [2026-01-17] PR #44: Optimize Vite manual chunks for Valibot validation library
 **Commit**: `766963bc7e23e5a10b8fd3bd24c4bbc7cda6f86f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/44)
