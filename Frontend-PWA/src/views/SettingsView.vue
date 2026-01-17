@@ -62,11 +62,55 @@ function handleThemeChange(newTheme: any) {
 
 // 🔄 SMART UPDATE INTEGRATION
 import { useRegisterSW } from "virtual:pwa-register/vue";
+import { useToast } from "../composables/useToast"; // Fix 23: Import Toast
+
 const { updateServiceWorker } = useRegisterSW();
+const toast = useToast();
 
 async function forceUpdate() {
   haptics.heavy();
-  updateServiceWorker(true);
+  const tId = toast.info("Checking for updates...");
+
+  if (!("serviceWorker" in navigator)) {
+    toast.remove(tId);
+    toast.error("Service Worker not available");
+    return;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      toast.remove(tId);
+      toast.error("No active session found");
+      return;
+    }
+
+    // 1. Check if update is already waiting
+    if (reg.waiting) {
+      toast.remove(tId);
+      toast.success("Update ready! Reloading...");
+      updateServiceWorker(true);
+      return;
+    }
+
+    // 2. Force network check
+    await reg.update();
+
+    // 3. Check results
+    if (reg.installing || reg.waiting) {
+      toast.remove(tId);
+      toast.success("Update found! Downloading...");
+      // Let the natural PWA flow handle the rest, or strictly:
+      // if (reg.waiting) updateServiceWorker(true);
+    } else {
+      toast.remove(tId);
+      toast.success("Clash Manager is up to date");
+    }
+  } catch (e) {
+    console.error("Update check failed", e);
+    toast.remove(tId);
+    toast.error("Update check failed");
+  }
 }
 
 async function clearCache() {
