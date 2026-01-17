@@ -31,6 +31,7 @@ jobs:
 
       - name: Forward Sync (Jules -> Beta -> Stable)
         run: |
+          # NOTE: Jules is reserved for automated updates from Google Jules.
           # 1. Jules -> Beta
           echo "==== SYNC: Jules -> Beta ===="
           if git show-ref --verify --quiet refs/remotes/origin/Beta; then
@@ -78,6 +79,7 @@ jobs:
 
       - name: Reverse Sync (Stable -> Beta -> Jules)
         run: |
+          # NOTE: Stable and Beta are the primary branches for manual development.
           # 1. Stable -> Beta
           echo "==== SYNC: Stable -> Beta ===="
           git checkout Beta
