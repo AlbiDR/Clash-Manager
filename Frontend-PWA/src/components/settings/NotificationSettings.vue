@@ -45,12 +45,30 @@ const enableNotifications = async () => {
 };
 
 // Improvement #9: Test Logic
+const testCount = ref(1); // Local counter for testing
 const sendTest = async () => {
   haptics.heavy();
-  await sendLocalNotification(
-    "Clash Manager",
-    "This is a test notification from the new system.",
-  );
+
+  // Increment on each press to verify badge numbers go up
+  const count = testCount.value++;
+
+  // Directly stimulate the Android SW logic
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: "BADGE_NOTIFICATION_ANDROID",
+      count: count,
+      threshold: modules.notificationThreshold,
+    });
+
+    // Also show a toast/console for dev feedback
+    console.log(`[Test] Sent badge count: ${count}`);
+  } else {
+    // Fallback for non-SW/Dev env
+    await sendLocalNotification(
+      "Test Alert",
+      `Test notification #${count}. Badge should be ${count}.`,
+    );
+  }
 };
 </script>
 
