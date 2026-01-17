@@ -116,9 +116,9 @@ export function useTheme() {
 
       // 4. Fetch or use cached base manifest
       if (!baseManifestCache) {
-        baseManifestCache = await fetch("/manifest.json").then((res) =>
-          res.json(),
-        );
+        // use href of existing link to ensure base path is handled correctly
+        const fetchUrl = link.getAttribute("href") || "manifest.json";
+        baseManifestCache = await fetch(fetchUrl).then((res) => res.json());
       }
 
       // 5. Construct new manifest
