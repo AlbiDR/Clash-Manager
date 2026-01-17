@@ -187,9 +187,13 @@ const ScoringSystem = {
   /**
    * ⚖️ HYBRID BENCHMARK CALCULATOR (V7)
    * ----------------------------------------------------------------------------
-   * Top 50 player would crush the scores of all other recruits. The 40/60
-   * Hybrid split anchors the benchmark to our Clan's elite (Stability) while
-   * allowing it to drift with the Global Market (Discovery).
+   * WHY: Prevents "Benchmark Hijacking". In V6, discovery of a single Global
+   * Top 50 player would crush the scores of all other recruits.
+   *
+   * REASONING (40/60 Split): We lean 60% towards the External Pool because
+   * Clan members naturally accrue higher scores due to consistent War access
+   * (the +500 bonus). Weighting the Pool higher ensures the benchmark is
+   * aspirational and fair to recruits who lack daily War opportunity.
    *
    * HOW:
    * 1. Clan Side: Pulls members with Perf > 50 (Our "Trusted Elite").
