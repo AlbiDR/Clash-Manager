@@ -1,5 +1,13 @@
 # Changelog
 
+## [10.0.0] - 2026-01-18
+
+### Strategic Pivot: PWA-First Architecture
+
+- **Versioning Reset**: Leaped to v10.0.0 to resolve historical versioning noise (previous automated v9 tags) and establish a clean baseline for the project's next era.
+- **Platform Declaration**: Officially abandoned native APK and Tauri-based desktop systems. The project is now a **PWA-First** ecosystem, optimized for high-performance WebAPK delivery on Android and professional dashboarding on Desktop.
+- **Deep Net Core**: Integrated the v7 Hybrid Benchmarking engine as the standard for recruitment logic in the v10 base.
+
 ## [7.0.1] - 2026-01-18
 
 ### Fixed
