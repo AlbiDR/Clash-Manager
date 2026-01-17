@@ -63,7 +63,7 @@ function request(method, path, body = null) {
 async function run() {
   try {
     console.log(
-      `Checking for PRs from ${CONFIG.author} targeting ${CONFIG.targetBranch}...`,
+      `Checking for PRs from ${CONFIG.author} (or [bot]) targeting ${CONFIG.targetBranch}...`,
     );
 
     // 1. Fetch Open PRs (Paginated)
@@ -83,7 +83,11 @@ async function run() {
       }
     }
 
-    const authorPrs = prs.filter((pr) => pr.user.login === CONFIG.author);
+    const authorPrs = prs.filter(
+      (pr) =>
+        pr.user.login === CONFIG.author ||
+        pr.user.login === `${CONFIG.author}[bot]`,
+    );
     const targetPrs = authorPrs.filter(
       (pr) => pr.base.ref === CONFIG.targetBranch,
     );
