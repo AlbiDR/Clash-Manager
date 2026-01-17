@@ -240,5 +240,21 @@ const ScoringSystem = {
 
     return Math.max(1, finalBenchmark);
   },
+
+  /**
+   * 🎯 POTENTIAL SCORE CALCULATOR
+   * ----------------------------------------------------------------------------
+   * WHY: Enforces a structural cap at 100%. Even if a recruit is "Better than
+   * the Benchmark", we display 100% to keep the UI clean and the mental model
+   * of "Performance vs Gold Standard" intuitive.
+   *
+   * @param {number} rawScore - The calculated yardstick score.
+   * @param {number} benchmark - The hybrid pivot point.
+   */
+  calculatePotentialScore: function (rawScore, benchmark) {
+    if (!benchmark || benchmark <= 0) return 0;
+    const score = Math.round((rawScore / benchmark) * 100);
+    return Math.min(100, score);
+  },
 };
 // 🔒 END PROTECTION ZONE ===================================================

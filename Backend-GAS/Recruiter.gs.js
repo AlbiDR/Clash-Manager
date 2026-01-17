@@ -165,7 +165,11 @@ function scoutRecruits() {
   }
 
   finalPool.forEach(
-    (p) => (p.perfScore = Math.round((p.rawScore / finalBenchmark) * 100)),
+    (p) =>
+      (p.perfScore = ScoringSystem.calculatePotentialScore(
+        p.rawScore,
+        finalBenchmark,
+      )),
   );
 
   // 🛡️ BACKUP
