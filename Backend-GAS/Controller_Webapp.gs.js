@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.2.2
+ * 🏷️ VERSION: 7.0.0
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "6.3.0";
+const VER_CONTROLLER_WEBAPP = "7.0.0";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)

@@ -8,11 +8,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 6.1.5
+ * 🏷️ VERSION: 7.0.0
  * ============================================================================
  */
 
-const VER_LEADERBOARD = "6.3.0";
+const VER_LEADERBOARD = "7.0.0";
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

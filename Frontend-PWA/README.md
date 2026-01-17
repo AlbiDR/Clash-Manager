@@ -1,6 +1,6 @@
 # Clash Manager — Client Core (PWA)
 
-[![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../../docs/ARCHITECTURE.md)
+[![Version](https://img.shields.io/badge/Version-7.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../../docs/ARCHITECTURE.md)
 
 The heart of the Clash Manager interface. This is a high-performance Vue 3 application built as a **Progressive Web App (PWA)** for desktop-class administrative excellence.
 
