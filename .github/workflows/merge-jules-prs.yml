@@ -2,11 +2,7 @@ name: Sync Jules PRs
 
 on:
   schedule:
-    # 8:00 AM CET is 7:00 AM UTC (Standard Time) or 6:00 AM UTC (Summer Time).
-    # Italy switches between CET (UTC+1) and CEST (UTC+2).
-    # Cron uses UTC.
-    # To cover 8AM Italy consistently, we'd theoretically need to adjust, but typically we pick one.
-    # UTC 7:00 is 8:00 CET.
+    # 8:00 AM CET
     - cron: "0 7 * * *"
   workflow_dispatch:
 
@@ -14,14 +10,21 @@ permissions:
   contents: write
   pull-requests: write
 
+# ============================================================================
+# AUTOMATION ENGINE: Jules PR Synchronization
+# ============================================================================
 jobs:
   merge-prs:
+    name: "Merge Google Jules PRs"
     runs-on: ubuntu-latest
     steps:
+      # ----------------------------------------------------------------------
+      # STEP 1: Environment Setup
+      # ----------------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history for all branches and tags
+          fetch-depth: 0
 
       - name: Ensure Jules Branch Exists and Checkout
         run: |
@@ -41,11 +44,17 @@ jobs:
         with:
           node-version: "20"
 
+      # ----------------------------------------------------------------------
+      # STEP 2: Execution Logic (Ultra-Robust)
+      # ----------------------------------------------------------------------
       - name: Run Merge Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node .github/scripts/merge-jules-prs.js
 
+      # ----------------------------------------------------------------------
+      # STEP 3: Persistence & Documentation
+      # ----------------------------------------------------------------------
       - name: Commit and Push Changelog
         run: |
           if [[ `git status --porcelain .jules/CHANGELOG.md` ]]; then
