@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   full-sync:
@@ -19,6 +20,11 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Initialize Flags
+        run: |
+          echo "PWA_CHANGED=false" >> $GITHUB_ENV
+          echo "GAS_CHANGED=false" >> $GITHUB_ENV
 
       - name: Fetch all branches
         run: git fetch origin
@@ -41,8 +47,34 @@ jobs:
           echo "==== SYNC: Beta -> Stable ===="
           git checkout Stable
           git pull origin Stable
+
+          BEFORE_SHA=$(git rev-parse HEAD)
           git merge Beta --no-edit
-          git push origin Stable
+          AFTER_SHA=$(git rev-parse HEAD)
+
+          if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
+            git push origin Stable
+            if git diff --name-only $BEFORE_SHA $AFTER_SHA | grep -E "^Frontend-PWA/|^\.github/workflows/deploy-pwa\.yml" > /dev/null; then
+              echo "PWA_CHANGED=true" >> $GITHUB_ENV
+            fi
+            if git diff --name-only $BEFORE_SHA $AFTER_SHA | grep -E "^Backend-GAS/" > /dev/null; then
+              echo "GAS_CHANGED=true" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Trigger Deployments
+        if: env.PWA_CHANGED == 'true' || env.GAS_CHANGED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ env.PWA_CHANGED }}" == "true" ]; then
+            echo "🚀 Triggering PWA Deployment..."
+            gh workflow run deploy-pwa.yml --ref Stable
+          fi
+          if [ "${{ env.GAS_CHANGED }}" == "true" ]; then
+            echo "🚀 Triggering GAS Deployment..."
+            gh workflow run deploy-gas.yml --ref Stable
+          fi
 
       - name: Reverse Sync (Stable -> Beta -> Jules)
         run: |
