@@ -4,12 +4,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 6.3.0
+ * 🏷️ VERSION: 7.0.0
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = "6.3.0";
+const VER_CONFIGURATION = "7.0.0";
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -24,15 +24,15 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: "6.3.0",
-      UTILITIES: "6.3.0",
-      ORCHESTRATOR_TRIGGERS: "6.3.0",
-      LOGGER: "6.3.0",
-      LEADERBOARD: "6.3.0",
-      SCORING_SYSTEM: "6.3.0",
-      RECRUITER: "6.3.0",
-      CONTROLLER_WEBAPP: "6.3.0",
-      API_PUBLIC: "6.3.0",
+      CONFIGURATION: "7.0.0",
+      UTILITIES: "7.0.0",
+      ORCHESTRATOR_TRIGGERS: "7.0.0",
+      LOGGER: "7.0.0",
+      LEADERBOARD: "7.0.0",
+      SCORING_SYSTEM: "7.0.0",
+      RECRUITER: "7.0.0",
+      CONTROLLER_WEBAPP: "7.0.0",
+      API_PUBLIC: "7.0.0",
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",
