@@ -33,42 +33,62 @@ self.addEventListener("message", async (event) => {
   }
 
   // 🤖 ANDROID: Badge via persistent notification
-  // Android doesn't support direct Badge API - only notifications create app icon badges
+  // Mirrors Native Kotlin RecruitmentNotificationService logic
   if (event.data.type === "BADGE_NOTIFICATION_ANDROID") {
-    const { count, threshold = 75 } = event.data;
+    const { count = 0, threshold = 75 } = event.data;
+
+    // Logic: Frontend already filtered this count based on threshold.
+    const countAboveThreshold = Math.max(0, count);
+
     try {
-      // ⚡ OVERRIDE ATTEMPT 1: Set badge BEFORE notification
+      // 1. UPDATE BADGE (The "Number" on the Icon)
+      // Corresponds to setNumber() in native
       if (self.navigator.setAppBadge) {
-        await self.navigator.setAppBadge(count);
+        if (countAboveThreshold > 0) {
+          await self.navigator.setAppBadge(countAboveThreshold);
+        } else {
+          await self.navigator.clearAppBadge();
+        }
       }
 
-      if (count > 0) {
-        // Show persistent silent notification to trigger Android badge
-        await self.registration.showNotification("Elite Recruits Available", {
-          body: `${count} candidate${count > 1 ? "s" : ""} above ${threshold} score threshold`,
+      // 2. SHOW/UPDATE NOTIFICATION
+      // Corresponds to Recruits Notification + Summary
+      if (countAboveThreshold > 0) {
+        // We use a fixed tag to act as a "Group" and prevent cluttering the shade.
+        // This effectively implements the "Summary" behavior by keeping a single
+        // up-to-date entry.
+        await self.registration.showNotification("New Recruits Available", {
+          body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
           icon: "pwa-192.png",
-          badge: "pwa-64.png",
-          tag: "badge-persistent", // Always replaces previous badge notification
-          silent: true,
-          requireInteraction: false,
-          data: { type: "badge", count, timestamp: Date.now() },
-        });
+          badge: "pwa-64.png", // Small icon for the status bar
+          tag: "com.app.RECRUIT_UPDATES", // Matches GROUP_KEY_RECRUITS
 
-        // ⚡ OVERRIDE ATTEMPT 2: Set badge AFTER notification (with delay)
-        // Some launchers re-evaluate badge count when a notification arrives.
-        // We wait for the launcher to finish its "auto-count" and then try to nudge it.
-        setTimeout(async () => {
-          if (self.navigator.setAppBadge) {
-            await self.navigator.setAppBadge(count);
-          }
-        }, 300);
+          // "Notification Cooldown": Prevent sound/vibrate on simple updates
+          renotify: false,
+          silent: false, // First one makes sound, updates are silent due to renotify: false handling if we wanted (but web defaults to silent update if tag matches)
+          // Actually, renotify: true means "play sound again". false means "don't".
+          // We want it to be silent if it's just an update, but maybe audible if it's new?
+          // For now, mirroring "silent: true" from previous code or "setOnlyAlertOnce"?
+          // The user's Kotlin says: "Notification Cooldown (using setOnlyAlertOnce(true))".
+          // In Web, modifying an existing notification (same tag) doesn't vibrate unless renotify: true.
+          // So default is good.
+
+          requireInteraction: false,
+
+          // Custom data to bridge potential TWA/Native gaps
+          data: {
+            type: "badge",
+            count: countAboveThreshold,
+            shortcutId: "recruit_shortcut_id", // Matches Kotlin setShortcutId
+            url: "/#/recruiter",
+          },
+        });
       } else {
-        // Clear badge by closing the persistent notification
+        // Clear notifications if count drops below threshold
         const notifications = await self.registration.getNotifications({
-          tag: "badge-persistent",
+          tag: "com.app.RECRUIT_UPDATES",
         });
         notifications.forEach((n) => n.close());
-        if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
       }
     } catch (e) {
       console.warn("[SW] Android badge notification failed", e);
@@ -122,16 +142,22 @@ async function handlePushBadge(payload) {
   // Also good UX for other platforms
   if (badgeCount > 0) {
     await self.registration.showNotification(
-      title || "Elite Recruits Available",
+      title || "New Recruits Available",
       {
         body:
           body ||
-          `${badgeCount} candidate${badgeCount > 1 ? "s" : ""} above ${threshold} score threshold`,
+          `You have ${badgeCount} recruit${badgeCount === 1 ? "" : "s"} above your threshold.`,
         icon: "pwa-192.png",
         badge: "pwa-64.png",
-        tag: "badge-persistent",
-        silent: true,
-        data: { type: "badge", count: badgeCount },
+        tag: "com.app.RECRUIT_UPDATES",
+        renotify: false,
+        silent: false,
+        data: {
+          type: "badge",
+          count: badgeCount,
+          shortcutId: "recruit_shortcut_id",
+          url: "/#/recruiter",
+        },
       },
     );
   }
@@ -188,26 +214,26 @@ async function handleBackgroundSync() {
             await self.navigator.setAppBadge(count);
           }
 
-          await self.registration.showNotification("Elite Recruits Available", {
-            body: `${count} candidate${count > 1 ? "s" : ""} above ${threshold} score threshold`,
+          await self.registration.showNotification("New Recruits Available", {
+            body: `You have ${count} recruit${count === 1 ? "" : "s"} above your threshold.`,
             icon: "pwa-192.png",
             badge: "pwa-64.png",
-            tag: "badge-persistent",
-            silent: true,
+            tag: "com.app.RECRUIT_UPDATES",
+            renotify: false,
+            silent: false, // Ensure it's not totally silent so it can update badge count on some launchers
             requireInteraction: false,
-            data: { type: "badge", count, timestamp: Date.now() },
+            data: {
+              type: "badge",
+              count,
+              shortcutId: "recruit_shortcut_id",
+              url: "/#/recruiter",
+              timestamp: Date.now(),
+            },
           });
-
-          // ⚡ OVERRIDE ATTEMPT 2: Set badge AFTER notification (with delay)
-          setTimeout(async () => {
-            if (self.navigator.setAppBadge) {
-              await self.navigator.setAppBadge(count);
-            }
-          }, 300);
         } else {
           // Clear badge notification
           const notifications = await self.registration.getNotifications({
-            tag: "badge-persistent",
+            tag: "com.app.RECRUIT_UPDATES",
           });
           notifications.forEach((n) => n.close());
           if (self.navigator.clearAppBadge)
