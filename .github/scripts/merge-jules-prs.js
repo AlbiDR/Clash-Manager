@@ -17,7 +17,7 @@ const CONFIG = {
 // ============================================================================
 // CORE ENGINE: HTTP REQUEST HANDLER
 // ============================================================================
-function request(method, path, body = null) {
+function request(method, path, body = null, isGraphQL = false) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: "api.github.com",
@@ -26,7 +26,9 @@ function request(method, path, body = null) {
       headers: {
         Authorization: `token ${CONFIG.token}`,
         "User-Agent": "Script",
-        Accept: "application/vnd.github.v3+json",
+        Accept: isGraphQL
+          ? "application/json"
+          : "application/vnd.github.v3+json",
         "Content-Type": "application/json",
       },
     };
@@ -55,6 +57,28 @@ function request(method, path, body = null) {
     if (body) req.write(JSON.stringify(body));
     req.end();
   });
+}
+
+// ============================================================================
+// GRAPHQL HELPERS
+// ============================================================================
+async function markReadyForReview(nodeId) {
+  const query = `
+    mutation($id: ID!) {
+      markPullRequestReadyForReview(input: {pullRequestId: $id}) {
+        pullRequest {
+          id
+          isDraft
+        }
+      }
+    }
+  `;
+  return request(
+    "POST",
+    "/graphql",
+    { query, variables: { id: nodeId } },
+    true,
+  );
 }
 
 // ============================================================================
@@ -87,9 +111,7 @@ async function run() {
     console.log(`\n🔎 DEBUG: Found ${prs.length} total open PRs.`);
     if (prs.length > 0) {
       console.log("---------------------------------------------------");
-      console.log(
-        "| #   | Author (Login)           | Target Branch | Title",
-      );
+      console.log("| #   | Author (Login)           | Target Branch | Title");
       console.log("---------------------------------------------------");
       prs.forEach((p) => {
         console.log(
@@ -144,6 +166,7 @@ async function run() {
       // 2. Extract Data
       const prData = {
         number: pr.number,
+        nodeId: pr.node_id,
         title: pr.title,
         body: pr.body,
         sha: pr.head.sha,
@@ -162,13 +185,10 @@ async function run() {
 
         if (details.draft) {
           console.log(
-            `PR #${pr.number} is in DRAFT mode. Marking as ready for review...`,
+            `PR #${pr.number} is in DRAFT mode. Marking as ready for review via GraphQL...`,
           );
           try {
-            await request(
-              "POST",
-              `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/ready_for_review`,
-            );
+            await markReadyForReview(prData.nodeId);
             console.log(`PR #${pr.number} is now ready for review.`);
           } catch (draftError) {
             console.warn(
@@ -180,7 +200,7 @@ async function run() {
         // Ultra-Robust Strategy: Try Force Merge -> Fallback to Exponential Backoff
         let merged = false;
         let tryCount = 1;
-        
+
         const mergeBody = {
           merge_method: "squash",
           commit_title: `${pr.title} (#${pr.number})`,
