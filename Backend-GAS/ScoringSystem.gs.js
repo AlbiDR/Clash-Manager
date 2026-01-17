@@ -187,8 +187,7 @@ const ScoringSystem = {
   /**
    * ⚖️ HYBRID BENCHMARK CALCULATOR (V7)
    * ----------------------------------------------------------------------------
-   * WHY: Prevents "Benchmark Hijacking". In V6, discovery of a single Global
-   * Top 50 player would crush the scores of all other recruits. The 50/50
+   * Top 50 player would crush the scores of all other recruits. The 40/60
    * Hybrid split anchors the benchmark to our Clan's elite (Stability) while
    * allowing it to drift with the Global Market (Discovery).
    *
@@ -220,11 +219,11 @@ const ScoringSystem = {
         ? topPool.reduce((a, b) => a + b.rawScore, 0) / topPool.length
         : 0;
 
-    // 3. HYBRID MERGE (50/50 Split)
+    // 3. HYBRID MERGE (40/60 Split)
     // Failsafe: If one side is empty, use the other 100%
     let finalBenchmark = 1;
     if (avgClanRef > 0 && avgPoolRef > 0) {
-      finalBenchmark = avgClanRef * 0.5 + avgPoolRef * 0.5;
+      finalBenchmark = avgClanRef * 0.4 + avgPoolRef * 0.6;
     } else if (avgClanRef > 0) {
       finalBenchmark = avgClanRef;
     } else if (avgPoolRef > 0) {
