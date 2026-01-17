@@ -147,6 +147,8 @@ async function fetchWithRetry(
     }
     return response;
   } catch (e: any) {
+    if (e.name === "AbortError") throw e; // Don't retry aborts
+
     if (retries > 0) {
       await new Promise((r) => setTimeout(r, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 2);
@@ -155,29 +157,28 @@ async function fetchWithRetry(
   }
 }
 
-type GenericEnvelope<T> = ApiResponse<T> & {
-  success?: boolean;
-  status?: string;
-  message?: string;
-  error?: any;
+type GasRequestOptions = {
+  signal?: AbortSignal;
 };
 
 async function gasRequest<T>(
   action: string,
   payload?: Record<string, unknown>,
+  options?: GasRequestOptions, // Fix: Add options param
 ): Promise<T> {
   const url = getGasUrl();
   if (!url) throw new Error("GAS_URL not configured.");
 
-  const options: RequestInit = {
+  const fetchOptions: RequestInit = {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({ action, ...payload }),
+    signal: options?.signal, // Fix: Pass signal
   };
 
   // If fetching fails after retries, this throws.
   try {
-    const response = await fetchWithRetry(url, options);
+    const response = await fetchWithRetry(url, fetchOptions);
 
     // Handle HTTP errors that weren't retried (like 400 Bad Request)
     if (!response.ok) {
@@ -211,7 +212,9 @@ async function gasRequest<T>(
     const errorMessage =
       envelope.error?.message || envelope.message || "Unknown Backend Error";
     throw new Error(errorMessage);
-  } catch (e) {
+  } catch (e: any) {
+    if (e.name === "AbortError") throw e;
+
     // 🛡️ BACKGROUND SYNC: Queue failed requests if they are retryable (network/server issues)
     // Don't queue 4xx errors (client faults) unless it's 429
     console.warn("GAS Request Failed, attempting background sync queue", e);
@@ -242,11 +245,11 @@ export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
-export async function fetchRemote(): Promise<WebAppData> {
+export async function fetchRemote(signal?: AbortSignal): Promise<WebAppData> {
   const valibotPreload = import("valibot");
 
   // gasRequest will THROW if it fails, which satisfies expect(fetchRemote()).rejects...
-  const data = await gasRequest<any>("getwebappdata");
+  const data = await gasRequest<any>("getwebappdata", undefined, { signal });
 
   if (!data) throw new Error("Invalid response structure");
 
@@ -256,7 +259,6 @@ export async function fetchRemote(): Promise<WebAppData> {
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
   return inflated;
 }
-
 export async function ping(): Promise<PingResponse> {
   return gasRequest<PingResponse>("ping");
 }
