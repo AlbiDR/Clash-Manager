@@ -32,9 +32,6 @@ export default defineConfig({
             if (id.includes("valibot")) {
               return "vendor-validation";
             }
-            if (id.includes("workbox-")) {
-              return "vendor-pwa";
-            }
             if (id.includes("@formkit")) {
               return "vendor-ui-deps";
             }
@@ -44,9 +41,6 @@ export default defineConfig({
             return "core-api";
           }
           if (id.includes("/src/components/")) {
-            // ⚡ PERFORMANCE: Exclude heavy/lazy components from monolithic UI bundle
-            // This ensures defineAsyncComponent actually creates a separate lazy chunk.
-            if (id.includes("WarHistoryChart.vue")) return;
             return "ui-components";
           }
           if (id.includes("/src/composables/")) {
@@ -55,6 +49,7 @@ export default defineConfig({
         },
       },
     },
+
   },
   plugins: [
     vue() as any,
