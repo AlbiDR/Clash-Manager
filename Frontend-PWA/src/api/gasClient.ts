@@ -176,9 +176,13 @@ async function gasRequest<T>(
     signal: options?.signal, // Fix: Pass signal
   };
 
+  // 🛡️ SYNC: Use Query String for Action (Required by some GAS deployments)
+  const separator = url.includes("?") ? "&" : "?";
+  const requestUrl = `${url}${separator}action=${action}`;
+
   // If fetching fails after retries, this throws.
   try {
-    const response = await fetchWithRetry(url, fetchOptions);
+    const response = await fetchWithRetry(requestUrl, fetchOptions);
 
     // Handle HTTP errors that weren't retried (like 400 Bad Request)
     if (!response.ok) {
