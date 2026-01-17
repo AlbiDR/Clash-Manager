@@ -29,10 +29,10 @@ export default defineConfig({
             if (id.includes("vue") || id.includes("vue-router")) {
               return "vendor-core";
             }
-            if (id.includes("zod")) {
+            if (id.includes("valibot")) {
               return "vendor-validation";
             }
-            if (id.includes("lucide") || id.includes("@formkit")) {
+            if (id.includes("@formkit")) {
               return "vendor-ui-deps";
             }
             return "vendor-stable";
