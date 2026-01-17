@@ -77,13 +77,6 @@ export function useBadge() {
       if (isAndroid) return;
     }
 
-    // 🛡️ Logic: Smart Clear on Focus
-    // If the app is visible, we typically don't want to badge (or we want to clear it)
-    if (document.visibilityState === "visible" && count > 0) {
-      // Optionally skip or clear. For now, we allow setting it as the host app
-      // might use it for internal state indicators.
-    }
-
     // ⚡ PERFORMANCE: Debounce updates to prevent API flooding (Bug #13)
     const now = Date.now();
     if (now - lastUpdate.value < 1500) return;
@@ -154,25 +147,8 @@ export function useBadge() {
     return "denied";
   }
 
-  // 🛡️ Logic: Auto-sync on visibility change (Logic #14)
-  if (typeof document !== "undefined" && typeof window !== "undefined") {
-    const syncState = () => {
-      if (document.visibilityState === "visible") {
-        // When app comes to foreground, clear badges automatically
-        clearBadge();
-      }
-    };
-
-    onMounted(() => {
-      document.addEventListener("visibilitychange", syncState);
-      window.addEventListener("focus", syncState);
-    });
-
-    onUnmounted(() => {
-      document.removeEventListener("visibilitychange", syncState);
-      window.removeEventListener("focus", syncState);
-    });
-  }
+  // 🛡️ Logic: Auto-clear removed to support persistent notifications (#Request-Persistence)
+  // Badges will now only clear when data changes (recruits dismissed) or explicitly cleared.
 
   return {
     isSupported,
