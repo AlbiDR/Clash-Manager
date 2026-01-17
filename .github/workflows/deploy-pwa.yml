@@ -83,7 +83,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
