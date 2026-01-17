@@ -150,6 +150,8 @@ async function run() {
         url: pr.html_url,
       };
 
+      const maxTries = 5; // Defined here for scope visibility in catch block
+
       // 3. Merge PR Logic (Ultra-Robust)
       try {
         // Fetch details specifically to check for draft status
@@ -162,17 +164,23 @@ async function run() {
           console.log(
             `PR #${pr.number} is in DRAFT mode. Marking as ready for review...`,
           );
-          await request(
-            "POST",
-            `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/ready_for_review`,
-          );
-          console.log(`PR #${pr.number} is now ready for review.`);
+          try {
+            await request(
+              "POST",
+              `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/ready_for_review`,
+            );
+            console.log(`PR #${pr.number} is now ready for review.`);
+          } catch (draftError) {
+            console.warn(
+              `⚠️ Failed to mark PR #${pr.number} as ready for review (ignoring and attempting merge anyway): ${draftError.message}`,
+            );
+          }
         }
 
         // Ultra-Robust Strategy: Try Force Merge -> Fallback to Exponential Backoff
         let merged = false;
         let tryCount = 1;
-        const maxTries = 5;
+        
         const mergeBody = {
           merge_method: "squash",
           commit_title: `${pr.title} (#${pr.number})`,
