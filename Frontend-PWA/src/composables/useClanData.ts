@@ -145,11 +145,15 @@ export function useClanData() {
   }
 
   async function refresh() {
-    if (isRefreshing.value) return;
+    if (isRefreshing.value) {
+      // If already refreshing, decide if we should debounce or replace.
+      // For now, we replace to ensure freshest data.
+    }
 
-    // Fix 5: Cancel previous pending request
+    // Cancel previous pending request
     if (refreshAbortController) {
-      refreshAbortController.abort();
+      // Pass a reason so we can distinguish this from a timeout
+      refreshAbortController.abort("replaced");
     }
     refreshAbortController = new AbortController();
     const signal = refreshAbortController.signal;
@@ -158,7 +162,7 @@ export function useClanData() {
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
         console.warn("Sync timed out (20s), aborting...");
-        refreshAbortController.abort();
+        refreshAbortController.abort("timeout");
       }
     }, 20000);
 
@@ -202,12 +206,20 @@ export function useClanData() {
       // 📡 Broadcast success to other tabs
       broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") {
-        // If aborted meaningfully (timeout), set error
-        if (syncStatus.value === "syncing") {
+      // Handle AbortSignal logic
+      if (signal.aborted) {
+        // If replaced by a new request, we silently exit (do NOT set error)
+        if (signal.reason === "replaced") {
+          // console.log("Sync replaced by newer request");
+          return;
+        }
+        // If timed out, we DO set error
+        if (signal.reason === "timeout") {
           syncStatus.value = "error";
           syncError.value = "Request Timed Out";
+          return;
         }
+        // Fallback for standard aborts (shouldn't happen often with above logic)
         return;
       }
 
@@ -216,11 +228,16 @@ export function useClanData() {
       syncError.value = e instanceof Error ? e.message : "Sync failed";
     } finally {
       clearTimeout(timeoutId);
-      isRefreshing.value = false;
-      refreshAbortController = null;
-      setTimeout(() => {
-        if (syncStatus.value === "success") syncStatus.value = "idle";
-      }, 2000);
+      // Only reset flags if THIS was the active controller (not replaced)
+      if (refreshAbortController?.signal === signal) {
+        isRefreshing.value = false;
+        refreshAbortController = null;
+
+        // Auto-dismiss success state
+        setTimeout(() => {
+          if (syncStatus.value === "success") syncStatus.value = "idle";
+        }, 2000);
+      }
     }
   }
 

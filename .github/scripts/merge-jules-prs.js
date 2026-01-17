@@ -60,20 +60,46 @@ async function run() {
       `Checking for PRs from ${CONFIG.author} targeting ${CONFIG.targetBranch}...`,
     );
 
-    // 1. Fetch Open PRs
-    const prs = await request(
-      "GET",
-      `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls?state=open&base=${CONFIG.targetBranch}`,
+    // 1. Fetch Open PRs (Paginated)
+    let prs = [];
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const pagePrs = await request(
+        "GET",
+        `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls?state=open&per_page=100&page=${page}`,
+      );
+      if (pagePrs.length === 0) {
+        hasMore = false;
+      } else {
+        prs = prs.concat(pagePrs);
+        page++;
+      }
+    }
+
+    const authorPrs = prs.filter((pr) => pr.user.login === CONFIG.author);
+    const targetPrs = authorPrs.filter(
+      (pr) => pr.base.ref === CONFIG.targetBranch,
     );
 
-    const targetPrs = prs.filter((pr) => pr.user.login === CONFIG.author);
+    if (authorPrs.length > 0 && targetPrs.length === 0) {
+      console.log(
+        `Found ${authorPrs.length} PR(s) from ${CONFIG.author}, but none target '${CONFIG.targetBranch}'.`,
+      );
+      authorPrs.forEach((pr) =>
+        console.log(` - PR #${pr.number} targets '${pr.base.ref}'`),
+      );
+      return;
+    }
 
     if (targetPrs.length === 0) {
       console.log("No matching PRs found.");
       return;
     }
 
-    console.log(`Found ${targetPrs.length} PR(s). Processing...`);
+    console.log(
+      `Found ${targetPrs.length} PR(s) targeting ${CONFIG.targetBranch}. Processing...`,
+    );
 
     // Ensure .jules directory exists
     const dir = path.dirname(CONFIG.changelogPath);
@@ -97,6 +123,44 @@ async function run() {
 
       // 3. Merge PR
       try {
+        // Check mergeability and draft status first
+        let details = await request(
+          "GET",
+          `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`,
+        );
+
+        // Poll for mergeability if it's null (calculating)
+        let retries = 5;
+        while (details.mergeable === null && retries > 0) {
+          console.log(
+            `Mergeability for PR #${pr.number} is still being calculated. Retrying in 2s...`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          details = await request(
+            "GET",
+            `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`,
+          );
+          retries--;
+        }
+
+        if (details.draft) {
+          console.log(
+            `PR #${pr.number} is in DRAFT mode. Marking as ready for review...`,
+          );
+          await request(
+            "POST",
+            `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/ready_for_review`,
+          );
+          console.log(`PR #${pr.number} is now ready for review.`);
+        }
+
+        if (details.mergeable === false) {
+          console.warn(
+            `PR #${pr.number} is not mergeable (conflicts or status checks). Skipping.`,
+          );
+          continue;
+        }
+
         await request(
           "PUT",
           `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/merge`,
