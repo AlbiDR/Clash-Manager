@@ -12,6 +12,7 @@ import { vTooltip } from "./directives/vTooltip";
 import { vTactile } from "./directives/vTactile";
 import { useModules } from "./composables/useModules";
 import { useClanData } from "./composables/useClanData";
+import { useApiState } from "./composables/useApiState";
 import { useTheme } from "./composables/useTheme";
 import { useWakeLock } from "./composables/useWakeLock";
 import { useStoragePersistence } from "./composables/useStoragePersistence";

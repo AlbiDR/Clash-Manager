@@ -152,6 +152,15 @@ export function useClanData() {
       refreshAbortController.abort();
     }
     refreshAbortController = new AbortController();
+    const signal = refreshAbortController.signal;
+
+    // 🛡️ TIMEOUT PROTECTION: Force fail if network hangs (20s)
+    const timeoutId = setTimeout(() => {
+      if (refreshAbortController) {
+        console.warn("Sync timed out (20s), aborting...");
+        refreshAbortController.abort();
+      }
+    }, 20000);
 
     try {
       isRefreshing.value = true;
@@ -168,10 +177,11 @@ export function useClanData() {
         startBackgroundSync(); // Re-run the appropriate mock logic
         syncStatus.value = "success";
         isRefreshing.value = false;
+        clearTimeout(timeoutId);
         return;
       }
 
-      const remoteData = await fetchRemote();
+      const remoteData = await fetchRemote(signal);
 
       // Trigger notification check before overwriting state
       processRecruitChanges(clanData.value, remoteData);
@@ -192,12 +202,20 @@ export function useClanData() {
       // 📡 Broadcast success to other tabs
       broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") return; // Ignore aborts
+      if (e instanceof Error && e.name === "AbortError") {
+        // If aborted meaningfully (timeout), set error
+        if (syncStatus.value === "syncing") {
+          syncStatus.value = "error";
+          syncError.value = "Request Timed Out";
+        }
+        return;
+      }
 
       console.error("Sync failed:", e);
       syncStatus.value = "error";
       syncError.value = e instanceof Error ? e.message : "Sync failed";
     } finally {
+      clearTimeout(timeoutId);
       isRefreshing.value = false;
       refreshAbortController = null;
       setTimeout(() => {
