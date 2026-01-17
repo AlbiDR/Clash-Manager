@@ -41,7 +41,7 @@ function scoutRecruits() {
   console.log(`📊 Baseline: Clan Avg Trophies is ${Math.round(avgTrophies)}.`);
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
-  const { ids: blacklistSet, highScore: discardedHighScore } =
+  const { ids: blacklistSet, entries: blacklistEntries } =
     updateAndGetBlacklist(sheet);
 
   // 2. Load existing tracking data
@@ -103,6 +103,54 @@ function scoutRecruits() {
   );
 
   // 6. Final Pool Scoring & Capping
+  // ----------------------------------------------------------------------------
+  /**
+   * WHY: We use a Hybrid Benchmark (50% Clan / 50% Elite Recruits) to ensure
+   * that a single "outlier" (like a pro player) doesn't hijack the scoring scale.
+   * This keeps the "Potential Score" relevant to our clan's actual standard.
+   */
+
+  // A. Get Clan Baseline (Members with Performance Score >= 50)
+  const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
+  const clanEliteData = [];
+  if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    const L = CONFIG.SCHEMA.LB;
+    const lbData = lbSheet
+      .getRange(
+        CONFIG.LAYOUT.DATA_START_ROW,
+        2,
+        lbSheet.getLastRow() - CONFIG.LAYOUT.DATA_START_ROW + 1,
+        16,
+      )
+      .getValues();
+
+    lbData.forEach((row) => {
+      const perf = Number(row[L.PERF_SCORE]) || 0;
+      if (perf >= 50) {
+        // Calculate Recruit-Equivalent Raw Score
+        // Formula: (T * 1.0) + (D * 0.07) + ((W + bonus) * 20.0)
+        // For Clan members, we use 'currentFame > 0' as the bonus trigger
+        const histStr = String(row[L.HISTORY] || "");
+        const currentWk = Utils.calculateWarWeekId(new Date());
+        const hasRecentWar = histStr.includes(currentWk);
+
+        const raw = ScoringSystem.calculateRecruitRawScore(
+          Number(row[L.TROPHIES]) || 0,
+          Number(row[L.TOTAL_DON]) || 0,
+          Number(row[L.WAR_DAY_WINS]) || 0,
+          hasRecentWar,
+        );
+        clanEliteData.push({ rawScore: raw, perfScore: perf });
+      }
+    });
+  }
+
+  // B. Calculate Benchmark
+  const finalBenchmark = ScoringSystem.calculateHybridBenchmark(
+    clanEliteData,
+    blacklistEntries,
+  );
+
   const rawPool = Array.from(existing.values()).sort(
     (a, b) => b.rawScore - a.rawScore,
   );
@@ -115,10 +163,6 @@ function scoutRecruits() {
     );
     return;
   }
-
-  const currentHighRaw = finalPool.length > 0 ? finalPool[0].rawScore : 0;
-  const benchmarkScore = Math.max(discardedHighScore, currentHighRaw);
-  const finalBenchmark = benchmarkScore > 0 ? benchmarkScore : 1;
 
   finalPool.forEach(
     (p) => (p.perfScore = Math.round((p.rawScore / finalBenchmark) * 100)),
@@ -246,7 +290,7 @@ function updateAndGetBlacklist(sheet) {
 
   return {
     ids: new Set(validEntries.map((e) => e.t)),
-    highScore: benchmarkHigh,
+    entries: validEntries.map((e) => ({ rawScore: e.s })), // Return full valid entries for benchmarking
   };
 }
 

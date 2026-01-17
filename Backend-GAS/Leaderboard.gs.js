@@ -280,6 +280,12 @@ function updateLeaderboard() {
       avgWarFame,
       historyString,
       scores,
+      /**
+       * WHY: Tracking lifetime War Day Wins is necessary for the "Deep Net v7"
+       * hybrid benchmark, as it allows us to score clan members using the
+       * same formula as recruits.
+       */
+      warDayWins: m.warDayWins || 0,
       cleanKey: m.tag.replace("#", "").trim().toLowerCase(),
     });
   });
@@ -323,6 +329,7 @@ function updateLeaderboard() {
     row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score
     row[L.TREND] = trend; // ✨ Raw Score Delta
     row[L.AVG_WAR_FAME] = r.avgWarFame;
+    row[L.WAR_DAY_WINS] = r.warDayWins;
 
     rows.push(row);
   });
@@ -352,6 +359,7 @@ function updateLeaderboard() {
     "Raw Score",
     "Performance Score",
     "Trend",
+    "War Day Wins",
   ];
 
   lbSheet.clear();
