@@ -8,12 +8,66 @@ permissions:
   actions: write
 
 # ============================================================================
-# JOB 1: (Upstream) Jules → Beta
+# JOB 0: Pre-sync Check
 # ============================================================================
 jobs:
+  check-sync:
+    name: "Initial Difference Detection"
+    runs-on: ubuntu-latest
+    outputs:
+      jules_beta_diff: ${{ steps.check.outputs.jules_beta_diff }}
+      beta_stable_diff: ${{ steps.check.outputs.beta_stable_diff }}
+      stable_beta_diff: ${{ steps.check.outputs.stable_beta_diff }}
+      beta_jules_diff: ${{ steps.check.outputs.beta_jules_diff }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for differences
+        id: check
+        run: |
+          git fetch origin
+
+          # Jules -> Beta
+          if git merge-base --is-ancestor origin/Jules origin/Beta; then
+            echo "jules_beta_diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "jules_beta_diff=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Beta -> Stable
+          if git merge-base --is-ancestor origin/Beta origin/Stable; then
+            echo "beta_stable_diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "beta_stable_diff=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Stable -> Beta
+          if git merge-base --is-ancestor origin/Stable origin/Beta; then
+            echo "stable_beta_diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "stable_beta_diff=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Beta -> Jules
+          if git merge-base --is-ancestor origin/Beta origin/Jules; then
+            echo "beta_jules_diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "beta_jules_diff=true" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================================
+  # JOB 1: (Upstream) Jules → Beta
+  # ============================================================================
   jules-to-beta:
     name: "(Upstream) Jules → Beta"
+    needs: check-sync
+    if: needs.check-sync.outputs.jules_beta_diff == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,26 +83,27 @@ jobs:
         run: git fetch origin
 
       - name: Merge Jules into Beta
+        id: merge
         run: |
-          # NOTE: Jules is reserved for automated updates from Google Jules.
-          if git show-ref --verify --quiet refs/remotes/origin/Beta; then
-            git checkout Beta
-            git pull origin Beta
-          else
-            git checkout -b Beta origin/Jules
-            git push origin Beta
-          fi
+          git checkout Beta
+          git pull origin Beta
           git merge origin/Jules --no-edit
           git push origin Beta
+          echo "merged=true" >> $GITHUB_OUTPUT
 
   # ============================================================================
   # JOB 2: (Upstream) Beta → Stable
   # ============================================================================
   beta-to-stable:
     name: "(Upstream) Beta → Stable"
-    needs: jules-to-beta
+    needs: [check-sync, jules-to-beta]
+    if: |
+      always() &&
+      (needs.check-sync.outputs.beta_stable_diff == 'true' || needs.jules-to-beta.outputs.merged == 'true') &&
+      (needs.jules-to-beta.result == 'success' || needs.jules-to-beta.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
+      merged: ${{ steps.merge.outputs.merged }}
       pwa_changed: ${{ steps.detect.outputs.pwa_changed }}
       gas_changed: ${{ steps.detect.outputs.gas_changed }}
     steps:
@@ -80,15 +135,15 @@ jobs:
 
           if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
             git push origin Stable
-            echo "changes_detected=true" >> $GITHUB_OUTPUT
+            echo "merged=true" >> $GITHUB_OUTPUT
           else
-            echo "changes_detected=false" >> $GITHUB_OUTPUT
+            echo "merged=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Detect Changed Files
         id: detect
         run: |
-          if [ "${{ steps.merge.outputs.changes_detected }}" == "true" ]; then
+          if [ "${{ steps.merge.outputs.merged }}" == "true" ]; then
             BEFORE=${{ steps.merge.outputs.before_sha }}
             AFTER=${{ steps.merge.outputs.after_sha }}
 
@@ -115,8 +170,14 @@ jobs:
   # ============================================================================
   stable-to-beta:
     name: "(Downstream) Stable → Beta"
-    needs: beta-to-stable
+    needs: [check-sync, beta-to-stable]
+    if: |
+      always() &&
+      (needs.check-sync.outputs.stable_beta_diff == 'true' || needs.beta-to-stable.outputs.merged == 'true') &&
+      (needs.beta-to-stable.result == 'success' || needs.beta-to-stable.result == 'skipped')
     runs-on: ubuntu-latest
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -132,19 +193,32 @@ jobs:
         run: git fetch origin
 
       - name: Merge Stable into Beta
+        id: merge
         run: |
-          # NOTE: Stable and Beta are the primary branches for manual development.
           git checkout Beta
           git pull origin Beta
+
+          BEFORE_SHA=$(git rev-parse HEAD)
           git merge origin/Stable --no-edit
-          git push origin Beta
+          AFTER_SHA=$(git rev-parse HEAD)
+
+          if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
+            git push origin Beta
+            echo "merged=true" >> $GITHUB_OUTPUT
+          else
+            echo "merged=false" >> $GITHUB_OUTPUT
+          fi
 
   # ============================================================================
   # JOB 4: (Downstream) Beta → Jules
   # ============================================================================
   beta-to-jules:
     name: "(Downstream) Beta → Jules"
-    needs: stable-to-beta
+    needs: [check-sync, stable-to-beta]
+    if: |
+      always() &&
+      (needs.check-sync.outputs.beta_jules_diff == 'true' || needs.stable-to-beta.outputs.merged == 'true') &&
+      (needs.stable-to-beta.result == 'success' || needs.stable-to-beta.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -162,7 +236,6 @@ jobs:
 
       - name: Merge Beta into Jules
         run: |
-          # This keeps Jules up-to-date for Google Jules' nightly work.
           git checkout Jules
           git pull origin Jules
           git merge origin/Beta --no-edit
@@ -174,7 +247,7 @@ jobs:
   deploy-pwa:
     name: "(Deploy) PWA"
     needs: beta-to-stable
-    if: needs.beta-to-stable.outputs.pwa_changed == 'true'
+    if: always() && needs.beta-to-stable.outputs.pwa_changed == 'true' && needs.beta-to-stable.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger PWA Deployment
@@ -190,7 +263,7 @@ jobs:
   deploy-gas:
     name: "(Deploy) GAS"
     needs: beta-to-stable
-    if: needs.beta-to-stable.outputs.gas_changed == 'true'
+    if: always() && needs.beta-to-stable.outputs.gas_changed == 'true' && needs.beta-to-stable.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger GAS Deployment
