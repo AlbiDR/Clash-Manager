@@ -83,18 +83,37 @@ async function run() {
       }
     }
 
-    const authorPrs = prs.filter(
-      (pr) =>
-        pr.user.login === CONFIG.author ||
-        pr.user.login === `${CONFIG.author}[bot]`,
-    );
+    // --- DEBUGGING BLOCK START ---
+    console.log(`\n🔎 DEBUG: Found ${prs.length} total open PRs.`);
+    if (prs.length > 0) {
+      console.log("---------------------------------------------------");
+      console.log(
+        "| #   | Author (Login)           | Target Branch | Title",
+      );
+      console.log("---------------------------------------------------");
+      prs.forEach((p) => {
+        console.log(
+          `| ${p.number.toString().padEnd(3)} | ${p.user.login.padEnd(24)} | ${p.base.ref.padEnd(13)} | ${p.title.substring(0, 30)}...`,
+        );
+      });
+      console.log("---------------------------------------------------\n");
+    }
+    // --- DEBUGGING BLOCK END ---
+
+    const authorPrs = prs.filter((pr) => {
+      const login = pr.user.login.toLowerCase();
+      const author = CONFIG.author.toLowerCase();
+      // Check for exact match or [bot] suffix
+      return login === author || login === `${author}[bot]`;
+    });
+
     const targetPrs = authorPrs.filter(
       (pr) => pr.base.ref === CONFIG.targetBranch,
     );
 
     if (authorPrs.length > 0 && targetPrs.length === 0) {
       console.log(
-        `Found ${authorPrs.length} PR(s) from ${CONFIG.author}, but none target '${CONFIG.targetBranch}'.`,
+        `⚠️ Found ${authorPrs.length} PR(s) from ${CONFIG.author}, but none target '${CONFIG.targetBranch}'.`,
       );
       authorPrs.forEach((pr) =>
         console.log(` - PR #${pr.number} targets '${pr.base.ref}'`),
@@ -103,7 +122,7 @@ async function run() {
     }
 
     if (targetPrs.length === 0) {
-      console.log("No matching PRs found.");
+      console.log("No matching PRs found (Author + Target Branch mismatch).");
       return;
     }
 
