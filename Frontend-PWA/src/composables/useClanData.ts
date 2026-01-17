@@ -17,12 +17,24 @@ const isRefreshing = ref(false);
 const lastSyncTime = ref<number | null>(null);
 const syncStatus = ref<"idle" | "syncing" | "success" | "error">("idle");
 const syncError = ref<string | null>(null);
+const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
+// Singleton Composables (Module Level)
 const { setBadge, sendLocalNotification } = useBadge();
 const { modules } = useModules();
 const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
+
+function updateBadgeCount(data: WebAppData) {
+  if (data?.hh) {
+    const threshold = modules.notificationThreshold || 75;
+    const count = modules.notificationBadgeHighPotential
+      ? data.hh.filter((r) => r.s >= threshold).length
+      : data.hh.length;
+    setBadge(count);
+  }
+}
 
 // 📡 Broadcast Channel Integration
 const { post: broadcast } = useBroadcastChannel((msg) => {
@@ -43,8 +55,6 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
     }
   }
 });
-
-const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
 /**
  * 🛠 RECRUIT NOTIFICATION ENGINE
@@ -132,16 +142,6 @@ export function useClanData() {
 
     // Default: Return to network data if no mode active
     refresh();
-  }
-
-  function updateBadgeCount(data: WebAppData) {
-    if (data?.hh) {
-      const threshold = modules.notificationThreshold || 75;
-      const count = modules.notificationBadgeHighPotential
-        ? data.hh.filter((r) => r.s >= threshold).length
-        : data.hh.length;
-      setBadge(count);
-    }
   }
 
   async function refresh() {

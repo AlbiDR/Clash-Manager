@@ -17,7 +17,7 @@ vi.mock("../useNetworkInfo", () => ({
 }));
 
 // Mock Navigator
-const originalNavigator = global.navigator;
+const originalNavigator = globalThis.navigator;
 const onLineValue = ref(true);
 
 describe("useConnectionStatus", () => {
@@ -47,7 +47,7 @@ describe("useConnectionStatus", () => {
     });
 
     // Mock navigator.onLine
-    Object.defineProperty(global, "navigator", {
+    Object.defineProperty(globalThis, "navigator", {
       value: { ...originalNavigator, onLine: true },
       writable: true,
     });
@@ -55,7 +55,7 @@ describe("useConnectionStatus", () => {
 
   afterEach(() => {
     // Restore navigator
-    Object.defineProperty(global, "navigator", {
+    Object.defineProperty(globalThis, "navigator", {
       value: originalNavigator,
       writable: true,
     });

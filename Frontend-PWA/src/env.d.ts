@@ -6,6 +6,7 @@
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string;
   readonly VITE_APP_VERSION: string;
+  readonly TEST: boolean;
   BASE_URL: string;
   MODE: string;
   DEV: boolean;

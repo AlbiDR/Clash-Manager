@@ -17,7 +17,7 @@ const CONFIG = {
 // ============================================================================
 // CORE ENGINE: HTTP REQUEST HANDLER
 // ============================================================================
-function request(method, path, body = null) {
+function request(method, path, body = null, isGraphQL = false) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: "api.github.com",
@@ -26,7 +26,9 @@ function request(method, path, body = null) {
       headers: {
         Authorization: `token ${CONFIG.token}`,
         "User-Agent": "Script",
-        Accept: "application/vnd.github.v3+json",
+        Accept: isGraphQL
+          ? "application/json"
+          : "application/vnd.github.v3+json",
         "Content-Type": "application/json",
       },
     };
@@ -58,12 +60,34 @@ function request(method, path, body = null) {
 }
 
 // ============================================================================
+// GRAPHQL HELPERS
+// ============================================================================
+async function markReadyForReview(nodeId) {
+  const query = `
+    mutation($id: ID!) {
+      markPullRequestReadyForReview(input: {pullRequestId: $id}) {
+        pullRequest {
+          id
+          isDraft
+        }
+      }
+    }
+  `;
+  return request(
+    "POST",
+    "/graphql",
+    { query, variables: { id: nodeId } },
+    true,
+  );
+}
+
+// ============================================================================
 // AUTOMATION LOGIC: Jules PR Merge Engine
 // ============================================================================
 async function run() {
   try {
     console.log(
-      `Checking for PRs from ${CONFIG.author} targeting ${CONFIG.targetBranch}...`,
+      `Checking for PRs from ${CONFIG.author} (or [bot]) targeting ${CONFIG.targetBranch}...`,
     );
 
     // 1. Fetch Open PRs (Paginated)
@@ -83,14 +107,35 @@ async function run() {
       }
     }
 
-    const authorPrs = prs.filter((pr) => pr.user.login === CONFIG.author);
+    // --- DEBUGGING BLOCK START ---
+    console.log(`\n🔎 DEBUG: Found ${prs.length} total open PRs.`);
+    if (prs.length > 0) {
+      console.log("---------------------------------------------------");
+      console.log("| #   | Author (Login)           | Target Branch | Title");
+      console.log("---------------------------------------------------");
+      prs.forEach((p) => {
+        console.log(
+          `| ${p.number.toString().padEnd(3)} | ${p.user.login.padEnd(24)} | ${p.base.ref.padEnd(13)} | ${p.title.substring(0, 30)}...`,
+        );
+      });
+      console.log("---------------------------------------------------\n");
+    }
+    // --- DEBUGGING BLOCK END ---
+
+    const authorPrs = prs.filter((pr) => {
+      const login = pr.user.login.toLowerCase();
+      const author = CONFIG.author.toLowerCase();
+      // Check for exact match or [bot] suffix
+      return login === author || login === `${author}[bot]`;
+    });
+
     const targetPrs = authorPrs.filter(
       (pr) => pr.base.ref === CONFIG.targetBranch,
     );
 
     if (authorPrs.length > 0 && targetPrs.length === 0) {
       console.log(
-        `Found ${authorPrs.length} PR(s) from ${CONFIG.author}, but none target '${CONFIG.targetBranch}'.`,
+        `⚠️ Found ${authorPrs.length} PR(s) from ${CONFIG.author}, but none target '${CONFIG.targetBranch}'.`,
       );
       authorPrs.forEach((pr) =>
         console.log(` - PR #${pr.number} targets '${pr.base.ref}'`),
@@ -99,7 +144,7 @@ async function run() {
     }
 
     if (targetPrs.length === 0) {
-      console.log("No matching PRs found.");
+      console.log("No matching PRs found (Author + Target Branch mismatch).");
       return;
     }
 
@@ -121,11 +166,14 @@ async function run() {
       // 2. Extract Data
       const prData = {
         number: pr.number,
+        nodeId: pr.node_id,
         title: pr.title,
         body: pr.body,
         sha: pr.head.sha,
         url: pr.html_url,
       };
+
+      const maxTries = 5; // Defined here for scope visibility in catch block
 
       // 3. Merge PR Logic (Ultra-Robust)
       try {
@@ -137,19 +185,22 @@ async function run() {
 
         if (details.draft) {
           console.log(
-            `PR #${pr.number} is in DRAFT mode. Marking as ready for review...`,
+            `PR #${pr.number} is in DRAFT mode. Marking as ready for review via GraphQL...`,
           );
-          await request(
-            "POST",
-            `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/ready_for_review`,
-          );
-          console.log(`PR #${pr.number} is now ready for review.`);
+          try {
+            await markReadyForReview(prData.nodeId);
+            console.log(`PR #${pr.number} is now ready for review.`);
+          } catch (draftError) {
+            console.warn(
+              `⚠️ Failed to mark PR #${pr.number} as ready for review (ignoring and attempting merge anyway): ${draftError.message}`,
+            );
+          }
         }
 
         // Ultra-Robust Strategy: Try Force Merge -> Fallback to Exponential Backoff
         let merged = false;
         let tryCount = 1;
-        const maxTries = 5;
+
         const mergeBody = {
           merge_method: "squash",
           commit_title: `${pr.title} (#${pr.number})`,

@@ -13,6 +13,14 @@ import { idb } from "../utils/idb";
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 
+interface GenericEnvelope<T> {
+  success?: boolean;
+  status?: string;
+  data?: T;
+  error?: { message: string };
+  message?: string;
+}
+
 const getGasUrl = () => {
   let url = "";
   if (typeof localStorage !== "undefined") {
@@ -229,7 +237,8 @@ async function gasRequest<T>(
     if ("serviceWorker" in navigator && "SyncManager" in window) {
       try {
         const reg = await navigator.serviceWorker.ready;
-        await reg.sync.register("offline-queue-sync");
+        // Cast to any for sync property
+        await (reg as any).sync.register("offline-queue-sync");
       } catch (syncErr) {
         console.warn("Background Sync registration failed", syncErr);
       }

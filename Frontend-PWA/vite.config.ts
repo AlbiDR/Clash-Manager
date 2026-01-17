@@ -55,7 +55,6 @@ export default defineConfig({
         },
       },
     },
-
   },
   plugins: [
     vue() as any,
