@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-01-17] PR #43: Optimize Bundle Chunking and Lazy-Loading Strategy
+**Commit**: `0f35a4e6933070f707de63a1de352b9092926266`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/43)
+
+### Description
+Refined the Vite `manualChunks` strategy to align with actual project dependencies (`valibot` instead of `zod`) and preserve code-splitting for heavy components. This optimization significantly reduces the initial bundle size and improves hydration performance for the PWA.
+
+---
+*PR created automatically by Jules for task [1096648384874374336](https://jules.google.com/task/1096648384874374336) started by @AlbiDR*
+
+---
+
 ## [2026-01-17] ❌ FAILED MERGE: PR #43: Optimize Bundle Chunking and Lazy-Loading Strategy
 > [!CAUTION]
 > **Status**: Auto-merge failed after 5 attempts.
