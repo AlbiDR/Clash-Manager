@@ -125,6 +125,7 @@ const CONFIG = {
       RAW_SCORE: 12,
       PERF_SCORE: 13,
       TREND: 14,
+      WAR_DAY_WINS: 15, // WHY: Required for V7 Hybrid Benchmarking
     },
   },
 

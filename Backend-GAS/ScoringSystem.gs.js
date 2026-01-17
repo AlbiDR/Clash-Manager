@@ -155,5 +155,87 @@ const ScoringSystem = {
     // 6. Trophies (Last Resort)
     return rowB[L.TROPHIES] - rowA[L.TROPHIES];
   },
+
+  /**
+   * 🏗️ UNIFIED RAW SCORE (Recruit-Equivalent)
+   * ----------------------------------------------------------------------------
+   * WHY: This formula is the "Universal Yardstick". By using the exact same
+   * math for both active Clan Members and found Recruits, we eliminate
+   * environmental bias (e.g., tenure bonuses) and see who is truly better "on paper".
+   *
+   * HOW: It prioritizes Trophies and Total Donations (Base Skill) while
+   * applying a heavy 20.0x multiplier to War Wins. The +500 Bonus acts as a
+   * "Recency Filter" to prioritize active war players.
+   */
+  calculateRecruitRawScore: function (
+    trophies,
+    totalDonations,
+    warDayWins,
+    hasRecentWar,
+  ) {
+    const W = { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
+    const warBonus = hasRecentWar ? 500 : 0;
+    const totalWarScore = (warDayWins || 0) + warBonus;
+
+    return Math.round(
+      (trophies || 0) * W.TROPHY +
+        (totalDonations || 0) * W.DON +
+        totalWarScore * W.WAR,
+    );
+  },
+
+  /**
+   * ⚖️ HYBRID BENCHMARK CALCULATOR (V7)
+   * ----------------------------------------------------------------------------
+   * WHY: Prevents "Benchmark Hijacking". In V6, discovery of a single Global
+   * Top 50 player would crush the scores of all other recruits. The 50/50
+   * Hybrid split anchors the benchmark to our Clan's elite (Stability) while
+   * allowing it to drift with the Global Market (Discovery).
+   *
+   * HOW:
+   * 1. Clan Side: Pulls members with Perf > 50 (Our "Trusted Elite").
+   * 2. Pool Side: Pulls Top 5% of Blacklisted "Elite Recruits" (The "Market Standard").
+   * 3. Result: If we find a God-tier player, they score >100%, but don't
+   *    make a Great recruit (90%) look like a Poor recruit (40%).
+   */
+  calculateHybridBenchmark: function (clanScoredList, blacklistScoredList) {
+    // 1. CLAN BASELINE (Performance Score >= 50)
+    const clanPool = (clanScoredList || []).filter((c) => c.perfScore >= 50);
+    const avgClanRef =
+      clanPool.length > 0
+        ? clanPool.reduce((a, b) => a + b.rawScore, 0) / clanPool.length
+        : 0;
+
+    // 2. DISCOVERY BASELINE (Top 5% of Blacklist, Min 3)
+    const pool = [...(blacklistScoredList || [])].sort(
+      (a, b) => b.rawScore - a.rawScore,
+    );
+    const poolSize = Math.max(
+      CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL || 3,
+      Math.ceil(pool.length * (CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE || 0.05)),
+    );
+    const topPool = pool.slice(0, poolSize);
+    const avgPoolRef =
+      topPool.length > 0
+        ? topPool.reduce((a, b) => a + b.rawScore, 0) / topPool.length
+        : 0;
+
+    // 3. HYBRID MERGE (50/50 Split)
+    // Failsafe: If one side is empty, use the other 100%
+    let finalBenchmark = 1;
+    if (avgClanRef > 0 && avgPoolRef > 0) {
+      finalBenchmark = avgClanRef * 0.5 + avgPoolRef * 0.5;
+    } else if (avgClanRef > 0) {
+      finalBenchmark = avgClanRef;
+    } else if (avgPoolRef > 0) {
+      finalBenchmark = avgPoolRef;
+    }
+
+    console.log(
+      `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(avgPoolRef)}) = Result:${Math.round(finalBenchmark)}`,
+    );
+
+    return Math.max(1, finalBenchmark);
+  },
 };
 // 🔒 END PROTECTION ZONE ===================================================
