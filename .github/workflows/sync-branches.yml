@@ -7,8 +7,12 @@ permissions:
   contents: write
   actions: write
 
+# ============================================================================
+# JOB 1: (Upstream) Jules → Beta
+# ============================================================================
 jobs:
-  full-sync:
+  jules-to-beta:
+    name: "(Upstream) Jules → Beta"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,19 +25,12 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Initialize Flags
-        run: |
-          echo "PWA_CHANGED=false" >> $GITHUB_ENV
-          echo "GAS_CHANGED=false" >> $GITHUB_ENV
-
       - name: Fetch all branches
         run: git fetch origin
 
-      - name: Forward Sync (Jules -> Beta -> Stable)
+      - name: Merge Jules into Beta
         run: |
           # NOTE: Jules is reserved for automated updates from Google Jules.
-          # 1. Jules -> Beta
-          echo "==== SYNC: Jules -> Beta ===="
           if git show-ref --verify --quiet refs/remotes/origin/Beta; then
             git checkout Beta
             git pull origin Beta
@@ -44,57 +41,161 @@ jobs:
           git merge origin/Jules --no-edit
           git push origin Beta
 
-          # 2. Beta -> Stable
-          echo "==== SYNC: Beta -> Stable ===="
+  # ============================================================================
+  # JOB 2: (Upstream) Beta → Stable
+  # ============================================================================
+  beta-to-stable:
+    name: "(Upstream) Beta → Stable"
+    needs: jules-to-beta
+    runs-on: ubuntu-latest
+    outputs:
+      pwa_changed: ${{ steps.detect.outputs.pwa_changed }}
+      gas_changed: ${{ steps.detect.outputs.gas_changed }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git User
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Fetch all branches
+        run: git fetch origin
+
+      - name: Merge Beta into Stable
+        id: merge
+        run: |
           git checkout Stable
           git pull origin Stable
 
           BEFORE_SHA=$(git rev-parse HEAD)
-          git merge Beta --no-edit
+          git merge origin/Beta --no-edit
           AFTER_SHA=$(git rev-parse HEAD)
+
+          echo "before_sha=$BEFORE_SHA" >> $GITHUB_OUTPUT
+          echo "after_sha=$AFTER_SHA" >> $GITHUB_OUTPUT
 
           if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
             git push origin Stable
-            if git diff --name-only $BEFORE_SHA $AFTER_SHA | grep -E "^Frontend-PWA/|^\.github/workflows/deploy-pwa\.yml" > /dev/null; then
-              echo "PWA_CHANGED=true" >> $GITHUB_ENV
-            fi
-            if git diff --name-only $BEFORE_SHA $AFTER_SHA | grep -E "^Backend-GAS/" > /dev/null; then
-              echo "GAS_CHANGED=true" >> $GITHUB_ENV
-            fi
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Trigger Deployments
-        if: env.PWA_CHANGED == 'true' || env.GAS_CHANGED == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Detect Changed Files
+        id: detect
         run: |
-          if [ "${{ env.PWA_CHANGED }}" == "true" ]; then
-            echo "🚀 Triggering PWA Deployment..."
-            gh workflow run deploy-pwa.yml --ref Stable
-          fi
-          if [ "${{ env.GAS_CHANGED }}" == "true" ]; then
-            echo "🚀 Triggering GAS Deployment..."
-            gh workflow run deploy-gas.yml --ref Stable
+          if [ "${{ steps.merge.outputs.changes_detected }}" == "true" ]; then
+            BEFORE=${{ steps.merge.outputs.before_sha }}
+            AFTER=${{ steps.merge.outputs.after_sha }}
+
+            # PWA: Frontend-PWA/** or deploy-pwa.yml, excluding .md files
+            if git diff --name-only $BEFORE $AFTER | grep -E "^Frontend-PWA/|^\.github/workflows/deploy-pwa\.yml" | grep -v "\.md$" > /dev/null; then
+              echo "pwa_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "pwa_changed=false" >> $GITHUB_OUTPUT
+            fi
+
+            # GAS: Only actual GAS scripts (*.gs.js and appsscript.json)
+            if git diff --name-only $BEFORE $AFTER | grep -E "^Backend-GAS/.*\.gs\.js$|^Backend-GAS/appsscript\.json$" > /dev/null; then
+              echo "gas_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "gas_changed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "pwa_changed=false" >> $GITHUB_OUTPUT
+            echo "gas_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Reverse Sync (Stable -> Beta -> Jules)
+  # ============================================================================
+  # JOB 3: (Downstream) Stable → Beta
+  # ============================================================================
+  stable-to-beta:
+    name: "(Downstream) Stable → Beta"
+    needs: beta-to-stable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git User
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Fetch all branches
+        run: git fetch origin
+
+      - name: Merge Stable into Beta
         run: |
           # NOTE: Stable and Beta are the primary branches for manual development.
-          # 1. Stable -> Beta
-          echo "==== SYNC: Stable -> Beta ===="
           git checkout Beta
           git pull origin Beta
           git merge origin/Stable --no-edit
           git push origin Beta
 
-          # 2. Beta -> Jules
-          echo "==== SYNC: Beta -> Jules ===="
+  # ============================================================================
+  # JOB 4: (Downstream) Beta → Jules
+  # ============================================================================
+  beta-to-jules:
+    name: "(Downstream) Beta → Jules"
+    needs: stable-to-beta
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git User
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Fetch all branches
+        run: git fetch origin
+
+      - name: Merge Beta into Jules
+        run: |
+          # This keeps Jules up-to-date for Google Jules' nightly work.
           git checkout Jules
           git pull origin Jules
-          git merge Beta --no-edit
+          git merge origin/Beta --no-edit
           git push origin Jules
 
-      - name: Final Status
+  # ============================================================================
+  # JOB 5: (Deploy) PWA - Conditional
+  # ============================================================================
+  deploy-pwa:
+    name: "(Deploy) PWA"
+    needs: beta-to-stable
+    if: needs.beta-to-stable.outputs.pwa_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger PWA Deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Successfully completed full round-trip synchronization."
-          echo "Path: Jules <-> Beta <-> Stable"
+          echo "🚀 Triggering PWA Deployment..."
+          gh workflow run deploy-pwa.yml --ref Stable -R ${{ github.repository }}
+
+  # ============================================================================
+  # JOB 6: (Deploy) GAS - Conditional
+  # ============================================================================
+  deploy-gas:
+    name: "(Deploy) GAS"
+    needs: beta-to-stable
+    if: needs.beta-to-stable.outputs.gas_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger GAS Deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "🚀 Triggering GAS Deployment..."
+          gh workflow run deploy-gas.yml --ref Stable -R ${{ github.repository }}

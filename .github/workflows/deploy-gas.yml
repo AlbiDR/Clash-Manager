@@ -2,7 +2,7 @@ name: Deploy GAS
 
 on:
   push:
-    branches: ["**"]
+    branches: ["Stable", "Beta"]
     paths:
       - "Backend-GAS/**" # Only triggers if backend files change
   workflow_dispatch: # Allows you to click "Run workflow" manually
