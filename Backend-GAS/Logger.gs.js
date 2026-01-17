@@ -8,7 +8,7 @@
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
  *      (Preserves data for players who leave mid-day).
- * 🏷️ VERSION: 7.0.0
+ * 🏷️ VERSION: 7.0.1
  *
  * 🧠 REASONING:
  *    - "Snapshots": We need a history of performance (War + Donos).
@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-const VER_LOGGER = "7.0.0";
+const VER_LOGGER = "7.0.1";
 
 function updateClanDatabase() {
   console.time("ETL");

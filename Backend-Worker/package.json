@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-worker",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "Worker to perform bulk URL fetches for Clash Manager (designed for Cloud Run)",
   "main": "index.js",
   "scripts": {
