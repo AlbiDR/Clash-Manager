@@ -117,7 +117,11 @@ export function useBadge() {
     await setBadge(0);
   }
 
-  async function sendLocalNotification(title: string, body?: string) {
+  async function sendLocalNotification(
+    title: string,
+    body?: string,
+    channelId?: string,
+  ) {
     if (Notification.permission !== "granted") return;
 
     // Suppression in Quiet Mode
@@ -133,6 +137,7 @@ export function useBadge() {
           icon: "/pwa-192x192.png",
           badge: "/pwa-192x192.png",
           tag: "local-alert",
+          channelId, // Optional: for Headhunter channel
           silent: !modules.notificationSound, // Respect sound setting
           actions: [{ action: "open", title: "Open" }],
         },

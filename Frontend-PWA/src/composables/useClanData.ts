@@ -74,7 +74,7 @@ function processRecruitChanges(
         ? `A candidate with score ${topScore} just entered the pool.`
         : `${count} candidates with scores up to ${topScore} detected.`;
 
-    sendLocalNotification(title, body);
+    sendLocalNotification(title, body, "headhunter-channel");
   }
 }
 

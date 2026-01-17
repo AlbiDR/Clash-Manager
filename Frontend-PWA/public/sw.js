@@ -62,6 +62,7 @@ self.addEventListener("message", async (event) => {
           icon: "pwa-192.png",
           badge: "pwa-64.png", // Small icon for the status bar
           tag: "com.app.RECRUIT_UPDATES", // Matches GROUP_KEY_RECRUITS
+          channelId: "headhunter-channel",
 
           // "Notification Cooldown": Prevent sound/vibrate on simple updates
           renotify: false,
@@ -219,6 +220,7 @@ async function handleBackgroundSync() {
             icon: "pwa-192.png",
             badge: "pwa-64.png",
             tag: "com.app.RECRUIT_UPDATES",
+            channelId: "headhunter-channel",
             renotify: false,
             silent: false, // Ensure it's not totally silent so it can update badge count on some launchers
             requireInteraction: false,
