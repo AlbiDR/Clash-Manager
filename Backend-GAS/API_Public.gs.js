@@ -8,7 +8,7 @@
  *    - doGet(e): Handles all READ operations via ?action= parameter
  *    - doPost(e): Handles all WRITE operations via JSON body { action: ... }
  *    - Standard Envelope: { status, data, error, timestamp }
- * 🏷️ VERSION: 7.0.0
+ * 🏷️ VERSION: 7.0.1
  *
  * 🧠 REASONING:
  *    - Headless architecture enables hosting frontend on GitHub Pages as PWA
@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-const VER_API_PUBLIC = "7.0.0";
+const VER_API_PUBLIC = "7.0.1";
 
 // ============================================================================
 // 🌐 HTTP HANDLERS (Entry Points)
