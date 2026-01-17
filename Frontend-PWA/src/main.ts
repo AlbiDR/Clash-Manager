@@ -72,8 +72,8 @@ async function bootstrap() {
     }
 
     // 1. Critical Config (Synchronous)
-    const modules = useModules();
-    modules.init();
+    const { modules, init: initModules } = useModules();
+    initModules();
 
     const theme = useTheme();
     theme.init();
