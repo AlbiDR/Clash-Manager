@@ -1,5 +1,7 @@
+// @ts-nocheck
 import fs from 'fs';
 import path from 'path';
+import process from 'process';
 
 // Usage: node generate-assetlinks.mjs <sha256_fingerprint>
 // Example: node generate-assetlinks.mjs 12:34:56...
