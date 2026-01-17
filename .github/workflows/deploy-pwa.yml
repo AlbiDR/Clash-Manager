@@ -74,7 +74,7 @@ jobs:
         # env: VITE_GAS_URL is now global to the job
 
       - name: Upload Pages Artifact
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./Frontend-PWA/dist"

@@ -35,9 +35,9 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed.timestamp > (lastSyncTime.value || 0)) {
-           clanData.value = parsed;
-           lastSyncTime.value = parsed.timestamp;
-           updateBadgeCount(parsed);
+          clanData.value = parsed;
+          lastSyncTime.value = parsed.timestamp;
+          updateBadgeCount(parsed);
         }
       }
     }
@@ -186,7 +186,6 @@ export function useClanData() {
       saveTask(() => {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
         // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
-      });
       });
       updateBadgeCount(remoteData);
 
