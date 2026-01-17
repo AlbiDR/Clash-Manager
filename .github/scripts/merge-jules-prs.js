@@ -2,7 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const https = require("https");
 
-// Configuration
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
 const CONFIG = {
   targetOwner: process.env.GITHUB_REPOSITORY.split("/")[0],
   targetRepo: process.env.GITHUB_REPOSITORY.split("/")[1],
@@ -12,7 +14,9 @@ const CONFIG = {
   changelogPath: path.join(".jules", "CHANGELOG.md"),
 };
 
-// Helper: Make HTTP Request
+// ============================================================================
+// CORE ENGINE: HTTP REQUEST HANDLER
+// ============================================================================
 function request(method, path, body = null) {
   return new Promise((resolve, reject) => {
     const options = {
@@ -53,7 +57,9 @@ function request(method, path, body = null) {
   });
 }
 
-// Main Function
+// ============================================================================
+// AUTOMATION LOGIC: Jules PR Merge Engine
+// ============================================================================
 async function run() {
   try {
     console.log(
@@ -121,27 +127,13 @@ async function run() {
         url: pr.html_url,
       };
 
-      // 3. Merge PR
+      // 3. Merge PR Logic (Ultra-Robust)
       try {
-        // Check mergeability and draft status first
-        let details = await request(
+        // Fetch details specifically to check for draft status
+        const details = await request(
           "GET",
           `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`,
         );
-
-        // Poll for mergeability if it's null (calculating)
-        let retries = 5;
-        while (details.mergeable === null && retries > 0) {
-          console.log(
-            `Mergeability for PR #${pr.number} is still being calculated. Retrying in 2s...`,
-          );
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          details = await request(
-            "GET",
-            `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`,
-          );
-          retries--;
-        }
 
         if (details.draft) {
           console.log(
@@ -154,29 +146,68 @@ async function run() {
           console.log(`PR #${pr.number} is now ready for review.`);
         }
 
-        if (details.mergeable === false) {
-          console.warn(
-            `PR #${pr.number} is not mergeable (conflicts or status checks). Skipping.`,
-          );
-          continue;
-        }
+        // Ultra-Robust Strategy: Try Force Merge -> Fallback to Exponential Backoff
+        let merged = false;
+        let tryCount = 1;
+        const maxTries = 5;
+        const mergeBody = {
+          merge_method: "squash",
+          commit_title: `${pr.title} (#${pr.number})`,
+          commit_message: `Auto-merged PR #${pr.number} from ${CONFIG.author}`,
+        };
 
-        await request(
-          "PUT",
-          `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/merge`,
-          {
-            merge_method: "squash", // Consolidate commits
-            commit_title: `${pr.title} (#${pr.number})`,
-            commit_message: `Auto-merged PR #${pr.number} from ${CONFIG.author}`,
-          },
-        );
-        console.log(`Successfully merged PR #${pr.number}`);
+        while (!merged && tryCount <= maxTries) {
+          try {
+            console.log(
+              `Attempting to merge PR #${pr.number} (Attempt ${tryCount}/${maxTries})...`,
+            );
+            await request(
+              "PUT",
+              `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/merge`,
+              mergeBody,
+            );
+            merged = true;
+            console.log(`Successfully merged PR #${pr.number}`);
+          } catch (error) {
+            // Check if error is a temporary blocker (405 or 409)
+            if (
+              tryCount < maxTries &&
+              (error.message.includes("405") || error.message.includes("409"))
+            ) {
+              const waitMs = Math.pow(2, tryCount) * 1000; // Exponential backoff: 2s, 4s, 8s, 16s
+              console.log(
+                `Merge temporarily blocked or calculating. Retrying in ${waitMs / 1000}s...`,
+              );
+              await new Promise((resolve) => setTimeout(resolve, waitMs));
+              tryCount++;
+            } else {
+              throw error; // Permanent failure or exhausted retries
+            }
+          }
+        }
       } catch (error) {
-        console.error(`Failed to merge PR #${pr.number}:`, error.message);
-        continue; // Skip changelog update if merge fails
+        console.error(
+          `CRITICAL: Failed to merge PR #${pr.number}:`,
+          error.message,
+        );
+
+        // Final Fallback: Log failure to changelog so it's visible in the repo
+        const date = new Date().toISOString().split("T")[0];
+        const failureEntry = `
+## [${date}] ❌ FAILED MERGE: PR #${pr.number}: ${pr.title}
+> [!CAUTION]
+> **Status**: Auto-merge failed after ${maxTries} attempts.
+> **Error**: \`${error.message}\`  
+> **Requirement**: Manual intervention (likely a merge conflict) is required.
+> **PR Link**: [Link](${pr.html_url})
+
+---
+`;
+        changelogUpdates = failureEntry + changelogUpdates;
+        continue;
       }
 
-      // 4. Format Changelog Entry
+      // 4. Format Successful Merger Entry
       const date = new Date().toISOString().split("T")[0];
       const entry = `
 ## [${date}] PR #${prData.number}: ${prData.title}
@@ -200,22 +231,9 @@ ${prData.body ? "### Description\n" + prData.body : ""}
           "# Changelog\n\nAutomated changelog of merges from google-labs-jules.\n\n";
       }
 
-      // Insert new entries after the header (simple prepend logic)
-      // If the file starts with specific header, we might want to append after it.
-      // For simplicity, we'll prepend new entries to the top of the log area.
-
-      // If file has content, check for header
       let newContent = "";
       if (currentContent.startsWith("# Changelog")) {
-        const lines = currentContent.split("\n");
-        // Find where the header ends (e.g. after the first few empty lines or explanation)
-        // We'll just append after the first H1 and its immediate text.
-        // Simpler: Just Prepend to content if we ignore the very top header,
-        // but let's just put it at the top of the "entries" section.
-        // For now, let's just prepend to the whole file if it's empty, or insert after the first line.
-
         if (currentContent.includes("\n\n")) {
-          // Insert after the first double newline (assumed header end)
           const splitIndex = currentContent.indexOf("\n\n") + 2;
           newContent =
             currentContent.slice(0, splitIndex) +
