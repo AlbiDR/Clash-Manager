@@ -1,4 +1,4 @@
-import { ref, computed, readonly } from "vue";
+import { ref, computed, readonly, watch } from "vue";
 import { useApiState } from "./useApiState";
 import { useNetworkInfo } from "./useNetworkInfo";
 
@@ -13,22 +13,16 @@ const isOnline = ref(navigator.onLine);
 const isSuccessFading = ref(false);
 const isSyncing = ref(false);
 
-// Fix 19: Debounce Offline
-let offlineTimeout: any = null;
-
 // Module-level event listener initialization
 let listenersAttached = false;
 
 function handleOnline() {
-  if (offlineTimeout) clearTimeout(offlineTimeout);
   isOnline.value = true;
 }
 
 function handleOffline() {
-  // Fix 19: Debounce (2s buffer before showing offline UI)
-  offlineTimeout = setTimeout(() => {
-    isOnline.value = false;
-  }, 2000);
+  // Direct offline detection is usually reliable for "hard" disconnects
+  isOnline.value = false;
 }
 
 // Attach listeners once at module level
@@ -58,30 +52,32 @@ export function useConnectionStatus() {
     }, 1800);
   }
 
+  // Priority Queue Logic for Status
+  // 1. Hard Offline (Physical)
+  // 2. Soft Offline (API Failure)
+  // 3. Success Animation (High Priority Visual Feedback)
+  // 4. Syncing (Active Operation)
+  // 5. Slow Connection (Warning)
+  // 6. Online (Idle/Safe)
   const status = computed((): ConnectionStatus => {
-    const result =
-      !isOnline.value || apiStatus.value === "offline"
-        ? "offline"
-        : isSuccessFading.value
-          ? "success-resolve"
-          : isSyncing.value || apiStatus.value === "checking"
-            ? "syncing"
-            : isSlowConnection.value
-              ? "slow"
-              : "online";
+    // 1. Physical Offline
+    if (!isOnline.value) return "offline";
 
-    // Debug: log status changes in development
-    if (import.meta.env.DEV) {
-      console.log("[ConnectionStatus]", {
-        isOnline: isOnline.value,
-        apiStatus: apiStatus.value,
-        isSyncing: isSyncing.value,
-        isSuccessFading: isSuccessFading.value,
-        computed: result,
-      });
-    }
+    // 2. API Offline (only if strictly offline, 'stale' is considered online-ish)
+    if (apiStatus.value === "offline") return "offline";
 
-    return result;
+    // 3. Success State (Visual Priority)
+    // We show success even if syncing is starting again to ensure the user sees the green flash
+    if (isSuccessFading.value) return "success-resolve";
+
+    // 4. Checking / Syncing
+    if (isSyncing.value || apiStatus.value === "checking") return "syncing";
+
+    // 5. Slow Network
+    if (isSlowConnection.value) return "slow";
+
+    // 6. Default Online
+    return "online";
   });
 
   return {
@@ -92,4 +88,24 @@ export function useConnectionStatus() {
     setSyncing,
     setSuccess,
   };
+}
+
+// Test Helper
+export function resetConnectionState() {
+  if (import.meta.env.TEST) {
+    // We need to access the variables.
+    // Since they are not exported, we can't easily reset them from outside unless this function is inside the module scope.
+    // Ideally this function sets the non-exported refs.
+    // Note: isOnline, isSyncing, etc are module-level variables.
+    // However, they are const refs?
+    // const isOnline = ref(...) -> reactive object. We can change .value.
+
+    // Check if variables are accessible here.
+    // They are defined at module level (lines 12-14).
+    // So this works.
+    isSuccessFading.value = false;
+    isSyncing.value = false;
+    // reset online status to default (true)
+    isOnline.value = true;
+  }
 }
