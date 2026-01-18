@@ -148,8 +148,9 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     let s = safeNum(row[m.s]);
     let r = safeNum(row[m.r]);
 
-    // 🛡️ SEMANTIC CROSS-CHECK: If s looks like a raw score and r looks like a perf score...
-    if (type === "lb" && s > 1000 && (r <= 150 || r === 0) && s > r) {
+    // 🛡️ SEMANTIC CROSS-CHECK (FE Guard V4)
+    // Heuristic: If Score > Raw AND Score > 500, they are 100% swapped.
+    if (type === "lb" && s > r && s > 500) {
       // Swapped indices or column headers detected!
       const temp = s;
       s = r;

@@ -930,12 +930,12 @@ const Utils = {
     sheet,
     headerMap,
     headerRow = 2,
-    startCol = 2,
+    startCol = 1, // Start at Column A (Absolute Indexing)
   ) {
     if (!sheet) return {};
 
-    // Read a wide range of headers to be safe (up to 35 columns)
-    const headers = sheet.getRange(headerRow, startCol, 1, 35).getValues()[0];
+    // Read a wide range of headers to be safe (up to 40 columns)
+    const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
     const resolved = {};
 
     Object.keys(headerMap).forEach((key) => {

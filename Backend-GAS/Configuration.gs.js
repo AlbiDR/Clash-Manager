@@ -58,7 +58,7 @@ const CONFIG = {
     JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined"
       ? VER_API_PUBLIC
       : "10.0.0"
-    ).replace(/\./g, "_")}_S2`, // S2 suffix to force-bust cache for new schema
+    ).replace(/\./g, "_")}_S5`, // S5 suffix for total absolute 1:1 sync
     DB_PURGE_DAYS: 7,
     DB_ROW_LIMIT: 20000,
   },
@@ -140,22 +140,22 @@ const CONFIG = {
       POTENTIAL_SCORE: 9,
     },
     LB: {
-      TAG: 0,
-      NAME: 1,
-      ROLE: 2,
-      TROPHIES: 3,
-      DAYS: 4,
-      WEEKLY_REQ: 5,
-      AVG_DAY: 6,
-      TOTAL_DON: 7,
-      LAST_SEEN: 8,
-      WAR_RATE: 9,
-      AVG_WAR_FAME: 10,
-      HISTORY: 11,
-      RAW_SCORE: 12,
-      PERF_SCORE: 13,
-      TREND: 14,
-      WAR_DAY_WINS: 15, // WHY: Required for V7 Hybrid Benchmarking
+      TAG: 1,
+      NAME: 2,
+      ROLE: 3,
+      TROPHIES: 4,
+      DAYS: 5,
+      WEEKLY_REQ: 6,
+      AVG_DAY: 7,
+      TOTAL_DON: 8,
+      LAST_SEEN: 9,
+      WAR_RATE: 10,
+      AVG_WAR_FAME: 11,
+      HISTORY: 12,
+      RAW_SCORE: 13,
+      PERF_SCORE: 14,
+      TREND: 15,
+      WAR_DAY_WINS: 16,
     },
   },
 
