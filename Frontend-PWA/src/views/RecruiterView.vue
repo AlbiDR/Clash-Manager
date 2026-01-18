@@ -234,7 +234,7 @@ function handleSearchUpdate(val: string) {
           expandedIds.has(recruit.id),
           selectedSet.has(recruit.id),
           isSelectionMode,
-          isRefreshing,
+          expandedIds.has(recruit.id) && isRefreshing,
         ]"
         :id="`recruit-${recruit.id}`"
         :recruit="recruit"
