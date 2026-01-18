@@ -1,17 +1,23 @@
-const express = require('express');
-const fetch = require('node-fetch');
+const express = require("express");
+const fetch = require("node-fetch");
 
 const app = express();
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: "2mb" }));
 
-const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '20', 10);
-const DEFAULT_TIMEOUT = parseInt(process.env.WORKER_TIMEOUT_SEC || '45', 10) * 1000;
-const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || '2', 10);
+const DEFAULT_CONCURRENCY = parseInt(
+  process.env.WORKER_CONCURRENCY || "20",
+  10,
+);
+const DEFAULT_TIMEOUT =
+  parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
+const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || "2", 10);
 
 function timeoutFetch(url, opts = {}, timeout = DEFAULT_TIMEOUT) {
   return Promise.race([
     fetch(url, { ...opts, timeout }),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeout)),
+    new Promise((_, rej) =>
+      setTimeout(() => rej(new Error("timeout")), timeout),
+    ),
   ]);
 }
 
@@ -34,13 +40,22 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
       lastErr = e;
       // Retry on network or 5xx
       attempt++;
-      if (attempt <= retries) await new Promise((r) => setTimeout(r, 500 * attempt));
+      if (attempt <= retries)
+        await new Promise((r) => setTimeout(r, 500 * attempt));
     }
   }
-  return { code: 520, content: `Fetch failed: ${lastErr ? lastErr.message : 'unknown'}` };
+  return {
+    code: 520,
+    content: `Fetch failed: ${lastErr ? lastErr.message : "unknown"}`,
+  };
 }
 
-async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
+async function processBatch(
+  urls = [],
+  apiKeys = [],
+  concurrency = DEFAULT_CONCURRENCY,
+  scoring = null,
+) {
   const results = new Array(urls.length);
   let idx = 0;
 
@@ -51,8 +66,8 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
       const url = urls[i];
 
       const headers = {
-        'User-Agent': 'ClanManagerWorker/1.0',
-        'Accept-Encoding': 'gzip'
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Accept-Encoding": "gzip",
       };
       if (apiKeys && apiKeys.length > 0) {
         const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
@@ -60,17 +75,25 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
       }
 
       // ⚡ SCORING OPTIMIZATION: If we are fetching a player profile, optionally fetch battlelog too
-      if (scoring && url.includes('/players/') && !url.includes('/battlelog')) {
+      if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
         try {
-          const profile = await fetchWithRetries(url, { method: 'GET', headers });
+          const profile = await fetchWithRetries(url, {
+            method: "GET",
+            headers,
+          });
           if (profile.code === 200 && profile.content && profile.content.tag) {
-            const logUrl = url + '/battlelog';
-            const logs = await fetchWithRetries(logUrl, { method: 'GET', headers });
-            
+            const logUrl = url + "/battlelog";
+            const logs = await fetchWithRetries(logUrl, {
+              method: "GET",
+              headers,
+            });
+
             let warBonus = 0;
             if (logs.code === 200 && Array.isArray(logs.content)) {
-              const hasWar = logs.content.some(b => 
-                ['riverRacePvP', 'boatBattle', 'riverRaceDuel'].includes(b.type)
+              const hasWar = logs.content.some((b) =>
+                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
+                  b.type,
+                ),
               );
               if (hasWar) warBonus = 500;
             }
@@ -79,8 +102,8 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
             const totalWarScore = (p.warDayWins || 0) + warBonus;
             const rawScore = Math.round(
               (p.trophies || 0) * (scoring.TROPHY || 0) +
-              (p.totalDonations || 0) * (scoring.DON || 0) +
-              totalWarScore * (scoring.WAR || 0)
+                (p.totalDonations || 0) * (scoring.DON || 0) +
+                totalWarScore * (scoring.WAR || 0),
             );
 
             results[i] = {
@@ -92,17 +115,20 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
                 donations: p.totalDonations,
                 cards: p.challengeCardsWon,
                 war: totalWarScore,
-                rawScore: rawScore
-              }
+                rawScore: rawScore,
+              },
             };
           } else {
             results[i] = profile;
           }
         } catch (e) {
-          results[i] = { code: 500, content: `Scoring fetch failed: ${e.message}` };
+          results[i] = {
+            code: 500,
+            content: `Scoring fetch failed: ${e.message}`,
+          };
         }
       } else {
-        const res = await fetchWithRetries(url, { method: 'GET', headers });
+        const res = await fetchWithRetries(url, { method: "GET", headers });
         results[i] = res;
       }
     }
@@ -116,7 +142,10 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
   // If scoring was requested, sort and potentially cap to save bandwidth
   if (scoring) {
     return results
-      .filter(r => r && r.code === 200 && r.content && r.content.rawScore !== undefined)
+      .filter(
+        (r) =>
+          r && r.code === 200 && r.content && r.content.rawScore !== undefined,
+      )
       .sort((a, b) => b.content.rawScore - a.content.rawScore)
       .slice(0, 200); // Return top 200 candidates to GAS
   }
@@ -128,36 +157,49 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
 function checkAuth(req, res, next) {
   const secret = process.env.WORKER_SECRET;
   if (!secret) return next();
-  const auth = (req.get('authorization') || '').trim();
-  if (auth !== `Bearer ${secret}`) return res.status(401).json({ error: 'unauthorized' });
+  const auth = (req.get("authorization") || "").trim();
+  if (auth !== `Bearer ${secret}`)
+    return res.status(401).json({ error: "unauthorized" });
   return next();
 }
 
-app.get('/', (req, res) => res.send('Clash Manager Worker is running'));
+app.get("/", (req, res) => res.send("Clash Manager Worker is running"));
 
 // Capabilities endpoint for health and config (simple) - used by GAS preflight
-app.get('/capabilities', checkAuth, (req, res) => {
+app.get("/capabilities", checkAuth, (req, res) => {
   return res.json({
-    version: '0.1.0',
+    version: "10.0.0",
     concurrency: DEFAULT_CONCURRENCY,
     timeoutMs: DEFAULT_TIMEOUT,
     maxRetries: MAX_RETRIES,
   });
 });
 
-app.post('/fetch', checkAuth, async (req, res) => {
+app.post("/fetch", checkAuth, async (req, res) => {
   try {
     const { urls, apiKeys, scoring } = req.body;
-    if (!Array.isArray(urls)) return res.status(400).json({ error: 'urls must be array' });
-    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
+    if (!Array.isArray(urls))
+      return res.status(400).json({ error: "urls must be array" });
+    const concurrency = Number(
+      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
+    );
 
-    const results = await processBatch(urls, apiKeys || [], concurrency, scoring);
+    const results = await processBatch(
+      urls,
+      apiKeys || [],
+      concurrency,
+      scoring,
+    );
     return res.json({ results });
   } catch (e) {
-    console.error('Failed /fetch', e);
+    console.error("Failed /fetch", e);
     return res.status(500).json({ error: e.message });
   }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`));
+app.listen(PORT, () =>
+  console.log(
+    `Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`,
+  ),
+);
