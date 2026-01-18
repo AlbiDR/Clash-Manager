@@ -15,6 +15,9 @@ function scoutRecruits() {
   let sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
   if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.HH);
 
+  // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
+  Utils.bootDynamicSchema();
+
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
   // 1. Establish Baseline
@@ -512,18 +515,9 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
 function renderHeadhunterView(sheet, list, baseline) {
   sheet.clear();
-  const HEADERS = [
-    "Tag",
-    "Invited",
-    "Name",
-    "Trophies",
-    "Donations",
-    "Cards Won",
-    "War Wins",
-    "Found",
-    "Raw Score",
-    "Potential Score",
-  ];
+  const HEADERS = Object.keys(CONFIG.SCHEMA.HH_HEADERS)
+    .sort((a, b) => CONFIG.SCHEMA.HH[a] - CONFIG.SCHEMA.HH[b])
+    .map((k) => CONFIG.SCHEMA.HH_HEADERS[k]);
   const rows = list.map((c) => [
     c.tag,
     c.invited,

@@ -920,4 +920,71 @@ const Utils = {
     }
     sheet.setHiddenGridlines(true);
   },
+
+  /**
+   * 🏗️ DYNAMIC SCHEMA RESOLVER
+   * Analyzes a sheet with standard headers and returns a mapping of internal keys
+   * to their current column indices (0-based).
+   */
+  resolveSchemaIndices: function (
+    sheet,
+    headerMap,
+    headerRow = 2,
+    startCol = 2,
+  ) {
+    if (!sheet) return {};
+
+    // Read a wide range of headers to be safe (up to 35 columns)
+    const headers = sheet.getRange(headerRow, startCol, 1, 35).getValues()[0];
+    const resolved = {};
+
+    Object.keys(headerMap).forEach((key) => {
+      const targetLabel = headerMap[key].toLowerCase().trim();
+      const idx = headers.findIndex(
+        (h) =>
+          String(h || "")
+            .toLowerCase()
+            .trim() === targetLabel,
+      );
+
+      if (idx !== -1) {
+        resolved[key] = idx;
+      } else {
+        console.warn(
+          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheet.getName()}.`,
+        );
+      }
+    });
+
+    return resolved;
+  },
+
+  /**
+   * ⚡ BOOT DYNAMIC SCHEMA
+   * Automatically updates the CONFIG.SCHEMA indices based on the actual sheet live layout.
+   */
+  bootDynamicSchema: function () {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+
+    console.log("⚡ Booting Dynamic Schema Sync...");
+
+    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
+    if (lbSheet) {
+      const resolvedLB = this.resolveSchemaIndices(
+        lbSheet,
+        CONFIG.SCHEMA.LB_HEADERS,
+      );
+      Object.assign(CONFIG.SCHEMA.LB, resolvedLB);
+    }
+
+    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+    if (hhSheet) {
+      const resolvedHH = this.resolveSchemaIndices(
+        hhSheet,
+        CONFIG.SCHEMA.HH_HEADERS,
+      );
+      Object.assign(CONFIG.SCHEMA.HH, resolvedHH);
+    }
+  },
 };

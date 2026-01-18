@@ -129,6 +129,9 @@ function refreshWebPayload() {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+      // ⚡ SMART SYNC: Dynamically resolve column indices from headers before building matrix
+      Utils.bootDynamicSchema();
+
       const data = {
         format: "matrix",
         schema: {
@@ -207,8 +210,11 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
 
   if (lastRow < startRow) return [];
 
-  // ⚡ IMPROVEMENT: Fetch 17 columns (up to War Day Wins) to ensure all schema indices are present
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 16);
+  // Calculate the max column index we need to fetch based on the schema
+  const maxIdx = Math.max(...Object.values(SCHEMA)) + 1;
+  const numCols = Math.max(16, maxIdx); // Buffer to at least 16
+
+  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, numCols);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
