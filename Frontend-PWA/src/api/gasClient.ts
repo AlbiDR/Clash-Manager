@@ -107,25 +107,25 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   return {
     lb: lb
       .map((r: any) => {
-        // Row must at least have tag and name
-        if (!r || r.length < 2) return null;
+        // Row must at least have tag at index 1 and name at index 2
+        if (!r || r.length < 3) return null;
 
         return {
-          id: safeStr(r[0]), // Tag (Col B)
-          n: safeStr(r[1]), // Name (Col C)
-          t: safeNum(r[3]), // Trophies (Col E)
-          s: safeNum(r[13] ?? r[12]), // Performance Score (Col O) with fallback to N
+          id: safeStr(r[1]), // Tag (Col B)
+          n: safeStr(r[2]), // Name (Col C)
+          t: safeNum(r[4]), // Trophies (Col E)
+          s: safeNum(r[14] ?? r[13]), // Performance Score (Col O) with fallback to N
           d: {
-            role: safeStr(r[2]), // Role (Col D)
-            days: safeNum(r[4]),
-            avg: safeNum(r[6]),
-            seen: r[8] ? safeStr(r[8]) : null,
-            rate: r[9] ? safeStr(r[10]) : null,
-            wfame: safeNum(r[10]),
-            hist: safeStr(r[11]),
+            role: safeStr(r[3]), // Role (Col D)
+            days: safeNum(r[5]),
+            avg: safeNum(r[7]),
+            seen: r[9] ? safeStr(r[9]) : null,
+            rate: r[10] ? safeStr(r[10]) : null,
+            wfame: safeNum(r[11]),
+            hist: safeStr(r[12]),
           },
-          dt: safeNum(r[14]), // Trend (Col P)
-          r: safeNum(r[12]), // Raw Score (Col N)
+          dt: safeNum(r[15]), // Trend (Col P)
+          r: safeNum(r[13]), // Raw Score (Col N)
         };
       })
       .filter(Boolean) as any[],
