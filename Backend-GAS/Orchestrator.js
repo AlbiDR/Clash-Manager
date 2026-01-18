@@ -1,12 +1,12 @@
 /**
  * ============================================================================
- * 🕹️ MODULE: ORCHESTRATOR & TRIGGERS
+ * 🕹️ MODULE: ORCHESTRATOR
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Manages Automation Triggers and the "Master Protocol".
  * ⚙️ WORKFLOW:
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 10.0.2
+ * 🏷️ VERSION: 10.0.3
  *
  * 🧠 REASONING:
  *    - Granularity: Replaced the monolithic "dailymaster" with 2 optimized tasks.
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR = "10.0.2";
+const VER_ORCHESTRATOR = "10.0.3";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
@@ -374,6 +374,20 @@ function verifyApiKeysInternal(isUserFacing, limit = 0) {
   // Determine subset of keys to check
   const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
 
+  // ⚡ STRATEGY A: REMOTE OFFLOAD (Saves 95% Quota)
+  // If a Remote Worker is available, use it to check ALL keys in a single fetch.
+  // We skip this for single-key health checks (limit=1) unless we are desperate,
+  // but generally using the worker is safer for quota even for single checks.
+  if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
+      const remoteResults = Utils.auditKeysRemote(keysToCheck);
+      if (remoteResults) {
+          console.log("✅ API Audit handled by Remote Worker.");
+          return remoteResults;
+      }
+      console.warn("⚠️ Remote Audit failed. Falling back to local quota.");
+  }
+
+  // ⚡ STRATEGY B: LOCAL FETCH (Legacy/Fallback)
   for (const keyObj of keysToCheck) {
     
     // 🛡️ CIRCUIT BREAKER: If quota is dead, stop trying to fetch
