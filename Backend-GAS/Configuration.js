@@ -4,12 +4,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 10.0.5
+ * 🏷️ VERSION: 10.0.6
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = "10.0.5";
+const VER_CONFIGURATION = "10.0.6";
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -24,13 +24,13 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: "10.0.5",
+      CONFIGURATION: "10.0.6",
       UTILITIES: "10.0.6",
       ORCHESTRATOR: "10.0.4",
       LOGGER: "10.0.1",
       LEADERBOARD: "10.0.1",
       SCORING_SYSTEM: "10.0.0",
-      RECRUITER: "10.0.5",
+      RECRUITER: "10.0.9",
       CONTROLLER_WEBAPP: "10.0.1",
       API_PUBLIC: "10.0.0",
     },
@@ -99,7 +99,7 @@ const CONFIG = {
       WAR_RATE: "War Rate",
       AVG_WAR_FAME: "Average War Fame",
       HISTORY: "War History",
-      RAW_SCORE: "Raw Score",
+      RAW_SCORE: "Performance Raw Score", // ⚡ UPDATED: Explicit Naming
       PERF_SCORE: "Performance Score",
       TREND: "Trend",
       WAR_DAY_WINS: "War Day Wins",
@@ -113,7 +113,7 @@ const CONFIG = {
       CARDS: "Cards Won",
       WAR_WINS: "War Wins",
       FOUND_DATE: "Found Date",
-      RAW_SCORE: "Raw Score",
+      RAW_SCORE: "Potential Raw Score", // ⚡ UPDATED: Explicit Naming
       POTENTIAL_SCORE: "Potential Score",
     },
     DB: {
