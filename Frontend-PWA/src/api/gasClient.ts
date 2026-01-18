@@ -93,23 +93,23 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   // Strict bounds checking for matrix columns
   return {
     lb: lb.map((r: any) => {
-      if (r.length < 10) throw new Error("Matrix Row (LB) underflow");
+      if (r.length < 16) throw new Error("Matrix Row (LB) underflow");
       return {
-        id: String(r[0]),
-        n: String(r[1]),
-        t: Number(r[2]),
-        s: Number(r[3]),
+        id: String(r[1]),
+        n: String(r[2]),
+        t: Number(r[4]),
+        s: Number(r[14]), // Performance Score (Col O)
         d: {
-          role: String(r[4]),
+          role: String(r[3]),
           days: Number(r[5]),
-          avg: Number(r[6]),
-          seen: r[7] ? String(r[7]) : null,
-          rate: r[8] ? String(r[8]) : null,
-          wfame: Number(r[9] ?? 0),
-          hist: String(r[10]),
+          avg: Number(r[7]),
+          seen: r[9] ? String(r[9]) : null,
+          rate: r[10] ? String(r[10]) : null,
+          wfame: Number(r[11] ?? 0),
+          hist: String(r[12]),
         },
-        dt: Number(r[11] ?? 0),
-        r: Number(r[12] ?? 0),
+        dt: Number(r[15] ?? 0),
+        r: Number(r[13] ?? 0), // Raw Score (Col N)
       };
     }),
     hh: hh.map((r: any) => {
