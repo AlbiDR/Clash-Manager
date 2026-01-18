@@ -2,7 +2,7 @@ const express = require("express");
 const fetch = require("node-fetch");
 
 const app = express();
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "50mb" })); // Increased limit for large blacklist payloads
 
 const DEFAULT_CONCURRENCY = parseInt(
   process.env.WORKER_CONCURRENCY || "20",
@@ -153,6 +153,66 @@ async function processBatch(
   return results;
 }
 
+// ⚡ TOURNAMENT SCAN ENGINE
+// Filters candidates inside the worker to save bandwidth
+async function processScanBatch(
+  tags = [],
+  apiKeys = [],
+  concurrency = DEFAULT_CONCURRENCY,
+  blacklistSet = new Set(),
+  minTrophies = 4000
+) {
+  const candidates = [];
+  let idx = 0;
+
+  async function worker() {
+    while (true) {
+      const i = idx++;
+      if (i >= tags.length) return;
+      const tag = tags[i];
+      const url = `https://api.clashroyale.com/v1/tournaments/${encodeURIComponent(tag)}`;
+
+      const headers = {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Accept-Encoding": "gzip",
+      };
+      if (apiKeys && apiKeys.length > 0) {
+        const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+        headers.Authorization = `Bearer ${key}`;
+      }
+
+      try {
+        const res = await fetchWithRetries(url, { method: "GET", headers });
+        if (res.code === 200 && res.content && res.content.membersList) {
+           // ⚡ IN-MEMORY FILTERING
+           // We filter immediately here instead of sending 50 players back to GAS
+           res.content.membersList.forEach(p => {
+             // 1. Check Trophies
+             if (p.trophies < minTrophies) return;
+             // 2. Check Clan Status (Must be empty/null)
+             if (p.clan && p.clan.tag) return;
+             // 3. Check Blacklist
+             if (blacklistSet.has(p.tag)) return;
+
+             // Valid Candidate
+             candidates.push(p);
+           });
+        }
+      } catch (e) {
+        // Silent fail for individual tournament errors
+        console.warn(`Scan error for ${tag}: ${e.message}`);
+      }
+    }
+  }
+
+  const workers = [];
+  const spawn = Math.min(concurrency, tags.length);
+  for (let i = 0; i < spawn; i++) workers.push(worker());
+  await Promise.all(workers);
+
+  return candidates;
+}
+
 // Simple auth middleware - check Bearer token if WORKER_SECRET is set
 function checkAuth(req, res, next) {
   const secret = process.env.WORKER_SECRET;
@@ -176,9 +236,8 @@ app.get("/capabilities", checkAuth, (req, res) => {
 });
 
 /**
- * 🔑 AUDIT ENDPOINT (New)
+ * 🔑 AUDIT ENDPOINT
  * Checks a list of API keys against a lightweight endpoint to verify validity.
- * Offloads GAS Quota.
  */
 app.post("/audit", checkAuth, async (req, res) => {
   try {
@@ -207,6 +266,38 @@ app.post("/audit", checkAuth, async (req, res) => {
     const results = await Promise.all(tasks);
     return res.json({ results });
   } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * 📡 SCAN ENDPOINT (New)
+ * High-performance tournament scanner. Accepts tournament tags, filters them,
+ * and returns ONLY the clanless candidates.
+ */
+app.post("/scan", checkAuth, async (req, res) => {
+  try {
+    const { tags, apiKeys, blacklist, minTrophies } = req.body;
+    if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
+    
+    // Optimize blacklist lookup
+    const blacklistSet = new Set(blacklist || []);
+    
+    const concurrency = Number(
+      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
+    );
+
+    const candidates = await processScanBatch(
+      tags,
+      apiKeys || [],
+      concurrency,
+      blacklistSet,
+      minTrophies || 4000
+    );
+    
+    return res.json({ candidates });
+  } catch (e) {
+    console.error("Failed /scan", e);
     return res.status(500).json({ error: e.message });
   }
 });
