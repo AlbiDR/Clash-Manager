@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.5
+ * 🏷️ VERSION: 10.0.6
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.5";
+const VER_RECRUITER = "10.0.6";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -113,14 +113,6 @@ function scoutRecruits() {
   );
 
   // 6. Final Pool Scoring & Capping
-  // ----------------------------------------------------------------------------
-  /**
-   * WHY: We use a Hybrid Benchmark (50% Clan / 50% Elite Recruits) to ensure
-   * that a single "outlier" (like a pro player) doesn't hijack the scoring scale.
-   * This keeps the "Potential Score" relevant to our clan's actual standard.
-   */
-
-  // A. Get Clan Baseline (Members with Performance Score >= 50)
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   const clanEliteData = [];
   if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -137,9 +129,6 @@ function scoutRecruits() {
     lbData.forEach((row) => {
       const perf = Number(row[L.PERF_SCORE]) || 0;
       if (perf >= 50) {
-        // Calculate Recruit-Equivalent Raw Score
-        // Formula: (T * 1.0) + (D * 0.07) + ((W + bonus) * 20.0)
-        // For Clan members, we use 'currentFame > 0' as the bonus trigger
         const histStr = String(row[L.HISTORY] || "");
         const currentWk = Utils.calculateWarWeekId(new Date());
         const hasRecentWar = histStr.includes(currentWk);
@@ -254,12 +243,7 @@ function updateAndGetBlacklist(sheet) {
   // 2. DYNAMIC BENCHMARK (Decay + Percentile)
   // Calculate decayed scores for benchmark purposes (does not affect saved raw score)
   const scoredEntries = validEntries.map((e) => {
-    const msSinceAdded = now - (e.e - expiryDuration); // e.e is expiry (future), so e.e - duration = added time
-    // ^ Wait, e.e is set to now + duration when added/updated.
-    // If we want age, we need (ExpiryTimestamp - CurrentTimestamp) inverted?
-    // No, existing logic sets `e: now + expiryDuration`.
-    // So `e - now` is remaining time.
-    // `expiryDuration - (e - now)` is elapsed time (age).
+    const msSinceAdded = now - (e.e - expiryDuration); 
     const remainingMs = e.e - now;
     const ageMs = expiryDuration - remainingMs;
     const ageDays = Math.max(0, ageMs / 86400000);
@@ -392,6 +376,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   let usedRemote = false;
 
   // ⚡ MEGA-OFFLOAD: Use Remote Worker for Scanning Logic
+  // This drastically reduces execution time and fetches by moving filtering to the worker
   if (remoteAvailable && remoteExpandEnabled) {
     try {
       console.log("☁️ Offloading Tournament Scan to Worker...");
