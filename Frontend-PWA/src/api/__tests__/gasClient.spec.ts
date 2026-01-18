@@ -6,37 +6,43 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
+      // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14), trend(15)]
       lb: [
         [
+          "BUFFER",
           "player1",
           "King Arthur",
-          5000,
-          95,
           "leader",
+          5000,
           100,
+          200,
           50,
+          1000,
           "2023-01-01",
           "100%",
-          1500, // wfame
+          1500,
           "3000 24W01",
-          5,
-          9500,
+          9500, // Raw Score (13)
+          95, // Performance Score (14)
+          5, // Trend (15)
         ],
         [
+          "",
           "player2",
           "Lancelot",
-          4000,
-          80,
           "member",
+          4000,
           5,
+          100,
           10,
+          200,
           "2023-01-02",
           "50%",
-          0, // wfame
-          "",
           0,
-          8000,
+          "",
+          8000, // Raw Score (13)
+          80, // Performance Score (14)
+          0, // Trend (15)
         ],
       ],
       hh: [],
@@ -49,14 +55,21 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].id).toBe("player1");
     expect(result.lb[0].n).toBe("King Arthur");
     expect(result.lb[0].t).toBe(5000);
+    expect(result.lb[0].s).toBe(95);
+    expect(result.lb[0].r).toBe(9500);
+    expect(result.lb[0].dt).toBe(5);
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
-    expect(result.lb[0].dt).toBe(5);
-    expect(result.lb[0].r).toBe(9500);
+    expect(result.lb[0].d.avg).toBe(50);
+    expect(result.lb[0].d.seen).toBe("2023-01-01");
+    expect(result.lb[0].d.rate).toBe("100%");
+    expect(result.lb[0].d.wfame).toBe(1500);
+    expect(result.lb[0].d.hist).toBe("3000 24W01");
 
     // Check second player
     expect(result.lb[1].id).toBe("player2");
-    expect(result.lb[1].d.role).toBe("member");
+    expect(result.lb[1].s).toBe(80);
+    expect(result.lb[1].r).toBe(8000);
     expect(result.lb[1].dt).toBe(0);
   });
 
@@ -112,8 +125,8 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] },
-      // Added missing columns (0, 0) to satisfy Zod schema
-      lb: [["p1", "Test", 0, 0, "m", 0, 0, "", "", 0, "", 0, 0]],
+      // Added missing columns to satisfy new length check (16 indices)
+      lb: [["buf", "p1", "Test", "m", 0, 0, 0, 0, 0, "", "", 0, "", 0, 0, 0]],
       hh: [],
       timestamp: 123456789,
     };
