@@ -4,12 +4,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 6.3.0
+ * 🏷️ VERSION: 10.0.0
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = "6.3.0";
+const VER_CONFIGURATION = "10.0.0";
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -24,15 +24,15 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: "6.3.0",
-      UTILITIES: "6.3.0",
-      ORCHESTRATOR_TRIGGERS: "6.3.0",
-      LOGGER: "6.3.0",
-      LEADERBOARD: "6.3.0",
-      SCORING_SYSTEM: "6.3.0",
-      RECRUITER: "6.3.0",
-      CONTROLLER_WEBAPP: "6.3.0",
-      API_PUBLIC: "6.3.0",
+      CONFIGURATION: "10.0.0",
+      UTILITIES: "10.0.0",
+      ORCHESTRATOR_TRIGGERS: "10.0.0",
+      LOGGER: "10.0.0",
+      LEADERBOARD: "10.0.0",
+      SCORING_SYSTEM: "10.0.0",
+      RECRUITER: "10.0.0",
+      CONTROLLER_WEBAPP: "10.0.0",
+      API_PUBLIC: "10.0.0",
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",
@@ -57,8 +57,8 @@ const CONFIG = {
     RETRY_MAX: 3,
     JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined"
       ? VER_API_PUBLIC
-      : "6.0.0"
-    ).replace(/\./g, "_")}`,
+      : "10.0.0"
+    ).replace(/\./g, "_")}_S5`, // S5 suffix for total absolute 1:1 sync
     DB_PURGE_DAYS: 7,
     DB_ROW_LIMIT: 20000,
   },
@@ -86,6 +86,36 @@ const CONFIG = {
   },
 
   SCHEMA: {
+    LB_HEADERS: {
+      TAG: "Tag",
+      NAME: "Name",
+      ROLE: "Role",
+      TROPHIES: "Trophies",
+      DAYS: "Days Tracked",
+      WEEKLY_REQ: "Received Weekly",
+      AVG_DAY: "Average Daily Donations",
+      TOTAL_DON: "Total Donations",
+      LAST_SEEN: "Last Seen",
+      WAR_RATE: "War Rate",
+      AVG_WAR_FAME: "Average War Fame",
+      HISTORY: "War History",
+      RAW_SCORE: "Raw Score",
+      PERF_SCORE: "Performance Score",
+      TREND: "Trend",
+      WAR_DAY_WINS: "War Day Wins",
+    },
+    HH_HEADERS: {
+      TAG: "Tag",
+      INVITED: "Invited",
+      NAME: "Name",
+      TROPHIES: "Trophies",
+      DONATIONS: "Donations",
+      CARDS: "Cards Won",
+      WAR_WINS: "War Wins",
+      FOUND_DATE: "Found Date",
+      RAW_SCORE: "Raw Score",
+      POTENTIAL_SCORE: "Potential Score",
+    },
     DB: {
       DATE: 0,
       TAG: 1,
@@ -107,24 +137,25 @@ const CONFIG = {
       WAR_WINS: 6,
       FOUND_DATE: 7,
       RAW_SCORE: 8,
-      PERF_SCORE: 9,
+      POTENTIAL_SCORE: 9,
     },
     LB: {
-      TAG: 0,
-      NAME: 1,
-      ROLE: 2,
-      TROPHIES: 3,
-      DAYS: 4,
-      WEEKLY_REQ: 5,
-      AVG_DAY: 6,
-      TOTAL_DON: 7,
-      LAST_SEEN: 8,
-      WAR_RATE: 9,
-      AVG_WAR_FAME: 10,
-      HISTORY: 11,
-      RAW_SCORE: 12,
-      PERF_SCORE: 13,
-      TREND: 14,
+      TAG: 1,
+      NAME: 2,
+      ROLE: 3,
+      TROPHIES: 4,
+      DAYS: 5,
+      WEEKLY_REQ: 6,
+      AVG_DAY: 7,
+      TOTAL_DON: 8,
+      LAST_SEEN: 9,
+      WAR_RATE: 10,
+      AVG_WAR_FAME: 11,
+      HISTORY: 12,
+      RAW_SCORE: 13,
+      PERF_SCORE: 14,
+      TREND: 15,
+      WAR_DAY_WINS: 16,
     },
   },
 

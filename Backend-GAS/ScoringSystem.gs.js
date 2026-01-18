@@ -5,7 +5,7 @@
  * 📝 DESCRIPTION: The mathematical heart of the application.
  * ⚙️ ROLE: Pure Logic. Accepts raw data -> Returns Scores & Sort Orders.
  * 🔒 STATUS: PROTECTED "DO NOT MODIFY" ZONE.
- * 🏷️ VERSION: 6.0.0
+ * 🏷️ VERSION: 10.0.0
  *
  * 🧠 REASONING:
  *    - Separation of Concerns: This file knows nothing about Sheets or APIs.
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_SCORING_SYSTEM = "6.3.0";
+const VER_SCORING_SYSTEM = "10.0.0";
 
 // 🔒 =======================================================================
 // 🔒 SCORING SYSTEM PROTECTION ZONE
@@ -154,6 +154,107 @@ const ScoringSystem = {
 
     // 6. Trophies (Last Resort)
     return rowB[L.TROPHIES] - rowA[L.TROPHIES];
+  },
+
+  /**
+   * 🏗️ UNIFIED RAW SCORE (Recruit-Equivalent)
+   * ----------------------------------------------------------------------------
+   * WHY: This formula is the "Universal Yardstick". By using the exact same
+   * math for both active Clan Members and found Recruits, we eliminate
+   * environmental bias (e.g., tenure bonuses) and see who is truly better "on paper".
+   *
+   * HOW: It prioritizes Trophies and Total Donations (Base Skill) while
+   * applying a heavy 20.0x multiplier to War Wins. The +500 Bonus acts as a
+   * "Recency Filter" to prioritize active war players.
+   */
+  calculateRecruitRawScore: function (
+    trophies,
+    totalDonations,
+    warDayWins,
+    hasRecentWar,
+  ) {
+    const W = { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
+    const warBonus = hasRecentWar ? 500 : 0;
+    const totalWarScore = (warDayWins || 0) + warBonus;
+
+    return Math.round(
+      (trophies || 0) * W.TROPHY +
+        (totalDonations || 0) * W.DON +
+        totalWarScore * W.WAR,
+    );
+  },
+
+  /**
+   * ⚖️ HYBRID BENCHMARK CALCULATOR (V7)
+   * ----------------------------------------------------------------------------
+   * WHY: Prevents "Benchmark Hijacking". In V6, discovery of a single Global
+   * Top 50 player would crush the scores of all other recruits.
+   *
+   * REASONING (40/60 Split): We lean 60% towards the External Pool because
+   * Clan members naturally accrue higher scores due to consistent War access
+   * (the +500 bonus). Weighting the Pool higher ensures the benchmark is
+   * aspirational and fair to recruits who lack daily War opportunity.
+   *
+   * HOW:
+   * 1. Clan Side: Pulls members with Perf > 50 (Our "Trusted Elite").
+   * 2. Pool Side: Pulls Top 5% of Blacklisted "Elite Recruits" (The "Market Standard").
+   * 3. Result: If we find a God-tier player, they score >100%, but don't
+   *    make a Great recruit (90%) look like a Poor recruit (40%).
+   */
+  calculateHybridBenchmark: function (clanScoredList, blacklistScoredList) {
+    // 1. CLAN BASELINE (Performance Score >= 50)
+    const clanPool = (clanScoredList || []).filter((c) => c.perfScore >= 50);
+    const avgClanRef =
+      clanPool.length > 0
+        ? clanPool.reduce((a, b) => a + b.rawScore, 0) / clanPool.length
+        : 0;
+
+    // 2. DISCOVERY BASELINE (Top 5% of Blacklist, Min 3)
+    const pool = [...(blacklistScoredList || [])].sort(
+      (a, b) => b.rawScore - a.rawScore,
+    );
+    const poolSize = Math.max(
+      CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL || 3,
+      Math.ceil(pool.length * (CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE || 0.05)),
+    );
+    const topPool = pool.slice(0, poolSize);
+    const avgPoolRef =
+      topPool.length > 0
+        ? topPool.reduce((a, b) => a + b.rawScore, 0) / topPool.length
+        : 0;
+
+    // 3. HYBRID MERGE (40/60 Split)
+    // Failsafe: If one side is empty, use the other 100%
+    let finalBenchmark = 1;
+    if (avgClanRef > 0 && avgPoolRef > 0) {
+      finalBenchmark = avgClanRef * 0.4 + avgPoolRef * 0.6;
+    } else if (avgClanRef > 0) {
+      finalBenchmark = avgClanRef;
+    } else if (avgPoolRef > 0) {
+      finalBenchmark = avgPoolRef;
+    }
+
+    console.log(
+      `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(avgPoolRef)}) = Result:${Math.round(finalBenchmark)}`,
+    );
+
+    return Math.max(1, finalBenchmark);
+  },
+
+  /**
+   * 🎯 POTENTIAL SCORE CALCULATOR
+   * ----------------------------------------------------------------------------
+   * WHY: Enforces a structural cap at 100%. Even if a recruit is "Better than
+   * the Benchmark", we display 100% to keep the UI clean and the mental model
+   * of "Performance vs Gold Standard" intuitive.
+   *
+   * @param {number} rawScore - The calculated yardstick score.
+   * @param {number} benchmark - The hybrid pivot point.
+   */
+  calculatePotentialScore: function (rawScore, benchmark) {
+    if (!benchmark || benchmark <= 0) return 0;
+    const score = Math.round((rawScore / benchmark) * 100);
+    return Math.min(100, score);
   },
 };
 // 🔒 END PROTECTION ZONE ===================================================

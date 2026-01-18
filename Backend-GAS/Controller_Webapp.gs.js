@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 6.2.2
+ * 🏷️ VERSION: 10.0.0
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "6.3.0";
+const VER_CONTROLLER_WEBAPP = "10.0.0";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -129,23 +129,29 @@ function refreshWebPayload() {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+      // ⚡ SMART SYNC: Dynamically resolve column indices from headers before building matrix
+      Utils.bootDynamicSchema();
+
       const data = {
         format: "matrix",
         schema: {
           lb: [
             "id",
             "n",
-            "t",
-            "s",
             "role",
+            "t",
             "days",
+            "req",
             "avg",
+            "tot",
             "seen",
             "rate",
             "wfame",
             "hist",
-            "dt",
             "r",
+            "s",
+            "dt",
+            "war",
           ],
           hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
         },
@@ -163,6 +169,7 @@ function refreshWebPayload() {
         ),
         playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
+        _debug_schema: { lb: CONFIG.SCHEMA.LB, hh: CONFIG.SCHEMA.HH },
       };
 
       const payload = { success: true, data: data, error: null };
@@ -207,13 +214,26 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
 
   if (lastRow < startRow) return [];
 
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 15);
+  // Calculate the max column index we need to fetch based on the schema
+  const maxIdx = Math.max(...Object.values(SCHEMA));
+  const numCols = Math.max(20, maxIdx + 1); // Absolute 1:1 Sheet Fetch
+
+  const range = sheet.getRange(startRow, 1, lastRow - startRow + 1, numCols);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
-  const sanitizeNum = (v) => {
-    const n = Number(v);
-    return isFinite(n) ? n : 0;
+  const sanitizeNum = (v, displayV) => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") {
+      // Handle ratio percentages (0.85 in cell, but 85 expected in PWA)
+      if (displayV && displayV.includes("%") && v <= 1.5) return v * 100;
+      return v;
+    }
+    let s = String(v).replace(/,/g, "").replace(/%/g, "").trim();
+    let n = parseFloat(s);
+    if (isNaN(n)) return 0;
+    if (String(v).includes("%") && n <= 1.5) return n * 100;
+    return n;
   };
   const sanitizeStr = (v) =>
     v === null || v === undefined ? "" : String(v).trim();
@@ -243,7 +263,20 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           "$1",
         );
         const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
-        const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
+
+        // Explicit column values from Absolute Sheet Schema
+        const raw = sanitizeNum(
+          r[SCHEMA.RAW_SCORE],
+          displayVals[index][SCHEMA.RAW_SCORE],
+        );
+        const score = sanitizeNum(
+          r[SCHEMA.PERF_SCORE],
+          displayVals[index][SCHEMA.PERF_SCORE],
+        );
+        const trend = sanitizeNum(
+          r[SCHEMA.TREND],
+          displayVals[index][SCHEMA.TREND],
+        );
 
         if (isHeadhunter) {
           const fd = r[SCHEMA.FOUND_DATE];
@@ -284,17 +317,20 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           return [
             id,
             name,
-            trophies,
-            score,
             role,
+            trophies,
             days,
+            sanitizeNum(r[SCHEMA.WEEKLY_REQ]),
             avg,
+            sanitizeNum(r[SCHEMA.TOTAL_DON]),
             seen,
             rateDisplay,
             wfame,
             hist,
-            trend,
             raw,
+            score,
+            trend,
+            sanitizeNum(r[SCHEMA.WAR_DAY_WINS]),
           ];
         }
       } catch (err) {

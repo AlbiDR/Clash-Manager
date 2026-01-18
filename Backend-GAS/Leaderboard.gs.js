@@ -8,11 +8,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 6.1.5
+ * 🏷️ VERSION: 10.0.0
  * ============================================================================
  */
 
-const VER_LEADERBOARD = "6.3.0";
+const VER_LEADERBOARD = "10.0.0";
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -20,6 +20,8 @@ function updateLeaderboard() {
   let lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
 
+  // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
+  Utils.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
 
   // 🛡️ SAFETY & HISTORY SNAPSHOT
@@ -33,15 +35,13 @@ function updateLeaderboard() {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
 
     // Ensure we have enough data to read
-    if (lastRow >= startRow && maxCols > 2) {
-      const colsToRead = Math.min(20, maxCols - 1);
-
+    if (lastRow >= startRow && maxCols >= L.TAG) {
       const oldData = lbSheet
-        .getRange(startRow, 2, lastRow - startRow + 1, colsToRead)
+        .getRange(startRow, 1, lastRow - startRow + 1, maxCols)
         .getValues();
 
       const tagIdx = L.TAG;
-      const scoreIdx = L.RAW_SCORE; // ✨ Tracking Raw Score (Index 12)
+      const scoreIdx = L.RAW_SCORE; // ✨ Tracking Raw Score (Absolute Index)
 
       oldData.forEach((row) => {
         // Safe read: check if column exists in this row data
@@ -280,11 +280,17 @@ function updateLeaderboard() {
       avgWarFame,
       historyString,
       scores,
+      /**
+       * WHY: Tracking lifetime War Day Wins is necessary for the "Deep Net v7"
+       * hybrid benchmark, as it allows us to score clan members using the
+       * same formula as recruits.
+       */
+      warDayWins: m.warDayWins || 0,
       cleanKey: m.tag.replace("#", "").trim().toLowerCase(),
     });
   });
 
-  // Calculate Max Score first for Normalization
+  // Calculate Max Score first for Normalization (Specific Leaderboard Math)
   let maxPerfScore = 0;
   rawMemberResults.forEach((r) => {
     if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf;
@@ -295,9 +301,11 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
 
   rawMemberResults.forEach((r) => {
-    // Normalize Performance Score (0-100)
+    // Normalize Performance Score (0-100) based on Clan Max
     const normalizedPerf =
-      maxPerfScore > 0 ? Math.round((r.scores.perf / maxPerfScore) * 100) : 0;
+      maxPerfScore > 0
+        ? Math.min(100, Math.round((r.scores.perf / maxPerfScore) * 100))
+        : 0;
 
     // 📈 CALCULATE TREND (RAW SCORE DELTA)
     let trend = 0;
@@ -306,7 +314,7 @@ function updateLeaderboard() {
       trend = r.scores.raw - oldRaw;
     }
 
-    const row = [];
+    const row = new Array(18).fill(""); // Unified 18-col Absolute Structure
     row[L.TAG] = r.member.tag;
     row[L.NAME] =
       `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${r.member.tag.replace("#", "")}", "${r.member.name}")`;
@@ -320,9 +328,10 @@ function updateLeaderboard() {
     row[L.WAR_RATE] = `${r.warRateVal}%`;
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
-    row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score
+    row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score (Hard Capped)
     row[L.TREND] = trend; // ✨ Raw Score Delta
     row[L.AVG_WAR_FAME] = r.avgWarFame;
+    row[L.WAR_DAY_WINS] = r.warDayWins;
 
     rows.push(row);
   });
@@ -336,39 +345,32 @@ function updateLeaderboard() {
 
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
-  const HEADERS = [
-    "Tag",
-    "Name",
-    "Role",
-    "Trophies",
-    "Days Tracked",
-    "Received Weekly",
-    "Average Daily Donations",
-    "Total Donations",
-    "Last Seen",
-    "War Rate",
-    "Average War Fame",
-    "War History",
-    "Raw Score",
-    "Performance Score",
-    "Trend",
-  ];
+  const HEADERS_ARRAY = new Array(18).fill("");
+  Object.keys(CONFIG.SCHEMA.LB_HEADERS).forEach((k) => {
+    HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.LB_HEADERS[k];
+  });
 
   lbSheet.clear();
   lbSheet
-    .getRange(2, 2, 1, HEADERS.length)
-    .setValues([HEADERS])
+    .getRange(2, 1, 1, HEADERS_ARRAY.length)
+    .setValues([HEADERS_ARRAY])
     .setFontWeight("bold");
 
   if (rows.length > 0) {
     lbSheet
-      .getRange(CONFIG.LAYOUT.DATA_START_ROW, 2, rows.length, HEADERS.length)
+      .getRange(
+        CONFIG.LAYOUT.DATA_START_ROW,
+        1,
+        rows.length,
+        HEADERS_ARRAY.length,
+      )
       .setValues(rows);
 
-    const scoreColIndex = 2 + L.PERF_SCORE;
+    const scoreColIndex = 1 + L.PERF_SCORE; // Absolute Col Number
     lbSheet
       .getRange(CONFIG.LAYOUT.DATA_START_ROW, scoreColIndex, rows.length, 1)
-      .setFontWeight("bold");
+      .setFontWeight("bold")
+      .setNumberFormat('0"%"');
 
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMinpointWithValue(
@@ -392,7 +394,7 @@ function updateLeaderboard() {
       .build();
 
     // Format Trend Column (Red/Green text in Sheet)
-    const trendColIndex = 2 + L.TREND;
+    const trendColIndex = 1 + L.TREND; // Absolute Col Number
     const trendRange = lbSheet.getRange(
       CONFIG.LAYOUT.DATA_START_ROW,
       trendColIndex,

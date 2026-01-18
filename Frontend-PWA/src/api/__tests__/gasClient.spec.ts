@@ -5,38 +5,45 @@ describe("gasClient Data Inflation", () => {
   it("correctly inflates Leaderboard matrix", async () => {
     const rawMatrixData = {
       format: "matrix",
-      schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [id, n, t, s, role, days, avg, seen, rate, hist, dt, r]
+      schema: {
+        lb: [
+          "id",
+          "n",
+          "role",
+          "t",
+          "days",
+          "req",
+          "avg",
+          "tot",
+          "seen",
+          "rate",
+          "wfame",
+          "hist",
+          "r",
+          "s",
+          "dt",
+          "war",
+        ],
+        hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+      },
       lb: [
         [
-          "player1",
-          "King Arthur",
-          5000,
-          95,
-          "leader",
-          100,
-          50,
-          "2023-01-01",
-          "100%",
-          1500, // wfame
-          "3000 24W01",
-          5,
-          9500,
-        ],
-        [
-          "player2",
-          "Lancelot",
-          4000,
-          80,
-          "member",
-          5,
-          10,
-          "2023-01-02",
-          "50%",
-          0, // wfame
-          "",
-          0,
-          8000,
+          "player1", // 0: id
+          "King Arthur", // 1: n
+          "leader", // 2: role
+          5000, // 3: t
+          100, // 4: days
+          500, // 5: req
+          50, // 6: avg
+          1000, // 7: tot
+          "2023-01-01", // 8: seen
+          "100%", // 9: rate
+          1500, // 10: wfame
+          "3000 24W01", // 11: hist
+          9500, // 12: r
+          100, // 13: s
+          5, // 14: dt
+          20, // 15: war
         ],
       ],
       hh: [],
@@ -49,15 +56,13 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].id).toBe("player1");
     expect(result.lb[0].n).toBe("King Arthur");
     expect(result.lb[0].t).toBe(5000);
+    expect(result.lb[0].s).toBe(100);
+    expect(result.lb[0].r).toBe(9500);
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
-    expect(result.lb[0].dt).toBe(5);
-    expect(result.lb[0].r).toBe(9500);
-
-    // Check second player
-    expect(result.lb[1].id).toBe("player2");
-    expect(result.lb[1].d.role).toBe("member");
-    expect(result.lb[1].dt).toBe(0);
+    expect(result.lb[0].d.avg).toBe(50);
+    expect(result.lb[0].d.seen).toBe("2023-01-01");
+    expect(result.lb[0].d.wfame).toBe(1500);
   });
 
   it("extracts playerTag from payload", async () => {
@@ -112,8 +117,8 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] },
-      // Added missing columns (0, 0) to satisfy Zod schema
-      lb: [["p1", "Test", 0, 0, "m", 0, 0, "", "", 0, "", 0, 0]],
+      // Added columns to satisfy new length (16 indices)
+      lb: [["p1", "Test", "m", 0, 0, 0, 0, 0, "", "", 0, "", 0, 0, 0, 0]],
       hh: [],
       timestamp: 123456789,
     };
@@ -124,5 +129,113 @@ describe("gasClient Data Inflation", () => {
     const result = await inflatePayload(stringified);
     expect(result.lb).toHaveLength(1);
     expect(result.lb[0].id).toBe("p1");
+  });
+
+  it("semantically corrects swapped s/r values", async () => {
+    const rawMatrixData = {
+      format: "matrix",
+      schema: {
+        lb: [
+          "id",
+          "n",
+          "role",
+          "t",
+          "days",
+          "req",
+          "avg",
+          "tot",
+          "seen",
+          "rate",
+          "wfame",
+          "hist",
+          "r",
+          "s",
+          "dt",
+          "war",
+        ],
+        hh: [],
+      },
+      lb: [
+        [
+          "p1",
+          "Tester",
+          "m",
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          "",
+          0,
+          "",
+          100, // index 12: r (input shows 100, which looks like s)
+          52052, // index 13: s (input shows 52052, which looks like r)
+          0,
+          0,
+        ],
+      ],
+      hh: [],
+      timestamp: 123456789,
+    };
+
+    const result = await inflatePayload(rawMatrixData);
+    // Should swap them back
+    expect(result.lb[0].s).toBe(100);
+    expect(result.lb[0].r).toBe(52052);
+  });
+
+  it("does NOT swap correctly ordered low raw scores", async () => {
+    const rawMatrixData = {
+      format: "matrix",
+      schema: {
+        lb: [
+          "id",
+          "n",
+          "role",
+          "t",
+          "days",
+          "req",
+          "avg",
+          "tot",
+          "seen",
+          "rate",
+          "wfame",
+          "hist",
+          "r",
+          "s",
+          "dt",
+          "war",
+        ],
+        hh: [],
+      },
+      lb: [
+        [
+          "p2",
+          "TinyRaw",
+          "m",
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          "",
+          0,
+          "",
+          2, // index 12: r (Raw Total) -> extremely low but correct
+          100, // index 13: s (Performance) -> correct
+          0,
+          0,
+        ],
+      ],
+      hh: [],
+      timestamp: 123456789,
+    };
+
+    const result = await inflatePayload(rawMatrixData);
+    // Should NOT swap: s=100, r=2. Heuristic s > r (100 > 2) but s is not > 500.
+    expect(result.lb[0].s).toBe(100);
+    expect(result.lb[0].r).toBe(2);
   });
 });

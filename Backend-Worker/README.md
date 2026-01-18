@@ -4,7 +4,7 @@ The **Scaling Engine**. A high-concurrency Express.js proxy designed to offload 
 
 ---
 
-## 🏗️ Technical Specifications
+## Technical Specifications
 
 - **Runtime**: Node.js (Express)
 - **Capacity**: Configurable concurrency (default `8`) with automatic retries.
@@ -12,7 +12,7 @@ The **Scaling Engine**. A high-concurrency Express.js proxy designed to offload 
 
 ---
 
-## 🚀 Deployment Workflow
+## Deployment Workflow
 
 ### 1. Build & Push
 
@@ -36,7 +36,7 @@ gcloud run deploy clash-manager-worker \
 
 ---
 
-## 📡 Protocol Interface
+## Protocol Interface
 
 The worker operates as a transparent bulk-fetching proxy for the GAS `RemoteWorker` engine.
 
@@ -56,13 +56,13 @@ A serialized result set containing status codes and parsed JSON/string content f
 
 ---
 
-## 🛠️ Configuration
+## Configuration
 
 - `WORKER_CONCURRENCY`: Adjust based on target API rate limits.
 - `WORKER_TIMEOUT_SEC`: Standardized at `45` seconds to respect serverless request windows.
 
 ---
 
-## 📜 License
+## License
 
 Proprietary. © 2026 AlbiDR. All rights reserved.
