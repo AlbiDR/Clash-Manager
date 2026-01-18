@@ -359,11 +359,12 @@ function triggerVerifyApiKeys() {
 function verifyApiKeysInternal(isUserFacing) {
   const keys = CONFIG.SYSTEM.API_KEYS;
   const baseUrl = CONFIG.SYSTEM.API_BASE;
-
-  // Use a stable endpoint that doesn't depend on user configuration
   const url = `${baseUrl}/cards`;
+  const results = [];
 
-  return keys.map((keyObj) => {
+  // Use a sequential loop instead of map to allow thread sleeping between requests.
+  // This prevents hitting GAS execution limits or API proxy flood protection.
+  for (const keyObj of keys) {
     try {
       const response = UrlFetchApp.fetch(url, {
         method: "get",
@@ -376,18 +377,27 @@ function verifyApiKeysInternal(isUserFacing) {
 
       const code = response.getResponseCode();
       if (code === 200) {
-        return { name: keyObj.name, success: true };
+        results.push({ name: keyObj.name, success: true });
       } else {
         let errorMsg = `Error ${code}`;
         if (code === 403) errorMsg = "⛔ Access Denied (Invalid Key)";
         if (code === 429) errorMsg = "⚠️ Rate Limited (Throttled)";
         if (code === 503) errorMsg = "⚠️ Maintenance Mode";
-        return { name: keyObj.name, success: false, error: errorMsg };
+        results.push({ name: keyObj.name, success: false, error: errorMsg });
       }
     } catch (e) {
-      return { name: keyObj.name, success: false, error: "Network/CORS Error" };
+      // Capture the actual GAS exception (e.g. "Timeout", "DNS Error")
+      // instead of masking it with a generic label.
+      results.push({ name: keyObj.name, success: false, error: `Ex: ${e.message}` });
     }
-  });
+    
+    // 🛡️ Safety Pause: 200ms sleep between checks
+    if (keys.length > 1) {
+      Utilities.sleep(200);
+    }
+  }
+  
+  return results;
 }
 
 // DEPRECATED: Legacy Monolith (Preserved for compatibility)
