@@ -90,9 +90,9 @@ export function generateMockData(): WebAppData {
       id: `PLAYER${i}`,
       n: names[i] || `Knight ${i}`,
       t: trophies,
-      s: score,
+      performanceScore: score,
+      performanceRawScore: score * 100,
       dt: Math.floor(Math.random() * 15) - 5,
-      r: score * 100,
       d: {
         role: i === 0 ? "Leader" : i < 5 ? "Co-Leader" : "Member",
         days: 10 + Math.floor(Math.random() * 500),
@@ -126,7 +126,8 @@ export function generateMockData(): WebAppData {
       id: `RECRUIT${i}`,
       n: nameBase + i,
       t: 4500 + Math.floor(Math.random() * 3000),
-      s: score,
+      potentialScore: score,
+      potentialRawScore: score * 100,
       d: {
         don: Math.floor(Math.random() * 1000),
         war: Math.floor(Math.random() * 500),
@@ -139,8 +140,8 @@ export function generateMockData(): WebAppData {
   }
 
   return {
-    lb: lb.sort((a, b) => b.s - a.s),
-    hh: hh.sort((a, b) => b.s - a.s),
+    lb: lb.sort((a, b) => b.performanceScore - a.performanceScore),
+    hh: hh.sort((a, b) => b.potentialScore - a.potentialScore),
     timestamp: Date.now(),
   };
 }
