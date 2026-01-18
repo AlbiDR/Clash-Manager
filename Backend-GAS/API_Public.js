@@ -231,6 +231,7 @@ function getModuleVersions() {
     "LOGGER",
     "RECRUITER",
     "SCORING_SYSTEM",
+    "ORCHESTRATOR",
   ];
   return Object.fromEntries(
     modules.map((m) => [
