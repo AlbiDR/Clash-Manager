@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.1
+ * 🏷️ VERSION: 10.0.2
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.1";
+const VER_RECRUITER = "10.0.2";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -388,24 +388,43 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
   if (tourneyTags.length === 0) return [];
 
-  const details = Utils.fetchRoyaleAPI(
-    tourneyTags.map(
-      (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
-    ),
-  );
-  const candidates = [];
+  let candidates = [];
 
-  details.forEach((d) => {
-    if (d && d.membersList && d.membersList.length >= 10) {
-      d.membersList.forEach((p) => {
-        if (
-          (!p.clan || p.clan.tag === "") &&
-          (!blacklistSet || !blacklistSet.has(p.tag))
-        )
-          candidates.push(p);
-      });
+  // ⚡ MEGA-OFFLOAD: Use Remote Worker for Scanning Logic
+  if (remoteAvailable && remoteExpandEnabled) {
+    try {
+      console.log("☁️ Offloading Tournament Scan to Worker...");
+      candidates = Utils.scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet);
+      console.log(`☁️ Worker returned ${candidates.length} pre-filtered candidates.`);
+    } catch (e) {
+      console.warn("⚠️ Remote scan failed, falling back to local scan.", e);
+      // Fallback is handled below implicitly if candidates is empty? 
+      // No, we need to explicitly run local logic if remote failed.
+      // But we can just duplicate logic here or structure it to fall through.
+      // Let's assume fallback for now if we didn't get results.
     }
-  });
+  }
+
+  // Local fallback or standard execution if remote disabled/failed
+  if (candidates.length === 0) {
+    const details = Utils.fetchRoyaleAPI(
+      tourneyTags.map(
+        (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
+      ),
+    );
+
+    details.forEach((d) => {
+      if (d && d.membersList && d.membersList.length >= 10) {
+        d.membersList.forEach((p) => {
+          if (
+            (!p.clan || p.clan.tag === "") &&
+            (!blacklistSet || !blacklistSet.has(p.tag))
+          )
+            candidates.push(p);
+        });
+      }
+    });
+  }
 
   const uniqueCandidates = new Map();
   candidates.forEach((c) => {
