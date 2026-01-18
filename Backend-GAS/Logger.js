@@ -8,7 +8,7 @@
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
  *      (Preserves data for players who leave mid-day).
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.0.1
  *
  * 🧠 REASONING:
  *    - "Snapshots": We need a history of performance (War + Donos).
@@ -17,11 +17,19 @@
  * ============================================================================
  */
 
-const VER_LOGGER = "10.0.0";
+const VER_LOGGER = "10.0.1";
 
 function updateClanDatabase() {
   console.time("ETL");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 🛡️ CONFIGURATION CHECK
+  if (!CONFIG.SYSTEM.CLAN_TAG) {
+    console.error("❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Database Update.");
+    const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+    if (sheet) sheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    return;
+  }
 
   try {
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
@@ -39,7 +47,7 @@ function updateClanDatabase() {
     // ABORT IMMEDIATELY to prevent wiping the database with zeros.
     if (!membersData || !membersData.items || membersData.items.length === 0) {
       console.error(
-        "⛔ ETL ABORTED: API returned empty or invalid member data. Database NOT updated.",
+        "⛔ ETL ABORTED: API returned empty or invalid member data. Database NOT updated. Check API Key and Clan Tag.",
       );
       return;
     }
