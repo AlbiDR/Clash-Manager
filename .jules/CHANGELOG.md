@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [2026-01-18] PR #45: Optimize List Sync Re-renders
+**Commit**: `e54a3d3d08ccad14d57b04e04e699a6ff7596b02`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/45)
+
+### Description
+Implemented a performance optimization for the Frontend PWA that reduces unnecessary re-renders during background data synchronization.
+
+By updating the `v-memo` directive in `LeaderboardView.vue` and `RecruiterView.vue`, the application now only triggers re-renders for items that are currently expanded (and thus showing refresh-sensitive data/skeletons) when the background sync state changes. Collapsed items, which make up the vast majority of the list, are now skipped during these updates.
+
+Validation:
+- Unit tests for `useConsoleLogic` passed.
+- Production build successful.
+- Frontend verification confirmed application remains functional.
+- Code review completed and verified as correct.
+
+Lighthouse category scores remain above 91%.
+
+---
+*PR created automatically by Jules for task [9168661994795018283](https://jules.google.com/task/9168661994795018283) started by @AlbiDR*
+
+---
+
 ## [2026-01-17] PR #43: Optimize Bundle Chunking and Lazy-Loading Strategy
 **Commit**: `0f35a4e6933070f707de63a1de352b9092926266`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/43)
