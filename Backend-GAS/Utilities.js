@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.3
+ * 🏷️ VERSION: 10.0.4
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.3";
+const VER_UTILITIES = "10.0.4";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -213,7 +213,6 @@ const Utils = {
   /**
    * 🔑 REMOTE AUDIT DELEGATE
    * Offloads API key verification to the worker to save GAS quota.
-   * Returns null if worker is not configured or fails, signaling a local fallback.
    */
   auditKeysRemote: function (keys) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
@@ -227,7 +226,6 @@ const Utils = {
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
-      // This uses 1 fetch quota to test N keys
       const res = UrlFetchApp.fetch(
         CONFIG.SYSTEM.REMOTE_WORKER_URL + "/audit",
         {
@@ -247,8 +245,6 @@ const Utils = {
       const json = JSON.parse(res.getContentText());
       if (!json.results || !Array.isArray(json.results)) return null;
       
-      // Map back to internal format
-      // Match results by key value
       return keys.map(k => {
           const remoteResult = json.results.find(r => r.key === k.value);
           
@@ -269,6 +265,60 @@ const Utils = {
     } catch (e) {
       console.warn("Remote audit connection error", e);
       return null;
+    }
+  },
+
+  /**
+   * 📡 REMOTE SCAN DELEGATE
+   * Offloads heavy tournament filtering logic to the worker.
+   * Returns: Array of valid candidate objects (filtered and ready for scoring).
+   */
+  scanTournamentsRemote: function (tourneyTags, minTrophies, blacklistSet) {
+    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
+      throw new Error("Worker not configured for scanning");
+    }
+
+    const keyPool = CONFIG.SYSTEM.API_KEYS;
+    const blacklistArray = Array.from(blacklistSet);
+
+    try {
+      const payload = {
+        tags: tourneyTags,
+        apiKeys: keyPool.map(k => k.value),
+        blacklist: blacklistArray,
+        minTrophies: minTrophies
+      };
+
+      const headers = { "Content-Type": "application/json" };
+      if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
+        headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+
+      const res = UrlFetchApp.fetch(
+        CONFIG.SYSTEM.REMOTE_WORKER_URL + "/scan",
+        {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true,
+          headers: headers
+        }
+      );
+
+      if (res.getResponseCode() !== 200) {
+        throw new Error(`Worker returned ${res.getResponseCode()}`);
+      }
+
+      const json = JSON.parse(res.getContentText());
+      if (!json.candidates || !Array.isArray(json.candidates)) {
+        throw new Error("Invalid worker response format");
+      }
+
+      return json.candidates;
+
+    } catch (e) {
+      console.warn("⚠️ Remote scan failed:", e.message);
+      // Let caller handle fallback or throw
+      throw e;
     }
   },
 
