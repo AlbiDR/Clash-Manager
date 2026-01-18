@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.2
+ * 🏷️ VERSION: 10.0.4
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.2";
+const VER_RECRUITER = "10.0.4";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
