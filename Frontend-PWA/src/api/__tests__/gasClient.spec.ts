@@ -184,4 +184,58 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].s).toBe(100);
     expect(result.lb[0].r).toBe(52052);
   });
+
+  it("does NOT swap correctly ordered low raw scores", async () => {
+    const rawMatrixData = {
+      format: "matrix",
+      schema: {
+        lb: [
+          "id",
+          "n",
+          "role",
+          "t",
+          "days",
+          "req",
+          "avg",
+          "tot",
+          "seen",
+          "rate",
+          "wfame",
+          "hist",
+          "r",
+          "s",
+          "dt",
+          "war",
+        ],
+        hh: [],
+      },
+      lb: [
+        [
+          "p2",
+          "TinyRaw",
+          "m",
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          "",
+          0,
+          "",
+          2, // index 12: r (Raw Total) -> extremely low but correct
+          100, // index 13: s (Performance) -> correct
+          0,
+          0,
+        ],
+      ],
+      hh: [],
+      timestamp: 123456789,
+    };
+
+    const result = await inflatePayload(rawMatrixData);
+    // Should NOT swap: s=100, r=2. Heuristic s > r (100 > 2) but s is not > 500.
+    expect(result.lb[0].s).toBe(100);
+    expect(result.lb[0].r).toBe(2);
+  });
 });

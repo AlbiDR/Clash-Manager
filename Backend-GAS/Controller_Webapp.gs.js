@@ -169,6 +169,7 @@ function refreshWebPayload() {
         ),
         playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
+        _debug_schema: { lb: CONFIG.SCHEMA.LB, hh: CONFIG.SCHEMA.HH },
       };
 
       const payload = { success: true, data: data, error: null };
@@ -214,16 +215,25 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
   if (lastRow < startRow) return [];
 
   // Calculate the max column index we need to fetch based on the schema
-  const maxIdx = Math.max(...Object.values(SCHEMA)) + 1;
-  const numCols = Math.max(16, maxIdx); // Buffer to at least 16
+  const maxIdx = Math.max(...Object.values(SCHEMA));
+  const numCols = Math.max(20, maxIdx + 1); // Absolute 1:1 Sheet Fetch
 
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, numCols);
+  const range = sheet.getRange(startRow, 1, lastRow - startRow + 1, numCols);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
-  const sanitizeNum = (v) => {
-    const n = Number(v);
-    return isFinite(n) ? n : 0;
+  const sanitizeNum = (v, displayV) => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") {
+      // Handle ratio percentages (0.85 in cell, but 85 expected in PWA)
+      if (displayV && displayV.includes("%") && v <= 1.5) return v * 100;
+      return v;
+    }
+    let s = String(v).replace(/,/g, "").replace(/%/g, "").trim();
+    let n = parseFloat(s);
+    if (isNaN(n)) return 0;
+    if (String(v).includes("%") && n <= 1.5) return n * 100;
+    return n;
   };
   const sanitizeStr = (v) =>
     v === null || v === undefined ? "" : String(v).trim();
@@ -254,22 +264,19 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         );
         const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
 
-        // 🚨 SEMANTIC SELF-CORRECTION (Backend Guard)
-        // If Perf Score is > 1000 and Raw Score < 1000, they are 100% swapped in the sheet.
-        // This is the "insidious" part the user mentioned.
-        let score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
-        let raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
-
-        if (score > 1000 && raw <= 100 && score > raw) {
-          // Swapped indices or column headers
-          const temp = score;
-          score = raw;
-          raw = temp;
-        }
-
-        // Failsafe: Final cap for score display (should always be a percentage 0-100+)
-        // We allow >100 for "Elite" performance, but not 50,000.
-        if (score > 1000) score = 100;
+        // Explicit column values from Absolute Sheet Schema
+        const raw = sanitizeNum(
+          r[SCHEMA.RAW_SCORE],
+          displayVals[index][SCHEMA.RAW_SCORE],
+        );
+        const score = sanitizeNum(
+          r[SCHEMA.PERF_SCORE],
+          displayVals[index][SCHEMA.PERF_SCORE],
+        );
+        const trend = sanitizeNum(
+          r[SCHEMA.TREND],
+          displayVals[index][SCHEMA.TREND],
+        );
 
         if (isHeadhunter) {
           const fd = r[SCHEMA.FOUND_DATE];
