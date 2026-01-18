@@ -30,6 +30,22 @@ jobs:
         with:
           node-version: "22"
 
+      # 🛡️ SECRET VALIDATION: Fail fast if secrets are missing
+      - name: Validate Secrets
+        run: |
+          if [ -z "${{ secrets.SCRIPT_ID }}" ]; then
+            echo "::error::❌ CRITICAL ERROR: SCRIPT_ID secret is missing."
+            echo "Please add the 'SCRIPT_ID' secret to your GitHub Repository Settings."
+            echo "Value should be the Script ID found in Apps Script > Project Settings."
+            exit 1
+          fi
+          if [ -z "${{ secrets.CLASPRC_JSON }}" ]; then
+            echo "::error::❌ CRITICAL ERROR: CLASPRC_JSON secret is missing."
+            echo "Please add the 'CLASPRC_JSON' secret to your GitHub Repository Settings."
+            echo "Run 'clasp login' locally and copy the content of ~/.clasprc.json."
+            exit 1
+          fi
+
       # Using --no-fund and --no-audit makes the Clasp installation faster
       - name: Install Clasp
         run: pnpm add -g @google/clasp
@@ -42,7 +58,14 @@ jobs:
       - name: Create Clasp Project Settings
         run: |
           cd Backend-GAS
+          # Write config
           echo '{"scriptId":"${{ secrets.SCRIPT_ID }}","rootDir":"."}' > .clasp.json
+          
+          # Verify config was written (non-empty)
+          if grep -q '"scriptId":""' .clasp.json; then
+             echo "::error::❌ SCRIPT_ID was written as empty string. Check your repository secrets."
+             exit 1
+          fi
 
       - name: Push Code to Google Apps Script
         run: |
