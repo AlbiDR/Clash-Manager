@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.4
+ * 🏷️ VERSION: 10.0.5
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.4";
+const VER_RECRUITER = "10.0.5";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -389,6 +389,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   if (tourneyTags.length === 0) return [];
 
   let candidates = [];
+  let usedRemote = false;
 
   // ⚡ MEGA-OFFLOAD: Use Remote Worker for Scanning Logic
   if (remoteAvailable && remoteExpandEnabled) {
@@ -396,17 +397,16 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
       console.log("☁️ Offloading Tournament Scan to Worker...");
       candidates = Utils.scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet);
       console.log(`☁️ Worker returned ${candidates.length} pre-filtered candidates.`);
+      usedRemote = true; // Mark remote usage successful
     } catch (e) {
       console.warn("⚠️ Remote scan failed, falling back to local scan.", e);
-      // Fallback is handled below implicitly if candidates is empty? 
-      // No, we need to explicitly run local logic if remote failed.
-      // But we can just duplicate logic here or structure it to fall through.
-      // Let's assume fallback for now if we didn't get results.
+      // usedRemote stays false, triggering local fallback below
     }
   }
 
   // Local fallback or standard execution if remote disabled/failed
-  if (candidates.length === 0) {
+  if (!usedRemote) {
+    console.log("📡 Local Scanning: Fetching tournament details...");
     const details = Utils.fetchRoyaleAPI(
       tourneyTags.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
