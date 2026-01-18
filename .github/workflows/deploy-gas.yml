@@ -34,8 +34,8 @@ jobs:
       - name: Validate Secrets
         env:
           CLASPRC: ${{ secrets.CLASPRC_JSON }}
-          SID: ${{ secrets.SCRIPT_ID }}
           GAS_URL: ${{ secrets.VITE_GAS_URL }}
+          SID: ${{ secrets.SCRIPT_ID }}
         run: |
           if [ -z "$CLASPRC" ]; then
             echo "::error::❌ CRITICAL ERROR: CLASPRC_JSON secret is missing."
@@ -43,9 +43,9 @@ jobs:
             exit 1
           fi
 
-          if [ -z "$SID" ] && [ -z "$GAS_URL" ]; then
-            echo "::error::❌ CRITICAL ERROR: Missing Script ID."
-            echo "Please add 'SCRIPT_ID' (preferred) or 'VITE_GAS_URL' to repository secrets."
+          if [ -z "$GAS_URL" ] && [ -z "$SID" ]; then
+            echo "::error::❌ CRITICAL ERROR: VITE_GAS_URL secret is missing."
+            echo "Please add 'VITE_GAS_URL' to your repository secrets."
             exit 1
           fi
 
@@ -60,37 +60,41 @@ jobs:
 
       - name: Create Clasp Project Settings
         env:
-          SID: ${{ secrets.SCRIPT_ID }}
           GAS_URL: ${{ secrets.VITE_GAS_URL }}
+          SID: ${{ secrets.SCRIPT_ID }}
         run: |
           cd Backend-GAS
           
           # 🧠 INTELLIGENT ID RESOLUTION
           TARGET_ID=""
 
-          # 1. Prefer Explicit SCRIPT_ID (Best Practice)
-          if [ -n "$SID" ]; then
-            echo "✅ Found SCRIPT_ID secret."
-            TARGET_ID="$SID"
+          # 1. Try VITE_GAS_URL (Primary)
+          if [ -n "$GAS_URL" ]; then
+            echo "🔍 Checking VITE_GAS_URL..."
+            if [[ "$GAS_URL" == *"script.google.com"* ]]; then
+               # Extract ID between '/s/' and the next slash or end of line
+               # Regex explanation:
+               # s|.*/s/  -> replace everything up to /s/
+               # \([^/]*\) -> capture the group of characters that are NOT a slash
+               # .*       -> match the rest
+               # |\1|p    -> replace with capture group and print
+               TARGET_ID=$(echo "$GAS_URL" | sed -n 's|.*/s/\([^/]*\).*|\1|p')
+               echo "✅ Extracted Script ID from URL."
+            else
+               TARGET_ID="$GAS_URL"
+               echo "✅ Using VITE_GAS_URL as raw ID."
+            fi
           fi
 
-          # 2. Fallback to VITE_GAS_URL extraction if SCRIPT_ID is missing
-          if [ -z "$TARGET_ID" ] && [ -n "$GAS_URL" ]; then
-            echo "⚠️ SCRIPT_ID not found. Attempting to extract from VITE_GAS_URL..."
-            if [[ "$GAS_URL" == *"script.google.com"* ]]; then
-               # Extract ID between '/s/' and the next slash
-               TARGET_ID=$(echo "$GAS_URL" | sed -n 's|.*/s/\([^/]*\).*|\1|p')
-               echo "ℹ️ Extracted ID from URL."
-            else
-               # Assume raw ID if it doesn't look like a URL
-               TARGET_ID="$GAS_URL"
-               echo "ℹ️ Using VITE_GAS_URL as raw ID."
-            fi
+          # 2. Fallback to SCRIPT_ID if VITE_GAS_URL failed or was empty
+          if [ -z "$TARGET_ID" ] && [ -n "$SID" ]; then
+            echo "⚠️ VITE_GAS_URL did not yield an ID. Falling back to SCRIPT_ID secret."
+            TARGET_ID="$SID"
           fi
 
           # 3. Final Validation
           if [ -z "$TARGET_ID" ]; then
-             echo "::error::❌ Failed to resolve Script ID. Ensure SCRIPT_ID or VITE_GAS_URL is set correctly."
+             echo "::error::❌ Failed to resolve Script ID. Ensure VITE_GAS_URL contains a valid Google Apps Script URL or ID."
              exit 1
           fi
           
