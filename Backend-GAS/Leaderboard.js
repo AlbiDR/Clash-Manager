@@ -442,7 +442,10 @@ function updateLeaderboard() {
       .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
   ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
 
-  Utils.applyStandardLayout(lbSheet, rows.length, HEADERS_ARRAY.length, HEADERS_ARRAY);
+  // ⚡ FIX: Slice off the first empty element (Index 0) from HEADERS_ARRAY
+  // because applyStandardLayout starts writing at Column 2 (B), assuming a dense array.
+  // HEADERS_ARRAY is sparse (Index 0 is empty for Column A buffer).
+  Utils.applyStandardLayout(lbSheet, rows.length, HEADERS_ARRAY.length - 1, HEADERS_ARRAY.slice(1));
   Logger.log('🏁 updateLeaderboard execution completed');
 }
 
