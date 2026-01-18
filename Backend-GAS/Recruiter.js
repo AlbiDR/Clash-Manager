@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.6
+ * 🏷️ VERSION: 10.0.7
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.6";
+const VER_RECRUITER = "10.0.7";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -557,7 +557,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
-        2 + CONFIG.SCHEMA.HH.INVITED,
+        1 + CONFIG.SCHEMA.HH.INVITED,
         rows.length,
         1,
       )
@@ -565,7 +565,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
-        2 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
+        1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
         rows.length,
         1,
       )
@@ -573,7 +573,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
-        2 + CONFIG.SCHEMA.HH.FOUND_DATE,
+        1 + CONFIG.SCHEMA.HH.FOUND_DATE,
         rows.length,
         1,
       )
@@ -597,7 +597,7 @@ function renderHeadhunterView(sheet, list, baseline) {
       .setRanges([
         sheet.getRange(
           CONFIG.LAYOUT.DATA_START_ROW,
-          2 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
+          1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
           rows.length,
           1,
         ),
