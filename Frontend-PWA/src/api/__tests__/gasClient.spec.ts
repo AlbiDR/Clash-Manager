@@ -6,9 +6,10 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [tag(0), name(1), role(2), trophies(3), days(4), rec(5), avg(6), tot(7), seen(8), rate(9), wfame(10), hist(11), raw(12), perf(13), trend(14)]
+      // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14), trend(15)]
       lb: [
         [
+          "BUFFER",
           "player1",
           "King Arthur",
           "leader",
@@ -21,11 +22,12 @@ describe("gasClient Data Inflation", () => {
           "100%",
           1500,
           "3000 24W01",
-          "9,500", // Raw Score (12)
-          "100%", // Performance Score (13)
-          "5", // Trend (14)
+          "9,500", // Raw Score (13)
+          "100%", // Performance Score (14)
+          "5", // Trend (15)
         ],
         [
+          "",
           "player2",
           "Lancelot",
           "member",
@@ -38,8 +40,8 @@ describe("gasClient Data Inflation", () => {
           "50%",
           0,
           "",
-          8000, // Raw Score (12)
-          "80%", // Performance Score (13)
+          8000, // Raw Score (13)
+          "80%", // Performance Score (14)
         ],
       ],
       hh: [],
