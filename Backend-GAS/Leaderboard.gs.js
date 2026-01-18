@@ -290,40 +290,22 @@ function updateLeaderboard() {
     });
   });
 
-  // 3. UNIFIED BENCHMARKING (Deep Net v7)
-  // ----------------------------------------------------------------------------
-  /**
-   * WHY: Instead of local normalization (which is volatile), we use the same
-   * Hybrid Benchmark logic as the Recruiter. This ensures a Member's '80%'
-   * means exactly the same as a Recruit's '80%'.
-   */
-  const clanEliteData = rawMemberResults
-    .filter((r) => r.scores.perf >= 1) // Anchor against anyone contributing
-    .map((r) => {
-      // Calculate Unified Raw Score for benchmark purposes
-      const histStr = String(r.historyString || "");
-      const hasRecentWar = histStr.includes(currentWeekId);
-      const unifiedRaw = ScoringSystem.calculateRecruitRawScore(
-        r.trophies,
-        r.totalDonations,
-        r.warDayWins,
-        hasRecentWar,
-      );
-      return { rawScore: unifiedRaw, perfScore: r.scores.perf };
-    });
+  // Calculate Max Score first for Normalization (Specific Leaderboard Math)
+  let maxPerfScore = 0;
+  rawMemberResults.forEach((r) => {
+    if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf;
+  });
 
-  // Calculate the same Benchmark as Recruiter (using Clan context only for this run)
-  const unifiedBenchmark = ScoringSystem.calculateHybridBenchmark(
-    clanEliteData,
-    [], // No blacklist available during standalone LB sync
-  );
+  // ----------------------------------------------------------------------------
+  // 3. FINALIZE & CALCULATE TREND
+  // ----------------------------------------------------------------------------
 
   rawMemberResults.forEach((r) => {
-    // 🎯 Use strict calculatePotentialScore (Fixed 0-100 cap)
-    const normalizedPerf = ScoringSystem.calculatePotentialScore(
-      r.scores.perf,
-      unifiedBenchmark,
-    );
+    // Normalize Performance Score (0-100) based on Clan Max
+    const normalizedPerf =
+      maxPerfScore > 0
+        ? Math.min(100, Math.round((r.scores.perf / maxPerfScore) * 100))
+        : 0;
 
     // 📈 CALCULATE TREND (RAW SCORE DELTA)
     let trend = 0;
@@ -346,7 +328,7 @@ function updateLeaderboard() {
     row[L.WAR_RATE] = `${r.warRateVal}%`;
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
-    row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score
+    row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score (Hard Capped)
     row[L.TREND] = trend; // ✨ Raw Score Delta
     row[L.AVG_WAR_FAME] = r.avgWarFame;
     row[L.WAR_DAY_WINS] = r.warDayWins;
