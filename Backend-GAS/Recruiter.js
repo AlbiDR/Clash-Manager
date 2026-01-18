@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.7
+ * 🏷️ VERSION: 10.0.8
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.7";
+const VER_RECRUITER = "10.0.8";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -526,26 +526,51 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
 
 function renderHeadhunterView(sheet, list, baseline) {
   sheet.clear();
-  const HEADERS = Object.keys(CONFIG.SCHEMA.HH_HEADERS)
-    .sort((a, b) => CONFIG.SCHEMA.HH[a] - CONFIG.SCHEMA.HH[b])
-    .map((k) => CONFIG.SCHEMA.HH_HEADERS[k]);
+
+  // ⚡ ENFORCE CANONICAL ORDER
+  // To prevent column misalignment when sheet headers are missing or shuffled,
+  // we strictly define the write order here.
+  const CANONICAL_KEYS = [
+    "TAG",
+    "INVITED",
+    "NAME",
+    "TROPHIES",
+    "DONATIONS",
+    "CARDS",
+    "WAR_WINS",
+    "FOUND_DATE",
+    "RAW_SCORE",
+    "POTENTIAL_SCORE"
+  ];
+
+  // 1. Reset Schema to Canonical Order
+  // This ensures `1 + CONFIG.SCHEMA.HH.KEY` math works correctly for formatting.
+  CANONICAL_KEYS.forEach((key, index) => {
+    CONFIG.SCHEMA.HH[key] = index + 1; // 1-based index to match logic below
+  });
+
+  const HEADERS = CANONICAL_KEYS.map(key => CONFIG.SCHEMA.HH_HEADERS[key]);
+
+  // 2. Map Data using Canonical Order
   const rows = list.map((c) => [
-    c.tag,
-    c.invited,
-    `=HYPERLINK("clashroyale://playerInfo?id=${c.tag.replace("#", "")}", "${c.name}")`,
-    c.trophies,
-    c.donations,
-    c.cards,
-    c.war,
-    c.foundDate instanceof Date ? c.foundDate : new Date(c.foundDate),
-    c.rawScore,
-    c.potentialScore,
+    c.tag, // TAG
+    c.invited, // INVITED
+    `=HYPERLINK("clashroyale://playerInfo?id=${c.tag.replace("#", "")}", "${c.name}")`, // NAME
+    c.trophies, // TROPHIES
+    c.donations, // DONATIONS
+    c.cards, // CARDS
+    c.war, // WAR_WINS
+    c.foundDate instanceof Date ? c.foundDate : new Date(c.foundDate), // FOUND_DATE
+    c.rawScore, // RAW_SCORE
+    c.potentialScore, // POTENTIAL_SCORE
   ]);
+
   sheet
     .getRange(2, 2, 1, HEADERS.length)
     .setValues([HEADERS])
     .setFontWeight("bold")
     .setWrap(true);
+
   if (rows.length > 0) {
     const dataRange = sheet.getRange(
       CONFIG.LAYOUT.DATA_START_ROW,
@@ -554,6 +579,12 @@ function renderHeadhunterView(sheet, list, baseline) {
       rows[0].length,
     );
     dataRange.setValues(rows);
+
+    // 3. Format using Canonical Offsets
+    // `1 + SCHEMA_INDEX` corresponds to the column index if data starts at Col 2.
+    // Example: TAG is 1. `1 + 1 = 2` (Col B).
+    // INVITED is 2. `1 + 2 = 3` (Col C).
+    
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
@@ -562,6 +593,7 @@ function renderHeadhunterView(sheet, list, baseline) {
         1,
       )
       .insertCheckboxes();
+
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
@@ -570,6 +602,7 @@ function renderHeadhunterView(sheet, list, baseline) {
         1,
       )
       .setNumberFormat('0"%"');
+
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
@@ -578,6 +611,7 @@ function renderHeadhunterView(sheet, list, baseline) {
         1,
       )
       .setNumberFormat("yyyy-mm-dd HH:mm:ss"); // 24h format HH instead of hh
+
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMinpointWithValue(
         "#ffffff",
