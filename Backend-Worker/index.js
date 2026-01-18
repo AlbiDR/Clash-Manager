@@ -2,22 +2,16 @@ const express = require("express");
 const fetch = require("node-fetch");
 
 const app = express();
-app.use(express.json({ limit: "50mb" })); // Increased limit for large blacklist payloads
+app.use(express.json({ limit: "50mb" }));
 
-const DEFAULT_CONCURRENCY = parseInt(
-  process.env.WORKER_CONCURRENCY || "20",
-  10,
-);
-const DEFAULT_TIMEOUT =
-  parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
+const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "20", 10);
+const DEFAULT_TIMEOUT = parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
 const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || "2", 10);
 
 function timeoutFetch(url, opts = {}, timeout = DEFAULT_TIMEOUT) {
   return Promise.race([
     fetch(url, { ...opts, timeout }),
-    new Promise((_, rej) =>
-      setTimeout(() => rej(new Error("timeout")), timeout),
-    ),
+    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), timeout)),
   ]);
 }
 
@@ -38,10 +32,8 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
       return { code, content };
     } catch (e) {
       lastErr = e;
-      // Retry on network or 5xx
       attempt++;
-      if (attempt <= retries)
-        await new Promise((r) => setTimeout(r, 500 * attempt));
+      if (attempt <= retries) await new Promise((r) => setTimeout(r, 500 * attempt));
     }
   }
   return {
@@ -50,12 +42,7 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
   };
 }
 
-async function processBatch(
-  urls = [],
-  apiKeys = [],
-  concurrency = DEFAULT_CONCURRENCY,
-  scoring = null,
-) {
+async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
   const results = new Array(urls.length);
   let idx = 0;
 
@@ -74,26 +61,17 @@ async function processBatch(
         headers.Authorization = `Bearer ${key}`;
       }
 
-      // ⚡ SCORING OPTIMIZATION: If we are fetching a player profile, optionally fetch battlelog too
       if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
         try {
-          const profile = await fetchWithRetries(url, {
-            method: "GET",
-            headers,
-          });
+          const profile = await fetchWithRetries(url, { method: "GET", headers });
           if (profile.code === 200 && profile.content && profile.content.tag) {
             const logUrl = url + "/battlelog";
-            const logs = await fetchWithRetries(logUrl, {
-              method: "GET",
-              headers,
-            });
+            const logs = await fetchWithRetries(logUrl, { method: "GET", headers });
 
             let warBonus = 0;
             if (logs.code === 200 && Array.isArray(logs.content)) {
               const hasWar = logs.content.some((b) =>
-                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
-                  b.type,
-                ),
+                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)
               );
               if (hasWar) warBonus = 500;
             }
@@ -103,7 +81,7 @@ async function processBatch(
             const rawScore = Math.round(
               (p.trophies || 0) * (scoring.TROPHY || 0) +
                 (p.totalDonations || 0) * (scoring.DON || 0) +
-                totalWarScore * (scoring.WAR || 0),
+                totalWarScore * (scoring.WAR || 0)
             );
 
             results[i] = {
@@ -122,10 +100,7 @@ async function processBatch(
             results[i] = profile;
           }
         } catch (e) {
-          results[i] = {
-            code: 500,
-            content: `Scoring fetch failed: ${e.message}`,
-          };
+          results[i] = { code: 500, content: `Scoring fetch failed: ${e.message}` };
         }
       } else {
         const res = await fetchWithRetries(url, { method: "GET", headers });
@@ -139,22 +114,17 @@ async function processBatch(
   for (let i = 0; i < spawn; i++) workers.push(worker());
   await Promise.all(workers);
 
-  // If scoring was requested, sort and potentially cap to save bandwidth
   if (scoring) {
     return results
-      .filter(
-        (r) =>
-          r && r.code === 200 && r.content && r.content.rawScore !== undefined,
-      )
+      .filter((r) => r && r.code === 200 && r.content && r.content.rawScore !== undefined)
       .sort((a, b) => b.content.rawScore - a.content.rawScore)
-      .slice(0, 200); // Return top 200 candidates to GAS
+      .slice(0, 200);
   }
 
   return results;
 }
 
 // ⚡ TOURNAMENT SCAN ENGINE
-// Filters candidates inside the worker to save bandwidth
 async function processScanBatch(
   tags = [],
   apiKeys = [],
@@ -185,21 +155,14 @@ async function processScanBatch(
         const res = await fetchWithRetries(url, { method: "GET", headers });
         if (res.code === 200 && res.content && res.content.membersList) {
            // ⚡ IN-MEMORY FILTERING
-           // We filter immediately here instead of sending 50 players back to GAS
            res.content.membersList.forEach(p => {
-             // 1. Check Trophies
              if (p.trophies < minTrophies) return;
-             // 2. Check Clan Status (Must be empty/null)
              if (p.clan && p.clan.tag) return;
-             // 3. Check Blacklist
              if (blacklistSet.has(p.tag)) return;
-
-             // Valid Candidate
              candidates.push(p);
            });
         }
       } catch (e) {
-        // Silent fail for individual tournament errors
         console.warn(`Scan error for ${tag}: ${e.message}`);
       }
     }
@@ -213,19 +176,16 @@ async function processScanBatch(
   return candidates;
 }
 
-// Simple auth middleware - check Bearer token if WORKER_SECRET is set
 function checkAuth(req, res, next) {
   const secret = process.env.WORKER_SECRET;
   if (!secret) return next();
   const auth = (req.get("authorization") || "").trim();
-  if (auth !== `Bearer ${secret}`)
-    return res.status(401).json({ error: "unauthorized" });
+  if (auth !== `Bearer ${secret}`) return res.status(401).json({ error: "unauthorized" });
   return next();
 }
 
 app.get("/", (req, res) => res.send("Clash Manager Worker is running"));
 
-// Capabilities endpoint for health and config (simple) - used by GAS preflight
 app.get("/capabilities", checkAuth, (req, res) => {
   return res.json({
     version: "10.0.0",
@@ -235,19 +195,12 @@ app.get("/capabilities", checkAuth, (req, res) => {
   });
 });
 
-/**
- * 🔑 AUDIT ENDPOINT
- * Checks a list of API keys against a lightweight endpoint to verify validity.
- */
 app.post("/audit", checkAuth, async (req, res) => {
   try {
     const { apiKeys } = req.body;
     if (!Array.isArray(apiKeys)) return res.status(400).json({ error: "apiKeys must be array" });
 
-    // Lightweight endpoint that requires auth but returns small data
     const auditUrl = "https://api.clashroyale.com/v1/cards"; 
-
-    // Map keys to fetch promises
     const tasks = apiKeys.map(async (key) => {
         try {
             const response = await timeoutFetch(auditUrl, {
@@ -256,7 +209,7 @@ app.post("/audit", checkAuth, async (req, res) => {
                     "Authorization": `Bearer ${key}`,
                     "User-Agent": "ClanManagerWorker/Audit"
                 }
-            }, 5000); // 5s timeout per key
+            }, 5000);
             return { key, status: response.status };
         } catch (e) {
             return { key, status: 500, error: e.message };
@@ -270,22 +223,13 @@ app.post("/audit", checkAuth, async (req, res) => {
   }
 });
 
-/**
- * 📡 SCAN ENDPOINT (New)
- * High-performance tournament scanner. Accepts tournament tags, filters them,
- * and returns ONLY the clanless candidates.
- */
 app.post("/scan", checkAuth, async (req, res) => {
   try {
     const { tags, apiKeys, blacklist, minTrophies } = req.body;
     if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
     
-    // Optimize blacklist lookup
     const blacklistSet = new Set(blacklist || []);
-    
-    const concurrency = Number(
-      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
-    );
+    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
 
     const candidates = await processScanBatch(
       tags,
@@ -305,18 +249,10 @@ app.post("/scan", checkAuth, async (req, res) => {
 app.post("/fetch", checkAuth, async (req, res) => {
   try {
     const { urls, apiKeys, scoring } = req.body;
-    if (!Array.isArray(urls))
-      return res.status(400).json({ error: "urls must be array" });
-    const concurrency = Number(
-      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
-    );
+    if (!Array.isArray(urls)) return res.status(400).json({ error: "urls must be array" });
+    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
 
-    const results = await processBatch(
-      urls,
-      apiKeys || [],
-      concurrency,
-      scoring,
-    );
+    const results = await processBatch(urls, apiKeys || [], concurrency, scoring);
     return res.json({ results });
   } catch (e) {
     console.error("Failed /fetch", e);
@@ -325,8 +261,4 @@ app.post("/fetch", checkAuth, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () =>
-  console.log(
-    `Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`,
-  ),
-);
+app.listen(PORT, () => console.log(`Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`));
