@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.0.1
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.0";
+const VER_RECRUITER = "10.0.1";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -17,6 +17,13 @@ function scoutRecruits() {
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
   Utils.bootDynamicSchema();
+
+  // 🛡️ CONFIGURATION CHECK
+  if (!CONFIG.SYSTEM.CLAN_TAG) {
+    console.error("❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Recruiter Scan.");
+    sheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    return;
+  }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
@@ -37,7 +44,7 @@ function scoutRecruits() {
       baselineData[0].items.length;
   } else {
     console.warn(
-      "⚠️ Recruiter: Could not fetch baseline clan data. Defaulting to 4000 trophies.",
+      "⚠️ Recruiter: Could not fetch baseline clan data. Defaulting to 4000 trophies. Check API configuration.",
     );
   }
 
