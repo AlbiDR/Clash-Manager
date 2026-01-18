@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.0.1
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.0";
+const VER_UTILITIES = "10.0.1";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -340,6 +340,8 @@ const Utils = {
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url).forEach((idx) => (finalResults[idx] = null));
+              // Log 404 explicitly so we know it's a data issue, not a key issue
+              console.warn(`[API] 404 Not Found: ${url}`);
             } else if (code === 403 || code === 429) {
               if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
                 // If using remote worker, the worker manages key rotation.
@@ -363,8 +365,12 @@ const Utils = {
                 retryChunk = true;
               }
             } else {
+              // 🔴 VERBOSE ERROR LOGGING (New)
+              // Print exact URL and Response Body for debugging
+              const errorBody = r.getContentText().substring(0, 200);
+              console.error(`[API ERROR] ${code} at ${url}\nResponse: ${errorBody}`);
+              
               if (code >= 500) retryChunk = true;
-              console.warn(`API ${code} for ${url}`);
             }
           });
 
