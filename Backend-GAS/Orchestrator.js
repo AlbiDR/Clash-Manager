@@ -6,15 +6,16 @@
  * ⚙️ WORKFLOW:
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 10.0.1
+ * 🏷️ VERSION: 10.0.2
  *
  * 🧠 REASONING:
  *    - Granularity: Replaced the monolithic "dailymaster" with 2 optimized tasks.
  *    - Chaining: DB update enforces a subsequent LB update to keep data consistent.
+ *    - Quota Safety: Health checks now sample connection instead of draining quota.
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR = "10.0.1";
+const VER_ORCHESTRATOR = "10.0.2";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
@@ -261,13 +262,17 @@ function checkSystemHealth() {
     keysHealthy = false;
     keyStatusReport = "❌ No API Keys configured.\n";
   } else {
-    // Perform a quick verification of keys using the first found clan (cache-friendly)
-    const verificationResults = verifyApiKeysInternal(false); // Silent mode
-    const activeCount = verificationResults.filter((r) => r.success).length;
-    keysHealthy = activeCount > 0;
-    keyStatusReport = `🔑 API KEYS: ${activeCount}/${keys.length} Active${
-      activeCount === keys.length ? " (Perfect)" : ""
-    }\n`;
+    // ⚡ OPTIMIZATION: Only sample 1 key to save daily quota
+    const verificationResults = verifyApiKeysInternal(false, 1);
+    const isConnectivityActive = verificationResults.length > 0 && verificationResults[0].success;
+    
+    if (isConnectivityActive) {
+      keyStatusReport = `🔑 API CONNECTION: ✅ Active (Sampled 1/${keys.length} keys)\n`;
+    } else {
+      keysHealthy = false;
+      const errorMsg = verificationResults.length > 0 ? verificationResults[0].error : "Unknown Error";
+      keyStatusReport = `❌ API CONNECTION FAILED: ${errorMsg}\n`;
+    }
   }
 
   // Module Check
@@ -330,7 +335,8 @@ function triggerVerifyApiKeys() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Verifying API Keys...", "Security Audit", 10);
 
-  const results = verifyApiKeysInternal(true); // User-facing mode
+  // Check ALL keys (limit 0)
+  const results = verifyApiKeysInternal(true, 0); 
 
   let report = "🔑 API KEY SECURITY AUDIT\n---------------------------\n";
   let activeCount = 0;
@@ -353,18 +359,29 @@ function triggerVerifyApiKeys() {
 /**
  * Core logic for verifying API keys.
  * Performs a simple request (/cards) to verify validity.
- * We use /cards because it is a static endpoint that always exists,
- * preventing false negatives if the Clan Tag is incorrect.
+ * 
+ * @param {boolean} isUserFacing - (Legacy)
+ * @param {number} limit - Max keys to check (0 = All). Use 1 for health checks.
  */
-function verifyApiKeysInternal(isUserFacing) {
+function verifyApiKeysInternal(isUserFacing, limit = 0) {
   const keys = CONFIG.SYSTEM.API_KEYS;
   const baseUrl = CONFIG.SYSTEM.API_BASE;
   const url = `${baseUrl}/cards`;
   const results = [];
+  
+  let quotaExhausted = false;
 
-  // Use a sequential loop instead of map to allow thread sleeping between requests.
-  // This prevents hitting GAS execution limits or API proxy flood protection.
-  for (const keyObj of keys) {
+  // Determine subset of keys to check
+  const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
+
+  for (const keyObj of keysToCheck) {
+    
+    // 🛡️ CIRCUIT BREAKER: If quota is dead, stop trying to fetch
+    if (quotaExhausted) {
+      results.push({ name: keyObj.name, success: false, error: "⚠️ Skipped (Quota Exceeded)" });
+      continue;
+    }
+
     try {
       const response = UrlFetchApp.fetch(url, {
         method: "get",
@@ -386,13 +403,17 @@ function verifyApiKeysInternal(isUserFacing) {
         results.push({ name: keyObj.name, success: false, error: errorMsg });
       }
     } catch (e) {
-      // Capture the actual GAS exception (e.g. "Timeout", "DNS Error")
-      // instead of masking it with a generic label.
-      results.push({ name: keyObj.name, success: false, error: `Ex: ${e.message}` });
+      // 🛡️ QUOTA DETECTION
+      if (e.message && e.message.indexOf("Service invoked too many times") > -1) {
+        quotaExhausted = true;
+        results.push({ name: keyObj.name, success: false, error: "⛔ DAILY QUOTA LIMIT REACHED" });
+      } else {
+        results.push({ name: keyObj.name, success: false, error: `Ex: ${e.message}` });
+      }
     }
     
-    // 🛡️ Safety Pause: 200ms sleep between checks
-    if (keys.length > 1) {
+    // 🛡️ Safety Pause: 200ms sleep between checks if running multiple
+    if (keysToCheck.length > 1) {
       Utilities.sleep(200);
     }
   }
