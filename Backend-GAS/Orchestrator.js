@@ -14,7 +14,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR_TRIGGERS = "10.0.0";
+const VER_ORCHESTRATOR = "10.0.0";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
@@ -286,12 +286,12 @@ function checkSystemHealth() {
       expected: manifest.UTILITIES,
     },
     {
-      name: "Orchestrator & Triggers",
+      name: "Orchestrator",
       current:
-        typeof VER_ORCHESTRATOR_TRIGGERS !== "undefined"
-          ? VER_ORCHESTRATOR_TRIGGERS
+        typeof VER_ORCHESTRATOR !== "undefined"
+          ? VER_ORCHESTRATOR
           : "MISSING",
-      expected: manifest.ORCHESTRATOR_TRIGGERS,
+      expected: manifest.ORCHESTRATOR,
     },
     {
       name: "Recruiter",
