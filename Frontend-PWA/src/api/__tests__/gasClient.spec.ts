@@ -117,7 +117,6 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] },
-      // Added missing columns to satisfy new length check (16 indices)
       // Added columns to satisfy new length (16 indices)
       lb: [["p1", "Test", "m", 0, 0, 0, 0, 0, "", "", 0, "", 0, 0, 0, 0]],
       hh: [],
@@ -130,5 +129,59 @@ describe("gasClient Data Inflation", () => {
     const result = await inflatePayload(stringified);
     expect(result.lb).toHaveLength(1);
     expect(result.lb[0].id).toBe("p1");
+  });
+
+  it("semantically corrects swapped s/r values", async () => {
+    const rawMatrixData = {
+      format: "matrix",
+      schema: {
+        lb: [
+          "id",
+          "n",
+          "role",
+          "t",
+          "days",
+          "req",
+          "avg",
+          "tot",
+          "seen",
+          "rate",
+          "wfame",
+          "hist",
+          "r",
+          "s",
+          "dt",
+          "war",
+        ],
+        hh: [],
+      },
+      lb: [
+        [
+          "p1",
+          "Tester",
+          "m",
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          "",
+          0,
+          "",
+          100, // index 12: r (input shows 100, which looks like s)
+          52052, // index 13: s (input shows 52052, which looks like r)
+          0,
+          0,
+        ],
+      ],
+      hh: [],
+      timestamp: 123456789,
+    };
+
+    const result = await inflatePayload(rawMatrixData);
+    // Should swap them back
+    expect(result.lb[0].s).toBe(100);
+    expect(result.lb[0].r).toBe(52052);
   });
 });
