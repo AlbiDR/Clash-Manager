@@ -26,7 +26,7 @@ const CONFIG = {
     MANIFEST: {
       CONFIGURATION: "10.0.0",
       UTILITIES: "10.0.0",
-      ORCHESTRATOR_TRIGGERS: "10.0.0",
+      ORCHESTRATOR: "10.0.0",
       LOGGER: "10.0.0",
       LEADERBOARD: "10.0.0",
       SCORING_SYSTEM: "10.0.0",
