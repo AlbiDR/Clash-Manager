@@ -9,39 +9,34 @@ describe("gasClient Data Inflation", () => {
       // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14), trend(15)]
       lb: [
         [
-          "BUFFER",
           "player1",
           "King Arthur",
-          "leader",
-          "5,000",
+          5000,
           100,
-          200,
+          "leader",
+          100,
           50,
-          1000,
           "2023-01-01",
           "100%",
           1500,
           "3000 24W01",
-          "9,500", // Raw Score (13)
-          "100%", // Performance Score (14)
-          "5", // Trend (15)
+          5,
+          9500,
         ],
         [
-          "",
           "player2",
           "Lancelot",
-          "member",
           4000,
+          80,
+          "member",
           5,
-          100,
           10,
-          200,
           "2023-01-02",
           "50%",
           0,
           "",
-          8000, // Raw Score (13)
-          "80%", // Performance Score (14)
+          0,
+          8000,
         ],
       ],
       hh: [],
@@ -121,7 +116,7 @@ describe("gasClient Data Inflation", () => {
       format: "matrix",
       schema: { lb: [], hh: [] },
       // Added missing columns to satisfy new length check (16 indices)
-      lb: [["buf", "p1", "Test", "m", 0, 0, 0, 0, 0, "", "", 0, "", 0, 0, 0]],
+      lb: [["p1", "Test", 0, 0, "m", 0, 0, "", "", 0, "", 0, 0]],
       hh: [],
       timestamp: 123456789,
     };
