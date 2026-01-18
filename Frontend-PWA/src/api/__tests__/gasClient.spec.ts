@@ -19,12 +19,12 @@ describe("gasClient Data Inflation", () => {
           "rate",
           "wfame",
           "hist",
-          "r",
-          "s",
+          "performanceRawScore", // explicit key
+          "performanceScore", // explicit key
           "dt",
           "war",
         ],
-        hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+        hh: ["id", "n", "t", "potentialScore", "don", "war", "ago", "cards"],
       },
       lb: [
         [
@@ -40,8 +40,8 @@ describe("gasClient Data Inflation", () => {
           "100%", // 9: rate
           1500, // 10: wfame
           "3000 24W01", // 11: hist
-          9500, // 12: r
-          100, // 13: s
+          52102, // 12: performanceRawScore
+          100, // 13: performanceScore
           5, // 14: dt
           20, // 15: war
         ],
@@ -56,8 +56,8 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].id).toBe("player1");
     expect(result.lb[0].n).toBe("King Arthur");
     expect(result.lb[0].t).toBe(5000);
-    expect(result.lb[0].s).toBe(100);
-    expect(result.lb[0].r).toBe(9500);
+    expect(result.lb[0].performanceScore).toBe(100);
+    expect(result.lb[0].performanceRawScore).toBe(52102);
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
     expect(result.lb[0].d.avg).toBe(50);
@@ -84,8 +84,8 @@ describe("gasClient Data Inflation", () => {
       format: "matrix",
       schema: { lb: [], hh: [] },
       lb: [],
-      // [id, n, t, s, don, war, ago, cards]
-      hh: [["recruit1", "New Guy", 3000, 60, 500, 20, "2024-01-01", 1000]],
+      // [id, n, t, potentialScore, don, war, ago, cards, potentialRawScore]
+      hh: [["recruit1", "New Guy", 3000, 60, 500, 20, "2024-01-01", 1000, 42000]],
       timestamp: 123456789,
     };
 
@@ -97,6 +97,8 @@ describe("gasClient Data Inflation", () => {
     expect(result.hh[0].d.don).toBe(500);
     expect(result.hh[0].d.war).toBe(20);
     expect(result.hh[0].d.cards).toBe(1000);
+    expect(result.hh[0].potentialScore).toBe(60);
+    expect(result.hh[0].potentialRawScore).toBe(42000);
   });
 
   it("handles empty matrix gracefully", async () => {
@@ -131,111 +133,25 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].id).toBe("p1");
   });
 
-  it("semantically corrects swapped s/r values", async () => {
-    const rawMatrixData = {
+  it("handles backwards compatibility for older cached data", async () => {
+    const oldMatrixData = {
       format: "matrix",
       schema: {
         lb: [
-          "id",
-          "n",
-          "role",
-          "t",
-          "days",
-          "req",
-          "avg",
-          "tot",
-          "seen",
-          "rate",
-          "wfame",
-          "hist",
-          "r",
-          "s",
-          "dt",
-          "war",
+          "id", "n", "role", "t", "days", "req", "avg", "tot", "seen", "rate", "wfame", "hist", "r", "s", "dt", "war"
         ],
-        hh: [],
+        hh: []
       },
       lb: [
-        [
-          "p1",
-          "Tester",
-          "m",
-          0,
-          0,
-          0,
-          0,
-          0,
-          "",
-          "",
-          0,
-          "",
-          100, // index 12: r (input shows 100, which looks like s)
-          52052, // index 13: s (input shows 52052, which looks like r)
-          0,
-          0,
-        ],
+        ["p1", "OldGuy", "m", 5000, 100, 0, 0, 0, "", "", 0, "", 50000, 95, 0, 0]
       ],
       hh: [],
-      timestamp: 123456789,
+      timestamp: 123
     };
 
-    const result = await inflatePayload(rawMatrixData);
-    // Should swap them back
-    expect(result.lb[0].s).toBe(100);
-    expect(result.lb[0].r).toBe(52052);
-  });
-
-  it("does NOT swap correctly ordered low raw scores", async () => {
-    const rawMatrixData = {
-      format: "matrix",
-      schema: {
-        lb: [
-          "id",
-          "n",
-          "role",
-          "t",
-          "days",
-          "req",
-          "avg",
-          "tot",
-          "seen",
-          "rate",
-          "wfame",
-          "hist",
-          "r",
-          "s",
-          "dt",
-          "war",
-        ],
-        hh: [],
-      },
-      lb: [
-        [
-          "p2",
-          "TinyRaw",
-          "m",
-          0,
-          0,
-          0,
-          0,
-          0,
-          "",
-          "",
-          0,
-          "",
-          2, // index 12: r (Raw Total) -> extremely low but correct
-          100, // index 13: s (Performance) -> correct
-          0,
-          0,
-        ],
-      ],
-      hh: [],
-      timestamp: 123456789,
-    };
-
-    const result = await inflatePayload(rawMatrixData);
-    // Should NOT swap: s=100, r=2. Heuristic s > r (100 > 2) but s is not > 500.
-    expect(result.lb[0].s).toBe(100);
-    expect(result.lb[0].r).toBe(2);
+    const result = await inflatePayload(oldMatrixData);
+    // Should map 'r' -> performanceRawScore, 's' -> performanceScore
+    expect(result.lb[0].performanceRawScore).toBe(50000);
+    expect(result.lb[0].performanceScore).toBe(95);
   });
 });
