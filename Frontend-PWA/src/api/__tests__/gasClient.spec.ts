@@ -6,10 +6,9 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14)]
+      // [tag(0), name(1), role(2), trophies(3), days(4), rec(5), avg(6), tot(7), seen(8), rate(9), wfame(10), hist(11), raw(12), perf(13), trend(14)]
       lb: [
         [
-          "BUFFER",
           "player1",
           "King Arthur",
           "leader",
@@ -22,11 +21,11 @@ describe("gasClient Data Inflation", () => {
           "100%",
           1500,
           "3000 24W01",
-          "9,500", // Raw Score (13) with comma
-          "100%", // Performance Score (14) - user mentioned 100%
+          "9,500", // Raw Score (12)
+          "100%", // Performance Score (13)
+          "5", // Trend (14)
         ],
         [
-          "",
           "player2",
           "Lancelot",
           "member",
@@ -39,8 +38,8 @@ describe("gasClient Data Inflation", () => {
           "50%",
           0,
           "",
-          8000, // Raw Score (13)
-          "80%", // Performance Score (14)
+          8000, // Raw Score (12)
+          "80%", // Performance Score (13)
         ],
       ],
       hh: [],
@@ -55,7 +54,6 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].t).toBe(5000); // parsed "5,000"
     expect(result.lb[0].s).toBe(100); // parsed "100%"
     expect(result.lb[0].r).toBe(9500); // parsed "9,500"
-    expect(result.lb[0].dt).toBe(0); // optional Trend missing
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
     expect(result.lb[0].d.avg).toBe(50);
