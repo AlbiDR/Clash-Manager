@@ -23,11 +23,20 @@ The **Data Processing Core**. A lean, modular Google Apps Script engine that orc
 
 ### Script Configuration
 
-Set the following **Project Script Properties** to activate the engine:
+Set the following **Project Script Properties** in the Apps Script Editor (`Project Settings > Script Properties`) to activate the engine:
 
 - `ClanTag`: Your primary clan tag (Format: `2PP...`)
 - `WebAppUrl`: The URL of this deployment (for cross-service calls)
 - `CRK1..CRKn`: Clash Royale API keys (Multiple keys enable round-robin load balancing)
+
+### Continuous Deployment (GitHub Actions)
+
+To enable automated deployments via GitHub Actions, you must configure the following **Repository Secrets** (`Settings > Secrets and variables > Actions`):
+
+| Secret Name    | Description                                                                 |
+| :------------- | :-------------------------------------------------------------------------- |
+| `SCRIPT_ID`    | The Script ID found in **Apps Script > Project Settings > Script ID**.      |
+| `CLASPRC_JSON` | The content of your local `~/.clasprc.json` file (after running `clasp login`). |
 
 ### Triggers
 
