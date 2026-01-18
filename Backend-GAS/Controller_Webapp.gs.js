@@ -254,16 +254,22 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         );
         const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
 
-        // 🚨 CRITICAL MAPPING CHECK: Ensure s (Performance) is NOT Raw
-        let score = 0;
-        if (isHeadhunter) {
-          score = sanitizeNum(r[SCHEMA.POTENTIAL_SCORE]);
-        } else {
-          score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
-          // Failsafe: If score is suspiciously high (>100), it's likely a raw score.
-          // Capping here as a layer of defense against sheet misalignment.
-          if (score > 100) score = 100;
+        // 🚨 SEMANTIC SELF-CORRECTION (Backend Guard)
+        // If Perf Score is > 1000 and Raw Score < 1000, they are 100% swapped in the sheet.
+        // This is the "insidious" part the user mentioned.
+        let score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
+        let raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
+
+        if (score > 1000 && raw <= 100 && score > raw) {
+          // Swapped indices or column headers
+          const temp = score;
+          score = raw;
+          raw = temp;
         }
+
+        // Failsafe: Final cap for score display (should always be a percentage 0-100+)
+        // We allow >100 for "Elite" performance, but not 50,000.
+        if (score > 1000) score = 100;
 
         if (isHeadhunter) {
           const fd = r[SCHEMA.FOUND_DATE];

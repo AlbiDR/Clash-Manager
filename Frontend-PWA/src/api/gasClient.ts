@@ -73,7 +73,29 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return parsedData as WebAppData;
   }
 
-  // No longer strictly requiring Valibot for runtime blocking, use it as a check
+  // Define our definitive internal field keys (V10 matches current backend)
+  const FIELDS = {
+    LB: [
+      "id",
+      "n",
+      "role",
+      "t",
+      "days",
+      "req",
+      "avg",
+      "tot",
+      "seen",
+      "rate",
+      "wfame",
+      "hist",
+      "r",
+      "s",
+      "dt",
+      "war",
+    ],
+    HH: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+  };
+
   const valibot = await import("valibot");
   const WebAppDataSchema = valibot.object({
     format: valibot.optional(valibot.string()),
@@ -90,54 +112,18 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   });
 
   const check = valibot.safeParse(WebAppDataSchema, parsedData);
-  if (!check.success) {
-    console.warn("API Schema Warning (Non-Fatal):", check.issues);
-  }
-
-  // Use parsedData directly for better resiliency if schema check fails
   const source = check.success ? check.output : (parsedData as any);
+
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
-  const timestamp = Number(source.timestamp) || Date.now();
-  const playerTag = (parsedData as any).playerTag;
+  const lbSchema = (
+    source.schema?.lb?.length ? source.schema.lb : FIELDS.LB
+  ) as string[];
+  const hhSchema = (
+    source.schema?.hh?.length ? source.schema.hh : FIELDS.HH
+  ) as string[];
 
-  // ⚡ SMART SYNC: Dynamically map based on returned schema
-  const lbSchema = (source.schema?.lb as string[]) || [];
-  const hhSchema = (source.schema?.hh as string[]) || [];
-
-  const getIdx = (schema: string[], key: string, fallback: number) => {
-    const idx = schema.indexOf(key);
-    return idx === -1 ? fallback : idx;
-  };
-
-  const L = {
-    id: getIdx(lbSchema, "id", 0),
-    n: getIdx(lbSchema, "n", 1),
-    role: getIdx(lbSchema, "role", 2),
-    t: getIdx(lbSchema, "t", 3),
-    days: getIdx(lbSchema, "days", 4),
-    avg: getIdx(lbSchema, "avg", 6),
-    seen: getIdx(lbSchema, "seen", 8),
-    rate: getIdx(lbSchema, "rate", 9),
-    wfame: getIdx(lbSchema, "wfame", 10),
-    hist: getIdx(lbSchema, "hist", 11),
-    r: getIdx(lbSchema, "r", 12),
-    s: getIdx(lbSchema, "s", 13),
-    dt: getIdx(lbSchema, "dt", 14),
-  };
-
-  const H = {
-    id: getIdx(hhSchema, "id", 0),
-    n: getIdx(hhSchema, "n", 1),
-    t: getIdx(hhSchema, "t", 2),
-    s: getIdx(hhSchema, "s", 3),
-    don: getIdx(hhSchema, "don", 4),
-    war: getIdx(hhSchema, "war", 5),
-    ago: getIdx(hhSchema, "ago", 6),
-    cards: getIdx(hhSchema, "cards", 7),
-  };
-
-  // Robust parsing helpers
+  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
   const safeNum = (v: any) => {
     if (typeof v === "number") return v;
     if (typeof v === "string") {
@@ -148,76 +134,74 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return 0;
   };
 
-  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
+  /**
+   * Surgical field extractor with semantic check
+   */
+  const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
+    if (!row || !Array.isArray(row) || row.length < 3) return null;
+
+    // Direct Key-to-Index Map
+    const m: Record<string, number> = {};
+    schema.forEach((key, idx) => (m[key] = idx));
+
+    // Resolve Values
+    let s = safeNum(row[m.s]);
+    let r = safeNum(row[m.r]);
+
+    // 🛡️ SEMANTIC CROSS-CHECK: If s looks like a raw score and r looks like a perf score...
+    if (type === "lb" && s > 1000 && (r <= 150 || r === 0) && s > r) {
+      // Swapped indices or column headers detected!
+      const temp = s;
+      s = r;
+      r = temp;
+    }
+
+    // Safety Cap: Performance score is usually a % (0-150 range max)
+    const finalScore = type === "lb" && s > 1000 ? 100 : s;
+
+    if (type === "lb") {
+      return {
+        id: safeStr(row[m.id]),
+        n: safeStr(row[m.n]),
+        t: safeNum(row[m.t]),
+        s: finalScore,
+        dt: safeNum(row[m.dt]),
+        r: r,
+        d: {
+          role: safeStr(row[m.role]),
+          days: safeNum(row[m.days]),
+          avg: safeNum(row[m.avg]),
+          seen: safeStr(row[m.seen] || "-"),
+          rate: safeStr(row[m.rate] || "0%"),
+          wfame: safeNum(row[m.wfame]),
+          hist: safeStr(row[m.hist]),
+        },
+      };
+    } else {
+      return {
+        id: safeStr(row[m.id]),
+        n: safeStr(row[m.n]),
+        t: safeNum(row[m.t]),
+        s: s,
+        d: {
+          don: safeNum(row[m.don]),
+          war: safeNum(row[m.war]),
+          ago: safeStr(row[m.ago]),
+          cards: safeNum(row[m.cards]),
+        },
+      };
+    }
+  };
 
   return {
     lb: lbMatrix
-      .map((r: any) => {
-        if (!r || !Array.isArray(r) || r.length < 3) return null;
-
-        // 🛡️ LEGACY FALLBACK: If schema is missing and row is very long, it's the old sheet format
-        const isLegacySheet = !source.schema && r.length >= 15;
-        const isBuffered = r[0] === "BUFFER";
-
-        if (isLegacySheet || isBuffered) {
-          const offset = isBuffered ? 1 : 0;
-          return {
-            id: safeStr(r[0 + offset]),
-            n: safeStr(r[1 + offset]),
-            t: safeNum(r[3 + offset]),
-            s: safeNum(r[13 + offset] ?? r[12 + offset]),
-            d: {
-              role: safeStr(r[2 + offset]),
-              days: safeNum(r[4 + offset]),
-              avg: safeNum(r[6 + offset]),
-              seen: r[8 + offset] ? safeStr(r[8 + offset]) : null,
-              rate: r[9 + offset] ? safeStr(r[9 + offset]) : null,
-              wfame: safeNum(r[10 + offset]),
-              hist: safeStr(r[11 + offset]),
-            },
-            dt: safeNum(r[14 + offset]),
-            r: safeNum(r[12 + offset]),
-          };
-        }
-
-        return {
-          id: safeStr(r[L.id]),
-          n: safeStr(r[L.n]),
-          t: safeNum(r[L.t]),
-          s: safeNum(r[L.s]),
-          d: {
-            role: safeStr(r[L.role]),
-            days: safeNum(r[L.days]),
-            avg: safeNum(r[L.avg]),
-            seen: r[L.seen] ? safeStr(r[L.seen]) : null,
-            rate: r[L.rate] ? safeStr(r[L.rate]) : null,
-            wfame: safeNum(r[L.wfame]),
-            hist: safeStr(r[L.hist]),
-          },
-          dt: safeNum(r[L.dt]),
-          r: safeNum(r[L.r]),
-        };
-      })
+      .map((r: any) => mapRow(r, lbSchema, "lb"))
       .filter(Boolean) as any[],
     hh: hhMatrix
-      .map((r: any) => {
-        if (!r || !Array.isArray(r) || r.length < 4) return null;
-        return {
-          id: safeStr(r[H.id]),
-          n: safeStr(r[H.n]),
-          t: safeNum(r[H.t]),
-          s: safeNum(r[H.s]),
-          d: {
-            don: safeNum(r[H.don]),
-            war: safeNum(r[H.war]),
-            ago: safeStr(r[H.ago]),
-            cards: safeNum(r[H.cards]),
-          },
-        };
-      })
+      .map((r: any) => mapRow(r, hhSchema, "hh"))
       .filter(Boolean) as any[],
-    playerTag,
-    timestamp,
+    playerTag: source.playerTag,
+    timestamp: Number(source.timestamp) || Date.now(),
   };
 }
 

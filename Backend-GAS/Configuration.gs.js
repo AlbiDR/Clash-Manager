@@ -57,8 +57,8 @@ const CONFIG = {
     RETRY_MAX: 3,
     JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined"
       ? VER_API_PUBLIC
-      : "6.0.0"
-    ).replace(/\./g, "_")}`,
+      : "10.0.0"
+    ).replace(/\./g, "_")}_S2`, // S2 suffix to force-bust cache for new schema
     DB_PURGE_DAYS: 7,
     DB_ROW_LIMIT: 20000,
   },
