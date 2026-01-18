@@ -79,6 +79,7 @@ function updateLeaderboard() {
   }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+  Logger.log(`🔎 Requesting Data for Clan Tag: ${CONFIG.SYSTEM.CLAN_TAG} (Encoded: ${cleanTag})`);
 
   // ----------------------------------------------------------------------------
   // 1. DATA INGESTION
