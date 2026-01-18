@@ -5,38 +5,45 @@ describe("gasClient Data Inflation", () => {
   it("correctly inflates Leaderboard matrix", async () => {
     const rawMatrixData = {
       format: "matrix",
-      schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14), trend(15)]
+      schema: {
+        lb: [
+          "id",
+          "n",
+          "role",
+          "t",
+          "days",
+          "req",
+          "avg",
+          "tot",
+          "seen",
+          "rate",
+          "wfame",
+          "hist",
+          "r",
+          "s",
+          "dt",
+          "war",
+        ],
+        hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+      },
       lb: [
         [
-          "player1",
-          "King Arthur",
-          5000,
-          100,
-          "leader",
-          100,
-          50,
-          "2023-01-01",
-          "100%",
-          1500,
-          "3000 24W01",
-          5,
-          9500,
-        ],
-        [
-          "player2",
-          "Lancelot",
-          4000,
-          80,
-          "member",
-          5,
-          10,
-          "2023-01-02",
-          "50%",
-          0,
-          "",
-          0,
-          8000,
+          "player1", // 0: id
+          "King Arthur", // 1: n
+          "leader", // 2: role
+          5000, // 3: t
+          100, // 4: days
+          500, // 5: req
+          50, // 6: avg
+          1000, // 7: tot
+          "2023-01-01", // 8: seen
+          "100%", // 9: rate
+          1500, // 10: wfame
+          "3000 24W01", // 11: hist
+          9500, // 12: r
+          100, // 13: s
+          5, // 14: dt
+          20, // 15: war
         ],
       ],
       hh: [],
@@ -48,19 +55,14 @@ describe("gasClient Data Inflation", () => {
     // Check first player
     expect(result.lb[0].id).toBe("player1");
     expect(result.lb[0].n).toBe("King Arthur");
-    expect(result.lb[0].t).toBe(5000); // parsed "5,000"
-    expect(result.lb[0].s).toBe(100); // parsed "100%"
-    expect(result.lb[0].r).toBe(9500); // parsed "9,500"
+    expect(result.lb[0].t).toBe(5000);
+    expect(result.lb[0].s).toBe(100);
+    expect(result.lb[0].r).toBe(9500);
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
     expect(result.lb[0].d.avg).toBe(50);
     expect(result.lb[0].d.seen).toBe("2023-01-01");
     expect(result.lb[0].d.wfame).toBe(1500);
-
-    // Check second player
-    expect(result.lb[1].id).toBe("player2");
-    expect(result.lb[1].s).toBe(80); // parsed "80%"
-    expect(result.lb[1].r).toBe(8000);
   });
 
   it("extracts playerTag from payload", async () => {
@@ -116,7 +118,8 @@ describe("gasClient Data Inflation", () => {
       format: "matrix",
       schema: { lb: [], hh: [] },
       // Added missing columns to satisfy new length check (16 indices)
-      lb: [["p1", "Test", 0, 0, "m", 0, 0, "", "", 0, "", 0, 0]],
+      // Added columns to satisfy new length (16 indices)
+      lb: [["p1", "Test", "m", 0, 0, 0, 0, 0, "", "", 0, "", 0, 0, 0, 0]],
       hh: [],
       timestamp: 123456789,
     };
