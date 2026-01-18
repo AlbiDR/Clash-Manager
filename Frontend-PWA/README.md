@@ -41,10 +41,35 @@ The heart of the Clash Manager interface. This is a high-performance Vue 3 appli
 ## Architectural Components
 
 - **Logic**: Vue 3 + TypeScript
-- **Aesthetics**: Vanilla CSS (Sovereign Design System)
+- **Aesthetics**: Tailwind CSS (Sovereign Design System)
 - **State**: Reactive Composables + IndexedDB (Local Cache)
-- **Validation**: Zod (Dynamic API Inflation)
+- **Validation**: Valibot (Dynamic API Inflation)
 - **Testing**: Vitest + JSDOM
+
+---
+
+## Development
+
+<details>
+<summary>Local Development Environment</summary>
+
+### Prerequisites
+- Node.js (v20+)
+- pnpm (v9+)
+
+### Execution
+To start the Vite development server with Hot Module Replacement:
+
+```bash
+pnpm dev
+```
+
+The application will be available at `http://localhost:5173`.
+
+### Environment Configuration
+Ensure a `.env` file exists in the `Frontend-PWA/` root with `VITE_GAS_URL` pointing to your Google Apps Script deployment.
+
+</details>
 
 ---
 
