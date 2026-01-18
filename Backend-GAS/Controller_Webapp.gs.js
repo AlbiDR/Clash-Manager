@@ -149,7 +149,7 @@ function refreshWebPayload() {
             "wfame",
             "hist",
             "performanceRawScore", // STRICT: Unbounded
-            "performanceScore", // STRICT: Percentage 0-100
+            "performanceScore",    // STRICT: Percentage 0-100
             "dt",
             "war",
           ],
@@ -157,12 +157,12 @@ function refreshWebPayload() {
             "id",
             "n",
             "t",
-            "potentialScore", // STRICT: Percentage 0-100
+            "potentialScore",      // STRICT: Percentage 0-100
             "don",
             "war",
             "ago",
             "cards",
-            "potentialRawScore", // STRICT: Unbounded
+            "potentialRawScore"    // STRICT: Unbounded
           ],
         },
         lb: extractSheetDataMatrix(
@@ -281,11 +281,9 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         );
         const scoreVal = sanitizeNum(
           r[isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE],
-          displayVals[index][
-            isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE
-          ],
+          displayVals[index][isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE],
         );
-
+        
         if (isHeadhunter) {
           const fd = r[SCHEMA.FOUND_DATE];
           const ago =
