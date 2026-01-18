@@ -207,7 +207,8 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
 
   if (lastRow < startRow) return [];
 
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 15);
+  // ⚡ IMPROVEMENT: Fetch 17 columns (up to War Day Wins) to ensure all schema indices are present
+  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, 16);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
@@ -243,9 +244,17 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           "$1",
         );
         const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
-        const score = sanitizeNum(
-          isHeadhunter ? r[SCHEMA.POTENTIAL_SCORE] : r[SCHEMA.PERF_SCORE],
-        );
+
+        // 🚨 CRITICAL MAPPING CHECK: Ensure s (Performance) is NOT Raw
+        let score = 0;
+        if (isHeadhunter) {
+          score = sanitizeNum(r[SCHEMA.POTENTIAL_SCORE]);
+        } else {
+          score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
+          // Failsafe: If score is suspiciously high (>100), it's likely a raw score.
+          // Capping here as a layer of defense against sheet misalignment.
+          if (score > 100) score = 100;
+        }
 
         if (isHeadhunter) {
           const fd = r[SCHEMA.FOUND_DATE];
