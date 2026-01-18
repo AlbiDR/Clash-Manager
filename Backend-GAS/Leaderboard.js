@@ -328,7 +328,7 @@ function updateLeaderboard() {
       trend = r.scores.raw - oldRaw;
     }
 
-    const row = new Array(18).fill(""); // Unified 18-col Absolute Structure
+    const row = new Array(17).fill(""); // Unified 17-col Absolute Structure (0-16)
     row[L.TAG] = r.member.tag;
     row[L.NAME] =
       `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${r.member.tag.replace("#", "")}", "${r.member.name}")`;
@@ -359,7 +359,7 @@ function updateLeaderboard() {
 
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
-  const HEADERS_ARRAY = new Array(18).fill("");
+  const HEADERS_ARRAY = new Array(17).fill("");
   Object.keys(CONFIG.SCHEMA.LB_HEADERS).forEach((k) => {
     HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.LB_HEADERS[k];
   });
