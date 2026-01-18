@@ -184,7 +184,7 @@ function handleSearch(val: string) {
           expandedIds.has(member.id),
           selectedSet.has(member.id),
           isSelectionMode,
-          isRefreshing,
+          expandedIds.has(member.id) && isRefreshing,
           data?.playerTag === member.id,
         ]"
         :id="`member-${member.id}`"
