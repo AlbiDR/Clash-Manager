@@ -1,12 +1,12 @@
 /**
  * ============================================================================
- * 🕹️ MODULE: ORCHESTRATOR
+ * 🕹️ MODULE: ORCHESTRATOR & TRIGGERS
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Manages Automation Triggers and the "Master Protocol".
  * ⚙️ WORKFLOW:
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 10.0.3
+ * 🏷️ VERSION: 10.0.4
  *
  * 🧠 REASONING:
  *    - Granularity: Replaced the monolithic "dailymaster" with 2 optimized tasks.
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR = "10.0.3";
+const VER_ORCHESTRATOR = "10.0.4";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
