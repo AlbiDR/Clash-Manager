@@ -158,13 +158,13 @@ export function useClanData() {
     refreshAbortController = new AbortController();
     const signal = refreshAbortController.signal;
 
-    // 🛡️ TIMEOUT PROTECTION: Force fail if network hangs (20s)
+    // 🛡️ TIMEOUT PROTECTION: Force fail if network hangs (40s)
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
-        console.warn("Sync timed out (20s), aborting...");
+        console.warn("Sync timed out (40s), aborting...");
         refreshAbortController.abort("timeout");
       }
-    }, 20000);
+    }, 40000);
 
     try {
       isRefreshing.value = true;
