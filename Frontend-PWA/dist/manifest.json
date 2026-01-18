@@ -1,0 +1,127 @@
+{
+  "name": "Clash Manager",
+  "short_name": "Clash Manager",
+  "description": "Professional recruitment and performance analytics dashboard for Clash Royale clan leaders.",
+  "theme_color": "#0b0e14",
+  "background_color": "#0b0e14",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./#/leaderboard",
+  "id": "clash-manager",
+  "orientation": "portrait",
+  "categories": ["productivity", "games", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "handle_links": "preferred",
+  "share_target": {
+    "action": "./#/recruiter",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "icons": [
+    {
+      "src": "pwa-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "pwa-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "pwa-icon-monochrome.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-mobile-light.webp",
+      "sizes": "1080x1920",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Clash Manager Mobile (Light)"
+    },
+    {
+      "src": "screenshot-mobile-dark.webp",
+      "sizes": "1080x1920",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Clash Manager Mobile (Dark)"
+    },
+    {
+      "src": "screenshot-desktop-light.webp",
+      "sizes": "1920x1080",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Clash Manager Desktop (Light)"
+    },
+    {
+      "src": "screenshot-desktop-dark.webp",
+      "sizes": "1920x1080",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Clash Manager Desktop (Dark)"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.supercell.clashroyale",
+      "id": "com.supercell.clashroyale"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "shortcuts": [
+    {
+      "name": "Leaderboard",
+      "short_name": "Leaderboard",
+      "description": "View clan performance leaderboard",
+      "url": "./#/leaderboard",
+      "icons": [
+        { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Headhunter",
+      "short_name": "Headhunter",
+      "description": "Research potential recruits",
+      "url": "./#/recruiter",
+      "icons": [
+        { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Configure dashboard preferences",
+      "url": "./#/settings",
+      "icons": [
+        { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
+  ]
+}
