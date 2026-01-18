@@ -8,11 +8,11 @@
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.0.1
  * ============================================================================
  */
 
-const VER_LEADERBOARD = "10.0.0";
+const VER_LEADERBOARD = "10.0.1";
 
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -23,6 +23,13 @@ function updateLeaderboard() {
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
   Utils.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
+
+  // 🛡️ CONFIGURATION CHECK
+  if (!CONFIG.SYSTEM.CLAN_TAG) {
+    console.error("❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Leaderboard Update.");
+    lbSheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    return;
+  }
 
   // 🛡️ SAFETY & HISTORY SNAPSHOT
   // We read the existing scores BEFORE we process new data.
@@ -88,7 +95,7 @@ function updateLeaderboard() {
   );
 
   if (!membersData || !membersData.items) {
-    console.error("Leaderboard: Failed to fetch members.");
+    console.error("Leaderboard: Failed to fetch members. Check API Key validity and Clan Tag.");
     return;
   }
 
