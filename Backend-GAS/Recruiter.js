@@ -120,9 +120,9 @@ function scoutRecruits() {
     const lbData = lbSheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
-        2,
+        1, // ⚡ FIX: Fetch from Column A (1) to align with absolute schema indices
         lbSheet.getLastRow() - CONFIG.LAYOUT.DATA_START_ROW + 1,
-        16,
+        20, // ⚡ FIX: Fetch wide enough range (A-T) to cover all cols
       )
       .getValues();
 
@@ -212,14 +212,14 @@ function updateAndGetBlacklist(sheet) {
     const lastRow = sheet.getLastRow();
     const numRows = lastRow - startRow + 1;
 
-    // Fetch only the columns we need: Tag (B), Invited (C), Raw Score (J)
-    // Map to relative indices for easier processing
-    const tagValues = sheet.getRange(startRow, 2, numRows, 1).getValues();
+    // Fetch Tag and specific columns
+    // ⚡ FIX: Use `1 + Index` to convert 0-based absolute Schema Index to 1-based GAS Column
+    const tagValues = sheet.getRange(startRow, 1 + H.TAG, numRows, 1).getValues();
     const invitedValues = sheet
-      .getRange(startRow, 2 + H.INVITED, numRows, 1)
+      .getRange(startRow, 1 + H.INVITED, numRows, 1)
       .getValues();
     const rawScoreValues = sheet
-      .getRange(startRow, 2 + H.RAW_SCORE, numRows, 1)
+      .getRange(startRow, 1 + H.RAW_SCORE, numRows, 1)
       .getValues();
 
     for (let i = 0; i < numRows; i++) {
@@ -298,9 +298,9 @@ function loadRecruitDatabase(sheet) {
   const rows = sheet
     .getRange(
       CONFIG.LAYOUT.DATA_START_ROW,
-      2,
+      1, // ⚡ FIX: Fetch from Column 1 (A)
       sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
-      10,
+      20, // Fetch wide range
     )
     .getValues();
   return new Map(
