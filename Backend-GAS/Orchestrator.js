@@ -6,7 +6,7 @@
  * ⚙️ WORKFLOW:
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.0.1
  *
  * 🧠 REASONING:
  *    - Granularity: Replaced the monolithic "dailymaster" with 2 optimized tasks.
@@ -14,7 +14,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR = "10.0.0";
+const VER_ORCHESTRATOR = "10.0.1";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
@@ -352,26 +352,16 @@ function triggerVerifyApiKeys() {
 
 /**
  * Core logic for verifying API keys.
- * Performs a simple request (clan info) for each key to verify validity.
+ * Performs a simple request (/cards) to verify validity.
+ * We use /cards because it is a static endpoint that always exists,
+ * preventing false negatives if the Clan Tag is incorrect.
  */
 function verifyApiKeysInternal(isUserFacing) {
   const keys = CONFIG.SYSTEM.API_KEYS;
   const baseUrl = CONFIG.SYSTEM.API_BASE;
-  const clanTag = CONFIG.SYSTEM.CLAN_TAG;
 
-  if (!clanTag) {
-    if (isUserFacing) {
-      SpreadsheetApp.getUi().alert(
-        "Missing Clan Tag",
-        "Please configure a ClanTag in Script Properties to verify keys.",
-        SpreadsheetApp.getUi().ButtonSet.OK,
-      );
-    }
-    return [];
-  }
-
-  const encodedTag = encodeURIComponent(clanTag.replace("#", ""));
-  const url = `${baseUrl}/clans/%23${encodedTag}`;
+  // Use a stable endpoint that doesn't depend on user configuration
+  const url = `${baseUrl}/cards`;
 
   return keys.map((keyObj) => {
     try {
@@ -389,8 +379,9 @@ function verifyApiKeysInternal(isUserFacing) {
         return { name: keyObj.name, success: true };
       } else {
         let errorMsg = `Error ${code}`;
-        if (code === 403) errorMsg = "Invalid/IP Restricted";
-        if (code === 429) errorMsg = "Rate Limited";
+        if (code === 403) errorMsg = "⛔ Access Denied (Invalid Key)";
+        if (code === 429) errorMsg = "⚠️ Rate Limited (Throttled)";
+        if (code === 503) errorMsg = "⚠️ Maintenance Mode";
         return { name: keyObj.name, success: false, error: errorMsg };
       }
     } catch (e) {
