@@ -166,7 +166,7 @@ function scoutRecruits() {
 
   finalPool.forEach(
     (p) =>
-      (p.perfScore = ScoringSystem.calculatePotentialScore(
+      (p.potentialScore = ScoringSystem.calculatePotentialScore(
         p.rawScore,
         finalBenchmark,
       )),
@@ -324,7 +324,7 @@ function loadRecruitDatabase(sheet) {
           war: r[H.WAR_WINS],
           foundDate: r[H.FOUND_DATE] ? new Date(r[H.FOUND_DATE]) : new Date(),
           rawScore: Number(r[H.RAW_SCORE]),
-          perfScore: Number(r[H.PERF_SCORE]),
+          potentialScore: Number(r[H.POTENTIAL_SCORE]),
         },
       ]),
   );
@@ -522,7 +522,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     "War Wins",
     "Found",
     "Raw Score",
-    "Performance Score",
+    "Potential Score",
   ];
   const rows = list.map((c) => [
     c.tag,
@@ -534,7 +534,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     c.war,
     c.foundDate instanceof Date ? c.foundDate : new Date(c.foundDate),
     c.rawScore,
-    c.perfScore,
+    c.potentialScore,
   ]);
   sheet
     .getRange(2, 2, 1, HEADERS.length)
@@ -560,7 +560,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
-        2 + CONFIG.SCHEMA.HH.PERF_SCORE,
+        2 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
         rows.length,
         1,
       )
@@ -592,7 +592,7 @@ function renderHeadhunterView(sheet, list, baseline) {
       .setRanges([
         sheet.getRange(
           CONFIG.LAYOUT.DATA_START_ROW,
-          2 + CONFIG.SCHEMA.HH.PERF_SCORE,
+          2 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
           rows.length,
           1,
         ),
