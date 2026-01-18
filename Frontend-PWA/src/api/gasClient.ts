@@ -73,21 +73,25 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return parsedData as WebAppData;
   }
 
-  // If this fails, let it fail loudly so we know the environment is broken.
+  // No longer strictly requiring Valibot for runtime blocking, use it as a check
   const valibot = await import("valibot");
-
   const WebAppDataSchema = valibot.object({
     lb: valibot.array(valibot.array(valibot.unknown())),
     hh: valibot.array(valibot.array(valibot.unknown())),
-    timestamp: valibot.number(),
+    timestamp: valibot.union([valibot.number(), valibot.string()]),
   });
 
-  const result = valibot.safeParse(WebAppDataSchema, parsedData);
+  const check = valibot.safeParse(WebAppDataSchema, parsedData);
+  if (!check.success) {
+    console.warn("API Schema Warning (Non-Fatal):", check.issues);
+  }
 
-  if (!result.success) throw new Error("API Schema Mismatch");
-
-  // Valibot v1+ uses .output instead of .data for success result
-  const { lb, hh, timestamp } = result.output;
+  // Use parsedData directly for better resiliency if schema check fails
+  const source = check.success ? check.output : (parsedData as any);
+  const lb = Array.isArray(source.lb) ? source.lb : [];
+  const hh = Array.isArray(source.hh) ? source.hh : [];
+  const timestamp = Number(source.timestamp) || Date.now();
+  // playerTag is outside the matrix format but inside the envelope data
   const playerTag = (parsedData as any).playerTag;
 
   // Robust parsing helpers
@@ -107,14 +111,42 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   return {
     lb: lb
       .map((r: any) => {
-        // Row must have at least 13 elements as per Controller_Webapp.gs.js matrix extraction
-        if (!r || r.length < 13) return null;
+        if (!r || !Array.isArray(r) || r.length < 3) return null;
+
+        // 🛡️ SYNC: Detect "BUFFER" column shift (Legacy logic protection)
+        const isBuffered = r[0] === "BUFFER";
+        const offset = isBuffered ? 1 : 0;
+
+        // Detect if index mismatch occurred (Tag usually starts with digit/letter, Name has spaces/caps)
+        // If length is 16, it's definitely the legacy sheet structure
+        const isLegacy = r.length >= 15;
+
+        if (isLegacy || isBuffered) {
+          // Fallback to legacy mapping if data looks like it
+          return {
+            id: safeStr(r[1]),
+            n: safeStr(r[2]),
+            t: safeNum(r[4]),
+            s: safeNum(r[14] ?? r[13]),
+            d: {
+              role: safeStr(r[3]),
+              days: safeNum(r[5]),
+              avg: safeNum(r[7]),
+              seen: r[9] ? safeStr(r[9]) : null,
+              rate: r[10] ? safeStr(r[10]) : null,
+              wfame: safeNum(r[11]),
+              hist: safeStr(r[12]),
+            },
+            dt: safeNum(r[15]),
+            r: safeNum(r[13]),
+          };
+        }
 
         return {
-          id: safeStr(r[0]),   // Tag
-          n: safeStr(r[1]),    // Name
-          t: safeNum(r[2]),    // Trophies
-          s: safeNum(r[3]),    // Performance Score
+          id: safeStr(r[0]), // Tag
+          n: safeStr(r[1]), // Name
+          t: safeNum(r[2]), // Trophies
+          s: safeNum(r[3]), // Performance Score
           d: {
             role: safeStr(r[4]), // Role
             days: safeNum(r[5]),
@@ -125,7 +157,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
             hist: safeStr(r[10]),
           },
           dt: safeNum(r[11]), // Trend
-          r: safeNum(r[12]),  // Raw Score
+          r: safeNum(r[12]), // Raw Score
         };
       })
       .filter(Boolean) as any[],
