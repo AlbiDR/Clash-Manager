@@ -45,11 +45,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "v10.0.0: The PWA-First Evolution"
+          name: "v10.0.0: Evolution — PWA-First (Deep Net v7)"
           body: |
-            # Clash Manager v10.0.0 — The PWA-First Evolution
+            # Clash Manager v10.0.0 — Evolution
 
-            This landmark release marks a major strategic pivot for Clash Manager. We are officially transitioning from legacy native application packaging (APK/Tauri) to a cutting-edge **PWA-First** architecture. This includes a major version reset to **v10.0.0** to establish a clean baseline and resolve historical versioning overlaps (previous v9 automated tags).
+            This landmark release marks a major strategic pivot for Clash Manager. We are officially transitioning from legacy native application packaging (APK/Tauri) to a cutting-edge **PWA-First** architecture. This version resets the baseline to **v10.0.0**, powered by the new **Deep Net v7** intelligence core.
 
             ## 🚀 Strategic Pivot: PWA & WebAPK
             - **PWA-First Architecture**: Officially abandoned APK, TWA, and Tauri desktop systems in favor of high-performance web standards.
