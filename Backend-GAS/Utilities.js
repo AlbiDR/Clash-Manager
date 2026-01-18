@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.6
+ * 🏷️ VERSION: 10.0.7
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.6";
+const VER_UTILITIES = "10.0.7";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -324,6 +324,7 @@ const Utils = {
 
   /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
+   * Includes Circuit Breaker logic for Remote Worker fallbacks.
    */
   fetchRoyaleAPI: function (urls, scoring = null) {
     if (!urls || urls.length === 0) return [];
@@ -366,7 +367,7 @@ const Utils = {
 
     if (urlsToFetch.length === 0) return finalResults;
 
-    // Post-deduplication quota accounting: don't exceed API budget
+    // Post-deduplication quota accounting
     const remainingQuota = MAX_FETCH_PER_EXECUTION - _FETCH_COUNT;
     if (remainingQuota <= 0) {
       console.error(
@@ -384,7 +385,6 @@ const Utils = {
 
     // Account for the permitted fetches
     _FETCH_COUNT += urlsToFetch.length;
-    // Persist fetch state (date, count, exhausted)
     try {
       const today = new Date().toISOString().slice(0, 10);
       this.Props.setFetchState({
@@ -393,18 +393,15 @@ const Utils = {
       });
     } catch (e) {}
 
+    // 🛡️ CIRCUIT BREAKER: Determine remote capability
+    // If worker fails, we will disable this flag for the rest of this batch execution
+    let useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+
     // 3. Batch Processing
     const BATCH_SIZE = 100;
 
     for (let c = 0; c < urlsToFetch.length; c += BATCH_SIZE) {
       const chunkUrls = urlsToFetch.slice(c, c + BATCH_SIZE);
-
-      // If remote worker is configured but unhealthy, attempt a quick health check and fall back
-      if (CONFIG.SYSTEM.REMOTE_WORKER_URL && !this.remoteWorkerHealthy()) {
-        console.warn(
-          "⚠️ Remote worker configured but appears unhealthy. Falling back to local fetches for this batch.",
-        );
-      }
 
       for (let attempt = 0; attempt < CONFIG.SYSTEM.RETRY_MAX; attempt++) {
         if (keyPool.length === 0)
@@ -426,10 +423,18 @@ const Utils = {
 
         try {
           let responses;
-          if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
-            // Offload to remote worker - pass keyPool for worker to use
-            responses = Utils.remoteFetchChunk(chunkUrls, keyPool, scoring);
+          
+          if (useRemote) {
+            try {
+              // Offload to remote worker
+              responses = Utils.remoteFetchChunk(chunkUrls, keyPool, scoring);
+            } catch (workerErr) {
+              console.warn("⚠️ Worker failed, switching to local fallback for this execution.", workerErr.message);
+              useRemote = false; // Disable remote for subsequent retries/batches
+              throw workerErr; // Throw to trigger the catch block below and retry via local
+            }
           } else {
+            // Local Fetch (Fallback or Default)
             responses = UrlFetchApp.fetchAll(requests);
           }
 
@@ -452,10 +457,9 @@ const Utils = {
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url).forEach((idx) => (finalResults[idx] = null));
-              // Log 404 explicitly so we know it's a data issue, not a key issue
               console.warn(`[API] 404 Not Found: ${url}`);
             } else if (code === 403 || code === 429) {
-              if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
+              if (useRemote) {
                 // If using remote worker, the worker manages key rotation.
                 console.warn(
                   `⚠️ Remote worker reported ${code} for ${url}. Worker manages keys; will retry chunk.`,
@@ -477,8 +481,6 @@ const Utils = {
                 retryChunk = true;
               }
             } else {
-              // 🔴 VERBOSE ERROR LOGGING (New)
-              // Print exact URL and Response Body for debugging
               const errorBody = r.getContentText().substring(0, 200);
               console.error(`[API ERROR] ${code} at ${url}\nResponse: ${errorBody}`);
               
@@ -510,7 +512,7 @@ const Utils = {
         }
       }
 
-      // Small pause between batches to reduce chance of hitting backend burst limits
+      // Small pause between batches
       Utilities.sleep(200);
     }
 
