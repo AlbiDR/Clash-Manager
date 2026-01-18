@@ -73,62 +73,136 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return parsedData as WebAppData;
   }
 
-  // If this fails, let it fail loudly so we know the environment is broken.
-  const valibot = await import("valibot");
+  // Define our definitive internal field keys (V10 matches current backend)
+  const FIELDS = {
+    LB: [
+      "id",
+      "n",
+      "role",
+      "t",
+      "days",
+      "req",
+      "avg",
+      "tot",
+      "seen",
+      "rate",
+      "wfame",
+      "hist",
+      "r",
+      "s",
+      "dt",
+      "war",
+    ],
+    HH: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+  };
 
+  const valibot = await import("valibot");
   const WebAppDataSchema = valibot.object({
+    format: valibot.optional(valibot.string()),
+    schema: valibot.optional(
+      valibot.object({
+        lb: valibot.array(valibot.string()),
+        hh: valibot.array(valibot.string()),
+      }),
+    ),
     lb: valibot.array(valibot.array(valibot.unknown())),
     hh: valibot.array(valibot.array(valibot.unknown())),
-    timestamp: valibot.number(),
+    timestamp: valibot.union([valibot.number(), valibot.string()]),
+    playerTag: valibot.optional(valibot.string()),
   });
 
-  const result = valibot.safeParse(WebAppDataSchema, parsedData);
+  const check = valibot.safeParse(WebAppDataSchema, parsedData);
+  const source = check.success ? check.output : (parsedData as any);
 
-  if (!result.success) throw new Error("API Schema Mismatch");
+  const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
+  const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
+  const lbSchema = (
+    source.schema?.lb?.length ? source.schema.lb : FIELDS.LB
+  ) as string[];
+  const hhSchema = (
+    source.schema?.hh?.length ? source.schema.hh : FIELDS.HH
+  ) as string[];
 
-  // Valibot v1+ uses .output instead of .data for success result
-  const { lb, hh, timestamp } = result.output;
-  const playerTag = (parsedData as any).playerTag;
+  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
+  const safeNum = (v: any) => {
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const cleaned = v.replace(/,/g, "").replace(/%/g, "");
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? 0 : n;
+    }
+    return 0;
+  };
 
-  // Strict bounds checking for matrix columns
+  /**
+   * Surgical field extractor with semantic check
+   */
+  const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
+    if (!row || !Array.isArray(row) || row.length < 3) return null;
+
+    // Direct Key-to-Index Map
+    const m: Record<string, number> = {};
+    schema.forEach((key, idx) => (m[key] = idx));
+
+    // Resolve Values
+    let s = safeNum(row[m.s]);
+    let r = safeNum(row[m.r]);
+
+    // 🛡️ SEMANTIC CROSS-CHECK (FE Guard V4)
+    // Heuristic: If Score > Raw AND Score > 500, they are 100% swapped.
+    if (type === "lb" && s > r && s > 500) {
+      // Swapped indices or column headers detected!
+      const temp = s;
+      s = r;
+      r = temp;
+    }
+
+    // Safety Cap: Performance score is usually a % (0-150 range max)
+    const finalScore = type === "lb" && s > 1000 ? 100 : s;
+
+    if (type === "lb") {
+      return {
+        id: safeStr(row[m.id]),
+        n: safeStr(row[m.n]),
+        t: safeNum(row[m.t]),
+        s: finalScore,
+        dt: safeNum(row[m.dt]),
+        r: r,
+        d: {
+          role: safeStr(row[m.role]),
+          days: safeNum(row[m.days]),
+          avg: safeNum(row[m.avg]),
+          seen: safeStr(row[m.seen] || "-"),
+          rate: safeStr(row[m.rate] || "0%"),
+          wfame: safeNum(row[m.wfame]),
+          hist: safeStr(row[m.hist]),
+        },
+      };
+    } else {
+      return {
+        id: safeStr(row[m.id]),
+        n: safeStr(row[m.n]),
+        t: safeNum(row[m.t]),
+        s: s,
+        d: {
+          don: safeNum(row[m.don]),
+          war: safeNum(row[m.war]),
+          ago: safeStr(row[m.ago]),
+          cards: safeNum(row[m.cards]),
+        },
+      };
+    }
+  };
+
   return {
-    lb: lb.map((r: any) => {
-      if (r.length < 10) throw new Error("Matrix Row (LB) underflow");
-      return {
-        id: String(r[0]),
-        n: String(r[1]),
-        t: Number(r[2]),
-        s: Number(r[3]),
-        d: {
-          role: String(r[4]),
-          days: Number(r[5]),
-          avg: Number(r[6]),
-          seen: r[7] ? String(r[7]) : null,
-          rate: r[8] ? String(r[8]) : null,
-          wfame: Number(r[9] ?? 0),
-          hist: String(r[10]),
-        },
-        dt: Number(r[11] ?? 0),
-        r: Number(r[12] ?? 0),
-      };
-    }),
-    hh: hh.map((r: any) => {
-      if (r.length < 7) throw new Error("Matrix Row (HH) underflow");
-      return {
-        id: String(r[0]),
-        n: String(r[1]),
-        t: Number(r[2]),
-        s: Number(r[3]),
-        d: {
-          don: Number(r[4]),
-          war: Number(r[5]),
-          ago: String(r[6]),
-          cards: Number(r[7] ?? 0),
-        },
-      };
-    }),
-    playerTag,
-    timestamp,
+    lb: lbMatrix
+      .map((r: any) => mapRow(r, lbSchema, "lb"))
+      .filter(Boolean) as any[],
+    hh: hhMatrix
+      .map((r: any) => mapRow(r, hhSchema, "hh"))
+      .filter(Boolean) as any[],
+    playerTag: source.playerTag,
+    timestamp: Number(source.timestamp) || Date.now(),
   };
 }
 
@@ -167,6 +241,7 @@ async function fetchWithRetry(
 
 type GasRequestOptions = {
   signal?: AbortSignal;
+  force?: boolean;
 };
 
 async function gasRequest<T>(
@@ -258,11 +333,17 @@ export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
-export async function fetchRemote(signal?: AbortSignal): Promise<WebAppData> {
+export async function fetchRemote(options?: {
+  signal?: AbortSignal;
+  force?: boolean;
+}): Promise<WebAppData> {
   const valibotPreload = import("valibot");
 
   // gasRequest will THROW if it fails, which satisfies expect(fetchRemote()).rejects...
-  const data = await gasRequest<any>("getwebappdata", undefined, { signal });
+  const action = options?.force ? "refresh" : "getwebappdata";
+  const data = await gasRequest<any>(action, undefined, {
+    signal: options?.signal,
+  });
 
   if (!data) throw new Error("Invalid response structure");
 

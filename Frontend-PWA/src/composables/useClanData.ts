@@ -185,7 +185,7 @@ export function useClanData() {
         return;
       }
 
-      const remoteData = await fetchRemote(signal);
+      const remoteData = await fetchRemote({ signal, force: true });
 
       // Trigger notification check before overwriting state
       processRecruitChanges(clanData.value, remoteData);

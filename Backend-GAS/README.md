@@ -1,6 +1,6 @@
 # Clash Manager — Backend Engine
 
-[![Version](https://img.shields.io/badge/Version-8.11.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
+[![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 
 The **Data Processing Core**. A lean, modular Google Apps Script engine that orchestrates high-volume ETL, multi-dimensional performance scoring, and a high-availability headless JSON API.
 

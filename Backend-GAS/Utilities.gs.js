@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 6.0.1
+ * 🏷️ VERSION: 10.0.0
  * ============================================================================
  */
 
-const VER_UTILITIES = "6.3.0";
+const VER_UTILITIES = "10.0.0";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -919,5 +919,72 @@ const Utils = {
       }
     }
     sheet.setHiddenGridlines(true);
+  },
+
+  /**
+   * 🏗️ DYNAMIC SCHEMA RESOLVER
+   * Analyzes a sheet with standard headers and returns a mapping of internal keys
+   * to their current column indices (0-based).
+   */
+  resolveSchemaIndices: function (
+    sheet,
+    headerMap,
+    headerRow = 2,
+    startCol = 1, // Start at Column A (Absolute Indexing)
+  ) {
+    if (!sheet) return {};
+
+    // Read a wide range of headers to be safe (up to 40 columns)
+    const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
+    const resolved = {};
+
+    Object.keys(headerMap).forEach((key) => {
+      const targetLabel = headerMap[key].toLowerCase().trim();
+      const idx = headers.findIndex(
+        (h) =>
+          String(h || "")
+            .toLowerCase()
+            .trim() === targetLabel,
+      );
+
+      if (idx !== -1) {
+        resolved[key] = idx;
+      } else {
+        console.warn(
+          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheet.getName()}.`,
+        );
+      }
+    });
+
+    return resolved;
+  },
+
+  /**
+   * ⚡ BOOT DYNAMIC SCHEMA
+   * Automatically updates the CONFIG.SCHEMA indices based on the actual sheet live layout.
+   */
+  bootDynamicSchema: function () {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+
+    console.log("⚡ Booting Dynamic Schema Sync...");
+
+    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
+    if (lbSheet) {
+      const resolvedLB = this.resolveSchemaIndices(
+        lbSheet,
+        CONFIG.SCHEMA.LB_HEADERS,
+      );
+      Object.assign(CONFIG.SCHEMA.LB, resolvedLB);
+    }
+
+    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+    if (hhSheet) {
+      const resolvedHH = this.resolveSchemaIndices(
+        hhSheet,
+        CONFIG.SCHEMA.HH_HEADERS,
+      );
+      Object.assign(CONFIG.SCHEMA.HH, resolvedHH);
+    }
   },
 };

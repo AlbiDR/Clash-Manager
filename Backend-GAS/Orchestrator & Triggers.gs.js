@@ -6,7 +6,7 @@
  * ⚙️ WORKFLOW:
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 6.0.0
+ * 🏷️ VERSION: 10.0.0
  *
  * 🧠 REASONING:
  *    - Granularity: Replaced the monolithic "dailymaster" with 2 optimized tasks.
@@ -14,7 +14,7 @@
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR_TRIGGERS = "6.3.0";
+const VER_ORCHESTRATOR_TRIGGERS = "10.0.0";
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.

@@ -94,7 +94,7 @@ const sortOptions = [
   {
     label: "Potential",
     value: "score",
-    desc: `**Predictive quality score** based on account progression and historical reliability.\n\n**Algorithm:**\nCompares the candidate's Trophies, Lifetime Donations, and War Win count against your current Clan baseline.\n\n**Signal:**\nRecruits with high potential often demonstrate a developed card pool and a history of active Clan War contribution.`,
+    desc: `**Suppositional quality score** based on account progression and historical reliability.\n\n**Algorithm:**\nCompares the candidate's account stats against your current Clan baseline (Hybrid Benchmark).\n\n**Signal:**\n"Potential" indicates how well this recruit is expected to perform if they were to join the clan today. Values are strictly capped at 100%.`,
   },
   {
     label: "Trophies",
@@ -234,7 +234,7 @@ function handleSearchUpdate(val: string) {
           expandedIds.has(recruit.id),
           selectedSet.has(recruit.id),
           isSelectionMode,
-          isRefreshing,
+          expandedIds.has(recruit.id) && isRefreshing,
         ]"
         :id="`recruit-${recruit.id}`"
         :recruit="recruit"
