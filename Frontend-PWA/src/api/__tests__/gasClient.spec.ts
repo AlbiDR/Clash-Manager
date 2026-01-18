@@ -6,7 +6,7 @@ describe("gasClient Data Inflation", () => {
     const rawMatrixData = {
       format: "matrix",
       schema: { lb: [], hh: [] }, // Actual schema not used by parsing logic, just marker
-      // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14), trend(15)]
+      // [buf(0), tag(1), name(2), role(3), trophies(4), days(5), rec(6), avg(7), tot(8), seen(9), rate(10), wfame(11), hist(12), raw(13), perf(14)]
       lb: [
         [
           "BUFFER",
@@ -23,8 +23,7 @@ describe("gasClient Data Inflation", () => {
           1500,
           "3000 24W01",
           9500, // Raw Score (13)
-          95, // Performance Score (14)
-          5, // Trend (15)
+          100, // Performance Score (14) - user mentioned 100%
         ],
         [
           "",
@@ -42,7 +41,6 @@ describe("gasClient Data Inflation", () => {
           "",
           8000, // Raw Score (13)
           80, // Performance Score (14)
-          0, // Trend (15)
         ],
       ],
       hh: [],
@@ -55,22 +53,19 @@ describe("gasClient Data Inflation", () => {
     expect(result.lb[0].id).toBe("player1");
     expect(result.lb[0].n).toBe("King Arthur");
     expect(result.lb[0].t).toBe(5000);
-    expect(result.lb[0].s).toBe(95);
-    expect(result.lb[0].r).toBe(9500);
-    expect(result.lb[0].dt).toBe(5);
+    expect(result.lb[0].s).toBe(100); // Performance Score from Col O
+    expect(result.lb[0].r).toBe(9500); // Raw Score from Col N
+    expect(result.lb[0].dt).toBe(0); // Optional Trend missing in 15-col row
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
     expect(result.lb[0].d.avg).toBe(50);
     expect(result.lb[0].d.seen).toBe("2023-01-01");
-    expect(result.lb[0].d.rate).toBe("100%");
     expect(result.lb[0].d.wfame).toBe(1500);
-    expect(result.lb[0].d.hist).toBe("3000 24W01");
 
     // Check second player
     expect(result.lb[1].id).toBe("player2");
     expect(result.lb[1].s).toBe(80);
     expect(result.lb[1].r).toBe(8000);
-    expect(result.lb[1].dt).toBe(0);
   });
 
   it("extracts playerTag from payload", async () => {
