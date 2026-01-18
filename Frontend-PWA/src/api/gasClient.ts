@@ -76,9 +76,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   // No longer strictly requiring Valibot for runtime blocking, use it as a check
   const valibot = await import("valibot");
   const WebAppDataSchema = valibot.object({
+    format: valibot.optional(valibot.string()),
+    schema: valibot.optional(
+      valibot.object({
+        lb: valibot.array(valibot.string()),
+        hh: valibot.array(valibot.string()),
+      }),
+    ),
     lb: valibot.array(valibot.array(valibot.unknown())),
     hh: valibot.array(valibot.array(valibot.unknown())),
     timestamp: valibot.union([valibot.number(), valibot.string()]),
+    playerTag: valibot.optional(valibot.string()),
   });
 
   const check = valibot.safeParse(WebAppDataSchema, parsedData);
@@ -105,17 +113,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   const L = {
     id: getIdx(lbSchema, "id", 0),
     n: getIdx(lbSchema, "n", 1),
-    t: getIdx(lbSchema, "t", 2),
-    s: getIdx(lbSchema, "s", 3),
-    role: getIdx(lbSchema, "role", 4),
-    days: getIdx(lbSchema, "days", 5),
+    role: getIdx(lbSchema, "role", 2),
+    t: getIdx(lbSchema, "t", 3),
+    days: getIdx(lbSchema, "days", 4),
     avg: getIdx(lbSchema, "avg", 6),
-    seen: getIdx(lbSchema, "seen", 7),
-    rate: getIdx(lbSchema, "rate", 8),
-    wfame: getIdx(lbSchema, "wfame", 9),
-    hist: getIdx(lbSchema, "hist", 10),
-    dt: getIdx(lbSchema, "dt", 11),
+    seen: getIdx(lbSchema, "seen", 8),
+    rate: getIdx(lbSchema, "rate", 9),
+    wfame: getIdx(lbSchema, "wfame", 10),
+    hist: getIdx(lbSchema, "hist", 11),
     r: getIdx(lbSchema, "r", 12),
+    s: getIdx(lbSchema, "s", 13),
+    dt: getIdx(lbSchema, "dt", 14),
   };
 
   const H = {
