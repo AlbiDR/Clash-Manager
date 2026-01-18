@@ -90,43 +90,62 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   const { lb, hh, timestamp } = result.output;
   const playerTag = (parsedData as any).playerTag;
 
-  // Strict bounds checking for matrix columns
+  // Robust parsing helpers
+  const safeNum = (v: any) => {
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const cleaned = v.replace(/,/g, "").replace(/%/g, "");
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? 0 : n;
+    }
+    return 0;
+  };
+
+  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
+
+  // Strict bounds checking removed in favor of safe access
   return {
-    lb: lb.map((r: any) => {
-      if (r.length < 15) throw new Error("Matrix Row (LB) underflow");
-      return {
-        id: String(r[1]),
-        n: String(r[2]),
-        t: Number(r[4] ?? 0),
-        s: Number(r[14] ?? 0), // Performance Score (Col O)
-        d: {
-          role: String(r[3] ?? ""),
-          days: Number(r[5] ?? 0),
-          avg: Number(r[7] ?? 0),
-          seen: r[9] ? String(r[9]) : null,
-          rate: r[10] ? String(r[10]) : null,
-          wfame: Number(r[11] ?? 0),
-          hist: String(r[12] ?? ""),
-        },
-        dt: Number(r[15] ?? 0), // Trend (Col P) - Optional
-        r: Number(r[13] ?? 0), // Raw Score (Col N)
-      };
-    }),
-    hh: hh.map((r: any) => {
-      if (r.length < 7) throw new Error("Matrix Row (HH) underflow");
-      return {
-        id: String(r[0]),
-        n: String(r[1]),
-        t: Number(r[2]),
-        s: Number(r[3]),
-        d: {
-          don: Number(r[4]),
-          war: Number(r[5]),
-          ago: String(r[6]),
-          cards: Number(r[7] ?? 0),
-        },
-      };
-    }),
+    lb: lb
+      .map((r: any) => {
+        // Row must at least have tag and name
+        if (!r || r.length < 2) return null;
+
+        return {
+          id: safeStr(r[1]), // Tag (Col B)
+          n: safeStr(r[2]), // Name (Col C)
+          t: safeNum(r[4]), // Trophies (Col E)
+          s: safeNum(r[14] ?? r[13] ?? r[3]), // Performance Score (Col O) with fallbacks
+          d: {
+            role: safeStr(r[3]),
+            days: safeNum(r[5]),
+            avg: safeNum(r[7]),
+            seen: r[9] ? safeStr(r[9]) : null,
+            rate: r[10] ? safeStr(r[10]) : null,
+            wfame: safeNum(r[11]),
+            hist: safeStr(r[12]),
+          },
+          dt: safeNum(r[15]), // Trend (Col P)
+          r: safeNum(r[13] ?? r[3]), // Raw Score (Col N)
+        };
+      })
+      .filter(Boolean) as any[],
+    hh: hh
+      .map((r: any) => {
+        if (!r || r.length < 4) return null;
+        return {
+          id: safeStr(r[0]),
+          n: safeStr(r[1]),
+          t: safeNum(r[2]),
+          s: safeNum(r[3]),
+          d: {
+            don: safeNum(r[4]),
+            war: safeNum(r[5]),
+            ago: safeStr(r[6]),
+            cards: safeNum(r[7]),
+          },
+        };
+      })
+      .filter(Boolean) as any[],
     playerTag,
     timestamp,
   };

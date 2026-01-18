@@ -13,7 +13,7 @@ describe("gasClient Data Inflation", () => {
           "player1",
           "King Arthur",
           "leader",
-          5000,
+          "5,000",
           100,
           200,
           50,
@@ -22,8 +22,8 @@ describe("gasClient Data Inflation", () => {
           "100%",
           1500,
           "3000 24W01",
-          9500, // Raw Score (13)
-          100, // Performance Score (14) - user mentioned 100%
+          "9,500", // Raw Score (13) with comma
+          "100%", // Performance Score (14) - user mentioned 100%
         ],
         [
           "",
@@ -40,7 +40,7 @@ describe("gasClient Data Inflation", () => {
           0,
           "",
           8000, // Raw Score (13)
-          80, // Performance Score (14)
+          "80%", // Performance Score (14)
         ],
       ],
       hh: [],
@@ -52,10 +52,10 @@ describe("gasClient Data Inflation", () => {
     // Check first player
     expect(result.lb[0].id).toBe("player1");
     expect(result.lb[0].n).toBe("King Arthur");
-    expect(result.lb[0].t).toBe(5000);
-    expect(result.lb[0].s).toBe(100); // Performance Score from Col O
-    expect(result.lb[0].r).toBe(9500); // Raw Score from Col N
-    expect(result.lb[0].dt).toBe(0); // Optional Trend missing in 15-col row
+    expect(result.lb[0].t).toBe(5000); // parsed "5,000"
+    expect(result.lb[0].s).toBe(100); // parsed "100%"
+    expect(result.lb[0].r).toBe(9500); // parsed "9,500"
+    expect(result.lb[0].dt).toBe(0); // optional Trend missing
     expect(result.lb[0].d.role).toBe("leader");
     expect(result.lb[0].d.days).toBe(100);
     expect(result.lb[0].d.avg).toBe(50);
@@ -64,7 +64,7 @@ describe("gasClient Data Inflation", () => {
 
     // Check second player
     expect(result.lb[1].id).toBe("player2");
-    expect(result.lb[1].s).toBe(80);
+    expect(result.lb[1].s).toBe(80); // parsed "80%"
     expect(result.lb[1].r).toBe(8000);
   });
 
