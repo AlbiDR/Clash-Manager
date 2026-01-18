@@ -30,19 +30,22 @@ jobs:
         with:
           node-version: "22"
 
-      # 🛡️ SECRET VALIDATION: Fail fast if secrets are missing
+      # 🛡️ SECRET VALIDATION: Check for presence of required secrets
       - name: Validate Secrets
+        env:
+          SID: ${{ secrets.SCRIPT_ID }}
+          URL: ${{ secrets.VITE_GAS_URL }}
+          CLASPRC: ${{ secrets.CLASPRC_JSON }}
         run: |
-          if [ -z "${{ secrets.SCRIPT_ID }}" ]; then
-            echo "::error::❌ CRITICAL ERROR: SCRIPT_ID secret is missing."
-            echo "Please add the 'SCRIPT_ID' secret to your GitHub Repository Settings."
-            echo "Value should be the Script ID found in Apps Script > Project Settings."
-            exit 1
-          fi
-          if [ -z "${{ secrets.CLASPRC_JSON }}" ]; then
+          if [ -z "$CLASPRC" ]; then
             echo "::error::❌ CRITICAL ERROR: CLASPRC_JSON secret is missing."
             echo "Please add the 'CLASPRC_JSON' secret to your GitHub Repository Settings."
-            echo "Run 'clasp login' locally and copy the content of ~/.clasprc.json."
+            exit 1
+          fi
+
+          if [ -z "$SID" ] && [ -z "$URL" ]; then
+            echo "::error::❌ CRITICAL ERROR: Neither SCRIPT_ID nor VITE_GAS_URL secrets were found."
+            echo "Please add the Script ID to repository secrets."
             exit 1
           fi
 
@@ -56,14 +59,46 @@ jobs:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
 
       - name: Create Clasp Project Settings
+        env:
+          SID: ${{ secrets.SCRIPT_ID }}
+          URL: ${{ secrets.VITE_GAS_URL }}
         run: |
           cd Backend-GAS
-          # Write config
-          echo '{"scriptId":"${{ secrets.SCRIPT_ID }}","rootDir":"."}' > .clasp.json
           
-          # Verify config was written (non-empty)
+          # 🧠 INTELLIGENT ID RESOLUTION
+          # 1. Prefer explicit SCRIPT_ID
+          FINAL_ID="$SID"
+          
+          # 2. Fallback to VITE_GAS_URL if SCRIPT_ID is missing
+          if [ -z "$FINAL_ID" ]; then
+            echo "⚠️ SCRIPT_ID secret is empty. Attempting to resolve from VITE_GAS_URL..."
+            
+            # Check if it looks like a URL
+            if [[ "$URL" == *"script.google.com"* ]]; then
+               # Extract ID between '/s/' and '/exec' (or end of string)
+               # Regex: remove everything before /s/, then remove everything after the next /
+               FINAL_ID=$(echo "$URL" | sed -e 's/.*\/s\///' -e 's/\/.*//')
+               echo "ℹ️ Extracted ID from URL."
+            else
+               # Assume the value is the ID itself
+               FINAL_ID="$URL"
+               echo "ℹ️ Used VITE_GAS_URL value directly."
+            fi
+          fi
+
+          if [ -z "$FINAL_ID" ]; then
+             echo "::error::❌ Failed to resolve Script ID. Ensure SCRIPT_ID or VITE_GAS_URL is set correctly."
+             exit 1
+          fi
+          
+          echo "✅ Target Script ID: ${FINAL_ID:0:5}..."
+
+          # Write config
+          echo "{\"scriptId\":\"$FINAL_ID\",\"rootDir\":\".\"}" > .clasp.json
+          
+          # Double check file content
           if grep -q '"scriptId":""' .clasp.json; then
-             echo "::error::❌ SCRIPT_ID was written as empty string. Check your repository secrets."
+             echo "::error::❌ .clasp.json was generated with an empty scriptId."
              exit 1
           fi
 
