@@ -167,6 +167,7 @@ async function fetchWithRetry(
 
 type GasRequestOptions = {
   signal?: AbortSignal;
+  force?: boolean;
 };
 
 async function gasRequest<T>(
@@ -258,11 +259,17 @@ export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
-export async function fetchRemote(signal?: AbortSignal): Promise<WebAppData> {
+export async function fetchRemote(options?: {
+  signal?: AbortSignal;
+  force?: boolean;
+}): Promise<WebAppData> {
   const valibotPreload = import("valibot");
 
   // gasRequest will THROW if it fails, which satisfies expect(fetchRemote()).rejects...
-  const data = await gasRequest<any>("getwebappdata", undefined, { signal });
+  const action = options?.force ? "refresh" : "getwebappdata";
+  const data = await gasRequest<any>(action, undefined, {
+    signal: options?.signal,
+  });
 
   if (!data) throw new Error("Invalid response structure");
 
