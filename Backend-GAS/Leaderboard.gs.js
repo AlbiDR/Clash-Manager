@@ -28,6 +28,9 @@ function updateLeaderboard() {
   // We read the existing scores BEFORE we process new data.
   // UPDATE: Tracking RAW SCORE (Col 11) for precise momentum calc.
   const previousScores = new Map(); // Map<CleanTag, RawScore>
+  Logger.log(
+    "🔎 Starting updateLeaderboard - snapshot previousScores map initialized",
+  );
 
   try {
     const lastRow = lbSheet.getLastRow();
@@ -60,9 +63,7 @@ function updateLeaderboard() {
         }
       });
 
-      console.log(
-        `📉 Snapshot: Loaded ${previousScores.size} previous scores.`,
-      );
+      Logger.log(`📉 Snapshot: Loaded ${previousScores.size} previous scores.`);
     }
   } catch (e) {
     console.warn(
@@ -82,6 +83,9 @@ function updateLeaderboard() {
   ];
 
   const [membersData, raceData, logData] = Utils.fetchRoyaleAPI(urls);
+  Logger.log(
+    `📦 Fetched data: members=${membersData?.items?.length || 0}, raceParticipants=${raceData?.clan?.participants?.length || 0}, logItems=${logData?.items?.length || 0}`,
+  );
 
   if (!membersData || !membersData.items) {
     console.error("Leaderboard: Failed to fetch members.");
@@ -96,6 +100,7 @@ function updateLeaderboard() {
 
   // A. Build War History Map
   const warHistoryMap = new Map();
+  Logger.log(`🛠️ warHistoryMap initialized`);
   const addWarEntry = (tag, weekId, fame) => {
     if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
     const userMap = warHistoryMap.get(tag);
@@ -104,6 +109,7 @@ function updateLeaderboard() {
 
   // 1. REHYDRATE FROM ARCHIVE (Existing Sheet Data)
   if (lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    Logger.log("📜 Rehydrating leaderboard historic data");
     try {
       const histColIndex = 2 + CONFIG.SCHEMA.LB.HISTORY;
       const tagColIndex = 2 + CONFIG.SCHEMA.LB.TAG;
@@ -424,12 +430,22 @@ function updateLeaderboard() {
   }
 
   lbSheet
-    .getRange("B1")
-    .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
+      .getRange("B1")
+      .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
   ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
 
   Utils.applyStandardLayout(lbSheet, rows.length, HEADERS.length, HEADERS);
+  Logger.log('🏁 updateLeaderboard execution completed');
 }
++
++/**
++ * Debug helper to invoke updateLeaderboard via clasp run.
++ * This function is NOT used in production.
++ */
++function debugUpdateLeaderboard() {
++  Logger.log('🔧 debugUpdateLeaderboard invoked');
++  updateLeaderboard();
++}
 
 function timeAgo(date) {
   if (!date) return "-";
