@@ -127,8 +127,9 @@ const CONFIG = {
       LAST_SEEN: 7,
       WAR_FAME: 8,
     },
+    // Shifted HH indices +1 to align with absolute column A=0 (Buffer), B=1 (Data Start)
     HH: {
-      TAG: 1, // Adjusted to match absolute index (B)
+      TAG: 1, 
       INVITED: 2,
       NAME: 3,
       TROPHIES: 4,
