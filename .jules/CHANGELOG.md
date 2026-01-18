@@ -1,6 +1,25 @@
 # Changelog
 
 
+## [2026-01-18] PR #46: Documentation Clarity and Synchronization Overhaul
+**Commit**: `3ffb861ee346284089d45b901f4595ec7e74869f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/46)
+
+### Description
+This update addresses several synchronization and clarity gaps in the project's documentation:
+
+1. **Frontend-PWA Synchronization**: Updated the Architectural Components to accurately reflect the use of `Valibot` (replacing `Zod`) and `Tailwind CSS`. Added a new, collapsible "Development" section with explicit instructions for `pnpm dev`.
+2. **Standardization**: Removed all prohibited emojis from `Backend-Worker/README.md` to align with the "Document" role's professional guidelines.
+3. **Syntax Correction**: Fixed a malformed code block in the root `README.md` where single backticks were incorrectly used for a multi-line environment variable example.
+4. **Journaling**: Recorded the clarity gap and solution in `.jules/document-project.md`.
+
+No functional code was modified.
+
+---
+*PR created automatically by Jules for task [4431585522102261599](https://jules.google.com/task/4431585522102261599) started by @AlbiDR*
+
+---
+
 ## [2026-01-18] PR #45: Optimize List Sync Re-renders
 **Commit**: `e54a3d3d08ccad14d57b04e04e699a6ff7596b02`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/45)
