@@ -1,4 +1,3 @@
-
 # Ignore all hidden files
 .*
 
@@ -11,6 +10,9 @@ README.md
 
 # Ignore node_modules
 node_modules/
+
+# Ignore legacy double-extension source files (prevents duplicates during migration)
+**/*.gs.js
 
 # WHITELIST: Only upload these
 !appsscript.json
