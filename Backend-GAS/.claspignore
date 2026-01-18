@@ -1,0 +1,18 @@
+# Ignore all hidden files/directories (like .git, .github)
+.*
+
+# Explicitly ignore node_modules
+node_modules/
+
+# Ignore documentation
+*.md
+
+# Ignore config files that shouldn't be uploaded as scripts
+package.json
+package-lock.json
+pnpm-lock.yaml
+tsconfig.json
+
+# Whitelist: Ensure appsscript.json is NOT ignored (clasp needs it)
+!appsscript.json
+!**/*.js
