@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.0.1
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.0";
+const VER_CONTROLLER_WEBAPP = "10.0.1";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -148,12 +148,22 @@ function refreshWebPayload() {
             "rate",
             "wfame",
             "hist",
-            "r",
-            "s",
+            "performanceRawScore", // STRICT: Unbounded
+            "performanceScore", // STRICT: Percentage 0-100
             "dt",
             "war",
           ],
-          hh: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+          hh: [
+            "id",
+            "n",
+            "t",
+            "potentialScore", // STRICT: Percentage 0-100
+            "don",
+            "war",
+            "ago",
+            "cards",
+            "potentialRawScore", // STRICT: Unbounded
+          ],
         },
         lb: extractSheetDataMatrix(
           ss,
@@ -265,17 +275,15 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
         const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
 
         // Explicit column values from Absolute Sheet Schema
-        const raw = sanitizeNum(
+        const rawVal = sanitizeNum(
           r[SCHEMA.RAW_SCORE],
           displayVals[index][SCHEMA.RAW_SCORE],
         );
-        const score = sanitizeNum(
-          r[SCHEMA.PERF_SCORE],
-          displayVals[index][SCHEMA.PERF_SCORE],
-        );
-        const trend = sanitizeNum(
-          r[SCHEMA.TREND],
-          displayVals[index][SCHEMA.TREND],
+        const scoreVal = sanitizeNum(
+          r[isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE],
+          displayVals[index][
+            isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE
+          ],
         );
 
         if (isHeadhunter) {
@@ -286,9 +294,10 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           const war = sanitizeNum(r[SCHEMA.WAR_WINS]);
           const cards = sanitizeNum(r[SCHEMA.CARDS]);
 
-          return [id, name, trophies, score, don, war, ago, cards];
+          // Matches HH Schema: id, n, t, potentialScore, don, war, ago, cards, potentialRawScore
+          return [id, name, trophies, scoreVal, don, war, ago, cards, rawVal];
         } else {
-          // LEADERBOARD logic remains same...
+          // LEADERBOARD logic
           let role = sanitizeStr(r[SCHEMA.ROLE] || "Member");
           if (role === "coLeader") role = "Co-Leader";
 
@@ -311,9 +320,9 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || "-");
           const hist = sanitizeStr(r[SCHEMA.HISTORY]);
           const trend = sanitizeNum(r[SCHEMA.TREND]);
-          const raw = sanitizeNum(r[SCHEMA.RAW_SCORE]);
           const wfame = sanitizeNum(r[SCHEMA.AVG_WAR_FAME]);
 
+          // Matches LB Schema: id, n, role, t, days, req, avg, tot, seen, rate, wfame, hist, performanceRawScore, performanceScore, dt, war
           return [
             id,
             name,
@@ -327,8 +336,8 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
             rateDisplay,
             wfame,
             hist,
-            raw,
-            score,
+            rawVal, // Explicit PerformanceRawScore
+            scoreVal, // Explicit PerformanceScore (%)
             trend,
             sanitizeNum(r[SCHEMA.WAR_DAY_WINS]),
           ];
