@@ -22,8 +22,11 @@ export interface LeaderboardMember {
   id: string; // Player tag without #
   n: string; // Name
   t: number; // Trophies
-  s: number; // Performance Score
-  r?: number; // Raw Score (Total)
+  
+  // STRICT NOMENCLATURE
+  performanceScore: number; // Normalized % (0-100)
+  performanceRawScore: number;  // Unbounded Calculation (e.g. 52102)
+
   dt?: number; // Score Trend (Raw Score Delta)
   d: {
     role: string;
@@ -41,7 +44,11 @@ export interface Recruit {
   id: string; // Player tag without #
   n: string; // Name
   t: number; // Trophies
-  s: number; // Performance Score
+  
+  // STRICT NOMENCLATURE
+  potentialScore: number; // Normalized % (0-100)
+  potentialRawScore: number; // Unbounded Calculation (e.g. 52102)
+
   d: {
     don: number; // Donations
     war: number; // War Wins

@@ -30,7 +30,7 @@ function updateBadgeCount(data: WebAppData) {
   if (data?.hh) {
     const threshold = modules.notificationThreshold || 75;
     const count = modules.notificationBadgeHighPotential
-      ? data.hh.filter((r) => r.s >= threshold).length
+      ? data.hh.filter((r) => r.potentialScore >= threshold).length
       : data.hh.length;
     setBadge(count);
   }
@@ -70,12 +70,12 @@ function processRecruitChanges(
   const oldIds = new Set(oldData?.hh?.map((r) => r.id) || []);
 
   const newEliteRecruits = newData.hh.filter(
-    (r) => r.s >= threshold && !oldIds.has(r.id),
+    (r) => r.potentialScore >= threshold && !oldIds.has(r.id),
   );
 
   if (newEliteRecruits.length > 0) {
     const count = newEliteRecruits.length;
-    const topScore = Math.max(...newEliteRecruits.map((r) => r.s));
+    const topScore = Math.max(...newEliteRecruits.map((r) => r.potentialScore));
 
     const title =
       count === 1 ? "Elite Recruit Found" : "Elite Recruits Located";

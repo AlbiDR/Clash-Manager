@@ -73,7 +73,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return parsedData as WebAppData;
   }
 
-  // Define our definitive internal field keys (V10 matches current backend)
+  // Updated V10.0.1 Fields matching new Backend
   const FIELDS = {
     LB: [
       "id",
@@ -88,12 +88,22 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
       "rate",
       "wfame",
       "hist",
-      "r",
-      "s",
+      "performanceRawScore", // NEW explicit
+      "performanceScore", // NEW explicit
       "dt",
       "war",
     ],
-    HH: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
+    HH: [
+      "id",
+      "n",
+      "t",
+      "potentialScore", // NEW explicit
+      "don",
+      "war",
+      "ago",
+      "cards",
+      "potentialRawScore" // NEW explicit
+    ],
   };
 
   const WebAppDataSchema = v.object({
@@ -134,7 +144,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   };
 
   /**
-   * Surgical field extractor with semantic check
+   * Surgical field extractor
    */
   const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
     if (!row || !Array.isArray(row) || row.length < 3) return null;
@@ -143,30 +153,21 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     const m: Record<string, number> = {};
     schema.forEach((key, idx) => (m[key] = idx));
 
-    // Resolve Values
-    let s = safeNum(row[m.s]);
-    let r = safeNum(row[m.r]);
-
-    // 🛡️ SEMANTIC CROSS-CHECK (FE Guard V4)
-    // Heuristic: If Score > Raw AND Score > 500, they are 100% swapped.
-    if (type === "lb" && s > r && s > 500) {
-      // Swapped indices or column headers detected!
-      const temp = s;
-      s = r;
-      r = temp;
-    }
-
-    // Safety Cap: Performance score is usually a % (0-150 range max)
-    const finalScore = type === "lb" && s > 1000 ? 100 : s;
-
     if (type === "lb") {
+      // Compatibility: Map both new and old keys to be safe
+      const perfVal = safeNum(row[m.performanceScore !== undefined ? m.performanceScore : m.perf || m.s]);
+      const rawVal = safeNum(row[m.performanceRawScore !== undefined ? m.performanceRawScore : m.raw || m.r]);
+
+      // Safety Cap: Performance score is usually a % (0-150 range max)
+      const finalPerf = perfVal > 1000 ? 100 : perfVal;
+
       return {
         id: safeStr(row[m.id]),
         n: safeStr(row[m.n]),
         t: safeNum(row[m.t]),
-        s: finalScore,
+        performanceScore: finalPerf,
+        performanceRawScore: rawVal,
         dt: safeNum(row[m.dt]),
-        r: r,
         d: {
           role: safeStr(row[m.role]),
           days: safeNum(row[m.days]),
@@ -178,11 +179,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
         },
       };
     } else {
+      // Headhunter
+      // Compatibility
+      const potVal = safeNum(row[m.potentialScore !== undefined ? m.potentialScore : m.potential || m.s]);
+      const rawVal = safeNum(row[m.potentialRawScore !== undefined ? m.potentialRawScore : m.raw]);
+
       return {
         id: safeStr(row[m.id]),
         n: safeStr(row[m.n]),
         t: safeNum(row[m.t]),
-        s: s,
+        potentialScore: potVal,
+        potentialRawScore: rawVal,
         d: {
           don: safeNum(row[m.don]),
           war: safeNum(row[m.war]),

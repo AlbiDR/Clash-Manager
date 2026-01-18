@@ -32,7 +32,7 @@ const sortStrategies: Record<
   string,
   (a: LeaderboardMember, b: LeaderboardMember) => number
 > = {
-  score: (a, b) => (b.s || 0) - (a.s || 0),
+  score: (a, b) => (b.performanceScore || 0) - (a.performanceScore || 0),
   trend: (a, b) => (b.dt || 0) - (a.dt || 0),
   trophies: (a, b) => (b.t || 0) - (a.t || 0),
   name: (a, b) => a.n.localeCompare(b.n),
@@ -124,7 +124,7 @@ const listItems = computed(() => {
 
 // Specific Helper for Score Selection
 function onSelectScore(threshold: number, mode: "ge" | "le") {
-  handleSelectScore(threshold, mode, (m) => m.s || 0);
+  handleSelectScore(threshold, mode, (m) => m.performanceScore || 0);
 }
 
 function handleSearch(val: string) {
@@ -179,7 +179,7 @@ function handleSearch(val: string) {
         v-for="(member, index) in visibleItems"
         :key="member.id"
         v-memo="[
-          member.s,
+          member.performanceScore,
           member.dt,
           expandedIds.has(member.id),
           selectedSet.has(member.id),

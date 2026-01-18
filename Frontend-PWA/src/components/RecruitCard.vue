@@ -39,7 +39,7 @@ function getTooltip(metric: string, value: number | undefined) {
   return getBenchmark("hh", metric, value);
 }
 
-const toneClass = computed(() => getScoreTone(recruit.s));
+const toneClass = computed(() => getScoreTone(recruit.potentialScore));
 const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
 </script>
 
@@ -73,9 +73,10 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
 
     <!-- SLOT: Score Section -->
     <template #score-section>
-      <span class="stat-score" v-tooltip="getTooltip('score', recruit.s)">{{
-        Math.round(recruit.s || 0)
-      }}</span>
+      <span
+        class="stat-score"
+        v-tooltip="getTooltip('score', recruit.potentialScore)"
+      >{{ Math.round(recruit.potentialScore || 0) }}</span>
     </template>
 
     <!-- SLOT: Expanded Content -->

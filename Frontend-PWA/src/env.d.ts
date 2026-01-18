@@ -31,14 +31,6 @@ declare module "*.css" {
   export default content;
 }
 
-interface Window {
-  requestIdleCallback: (
-    callback: (deadline: IdleDeadline) => void,
-    options?: IdleRequestOptions,
-  ) => number;
-  cancelIdleCallback: (handle: number) => void;
-}
-
 interface Document {
   startViewTransition(callback: () => Promise<void> | void): {
     finished: Promise<void>;

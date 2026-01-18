@@ -44,9 +44,9 @@ export function useBenchmarking() {
         min: getMin(lb.map((m) => m.d.avg)),
       },
       score: {
-        avg: getAvg(lb.map((m) => m.s)),
-        max: getMax(lb.map((m) => m.s)),
-        min: getMin(lb.map((m) => m.s)),
+        avg: getAvg(lb.map((m) => m.performanceScore)),
+        max: getMax(lb.map((m) => m.performanceScore)),
+        min: getMin(lb.map((m) => m.performanceScore)),
       },
       tenure: {
         avg: getAvg(lb.map((m) => m.d.days)),
@@ -86,9 +86,9 @@ export function useBenchmarking() {
         min: getMin(hh.map((m) => m.d.cards || 0)),
       },
       score: {
-        avg: getAvg(hh.map((m) => m.s)),
-        max: getMax(hh.map((m) => m.s)),
-        min: getMin(hh.map((m) => m.s)),
+        avg: getAvg(hh.map((m) => m.potentialScore)),
+        max: getMax(hh.map((m) => m.potentialScore)),
+        min: getMin(hh.map((m) => m.potentialScore)),
       },
     };
   });
