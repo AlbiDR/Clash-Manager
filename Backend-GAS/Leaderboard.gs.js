@@ -20,6 +20,8 @@ function updateLeaderboard() {
   let lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
 
+  // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
+  Utils.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
 
   // 🛡️ SAFETY & HISTORY SNAPSHOT
@@ -345,24 +347,9 @@ function updateLeaderboard() {
 
   Utils.backupSheet(ss, CONFIG.SHEETS.LB);
 
-  const HEADERS = [
-    "Tag",
-    "Name",
-    "Role",
-    "Trophies",
-    "Days Tracked",
-    "Received Weekly",
-    "Average Daily Donations",
-    "Total Donations",
-    "Last Seen",
-    "War Rate",
-    "Average War Fame",
-    "War History",
-    "Raw Score",
-    "Performance Score",
-    "Trend",
-    "War Day Wins",
-  ];
+  const HEADERS = Object.keys(CONFIG.SCHEMA.LB_HEADERS)
+    .sort((a, b) => CONFIG.SCHEMA.LB[a] - CONFIG.SCHEMA.LB[b])
+    .map((k) => CONFIG.SCHEMA.LB_HEADERS[k]);
 
   lbSheet.clear();
   lbSheet

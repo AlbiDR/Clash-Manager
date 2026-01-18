@@ -88,11 +88,46 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   // Use parsedData directly for better resiliency if schema check fails
   const source = check.success ? check.output : (parsedData as any);
-  const lb = Array.isArray(source.lb) ? source.lb : [];
-  const hh = Array.isArray(source.hh) ? source.hh : [];
+  const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
+  const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
   const timestamp = Number(source.timestamp) || Date.now();
-  // playerTag is outside the matrix format but inside the envelope data
   const playerTag = (parsedData as any).playerTag;
+
+  // ⚡ SMART SYNC: Dynamically map based on returned schema
+  const lbSchema = (source.schema?.lb as string[]) || [];
+  const hhSchema = (source.schema?.hh as string[]) || [];
+
+  const getIdx = (schema: string[], key: string, fallback: number) => {
+    const idx = schema.indexOf(key);
+    return idx === -1 ? fallback : idx;
+  };
+
+  const L = {
+    id: getIdx(lbSchema, "id", 0),
+    n: getIdx(lbSchema, "n", 1),
+    t: getIdx(lbSchema, "t", 2),
+    s: getIdx(lbSchema, "s", 3),
+    role: getIdx(lbSchema, "role", 4),
+    days: getIdx(lbSchema, "days", 5),
+    avg: getIdx(lbSchema, "avg", 6),
+    seen: getIdx(lbSchema, "seen", 7),
+    rate: getIdx(lbSchema, "rate", 8),
+    wfame: getIdx(lbSchema, "wfame", 9),
+    hist: getIdx(lbSchema, "hist", 10),
+    dt: getIdx(lbSchema, "dt", 11),
+    r: getIdx(lbSchema, "r", 12),
+  };
+
+  const H = {
+    id: getIdx(hhSchema, "id", 0),
+    n: getIdx(hhSchema, "n", 1),
+    t: getIdx(hhSchema, "t", 2),
+    s: getIdx(hhSchema, "s", 3),
+    don: getIdx(hhSchema, "don", 4),
+    war: getIdx(hhSchema, "war", 5),
+    ago: getIdx(hhSchema, "ago", 6),
+    cards: getIdx(hhSchema, "cards", 7),
+  };
 
   // Robust parsing helpers
   const safeNum = (v: any) => {
@@ -107,73 +142,68 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
 
-  // Strict bounds checking removed in favor of safe access
   return {
-    lb: lb
+    lb: lbMatrix
       .map((r: any) => {
         if (!r || !Array.isArray(r) || r.length < 3) return null;
 
-        // 🛡️ SYNC: Detect "BUFFER" column shift (Legacy logic protection)
+        // 🛡️ LEGACY FALLBACK: If schema is missing and row is very long, it's the old sheet format
+        const isLegacySheet = !source.schema && r.length >= 15;
         const isBuffered = r[0] === "BUFFER";
-        const offset = isBuffered ? 1 : 0;
 
-        // Detect if index mismatch occurred (Tag usually starts with digit/letter, Name has spaces/caps)
-        // If length is 16, it's definitely the legacy sheet structure
-        const isLegacy = r.length >= 15;
-
-        if (isLegacy || isBuffered) {
-          // Fallback to legacy mapping if data looks like it
+        if (isLegacySheet || isBuffered) {
+          const offset = isBuffered ? 1 : 0;
           return {
-            id: safeStr(r[1]),
-            n: safeStr(r[2]),
-            t: safeNum(r[4]),
-            s: safeNum(r[14] ?? r[13]),
+            id: safeStr(r[0 + offset]),
+            n: safeStr(r[1 + offset]),
+            t: safeNum(r[3 + offset]),
+            s: safeNum(r[13 + offset] ?? r[12 + offset]),
             d: {
-              role: safeStr(r[3]),
-              days: safeNum(r[5]),
-              avg: safeNum(r[7]),
-              seen: r[9] ? safeStr(r[9]) : null,
-              rate: r[10] ? safeStr(r[10]) : null,
-              wfame: safeNum(r[11]),
-              hist: safeStr(r[12]),
+              role: safeStr(r[2 + offset]),
+              days: safeNum(r[4 + offset]),
+              avg: safeNum(r[6 + offset]),
+              seen: r[8 + offset] ? safeStr(r[8 + offset]) : null,
+              rate: r[9 + offset] ? safeStr(r[9 + offset]) : null,
+              wfame: safeNum(r[10 + offset]),
+              hist: safeStr(r[11 + offset]),
             },
-            dt: safeNum(r[15]),
-            r: safeNum(r[13]),
+            dt: safeNum(r[14 + offset]),
+            r: safeNum(r[12 + offset]),
           };
         }
 
         return {
-          id: safeStr(r[0]), // Tag
-          n: safeStr(r[1]), // Name
-          t: safeNum(r[2]), // Trophies
-          s: safeNum(r[3]), // Performance Score
+          id: safeStr(r[L.id]),
+          n: safeStr(r[L.n]),
+          t: safeNum(r[L.t]),
+          s: safeNum(r[L.s]),
           d: {
-            role: safeStr(r[4]), // Role
-            days: safeNum(r[5]),
-            avg: safeNum(r[6]),
-            seen: r[7] ? safeStr(r[7]) : null,
-            rate: r[8] ? safeStr(r[8]) : null,
-            wfame: safeNum(r[9]),
-            hist: safeStr(r[10]),
+            role: safeStr(r[L.role]),
+            days: safeNum(r[L.days]),
+            avg: safeNum(r[L.avg]),
+            seen: r[L.seen] ? safeStr(r[L.seen]) : null,
+            rate: r[L.rate] ? safeStr(r[L.rate]) : null,
+            wfame: safeNum(r[L.wfame]),
+            hist: safeStr(r[L.hist]),
           },
-          dt: safeNum(r[11]), // Trend
-          r: safeNum(r[12]), // Raw Score
+          dt: safeNum(r[L.dt]),
+          r: safeNum(r[L.r]),
         };
       })
       .filter(Boolean) as any[],
-    hh: hh
+    hh: hhMatrix
       .map((r: any) => {
-        if (!r || r.length < 4) return null;
+        if (!r || !Array.isArray(r) || r.length < 4) return null;
         return {
-          id: safeStr(r[0]),
-          n: safeStr(r[1]),
-          t: safeNum(r[2]),
-          s: safeNum(r[3]),
+          id: safeStr(r[H.id]),
+          n: safeStr(r[H.n]),
+          t: safeNum(r[H.t]),
+          s: safeNum(r[H.s]),
           d: {
-            don: safeNum(r[4]),
-            war: safeNum(r[5]),
-            ago: safeStr(r[6]),
-            cards: safeNum(r[7]),
+            don: safeNum(r[H.don]),
+            war: safeNum(r[H.war]),
+            ago: safeStr(r[H.ago]),
+            cards: safeNum(r[H.cards]),
           },
         };
       })
