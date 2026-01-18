@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.1
+ * 🏷️ VERSION: 10.0.2
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.1";
+const VER_UTILITIES = "10.0.2";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -208,6 +208,68 @@ const Utils = {
     delete: function (key) {
       this._service.deleteProperty(key);
     },
+  },
+
+  /**
+   * 🔑 REMOTE AUDIT DELEGATE
+   * Offloads API key verification to the worker to save GAS quota.
+   * Returns null if worker is not configured or fails, signaling a local fallback.
+   */
+  auditKeysRemote: function (keys) {
+    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
+
+    try {
+      const payload = {
+        apiKeys: keys.map(k => k.value)
+      };
+      
+      const headers = { "Content-Type": "application/json" };
+      if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
+        headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+
+      // This uses 1 fetch quota to test N keys
+      const res = UrlFetchApp.fetch(
+        CONFIG.SYSTEM.REMOTE_WORKER_URL + "/audit",
+        {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true,
+          headers: headers
+        }
+      );
+
+      if (res.getResponseCode() !== 200) {
+        console.warn(`⚠️ Remote audit failed with status ${res.getResponseCode()}`);
+        return null;
+      }
+      
+      const json = JSON.parse(res.getContentText());
+      if (!json.results || !Array.isArray(json.results)) return null;
+      
+      // Map back to internal format
+      // Match results by key value
+      return keys.map(k => {
+          const remoteResult = json.results.find(r => r.key === k.value);
+          
+          if (!remoteResult) {
+             return { name: k.name, success: false, error: "Worker skipped key" };
+          }
+          
+          if (remoteResult.status === 200) {
+             return { name: k.name, success: true };
+          }
+          
+          let errorMsg = `Error ${remoteResult.status}`;
+          if (remoteResult.status === 403) errorMsg = "⛔ Access Denied";
+          if (remoteResult.status === 429) errorMsg = "⚠️ Throttled";
+          return { name: k.name, success: false, error: errorMsg };
+      });
+
+    } catch (e) {
+      console.warn("Remote audit connection error", e);
+      return null;
+    }
   },
 
   /**
