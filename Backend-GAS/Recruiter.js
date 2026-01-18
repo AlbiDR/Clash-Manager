@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.8
+ * 🏷️ VERSION: 10.0.9
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.8";
+const VER_RECRUITER = "10.0.9";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -602,6 +602,16 @@ function renderHeadhunterView(sheet, list, baseline) {
         1,
       )
       .setNumberFormat('0"%"');
+
+    // ⚡ FIX: Force Raw Score to be Plain Text to prevent Date interpretation (Requested by User)
+    sheet
+      .getRange(
+        CONFIG.LAYOUT.DATA_START_ROW,
+        1 + CONFIG.SCHEMA.HH.RAW_SCORE,
+        rows.length,
+        1,
+      )
+      .setNumberFormat("@");
 
     sheet
       .getRange(
