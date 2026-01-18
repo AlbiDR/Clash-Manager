@@ -39,6 +39,11 @@ jobs:
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
 
+      - name: Create Clasp Project Settings
+        run: |
+          cd Backend-GAS
+          echo '{"scriptId":"${{ secrets.SCRIPT_ID }}","rootDir":"."}' > .clasp.json
+
       - name: Push Code to Google Apps Script
         run: |
           cd Backend-GAS
