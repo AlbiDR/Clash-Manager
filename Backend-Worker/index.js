@@ -175,6 +175,42 @@ app.get("/capabilities", checkAuth, (req, res) => {
   });
 });
 
+/**
+ * 🔑 AUDIT ENDPOINT (New)
+ * Checks a list of API keys against a lightweight endpoint to verify validity.
+ * Offloads GAS Quota.
+ */
+app.post("/audit", checkAuth, async (req, res) => {
+  try {
+    const { apiKeys } = req.body;
+    if (!Array.isArray(apiKeys)) return res.status(400).json({ error: "apiKeys must be array" });
+
+    // Lightweight endpoint that requires auth but returns small data
+    const auditUrl = "https://api.clashroyale.com/v1/cards"; 
+
+    // Map keys to fetch promises
+    const tasks = apiKeys.map(async (key) => {
+        try {
+            const response = await timeoutFetch(auditUrl, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${key}`,
+                    "User-Agent": "ClanManagerWorker/Audit"
+                }
+            }, 5000); // 5s timeout per key
+            return { key, status: response.status };
+        } catch (e) {
+            return { key, status: 500, error: e.message };
+        }
+    });
+
+    const results = await Promise.all(tasks);
+    return res.json({ results });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 app.post("/fetch", checkAuth, async (req, res) => {
   try {
     const { urls, apiKeys, scoring } = req.body;
