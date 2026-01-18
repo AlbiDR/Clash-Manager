@@ -44,7 +44,8 @@ const scoreTone = (score: number) => getScoreTone(score);
 
 const trendInfo = computed(() => {
   const dt = Number(member.dt) || 0;
-  const currentRaw = Number(member.r) || 0;
+  // Use explicit RAW property
+  const currentRaw = Number(member.performanceRawScore) || 0;
   if (dt === 0 || currentRaw === 0) return null;
   const previousRaw = currentRaw - dt;
   if (previousRaw < 50) return null;
@@ -70,8 +71,8 @@ const trendInfo = computed(() => {
     :selected="selected"
     :selection-mode="selectionMode"
     :is-tagged="isTagged"
-    :tone-class="scoreTone(member.s)"
-    :aria-label="`${member.n}, score ${Math.round(member.s)}, ${roleInfo(member.d.role).label}`"
+    :tone-class="scoreTone(member.performanceScore)"
+    :aria-label="`${member.n}, score ${Math.round(member.performanceScore)}, ${roleInfo(member.d.role).label}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
@@ -114,10 +115,10 @@ const trendInfo = computed(() => {
         class="stat-score"
         v-tooltip="
           modules.ghostBenchmarking
-            ? getBenchmark('lb', 'score', member.s)
+            ? getBenchmark('lb', 'score', member.performanceScore)
             : null
         "
-        >{{ Math.round(member.s || 0) }}</span
+        >{{ Math.round(member.performanceScore || 0) }}</span
       >
       <div
         v-if="trendInfo"
@@ -137,7 +138,7 @@ const trendInfo = computed(() => {
       </div>
     </template>
 
-    <!-- SLOT: Expanded Content -->
+    <!-- Expanded Content -->
     <template #expanded-content>
       <div class="stats-grid" :aria-busy="appIsRefreshing">
         <template v-if="appIsRefreshing">

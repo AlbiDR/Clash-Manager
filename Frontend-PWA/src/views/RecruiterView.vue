@@ -47,7 +47,7 @@ const recruits = computed(() => {
 const getTs = (str?: string) => (str ? new Date(str).getTime() : 0);
 
 const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
-  score: (a, b) => (b.s || 0) - (a.s || 0),
+  score: (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
   trophies: (a, b) => (b.t || 0) - (a.t || 0),
   name: (a, b) => a.n.localeCompare(b.n),
   time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
@@ -169,7 +169,7 @@ function executeDismiss(ids: string[]) {
 
 // Specific Helper for Score Selection
 function onSelectScore(threshold: number, mode: "ge" | "le") {
-  handleSelectScore(threshold, mode, (r) => r.s || 0);
+  handleSelectScore(threshold, mode, (r) => r.potentialScore || 0);
 }
 
 function handleSearchUpdate(val: string) {
@@ -229,7 +229,7 @@ function handleSearchUpdate(val: string) {
         v-for="(recruit, index) in visibleItems"
         :key="recruit.id"
         v-memo="[
-          recruit.s,
+          recruit.potentialScore,
           recruit.t,
           expandedIds.has(recruit.id),
           selectedSet.has(recruit.id),
