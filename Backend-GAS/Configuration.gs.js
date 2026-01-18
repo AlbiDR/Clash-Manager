@@ -107,7 +107,7 @@ const CONFIG = {
       WAR_WINS: 6,
       FOUND_DATE: 7,
       RAW_SCORE: 8,
-      PERF_SCORE: 9,
+      POTENTIAL_SCORE: 9,
     },
     LB: {
       TAG: 0,

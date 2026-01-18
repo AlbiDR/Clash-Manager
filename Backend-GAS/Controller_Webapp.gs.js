@@ -243,7 +243,9 @@ function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
           "$1",
         );
         const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
-        const score = sanitizeNum(r[SCHEMA.PERF_SCORE]);
+        const score = sanitizeNum(
+          isHeadhunter ? r[SCHEMA.POTENTIAL_SCORE] : r[SCHEMA.PERF_SCORE],
+        );
 
         if (isHeadhunter) {
           const fd = r[SCHEMA.FOUND_DATE];
