@@ -78,7 +78,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./Frontend-PWA/dist"
-          compression-level: 1
 
   deploy:
     name: Deploy
