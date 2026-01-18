@@ -437,15 +437,15 @@ function updateLeaderboard() {
   Utils.applyStandardLayout(lbSheet, rows.length, HEADERS.length, HEADERS);
   Logger.log('🏁 updateLeaderboard execution completed');
 }
-+
-+/**
-+ * Debug helper to invoke updateLeaderboard via clasp run.
-+ * This function is NOT used in production.
-+ */
-+function debugUpdateLeaderboard() {
-+  Logger.log('🔧 debugUpdateLeaderboard invoked');
-+  updateLeaderboard();
-+}
+
+/**
+ * Debug helper to invoke updateLeaderboard via clasp run.
+ * This function is NOT used in production.
+ */
+function debugUpdateLeaderboard() {
+  Logger.log('🔧 debugUpdateLeaderboard invoked');
+  updateLeaderboard();
+}
 
 function timeAgo(date) {
   if (!date) return "-";
