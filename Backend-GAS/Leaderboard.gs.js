@@ -290,20 +290,40 @@ function updateLeaderboard() {
     });
   });
 
-  // Calculate Max Score first for Normalization
-  let maxPerfScore = 0;
-  rawMemberResults.forEach((r) => {
-    if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf;
-  });
-
+  // 3. UNIFIED BENCHMARKING (Deep Net v7)
   // ----------------------------------------------------------------------------
-  // 3. FINALIZE & CALCULATE TREND
-  // ----------------------------------------------------------------------------
+  /**
+   * WHY: Instead of local normalization (which is volatile), we use the same
+   * Hybrid Benchmark logic as the Recruiter. This ensures a Member's '80%'
+   * means exactly the same as a Recruit's '80%'.
+   */
+  const clanEliteData = rawMemberResults
+    .filter((r) => r.scores.perf >= 1) // Anchor against anyone contributing
+    .map((r) => {
+      // Calculate Unified Raw Score for benchmark purposes
+      const histStr = String(r.historyString || "");
+      const hasRecentWar = histStr.includes(currentWeekId);
+      const unifiedRaw = ScoringSystem.calculateRecruitRawScore(
+        r.trophies,
+        r.totalDonations,
+        r.warDayWins,
+        hasRecentWar,
+      );
+      return { rawScore: unifiedRaw, perfScore: r.scores.perf };
+    });
+
+  // Calculate the same Benchmark as Recruiter (using Clan context only for this run)
+  const unifiedBenchmark = ScoringSystem.calculateHybridBenchmark(
+    clanEliteData,
+    [], // No blacklist available during standalone LB sync
+  );
 
   rawMemberResults.forEach((r) => {
-    // Normalize Performance Score (0-100)
-    const normalizedPerf =
-      maxPerfScore > 0 ? Math.round((r.scores.perf / maxPerfScore) * 100) : 0;
+    // 🎯 Use strict calculatePotentialScore (Fixed 0-100 cap)
+    const normalizedPerf = ScoringSystem.calculatePotentialScore(
+      r.scores.perf,
+      unifiedBenchmark,
+    );
 
     // 📈 CALCULATE TREND (RAW SCORE DELTA)
     let trend = 0;
@@ -376,7 +396,8 @@ function updateLeaderboard() {
     const scoreColIndex = 2 + L.PERF_SCORE;
     lbSheet
       .getRange(CONFIG.LAYOUT.DATA_START_ROW, scoreColIndex, rows.length, 1)
-      .setFontWeight("bold");
+      .setFontWeight("bold")
+      .setNumberFormat('0"%"');
 
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMinpointWithValue(
