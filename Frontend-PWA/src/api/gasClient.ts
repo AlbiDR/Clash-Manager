@@ -9,6 +9,7 @@ import type {
   PingResponse,
   DismissResponse,
 } from "../types";
+import * as v from "valibot";
 import { idb } from "../utils/idb";
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
@@ -49,7 +50,6 @@ const getGasUrl = () => {
 
 /**
  * Inflates the payload.
- * USES STANDARD DYNAMIC IMPORT to prevent TypeError crashes.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
   let parsedData: any;
@@ -96,22 +96,21 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     HH: ["id", "n", "t", "s", "don", "war", "ago", "cards"],
   };
 
-  const valibot = await import("valibot");
-  const WebAppDataSchema = valibot.object({
-    format: valibot.optional(valibot.string()),
-    schema: valibot.optional(
-      valibot.object({
-        lb: valibot.array(valibot.string()),
-        hh: valibot.array(valibot.string()),
+  const WebAppDataSchema = v.object({
+    format: v.optional(v.string()),
+    schema: v.optional(
+      v.object({
+        lb: v.array(v.string()),
+        hh: v.array(v.string()),
       }),
     ),
-    lb: valibot.array(valibot.array(valibot.unknown())),
-    hh: valibot.array(valibot.array(valibot.unknown())),
-    timestamp: valibot.union([valibot.number(), valibot.string()]),
-    playerTag: valibot.optional(valibot.string()),
+    lb: v.array(v.array(v.unknown())),
+    hh: v.array(v.array(v.unknown())),
+    timestamp: v.union([v.number(), v.string()]),
+    playerTag: v.optional(v.string()),
   });
 
-  const check = valibot.safeParse(WebAppDataSchema, parsedData);
+  const check = v.safeParse(WebAppDataSchema, parsedData);
   const source = check.success ? check.output : (parsedData as any);
 
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
@@ -337,8 +336,6 @@ export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
 }): Promise<WebAppData> {
-  const valibotPreload = import("valibot");
-
   // gasRequest will THROW if it fails, which satisfies expect(fetchRemote()).rejects...
   const action = options?.force ? "refresh" : "getwebappdata";
   const data = await gasRequest<any>(action, undefined, {
@@ -346,8 +343,6 @@ export async function fetchRemote(options?: {
   });
 
   if (!data) throw new Error("Invalid response structure");
-
-  await valibotPreload;
 
   const inflated = await inflatePayload(data);
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
