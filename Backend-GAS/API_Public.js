@@ -250,10 +250,19 @@ function getModuleVersions() {
 /**
  * Fetches the current member list from the Clash Royale API.
  * Maps 'expLevel' (King Level) to 'kingLevel' to satisfy the UI interface.
+ * ⚡ OPTIMIZED: Tries remote worker first, falls back to local fetch.
  *
  * @return {Array} List of clan members
  */
 function getMembers() {
+  // 1. Try Remote Worker (Public API Offload)
+  const remoteData = Utils.fetchPublicJson('members');
+  if (remoteData) {
+    return remoteData;
+  }
+
+  // 2. Fallback: Local Fetch & Transform
+  console.log("Members: Using local fallback");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
   const data = Utils.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
@@ -277,10 +286,19 @@ function getMembers() {
 /**
  * Fetches the recent River Race Log (War Log).
  * Transforms complex RoyaleAPI standings into a simplified Win/Loss/Score format.
+ * ⚡ OPTIMIZED: Tries remote worker first, falls back to local fetch.
  *
  * @return {Array} List of war log entries
  */
 function getWarLog() {
+  // 1. Try Remote Worker (Public API Offload)
+  const remoteData = Utils.fetchPublicJson('warlog');
+  if (remoteData) {
+    return remoteData;
+  }
+
+  // 2. Fallback: Local Fetch & Transform
+  console.log("WarLog: Using local fallback");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
   const data = Utils.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
