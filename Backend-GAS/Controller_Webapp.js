@@ -68,6 +68,7 @@ function markRecruitsAsInvitedBulk(ids) {
       const expiryDate = now + expiryDuration;
       
       // Create DB Entries: [Tag, ExpiryTimestamp, RawScore(0 placeholder)]
+      // Note: We use 0 for RawScore as dismissed recruits shouldn't affect the high-end benchmark
       const dbEntries = ids.map(id => {
         const tag = id.startsWith("#") ? id : "#" + id;
         return [tag, expiryDate, 0]; 
@@ -99,10 +100,11 @@ function markRecruitsAsInvitedBulk(ids) {
           const rowsToDelete = [];
 
           // Identify rows to delete
+          // We map Tags to Absolute Row Indices
           const tagMap = new Map();
           for(let i=0; i<tagValues.length; i++) {
              const t = String(tagValues[i][0] || "");
-             if(t) tagMap.set(t, startRow + i); // Absolute row number
+             if(t) tagMap.set(t, startRow + i); 
           }
 
           ids.forEach(id => {
@@ -112,7 +114,7 @@ function markRecruitsAsInvitedBulk(ids) {
             }
           });
 
-          // Delete from bottom up to preserve indices
+          // Delete from bottom up to preserve indices of upper rows
           if (rowsToDelete.length > 0) {
             rowsToDelete.sort((a, b) => b - a);
             rowsToDelete.forEach(rowIdx => sheet.deleteRow(rowIdx));
