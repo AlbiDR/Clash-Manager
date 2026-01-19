@@ -142,6 +142,7 @@ function handleSearch(val: string) {
     :sort-options="sortOptions"
     :current-sort="sortBy"
     :loading="showSkeletons"
+    :skeleton-component="MemberCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
     :is-refreshing="isRefreshing"
@@ -172,7 +173,11 @@ function handleSearch(val: string) {
         @toggle="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
       />
-      <SkeletonCard v-for="i in 7" :key="'ex-' + i" :style="{ '--i': i + 1 }" />
+      <MemberCardSkeleton
+        v-for="i in 7"
+        :key="'ex-' + i"
+        :style="{ '--i': i + 1 }"
+      />
     </template>
     <template v-else>
       <MemberCard

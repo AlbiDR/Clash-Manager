@@ -11,7 +11,7 @@ import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
 import type { Recruit } from "../types";
 
 import RecruitCard from "../components/RecruitCard.vue";
-import MemberCardSkeleton from "../components/MemberCardSkeleton.vue";
+import RecruitCardSkeleton from "../components/RecruitCardSkeleton.vue";
 import Icon from "../components/Icon.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
@@ -223,7 +223,8 @@ function handleSearchUpdate(val: string) {
     :stats="statsBadge"
     :sort-options="sortOptions"
     :current-sort="sortBy"
-    :loading="showSkeletons"
+    :loading="isRefreshing && !isHydrated"
+    :skeleton-component="RecruitCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
     :is-refreshing="isRefreshing || isTurboScanning"
