@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.6
+ * 🏷️ VERSION: 10.0.7
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.6";
+const VER_CONTROLLER_WEBAPP = "10.0.7";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -123,9 +123,10 @@ function markRecruitsAsInvitedBulk(ids) {
         }
       }
 
-      // 3. FLUSH & REFRESH
+      // 3. FLUSH & REFRESH (Internal)
+      // We call the internal generator directly to avoid nested locking issues
       SpreadsheetApp.flush();
-      refreshWebPayload();
+      _generatePayloadInternal();
 
       console.timeEnd("BulkDismiss");
       return { success: true, count: ids.length };
@@ -140,8 +141,21 @@ function markRecruitsAsInvitedBulk(ids) {
 // 🔄 CACHE MANAGEMENT
 // ============================================================================
 
+/**
+ * Public wrapper that acquires lock before generating payload.
+ */
 function refreshWebPayload() {
   return Utils.executeSafely("PAYLOAD_GEN", () => {
+    return _generatePayloadInternal();
+  });
+}
+
+/**
+ * 🔒 INTERNAL GENERATOR (No Lock)
+ * Contains the core logic for payload generation. 
+ * Can be called by other locked functions (like markRecruitsAsInvitedBulk) safely.
+ */
+function _generatePayloadInternal() {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -209,7 +223,6 @@ function refreshWebPayload() {
         },
       });
     }
-  });
 }
 
 // ============================================================================
