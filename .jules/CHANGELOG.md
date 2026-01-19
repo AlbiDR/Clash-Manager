@@ -1,5 +1,17 @@
 # Changelog
 
+
+## [2026-01-19] PR #50: Optimize Search Performance in useListFilter
+**Commit**: `3fa3087f79cef0a20e75712e2661ff634d8eb2f4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/50)
+
+### Description
+Optimized `useListFilter` composable to improve search responsiveness. The change pre-calculates and caches normalized search fields when the source list changes, eliminating redundant string operations (toLowerCase) on every keystroke during active searching. Verified with a new unit test suite.
+
+---
+*PR created automatically by Jules for task [14983220874502807738](https://jules.google.com/task/14983220874502807738) started by @AlbiDR*
+
+---
 ## [10.0.0] - 2026-01-18
 
 ### Strategic Pivot: PWA-First Architecture
