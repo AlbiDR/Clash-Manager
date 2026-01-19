@@ -43,9 +43,6 @@ const Utils = {
       const success = lock.tryLock(60000);
 
       if (!success) {
-        console.warn(
-          `🔒 RACE PREVENTED: Could not acquire lock for '${lockKey}'. System is busy.`,
-        );
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         try {
           ss.toast("System is busy. Please try again in 30s.", "⚠️ Locked");
@@ -87,9 +84,6 @@ const Utils = {
       try {
         return JSON.parse(raw);
       } catch (e) {
-        console.warn(
-          `⚠️ Props: JSON Parse error for key '${key}'. Resetting to default.`,
-        );
         return defaultVal;
       }
     },
@@ -99,9 +93,6 @@ const Utils = {
         const str = JSON.stringify(val);
         // Check size limit (9KB per value)
         if (str.length > 9000) {
-          console.warn(
-            `⚠️ Props: Value for '${key}' exceeds 9KB limit. Use setChunked instead.`,
-          );
           return false;
         }
         this._service.setProperty(key, str);
@@ -123,9 +114,6 @@ const Utils = {
         // 1. Check for legacy single key first (Migration path)
         const simple = this._service.getProperty(baseKey);
         if (simple) {
-          console.log(
-            `🧩 Props: Found legacy key for '${baseKey}'. Migrating on next save.`,
-          );
           return JSON.parse(simple);
         }
 
@@ -219,9 +207,9 @@ const Utils = {
 
     try {
       const payload = {
-        apiKeys: keys.map(k => k.value)
+        apiKeys: keys.map((k) => k.value),
       };
-      
+
       const headers = { "Content-Type": "application/json" };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
@@ -233,37 +221,34 @@ const Utils = {
           contentType: "application/json",
           payload: JSON.stringify(payload),
           muteHttpExceptions: true,
-          headers: headers
-        }
+          headers: headers,
+        },
       );
 
       if (res.getResponseCode() !== 200) {
-        console.warn(`⚠️ Remote audit failed with status ${res.getResponseCode()}`);
         return null;
       }
-      
+
       const json = JSON.parse(res.getContentText());
       if (!json.results || !Array.isArray(json.results)) return null;
-      
-      return keys.map(k => {
-          const remoteResult = json.results.find(r => r.key === k.value);
-          
-          if (!remoteResult) {
-             return { name: k.name, success: false, error: "Worker skipped key" };
-          }
-          
-          if (remoteResult.status === 200) {
-             return { name: k.name, success: true };
-          }
-          
-          let errorMsg = `Error ${remoteResult.status}`;
-          if (remoteResult.status === 403) errorMsg = "⛔ Access Denied";
-          if (remoteResult.status === 429) errorMsg = "⚠️ Throttled";
-          return { name: k.name, success: false, error: errorMsg };
-      });
 
+      return keys.map((k) => {
+        const remoteResult = json.results.find((r) => r.key === k.value);
+
+        if (!remoteResult) {
+          return { name: k.name, success: false, error: "Worker skipped key" };
+        }
+
+        if (remoteResult.status === 200) {
+          return { name: k.name, success: true };
+        }
+
+        let errorMsg = `Error ${remoteResult.status}`;
+        if (remoteResult.status === 403) errorMsg = "⛔ Access Denied";
+        if (remoteResult.status === 429) errorMsg = "⚠️ Throttled";
+        return { name: k.name, success: false, error: errorMsg };
+      });
     } catch (e) {
-      console.warn("Remote audit connection error", e);
       return null;
     }
   },
@@ -273,7 +258,12 @@ const Utils = {
    * Offloads heavy tournament filtering logic to the worker.
    * Returns: Array of valid candidate objects (filtered and ready for scoring).
    */
-  scanTournamentsRemote: function (tourneyTags, minTrophies, blacklistSet, scoring = null) {
+  scanTournamentsRemote: function (
+    tourneyTags,
+    minTrophies,
+    blacklistSet,
+    scoring = null,
+  ) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
       throw new Error("Worker not configured for scanning");
     }
@@ -284,26 +274,23 @@ const Utils = {
     try {
       const payload = {
         tags: tourneyTags,
-        apiKeys: keyPool.map(k => k.value),
+        apiKeys: keyPool.map((k) => k.value),
         blacklist: blacklistArray,
         minTrophies: minTrophies,
-        scoring: scoring // Pass scoring weights to worker
+        scoring: scoring, // Pass scoring weights to worker
       };
 
       const headers = { "Content-Type": "application/json" };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
-      const res = UrlFetchApp.fetch(
-        CONFIG.SYSTEM.REMOTE_WORKER_URL + "/scan",
-        {
-          method: "post",
-          contentType: "application/json",
-          payload: JSON.stringify(payload),
-          muteHttpExceptions: true,
-          headers: headers
-        }
-      );
+      const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + "/scan", {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true,
+        headers: headers,
+      });
 
       if (res.getResponseCode() !== 200) {
         throw new Error(`Worker returned ${res.getResponseCode()}`);
@@ -315,9 +302,7 @@ const Utils = {
       }
 
       return json.candidates;
-
     } catch (e) {
-      console.warn("⚠️ Remote scan failed:", e.message);
       // Let caller handle fallback or throw
       throw e;
     }
@@ -329,38 +314,40 @@ const Utils = {
    * Returns transformed array if successful, or null to trigger local fallback.
    */
   fetchPublicJson: function (type) {
-    const useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
-    
+    const useRemote =
+      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+
     if (!useRemote) return null;
 
     try {
       const payload = {
         tag: CONFIG.SYSTEM.CLAN_TAG,
         type: type,
-        apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value)
+        apiKeys: CONFIG.SYSTEM.API_KEYS.map((k) => k.value),
       };
 
       const headers = { "Content-Type": "application/json" };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
-      const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + "/clan/api", {
-        method: "post",
-        contentType: "application/json",
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true,
-        headers: headers
-      });
+      const res = UrlFetchApp.fetch(
+        CONFIG.SYSTEM.REMOTE_WORKER_URL + "/clan/api",
+        {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true,
+          headers: headers,
+        },
+      );
 
       if (res.getResponseCode() === 200) {
         const json = JSON.parse(res.getContentText());
         return json.data;
       } else {
-        console.warn(`Worker /clan/api failed: ${res.getResponseCode()}`);
         return null;
       }
     } catch (e) {
-      console.warn(`Worker /clan/api error (${type}), falling back to local`, e);
       return null;
     }
   },
@@ -372,32 +359,36 @@ const Utils = {
    * If failed/disabled, falls back to standard fetchRoyaleAPI calls (handled by caller fallback logic).
    */
   fetchClanDataSmart: function (cleanTag) {
-    const useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
-    
+    const useRemote =
+      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+
     // 1. Try Remote Worker (Aggregated)
     if (useRemote) {
       try {
         const payload = {
           tag: cleanTag, // Already encoded or raw? Worker expects raw tag, let's decode if needed or pass as is.
-                         // Worker uses it to build URL: /clans/${encodeURIComponent(tag)}/members
-                         // If we pass "%23TAG", encoding it again is bad.
-                         // Standardize: pass CLEAN tag (no #, no URL encoding yet)
-          apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value)
+          // Worker uses it to build URL: /clans/${encodeURIComponent(tag)}/members
+          // If we pass "%23TAG", encoding it again is bad.
+          // Standardize: pass CLEAN tag (no #, no URL encoding yet)
+          apiKeys: CONFIG.SYSTEM.API_KEYS.map((k) => k.value),
         };
         // Decode incase it was passed encoded
-        payload.tag = decodeURIComponent(cleanTag); 
+        payload.tag = decodeURIComponent(cleanTag);
 
         const headers = { "Content-Type": "application/json" };
         if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
           headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
-        const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + "/clan/full", {
-          method: "post",
-          contentType: "application/json",
-          payload: JSON.stringify(payload),
-          muteHttpExceptions: true,
-          headers: headers
-        });
+        const res = UrlFetchApp.fetch(
+          CONFIG.SYSTEM.REMOTE_WORKER_URL + "/clan/full",
+          {
+            method: "post",
+            contentType: "application/json",
+            payload: JSON.stringify(payload),
+            muteHttpExceptions: true,
+            headers: headers,
+          },
+        );
 
         if (res.getResponseCode() === 200) {
           const json = JSON.parse(res.getContentText());
@@ -407,15 +398,12 @@ const Utils = {
             race: { clan: json.race.clan },
             // Worker returns a history object: { tag: { week: fame } }
             // We return it as 'history' so Leaderboard knows it's pre-processed
-            history: json.history, 
-            log: null // No log needed if history exists
+            history: json.history,
+            log: null, // No log needed if history exists
           };
         } else {
-          console.warn(`Worker /clan/full failed: ${res.getResponseCode()}`);
         }
-      } catch (e) {
-        console.warn("Worker /clan/full error, falling back to legacy fetch", e);
-      }
+      } catch (e) {}
     }
 
     // 2. Fallback: Standard Fetch (GAS iterates 3 URLs)
@@ -432,7 +420,7 @@ const Utils = {
       members: membersData,
       race: raceData,
       history: null, // Null history triggers local parsing logic
-      log: logData
+      log: logData,
     };
   },
 
@@ -491,9 +479,6 @@ const Utils = {
     }
 
     if (urlsToFetch.length > remainingQuota) {
-      console.warn(
-        `⚠️ Truncating fetch list from ${urlsToFetch.length} to ${remainingQuota} to avoid exceeding API budget.`,
-      );
       urlsToFetch = urlsToFetch.slice(0, remainingQuota);
     }
 
@@ -509,7 +494,8 @@ const Utils = {
 
     // 🛡️ CIRCUIT BREAKER: Determine remote capability
     // If worker fails, we will disable this flag for the rest of this batch execution
-    let useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+    let useRemote =
+      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
 
     // 3. Batch Processing
     const BATCH_SIZE = 100;
@@ -537,13 +523,12 @@ const Utils = {
 
         try {
           let responses;
-          
+
           if (useRemote) {
             try {
               // Offload to remote worker
               responses = Utils.remoteFetchChunk(chunkUrls, keyPool, scoring);
             } catch (workerErr) {
-              console.warn("⚠️ Worker failed, switching to local fallback for this execution.", workerErr.message);
               useRemote = false; // Disable remote for subsequent retries/batches
               throw workerErr; // Throw to trigger the catch block below and retry via local
             }
@@ -565,19 +550,14 @@ const Utils = {
                 urlIndices
                   .get(url)
                   .forEach((idx) => (finalResults[idx] = json));
-              } catch (e) {
-                console.warn(`JSON Parse Error: ${url}`);
-              }
+              } catch (e) {}
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url).forEach((idx) => (finalResults[idx] = null));
-              console.warn(`[API] 404 Not Found: ${url}`);
             } else if (code === 403 || code === 429) {
               if (useRemote) {
                 // If using remote worker, the worker manages key rotation.
-                console.warn(
-                  `⚠️ Remote worker reported ${code} for ${url}. Worker manages keys; will retry chunk.`,
-                );
+
                 retryChunk = true;
               } else {
                 const badKeyVal = requests[i].headers["Authorization"].replace(
@@ -586,7 +566,7 @@ const Utils = {
                 );
                 const keyObj = keyPool.find((k) => k.value === badKeyVal);
                 const keyName = keyObj ? keyObj.name : "Unknown Key";
-                console.warn(`⚠️ API ${code} on key ${keyName}. Removing.`);
+
                 keyPool = keyPool.filter((k) => k.value !== badKeyVal);
                 const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(
                   (k) => k.value === badKeyVal,
@@ -596,8 +576,10 @@ const Utils = {
               }
             } else {
               const errorBody = r.getContentText().substring(0, 200);
-              console.error(`[API ERROR] ${code} at ${url}\nResponse: ${errorBody}`);
-              
+              console.error(
+                `[API ERROR] ${code} at ${url}\nResponse: ${errorBody}`,
+              );
+
               if (code >= 500) retryChunk = true;
             }
           });
@@ -717,13 +699,8 @@ const Utils = {
       if (res.getResponseCode() === 200) {
         isHealthy = true;
       } else {
-        console.warn(
-          `⚠️ Remote worker health check failed: ${res.getResponseCode()}`,
-        );
       }
-    } catch (e) {
-      console.warn(`⚠️ Remote worker connection error: ${e.message}`);
-    }
+    } catch (e) {}
 
     // Save to all caches
     _EXECUTION_CACHE.set("worker_health", isHealthy);
@@ -784,7 +761,6 @@ const Utils = {
           }
           return fullString;
         } catch (e) {
-          console.warn("Cache reassembly failed: " + e.message);
           return null;
         }
       }

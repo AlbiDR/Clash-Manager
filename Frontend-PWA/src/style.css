@@ -65,14 +65,26 @@ textarea,
   touch-action: manipulation;
 }
 
-/* Allow specific gestures for interactive elements */
+/* Allow specific gestures for interactive elements w/ Smooth Motion */
 .card,
 .hit-target,
 button,
 a,
 input,
-select {
+select,
+.tier-badge,
+.icon-button {
   touch-action: manipulation;
+  transition:
+    transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15),
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card:active,
+button:active {
+  transform: scale(0.98);
 }
 
 /* Scrolling optimizations (native feel) */
@@ -526,17 +538,19 @@ a {
 .rich-tooltip {
   position: absolute;
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
   color: var(--sys-color-on-surface);
-  padding: 14px;
-  border-radius: 18px;
-  width: 170px;
+  padding: 16px;
+  border-radius: 20px;
+  width: 180px;
   pointer-events: none;
   opacity: 0;
   z-index: 10000;
-  border: 1px solid var(--sys-surface-glass-border);
-  box-shadow: var(--sys-elevation-3);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
   transition:
     opacity 0.2s ease,
     transform 0.25s var(--sys-motion-spring),
@@ -546,7 +560,7 @@ a {
   flex-direction: column;
   gap: 10px;
   contain: content;
-  transform: translateX(-50%) translateY(-100%) scale(0.8);
+  transform: translateX(-50%) translateY(-100%) scale(0.9);
 }
 
 .rich-tooltip.visible {

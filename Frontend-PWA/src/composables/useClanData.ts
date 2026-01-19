@@ -78,16 +78,16 @@ function applyLocalDismissal(ids: string[]) {
 
   const currentHH = clanData.value.hh;
   const idsSet = new Set(ids);
-  
+
   // Optimization: Check if any IDs actually exist before cloning
-  if (!currentHH.some(r => idsSet.has(r.id))) return;
+  if (!currentHH.some((r) => idsSet.has(r.id))) return;
 
   const newHH = currentHH.filter((r) => !idsSet.has(r.id));
   const updatedData = { ...clanData.value, hh: newHH };
-  
+
   clanData.value = updatedData;
   updateBadgeCount(updatedData);
-  
+
   // Persist to storage to keep tabs in sync on reload
   localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(updatedData));
 }
@@ -128,7 +128,6 @@ export function useClanData() {
         updateBadgeCount(parsed);
       }
     } catch (e) {
-      console.warn("Hydration failed (Corrupt Data), purging...", e);
       localStorage.removeItem(SNAPSHOT_KEY);
       clanData.value = null;
     } finally {
@@ -186,7 +185,6 @@ export function useClanData() {
     // 🛡️ TIMEOUT PROTECTION: Force fail if network hangs (40s)
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
-        console.warn("Sync timed out (40s), aborting...");
         refreshAbortController.abort("timeout");
       }
     }, 40000);
@@ -303,9 +301,7 @@ export function useClanData() {
     if ("wakeLock" in navigator && syncStatus.value === "syncing") {
       try {
         wakeLock = await (navigator as any).wakeLock.request("screen");
-      } catch (err) {
-        console.warn("Wake Lock failed", err);
-      }
+      } catch (err) {}
     }
   }
 
