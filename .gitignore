@@ -42,3 +42,7 @@ tailwind.config.js
 *.njsproj
 *.sln
 *.sw?
+
+# Tooling
+.roo/
+.roomodes
