@@ -4,12 +4,12 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 10.0.6
+ * 🏷️ VERSION: 10.0.7
  * ============================================================================
  */
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = "10.0.6";
+const VER_CONFIGURATION = "10.0.7";
 
 // Fetch all script properties once at initialization
 let _PROPS = {};
@@ -24,7 +24,7 @@ try {
 const CONFIG = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: "10.0.6",
+      CONFIGURATION: "10.0.7",
       UTILITIES: "10.0.6",
       ORCHESTRATOR: "10.0.4",
       LOGGER: "10.0.1",
@@ -53,7 +53,8 @@ const CONFIG = {
     API_BASE: "https://proxy.royaleapi.dev/v1",
     REMOTE_WORKER_URL: _PROPS["RemoteWorkerUrl"] || "",
     REMOTE_WORKER_SECRET: _PROPS["RemoteWorkerSecret"] || "",
-    WEB_APP_URL: "https://albidr.github.io/Clash-Manager/",
+    // ⚡ UPDATE: Prioritize Script Property for PWA URL, fallback to default
+    WEB_APP_URL: _PROPS["WebAppUrl"] || "https://albidr.github.io/Clash-Manager/",
     RETRY_MAX: 3,
     JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined"
       ? VER_API_PUBLIC
