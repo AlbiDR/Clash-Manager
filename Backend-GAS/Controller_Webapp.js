@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.2
+ * 🏷️ VERSION: 10.0.3
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.2";
+const VER_CONTROLLER_WEBAPP = "10.0.3";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -62,6 +62,10 @@ function markRecruitsAsInvitedBulk(ids) {
       if (!sheet)
         return { success: false, message: "Headhunter sheet not found." };
 
+      // ⚡ STABILITY FIX: Ensure schema is synced with actual sheet columns before writing
+      // This prevents writing to the wrong column if headers are moved.
+      Utils.bootDynamicSchema();
+
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const lastRow = sheet.getLastRow();
 
@@ -71,8 +75,19 @@ function markRecruitsAsInvitedBulk(ids) {
       // 1. UPDATE SHEET (Visual/Database)
       if (lastRow >= startRow) {
         const numRows = lastRow - startRow + 1;
-        const tagColIdx = 2 + CONFIG.SCHEMA.HH.TAG;
-        const invitedColIdx = 2 + CONFIG.SCHEMA.HH.INVITED;
+        
+        // ⚡ FIX: Correct Column Math
+        // Array Read (0-based) vs Sheet Column (1-based).
+        // Since we read from Col 1 (A), Array Index 1 IS Sheet Col 2 (B).
+        // Therefore, we use `1 + SCHEMA_INDEX` to get the GAS Column number.
+        // Old broken math was `2 + SCHEMA_INDEX`.
+        const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
+        const invitedColIdx = 1 + CONFIG.SCHEMA.HH.INVITED;
+
+        // Safety check to ensure we aren't writing out of bounds
+        if (tagColIdx < 1 || invitedColIdx < 1) {
+           throw new Error("Schema Mismatch: Could not resolve Tag or Invited columns.");
+        }
 
         const tagValues = sheet
           .getRange(startRow, tagColIdx, numRows, 1)
