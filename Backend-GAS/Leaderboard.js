@@ -84,15 +84,11 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   // 1. DATA INGESTION
   // ----------------------------------------------------------------------------
-  const urls = [
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
-  ];
-
-  const [membersData, raceData, logData] = Utils.fetchRoyaleAPI(urls);
+  // ⚡ SMART FETCH: Attempts to use Worker for aggregation first
+  const { members: membersData, race: raceData, log: logData, history: remoteHistory } = Utils.fetchClanDataSmart(cleanTag);
+  
   Logger.log(
-    `📦 Fetched data: members=${membersData?.items?.length || 0}, raceParticipants=${raceData?.clan?.participants?.length || 0}, logItems=${logData?.items?.length || 0}`,
+    `📦 Fetched data: members=${membersData?.items?.length || 0}, raceParticipants=${raceData?.clan?.participants?.length || 0}`
   );
 
   if (!membersData || !membersData.items) {
@@ -158,7 +154,17 @@ function updateLeaderboard() {
   }
 
   // 2. MERGE FRESH API DATA
-  if (logData && logData.items) {
+  // ⚡ OPTIMIZATION: Use remote history if available, else parse local log
+  if (remoteHistory) {
+    Logger.log("☁️ Using Worker-Aggregated History");
+    Object.keys(remoteHistory).forEach(tag => {
+      const playerHist = remoteHistory[tag];
+      Object.keys(playerHist).forEach(weekId => {
+        addWarEntry(tag, weekId, playerHist[weekId]);
+      });
+    });
+  } else if (logData && logData.items) {
+    Logger.log("🐌 Using Local Log Parsing");
     logData.items.forEach((log) => {
       const weekId = Utils.calculateWarWeekId(
         Utils.parseRoyaleApiDate(log.createdDate),
