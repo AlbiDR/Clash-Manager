@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.9
+ * 🏷️ VERSION: 10.0.10
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.9";
+const VER_CONTROLLER_WEBAPP = "10.0.10";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -86,8 +86,8 @@ function markRecruitsAsInvitedBulk(ids) {
              const t = String(tagValues[i][0] || "").trim();
              const s = Number(scoreValues[i][0]) || 0;
              if(t) {
-                // Normalize tag just in case
-                const normTag = t.startsWith("#") ? t : "#" + t;
+                // Normalize tag just in case - FORCE UPPERCASE to match inputs
+                const normTag = (t.startsWith("#") ? t : "#" + t).toUpperCase();
                 tagScoreMap.set(normTag, s);
                 tagRowMap.set(normTag, startRow + i);
              } 
@@ -110,7 +110,8 @@ function markRecruitsAsInvitedBulk(ids) {
       
       // Create DB Entries: [Tag, ExpiryTimestamp, RawScore]
       const dbEntries = ids.map(id => {
-        const tag = id.startsWith("#") ? id : "#" + id;
+        // Normalize input ID - FORCE UPPERCASE
+        const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
         // ⚡ FIX: Use the captured score from the sheet, default to 0 only if missing
         const rawScore = tagScoreMap.get(tag) || 0;
         return [tag, expiryDate, rawScore]; 
@@ -133,7 +134,8 @@ function markRecruitsAsInvitedBulk(ids) {
           const rowsToDelete = [];
 
           ids.forEach(id => {
-            const tag = id.startsWith("#") ? id : "#" + id;
+            // Normalize input ID - FORCE UPPERCASE
+            const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
             if (tagRowMap.has(tag)) {
                rowsToDelete.push(tagRowMap.get(tag));
             }
@@ -208,14 +210,14 @@ function _generatePayloadInternal() {
          const now = Date.now();
          // Col 0 = Tag, Col 1 = Expiry
          rawBL.forEach(r => {
-            if (r[1] > now) blacklist.add(String(r[0]));
+            if (r[1] > now) blacklist.add(String(r[0]).toUpperCase());
          });
       }
 
       const filteredHH = hhResult.rows.filter(row => {
          // Assuming ID is index 0 in the output array (matches schema order)
          const id = "#" + row[0]; 
-         return !blacklist.has(id);
+         return !blacklist.has(id.toUpperCase());
       });
 
       const data = {
@@ -348,7 +350,8 @@ function extractSheetDataStrict(ss, sheetName, type) {
 
       switch(m.type) {
         case "tag": 
-          return String(val).replace("#", "").trim();
+          // ⚡ NORMALIZE: Ensure frontend always gets Uppercase IDs for consistency
+          return String(val).replace("#", "").trim().toUpperCase();
         case "num":
           return sanitizeNum(val, disp);
         case "rate":
