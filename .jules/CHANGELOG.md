@@ -1,5 +1,37 @@
 # Changelog
 
+
+## [2026-01-19] PR #51: Establish Architecture Hub and Resolve Documentation Paths
+**Commit**: `7e02a0cf6266957cdca527d1e342393e4e3f8740`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/51)
+
+### Description
+This update addresses a significant clarity gap in the project's documentation by establishing a central architectural reference and resolving broken links across the monorepo.
+
+Key improvements:
+1. **Consolidated Knowledge**: Created `docs/ARCHITECTURE.md` with Mermaid diagrams and detailed component breakdowns, providing a single source of truth for the system design.
+2. **Technical Accuracy**: Updated `Backend-GAS/README.md` to replace obsolete "Tauri" terminology with the current "Vue 3 Frontend (PWA)" stack.
+3. **Path Integrity**: Corrected relative links in sub-package READMEs to ensure the new documentation is accessible from all levels of the repository.
+4. **Aesthetic Cleanup**: Refined the `Frontend-PWA` README by removing redundant horizontal rules and ensuring consistent formatting.
+
+These changes strictly adhere to the "Document" persona's constraints: no emojis, no cocky jargon, and no functional code modifications.
+
+---
+*PR created automatically by Jules for task [969657388842426333](https://jules.google.com/task/969657388842426333) started by @AlbiDR*
+
+---
+
+## [2026-01-19] PR #50: Optimize Search Performance in useListFilter
+**Commit**: `3fa3087f79cef0a20e75712e2661ff634d8eb2f4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/50)
+
+### Description
+Optimized `useListFilter` composable to improve search responsiveness. The change pre-calculates and caches normalized search fields when the source list changes, eliminating redundant string operations (toLowerCase) on every keystroke during active searching. Verified with a new unit test suite.
+
+---
+*PR created automatically by Jules for task [14983220874502807738](https://jules.google.com/task/14983220874502807738) started by @AlbiDR*
+
+---
 ## [10.0.0] - 2026-01-18
 
 ### Strategic Pivot: PWA-First Architecture
