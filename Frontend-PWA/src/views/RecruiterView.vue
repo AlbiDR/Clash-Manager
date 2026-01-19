@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, watch, ref } from "vue";
 import { useClanData } from "../composables/useClanData";
 import { useApiState } from "../composables/useApiState";
 import { useToast } from "../composables/useToast";
 import { useRecruitBlacklist } from "../composables/useRecruitBlacklist";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
 import { useShowcaseMode } from "../composables/useShowcaseMode";
+import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
 import type { Recruit } from "../types";
 
 import RecruitCard from "../components/RecruitCard.vue";
@@ -32,7 +33,7 @@ const {
   isRefreshing,
   syncError,
   lastSyncTime,
-  refresh,
+  refresh: refreshGas,
   dismissRecruitsAction,
 } = useClanData();
 const blacklist = useRecruitBlacklist();
@@ -99,17 +100,17 @@ const sortOptions = [
   {
     label: "Trophies",
     value: "trophies",
-    desc: `**Current ladder ranking** pull via Supercell API.\n\n**Insight:**\nReflects mechanical skill and King Tower progression on Trophy Road or Path of Legends.`,
+    desc: `**Current ladder ranking** pull via Supercell API.\n\n**Insight:**\nReflects mechanical skill and King Tower progression.`,
   },
   {
     label: "Donations",
     value: "donations",
-    desc: `**Lifetime card donations** from previous Clan history.\n\n**Logic:**\nMeasures long-term generosity. High lifetime donations are the most reliable predictor of a player's team-oriented mindset.`,
+    desc: `**Lifetime card donations** from previous Clan history.\n\n**Logic:**\nMeasures long-term generosity.`,
   },
   {
     label: "Recency",
     value: "time_found",
-    desc: `**Timestamp of discovery** during recent tournament scans.\n\n**Use case:**\nIdentifying fresh talent who have recently gone clanless and are likely seeking a new home immediately.`,
+    desc: `**Timestamp of discovery** during recent tournament scans.`,
   },
   {
     label: "Name",
@@ -132,16 +133,49 @@ watch(
     if (newRecruits && newRecruits.length > 0) {
       const currentIds = newRecruits.map((r) => r.id);
       blacklist.prune(currentIds);
-      // Note: processDeepLink is auto-called by useConsoleLogic watcher on data change,
-      // but here we might need manual control if blacklist affects it?
-      // Actually useConsoleLogic watches 'recruits' computed, which filters blacklist.
-      // So we don't need to manually call processDeepLink here!
     }
   },
   { deep: true, immediate: true },
 );
 
-const { undo, success, error } = useToast();
+const { undo, success, error, info } = useToast();
+
+// ⚡ DIRECT SCAN: Turbo Mode
+const isTurboScanning = ref(false);
+
+async function handleRefresh() {
+  if (isWorkerConfigured()) {
+    isTurboScanning.value = true;
+    info("Starting Turbo Scan via Worker...");
+    
+    // Direct Fetch (Bypassing GAS)
+    const newCandidates = await scanRecruitsDirect();
+    if (newCandidates && newCandidates.length > 0) {
+      // Merge with existing data locally to update view instantly
+      if (data.value) {
+        // Simple merge: append new ones
+        const existingIds = new Set(data.value.hh.map(r => r.id));
+        const merged = [...data.value.hh];
+        let added = 0;
+        newCandidates.forEach(c => {
+          if (!existingIds.has(c.id)) {
+            merged.push(c);
+            added++;
+          }
+        });
+        // Mutate local state temporarily (will be overwritten by next full sync)
+        data.value.hh = merged.sort((a,b) => b.potentialScore - a.potentialScore);
+        success(`Turbo Scan: Found ${added} new recruits`);
+      }
+    } else {
+      info("Turbo Scan complete. No new candidates.");
+    }
+    isTurboScanning.value = false;
+  }
+  
+  // Always trigger full sync to ensure consistency
+  refreshGas();
+}
 
 function dismissBulk() {
   if (selectedIds.value.length === 0) return;
@@ -189,11 +223,11 @@ function handleSearchUpdate(val: string) {
     :loading="showSkeletons"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
-    :is-refreshing="isRefreshing"
+    :is-refreshing="isRefreshing || isTurboScanning"
     :sync-error="syncError"
     :is-empty="!showSkeletons && filteredItems.length === 0"
     :fab-state="fabState"
-    @refresh="refresh"
+    @refresh="handleRefresh"
     @update:search="handleSearchUpdate"
     @update:sort="updateSort"
     @select-all="handleSelectAll"
@@ -205,7 +239,7 @@ function handleSearchUpdate(val: string) {
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
-      <button class="btn-primary" @click="refresh">
+      <button class="btn-primary" @click="handleRefresh">
         <Icon name="refresh" size="18" />
         <span>Scan Again</span>
       </button>
@@ -218,9 +252,9 @@ function handleSearchUpdate(val: string) {
         :recruit="visibleItems[0]"
         :expanded="expandedIds.has(visibleItems[0].id)"
         :selected="selectedSet.has(visibleItems[0].id)"
+        :selection-mode="isSelectionMode"
         @toggle-expand="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
-        @dismiss="dismissRecruitsAction([visibleItems[0].id])"
       />
       <SkeletonCard v-for="i in 7" :key="'ex-' + i" />
     </template>
