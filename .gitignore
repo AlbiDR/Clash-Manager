@@ -3,6 +3,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+*.txt
 
 # Environment & Secrets
 .env
