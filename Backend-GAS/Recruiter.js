@@ -138,6 +138,7 @@ function scoutRecruits() {
           Number(row[L.TOTAL_DON]) || 0,
           Number(row[L.WAR_DAY_WINS]) || 0,
           hasRecentWar,
+          CONFIG.HEADHUNTER.WEIGHTS // Pass explicit weights
         );
         clanEliteData.push({ rawScore: raw, perfScore: perf });
       }
@@ -483,27 +484,31 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
       const logs = Utils.fetchRoyaleAPI(logUrls);
 
       candidatesToScoreLocally.forEach((p, idx) => {
-        let warBonus = 0;
+        let hasWar = false;
         if (logs[idx]) {
-          const hasWar = logs[idx].some(
+          hasWar = logs[idx].some(
             (b) =>
               b.type === "riverRacePvP" ||
               b.type === "boatBattle" ||
               b.type === "riverRaceDuel",
           );
-          if (hasWar) warBonus = 500;
         }
-        let totalWarScore = (p.warDayWins || 0) + warBonus;
+        let totalWarScore = (p.warDayWins || 0) + (hasWar ? 500 : 0);
         if (existingRecruits?.has(p.tag))
           totalWarScore = Math.max(
             totalWarScore,
             existingRecruits.get(p.tag).war || 0,
           );
-        const rawScore = Math.round(
-          p.trophies * W.TROPHY +
-            p.totalDonations * W.DON +
-            totalWarScore * W.WAR,
+        
+        // 🔗 LOGIC SYNC: Use Shared Scoring System
+        const rawScore = ScoringSystem.calculateRecruitRawScore(
+            p.trophies || 0,
+            p.totalDonations || 0,
+            p.warDayWins || 0,
+            hasWar,
+            W // Pass explicit weights
         );
+
         p._computed = {
           tag: p.tag,
           name: p.name,
