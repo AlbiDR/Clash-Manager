@@ -1,19 +1,30 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
-import { useClanData } from "./composables/useClanData";
+import { useClashData } from "./composables/useClashData";
+import { useHeadhunter } from "./composables/useHeadhunter";
 import { useHaptics } from "./composables/useHaptics";
-import { useConnectionStatus } from "./composables/useConnectionStatus"; 
+import { useConnectionStatus } from "./composables/useConnectionStatus";
 import FloatingDock from "./components/FloatingDock.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ErrorBoundary from "./components/ErrorBoundary.vue";
 
-const { syncStatus, refresh } = useClanData();
+const { syncStatus, refresh, loadLocal } = useClashData();
+// Initialize Headhunter (starts watchers for notifications/badge)
+useHeadhunter();
+
+// Load local data immediately
+loadLocal();
 const haptics = useHaptics();
 const route = useRoute();
 const currentRoute = computed(() => route);
 
-const { status: connectionState, setSuccess, setSyncing, isOnline } = useConnectionStatus();
+const {
+  status: connectionState,
+  setSuccess,
+  setSyncing,
+  isOnline,
+} = useConnectionStatus();
 
 watch(syncStatus, (newStatus, oldStatus) => {
   if (oldStatus === "syncing" && newStatus === "success") {
@@ -38,22 +49,30 @@ import { useRegisterSW } from "virtual:pwa-register/vue";
 const { needRefresh, updateServiceWorker } = useRegisterSW({
   onRegistered(r) {
     // Check for updates every hour
-    r && setInterval(() => { r.update(); }, 60 * 60 * 1000);
+    r &&
+      setInterval(
+        () => {
+          r.update();
+        },
+        60 * 60 * 1000,
+      );
   },
   onNeedRefresh() {
-    // Automatically apply update if it's a minor change 
+    // Automatically apply update if it's a minor change
     // or notify user for major shifts.
     updateServiceWorker(true);
-  }
+  },
 });
 
 onMounted(() => {
   // 🛡️ VERSION GUARD: Force cache busting if version mismatch detected
   const currentVersion = __APP_VERSION__;
   const storedVersion = localStorage.getItem("app_version");
-  
+
   if (storedVersion && storedVersion !== currentVersion) {
-    console.log(`[Version] Upgrading from ${storedVersion} to ${currentVersion}`);
+    console.log(
+      `[Version] Upgrading from ${storedVersion} to ${currentVersion}`,
+    );
     // Optional: Clear old system states if needed
   }
   localStorage.setItem("app_version", currentVersion);
@@ -128,14 +147,20 @@ onMounted(() => {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* 🎭 View Transitions Fallback (Fade + Slightly Slide) */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-enter-from {
@@ -150,4 +175,3 @@ onMounted(() => {
 
 /* ⚡ FUTURE: CSS View Transitions API support elsewhere */
 </style>
-

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch, ref } from "vue";
-import { useClanData } from "../composables/useClanData";
+import { useClashData } from "../composables/useClashData";
+import { useHeadhunter } from "../composables/useHeadhunter";
 import { useApiState } from "../composables/useApiState";
 import { useToast } from "../composables/useToast";
 import { useRecruitBlacklist } from "../composables/useRecruitBlacklist";
@@ -34,8 +35,8 @@ const {
   syncError,
   lastSyncTime,
   refresh: refreshGas,
-  dismissRecruitsAction,
-} = useClanData();
+} = useClashData();
+const { dismissRecruitsAction } = useHeadhunter();
 const blacklist = useRecruitBlacklist();
 
 // 🛡️ PRE-FILTER: Exclude Tombstones
@@ -147,24 +148,26 @@ async function handleRefresh() {
   if (isWorkerConfigured()) {
     isTurboScanning.value = true;
     info("Starting Turbo Scan via Worker...");
-    
+
     // Direct Fetch (Bypassing GAS)
     const newCandidates = await scanRecruitsDirect();
     if (newCandidates && newCandidates.length > 0) {
       // Merge with existing data locally to update view instantly
       if (data.value) {
         // Simple merge: append new ones
-        const existingIds = new Set(data.value.hh.map(r => r.id));
+        const existingIds = new Set(data.value.hh.map((r) => r.id));
         const merged = [...data.value.hh];
         let added = 0;
-        newCandidates.forEach(c => {
+        newCandidates.forEach((c) => {
           if (!existingIds.has(c.id)) {
             merged.push(c);
             added++;
           }
         });
         // Mutate local state temporarily (will be overwritten by next full sync)
-        data.value.hh = merged.sort((a,b) => b.potentialScore - a.potentialScore);
+        data.value.hh = merged.sort(
+          (a, b) => b.potentialScore - a.potentialScore,
+        );
         success(`Turbo Scan: Found ${added} new recruits`);
       }
     } else {
@@ -172,7 +175,7 @@ async function handleRefresh() {
     }
     isTurboScanning.value = false;
   }
-  
+
   // Always trigger full sync to ensure consistency
   refreshGas();
 }

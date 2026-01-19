@@ -7,6 +7,7 @@ import { useBenchmarking } from "../composables/useBenchmarking";
 import { useModules } from "../composables/useModules";
 import { getScoreTone, formatRole } from "../utils/formatters";
 import { useExternalLink } from "../composables/useExternalLink";
+import StatisticItem from "./StatisticItem.vue";
 
 const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
@@ -148,42 +149,31 @@ const trendInfo = computed(() => {
           </div>
         </template>
         <template v-else>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="
-              modules.ghostBenchmarking
-                ? getBenchmark(
-                    'lb',
-                    'warRate',
-                    parseFloat(member.d.rate || '0'),
-                  )
-                : null
-            "
-          >
-            <span class="label">War Rate</span>
-            <span class="value">{{ member.d.rate }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="label">Average Fame</span>
-            <span class="value">{{
-              (member.d.wfame || 0).toLocaleString()
-            }}</span>
-          </div>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="
-              modules.ghostBenchmarking
-                ? getBenchmark('lb', 'donations', member.d.avg)
-                : null
-            "
-          >
-            <span class="label">Daily Donations</span>
-            <span class="value">{{ member.d.avg }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="label">Last Seen</span>
-            <span class="value">{{ member.d.seen }}</span>
-          </div>
+          <template v-else>
+            <StatisticItem
+              label="War Rate"
+              :value="member.d.rate || '0%'"
+              :tooltip-context="{
+                type: 'lb',
+                metric: 'warRate',
+                rawValue: parseFloat(member.d.rate || '0'),
+              }"
+            />
+            <StatisticItem
+              label="Average Fame"
+              :value="(member.d.wfame || 0).toLocaleString()"
+            />
+            <StatisticItem
+              label="Daily Donations"
+              :value="member.d.avg"
+              :tooltip-context="{
+                type: 'lb',
+                metric: 'donations',
+                rawValue: member.d.avg,
+              }"
+            />
+            <StatisticItem label="Last Seen" :value="member.d.seen" />
+          </template>
         </template>
       </div>
 
@@ -328,59 +318,10 @@ const trendInfo = computed(() => {
   gap: 8px;
   margin-bottom: 12px;
 }
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 4px;
-  border-radius: 10px;
-  background: var(--sys-color-surface-container-highest);
-  border: 1px solid var(--sys-surface-glass-border);
-  transition:
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.stat-item:hover {
-  transform: translateY(-2px) scale(1.02);
-  background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 2;
-}
-.stat-item .label {
-  font-size: 9px;
-  text-transform: uppercase;
-  font-weight: 850;
-  color: var(--sys-color-secondary);
-  letter-spacing: 0.06em;
-  opacity: 0.7;
-  text-align: center;
-  line-height: 1.1;
-  min-height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  word-break: break-word;
-}
-.stat-item .value {
-  font-size: 14px;
-  font-weight: 900;
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-mono);
-  line-height: 1;
-}
 
 @media (max-width: 360px) {
   .stats-grid {
     gap: 6px;
-  }
-  .stat-item {
-    padding: 4px 2px;
-  }
-  .stat-item .value {
-    font-size: 13px;
   }
 }
 

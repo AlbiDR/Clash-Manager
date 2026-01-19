@@ -2,7 +2,7 @@
 import { ref, reactive, onUnmounted, computed } from "vue";
 import { triggerBackendUpdate } from "../../api/gasClient";
 import Icon from "../Icon.vue";
-import { useClanData } from "../../composables/useClanData";
+import { useClashData } from "../../composables/useClashData";
 
 // Types
 type TargetKey = "members" | "leaderboard" | "headhunters";
@@ -48,7 +48,7 @@ const targets = reactive<Record<TargetKey, RefreshTarget>>({
   },
 });
 
-const { isRefreshing } = useClanData(); // Get global refreshing state
+const { isRefreshing } = useClashData(); // Get global refreshing state
 
 // Logic
 const startCooldown = (key: TargetKey) => {

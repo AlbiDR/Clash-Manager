@@ -1,16 +1,15 @@
 import { ref, shallowRef, readonly, watch } from "vue";
-import { loadCache, fetchRemote, dismissRecruits } from "../api/gasClient";
+import { fetchRemote } from "../api/gasClient";
 import type { WebAppData } from "../types";
-import { useBadge } from "./useBadge";
-import { useModules } from "./useModules";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
 import { useBroadcastChannel } from "./useBroadcastChannel";
+import { useWakeLock } from "./useWakeLock";
 
 // Global State
-const clanData = shallowRef<WebAppData | null>(null);
+const clashData = shallowRef<WebAppData | null>(null);
 // Initialize as hydrated=false to force Skeletons on first paint
 const isHydrated = ref(false);
 const isRefreshing = ref(false);
@@ -20,77 +19,9 @@ const syncError = ref<string | null>(null);
 const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
 // Singleton Composables (Module Level)
-const { setBadge, sendLocalNotification } = useBadge();
-const { modules } = useModules();
 const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
-
-function updateBadgeCount(data: WebAppData) {
-  if (data?.hh) {
-    const threshold = modules.notificationThreshold || 75;
-    const count = modules.notificationBadgeHighPotential
-      ? data.hh.filter((r) => r.potentialScore >= threshold).length
-      : data.hh.length;
-    setBadge(count);
-  }
-}
-
-/**
- * 🛠 RECRUIT NOTIFICATION ENGINE
- * Compares current pool with new incoming data to detect high-potential recruits.
- */
-function processRecruitChanges(
-  oldData: WebAppData | null,
-  newData: WebAppData,
-) {
-  if (!newData?.hh || !modules.experimentalNotifications) return;
-
-  const threshold = modules.notificationThreshold || 75;
-  const oldIds = new Set(oldData?.hh?.map((r) => r.id) || []);
-
-  const newEliteRecruits = newData.hh.filter(
-    (r) => r.potentialScore >= threshold && !oldIds.has(r.id),
-  );
-
-  if (newEliteRecruits.length > 0) {
-    const count = newEliteRecruits.length;
-    const topScore = Math.max(...newEliteRecruits.map((r) => r.potentialScore));
-
-    const title =
-      count === 1 ? "Elite Recruit Found" : "Elite Recruits Located";
-    const body =
-      count === 1
-        ? `A candidate with score ${topScore} just entered the pool.`
-        : `${count} candidates with scores up to ${topScore} detected.`;
-
-    sendLocalNotification(title, body, "headhunter-channel");
-  }
-}
-
-/**
- * 🧹 LOCAL REMOVAL HELPER
- * Removes recruits from the local state without triggering a network call.
- * Used for optimistic updates and cross-tab sync.
- */
-function applyLocalDismissal(ids: string[]) {
-  if (!clanData.value) return;
-
-  const currentHH = clanData.value.hh;
-  const idsSet = new Set(ids);
-
-  // Optimization: Check if any IDs actually exist before cloning
-  if (!currentHH.some((r) => idsSet.has(r.id))) return;
-
-  const newHH = currentHH.filter((r) => !idsSet.has(r.id));
-  const updatedData = { ...clanData.value, hh: newHH };
-
-  clanData.value = updatedData;
-  updateBadgeCount(updatedData);
-
-  // Persist to storage to keep tabs in sync on reload
-  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(updatedData));
-}
 
 // 📡 Broadcast Channel Integration
 const { post: broadcast } = useBroadcastChannel((msg) => {
@@ -101,19 +32,31 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed.timestamp > (lastSyncTime.value || 0)) {
-          clanData.value = parsed;
+          clashData.value = parsed;
           lastSyncTime.value = parsed.timestamp;
-          updateBadgeCount(parsed);
         }
       }
     }
-  } else if (msg.type === "RECRUIT_DISMISSAL") {
-    // Another tab dismissed recruits. Apply locally.
-    applyLocalDismissal(msg.ids);
   }
 });
 
-export function useClanData() {
+/**
+ * 🛠 LOCAL UPDATE HELPER
+ * Allows other logic (like optimistic updates) to modify the state directly.
+ */
+function updateLocalData(newData: WebAppData) {
+  clashData.value = newData;
+  // We generally don't persist optimistic updates to the snapshot
+  // unless we are sure it's stable, but for simple dismissals it's fine
+  // IF needed. For now, we will let the consumer decide persistence or
+  // we can add a flag. The original implementation persisted on dismissal.
+  // We'll expose a persist helper if needed, or just let the consumer assume
+  // this is in-memory only.
+  // Actually, checking original code: dismissRecruitsAction DID persist to localStorage.
+  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(newData));
+}
+
+export function useClashData() {
   // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
   // Call this AFTER app.mount() to avoid blocking LCP
   function loadLocal() {
@@ -123,13 +66,12 @@ export function useClanData() {
       const raw = localStorage.getItem(SNAPSHOT_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        clanData.value = parsed;
+        clashData.value = parsed;
         lastSyncTime.value = parsed.timestamp || Date.now();
-        updateBadgeCount(parsed);
       }
     } catch (e) {
       localStorage.removeItem(SNAPSHOT_KEY);
-      clanData.value = null;
+      clashData.value = null;
     } finally {
       isHydrated.value = true;
     }
@@ -141,16 +83,16 @@ export function useClanData() {
   async function startBackgroundSync() {
     if (isShowcaseMode.value) {
       const mock = generateMockData();
-      updateBadgeCount(mock);
-      clanData.value = mock;
+      clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
       return;
     }
 
     if (isBlueprintMode.value) {
-      const mock = generateMockData();
-      updateBadgeCount(mock); // Update with full count
-      clanData.value = null; // Then force skeleton state
+      // Blueprint mode simulation: No data loaded yet? Or partial?
+      // Original logic: updateBadgeCount(mock); clanData.value = null;
+      // We will mimic: null data to force skeleton
+      clashData.value = null;
       lastSyncTime.value = Date.now();
       return;
     }
@@ -158,9 +100,8 @@ export function useClanData() {
     if (isSyntheticMode.value) {
       // console.log("🌟 Synthetic Mode Active");
       const mock = generateMockData();
-      clanData.value = mock;
+      clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
-      updateBadgeCount(mock);
       return;
     }
 
@@ -210,10 +151,7 @@ export function useClanData() {
 
       const remoteData = await fetchRemote({ signal, force: true });
 
-      // Trigger notification check before overwriting state
-      processRecruitChanges(clanData.value, remoteData);
-
-      clanData.value = remoteData;
+      clashData.value = remoteData;
       lastSyncTime.value = remoteData.timestamp;
       syncStatus.value = "success";
 
@@ -224,7 +162,6 @@ export function useClanData() {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
         // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
       });
-      updateBadgeCount(remoteData);
 
       // 📡 Broadcast success to other tabs
       broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
@@ -273,44 +210,10 @@ export function useClanData() {
     { flush: "post" },
   );
 
-  async function dismissRecruitsAction(ids: string[]) {
-    if (!clanData.value) return;
-
-    // Optimistically update local state
-    const oldData = clanData.value; // Keep reference for rollback
-    applyLocalDismissal(ids);
-
-    try {
-      await dismissRecruits(ids);
-      // 📡 Broadcast dismissal to other tabs on success
-      broadcast({ type: "RECRUIT_DISMISSAL", ids });
-    } catch (e) {
-      // Revert on failure
-      clanData.value = oldData;
-      updateBadgeCount(clanData.value);
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(oldData));
-      throw e;
-    }
-  }
-
   // 🛡️ Logic: Screen Wake Lock (Logic #15)
-  // Prevents device sleep during critical synchronization cycles
-  let wakeLock: any = null;
-
-  async function requestWakeLock() {
-    if ("wakeLock" in navigator && syncStatus.value === "syncing") {
-      try {
-        wakeLock = await (navigator as any).wakeLock.request("screen");
-      } catch (err) {}
-    }
-  }
-
-  async function releaseWakeLock() {
-    if (wakeLock) {
-      await wakeLock.release();
-      wakeLock = null;
-    }
-  }
+  // 🛡️ Logic: Screen Wake Lock (Logic #15)
+  // Use shared composable for stability and DRY compliance
+  const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
 
   watch(syncStatus, (status: string) => {
     if (status === "syncing") requestWakeLock();
@@ -318,7 +221,7 @@ export function useClanData() {
   });
 
   return {
-    data: readonly(clanData),
+    data: readonly(clashData),
     isHydrated: readonly(isHydrated),
     isRefreshing: readonly(isRefreshing),
     syncStatus: readonly(syncStatus),
@@ -327,6 +230,6 @@ export function useClanData() {
     loadLocal,
     startBackgroundSync,
     refresh,
-    dismissRecruitsAction,
+    updateLocalData, // Exposed for optimistic updates from business logic
   };
 }

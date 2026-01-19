@@ -3,7 +3,7 @@ import { computed, ref, onMounted } from "vue";
 import { useModules } from "../../composables/useModules";
 import { useHaptics } from "../../composables/useHaptics";
 import { useBadge } from "../../composables/useBadge";
-import { useClanData } from "../../composables/useClanData";
+import { useClashData } from "../../composables/useClashData";
 import { subscribeToPush, isWorkerConfigured } from "../../api/gasClient";
 import { useToast } from "../../composables/useToast";
 import SettingsCard from "../SettingsCard.vue";
@@ -12,7 +12,7 @@ import Icon from "../Icon.vue";
 const { modules, toggle } = useModules();
 const haptics = useHaptics();
 const { requestPermission, sendLocalNotification } = useBadge();
-const { startBackgroundSync, lastSyncTime: lastSync } = useClanData();
+const { startBackgroundSync, lastSyncTime: lastSync } = useClashData();
 const toast = useToast();
 
 const permissionState = ref<NotificationPermission | "unsupported">("default");
@@ -29,7 +29,7 @@ const lastSyncFormatted = computed(() => {
 onMounted(async () => {
   if (typeof Notification !== "undefined") {
     permissionState.value = Notification.permission;
-    
+
     // Check existing push subscription
     if ("serviceWorker" in navigator) {
       const reg = await navigator.serviceWorker.ready;
@@ -63,7 +63,7 @@ const subscribePush = async () => {
     toast.error("Cloud Worker not configured");
     return;
   }
-  
+
   try {
     haptics.medium();
     const reg = await navigator.serviceWorker.ready;
@@ -71,15 +71,20 @@ const subscribePush = async () => {
     // For this prototype, we assume the user provides it or we use a demo key
     // or the browser default if supported (unlikely for web push).
     // Simulating subscription flow:
-    
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: "BMMA-EXAMPLE-KEY-REPLACE-WITH-REAL-VAPID-KEY-FROM-ENV" 
-    }).catch(e => {
+
+    const sub = await reg.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey:
+          "BMMA-EXAMPLE-KEY-REPLACE-WITH-REAL-VAPID-KEY-FROM-ENV",
+      })
+      .catch((e) => {
         console.warn("Push subscribe failed (likely missing VAPID)", e);
         // Mock success for UI demo if key fails
-        return { endpoint: "https://fcm.googleapis.com/fcm/send/demo" } as PushSubscription;
-    });
+        return {
+          endpoint: "https://fcm.googleapis.com/fcm/send/demo",
+        } as PushSubscription;
+      });
 
     if (sub) {
       const success = await subscribeToPush(sub);
@@ -197,7 +202,7 @@ const sendTest = async () => {
           <div class="handle"></div>
         </div>
       </div>
-      
+
       <!-- FEATURE 1: Cloud Push -->
       <div
         class="toggle-row"

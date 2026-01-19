@@ -8,6 +8,7 @@ import { useModules } from "../composables/useModules";
 import { getScoreTone, formatTimeAgoShort } from "../utils/formatters";
 
 import { useExternalLink } from "../composables/useExternalLink";
+import StatisticItem from "./StatisticItem.vue";
 
 const {
   id,
@@ -76,7 +77,8 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
       <span
         class="stat-score"
         v-tooltip="getTooltip('score', recruit.potentialScore)"
-      >{{ Math.round(recruit.potentialScore || 0) }}</span>
+        >{{ Math.round(recruit.potentialScore || 0) }}</span
+      >
     </template>
 
     <!-- SLOT: Expanded Content -->
@@ -89,27 +91,35 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
           </div>
         </template>
         <template v-else>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="getTooltip('donations', recruit.d.don)"
-          >
-            <span class="label">Donations</span>
-            <span class="value">{{ recruit.d.don }}</span>
-          </div>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="getTooltip('warWins', recruit.d.war)"
-          >
-            <span class="label">War Wins</span>
-            <span class="value">{{ recruit.d.war }}</span>
-          </div>
-          <div
-            class="stat-item hit-target"
-            v-tooltip="getTooltip('cardsWon', recruit.d.cards)"
-          >
-            <span class="label">Cards Won</span>
-            <span class="value">{{ recruit.d.cards || "-" }}</span>
-          </div>
+          <template v-else>
+            <StatisticItem
+              label="Donations"
+              :value="recruit.d.don"
+              :tooltip-context="{
+                type: 'hh',
+                metric: 'donations',
+                rawValue: recruit.d.don,
+              }"
+            />
+            <StatisticItem
+              label="War Wins"
+              :value="recruit.d.war"
+              :tooltip-context="{
+                type: 'hh',
+                metric: 'warWins',
+                rawValue: recruit.d.war,
+              }"
+            />
+            <StatisticItem
+              label="Cards Won"
+              :value="recruit.d.cards || '-'"
+              :tooltip-context="{
+                type: 'hh',
+                metric: 'cardsWon',
+                rawValue: recruit.d.cards || 0,
+              }"
+            />
+          </template>
         </template>
       </div>
 
@@ -196,63 +206,10 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
   gap: 8px;
   margin-bottom: 12px;
 }
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 4px;
-  border-radius: 10px;
-  background: var(--sys-color-surface-container-highest);
-  border: 1px solid var(--sys-surface-glass-border);
-  transition:
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.stat-item:hover {
-  transform: translateY(-2px) scale(1.02);
-  background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 2;
-}
-
-.label {
-  font-size: 9px;
-  text-transform: uppercase;
-  font-weight: 850;
-  color: var(--sys-color-secondary);
-  letter-spacing: 0.06em;
-  opacity: 0.7;
-  text-align: center;
-  line-height: 1.1;
-  min-height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  word-break: break-word;
-}
-.value {
-  font-size: 14px;
-  font-weight: 900;
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-mono);
-  line-height: 1;
-}
 
 @media (max-width: 380px) {
   .stats-grid {
     gap: 4px;
-  }
-  .stat-item {
-    padding: 4px 2px;
-  }
-  .value {
-    font-size: 12px;
-  }
-  .label {
-    font-size: 8px;
   }
 }
 
