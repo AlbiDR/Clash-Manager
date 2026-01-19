@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.8
+ * 🏷️ VERSION: 10.0.9
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.8";
+const VER_UTILITIES = "10.0.9";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -320,6 +320,48 @@ const Utils = {
       console.warn("⚠️ Remote scan failed:", e.message);
       // Let caller handle fallback or throw
       throw e;
+    }
+  },
+
+  /**
+   * 🌐 PUBLIC API OFFLOAD (Worker Optimized)
+   * Delegates "Members" and "WarLog" requests to the worker to bypass GAS transformation logic.
+   * Returns transformed array if successful, or null to trigger local fallback.
+   */
+  fetchPublicJson: function (type) {
+    const useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+    
+    if (!useRemote) return null;
+
+    try {
+      const payload = {
+        tag: CONFIG.SYSTEM.CLAN_TAG,
+        type: type,
+        apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value)
+      };
+
+      const headers = { "Content-Type": "application/json" };
+      if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
+        headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+
+      const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + "/clan/api", {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true,
+        headers: headers
+      });
+
+      if (res.getResponseCode() === 200) {
+        const json = JSON.parse(res.getContentText());
+        return json.data;
+      } else {
+        console.warn(`Worker /clan/api failed: ${res.getResponseCode()}`);
+        return null;
+      }
+    } catch (e) {
+      console.warn(`Worker /clan/api error (${type}), falling back to local`, e);
+      return null;
     }
   },
 
