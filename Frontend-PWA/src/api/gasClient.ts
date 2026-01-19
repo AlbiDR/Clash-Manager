@@ -31,8 +31,16 @@ const getGasUrl = () => {
     url = import.meta.env.VITE_GAS_URL || "";
   }
 
+  url = url.trim();
+
+  // ⚡ SMART RESOLUTION: If input looks like a Script ID (no slashes, no dots), construct the URL automatically.
+  // Matches standard ID format (alphanumeric, underscores, hyphens)
+  if (url && !url.includes("/") && !url.includes(".") && url.length > 15) {
+     // Assume it's a raw Deployment ID
+     return `https://script.google.com/macros/s/${url}/exec`;
+  }
+
   if (url) {
-    url = url.trim();
     // 🛡️ SYNC: Ensure SW can see the URL via IDB
     idb.set("cm_gas_url", url).catch(() => {});
   }
@@ -50,6 +58,7 @@ const getGasUrl = () => {
 
 /**
  * Inflates the payload.
+ * ⚡ ROBUSTNESS UPDATE: Purely driven by Backend Schema. No more index guessing.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
   let parsedData: any;
@@ -57,14 +66,12 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     try {
       parsedData = JSON.parse(data);
     } catch (e) {
-      // If we can't parse it, it might be a raw error message. Throwing allows retry.
       throw new Error("Failed to parse data string");
     }
   } else {
     parsedData = data;
   }
 
-  // Guard: If data is null/undefined, throw so we can catch it upstream
   if (!parsedData || typeof parsedData !== "object") {
     throw new Error("Invalid payload: data is null or not an object");
   }
@@ -72,39 +79,6 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   if (parsedData.format !== "matrix") {
     return parsedData as WebAppData;
   }
-
-  // Updated V10.0.1 Fields matching new Backend
-  const FIELDS = {
-    LB: [
-      "id",
-      "n",
-      "role",
-      "t",
-      "days",
-      "req",
-      "avg",
-      "tot",
-      "seen",
-      "rate",
-      "wfame",
-      "hist",
-      "performanceRawScore", // NEW explicit
-      "performanceScore", // NEW explicit
-      "dt",
-      "war",
-    ],
-    HH: [
-      "id",
-      "n",
-      "t",
-      "potentialScore", // NEW explicit
-      "don",
-      "war",
-      "ago",
-      "cards",
-      "potentialRawScore" // NEW explicit
-    ],
-  };
 
   const WebAppDataSchema = v.object({
     format: v.optional(v.string()),
@@ -125,12 +99,10 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
-  const lbSchema = (
-    source.schema?.lb?.length ? source.schema.lb : FIELDS.LB
-  ) as string[];
-  const hhSchema = (
-    source.schema?.hh?.length ? source.schema.hh : FIELDS.HH
-  ) as string[];
+  
+  // Use schema from backend if available, otherwise assume empty
+  const lbSchema = source.schema?.lb || [];
+  const hhSchema = source.schema?.hh || [];
 
   const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
   const safeNum = (v: any) => {
@@ -144,57 +116,49 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   };
 
   /**
-   * Surgical field extractor
+   * Universal Mapper
+   * Relies 100% on the schema keys provided by the backend.
    */
   const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
-    if (!row || !Array.isArray(row) || row.length < 3) return null;
+    if (!row || !Array.isArray(row)) return null;
 
-    // Direct Key-to-Index Map
-    const m: Record<string, number> = {};
-    schema.forEach((key, idx) => (m[key] = idx));
+    // Create a key-to-value map for this row based on schema
+    const d: Record<string, any> = {};
+    schema.forEach((key, index) => {
+      if (index < row.length) d[key] = row[index];
+    });
 
     if (type === "lb") {
-      // Compatibility: Map both new and old keys to be safe
-      const perfVal = safeNum(row[m.performanceScore !== undefined ? m.performanceScore : m.perf || m.s]);
-      const rawVal = safeNum(row[m.performanceRawScore !== undefined ? m.performanceRawScore : m.raw || m.r]);
-
-      // Safety Cap: Performance score is usually a % (0-150 range max)
-      const finalPerf = perfVal > 1000 ? 100 : perfVal;
-
       return {
-        id: safeStr(row[m.id]),
-        n: safeStr(row[m.n]),
-        t: safeNum(row[m.t]),
-        performanceScore: finalPerf,
-        performanceRawScore: rawVal,
-        dt: safeNum(row[m.dt]),
+        id: safeStr(d.id),
+        n: safeStr(d.n),
+        t: safeNum(d.t),
+        // Trust the backend values. No more > 1000 checks.
+        performanceScore: safeNum(d.performanceScore), 
+        performanceRawScore: safeNum(d.performanceRawScore),
+        dt: safeNum(d.dt),
         d: {
-          role: safeStr(row[m.role]),
-          days: safeNum(row[m.days]),
-          avg: safeNum(row[m.avg]),
-          seen: safeStr(row[m.seen] || "-"),
-          rate: safeStr(row[m.rate] || "0%"),
-          wfame: safeNum(row[m.wfame]),
-          hist: safeStr(row[m.hist]),
+          role: safeStr(d.role),
+          days: safeNum(d.days),
+          avg: safeNum(d.avg),
+          seen: safeStr(d.seen || "-"),
+          rate: safeStr(d.rate || "0%"),
+          wfame: safeNum(d.wfame),
+          hist: safeStr(d.hist),
         },
       };
     } else {
-      // Headhunter
-      // Compatibility
-      const potVal = safeNum(row[m.potentialScore !== undefined ? m.potentialScore : m.potential || m.s]);
-      const rawVal = safeNum(row[m.potentialRawScore !== undefined ? m.potentialRawScore : m.raw]);
-
       return {
-        id: safeStr(row[m.id]),
-        n: safeStr(row[m.n]),
-        t: safeNum(row[m.t]),
-        potentialScore: potVal,
-        potentialRawScore: rawVal,
+        id: safeStr(d.id),
+        n: safeStr(d.n),
+        t: safeNum(d.t),
+        potentialScore: safeNum(d.potentialScore),
+        potentialRawScore: safeNum(d.potentialRawScore),
         d: {
-          don: safeNum(row[m.don]),
-          war: safeNum(row[m.war]),
-          ago: safeStr(row[m.ago]),
-          cards: safeNum(row[m.cards]),
+          don: safeNum(d.don),
+          war: safeNum(d.war),
+          ago: safeStr(d.ago),
+          cards: safeNum(d.cards),
         },
       };
     }
@@ -230,7 +194,6 @@ async function fetchWithRetry(
       if (response.status >= 500 || response.status === 429) {
         throw new Error(`HTTP ${response.status}`);
       }
-      // For other errors (400, 401, 403), we return the response so the caller handles it
       return response;
     }
     return response;
@@ -265,15 +228,12 @@ async function gasRequest<T>(
     signal: options?.signal, // Fix: Pass signal
   };
 
-  // 🛡️ SYNC: Use Query String for Action (Required by some GAS deployments)
   const separator = url.includes("?") ? "&" : "?";
   const requestUrl = `${url}${separator}action=${action}`;
 
-  // If fetching fails after retries, this throws.
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);
 
-    // Handle HTTP errors that weren't retried (like 400 Bad Request)
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -308,24 +268,20 @@ async function gasRequest<T>(
   } catch (e: any) {
     if (e.name === "AbortError") throw e;
 
-    // 🛡️ BACKGROUND SYNC: Queue failed requests if they are retryable (network/server issues)
-    // Don't queue 4xx errors (client faults) unless it's 429
     console.warn("GAS Request Failed, attempting background sync queue", e);
 
     await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
 
-    // Register One-Time Sync
     if ("serviceWorker" in navigator && "SyncManager" in window) {
       try {
         const reg = await navigator.serviceWorker.ready;
-        // Cast to any for sync property
         await (reg as any).sync.register("offline-queue-sync");
       } catch (syncErr) {
         console.warn("Background Sync registration failed", syncErr);
       }
     }
 
-    throw e; // Re-throw so UI knows it failed (and can show "Offline/Syncing" state)
+    throw e; 
   }
 }
 
@@ -343,7 +299,6 @@ export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
 }): Promise<WebAppData> {
-  // gasRequest will THROW if it fails, which satisfies expect(fetchRemote()).rejects...
   const action = options?.force ? "refresh" : "getwebappdata";
   const data = await gasRequest<any>(action, undefined, {
     signal: options?.signal,
