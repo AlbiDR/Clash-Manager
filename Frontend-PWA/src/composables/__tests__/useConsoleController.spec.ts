@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, computed } from "vue";
-import { useConsoleLogic } from "../useConsoleLogic";
+import { useConsoleController } from "../useConsoleController";
 
 // Mock dependencies
 vi.mock("../useBatchQueue", () => ({
@@ -66,7 +66,7 @@ vi.mock("../useShowcaseMode", () => ({
   })),
 }));
 
-describe("useConsoleLogic", () => {
+describe("useConsoleController", () => {
   const defaultOptions = {
     data: ref([{ id: "1", n: "Test" }]),
     isHydrated: ref(true),
@@ -89,14 +89,14 @@ describe("useConsoleLogic", () => {
 
   it("shows skeletons when Blueprint Mode is active", () => {
     mockBlueprintMode.value = true;
-    const { showSkeletons } = useConsoleLogic(defaultOptions);
+    const { showSkeletons } = useConsoleController(defaultOptions);
     expect(showSkeletons.value).toBe(true);
   });
 
   it("does NOT show skeletons when Showcase Mode is active, even if Blueprint Mode is also active", () => {
     mockBlueprintMode.value = true;
     mockShowcaseMode.value = true;
-    const { showSkeletons } = useConsoleLogic(defaultOptions);
+    const { showSkeletons } = useConsoleController(defaultOptions);
     expect(showSkeletons.value).toBe(false);
   });
 
@@ -107,7 +107,7 @@ describe("useConsoleLogic", () => {
       isRefreshing: ref(true),
       data: ref([]),
     };
-    const { showSkeletons } = useConsoleLogic(options);
+    const { showSkeletons } = useConsoleController(options);
     expect(showSkeletons.value).toBe(true);
   });
 
@@ -118,7 +118,7 @@ describe("useConsoleLogic", () => {
       isRefreshing: ref(true),
       data: ref([{ id: "1", n: "Test" }]),
     };
-    const { showSkeletons } = useConsoleLogic(options);
+    const { showSkeletons } = useConsoleController(options);
     expect(showSkeletons.value).toBe(false);
   });
 });

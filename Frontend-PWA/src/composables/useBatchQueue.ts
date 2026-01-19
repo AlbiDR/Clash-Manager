@@ -1,6 +1,6 @@
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useToast } from "./useToast";
-import { useModules } from "./useModules";
+import { useAppSettings } from "./useAppSettings";
 import { useExternalLink, buildDeepLink } from "./useExternalLink";
 
 interface BatchQueueOptions {
@@ -29,7 +29,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const forceSelectionMode = ref(false);
 
   const { error, info } = useToast();
-  const { modules } = useModules();
+  const { modules } = useAppSettings();
   const { openInGame } = useExternalLink();
 
   const isSelectionMode = computed(

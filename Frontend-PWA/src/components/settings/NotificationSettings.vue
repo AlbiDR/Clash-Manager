@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
-import { useModules } from "../../composables/useModules";
+import { useAppSettings } from "../../composables/useAppSettings";
 import { useHaptics } from "../../composables/useHaptics";
 import { useBadge } from "../../composables/useBadge";
 import { useClashData } from "../../composables/useClashData";
@@ -9,7 +9,7 @@ import { useToast } from "../../composables/useToast";
 import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
-const { modules, toggle } = useModules();
+const { modules, toggle } = useAppSettings();
 const haptics = useHaptics();
 const { requestPermission, sendLocalNotification } = useBadge();
 const { startBackgroundSync, lastSyncTime: lastSync } = useClashData();

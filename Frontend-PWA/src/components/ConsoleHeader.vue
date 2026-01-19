@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import Icon from "./Icon.vue";
-import { useModules } from "../composables/useModules";
+import { useAppSettings } from "../composables/useAppSettings";
 
 const props = defineProps<{
   title: string;
@@ -21,7 +21,7 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { modules } = useModules();
+const { modules } = useAppSettings();
 const isScrolled = ref(false);
 const showInfoOverlay = ref(false);
 let debounceTimer: number | null = null;

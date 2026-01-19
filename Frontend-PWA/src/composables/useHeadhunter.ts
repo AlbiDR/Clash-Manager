@@ -3,12 +3,12 @@ import { dismissRecruits } from "../api/gasClient";
 import type { WebAppData } from "../types";
 import { useClashData } from "./useClashData";
 import { useBadge } from "./useBadge";
-import { useModules } from "./useModules";
+import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
 
 // Singleton Composables
 const { setBadge, sendLocalNotification } = useBadge();
-const { modules } = useModules();
+const { modules } = useAppSettings();
 const { data: clashData, updateLocalData } = useClashData();
 
 function updateHeadhunterBadge(data: WebAppData | null) {

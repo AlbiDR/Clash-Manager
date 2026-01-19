@@ -10,7 +10,7 @@ import router from "./router";
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 import { vTooltip } from "./directives/vTooltip";
 import { vTactile } from "./directives/vTactile";
-import { useModules } from "./composables/useModules";
+import { useAppSettings } from "./composables/useAppSettings";
 import { useClashData } from "./composables/useClashData";
 import { useApiState } from "./composables/useApiState";
 import { useTheme } from "./composables/useTheme";
@@ -72,7 +72,7 @@ async function bootstrap() {
     }
 
     // 1. Critical Config (Synchronous)
-    const { modules, init: initModules } = useModules();
+    const { modules, init: initModules } = useAppSettings();
     initModules();
 
     const theme = useTheme();

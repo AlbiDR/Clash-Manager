@@ -25,7 +25,7 @@ interface ConsoleLogicOptions<T> {
   statsLabel: string;
 }
 
-export function useConsoleLogic<T extends { id: string }>(
+export function useConsoleController<T extends { id: string }>(
   options: ConsoleLogicOptions<T>,
 ) {
   const {

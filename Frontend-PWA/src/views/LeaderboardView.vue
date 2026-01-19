@@ -2,13 +2,13 @@
 import { computed } from "vue";
 import { useClashData } from "../composables/useClashData";
 import { useApiState } from "../composables/useApiState";
-import { useConsoleLogic } from "../composables/useConsoleLogic";
+import { useConsoleController } from "../composables/useConsoleController";
 import { useShowcaseMode } from "../composables/useShowcaseMode";
 import { parseTimeAgoValue } from "../utils/formatters";
 import type { LeaderboardMember } from "../types";
 
 import MemberCard from "../components/MemberCard.vue";
-import SkeletonCard from "../components/SkeletonCard.vue";
+import MemberCardSkeleton from "../components/MemberCardSkeleton.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
 const { pingData } = useApiState();
@@ -63,7 +63,7 @@ const {
   handleBlitz,
   handleSelectAll,
   handleSelectScore,
-} = useConsoleLogic({
+} = useConsoleController({
   data: members,
   isHydrated,
   isRefreshing,
