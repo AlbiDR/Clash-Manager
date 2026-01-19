@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.4
+ * 🏷️ VERSION: 10.0.5
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.4";
+const VER_CONTROLLER_WEBAPP = "10.0.5";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -60,7 +60,6 @@ function markRecruitsAsInvitedBulk(ids) {
       
       // 1. DATABASE WRITE (Primary Source of Truth)
       // We write directly to the Blacklist/History sheet.
-      // This ensures persistence even if the visual Headhunter sheet is cleared.
       let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
       if (!blSheet) blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
 
@@ -81,9 +80,8 @@ function markRecruitsAsInvitedBulk(ids) {
         console.log(`🌐 DB Action: Added ${dbEntries.length} to Blacklist History.`);
       }
 
-      // 2. VISUAL UPDATE (Secondary / User Feedback)
-      // We still tick the boxes in the main sheet so if a user looks at the spreadsheet,
-      // they see the "TRUE" checkbox. But this is no longer the logic driver.
+      // 2. VISUAL UPDATE (Legacy/Spreadsheet Sync)
+      // We explicitly tick the checkbox in the sheet so the user sees the change if they open the sheet.
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
       if (sheet) {
         Utils.bootDynamicSchema();
@@ -92,6 +90,8 @@ function markRecruitsAsInvitedBulk(ids) {
 
         if (lastRowVisual >= startRow) {
           const numRows = lastRowVisual - startRow + 1;
+          
+          // ⚡ COLUMN RESOLUTION: Use 1-based index from Schema + 1 (A=1)
           const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
           const invitedColIdx = 1 + CONFIG.SCHEMA.HH.INVITED;
 
@@ -110,13 +110,14 @@ function markRecruitsAsInvitedBulk(ids) {
             const tag = id.startsWith("#") ? id : "#" + id;
             const idx = tagMap.get(tag);
             if (idx !== undefined) {
-              invitedValues[idx][0] = true;
+              invitedValues[idx][0] = true; // Tick the box
               visualUpdates++;
             }
           });
 
           if (visualUpdates > 0) {
             invitedRange.setValues(invitedValues);
+            console.log(`🌐 Sheet Action: Ticked ${visualUpdates} checkboxes.`);
           }
         }
       }
