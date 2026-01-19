@@ -11,7 +11,7 @@ import router from "./router";
 import { vTooltip } from "./directives/vTooltip";
 import { vTactile } from "./directives/vTactile";
 import { useModules } from "./composables/useModules";
-import { useClanData } from "./composables/useClanData";
+import { useClashData } from "./composables/useClashData";
 import { useApiState } from "./composables/useApiState";
 import { useTheme } from "./composables/useTheme";
 import { useWakeLock } from "./composables/useWakeLock";
@@ -100,17 +100,17 @@ async function bootstrap() {
     app.mount("#app");
 
     // 4. Initialize Systems (Post-Mount)
-    const clanData = useClanData();
+    const clashData = useClashData();
     const apiState = useApiState();
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
-    clanData.loadLocal();
+    clashData.loadLocal();
 
     // Defer network and heavy systems
     setTimeout(async () => {
       apiState.init();
-      clanData.startBackgroundSync();
+      clashData.startBackgroundSync();
       wakeLock.init();
 
       // 💾 PERSISTENCE: Request durable storage

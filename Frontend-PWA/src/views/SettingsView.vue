@@ -7,7 +7,7 @@ import { useWakeLock } from "../composables/useWakeLock";
 import { useSyntheticMode } from "../composables/useSyntheticMode";
 import { useBlueprintMode } from "../composables/useBlueprintMode";
 import { useShowcaseMode } from "../composables/useShowcaseMode";
-import { useClanData } from "../composables/useClanData";
+import { useClashData } from "../composables/useClashData";
 import { useConnectionStatus } from "../composables/useConnectionStatus";
 import { idb } from "../utils/idb"; // Fix 23: Import IDB
 import ConsoleHeader from "../components/ConsoleHeader.vue";
@@ -26,7 +26,7 @@ const wakeLock = useWakeLock();
 const { isSyntheticMode, toggleSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode, toggleBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode, toggleShowcaseMode } = useShowcaseMode();
-const { isHydrated, isRefreshing } = useClanData();
+const { isHydrated, isRefreshing } = useClashData();
 const appVersion =
   typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
@@ -159,7 +159,7 @@ async function factoryReset() {
       title="Settings"
       :status="apiStatusObject"
       :loading="isRefreshing"
-      @refresh="useClanData().refresh()"
+      @refresh="useClashData().refresh()"
     />
 
     <div class="settings-content gpu-contain">

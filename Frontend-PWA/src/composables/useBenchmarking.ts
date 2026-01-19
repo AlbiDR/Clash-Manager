@@ -3,7 +3,7 @@
  * Statistical engine for comparing player performance against clan averages.
  */
 import { computed } from "vue";
-import { useClanData } from "./useClanData";
+import { useClashData } from "./useClashData";
 
 export interface BenchmarkData {
   label: string;
@@ -17,7 +17,7 @@ export interface BenchmarkData {
 }
 
 export function useBenchmarking() {
-  const { data } = useClanData();
+  const { data } = useClashData();
 
   const getAvg = (arr: number[]) =>
     arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
@@ -101,7 +101,9 @@ export function useBenchmarking() {
     const stats = context === "lb" ? lbStats.value : hhStats.value;
     if (!stats) return null;
 
-    const m = (stats as Record<string, { avg: number; max: number; min: number }>)[metric];
+    const m = (
+      stats as Record<string, { avg: number; max: number; min: number }>
+    )[metric];
     if (!m) return null;
 
     const diff = value - m.avg;

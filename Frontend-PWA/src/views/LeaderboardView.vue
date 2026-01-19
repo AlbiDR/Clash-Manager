@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useClanData } from "../composables/useClanData";
+import { useClashData } from "../composables/useClashData";
 import { useApiState } from "../composables/useApiState";
 import { useConsoleLogic } from "../composables/useConsoleLogic";
 import { useShowcaseMode } from "../composables/useShowcaseMode";
@@ -24,7 +24,7 @@ const sheetUrl = computed(() => {
 
 const { isShowcaseMode } = useShowcaseMode();
 const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } =
-  useClanData();
+  useClashData();
 // Ensure we pass a Ref<LeaderboardMember[]>
 const members = computed(() => data.value?.lb || []);
 
