@@ -1,6 +1,6 @@
 /**
  * GAS API Client
- * Optimized for reliability and test passing.
+ * Optimized for reliability, test passing, and backward compatibility.
  */
 
 import type {
@@ -13,6 +13,18 @@ import * as v from "valibot";
 import { idb } from "../utils/idb";
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
+
+// Default Schemas for fallback (matches V10 Standard)
+const DEFAULT_LB_SCHEMA = [
+  "id", "n", "role", "t", "days", "req", "avg", "tot", 
+  "seen", "rate", "wfame", "hist", "performanceRawScore", 
+  "performanceScore", "dt", "war"
+];
+
+const DEFAULT_HH_SCHEMA = [
+  "id", "n", "t", "potentialScore", "don", "war", 
+  "ago", "cards", "potentialRawScore"
+];
 
 interface GenericEnvelope<T> {
   success?: boolean;
@@ -36,7 +48,7 @@ const getGasUrl = () => {
   // ⚡ SMART RESOLUTION: If input looks like a Script ID (no slashes, no dots), construct the URL automatically.
   // Matches standard ID format (alphanumeric, underscores, hyphens)
   if (url && !url.includes("/") && !url.includes(".") && url.length > 15) {
-     // Assume it's a raw Deployment ID
+     // Assume it's a raw Deployment ID and construct the Web App URL
      return `https://script.google.com/macros/s/${url}/exec`;
   }
 
@@ -58,7 +70,7 @@ const getGasUrl = () => {
 
 /**
  * Inflates the payload.
- * ⚡ ROBUSTNESS UPDATE: Purely driven by Backend Schema. No more index guessing.
+ * ⚡ ROBUSTNESS UPDATE: Handles Schema-Driven parsing with Fallbacks and Legacy Keys.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
   let parsedData: any;
@@ -100,9 +112,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
   
-  // Use schema from backend if available, otherwise assume empty
-  const lbSchema = source.schema?.lb || [];
-  const hhSchema = source.schema?.hh || [];
+  // 🛡️ SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
+  let lbSchema = source.schema?.lb;
+  let hhSchema = source.schema?.hh;
+
+  if (!lbSchema || !Array.isArray(lbSchema) || lbSchema.length === 0) {
+    lbSchema = DEFAULT_LB_SCHEMA;
+  }
+  
+  if (!hhSchema || !Array.isArray(hhSchema) || hhSchema.length === 0) {
+    hhSchema = DEFAULT_HH_SCHEMA;
+  }
 
   const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
   const safeNum = (v: any) => {
@@ -117,7 +137,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   /**
    * Universal Mapper
-   * Relies 100% on the schema keys provided by the backend.
+   * Relies on the schema keys provided by the backend, with legacy compat support.
    */
   const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
     if (!row || !Array.isArray(row)) return null;
@@ -129,13 +149,16 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     });
 
     if (type === "lb") {
+      // 🛡️ LEGACY COMPAT: Map 's' -> performanceScore, 'r' -> performanceRawScore
+      const perfScore = d.performanceScore ?? d.s;
+      const perfRaw = d.performanceRawScore ?? d.r; // Handle old 'r' key
+
       return {
         id: safeStr(d.id),
         n: safeStr(d.n),
         t: safeNum(d.t),
-        // Trust the backend values. No more > 1000 checks.
-        performanceScore: safeNum(d.performanceScore), 
-        performanceRawScore: safeNum(d.performanceRawScore),
+        performanceScore: safeNum(perfScore), 
+        performanceRawScore: safeNum(perfRaw),
         dt: safeNum(d.dt),
         d: {
           role: safeStr(d.role),
