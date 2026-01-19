@@ -5,7 +5,7 @@
  * 📝 DESCRIPTION: The mathematical heart of the application.
  * ⚙️ ROLE: Pure Logic. Accepts raw data -> Returns Scores & Sort Orders.
  * 🔒 STATUS: PROTECTED "DO NOT MODIFY" ZONE.
- * 🏷️ VERSION: 10.0.0
+ * 🏷️ VERSION: 10.1.0
  *
  * 🧠 REASONING:
  *    - Separation of Concerns: This file knows nothing about Sheets or APIs.
@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-const VER_SCORING_SYSTEM = "10.0.0";
+const VER_SCORING_SYSTEM = "10.1.0";
 
 // 🔒 =======================================================================
 // 🔒 SCORING SYSTEM PROTECTION ZONE
@@ -90,8 +90,8 @@ const ScoringSystem = {
     lastSeenDate,
     now,
   ) {
-    const W = CONFIG.LEADERBOARD.WEIGHTS;
-    const P = CONFIG.LEADERBOARD.PENALTIES;
+    const W = (typeof CONFIG !== 'undefined' ? CONFIG.LEADERBOARD.WEIGHTS : { FAME: 3, AVG_FAME: 15, DONATION: 50, TROPHY: 0.0002, WAR_RATE: 150 });
+    const P = (typeof CONFIG !== 'undefined' ? CONFIG.LEADERBOARD.PENALTIES : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08 });
 
     // 1. Raw Score Calculation
     // V6 Formula: Mixed weighting of Current Fame (Volatile) and Average Fame (Stable)
@@ -126,7 +126,7 @@ const ScoringSystem = {
    * Priority: Perf > Raw > WarRate > TotalDon > Tenure(Asc) > Trophies
    */
   comparator: function (rowA, rowB) {
-    const L = CONFIG.SCHEMA.LB;
+    const L = (typeof CONFIG !== 'undefined' ? CONFIG.SCHEMA.LB : { PERF_SCORE: 14, RAW_SCORE: 13, WAR_RATE: 10, TOTAL_DON: 8, DAYS: 5, TROPHIES: 4 });
 
     // 1. Performance Score (Current Status - Decayed)
     const diffPerf = rowB[L.PERF_SCORE] - rowA[L.PERF_SCORE];
@@ -163,17 +163,16 @@ const ScoringSystem = {
    * math for both active Clan Members and found Recruits, we eliminate
    * environmental bias (e.g., tenure bonuses) and see who is truly better "on paper".
    *
-   * HOW: It prioritizes Trophies and Total Donations (Base Skill) while
-   * applying a heavy 20.0x multiplier to War Wins. The +500 Bonus acts as a
-   * "Recency Filter" to prioritize active war players.
+   * @param {Object} weights - { TROPHY: number, DON: number, WAR: number }
    */
   calculateRecruitRawScore: function (
     trophies,
     totalDonations,
     warDayWins,
     hasRecentWar,
+    weights
   ) {
-    const W = { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
+    const W = weights || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
     const warBonus = hasRecentWar ? 500 : 0;
     const totalWarScore = (warDayWins || 0) + warBonus;
 
@@ -214,8 +213,8 @@ const ScoringSystem = {
       (a, b) => b.rawScore - a.rawScore,
     );
     const poolSize = Math.max(
-      CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL || 3,
-      Math.ceil(pool.length * (CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE || 0.05)),
+      3, // Min pool size
+      Math.ceil(pool.length * 0.05), // Top 5%
     );
     const topPool = pool.slice(0, poolSize);
     const avgPoolRef =
@@ -234,9 +233,12 @@ const ScoringSystem = {
       finalBenchmark = avgPoolRef;
     }
 
-    console.log(
-      `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(avgPoolRef)}) = Result:${Math.round(finalBenchmark)}`,
-    );
+    // Logger only available in GAS
+    if (typeof console !== 'undefined' && console.log) {
+        console.log(
+        `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(avgPoolRef)}) = Result:${Math.round(finalBenchmark)}`,
+        );
+    }
 
     return Math.max(1, finalBenchmark);
   },
@@ -257,4 +259,10 @@ const ScoringSystem = {
     return Math.min(100, score);
   },
 };
+
+// 🌍 NODE.JS COMPATIBILITY
+// Allows this file to be 'required' in the Node Worker without breaking GAS.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = ScoringSystem;
+}
 // 🔒 END PROTECTION ZONE ===================================================
