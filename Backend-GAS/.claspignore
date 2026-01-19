@@ -1,19 +1,4 @@
-# Ignore all hidden files
-.*
-
-# Ignore build/config files
-package.json
-package-lock.json
-pnpm-lock.yaml
-tsconfig.json
-README.md
-
-# Ignore node_modules
-node_modules/
-
-# Ignore legacy double-extension source files (prevents duplicates during migration)
-**/*.gs.js
-
-# WHITELIST: Only upload these
+**/**
 !appsscript.json
-!**/*.js
+!*.js
+!*.gs
