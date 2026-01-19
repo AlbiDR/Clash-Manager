@@ -8,6 +8,7 @@ import type {
   WebAppData,
   PingResponse,
   DismissResponse,
+  Recruit,
 } from "../types";
 import * as v from "valibot";
 import { idb } from "../utils/idb";
@@ -66,6 +67,15 @@ const getGasUrl = () => {
   }
 
   return url;
+};
+
+// ⚡ DIRECT WORKER SUPPORT
+const getWorkerUrl = () => {
+  if (typeof localStorage !== "undefined") {
+    const override = localStorage.getItem("cm_worker_url");
+    if (override) return override;
+  }
+  return import.meta.env.VITE_WORKER_URL || "";
 };
 
 /**
@@ -352,10 +362,77 @@ export async function triggerBackendUpdate(
   );
 }
 
+// ⚡ DIRECT WORKER SCAN
+export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
+  const workerUrl = getWorkerUrl();
+  if (!workerUrl) return null;
+
+  try {
+    const res = await fetch(`${workerUrl}/public/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tags: [
+          // Basic seed list for public scan if no specific targets
+          "2CCCP", "9U9Q9", "29UQQ282", "200000" // Popular tourney patterns or let worker decide
+        ],
+        // Default scoring profile
+        scoring: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 }
+      })
+    });
+
+    if (!res.ok) throw new Error(`Worker status ${res.status}`);
+    const json = await res.json();
+    
+    // Transform raw worker format to PWA Recruit format
+    if (json.candidates && Array.isArray(json.candidates)) {
+      return json.candidates.map((c: any) => ({
+        id: c.tag.replace("#", ""),
+        n: c.name,
+        t: c.trophies,
+        potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)), // Approx normalization
+        potentialRawScore: c.rawScore,
+        d: {
+          don: c.donations,
+          war: c.war,
+          cards: c.cards,
+          ago: new Date().toISOString()
+        }
+      }));
+    }
+    return null;
+  } catch (e) {
+    console.warn("Direct worker scan failed:", e);
+    return null;
+  }
+}
+
+// 🔔 PUSH SUBSCRIPTION
+export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
+  const workerUrl = getWorkerUrl();
+  if (!workerUrl) return false;
+
+  try {
+    await fetch(`${workerUrl}/public/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription)
+    });
+    return true;
+  } catch (e) {
+    console.warn("Push subscription failed:", e);
+    return false;
+  }
+}
+
 export function isConfigured(): boolean {
   return Boolean(getGasUrl());
 }
 
 export function getApiUrl(): string {
   return getGasUrl() || "(not configured)";
+}
+
+export function isWorkerConfigured(): boolean {
+  return Boolean(getWorkerUrl());
 }
