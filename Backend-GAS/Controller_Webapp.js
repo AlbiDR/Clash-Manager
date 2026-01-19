@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.1
+ * 🏷️ VERSION: 10.0.2
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.1";
+const VER_CONTROLLER_WEBAPP = "10.0.2";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -129,57 +129,24 @@ function refreshWebPayload() {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-      // ⚡ SMART SYNC: Dynamically resolve column indices from headers before building matrix
+      // ⚡ SMART SYNC: Dynamically resolve column indices from headers
       Utils.bootDynamicSchema();
+
+      // 1. EXTRACT DATA & SCHEMA SIMULTANEOUSLY
+      // We no longer manually type the schema array. It comes from the same map used to read the data.
+      const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
+      const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
 
       const data = {
         format: "matrix",
         schema: {
-          lb: [
-            "id",
-            "n",
-            "role",
-            "t",
-            "days",
-            "req",
-            "avg",
-            "tot",
-            "seen",
-            "rate",
-            "wfame",
-            "hist",
-            "performanceRawScore", // STRICT: Unbounded
-            "performanceScore",    // STRICT: Percentage 0-100
-            "dt",
-            "war",
-          ],
-          hh: [
-            "id",
-            "n",
-            "t",
-            "potentialScore",      // STRICT: Percentage 0-100
-            "don",
-            "war",
-            "ago",
-            "cards",
-            "potentialRawScore"    // STRICT: Unbounded
-          ],
+          lb: lbResult.schema,
+          hh: hhResult.schema,
         },
-        lb: extractSheetDataMatrix(
-          ss,
-          CONFIG.SHEETS.LB,
-          CONFIG.SCHEMA.LB,
-          false,
-        ),
-        hh: extractSheetDataMatrix(
-          ss,
-          CONFIG.SHEETS.HH,
-          CONFIG.SCHEMA.HH,
-          true,
-        ),
+        lb: lbResult.rows,
+        hh: hhResult.rows,
         playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
-        _debug_schema: { lb: CONFIG.SCHEMA.LB, hh: CONFIG.SCHEMA.HH },
       };
 
       const payload = { success: true, data: data, error: null };
@@ -212,138 +179,134 @@ function refreshWebPayload() {
 }
 
 // ============================================================================
-// 📊 DATA EXTRACTION (MATRIX MODE)
+// 📊 DATA EXTRACTION (STRICT MODE)
 // ============================================================================
 
-function extractSheetDataMatrix(ss, sheetName, SCHEMA, isHeadhunter) {
+/**
+ * Robust Extractor that guarantees the output Matrix matches the generated Schema.
+ */
+function extractSheetDataStrict(ss, sheetName, type) {
   const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return [];
+  if (!sheet) return { schema: [], rows: [] };
 
   const lastRow = sheet.getLastRow();
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+  if (lastRow < startRow) return { schema: [], rows: [] };
 
-  if (lastRow < startRow) return [];
+  // 1. DEFINE THE SOURCE OF TRUTH MAP
+  // This array defines both the JSON Key and the Sheet Column Index.
+  // Order here determines the order in the output array.
+  let mapping = [];
+  const S = type === "lb" ? CONFIG.SCHEMA.LB : CONFIG.SCHEMA.HH;
 
-  // Calculate the max column index we need to fetch based on the schema
-  const maxIdx = Math.max(...Object.values(SCHEMA));
-  const numCols = Math.max(20, maxIdx + 1); // Absolute 1:1 Sheet Fetch
+  if (type === "lb") {
+    mapping = [
+      { key: "id", col: S.TAG, type: "tag" },
+      { key: "n", col: S.NAME, type: "str" },
+      { key: "role", col: S.ROLE, type: "str" },
+      { key: "t", col: S.TROPHIES, type: "num" },
+      { key: "performanceScore", col: S.PERF_SCORE, type: "num" }, // 0-100
+      { key: "performanceRawScore", col: S.RAW_SCORE, type: "num" }, // Unbounded
+      { key: "days", col: S.DAYS, type: "num" },
+      { key: "req", col: S.WEEKLY_REQ, type: "num" },
+      { key: "avg", col: S.AVG_DAY, type: "num" },
+      { key: "tot", col: S.TOTAL_DON, type: "num" },
+      { key: "seen", col: S.LAST_SEEN, type: "str" },
+      { key: "rate", col: S.WAR_RATE, type: "rate" },
+      { key: "wfame", col: S.AVG_WAR_FAME, type: "num" },
+      { key: "hist", col: S.HISTORY, type: "str" },
+      { key: "dt", col: S.TREND, type: "num" },
+      { key: "war", col: S.WAR_DAY_WINS, type: "num" },
+    ];
+  } else {
+    mapping = [
+      { key: "id", col: S.TAG, type: "tag" },
+      { key: "n", col: S.NAME, type: "str" },
+      { key: "t", col: S.TROPHIES, type: "num" },
+      { key: "potentialScore", col: S.POTENTIAL_SCORE, type: "num" }, // 0-100
+      { key: "potentialRawScore", col: S.RAW_SCORE, type: "num" }, // Unbounded
+      { key: "don", col: S.DONATIONS, type: "num" },
+      { key: "war", col: S.WAR_WINS, type: "num" },
+      { key: "cards", col: S.CARDS, type: "num" },
+      { key: "ago", col: S.FOUND_DATE, type: "date" },
+      { key: "invited", col: S.INVITED, type: "bool_check" }, // Internal check
+    ];
+  }
 
+  // 2. FETCH DATA
+  // We fetch a wide range to ensure we cover all columns defined in CONFIG
+  const maxColIdx = Math.max(...Object.values(S));
+  const numCols = Math.max(20, maxColIdx + 1);
   const range = sheet.getRange(startRow, 1, lastRow - startRow + 1, numCols);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
-  const sanitizeNum = (v, displayV) => {
-    if (v === null || v === undefined) return 0;
-    if (typeof v === "number") {
-      // Handle ratio percentages (0.85 in cell, but 85 expected in PWA)
-      if (displayV && displayV.includes("%") && v <= 1.5) return v * 100;
-      return v;
+  // 3. TRANSFORM
+  const rows = [];
+  
+  for (let i = 0; i < vals.length; i++) {
+    const rowRaw = vals[i];
+    const rowDisplay = displayVals[i];
+    
+    // Global filter: Must have a valid tag
+    const tagRaw = rowRaw[S.TAG];
+    if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#")) continue;
+    
+    // Headhunter filter: Skip invited
+    if (type === "hh") {
+      const invitedVal = rowRaw[S.INVITED];
+      const isInvited = invitedVal === true || String(invitedVal).toUpperCase() === "TRUE";
+      if (isInvited) continue;
     }
-    let s = String(v).replace(/,/g, "").replace(/%/g, "").trim();
-    let n = parseFloat(s);
-    if (isNaN(n)) return 0;
-    if (String(v).includes("%") && n <= 1.5) return n * 100;
-    return n;
-  };
-  const sanitizeStr = (v) =>
-    v === null || v === undefined ? "" : String(v).trim();
 
-  return vals
-    .map((r, index) => {
-      try {
-        const tagRaw = r[SCHEMA.TAG];
-        if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#"))
-          return null;
+    const outputRow = mapping.map(m => {
+      // Don't include internal check columns in output
+      if (m.type === "bool_check") return null;
 
-        const id = tagRaw.replace("#", "").trim();
-        if (id.length < 3) return null;
+      const val = rowRaw[m.col];
+      const disp = rowDisplay[m.col];
 
-        // 🚨 AIRTIGHT FILTER: Check "Invited" status
-        if (isHeadhunter) {
-          const rawInvited = r[SCHEMA.INVITED];
-          const isActuallyInvited =
-            rawInvited === true ||
-            String(rawInvited).toUpperCase() === "TRUE" ||
-            String(rawInvited) === "1";
-          if (isActuallyInvited) return null;
-        }
-
-        const name = sanitizeStr(r[SCHEMA.NAME]).replace(
-          /^=HYPERLINK.*"(.*)".*$/,
-          "$1",
-        );
-        const trophies = sanitizeNum(r[SCHEMA.TROPHIES]);
-
-        // Explicit column values from Absolute Sheet Schema
-        const rawVal = sanitizeNum(
-          r[SCHEMA.RAW_SCORE],
-          displayVals[index][SCHEMA.RAW_SCORE],
-        );
-        const scoreVal = sanitizeNum(
-          r[isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE],
-          displayVals[index][isHeadhunter ? SCHEMA.POTENTIAL_SCORE : SCHEMA.PERF_SCORE],
-        );
-        
-        if (isHeadhunter) {
-          const fd = r[SCHEMA.FOUND_DATE];
-          const ago =
-            fd instanceof Date && !isNaN(fd.getTime()) ? fd.toISOString() : "";
-          const don = sanitizeNum(r[SCHEMA.DONATIONS]);
-          const war = sanitizeNum(r[SCHEMA.WAR_WINS]);
-          const cards = sanitizeNum(r[SCHEMA.CARDS]);
-
-          // Matches HH Schema: id, n, t, potentialScore, don, war, ago, cards, potentialRawScore
-          return [id, name, trophies, scoreVal, don, war, ago, cards, rawVal];
-        } else {
-          // LEADERBOARD logic
-          let role = sanitizeStr(r[SCHEMA.ROLE] || "Member");
-          if (role === "coLeader") role = "Co-Leader";
-
-          let rateDisplay = "0%";
-          const visualRate = displayVals[index][SCHEMA.WAR_RATE];
-          const rawRate = r[SCHEMA.WAR_RATE];
-
-          if (visualRate && visualRate.includes("%")) {
-            rateDisplay = visualRate.trim();
-          } else {
-            let val = parseFloat(String(rawRate));
-            if (!isNaN(val)) {
-              if (val <= 1.0) val = val * 100;
-              rateDisplay = `${Math.round(val)}%`;
-            }
+      switch(m.type) {
+        case "tag": 
+          return String(val).replace("#", "").trim();
+        case "num":
+          return sanitizeNum(val, disp);
+        case "rate":
+          if (disp && disp.includes("%")) return disp.trim();
+          let n = parseFloat(String(val));
+          if (!isNaN(n) && n <= 1.0) return `${Math.round(n * 100)}%`;
+          return `${Math.round(n)}%`;
+        case "date":
+          return val instanceof Date ? val.toISOString() : "";
+        case "str":
+        default:
+          let s = val === null || val === undefined ? "" : String(val);
+          // Strip formulas like =HYPERLINK
+          if (s.startsWith("=")) {
+             return s.replace(/^=HYPERLINK.*"(.*)".*$/, "$1");
           }
-
-          const days = sanitizeNum(r[SCHEMA.DAYS]);
-          const avg = sanitizeNum(r[SCHEMA.AVG_DAY]);
-          const seen = sanitizeStr(r[SCHEMA.LAST_SEEN] || "-");
-          const hist = sanitizeStr(r[SCHEMA.HISTORY]);
-          const trend = sanitizeNum(r[SCHEMA.TREND]);
-          const wfame = sanitizeNum(r[SCHEMA.AVG_WAR_FAME]);
-
-          // Matches LB Schema: id, n, role, t, days, req, avg, tot, seen, rate, wfame, hist, performanceRawScore, performanceScore, dt, war
-          return [
-            id,
-            name,
-            role,
-            trophies,
-            days,
-            sanitizeNum(r[SCHEMA.WEEKLY_REQ]),
-            avg,
-            sanitizeNum(r[SCHEMA.TOTAL_DON]),
-            seen,
-            rateDisplay,
-            wfame,
-            hist,
-            rawVal, // Explicit PerformanceRawScore
-            scoreVal, // Explicit PerformanceScore (%)
-            trend,
-            sanitizeNum(r[SCHEMA.WAR_DAY_WINS]),
-          ];
-        }
-      } catch (err) {
-        console.warn(`Row extraction error in ${sheetName}: ${err.message}`);
-        return null;
+          return s.trim();
       }
-    })
-    .filter(Boolean);
+    }).filter(v => v !== null); // Remove nulls from boolean checks
+
+    rows.push(outputRow);
+  }
+
+  // 4. RETURN SYNCHRONIZED SCHEMA & DATA
+  return {
+    schema: mapping.filter(m => m.type !== "bool_check").map(m => m.key),
+    rows: rows
+  };
+}
+
+// Helper: Robust number parsing
+function sanitizeNum(v, displayV) {
+  if (v === null || v === undefined) return 0;
+  if (typeof v === "number") return v;
+  let s = String(v).replace(/,/g, "").replace(/%/g, "").trim();
+  let n = parseFloat(s);
+  if (isNaN(n)) return 0;
+  // Handle displayed percentages that might be stored as strings
+  if (displayV && displayV.includes("%")) return n; 
+  return n;
 }
