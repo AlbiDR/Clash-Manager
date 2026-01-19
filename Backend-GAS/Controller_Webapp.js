@@ -22,15 +22,9 @@ function getWebAppData(forceRefresh) {
     }
 
     if (payloadStr) {
-      console.log("🌐 API Request: Serving from cache.");
       return payloadStr;
     }
 
-    console.log(
-      forceRefresh
-        ? "🌐 API Request: Force-refreshing payload."
-        : "🌐 API Request: Cache miss.",
-    );
     return refreshWebPayload();
   } catch (e) {
     console.error(`getWebAppData CRITICAL FAILURE: ${e.stack}`);
@@ -54,17 +48,16 @@ function markRecruitsAsInvitedBulk(ids) {
 
   // 🔒 STRUCTURAL FIX: MUTEX LOCKING
   return Utils.executeSafely("WRITE_HH", () => {
-    console.time("BulkDismiss");
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
-      
+
       // 🛡️ SYNC: Ensure we are seeing the absolute latest state of the workbook
       SpreadsheetApp.flush();
 
       // 1. READ EXISTING DATA (Capture Scores BEFORE deletion)
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
       const tagScoreMap = new Map(); // Tag -> RawScore
-      const tagRowMap = new Map();   // Tag -> AbsoluteRowIndex
+      const tagRowMap = new Map(); // Tag -> AbsoluteRowIndex
 
       if (sheet) {
         Utils.bootDynamicSchema();
@@ -73,28 +66,32 @@ function markRecruitsAsInvitedBulk(ids) {
 
         if (lastRowVisual >= startRow) {
           const numRows = lastRowVisual - startRow + 1;
-          
+
           // ⚡ COLUMN RESOLUTION: Use 1-based index from Schema + 1 (A=1)
           const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
           const scoreColIdx = 1 + CONFIG.SCHEMA.HH.RAW_SCORE;
 
           // Fetch Data
-          const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
-          const scoreValues = sheet.getRange(startRow, scoreColIdx, numRows, 1).getValues();
+          const tagValues = sheet
+            .getRange(startRow, tagColIdx, numRows, 1)
+            .getValues();
+          const scoreValues = sheet
+            .getRange(startRow, scoreColIdx, numRows, 1)
+            .getValues();
 
-          for(let i=0; i<tagValues.length; i++) {
-             const t = String(tagValues[i][0] || "").trim();
-             const s = Number(scoreValues[i][0]) || 0;
-             if(t) {
-                // Normalize tag just in case - FORCE UPPERCASE to match inputs
-                const normTag = (t.startsWith("#") ? t : "#" + t).toUpperCase();
-                tagScoreMap.set(normTag, s);
-                tagRowMap.set(normTag, startRow + i);
-             } 
+          for (let i = 0; i < tagValues.length; i++) {
+            const t = String(tagValues[i][0] || "").trim();
+            const s = Number(scoreValues[i][0]) || 0;
+            if (t) {
+              // Normalize tag just in case - FORCE UPPERCASE to match inputs
+              const normTag = (t.startsWith("#") ? t : "#" + t).toUpperCase();
+              tagScoreMap.set(normTag, s);
+              tagRowMap.set(normTag, startRow + i);
+            }
           }
         }
       }
-      
+
       // 2. DATABASE WRITE (Primary Source of Truth)
       // We write directly to the Blacklist/History sheet.
       let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
@@ -105,66 +102,64 @@ function markRecruitsAsInvitedBulk(ids) {
       }
 
       const now = Date.now();
-      const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
+      const expiryDuration =
+        (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
       const expiryDate = now + expiryDuration;
-      
+
       // Create DB Entries: [Tag, ExpiryTimestamp, RawScore]
-      const dbEntries = ids.map(id => {
+      const dbEntries = ids.map((id) => {
         // Normalize input ID - FORCE UPPERCASE
         const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
         // ⚡ FIX: Use the captured score from the sheet, default to 0 only if missing
         const rawScore = tagScoreMap.get(tag) || 0;
-        return [tag, expiryDate, rawScore]; 
+        return [tag, expiryDate, rawScore];
       });
 
       // Append to DB
       if (dbEntries.length > 0) {
         const lastRow = Math.max(blSheet.getLastRow(), 1);
-        blSheet.getRange(lastRow + 1, 1, dbEntries.length, 3).setValues(dbEntries);
-        console.log(`🌐 DB Action: Added ${dbEntries.length} to Blacklist History.`);
-        
+        blSheet
+          .getRange(lastRow + 1, 1, dbEntries.length, 3)
+          .setValues(dbEntries);
+
         // 🛡️ COMMIT: Force write to DB immediately
         SpreadsheetApp.flush();
       }
 
       // 3. SHEET CLEANUP (Visual Sync)
       let deletedCount = 0;
-      
+
       if (sheet && tagRowMap.size > 0) {
-          const rowsToDelete = [];
+        const rowsToDelete = [];
 
-          ids.forEach(id => {
-            // Normalize input ID - FORCE UPPERCASE
-            const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
-            if (tagRowMap.has(tag)) {
-               rowsToDelete.push(tagRowMap.get(tag));
-            }
-          });
-
-          // Delete from bottom up to preserve indices of upper rows
-          if (rowsToDelete.length > 0) {
-            rowsToDelete.sort((a, b) => b - a);
-            rowsToDelete.forEach(rowIdx => sheet.deleteRow(rowIdx));
-            deletedCount = rowsToDelete.length;
-            console.log(`🌐 Sheet Action: Deleted ${deletedCount} dismissed rows.`);
+        ids.forEach((id) => {
+          // Normalize input ID - FORCE UPPERCASE
+          const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
+          if (tagRowMap.has(tag)) {
+            rowsToDelete.push(tagRowMap.get(tag));
           }
+        });
+
+        // Delete from bottom up to preserve indices of upper rows
+        if (rowsToDelete.length > 0) {
+          rowsToDelete.sort((a, b) => b - a);
+          rowsToDelete.forEach((rowIdx) => sheet.deleteRow(rowIdx));
+          deletedCount = rowsToDelete.length;
+        }
       }
 
       // 4. FLUSH & REFRESH (Internal)
       SpreadsheetApp.flush();
       const payloadStr = _generatePayloadInternal();
 
-      console.timeEnd("BulkDismiss");
-      
       // Return metadata for debugging/confirmation
-      return { 
-        success: true, 
-        count: ids.length, 
+      return {
+        success: true,
+        count: ids.length,
         dbWrite: dbEntries.length,
         deleted: deletedCount,
-        payloadSize: payloadStr.length 
+        payloadSize: payloadStr.length,
       };
-      
     } catch (e) {
       console.error(`Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
@@ -187,77 +182,73 @@ function refreshWebPayload() {
 
 /**
  * 🔒 INTERNAL GENERATOR (No Lock)
- * Contains the core logic for payload generation. 
+ * Contains the core logic for payload generation.
  * Can be called by other locked functions (like markRecruitsAsInvitedBulk) safely.
  */
 function _generatePayloadInternal() {
-    try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-      // ⚡ SMART SYNC: Dynamically resolve column indices from headers
-      Utils.bootDynamicSchema();
+    // ⚡ SMART SYNC: Dynamically resolve column indices from headers
+    Utils.bootDynamicSchema();
 
-      // 1. EXTRACT DATA & SCHEMA SIMULTANEOUSLY
-      const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
-      const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
+    // 1. EXTRACT DATA & SCHEMA SIMULTANEOUSLY
+    const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
+    const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
 
-      // ⚡ FILTER: Remove Blacklisted items from HH result immediately
-      // This prevents "flickering" where a dismissed recruit might show up for 1 second before the blacklist syncs
-      const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
-      const blacklist = new Set();
-      if (blSheet) {
-         const rawBL = blSheet.getDataRange().getValues();
-         const now = Date.now();
-         // Col 0 = Tag, Col 1 = Expiry
-         rawBL.forEach(r => {
-            if (r[1] > now) blacklist.add(String(r[0]).toUpperCase());
-         });
-      }
-
-      const filteredHH = hhResult.rows.filter(row => {
-         // Assuming ID is index 0 in the output array (matches schema order)
-         const id = "#" + row[0]; 
-         return !blacklist.has(id.toUpperCase());
-      });
-
-      const data = {
-        format: "matrix",
-        schema: {
-          lb: lbResult.schema,
-          hh: hhResult.schema,
-        },
-        lb: lbResult.rows,
-        hh: filteredHH,
-        playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
-        timestamp: new Date().getTime(),
-      };
-
-      const payload = { success: true, data: data, error: null };
-      const payloadStr = JSON.stringify(payload);
-
-      Utils.CacheHandler.putLarge(
-        CONFIG.SYSTEM.JSON_STORE_KEY,
-        payloadStr,
-        21600,
-      );
-      Utils.Props.set("LAST_PAYLOAD_TIMESTAMP", data.timestamp);
-
-      console.log(
-        `🚀 Web Payload Generated (${Math.round(payloadStr.length / 1024)} KB)`,
-      );
-
-      return payloadStr;
-    } catch (e) {
-      console.error(`refreshWebPayload FAILED: ${e.stack}`);
-      return JSON.stringify({
-        success: false,
-        data: null,
-        error: {
-          code: "PAYLOAD_GENERATION_FAILED",
-          message: `Failed to generate data from Sheets: ${e.message}`,
-        },
+    // ⚡ FILTER: Remove Blacklisted items from HH result immediately
+    // This prevents "flickering" where a dismissed recruit might show up for 1 second before the blacklist syncs
+    const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
+    const blacklist = new Set();
+    if (blSheet) {
+      const rawBL = blSheet.getDataRange().getValues();
+      const now = Date.now();
+      // Col 0 = Tag, Col 1 = Expiry
+      rawBL.forEach((r) => {
+        if (r[1] > now) blacklist.add(String(r[0]).toUpperCase());
       });
     }
+
+    const filteredHH = hhResult.rows.filter((row) => {
+      // Assuming ID is index 0 in the output array (matches schema order)
+      const id = "#" + row[0];
+      return !blacklist.has(id.toUpperCase());
+    });
+
+    const data = {
+      format: "matrix",
+      schema: {
+        lb: lbResult.schema,
+        hh: hhResult.schema,
+      },
+      lb: lbResult.rows,
+      hh: filteredHH,
+      playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
+      timestamp: new Date().getTime(),
+    };
+
+    const payload = { success: true, data: data, error: null };
+    const payloadStr = JSON.stringify(payload);
+
+    Utils.CacheHandler.putLarge(
+      CONFIG.SYSTEM.JSON_STORE_KEY,
+      payloadStr,
+      21600,
+    );
+    Utils.Props.set("LAST_PAYLOAD_TIMESTAMP", data.timestamp);
+
+    return payloadStr;
+  } catch (e) {
+    console.error(`refreshWebPayload FAILED: ${e.stack}`);
+    return JSON.stringify({
+      success: false,
+      data: null,
+      error: {
+        code: "PAYLOAD_GENERATION_FAILED",
+        message: `Failed to generate data from Sheets: ${e.message}`,
+      },
+    });
+  }
 }
 
 // ============================================================================
@@ -325,60 +316,64 @@ function extractSheetDataStrict(ss, sheetName, type) {
 
   // 3. TRANSFORM
   const rows = [];
-  
+
   for (let i = 0; i < vals.length; i++) {
     const rowRaw = vals[i];
     const rowDisplay = displayVals[i];
-    
+
     // Global filter: Must have a valid tag
     const tagRaw = rowRaw[S.TAG];
-    if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#")) continue;
-    
+    if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#"))
+      continue;
+
     // Headhunter filter: Skip invited (Legacy check for safety)
     if (type === "hh") {
       const invitedVal = rowRaw[S.INVITED];
-      const isInvited = invitedVal === true || String(invitedVal).toUpperCase() === "TRUE";
+      const isInvited =
+        invitedVal === true || String(invitedVal).toUpperCase() === "TRUE";
       if (isInvited) continue;
     }
 
-    const outputRow = mapping.map(m => {
-      // Don't include internal check columns in output
-      if (m.type === "bool_check") return null;
+    const outputRow = mapping
+      .map((m) => {
+        // Don't include internal check columns in output
+        if (m.type === "bool_check") return null;
 
-      const val = rowRaw[m.col];
-      const disp = rowDisplay[m.col];
+        const val = rowRaw[m.col];
+        const disp = rowDisplay[m.col];
 
-      switch(m.type) {
-        case "tag": 
-          // ⚡ NORMALIZE: Ensure frontend always gets Uppercase IDs for consistency
-          return String(val).replace("#", "").trim().toUpperCase();
-        case "num":
-          return sanitizeNum(val, disp);
-        case "rate":
-          if (disp && disp.includes("%")) return disp.trim();
-          let n = parseFloat(String(val));
-          if (!isNaN(n) && n <= 1.0) return `${Math.round(n * 100)}%`;
-          return `${Math.round(n)}%`;
-        case "date":
-          return val instanceof Date ? val.toISOString() : "";
-        case "str":
-        default:
-          let s = val === null || val === undefined ? "" : String(val);
-          // Strip formulas like =HYPERLINK
-          if (s.startsWith("=")) {
-             return s.replace(/^=HYPERLINK.*"(.*)".*$/, "$1");
-          }
-          return s.trim();
-      }
-    }).filter(v => v !== null); // Remove nulls from boolean checks
+        switch (m.type) {
+          case "tag":
+            // ⚡ NORMALIZE: Ensure frontend always gets Uppercase IDs for consistency
+            return String(val).replace("#", "").trim().toUpperCase();
+          case "num":
+            return sanitizeNum(val, disp);
+          case "rate":
+            if (disp && disp.includes("%")) return disp.trim();
+            let n = parseFloat(String(val));
+            if (!isNaN(n) && n <= 1.0) return `${Math.round(n * 100)}%`;
+            return `${Math.round(n)}%`;
+          case "date":
+            return val instanceof Date ? val.toISOString() : "";
+          case "str":
+          default:
+            let s = val === null || val === undefined ? "" : String(val);
+            // Strip formulas like =HYPERLINK
+            if (s.startsWith("=")) {
+              return s.replace(/^=HYPERLINK.*"(.*)".*$/, "$1");
+            }
+            return s.trim();
+        }
+      })
+      .filter((v) => v !== null); // Remove nulls from boolean checks
 
     rows.push(outputRow);
   }
 
   // 4. RETURN SYNCHRONIZED SCHEMA & DATA
   return {
-    schema: mapping.filter(m => m.type !== "bool_check").map(m => m.key),
-    rows: rows
+    schema: mapping.filter((m) => m.type !== "bool_check").map((m) => m.key),
+    rows: rows,
   };
 }
 
@@ -390,6 +385,6 @@ function sanitizeNum(v, displayV) {
   let n = parseFloat(s);
   if (isNaN(n)) return 0;
   // Handle displayed percentages that might be stored as strings
-  if (displayV && displayV.includes("%")) return n; 
+  if (displayV && displayV.includes("%")) return n;
   return n;
 }

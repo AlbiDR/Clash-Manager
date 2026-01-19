@@ -28,12 +28,6 @@ export function useStoragePersistence() {
       isSupported.value = true;
       const result = await navigator.storage.persist();
       isPersisted.value = result;
-
-      if (import.meta.env.DEV) {
-        console.log(
-          `[StoragePersistence] Request result: ${result ? "GRANTED" : "DENIED"}`,
-        );
-      }
     }
   }
 

@@ -43,12 +43,10 @@ function scoutRecruits() {
       baselineData[0].items.reduce((a, b) => a + b.trophies, 0) /
       baselineData[0].items.length;
   } else {
-    console.warn(
-      "⚠️ Recruiter: Could not fetch baseline clan data. Defaulting to 4000 trophies. Check API configuration.",
-    );
+
   }
 
-  console.log(`📊 Baseline: Clan Avg Trophies is ${Math.round(avgTrophies)}.`);
+
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   // This step harvests manual checkbox ticks from the spreadsheet and saves them to DB
@@ -57,9 +55,7 @@ function scoutRecruits() {
 
   // 2. Load existing tracking data
   const existing = loadRecruitDatabase(sheet);
-  console.log(
-    `📂 Database: Loaded ${existing.size} existing candidates from sheet.`,
-  );
+
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
@@ -77,9 +73,7 @@ function scoutRecruits() {
       }
     });
     if (joinedCount > 0)
-      console.log(
-        `🧹 Clean-up: Removed ${joinedCount} players who joined other clans.`,
-      );
+
   }
 
   // 3. Dynamic Safety Cap
@@ -88,9 +82,7 @@ function scoutRecruits() {
     4000,
     Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies),
   );
-  console.log(
-    `🎯 Strategy: Seeking players with >${minTrophies} Trophies to fill pool.`,
-  );
+
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
@@ -109,9 +101,7 @@ function scoutRecruits() {
     existing.set(c.tag, c);
   });
 
-  console.log(
-    `🔍 Scan Result: Merged ${newArrivals} new arrivals and ${updatedExisting} status updates.`,
-  );
+
 
   // 6. Final Pool Scoring & Capping
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
@@ -286,9 +276,7 @@ function updateAndGetBlacklist(sheet) {
       ? pool.reduce((acc, c) => acc + c.decayed, 0) / pool.length
       : 0;
 
-  console.log(
-    `🚫 Blacklist: ${validEntries.length} active. Benchmark Pool: Top ${poolSize} (Avg: ${Math.round(benchmarkHigh)}).`,
-  );
+
 
   // 4. Write back to sheet (Overwrite with deduplicated set)
   blSheet.clear();
@@ -298,7 +286,7 @@ function updateAndGetBlacklist(sheet) {
   }
 
   if (rowsToDelete.length > 0) {
-    console.log(`🧹 Purging ${rowsToDelete.length} invited rows.`);
+
     // Delete in reverse order to preserve indices
     rowsToDelete.sort((a, b) => b - a).forEach((idx) => sheet.deleteRow(idx));
     SpreadsheetApp.flush();
@@ -343,16 +331,14 @@ function loadRecruitDatabase(sheet) {
 }
 
 function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
-  console.time("ScanTournaments");
+
   const W = CONFIG.HEADHUNTER.WEIGHTS;
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
   const searchUrls = keywords.map(
     (k) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
   );
 
-  console.log(
-    `📡 Discovery: Broadcasting search for ${keywords.length} keywords...`,
-  );
+
   const searchResults = Utils.fetchRoyaleAPI(searchUrls);
   const uniqueTourneys = new Map();
   searchResults.forEach((res) => {
@@ -360,7 +346,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
       res.items.forEach((t) => uniqueTourneys.set(t.tag, t));
   });
 
-  console.log(`📡 Discovery: Found ${uniqueTourneys.size} open tournaments.`);
+
 
   // Decide scan depth based on remote worker availability and a user toggle
   const remoteAvailable = Utils.remoteWorkerHealthy();
@@ -384,9 +370,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
 
-  console.log(
-    `📡 Discovery: Deep-scanning ${tourneyTags.length} selected tournaments... (remote=${remoteAvailable}, expand=${remoteExpandEnabled})`,
-  );
+
 
   if (tourneyTags.length === 0) return [];
 
@@ -397,20 +381,20 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   // This drastically reduces execution time and fetches by moving filtering to the worker
   if (remoteAvailable && remoteExpandEnabled) {
     try {
-      console.log("☁️ Offloading Tournament Scan to Worker...");
+
       // Pass weights (W) to enable scoring on the worker
       candidates = Utils.scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, W);
-      console.log(`☁️ Worker returned ${candidates.length} pre-filtered candidates.`);
+
       usedRemote = true; // Mark remote usage successful
     } catch (e) {
-      console.warn("⚠️ Remote scan failed, falling back to local scan.", e);
+
       // usedRemote stays false, triggering local fallback below
     }
   }
 
   // Local fallback or standard execution if remote disabled/failed
   if (!usedRemote) {
-    console.log("📡 Local Scanning: Fetching tournament details...");
+
     const details = Utils.fetchRoyaleAPI(
       tourneyTags.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
@@ -436,9 +420,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
       uniqueCandidates.set(c.tag, c);
   });
 
-  console.log(
-    `👥 Filtering: Extracted ${candidates.length} clanless players. ${uniqueCandidates.size} unique above trophy threshold.`,
-  );
+
 
   const playerLimit = Math.min(
     CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000,
@@ -457,12 +439,10 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   // If usedRemote is true, candidates might already be scored.
   // Check if we have rawScore.
   if (usedRemote && candidates.length > 0 && candidates[0].rawScore !== undefined) {
-     console.log("⚡ Candidates already scored by worker. Skipping local fetch.");
+
      validCandidates.push(...candidates);
   } else {
-      console.log(
-        `👥 Filtering: Retrieving full profiles${remoteAvailable ? " (Scoring-as-a-Service)" : ""} for ${tagsToFetch.length} candidates...`,
-      );
+
 
       const playersData = Utils.fetchRoyaleAPI(
         tagsToFetch.map(
@@ -491,9 +471,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     );
 
     if (candidatesToScoreLocally.length > 0) {
-      console.log(
-        `📡 Local Scoring: Fetching battle logs for ${candidatesToScoreLocally.length} players...`,
-      );
+
       const logUrls = candidatesToScoreLocally.map(
         (p) =>
           `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
@@ -552,7 +530,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     });
   }
 
-  console.timeEnd("ScanTournaments");
+
   return validCandidates.map((p) => p._computed).filter(Boolean);
 }
 
