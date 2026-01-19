@@ -42,6 +42,40 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
   };
 }
 
+// Helper: Calculate War Week ID (Matches GAS Implementation)
+function calculateWarWeekId(dateStr) {
+  if (!dateStr) return "Unknown";
+  // Parse ISO string to Date
+  let date;
+  if (/^\d{8}T\d{6}/.test(dateStr)) {
+      const y = parseInt(dateStr.substr(0, 4), 10);
+      const m = parseInt(dateStr.substr(4, 2), 10) - 1;
+      const d = parseInt(dateStr.substr(6, 2), 10);
+      const h = parseInt(dateStr.substr(9, 2), 10);
+      const min = parseInt(dateStr.substr(11, 2), 10);
+      const s = parseInt(dateStr.substr(13, 2), 10);
+      date = new Date(Date.UTC(y, m, d, h, min, s));
+  } else {
+      date = new Date(dateStr);
+  }
+
+  // Adjust to Thursday (War Start)
+  // Logic aligned with GAS: date.getDate() + 3 - ((date.getDay() + 6) % 7)
+  const d = new Date(date.getTime());
+  d.setUTCHours(0,0,0,0);
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1) + 3; // Adjust to Thursday
+  // Simplified approximation of GAS logic
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  
+  const year = d.getUTCFullYear();
+  const week1 = new Date(Date.UTC(year, 0, 4));
+  const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getUTCDay() + 6) % 7)) / 7);
+  const yearShort = year.toString().slice(-2);
+  
+  return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
+}
+
 async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
   const results = new Array(urls.length);
   let idx = 0;
@@ -242,6 +276,61 @@ app.post("/scan", checkAuth, async (req, res) => {
     return res.json({ candidates });
   } catch (e) {
     console.error("Failed /scan", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ⚡ FULL CLAN CONTEXT (Optimized for Leaderboard)
+app.post("/clan/full", checkAuth, async (req, res) => {
+  try {
+    const { tag, apiKeys } = req.body;
+    if (!tag) return res.status(400).json({ error: "tag required" });
+
+    const cleanTag = encodeURIComponent(tag);
+    const urls = [
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/members`,
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/currentriverrace`,
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`
+    ];
+
+    const results = await processBatch(urls, apiKeys, 3, null);
+    
+    const membersData = results[0].code === 200 ? results[0].content : null;
+    const raceData = results[1].code === 200 ? results[1].content : null;
+    const logData = results[2].code === 200 ? results[2].content : null;
+
+    if (!membersData) {
+      return res.status(500).json({ error: "Failed to fetch members" });
+    }
+
+    // ⚡ PRE-PROCESS HISTORY
+    // Offload the O(W x M) iteration from GAS to Node
+    const warHistory = {}; // tag -> { weekId: fame }
+    
+    if (logData && logData.items) {
+      logData.items.forEach(log => {
+        const weekId = calculateWarWeekId(log.createdDate);
+        const standings = log.standings || [];
+        const myClan = standings.find(s => s.clan.tag === tag);
+        
+        if (myClan && myClan.clan.participants) {
+          myClan.clan.participants.forEach(p => {
+            if (!warHistory[p.tag]) warHistory[p.tag] = {};
+            // Track max fame if duplicate week entries exist (rare but possible)
+            warHistory[p.tag][weekId] = Math.max(warHistory[p.tag][weekId] || 0, p.fame);
+          });
+        }
+      });
+    }
+
+    return res.json({
+      members: membersData,
+      race: raceData,
+      history: warHistory
+    });
+
+  } catch (e) {
+    console.error("Failed /clan/full", e);
     return res.status(500).json({ error: e.message });
   }
 });
