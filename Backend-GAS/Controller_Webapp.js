@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.3
+ * 🏷️ VERSION: 10.0.4
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.3";
+const VER_CONTROLLER_WEBAPP = "10.0.4";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -53,81 +53,80 @@ function markRecruitsAsInvitedBulk(ids) {
   if (!ids || !Array.isArray(ids) || ids.length === 0) return { success: true };
 
   // 🔒 STRUCTURAL FIX: MUTEX LOCKING
-  // This ensures we never collide with a Scout Run (which clears/rewrites the sheet).
   return Utils.executeSafely("WRITE_HH", () => {
     console.time("BulkDismiss");
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
+      
+      // 1. DATABASE WRITE (Primary Source of Truth)
+      // We write directly to the Blacklist/History sheet.
+      // This ensures persistence even if the visual Headhunter sheet is cleared.
+      let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
+      if (!blSheet) blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
+
+      const now = Date.now();
+      const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
+      const expiryDate = now + expiryDuration;
+      
+      // Create DB Entries: [Tag, ExpiryTimestamp, RawScore(0 placeholder)]
+      const dbEntries = ids.map(id => {
+        const tag = id.startsWith("#") ? id : "#" + id;
+        return [tag, expiryDate, 0]; 
+      });
+
+      // Append to DB
+      if (dbEntries.length > 0) {
+        const lastRow = Math.max(blSheet.getLastRow(), 1);
+        blSheet.getRange(lastRow + 1, 1, dbEntries.length, 3).setValues(dbEntries);
+        console.log(`🌐 DB Action: Added ${dbEntries.length} to Blacklist History.`);
+      }
+
+      // 2. VISUAL UPDATE (Secondary / User Feedback)
+      // We still tick the boxes in the main sheet so if a user looks at the spreadsheet,
+      // they see the "TRUE" checkbox. But this is no longer the logic driver.
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-      if (!sheet)
-        return { success: false, message: "Headhunter sheet not found." };
+      if (sheet) {
+        Utils.bootDynamicSchema();
+        const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+        const lastRowVisual = sheet.getLastRow();
 
-      // ⚡ STABILITY FIX: Ensure schema is synced with actual sheet columns before writing
-      // This prevents writing to the wrong column if headers are moved.
-      Utils.bootDynamicSchema();
+        if (lastRowVisual >= startRow) {
+          const numRows = lastRowVisual - startRow + 1;
+          const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
+          const invitedColIdx = 1 + CONFIG.SCHEMA.HH.INVITED;
 
-      const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-      const lastRow = sheet.getLastRow();
+          const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
+          const invitedRange = sheet.getRange(startRow, invitedColIdx, numRows, 1);
+          const invitedValues = invitedRange.getValues();
 
-      const idsSet = new Set(ids.map((id) => "#" + id));
-      let sheetUpdates = 0;
-
-      // 1. UPDATE SHEET (Visual/Database)
-      if (lastRow >= startRow) {
-        const numRows = lastRow - startRow + 1;
-        
-        // ⚡ FIX: Correct Column Math
-        // Array Read (0-based) vs Sheet Column (1-based).
-        // Since we read from Col 1 (A), Array Index 1 IS Sheet Col 2 (B).
-        // Therefore, we use `1 + SCHEMA_INDEX` to get the GAS Column number.
-        // Old broken math was `2 + SCHEMA_INDEX`.
-        const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
-        const invitedColIdx = 1 + CONFIG.SCHEMA.HH.INVITED;
-
-        // Safety check to ensure we aren't writing out of bounds
-        if (tagColIdx < 1 || invitedColIdx < 1) {
-           throw new Error("Schema Mismatch: Could not resolve Tag or Invited columns.");
-        }
-
-        const tagValues = sheet
-          .getRange(startRow, tagColIdx, numRows, 1)
-          .getValues();
-        const invitedRange = sheet.getRange(
-          startRow,
-          invitedColIdx,
-          numRows,
-          1,
-        );
-        const invitedValues = invitedRange.getValues();
-
-        const tagMap = new Map(
-          tagValues
-            .map((row, idx) => (row[0] ? [row[0].toString(), idx] : null))
-            .filter(Boolean),
-        );
-
-        idsSet.forEach((tag) => {
-          const idx = tagMap.get(tag);
-          if (idx !== undefined) {
-            invitedValues[idx][0] = true;
-            sheetUpdates++;
+          const tagMap = new Map();
+          for(let i=0; i<tagValues.length; i++) {
+             const t = String(tagValues[i][0] || "");
+             if(t) tagMap.set(t, i);
           }
-        });
 
-        if (sheetUpdates > 0) {
-          invitedRange.setValues(invitedValues);
+          let visualUpdates = 0;
+          ids.forEach(id => {
+            const tag = id.startsWith("#") ? id : "#" + id;
+            const idx = tagMap.get(tag);
+            if (idx !== undefined) {
+              invitedValues[idx][0] = true;
+              visualUpdates++;
+            }
+          });
+
+          if (visualUpdates > 0) {
+            invitedRange.setValues(invitedValues);
+          }
         }
       }
 
-      // 2. FLUSH & FORCE REFRESH
-      if (sheetUpdates > 0) {
-        SpreadsheetApp.flush();
-        console.log(`🌐 API Action: Dismissed ${sheetUpdates} candidates.`);
-        refreshWebPayload();
-      }
+      // 3. FLUSH & REFRESH
+      SpreadsheetApp.flush();
+      refreshWebPayload();
 
       console.timeEnd("BulkDismiss");
-      return { success: true, count: sheetUpdates };
+      return { success: true, count: ids.length };
     } catch (e) {
       console.error(`Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
@@ -148,9 +147,27 @@ function refreshWebPayload() {
       Utils.bootDynamicSchema();
 
       // 1. EXTRACT DATA & SCHEMA SIMULTANEOUSLY
-      // We no longer manually type the schema array. It comes from the same map used to read the data.
       const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
       const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
+
+      // ⚡ FILTER: Remove Blacklisted items from HH result immediately
+      // This prevents "flickering" where a dismissed recruit might show up for 1 second before the blacklist syncs
+      const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
+      const blacklist = new Set();
+      if (blSheet) {
+         const rawBL = blSheet.getDataRange().getValues();
+         const now = Date.now();
+         // Col 0 = Tag, Col 1 = Expiry
+         rawBL.forEach(r => {
+            if (r[1] > now) blacklist.add(String(r[0]));
+         });
+      }
+
+      const filteredHH = hhResult.rows.filter(row => {
+         // Assuming ID is index 0 in the output array (matches schema order)
+         const id = "#" + row[0]; 
+         return !blacklist.has(id);
+      });
 
       const data = {
         format: "matrix",
@@ -159,7 +176,7 @@ function refreshWebPayload() {
           hh: hhResult.schema,
         },
         lb: lbResult.rows,
-        hh: hhResult.rows,
+        hh: filteredHH,
         playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
       };
@@ -267,7 +284,7 @@ function extractSheetDataStrict(ss, sheetName, type) {
     const tagRaw = rowRaw[S.TAG];
     if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#")) continue;
     
-    // Headhunter filter: Skip invited
+    // Headhunter filter: Skip invited (Legacy check for safety)
     if (type === "hh") {
       const invitedVal = rowRaw[S.INVITED];
       const isInvited = invitedVal === true || String(invitedVal).toUpperCase() === "TRUE";
