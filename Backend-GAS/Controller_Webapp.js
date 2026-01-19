@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.8
+ * 🏷️ VERSION: 10.0.9
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.8";
+const VER_CONTROLLER_WEBAPP = "10.0.9";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -60,8 +60,42 @@ function markRecruitsAsInvitedBulk(ids) {
       
       // 🛡️ SYNC: Ensure we are seeing the absolute latest state of the workbook
       SpreadsheetApp.flush();
+
+      // 1. READ EXISTING DATA (Capture Scores BEFORE deletion)
+      const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+      const tagScoreMap = new Map(); // Tag -> RawScore
+      const tagRowMap = new Map();   // Tag -> AbsoluteRowIndex
+
+      if (sheet) {
+        Utils.bootDynamicSchema();
+        const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+        const lastRowVisual = sheet.getLastRow();
+
+        if (lastRowVisual >= startRow) {
+          const numRows = lastRowVisual - startRow + 1;
+          
+          // ⚡ COLUMN RESOLUTION: Use 1-based index from Schema + 1 (A=1)
+          const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
+          const scoreColIdx = 1 + CONFIG.SCHEMA.HH.RAW_SCORE;
+
+          // Fetch Data
+          const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
+          const scoreValues = sheet.getRange(startRow, scoreColIdx, numRows, 1).getValues();
+
+          for(let i=0; i<tagValues.length; i++) {
+             const t = String(tagValues[i][0] || "").trim();
+             const s = Number(scoreValues[i][0]) || 0;
+             if(t) {
+                // Normalize tag just in case
+                const normTag = t.startsWith("#") ? t : "#" + t;
+                tagScoreMap.set(normTag, s);
+                tagRowMap.set(normTag, startRow + i);
+             } 
+          }
+        }
+      }
       
-      // 1. DATABASE WRITE (Primary Source of Truth)
+      // 2. DATABASE WRITE (Primary Source of Truth)
       // We write directly to the Blacklist/History sheet.
       let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
       if (!blSheet) {
@@ -74,10 +108,12 @@ function markRecruitsAsInvitedBulk(ids) {
       const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
       const expiryDate = now + expiryDuration;
       
-      // Create DB Entries: [Tag, ExpiryTimestamp, RawScore(0 placeholder)]
+      // Create DB Entries: [Tag, ExpiryTimestamp, RawScore]
       const dbEntries = ids.map(id => {
         const tag = id.startsWith("#") ? id : "#" + id;
-        return [tag, expiryDate, 0]; 
+        // ⚡ FIX: Use the captured score from the sheet, default to 0 only if missing
+        const rawScore = tagScoreMap.get(tag) || 0;
+        return [tag, expiryDate, rawScore]; 
       });
 
       // Append to DB
@@ -90,37 +126,16 @@ function markRecruitsAsInvitedBulk(ids) {
         SpreadsheetApp.flush();
       }
 
-      // 2. SHEET CLEANUP (Visual Sync)
+      // 3. SHEET CLEANUP (Visual Sync)
       let deletedCount = 0;
-      const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
       
-      if (sheet) {
-        Utils.bootDynamicSchema();
-        const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-        const lastRowVisual = sheet.getLastRow();
-
-        if (lastRowVisual >= startRow) {
-          const numRows = lastRowVisual - startRow + 1;
-          
-          // ⚡ COLUMN RESOLUTION: Use 1-based index from Schema + 1 (A=1)
-          const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
-
-          // Fetch only the Tag column to find rows
-          const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
+      if (sheet && tagRowMap.size > 0) {
           const rowsToDelete = [];
-
-          // Identify rows to delete
-          // We map Tags to Absolute Row Indices
-          const tagMap = new Map();
-          for(let i=0; i<tagValues.length; i++) {
-             const t = String(tagValues[i][0] || "").trim();
-             if(t) tagMap.set(t, startRow + i); 
-          }
 
           ids.forEach(id => {
             const tag = id.startsWith("#") ? id : "#" + id;
-            if (tagMap.has(tag)) {
-               rowsToDelete.push(tagMap.get(tag));
+            if (tagRowMap.has(tag)) {
+               rowsToDelete.push(tagRowMap.get(tag));
             }
           });
 
@@ -131,10 +146,9 @@ function markRecruitsAsInvitedBulk(ids) {
             deletedCount = rowsToDelete.length;
             console.log(`🌐 Sheet Action: Deleted ${deletedCount} dismissed rows.`);
           }
-        }
       }
 
-      // 3. FLUSH & REFRESH (Internal)
+      // 4. FLUSH & REFRESH (Internal)
       SpreadsheetApp.flush();
       const payloadStr = _generatePayloadInternal();
 
