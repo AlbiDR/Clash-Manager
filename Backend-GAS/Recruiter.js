@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.10
+ * 🏷️ VERSION: 10.0.11
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.10";
+const VER_RECRUITER = "10.0.11";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -194,18 +194,32 @@ function updateAndGetBlacklist(sheet) {
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
 
   // 1. Read blacklist from sheet
-  let validEntries = [];
+  // Map to handle deduplication: Tag -> Entry
+  const entryMap = new Map();
+
   if (blSheet.getLastRow() >= 1) {
     const rawData = blSheet.getDataRange().getValues();
-    validEntries = rawData
-      .map((row) => ({
-        t: String(row[0]),
-        e: Number(row[1]) || 0,
-        s: Number(row[2]) || 0,
-      }))
-      .filter((entry) => entry.e > now);
+    rawData.forEach(row => {
+       const tag = String(row[0]).trim();
+       if (!tag) return;
+       const expiry = Number(row[1]) || 0;
+       const score = Number(row[2]) || 0;
+       
+       if (expiry > now) {
+          // If duplicate, keep max score / max expiry
+          if (entryMap.has(tag)) {
+             const existing = entryMap.get(tag);
+             existing.e = Math.max(existing.e, expiry);
+             existing.s = Math.max(existing.s, score);
+          } else {
+             entryMap.set(tag, { t: tag, e: expiry, s: score });
+          }
+       }
+    });
   }
 
+  // 2. Harvest *Manual Ticks* from the Headhunter Sheet
+  // (In case a user clicked the box in the sheet but didn't use the Web App dismissal)
   const rowsToDelete = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
@@ -213,15 +227,9 @@ function updateAndGetBlacklist(sheet) {
     const lastRow = sheet.getLastRow();
     const numRows = lastRow - startRow + 1;
 
-    // Fetch Tag and specific columns
-    // ⚡ FIX: Use `1 + Index` to convert 0-based absolute Schema Index to 1-based GAS Column
     const tagValues = sheet.getRange(startRow, 1 + H.TAG, numRows, 1).getValues();
-    const invitedValues = sheet
-      .getRange(startRow, 1 + H.INVITED, numRows, 1)
-      .getValues();
-    const rawScoreValues = sheet
-      .getRange(startRow, 1 + H.RAW_SCORE, numRows, 1)
-      .getValues();
+    const invitedValues = sheet.getRange(startRow, 1 + H.INVITED, numRows, 1).getValues();
+    const rawScoreValues = sheet.getRange(startRow, 1 + H.RAW_SCORE, numRows, 1).getValues();
 
     for (let i = 0; i < numRows; i++) {
       const tag = String(tagValues[i][0] || "").trim();
@@ -231,18 +239,25 @@ function updateAndGetBlacklist(sheet) {
 
       if (tag && isInvited) {
         const raw = Number(rawScoreValues[i][0]) || 0;
-        const existing = validEntries.find((v) => v.t === tag);
-        if (existing) existing.s = Math.max(existing.s, raw);
-        else validEntries.push({ t: tag, e: now + expiryDuration, s: raw });
+        
+        // Add to map or update existing
+        if (entryMap.has(tag)) {
+           const existing = entryMap.get(tag);
+           existing.e = now + expiryDuration; // Refresh expiry on manual re-tick
+           existing.s = Math.max(existing.s, raw);
+        } else {
+           entryMap.set(tag, { t: tag, e: now + expiryDuration, s: raw });
+        }
+        
         rowsToDelete.push(startRow + i);
       }
     }
   }
 
+  const validEntries = Array.from(entryMap.values());
   validEntries.sort((a, b) => b.s - a.s);
 
-  // 2. DYNAMIC BENCHMARK (Decay + Percentile)
-  // Calculate decayed scores for benchmark purposes (does not affect saved raw score)
+  // 3. DYNAMIC BENCHMARK (Decay + Percentile)
   const scoredEntries = validEntries.map((e) => {
     const msSinceAdded = now - (e.e - expiryDuration); 
     const remainingMs = e.e - now;
@@ -255,10 +270,8 @@ function updateAndGetBlacklist(sheet) {
     return { ...e, decayed: e.s * decayFactor };
   });
 
-  // Sort by DECAYED score to find the current effective top tier
   scoredEntries.sort((a, b) => b.decayed - a.decayed);
 
-  // Determine Pool Size (Top 5%, Minimum 3)
   const poolSize = Math.max(
     CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL,
     Math.ceil(scoredEntries.length * CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE),
@@ -274,7 +287,7 @@ function updateAndGetBlacklist(sheet) {
     `🚫 Blacklist: ${validEntries.length} active. Benchmark Pool: Top ${poolSize} (Avg: ${Math.round(benchmarkHigh)}).`,
   );
 
-  // 3. Write back to sheet (Overwrite) - We save Raw Score 's', not decayed
+  // 4. Write back to sheet (Overwrite with deduplicated set)
   blSheet.clear();
   if (validEntries.length > 0) {
     const output = validEntries.map((e) => [e.t, e.e, e.s]);
@@ -283,6 +296,7 @@ function updateAndGetBlacklist(sheet) {
 
   if (rowsToDelete.length > 0) {
     console.log(`🧹 Purging ${rowsToDelete.length} invited rows.`);
+    // Delete in reverse order to preserve indices
     rowsToDelete.sort((a, b) => b - a).forEach((idx) => sheet.deleteRow(idx));
     SpreadsheetApp.flush();
   }
