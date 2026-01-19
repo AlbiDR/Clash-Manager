@@ -9,6 +9,7 @@ import { onUnmounted } from "vue";
 export type BroadcastMessage =
   | { type: "BADGE_UPDATE"; count: number }
   | { type: "DATA_SYNC_SUCCESS"; timestamp: number }
+  | { type: "RECRUIT_DISMISSAL"; ids: string[] }
   | { type: "FORCE_REFRESH" };
 
 const CHANNEL_NAME = "clash_manager_broadcast";
