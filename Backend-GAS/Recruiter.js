@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.9
+ * 🏷️ VERSION: 10.0.10
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.9";
+const VER_RECRUITER = "10.0.10";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -380,7 +380,8 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   if (remoteAvailable && remoteExpandEnabled) {
     try {
       console.log("☁️ Offloading Tournament Scan to Worker...");
-      candidates = Utils.scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet);
+      // Pass weights (W) to enable scoring on the worker
+      candidates = Utils.scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, W);
       console.log(`☁️ Worker returned ${candidates.length} pre-filtered candidates.`);
       usedRemote = true; // Mark remote usage successful
     } catch (e) {
@@ -432,29 +433,38 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
 
   if (tagsToFetch.length === 0) return [];
-  console.log(
-    `👥 Filtering: Retrieving full profiles${remoteAvailable ? " (Scoring-as-a-Service)" : ""} for ${tagsToFetch.length} candidates...`,
-  );
-
-  const playersData = Utils.fetchRoyaleAPI(
-    tagsToFetch.map(
-      (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
-    ),
-    remoteAvailable ? W : null,
-  );
-
+  
   const validCandidates = [];
-  playersData.forEach((p) => {
-    if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-      if (p.rawScore !== undefined) {
-        // Data already scored by worker
-        validCandidates.push(p);
-      } else {
-        // Local fallback scoring needed
-        validCandidates.push(p);
-      }
-    }
-  });
+
+  // If usedRemote is true, candidates might already be scored.
+  // Check if we have rawScore.
+  if (usedRemote && candidates.length > 0 && candidates[0].rawScore !== undefined) {
+     console.log("⚡ Candidates already scored by worker. Skipping local fetch.");
+     validCandidates.push(...candidates);
+  } else {
+      console.log(
+        `👥 Filtering: Retrieving full profiles${remoteAvailable ? " (Scoring-as-a-Service)" : ""} for ${tagsToFetch.length} candidates...`,
+      );
+
+      const playersData = Utils.fetchRoyaleAPI(
+        tagsToFetch.map(
+          (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
+        ),
+        remoteAvailable ? W : null,
+      );
+
+      playersData.forEach((p) => {
+        if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
+          if (p.rawScore !== undefined) {
+            // Data already scored by worker
+            validCandidates.push(p);
+          } else {
+            // Local fallback scoring needed
+            validCandidates.push(p);
+          }
+        }
+      });
+  }
 
   if (validCandidates.length > 0) {
     // Determine which candidates need logs (only if not already scored by remote)
