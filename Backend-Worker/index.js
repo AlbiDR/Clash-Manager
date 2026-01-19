@@ -356,6 +356,92 @@ app.post("/clan/full", checkAuth, async (req, res) => {
   }
 });
 
+// ⚡ PUBLIC API OFFLOAD (Frontend Data Proxy)
+app.post("/clan/api", checkAuth, async (req, res) => {
+  try {
+    const { tag, type, apiKeys } = req.body;
+    if (!tag) return res.status(400).json({ error: "tag required" });
+    if (!type) return res.status(400).json({ error: "type required" });
+
+    const cleanTag = encodeURIComponent(tag);
+    let url = "";
+    
+    if (type === "members") {
+      url = `https://api.clashroyale.com/v1/clans/${cleanTag}/members`;
+    } else if (type === "warlog") {
+      url = `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`;
+    } else {
+      return res.status(400).json({ error: "invalid type" });
+    }
+
+    const { code, content } = await fetchWithRetries(url, {
+      method: "GET",
+      headers: {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Authorization": `Bearer ${apiKeys && apiKeys.length > 0 ? apiKeys[0] : ""}`
+      }
+    });
+
+    if (code !== 200) {
+      return res.status(code).json({ error: "upstream error", details: content });
+    }
+
+    // ⚡ TRANSFORM DATA (Mimics GAS Logic)
+    let transformed = [];
+
+    if (type === "members" && content.items) {
+      const formatRole = (role) => ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] || "Member";
+      transformed = content.items.map(m => ({
+        tag: m.tag,
+        name: m.name,
+        role: formatRole(m.role),
+        kingLevel: m.expLevel,
+        donations: m.donations,
+        donationsReceived: m.donationsReceived
+      }));
+    } else if (type === "warlog" && content.items) {
+      const parseCRDateISO = (t) => {
+        if (!t) return new Date().toISOString().split("T")[0];
+        // 20240101T120000.000Z -> 2024-01-01
+        return t.substring(0,4) + "-" + t.substring(4,6) + "-" + t.substring(6,8);
+      };
+
+      transformed = content.items.map(r => {
+        let myStanding = null;
+        let opponents = [];
+        
+        if (r.standings) {
+          myStanding = r.standings.find(s => s.clan.tag === tag); // Tag passed in body
+          opponents = r.standings.filter(s => s.clan.tag !== tag);
+        }
+
+        const myFame = myStanding ? myStanding.clan.fame : 0;
+        const myRank = myStanding ? myStanding.rank : null;
+        const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
+
+        let result = "lose";
+        if (myRank === 1) result = "win";
+        if (myRank === null) result = "n/a";
+
+        return {
+          result: result,
+          endTime: parseCRDateISO(r.createdDate),
+          opponent: bestRival ? bestRival.clan.name : "No Opponent",
+          teamSize: 50,
+          score: myFame,
+          opponentScore: bestRival ? bestRival.clan.fame : 0
+        };
+      });
+    }
+
+    return res.json({ data: transformed });
+
+  } catch (e) {
+    console.error("Failed /clan/api", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 app.post("/fetch", checkAuth, async (req, res) => {
   try {
     const { urls, apiKeys, scoring } = req.body;
