@@ -4,7 +4,7 @@ import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
-import MemberCardSkeleton from "./MemberCardSkeleton.vue";
+
 import Icon from "./Icon.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 import { useHaptics } from "../composables/useHaptics";
@@ -33,6 +33,7 @@ const props = defineProps<{
     selectionCount: number;
     blitzEnabled: boolean;
   };
+  skeletonComponent: any;
 }>();
 
 const emit = defineEmits<{
@@ -212,7 +213,8 @@ onUnmounted(() => {
 
       <!-- Loading State (Skeletons) -->
       <div v-else-if="loading" class="list-container gpu-contain">
-        <SkeletonCard
+        <component
+          :is="skeletonComponent"
           v-for="i in 8"
           :key="i"
           :index="i"
