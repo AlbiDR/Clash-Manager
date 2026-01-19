@@ -1,14 +1,14 @@
 const fs = require("fs");
 const path = require("path");
 
-// Paths
+// Paths - adjusted to go up 2 levels from .github/scripts to root
 const CONFIG_PATH = path.join(
   __dirname,
-  "..",
+  "../..",
   "Backend-GAS",
-  "Configuration.gs.js",
+  "Configuration.js",
 );
-const README_PATH = path.join(__dirname, "..", "README.md");
+const README_PATH = path.join(__dirname, "../..", "README.md");
 
 const configText = fs.readFileSync(CONFIG_PATH, "utf8");
 const readmeText = fs.readFileSync(README_PATH, "utf8");
@@ -71,7 +71,7 @@ const cfgWeights = extractWeightsFromConfig(configText);
 const docWeights = extractWeightsFromReadme(readmeText);
 
 if (!cfgWeights) {
-  console.error("Could not extract WEIGHTS from Configuration.gs.js");
+  console.error("Could not extract WEIGHTS from Configuration.js");
   process.exit(2);
 }
 
