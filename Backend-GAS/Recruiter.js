@@ -3,11 +3,11 @@
  * 🔭 MODULE: RECRUITER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 10.0.11
+ * 🏷️ VERSION: 10.0.12
  * ============================================================================
  */
 
-const VER_RECRUITER = "10.0.11";
+const VER_RECRUITER = "10.0.12";
 
 function scoutRecruits() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -51,6 +51,7 @@ function scoutRecruits() {
   console.log(`📊 Baseline: Clan Avg Trophies is ${Math.round(avgTrophies)}.`);
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
+  // This step harvests manual checkbox ticks from the spreadsheet and saves them to DB
   const { ids: blacklistSet, entries: blacklistEntries } =
     updateAndGetBlacklist(sheet);
 
@@ -185,6 +186,8 @@ function scoutRecruits() {
 
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
+ * This is the crucial bridge between Spreadsheet UI and the Database.
+ * It reads manual ticks, saves them to the DB, and returns the full blacklist.
  */
 function updateAndGetBlacklist(sheet) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -193,7 +196,7 @@ function updateAndGetBlacklist(sheet) {
   const now = Date.now();
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
 
-  // 1. Read blacklist from sheet
+  // 1. Read existing blacklist from DB sheet
   // Map to handle deduplication: Tag -> Entry
   const entryMap = new Map();
 
@@ -219,7 +222,7 @@ function updateAndGetBlacklist(sheet) {
   }
 
   // 2. Harvest *Manual Ticks* from the Headhunter Sheet
-  // (In case a user clicked the box in the sheet but didn't use the Web App dismissal)
+  // This allows the spreadsheet user to dismiss recruits manually.
   const rowsToDelete = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
@@ -240,7 +243,7 @@ function updateAndGetBlacklist(sheet) {
       if (tag && isInvited) {
         const raw = Number(rawScoreValues[i][0]) || 0;
         
-        // Add to map or update existing
+        // Add to map or update existing (Renew expiry)
         if (entryMap.has(tag)) {
            const existing = entryMap.get(tag);
            existing.e = now + expiryDuration; // Refresh expiry on manual re-tick
