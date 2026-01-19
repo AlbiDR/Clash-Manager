@@ -36,26 +36,6 @@ function updateBadgeCount(data: WebAppData) {
   }
 }
 
-// 📡 Broadcast Channel Integration
-const { post: broadcast } = useBroadcastChannel((msg) => {
-  if (msg.type === "DATA_SYNC_SUCCESS") {
-    // Another tab brought fresh data. Reload from local storage/IDB to sync.
-    // We can just trigger loadLocal() again or force a soft re-hydration.
-    // Ensure we don't loop endlessly.
-    if (!isRefreshing.value) {
-      const raw = localStorage.getItem(SNAPSHOT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.timestamp > (lastSyncTime.value || 0)) {
-          clanData.value = parsed;
-          lastSyncTime.value = parsed.timestamp;
-          updateBadgeCount(parsed);
-        }
-      }
-    }
-  }
-});
-
 /**
  * 🛠 RECRUIT NOTIFICATION ENGINE
  * Compares current pool with new incoming data to detect high-potential recruits.
@@ -87,6 +67,51 @@ function processRecruitChanges(
     sendLocalNotification(title, body, "headhunter-channel");
   }
 }
+
+/**
+ * 🧹 LOCAL REMOVAL HELPER
+ * Removes recruits from the local state without triggering a network call.
+ * Used for optimistic updates and cross-tab sync.
+ */
+function applyLocalDismissal(ids: string[]) {
+  if (!clanData.value) return;
+
+  const currentHH = clanData.value.hh;
+  const idsSet = new Set(ids);
+  
+  // Optimization: Check if any IDs actually exist before cloning
+  if (!currentHH.some(r => idsSet.has(r.id))) return;
+
+  const newHH = currentHH.filter((r) => !idsSet.has(r.id));
+  const updatedData = { ...clanData.value, hh: newHH };
+  
+  clanData.value = updatedData;
+  updateBadgeCount(updatedData);
+  
+  // Persist to storage to keep tabs in sync on reload
+  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(updatedData));
+}
+
+// 📡 Broadcast Channel Integration
+const { post: broadcast } = useBroadcastChannel((msg) => {
+  if (msg.type === "DATA_SYNC_SUCCESS") {
+    // Another tab brought fresh data. Reload from local storage/IDB to sync.
+    if (!isRefreshing.value) {
+      const raw = localStorage.getItem(SNAPSHOT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.timestamp > (lastSyncTime.value || 0)) {
+          clanData.value = parsed;
+          lastSyncTime.value = parsed.timestamp;
+          updateBadgeCount(parsed);
+        }
+      }
+    }
+  } else if (msg.type === "RECRUIT_DISMISSAL") {
+    // Another tab dismissed recruits. Apply locally.
+    applyLocalDismissal(msg.ids);
+  }
+});
 
 export function useClanData() {
   // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
@@ -253,21 +278,19 @@ export function useClanData() {
   async function dismissRecruitsAction(ids: string[]) {
     if (!clanData.value) return;
 
-    const currentHH = clanData.value.hh;
-    const idsSet = new Set(ids);
-    const newHH = currentHH.filter((r) => !idsSet.has(r.id));
-
-    const oldData = clanData.value;
-    clanData.value = { ...oldData, hh: newHH };
-
-    updateBadgeCount(clanData.value);
-    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(clanData.value));
+    // Optimistically update local state
+    const oldData = clanData.value; // Keep reference for rollback
+    applyLocalDismissal(ids);
 
     try {
       await dismissRecruits(ids);
+      // 📡 Broadcast dismissal to other tabs on success
+      broadcast({ type: "RECRUIT_DISMISSAL", ids });
     } catch (e) {
+      // Revert on failure
       clanData.value = oldData;
       updateBadgeCount(clanData.value);
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(oldData));
       throw e;
     }
   }
