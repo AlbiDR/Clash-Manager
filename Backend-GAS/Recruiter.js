@@ -20,7 +20,9 @@ function scoutRecruits() {
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
-    console.error("❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Recruiter Scan.");
+    console.error(
+      "❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Recruiter Scan.",
+    );
     sheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
     return;
   }
@@ -43,10 +45,7 @@ function scoutRecruits() {
       baselineData[0].items.reduce((a, b) => a + b.trophies, 0) /
       baselineData[0].items.length;
   } else {
-
   }
-
-
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   // This step harvests manual checkbox ticks from the spreadsheet and saves them to DB
@@ -55,7 +54,6 @@ function scoutRecruits() {
 
   // 2. Load existing tracking data
   const existing = loadRecruitDatabase(sheet);
-
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
@@ -72,8 +70,9 @@ function scoutRecruits() {
         joinedCount++;
       }
     });
-    if (joinedCount > 0)
-
+    if (joinedCount > 0) {
+      console.log(`[Recruiter] prune: ${joinedCount} recruits caused update.`);
+    }
   }
 
   // 3. Dynamic Safety Cap
@@ -82,7 +81,6 @@ function scoutRecruits() {
     4000,
     Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies),
   );
-
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet);
@@ -100,8 +98,6 @@ function scoutRecruits() {
     }
     existing.set(c.tag, c);
   });
-
-
 
   // 6. Final Pool Scoring & Capping
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
@@ -129,7 +125,7 @@ function scoutRecruits() {
           Number(row[L.TOTAL_DON]) || 0,
           Number(row[L.WAR_DAY_WINS]) || 0,
           hasRecentWar,
-          CONFIG.HEADHUNTER.WEIGHTS // Pass explicit weights
+          CONFIG.HEADHUNTER.WEIGHTS, // Pass explicit weights
         );
         clanEliteData.push({ rawScore: raw, perfScore: perf });
       }
@@ -192,22 +188,22 @@ function updateAndGetBlacklist(sheet) {
 
   if (blSheet.getLastRow() >= 1) {
     const rawData = blSheet.getDataRange().getValues();
-    rawData.forEach(row => {
-       const tag = String(row[0]).trim();
-       if (!tag) return;
-       const expiry = Number(row[1]) || 0;
-       const score = Number(row[2]) || 0;
-       
-       if (expiry > now) {
-          // If duplicate, keep max score / max expiry
-          if (entryMap.has(tag)) {
-             const existing = entryMap.get(tag);
-             existing.e = Math.max(existing.e, expiry);
-             existing.s = Math.max(existing.s, score);
-          } else {
-             entryMap.set(tag, { t: tag, e: expiry, s: score });
-          }
-       }
+    rawData.forEach((row) => {
+      const tag = String(row[0]).trim();
+      if (!tag) return;
+      const expiry = Number(row[1]) || 0;
+      const score = Number(row[2]) || 0;
+
+      if (expiry > now) {
+        // If duplicate, keep max score / max expiry
+        if (entryMap.has(tag)) {
+          const existing = entryMap.get(tag);
+          existing.e = Math.max(existing.e, expiry);
+          existing.s = Math.max(existing.s, score);
+        } else {
+          entryMap.set(tag, { t: tag, e: expiry, s: score });
+        }
+      }
     });
   }
 
@@ -220,9 +216,15 @@ function updateAndGetBlacklist(sheet) {
     const lastRow = sheet.getLastRow();
     const numRows = lastRow - startRow + 1;
 
-    const tagValues = sheet.getRange(startRow, 1 + H.TAG, numRows, 1).getValues();
-    const invitedValues = sheet.getRange(startRow, 1 + H.INVITED, numRows, 1).getValues();
-    const rawScoreValues = sheet.getRange(startRow, 1 + H.RAW_SCORE, numRows, 1).getValues();
+    const tagValues = sheet
+      .getRange(startRow, 1 + H.TAG, numRows, 1)
+      .getValues();
+    const invitedValues = sheet
+      .getRange(startRow, 1 + H.INVITED, numRows, 1)
+      .getValues();
+    const rawScoreValues = sheet
+      .getRange(startRow, 1 + H.RAW_SCORE, numRows, 1)
+      .getValues();
 
     for (let i = 0; i < numRows; i++) {
       const tag = String(tagValues[i][0] || "").trim();
@@ -232,16 +234,16 @@ function updateAndGetBlacklist(sheet) {
 
       if (tag && isInvited) {
         const raw = Number(rawScoreValues[i][0]) || 0;
-        
+
         // Add to map or update existing (Renew expiry)
         if (entryMap.has(tag)) {
-           const existing = entryMap.get(tag);
-           existing.e = now + expiryDuration; // Refresh expiry on manual re-tick
-           existing.s = Math.max(existing.s, raw);
+          const existing = entryMap.get(tag);
+          existing.e = now + expiryDuration; // Refresh expiry on manual re-tick
+          existing.s = Math.max(existing.s, raw);
         } else {
-           entryMap.set(tag, { t: tag, e: now + expiryDuration, s: raw });
+          entryMap.set(tag, { t: tag, e: now + expiryDuration, s: raw });
         }
-        
+
         rowsToDelete.push(startRow + i);
       }
     }
@@ -252,7 +254,7 @@ function updateAndGetBlacklist(sheet) {
 
   // 3. DYNAMIC BENCHMARK (Decay + Percentile)
   const scoredEntries = validEntries.map((e) => {
-    const msSinceAdded = now - (e.e - expiryDuration); 
+    const msSinceAdded = now - (e.e - expiryDuration);
     const remainingMs = e.e - now;
     const ageMs = expiryDuration - remainingMs;
     const ageDays = Math.max(0, ageMs / 86400000);
@@ -276,8 +278,6 @@ function updateAndGetBlacklist(sheet) {
       ? pool.reduce((acc, c) => acc + c.decayed, 0) / pool.length
       : 0;
 
-
-
   // 4. Write back to sheet (Overwrite with deduplicated set)
   blSheet.clear();
   if (validEntries.length > 0) {
@@ -286,7 +286,6 @@ function updateAndGetBlacklist(sheet) {
   }
 
   if (rowsToDelete.length > 0) {
-
     // Delete in reverse order to preserve indices
     rowsToDelete.sort((a, b) => b - a).forEach((idx) => sheet.deleteRow(idx));
     SpreadsheetApp.flush();
@@ -331,13 +330,11 @@ function loadRecruitDatabase(sheet) {
 }
 
 function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
-
   const W = CONFIG.HEADHUNTER.WEIGHTS;
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
   const searchUrls = keywords.map(
     (k) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
   );
-
 
   const searchResults = Utils.fetchRoyaleAPI(searchUrls);
   const uniqueTourneys = new Map();
@@ -345,8 +342,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     if (res && res.items)
       res.items.forEach((t) => uniqueTourneys.set(t.tag, t));
   });
-
-
 
   // Decide scan depth based on remote worker availability and a user toggle
   const remoteAvailable = Utils.remoteWorkerHealthy();
@@ -370,8 +365,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
 
-
-
   if (tourneyTags.length === 0) return [];
 
   let candidates = [];
@@ -381,20 +374,22 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   // This drastically reduces execution time and fetches by moving filtering to the worker
   if (remoteAvailable && remoteExpandEnabled) {
     try {
-
       // Pass weights (W) to enable scoring on the worker
-      candidates = Utils.scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, W);
+      candidates = Utils.scanTournamentsRemote(
+        tourneyTags,
+        minTrophies,
+        blacklistSet,
+        W,
+      );
 
       usedRemote = true; // Mark remote usage successful
     } catch (e) {
-
       // usedRemote stays false, triggering local fallback below
     }
   }
 
   // Local fallback or standard execution if remote disabled/failed
   if (!usedRemote) {
-
     const details = Utils.fetchRoyaleAPI(
       tourneyTags.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
@@ -420,8 +415,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
       uniqueCandidates.set(c.tag, c);
   });
 
-
-
   const playerLimit = Math.min(
     CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000,
     scanCfg.PLAYERS || 250,
@@ -433,35 +426,36 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
   const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
 
   if (tagsToFetch.length === 0) return [];
-  
+
   const validCandidates = [];
 
   // If usedRemote is true, candidates might already be scored.
   // Check if we have rawScore.
-  if (usedRemote && candidates.length > 0 && candidates[0].rawScore !== undefined) {
-
-     validCandidates.push(...candidates);
+  if (
+    usedRemote &&
+    candidates.length > 0 &&
+    candidates[0].rawScore !== undefined
+  ) {
+    validCandidates.push(...candidates);
   } else {
+    const playersData = Utils.fetchRoyaleAPI(
+      tagsToFetch.map(
+        (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
+      ),
+      remoteAvailable ? W : null,
+    );
 
-
-      const playersData = Utils.fetchRoyaleAPI(
-        tagsToFetch.map(
-          (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
-        ),
-        remoteAvailable ? W : null,
-      );
-
-      playersData.forEach((p) => {
-        if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-          if (p.rawScore !== undefined) {
-            // Data already scored by worker
-            validCandidates.push(p);
-          } else {
-            // Local fallback scoring needed
-            validCandidates.push(p);
-          }
+    playersData.forEach((p) => {
+      if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
+        if (p.rawScore !== undefined) {
+          // Data already scored by worker
+          validCandidates.push(p);
+        } else {
+          // Local fallback scoring needed
+          validCandidates.push(p);
         }
-      });
+      }
+    });
   }
 
   if (validCandidates.length > 0) {
@@ -471,7 +465,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     );
 
     if (candidatesToScoreLocally.length > 0) {
-
       const logUrls = candidatesToScoreLocally.map(
         (p) =>
           `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
@@ -494,14 +487,14 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
             totalWarScore,
             existingRecruits.get(p.tag).war || 0,
           );
-        
+
         // 🔗 LOGIC SYNC: Use Shared Scoring System
         const rawScore = ScoringSystem.calculateRecruitRawScore(
-            p.trophies || 0,
-            p.totalDonations || 0,
-            p.warDayWins || 0,
-            hasWar,
-            W // Pass explicit weights
+          p.trophies || 0,
+          p.totalDonations || 0,
+          p.warDayWins || 0,
+          hasWar,
+          W, // Pass explicit weights
         );
 
         p._computed = {
@@ -530,7 +523,6 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
     });
   }
 
-
   return validCandidates.map((p) => p._computed).filter(Boolean);
 }
 
@@ -550,7 +542,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     "WAR_WINS",
     "FOUND_DATE",
     "RAW_SCORE",
-    "POTENTIAL_SCORE"
+    "POTENTIAL_SCORE",
   ];
 
   // 1. Reset Schema to Canonical Order
@@ -559,7 +551,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     CONFIG.SCHEMA.HH[key] = index + 1; // 1-based index to match logic below
   });
 
-  const HEADERS = CANONICAL_KEYS.map(key => CONFIG.SCHEMA.HH_HEADERS[key]);
+  const HEADERS = CANONICAL_KEYS.map((key) => CONFIG.SCHEMA.HH_HEADERS[key]);
 
   // 2. Map Data using Canonical Order
   const rows = list.map((c) => [
@@ -594,7 +586,7 @@ function renderHeadhunterView(sheet, list, baseline) {
     // `1 + SCHEMA_INDEX` corresponds to the column index if data starts at Col 2.
     // Example: TAG is 1. `1 + 1 = 2` (Col B).
     // INVITED is 2. `1 + 2 = 3` (Col C).
-    
+
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,

@@ -91,35 +91,27 @@ const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
           </div>
         </template>
         <template v-else>
-          <template v-else>
-            <StatisticItem
-              label="Donations"
-              :value="recruit.d.don"
-              :tooltip-context="{
-                type: 'hh',
-                metric: 'donations',
-                rawValue: recruit.d.don,
-              }"
-            />
-            <StatisticItem
-              label="War Wins"
-              :value="recruit.d.war"
-              :tooltip-context="{
-                type: 'hh',
-                metric: 'warWins',
-                rawValue: recruit.d.war,
-              }"
-            />
-            <StatisticItem
-              label="Cards Won"
-              :value="recruit.d.cards || '-'"
-              :tooltip-context="{
-                type: 'hh',
-                metric: 'cardsWon',
-                rawValue: recruit.d.cards || 0,
-              }"
-            />
-          </template>
+          <StatisticItem
+            label="Donations"
+            :value="recruit.d.don"
+            benchmark-type="hh"
+            benchmark-metric="donations"
+            :benchmark-raw-value="recruit.d.don"
+          />
+          <StatisticItem
+            label="War Wins"
+            :value="recruit.d.war"
+            benchmark-type="hh"
+            benchmark-metric="warWins"
+            :benchmark-raw-value="recruit.d.war"
+          />
+          <StatisticItem
+            label="Cards Won"
+            :value="recruit.d.cards || '-'"
+            benchmark-type="hh"
+            benchmark-metric="cardsWon"
+            :benchmark-raw-value="recruit.d.cards || 0"
+          />
         </template>
       </div>
 

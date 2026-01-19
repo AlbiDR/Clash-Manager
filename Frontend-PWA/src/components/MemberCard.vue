@@ -149,31 +149,25 @@ const trendInfo = computed(() => {
           </div>
         </template>
         <template v-else>
-          <template v-else>
-            <StatisticItem
-              label="War Rate"
-              :value="member.d.rate || '0%'"
-              :tooltip-context="{
-                type: 'lb',
-                metric: 'warRate',
-                rawValue: parseFloat(member.d.rate || '0'),
-              }"
-            />
-            <StatisticItem
-              label="Average Fame"
-              :value="(member.d.wfame || 0).toLocaleString()"
-            />
-            <StatisticItem
-              label="Daily Donations"
-              :value="member.d.avg"
-              :tooltip-context="{
-                type: 'lb',
-                metric: 'donations',
-                rawValue: member.d.avg,
-              }"
-            />
-            <StatisticItem label="Last Seen" :value="member.d.seen" />
-          </template>
+          <StatisticItem
+            label="War Rate"
+            :value="member.d.rate || '0%'"
+            benchmark-type="lb"
+            benchmark-metric="warRate"
+            :benchmark-raw-value="parseFloat(member.d.rate || '0')"
+          />
+          <StatisticItem
+            label="Average Fame"
+            :value="(member.d.wfame || 0).toLocaleString()"
+          />
+          <StatisticItem
+            label="Daily Donations"
+            :value="member.d.avg"
+            benchmark-type="lb"
+            benchmark-metric="donations"
+            :benchmark-raw-value="member.d.avg"
+          />
+          <StatisticItem label="Last Seen" :value="member.d.seen" />
         </template>
       </div>
 
