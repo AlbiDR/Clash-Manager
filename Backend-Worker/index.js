@@ -1,485 +1,460 @@
-/**
- * ============================================================================
- * 🔌 MODULE: API_PUBLIC (JSON REST API ROUTER)
- * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
- *                 Replaces the legacy google.script.run bridge.
- * ⚙️ ARCHITECTURE:
- *    - doGet(e): Handles all READ operations via ?action= parameter
- *    - doPost(e): Handles all WRITE operations via JSON body { action: ... }
- *    - Standard Envelope: { status, data, error, timestamp }
- * 🏷️ VERSION: 10.0.1
- *
- * 🧠 REASONING:
- *    - Headless architecture enables hosting frontend on GitHub Pages as PWA
- *    - All responses are JSON with consistent envelope for easy client parsing
- *    - POST recommended from external origins to bypass GAS caching/CORS issues
- * ============================================================================
- */
+const express = require("express");
+const fetch = require("node-fetch");
 
-const VER_API_PUBLIC = "10.0.1";
+const app = express();
+app.use(express.json({ limit: "50mb" }));
 
-// ============================================================================
-// 🌐 HTTP HANDLERS (Entry Points)
-// ============================================================================
+const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "20", 10);
+const DEFAULT_TIMEOUT = parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
+const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || "2", 10);
 
-/**
- * GET Handler - Read Operations
- * Supports both ?action= query params and POST body for flexibility.
- *
- * Endpoints:
- *   ?action=ping          - Health check
- *   ?action=getLeaderboard - Full leaderboard + recruiter data (cached)
- *   ?action=getRecruits   - Recruiter pool only
- *   ?action=getMembers    - Real-time clan members from Clash Royale API
- *   ?action=getWarLog     - River Race history
- *
- * @param {Object} e - Event object with parameters
- * @return {TextOutput} JSON response
- */
-function doGet(e) {
+function timeoutFetch(url, opts = {}, timeout = DEFAULT_TIMEOUT) {
+  return Promise.race([
+    fetch(url, { ...opts, timeout }),
+    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), timeout)),
+  ]);
+}
+
+async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
+  let attempt = 0;
+  let lastErr = null;
+  while (attempt <= retries) {
+    try {
+      const res = await timeoutFetch(url, opts);
+      const code = res.status;
+      let content = null;
+      const text = await res.text();
+      try {
+        content = JSON.parse(text);
+      } catch (e) {
+        content = text;
+      }
+      return { code, content };
+    } catch (e) {
+      lastErr = e;
+      attempt++;
+      if (attempt <= retries) await new Promise((r) => setTimeout(r, 500 * attempt));
+    }
+  }
+  return {
+    code: 520,
+    content: `Fetch failed: ${lastErr ? lastErr.message : "unknown"}`,
+  };
+}
+
+// Helper: Calculate War Week ID (Matches GAS Implementation)
+function calculateWarWeekId(dateStr) {
+  if (!dateStr) return "Unknown";
+  // Parse ISO string to Date
+  let date;
+  if (/^\d{8}T\d{6}/.test(dateStr)) {
+      const y = parseInt(dateStr.substr(0, 4), 10);
+      const m = parseInt(dateStr.substr(4, 2), 10) - 1;
+      const d = parseInt(dateStr.substr(6, 2), 10);
+      const h = parseInt(dateStr.substr(9, 2), 10);
+      const min = parseInt(dateStr.substr(11, 2), 10);
+      const s = parseInt(dateStr.substr(13, 2), 10);
+      date = new Date(Date.UTC(y, m, d, h, min, s));
+  } else {
+      date = new Date(dateStr);
+  }
+
+  // Adjust to Thursday (War Start)
+  // Logic aligned with GAS: date.getDate() + 3 - ((date.getDay() + 6) % 7)
+  const d = new Date(date.getTime());
+  d.setUTCHours(0,0,0,0);
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1) + 3; // Adjust to Thursday
+  // Simplified approximation of GAS logic
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  
+  const year = d.getUTCFullYear();
+  const week1 = new Date(Date.UTC(year, 0, 4));
+  const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getUTCDay() + 6) % 7)) / 7);
+  const yearShort = year.toString().slice(-2);
+  
+  return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
+}
+
+async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
+  const results = new Array(urls.length);
+  let idx = 0;
+
+  async function worker() {
+    while (true) {
+      const i = idx++;
+      if (i >= urls.length) return;
+      const url = urls[i];
+
+      const headers = {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Accept-Encoding": "gzip",
+      };
+      if (apiKeys && apiKeys.length > 0) {
+        const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+        headers.Authorization = `Bearer ${key}`;
+      }
+
+      if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
+        try {
+          const profile = await fetchWithRetries(url, { method: "GET", headers });
+          if (profile.code === 200 && profile.content && profile.content.tag) {
+            const logUrl = url + "/battlelog";
+            const logs = await fetchWithRetries(logUrl, { method: "GET", headers });
+
+            let warBonus = 0;
+            if (logs.code === 200 && Array.isArray(logs.content)) {
+              const hasWar = logs.content.some((b) =>
+                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)
+              );
+              if (hasWar) warBonus = 500;
+            }
+
+            const p = profile.content;
+            const totalWarScore = (p.warDayWins || 0) + warBonus;
+            const rawScore = Math.round(
+              (p.trophies || 0) * (scoring.TROPHY || 0) +
+                (p.totalDonations || 0) * (scoring.DON || 0) +
+                totalWarScore * (scoring.WAR || 0)
+            );
+
+            results[i] = {
+              code: 200,
+              content: {
+                tag: p.tag,
+                name: p.name,
+                trophies: p.trophies,
+                donations: p.totalDonations,
+                cards: p.challengeCardsWon,
+                war: totalWarScore,
+                rawScore: rawScore,
+              },
+            };
+          } else {
+            results[i] = profile;
+          }
+        } catch (e) {
+          results[i] = { code: 500, content: `Scoring fetch failed: ${e.message}` };
+        }
+      } else {
+        const res = await fetchWithRetries(url, { method: "GET", headers });
+        results[i] = res;
+      }
+    }
+  }
+
+  const workers = [];
+  const spawn = Math.min(concurrency, urls.length);
+  for (let i = 0; i < spawn; i++) workers.push(worker());
+  await Promise.all(workers);
+
+  if (scoring) {
+    return results
+      .filter((r) => r && r.code === 200 && r.content && r.content.rawScore !== undefined)
+      .sort((a, b) => b.content.rawScore - a.content.rawScore)
+      .slice(0, 200);
+  }
+
+  return results;
+}
+
+// ⚡ TOURNAMENT SCAN ENGINE
+async function processScanBatch(
+  tags = [],
+  apiKeys = [],
+  concurrency = DEFAULT_CONCURRENCY,
+  blacklistSet = new Set(),
+  minTrophies = 4000
+) {
+  const candidates = [];
+  let idx = 0;
+
+  async function worker() {
+    while (true) {
+      const i = idx++;
+      if (i >= tags.length) return;
+      const tag = tags[i];
+      const url = `https://api.clashroyale.com/v1/tournaments/${encodeURIComponent(tag)}`;
+
+      const headers = {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Accept-Encoding": "gzip",
+      };
+      if (apiKeys && apiKeys.length > 0) {
+        const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+        headers.Authorization = `Bearer ${key}`;
+      }
+
+      try {
+        const res = await fetchWithRetries(url, { method: "GET", headers });
+        if (res.code === 200 && res.content && res.content.membersList) {
+           // ⚡ IN-MEMORY FILTERING
+           res.content.membersList.forEach(p => {
+             if (p.trophies < minTrophies) return;
+             if (p.clan && p.clan.tag) return;
+             if (blacklistSet.has(p.tag)) return;
+             candidates.push(p);
+           });
+        }
+      } catch (e) {
+        console.warn(`Scan error for ${tag}: ${e.message}`);
+      }
+    }
+  }
+
+  const workers = [];
+  const spawn = Math.min(concurrency, tags.length);
+  for (let i = 0; i < spawn; i++) workers.push(worker());
+  await Promise.all(workers);
+
+  return candidates;
+}
+
+function checkAuth(req, res, next) {
+  const secret = process.env.WORKER_SECRET;
+  if (!secret) return next();
+  const auth = (req.get("authorization") || "").trim();
+  if (auth !== `Bearer ${secret}`) return res.status(401).json({ error: "unauthorized" });
+  return next();
+}
+
+app.get("/", (req, res) => res.send("Clash Manager Worker is running"));
+
+app.get("/capabilities", checkAuth, (req, res) => {
+  return res.json({
+    version: "10.0.0",
+    concurrency: DEFAULT_CONCURRENCY,
+    timeoutMs: DEFAULT_TIMEOUT,
+    maxRetries: MAX_RETRIES,
+  });
+});
+
+app.post("/audit", checkAuth, async (req, res) => {
   try {
-    const action = (e?.parameter?.action || "").toLowerCase().trim();
+    const { apiKeys } = req.body;
+    if (!Array.isArray(apiKeys)) return res.status(400).json({ error: "apiKeys must be array" });
 
-    switch (action) {
-      case "ping":
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const sheetsMap = {};
-        ss.getSheets().forEach(
-          (s) => (sheetsMap[s.getName()] = s.getSheetId()),
-        );
+    const auditUrl = "https://api.clashroyale.com/v1/cards"; 
+    const tasks = apiKeys.map(async (key) => {
+        try {
+            const response = await timeoutFetch(auditUrl, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${key}`,
+                    "User-Agent": "ClanManagerWorker/Audit"
+                }
+            }, 5000);
+            return { key, status: response.status };
+        } catch (e) {
+            return { key, status: 500, error: e.message };
+        }
+    });
 
-        return respond({
-          version: VER_API_PUBLIC,
-          status: "online",
-          scriptId: ScriptApp.getScriptId(),
-          spreadsheetUrl: ss.getUrl(),
-          // Map of SheetName -> GID for direct linking
-          sheets: sheetsMap,
-          modules: getModuleVersions(),
-        });
+    const results = await Promise.all(tasks);
+    return res.json({ results });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
 
-      case "getleaderboard":
-      case "getwebappdata":
-        // Returns cached leaderboard + recruiter data
-        const webData = getWebAppData(false);
-        // getWebAppData returns a JSON string, parse and re-wrap in envelope
-        return respondRaw(webData);
+app.post("/scan", checkAuth, async (req, res) => {
+  try {
+    const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
+    if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
+    
+    const blacklistSet = new Set(blacklist || []);
+    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
 
-      case "getrecruits":
-        const recruitData = getWebAppData(false);
-        const parsed = JSON.parse(recruitData);
-        if (parsed.success && parsed.data) {
-          return respond({
-            hh: parsed.data.hh,
-            timestamp: parsed.data.timestamp,
+    // 1. Initial Scan (Get valid candidates from tournaments)
+    const candidates = await processScanBatch(
+      tags,
+      apiKeys || [],
+      concurrency,
+      blacklistSet,
+      minTrophies || 4000
+    );
+
+    // 2. Deep Scoring (If enabled)
+    // If scoring is provided, we immediately fetch profiles + battlelogs for the survivors
+    // This offloads the heavy "enrichment" phase from GAS to Node
+    if (scoring && candidates.length > 0) {
+      const candidateTags = [...new Set(candidates.map(c => c.tag))]; // Deduplicate
+      const playerUrls = candidateTags.map(t => `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`);
+      
+      const scoredResults = await processBatch(
+        playerUrls, 
+        apiKeys || [], 
+        concurrency, 
+        scoring
+      );
+
+      // Extract just the content from the results
+      return res.json({ 
+        candidates: scoredResults.map(r => r.content).filter(c => c && c.tag) 
+      });
+    }
+    
+    return res.json({ candidates });
+  } catch (e) {
+    console.error("Failed /scan", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ⚡ FULL CLAN CONTEXT (Optimized for Leaderboard)
+app.post("/clan/full", checkAuth, async (req, res) => {
+  try {
+    const { tag, apiKeys } = req.body;
+    if (!tag) return res.status(400).json({ error: "tag required" });
+
+    const cleanTag = encodeURIComponent(tag);
+    const urls = [
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/members`,
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/currentriverrace`,
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`
+    ];
+
+    const results = await processBatch(urls, apiKeys, 3, null);
+    
+    const membersData = results[0].code === 200 ? results[0].content : null;
+    const raceData = results[1].code === 200 ? results[1].content : null;
+    const logData = results[2].code === 200 ? results[2].content : null;
+
+    if (!membersData) {
+      return res.status(500).json({ error: "Failed to fetch members" });
+    }
+
+    // ⚡ PRE-PROCESS HISTORY
+    // Offload the O(W x M) iteration from GAS to Node
+    const warHistory = {}; // tag -> { weekId: fame }
+    
+    if (logData && logData.items) {
+      logData.items.forEach(log => {
+        const weekId = calculateWarWeekId(log.createdDate);
+        const standings = log.standings || [];
+        const myClan = standings.find(s => s.clan.tag === tag);
+        
+        if (myClan && myClan.clan.participants) {
+          myClan.clan.participants.forEach(p => {
+            if (!warHistory[p.tag]) warHistory[p.tag] = {};
+            // Track max fame if duplicate week entries exist (rare but possible)
+            warHistory[p.tag][weekId] = Math.max(warHistory[p.tag][weekId] || 0, p.fame);
           });
         }
-        return respond(null, "NO_DATA", "Recruit data not available");
-
-      case "getmembers":
-        return respond(getMembers());
-
-      case "getwarlog":
-        return respond(getWarLog());
-
-      case "refresh":
-        // Force refresh the cache
-        const freshData = getWebAppData(true);
-        return respondRaw(freshData);
-
-      case "":
-        return respond(
-          null,
-          "NO_ACTION",
-          "Missing ?action= parameter. Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh",
-        );
-
-      default:
-        return respond(
-          null,
-          "INVALID_ACTION",
-          `Unknown action: "${action}". Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh`,
-        );
-    }
-  } catch (err) {
-    console.error(`doGet CRITICAL ERROR: ${err.stack}`);
-    return respond(null, "SERVER_ERROR", err.message);
-  }
-}
-
-/**
- * POST Handler - Write Operations & Alternative Read
- * Body format: { "action": "...", ...params }
- *
- * Write Endpoints:
- *   action: "dismissRecruits" - Mark recruits as invited (ids: string[])
- *
- * Read Endpoints (POST alternative for CORS):
- *   action: "getLeaderboard", "getRecruits", etc.
- *
- * @param {Object} e - Event object with postData
- * @return {TextOutput} JSON response
- */
-function doPost(e) {
-  try {
-    // Parse JSON body
-    const body = e?.postData?.contents;
-    if (!body) {
-      return respond(null, "EMPTY_BODY", "POST request requires JSON body");
-    }
-
-    let payload;
-    try {
-      payload = JSON.parse(body);
-    } catch (parseErr) {
-      return respond(null, "PARSE_ERROR", `Invalid JSON: ${parseErr.message}`);
-    }
-
-    const action = (payload.action || "").toLowerCase().trim();
-
-    switch (action) {
-      // ========== WRITE OPERATIONS ==========
-      case "dismissrecruits":
-        const ids = payload.ids;
-        if (!ids || !Array.isArray(ids)) {
-          return respond(
-            null,
-            "INVALID_PARAMS",
-            'dismissRecruits requires "ids" array',
-          );
-        }
-        return respond(markRecruitsAsInvitedBulk(ids));
-
-      case "triggerupdate":
-        return respond(triggerAsyncUpdate(payload.target));
-
-      // ========== READ OPERATIONS (POST alternative) ==========
-      // Allow reads via POST for CORS flexibility
-      case "ping":
-      case "getleaderboard":
-      case "getwebappdata":
-      case "getrecruits":
-      case "getmembers":
-      case "getwarlog":
-      case "refresh":
-        // Delegate to doGet logic by constructing a fake event
-        return doGet({ parameter: { action: action } });
-
-      case "":
-        return respond(null, "NO_ACTION", 'Missing "action" in POST body');
-
-      default:
-        return respond(null, "INVALID_ACTION", `Unknown action: "${action}"`);
-    }
-  } catch (err) {
-    console.error(`doPost CRITICAL ERROR: ${err.stack}`);
-    return respond(null, "SERVER_ERROR", err.message);
-  }
-}
-
-// ============================================================================
-// 📦 RESPONSE UTILITIES
-// ============================================================================
-
-/**
- * Creates a standardized JSON response envelope.
- *
- * @param {any} data - Response data (null on error)
- * @param {string|null} errorCode - Error code (null on success)
- * @param {string|null} errorMessage - Human-readable error message
- * @return {TextOutput} GAS ContentService text output
- */
-function respond(data, errorCode = null, errorMessage = null) {
-  const envelope = {
-    status: errorCode ? "error" : "success",
-    data: errorCode ? null : data,
-    error: errorCode ? { code: errorCode, message: errorMessage } : null,
-    timestamp: new Date().toISOString(),
-  };
-
-  return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(
-    ContentService.MimeType.JSON,
-  );
-}
-
-/**
- * Passes through a pre-formatted JSON string.
- * Used when getWebAppData already returns a properly formatted response.
- *
- * @param {string} jsonString - Pre-formatted JSON string
- * @return {TextOutput} GAS ContentService text output
- */
-function respondRaw(jsonString) {
-  return ContentService.createTextOutput(jsonString).setMimeType(
-    ContentService.MimeType.JSON,
-  );
-}
-
-/**
- * Collects version numbers from all modules for health monitoring.
- *
- * @return {Object} Map of module names to versions
- */
-function getModuleVersions() {
-  const modules = [
-    "API_PUBLIC",
-    "CONFIGURATION",
-    "CONTROLLER_WEBAPP",
-    "UTILITIES",
-    "LEADERBOARD",
-    "LOGGER",
-    "RECRUITER",
-    "SCORING_SYSTEM",
-    "ORCHESTRATOR",
-  ];
-  return Object.fromEntries(
-    modules.map((m) => [
-      m,
-      typeof globalThis[`VER_${m}`] !== "undefined"
-        ? globalThis[`VER_${m}`]
-        : "N/A",
-    ]),
-  );
-}
-
-// ============================================================================
-// 📊 DATA FETCHERS (Clash Royale API)
-// ============================================================================
-
-/**
- * Fetches the current member list from the Clash Royale API.
- * Maps 'expLevel' (King Level) to 'kingLevel' to satisfy the UI interface.
- * ⚡ OPTIMIZED: Tries remote worker first, falls back to local fetch.
- *
- * @return {Array} List of clan members
- */
-function getMembers() {
-  // 1. Try Remote Worker (Public API Offload)
-  const remoteData = Utils.fetchPublicJson('members');
-  if (remoteData) {
-    return remoteData;
-  }
-
-  // 2. Fallback: Local Fetch & Transform
-  console.log("Members: Using local fallback");
-  const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Utils.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
-  ]);
-
-  if (!data || !data[0] || !data[0].items) {
-    console.warn("API: getMembers returned no data.");
-    return [];
-  }
-
-  return data[0].items.map((m) => ({
-    tag: m.tag,
-    name: m.name,
-    role: formatRole(m.role),
-    kingLevel: m.expLevel,
-    donations: m.donations,
-    donationsReceived: m.donationsReceived,
-  }));
-}
-
-/**
- * Fetches the recent River Race Log (War Log).
- * Transforms complex RoyaleAPI standings into a simplified Win/Loss/Score format.
- * ⚡ OPTIMIZED: Tries remote worker first, falls back to local fetch.
- *
- * @return {Array} List of war log entries
- */
-function getWarLog() {
-  // 1. Try Remote Worker (Public API Offload)
-  const remoteData = Utils.fetchPublicJson('warlog');
-  if (remoteData) {
-    return remoteData;
-  }
-
-  // 2. Fallback: Local Fetch & Transform
-  console.log("WarLog: Using local fallback");
-  const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Utils.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
-  ]);
-
-  if (!data || !data[0] || !data[0].items) {
-    console.warn("API: getWarLog returned no data.");
-    return [];
-  }
-
-  return data[0].items.map((r) => {
-    let myStanding = null;
-    let opponents = [];
-
-    if (r.standings) {
-      myStanding = r.standings.find(
-        (s) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
-      );
-      opponents = r.standings.filter(
-        (s) => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG,
-      );
-    }
-
-    const myFame = myStanding ? myStanding.clan.fame : 0;
-    const myRank = myStanding ? myStanding.rank : null;
-
-    const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
-
-    let result = "lose";
-    if (myRank === 1) result = "win";
-    if (myRank === null) result = "n/a";
-
-    return {
-      result: result,
-      endTime: parseCRDateISO(r.createdDate),
-      opponent: bestRival ? bestRival.clan.name : "No Opponent",
-      teamSize: 50,
-      score: myFame,
-      opponentScore: bestRival ? bestRival.clan.fame : 0,
-    };
-  });
-}
-
-// ============================================================================
-// 🛠️ HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Helper: Formats API role string to Title Case
- * e.g. "coLeader" -> "Co-Leader"
- */
-const formatRole = (role) =>
-  ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ||
-  "Member";
-
-/**
- * Helper: Parses RoyaleAPI ISO dates (YYYYMMDDThhmmss.000Z) to readable YYYY-MM-DD
- */
-function parseCRDateISO(t) {
-  if (!t) return new Date().toISOString().split("T")[0];
-  const d = new Date(
-    t.replace(
-      /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
-      "$1-$2-$3T$4:$5:$6Z",
-    ),
-  );
-  return Utils.formatDate(d);
-}
-
-/**
- * 🤖 ASYNC UPDATE DISPATCHER (NON-BLOCKING)
- * Queues a task and returns immediately to prevent HTTP timeouts.
- */
-function triggerAsyncUpdate(target) {
-  const normTarget = (target || "").toLowerCase().trim();
-  const validTargets = ["members", "leaderboard", "headhunters"];
-
-  if (!validTargets.includes(normTarget)) {
-    return {
-      success: false,
-      error: "INVALID_TARGET",
-      message: `Unknown target: "${normTarget}"`,
-    };
-  }
-
-  return Utils.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
-    try {
-      // 1. Check if already busy (System-wide lock)
-      const cache = CacheService.getScriptCache();
-      if (cache.get("SYSTEM_STATUS") === "BUSY") {
-        return {
-          success: false,
-          status: "BUSY",
-          message: "System is already processing an update. Please wait.",
-        };
-      }
-
-      // 2. Queue the specific target
-      Utils.Props.set("PENDING_UPDATE_TARGET", normTarget);
-
-      // 3. Mark as Busy immediately
-      cache.put("SYSTEM_STATUS", "BUSY", 1200); // 20 min lock safety
-
-      // 4. Create One-Time Trigger
-      // Delete any existing dispatchers first to clean up
-      ScriptApp.getProjectTriggers().forEach((t) => {
-        if (t.getHandlerFunction() === "dispatchAsyncUpdate")
-          ScriptApp.deleteTrigger(t);
       });
-
-      ScriptApp.newTrigger("dispatchAsyncUpdate")
-        .timeBased()
-        .after(500)
-        .create();
-
-      console.log(`🚀 Async Trigger Queued: ${normTarget}`);
-      return { success: true, status: "QUEUED", target: normTarget };
-    } catch (e) {
-      console.error(`triggerAsyncUpdate Failed: ${e.message}`);
-      throw e;
     }
-  });
-}
 
-/**
- * Handle function called by the Time-Based Trigger.
- * Runs in the background, not tied to the HTTP request.
- */
-function dispatchAsyncUpdate() {
-  const target = Utils.Props.get("PENDING_UPDATE_TARGET");
-  if (!target) {
-    console.warn("⚠️ Async Dispatcher: No pending target found.");
-    return;
+    return res.json({
+      members: membersData,
+      race: raceData,
+      history: warHistory
+    });
+
+  } catch (e) {
+    console.error("Failed /clan/full", e);
+    return res.status(500).json({ error: e.message });
   }
+});
 
-  // Clear pending target immediately to prevent loops
-  Utils.Props.delete("PENDING_UPDATE_TARGET");
+// ⚡ PUBLIC API OFFLOAD (Frontend Data Proxy)
+app.post("/clan/api", checkAuth, async (req, res) => {
+  try {
+    const { tag, type, apiKeys } = req.body;
+    if (!tag) return res.status(400).json({ error: "tag required" });
+    if (!type) return res.status(400).json({ error: "type required" });
 
-  Utils.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
-    try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheetName = "";
-      if (target === "members") sheetName = CONFIG.SHEETS.DB;
-      else if (target === "leaderboard") sheetName = CONFIG.SHEETS.LB;
-      else if (target === "headhunters") sheetName = CONFIG.SHEETS.HH;
-
-      const sheet = ss.getSheetByName(sheetName);
-
-      // Visual Feedback (Tick box)
-      if (sheet) {
-        sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(true);
-        SpreadsheetApp.flush();
-      }
-
-      // Run logic
-      if (target === "members") {
-        updateClanDatabase();
-        refreshWebPayload();
-      } else if (target === "leaderboard") {
-        updateLeaderboard();
-        refreshWebPayload();
-      } else if (target === "headhunters") {
-        scoutRecruits();
-      }
-
-      // Visual Feedback (Untick)
-      if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
-
-      console.log(`✅ Async Execution Perfect: ${target}`);
-    } catch (e) {
-      console.error(`❌ Async Execution Failed [${target}]: ${e.message}`);
-    } finally {
-      // Clear busy flag
-      CacheService.getScriptCache().remove("SYSTEM_STATUS");
+    const cleanTag = encodeURIComponent(tag);
+    let url = "";
+    
+    if (type === "members") {
+      url = `https://api.clashroyale.com/v1/clans/${cleanTag}/members`;
+    } else if (type === "warlog") {
+      url = `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`;
+    } else {
+      return res.status(400).json({ error: "invalid type" });
     }
-  });
-}
 
-/**
- * Legacy Trigger maintained for compatibility
- */
-function triggerHeadlessUpdate() {
-  return triggerAsyncUpdate("members");
-}
+    const { code, content } = await fetchWithRetries(url, {
+      method: "GET",
+      headers: {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Authorization": `Bearer ${apiKeys && apiKeys.length > 0 ? apiKeys[0] : ""}`
+      }
+    });
+
+    if (code !== 200) {
+      return res.status(code).json({ error: "upstream error", details: content });
+    }
+
+    // ⚡ TRANSFORM DATA (Mimics GAS Logic)
+    let transformed = [];
+
+    if (type === "members" && content.items) {
+      const formatRole = (role) => ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] || "Member";
+      transformed = content.items.map(m => ({
+        tag: m.tag,
+        name: m.name,
+        role: formatRole(m.role),
+        kingLevel: m.expLevel,
+        donations: m.donations,
+        donationsReceived: m.donationsReceived
+      }));
+    } else if (type === "warlog" && content.items) {
+      const parseCRDateISO = (t) => {
+        if (!t) return new Date().toISOString().split("T")[0];
+        // 20240101T120000.000Z -> 2024-01-01
+        return t.substring(0,4) + "-" + t.substring(4,6) + "-" + t.substring(6,8);
+      };
+
+      transformed = content.items.map(r => {
+        let myStanding = null;
+        let opponents = [];
+        
+        if (r.standings) {
+          myStanding = r.standings.find(s => s.clan.tag === tag); // Tag passed in body
+          opponents = r.standings.filter(s => s.clan.tag !== tag);
+        }
+
+        const myFame = myStanding ? myStanding.clan.fame : 0;
+        const myRank = myStanding ? myStanding.rank : null;
+        const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
+
+        let result = "lose";
+        if (myRank === 1) result = "win";
+        if (myRank === null) result = "n/a";
+
+        return {
+          result: result,
+          endTime: parseCRDateISO(r.createdDate),
+          opponent: bestRival ? bestRival.clan.name : "No Opponent",
+          teamSize: 50,
+          score: myFame,
+          opponentScore: bestRival ? bestRival.clan.fame : 0
+        };
+      });
+    }
+
+    return res.json({ data: transformed });
+
+  } catch (e) {
+    console.error("Failed /clan/api", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/fetch", checkAuth, async (req, res) => {
+  try {
+    const { urls, apiKeys, scoring } = req.body;
+    if (!Array.isArray(urls)) return res.status(400).json({ error: "urls must be array" });
+    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
+
+    const results = await processBatch(urls, apiKeys || [], concurrency, scoring);
+    return res.json({ results });
+  } catch (e) {
+    console.error("Failed /fetch", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`));
