@@ -323,6 +323,77 @@ const Utils = {
   },
 
   /**
+   * ⚡ SMART CLAN FETCH (Worker Optimized)
+   * Attempts to fetch Members, Race, and History via the Worker's optimized /clan/full endpoint.
+   * If successful, returns pre-processed history map + raw data.
+   * If failed/disabled, falls back to standard fetchRoyaleAPI calls (handled by caller fallback logic).
+   */
+  fetchClanDataSmart: function (cleanTag) {
+    const useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+    
+    // 1. Try Remote Worker (Aggregated)
+    if (useRemote) {
+      try {
+        const payload = {
+          tag: cleanTag, // Already encoded or raw? Worker expects raw tag, let's decode if needed or pass as is.
+                         // Worker uses it to build URL: /clans/${encodeURIComponent(tag)}/members
+                         // If we pass "%23TAG", encoding it again is bad.
+                         // Standardize: pass CLEAN tag (no #, no URL encoding yet)
+          apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value)
+        };
+        // Decode incase it was passed encoded
+        payload.tag = decodeURIComponent(cleanTag); 
+
+        const headers = { "Content-Type": "application/json" };
+        if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
+          headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+
+        const res = UrlFetchApp.fetch(CONFIG.SYSTEM.REMOTE_WORKER_URL + "/clan/full", {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true,
+          headers: headers
+        });
+
+        if (res.getResponseCode() === 200) {
+          const json = JSON.parse(res.getContentText());
+          // Return standardized structure
+          return {
+            members: { items: json.members.items },
+            race: { clan: json.race.clan },
+            // Worker returns a history object: { tag: { week: fame } }
+            // We return it as 'history' so Leaderboard knows it's pre-processed
+            history: json.history, 
+            log: null // No log needed if history exists
+          };
+        } else {
+          console.warn(`Worker /clan/full failed: ${res.getResponseCode()}`);
+        }
+      } catch (e) {
+        console.warn("Worker /clan/full error, falling back to legacy fetch", e);
+      }
+    }
+
+    // 2. Fallback: Standard Fetch (GAS iterates 3 URLs)
+    // NOTE: This uses fetchRoyaleAPI which *might* still use Worker /fetch for individual calls if configured,
+    // but performs the aggregation logic locally in GAS.
+    const urls = [
+      `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
+      `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
+      `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
+    ];
+
+    const [membersData, raceData, logData] = Utils.fetchRoyaleAPI(urls);
+    return {
+      members: membersData,
+      race: raceData,
+      history: null, // Null history triggers local parsing logic
+      log: logData
+    };
+  },
+
+  /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
    * Includes Circuit Breaker logic for Remote Worker fallbacks.
    */
