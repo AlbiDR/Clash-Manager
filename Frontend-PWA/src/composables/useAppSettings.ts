@@ -116,4 +116,4 @@ export function useAppSettings() {
   };
 }
 
-export type UseModulesReturn = ReturnType<typeof useAppSettings>;
+export type UseAppSettingsReturn = ReturnType<typeof useAppSettings>;

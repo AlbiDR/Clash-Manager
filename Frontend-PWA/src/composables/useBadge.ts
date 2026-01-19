@@ -71,7 +71,7 @@ export function useBadge() {
   async function setBadge(count: number) {
     if (!isSupported) return;
 
-    // 🛡️ Logic: Quiet Mode integration from useModules
+    // 🛡️ Logic: Quiet Mode integration from useAppSettings
     if (modules.notificationQuietMode && count > 0) {
       // Suppress badges in quiet mode on Android (since they require notifications)
       if (isAndroid) return;
