@@ -1,330 +1,467 @@
 /**
- * GAS API Client
- * Optimized for reliability and test passing.
+ * ============================================================================
+ * 🔌 MODULE: API_PUBLIC (JSON REST API ROUTER)
+ * ----------------------------------------------------------------------------
+ * 📝 DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
+ *                 Replaces the legacy google.script.run bridge.
+ * ⚙️ ARCHITECTURE:
+ *    - doGet(e): Handles all READ operations via ?action= parameter
+ *    - doPost(e): Handles all WRITE operations via JSON body { action: ... }
+ *    - Standard Envelope: { status, data, error, timestamp }
+ * 🏷️ VERSION: 10.0.0
+ *
+ * 🧠 REASONING:
+ *    - Headless architecture enables hosting frontend on GitHub Pages as PWA
+ *    - All responses are JSON with consistent envelope for easy client parsing
+ *    - POST recommended from external origins to bypass GAS caching/CORS issues
+ * ============================================================================
  */
 
-import type {
-  ApiResponse,
-  WebAppData,
-  PingResponse,
-  DismissResponse,
-} from "../types";
-import * as v from "valibot";
-import { idb } from "../utils/idb";
+const VER_API_PUBLIC = "10.0.0";
 
-const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
-
-interface GenericEnvelope<T> {
-  success?: boolean;
-  status?: string;
-  data?: T;
-  error?: { message: string };
-  message?: string;
-}
-
-const getGasUrl = () => {
-  let url = "";
-  if (typeof localStorage !== "undefined") {
-    url =
-      localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || "";
-  } else {
-    url = import.meta.env.VITE_GAS_URL || "";
-  }
-
-  if (url) {
-    url = url.trim();
-    // 🛡️ SYNC: Ensure SW can see the URL via IDB
-    idb.set("cm_gas_url", url).catch(() => {});
-  }
-
-  if (url && !url.startsWith("https://")) {
-    if (url.startsWith("http://")) {
-      url = url.replace("http://", "https://");
-    } else {
-      url = `https://${url}`;
-    }
-  }
-
-  return url;
-};
+// ============================================================================
+// 🌐 HTTP HANDLERS (Entry Points)
+// ============================================================================
 
 /**
- * Inflates the payload.
- * ⚡ ROBUSTNESS UPDATE: Purely driven by Backend Schema. No more index guessing.
+ * GET Handler - Read Operations
+ * Supports both ?action= query params and POST body for flexibility.
+ *
+ * Endpoints:
+ *   ?action=ping          - Health check
+ *   ?action=getLeaderboard - Full leaderboard + recruiter data (cached)
+ *   ?action=getRecruits   - Recruiter pool only
+ *   ?action=getMembers    - Real-time clan members from Clash Royale API
+ *   ?action=getWarLog     - River Race history
+ *
+ * @param {Object} e - Event object with parameters
+ * @return {TextOutput} JSON response
  */
-export async function inflatePayload(data: unknown): Promise<WebAppData> {
-  let parsedData: any;
-  if (typeof data === "string") {
-    try {
-      parsedData = JSON.parse(data);
-    } catch (e) {
-      throw new Error("Failed to parse data string");
+function doGet(e) {
+  try {
+    const action = (e?.parameter?.action || "").toLowerCase().trim();
+
+    switch (action) {
+      case "ping":
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const sheetsMap = {};
+        ss.getSheets().forEach(
+          (s) => (sheetsMap[s.getName()] = s.getSheetId()),
+        );
+
+        return respond({
+          version: VER_API_PUBLIC,
+          status: "online",
+          scriptId: ScriptApp.getScriptId(),
+          spreadsheetUrl: ss.getUrl(),
+          // Map of SheetName -> GID for direct linking
+          sheets: sheetsMap,
+          modules: getModuleVersions(),
+        });
+
+      case "getleaderboard":
+      case "getwebappdata":
+        // Returns cached leaderboard + recruiter data
+        const webData = getWebAppData(false);
+        // getWebAppData returns a JSON string, parse and re-wrap in envelope
+        return respondRaw(webData);
+
+      case "getrecruits":
+        const recruitData = getWebAppData(false);
+        const parsed = JSON.parse(recruitData);
+        if (parsed.success && parsed.data) {
+          return respond({
+            hh: parsed.data.hh,
+            timestamp: parsed.data.timestamp,
+          });
+        }
+        return respond(null, "NO_DATA", "Recruit data not available");
+
+      case "getmembers":
+        return respond(getMembers());
+
+      case "getwarlog":
+        return respond(getWarLog());
+
+      case "refresh":
+        // Force refresh the cache
+        const freshData = getWebAppData(true);
+        return respondRaw(freshData);
+
+      case "":
+        return respond(
+          null,
+          "NO_ACTION",
+          "Missing ?action= parameter. Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh",
+        );
+
+      default:
+        return respond(
+          null,
+          "INVALID_ACTION",
+          `Unknown action: "${action}". Available: ping, getLeaderboard, getRecruits, getMembers, getWarLog, refresh`,
+        );
     }
-  } else {
-    parsedData = data;
+  } catch (err) {
+    console.error(`doGet CRITICAL ERROR: ${err.stack}`);
+    return respond(null, "SERVER_ERROR", err.message);
   }
-
-  if (!parsedData || typeof parsedData !== "object") {
-    throw new Error("Invalid payload: data is null or not an object");
-  }
-
-  if (parsedData.format !== "matrix") {
-    return parsedData as WebAppData;
-  }
-
-  const WebAppDataSchema = v.object({
-    format: v.optional(v.string()),
-    schema: v.optional(
-      v.object({
-        lb: v.array(v.string()),
-        hh: v.array(v.string()),
-      }),
-    ),
-    lb: v.array(v.array(v.unknown())),
-    hh: v.array(v.array(v.unknown())),
-    timestamp: v.union([v.number(), v.string()]),
-    playerTag: v.optional(v.string()),
-  });
-
-  const check = v.safeParse(WebAppDataSchema, parsedData);
-  const source = check.success ? check.output : (parsedData as any);
-
-  const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
-  const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
-  
-  // Use schema from backend if available, otherwise assume empty
-  const lbSchema = source.schema?.lb || [];
-  const hhSchema = source.schema?.hh || [];
-
-  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
-  const safeNum = (v: any) => {
-    if (typeof v === "number") return v;
-    if (typeof v === "string") {
-      const cleaned = v.replace(/,/g, "").replace(/%/g, "");
-      const n = parseFloat(cleaned);
-      return isNaN(n) ? 0 : n;
-    }
-    return 0;
-  };
-
-  /**
-   * Universal Mapper
-   * Relies 100% on the schema keys provided by the backend.
-   */
-  const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
-    if (!row || !Array.isArray(row)) return null;
-
-    // Create a key-to-value map for this row based on schema
-    const d: Record<string, any> = {};
-    schema.forEach((key, index) => {
-      if (index < row.length) d[key] = row[index];
-    });
-
-    if (type === "lb") {
-      return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        // Trust the backend values. No more > 1000 checks.
-        performanceScore: safeNum(d.performanceScore), 
-        performanceRawScore: safeNum(d.performanceRawScore),
-        dt: safeNum(d.dt),
-        d: {
-          role: safeStr(d.role),
-          days: safeNum(d.days),
-          avg: safeNum(d.avg),
-          seen: safeStr(d.seen || "-"),
-          rate: safeStr(d.rate || "0%"),
-          wfame: safeNum(d.wfame),
-          hist: safeStr(d.hist),
-        },
-      };
-    } else {
-      return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        potentialScore: safeNum(d.potentialScore),
-        potentialRawScore: safeNum(d.potentialRawScore),
-        d: {
-          don: safeNum(d.don),
-          war: safeNum(d.war),
-          ago: safeStr(d.ago),
-          cards: safeNum(d.cards),
-        },
-      };
-    }
-  };
-
-  return {
-    lb: lbMatrix
-      .map((r: any) => mapRow(r, lbSchema, "lb"))
-      .filter(Boolean) as any[],
-    hh: hhMatrix
-      .map((r: any) => mapRow(r, hhSchema, "hh"))
-      .filter(Boolean) as any[],
-    playerTag: source.playerTag,
-    timestamp: Number(source.timestamp) || Date.now(),
-  };
 }
 
 /**
- * Standard Fetch with Retry
- * Throws errors on 4xx/5xx so retries can happen.
+ * POST Handler - Write Operations & Alternative Read
+ * Body format: { "action": "...", ...params }
+ *
+ * Write Endpoints:
+ *   action: "dismissRecruits" - Mark recruits as invited (ids: string[])
+ *
+ * Read Endpoints (POST alternative for CORS):
+ *   action: "getLeaderboard", "getRecruits", etc.
+ *
+ * @param {Object} e - Event object with postData
+ * @return {TextOutput} JSON response
  */
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
-  retries = 3,
-  backoff = 500,
-): Promise<Response> {
+function doPost(e) {
   try {
-    const response = await fetch(url, options);
-
-    // We do NOT retry on 4xx (client errors) usually, but 429 (rate limit) is an exception.
-    if (!response.ok) {
-      if (response.status >= 500 || response.status === 429) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response;
+    // Parse JSON body
+    const body = e?.postData?.contents;
+    if (!body) {
+      return respond(null, "EMPTY_BODY", "POST request requires JSON body");
     }
-    return response;
-  } catch (e: any) {
-    if (e.name === "AbortError") throw e; // Don't retry aborts
 
-    if (retries > 0) {
-      await new Promise((r) => setTimeout(r, backoff));
-      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    let payload;
+    try {
+      payload = JSON.parse(body);
+    } catch (parseErr) {
+      return respond(null, "PARSE_ERROR", `Invalid JSON: ${parseErr.message}`);
     }
-    throw e;
+
+    const action = (payload.action || "").toLowerCase().trim();
+
+    switch (action) {
+      // ========== WRITE OPERATIONS ==========
+      case "dismissrecruits":
+        const ids = payload.ids;
+        if (!ids || !Array.isArray(ids)) {
+          return respond(
+            null,
+            "INVALID_PARAMS",
+            'dismissRecruits requires "ids" array',
+          );
+        }
+        return respond(markRecruitsAsInvitedBulk(ids));
+
+      case "triggerupdate":
+        return respond(triggerAsyncUpdate(payload.target));
+
+      // ========== READ OPERATIONS (POST alternative) ==========
+      // Allow reads via POST for CORS flexibility
+      case "ping":
+      case "getleaderboard":
+      case "getwebappdata":
+      case "getrecruits":
+      case "getmembers":
+      case "getwarlog":
+      case "refresh":
+        // Delegate to doGet logic by constructing a fake event
+        return doGet({ parameter: { action: action } });
+
+      case "":
+        return respond(null, "NO_ACTION", 'Missing "action" in POST body');
+
+      default:
+        return respond(null, "INVALID_ACTION", `Unknown action: "${action}"`);
+    }
+  } catch (err) {
+    console.error(`doPost CRITICAL ERROR: ${err.stack}`);
+    return respond(null, "SERVER_ERROR", err.message);
   }
 }
 
-type GasRequestOptions = {
-  signal?: AbortSignal;
-  force?: boolean;
-};
+// ============================================================================
+// 📦 RESPONSE UTILITIES
+// ============================================================================
 
-async function gasRequest<T>(
-  action: string,
-  payload?: Record<string, unknown>,
-  options?: GasRequestOptions, // Fix: Add options param
-): Promise<T> {
-  const url = getGasUrl();
-  if (!url) throw new Error("GAS_URL not configured.");
-
-  const fetchOptions: RequestInit = {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({ action, ...payload }),
-    signal: options?.signal, // Fix: Pass signal
+/**
+ * Creates a standardized JSON response envelope.
+ *
+ * @param {any} data - Response data (null on error)
+ * @param {string|null} errorCode - Error code (null on success)
+ * @param {string|null} errorMessage - Human-readable error message
+ * @return {TextOutput} GAS ContentService text output
+ */
+function respond(data, errorCode = null, errorMessage = null) {
+  const envelope = {
+    status: errorCode ? "error" : "success",
+    data: errorCode ? null : data,
+    error: errorCode ? { code: errorCode, message: errorMessage } : null,
+    timestamp: new Date().toISOString(),
   };
 
-  const separator = url.includes("?") ? "&" : "?";
-  const requestUrl = `${url}${separator}action=${action}`;
-
-  try {
-    const response = await fetchWithRetry(requestUrl, fetchOptions);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const text = await response.text();
-    if (!text || !text.trim()) {
-      throw new Error("Empty Response from Server");
-    }
-
-    let envelope: GenericEnvelope<T>;
-    try {
-      envelope = JSON.parse(text);
-    } catch (e) {
-      if (text.toLowerCase().includes("<html")) {
-        throw new Error("Google Server Error");
-      }
-      throw new Error("Invalid JSON Response");
-    }
-
-    const isSuccess =
-      envelope.success === true ||
-      (envelope.status && envelope.status.toLowerCase() === "success") ||
-      (envelope.data && !envelope.error);
-
-    if (isSuccess) {
-      return (envelope.data !== undefined ? envelope.data : envelope) as T;
-    }
-
-    const errorMessage =
-      envelope.error?.message || envelope.message || "Unknown Backend Error";
-    throw new Error(errorMessage);
-  } catch (e: any) {
-    if (e.name === "AbortError") throw e;
-
-    console.warn("GAS Request Failed, attempting background sync queue", e);
-
-    await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
-
-    if ("serviceWorker" in navigator && "SyncManager" in window) {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        await (reg as any).sync.register("offline-queue-sync");
-      } catch (syncErr) {
-        console.warn("Background Sync registration failed", syncErr);
-      }
-    }
-
-    throw e; 
-  }
-}
-
-async function enqueueOfflineRequest(request: any) {
-  const queue = (await idb.get<any[]>("offline_queue")) || [];
-  queue.push(request);
-  await idb.set("offline_queue", queue);
-}
-
-export async function loadCache(): Promise<WebAppData | null> {
-  return idb.get<WebAppData>(CACHE_KEY_MAIN);
-}
-
-export async function fetchRemote(options?: {
-  signal?: AbortSignal;
-  force?: boolean;
-}): Promise<WebAppData> {
-  const action = options?.force ? "refresh" : "getwebappdata";
-  const data = await gasRequest<any>(action, undefined, {
-    signal: options?.signal,
-  });
-
-  if (!data) throw new Error("Invalid response structure");
-
-  const inflated = await inflatePayload(data);
-  idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
-  return inflated;
-}
-export async function ping(): Promise<PingResponse> {
-  return gasRequest<PingResponse>("ping");
-}
-
-export async function dismissRecruits(
-  ids: string[],
-): Promise<ApiResponse<DismissResponse>> {
-  return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { ids });
-}
-
-export async function triggerBackendUpdate(
-  target?: string,
-): Promise<ApiResponse<{ success: boolean; message: string }>> {
-  return gasRequest<ApiResponse<{ success: boolean; message: string }>>(
-    "triggerUpdate",
-    { target },
+  return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(
+    ContentService.MimeType.JSON,
   );
 }
 
-export function isConfigured(): boolean {
-  return Boolean(getGasUrl());
+/**
+ * Passes through a pre-formatted JSON string.
+ * Used when getWebAppData already returns a properly formatted response.
+ *
+ * @param {string} jsonString - Pre-formatted JSON string
+ * @return {TextOutput} GAS ContentService text output
+ */
+function respondRaw(jsonString) {
+  return ContentService.createTextOutput(jsonString).setMimeType(
+    ContentService.MimeType.JSON,
+  );
 }
 
-export function getApiUrl(): string {
-  return getGasUrl() || "(not configured)";
+/**
+ * Collects version numbers from all modules for health monitoring.
+ *
+ * @return {Object} Map of module names to versions
+ */
+function getModuleVersions() {
+  const modules = [
+    "API_PUBLIC",
+    "CONFIGURATION",
+    "CONTROLLER_WEBAPP",
+    "UTILITIES",
+    "LEADERBOARD",
+    "LOGGER",
+    "RECRUITER",
+    "SCORING_SYSTEM",
+    "ORCHESTRATOR",
+  ];
+  return Object.fromEntries(
+    modules.map((m) => [
+      m,
+      typeof globalThis[`VER_${m}`] !== "undefined"
+        ? globalThis[`VER_${m}`]
+        : "N/A",
+    ]),
+  );
+}
+
+// ============================================================================
+// 📊 DATA FETCHERS (Clash Royale API)
+// ============================================================================
+
+/**
+ * Fetches the current member list from the Clash Royale API.
+ * Maps 'expLevel' (King Level) to 'kingLevel' to satisfy the UI interface.
+ *
+ * @return {Array} List of clan members
+ */
+function getMembers() {
+  const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+  const data = Utils.fetchRoyaleAPI([
+    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
+  ]);
+
+  if (!data || !data[0] || !data[0].items) {
+    console.warn("API: getMembers returned no data.");
+    return [];
+  }
+
+  return data[0].items.map((m) => ({
+    tag: m.tag,
+    name: m.name,
+    role: formatRole(m.role),
+    kingLevel: m.expLevel,
+    donations: m.donations,
+    donationsReceived: m.donationsReceived,
+  }));
+}
+
+/**
+ * Fetches the recent River Race Log (War Log).
+ * Transforms complex RoyaleAPI standings into a simplified Win/Loss/Score format.
+ *
+ * @return {Array} List of war log entries
+ */
+function getWarLog() {
+  const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+  const data = Utils.fetchRoyaleAPI([
+    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
+  ]);
+
+  if (!data || !data[0] || !data[0].items) {
+    console.warn("API: getWarLog returned no data.");
+    return [];
+  }
+
+  return data[0].items.map((r) => {
+    let myStanding = null;
+    let opponents = [];
+
+    if (r.standings) {
+      myStanding = r.standings.find(
+        (s) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
+      );
+      opponents = r.standings.filter(
+        (s) => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG,
+      );
+    }
+
+    const myFame = myStanding ? myStanding.clan.fame : 0;
+    const myRank = myStanding ? myStanding.rank : null;
+
+    const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
+
+    let result = "lose";
+    if (myRank === 1) result = "win";
+    if (myRank === null) result = "n/a";
+
+    return {
+      result: result,
+      endTime: parseCRDateISO(r.createdDate),
+      opponent: bestRival ? bestRival.clan.name : "No Opponent",
+      teamSize: 50,
+      score: myFame,
+      opponentScore: bestRival ? bestRival.clan.fame : 0,
+    };
+  });
+}
+
+// ============================================================================
+// 🛠️ HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Helper: Formats API role string to Title Case
+ * e.g. "coLeader" -> "Co-Leader"
+ */
+const formatRole = (role) =>
+  ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ||
+  "Member";
+
+/**
+ * Helper: Parses RoyaleAPI ISO dates (YYYYMMDDThhmmss.000Z) to readable YYYY-MM-DD
+ */
+function parseCRDateISO(t) {
+  if (!t) return new Date().toISOString().split("T")[0];
+  const d = new Date(
+    t.replace(
+      /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
+      "$1-$2-$3T$4:$5:$6Z",
+    ),
+  );
+  return Utils.formatDate(d);
+}
+
+/**
+ * 🤖 ASYNC UPDATE DISPATCHER (NON-BLOCKING)
+ * Queues a task and returns immediately to prevent HTTP timeouts.
+ */
+function triggerAsyncUpdate(target) {
+  const normTarget = (target || "").toLowerCase().trim();
+  const validTargets = ["members", "leaderboard", "headhunters"];
+
+  if (!validTargets.includes(normTarget)) {
+    return {
+      success: false,
+      error: "INVALID_TARGET",
+      message: `Unknown target: "${normTarget}"`,
+    };
+  }
+
+  return Utils.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
+    try {
+      // 1. Check if already busy (System-wide lock)
+      const cache = CacheService.getScriptCache();
+      if (cache.get("SYSTEM_STATUS") === "BUSY") {
+        return {
+          success: false,
+          status: "BUSY",
+          message: "System is already processing an update. Please wait.",
+        };
+      }
+
+      // 2. Queue the specific target
+      Utils.Props.set("PENDING_UPDATE_TARGET", normTarget);
+
+      // 3. Mark as Busy immediately
+      cache.put("SYSTEM_STATUS", "BUSY", 1200); // 20 min lock safety
+
+      // 4. Create One-Time Trigger
+      // Delete any existing dispatchers first to clean up
+      ScriptApp.getProjectTriggers().forEach((t) => {
+        if (t.getHandlerFunction() === "dispatchAsyncUpdate")
+          ScriptApp.deleteTrigger(t);
+      });
+
+      ScriptApp.newTrigger("dispatchAsyncUpdate")
+        .timeBased()
+        .after(500)
+        .create();
+
+      console.log(`🚀 Async Trigger Queued: ${normTarget}`);
+      return { success: true, status: "QUEUED", target: normTarget };
+    } catch (e) {
+      console.error(`triggerAsyncUpdate Failed: ${e.message}`);
+      throw e;
+    }
+  });
+}
+
+/**
+ * Handle function called by the Time-Based Trigger.
+ * Runs in the background, not tied to the HTTP request.
+ */
+function dispatchAsyncUpdate() {
+  const target = Utils.Props.get("PENDING_UPDATE_TARGET");
+  if (!target) {
+    console.warn("⚠️ Async Dispatcher: No pending target found.");
+    return;
+  }
+
+  // Clear pending target immediately to prevent loops
+  Utils.Props.delete("PENDING_UPDATE_TARGET");
+
+  Utils.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheetName = "";
+      if (target === "members") sheetName = CONFIG.SHEETS.DB;
+      else if (target === "leaderboard") sheetName = CONFIG.SHEETS.LB;
+      else if (target === "headhunters") sheetName = CONFIG.SHEETS.HH;
+
+      const sheet = ss.getSheetByName(sheetName);
+
+      // Visual Feedback (Tick box)
+      if (sheet) {
+        sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(true);
+        SpreadsheetApp.flush();
+      }
+
+      // Run logic
+      if (target === "members") {
+        updateClanDatabase();
+        refreshWebPayload();
+      } else if (target === "leaderboard") {
+        updateLeaderboard();
+        refreshWebPayload();
+      } else if (target === "headhunters") {
+        scoutRecruits();
+      }
+
+      // Visual Feedback (Untick)
+      if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
+
+      console.log(`✅ Async Execution Perfect: ${target}`);
+    } catch (e) {
+      console.error(`❌ Async Execution Failed [${target}]: ${e.message}`);
+    } finally {
+      // Clear busy flag
+      CacheService.getScriptCache().remove("SYSTEM_STATUS");
+    }
+  });
+}
+
+/**
+ * Legacy Trigger maintained for compatibility
+ */
+function triggerHeadlessUpdate() {
+  return triggerAsyncUpdate("members");
 }
