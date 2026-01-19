@@ -12,11 +12,11 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.7
+ * 🏷️ VERSION: 10.0.8
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.7";
+const VER_UTILITIES = "10.0.8";
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map();
@@ -273,7 +273,7 @@ const Utils = {
    * Offloads heavy tournament filtering logic to the worker.
    * Returns: Array of valid candidate objects (filtered and ready for scoring).
    */
-  scanTournamentsRemote: function (tourneyTags, minTrophies, blacklistSet) {
+  scanTournamentsRemote: function (tourneyTags, minTrophies, blacklistSet, scoring = null) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
       throw new Error("Worker not configured for scanning");
     }
@@ -286,7 +286,8 @@ const Utils = {
         tags: tourneyTags,
         apiKeys: keyPool.map(k => k.value),
         blacklist: blacklistArray,
-        minTrophies: minTrophies
+        minTrophies: minTrophies,
+        scoring: scoring // Pass scoring weights to worker
       };
 
       const headers = { "Content-Type": "application/json" };
