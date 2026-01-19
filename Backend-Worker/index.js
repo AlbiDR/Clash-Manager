@@ -5,6 +5,16 @@ const fetch = require("node-fetch");
 const ScoringSystem = require("../Backend-GAS/ScoringSystem.js");
 
 const app = express();
+
+// 🌍 CORS MIDDLEWARE (Allow PWA to hit this directly)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // In production, lock this to your PWA domain
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
 app.use(express.json({ limit: "50mb" }));
 
 const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "20", 10);
@@ -266,6 +276,71 @@ app.post("/audit", checkAuth, async (req, res) => {
   }
 });
 
+// 🔓 PUBLIC SCAN (DIRECT PWA ACCESS)
+// Allows the Frontend to call the worker directly, bypassing GAS.
+// Uses server-side API keys but does not require a secret from the client.
+app.post("/public/scan", async (req, res) => {
+  try {
+    const { tags, blacklist, minTrophies, scoring } = req.body;
+    // Note: API Keys are injected from process.env in a real worker deployment
+    // or passed via req.body if the client is trusted (not ideal for public PWA).
+    // For this implementation, we assume the Worker has env keys or accepts keys.
+    // Ideally, the Worker should have its own pool of keys.
+    
+    // Fallback: If client sends keys (legacy), use them. If not, check env.
+    const apiKeys = req.body.apiKeys || (process.env.API_KEYS ? process.env.API_KEYS.split(',') : []);
+    
+    if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
+    
+    const blacklistSet = new Set(blacklist || []);
+    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
+
+    // 1. Initial Scan
+    const candidates = await processScanBatch(
+      tags,
+      apiKeys,
+      concurrency,
+      blacklistSet,
+      minTrophies || 4000
+    );
+
+    // 2. Deep Scoring
+    if (scoring && candidates.length > 0) {
+      const candidateTags = [...new Set(candidates.map(c => c.tag))];
+      const playerUrls = candidateTags.map(t => `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`);
+      
+      const scoredResults = await processBatch(
+        playerUrls, 
+        apiKeys, 
+        concurrency, 
+        scoring
+      );
+
+      return res.json({ 
+        candidates: scoredResults.map(r => r.content).filter(c => c && c.tag) 
+      });
+    }
+    
+    return res.json({ candidates });
+  } catch (e) {
+    console.error("Failed /public/scan", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// 🔔 PUSH SUBSCRIPTION ENDPOINT
+// Stores PWA push subscriptions (In-Memory for now, replacing with DB recommended)
+const _subs = new Set();
+app.post("/public/subscribe", (req, res) => {
+  const sub = req.body;
+  if (!sub || !sub.endpoint) return res.status(400).json({ error: "Invalid subscription" });
+  
+  _subs.add(JSON.stringify(sub));
+  console.log(`🔔 New Push Subscription. Total: ${_subs.size}`);
+  return res.json({ success: true, count: _subs.size });
+});
+
+// Internal Scan Endpoint (Auth required)
 app.post("/scan", checkAuth, async (req, res) => {
   try {
     const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
@@ -274,7 +349,6 @@ app.post("/scan", checkAuth, async (req, res) => {
     const blacklistSet = new Set(blacklist || []);
     const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
 
-    // 1. Initial Scan (Get valid candidates from tournaments)
     const candidates = await processScanBatch(
       tags,
       apiKeys || [],
@@ -283,11 +357,8 @@ app.post("/scan", checkAuth, async (req, res) => {
       minTrophies || 4000
     );
 
-    // 2. Deep Scoring (If enabled)
-    // If scoring is provided, we immediately fetch profiles + battlelogs for the survivors
-    // This offloads the heavy "enrichment" phase from GAS to Node
     if (scoring && candidates.length > 0) {
-      const candidateTags = [...new Set(candidates.map(c => c.tag))]; // Deduplicate
+      const candidateTags = [...new Set(candidates.map(c => c.tag))];
       const playerUrls = candidateTags.map(t => `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`);
       
       const scoredResults = await processBatch(
@@ -297,7 +368,6 @@ app.post("/scan", checkAuth, async (req, res) => {
         scoring
       );
 
-      // Extract just the content from the results
       return res.json({ 
         candidates: scoredResults.map(r => r.content).filter(c => c && c.tag) 
       });
