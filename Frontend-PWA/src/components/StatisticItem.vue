@@ -6,11 +6,9 @@ import { useModules } from "../composables/useModules";
 const props = defineProps<{
   label: string;
   value: string | number;
-  tooltipContext?: {
-    type: "lb" | "hh";
-    metric: string;
-    rawValue: number;
-  };
+  benchmarkType?: "lb" | "hh";
+  benchmarkMetric?: string;
+  benchmarkRawValue?: number;
 }>();
 
 const { modules } = useModules();
@@ -19,14 +17,14 @@ const { getBenchmark } = useBenchmarking();
 const tooltipVal = computed(() => {
   if (
     modules.ghostBenchmarking &&
-    props.tooltipContext &&
-    props.tooltipContext.type &&
-    props.tooltipContext.metric
+    props.benchmarkType &&
+    props.benchmarkMetric &&
+    props.benchmarkRawValue !== undefined
   ) {
     return getBenchmark(
-      props.tooltipContext.type,
-      props.tooltipContext.metric,
-      props.tooltipContext.rawValue,
+      props.benchmarkType,
+      props.benchmarkMetric,
+      props.benchmarkRawValue,
     );
   }
   return null;
