@@ -260,7 +260,7 @@ function handleSearchUpdate(val: string) {
         @toggle-expand="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
       />
-      <SkeletonCard v-for="i in 7" :key="'ex-' + i" />
+      <RecruitCardSkeleton v-for="i in 7" :key="'ex-' + i" />
     </template>
     <template v-else>
       <RecruitCard
