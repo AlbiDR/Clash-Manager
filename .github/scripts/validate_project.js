@@ -8,7 +8,7 @@ const GAS_DIR = path.join(ROOT_DIR, "Backend-GAS");
 
 const PATHS = {
   packageJson: path.join(PWA_DIR, "package.json"),
-  backendConfig: path.join(GAS_DIR, "Configuration.gs.js"),
+  backendConfig: path.join(GAS_DIR, "Configuration.js"),
   readme: path.join(ROOT_DIR, "README.md"),
   env: path.join(PWA_DIR, ".env"),
 };
@@ -91,7 +91,7 @@ function checkScoringIntegrity() {
   const docWeights = extractWeightsFromReadme(readmeText);
 
   if (!cfgWeights) {
-    log.fail("Could not find WEIGHTS in Configuration.gs.js");
+    log.fail("Could not find WEIGHTS in Configuration.js");
     hasFailure = true;
     return;
   }
