@@ -259,12 +259,13 @@ app.post("/audit", checkAuth, async (req, res) => {
 
 app.post("/scan", checkAuth, async (req, res) => {
   try {
-    const { tags, apiKeys, blacklist, minTrophies } = req.body;
+    const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
     if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
     
     const blacklistSet = new Set(blacklist || []);
     const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
 
+    // 1. Initial Scan (Get valid candidates from tournaments)
     const candidates = await processScanBatch(
       tags,
       apiKeys || [],
@@ -272,6 +273,26 @@ app.post("/scan", checkAuth, async (req, res) => {
       blacklistSet,
       minTrophies || 4000
     );
+
+    // 2. Deep Scoring (If enabled)
+    // If scoring is provided, we immediately fetch profiles + battlelogs for the survivors
+    // This offloads the heavy "enrichment" phase from GAS to Node
+    if (scoring && candidates.length > 0) {
+      const candidateTags = [...new Set(candidates.map(c => c.tag))]; // Deduplicate
+      const playerUrls = candidateTags.map(t => `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`);
+      
+      const scoredResults = await processBatch(
+        playerUrls, 
+        apiKeys || [], 
+        concurrency, 
+        scoring
+      );
+
+      // Extract just the content from the results
+      return res.json({ 
+        candidates: scoredResults.map(r => r.content).filter(c => c && c.tag) 
+      });
+    }
     
     return res.json({ candidates });
   } catch (e) {
