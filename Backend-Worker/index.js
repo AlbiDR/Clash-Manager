@@ -1,5 +1,8 @@
 const express = require("express");
 const fetch = require("node-fetch");
+// 🔗 SHARED LOGIC: Import Scoring System from GAS source
+// Ensure this file exists in the build context!
+const ScoringSystem = require("../Backend-GAS/ScoringSystem.js");
 
 const app = express();
 app.use(express.json({ limit: "50mb" }));
@@ -102,21 +105,27 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
             const logUrl = url + "/battlelog";
             const logs = await fetchWithRetries(logUrl, { method: "GET", headers });
 
-            let warBonus = 0;
+            let hasWar = false;
             if (logs.code === 200 && Array.isArray(logs.content)) {
-              const hasWar = logs.content.some((b) =>
+              hasWar = logs.content.some((b) =>
                 ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)
               );
-              if (hasWar) warBonus = 500;
             }
 
             const p = profile.content;
-            const totalWarScore = (p.warDayWins || 0) + warBonus;
-            const rawScore = Math.round(
-              (p.trophies || 0) * (scoring.TROPHY || 0) +
-                (p.totalDonations || 0) * (scoring.DON || 0) +
-                totalWarScore * (scoring.WAR || 0)
+            
+            // 🔗 LOGIC SYNC: Use Shared Scoring System
+            const rawScore = ScoringSystem.calculateRecruitRawScore(
+                p.trophies || 0,
+                p.totalDonations || 0,
+                p.warDayWins || 0,
+                hasWar,
+                scoring // Inject weights passed from GAS
             );
+
+            // Calculate War Score for display/consistency with old format
+            const warBonus = hasWar ? 500 : 0;
+            const totalWarScore = (p.warDayWins || 0) + warBonus;
 
             results[i] = {
               code: 200,
