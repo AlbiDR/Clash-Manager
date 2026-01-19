@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.7
+ * 🏷️ VERSION: 10.0.8
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.7";
+const VER_CONTROLLER_WEBAPP = "10.0.8";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -58,17 +58,23 @@ function markRecruitsAsInvitedBulk(ids) {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       
+      // 🛡️ SYNC: Ensure we are seeing the absolute latest state of the workbook
+      SpreadsheetApp.flush();
+      
       // 1. DATABASE WRITE (Primary Source of Truth)
       // We write directly to the Blacklist/History sheet.
       let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
-      if (!blSheet) blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
+      if (!blSheet) {
+        blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
+        // Add headers if new
+        blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "RawScore"]]);
+      }
 
       const now = Date.now();
       const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
       const expiryDate = now + expiryDuration;
       
       // Create DB Entries: [Tag, ExpiryTimestamp, RawScore(0 placeholder)]
-      // Note: We use 0 for RawScore as dismissed recruits shouldn't affect the high-end benchmark
       const dbEntries = ids.map(id => {
         const tag = id.startsWith("#") ? id : "#" + id;
         return [tag, expiryDate, 0]; 
@@ -79,12 +85,15 @@ function markRecruitsAsInvitedBulk(ids) {
         const lastRow = Math.max(blSheet.getLastRow(), 1);
         blSheet.getRange(lastRow + 1, 1, dbEntries.length, 3).setValues(dbEntries);
         console.log(`🌐 DB Action: Added ${dbEntries.length} to Blacklist History.`);
+        
+        // 🛡️ COMMIT: Force write to DB immediately
+        SpreadsheetApp.flush();
       }
 
       // 2. SHEET CLEANUP (Visual Sync)
-      // We remove the rows immediately so the spreadsheet reflects the "Dismissed" state.
-      // This prevents the confusing "Ticked Box" state and ensures visual consistency.
+      let deletedCount = 0;
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+      
       if (sheet) {
         Utils.bootDynamicSchema();
         const startRow = CONFIG.LAYOUT.DATA_START_ROW;
@@ -96,6 +105,7 @@ function markRecruitsAsInvitedBulk(ids) {
           // ⚡ COLUMN RESOLUTION: Use 1-based index from Schema + 1 (A=1)
           const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
 
+          // Fetch only the Tag column to find rows
           const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
           const rowsToDelete = [];
 
@@ -103,7 +113,7 @@ function markRecruitsAsInvitedBulk(ids) {
           // We map Tags to Absolute Row Indices
           const tagMap = new Map();
           for(let i=0; i<tagValues.length; i++) {
-             const t = String(tagValues[i][0] || "");
+             const t = String(tagValues[i][0] || "").trim();
              if(t) tagMap.set(t, startRow + i); 
           }
 
@@ -118,18 +128,27 @@ function markRecruitsAsInvitedBulk(ids) {
           if (rowsToDelete.length > 0) {
             rowsToDelete.sort((a, b) => b - a);
             rowsToDelete.forEach(rowIdx => sheet.deleteRow(rowIdx));
-            console.log(`🌐 Sheet Action: Deleted ${rowsToDelete.length} dismissed rows.`);
+            deletedCount = rowsToDelete.length;
+            console.log(`🌐 Sheet Action: Deleted ${deletedCount} dismissed rows.`);
           }
         }
       }
 
       // 3. FLUSH & REFRESH (Internal)
-      // We call the internal generator directly to avoid nested locking issues
       SpreadsheetApp.flush();
-      _generatePayloadInternal();
+      const payloadStr = _generatePayloadInternal();
 
       console.timeEnd("BulkDismiss");
-      return { success: true, count: ids.length };
+      
+      // Return metadata for debugging/confirmation
+      return { 
+        success: true, 
+        count: ids.length, 
+        dbWrite: dbEntries.length,
+        deleted: deletedCount,
+        payloadSize: payloadStr.length 
+      };
+      
     } catch (e) {
       console.error(`Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
