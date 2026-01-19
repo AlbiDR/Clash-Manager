@@ -3,11 +3,11 @@
  * 🌐 MODULE: CONTROLLER_WEBAPP (DATA LAYER)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 10.0.5
+ * 🏷️ VERSION: 10.0.6
  * ============================================================================
  */
 
-const VER_CONTROLLER_WEBAPP = "10.0.5";
+const VER_CONTROLLER_WEBAPP = "10.0.6";
 
 // ============================================================================
 // 📦 DATA RETRIEVAL (Called by API_Public.gs.js)
@@ -80,8 +80,9 @@ function markRecruitsAsInvitedBulk(ids) {
         console.log(`🌐 DB Action: Added ${dbEntries.length} to Blacklist History.`);
       }
 
-      // 2. VISUAL UPDATE (Legacy/Spreadsheet Sync)
-      // We explicitly tick the checkbox in the sheet so the user sees the change if they open the sheet.
+      // 2. SHEET CLEANUP (Visual Sync)
+      // We remove the rows immediately so the spreadsheet reflects the "Dismissed" state.
+      // This prevents the confusing "Ticked Box" state and ensures visual consistency.
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
       if (sheet) {
         Utils.bootDynamicSchema();
@@ -93,31 +94,29 @@ function markRecruitsAsInvitedBulk(ids) {
           
           // ⚡ COLUMN RESOLUTION: Use 1-based index from Schema + 1 (A=1)
           const tagColIdx = 1 + CONFIG.SCHEMA.HH.TAG;
-          const invitedColIdx = 1 + CONFIG.SCHEMA.HH.INVITED;
 
           const tagValues = sheet.getRange(startRow, tagColIdx, numRows, 1).getValues();
-          const invitedRange = sheet.getRange(startRow, invitedColIdx, numRows, 1);
-          const invitedValues = invitedRange.getValues();
+          const rowsToDelete = [];
 
+          // Identify rows to delete
           const tagMap = new Map();
           for(let i=0; i<tagValues.length; i++) {
              const t = String(tagValues[i][0] || "");
-             if(t) tagMap.set(t, i);
+             if(t) tagMap.set(t, startRow + i); // Absolute row number
           }
 
-          let visualUpdates = 0;
           ids.forEach(id => {
             const tag = id.startsWith("#") ? id : "#" + id;
-            const idx = tagMap.get(tag);
-            if (idx !== undefined) {
-              invitedValues[idx][0] = true; // Tick the box
-              visualUpdates++;
+            if (tagMap.has(tag)) {
+               rowsToDelete.push(tagMap.get(tag));
             }
           });
 
-          if (visualUpdates > 0) {
-            invitedRange.setValues(invitedValues);
-            console.log(`🌐 Sheet Action: Ticked ${visualUpdates} checkboxes.`);
+          // Delete from bottom up to preserve indices
+          if (rowsToDelete.length > 0) {
+            rowsToDelete.sort((a, b) => b - a);
+            rowsToDelete.forEach(rowIdx => sheet.deleteRow(rowIdx));
+            console.log(`🌐 Sheet Action: Deleted ${rowsToDelete.length} dismissed rows.`);
           }
         }
       }
