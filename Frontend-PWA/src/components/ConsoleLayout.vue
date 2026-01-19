@@ -4,7 +4,7 @@ import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
-import SkeletonCard from "./SkeletonCard.vue";
+import MemberCardSkeleton from "./MemberCardSkeleton.vue";
 import Icon from "./Icon.vue";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 import { useHaptics } from "../composables/useHaptics";

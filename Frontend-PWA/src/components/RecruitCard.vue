@@ -4,7 +4,7 @@ import type { Recruit } from "../types";
 import Icon from "./Icon.vue";
 import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
-import { useModules } from "../composables/useModules";
+import { useAppSettings } from "../composables/useAppSettings";
 import { getScoreTone, formatTimeAgoShort } from "../utils/formatters";
 
 import { useExternalLink } from "../composables/useExternalLink";
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 }>();
 
 const { getBenchmark } = useBenchmarking();
-const { modules } = useModules();
+const { modules } = useAppSettings();
 const { openExternal, openInGame } = useExternalLink();
 
 function getTooltip(metric: string, value: number | undefined) {

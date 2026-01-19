@@ -5,13 +5,13 @@ import { useHeadhunter } from "../composables/useHeadhunter";
 import { useApiState } from "../composables/useApiState";
 import { useToast } from "../composables/useToast";
 import { useRecruitBlacklist } from "../composables/useRecruitBlacklist";
-import { useConsoleLogic } from "../composables/useConsoleLogic";
+import { useConsoleController } from "../composables/useConsoleController";
 import { useShowcaseMode } from "../composables/useShowcaseMode";
 import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
 import type { Recruit } from "../types";
 
 import RecruitCard from "../components/RecruitCard.vue";
-import SkeletonCard from "../components/SkeletonCard.vue";
+import MemberCardSkeleton from "../components/MemberCardSkeleton.vue";
 import Icon from "../components/Icon.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
@@ -78,7 +78,7 @@ const {
   handleSelectAll,
   handleSelectScore,
   processDeepLink,
-} = useConsoleLogic({
+} = useConsoleController({
   data: recruits,
   isHydrated,
   isRefreshing,

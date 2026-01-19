@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from "vue";
-import { useModules } from "../composables/useModules";
+import { useAppSettings } from "../composables/useAppSettings";
 import { useTheme } from "../composables/useTheme";
 import { useHaptics } from "../composables/useHaptics";
 import { useWakeLock } from "../composables/useWakeLock";
@@ -19,7 +19,7 @@ import NotificationSettings from "../components/settings/NotificationSettings.vu
 import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
 import { vTactile } from "../directives/vTactile";
 
-const { modules, toggle } = useModules();
+const { modules, toggle } = useAppSettings();
 const { theme, setTheme, clearManifestCache } = useTheme();
 const haptics = useHaptics();
 const wakeLock = useWakeLock();

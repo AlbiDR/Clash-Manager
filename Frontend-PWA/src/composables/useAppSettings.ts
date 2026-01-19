@@ -46,7 +46,7 @@ function mergeStorage(stored: any): ModuleState {
   (Object.keys(DEFAULT_STATE) as (keyof ModuleState)[]).forEach((key) => {
     const val = stored[key];
     const expectedType = typeof DEFAULT_STATE[key];
-    
+
     if (key === "notificationThreshold") {
       if (val === 50 || val === 75) result[key] = val;
     } else if (typeof val === expectedType) {
@@ -57,10 +57,10 @@ function mergeStorage(stored: any): ModuleState {
   return result;
 }
 
-export function useModules() {
+export function useAppSettings() {
   function init() {
     if (isInitialized.value) return;
-    
+
     // Load local storage
     try {
       const raw = localStorage.getItem(MODULES_KEY);
@@ -116,5 +116,4 @@ export function useModules() {
   };
 }
 
-export type UseModulesReturn = ReturnType<typeof useModules>;
-
+export type UseModulesReturn = ReturnType<typeof useAppSettings>;

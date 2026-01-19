@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from "vue";
-import { useModules } from "./useModules";
+import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
 
 // 🛡️ Global persistent state to track debounce across multiple useBadge() instances
@@ -11,7 +11,7 @@ const isAndroid =
   typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
 
 export function useBadge() {
-  const { modules } = useModules();
+  const { modules } = useAppSettings();
 
   // 📡 Broadcast Channel Integration
   const { post: broadcast } = useBroadcastChannel((msg) => {

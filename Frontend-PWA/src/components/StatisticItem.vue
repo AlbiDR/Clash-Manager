@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
-import { useModules } from "../composables/useModules";
+import { useAppSettings } from "../composables/useAppSettings";
 
 const props = defineProps<{
   label: string;
@@ -11,7 +11,7 @@ const props = defineProps<{
   benchmarkRawValue?: number;
 }>();
 
-const { modules } = useModules();
+const { modules } = useAppSettings();
 const { getBenchmark } = useBenchmarking();
 
 const tooltipVal = computed(() => {
