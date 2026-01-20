@@ -115,12 +115,7 @@ const sortOptions = [
   },
 ];
 
-const listItems = computed(() => {
-  if (isShowcaseMode.value) {
-    return visibleItems.value.length > 0 ? visibleItems.value.slice(0, 1) : [];
-  }
-  return visibleItems.value;
-});
+const listItems = computed(() => visibleItems.value);
 
 // Specific Helper for Score Selection
 function onSelectScore(threshold: number, mode: "ge" | "le") {
