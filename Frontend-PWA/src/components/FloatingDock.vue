@@ -171,15 +171,13 @@ function handleFabDismiss() {
   padding: 6px;
   border-radius: var(--shape-corner-full);
   display: flex;
-  gap: 4px;
+  gap: 6px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   z-index: 500;
   /* Disable double-tap zoom delay */
   touch-action: manipulation;
   /* Optimize transition timing for responsiveness */
-  transition:
-    transform 0.3s cubic-bezier(0.2, 0, 0, 1),
-    opacity 0.2s ease;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .dock-container.hidden {
@@ -190,8 +188,6 @@ function handleFabDismiss() {
 
 /* FAB Mode Styling */
 .dock-container.fab-mode {
-  padding: 8px;
-  gap: 8px;
   flex-direction: row;
   align-items: center;
   /* Prevent flex items from wrapping on smaller screens */
@@ -201,7 +197,8 @@ function handleFabDismiss() {
 .dock-item {
   position: relative;
   /* Ensure sufficient touch target size */
-  padding: 12px 24px;
+  height: 56px;
+  padding: 0 24px;
   border-radius: var(--shape-corner-full);
   display: flex;
   align-items: center;
@@ -268,8 +265,9 @@ function handleFabDismiss() {
 /* FAB Buttons */
 .fab-btn {
   /* Maintain minimum height for touch targets */
-  padding: 14px 24px;
-  min-height: 52px;
+  height: 56px;
+  padding: 0 24px;
+  min-height: 56px;
   border-radius: var(--shape-corner-full);
   font-weight: 900;
   font-size: 15px;
@@ -296,8 +294,9 @@ function handleFabDismiss() {
 }
 
 .fab-btn.compact {
-  padding: 14px;
-  min-width: 52px;
+  padding: 0;
+  width: 56px;
+  min-width: 56px;
 }
 
 .fab-btn.primary {
@@ -362,16 +361,16 @@ function handleFabDismiss() {
   }
   /* Reduce padding on small screens to prevent layout overflow */
   .dock-item {
-    padding: 14px 16px;
+    padding: 0 16px;
     min-width: 56px;
   }
   .dock-item.active {
-    padding: 14px 24px;
+    padding: 0 24px;
     min-width: 100px;
   }
   /* Ensure padding consistency for icon-only items like Settings */
   .dock-item[aria-label="Settings"] {
-    padding: 14px 22px;
+    padding: 0 22px;
   }
 
   /* FAB specific mobile adjustments to prevent wrapping */
@@ -381,15 +380,16 @@ function handleFabDismiss() {
   }
 
   .fab-btn {
-    padding: 12px 16px;
-    min-height: 48px;
+    padding: 0 16px;
+    min-height: 56px;
     gap: 6px;
     font-size: 14px;
   }
 
   .fab-btn.compact {
-    padding: 12px;
-    min-width: 48px;
+    padding: 0;
+    width: 56px;
+    min-width: 56px;
   }
 
   .blast-status {
