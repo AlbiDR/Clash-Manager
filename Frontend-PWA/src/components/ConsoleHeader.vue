@@ -173,7 +173,7 @@ function openOverlay() {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 12px var(--sys-layout-margin, 16px);
+  padding: 12px 0;
   padding-top: calc(12px + env(safe-area-inset-top));
   box-sizing: border-box;
   transition: padding 0.4s var(--sys-motion-spring);
