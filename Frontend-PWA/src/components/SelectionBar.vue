@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import Icon from "./Icon.vue";
+import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   count: number;
@@ -14,8 +15,44 @@ const emit = defineEmits<{
   (e: "select-score", threshold: number, mode: "ge" | "le"): void;
 }>();
 
+const haptics = useHaptics();
+
+// UI State
 const isScoreExpanded = ref(false);
 const isActive = computed(() => props.count > 0);
+
+// Dynamic Filter State
+const filterMode = ref<"ge" | "le">("ge");
+const filterValue = ref(75);
+
+// Pre-calculated options for the "clinical-OCD" horizontal picker
+const thresholds = [0, 10, 20, 30, 40, 50, 60, 70, 75, 80, 90, 100];
+
+function toggleMode() {
+  filterMode.value = filterMode.value === "ge" ? "le" : "ge";
+  haptics.tap();
+  applyFilter();
+}
+
+function selectValue(val: number) {
+  if (filterValue.value === val) return;
+  filterValue.value = val;
+  haptics.medium();
+  applyFilter();
+}
+
+function applyFilter() {
+  emit("select-score", filterValue.value, filterMode.value);
+}
+
+function toggleExpand() {
+  isScoreExpanded.value = !isScoreExpanded.value;
+  haptics.tap();
+  if (isScoreExpanded.value) {
+    // Proactively apply current filter when expanding if it's the main interaction
+    applyFilter();
+  }
+}
 </script>
 
 <template>
@@ -25,7 +62,7 @@ const isActive = computed(() => props.count > 0);
     :aria-busy="loading ? 'true' : 'false'"
   >
     <!-- Left: Status Cluster -->
-    <div class="sel-status">
+    <div class="sel-status" :class="{ 'hide-on-expand': isScoreExpanded }">
       <div class="indicator-ring">
         <div class="indicator-dot" :class="{ active: isActive }"></div>
       </div>
@@ -36,73 +73,83 @@ const isActive = computed(() => props.count > 0);
 
     <!-- Center: Primary Actions -->
     <div class="sel-actions">
-      <button
-        class="action-pill"
-        @click="$emit('select-all')"
-        title="Select All"
-      >
-        <Icon name="select_all" size="16" />
-        <span class="pill-text">All</span>
-      </button>
+      <!-- Standard Chips (Hidden when score picker is fully expanded on small screens if needed) -->
+      <template v-if="!isScoreExpanded">
+        <button
+          class="action-pill"
+          @click="$emit('select-all')"
+          title="Select All"
+        >
+          <Icon name="select_all" size="16" />
+          <span class="pill-text">All</span>
+        </button>
 
-      <button
-        class="action-pill"
-        :class="{ dimmed: !isActive }"
-        @click="$emit('clear')"
-        :disabled="!isActive"
-        title="Clear Selection"
-      >
-        <Icon name="layers_clear" size="16" />
-        <span class="pill-text">None</span>
-      </button>
+        <button
+          class="action-pill"
+          :class="{ dimmed: !isActive }"
+          @click="$emit('clear')"
+          :disabled="!isActive"
+          title="Clear Selection"
+        >
+          <Icon name="layers_clear" size="16" />
+          <span class="pill-text">None</span>
+        </button>
 
-      <div class="v-sep"></div>
+        <div class="v-sep"></div>
+      </template>
 
-      <!-- Score Quick Selector -->
+      <!-- Score Dynamic Selector -->
       <div class="score-pill-group" :class="{ expanded: isScoreExpanded }">
-        <button class="sp-trigger" @click="isScoreExpanded = !isScoreExpanded">
-          <Icon name="star" size="14" />
-          <span class="sp-label">Score</span>
+        <!-- Comparison Mode Toggle -->
+        <button
+          class="mode-toggle"
+          @click="toggleMode"
+          :title="
+            filterMode === 'ge' ? 'Greater than or equal' : 'Less than or equal'
+          "
+        >
+          <span class="mode-symbol">{{ filterMode === "ge" ? "≥" : "≤" }}</span>
+        </button>
+
+        <!-- Main Trigger / Label -->
+        <button class="sp-trigger" @click="toggleExpand">
+          <span class="sp-label">{{ filterValue }}</span>
           <span class="sp-chevron" :class="{ rotated: isScoreExpanded }">
             <Icon name="chevron_down" size="14" />
           </span>
         </button>
 
-        <TransitionGroup name="sp-fade">
-          <template v-if="isScoreExpanded">
-            <button
-              key="le15"
-              class="sp-opt"
-              @click="$emit('select-score', 15, 'le')"
-            >
-              ≤15
-            </button>
-            <button
-              key="le25"
-              class="sp-opt"
-              @click="$emit('select-score', 25, 'le')"
-            >
-              ≤25
-            </button>
-            <button
-              key="ge50"
-              class="sp-opt"
-              @click="$emit('select-score', 50, 'ge')"
-            >
-              ≥50
-            </button>
-          </template>
-        </TransitionGroup>
+        <!-- Dynamic Value Picker (Horizontal Scroll) -->
+        <div v-if="isScoreExpanded" class="value-picker">
+          <button
+            v-for="val in thresholds"
+            :key="val"
+            class="val-opt"
+            :class="{ active: filterValue === val }"
+            @click="selectValue(val)"
+          >
+            {{ val }}
+          </button>
+        </div>
 
-        <button class="sp-opt primary" @click="$emit('select-score', 75, 'ge')">
-          ≥75
+        <!-- Quick "Pro" Shortcut (Visible when not expanded) -->
+        <button
+          v-if="!isScoreExpanded"
+          class="sp-opt primary"
+          @click="selectValue(75)"
+        >
+          75+
         </button>
       </div>
     </div>
 
-    <!-- Right: Done Button (Slides in) -->
+    <!-- Right: Done Button -->
     <Transition name="slide-done">
-      <button v-if="isActive" class="done-action" @click="$emit('done')">
+      <button
+        v-if="isActive && !isScoreExpanded"
+        class="done-action"
+        @click="$emit('done')"
+      >
         <Icon name="check" size="18" />
         <span>Done</span>
       </button>
@@ -121,13 +168,13 @@ const isActive = computed(() => props.count > 0);
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 44px;
+  height: 48px;
   padding: 0 4px;
   background: var(
     --sys-color-surface-container-low,
     var(--sys-color-surface-container)
   );
-  border-radius: 12px;
+  border-radius: 14px;
   gap: 8px;
   transition: all 0.4s var(--sys-motion-spring);
   position: relative;
@@ -146,6 +193,9 @@ const isActive = computed(() => props.count > 0);
   gap: 10px;
   padding-left: 10px;
   flex-shrink: 0;
+  transition:
+    opacity 0.3s,
+    width 0.3s;
 }
 
 .indicator-ring {
@@ -196,10 +246,10 @@ const isActive = computed(() => props.count > 0);
   gap: 6px;
   flex: 1;
   justify-content: center;
-  /* 🏗️ MOBILE: Allows scrolling if too many options */
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-width: 0;
 }
 .sel-actions::-webkit-scrollbar {
   display: none;
@@ -207,7 +257,7 @@ const isActive = computed(() => props.count > 0);
 
 .action-pill {
   height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 10px;
   border: none;
   background: var(--sys-color-surface-container-highest);
@@ -222,9 +272,8 @@ const isActive = computed(() => props.count > 0);
   flex-shrink: 0;
 }
 
-.action-pill:hover:not(:disabled) {
-  background: var(--sys-color-surface-container-highest);
-  filter: brightness(1.05);
+.action-pill:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .action-pill.dimmed {
@@ -241,21 +290,51 @@ const isActive = computed(() => props.count > 0);
   flex-shrink: 0;
 }
 
-/* Score Pill Group */
+/* 🧪 DYNAMIC SCORE PILL GROUP */
 .score-pill-group {
   display: flex;
   align-items: center;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 3px;
   gap: 2px;
-  transition: all 0.3s var(--sys-motion-spring);
+  transition: all 0.4s var(--sys-motion-spring);
   flex-shrink: 0;
+  border: 1px solid transparent;
+  min-width: 90px;
 }
 
 .score-pill-group.expanded {
+  background: var(--sys-color-surface-container-high);
+  border-color: var(--sys-color-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.mode-toggle {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: none;
   background: var(--sys-color-primary-container);
-  padding-right: 6px;
+  color: var(--sys-color-on-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+
+.mode-toggle:active {
+  transform: scale(0.85) rotate(-15deg);
+}
+
+.mode-symbol {
+  font-size: 16px;
+  font-weight: 900;
+  font-family: var(--sys-font-family-mono);
 }
 
 .sp-trigger {
@@ -265,52 +344,87 @@ const isActive = computed(() => props.count > 0);
   align-items: center;
   gap: 6px;
   padding: 0 8px;
-  height: 26px;
-  color: var(--sys-color-on-surface-variant);
+  height: 30px;
+  color: var(--sys-color-on-surface);
   cursor: pointer;
 }
 
-.expanded .sp-trigger {
-  color: var(--sys-color-on-primary-container);
-}
-
 .sp-label {
-  font-size: 10px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 14px;
+  font-weight: 900;
+  font-family: var(--sys-font-family-mono);
+  min-width: 24px;
+  text-align: center;
 }
 
 .sp-chevron {
   transition: transform 0.3s var(--sys-motion-spring);
   display: flex;
+  opacity: 0.6;
 }
 
 .sp-chevron.rotated {
   transform: rotate(180deg);
 }
 
-.sp-opt {
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 8px;
-  border: none;
-  background: rgba(var(--sys-color-on-primary-container-rgb), 0.08);
-  color: var(--sys-color-on-primary-container);
-  font-size: 11px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+/* Value Picker */
+.value-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+  animation: slideIn 0.3s ease;
+}
+.value-picker::-webkit-scrollbar {
+  display: none;
 }
 
-.sp-opt:active {
-  transform: scale(0.9);
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.val-opt {
+  height: 28px;
+  min-width: 36px;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface-variant);
+  font-size: 11px;
+  font-weight: 850;
+  font-family: var(--sys-font-family-mono);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.val-opt.active {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  transform: scale(1.05);
 }
 
 .sp-opt.primary {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 10px;
+  padding: 0 10px;
+  height: 30px;
+  font-weight: 950;
+  font-size: 10px;
+  font-family: var(--sys-font-family-mono);
+  margin-left: 2px;
 }
 
 /* Done Action */
@@ -318,16 +432,16 @@ const isActive = computed(() => props.count > 0);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px;
-  height: 34px;
+  padding: 0 14px;
+  height: 36px;
   font-weight: 900;
   font-size: 13px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.2);
+  box-shadow: var(--sys-elevation-2);
   transition: all 0.3s var(--sys-motion-spring);
   margin-right: 4px;
   flex-shrink: 0;
@@ -347,11 +461,16 @@ const isActive = computed(() => props.count > 0);
   padding: 0 16px;
   z-index: 10;
 }
-.sk-line {
-  height: 12px;
-  width: 100%;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+  .hide-on-expand {
+    opacity: 0;
+    width: 0;
+    padding: 0;
+    margin: 0;
+    pointer-events: none;
+  }
 }
 
 /* Transitions */
@@ -368,34 +487,5 @@ const isActive = computed(() => props.count > 0);
 .slide-done-leave-to {
   opacity: 0;
   transform: translateX(10px);
-}
-
-.sp-fade-enter-active,
-.sp-fade-leave-active {
-  transition: all 0.25s ease;
-  overflow: hidden;
-}
-
-.sp-fade-enter-from,
-.sp-fade-leave-to {
-  opacity: 0;
-  width: 0;
-  margin: 0;
-  padding: 0;
-  transform: scale(0.8);
-}
-
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.animate-pop {
-  animation: popIn 0.4s var(--sys-motion-spring);
 }
 </style>
