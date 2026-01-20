@@ -74,7 +74,7 @@ const {
   defaultSort: "score",
   deepLinkPrefix: "member-",
   batchIdMapper: (m: LeaderboardMember) => m.id,
-  statsLabel: "Clan",
+  statsLabel: "Member",
 });
 
 const sortOptions = [

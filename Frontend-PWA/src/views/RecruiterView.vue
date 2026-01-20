@@ -89,7 +89,7 @@ const {
   defaultSort: "score",
   deepLinkPrefix: "recruit-",
   batchIdMapper: (r: Recruit) => r.id,
-  statsLabel: "Pool",
+  statsLabel: "Recruit",
 });
 
 const sortOptions = [
