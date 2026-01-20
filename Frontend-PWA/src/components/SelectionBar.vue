@@ -26,7 +26,7 @@ const filterMode = ref<"ge" | "le">("ge");
 const filterValue = ref(75);
 
 // Pre-calculated options for the "clinical-OCD" horizontal picker
-const thresholds = [0, 10, 20, 30, 40, 50, 60, 70, 75, 80, 90, 100];
+const thresholds = [15, 30, 45, 60, 75, 90, 100];
 
 function toggleMode() {
   filterMode.value = filterMode.value === "ge" ? "le" : "ge";
@@ -96,27 +96,7 @@ function toggleExpand() {
             {{ val }}
           </button>
         </div>
-
-        <!-- Quick "Pro" Shortcut (Visible when not expanded) -->
-        <button
-          v-if="!isScoreExpanded"
-          class="sp-opt primary"
-          @click="selectValue(75)"
-        >
-          75+
-        </button>
       </div>
-
-      <!-- Select All Action (Always visible) -->
-      <button
-        v-if="!isScoreExpanded"
-        class="action-pill strategy-pill"
-        @click="$emit('select-all')"
-        title="Select All"
-      >
-        <Icon name="select_all" size="16" />
-        <span class="pill-text">All</span>
-      </button>
     </div>
 
     <!-- Center Cluster: Status Indicator (Active Only) -->
@@ -129,30 +109,20 @@ function toggleExpand() {
       </Transition>
     </div>
 
-    <!-- Right Cluster: Management & Done -->
+    <!-- Right Cluster: Morphing Primary Action -->
     <div class="sel-group management">
-      <TransitionGroup name="slide-right">
+      <Transition name="morph" mode="out-in">
         <button
-          v-if="isActive && !isScoreExpanded"
-          key="none"
-          class="action-pill alt-pill"
-          @click="$emit('clear')"
-          title="Clear Selection"
+          v-if="!isScoreExpanded"
+          :key="isActive ? 'none' : 'all'"
+          class="morph-btn"
+          :class="{ 'is-active-sel': isActive, 'is-idle-sel': !isActive }"
+          @click="isActive ? $emit('clear') : $emit('select-all')"
         >
-          <Icon name="deselect_all" size="16" />
-          <span class="pill-text">None</span>
+          <Icon v-if="isActive" name="deselect_all" size="16" />
+          <span>{{ isActive ? "None" : "All" }}</span>
         </button>
-
-        <button
-          v-if="isActive && !isScoreExpanded"
-          key="done"
-          class="done-action"
-          @click="$emit('done')"
-        >
-          <Icon name="check" size="18" />
-          <span>Done</span>
-        </button>
-      </TransitionGroup>
+      </Transition>
     </div>
 
     <!-- Skeleton Overlays -->
@@ -211,62 +181,37 @@ function toggleExpand() {
   gap: 6px;
 }
 
-.action-pill {
+.morph-btn {
   height: 32px;
-  padding: 0 10px;
+  padding: 0 16px;
   border-radius: 10px;
   border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.4s var(--sys-motion-spring);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.morph-btn.is-idle-sel {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
+}
+
+.morph-btn.is-active-sel {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 850;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
   border: 1px solid var(--sys-color-outline-variant);
+  box-shadow: none;
 }
 
-.action-pill:active {
-  transform: scale(0.94);
-}
-
-.strategy-pill {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-  border-color: rgba(var(--sys-color-secondary-rgb), 0.1);
-}
-
-.alt-pill {
-  background: var(--sys-color-surface-container-high);
-  opacity: 0.8;
-}
-
-.active-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 32px;
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  border-radius: 10px;
-  font-family: var(--sys-font-family-mono);
-}
-
-.status-badge {
-  font-weight: 900;
-  font-size: 13px;
-}
-
-.status-text {
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.8;
+.morph-btn:active {
+  transform: scale(0.92);
 }
 
 /* 🧪 DYNAMIC SCORE PILL GROUP */
@@ -380,52 +325,6 @@ function toggleExpand() {
   transform: scale(1.05);
 }
 
-.sp-opt.primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 9px;
-  padding: 0 8px;
-  height: 30px;
-  font-weight: 950;
-  font-size: 10px;
-  font-family: var(--sys-font-family-mono);
-}
-
-/* Done Action */
-.done-action {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 34px;
-  font-weight: 900;
-  font-size: 12px;
-  cursor: pointer;
-  box-shadow: var(--sys-elevation-1);
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.done-action:active {
-  transform: scale(0.92);
-}
-
-/* Loading Overlay */
-.loading-overlay {
-  position: absolute;
-  inset: 0;
-  background: var(--sys-color-surface-container-low);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  z-index: 10;
-}
-
 /* Transitions */
 .status-pop-enter-active {
   animation: popIn 0.4s var(--sys-motion-spring);
@@ -445,19 +344,19 @@ function toggleExpand() {
   }
 }
 
-.slide-right-enter-active,
-.slide-right-leave-active {
+.morph-enter-active,
+.morph-leave-active {
   transition: all 0.4s var(--sys-motion-spring);
 }
 
-.slide-right-enter-from {
+.morph-enter-from {
   opacity: 0;
-  transform: translateX(30px) scale(0.9);
+  transform: translateY(10px) scale(0.9);
 }
 
-.slide-right-leave-to {
+.morph-leave-to {
   opacity: 0;
-  transform: translateX(10px);
+  transform: translateY(-10px) scale(0.9);
 }
 
 @media (max-width: 600px) {
