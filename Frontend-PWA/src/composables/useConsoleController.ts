@@ -131,19 +131,21 @@ export function useConsoleController<T extends { id: string }>(
     const { isBlueprintMode } = useBlueprintMode();
     const { isShowcaseMode } = useShowcaseMode();
 
+    let count = 0;
     if (isBlueprintMode.value || isShowcaseMode.value) {
       const mockData = generateMockData();
-      const count =
-        statsLabel === "Clan" ? mockData.lb.length : mockData.hh.length;
-      return {
-        label: statsLabel,
-        value: count.toString(),
-      };
+      count = statsLabel === "Member" ? mockData.lb.length : mockData.hh.length;
+    } else {
+      count = data.value ? data.value.length : 0;
     }
 
+    // ⚡ DYNAMIC PLURALIZATION
+    // Ensures "1 Member" and "50 Members" consistency
+    const displayLabel = count === 1 ? statsLabel : `${statsLabel}s`;
+
     return {
-      label: statsLabel,
-      value: data.value ? data.value.length.toString() : "0",
+      label: displayLabel,
+      value: count.toString(),
     };
   });
 
