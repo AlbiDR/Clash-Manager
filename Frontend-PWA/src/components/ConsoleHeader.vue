@@ -285,7 +285,8 @@ function openOverlay() {
 
 .search-container {
   position: relative;
-  flex: 1;
+  flex: 1; /* Allow shrinking */
+  min-width: 120px;
 }
 
 .input-icon {
@@ -318,9 +319,14 @@ function openOverlay() {
   box-shadow: 0 0 0 4px rgba(var(--sys-color-primary-rgb), 0.1);
 }
 
+.sort-group {
+  flex: 1.3; /* Give Sort slightly more space for long options */
+  min-width: 140px;
+}
+
 .sort-container {
   position: relative;
-  width: 160px;
+  width: 100%;
 }
 
 .glass-select {
@@ -397,9 +403,6 @@ function openOverlay() {
     margin: 0;
     width: 100%;
     box-sizing: border-box;
-  }
-  .sort-container {
-    width: 140px;
   }
 }
 </style>

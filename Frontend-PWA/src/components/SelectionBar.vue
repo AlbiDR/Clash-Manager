@@ -20,6 +20,7 @@ const haptics = useHaptics();
 // UI State
 const isScoreExpanded = ref(false);
 const isActive = computed(() => props.count > 0);
+const valuePicker = ref<HTMLElement | null>(null);
 
 // Dynamic Filter State
 const filterMode = ref<"ge" | "le">("ge");
@@ -49,8 +50,16 @@ function toggleExpand() {
   isScoreExpanded.value = !isScoreExpanded.value;
   haptics.tap();
   if (isScoreExpanded.value) {
-    // Proactively apply current filter when expanding if it's the main interaction
     applyFilter();
+    // Scroll to end logic
+    setTimeout(() => {
+      if (valuePicker.value) {
+        valuePicker.value.scrollTo({
+          left: valuePicker.value.scrollWidth,
+          behavior: "smooth",
+        });
+      }
+    }, 50);
   }
 }
 </script>
@@ -85,7 +94,7 @@ function toggleExpand() {
         </button>
 
         <!-- Dynamic Value Picker (Horizontal Scroll) -->
-        <div v-if="isScoreExpanded" class="value-picker">
+        <div v-if="isScoreExpanded" ref="valuePicker" class="value-picker">
           <button
             v-for="val in thresholds"
             :key="val"
@@ -113,14 +122,30 @@ function toggleExpand() {
     <div class="sel-group management">
       <Transition name="morph" mode="out-in">
         <button
-          v-if="!isScoreExpanded"
-          :key="isActive ? 'none' : 'all'"
+          :key="isScoreExpanded ? 'done' : isActive ? 'none' : 'all'"
           class="morph-btn"
-          :class="{ 'is-active-sel': isActive, 'is-idle-sel': !isActive }"
-          @click="isActive ? $emit('clear') : $emit('select-all')"
+          :class="{
+            'is-active-sel': isActive && !isScoreExpanded,
+            'is-idle-sel': !isActive && !isScoreExpanded,
+            'is-expanded-action': isScoreExpanded,
+          }"
+          @click="
+            isScoreExpanded
+              ? toggleExpand()
+              : isActive
+                ? $emit('clear')
+                : $emit('select-all')
+          "
         >
-          <Icon v-if="isActive" name="deselect_all" size="16" />
-          <span>{{ isActive ? "None" : "All" }}</span>
+          <Icon
+            v-if="isActive && !isScoreExpanded"
+            name="deselect_all"
+            size="16"
+          />
+          <Icon v-else-if="isScoreExpanded" name="check" size="18" />
+          <span>{{
+            isScoreExpanded ? "Done" : isActive ? "None" : "All"
+          }}</span>
         </button>
       </Transition>
     </div>
@@ -203,6 +228,12 @@ function toggleExpand() {
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
 }
 
+.morph-btn.is-expanded-action {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
+}
+
 .morph-btn.is-active-sel {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
@@ -226,6 +257,7 @@ function toggleExpand() {
   flex-shrink: 0;
   border: 1px solid var(--sys-color-outline-variant);
   min-width: 84px;
+  position: relative;
 }
 
 .score-pill-group.expanded {
@@ -233,6 +265,8 @@ function toggleExpand() {
   border-color: var(--sys-color-primary);
   flex: 1;
   min-width: 0;
+  /* Ensure it doesn't overflow parent flex */
+  overflow: hidden;
 }
 
 .mode-toggle {
@@ -247,6 +281,7 @@ function toggleExpand() {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .mode-toggle:active {
@@ -298,6 +333,21 @@ function toggleExpand() {
   overflow-x: auto;
   scrollbar-width: none;
   flex: 1;
+  /* Fade mask for scroll indication */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10px,
+    black calc(100% - 10px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10px,
+    black calc(100% - 10px),
+    transparent 100%
+  );
 }
 
 .value-picker::-webkit-scrollbar {
@@ -317,6 +367,7 @@ function toggleExpand() {
   font-family: var(--sys-font-family-mono);
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .val-opt.active {
