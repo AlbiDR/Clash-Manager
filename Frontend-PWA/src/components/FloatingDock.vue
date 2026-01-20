@@ -148,9 +148,7 @@ function handleFabDismiss() {
           :aria-label="fabState.label || 'Open'"
         >
           <Icon name="check" size="18" />
-          <Transition name="fade-fast" mode="out-in">
-            <span :key="fabState.label">{{ fabState.label }}</span>
-          </Transition>
+          <span :key="fabState.label">{{ fabState.label }}</span>
         </button>
       </template>
     </template>
