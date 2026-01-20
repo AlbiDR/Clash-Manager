@@ -13,18 +13,52 @@ import type {
 import * as v from "valibot";
 import { idb } from "../utils/idb";
 
+// Helper for VAPID key conversion
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 
 // Default Schemas for fallback (matches V10 Standard)
 const DEFAULT_LB_SCHEMA = [
-  "id", "n", "role", "t", "days", "req", "avg", "tot", 
-  "seen", "rate", "wfame", "hist", "performanceRawScore", 
-  "performanceScore", "dt", "war"
+  "id",
+  "n",
+  "role",
+  "t",
+  "days",
+  "req",
+  "avg",
+  "tot",
+  "seen",
+  "rate",
+  "wfame",
+  "hist",
+  "performanceRawScore",
+  "performanceScore",
+  "dt",
+  "war",
 ];
 
 const DEFAULT_HH_SCHEMA = [
-  "id", "n", "t", "potentialScore", "don", "war", 
-  "ago", "cards", "potentialRawScore"
+  "id",
+  "n",
+  "t",
+  "potentialScore",
+  "don",
+  "war",
+  "ago",
+  "cards",
+  "potentialRawScore",
 ];
 
 interface GenericEnvelope<T> {
@@ -49,8 +83,8 @@ const getGasUrl = () => {
   // ⚡ SMART RESOLUTION: If input looks like a Script ID (no slashes, no dots), construct the URL automatically.
   // Matches standard ID format (alphanumeric, underscores, hyphens)
   if (url && !url.includes("/") && !url.includes(".") && url.length > 15) {
-     // Assume it's a raw Deployment ID and construct the Web App URL
-     return `https://script.google.com/macros/s/${url}/exec`;
+    // Assume it's a raw Deployment ID and construct the Web App URL
+    return `https://script.google.com/macros/s/${url}/exec`;
   }
 
   if (url) {
@@ -121,7 +155,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
-  
+
   // 🛡️ SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
   let lbSchema = source.schema?.lb;
   let hhSchema = source.schema?.hh;
@@ -129,7 +163,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   if (!lbSchema || !Array.isArray(lbSchema) || lbSchema.length === 0) {
     lbSchema = DEFAULT_LB_SCHEMA;
   }
-  
+
   if (!hhSchema || !Array.isArray(hhSchema) || hhSchema.length === 0) {
     hhSchema = DEFAULT_HH_SCHEMA;
   }
@@ -167,7 +201,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
         id: safeStr(d.id),
         n: safeStr(d.n),
         t: safeNum(d.t),
-        performanceScore: safeNum(perfScore), 
+        performanceScore: safeNum(perfScore),
         performanceRawScore: safeNum(perfRaw),
         dt: safeNum(d.dt),
         d: {
@@ -314,7 +348,7 @@ async function gasRequest<T>(
       }
     }
 
-    throw e; 
+    throw e;
   }
 }
 
@@ -374,16 +408,19 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       body: JSON.stringify({
         tags: [
           // Basic seed list for public scan if no specific targets
-          "2CCCP", "9U9Q9", "29UQQ282", "200000" // Popular tourney patterns or let worker decide
+          "2CCCP",
+          "9U9Q9",
+          "29UQQ282",
+          "200000", // Popular tourney patterns or let worker decide
         ],
         // Default scoring profile
-        scoring: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 }
-      })
+        scoring: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
+      }),
     });
 
     if (!res.ok) throw new Error(`Worker status ${res.status}`);
     const json = await res.json();
-    
+
     // Transform raw worker format to PWA Recruit format
     if (json.candidates && Array.isArray(json.candidates)) {
       return json.candidates.map((c: any) => ({
@@ -396,8 +433,8 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
           don: c.donations,
           war: c.war,
           cards: c.cards,
-          ago: new Date().toISOString()
-        }
+          ago: new Date().toISOString(),
+        },
       }));
     }
     return null;
@@ -408,7 +445,9 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
 }
 
 // 🔔 PUSH SUBSCRIPTION
-export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
+export async function subscribeToPush(
+  subscription: PushSubscription,
+): Promise<boolean> {
   const workerUrl = getWorkerUrl();
   if (!workerUrl) return false;
 
@@ -416,12 +455,28 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
     await fetch(`${workerUrl}/public/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(subscription)
+      body: JSON.stringify(subscription),
     });
     return true;
   } catch (e) {
     console.warn("Push subscription failed:", e);
     return false;
+  }
+}
+
+export async function getVapidKey(): Promise<Uint8Array | null> {
+  const workerUrl = getWorkerUrl();
+  if (!workerUrl) return null;
+
+  try {
+    const res = await fetch(`${workerUrl}/public/vapid`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.publicKey) return null;
+    return urlBase64ToUint8Array(json.publicKey);
+  } catch (e) {
+    console.warn("Failed to fetch VAPID key:", e);
+    return null;
   }
 }
 

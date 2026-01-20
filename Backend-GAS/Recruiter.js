@@ -82,8 +82,15 @@ function scoutRecruits() {
     Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies),
   );
 
+  const lastBenchmark = Number(Utils.Props.get("LastBenchmark", "50000"));
+
   // 4. Run the optimized scan
-  const scanned = scanTournaments(minTrophies, existing, blacklistSet);
+  const scanned = scanTournaments(
+    minTrophies,
+    existing,
+    blacklistSet,
+    lastBenchmark,
+  );
 
   // 5. Intelligent Merge
   let newArrivals = 0;
@@ -137,6 +144,7 @@ function scoutRecruits() {
     clanEliteData,
     blacklistEntries,
   );
+  Utils.Props.set("LastBenchmark", finalBenchmark);
 
   const rawPool = Array.from(existing.values()).sort(
     (a, b) => b.rawScore - a.rawScore,
@@ -329,7 +337,12 @@ function loadRecruitDatabase(sheet) {
   );
 }
 
-function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
+function scanTournaments(
+  minTrophies,
+  existingRecruits,
+  blacklistSet,
+  benchmark,
+) {
   const W = CONFIG.HEADHUNTER.WEIGHTS;
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
   const searchUrls = keywords.map(
@@ -380,6 +393,7 @@ function scanTournaments(minTrophies, existingRecruits, blacklistSet) {
         minTrophies,
         blacklistSet,
         W,
+        benchmark,
       );
 
       usedRemote = true; // Mark remote usage successful
