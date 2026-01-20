@@ -33,25 +33,18 @@ const thresholds = [15, 30, 45, 60, 75, 90, 100];
 function toggleMode() {
   filterMode.value = filterMode.value === "ge" ? "le" : "ge";
   haptics.tap();
-  applyFilter();
 }
 
 function selectValue(val: number) {
   if (filterValue.value === val) return;
   filterValue.value = val;
   haptics.medium();
-  applyFilter();
-}
-
-function applyFilter() {
-  emit("select-score", filterValue.value, filterMode.value);
 }
 
 function toggleExpand() {
   isScoreExpanded.value = !isScoreExpanded.value;
   haptics.tap();
   if (isScoreExpanded.value) {
-    applyFilter();
     // Scroll to end logic
     setTimeout(() => {
       if (valuePicker.value) {
@@ -127,7 +120,11 @@ function toggleExpand() {
             'is-idle-sel': !isActive,
             'is-expanded-action': isScoreExpanded && !isActive,
           }"
-          @click="isActive ? $emit('clear') : $emit('select-all')"
+          @click="
+            isActive
+              ? $emit('clear')
+              : $emit('select-score', filterValue, filterMode)
+          "
         >
           <span v-if="!isActive">Select</span>
           <span v-else>Done</span>
@@ -250,8 +247,10 @@ function toggleExpand() {
 .score-pill-group.expanded {
   background: var(--sys-color-surface-container-high);
   border-color: var(--sys-color-primary);
-  /* Expanded: Grow to fill available space */
-  flex: 1;
+  /* Expanded: Grow only to content size, up to available space */
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
   /* Ensure it doesn't overflow parent flex */
   overflow: hidden;
 }
