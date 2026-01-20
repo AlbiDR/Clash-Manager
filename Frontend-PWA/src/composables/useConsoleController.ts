@@ -132,9 +132,12 @@ export function useConsoleController<T extends { id: string }>(
     const { isShowcaseMode } = useShowcaseMode();
 
     let count = 0;
-    if (isBlueprintMode.value || isShowcaseMode.value) {
+    if (isBlueprintMode.value) {
       const mockData = generateMockData();
       count = statsLabel === "Member" ? mockData.lb.length : mockData.hh.length;
+    } else if (isShowcaseMode.value) {
+      // 🎯 SHOWCASE MODE: Always 1 (only one card is displayed)
+      count = 1;
     } else {
       count = data.value ? data.value.length : 0;
     }
