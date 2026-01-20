@@ -82,7 +82,8 @@ export function useClashData() {
 
   async function startBackgroundSync() {
     if (isShowcaseMode.value) {
-      const mock = generateMockData();
+      // ⚡ PERFORMANCE: Generate only 1 item in Showcase mode
+      const mock = generateMockData({ memberCount: 1, recruitCount: 1 });
       clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
       return;

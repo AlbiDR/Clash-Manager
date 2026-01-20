@@ -23,7 +23,12 @@ function generateWarHistory(): string {
   return weeks.join(" | ");
 }
 
-export function generateMockData(): WebAppData {
+export function generateMockData(options?: {
+  memberCount?: number;
+  recruitCount?: number;
+}): WebAppData {
+  const memberCount = options?.memberCount ?? 50;
+  const recruitCount = options?.recruitCount ?? 20;
   const lb: LeaderboardMember[] = [];
   const names = [
     "Arthur",
@@ -78,8 +83,8 @@ export function generateMockData(): WebAppData {
     "Sephiroth",
   ];
 
-  // Generate 50 Clan Members
-  for (let i = 0; i < 50; i++) {
+  // Generate Clan Members (default 50, or custom count for Showcase mode)
+  for (let i = 0; i < memberCount; i++) {
     const thrives = Math.random() > 0.2;
     const score = thrives
       ? Math.floor(Math.random() * 30) + 70
@@ -104,7 +109,7 @@ export function generateMockData(): WebAppData {
     });
   }
 
-  // Generate 20 Recruits
+  // Generate Recruits (default 20, or custom count for Showcase mode)
   const hh: Recruit[] = [];
   const recruitNames = [
     "Hunter",
@@ -119,7 +124,7 @@ export function generateMockData(): WebAppData {
     "Wolf",
   ];
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < recruitCount; i++) {
     const score = Math.floor(Math.random() * 60) + 40;
     const nameBase = recruitNames[i % recruitNames.length] || "Recruit";
     hh.push({
