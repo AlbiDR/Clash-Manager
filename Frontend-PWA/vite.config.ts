@@ -6,6 +6,20 @@ import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
 import packageJson from "./package.json";
 
+// View-specific components excluded from monolithic UI bundle.
+// This allows them to be bundled with their respective lazy-loaded views,
+// reducing the initial payload and ensuring better cache granularity.
+const VIEW_SPECIFIC_COMPONENTS = [
+  "WarHistoryChart.vue",
+  "MemberCard.vue",
+  "MemberCardSkeleton.vue",
+  "RecruitCard.vue",
+  "RecruitCardSkeleton.vue",
+  "SettingsCard.vue",
+  "SkeletonSettingsCard.vue",
+  "/src/components/settings/",
+];
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
@@ -44,9 +58,11 @@ export default defineConfig({
             return "core-api";
           }
           if (id.includes("/src/components/")) {
-            // ⚡ PERFORMANCE: Exclude heavy/lazy components from monolithic UI bundle
-            // This ensures defineAsyncComponent actually creates a separate lazy chunk.
-            if (id.includes("WarHistoryChart.vue")) return;
+            // PERFORMANCE: Exclude view-specific components from monolithic UI bundle.
+            if (VIEW_SPECIFIC_COMPONENTS.some((comp) => id.includes(comp))) {
+              return;
+            }
+
             return "ui-components";
           }
           if (id.includes("/src/composables/")) {
