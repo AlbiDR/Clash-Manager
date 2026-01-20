@@ -1,5 +1,7 @@
 # Clash Manager — Remote Worker (Cloud Run)
 
+[![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
+
 The **Scaling Engine**. A high-concurrency Express.js proxy designed to offload bulk URL fetching from the Google Apps Script environment, circumventing platform quotas and execution timeouts.
 
 ---
