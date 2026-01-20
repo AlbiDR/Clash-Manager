@@ -8,14 +8,14 @@ The **Data Processing Core**. A lean, modular Google Apps Script engine that orc
 
 ## Module Architecture
 
-| Module          | Filename                  | Responsibility                                   |
-| :-------------- | :------------------------ | :----------------------------------------------- |
-| **Public API**  | `API_Public.gs.js`        | Routing, handshake, and error handling           |
-| **Controller**  | `Controller_Webapp.gs.js` | Payload generation, compression, and caching     |
-| **Leaderboard** | `Leaderboard.gs.js`       | History aggregation and normalization logic      |
-| **Scoring**     | `ScoringSystem.gs.js`     | Canonical performance algorithms and decay logic |
-| **Scanning**    | `Recruiter.gs.js`         | Tournament scanning and candidate identification |
-| **Constants**   | `Configuration.gs.js`     | Weights, thresholds, and schema definitions      |
+| Module | Filename | Responsibility |
+| :--- | :--- | :--- |
+| **Public API** | `API_Public.js` | Routing, handshake, and error handling |
+| **Controller** | `Controller_Webapp.js` | Payload generation, compression, and caching |
+| **Leaderboard** | `Leaderboard.js` | History aggregation and normalization logic |
+| **Scoring** | `ScoringSystem.js` | Canonical performance algorithms and decay logic |
+| **Scanning** | `Recruiter.js` | Tournament scanning and candidate identification |
+| **Constants** | `Configuration.js` | Weights, thresholds, and schema definitions |
 
 ---
 
