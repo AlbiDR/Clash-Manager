@@ -186,7 +186,7 @@ function toggleExpand() {
 }
 
 .sel-group.management {
-  flex: 1;
+  flex: 0 0 auto;
   justify-content: flex-end;
   gap: 6px;
 }
@@ -291,8 +291,6 @@ function toggleExpand() {
   height: 30px;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  flex-grow: 1; /* Extend to fill space */
-  justify-content: flex-end; /* Align number to right or keep centered? User said "extends... to utilizes center space". Let's center it or keep near toggle. */
   justify-content: center;
 }
 
@@ -414,14 +412,5 @@ function toggleExpand() {
 .morph-leave-to {
   opacity: 0;
   transform: translateY(-10px) scale(0.9);
-}
-
-@media (max-width: 600px) {
-  .strategy {
-    flex: 2; /* Take up more space */
-  }
-  .management {
-    flex: 0 0 auto;
-  }
 }
 </style>
