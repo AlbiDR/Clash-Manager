@@ -38,10 +38,10 @@ A high-precision, production-grade toolkit for elite Clash Royale clan leadershi
 
 ## Architecture
 
+The system utilizes a distributed architecture to ensure high data integrity and low-latency interaction. Detailed technical specifications are available in the [Architecture Hub](docs/ARCHITECTURE.md).
+
 <details>
 <summary>View System Diagram</summary>
-
-The system is designed for high data integrity and low-latency interaction.
 
 ```mermaid
 flowchart TD
@@ -70,47 +70,13 @@ flowchart TD
     VueUI <--> IDB
 ```
 
-### Strategic Components
-
-- **Backend (GAS)**: Handles scheduled ETL, matrix normalization, and the canonical scoring algorithm.
-- **Backend Worker (Cloud Run)**: A high-concurrency proxy that offloads bulk URL fetching from the GAS environment to circumvent platform quotas.
-- **Client (Vite/Vue)**: An offline-first, glassmorphic UI designed for "Self-Healing" resilience and rapid recruitment workflows.
-
-</details>
-
-<details>
-<summary><strong>Data Protocols</strong></summary>
-
-### Headless API Handshake
-
-The Backend (GAS) exposes a single `doGet` endpoint that serves as a Headless JSON API.
-
-1. **Action Routing**: Client requests a specific `action` (e.g., `getwebappdata`).
-2. **Payload Delivery**: Server returns a unified matrix payload.
-3. **Double-Unwrap Protection**: Internal safety envelopes prevent Google's HTML service from corrupting the JSON.
-
-### Remote Worker Protocol
-
-When GAS requires high-volume scanning:
-
-1. **Dispatch**: GAS sends a batch of URLs to the Remote Worker.
-2. **Execution**: Worker fetches URLs in parallel using Round-Robin API keys.
-3. **Aggregation**: Results are serialized and returned to GAS.
-</details>
-
-<details>
-<summary><strong>Performance Strategy</strong></summary>
-
-- **SWR (Stale-While-Revalidate)**: IndexedDB provides immediate "offline" state while background sync fetches fresh data.
-- **v-memo Optimization**: List renders use conditional `v-memo` to ensure only expanded items react to background data updates.
-- **Dynamic Imports**: Heavy schemas (e.g., `valibot`) and charts are lazy-loaded to keep the initial bundle lightweight.
 </details>
 
 ---
 
 ## Quick Start
 
-The project is composed of a Google Apps Script backend and a Vue 3 frontend. Follow the steps below for local setup.
+The project is composed of a Google Apps Script backend, an optional Cloud Run worker, and a Vue 3 frontend. Follow the steps below for local setup.
 
 <details>
 <summary><strong>Backend Setup (Google Apps Script)</strong></summary>
@@ -122,27 +88,28 @@ The project is composed of a Google Apps Script backend and a Vue 3 frontend. Fo
 </details>
 
 <details>
+<summary><strong>Cloud Worker Setup (Optional)</strong></summary>
+
+The Remote Worker offloads bulk URL fetching to bypass GAS quotas.
+
+1.  **Navigate to Directory**: `cd Backend-Worker`
+2.  **Build & Deploy**: Follow the instructions in [Backend-Worker/README.md](Backend-Worker/README.md) to deploy to Google Cloud Run.
+3.  **Link to Backend**: Set the `RemoteWorkerUrl` script property in your GAS deployment.
+
+</details>
+
+<details>
 <summary><strong>Frontend Setup (PWA)</strong></summary>
 
-1.  **Navigate to Directory**:
-
-    ```bash
-    cd Frontend-PWA
-    ```
-
-2.  **Install Dependencies**:
-
-    ```bash
-    pnpm install
-    ```
-
+1.  **Navigate to Directory**: `cd Frontend-PWA`
+2.  **Install Dependencies**: `pnpm install`
 3.  **Configure Environment**: Create a `.env` file in `Frontend-PWA/` and add the `VITE_GAS_URL` from your backend deployment.
 
-        ```env
-        VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-        ```
+```env
+VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+```
 
-    </details>
+</details>
 
 The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-pwa.yml`).
 
@@ -150,22 +117,9 @@ The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-
 
 ## The Performance Model
 
-<details>
-<summary>Explore the Scoring Algorithm</summary>
+The core value of Clash Manager is its multi-dimensional scoring algorithm. It transforms raw metrics into a single, actionable **Performance Score** to drive recruitment and clan management decisions.
 
-The core value of Clash Manager is its multi-dimensional scoring algorithm (implemented in `ScoringSystem.gs.js`). It transforms raw metrics into a single, actionable **Performance Score**.
-
-| Metric           |  Factor   | Influence                    |
-| :--------------- | :-------: | :--------------------------- |
-| **Current Fame** |   `3x`    | Immediate War Impact         |
-| **Average Fame** |   `15x`   | Long-term Consistency        |
-| **Donations**    |   `50x`   | Clan Economy Contribution    |
-| **Trophies**     | `0.0002x` | Skill Weighting (Normalized) |
-| **War Rate**     |  `150x`   | Reliability & Participation  |
-
-> **Exponential Decay**: Inactivity is penalized after a 4-day grace period using the formula: $Score \times 0.92^{\max(0, \text{Days Inactive} - 4)}$.
-
-</details>
+> **Technical Detail**: The scoring logic and decay formulas are documented in the [Architecture Hub](docs/ARCHITECTURE.md#the-scoring-model).
 
 ---
 
