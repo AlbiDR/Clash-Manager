@@ -149,7 +149,7 @@ function handleFabDismiss() {
         >
           <Icon name="check" size="18" />
           <Transition name="fade-fast" mode="out-in">
-            <span :key="fabState.label">{{ fabState.label || "Open" }}</span>
+            <span :key="fabState.label">{{ fabState.label }}</span>
           </Transition>
         </button>
       </template>
