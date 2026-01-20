@@ -33,6 +33,8 @@ const thresholds = [15, 30, 45, 60, 75, 90, 100];
 function toggleMode() {
   filterMode.value = filterMode.value === "ge" ? "le" : "ge";
   haptics.tap();
+  // ⚡ AUTO-APPLY: Immediately trigger selection when mode is toggled
+  emit("select-score", filterValue.value, filterMode.value);
 }
 
 function selectValue(val: number) {
