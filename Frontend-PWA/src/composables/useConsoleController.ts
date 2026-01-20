@@ -132,12 +132,14 @@ export function useConsoleController<T extends { id: string }>(
     const { isShowcaseMode } = useShowcaseMode();
 
     let count = 0;
-    if (isBlueprintMode.value) {
-      const mockData = generateMockData();
-      count = statsLabel === "Member" ? mockData.lb.length : mockData.hh.length;
-    } else if (isShowcaseMode.value) {
+    // ⚠️ CHECK ORDER MATTERS: Showcase mode includes Blueprint mode,
+    // so we must check Showcase first to force count to 1
+    if (isShowcaseMode.value) {
       // 🎯 SHOWCASE MODE: Always 1 (only one card is displayed)
       count = 1;
+    } else if (isBlueprintMode.value) {
+      const mockData = generateMockData();
+      count = statsLabel === "Member" ? mockData.lb.length : mockData.hh.length;
     } else {
       count = data.value ? data.value.length : 0;
     }
