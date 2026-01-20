@@ -116,20 +116,15 @@ function onTouchEnd() {
 }
 // -----------------------------
 
-// Sync fabState visibility with global coordinator
-watch(
-  () => props.fabState?.visible,
-  (visible) => {
-    setFabVisible(!!visible);
-  },
-  { immediate: true },
-);
-
-// Sync fabState content with global coordinator
+// 🚀 FAB SYNCHRONIZATION
+// We watch the entire fabState object to ensure strict ordering of updates.
+// CRITICAL: We MUST update the content (label, etc.) BEFORE toggling visibility
+// to prevent the "Open" -> "Open 1/N" text jump (twitch).
 watch(
   () => props.fabState,
   (state) => {
     if (state) {
+      // 1. Update Content First (Data)
       updateFabState({
         label: state.label,
         actionHref: state.actionHref,
@@ -141,6 +136,12 @@ watch(
         onBlitz: () => emit("fab-blitz"),
         onDismiss: () => emit("fab-dismiss"),
       });
+
+      // 2. Toggle Visibility Second (UI)
+      // This ensures the FAB is fully hydrated with correct text before appearing.
+      setFabVisible(!!state.visible);
+    } else {
+      setFabVisible(false);
     }
   },
   { immediate: true, deep: true },
