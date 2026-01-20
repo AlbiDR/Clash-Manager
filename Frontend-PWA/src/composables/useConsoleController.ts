@@ -58,7 +58,10 @@ export function useConsoleController<T extends { id: string }>(
   );
   const visibleItems = computed(() => {
     if (useShowcaseMode().isShowcaseMode.value) {
-      return filteredItems.value;
+      // ⚡ PERFORMANCE: Only process 1 item in Showcase mode
+      return filteredItems.value.length > 0
+        ? filteredItems.value.slice(0, 1)
+        : [];
     }
     return allVisibleItems.value;
   });
