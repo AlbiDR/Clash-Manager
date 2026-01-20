@@ -1,4 +1,5 @@
 import { ref, watch, reactive, toRaw } from "vue";
+import { idb } from "../utils/idb";
 
 const MODULES_KEY = "cm_modules_v2";
 
@@ -84,6 +85,15 @@ export function useAppSettings() {
     });
 
     isInitialized.value = true;
+
+    // 🛡️ SYNC: Ensure SW has access to notification settings via IDB
+    // We do this once on init and then via the watch
+    idb
+      .set("cm_notifications_enabled", modules.experimentalNotifications)
+      .catch(() => {});
+    idb
+      .set("cm_notification_threshold", modules.notificationThreshold)
+      .catch(() => {});
   }
 
   // ⚡ PERFORMANCE: Single deep watch for persistence instead of ad-hoc saves
@@ -92,6 +102,14 @@ export function useAppSettings() {
     (newVal) => {
       try {
         localStorage.setItem(MODULES_KEY, JSON.stringify(toRaw(newVal)));
+
+        // 🛡️ SYNC: Selective sync to IndexedDB for Service Worker
+        idb
+          .set("cm_notifications_enabled", newVal.experimentalNotifications)
+          .catch(() => {});
+        idb
+          .set("cm_notification_threshold", newVal.notificationThreshold)
+          .catch(() => {});
       } catch (e) {
         console.error("[Modules] Failed to persist", e);
       }

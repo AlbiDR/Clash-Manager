@@ -41,10 +41,14 @@ self.addEventListener("message", async (event) => {
     const countAboveThreshold = Math.max(0, count);
 
     try {
+      const db = await openDB();
+      const enabled =
+        (await getValue(db, "cm_notifications_enabled")) !== false;
+
       // 1. UPDATE BADGE (The "Number" on the Icon)
       // Corresponds to setNumber() in native
       if (self.navigator.setAppBadge) {
-        if (countAboveThreshold > 0) {
+        if (countAboveThreshold > 0 && enabled) {
           await self.navigator.setAppBadge(countAboveThreshold);
         } else {
           await self.navigator.clearAppBadge();
@@ -53,7 +57,7 @@ self.addEventListener("message", async (event) => {
 
       // 2. SHOW/UPDATE NOTIFICATION
       // Corresponds to Recruits Notification + Summary
-      if (countAboveThreshold > 0) {
+      if (countAboveThreshold > 0 && enabled) {
         // We use a fixed tag to act as a "Group" and prevent cluttering the shade.
         // This effectively implements the "Summary" behavior by keeping a single
         // up-to-date entry.
@@ -116,21 +120,29 @@ self.addEventListener("push", (event) => {
 
   const payload = event.data.json?.() ?? {};
 
-  // Handle server-sent badge updates
-  if (payload.badgeCount !== undefined) {
-    event.waitUntil(handlePushBadge(payload));
-  } else if (payload.title) {
-    // Standard push notification
-    event.waitUntil(
-      self.registration.showNotification(payload.title, {
-        body: payload.body || "",
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
-        tag: payload.tag || "push-alert",
-        data: payload.data || {},
-      }),
-    );
-  }
+  event.waitUntil(
+    (async () => {
+      // Check if notifications are enabled globally
+      const db = await openDB();
+      const enabled =
+        (await getValue(db, "cm_notifications_enabled")) !== false; // Default to true
+      if (!enabled) return;
+
+      // Handle server-sent badge updates
+      if (payload.badgeCount !== undefined) {
+        await handlePushBadge(payload);
+      } else if (payload.title) {
+        // Standard push notification
+        await self.registration.showNotification(payload.title, {
+          body: payload.body || "",
+          icon: "pwa-192.png",
+          badge: "pwa-64.png",
+          tag: payload.tag || "push-alert",
+          data: payload.data || {},
+        });
+      }
+    })(),
+  );
 });
 
 /**
@@ -139,9 +151,12 @@ self.addEventListener("push", (event) => {
 async function handlePushBadge(payload) {
   const { badgeCount, title, body, threshold = 75 } = payload;
 
+  const db = await openDB();
+  const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
+
   // Always show notification for Android (creates badge)
   // Also good UX for other platforms
-  if (badgeCount > 0) {
+  if (badgeCount > 0 && enabled) {
     await self.registration.showNotification(
       title || "New Recruits Available",
       {
@@ -189,6 +204,14 @@ async function handleBackgroundSync() {
   try {
     // 1. Recover GAS URL and settings from IndexedDB
     const db = await openDB();
+
+    // 🛡️ SECURITY/UX: Check if notifications are enabled
+    const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
+    if (!enabled) {
+      console.log("[SW] Background sync skipped: Notifications disabled");
+      return;
+    }
+
     const gasUrl = await getValue(db, "cm_gas_url");
     if (!gasUrl) return;
 
