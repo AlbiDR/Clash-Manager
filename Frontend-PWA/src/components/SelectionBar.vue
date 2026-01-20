@@ -111,25 +111,25 @@ function toggleExpand() {
         </div>
       </Transition>
 
-      <Transition name="morph" mode="out-in">
-        <button
-          :key="isActive ? 'done' : 'select'"
-          class="morph-btn"
-          :class="{
-            'is-active-sel': isActive,
-            'is-idle-sel': !isActive,
-            'is-expanded-action': isScoreExpanded && !isActive,
-          }"
-          @click="
-            isActive
-              ? $emit('clear')
-              : $emit('select-score', filterValue, filterMode)
-          "
-        >
-          <span v-if="!isActive">Select</span>
-          <span v-else>Done</span>
-        </button>
-      </Transition>
+      <!-- Persistent Button Frame -->
+      <button
+        class="morph-btn"
+        :class="{
+          'is-active-sel': isActive,
+          'is-idle-sel': !isActive,
+          'is-expanded-action': isScoreExpanded && !isActive,
+        }"
+        @click="
+          isActive
+            ? $emit('clear')
+            : $emit('select-score', filterValue, filterMode)
+        "
+      >
+        <Transition name="text-morph" mode="out-in">
+          <span v-if="!isActive" key="select">Select</span>
+          <span v-else key="done">Done</span>
+        </Transition>
+      </button>
     </div>
 
     <!-- Skeleton Overlays -->
@@ -402,18 +402,18 @@ function toggleExpand() {
   }
 }
 
-.morph-enter-active,
-.morph-leave-active {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+.text-morph-enter-active,
+.text-morph-leave-active {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.morph-enter-from {
+.text-morph-enter-from {
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(4px);
 }
 
-.morph-leave-to {
+.text-morph-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(-4px);
 }
 </style>
