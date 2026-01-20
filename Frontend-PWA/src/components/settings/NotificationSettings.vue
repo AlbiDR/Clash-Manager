@@ -130,7 +130,29 @@ const sendTest = async () => {
 </script>
 
 <template>
-  <SettingsCard title="Badge Configuration" icon="bell">
+  <SettingsCard title="Notification Engine" icon="bell">
+    <!-- Master Toggle -->
+    <div
+      class="toggle-row master-toggle"
+      :class="{ 'active-row': modules.experimentalNotifications }"
+      @click="toggle('experimentalNotifications')"
+    >
+      <div class="row-info">
+        <div class="row-label">Background Synchronization</div>
+        <div class="row-desc">
+          Allow the application to refresh and alert in the background
+        </div>
+      </div>
+      <div
+        class="switch"
+        :class="{ active: modules.experimentalNotifications }"
+      >
+        <div class="handle"></div>
+      </div>
+    </div>
+
+    <div class="card-divider-s" style="margin: 16px 0" />
+
     <!-- Threshold Selector Section -->
     <div class="notification-section">
       <div class="section-header">
@@ -455,5 +477,12 @@ const sendTest = async () => {
   font-weight: 600;
   color: var(--sys-color-on-surface);
   /* opacity: 0.8; Removed to improve contrast */
+}
+
+.card-divider-s {
+  height: 1.5px;
+  background: var(--sys-color-outline-variant);
+  opacity: 0.1;
+  margin: 20px 0;
 }
 </style>
