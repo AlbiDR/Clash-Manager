@@ -190,7 +190,10 @@ function toggleExpand() {
 
 .morph-btn {
   height: 32px;
-  padding: 0 16px;
+  /* Fixed width to prevent twitchy resizing between "Select" and "Done" */
+  width: 84px;
+  padding: 0;
+  justify-content: center;
   border-radius: 10px;
   border: none;
   display: flex;
@@ -199,7 +202,8 @@ function toggleExpand() {
   font-size: 11px;
   font-weight: 900;
   cursor: pointer;
-  transition: all 0.4s var(--sys-motion-spring);
+  /* Smoother, slightly slower transition */
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -400,16 +404,16 @@ function toggleExpand() {
 
 .morph-enter-active,
 .morph-leave-active {
-  transition: all 0.4s var(--sys-motion-spring);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .morph-enter-from {
   opacity: 0;
-  transform: translateY(10px) scale(0.9);
+  transform: scale(0.8);
 }
 
 .morph-leave-to {
   opacity: 0;
-  transform: translateY(-10px) scale(0.9);
+  transform: scale(0.8);
 }
 </style>
