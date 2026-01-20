@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * 🚀 CLASH MANAGER WORKER (TypeScript Edition)
+ * CLASH MANAGER WORKER (TypeScript Edition)
  * ----------------------------------------------------------------------------
  * High-performance Express server for bulk API operations
  * Migrated from JavaScript with full type safety and modern TS features
@@ -41,7 +41,7 @@ import type {
 } from "./types.js";
 
 // ============================================================================
-// 📊 CONFIGURATION
+//  CONFIGURATION
 // ============================================================================
 
 const CONFIG: ServerConfig = {
@@ -53,7 +53,7 @@ const CONFIG: ServerConfig = {
 } as const;
 
 // ============================================================================
-// 🌐 EXPRESS APP SETUP
+//  EXPRESS APP SETUP
 // ============================================================================
 
 const app = express();
@@ -73,7 +73,7 @@ app.use((req: Request, res: Response, next: NextFunction): void => {
 app.use(express.json({ limit: "50mb" }));
 
 // ============================================================================
-// 🔧 UTILITY FUNCTIONS
+//  UTILITY FUNCTIONS
 // ============================================================================
 
 /**
@@ -157,7 +157,7 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
   // Adjust to Thursday (War Start Day)
   const d = new Date(date.getTime());
   d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6)  7));
 
   const year = d.getUTCFullYear();
   const week1 = new Date(Date.UTC(year, 0, 4));
@@ -166,7 +166,7 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
     Math.round(
       ((d.getTime() - week1.getTime()) / 86400000 -
         3 +
-        ((week1.getUTCDay() + 6) % 7)) /
+        ((week1.getUTCDay() + 6)  7)) /
         7,
     );
   const yearShort = year.toString().slice(-2);
@@ -387,7 +387,7 @@ async function processScanBatch(
 }
 
 // ============================================================================
-// 🔐 MIDDLEWARE
+//  MIDDLEWARE
 // ============================================================================
 
 const checkAuth: RequestHandler = (req, res, next) => {
@@ -402,7 +402,7 @@ const checkAuth: RequestHandler = (req, res, next) => {
 };
 
 // ============================================================================
-// 🛣️ ROUTES
+//  ROUTES
 // ============================================================================
 
 app.get("/", (_req: Request, res: Response): void => {
@@ -547,7 +547,7 @@ app.post(
     }
 
     subscriptions.add(JSON.stringify(sub));
-    console.log(`🔔 New Push Subscription. Total: ${subscriptions.size}`);
+    console.log(` New Push Subscription. Total: ${subscriptions.size}`);
     res.json({ success: true, count: subscriptions.size });
   },
 );
@@ -843,7 +843,7 @@ app.post(
 );
 
 // ============================================================================
-// 🚀 SERVER STARTUP
+//  SERVER STARTUP
 // ============================================================================
 
 app.listen(CONFIG.port, () => {
