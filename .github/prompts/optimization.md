@@ -46,12 +46,14 @@
 # [6] **Constraint 4: Daily Process (Execution Loop)**
 ### [A] Step 1: The Bottleneck Scan
 **[>] Action:** Scan codebase for *one* specific inefficiency or structural rot.
-* **[1] Priority List:**
-*    *[a]* Structural Rot (DRY violations/monolithic components).
-*    *[b]* Type Safety (JS to TS migration).
-*    *[c]* Lean Pruning (Dead code paths/unused files).
-*    *[d]* Performance (Re-renders, Loop complexity, Bundle Bloat).
+
 **[i] Decision:** Pick the single highest-impact, lowest-risk change.
+
+* **[1] Priority List:**
+*    **[a]** Structural Rot (DRY violations/monolithic components).
+*    **[b]** Type Safety (JS to TS migration).
+*    **[c]** Lean Pruning (Dead code paths/unused files).
+*    **[d]** Performance (Re-renders, Loop complexity, Bundle Bloat).
 ### [B] Step 2: Shadow Mode (Hypothesis & Proof)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
 * **[1]** Formulate "Hypothesis" (e.g., "Extracting logic X to Composable Y will reduce duplication").
@@ -64,13 +66,13 @@
 ### [D] Step 4: Present (Conventional Commits)
 **[i] Output:** Create a Pull Request.
 * **[1] Title Schema:**
-*    *[a]* `perf(scope): [summary]`
-*    *[b]* `refactor(scope): [summary]` (structural changes/TS migration)
-*    *[c]* `chore(prune): [summary]` (removing dead code)
-*    *[d]* `build(deps): [summary]` (updating dependencies/lockfiles)
-*    *[e]* `fix(types): [summary]` (resolving TS errors/interfaces)
-*    *[f]* `ci(workflow): [summary]` (tweaking actions/scripts)
+*    **[a]** `perf(scope): [summary]`
+*    **[b]** `refactor(scope): [summary]` (structural changes/TS migration)
+*    **[c]** `chore(prune): [summary]` (removing dead code)
+*    **[d]** `build(deps): [summary]` (updating dependencies/lockfiles)
+*    **[e]** `fix(types): [summary]` (resolving TS errors/interfaces)
+*    **[f]** `ci(workflow): [summary]` (tweaking actions/scripts)
 * **[2] Description Schema:**
-*    *[a]* Bottleneck/Risk Identified
-*    *[b]* The Fix & Logic (Paste Shadow Mode proof)
-*    *[c]* Verification (Confirm Vitest passes)
+*    **[a]** Bottleneck/Risk Identified
+*    **[b]** The Fix & Logic (Paste Shadow Mode proof)
+*    **[c]** Verification (Confirm Vitest passes)
