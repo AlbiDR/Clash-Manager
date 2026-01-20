@@ -145,6 +145,7 @@ function handleSearch(val: string) {
     :skeleton-component="MemberCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
+    :total-count="filteredItems.length"
     :is-refreshing="isRefreshing"
     :sync-error="syncError"
     :is-empty="!showSkeletons && filteredItems.length === 0"

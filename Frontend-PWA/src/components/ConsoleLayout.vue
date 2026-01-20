@@ -34,6 +34,7 @@ const props = defineProps<{
     blitzEnabled: boolean;
   };
   skeletonComponent: any;
+  totalCount?: number;
 }>();
 
 const emit = defineEmits<{
@@ -192,6 +193,7 @@ onUnmounted(() => {
           <SelectionBar
             v-if="selectedCount !== undefined"
             :count="selectedCount"
+            :total-count="totalCount || 0"
             :loading="loading"
             @select-all="$emit('select-all')"
             @clear="$emit('clear-selection')"

@@ -5,6 +5,7 @@ import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   count: number;
+  totalCount: number;
   loading?: boolean;
 }>();
 
@@ -108,44 +109,28 @@ function toggleExpand() {
       </div>
     </div>
 
-    <!-- Center Cluster: Status Indicator (Active Only) -->
-    <div class="sel-group status">
-      <Transition name="status-pop">
-        <div v-if="isActive && !isScoreExpanded" class="active-status">
-          <div class="status-badge">{{ count }}</div>
-          <span class="status-text">Selected</span>
-        </div>
-      </Transition>
-    </div>
-
     <!-- Right Cluster: Morphing Primary Action -->
     <div class="sel-group management">
+      <!-- Count Bubble (Active Only) -->
+      <Transition name="status-pop">
+        <div v-if="isActive" class="count-pill">
+          {{ count }}/{{ totalCount }}
+        </div>
+      </Transition>
+
       <Transition name="morph" mode="out-in">
         <button
-          :key="isScoreExpanded ? 'done' : isActive ? 'none' : 'all'"
+          :key="isActive ? 'done' : 'select'"
           class="morph-btn"
           :class="{
-            'is-active-sel': isActive && !isScoreExpanded,
-            'is-idle-sel': !isActive && !isScoreExpanded,
-            'is-expanded-action': isScoreExpanded,
+            'is-active-sel': isActive,
+            'is-idle-sel': !isActive,
+            'is-expanded-action': isScoreExpanded && !isActive,
           }"
-          @click="
-            isScoreExpanded
-              ? toggleExpand()
-              : isActive
-                ? $emit('clear')
-                : $emit('select-all')
-          "
+          @click="isActive ? $emit('clear') : $emit('select-all')"
         >
-          <Icon
-            v-if="isActive && !isScoreExpanded"
-            name="deselect_all"
-            size="16"
-          />
-          <Icon v-else-if="isScoreExpanded" name="check" size="18" />
-          <span>{{
-            isScoreExpanded ? "Done" : isActive ? "None" : "All"
-          }}</span>
+          <span v-if="!isActive">Select</span>
+          <span v-else>Done</span>
         </button>
       </Transition>
     </div>
@@ -254,17 +239,19 @@ function toggleExpand() {
   padding: 3px;
   gap: 2px;
   transition: all 0.4s var(--sys-motion-spring);
-  flex-shrink: 0;
   border: 1px solid var(--sys-color-outline-variant);
   min-width: 84px;
   position: relative;
+  /* Default: Compact width, only what's needed */
+  flex: 0 0 auto;
+  justify-content: space-between;
 }
 
 .score-pill-group.expanded {
   background: var(--sys-color-surface-container-high);
   border-color: var(--sys-color-primary);
+  /* Expanded: Grow to fill available space */
   flex: 1;
-  min-width: 0;
   /* Ensure it doesn't overflow parent flex */
   overflow: hidden;
 }
@@ -304,6 +291,9 @@ function toggleExpand() {
   height: 30px;
   color: var(--sys-color-on-surface);
   cursor: pointer;
+  flex-grow: 1; /* Extend to fill space */
+  justify-content: flex-end; /* Align number to right or keep centered? User said "extends... to utilizes center space". Let's center it or keep near toggle. */
+  justify-content: center;
 }
 
 .sp-label {
@@ -376,6 +366,22 @@ function toggleExpand() {
   transform: scale(1.05);
 }
 
+/* Count Pill */
+.count-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--sys-font-family-mono);
+  border: 1px solid var(--sys-color-outline-variant);
+}
+
 /* Transitions */
 .status-pop-enter-active {
   animation: popIn 0.4s var(--sys-motion-spring);
@@ -412,13 +418,10 @@ function toggleExpand() {
 
 @media (max-width: 600px) {
   .strategy {
-    flex: 2;
+    flex: 2; /* Take up more space */
   }
-  .status {
-    flex: 0.5;
-  }
-  .status-text {
-    display: none;
+  .management {
+    flex: 0 0 auto;
   }
 }
 </style>
