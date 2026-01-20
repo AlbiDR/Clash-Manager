@@ -227,6 +227,7 @@ function handleSearchUpdate(val: string) {
     :skeleton-component="RecruitCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
+    :total-count="filteredItems.length"
     :is-refreshing="isRefreshing || isTurboScanning"
     :sync-error="syncError"
     :is-empty="!showSkeletons && filteredItems.length === 0"
