@@ -229,9 +229,11 @@ button:active {
 /* Dark Theme Overrides - Applied via JS class */
 :root.dark {
   --sys-color-primary: #a8c7fa;
+  --sys-color-primary-rgb: 168, 199, 250;
   --sys-color-on-primary: #00315b;
   --sys-color-primary-container: #004781;
   --sys-color-on-primary-container: #d1e4ff;
+  --sys-color-on-primary-container-rgb: 209, 228, 255;
 
   --sys-color-secondary: #bbc7db;
   --sys-color-on-secondary: #253140;

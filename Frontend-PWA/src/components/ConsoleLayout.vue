@@ -190,9 +190,9 @@ onUnmounted(() => {
       >
         <template #extra>
           <SelectionBar
-            v-if="isSelectionMode"
-            :count="selectedCount || 0"
-            :loading="isRefreshing"
+            v-if="selectedCount !== undefined"
+            :count="selectedCount"
+            :loading="loading"
             @select-all="$emit('select-all')"
             @clear="$emit('clear-selection')"
             @done="$emit('clear-selection')"
