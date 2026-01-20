@@ -389,10 +389,14 @@ function openOverlay() {
 
 @media (max-width: 600px) {
   .header-wrapper {
-    padding: 8px 12px;
+    padding: 8px 0;
   }
   .console-glass {
     padding: 12px;
+    border-radius: 16px;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
   .sort-container {
     width: 140px;
