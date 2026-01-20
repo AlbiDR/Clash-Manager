@@ -1,8 +1,54 @@
+/// <reference lib="webworker" />
+
 // Service Worker for Clash Manager
 // Optimized for Native System Compatibility (WebAPK)
 import { precacheAndRoute } from "workbox-precaching";
 
-// 📦 PRECACHE: This list is injected automatically by workbox-build
+declare const self: ServiceWorkerGlobalScope;
+
+// Type definitions for service worker
+interface BadgeMessageData {
+  type: "SET_BADGE";
+  count: number;
+}
+
+interface AndroidBadgeMessageData {
+  type: "BADGE_NOTIFICATION_ANDROID";
+  count?: number;
+  threshold?: number;
+}
+
+interface ShowNotificationMessageData {
+  type: "SHOW_NOTIFICATION";
+  title: string;
+  options?: NotificationOptions;
+}
+
+type MessageData =
+  | BadgeMessageData
+  | AndroidBadgeMessageData
+  | ShowNotificationMessageData;
+
+interface PushPayload {
+  badgeCount?: number;
+  title?: string;
+  body?: string;
+  tag?: string;
+  data?: Record<string, unknown>;
+  threshold?: number;
+}
+
+interface AppData {
+  hh?: Array<{ s: number }>;
+  [key: string]: unknown;
+}
+
+interface ApiResponse {
+  status: string;
+  data?: AppData;
+}
+
+// Precache assets injected by workbox-build
 precacheAndRoute(self.__WB_MANIFEST || []);
 
 self.addEventListener("install", () => {
@@ -14,14 +60,16 @@ self.addEventListener("activate", (event) => {
 });
 
 /**
- * 🛠 NATIVE ICON BADGE & NOTIFICATION HANDLERS
+ * Native icon badge & notification handlers
  */
-self.addEventListener("message", async (event) => {
+self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   if (!event.data) return;
 
-  // 🖥️ NON-ANDROID: Standard Badge API (Windows, macOS, iOS Safari)
-  if (event.data.type === "SET_BADGE") {
-    const count = event.data.count;
+  const data = event.data as MessageData;
+
+  // NON-ANDROID: Standard Badge API (Windows, macOS, iOS Safari)
+  if (data.type === "SET_BADGE") {
+    const count = data.count;
     try {
       if (self.navigator.setAppBadge) {
         if (count > 0) await self.navigator.setAppBadge(count);
@@ -32,12 +80,9 @@ self.addEventListener("message", async (event) => {
     }
   }
 
-  // 🤖 ANDROID: Badge via persistent notification
-  // Mirrors Native Kotlin RecruitmentNotificationService logic
-  if (event.data.type === "BADGE_NOTIFICATION_ANDROID") {
-    const { count = 0, threshold = 75 } = event.data;
-
-    // Logic: Frontend already filtered this count based on threshold.
+  // ANDROID: Badge via persistent notification
+  if (data.type === "BADGE_NOTIFICATION_ANDROID") {
+    const { count = 0, threshold = 75 } = data;
     const countAboveThreshold = Math.max(0, count);
 
     try {
@@ -45,8 +90,7 @@ self.addEventListener("message", async (event) => {
       const enabled =
         (await getValue(db, "cm_notifications_enabled")) !== false;
 
-      // 1. UPDATE BADGE (The "Number" on the Icon)
-      // Corresponds to setNumber() in native
+      // Update badge
       if (self.navigator.setAppBadge) {
         if (countAboveThreshold > 0 && enabled) {
           await self.navigator.setAppBadge(countAboveThreshold);
@@ -55,41 +99,24 @@ self.addEventListener("message", async (event) => {
         }
       }
 
-      // 2. SHOW/UPDATE NOTIFICATION
-      // Corresponds to Recruits Notification + Summary
+      // Show/update notification
       if (countAboveThreshold > 0 && enabled) {
-        // We use a fixed tag to act as a "Group" and prevent cluttering the shade.
-        // This effectively implements the "Summary" behavior by keeping a single
-        // up-to-date entry.
         await self.registration.showNotification("New Recruits Available", {
           body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
           icon: "pwa-192.png",
-          badge: "pwa-64.png", // Small icon for the status bar
-          tag: "com.app.RECRUIT_UPDATES", // Matches GROUP_KEY_RECRUITS
-          channelId: "headhunter-channel",
-
-          // "Notification Cooldown": Prevent sound/vibrate on simple updates
+          badge: "pwa-64.png",
+          tag: "com.app.RECRUIT_UPDATES",
           renotify: false,
-          silent: false, // First one makes sound, updates are silent due to renotify: false handling if we wanted (but web defaults to silent update if tag matches)
-          // Actually, renotify: true means "play sound again". false means "don't".
-          // We want it to be silent if it's just an update, but maybe audible if it's new?
-          // For now, mirroring "silent: true" from previous code or "setOnlyAlertOnce"?
-          // The user's Kotlin says: "Notification Cooldown (using setOnlyAlertOnce(true))".
-          // In Web, modifying an existing notification (same tag) doesn't vibrate unless renotify: true.
-          // So default is good.
-
+          silent: false,
           requireInteraction: false,
-
-          // Custom data to bridge potential TWA/Native gaps
           data: {
             type: "badge",
             count: countAboveThreshold,
-            shortcutId: "recruit_shortcut_id", // Matches Kotlin setShortcutId
+            shortcutId: "recruit_shortcut_id",
             url: "/#/recruiter",
           },
         });
       } else {
-        // Clear notifications if count drops below threshold
         const notifications = await self.registration.getNotifications({
           tag: "com.app.RECRUIT_UPDATES",
         });
@@ -100,9 +127,9 @@ self.addEventListener("message", async (event) => {
     }
   }
 
-  if (event.data.type === "SHOW_NOTIFICATION") {
-    const { title, options } = event.data;
-    self.registration.showNotification(title, {
+  if (data.type === "SHOW_NOTIFICATION") {
+    const { title, options } = data;
+    await self.registration.showNotification(title, {
       icon: "pwa-192.png",
       badge: "pwa-64.png",
       tag: "clash-manager-alert",
@@ -112,27 +139,23 @@ self.addEventListener("message", async (event) => {
 });
 
 /**
- * 📲 PUSH NOTIFICATIONS (Server-initiated badge updates)
- * Enables future integration with push notification services
+ * Push notifications (server-initiated badge updates)
  */
-self.addEventListener("push", (event) => {
+self.addEventListener("push", (event: PushEvent) => {
   if (!event.data) return;
 
-  const payload = event.data.json?.() ?? {};
+  const payload = (event.data.json?.() ?? {}) as PushPayload;
 
   event.waitUntil(
-    (async () => {
-      // Check if notifications are enabled globally
+    (async (): Promise<void> => {
       const db = await openDB();
       const enabled =
-        (await getValue(db, "cm_notifications_enabled")) !== false; // Default to true
+        (await getValue(db, "cm_notifications_enabled")) !== false;
       if (!enabled) return;
 
-      // Handle server-sent badge updates
       if (payload.badgeCount !== undefined) {
         await handlePushBadge(payload);
       } else if (payload.title) {
-        // Standard push notification
         await self.registration.showNotification(payload.title, {
           body: payload.body || "",
           icon: "pwa-192.png",
@@ -146,17 +169,15 @@ self.addEventListener("push", (event) => {
 });
 
 /**
- * 🔢 Handle push-initiated badge updates
+ * Handle push-initiated badge updates
  */
-async function handlePushBadge(payload) {
+async function handlePushBadge(payload: PushPayload): Promise<void> {
   const { badgeCount, title, body, threshold = 75 } = payload;
 
   const db = await openDB();
   const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
 
-  // Always show notification for Android (creates badge)
-  // Also good UX for other platforms
-  if (badgeCount > 0 && enabled) {
+  if (badgeCount && badgeCount > 0 && enabled) {
     await self.registration.showNotification(
       title || "New Recruits Available",
       {
@@ -178,34 +199,30 @@ async function handlePushBadge(payload) {
     );
   }
 
-  // Also try standard Badge API for platforms that support it
   try {
     if (self.navigator.setAppBadge) {
-      if (badgeCount > 0) await self.navigator.setAppBadge(badgeCount);
+      if (badgeCount && badgeCount > 0)
+        await self.navigator.setAppBadge(badgeCount);
       else await self.navigator.clearAppBadge();
     }
   } catch (e) {
-    // Silent fail - notification is primary on Android anyway
+    // Silent fail
   }
 }
 
 /**
- * ⚡ PERIODIC BACKGROUND SYNC
- * Registered via the frontend, this allows the WebAPK to refresh recruiter
- * data even when the app is in the background.
+ * Periodic background sync
  */
-self.addEventListener("periodicsync", (event) => {
+self.addEventListener("periodicsync", (event: PeriodicSyncEvent) => {
   if (event.tag === "update-recruit-badge") {
     event.waitUntil(handleBackgroundSync());
   }
 });
 
-async function handleBackgroundSync() {
+async function handleBackgroundSync(): Promise<void> {
   try {
-    // 1. Recover GAS URL and settings from IndexedDB
     const db = await openDB();
 
-    // 🛡️ SECURITY/UX: Check if notifications are enabled
     const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
     if (!enabled) {
       console.log("[SW] Background sync skipped: Notifications disabled");
@@ -215,25 +232,21 @@ async function handleBackgroundSync() {
     const gasUrl = await getValue(db, "cm_gas_url");
     if (!gasUrl) return;
 
-    // Read configurable threshold (defaults to 75)
     const threshold = (await getValue(db, "cm_notification_threshold")) || 75;
 
-    // 2. Fetch Fresh Data (Silent)
-    const response = await fetch(gasUrl, {
+    const response = await fetch(gasUrl as string, {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ action: "getwebappdata" }),
     });
 
-    const json = await response.json();
+    const json = (await response.json()) as ApiResponse;
     if (json?.status === "success" && json?.data) {
-      // 3. Update Badge (Android-compatible via notification)
       const data = json.data;
       if (data.hh) {
         const count = data.hh.filter((r) => r.s >= threshold).length;
-        // 🤖 ANDROID: Use persistent notification (creates app icon badge)
+
         if (count > 0) {
-          // ⚡ OVERRIDE ATTEMPT 1: Set badge BEFORE notification
           if (self.navigator.setAppBadge) {
             await self.navigator.setAppBadge(count);
           }
@@ -243,9 +256,8 @@ async function handleBackgroundSync() {
             icon: "pwa-192.png",
             badge: "pwa-64.png",
             tag: "com.app.RECRUIT_UPDATES",
-            channelId: "headhunter-channel",
             renotify: false,
-            silent: false, // Ensure it's not totally silent so it can update badge count on some launchers
+            silent: false,
             requireInteraction: false,
             data: {
               type: "badge",
@@ -256,7 +268,6 @@ async function handleBackgroundSync() {
             },
           });
         } else {
-          // Clear badge notification
           const notifications = await self.registration.getNotifications({
             tag: "com.app.RECRUIT_UPDATES",
           });
@@ -272,52 +283,43 @@ async function handleBackgroundSync() {
 }
 
 /**
- * 🔄 ONE-TIME BACKGROUND SYNC (Recovery)
- * Retries failed API requests when connectivity returns.
+ * One-time background sync (recovery)
  */
-self.addEventListener("sync", (event) => {
+self.addEventListener("sync", (event: SyncEvent) => {
   if (event.tag === "offline-queue-sync") {
     event.waitUntil(processOfflineQueue());
   }
 });
 
-async function processOfflineQueue() {
+async function processOfflineQueue(): Promise<void> {
   try {
     const db = await openDB();
-    const queue = (await getValue(db, "offline_queue")) || [];
+    const queue = ((await getValue(db, "offline_queue")) || []) as unknown[];
     const gasUrl = await getValue(db, "cm_gas_url");
 
     if (!queue.length || !gasUrl) return;
 
-    // Process serial or parallel? Serial to preserve order usually better for state.
-    const remaining = [];
+    const remaining: unknown[] = [];
 
     for (const req of queue) {
       try {
-        await fetch(gasUrl, {
+        await fetch(gasUrl as string, {
           method: "POST",
           headers: { "Content-Type": "text/plain" },
           body: JSON.stringify(req),
         });
       } catch (e) {
-        // Prepare to retry if still failing
-        if (remaining.length < 50) remaining.push(req); // Cap queue size
+        if (remaining.length < 50) remaining.push(req);
       }
     }
 
-    // Update queue in IDB
-    // We need a helper to set values - adding it now
     await setValue(db, "offline_queue", remaining);
-
-    if (remaining.length === 0) {
-      // Notify client tabs? Optionally via postMessage
-    }
   } catch (e) {
     console.error("[SW] Queue sync failed", e);
   }
 }
 
-function setValue(db, key, value) {
+function setValue(db: IDBDatabase, key: string, value: unknown): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(["keyval"], "readwrite");
     const store = transaction.objectStore("keyval");
@@ -328,9 +330,9 @@ function setValue(db, key, value) {
 }
 
 /**
- * 🎲 MINIMAL IDB HELPER FOR SW
+ * Minimal IDB helper for service worker
  */
-function openDB() {
+function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("keyval-store", 1);
     request.onerror = () => reject(request.error);
@@ -338,7 +340,7 @@ function openDB() {
   });
 }
 
-function getValue(db, key) {
+function getValue(db: IDBDatabase, key: string): Promise<unknown> {
   return new Promise((resolve) => {
     const transaction = db.transaction(["keyval"], "readonly");
     const store = transaction.objectStore("keyval");
@@ -349,18 +351,16 @@ function getValue(db, key) {
 }
 
 /**
- * 🔗 NATIVE DEEP LINKING
+ * Native deep linking
  */
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener("notificationclick", (event: NotificationEvent) => {
   event.notification.close();
 
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {
-      // If a window is already open, focus it
       for (const client of clientList) {
         if ("focus" in client) return client.focus();
       }
-      // Otherwise open the app
       if (clients.openWindow)
         return clients.openWindow("/Clash-Manager/#/recruiter");
     }),
