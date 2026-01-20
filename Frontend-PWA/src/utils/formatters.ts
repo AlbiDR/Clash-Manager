@@ -76,3 +76,30 @@ export function cleanTag(tag: string | undefined): string {
   if (!tag) return "";
   return tag.replace(/^#/, "").toUpperCase().trim();
 }
+/**
+ * 🧹 DESCRIPTION FORMATTER
+ * Converts markdown-ish strings from Google Sheet notes/descriptions into semantic HTML.
+ */
+export function formatHeaderDescription(text: string): string {
+  if (!text) return "";
+
+  return (
+    text
+      // Section headers (Key: Value or Title:)
+      .replace(
+        /^(\*\*.*?\*\*|.*?:)$/gm,
+        '<div class="desc-section-title">$1</div>',
+      )
+      // Bold text (**text**)
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      // Bullet points (• item)
+      .replace(/^• (.+)$/gm, '<li class="bullet-item">$1</li>')
+      // Actual Line breaks
+      .replace(/\n/g, "<br>")
+      // Wrap lists in ul
+      .replace(
+        /(<li class="bullet-item">.*<\/li>\s*)+/g,
+        '<ul class="desc-list">$&</ul>',
+      )
+  );
+}

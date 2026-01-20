@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, computed } from "vue";
 import Icon from "./Icon.vue";
+import StatusPill from "./StatusPill.vue";
+import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
 import { useAppSettings } from "../composables/useAppSettings";
+import { useHeaderScroll } from "../composables/useHeaderScroll";
+import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   title: string;
@@ -22,13 +26,11 @@ const emit = defineEmits<{
 }>();
 
 const { modules } = useAppSettings();
-const isScrolled = ref(false);
+const { isScrolled } = useHeaderScroll();
+const haptics = useHaptics();
+
 const showInfoOverlay = ref(false);
 let debounceTimer: number | null = null;
-
-const handleScroll = () => {
-  isScrolled.value = window.scrollY > 20;
-};
 
 const handleInput = (e: Event) => {
   const val = (e.target as HTMLInputElement).value;
@@ -40,20 +42,6 @@ const handleInput = (e: Event) => {
   }, 300);
 };
 
-onMounted(() => window.addEventListener("scroll", handleScroll));
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-  document.body.style.overflow = "";
-});
-
-watch(showInfoOverlay, (val) => {
-  if (val) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
-});
-
 const activeSortDescription = computed(() => {
   if (!modules.sortExplanation) return null;
   const selected = props.sortOptions?.find(
@@ -62,28 +50,9 @@ const activeSortDescription = computed(() => {
   return selected?.desc || null;
 });
 
-function formatDescription(text: string) {
-  if (!text) return "";
-
-  return (
-    text
-      // Section headers (Key: Value or Title:)
-      .replace(
-        /^(\*\*.*?\*\*|.*?:)$/gm,
-        '<div class="desc-section-title">$1</div>',
-      )
-      // Bold text (**text**)
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      // Bullet points (• item)
-      .replace(/^• (.+)$/gm, '<li class="bullet-item">$1</li>')
-      // Actual Line breaks (handle both literal \n and encoded ones)
-      .replace(/\n/g, "<br>")
-      // Wrap lists in ul
-      .replace(
-        /(<li class="bullet-item">.*<\/li>\s*)+/g,
-        '<ul class="desc-list">$&</ul>',
-      )
-  );
+function openOverlay() {
+  haptics.tap();
+  showInfoOverlay.value = true;
 }
 </script>
 
@@ -92,6 +61,7 @@ function formatDescription(text: string) {
     <div class="console-glass">
       <div class="bloom-effect"></div>
 
+      <!-- Top Row: Identity & Status -->
       <div class="header-row top">
         <div class="left-cluster">
           <a
@@ -102,11 +72,11 @@ function formatDescription(text: string) {
             class="icon-button"
             title="Open in Sheets"
             aria-label="Open Google Sheet"
+            @click="haptics.tap()"
           >
             <Icon name="spreadsheet" size="20" />
           </a>
 
-          <!-- ⚡ LCP OPTIMIZATION: Use global .view-title class (defined in style.css) to match Static HTML Shell -->
           <h1 class="view-title">{{ title }}</h1>
 
           <div v-if="stats && !loading" class="stats-pill">
@@ -116,20 +86,16 @@ function formatDescription(text: string) {
           <div v-else-if="loading" class="sk-badge-m skeleton-anim"></div>
         </div>
 
-        <button
+        <StatusPill
           v-if="status && !loading"
-          class="status-pill hit-target"
-          :class="[status.type, { 'is-refreshing': status.type === 'loading' }]"
-          @click="emit('refresh')"
-          aria-label="Refresh Data"
-        >
-          <div v-if="status.type === 'loading'" class="spinner"></div>
-          <div v-else class="status-dot"></div>
-          <span class="status-text">{{ status.text }}</span>
-        </button>
+          :type="status.type"
+          :text="status.text"
+          @refresh="emit('refresh')"
+        />
         <div v-else-if="loading" class="sk-pill skeleton-anim"></div>
       </div>
 
+      <!-- Bottom Row: Controls -->
       <div v-if="showSearch" class="header-row bottom">
         <div class="search-container">
           <Icon name="search" class="input-icon" size="20" />
@@ -170,10 +136,11 @@ function formatDescription(text: string) {
               </template>
             </select>
             <div v-else class="sk-select skeleton-anim"></div>
+
             <button
               v-if="activeSortDescription && !loading"
               class="info-dot-inline"
-              @click="showInfoOverlay = true"
+              @click="openOverlay"
               aria-label="Sort Information"
             >
               <Icon name="info" size="16" />
@@ -182,38 +149,7 @@ function formatDescription(text: string) {
         </div>
       </div>
 
-      <!-- Rich Info Overlay (Integrated Console Expansion) -->
-      <Teleport to="body">
-        <Transition name="console-expand">
-          <div
-            v-if="showInfoOverlay && activeSortDescription"
-            class="info-overlay"
-            @click.self="showInfoOverlay = false"
-          >
-            <div class="info-card-expanded glassmorphic">
-              <div class="expansion-header">
-                <div class="expansion-title-group">
-                  <Icon name="info" size="18" class="ext-icon" />
-                  <h3>Heuristic Analysis</h3>
-                </div>
-                <button
-                  class="close-btn-round"
-                  @click="showInfoOverlay = false"
-                  aria-label="Close"
-                >
-                  <Icon name="close" size="20" />
-                </button>
-              </div>
-
-              <div
-                class="expansion-content scrollable-area"
-                v-html="formatDescription(activeSortDescription)"
-              ></div>
-            </div>
-          </div>
-        </Transition>
-      </Teleport>
-
+      <!-- Extra Row: Selection Context -->
       <div
         v-if="$slots.extra || reserveExtraSpace"
         class="header-row extra"
@@ -222,6 +158,13 @@ function formatDescription(text: string) {
         <slot name="extra"></slot>
       </div>
     </div>
+
+    <!-- Modular Expansion Overlay -->
+    <HeaderInfoOverlay
+      :show="showInfoOverlay"
+      :content="activeSortDescription"
+      @close="showInfoOverlay = false"
+    />
   </div>
 </template>
 
@@ -230,14 +173,15 @@ function formatDescription(text: string) {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 12px 0;
+  padding: 12px var(--sys-layout-margin, 16px);
   padding-top: calc(12px + env(safe-area-inset-top));
-  /* 🏗️ LAYOUT STABILITY: Fixed content-box prevents border/padding expansion */
-  box-sizing: content-box;
+  box-sizing: border-box;
+  transition: padding 0.4s var(--sys-motion-spring);
 }
+
 .header-wrapper.is-scrolled {
-  padding: 2px 0;
-  padding-top: calc(2px + env(safe-area-inset-top));
+  padding-top: calc(6px + env(safe-area-inset-top));
+  padding-bottom: 6px;
 }
 
 .console-glass {
@@ -246,13 +190,21 @@ function formatDescription(text: string) {
   backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
-  border-radius: var(--shape-corner-l);
-  padding: 18px;
+  border-radius: 24px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   box-shadow: var(--sys-elevation-2);
   overflow: hidden;
+  transition: all 0.4s var(--sys-motion-spring);
+}
+
+.is-scrolled .console-glass {
+  border-radius: 20px;
+  padding: 12px 16px;
+  background: rgba(var(--sys-color-surface-container-high-rgb), 0.85);
+  box-shadow: var(--sys-elevation-3);
 }
 
 .bloom-effect {
@@ -263,34 +215,22 @@ function formatDescription(text: string) {
   height: 150px;
   background: var(--sys-color-primary);
   filter: blur(80px);
-  opacity: 0.1;
+  opacity: 0.08;
   pointer-events: none;
+  transition: opacity 0.4s;
 }
 
-/* 🛡️ CLS PREVENTION: Fixed minimum height prevents shifting */
+.is-scrolled .bloom-effect {
+  opacity: 0.15;
+}
+
 .header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   gap: 12px;
-  min-height: 48px;
-}
-.header-row.extra {
-  /* 🏗️ LAYOUT STABILITY: Reserved space perfectly matching SelectionBar footprint */
-  height: 44px;
   min-height: 44px;
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--sys-color-outline-variant);
-  opacity: 0.9;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  align-items: center;
-}
-/* Hide the border if the row is actually empty and not reserved */
-.header-row.extra:empty:not(.reserved) {
-  display: none;
 }
 
 .left-cluster {
@@ -301,387 +241,161 @@ function formatDescription(text: string) {
   flex: 1;
 }
 
-/* NOTE: .view-title style removed from scoped block. It is now in global style.css */
-
-/* Skeleton title style */
-.sk-header-title {
-  height: 24px; /* Matches view-title font-size */
-  width: 160px; /* Representative width */
-  margin: 0;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
 .stats-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 4px 10px;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 850;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 900;
   flex-shrink: 0;
+  font-family: var(--sys-font-family-mono);
 }
+
 .sp-value {
   color: var(--sys-color-primary);
 }
+
 .sp-label {
   color: var(--sys-color-secondary);
   text-transform: uppercase;
-  font-size: 9px;
+  font-size: 8px;
+  opacity: 0.8;
 }
 
 .icon-button {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--sys-color-primary);
   background: var(--sys-color-surface-container-high);
-  transition: 0.2s;
-  flex-shrink: 0;
-}
-.icon-button:active {
-  transform: scale(0.92);
-}
-
-.status-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--sys-color-surface-container-high);
-  border-radius: 99px;
-  border: 1px solid var(--sys-surface-glass-border);
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
   transition: all 0.2s;
-}
-.status-pill:hover {
-  background: var(--sys-color-surface-container-high);
-  border-color: var(--sys-color-outline-variant);
-}
-.status-pill:active {
-  transform: scale(0.94);
-  background: var(--sys-color-surface-container-highest);
-}
-.status-pill.is-refreshing {
-  pointer-events: none;
-  opacity: 0.8;
-}
-.status-pill.ready {
-  color: var(--sys-color-success);
-  background: var(--sys-color-success-container);
-}
-.status-pill.error {
-  color: var(--sys-color-error);
-  background: var(--sys-color-error-container);
+  flex-shrink: 0;
+  border: 1px solid var(--sys-color-outline-variant);
 }
 
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-/* Mobile Optimizations */
-@media (max-width: 600px) {
-  .console-glass {
-    padding: 14px;
-    gap: 12px;
-  }
-  /* .view-title size handled globally in style.css */
-  .status-pill {
-    padding: 6px 10px;
-    gap: 6px;
-    min-width: 60px;
-  }
-  .left-cluster {
-    gap: 8px;
-  }
-  .stats-pill {
-    padding: 4px 8px;
-  }
+.icon-button:active {
+  transform: scale(0.9);
 }
 
 .search-container {
   position: relative;
   flex: 1;
 }
+
 .input-icon {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--sys-color-outline);
   pointer-events: none;
+  opacity: 0.7;
 }
 
 .glass-input {
   width: 100%;
-  height: 46px;
-  padding: 0 16px 0 44px;
-  border-radius: 14px;
+  height: 40px;
+  padding: 0 12px 0 40px;
+  border-radius: 12px;
   background: var(--sys-color-surface-container-high);
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   color: var(--sys-color-on-surface);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 500;
   transition: all 0.2s;
 }
+
 .glass-input:focus {
   background: var(--sys-color-surface);
   border-color: var(--sys-color-primary);
   outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--sys-color-primary-rgb), 0.1);
 }
 
-.sort-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .sort-container {
   position: relative;
-  width: 180px;
+  width: 160px;
 }
+
 .glass-select {
   width: 100%;
-  height: 46px;
-  padding: 0 12px 0 38px;
-  border-radius: 14px;
+  height: 40px;
+  padding: 0 12px 0 36px;
+  border-radius: 12px;
   background: var(--sys-color-surface-container-high);
-  border: none;
+  border: 1px solid var(--sys-color-outline-variant);
   font-size: 13px;
   font-weight: 800;
   color: var(--sys-color-on-surface);
   appearance: none;
   cursor: pointer;
-  transition: padding-right 0.2s;
+  transition: all 0.2s;
 }
+
+.glass-select:focus {
+  border-color: var(--sys-color-primary);
+  outline: none;
+}
+
 .glass-select.has-info {
-  padding-right: 42px;
+  padding-right: 36px;
 }
 
 .sort-icon {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--sys-color-outline);
   pointer-events: none;
+  opacity: 0.7;
 }
 
 .info-dot-inline {
   position: absolute;
-  right: 14px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
+  border-radius: 6px;
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border: none;
-  opacity: 0.9;
-  transition:
-    transform 0.2s,
-    opacity 0.2s;
+  transition: all 0.2s;
   z-index: 10;
 }
-.info-dot-inline:hover {
-  transform: translateY(-50%) scale(1.1);
-  opacity: 1;
+
+.info-dot-inline:active {
+  transform: translateY(-50%) scale(0.9);
 }
 
-/* Info Overlay Styles - Expanded Native Feel */
-.info-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 2000;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 16px;
-  padding-top: calc(16px + env(safe-area-inset-top));
-  touch-action: none;
+.header-row.extra {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sys-color-outline-variant);
+  min-height: auto;
 }
 
-.info-card-expanded {
-  width: 100%;
-  max-width: var(--sys-layout-max-width);
-  height: auto;
-  max-height: 85vh; /* Safe cap for very long lists */
-  background: var(--sys-surface-glass);
-  border: 1px solid var(--sys-surface-glass-border);
-  border-radius: 32px;
-  padding: 24px;
-  box-shadow: var(--sys-elevation-4);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  transform-origin: top;
-  position: relative;
-  overflow: hidden;
-}
-
-.expansion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.expansion-title-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ext-icon {
-  color: var(--sys-color-primary);
-}
-
-.expansion-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 950;
-  color: var(--sys-color-on-surface);
-  letter-spacing: -0.03em;
-}
-
-.expansion-content {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--sys-color-on-surface-variant);
-  overflow-y: auto;
-  padding-right: 12px;
-  -webkit-overflow-scrolling: touch;
-  flex: 1;
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-.expansion-content :deep(*) {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-/* Custom Scrollbar for Posh look */
-.expansion-content::-webkit-scrollbar {
-  width: 4px;
-}
-.expansion-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-.expansion-content::-webkit-scrollbar-thumb {
-  background: var(--sys-color-outline-variant);
-  border-radius: 10px;
-}
-
-:deep(.desc-section-title) {
-  font-weight: 900;
-  color: var(--sys-color-primary);
-  text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  margin-top: 24px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-}
-:deep(.desc-section-title)::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--sys-color-outline-variant);
-  margin-left: 12px;
-  opacity: 0.3;
-}
-
-:deep(.bullet-item) {
-  margin-left: 4px;
-  margin-bottom: 8px;
-  padding-left: 20px;
-  position: relative;
-}
-:deep(.bullet-item)::before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--sys-color-primary);
-  font-weight: 900;
-  opacity: 0.6;
-}
-
-:deep(.desc-list) {
-  margin: 12px 0;
-  padding: 0;
-  list-style-type: none;
-}
-
-:deep(strong) {
-  color: var(--sys-color-on-surface);
-  font-weight: 850;
-}
-
-.close-btn-round {
-  background: var(--sys-color-surface-container-highest);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  transition: 0.2s;
-}
-.close-btn-round:active {
-  transform: scale(0.9);
-}
-
-/* Expansion Transition */
-.console-expand-enter-active,
-.console-expand-leave-active {
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s var(--sys-motion-spring);
-}
-.console-expand-enter-from,
-.console-expand-leave-to {
-  opacity: 0;
-  transform: translateY(-20px) scaleY(0.95);
-}
-.console-expand-enter-active .info-card-expanded {
-  transition: transform 0.5s var(--sys-motion-spring);
-}
-.console-expand-enter-from .info-card-expanded {
-  transform: translateY(-100%);
-}
-
-.spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@media (max-width: 600px) {
+  .header-wrapper {
+    padding: 8px 12px;
+  }
+  .console-glass {
+    padding: 12px;
+  }
+  .sort-container {
+    width: 140px;
   }
 }
 </style>
