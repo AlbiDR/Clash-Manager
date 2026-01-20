@@ -114,22 +114,34 @@ self.addEventListener("message", async (event) => {
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
-  const payload = event.data.json?.() ?? {};
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch (e) {
+    payload = { title: "Clash Manager Update", body: event.data.text() };
+  }
 
   // Handle server-sent badge updates
   if (payload.badgeCount !== undefined) {
     event.waitUntil(handlePushBadge(payload));
-  } else if (payload.title) {
-    // Standard push notification
-    event.waitUntil(
-      self.registration.showNotification(payload.title, {
-        body: payload.body || "",
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
-        tag: payload.tag || "push-alert",
-        data: payload.data || {},
-      }),
-    );
+  } else {
+    // Standard push notification with actions
+    const title = payload.title || "Clash Manager Alert";
+    const options = {
+      body: payload.body || "",
+      icon: "pwa-192.png",
+      badge: "pwa-64.png",
+      tag: payload.tag || "push-alert",
+      data: payload.data || {},
+      actions: payload.actions || [
+        { action: "open", title: "View Now" },
+        { action: "dismiss", title: "Dismiss" },
+      ],
+      // Vibration: [200, 100, 200] is a good "buzz"
+      vibrate: [200, 100, 200],
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
   }
 });
 
@@ -329,17 +341,41 @@ function getValue(db, key) {
  * 🔗 NATIVE DEEP LINKING
  */
 self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
+  const notification = event.notification;
+  const action = event.action;
+  const data = notification.data || {};
+
+  notification.close();
+
+  if (action === "dismiss") {
+    return;
+  }
+
+  // Handle "Invite" action - Deep link straight to Player in CR
+  if (action === "invite" && data.tag) {
+    const playerTag = data.tag.replace("#", "");
+    const crLink = `clashroyale://playerInfo?id=${playerTag}`;
+    // We can't easily open deep links directly from SW for external apps in all browsers,
+    // but we can open a window that redirects or use a specific PWA view.
+    // For now, opening the PWA recruiter view is the most reliable way to show the button.
+  }
 
   event.waitUntil(
-    clients.matchAll({ type: "window" }).then((clientList) => {
+    self.clients.matchAll({ type: "window" }).then((clientList) => {
       // If a window is already open, focus it
       for (const client of clientList) {
-        if ("focus" in client) return client.focus();
+        if ("focus" in client) {
+          if (data.url) client.navigate(data.url);
+          return client.focus();
+        }
       }
-      // Otherwise open the app
-      if (clients.openWindow)
-        return clients.openWindow("/Clash-Manager/#/recruiter");
+      // Otherwise open the app at the specified URL
+      if (self.clients.openWindow) {
+        const url = data.url
+          ? `/Clash-Manager/${data.url}`
+          : "/Clash-Manager/#/recruiter";
+        return self.clients.openWindow(url);
+      }
     }),
   );
 });

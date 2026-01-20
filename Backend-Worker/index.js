@@ -1,8 +1,17 @@
 const express = require("express");
 const fetch = require("node-fetch");
-// 🔗 SHARED LOGIC: Import Scoring System from GAS source
-// Ensure this file exists in the build context!
 const ScoringSystem = require("../Backend-GAS/ScoringSystem.js");
+const webpush = require("web-push");
+
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
+const VAPID_EMAIL = process.env.VAPID_EMAIL || "mailto:admin@example.com";
+
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+} else {
+  console.warn("⚠️ VAPID keys missing. Push notifications will fail.");
+}
 
 const app = express();
 
@@ -17,14 +26,20 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: "50mb" }));
 
-const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "20", 10);
-const DEFAULT_TIMEOUT = parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
+const DEFAULT_CONCURRENCY = parseInt(
+  process.env.WORKER_CONCURRENCY || "20",
+  10,
+);
+const DEFAULT_TIMEOUT =
+  parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
 const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || "2", 10);
 
 function timeoutFetch(url, opts = {}, timeout = DEFAULT_TIMEOUT) {
   return Promise.race([
     fetch(url, { ...opts, timeout }),
-    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), timeout)),
+    new Promise((_, rej) =>
+      setTimeout(() => rej(new Error("timeout")), timeout),
+    ),
   ]);
 }
 
@@ -46,7 +61,8 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
     } catch (e) {
       lastErr = e;
       attempt++;
-      if (attempt <= retries) await new Promise((r) => setTimeout(r, 500 * attempt));
+      if (attempt <= retries)
+        await new Promise((r) => setTimeout(r, 500 * attempt));
     }
   }
   return {
@@ -61,35 +77,47 @@ function calculateWarWeekId(dateStr) {
   // Parse ISO string to Date
   let date;
   if (/^\d{8}T\d{6}/.test(dateStr)) {
-      const y = parseInt(dateStr.substr(0, 4), 10);
-      const m = parseInt(dateStr.substr(4, 2), 10) - 1;
-      const d = parseInt(dateStr.substr(6, 2), 10);
-      const h = parseInt(dateStr.substr(9, 2), 10);
-      const min = parseInt(dateStr.substr(11, 2), 10);
-      const s = parseInt(dateStr.substr(13, 2), 10);
-      date = new Date(Date.UTC(y, m, d, h, min, s));
+    const y = parseInt(dateStr.substr(0, 4), 10);
+    const m = parseInt(dateStr.substr(4, 2), 10) - 1;
+    const d = parseInt(dateStr.substr(6, 2), 10);
+    const h = parseInt(dateStr.substr(9, 2), 10);
+    const min = parseInt(dateStr.substr(11, 2), 10);
+    const s = parseInt(dateStr.substr(13, 2), 10);
+    date = new Date(Date.UTC(y, m, d, h, min, s));
   } else {
-      date = new Date(dateStr);
+    date = new Date(dateStr);
   }
 
   // Adjust to Thursday (War Start)
   // Logic aligned with GAS: date.getDate() + 3 - ((date.getDay() + 6) % 7)
   const d = new Date(date.getTime());
-  d.setUTCHours(0,0,0,0);
+  d.setUTCHours(0, 0, 0, 0);
   const day = d.getUTCDay();
   const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1) + 3; // Adjust to Thursday
   // Simplified approximation of GAS logic
   d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
-  
+
   const year = d.getUTCFullYear();
   const week1 = new Date(Date.UTC(year, 0, 4));
-  const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getUTCDay() + 6) % 7)) / 7);
+  const weekNum =
+    1 +
+    Math.round(
+      ((d.getTime() - week1.getTime()) / 86400000 -
+        3 +
+        ((week1.getUTCDay() + 6) % 7)) /
+        7,
+    );
   const yearShort = year.toString().slice(-2);
-  
+
   return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
 }
 
-async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
+async function processBatch(
+  urls = [],
+  apiKeys = [],
+  concurrency = DEFAULT_CONCURRENCY,
+  scoring = null,
+) {
   const results = new Array(urls.length);
   let idx = 0;
 
@@ -110,27 +138,35 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
 
       if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
         try {
-          const profile = await fetchWithRetries(url, { method: "GET", headers });
+          const profile = await fetchWithRetries(url, {
+            method: "GET",
+            headers,
+          });
           if (profile.code === 200 && profile.content && profile.content.tag) {
             const logUrl = url + "/battlelog";
-            const logs = await fetchWithRetries(logUrl, { method: "GET", headers });
+            const logs = await fetchWithRetries(logUrl, {
+              method: "GET",
+              headers,
+            });
 
             let hasWar = false;
             if (logs.code === 200 && Array.isArray(logs.content)) {
               hasWar = logs.content.some((b) =>
-                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)
+                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
+                  b.type,
+                ),
               );
             }
 
             const p = profile.content;
-            
+
             // 🔗 LOGIC SYNC: Use Shared Scoring System
             const rawScore = ScoringSystem.calculateRecruitRawScore(
-                p.trophies || 0,
-                p.totalDonations || 0,
-                p.warDayWins || 0,
-                hasWar,
-                scoring // Inject weights passed from GAS
+              p.trophies || 0,
+              p.totalDonations || 0,
+              p.warDayWins || 0,
+              hasWar,
+              scoring, // Inject weights passed from GAS
             );
 
             // Calculate War Score for display/consistency with old format
@@ -153,7 +189,10 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
             results[i] = profile;
           }
         } catch (e) {
-          results[i] = { code: 500, content: `Scoring fetch failed: ${e.message}` };
+          results[i] = {
+            code: 500,
+            content: `Scoring fetch failed: ${e.message}`,
+          };
         }
       } else {
         const res = await fetchWithRetries(url, { method: "GET", headers });
@@ -169,7 +208,10 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
 
   if (scoring) {
     return results
-      .filter((r) => r && r.code === 200 && r.content && r.content.rawScore !== undefined)
+      .filter(
+        (r) =>
+          r && r.code === 200 && r.content && r.content.rawScore !== undefined,
+      )
       .sort((a, b) => b.content.rawScore - a.content.rawScore)
       .slice(0, 200);
   }
@@ -183,7 +225,7 @@ async function processScanBatch(
   apiKeys = [],
   concurrency = DEFAULT_CONCURRENCY,
   blacklistSet = new Set(),
-  minTrophies = 4000
+  minTrophies = 4000,
 ) {
   const candidates = [];
   let idx = 0;
@@ -207,13 +249,13 @@ async function processScanBatch(
       try {
         const res = await fetchWithRetries(url, { method: "GET", headers });
         if (res.code === 200 && res.content && res.content.membersList) {
-           // ⚡ IN-MEMORY FILTERING
-           res.content.membersList.forEach(p => {
-             if (p.trophies < minTrophies) return;
-             if (p.clan && p.clan.tag) return;
-             if (blacklistSet.has(p.tag)) return;
-             candidates.push(p);
-           });
+          // ⚡ IN-MEMORY FILTERING
+          res.content.membersList.forEach((p) => {
+            if (p.trophies < minTrophies) return;
+            if (p.clan && p.clan.tag) return;
+            if (blacklistSet.has(p.tag)) return;
+            candidates.push(p);
+          });
         }
       } catch (e) {
         console.warn(`Scan error for ${tag}: ${e.message}`);
@@ -233,7 +275,8 @@ function checkAuth(req, res, next) {
   const secret = process.env.WORKER_SECRET;
   if (!secret) return next();
   const auth = (req.get("authorization") || "").trim();
-  if (auth !== `Bearer ${secret}`) return res.status(401).json({ error: "unauthorized" });
+  if (auth !== `Bearer ${secret}`)
+    return res.status(401).json({ error: "unauthorized" });
   return next();
 }
 
@@ -251,22 +294,27 @@ app.get("/capabilities", checkAuth, (req, res) => {
 app.post("/audit", checkAuth, async (req, res) => {
   try {
     const { apiKeys } = req.body;
-    if (!Array.isArray(apiKeys)) return res.status(400).json({ error: "apiKeys must be array" });
+    if (!Array.isArray(apiKeys))
+      return res.status(400).json({ error: "apiKeys must be array" });
 
-    const auditUrl = "https://api.clashroyale.com/v1/cards"; 
+    const auditUrl = "https://api.clashroyale.com/v1/cards";
     const tasks = apiKeys.map(async (key) => {
-        try {
-            const response = await timeoutFetch(auditUrl, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${key}`,
-                    "User-Agent": "ClanManagerWorker/Audit"
-                }
-            }, 5000);
-            return { key, status: response.status };
-        } catch (e) {
-            return { key, status: 500, error: e.message };
-        }
+      try {
+        const response = await timeoutFetch(
+          auditUrl,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${key}`,
+              "User-Agent": "ClanManagerWorker/Audit",
+            },
+          },
+          5000,
+        );
+        return { key, status: response.status };
+      } catch (e) {
+        return { key, status: 500, error: e.message };
+      }
     });
 
     const results = await Promise.all(tasks);
@@ -286,14 +334,19 @@ app.post("/public/scan", async (req, res) => {
     // or passed via req.body if the client is trusted (not ideal for public PWA).
     // For this implementation, we assume the Worker has env keys or accepts keys.
     // Ideally, the Worker should have its own pool of keys.
-    
+
     // Fallback: If client sends keys (legacy), use them. If not, check env.
-    const apiKeys = req.body.apiKeys || (process.env.API_KEYS ? process.env.API_KEYS.split(',') : []);
-    
-    if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
-    
+    const apiKeys =
+      req.body.apiKeys ||
+      (process.env.API_KEYS ? process.env.API_KEYS.split(",") : []);
+
+    if (!Array.isArray(tags))
+      return res.status(400).json({ error: "tags must be array" });
+
     const blacklistSet = new Set(blacklist || []);
-    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
+    const concurrency = Number(
+      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
+    );
 
     // 1. Initial Scan
     const candidates = await processScanBatch(
@@ -301,26 +354,44 @@ app.post("/public/scan", async (req, res) => {
       apiKeys,
       concurrency,
       blacklistSet,
-      minTrophies || 4000
+      minTrophies || 4000,
     );
 
     // 2. Deep Scoring
     if (scoring && candidates.length > 0) {
-      const candidateTags = [...new Set(candidates.map(c => c.tag))];
-      const playerUrls = candidateTags.map(t => `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`);
-      
-      const scoredResults = await processBatch(
-        playerUrls, 
-        apiKeys, 
-        concurrency, 
-        scoring
+      const candidateTags = [...new Set(candidates.map((c) => c.tag))];
+      const playerUrls = candidateTags.map(
+        (t) =>
+          `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`,
       );
 
-      return res.json({ 
-        candidates: scoredResults.map(r => r.content).filter(c => c && c.tag) 
-      });
+      const scoredResults = await processBatch(
+        playerUrls,
+        apiKeys,
+        concurrency,
+        scoring,
+      );
+
+      const results = scoredResults
+        .map((r) => r.content)
+        .filter((c) => c && c.tag);
+
+      // ⚡ TRIGGER PUSH FOR GOD-TIER (If benchmark provided)
+      const benchmark = req.body.benchmark;
+      if (benchmark) {
+        results.forEach((c) => {
+          const potential = ScoringSystem.calculatePotentialScore(
+            c.rawScore,
+            benchmark,
+          );
+          c.potentialScore = potential;
+          if (potential >= 100) triggerPushNotifications(c);
+        });
+      }
+
+      return res.json({ candidates: results });
     }
-    
+
     return res.json({ candidates });
   } catch (e) {
     console.error("Failed /public/scan", e);
@@ -333,46 +404,120 @@ app.post("/public/scan", async (req, res) => {
 const _subs = new Set();
 app.post("/public/subscribe", (req, res) => {
   const sub = req.body;
-  if (!sub || !sub.endpoint) return res.status(400).json({ error: "Invalid subscription" });
-  
+  if (!sub || !sub.endpoint)
+    return res.status(400).json({ error: "Invalid subscription" });
+
   _subs.add(JSON.stringify(sub));
   console.log(`🔔 New Push Subscription. Total: ${_subs.size}`);
   return res.json({ success: true, count: _subs.size });
 });
 
+app.get("/public/vapid", (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC || "" });
+});
+
+async function triggerPushNotifications(candidates) {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE || _subs.size === 0) return;
+  if (!Array.isArray(candidates) || candidates.length === 0) return;
+
+  const count = candidates.length;
+  const first = candidates[0];
+
+  const payload = JSON.stringify({
+    title:
+      count === 1 ? "GOD-TIER RECRUIT FOUND!" : `${count} GOD-TIER RECRUITS!`,
+    body:
+      count === 1
+        ? `${first.name} (${first.tag}) has a 100% Potential Score!`
+        : `Top find: ${first.name} plus ${count - 1} other elite players found.`,
+    icon: "pwa-192.png",
+    badge: "pwa-64.png",
+    tag: "god-tier-recruit",
+    badgeCount: count, // 🔢 Custom field for SW to use setAppBadge
+    data: {
+      url: "/#/recruiter",
+      tag: first.tag,
+    },
+    actions: [
+      { action: "invite", title: count === 1 ? "Invite Player" : "View All" },
+      { action: "dismiss", title: "Dismiss" },
+    ],
+  });
+
+  const subsArray = Array.from(_subs);
+  const tasks = subsArray.map((subStr) => {
+    try {
+      const sub = JSON.parse(subStr);
+      return webpush.sendNotification(sub, payload).catch((err) => {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          console.log("🗑️ Removing expired subscription");
+          _subs.delete(subStr);
+        } else {
+          console.error("❌ Push error:", err);
+        }
+      });
+    } catch (e) {
+      _subs.delete(subStr);
+    }
+  });
+
+  await Promise.allSettled(tasks);
+}
+
 // Internal Scan Endpoint (Auth required)
 app.post("/scan", checkAuth, async (req, res) => {
   try {
     const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
-    if (!Array.isArray(tags)) return res.status(400).json({ error: "tags must be array" });
-    
+    if (!Array.isArray(tags))
+      return res.status(400).json({ error: "tags must be array" });
+
     const blacklistSet = new Set(blacklist || []);
-    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
+    const concurrency = Number(
+      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
+    );
 
     const candidates = await processScanBatch(
       tags,
       apiKeys || [],
       concurrency,
       blacklistSet,
-      minTrophies || 4000
+      minTrophies || 4000,
     );
 
     if (scoring && candidates.length > 0) {
-      const candidateTags = [...new Set(candidates.map(c => c.tag))];
-      const playerUrls = candidateTags.map(t => `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`);
-      
-      const scoredResults = await processBatch(
-        playerUrls, 
-        apiKeys || [], 
-        concurrency, 
-        scoring
+      const candidateTags = [...new Set(candidates.map((c) => c.tag))];
+      const playerUrls = candidateTags.map(
+        (t) =>
+          `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`,
       );
 
-      return res.json({ 
-        candidates: scoredResults.map(r => r.content).filter(c => c && c.tag) 
-      });
+      const scoredResults = await processBatch(
+        playerUrls,
+        apiKeys || [],
+        concurrency,
+        scoring,
+      );
+
+      const results = scoredResults
+        .map((r) => r.content)
+        .filter((c) => c && c.tag);
+
+      // ⚡ TRIGGER PUSH FOR GOD-TIER (If benchmark provided)
+      const benchmark = req.body.benchmark;
+      if (benchmark) {
+        results.forEach((c) => {
+          const potential = ScoringSystem.calculatePotentialScore(
+            c.rawScore,
+            benchmark,
+          );
+          c.potentialScore = potential;
+          if (potential >= 100) triggerPushNotifications(c);
+        });
+      }
+
+      return res.json({ candidates: results });
     }
-    
+
     return res.json({ candidates });
   } catch (e) {
     console.error("Failed /scan", e);
@@ -390,11 +535,11 @@ app.post("/clan/full", checkAuth, async (req, res) => {
     const urls = [
       `https://api.clashroyale.com/v1/clans/${cleanTag}/members`,
       `https://api.clashroyale.com/v1/clans/${cleanTag}/currentriverrace`,
-      `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`
+      `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`,
     ];
 
     const results = await processBatch(urls, apiKeys, 3, null);
-    
+
     const membersData = results[0].code === 200 ? results[0].content : null;
     const raceData = results[1].code === 200 ? results[1].content : null;
     const logData = results[2].code === 200 ? results[2].content : null;
@@ -406,18 +551,21 @@ app.post("/clan/full", checkAuth, async (req, res) => {
     // ⚡ PRE-PROCESS HISTORY
     // Offload the O(W x M) iteration from GAS to Node
     const warHistory = {}; // tag -> { weekId: fame }
-    
+
     if (logData && logData.items) {
-      logData.items.forEach(log => {
+      logData.items.forEach((log) => {
         const weekId = calculateWarWeekId(log.createdDate);
         const standings = log.standings || [];
-        const myClan = standings.find(s => s.clan.tag === tag);
-        
+        const myClan = standings.find((s) => s.clan.tag === tag);
+
         if (myClan && myClan.clan.participants) {
-          myClan.clan.participants.forEach(p => {
+          myClan.clan.participants.forEach((p) => {
             if (!warHistory[p.tag]) warHistory[p.tag] = {};
             // Track max fame if duplicate week entries exist (rare but possible)
-            warHistory[p.tag][weekId] = Math.max(warHistory[p.tag][weekId] || 0, p.fame);
+            warHistory[p.tag][weekId] = Math.max(
+              warHistory[p.tag][weekId] || 0,
+              p.fame,
+            );
           });
         }
       });
@@ -426,9 +574,8 @@ app.post("/clan/full", checkAuth, async (req, res) => {
     return res.json({
       members: membersData,
       race: raceData,
-      history: warHistory
+      history: warHistory,
     });
-
   } catch (e) {
     console.error("Failed /clan/full", e);
     return res.status(500).json({ error: e.message });
@@ -444,7 +591,7 @@ app.post("/clan/api", checkAuth, async (req, res) => {
 
     const cleanTag = encodeURIComponent(tag);
     let url = "";
-    
+
     if (type === "members") {
       url = `https://api.clashroyale.com/v1/clans/${cleanTag}/members`;
     } else if (type === "warlog") {
@@ -457,46 +604,54 @@ app.post("/clan/api", checkAuth, async (req, res) => {
       method: "GET",
       headers: {
         "User-Agent": "ClanManagerWorker/1.0",
-        "Authorization": `Bearer ${apiKeys && apiKeys.length > 0 ? apiKeys[0] : ""}`
-      }
+        Authorization: `Bearer ${apiKeys && apiKeys.length > 0 ? apiKeys[0] : ""}`,
+      },
     });
 
     if (code !== 200) {
-      return res.status(code).json({ error: "upstream error", details: content });
+      return res
+        .status(code)
+        .json({ error: "upstream error", details: content });
     }
 
     // ⚡ TRANSFORM DATA (Mimics GAS Logic)
     let transformed = [];
 
     if (type === "members" && content.items) {
-      const formatRole = (role) => ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] || "Member";
-      transformed = content.items.map(m => ({
+      const formatRole = (role) =>
+        ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ||
+        "Member";
+      transformed = content.items.map((m) => ({
         tag: m.tag,
         name: m.name,
         role: formatRole(m.role),
         kingLevel: m.expLevel,
         donations: m.donations,
-        donationsReceived: m.donationsReceived
+        donationsReceived: m.donationsReceived,
       }));
     } else if (type === "warlog" && content.items) {
       const parseCRDateISO = (t) => {
         if (!t) return new Date().toISOString().split("T")[0];
         // 20240101T120000.000Z -> 2024-01-01
-        return t.substring(0,4) + "-" + t.substring(4,6) + "-" + t.substring(6,8);
+        return (
+          t.substring(0, 4) + "-" + t.substring(4, 6) + "-" + t.substring(6, 8)
+        );
       };
 
-      transformed = content.items.map(r => {
+      transformed = content.items.map((r) => {
         let myStanding = null;
         let opponents = [];
-        
+
         if (r.standings) {
-          myStanding = r.standings.find(s => s.clan.tag === tag); // Tag passed in body
-          opponents = r.standings.filter(s => s.clan.tag !== tag);
+          myStanding = r.standings.find((s) => s.clan.tag === tag); // Tag passed in body
+          opponents = r.standings.filter((s) => s.clan.tag !== tag);
         }
 
         const myFame = myStanding ? myStanding.clan.fame : 0;
         const myRank = myStanding ? myStanding.rank : null;
-        const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
+        const bestRival = opponents.sort(
+          (a, b) => b.clan.fame - a.clan.fame,
+        )[0];
 
         let result = "lose";
         if (myRank === 1) result = "win";
@@ -508,13 +663,12 @@ app.post("/clan/api", checkAuth, async (req, res) => {
           opponent: bestRival ? bestRival.clan.name : "No Opponent",
           teamSize: 50,
           score: myFame,
-          opponentScore: bestRival ? bestRival.clan.fame : 0
+          opponentScore: bestRival ? bestRival.clan.fame : 0,
         };
       });
     }
 
     return res.json({ data: transformed });
-
   } catch (e) {
     console.error("Failed /clan/api", e);
     return res.status(500).json({ error: e.message });
@@ -524,10 +678,18 @@ app.post("/clan/api", checkAuth, async (req, res) => {
 app.post("/fetch", checkAuth, async (req, res) => {
   try {
     const { urls, apiKeys, scoring } = req.body;
-    if (!Array.isArray(urls)) return res.status(400).json({ error: "urls must be array" });
-    const concurrency = Number(process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY);
+    if (!Array.isArray(urls))
+      return res.status(400).json({ error: "urls must be array" });
+    const concurrency = Number(
+      process.env.WORKER_CONCURRENCY || req.query.c || DEFAULT_CONCURRENCY,
+    );
 
-    const results = await processBatch(urls, apiKeys || [], concurrency, scoring);
+    const results = await processBatch(
+      urls,
+      apiKeys || [],
+      concurrency,
+      scoring,
+    );
     return res.json({ results });
   } catch (e) {
     console.error("Failed /fetch", e);
@@ -536,4 +698,8 @@ app.post("/fetch", checkAuth, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`));
+app.listen(PORT, () =>
+  console.log(
+    `Worker listening on ${PORT} (concurrency=${DEFAULT_CONCURRENCY})`,
+  ),
+);
