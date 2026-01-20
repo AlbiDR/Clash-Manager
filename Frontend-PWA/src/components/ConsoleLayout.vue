@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, computed } from "vue";
+import { ref, watch, onUnmounted, computed, nextTick } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import SelectionBar from "./SelectionBar.vue";
 import EmptyState from "./EmptyState.vue";
@@ -139,7 +139,11 @@ watch(
 
       // 2. Toggle Visibility Second (UI)
       // This ensures the FAB is fully hydrated with correct text before appearing.
-      setFabVisible(!!state.visible);
+      // ⚡ FORCE UPDATE: Use nextTick to ensure the reactive state (step 1)
+      // has fully propagated through the system before we flip the visibility switch.
+      nextTick(() => {
+        setFabVisible(!!state.visible);
+      });
     } else {
       setFabVisible(false);
     }
