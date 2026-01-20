@@ -263,7 +263,6 @@ const Utils = {
     minTrophies,
     blacklistSet,
     scoring = null,
-    benchmark = null,
   ) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
       throw new Error("Worker not configured for scanning");
@@ -279,7 +278,6 @@ const Utils = {
         blacklist: blacklistArray,
         minTrophies: minTrophies,
         scoring: scoring, // Pass scoring weights to worker
-        benchmark: benchmark, // Pass benchmark for push triggers
       };
 
       const headers = { "Content-Type": "application/json" };

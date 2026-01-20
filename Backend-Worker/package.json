@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "node-fetch": "^2.6.9",
-    "web-push": "^3.6.7"
+    "node-fetch": "^2.6.9"
   }
 }
