@@ -14,7 +14,7 @@ import express, {
   RequestHandler,
 } from "express";
 import fetch from "node-fetch";
-import ScoringSystem from "../../Backend-GAS/ScoringSystem.js";
+import ScoringSystem from "../../Backend-GAS/ScoringSystem";
 import type {
   ServerConfig,
   FetchResult,
@@ -157,7 +157,7 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
   // Adjust to Thursday (War Start Day)
   const d = new Date(date.getTime());
   d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6)  7));
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
 
   const year = d.getUTCFullYear();
   const week1 = new Date(Date.UTC(year, 0, 4));
@@ -166,7 +166,7 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
     Math.round(
       ((d.getTime() - week1.getTime()) / 86400000 -
         3 +
-        ((week1.getUTCDay() + 6)  7)) /
+        ((week1.getUTCDay() + 6) % 7)) /
         7,
     );
   const yearShort = year.toString().slice(-2);
