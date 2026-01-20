@@ -39,6 +39,8 @@ function selectValue(val: number) {
   if (filterValue.value === val) return;
   filterValue.value = val;
   haptics.medium();
+  // ⚡ AUTO-APPLY: Immediately trigger selection when a threshold is clicked
+  emit("select-score", filterValue.value, filterMode.value);
 }
 
 function toggleExpand() {
