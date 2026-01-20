@@ -61,43 +61,8 @@ function toggleExpand() {
     :class="{ 'is-active': isActive, 'is-loading': loading }"
     :aria-busy="loading ? 'true' : 'false'"
   >
-    <!-- Left: Status Cluster -->
-    <div class="sel-status" :class="{ 'hide-on-expand': isScoreExpanded }">
-      <div class="indicator-ring">
-        <div class="indicator-dot" :class="{ active: isActive }"></div>
-      </div>
-      <span class="status-label">
-        {{ isActive ? `${count} Selected` : "Multi-Select" }}
-      </span>
-    </div>
-
-    <!-- Center: Primary Actions -->
-    <div class="sel-actions">
-      <!-- Standard Chips (Hidden when score picker is fully expanded on small screens if needed) -->
-      <template v-if="!isScoreExpanded">
-        <button
-          class="action-pill"
-          @click="$emit('select-all')"
-          title="Select All"
-        >
-          <Icon name="select_all" size="16" />
-          <span class="pill-text">All</span>
-        </button>
-
-        <button
-          class="action-pill"
-          :class="{ dimmed: !isActive }"
-          @click="$emit('clear')"
-          :disabled="!isActive"
-          title="Clear Selection"
-        >
-          <Icon name="layers_clear" size="16" />
-          <span class="pill-text">None</span>
-        </button>
-
-        <div class="v-sep"></div>
-      </template>
-
+    <!-- Left Cluster: Strategy & Selection Tools -->
+    <div class="sel-group strategy">
       <!-- Score Dynamic Selector -->
       <div class="score-pill-group" :class="{ expanded: isScoreExpanded }">
         <!-- Comparison Mode Toggle -->
@@ -141,19 +106,54 @@ function toggleExpand() {
           75+
         </button>
       </div>
+
+      <!-- Select All Action (Always visible) -->
+      <button
+        v-if="!isScoreExpanded"
+        class="action-pill strategy-pill"
+        @click="$emit('select-all')"
+        title="Select All"
+      >
+        <Icon name="select_all" size="16" />
+        <span class="pill-text">All</span>
+      </button>
     </div>
 
-    <!-- Right: Done Button -->
-    <Transition name="slide-done">
-      <button
-        v-if="isActive && !isScoreExpanded"
-        class="done-action"
-        @click="$emit('done')"
-      >
-        <Icon name="check" size="18" />
-        <span>Done</span>
-      </button>
-    </Transition>
+    <!-- Center Cluster: Status Indicator (Active Only) -->
+    <div class="sel-group status">
+      <Transition name="status-pop">
+        <div v-if="isActive && !isScoreExpanded" class="active-status">
+          <div class="status-badge">{{ count }}</div>
+          <span class="status-text">Selected</span>
+        </div>
+      </Transition>
+    </div>
+
+    <!-- Right Cluster: Management & Done -->
+    <div class="sel-group management">
+      <TransitionGroup name="slide-right">
+        <button
+          v-if="isActive && !isScoreExpanded"
+          key="none"
+          class="action-pill alt-pill"
+          @click="$emit('clear')"
+          title="Clear Selection"
+        >
+          <Icon name="deselect_all" size="16" />
+          <span class="pill-text">None</span>
+        </button>
+
+        <button
+          v-if="isActive && !isScoreExpanded"
+          key="done"
+          class="done-action"
+          @click="$emit('done')"
+        >
+          <Icon name="check" size="18" />
+          <span>Done</span>
+        </button>
+      </TransitionGroup>
+    </div>
 
     <!-- Skeleton Overlays -->
     <div v-if="loading" class="loading-overlay">
@@ -174,7 +174,7 @@ function toggleExpand() {
     --sys-color-surface-container-low,
     var(--sys-color-surface-container)
   );
-  border-radius: 14px;
+  border-radius: 16px;
   gap: 8px;
   transition: all 0.4s var(--sys-motion-spring);
   position: relative;
@@ -184,80 +184,36 @@ function toggleExpand() {
 
 .selection-bar.is-active {
   background: var(--sys-color-surface-container-high);
-  box-shadow: inset 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.15);
+  box-shadow: inset 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.12);
 }
 
-.sel-status {
+.sel-group {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-left: 10px;
-  flex-shrink: 0;
-  transition:
-    opacity 0.3s,
-    width 0.3s;
+  height: 100%;
 }
 
-.indicator-ring {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1.5px solid var(--sys-color-outline-variant);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.is-active .indicator-ring {
-  border-color: var(--sys-color-primary);
-  background: var(--sys-color-primary-container);
-}
-
-.indicator-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: transparent;
-  transition: all 0.4s var(--sys-motion-spring);
-  transform: scale(0);
-}
-
-.indicator-dot.active {
-  background: var(--sys-color-primary);
-  transform: scale(1);
-}
-
-.status-label {
-  font-size: 13px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface-variant);
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-
-.is-active .status-label {
-  color: var(--sys-color-on-surface);
-}
-
-.sel-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.sel-group.strategy {
   flex: 1;
-  justify-content: center;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  gap: 6px;
   min-width: 0;
 }
-.sel-actions::-webkit-scrollbar {
-  display: none;
+
+.sel-group.status {
+  flex: 1;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sel-group.management {
+  flex: 1;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .action-pill {
   height: 32px;
-  padding: 0 12px;
+  padding: 0 10px;
   border-radius: 10px;
   border: none;
   background: var(--sys-color-surface-container-highest);
@@ -265,29 +221,52 @@ function toggleExpand() {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 750;
+  font-size: 11px;
+  font-weight: 850;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  border: 1px solid var(--sys-color-outline-variant);
 }
 
-.action-pill:active:not(:disabled) {
+.action-pill:active {
   transform: scale(0.94);
 }
 
-.action-pill.dimmed {
-  opacity: 0.4;
-  filter: grayscale(1);
-  cursor: default;
+.strategy-pill {
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+  border-color: rgba(var(--sys-color-secondary-rgb), 0.1);
 }
 
-.v-sep {
-  width: 1px;
-  height: 16px;
-  background: var(--sys-color-outline-variant);
-  margin: 0 4px;
-  flex-shrink: 0;
+.alt-pill {
+  background: var(--sys-color-surface-container-high);
+  opacity: 0.8;
+}
+
+.active-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  border-radius: 10px;
+  font-family: var(--sys-font-family-mono);
+}
+
+.status-badge {
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.status-text {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
 }
 
 /* 🧪 DYNAMIC SCORE PILL GROUP */
@@ -295,13 +274,13 @@ function toggleExpand() {
   display: flex;
   align-items: center;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 3px;
   gap: 2px;
   transition: all 0.4s var(--sys-motion-spring);
   flex-shrink: 0;
-  border: 1px solid transparent;
-  min-width: 90px;
+  border: 1px solid var(--sys-color-outline-variant);
+  min-width: 84px;
 }
 
 .score-pill-group.expanded {
@@ -314,7 +293,7 @@ function toggleExpand() {
 .mode-toggle {
   width: 30px;
   height: 30px;
-  border-radius: 10px;
+  border-radius: 9px;
   border: none;
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
@@ -322,9 +301,7 @@ function toggleExpand() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition:
-    background 0.2s,
-    transform 0.2s;
+  transition: all 0.2s;
 }
 
 .mode-toggle:active {
@@ -342,8 +319,8 @@ function toggleExpand() {
   border: none;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 8px;
+  gap: 4px;
+  padding: 0 6px;
   height: 30px;
   color: var(--sys-color-on-surface);
   cursor: pointer;
@@ -360,7 +337,7 @@ function toggleExpand() {
 .sp-chevron {
   transition: transform 0.3s var(--sys-motion-spring);
   display: flex;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .sp-chevron.rotated {
@@ -376,28 +353,17 @@ function toggleExpand() {
   overflow-x: auto;
   scrollbar-width: none;
   flex: 1;
-  animation: slideIn 0.3s ease;
-}
-.value-picker::-webkit-scrollbar {
-  display: none;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.value-picker::-webkit-scrollbar {
+  display: none;
 }
 
 .val-opt {
   height: 28px;
   min-width: 36px;
   padding: 0 6px;
-  border-radius: 8px;
+  border-radius: 7px;
   border: none;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
@@ -418,13 +384,12 @@ function toggleExpand() {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
-  border-radius: 10px;
-  padding: 0 10px;
+  border-radius: 9px;
+  padding: 0 8px;
   height: 30px;
   font-weight: 950;
   font-size: 10px;
   font-family: var(--sys-font-family-mono);
-  margin-left: 2px;
 }
 
 /* Done Action */
@@ -436,14 +401,13 @@ function toggleExpand() {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 14px;
-  height: 36px;
+  padding: 0 12px;
+  height: 34px;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
-  box-shadow: var(--sys-elevation-2);
-  transition: all 0.3s var(--sys-motion-spring);
-  margin-right: 4px;
+  box-shadow: var(--sys-elevation-1);
+  transition: all 0.2s;
   flex-shrink: 0;
 }
 
@@ -462,30 +426,49 @@ function toggleExpand() {
   z-index: 10;
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 480px) {
-  .hide-on-expand {
+/* Transitions */
+.status-pop-enter-active {
+  animation: popIn 0.4s var(--sys-motion-spring);
+}
+.status-pop-leave-active {
+  animation: popIn 0.3s var(--sys-motion-spring) reverse;
+}
+
+@keyframes popIn {
+  from {
     opacity: 0;
-    width: 0;
-    padding: 0;
-    margin: 0;
-    pointer-events: none;
+    transform: scale(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
-/* Transitions */
-.slide-done-enter-active,
-.slide-done-leave-active {
+.slide-right-enter-active,
+.slide-right-leave-active {
   transition: all 0.4s var(--sys-motion-spring);
 }
 
-.slide-done-enter-from {
+.slide-right-enter-from {
   opacity: 0;
-  transform: translateX(20px) scale(0.9);
+  transform: translateX(30px) scale(0.9);
 }
 
-.slide-done-leave-to {
+.slide-right-leave-to {
   opacity: 0;
   transform: translateX(10px);
+}
+
+@media (max-width: 600px) {
+  .strategy {
+    flex: 2;
+  }
+  .status {
+    flex: 0.5;
+  }
+  .status-text {
+    display: none;
+  }
 }
 </style>
