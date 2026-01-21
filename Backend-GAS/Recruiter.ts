@@ -663,3 +663,8 @@ function renderHeadhunterView(
     HEADERS,
   );
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { scoutRecruits, VER_RECRUITER });

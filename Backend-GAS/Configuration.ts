@@ -331,3 +331,8 @@ const CONFIG: AppConfig = {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { CONFIG, VER_CONFIGURATION };
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { CONFIG, VER_CONFIGURATION });
