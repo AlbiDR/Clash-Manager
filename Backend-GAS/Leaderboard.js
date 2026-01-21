@@ -1,42 +1,58 @@
 /**
  * ============================================================================
- * 🏆 MODULE: LEADERBOARD
+ * MODULE: LEADERBOARD
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: The core ranking engine for the Clan.
- * ⚙️ ALGORITHM OVERVIEW:
+ * DESCRIPTION: The core ranking engine for the Clan.
+ * ALGORITHM OVERVIEW:
  *    1. Hybrid Data Fetch: Combines Live API (Current stats) + DB (Tenure).
  *    2. War History: Merges 'currentriverrace' + 'riverracelog' for full context.
  *    3. ScoringSystem: Delegates logic to 'ScoringSystem.gs'.
  *    4. TREND ENGINE: Compares new scores vs old scores to show momentum.
- * 🏷️ VERSION: 10.0.1
+ * VERSION: 10.0.1
  * ============================================================================
  */
 
 const VER_LEADERBOARD = "10.0.1";
 
+/**
+ * Primary ETL sink for player rankings.
+ * Orchestrates data ingestion from RoyaleAPI, merges with historical archives,
+ * and calculates the canonical leaderboard using the ScoringSystem engine.
+ *
+ * @remarks
+ * This function handles multi-stage data processing:
+ * 1. Snapshotting existing state for trend analysis.
+ * 2. Hydrating historical war data from the sheet itself.
+ * 3. Computing multi-dimensional scores (Fame, Donations, Activity).
+ * 4. Applying the "Holy Grail" sorting algorithm.
+ *
+ * @warning
+ * Consumes significant SpreadsheetApp and UrlFetchApp quotas.
+ */
 function updateLeaderboard() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   let lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
 
-  // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
+  // DYNAMIC SYNC: Resolve column indices from current sheet headers first
   Utils.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
 
-  // 🛡️ CONFIGURATION CHECK
+  // CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
-    console.error("❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Leaderboard Update.");
-    lbSheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    console.error("CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Leaderboard Update.");
+    lbSheet.getRange("B1").setValue("Error: Missing ClanTag");
     return;
   }
 
-  // 🛡️ SAFETY & HISTORY SNAPSHOT
-  // We read the existing scores BEFORE we process new data.
-  // UPDATE: Tracking RAW SCORE (Col 11) for precise momentum calc.
+  // SAFETY & HISTORY SNAPSHOT
+  // Capture previous raw scores to enable absolute momentum (Trend) tracking.
+  // Normalized scores (0-100) are rejected for trends as they fluctuate
+  // dynamically based on the current clan leader's performance.
   const previousScores = new Map(); // Map<CleanTag, RawScore>
   Logger.log(
-    "🔎 Starting updateLeaderboard - snapshot previousScores map initialized",
+    "Starting updateLeaderboard - snapshot previousScores map initialized",
   );
 
   try {
@@ -51,7 +67,7 @@ function updateLeaderboard() {
         .getValues();
 
       const tagIdx = L.TAG;
-      const scoreIdx = L.RAW_SCORE; // ✨ Tracking Raw Score (Absolute Index)
+      const scoreIdx = L.RAW_SCORE; // Tracking Raw Score (Absolute Index)
 
       oldData.forEach((row) => {
         // Safe read: check if column exists in this row data
@@ -70,25 +86,25 @@ function updateLeaderboard() {
         }
       });
 
-      Logger.log(`📉 Snapshot: Loaded ${previousScores.size} previous scores.`);
+      Logger.log(`Snapshot: Loaded ${previousScores.size} previous scores.`);
     }
   } catch (e) {
     console.warn(
-      "⚠️ Snapshot Warning (Trend data may be incomplete): " + e.message,
+      "Snapshot Warning (Trend data may be incomplete): " + e.message,
     );
   }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  Logger.log(`🔎 Requesting Data for Clan Tag: ${CONFIG.SYSTEM.CLAN_TAG} (Encoded: ${cleanTag})`);
+  Logger.log(`Requesting Data for Clan Tag: ${CONFIG.SYSTEM.CLAN_TAG} (Encoded: ${cleanTag})`);
 
   // ----------------------------------------------------------------------------
   // 1. DATA INGESTION
   // ----------------------------------------------------------------------------
-  // ⚡ SMART FETCH: Attempts to use Worker for aggregation first
+  // SMART FETCH: Attempts to use Worker for aggregation first
   const { members: membersData, race: raceData, log: logData, history: remoteHistory } = Utils.fetchClanDataSmart(cleanTag);
   
   Logger.log(
-    `📦 Fetched data: members=${membersData?.items?.length || 0}, raceParticipants=${raceData?.clan?.participants?.length || 0}`
+    `Fetched data: members=${membersData?.items?.length || 0}, raceParticipants=${raceData?.clan?.participants?.length || 0}`
   );
 
   if (!membersData || !membersData.items) {
@@ -104,7 +120,7 @@ function updateLeaderboard() {
 
   // A. Build War History Map
   const warHistoryMap = new Map();
-  Logger.log(`🛠️ warHistoryMap initialized`);
+  Logger.log(`warHistoryMap initialized`);
   const addWarEntry = (tag, weekId, fame) => {
     if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
     const userMap = warHistoryMap.get(tag);
@@ -112,8 +128,11 @@ function updateLeaderboard() {
   };
 
   // 1. REHYDRATE FROM ARCHIVE (Existing Sheet Data)
+  // Restore historical war data from the sheet to preserve continuity between
+  // API fetch cycles and GAS execution limit resets. This ensures war history
+  // remains intact even if older logs are purged from RoyaleAPI.
   if (lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
-    Logger.log("📜 Rehydrating leaderboard historic data");
+    Logger.log("Rehydrating leaderboard historic data");
     try {
       const histColIndex = 2 + CONFIG.SCHEMA.LB.HISTORY;
       const tagColIndex = 2 + CONFIG.SCHEMA.LB.TAG;
@@ -154,9 +173,9 @@ function updateLeaderboard() {
   }
 
   // 2. MERGE FRESH API DATA
-  // ⚡ OPTIMIZATION: Use remote history if available, else parse local log
+  // OPTIMIZATION: Use remote history if available, else parse local log
   if (remoteHistory) {
-    Logger.log("☁️ Using Worker-Aggregated History");
+    Logger.log("Using Worker-Aggregated History");
     Object.keys(remoteHistory).forEach(tag => {
       const playerHist = remoteHistory[tag];
       Object.keys(playerHist).forEach(weekId => {
@@ -164,7 +183,7 @@ function updateLeaderboard() {
       });
     });
   } else if (logData && logData.items) {
-    Logger.log("🐌 Using Local Log Parsing");
+    Logger.log("Using Local Log Parsing");
     logData.items.forEach((log) => {
       const weekId = Utils.calculateWarWeekId(
         Utils.parseRoyaleApiDate(log.createdDate),
@@ -226,7 +245,8 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
   const rows = [];
 
-  // Sort helper to normalize scores first so trends are accurate to the final result
+  // Pre-calculate all metrics in a single pass to minimize redundant map lookups.
+  // We collect raw results first to determine the Clan Max for normalization.
   const rawMemberResults = [];
 
   membersData.items.forEach((m) => {
@@ -321,13 +341,14 @@ function updateLeaderboard() {
   // ----------------------------------------------------------------------------
 
   rawMemberResults.forEach((r) => {
-    // Normalize Performance Score (0-100) based on Clan Max
+    // Scores are normalized to a 100% scale relative to the clan's top performer
+    // to provide an intuitive performance benchmark for all members.
     const normalizedPerf =
       maxPerfScore > 0
         ? Math.min(100, Math.round((r.scores.perf / maxPerfScore) * 100))
         : 0;
 
-    // 📈 CALCULATE TREND (RAW SCORE DELTA)
+    // Calculate trend based on absolute raw score delta.
     let trend = 0;
     if (previousScores.has(r.cleanKey)) {
       const oldRaw = previousScores.get(r.cleanKey);
@@ -349,14 +370,15 @@ function updateLeaderboard() {
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
     row[L.PERF_SCORE] = normalizedPerf; // 0-100 Score (Hard Capped)
-    row[L.TREND] = trend; // ✨ Raw Score Delta
+    row[L.TREND] = trend; // Raw Score Delta
     row[L.AVG_WAR_FAME] = r.avgWarFame;
     row[L.WAR_DAY_WINS] = r.warDayWins;
 
     rows.push(row);
   });
 
-  // Sort
+  // Apply the Holy Grail comparator (ScoringSystem) to ensure the sheet
+  // reflects the canonical ranking order defined by the project's strategy.
   rows.sort(ScoringSystem.comparator);
 
   // ----------------------------------------------------------------------------
@@ -370,6 +392,8 @@ function updateLeaderboard() {
     HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.LB_HEADERS[k];
   });
 
+  // Clear and rewrite the sheet to ensure atomic-like updates and consistent
+  // formatting. This prevents "ghost" data if the new member count is lower.
   lbSheet.clear();
   lbSheet
     .getRange(2, 1, 1, HEADERS_ARRAY.length)
@@ -445,14 +469,14 @@ function updateLeaderboard() {
 
   lbSheet
       .getRange("B1")
-      .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
+      .setValue(`LEADERBOARD - ${new Date().toLocaleString()}`);
   ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
 
-  // ⚡ FIX: Slice off the first empty element (Index 0) from HEADERS_ARRAY
-  // because applyStandardLayout starts writing at Column 2 (B), assuming a dense array.
-  // HEADERS_ARRAY is sparse (Index 0 is empty for Column A buffer).
+  // Align sparse header array with the standard layout engine.
+  // We slice off the Index 0 (Column A buffer) because applyStandardLayout
+  // assumes a dense array starting from Column B.
   Utils.applyStandardLayout(lbSheet, rows.length, HEADERS_ARRAY.length - 1, HEADERS_ARRAY.slice(1));
-  Logger.log('🏁 updateLeaderboard execution completed');
+  Logger.log('updateLeaderboard execution completed');
 }
 
 /**
@@ -460,10 +484,16 @@ function updateLeaderboard() {
  * This function is NOT used in production.
  */
 function debugUpdateLeaderboard() {
-  Logger.log('🔧 debugUpdateLeaderboard invoked');
+  Logger.log('debugUpdateLeaderboard invoked');
   updateLeaderboard();
 }
 
+/**
+ * Calculates a relative time string from a Date object.
+ *
+ * @param {Date} date - The source date to compare against 'now'.
+ * @returns {string} - Human-readable string (e.g., "3d ago", "Just now").
+ */
 function timeAgo(date) {
   if (!date) return "-";
   const units = [
