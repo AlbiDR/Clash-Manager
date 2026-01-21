@@ -1021,7 +1021,7 @@ const Utils: AppUtils = {
         resolved[key] = idx;
       } else {
         console.warn(
-          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheetName}.`,
+          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheetName}. Verify header exists in Row ${headerRow}.`,
         );
       }
     });
