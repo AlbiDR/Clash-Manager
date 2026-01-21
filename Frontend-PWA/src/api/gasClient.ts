@@ -83,23 +83,21 @@ const getWorkerUrl = () => {
  * ⚡ ROBUSTNESS UPDATE: Handles Schema-Driven parsing with Fallbacks and Legacy Keys.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
-  let parsedData: any;
+  let parsedData: Record<string, unknown>;
   if (typeof data === "string") {
     try {
       parsedData = JSON.parse(data);
     } catch (e) {
       throw new Error("Failed to parse data string");
     }
+  } else if (data && typeof data === "object") {
+    parsedData = data as Record<string, unknown>;
   } else {
-    parsedData = data;
-  }
-
-  if (!parsedData || typeof parsedData !== "object") {
     throw new Error("Invalid payload: data is null or not an object");
   }
 
   if (parsedData.format !== "matrix") {
-    return parsedData as WebAppData;
+    return parsedData as unknown as WebAppData;
   }
 
   const WebAppDataSchema = v.object({
@@ -117,81 +115,95 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   });
 
   const check = v.safeParse(WebAppDataSchema, parsedData);
-  const source = check.success ? check.output : (parsedData as any);
+  if (!check.success) {
+    throw new Error("Invalid matrix payload structure");
+  }
+  const source = check.output;
 
-  const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
-  const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
+  const lbMatrix = source.lb || [];
+  const hhMatrix = source.hh || [];
   
   // 🛡️ SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
   let lbSchema = source.schema?.lb;
   let hhSchema = source.schema?.hh;
 
-  if (!lbSchema || !Array.isArray(lbSchema) || lbSchema.length === 0) {
+  if (!lbSchema || lbSchema.length === 0) {
     lbSchema = DEFAULT_LB_SCHEMA;
   }
   
-  if (!hhSchema || !Array.isArray(hhSchema) || hhSchema.length === 0) {
+  if (!hhSchema || hhSchema.length === 0) {
     hhSchema = DEFAULT_HH_SCHEMA;
   }
 
-  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
-  const safeNum = (v: any) => {
+  const safeStr = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+  const safeNum = (v: unknown) => {
     if (typeof v === "number") return v;
     if (typeof v === "string") {
-      const cleaned = v.replace(/,/g, "").replace(/%/g, "");
+      const cleaned = v.replace(/[,%]/g, "");
       const n = parseFloat(cleaned);
       return isNaN(n) ? 0 : n;
     }
     return 0;
   };
 
+  // Pre-calculate schema indices for O(1) field access
+  const getIndices = (schema: string[]) => {
+    const indices: Record<string, number> = {};
+    schema.forEach((key, i) => {
+      indices[key] = i;
+    });
+    return indices;
+  };
+
+  const lbIndices = getIndices(lbSchema);
+  const hhIndices = getIndices(hhSchema);
+
   /**
    * Universal Mapper
-   * Relies on the schema keys provided by the backend, with legacy compat support.
+   * Relies on the pre-calculated schema indices to avoid O(N*M) lookups.
    */
-  const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
+  const mapRow = (row: unknown[], indices: Record<string, number>, type: "lb" | "hh") => {
     if (!row || !Array.isArray(row)) return null;
 
-    // Create a key-to-value map for this row based on schema
-    const d: Record<string, any> = {};
-    schema.forEach((key, index) => {
-      if (index < row.length) d[key] = row[index];
-    });
+    const getVal = (key: string) => {
+      const idx = indices[key];
+      return idx !== undefined ? row[idx] : undefined;
+    };
 
     if (type === "lb") {
       // 🛡️ LEGACY COMPAT: Map 's' -> performanceScore, 'r' -> performanceRawScore
-      const perfScore = d.performanceScore ?? d.s;
-      const perfRaw = d.performanceRawScore ?? d.r; // Handle old 'r' key
+      const perfScore = getVal("performanceScore") ?? getVal("s");
+      const perfRaw = getVal("performanceRawScore") ?? getVal("r");
 
       return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
+        id: safeStr(getVal("id")),
+        n: safeStr(getVal("n")),
+        t: safeNum(getVal("t")),
         performanceScore: safeNum(perfScore), 
         performanceRawScore: safeNum(perfRaw),
-        dt: safeNum(d.dt),
+        dt: safeNum(getVal("dt")),
         d: {
-          role: safeStr(d.role),
-          days: safeNum(d.days),
-          avg: safeNum(d.avg),
-          seen: safeStr(d.seen || "-"),
-          rate: safeStr(d.rate || "0%"),
-          wfame: safeNum(d.wfame),
-          hist: safeStr(d.hist),
+          role: safeStr(getVal("role")),
+          days: safeNum(getVal("days")),
+          avg: safeNum(getVal("avg")),
+          seen: safeStr(getVal("seen") || "-"),
+          rate: safeStr(getVal("rate") || "0%"),
+          wfame: safeNum(getVal("wfame")),
+          hist: safeStr(getVal("hist")),
         },
       };
     } else {
       return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        potentialScore: safeNum(d.potentialScore),
-        potentialRawScore: safeNum(d.potentialRawScore),
+        id: safeStr(getVal("id")),
+        n: safeStr(getVal("n")),
+        t: safeNum(getVal("t")),
+        potentialScore: safeNum(getVal("potentialScore")),
+        potentialRawScore: safeNum(getVal("potentialRawScore")),
         d: {
-          don: safeNum(d.don),
-          war: safeNum(d.war),
-          ago: safeStr(d.ago),
-          cards: safeNum(d.cards),
+          don: safeNum(getVal("don")),
+          war: safeNum(getVal("war")),
+          ago: safeStr(getVal("ago")),
+          cards: safeNum(getVal("cards")),
         },
       };
     }
@@ -199,11 +211,11 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   return {
     lb: lbMatrix
-      .map((r: any) => mapRow(r, lbSchema, "lb"))
-      .filter(Boolean) as any[],
+      .map((r) => mapRow(r, lbIndices, "lb"))
+      .filter((v): v is NonNullable<typeof v> => v !== null),
     hh: hhMatrix
-      .map((r: any) => mapRow(r, hhSchema, "hh"))
-      .filter(Boolean) as any[],
+      .map((r) => mapRow(r, hhIndices, "hh"))
+      .filter((v): v is NonNullable<typeof v> => v !== null),
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
   };
@@ -318,8 +330,8 @@ async function gasRequest<T>(
   }
 }
 
-async function enqueueOfflineRequest(request: any) {
-  const queue = (await idb.get<any[]>("offline_queue")) || [];
+async function enqueueOfflineRequest(request: { action: string; payload?: Record<string, unknown>; timestamp: number }) {
+  const queue = (await idb.get<unknown[]>("offline_queue")) || [];
   queue.push(request);
   await idb.set("offline_queue", queue);
 }
@@ -333,7 +345,7 @@ export async function fetchRemote(options?: {
   force?: boolean;
 }): Promise<WebAppData> {
   const action = options?.force ? "refresh" : "getwebappdata";
-  const data = await gasRequest<any>(action, undefined, {
+  const data = await gasRequest<unknown>(action, undefined, {
     signal: options?.signal,
   });
 
