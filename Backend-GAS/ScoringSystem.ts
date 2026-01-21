@@ -41,7 +41,38 @@ export interface ScoringConfig {
 // Global CONFIG declaration for GAS environment
 declare const CONFIG: ScoringConfig;
 
-const ScoringSystem = {
+export interface IScoringSystem {
+  calculateWarRate(
+    warHistoryMap: Map<string, number> | Record<string, number>,
+    daysTracked: number,
+    currentWeekId: string,
+    currentDayIndex: number,
+  ): number;
+  computeScores(
+    currentFame: number,
+    averageFame: number,
+    weeklyDonations: number,
+    trophies: number,
+    warRateVal: number,
+    lastSeenDate: number,
+    now: number,
+  ): { raw: number; perf: number };
+  comparator(rowA: any[], rowB: any[]): number;
+  calculateRecruitRawScore(
+    trophies: number,
+    totalDonations: number,
+    warDayWins: number,
+    hasRecentWar: boolean,
+    weights: ScoringWeights | null,
+  ): number;
+  calculateHybridBenchmark(
+    clanScoredList: Array<{ rawScore: number; perfScore: number }>,
+    blacklistScoredList: Array<{ rawScore: number }>,
+  ): number;
+  calculatePotentialScore(rawScore: number, benchmark: number): number;
+}
+
+const ScoringSystem: IScoringSystem = {
   /**
    * Calculates the War Participation Rate.
    */
