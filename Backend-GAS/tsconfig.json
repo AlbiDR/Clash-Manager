@@ -1,16 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2019",
-    "lib": ["ESNext"],
+    "target": "ESNext",
     "module": "ESNext",
-    "noImplicitAny": false,
-    "strict": false,
+    "lib": ["ESNext"],
+    "outDir": "./dist",
+    "rootDir": "./",
+    "moduleResolution": "node",
+    "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["google-apps-script", "node"],
-    "outDir": "dist",
-    "rootDir": ".."
+    "skipLibCheck": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
