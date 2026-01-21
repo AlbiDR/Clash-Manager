@@ -1,4 +1,8 @@
-**/**
-!appsscript.json
-!*.js
-!*.gs
+node_modules/
+package.json
+pnpm-lock.yaml
+tsconfig.json
+.clasp.json
+.claspignore
+.git/
+*.md
