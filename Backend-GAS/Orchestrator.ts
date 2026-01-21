@@ -436,6 +436,5 @@ Object.assign(this, {
   triggerScoutRecruits,
   checkSystemHealth,
   triggerVerifyApiKeys,
-  dispatchAsyncUpdate,
   VER_ORCHESTRATOR,
 });

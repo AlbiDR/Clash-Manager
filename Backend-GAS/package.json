@@ -1,0 +1,11 @@
+{
+  "name": "clash-manager-backend",
+  "version": "1.0.0",
+  "description": "Backend GAS logic",
+  "devDependencies": {
+    "@google/clasp": "2.4.2",
+    "@types/google-apps-script": "^1.0.83",
+    "@types/node": "^25.0.9",
+    "typescript": "^5.0.0"
+  }
+}

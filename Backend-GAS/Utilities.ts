@@ -650,10 +650,10 @@ const Utils: AppUtils = {
     const CACHE_KEY = "WORKER_HEALTH_CACHE";
     const now = Date.now();
     try {
-      const cached = this.Props.getJSON<{
+      const cached = this.Props.getJSON(CACHE_KEY, null) as {
         status: boolean;
         time: number;
-      } | null>(CACHE_KEY, null);
+      } | null;
       if (cached && now - cached.time < 300000) {
         _EXECUTION_CACHE.set("worker_health", cached.status);
         return cached.status;
