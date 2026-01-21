@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * ⚔️ MODULE: SERVICE_WAR_INTELLIGENCE
+ * ⚔️ MODULE: SERVICE_WARINTELLIGENCE
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: authoritative engine for Clan War state interpretation.
  * ⚙️ ROLE: Domain Service (Telemetry Analysis & State Management)
