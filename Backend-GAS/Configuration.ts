@@ -8,11 +8,108 @@
  * ============================================================================
  */
 
+// Define the global version constants for type safety
+declare const VER_API_PUBLIC: string | undefined;
+
+/**
+ * 🏛️ APP CONFIG INTERFACE
+ * Centralized definition for the entire application state.
+ */
+export interface AppConfig {
+  SYSTEM: {
+    MANIFEST: {
+      CONFIGURATION: string;
+      UTILITIES: string;
+      ORCHESTRATOR: string;
+      LOGGER: string;
+      LEADERBOARD: string;
+      SCORING_SYSTEM: string;
+      RECRUITER: string;
+      CONTROLLER_WEBAPP: string;
+      API_PUBLIC: string;
+    };
+    CLAN_TAG: string;
+    PLAYER_TAG: string;
+    API_KEYS: Array<{ name: string; value: string }>;
+    TIMEZONE: string;
+    API_BASE: string;
+    REMOTE_WORKER_URL: string;
+    REMOTE_WORKER_SECRET: string;
+    WEB_APP_URL: string;
+    RETRY_MAX: number;
+    JSON_STORE_KEY: string;
+    DB_PURGE_DAYS: number;
+    DB_ROW_LIMIT: number;
+  };
+  SHEETS: {
+    DB: string;
+    LB: string;
+    HH: string;
+    BL: string;
+  };
+  LAYOUT: {
+    BUFFER_SIZE: number;
+    DATA_START_ROW: number;
+  };
+  UI: {
+    MENU_NAME: string;
+    MOBILE_TRIGGER_CELL: string;
+    MENU_ITEMS: {
+      DB: string;
+      LB: string;
+      HH: string;
+      ALL: string;
+      MOBILE: string;
+      KEYS: string;
+      HEALTH: string;
+    };
+  };
+  SCHEMA: {
+    LB_HEADERS: Record<string, string>;
+    HH_HEADERS: Record<string, string>;
+    DB: Record<string, number>;
+    HH: Record<string, number>;
+    LB: Record<string, number>;
+  };
+  HEADHUNTER: {
+    TARGET: number;
+    BLACKLIST_DAYS: number;
+    KEYWORDS: string[];
+    WEIGHTS: {
+      TROPHY: number;
+      DON: number;
+      WAR: number;
+    };
+    DEEP_SCAN: {
+      LOCAL: { TOURNEYS: number; PLAYERS: number };
+      REMOTE: { TOURNEYS: number; PLAYERS: number };
+      MAX_TOURNEYS: number;
+      MAX_PLAYERS: number;
+    };
+    BENCHMARK_DECAY: number;
+    BENCHMARK_PERCENTILE: number;
+    BENCHMARK_MIN_POOL: number;
+  };
+  LEADERBOARD: {
+    WEIGHTS: {
+      FAME: number;
+      AVG_FAME: number;
+      DONATION: number;
+      TROPHY: number;
+      WAR_RATE: number;
+    };
+    PENALTIES: {
+      INACTIVITY_GRACE_DAYS: number;
+      DECAY_RATE: number;
+    };
+  };
+}
+
 // Global Version Constant for this file
 const VER_CONFIGURATION = "10.0.7";
 
 // Fetch all script properties once at initialization
-let _PROPS = {};
+let _PROPS: Record<string, string> = {};
 try {
   _PROPS = PropertiesService.getScriptProperties().getProperties();
 } catch (e) {
@@ -21,7 +118,7 @@ try {
   );
 }
 
-const CONFIG = {
+const CONFIG: AppConfig = {
   SYSTEM: {
     MANIFEST: {
       CONFIGURATION: "10.0.7",
@@ -54,7 +151,8 @@ const CONFIG = {
     REMOTE_WORKER_URL: _PROPS["RemoteWorkerUrl"] || "",
     REMOTE_WORKER_SECRET: _PROPS["RemoteWorkerSecret"] || "",
     // ⚡ UPDATE: Prioritize Script Property for PWA URL, fallback to default
-    WEB_APP_URL: _PROPS["WebAppUrl"] || "https://albidr.github.io/Clash-Manager/",
+    WEB_APP_URL:
+      _PROPS["WebAppUrl"] || "https://albidr.github.io/Clash-Manager/",
     RETRY_MAX: 3,
     JSON_STORE_KEY: `WEB_APP_PAYLOAD_V${(typeof VER_API_PUBLIC !== "undefined"
       ? VER_API_PUBLIC
@@ -130,7 +228,7 @@ const CONFIG = {
     },
     // Shifted HH indices +1 to align with absolute column A=0 (Buffer), B=1 (Data Start)
     HH: {
-      TAG: 1, 
+      TAG: 1,
       INVITED: 2,
       NAME: 3,
       TROPHIES: 4,
@@ -228,3 +326,8 @@ const CONFIG = {
     },
   },
 };
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { CONFIG, VER_CONFIGURATION };
+}
