@@ -57,13 +57,13 @@ jobs:
         with:
           node-version: "20"
 
-      # ----------------------------------------------------------------------
-      # STEP 2: Execution Logic (Ultra-Robust)
-      # ----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
+        # STEP 2: Execution Logic (Ultra-Robust)
+        # ----------------------------------------------------------------------
       - name: Run Merge Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node .github/scripts/merge-jules-prs.js
+        run: npx tsx .github/scripts/merge-jules-prs.ts
 
       # ----------------------------------------------------------------------
       # STEP 3: Persistence & Documentation
