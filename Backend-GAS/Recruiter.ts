@@ -151,16 +151,16 @@ function scoutRecruits(): void {
       .getValues();
 
     lbData.forEach((row) => {
-      const perf = Number(row[L.PERF_SCORE - 1]) || 0;
+      const perf = Number(row[L.PERF_SCORE]) || 0;
       if (perf >= 50) {
-        const histStr = String(row[L.HISTORY - 1] || "");
+        const histStr = String(row[L.HISTORY] || "");
         const currentWk = Utils.calculateWarWeekId(new Date());
         const hasRecentWar = histStr.includes(currentWk);
 
         const raw = ScoringSystem.calculateRecruitRawScore(
-          Number(row[L.TROPHIES - 1]) || 0,
-          Number(row[L.TOTAL_DON - 1]) || 0,
-          Number(row[L.WAR_DAY_WINS - 1]) || 0,
+          Number(row[L.TROPHIES]) || 0,
+          Number(row[L.TOTAL_DON]) || 0,
+          Number(row[L.WAR_DAY_WINS]) || 0,
           hasRecentWar,
           CONFIG.HEADHUNTER.WEIGHTS,
         );

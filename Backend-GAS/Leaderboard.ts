@@ -77,8 +77,8 @@ function updateLeaderboard(): void {
         .getRange(startRow, 1, lastRow - startRow + 1, maxCols)
         .getValues();
 
-      const tagIdx = L.TAG - 1; // 0-based for JS array
-      const scoreIdx = L.RAW_SCORE - 1; // 0-based for JS array
+      const tagIdx = L.TAG; // Corrected: Mapping is already 0-indexed offset
+      const scoreIdx = L.RAW_SCORE; // Corrected: Mapping is already 0-indexed offset
 
       oldData.forEach((row) => {
         if (row.length > scoreIdx) {
