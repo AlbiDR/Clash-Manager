@@ -999,12 +999,13 @@ const Utils: AppUtils = {
   },
 
   resolveSchemaIndices: function (
-    sheet,
-    headerMap,
+    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    headerMap: Record<string, string>,
     headerRow = 2,
     startCol = 1,
   ) {
     if (!sheet) return {};
+    const sheetName = sheet.getName();
     const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
     const resolved: Record<string, number> = {};
 
@@ -1016,7 +1017,13 @@ const Utils: AppUtils = {
             .toLowerCase()
             .trim() === targetLabel,
       );
-      if (idx !== -1) resolved[key] = idx;
+      if (idx !== -1) {
+        resolved[key] = idx;
+      } else {
+        console.warn(
+          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheetName}.`,
+        );
+      }
     });
     return resolved;
   },
@@ -1024,6 +1031,7 @@ const Utils: AppUtils = {
   bootDynamicSchema: function () {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) return;
+    console.info("⚡ Booting Dynamic Schema Sync...");
     const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
     if (lbSheet)
       Object.assign(
@@ -1043,5 +1051,10 @@ const Utils: AppUtils = {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = Utils;
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { Utils, VER_UTILITIES });
 
 export default Utils;

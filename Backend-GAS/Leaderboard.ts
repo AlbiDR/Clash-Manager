@@ -471,3 +471,8 @@ function timeAgo(date: Date | null): string {
   const match = units.find((u) => sec >= u.s);
   return match ? `${Math.floor(sec / match.s)}${match.t} ago` : "Just now";
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { updateLeaderboard, timeAgo, VER_LEADERBOARD });

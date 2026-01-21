@@ -11,6 +11,10 @@
 
 import type { ScoringWeights } from "../Backend-Worker/src/types";
 
+// Global Version Constant
+// @ts-ignore
+const VER_SCORING_SYSTEM = "10.1.0";
+
 // Define the scoring configuration interface
 export interface ScoringConfig {
   LEADERBOARD: {
@@ -282,5 +286,10 @@ const ScoringSystem: IScoringSystem = {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = ScoringSystem;
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { ScoringSystem, VER_SCORING_SYSTEM });
 
 export default ScoringSystem;

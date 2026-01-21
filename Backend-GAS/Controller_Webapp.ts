@@ -394,3 +394,13 @@ function sanitizeNum(v: any, displayV: string): number {
   if (displayV && displayV.includes("%")) return n;
   return n;
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, {
+  getWebAppData,
+  markRecruitsAsInvitedBulk,
+  refreshWebPayload,
+  VER_CONTROLLER_WEBAPP,
+});

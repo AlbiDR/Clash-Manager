@@ -360,3 +360,8 @@ function upsertDailySnapshots(
       .setNumberFormat("0");
   }
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { updateClanDatabase, VER_LOGGER });

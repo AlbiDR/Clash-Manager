@@ -416,3 +416,8 @@ function dispatchAsyncUpdate(): void {
     }
   });
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, { doGet, doPost, VER_API_PUBLIC });

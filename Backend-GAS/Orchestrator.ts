@@ -421,3 +421,21 @@ function verifyApiKeysInternal(
 
   return results;
 }
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this, {
+  onOpen,
+  taskUpdateMemberStats,
+  taskFastScout,
+  setupMobileTriggers,
+  handleMobileEdit,
+  triggerUpdateDatabase,
+  triggerUpdateLeaderboard,
+  triggerScoutRecruits,
+  checkSystemHealth,
+  triggerVerifyApiKeys,
+  dispatchAsyncUpdate,
+  VER_ORCHESTRATOR,
+});
