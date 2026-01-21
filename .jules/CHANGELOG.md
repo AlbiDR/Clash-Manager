@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-01-21] PR #55: docs(gas): improve contextual density and decision logging in Leaderboard engine
+**Commit**: `87bc65fb03f8bab4abddd8218f59ac2409d228b0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/55)
+
+### Description
+Improved documentation and contextual density in `Backend-GAS/Leaderboard.js` by adding JSDoc and inline comments explaining the rationale behind complex logic. Removed all emojis and buzzwords to align with project standards. Added @warning for GAS quota consumption.
+
+---
+*PR created automatically by Jules for task [18080862495891695235](https://jules.google.com/task/18080862495891695235) started by @AlbiDR*
+
+---
+
 ## [2026-01-21] PR #54: perf(frontend): optimize data inflation and deduplicate card styles
 **Commit**: `9751fc48b6562418a997c723149e7fb22f9c15c7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/54)
