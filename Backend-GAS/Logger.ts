@@ -1,31 +1,53 @@
 /**
  * ============================================================================
- * 📊 MODULE: LOGGER (DATABASE)
+ * 📊 MODULE: LOGGER (DATABASE) - TypeScript Edition
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Extracts API data and persists it to 'Clan Database'.
  * ⚙️ LOGIC:
  *    - Captures Daily Snapshots of Donations, Roles, Trophies, AND War Fame.
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
- *      (Preserves data for players who leave mid-day).
- * 🏷️ VERSION: 10.0.1
- *
- * 🧠 REASONING:
- *    - "Snapshots": We need a history of performance (War + Donos).
- *    - "Smart Merge": If this runs twice in one day, it shouldn't create duplicate
- *      rows. It must find "Today's" row and update it.
+ * 🏷️ VERSION: 11.0.0
  * ============================================================================
  */
 
-const VER_LOGGER = "10.0.1";
+import type { AppConfig } from "./Configuration";
+import type { AppUtils } from "./Utilities";
 
-function updateClanDatabase() {
+// Global Version Constant
+// @ts-ignore
+const VER_LOGGER = "11.0.0";
+
+// Global Declarations for GAS Environment
+declare const CONFIG: AppConfig;
+declare const Utils: AppUtils;
+
+/**
+ * 📊 ETL INTERFACE
+ */
+export interface ClanMemberSnapshot {
+  tag: string;
+  name: string;
+  role: string;
+  trophies: number;
+  donations: number;
+  donationsReceived: number;
+  lastSeen: string;
+}
+
+/**
+ * ⚡ MAIN ENTRY: Update Clan Database
+ * Fetches latest clan data and persists snapshots.
+ */
+function updateClanDatabase(): void {
   console.time("ETL");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
-    console.error("❌ CRITICAL: 'ClanTag' is not set in Script Properties. Aborting Database Update.");
+    console.error(
+      "❌ CRITICAL: 'ClanTag' is not set. Aborting Database Update.",
+    );
     const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
     if (sheet) sheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
     return;
@@ -34,7 +56,7 @@ function updateClanDatabase() {
   try {
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
-    // ⚡ UPDATE: Fetching BOTH Members and War Race data to build a complete profile
+    // ⚡ Fetch Members and War Race data
     const urls = [
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
@@ -43,23 +65,18 @@ function updateClanDatabase() {
     const [membersData, raceData] = Utils.fetchRoyaleAPI(urls);
 
     // 🛑 CIRCUIT BREAKER: API FAILURE
-    // If the API fails or returns empty data (Maintenance/Rate Limit),
-    // ABORT IMMEDIATELY to prevent wiping the database with zeros.
     if (!membersData || !membersData.items || membersData.items.length === 0) {
-      console.error(
-        "⛔ ETL ABORTED: API returned empty or invalid member data. Database NOT updated. Check API Key and Clan Tag.",
-      );
+      console.error("⛔ ETL ABORTED: API returned invalid data.");
       return;
     }
 
-    const activeMembers = membersData.items;
+    const activeMembers = membersData.items as ClanMemberSnapshot[];
     const activeTags = new Set(activeMembers.map((m) => m.tag));
 
     // 🗺️ MAP WAR FAME: Tag -> Fame
-    const warFameMap = new Map();
+    const warFameMap = new Map<string, number>();
     if (raceData && raceData.clan && raceData.clan.participants) {
-      raceData.clan.participants.forEach((p) => {
-        // Fallbacks for various API states (fame vs medals vs repairPoints)
+      raceData.clan.participants.forEach((p: any) => {
         const val = p.fame || p.medals || p.repairPoints || 0;
         warFameMap.set(p.tag, val);
       });
@@ -89,9 +106,7 @@ function updateClanDatabase() {
         .setWrap(true);
     }
 
-    // 🛡️ SCHEMA MIGRATION: Ensure sheet has enough columns
-    // This prevents "Out of Bounds" errors when we add the 'War Fame' column to an old sheet.
-    // +2 accounts for Buffer Left (1) and Buffer Right (1) implicitly.
+    // 🛡️ SCHEMA MIGRATION: Ensure enough columns
     const requiredCols = HEADER.length + 2;
     if (sheet.getMaxColumns() < requiredCols) {
       sheet.insertColumnsAfter(
@@ -100,54 +115,51 @@ function updateClanDatabase() {
       );
     }
 
-    // 🛡️ BACKUP: Perform backup right before we start modifying the sheet
-    // This prevents creating backups if the API fetch failed earlier.
+    // 🛡️ BACKUP
     Utils.backupSheet(ss, CONFIG.SHEETS.DB);
 
-    // 🧹 STEP 1: PRUNE STALE DATA (Retroactive Cleaning)
-    // Remove history for players who are NOT in the clan and haven't been seen in X days
+    // 🧹 STEP 1: PRUNE STALE DATA
     pruneStaleData(sheet, activeTags);
 
     // 📥 STEP 2: SMART MERGE TODAY'S DATA
     upsertDailySnapshots(sheet, activeMembers, warFameMap, HEADER);
 
     console.timeEnd("ETL");
-  } catch (e) {
+  } catch (e: any) {
     console.error(`ETL Error: ${e.message} \n${e.stack}`);
   }
 }
 
 /**
  * Prunes rows for players who are NOT currently in the clan AND
- * whose most recent entry in the DB is older than CONFIG.DB_PURGE_DAYS.
- * This runs on the ENTIRE dataset, cleaning up years of history if necessary.
- *
- * REASONING: Spreadsheet performance degrades exponentially with row count.
- * We must remove data for members who left long ago.
+ * whose most recent entry in the DB is older than CONFIG.SYSTEM.DB_PURGE_DAYS.
  */
-function pruneStaleData(sheet, activeTags) {
+function pruneStaleData(
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  activeTags: Set<string>,
+): void {
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
   const lastRow = sheet.getLastRow();
 
   if (lastRow < startRow) return;
 
   const S_DB = CONFIG.SCHEMA.DB;
-  const numCols = Object.keys(S_DB).length;
-
-  // Read entire DB into memory
-  // ⚠️ Safety: Limit read to max columns to avoid bounds error during migration
+  const numCols = Object.keys(CONFIG.SCHEMA.DB).length;
   const safeCols = Math.min(numCols, sheet.getMaxColumns() - 1);
   const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, safeCols);
   const data = range.getValues();
 
   // 1. Build maps of latest dates and names per tag
-  const tagMaps = data.reduce(
-    (acc, row) => {
-      const tag = row[S_DB.TAG];
+  const tagSeenData = data.reduce(
+    (acc: { lastSeen: Map<string, Date>; names: Map<string, string> }, row) => {
+      const tag = String(row[S_DB.TAG]);
       const dateVal = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : new Date(0);
-      if (!acc.lastSeen.has(tag) || dateVal > acc.lastSeen.get(tag)) {
+      if (
+        !acc.lastSeen.has(tag) ||
+        dateVal > (acc.lastSeen.get(tag) || new Date(0))
+      ) {
         acc.lastSeen.set(tag, dateVal);
-        acc.names.set(tag, row[S_DB.NAME]);
+        acc.names.set(tag, String(row[S_DB.NAME]));
       }
       return acc;
     },
@@ -158,13 +170,13 @@ function pruneStaleData(sheet, activeTags) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - CONFIG.SYSTEM.DB_PURGE_DAYS);
 
-  const tagsToPurge = new Set();
-  const purgedDetails = [];
+  const tagsToPurge = new Set<string>();
+  const purgedDetails: string[] = [];
 
-  tagMaps.lastSeen.forEach((lastDate, tag) => {
+  tagSeenData.lastSeen.forEach((lastDate, tag) => {
     if (!activeTags.has(tag) && lastDate < cutoff) {
       tagsToPurge.add(tag);
-      purgedDetails.push(`${tagMaps.names.get(tag) || "Unknown"} (${tag})`);
+      purgedDetails.push(`${tagSeenData.names.get(tag) || "Unknown"} (${tag})`);
     }
   });
 
@@ -174,18 +186,15 @@ function pruneStaleData(sheet, activeTags) {
   }
 
   // 3. Filter and count
-  console.log(
-    `🧹 Pruning: Removing ${tagsToPurge.size} old members:\n${purgedDetails.join("\n")}`,
-  );
+  console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
 
-  const cleanData = data.filter((row) => !tagsToPurge.has(row[S_DB.TAG]));
+  const cleanData = data.filter(
+    (row) => !tagsToPurge.has(String(row[S_DB.TAG])),
+  );
   const purgeCount = data.length - cleanData.length;
 
   // 4. Write Back (Atomic Replace)
-  // Clear the entire data range
   range.clearContent();
-
-  // Write the filtered data back starting from the top
   if (cleanData.length > 0) {
     sheet
       .getRange(startRow, 2, cleanData.length, safeCols)
@@ -195,43 +204,40 @@ function pruneStaleData(sheet, activeTags) {
 }
 
 /**
- * MERGE STRATEGY:
- * 1. Find all rows belonging to "Today".
- * 2. Update existing players with latest stats.
- * 3. Append new players who aren't in the sheet yet.
- * 4. LEAVE players who are in the sheet but left the clan (preserve daily history).
- *
- * REASONING: "Upsert" prevents duplicate rows if the script runs multiple times in one day.
+ * Upserts daily performance snapshots into the database.
  */
-function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
+function upsertDailySnapshots(
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  activeMembers: ClanMemberSnapshot[],
+  warFameMap: Map<string, number>,
+  headerRow: string[],
+): void {
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
   const S_DB = CONFIG.SCHEMA.DB;
   const today = new Date();
   const todayStr = Utils.formatDate(today);
-  const parseTime = (t) =>
-    t
-      ? new Date(
-          t.replace(
-            /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
-            "$1-$2-$3T$4:$5:$6Z",
-          ),
-        )
-      : new Date();
 
-  // 🛡️ FAILSAFE: DB_ROW_LIMIT
-  if (sheet.getLastRow() > CONFIG.SYSTEM.DB_ROW_LIMIT) {
-    console.warn("⚠️ Database Row Limit Reached.");
-    return;
-  }
+  const parseTime = (t: string | undefined): Date => {
+    if (!t) return new Date();
+    try {
+      return new Date(
+        t.replace(
+          /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
+          "$1-$2-$3T$4:$5:$6Z",
+        ),
+      );
+    } catch {
+      return new Date();
+    }
+  };
 
   const lastRow = sheet.getLastRow();
-  let todayDataRange = null;
-  let todayValues = [];
+  let todayDataRange: GoogleAppsScript.Spreadsheet.Range | null = null;
+  let todayValues: any[][] = [];
   let firstRowIndex = -1;
 
   // 1. Sort & Locate "Today's" Block
   if (lastRow >= startRow) {
-    // Sort by Date to ensure contiguous blocks
     sheet
       .getRange(startRow, 2, lastRow - startRow + 1, headerRow.length)
       .sort({ column: 2 + S_DB.DATE, ascending: true });
@@ -240,7 +246,6 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
       .getRange(startRow, 2 + S_DB.DATE, lastRow - startRow + 1, 1)
       .getValues();
 
-    // Find start and end of "Today"
     let startIdx = -1;
     let count = 0;
 
@@ -254,7 +259,6 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
 
     if (startIdx !== -1) {
       firstRowIndex = startRow + startIdx;
-      // Get the actual data for today
       todayDataRange = sheet.getRange(
         firstRowIndex,
         2,
@@ -266,40 +270,35 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
   }
 
   // 2. Prepare Updates
-  const processedTags = new Set();
+  const processedTags = new Set<string>();
   let updatesMade = false;
 
-  // Map existing rows for O(1) lookup
-  // Map: Tag -> { rowIndex (0-based relative to todayValues), rowData }
-  const existingMap = new Map();
+  const existingMap = new Map<string, number>();
   todayValues.forEach((row, idx) => {
-    existingMap.set(row[S_DB.TAG], idx);
+    existingMap.set(String(row[S_DB.TAG]), idx);
   });
 
   // 3. Process API Data
-  const newRowsToAppend = [];
+  const newRowsToAppend: any[][] = [];
 
   activeMembers.forEach((m) => {
-    const warFame = warFameMap.get(m.tag) || 0; // Get fame from race data
+    const warFame = warFameMap.get(m.tag) || 0;
 
     if (existingMap.has(m.tag)) {
-      // UPDATE EXISTING ROW
-      const idx = existingMap.get(m.tag);
+      const idx = existingMap.get(m.tag)!;
       const currentRow = todayValues[idx];
 
-      // Update mutable stats
       currentRow[S_DB.NAME] = m.name;
       currentRow[S_DB.ROLE] = m.role;
       currentRow[S_DB.TROPHIES] = m.trophies;
       currentRow[S_DB.DON_GIVEN] = m.donations;
       currentRow[S_DB.DON_REC] = m.donationsReceived;
       currentRow[S_DB.LAST_SEEN] = parseTime(m.lastSeen);
-      currentRow[S_DB.WAR_FAME] = warFame; // Update War Fame
+      currentRow[S_DB.WAR_FAME] = warFame;
 
       updatesMade = true;
       processedTags.add(m.tag);
     } else {
-      // PREPARE NEW ROW
       newRowsToAppend.push([
         today,
         m.tag,
@@ -309,29 +308,25 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
         m.donations,
         m.donationsReceived,
         parseTime(m.lastSeen),
-        warFame, // Add War Fame
+        warFame,
       ]);
     }
   });
 
-  // 4. Commit Updates (Batch Write)
+  // 4. Commit Updates
   if (updatesMade && todayDataRange) {
-    console.log(
-      `ETL: Updating ${processedTags.size} existing records for ${todayStr}.`,
-    );
+    console.log(`ETL: Updating ${processedTags.size} records for ${todayStr}.`);
     todayDataRange.setValues(todayValues);
   }
 
-  // 5. Commit Appends (Batch Write)
+  // 5. Commit Appends
   if (newRowsToAppend.length > 0) {
     console.log(
-      `ETL: Appending ${newRowsToAppend.length} new records for ${todayStr}.`,
+      `ETL: Appending ${newRowsToAppend.length} records for ${todayStr}.`,
     );
-    const writeRow = sheet.getLastRow() + 1;
-    const safeWriteRow = Math.max(writeRow, startRow);
-
+    const writeRow = Math.max(sheet.getLastRow() + 1, startRow);
     sheet
-      .getRange(safeWriteRow, 2, newRowsToAppend.length, headerRow.length)
+      .getRange(writeRow, 2, newRowsToAppend.length, headerRow.length)
       .setValues(newRowsToAppend)
       .setHorizontalAlignment("center");
   }
@@ -339,7 +334,6 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
   sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
 
   // 🧹 LAYOUT & CLEANUP
-  // Pass HEADER (headerRow) to applyStandardLayout to enforce schema
   Utils.applyStandardLayout(
     sheet,
     sheet.getLastRow() - (startRow - 1),
@@ -347,10 +341,8 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
     headerRow,
   );
 
-  // 📏 COLUMN WIDTHS & FORMATTING
   const currentLastRow = sheet.getLastRow();
   const dataRowCount = currentLastRow - (startRow - 1);
-
   if (dataRowCount > 0) {
     const sRow = startRow;
     sheet
@@ -358,12 +350,11 @@ function upsertDailySnapshots(sheet, activeMembers, warFameMap, headerRow) {
       .setNumberFormat("yyyy-mm-dd");
     sheet.getRange(sRow, 2 + S_DB.TAG, dataRowCount, 3).setNumberFormat("@");
     sheet
-      .getRange(sRow, 2 + S_DB.TROPHIES, dataRowCount, 3)
+      .getRange(sRow, 2 + S_DB.TROPHIES, dataRowCount, 4)
       .setNumberFormat("0");
     sheet
       .getRange(sRow, 2 + S_DB.LAST_SEEN, dataRowCount, 1)
       .setNumberFormat("yyyy-mm-dd hh:mm:ss");
-    // Format new War Fame column
     sheet
       .getRange(sRow, 2 + S_DB.WAR_FAME, dataRowCount, 1)
       .setNumberFormat("0");
