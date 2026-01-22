@@ -23,6 +23,9 @@ if [ -z "$(ls -A dist)" ]; then
    exit 1
 fi
 
+echo "📦 Compilation Manifest (dist/):"
+ls -1 dist/
+
 echo "📄 Copying appsscript.json..."
 if [ ! -f "appsscript.json" ]; then
     echo "❌ Error: appsscript.json not found!"
@@ -35,6 +38,8 @@ echo "🛠️  Fixing files for Google Apps Script..."
 # Process files: Convert JS to GAS-compatible GS
 # We need to strip ES Module syntax because GAS runs in a global scope (mostly).
 find dist -name "*.js" | while read -r f; do
+  echo "  > Processing $(basename "$f")"
+  
   # 1. Remove "import" lines entirely
   sed -i.bak '/^import /d' "$f"
   
