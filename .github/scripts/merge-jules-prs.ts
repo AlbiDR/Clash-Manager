@@ -270,7 +270,7 @@ ${pr.body ? "### Description\n" + pr.body : ""}
     }
   } catch (error: any) {
     console.error("💀 Fatal Engine Error:", error.message);
-    process.exit(1);
+    (process as any).exit(1);
   }
 }
 
