@@ -33,11 +33,11 @@ async function checkApiStatus() {
   try {
     const start = Date.now();
 
-    // Ping Timeout (5s)
+    // Ping Timeout (25s) - Increased to handle GAS cold starts
     const response = await Promise.race([
       ping(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error("Ping Timeout")), 5000),
+        setTimeout(() => reject(new Error("Ping Timeout")), 25000),
       ),
     ]);
     const latency = Date.now() - start;
