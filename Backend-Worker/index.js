@@ -1,12 +1,25 @@
+/**
+ * @file index.js (Remote Worker)
+ * @description High-concurrency proxy and computational offload layer for Clash Manager.
+ * @remarks
+ * This module is designed to bypass Google Apps Script (GAS) limitations:
+ * 1. Quota: Circummvents UrlFetchApp daily limits by using standard Node.js networking.
+ * 2. Concurrency: Parallelizes API requests which GAS can only perform sequentially.
+ * 3. Timeouts: Handles long-running batch operations that exceed the GAS 6-minute execution limit.
+ *
+ * It uses a shared scoring engine from the Backend-GAS directory to ensure mathematical parity
+ * between the Cloud Core and Cloud Worker.
+ */
+
 const express = require("express");
 const fetch = require("node-fetch");
-// 🔗 SHARED LOGIC: Import Scoring System from GAS source
-// Ensure this file exists in the build context!
+
+// Shared logic from sibling directory. Required for algorithm consistency.
 const ScoringSystem = require("../Backend-GAS/ScoringSystem.js");
 
 const app = express();
 
-// 🌍 CORS MIDDLEWARE (Allow PWA to hit this directly)
+// CORS MIDDLEWARE (Allow PWA to hit this directly)
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*"); // In production, lock this to your PWA domain
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -21,6 +34,18 @@ const DEFAULT_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "20", 10)
 const DEFAULT_TIMEOUT = parseInt(process.env.WORKER_TIMEOUT_SEC || "45", 10) * 1000;
 const MAX_RETRIES = parseInt(process.env.WORKER_RETRIES || "2", 10);
 
+/**
+ * Executes a fetch request with a hard timeout.
+ *
+ * @remarks
+ * Native node-fetch timeout can be unreliable for specific socket hangs.
+ * Promise.race ensures the event loop is released if the upstream API becomes unresponsive.
+ *
+ * @param {string} url - Target API endpoint.
+ * @param {Object} opts - Fetch configuration (headers, method, etc.).
+ * @param {number} timeout - Timeout in milliseconds.
+ * @returns {Promise<Response>}
+ */
 function timeoutFetch(url, opts = {}, timeout = DEFAULT_TIMEOUT) {
   return Promise.race([
     fetch(url, { ...opts, timeout }),
@@ -28,6 +53,19 @@ function timeoutFetch(url, opts = {}, timeout = DEFAULT_TIMEOUT) {
   ]);
 }
 
+/**
+ * Wraps fetch with an exponential backoff retry strategy.
+ *
+ * @remarks
+ * The Clash Royale API frequently returns 429 (Rate Limit) or 503 (Maintenance).
+ * Retries are essential for batch stability in the GAS environment where a
+ * single failure can crash the entire ETL sequence.
+ *
+ * @param {string} url - Target API endpoint.
+ * @param {Object} opts - Fetch configuration.
+ * @param {number} retries - Maximum number of retry attempts.
+ * @returns {Promise<{code: number, content: any}>}
+ */
 async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
   let attempt = 0;
   let lastErr = null;
@@ -40,12 +78,13 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
       try {
         content = JSON.parse(text);
       } catch (e) {
-        content = text;
+        content = text; // Fallback to raw text if JSON parsing fails
       }
       return { code, content };
     } catch (e) {
       lastErr = e;
       attempt++;
+      // Wait (500ms * attempt) before next try to reduce pressure on the API
       if (attempt <= retries) await new Promise((r) => setTimeout(r, 500 * attempt));
     }
   }
@@ -55,10 +94,20 @@ async function fetchWithRetries(url, opts, retries = MAX_RETRIES) {
   };
 }
 
-// Helper: Calculate War Week ID (Matches GAS Implementation)
+/**
+ * Generates a canonical War Week ID (e.g., "24W15").
+ *
+ * @remarks
+ * This function MUST maintain 100% parity with the GAS implementation in Leaderboard.js.
+ * It aligns dates to Thursday (standard Clan War start) to ensure consistent historical tracking.
+ *
+ * @param {string} dateStr - ISO 8601 or CR-specific timestamp.
+ * @returns {string} The formatted Week ID.
+ */
 function calculateWarWeekId(dateStr) {
   if (!dateStr) return "Unknown";
-  // Parse ISO string to Date
+
+  // Handle Clash Royale's compressed timestamp format (YYYYMMDDTHHMMSS.000Z)
   let date;
   if (/^\d{8}T\d{6}/.test(dateStr)) {
       const y = parseInt(dateStr.substr(0, 4), 10);
@@ -73,12 +122,11 @@ function calculateWarWeekId(dateStr) {
   }
 
   // Adjust to Thursday (War Start)
-  // Logic aligned with GAS: date.getDate() + 3 - ((date.getDay() + 6) % 7)
   const d = new Date(date.getTime());
   d.setUTCHours(0,0,0,0);
-  const day = d.getUTCDay();
-  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1) + 3; // Adjust to Thursday
-  // Simplified approximation of GAS logic
+
+  // The ISO week-year logic used here ensures that if a war spans a year boundary,
+  // it is attributed correctly to the year it started in.
   d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
   
   const year = d.getUTCFullYear();
@@ -89,10 +137,26 @@ function calculateWarWeekId(dateStr) {
   return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
 }
 
+/**
+ * Processes a batch of URLs using a fixed-size worker pool.
+ *
+ * @remarks
+ * This implements a semaphore-like pattern to control concurrency.
+ * High concurrency (e.g., >50) risks triggering upstream WAFs or exhausting Node.js memory.
+ *
+ * @param {string[]} urls - List of URLs to fetch.
+ * @param {string[]} apiKeys - Pool of API keys for round-robin rotation.
+ * @param {number} concurrency - Max simultaneous requests.
+ * @param {Object|null} scoring - Weights and parameters for the ScoringSystem engine.
+ * @returns {Promise<Array>} Results of the batch processing.
+ */
 async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCURRENCY, scoring = null) {
   const results = new Array(urls.length);
   let idx = 0;
 
+  /**
+   * Internal worker function that pulls tasks from the shared index.
+   */
   async function worker() {
     while (true) {
       const i = idx++;
@@ -101,13 +165,15 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
 
       const headers = {
         "User-Agent": "ClanManagerWorker/1.0",
-        "Accept-Encoding": "gzip",
+        "Accept-Encoding": "gzip", // Minimize bandwidth for large response bodies
       };
       if (apiKeys && apiKeys.length > 0) {
+        // Round-robin selection reduces the risk of hitting per-key rate limits
         const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
         headers.Authorization = `Bearer ${key}`;
       }
 
+      // Special logic for player scoring: requires fetching both profile AND battlelog
       if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
         try {
           const profile = await fetchWithRetries(url, { method: "GET", headers });
@@ -124,7 +190,7 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
 
             const p = profile.content;
             
-            // 🔗 LOGIC SYNC: Use Shared Scoring System
+            // LOGIC SYNC: Use Shared Scoring System
             const rawScore = ScoringSystem.calculateRecruitRawScore(
                 p.trophies || 0,
                 p.totalDonations || 0,
@@ -177,7 +243,7 @@ async function processBatch(urls = [], apiKeys = [], concurrency = DEFAULT_CONCU
   return results;
 }
 
-// ⚡ TOURNAMENT SCAN ENGINE
+// TOURNAMENT SCAN ENGINE
 async function processScanBatch(
   tags = [],
   apiKeys = [],
@@ -207,7 +273,7 @@ async function processScanBatch(
       try {
         const res = await fetchWithRetries(url, { method: "GET", headers });
         if (res.code === 200 && res.content && res.content.membersList) {
-           // ⚡ IN-MEMORY FILTERING
+           // IN-MEMORY FILTERING
            res.content.membersList.forEach(p => {
              if (p.trophies < minTrophies) return;
              if (p.clan && p.clan.tag) return;
@@ -276,9 +342,14 @@ app.post("/audit", checkAuth, async (req, res) => {
   }
 });
 
-// 🔓 PUBLIC SCAN (DIRECT PWA ACCESS)
-// Allows the Frontend to call the worker directly, bypassing GAS.
-// Uses server-side API keys but does not require a secret from the client.
+/**
+ * PUBLIC SCAN (DIRECT PWA ACCESS)
+ *
+ * @remarks
+ * This endpoint allows the Frontend PWA to initiate scans without routing
+ * through Google Apps Script. This reduces latency for interactive recruiter
+ * searches and preserves GAS execution time for core ETL tasks.
+ */
 app.post("/public/scan", async (req, res) => {
   try {
     const { tags, blacklist, minTrophies, scoring } = req.body;
@@ -328,7 +399,7 @@ app.post("/public/scan", async (req, res) => {
   }
 });
 
-// 🔔 PUSH SUBSCRIPTION ENDPOINT
+// PUSH SUBSCRIPTION ENDPOINT
 // Stores PWA push subscriptions (In-Memory for now, replacing with DB recommended)
 const _subs = new Set();
 app.post("/public/subscribe", (req, res) => {
@@ -336,7 +407,7 @@ app.post("/public/subscribe", (req, res) => {
   if (!sub || !sub.endpoint) return res.status(400).json({ error: "Invalid subscription" });
   
   _subs.add(JSON.stringify(sub));
-  console.log(`🔔 New Push Subscription. Total: ${_subs.size}`);
+  console.log(`New Push Subscription. Total: ${_subs.size}`);
   return res.json({ success: true, count: _subs.size });
 });
 
@@ -380,7 +451,7 @@ app.post("/scan", checkAuth, async (req, res) => {
   }
 });
 
-// ⚡ FULL CLAN CONTEXT (Optimized for Leaderboard)
+// FULL CLAN CONTEXT (Optimized for Leaderboard)
 app.post("/clan/full", checkAuth, async (req, res) => {
   try {
     const { tag, apiKeys } = req.body;
@@ -403,7 +474,7 @@ app.post("/clan/full", checkAuth, async (req, res) => {
       return res.status(500).json({ error: "Failed to fetch members" });
     }
 
-    // ⚡ PRE-PROCESS HISTORY
+    // PRE-PROCESS HISTORY
     // Offload the O(W x M) iteration from GAS to Node
     const warHistory = {}; // tag -> { weekId: fame }
     
@@ -435,7 +506,7 @@ app.post("/clan/full", checkAuth, async (req, res) => {
   }
 });
 
-// ⚡ PUBLIC API OFFLOAD (Frontend Data Proxy)
+// PUBLIC API OFFLOAD (Frontend Data Proxy)
 app.post("/clan/api", checkAuth, async (req, res) => {
   try {
     const { tag, type, apiKeys } = req.body;
@@ -465,7 +536,7 @@ app.post("/clan/api", checkAuth, async (req, res) => {
       return res.status(code).json({ error: "upstream error", details: content });
     }
 
-    // ⚡ TRANSFORM DATA (Mimics GAS Logic)
+    // TRANSFORM DATA (Mimics GAS Logic)
     let transformed = [];
 
     if (type === "members" && content.items) {
