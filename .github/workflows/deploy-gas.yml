@@ -7,7 +7,7 @@ on:
       - "Backend-GAS/**" # Only triggers if backend files change
   workflow_dispatch: # Allows you to click "Run workflow" manually
 
-# ⚡ CONCURRENCY: If you push 3 backend changes in a row,
+#  CONCURRENCY: If you push 3 backend changes in a row,
 # it cancels the old ones and only pushes the latest code to Google.
 concurrency:
   group: gas-sync-${{ github.ref }}
@@ -29,8 +29,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: "Backend-GAS/pnpm-lock.yaml"
 
-      # 🛡️ SECRET VALIDATION: Check for presence of required secrets
+      - name: Install Dependencies
+        working-directory: Backend-GAS
+        run: pnpm install
+
+      #  SECRET VALIDATION: Check for presence of required secrets
       - name: Validate Secrets
         env:
           CLASPRC: ${{ secrets.CLASPRC_JSON }}
@@ -38,19 +44,18 @@ jobs:
           SID: ${{ secrets.SCRIPT_ID }}
         run: |
           if [ -z "$CLASPRC" ]; then
-            echo "::error::❌ CRITICAL ERROR: CLASPRC_JSON secret is missing."
+            echo "::error:: CRITICAL ERROR: CLASPRC_JSON secret is missing."
             echo "Please add the 'CLASPRC_JSON' secret to your GitHub Repository Settings."
             exit 1
           fi
 
           if [ -z "$GAS_URL" ] && [ -z "$SID" ]; then
-            echo "::error::❌ CRITICAL ERROR: VITE_GAS_URL secret is missing."
+            echo "::error:: CRITICAL ERROR: VITE_GAS_URL secret is missing."
             echo "Please add 'VITE_GAS_URL' to your repository secrets."
             exit 1
           fi
 
-      # Using --no-fund and --no-audit makes the Clasp installation faster
-      - name: Install Clasp
+      - name: Install Clasp Global
         run: pnpm add -g @google/clasp
 
       - name: Create Clasp Auth File
@@ -62,27 +67,26 @@ jobs:
         env:
           GAS_URL: ${{ secrets.VITE_GAS_URL }}
           SID: ${{ secrets.SCRIPT_ID }}
+        working-directory: Backend-GAS
         run: |
-          cd Backend-GAS
-          
-          # 🧠 INTELLIGENT ID RESOLUTION
+          #  INTELLIGENT ID RESOLUTION
           TARGET_ID=""
 
           # 1. Prefer Explicit SCRIPT_ID (Correct Project ID)
           if [ -n "$SID" ]; then
-            echo "✅ Found SCRIPT_ID secret."
+            echo " Found SCRIPT_ID secret."
             TARGET_ID="$SID"
           fi
 
           # 2. Fallback to VITE_GAS_URL extraction if SCRIPT_ID is missing
           if [ -z "$TARGET_ID" ] && [ -n "$GAS_URL" ]; then
-            echo "⚠️ SCRIPT_ID not found. Attempting to extract from VITE_GAS_URL..."
+            echo " SCRIPT_ID not found. Attempting to extract from VITE_GAS_URL..."
             
             if [[ "$GAS_URL" == *"script.google.com"* ]]; then
                if [[ "$GAS_URL" == *"/d/"* ]]; then
                   # Extract ID from /d/<ID>/... (Project URL)
                   TARGET_ID=$(echo "$GAS_URL" | sed -n 's|.*/d/\([^/]*\).*|\1|p')
-                  echo "✅ Extracted Project ID from URL."
+                  echo " Extracted Project ID from URL."
                else
                   # Fallback for /s/ or /macros/s/ (Deployment URL)
                   # Warning: This is usually the Deployment ID, not the Script ID.
@@ -91,28 +95,29 @@ jobs:
                fi
             else
                TARGET_ID="$GAS_URL"
-               echo "ℹ️ Using raw VITE_GAS_URL string as ID."
+               echo " Using raw VITE_GAS_URL string as ID."
             fi
           fi
 
           # 3. Final Validation
           if [ -z "$TARGET_ID" ]; then
-             echo "::error::❌ Failed to resolve Script ID. Ensure SCRIPT_ID is set (preferred) or VITE_GAS_URL contains a valid ID."
+             echo "::error:: Failed to resolve Script ID. Ensure SCRIPT_ID is set (preferred) or VITE_GAS_URL contains a valid ID."
              exit 1
           fi
           
-          echo "🆔 Target Script ID: ${TARGET_ID:0:5}..."
+          echo " Target Script ID: ${TARGET_ID:0:5}..."
 
-          # Write config
-          echo "{\"scriptId\":\"$TARGET_ID\",\"rootDir\":\".\"}" > .clasp.json
+          # Write config pointing to dist folder for compiled assets
+          echo "{\"scriptId\":\"$TARGET_ID\",\"rootDir\":\"./dist\"}" > .clasp.json
           
           # Double check file content
           if grep -q '"scriptId":""' .clasp.json; then
-             echo "::error::❌ .clasp.json was generated with an empty scriptId."
+             echo "::error:: .clasp.json was generated with an empty scriptId."
              exit 1
           fi
 
-      - name: Push Code to Google Apps Script
+      - name: Compile and Push
+        working-directory: Backend-GAS
         run: |
-          cd Backend-GAS
-          clasp push --force
+          chmod +x deploy.sh
+          ./deploy.sh
