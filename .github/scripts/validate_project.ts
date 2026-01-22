@@ -236,8 +236,8 @@ try {
 console.log("\n--------------------------------------------------");
 if (hasFailure) {
   console.log("❌ Project Integrity Check FAILED. See errors above.");
-  process.exit(1);
+  (process as any).exit(1);
 } else {
   console.log("✅ Project Integrity Check PASSED. All systems nominal.");
-  process.exit(0);
+  (process as any).exit(0);
 }
