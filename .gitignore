@@ -38,6 +38,7 @@ Thumbs.db
 clasp.json
 
 # AI & Temporary Configs
+.agent
 .agents
 .gemini
 .cursor
