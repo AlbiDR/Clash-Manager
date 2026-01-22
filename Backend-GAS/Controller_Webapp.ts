@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🌐 MODULE: CONTROLLER_WEBAPP - TypeScript Edition
@@ -426,7 +427,7 @@ function sanitizeNum(v: any, displayV: string): number {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, {
+Object.assign(this as any, {
   getWebAppData,
   markRecruitsAsInvitedBulk,
   refreshWebPayload,
