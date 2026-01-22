@@ -39,10 +39,11 @@ async function checkApiStatus() {
     const start = Date.now();
 
     // ⚡ PATIENT HANDSHAKE: Extended timeout for slow cold starts
+    // Increased from 15s to 20s to account for GAS cold boot
     const response = await Promise.race([
       ping(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error("Handshake Timeout")), 15000),
+        setTimeout(() => reject(new Error("Handshake Timeout")), 20000),
       ),
     ]);
     const latency = Date.now() - start;
@@ -72,12 +73,13 @@ function handleFailure() {
     return;
   }
 
-  if (consecutiveFailures >= 3) {
+  // Increased tolerance: only hard fail after 5 tries (approx 30s)
+  if (consecutiveFailures >= 5) {
     apiStatus.value = "offline";
   } else {
-    // Keep checking with progressive backoff (2s, 4s)
+    // Keep checking with progressive backoff (2s, 4s...)
     apiStatus.value = "stale";
-    const delay = consecutiveFailures * 2000;
+    const delay = Math.min(consecutiveFailures * 2000, 10000);
     setTimeout(checkApiStatus, delay);
   }
 }
