@@ -3,7 +3,8 @@
  * Defines the shape of import.meta.env and handles static assets.
  */
 
-/// <reference types="vite/client" />
+// Reference removed to prevent "Cannot find type definition file" error
+// Manual declarations below handle the necessary types for this project
 
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string;
