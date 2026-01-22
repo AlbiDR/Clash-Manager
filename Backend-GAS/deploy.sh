@@ -54,13 +54,14 @@ find dist -name "*.js" | while read -r f; do
   # 1. Remove "import" lines entirely
   sed -i.bak '/^import /d' "$f"
   
-  # 2. Remove "export" keyword but keep the declaration
+  # 2. Remove "export default" lines ENTIRELY (Must be before generic export strip)
+  # This prevents "export default Foo" becoming "default Foo" (syntax error)
+  sed -i.bak '/^export default/d' "$f"
+
+  # 3. Remove "export" keyword but keep the declaration
   # e.g., "export const CONFIG" -> "const CONFIG"
   # e.g., "export function foo" -> "function foo"
   sed -i.bak 's/^export //g' "$f"
-  
-  # 3. Remove "export" inside lines (e.g. "export type") if any remain, or default exports
-  sed -i.bak '/^export default/d' "$f"
   
   # 4. Remove Object.defineProperty for exports (CommonJS artifact)
   sed -i.bak '/Object.defineProperty(exports/d' "$f"
