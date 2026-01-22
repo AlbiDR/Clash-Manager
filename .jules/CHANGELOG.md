@@ -1,6 +1,27 @@
 # Changelog
 
 
+## [2026-01-22] PR #57: Refactor Settings Module: Logic Extraction & Component Decomposition
+**Commit**: `60c7688de13aa5a239122188899f21107a905275`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/57)
+
+### Description
+This refactor improves the structural integrity and modularity of the settings module in the Frontend PWA. 
+
+By extracting system-level recovery logic into a dedicated composable (`useSystemRecovery`), we decouple the business logic from the view layer, enabling better testability and potential reuse.
+
+The decomposition of `SettingsView.vue` into smaller, atomic components reduces the complexity of the main view and improves maintainability. Each component now handles its own internal state and styling, following the project's atomic execution and modularity principles.
+
+Verification:
+- All 55 unit tests passed, including 4 new tests for `useSystemRecovery`.
+- Visual verification confirmed that the UI remains consistent and the regression with skeleton animations during refresh has been resolved.
+- Type safety has been enhanced with proper interfaces for theme management.
+
+---
+*PR created automatically by Jules for task [2676980365018228065](https://jules.google.com/task/2676980365018228065) started by @AlbiDR*
+
+---
+
 ## [2026-01-21] PR #55: docs(gas): improve contextual density and decision logging in Leaderboard engine
 **Commit**: `87bc65fb03f8bab4abddd8218f59ac2409d228b0`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/55)
