@@ -18,8 +18,8 @@ describe("useApiState", () => {
   it("sets status to online when ping succeeds with status 'online'", async () => {
     const mockPingResponse = {
       status: "online",
-      version: "6.3.0",
-      modules: { API_PUBLIC: "6.3.0" },
+      version: "11.0.1",
+      modules: { API_PUBLIC: "11.0.1" },
     };
 
     // @ts-ignore
@@ -31,16 +31,16 @@ describe("useApiState", () => {
 
     expect(apiStatus.value).toBe("online");
     expect(pingData.value).toMatchObject({
-      version: "6.3.0",
+      version: "11.0.1",
       status: "online",
     });
     expect(pingData.value?.latency).toBeDefined();
   });
 
-  it("sets status to offline when ping returns non-online status", async () => {
+  it("sets status to stale when ping returns non-online status on first attempt", async () => {
     const mockPingResponse = {
       status: "error",
-      version: "6.3.0",
+      version: "11.0.1",
       modules: {},
     };
 
@@ -51,9 +51,8 @@ describe("useApiState", () => {
 
     await checkApiStatus();
 
-    // With soft-fail, single failure doesn't go offline immediately
-    // Since it starts as 'checking', it remains 'checking' (soft fail)
-    expect(apiStatus.value).toBe("checking");
+    // With new soft-fail, single failure transitions to 'stale' to trigger retry
+    expect(apiStatus.value).toBe("stale");
   });
 
   it("sets status to offline only after consecutive failures (Soft Fail)", async () => {
@@ -65,26 +64,16 @@ describe("useApiState", () => {
 
     // First Check (Fail 1)
     await checkApiStatus();
-    // Should NOT be offline yet (Soft Fail)
-    expect(apiStatus.value).not.toBe("offline");
+    expect(apiStatus.value).toBe("stale");
 
-    // Should have a retry queued (Fast Retry)
-    vi.advanceTimersByTime(550);
-    expect(gasClient.ping).toHaveBeenCalledTimes(2);
+    // Advance for first retry (2s)
+    vi.advanceTimersByTime(2100);
+    // After Fail 2, it stays 'stale' and schedules another check
+    expect(apiStatus.value).toBe("stale");
 
-    // After retry fails (Fail 2) -> Now it should be offline
-    // We need to wait for the pending promise of the retry.
-    // Since checkApiStatus is async, the setTimeout call just triggers it.
-    // In a real env, we'd wait. In tests, we might need a small tick.
-    await vi.runAllTicks();
-
-    // Note: Since the retry is async inside setTimeout, we might need to manually trigger checkApiStatus if we want to await it easily,
-    // or just assume the mock rejection happens.
-    // Ideally we'd mock the second call to trigger the state change.
-
-    // Let's explicitly call it a second time to simulate the retry effect for assertion,
-    // as awaiting the timer callback is tricky without a returned promise.
-    await checkApiStatus();
+    // Advance for second retry (4s)
+    vi.advanceTimersByTime(4100);
+    // After Fail 3, it finally gives up and goes 'offline'
     expect(apiStatus.value).toBe("offline");
 
     vi.useRealTimers();
