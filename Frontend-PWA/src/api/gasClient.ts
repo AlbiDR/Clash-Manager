@@ -209,6 +209,7 @@ async function fetchWithRetry(
   try {
     const response = await fetch(url, {
       ...options,
+      cache: "no-store", // 🛡️ RELIABILITY: Prevent stale redirects or "Blocked" responses
       signal: options.signal || controller.signal,
     });
     
@@ -257,9 +258,11 @@ async function gasRequest<T>(
     signal: options?.signal,
   };
 
-  // ⚡ STANDARDIZATION: GAS doPost handles 'action' better in the body.
-  // We keep the URL clean to avoid potential mixed-parameter confusion in the Google Macro engine.
-  const requestUrl = url;
+  // ⚡ MANDATORY: GAS requires 'action' in the URL for proper routing and redirects.
+  // Cache busting is also essential to prevent the browser from skipping the redirect.
+  const separator = url.includes("?") ? "&" : "?";
+  const cacheBuster = `_cb=${Date.now()}`;
+  const requestUrl = `${url}${separator}action=${action}&${cacheBuster}`;
 
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);
