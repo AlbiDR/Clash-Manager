@@ -11,8 +11,8 @@ fi
 mkdir -p dist
 
 echo "🏗️  Compiling TypeScript..."
-# Capture output to check for errors explicitly if needed, but set -e handles status codes
-if ! ./node_modules/.bin/tsc; then
+# Use npx to ensure we use the local typescript version
+if ! npx tsc; then
     echo "❌ TypeScript compilation failed."
     exit 1
 fi
@@ -32,32 +32,43 @@ cp appsscript.json dist/
 
 echo "🛠️  Fixing files for Google Apps Script..."
 
-# Process files
+# Process files: Convert JS to GAS-compatible GS
+# We need to strip ES Module syntax because GAS runs in a global scope (mostly).
 find dist -name "*.js" | while read -r f; do
-  echo "  > Processing $(basename "$f")"
-  
-  # Strip import statements (e.g., import { X } from './Y';)
-  # Matches lines starting with 'import '
+  # 1. Remove "import" lines entirely
   sed -i.bak '/^import /d' "$f"
   
-  # Strip export keywords (e.g., export const X = ... -> const X = ...)
-  # Matches 'export ' at the start of the line or after whitespace
+  # 2. Remove "export" keyword but keep the declaration
+  # e.g., "export const CONFIG" -> "const CONFIG"
+  # e.g., "export function foo" -> "function foo"
   sed -i.bak 's/^export //g' "$f"
-  sed -i.bak 's/ export / /g' "$f"
   
-  # Strip default exports (e.g., export default X; -> remove line)
+  # 3. Remove "export" inside lines (e.g. "export type") if any remain, or default exports
   sed -i.bak '/^export default/d' "$f"
+  
+  # 4. Remove Object.defineProperty for exports (CommonJS artifact)
+  sed -i.bak '/Object.defineProperty(exports/d' "$f"
+  
+  # 5. Remove "use strict"; lines (GAS adds this implicitly/doesn't strictly need it)
+  sed -i.bak '/^"use strict";/d' "$f"
 
   # Clean up temp files created by sed
   rm "${f}.bak"
   
-  # Rename .js to .gs so Google recognizes it as a server script
+  # Rename .js to .gs
   mv "$f" "${f%.js}.gs"
 done
 
+# Final Safety Check: Do we have .gs files?
+count=$(find dist -name "*.gs" | wc -l)
+if [ "$count" -eq "0" ]; then
+   echo "❌ Error: No .gs files found in dist after processing. Aborting push."
+   exit 1
+fi
+
 echo "🚀 Pushing to Google Apps Script..."
-# We run clasp from the folder containing .clasp.json (which is current dir)
-# clasp.json points rootDir to ./dist, so it will push content of dist
-clasp push --force
+# Clasp will use the rootDir from .clasp.json (which is ./dist)
+# It will verify files against .claspignore (which now whitelist *.gs)
+npx clasp push --force
 
 echo "✅ SUCCESS: Your scripts have been deployed."
