@@ -21,11 +21,11 @@ interface AssetLink {
   target: AndroidTarget;
 }
 
-const fingerprint = process.argv[2];
+const fingerprint = (process as any).argv[2];
 
 if (!fingerprint) {
   console.error("❌ Please provide the SHA-256 fingerprint as an argument.");
-  process.exit(1);
+  (process as any).exit(1);
 }
 
 const assetLinks: AssetLink[] = [
@@ -51,5 +51,5 @@ try {
   console.log(`✅ Generated assetlinks.json at ${outputPath}`);
 } catch (error: any) {
   console.error(`❌ Failed to write assetlinks.json: ${error.message}`);
-  process.exit(1);
+  (process as any).exit(1);
 }
