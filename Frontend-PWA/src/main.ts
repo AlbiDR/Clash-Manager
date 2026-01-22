@@ -99,20 +99,22 @@ async function bootstrap() {
     // 3. Mount App
     app.mount("#app");
 
-    // 4. Initialize Systems (Post-Mount)
+    // 4. Initialize Systems (Immediate)
     const clashData = useClashData();
     const apiState = useApiState();
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
+    // ⚡ INSTANT BOOT: Load local cache and start network handshake immediately
+    // Removed the 400ms artificial delay to speed up cold starts
     clashData.loadLocal();
+    apiState.init();
+    clashData.startBackgroundSync();
 
-    // Defer network and heavy systems
+    // Defer only truly heavy background tasks
     setTimeout(async () => {
-      apiState.init();
-      clashData.startBackgroundSync();
       wakeLock.init();
-
+      
       // 💾 PERSISTENCE: Request durable storage
       storagePersistence.requestPersistence();
 
@@ -148,7 +150,7 @@ async function bootstrap() {
           console.warn("Periodic Sync registration failed", e);
         }
       }
-    }, 400);
+    }, 1000);
   } catch (error) {
     showFatalError(error);
   }
