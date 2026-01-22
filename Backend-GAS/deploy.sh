@@ -54,8 +54,8 @@ find dist -name "*.js" | while read -r f; do
   # 1. Remove "import" lines entirely
   sed -i.bak '/^import /d' "$f"
   
-  # 2. Remove "export default" lines ENTIRELY (Must be before generic export strip)
-  # This prevents "export default Foo" becoming "default Foo" (syntax error)
+  # 2. Remove "export default" lines ENTIRELY (Must be BEFORE generic export strip)
+  # Matches "export default Something;" or "export default {"
   sed -i.bak '/^export default/d' "$f"
 
   # 3. Remove "export" keyword but keep the declaration
