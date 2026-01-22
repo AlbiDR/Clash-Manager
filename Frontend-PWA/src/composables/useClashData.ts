@@ -6,7 +6,7 @@ import { useBlueprintMode } from "./useBlueprintMode";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
 import { useBroadcastChannel } from "./useBroadcastChannel";
-import { useWakeLock } from "./useWakeLock";
+import { useWakeLock } from "./composables/useWakeLock";
 
 // Global State
 const clashData = shallowRef<WebAppData | null>(null);
@@ -46,13 +46,6 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
  */
 function updateLocalData(newData: WebAppData) {
   clashData.value = newData;
-  // We generally don't persist optimistic updates to the snapshot
-  // unless we are sure it's stable, but for simple dismissals it's fine
-  // IF needed. For now, we will let the consumer decide persistence or
-  // we can add a flag. The original implementation persisted on dismissal.
-  // We'll expose a persist helper if needed, or just let the consumer assume
-  // this is in-memory only.
-  // Actually, checking original code: dismissRecruitsAction DID persist to localStorage.
   localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(newData));
 }
 
@@ -90,16 +83,12 @@ export function useClashData() {
     }
 
     if (isBlueprintMode.value) {
-      // Blueprint mode simulation: No data loaded yet? Or partial?
-      // Original logic: updateBadgeCount(mock); clanData.value = null;
-      // We will mimic: null data to force skeleton
       clashData.value = null;
       lastSyncTime.value = Date.now();
       return;
     }
 
     if (isSyntheticMode.value) {
-      // console.log("🌟 Synthetic Mode Active");
       const mock = generateMockData();
       clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
@@ -111,14 +100,8 @@ export function useClashData() {
   }
 
   async function refresh() {
-    if (isRefreshing.value) {
-      // If already refreshing, decide if we should debounce or replace.
-      // For now, we replace to ensure freshest data.
-    }
-
     // Cancel previous pending request
     if (refreshAbortController) {
-      // Pass a reason so we can distinguish this from a timeout
       refreshAbortController.abort("replaced");
     }
     refreshAbortController = new AbortController();
@@ -131,9 +114,12 @@ export function useClashData() {
       }
     }, 40000);
 
+    const startTime = Date.now();
+
     try {
       isRefreshing.value = true;
       syncStatus.value = "syncing";
+      // ⚡ UX FIX: Clear error immediately so UI shows loading state, not stale error
       syncError.value = null;
 
       // No-op guard for special modes
@@ -143,7 +129,7 @@ export function useClashData() {
         isShowcaseMode.value
       ) {
         await new Promise((resolve) => setTimeout(resolve, 800));
-        startBackgroundSync(); // Re-run the appropriate mock logic
+        startBackgroundSync();
         syncStatus.value = "success";
         isRefreshing.value = false;
         clearTimeout(timeoutId);
@@ -152,36 +138,38 @@ export function useClashData() {
 
       const remoteData = await fetchRemote({ signal, force: true });
 
+      // ⚡ UX FIX: Enforce minimum 800ms load time to prevent UI flicker on fast failures/success
+      // This ensures the user sees the "loading" state even if the error happens instantly
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 800) {
+        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
+      }
+
       clashData.value = remoteData;
       lastSyncTime.value = remoteData.timestamp;
       syncStatus.value = "success";
 
-      // Save to snapshot for next cold start LCP
-      // Use requestIdleCallback or setTimeout to avoid blocking input during save
       const saveTask = window.requestIdleCallback || setTimeout;
       saveTask(() => {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
-        // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
       });
 
-      // 📡 Broadcast success to other tabs
       broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
     } catch (e: unknown) {
-      // Handle AbortSignal logic
       if (signal.aborted) {
-        // If replaced by a new request, we silently exit (do NOT set error)
-        if (signal.reason === "replaced") {
-          // console.log("Sync replaced by newer request");
-          return;
-        }
-        // If timed out, we DO set error
+        if (signal.reason === "replaced") return;
         if (signal.reason === "timeout") {
           syncStatus.value = "error";
           syncError.value = "Request Timed Out";
           return;
         }
-        // Fallback for standard aborts (shouldn't happen often with above logic)
         return;
+      }
+
+      // ⚡ UX FIX: Ensure we respected minimum delay even on error
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 800) {
+        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
       }
 
       console.error("Sync failed:", e);
@@ -189,12 +177,9 @@ export function useClashData() {
       syncError.value = e instanceof Error ? e.message : "Sync failed";
     } finally {
       clearTimeout(timeoutId);
-      // Only reset flags if THIS was the active controller (not replaced)
       if (refreshAbortController?.signal === signal) {
         isRefreshing.value = false;
         refreshAbortController = null;
-
-        // Auto-dismiss success state
         setTimeout(() => {
           if (syncStatus.value === "success") syncStatus.value = "idle";
         }, 2000);
@@ -211,9 +196,6 @@ export function useClashData() {
     { flush: "post" },
   );
 
-  // 🛡️ Logic: Screen Wake Lock (Logic #15)
-  // 🛡️ Logic: Screen Wake Lock (Logic #15)
-  // Use shared composable for stability and DRY compliance
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
 
   watch(syncStatus, (status: string) => {
@@ -231,6 +213,6 @@ export function useClashData() {
     loadLocal,
     startBackgroundSync,
     refresh,
-    updateLocalData, // Exposed for optimistic updates from business logic
+    updateLocalData,
   };
 }
