@@ -9,7 +9,7 @@
     "deploy:pwa": "pnpm --filter clash-manager-pwa build",
     "dev:pwa": "pnpm --filter clash-manager-pwa dev",
     "build": "pnpm -r build",
-    "test": "pnpm -r test";test,
+    "test": "pnpm -r test",
     "fix:gitignore": "git rm -r --cached . && git add ."
   },
   "devDependencies": {
