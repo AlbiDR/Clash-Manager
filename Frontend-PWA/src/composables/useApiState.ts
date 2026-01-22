@@ -21,7 +21,10 @@ let consecutiveFailures = 0; // Track consecutive failures for soft-fail
 let handshakeController: AbortController | null = null;
 
 async function checkApiStatus() {
-  if (!isInitialized) apiStatus.value = "checking";
+  // Only show "checking" on the very first cold start to avoid flickering during retries
+  if (!isInitialized && consecutiveFailures === 0) {
+    apiStatus.value = "checking";
+  }
 
   apiConfigured.value = isConfigured();
   apiUrl.value = getApiUrl();
