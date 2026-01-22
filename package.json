@@ -1,0 +1,16 @@
+
+{
+  "name": "clash-manager-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy:gas": "pnpm --filter clash-manager-backend deploy",
+    "deploy:pwa": "pnpm --filter clash-manager-pwa build",
+    "dev:pwa": "pnpm --filter clash-manager-pwa dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
