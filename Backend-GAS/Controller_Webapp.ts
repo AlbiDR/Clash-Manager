@@ -14,6 +14,34 @@ import type { AppUtils } from "./Utilities";
 // @ts-ignore
 const VER_CONTROLLER_WEBAPP = "11.0.0";
 
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
@@ -217,7 +245,7 @@ function _generatePayloadInternal(): string {
     if (blSheet) {
       const rawBL = blSheet.getDataRange().getValues();
       const now = Date.now();
-      rawBL.forEach((r) => {
+      rawBL.forEach((r: any) => {
         if (Number(r[1]) > now) blacklist.add(String(r[0]).toUpperCase());
       });
     }
