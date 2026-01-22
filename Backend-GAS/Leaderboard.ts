@@ -20,6 +20,34 @@ import type { IScoringSystem } from "./ScoringSystem";
 // @ts-ignore
 const VER_LEADERBOARD = "11.0.0";
 
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
@@ -80,7 +108,7 @@ function updateLeaderboard(): void {
       const tagIdx = L.TAG; // Corrected: Mapping is already 0-indexed offset
       const scoreIdx = L.RAW_SCORE; // Corrected: Mapping is already 0-indexed offset
 
-      oldData.forEach((row) => {
+      oldData.forEach((row: any) => {
         if (row.length > scoreIdx) {
           const rawTag = String(row[tagIdx]);
           const score = row[scoreIdx];
@@ -143,7 +171,7 @@ function updateLeaderboard(): void {
           .getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1)
           .getValues();
 
-        tagData.forEach((row, i) => {
+        tagData.forEach((row: any, i: number) => {
           const tag = String(row[0]);
           const histStr = histData[i][0];
           if (tag && typeof histStr === "string" && histStr.length > 0) {
@@ -210,7 +238,7 @@ function updateLeaderboard(): void {
       .getValues();
     const S_DB = CONFIG.SCHEMA.DB;
 
-    dbValues.forEach((row) => {
+    dbValues.forEach((row: any) => {
       const tag = String(row[S_DB.TAG]);
       const dateVal = row[S_DB.DATE];
       const date = dateVal ? new Date(dateVal) : new Date();
