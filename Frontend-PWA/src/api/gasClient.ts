@@ -44,26 +44,20 @@ const getGasUrl = () => {
     url = import.meta.env.VITE_GAS_URL || "";
   }
 
+  if (!url) return "";
+  
   url = url.trim();
 
-  // ⚡ SMART RESOLUTION: If input looks like a Script ID (no slashes, no dots), construct the URL automatically.
-  // Matches standard ID format (alphanumeric, underscores, hyphens)
-  if (url && !url.includes("/") && !url.includes(".") && url.length > 15) {
-     // Assume it's a raw Deployment ID and construct the Web App URL
+  // ⚡ SMART RESOLUTION: Handle raw Deployment IDs (format: AKfycb...)
+  if (!url.includes("/") && !url.includes(".") && url.length > 20) {
      return `https://script.google.com/macros/s/${url}/exec`;
   }
 
-  if (url) {
-    // 🛡️ SYNC: Ensure SW can see the URL via IDB
-    idb.set("cm_gas_url", url).catch(() => {});
-  }
+  // 🛡️ SYNC: Ensure SW can see the URL via IDB
+  idb.set("cm_gas_url", url).catch(() => {});
 
-  if (url && !url.startsWith("https://")) {
-    if (url.startsWith("http://")) {
-      url = url.replace("http://", "https://");
-    } else {
-      url = `https://${url}`;
-    }
+  if (!url.startsWith("https://") && !url.startsWith("http://")) {
+    url = `https://${url}`;
   }
 
   return url;
@@ -145,23 +139,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return 0;
   };
 
-  /**
-   * Universal Mapper
-   * Relies on the schema keys provided by the backend, with legacy compat support.
-   */
   const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
     if (!row || !Array.isArray(row)) return null;
 
-    // Create a key-to-value map for this row based on schema
     const d: Record<string, any> = {};
     schema.forEach((key, index) => {
       if (index < row.length) d[key] = row[index];
     });
 
     if (type === "lb") {
-      // 🛡️ LEGACY COMPAT: Map 's' -> performanceScore, 'r' -> performanceRawScore
       const perfScore = d.performanceScore ?? d.s;
-      const perfRaw = d.performanceRawScore ?? d.r; // Handle old 'r' key
+      const perfRaw = d.performanceRawScore ?? d.r;
 
       return {
         id: safeStr(d.id),
@@ -209,20 +197,15 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   };
 }
 
-/**
- * Standard Fetch with Retry
- * Throws errors on 4xx/5xx so retries can happen.
- */
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
   retries = 3,
-  backoff = 500,
+  backoff = 1000,
 ): Promise<Response> {
   try {
     const response = await fetch(url, options);
 
-    // We do NOT retry on 4xx (client errors) usually, but 429 (rate limit) is an exception.
     if (!response.ok) {
       if (response.status >= 500 || response.status === 429) {
         throw new Error(`HTTP ${response.status}`);
@@ -231,11 +214,11 @@ async function fetchWithRetry(
     }
     return response;
   } catch (e: any) {
-    if (e.name === "AbortError") throw e; // Don't retry aborts
+    if (e.name === "AbortError") throw e;
 
     if (retries > 0) {
       await new Promise((r) => setTimeout(r, backoff));
-      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+      return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
     }
     throw e;
   }
@@ -249,7 +232,7 @@ type GasRequestOptions = {
 async function gasRequest<T>(
   action: string,
   payload?: Record<string, unknown>,
-  options?: GasRequestOptions, // Fix: Add options param
+  options?: GasRequestOptions,
 ): Promise<T> {
   const url = getGasUrl();
   if (!url) throw new Error("GAS_URL not configured.");
@@ -258,17 +241,19 @@ async function gasRequest<T>(
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({ action, ...payload }),
-    signal: options?.signal, // Fix: Pass signal
+    signal: options?.signal,
   };
 
+  // ⚡ CACHE BUSTING: Prevent stale browser cache during cold starts
+  const cacheBuster = action === 'ping' ? `&_cb=${Date.now()}` : '';
   const separator = url.includes("?") ? "&" : "?";
-  const requestUrl = `${url}${separator}action=${action}`;
+  const requestUrl = `${url}${separator}action=${action}${cacheBuster}`;
 
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(`Server returned HTTP ${response.status}`);
     }
 
     const text = await response.text();
@@ -276,14 +261,16 @@ async function gasRequest<T>(
       throw new Error("Empty Response from Server");
     }
 
+    // 🛡️ GOOGLE ERROR DETECTION: Catch HTML responses (Auth redirects, maintenance)
+    if (text.toLowerCase().includes("<html")) {
+      throw new Error("Backend unavailable (Check Permissions/URL)");
+    }
+
     let envelope: GenericEnvelope<T>;
     try {
       envelope = JSON.parse(text);
     } catch (e) {
-      if (text.toLowerCase().includes("<html")) {
-        throw new Error("Google Server Error");
-      }
-      throw new Error("Invalid JSON Response");
+      throw new Error("Malformed JSON Response from Backend");
     }
 
     const isSuccess =
@@ -296,21 +283,18 @@ async function gasRequest<T>(
     }
 
     const errorMessage =
-      envelope.error?.message || envelope.message || "Unknown Backend Error";
+      envelope.error?.message || envelope.message || "Operation failed on server";
     throw new Error(errorMessage);
   } catch (e: any) {
     if (e.name === "AbortError") throw e;
-
-    console.warn("GAS Request Failed, attempting background sync queue", e);
-
-    await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
-
-    if ("serviceWorker" in navigator && "SyncManager" in window) {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        await (reg as any).sync.register("offline-queue-sync");
-      } catch (syncErr) {
-        console.warn("Background Sync registration failed", syncErr);
+    
+    if (action !== 'ping' && action !== 'getwebappdata') {
+      await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
+      if ("serviceWorker" in navigator && "SyncManager" in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          await (reg as any).sync.register("offline-queue-sync");
+        } catch (syncErr) {}
       }
     }
 
@@ -362,7 +346,6 @@ export async function triggerBackendUpdate(
   );
 }
 
-// ⚡ DIRECT WORKER SCAN
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const workerUrl = getWorkerUrl();
   if (!workerUrl) return null;
@@ -372,11 +355,7 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        tags: [
-          // Basic seed list for public scan if no specific targets
-          "2CCCP", "9U9Q9", "29UQQ282", "200000" // Popular tourney patterns or let worker decide
-        ],
-        // Default scoring profile
+        tags: ["2CCCP", "9U9Q9", "29UQQ282", "200000"],
         scoring: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 }
       })
     });
@@ -384,13 +363,12 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
     if (!res.ok) throw new Error(`Worker status ${res.status}`);
     const json = await res.json();
     
-    // Transform raw worker format to PWA Recruit format
     if (json.candidates && Array.isArray(json.candidates)) {
       return json.candidates.map((c: any) => ({
         id: c.tag.replace("#", ""),
         n: c.name,
         t: c.trophies,
-        potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)), // Approx normalization
+        potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)),
         potentialRawScore: c.rawScore,
         d: {
           don: c.donations,
@@ -402,12 +380,10 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
     }
     return null;
   } catch (e) {
-    console.warn("Direct worker scan failed:", e);
     return null;
   }
 }
 
-// 🔔 PUSH SUBSCRIPTION
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
   const workerUrl = getWorkerUrl();
   if (!workerUrl) return false;
@@ -420,7 +396,6 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
     });
     return true;
   } catch (e) {
-    console.warn("Push subscription failed:", e);
     return false;
   }
 }
