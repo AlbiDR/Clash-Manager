@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🔌 MODULE: API_PUBLIC - TypeScript Edition
@@ -448,4 +449,4 @@ function dispatchAsyncUpdate(): void {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { doGet, doPost, dispatchAsyncUpdate, VER_API_PUBLIC });
+Object.assign(this as any, { doGet, doPost, dispatchAsyncUpdate, VER_API_PUBLIC });
