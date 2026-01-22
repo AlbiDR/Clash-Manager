@@ -33,6 +33,17 @@ if [ ! -f "appsscript.json" ]; then
 fi
 cp appsscript.json dist/
 
+# Ensure .clasp.json exists (Clasp requires this specific filename)
+if [ ! -f ".clasp.json" ]; then
+    if [ -f "clasp.json" ]; then
+        echo "⚠️  Found clasp.json but expected .clasp.json. Renaming..."
+        mv clasp.json .clasp.json
+    else
+        echo "❌ Error: .clasp.json not found! Please run 'clasp clone <scriptId>' or create it."
+        exit 1
+    fi
+fi
+
 echo "🛠️  Fixing files for Google Apps Script..."
 
 # Process files: Convert JS to GAS-compatible GS
