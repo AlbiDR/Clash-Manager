@@ -1,128 +1,94 @@
 /**
- * ============================================================================
- * ⚔️ MODULE: SERVICE_WAR_SNAPSHOT - Agentic Edition
- * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Direct state engine for Clan War phase detection.
- * 🏷️ VERSION: 11.6.0 (Renamed & Trigger-Optimized)
- * ============================================================================
+ * ⚔️ WAR INTELLIGENCE - CLASP EDITION
+ * VERSION: 11.6.0 | Optimized for Agentic Quota
  */
-
-import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
-
-declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
 
 /**
- * 📦 GLOBAL TRIGGER
- * Call this from other modules or triggers to get the current state.
+ * 🚀 ENTRY POINT: Triggerable by Apps Script
+ * Returns or logs the current war state.
  */
-function GetWarSnapshot(): WarSnapshotResult {
-  return WarSnapshot.get();
+function GetWarSnapshot(): any {
+  return WarIntelligence.getSnapshot();
 }
 
-export interface WarSnapshotResult {
-  protocol: "Trial Phase" | "Engagement Phase" | "Maintenance Mode" | "Seasonal Transition" | "Idle";
-  week: number;
-  day: number;
-  isColosseum: boolean;
-  isRaceFinished: boolean;
-  isEstimated: boolean;
-  minutesToReset: number;
-  timestamp: string;
-}
-
-/**
- * 🧠 WAR SNAPSHOT SERVICE
- * Singleton optimized for minimal token density and quota preservation.
- */
-export const WarSnapshot = (() => {
-  const CACHE_KEY = "WAR_INTEL_SNAP";
-  const TTL = 900; // 15 Minutes
-  const UTC_RESET_HOUR = 10;
-  
-  let _RAM_CACHE: WarSnapshotResult | null = null;
+const WarIntelligence = (() => {
+  const K = "W_SNAP_V11"; // Cache Key
+  const TTL = 900;       // 15 Min Cache
+  const RESET_H = 10;    // 10:00 UTC Reset
 
   return {
-    /**
-     * @returns {WarSnapshotResult} Atomic state of the current war.
-     */
-    get(): WarSnapshotResult {
-      // 1. Memory Check (Zero Quota)
-      if (_RAM_CACHE) return { ..._RAM_CACHE, minutesToReset: this.calcReset(new Date()) };
+    getSnapshot() {
+      // 1. Memory/Cache Handshake
+      const cached = CacheService.getScriptCache().get(K);
+      if (cached) return JSON.parse(cached);
 
-      // 2. Script Cache Check (Low Quota)
-      const cached = Utils.CacheHandler.getLarge(CACHE_KEY);
-      if (cached) {
-        _RAM_CACHE = JSON.parse(cached);
-        return { ..._RAM_CACHE!, minutesToReset: this.calcReset(new Date()) };
-      }
-
-      // 3. API Fetch (Normal Quota - Locked to prevent race conditions)
-      return Utils.executeSafely("WAR_SYNC_LOCK", () => {
+      // 2. Atomic Execution
+      // @ts-ignore
+      return Utils.executeSafely("WAR_SYNC", () => {
         try {
+          // @ts-ignore
           const tag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-          const data = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${tag}/currentriverrace`]);
-          const result = this.synthesize(data?.[0]);
-          
-          Utils.CacheHandler.putLarge(CACHE_KEY, JSON.stringify(result), TTL);
-          return (_RAM_CACHE = result);
+          // @ts-ignore
+          const res = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${tag}/currentriverrace`]);
+          const snap = this.parse(res?.[0]);
+
+          CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
+          return snap;
         } catch (e) {
-          console.warn("API Offline: Generating Time-Based Estimate.");
-          return this.generateEstimate();
+          return this.fallback();
         }
       });
     },
 
-    synthesize(data: any): WarSnapshotResult {
+    parse(d: any) {
       const now = new Date();
-      const base: WarSnapshotResult = {
-        protocol: "Idle", week: 0, day: 0, isColosseum: false, 
-        isRaceFinished: false, isEstimated: false, 
-        minutesToReset: this.calcReset(now), timestamp: Utils.formatDate(now)
-      };
-
-      if (!data) return base;
-      if (data.reason === "inMaintenance") return { ...base, protocol: "Maintenance Mode" };
-
-      const pIdx = data.periodIndex;
-      const sIdx = data.sectionIndex || 0;
-      if (pIdx === undefined) return { ...base, protocol: "Seasonal Transition" };
-
-      const day = (pIdx % 7) + 1;
-      const isColosseum = sIdx >= 3;
-      const isRaceFinished = data.state === "full";
+      const pIdx = d?.periodIndex;
+      const sIdx = d?.sectionIndex || 0;
       
-      // Phase Logic: Colosseum or 'war' state = Engagement. 'training' = Trial.
-      let protocol: WarSnapshotResult["protocol"] = "Engagement Phase";
-      if (!isColosseum && data.state === "training") {
-        protocol = "Trial Phase";
-      } else if (!isColosseum && data.state !== "war" && day <= 3) {
-        protocol = "Trial Phase";
-      }
-
-      return { ...base, protocol, week: sIdx + 1, day, isColosseum, isRaceFinished };
-    },
-
-    generateEstimate(): WarSnapshotResult {
-      const now = new Date();
-      const utcDay = now.getUTCDay();
-      const h = now.getUTCHours();
-      // Adjust for UTC 10:00 reset
-      let day = (h < UTC_RESET_HOUR) ? (utcDay === 0 ? 6 : utcDay - 1) : utcDay;
-      day = day === 0 ? 7 : day; 
+      // State Calculation Logic
+      const isCol = sIdx >= 3;
+      const day = (pIdx !== undefined) ? (pIdx % 7) + 1 : this.estDay(now);
+      const isFinished = d?.state === "full";
+      
+      // Phase Logic: Training (Trial) vs War (Engagement)
+      let phase: "Trial Phase" | "Engagement Phase" | "Idle" = "Idle";
+      if (d?.reason === "inMaintenance") phase = "Idle";
+      else if (isCol || d?.state === "war" || isFinished) phase = "Engagement Phase";
+      else if (d?.state === "training") phase = "Trial Phase";
+      else phase = day <= 3 ? "Trial Phase" : "Engagement Phase";
 
       return {
-        protocol: day <= 3 ? "Trial Phase" : "Engagement Phase",
-        week: 0, day, isColosseum: false, isRaceFinished: false, isEstimated: true,
-        minutesToReset: this.calcReset(now), timestamp: Utils.formatDate(now)
+        protocol: phase,
+        week: sIdx + 1,
+        day: day,
+        isColosseum: isCol,
+        isRaceFinished: isFinished,
+        minutesToReset: this.calcR(now),
+        isEstimated: !d,
+        timestamp: now.toISOString()
       };
     },
 
-    calcReset(d: Date): number {
-      const r = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), UTC_RESET_HOUR, 0, 0));
-      if (d.getTime() >= r.getTime()) r.setUTCDate(r.getUTCDate() + 1);
-      return Math.floor((r.getTime() - d.getTime()) / 60000);
+    estDay(n: Date) {
+      const h = n.getUTCHours();
+      const d = (h < RESET_H) ? (n.getUTCDay() === 0 ? 6 : n.getUTCDay() - 1) : n.getUTCDay();
+      return d === 0 ? 7 : d;
+    },
+
+    calcR(n: Date) {
+      const r = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
+      if (n.getTime() >= r.getTime()) r.setUTCDate(r.getUTCDate() + 1);
+      return Math.floor((r.getTime() - n.getTime()) / 60000);
+    },
+
+    fallback() {
+      const now = new Date();
+      const d = this.estDay(now);
+      return {
+        protocol: d <= 3 ? "Trial Phase" : "Engagement Phase",
+        week: 0, day: d, isColosseum: false, isRaceFinished: false,
+        minutesToReset: this.calcR(now), isEstimated: true, timestamp: now.toISOString()
+      };
     }
   };
 })();
