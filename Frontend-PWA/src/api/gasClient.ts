@@ -204,7 +204,7 @@ async function fetchWithRetry(
   backoff = 1000,
 ): Promise<Response> {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort("Global Fetch Timeout"), 30000); // 30s hard limit
+  const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "AbortError")), 30000);
 
   try {
     const response = await fetch(url, {
@@ -212,9 +212,8 @@ async function fetchWithRetry(
       signal: options.signal || controller.signal,
     });
     
-    clearTimeout(id);
+    clearTimeout(timeoutId);
 
-    // 🛡️ STATUS CHECK: Treat 5xx and 429 as retryable.
     if (!response.ok) {
       if (response.status >= 500 || response.status === 429) {
         throw new Error(`HTTP ${response.status}`);
@@ -223,8 +222,12 @@ async function fetchWithRetry(
     }
     return response;
   } catch (e: any) {
-    clearTimeout(id);
-    if (e.name === "AbortError" || e === "Global Fetch Timeout") throw e;
+    clearTimeout(timeoutId);
+    
+    // 🛡️ RECOGNITION: Correctly identify if the error was a deliberate abort vs timeout
+    if (e.name === "AbortError") {
+      throw e; 
+    }
 
     if (retries > 0) {
       await new Promise((r) => setTimeout(r, backoff));
@@ -254,10 +257,9 @@ async function gasRequest<T>(
     signal: options?.signal,
   };
 
-  // ⚡ CACHE BUSTING: Prevent stale browser cache during cold starts
-  const separator = url.includes("?") ? "&" : "?";
-  const cacheBuster = `_cb=${Date.now()}`;
-  const requestUrl = `${url}${separator}action=${action}&${cacheBuster}`;
+  // ⚡ STANDARDIZATION: GAS doPost handles 'action' better in the body.
+  // We keep the URL clean to avoid potential mixed-parameter confusion in the Google Macro engine.
+  const requestUrl = url;
 
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);
@@ -341,8 +343,8 @@ export async function fetchRemote(options?: {
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
   return inflated;
 }
-export async function ping(): Promise<PingResponse> {
-  return gasRequest<PingResponse>("ping");
+export async function ping(options?: GasRequestOptions): Promise<PingResponse> {
+  return gasRequest<PingResponse>("ping", undefined, options);
 }
 
 export async function dismissRecruits(

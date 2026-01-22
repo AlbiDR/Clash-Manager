@@ -18,6 +18,7 @@ const pingData = ref<PingResponse | null>(null);
 
 let isInitialized = false;
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
+let handshakeController: AbortController | null = null;
 
 async function checkApiStatus() {
   if (!isInitialized) apiStatus.value = "checking";
@@ -27,23 +28,29 @@ async function checkApiStatus() {
 
   if (!apiConfigured.value) {
     apiStatus.value = "unconfigured";
-    isInitialized = true; // Mark initialized even if not configured to stop checking
+    isInitialized = true; 
     return;
   }
 
+  // 🛡️ CANCELLATION: Kill any pending handshake before starting a new one
+  if (handshakeController) {
+    handshakeController.abort("Replaced by new check");
+  }
+  handshakeController = new AbortController();
+  const signal = handshakeController.signal;
+
   try {
-    // ⚡ Graduated Feedback: If this is a retry, show "Waking" status
     if (consecutiveFailures > 0) {
       apiStatus.value = "waking";
     }
 
     const start = Date.now();
 
-    // ⚡ PATIENT HANDSHAKE: Extended timeout for slow cold starts
+    // ⚡ PATIENT HANDSHAKE: Pass the signal through to the ping call
     const response = await Promise.race([
-      ping(),
+      ping({ signal }),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error("Handshake Timeout")), 25000),
+        setTimeout(() => reject(new DOMException("Handshake Timeout", "AbortError")), 25000),
       ),
     ]);
     const latency = Date.now() - start;
@@ -55,17 +62,26 @@ async function checkApiStatus() {
         latency,
       };
       consecutiveFailures = 0;
-      isInitialized = true; // Success!
+      isInitialized = true;
     } else {
-      handleFailure();
+      handleFailure(signal);
     }
-  } catch (e) {
+  } catch (e: any) {
+    if (e.name === "AbortError" && signal.aborted) {
+       // Gracefully handle deliberate aborts
+       return;
+    }
     console.warn("API Handshake Failed:", e);
-    handleFailure();
+    handleFailure(signal);
+  } finally {
+    if (handshakeController?.signal === signal) {
+      handshakeController = null;
+    }
   }
 }
 
-function handleFailure() {
+function handleFailure(signal?: AbortSignal) {
+  if (signal?.aborted) return;
   consecutiveFailures++;
 
   // 🛡️ SOFT FAIL ARCHITECTURE
