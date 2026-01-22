@@ -26,12 +26,12 @@ const README_PATH = path.join(__dirname, "../../", "README.md");
 
 if (!fs.existsSync(CONFIG_PATH)) {
   console.error(`❌ Configuration not found at ${CONFIG_PATH}`);
-  process.exit(1);
+  (process as any).exit(1);
 }
 
 if (!fs.existsSync(README_PATH)) {
   console.error(`❌ README not found at ${README_PATH}`);
-  process.exit(1);
+  (process as any).exit(1);
 }
 
 const configText = fs.readFileSync(CONFIG_PATH, "utf8");
@@ -95,12 +95,12 @@ const docWeights = extractWeightsFromReadme(readmeText);
 
 if (!cfgWeights) {
   console.error("❌ Could not extract WEIGHTS from Configuration.ts");
-  process.exit(2);
+  (process as any).exit(2);
 }
 
 if (!docWeights || Object.keys(docWeights).length === 0) {
   console.error("❌ Could not extract weights from README.md");
-  process.exit(2);
+  (process as any).exit(2);
 }
 
 const keys = ["FAME", "AVG_FAME", "DONATION", "TROPHY", "WAR_RATE"];
@@ -135,8 +135,8 @@ keys.forEach((k) => {
   }
 });
 
-if (!ok) process.exit(3);
+if (!ok) (process as any).exit(3);
 console.log(
   "\n🚀 Scoring weights are consistent between Configuration and README.",
 );
-process.exit(0);
+(process as any).exit(0);
