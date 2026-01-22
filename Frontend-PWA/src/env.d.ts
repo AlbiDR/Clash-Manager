@@ -5,11 +5,6 @@
 
 /// <reference types="vite/client" />
 
-// 🛡️ SHIM: Fix for environment where 'vue' module exports are not detected
-declare module "vue" {
-  export * from "@vue/runtime-dom";
-}
-
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string;
   readonly VITE_WORKER_URL: string;
