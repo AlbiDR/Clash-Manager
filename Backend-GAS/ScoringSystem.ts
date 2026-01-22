@@ -15,6 +15,8 @@ import type { ScoringWeights } from "../Backend-Worker/src/types";
 // @ts-ignore
 const VER_SCORING_SYSTEM = "10.1.0";
 
+declare const module: any;
+
 // Define the scoring configuration interface
 export interface ScoringConfig {
   LEADERBOARD: {
@@ -246,23 +248,23 @@ const ScoringSystem: IScoringSystem = {
     );
     const poolSize = Math.max(3, Math.ceil(pool.length * 0.05));
     const topPool = pool.slice(0, poolSize);
-    const avgPoolRef =
+    const topPoolAvg =
       topPool.length > 0
         ? topPool.reduce((a, b) => a + b.rawScore, 0) / topPool.length
         : 0;
 
     let finalBenchmark = 1;
-    if (avgClanRef > 0 && avgPoolRef > 0) {
-      finalBenchmark = avgClanRef * 0.4 + avgPoolRef * 0.6;
+    if (avgClanRef > 0 && topPoolAvg > 0) {
+      finalBenchmark = avgClanRef * 0.4 + topPoolAvg * 0.6;
     } else if (avgClanRef > 0) {
       finalBenchmark = avgClanRef;
-    } else if (avgPoolRef > 0) {
-      finalBenchmark = avgPoolRef;
+    } else if (topPoolAvg > 0) {
+      finalBenchmark = topPoolAvg;
     }
 
     if (typeof console !== "undefined" && console.log) {
       console.log(
-        `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(avgPoolRef)}) = Result:${Math.round(finalBenchmark)}`,
+        `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(topPoolAvg)}) = Result:${Math.round(finalBenchmark)}`,
       );
     }
 
