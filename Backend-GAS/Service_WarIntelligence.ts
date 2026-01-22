@@ -3,6 +3,10 @@
  * VERSION: 11.6.0 | Optimized for Agentic Quota
  */
 
+declare var CacheService: any;
+declare var Utils: any;
+declare var CONFIG: any;
+
 /**
  * 🚀 ENTRY POINT: Triggerable by Apps Script
  * Returns or logs the current war state.
