@@ -2,7 +2,7 @@
  * 🚀 CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import "./style.css";
 import App from "./App.vue";
 import router from "./router";
@@ -105,11 +105,28 @@ async function bootstrap() {
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
-    // ⚡ INSTANT BOOT: Load local cache and start network handshake immediately
-    // Removed the 400ms artificial delay to speed up cold starts
+    // ⚡ INSTANT BOOT: Load local cache immediately for LCP
     clashData.loadLocal();
+    
+    // 🛡️ CONCURRENCY FIX: Start API Handshake FIRST.
+    // Do NOT start background sync (heavy data fetch) until handshake clears.
+    // This prevents GAS 'Too Many Requests' errors on cold boot.
     apiState.init();
-    clashData.startBackgroundSync();
+
+    // Watch for API health before triggering heavy data load
+    const unwatch = watch(
+      () => apiState.apiStatus.value,
+      (status) => {
+        if (status === "online") {
+          // Server is awake and reachable, safe to sync data
+          clashData.startBackgroundSync();
+          unwatch(); // Run once per session
+        } else if (status === "offline") {
+          // If handshake fails completely, stop watching (Manual retry required)
+          unwatch();
+        }
+      }
+    );
 
     // Defer only truly heavy background tasks
     setTimeout(async () => {
@@ -127,7 +144,6 @@ async function bootstrap() {
       }
 
       // ⚡ NATIVE: Register Periodic Sync for WebAPK
-      // This allows the app to update its badge in the background.
       if (
         "serviceWorker" in navigator &&
         "periodicSync" in (navigator as any).serviceWorker
