@@ -16,6 +16,34 @@ import type { ScoringWeights } from "../Backend-Worker/src/types";
 // @ts-ignore
 const VER_RECRUITER = "11.0.0";
 
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
@@ -150,7 +178,7 @@ function scoutRecruits(): void {
       )
       .getValues();
 
-    lbData.forEach((row) => {
+    lbData.forEach((row: any) => {
       const perf = Number(row[L.PERF_SCORE]) || 0;
       if (perf >= 50) {
         const histStr = String(row[L.HISTORY] || "");
@@ -221,7 +249,7 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
 
   if (blSheet.getLastRow() >= 1) {
     const rawData = blSheet.getDataRange().getValues();
-    rawData.forEach((row) => {
+    rawData.forEach((row: any) => {
       const tag = String(row[0]).trim();
       if (!tag) return;
       const expiry = Number(row[1]) || 0;
@@ -315,7 +343,7 @@ function loadRecruitDatabase(
     .getValues();
 
   const recruitMap = new Map<string, Recruit>();
-  rows.forEach((r) => {
+  rows.forEach((r: any) => {
     const tag = String(r[H.TAG]);
     if (tag) {
       recruitMap.set(tag, {
