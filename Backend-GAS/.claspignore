@@ -1,17 +1,11 @@
 
-# Ignore everything by default
-**/**
-
-# Whitelist the dist folder (where our compiled code lives)
-!dist/**
-
-# Whitelist the manifest (it is copied to dist, but just in case)
-!appsscript.json
-
-# Explicitly ignore common noise
+# Ignore specific source files if they somehow end up in dist
+*.ts
+*.js
+*.map
 node_modules
 .git
-.DS_Store
-*.ts
-*.json
-*.sh
+
+# Explicitly whitelist the file types we WANT to upload
+!appsscript.json
+!*.gs
