@@ -10,8 +10,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "types": ["google-apps-script", "node"]
   },
   "include": ["*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.d.ts"]
+  "exclude": ["node_modules", "dist"]
 }
