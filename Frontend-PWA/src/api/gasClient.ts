@@ -206,6 +206,8 @@ async function fetchWithRetry(
   try {
     const response = await fetch(url, options);
 
+    // 🛡️ STATUS CHECK: Google script errors often return 200 with HTML, but real server errors return 5xx.
+    // We treat 5xx and 429 (Rate Limit) as retryable.
     if (!response.ok) {
       if (response.status >= 500 || response.status === 429) {
         throw new Error(`HTTP ${response.status}`);
@@ -261,9 +263,12 @@ async function gasRequest<T>(
       throw new Error("Empty Response from Server");
     }
 
-    // 🛡️ GOOGLE ERROR DETECTION: Catch HTML responses (Auth redirects, maintenance)
-    if (text.toLowerCase().includes("<html")) {
-      throw new Error("Backend unavailable (Check Permissions/URL)");
+    // 🛡️ ROBUST ERROR DETECTION: 
+    // GAS returns HTML (starting with <) when auth fails or script crashes completely.
+    // This is the most common cause of "Load Failed" loops.
+    if (text.trim().startsWith("<")) {
+      console.warn("GAS returned HTML instead of JSON. Possible Auth/Config issue:", text.substring(0, 100));
+      throw new Error("Backend Configuration Error (HTML Response)");
     }
 
     let envelope: GenericEnvelope<T>;
@@ -288,6 +293,7 @@ async function gasRequest<T>(
   } catch (e: any) {
     if (e.name === "AbortError") throw e;
     
+    // Offline Queue logic
     if (action !== 'ping' && action !== 'getwebappdata') {
       await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
       if ("serviceWorker" in navigator && "SyncManager" in window) {
