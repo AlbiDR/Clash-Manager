@@ -1,6 +1,26 @@
 # Changelog
 
 
+## [2026-01-22] PR #58: docs(worker): document remote worker intent and constraints
+**Commit**: `17674795748d5f28024a32a6846e03e810a1cd88`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/58)
+
+### Description
+### Context & Reasoning
+`Backend-Worker/index.js` is a critical infrastructure component acting as a high-concurrency proxy for Google Apps Script. Previously, it lacked JSDoc and context regarding its architectural role. This update adds "Contextual Density" by explaining the "Why" behind complex logic (retries, timeouts, worker pools) and ensuring parity with GAS documentation standards.
+
+### Changes
+- Added TSDoc/JSDoc to all major functions in `Backend-Worker/index.js`.
+- Added `@remarks` explaining the worker's role in bypassing GAS quotas and execution limits.
+- Added inline "Why" comments for exponential backoff, `Promise.race` timeouts, and ISO week alignment.
+- Systematically removed emojis and non-ASCII characters to comply with project documentation constraints.
+- Updated the documentation journal in `.jules/document-project.md`.
+
+---
+*PR created automatically by Jules for task [6794631074868322166](https://jules.google.com/task/6794631074868322166) started by @AlbiDR*
+
+---
+
 ## [2026-01-22] PR #57: Refactor Settings Module: Logic Extraction & Component Decomposition
 **Commit**: `60c7688de13aa5a239122188899f21107a905275`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/57)
