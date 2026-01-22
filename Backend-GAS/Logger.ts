@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 📊 MODULE: LOGGER (DATABASE) - TypeScript Edition
@@ -201,7 +202,7 @@ function pruneStaleData(
   const tagsToPurge = new Set<string>();
   const purgedDetails: string[] = [];
 
-  tagSeenData.lastSeen.forEach((lastDate, tag) => {
+  tagSeenData.lastSeen.forEach((lastDate: Date, tag: string) => {
     if (!activeTags.has(tag) && lastDate < cutoff) {
       tagsToPurge.add(tag);
       purgedDetails.push(`${tagSeenData.names.get(tag) || "Unknown"} (${tag})`);
@@ -392,4 +393,4 @@ function upsertDailySnapshots(
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { updateClanDatabase, VER_LOGGER });
+Object.assign(this as any, { updateClanDatabase, VER_LOGGER });

@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🕹️ MODULE: ORCHESTRATOR & TRIGGERS - TypeScript Edition
@@ -453,7 +454,7 @@ function verifyApiKeysInternal(
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, {
+Object.assign(this as any, {
   onOpen,
   taskUpdateMemberStats,
   taskFastScout,

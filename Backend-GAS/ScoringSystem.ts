@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🧠 MODULE: SCORING SYSTEM (CORE ENGINE)
@@ -9,7 +10,7 @@
  * ============================================================================
  */
 
-import type { ScoringWeights } from "../Backend-Worker/src/types";
+import type { ScoringWeights } from "./SharedTypes";
 
 // Global Version Constant
 // @ts-ignore
@@ -292,6 +293,6 @@ if (typeof module !== "undefined" && module.exports) {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { ScoringSystem, VER_SCORING_SYSTEM });
+Object.assign(this as any, { ScoringSystem, VER_SCORING_SYSTEM });
 
 export default ScoringSystem;

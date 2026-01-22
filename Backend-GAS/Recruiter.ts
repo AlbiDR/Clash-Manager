@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🔭 MODULE: RECRUITER - TypeScript Edition
@@ -10,7 +11,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { IScoringSystem } from "./ScoringSystem";
-import type { ScoringWeights } from "../Backend-Worker/src/types";
+import type { ScoringWeights } from "./SharedTypes";
 
 // Global Version Constant
 // @ts-ignore
@@ -695,4 +696,4 @@ function renderHeadhunterView(
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { scoutRecruits, VER_RECRUITER });
+Object.assign(this as any, { scoutRecruits, VER_RECRUITER });
