@@ -68,11 +68,22 @@ describe("useApiState", () => {
 
     // Advance for first retry (2s)
     vi.advanceTimersByTime(2100);
-    // After Fail 2, it stays 'stale' and schedules another check
+    
+    /** 
+     * ⚡ ASYNC TRANSITION: 
+     * In the real app, it enters 'waking' before failing and returning to 'stale'.
+     * In fake timers + async, we might catch it in 'waking'.
+     */
+    expect(['waking', 'stale']).toContain(apiStatus.value);
+
+    // Run pending promises to allow 'checkApiStatus' callback to finish
+    await Promise.resolve();
     expect(apiStatus.value).toBe("stale");
 
     // Advance for second retry (4s)
     vi.advanceTimersByTime(4100);
+    await Promise.resolve();
+    
     // After Fail 3, it finally gives up and goes 'offline'
     expect(apiStatus.value).toBe("offline");
 
