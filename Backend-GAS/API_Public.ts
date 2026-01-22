@@ -14,6 +14,34 @@ import type { AppUtils } from "./Utilities";
 // @ts-ignore
 const VER_API_PUBLIC = "11.0.0";
 
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
@@ -79,7 +107,7 @@ function doGet(
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const sheetsMap: Record<string, number> = {};
         ss.getSheets().forEach(
-          (s) => (sheetsMap[s.getName()] = s.getSheetId()),
+          (s: any) => (sheetsMap[s.getName()] = s.getSheetId()),
         );
 
         return respond({
@@ -353,7 +381,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
       Utils.Props.set("PENDING_UPDATE_TARGET", normTarget);
       cache.put("SYSTEM_STATUS", "BUSY", 1200);
 
-      ScriptApp.getProjectTriggers().forEach((t) => {
+      ScriptApp.getProjectTriggers().forEach((t: any) => {
         if (t.getHandlerFunction() === "dispatchAsyncUpdate")
           ScriptApp.deleteTrigger(t);
       });
