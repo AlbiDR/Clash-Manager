@@ -105,7 +105,11 @@ function doGet(
 
 function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content.TextOutput {
   try {
-    const action = (e?.parameter?.action || "").toLowerCase().trim();
+    const action = String(e?.parameter?.action || "").toLowerCase().trim();
+
+    if (!action) {
+      return respond(null, "MISSING_ACTION", "Request parameter 'action' is required.");
+    }
 
     switch (action) {
       case "ping":
@@ -164,8 +168,12 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
       case "refresh":
         return respondRaw(getWebAppData(true));
 
-      case "":
-        return respond(null, "NO_ACTION", "Missing ?action= parameter.");
+      case "log":
+        const level = (e?.parameter?.level || "INFO").toUpperCase();
+        const msg = e?.parameter?.message || "No message provided";
+        const ctx = e?.parameter?.context || "";
+        Logger.log(`[FE_${level}] ${msg} ${ctx}`);
+        return respond({ logged: true });
 
       default:
         return respond(null, "INVALID_ACTION", `Unknown action: "${action}".`);

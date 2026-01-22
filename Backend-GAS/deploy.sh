@@ -44,6 +44,12 @@ if [ ! -f ".clasp.json" ]; then
     fi
 fi
 
+# Validation: Check if .clasp.json has a valid scriptId
+if ! grep -qE '"scriptId":[[:space:]]*"[a-zA-Z0-9_-]{20,}"' .clasp.json; then
+    echo "❌ Error: .clasp.json does not contain a valid scriptId."
+    exit 1
+fi
+
 echo "🛠️  Fixing files for Google Apps Script..."
 
 # Process files: Convert JS to GAS-compatible GS

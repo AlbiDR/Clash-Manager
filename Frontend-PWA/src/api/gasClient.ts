@@ -14,6 +14,7 @@ import * as v from "valibot";
 import { idb } from "../utils/idb";
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
+const pendingRequests = new Map<string, Promise<any>>();
 
 // Default Schemas for fallback (matches V10 Standard)
 const DEFAULT_LB_SCHEMA = [
@@ -244,6 +245,29 @@ type GasRequestOptions = {
 };
 
 async function gasRequest<T>(
+  action: string,
+  payload?: Record<string, unknown>,
+  options?: GasRequestOptions,
+): Promise<T> {
+  const requestKey = JSON.stringify({ action, payload });
+
+  if (pendingRequests.has(requestKey) && !options?.force) {
+    return pendingRequests.get(requestKey)!;
+  }
+
+  const requestPromise = (async () => {
+    try {
+      return await _executeGasRequest<T>(action, payload, options);
+    } finally {
+      pendingRequests.delete(requestKey);
+    }
+  })();
+
+  pendingRequests.set(requestKey, requestPromise);
+  return requestPromise;
+}
+
+async function _executeGasRequest<T>(
   action: string,
   payload?: Record<string, unknown>,
   options?: GasRequestOptions,
