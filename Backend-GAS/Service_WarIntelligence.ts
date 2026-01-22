@@ -7,7 +7,7 @@
  * 🚀 ENTRY POINT: Triggerable by Apps Script
  * Returns or logs the current war state.
  */
-function GetWarSnapshot(): any {
+function getWarSnapshot(): any {
   return WarIntelligence.getSnapshot();
 }
 
