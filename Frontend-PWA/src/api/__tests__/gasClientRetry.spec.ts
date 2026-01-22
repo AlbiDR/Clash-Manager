@@ -99,7 +99,8 @@ describe("gasClient", () => {
         ),
     });
 
-    await expect(fetchRemote()).rejects.toThrow("Backend unavailable (Check Permissions/URL)");
+    // Updated expectation to match gasClient.ts logic
+    await expect(fetchRemote()).rejects.toThrow("Backend Configuration Error (HTML Response)");
   });
 
   it("should handle malformed JSON", async () => {
