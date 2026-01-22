@@ -4,7 +4,7 @@
  * 🔌 MODULE: API_PUBLIC - TypeScript Edition
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
- * 🏷️ VERSION: 11.0.0
+ * 🏷️ VERSION: 11.0.1
  * ============================================================================
  */
 
@@ -13,7 +13,7 @@ import type { AppUtils } from "./Utilities";
 
 // Global Version Constant
 // @ts-ignore
-const VER_API_PUBLIC = "11.0.0";
+const VER_API_PUBLIC = "11.0.1";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
@@ -105,20 +105,36 @@ function doGet(
 
     switch (action) {
       case "ping":
+        // ⚡ OPTIMIZATION: Check cache first to avoid slow SpreadsheetApp load
+        const cachedPing = Utils.CacheHandler.getLarge("PING_METADATA_V1");
+        if (cachedPing) {
+           return respondRaw(cachedPing);
+        }
+
+        // Cache Miss: Perform full load
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const sheetsMap: Record<string, number> = {};
         ss.getSheets().forEach(
           (s: any) => (sheetsMap[s.getName()] = s.getSheetId()),
         );
 
-        return respond({
-          version: VER_API_PUBLIC,
-          status: "online",
-          scriptId: ScriptApp.getScriptId(),
-          spreadsheetUrl: ss.getUrl(),
-          sheets: sheetsMap,
-          modules: getModuleVersions(),
-        });
+        const pingResponse = {
+          status: "success",
+          data: {
+             version: VER_API_PUBLIC,
+             status: "online",
+             scriptId: ScriptApp.getScriptId(),
+             spreadsheetUrl: ss.getUrl(),
+             sheets: sheetsMap,
+             modules: getModuleVersions(),
+          },
+          error: null,
+          timestamp: new Date().toISOString()
+        };
+        
+        const pingStr = JSON.stringify(pingResponse);
+        Utils.CacheHandler.putLarge("PING_METADATA_V1", pingStr, 3600); // Cache for 1 hour
+        return respondRaw(pingStr);
 
       case "getleaderboard":
       case "getwebappdata":
