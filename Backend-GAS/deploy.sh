@@ -51,17 +51,16 @@ echo "🛠️  Fixing files for Google Apps Script..."
 find dist -name "*.js" | while read -r f; do
   echo "  > Processing $(basename "$f")"
   
-  # 1. Remove "import" lines entirely
-  sed -i.bak '/^import /d' "$f"
+  # 1. Remove "import" lines entirely (tolerant of whitespace)
+  sed -i.bak '/^[[:space:]]*import /d' "$f"
   
   # 2. Remove "export default" lines ENTIRELY (Must be BEFORE generic export strip)
-  # Matches "export default Something;" or "export default {"
-  sed -i.bak '/^export default/d' "$f"
+  # Matches "export default Something;" or "export default {" with optional indentation
+  sed -i.bak '/^[[:space:]]*export default/d' "$f"
 
-  # 3. Remove "export" keyword but keep the declaration
-  # e.g., "export const CONFIG" -> "const CONFIG"
-  # e.g., "export function foo" -> "function foo"
-  sed -i.bak 's/^export //g' "$f"
+  # 3. Remove "export" keyword but keep the declaration (tolerant of whitespace)
+  # Uses capture group \1 to preserve the indentation
+  sed -i.bak 's/^\([[:space:]]*\)export /\1/g' "$f"
   
   # 4. Remove Object.defineProperty for exports (CommonJS artifact)
   sed -i.bak '/Object.defineProperty(exports/d' "$f"
