@@ -6,7 +6,7 @@ import { useBlueprintMode } from "./useBlueprintMode";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
 import { useBroadcastChannel } from "./useBroadcastChannel";
-import { useWakeLock } from "./composables/useWakeLock";
+import { useWakeLock } from "./useWakeLock";
 
 // Global State
 const clashData = shallowRef<WebAppData | null>(null);
