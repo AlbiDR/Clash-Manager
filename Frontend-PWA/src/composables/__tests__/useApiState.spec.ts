@@ -66,18 +66,26 @@ describe("useApiState", () => {
     await checkApiStatus();
     expect(apiStatus.value).toBe("stale");
 
-    // Advance for first retry (2s)
-    // ⚡ ASYNC HANDLING: Use advanceTimersByTimeAsync to ensure 
-    // the async checkApiStatus triggered by the timer finishes.
+    // Advance for retry #1 (2s delay)
+    // Fail 2
     await vi.advanceTimersByTimeAsync(2100);
-    
-    // After Fail 2, it should be back to 'stale'
     expect(apiStatus.value).toBe("stale");
 
-    // Advance for second retry (4s)
+    // Advance for retry #2 (4s delay)
+    // Fail 3
     await vi.advanceTimersByTimeAsync(4100);
+    expect(apiStatus.value).toBe("stale");
+
+    // Advance for retry #3 (6s delay)
+    // Fail 4
+    await vi.advanceTimersByTimeAsync(6100);
+    expect(apiStatus.value).toBe("stale");
+
+    // Advance for retry #4 (8s delay)
+    // Fail 5 -> Should hit threshold (>=5 failures)
+    await vi.advanceTimersByTimeAsync(8100);
     
-    // After Fail 3, it finally gives up and goes 'offline'
+    // After Fail 5, it finally gives up and goes 'offline'
     expect(apiStatus.value).toBe("offline");
 
     vi.useRealTimers();
