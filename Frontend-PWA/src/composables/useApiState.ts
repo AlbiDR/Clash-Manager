@@ -27,6 +27,7 @@ async function checkApiStatus() {
 
   if (!apiConfigured.value) {
     apiStatus.value = "unconfigured";
+    isInitialized = true; // Mark initialized even if not configured to stop checking
     return;
   }
 
@@ -39,11 +40,10 @@ async function checkApiStatus() {
     const start = Date.now();
 
     // ⚡ PATIENT HANDSHAKE: Extended timeout for slow cold starts
-    // Increased from 15s to 20s to account for GAS cold boot
     const response = await Promise.race([
       ping(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error("Handshake Timeout")), 20000),
+        setTimeout(() => reject(new Error("Handshake Timeout")), 25000),
       ),
     ]);
     const latency = Date.now() - start;
@@ -55,6 +55,7 @@ async function checkApiStatus() {
         latency,
       };
       consecutiveFailures = 0;
+      isInitialized = true; // Success!
     } else {
       handleFailure();
     }
@@ -70,12 +71,14 @@ function handleFailure() {
   // 🛡️ SOFT FAIL ARCHITECTURE
   if (!navigator.onLine) {
     apiStatus.value = "offline";
+    isInitialized = true; // Stop active retries if physically offline
     return;
   }
 
-  // Increased tolerance: only hard fail after 5 tries (approx 30s)
+  // Increased tolerance: only hard fail after 5 tries (approx 45s with backoff)
   if (consecutiveFailures >= 5) {
     apiStatus.value = "offline";
+    isInitialized = true; 
   } else {
     // Keep checking with progressive backoff (2s, 4s...)
     apiStatus.value = "stale";

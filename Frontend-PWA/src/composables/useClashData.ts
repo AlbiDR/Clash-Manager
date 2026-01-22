@@ -7,6 +7,7 @@ import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
 import { useBroadcastChannel } from "./useBroadcastChannel";
 import { useWakeLock } from "./useWakeLock";
+import { useConnectionStatus } from "./useConnectionStatus";
 
 // Global State
 const clashData = shallowRef<WebAppData | null>(null);
@@ -148,6 +149,10 @@ export function useClashData() {
       clashData.value = remoteData;
       lastSyncTime.value = remoteData.timestamp;
       syncStatus.value = "success";
+      
+      // Notify unified status of success
+      const { setSuccess } = useConnectionStatus();
+      setSuccess();
 
       const saveTask = window.requestIdleCallback || setTimeout;
       saveTask(() => {
@@ -177,6 +182,11 @@ export function useClashData() {
       syncError.value = e instanceof Error ? e.message : "Sync failed";
     } finally {
       clearTimeout(timeoutId);
+      
+      // Release syncing state
+      const { setSyncing } = useConnectionStatus();
+      setSyncing(false);
+
       if (refreshAbortController?.signal === signal) {
         isRefreshing.value = false;
         refreshAbortController = null;
@@ -186,6 +196,12 @@ export function useClashData() {
       }
     }
   }
+
+  // 🔄 Coordination: Inform status badge of syncing via watcher or direct injection
+  const { setSyncing } = useConnectionStatus();
+  watch(isRefreshing, (refreshing) => {
+    setSyncing(refreshing);
+  }, { immediate: true });
 
   // Synchronize data source when special modes change
   watch(
