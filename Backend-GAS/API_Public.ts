@@ -100,6 +100,10 @@ export interface WarLogEntry {
 function doGet(
   e: GoogleAppsScript.Events.DoGet,
 ): GoogleAppsScript.Content.TextOutput {
+  return handleRequest(e, "GET");
+}
+
+function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content.TextOutput {
   try {
     const action = (e?.parameter?.action || "").toLowerCase().trim();
 
@@ -167,7 +171,7 @@ function doGet(
         return respond(null, "INVALID_ACTION", `Unknown action: "${action}".`);
     }
   } catch (err: any) {
-    console.error(`doGet ERROR: ${err.stack}`);
+    console.error(`${method} Handler ERROR: ${err.stack}`);
     return respond(null, "SERVER_ERROR", err.message);
   }
 }
@@ -179,19 +183,19 @@ function doPost(
   e: GoogleAppsScript.Events.DoPost,
 ): GoogleAppsScript.Content.TextOutput {
   try {
+    const actionParam = (e?.parameter?.action || "").toLowerCase().trim();
+    
     const body = e?.postData?.contents;
-    if (!body) {
-      return respond(null, "EMPTY_BODY", "POST request requires JSON body");
+    let payload: ApiRequestPayload = {};
+    if (body) {
+      try {
+        payload = JSON.parse(body);
+      } catch (parseErr: any) {
+        return respond(null, "PARSE_ERROR", `Invalid JSON: ${parseErr.message}`);
+      }
     }
 
-    let payload: ApiRequestPayload;
-    try {
-      payload = JSON.parse(body);
-    } catch (parseErr: any) {
-      return respond(null, "PARSE_ERROR", `Invalid JSON: ${parseErr.message}`);
-    }
-
-    const action = (payload.action || "").toLowerCase().trim();
+    const action = (actionParam || payload.action || "").toLowerCase().trim();
 
     switch (action) {
       case "dismissrecruits":
@@ -215,11 +219,12 @@ function doPost(
       case "getmembers":
       case "getwarlog":
       case "refresh":
-        // Construction of a mock event for doGet delegation
-        return doGet({ parameter: { action: action } } as any);
+        // Delegation to handleRequest logic (which was based on doGet)
+        // We pass the parameter to simulate what doGet would see
+        return handleRequest({ parameter: { action: action } } as any, "POST");
 
       case "":
-        return respond(null, "NO_ACTION", 'Missing "action" in POST body');
+        return respond(null, "NO_ACTION", 'Missing "action" in POST body or URL');
 
       default:
         return respond(null, "INVALID_ACTION", `Unknown action: "${action}"`);
