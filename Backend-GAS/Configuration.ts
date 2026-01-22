@@ -11,6 +11,34 @@
 // Define the global version constants for type safety
 declare const VER_API_PUBLIC: string | undefined;
 
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
 /**
  * 🏛️ APP CONFIG INTERFACE
  * Centralized definition for the entire application state.
