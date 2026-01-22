@@ -125,7 +125,8 @@ async function bootstrap() {
           // If handshake fails completely, stop watching (Manual retry required)
           unwatch();
         }
-      }
+      },
+      { immediate: true }
     );
 
     // Defer only truly heavy background tasks
