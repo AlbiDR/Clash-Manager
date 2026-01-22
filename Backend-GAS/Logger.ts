@@ -18,6 +18,34 @@ import type { AppUtils } from "./Utilities";
 // @ts-ignore
 const VER_LOGGER = "11.0.0";
 
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
@@ -151,7 +179,7 @@ function pruneStaleData(
 
   // 1. Build maps of latest dates and names per tag
   const tagSeenData = data.reduce(
-    (acc: { lastSeen: Map<string, Date>; names: Map<string, string> }, row) => {
+    (acc: { lastSeen: Map<string, Date>; names: Map<string, string> }, row: any) => {
       const tag = String(row[S_DB.TAG]);
       const dateVal = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : new Date(0);
       if (
@@ -189,7 +217,7 @@ function pruneStaleData(
   console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
 
   const cleanData = data.filter(
-    (row) => !tagsToPurge.has(String(row[S_DB.TAG])),
+    (row: any) => !tagsToPurge.has(String(row[S_DB.TAG])),
   );
   const purgeCount = data.length - cleanData.length;
 
