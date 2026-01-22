@@ -14,6 +14,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log
 
 # System Files
 .DS_Store
@@ -34,8 +35,15 @@ Thumbs.db
 # Google Apps Script / Clasp
 .clasprc.json
 .clasp.json
+clasp.json
 
-# PWA / Vite
+# AI & Temporary Configs
+.agents
+.gemini
+.cursor
+.jules
+
+# PWA / Vite Generated
 public/sw.js
 public/workbox-*.js
 stats.html
