@@ -1001,7 +1001,9 @@ const Utils: AppUtils = {
         .setFontColor("#888888");
 
       const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
-      tableRange.getBandings().forEach((b: GoogleAppsScript.Spreadsheet.Banding) => b.remove());
+      tableRange
+        .getBandings()
+        .forEach((b: GoogleAppsScript.Spreadsheet.Banding) => b.remove());
       tableRange.applyRowBanding(
         SpreadsheetApp.BandingTheme.LIGHT_GREY,
         true,
