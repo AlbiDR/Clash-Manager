@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🛠️ MODULE: UTILITIES (TypeScript Edition)
@@ -16,7 +17,7 @@
  * ============================================================================
  */
 
-import type { ScoringWeights } from "../Backend-Worker/src/types";
+import type { ScoringWeights } from "./SharedTypes";
 import type { AppConfig } from "./Configuration";
 
 // Global Version Constant
@@ -45,6 +46,7 @@ declare namespace GoogleAppsScript {
     export type Sheet = any;
     export type Spreadsheet = any;
     export type Range = any;
+    export type Banding = any;
   }
   export namespace Content {
     export type TextOutput = any;
@@ -896,7 +898,7 @@ const Utils: AppUtils = {
     ];
     const allSheets = ss.getSheets();
 
-    allSheets.forEach((sheet) => {
+    allSheets.forEach((sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
       const name = sheet.getName();
       if (VISIBLE_WHITELIST.includes(name)) {
         if (sheet.isSheetHidden()) sheet.showSheet();
@@ -999,7 +1001,7 @@ const Utils: AppUtils = {
         .setFontColor("#888888");
 
       const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
-      tableRange.getBandings().forEach((b) => b.remove());
+      tableRange.getBandings().forEach((b: GoogleAppsScript.Spreadsheet.Banding) => b.remove());
       tableRange.applyRowBanding(
         SpreadsheetApp.BandingTheme.LIGHT_GREY,
         true,
@@ -1040,7 +1042,7 @@ const Utils: AppUtils = {
     Object.keys(headerMap).forEach((key) => {
       const targetLabel = headerMap[key].toLowerCase().trim();
       const idx = headers.findIndex(
-        (h) =>
+        (h: any) =>
           String(h || "")
             .toLowerCase()
             .trim() === targetLabel,
@@ -1083,6 +1085,6 @@ if (typeof module !== "undefined" && module.exports) {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { Utils, VER_UTILITIES });
+Object.assign(this as any, { Utils, VER_UTILITIES });
 
 export default Utils;

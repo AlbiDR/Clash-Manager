@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🏆 MODULE: LEADERBOARD - TypeScript Edition
@@ -503,4 +504,4 @@ function timeAgo(date: Date | null): string {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { updateLeaderboard, timeAgo, VER_LEADERBOARD });
+Object.assign(this as any, { updateLeaderboard, timeAgo, VER_LEADERBOARD });
