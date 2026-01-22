@@ -1,6 +1,17 @@
-node_modules/
-pnpm-lock.yaml
-.clasp.json
-.claspignore
-.git/
-*.md
+
+# Ignore everything by default
+**/**
+
+# Whitelist the dist folder (where our compiled code lives)
+!dist/**
+
+# Whitelist the manifest (it is copied to dist, but just in case)
+!appsscript.json
+
+# Explicitly ignore common noise
+node_modules
+.git
+.DS_Store
+*.ts
+*.json
+*.sh
