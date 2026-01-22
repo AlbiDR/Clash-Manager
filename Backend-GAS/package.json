@@ -7,7 +7,7 @@
     "deploy": "./deploy.sh"
   },
   "devDependencies": {
-    "@google/clasp": "2.4.2",
+    "@google/clasp": "^3.1.0",
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "^25.0.9",
     "typescript": "^5.0.0"
