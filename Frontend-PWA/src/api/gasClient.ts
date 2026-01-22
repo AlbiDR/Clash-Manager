@@ -203,11 +203,18 @@ async function fetchWithRetry(
   retries = 3,
   backoff = 1000,
 ): Promise<Response> {
-  try {
-    const response = await fetch(url, options);
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort("Global Fetch Timeout"), 30000); // 30s hard limit
 
-    // 🛡️ STATUS CHECK: Google script errors often return 200 with HTML, but real server errors return 5xx.
-    // We treat 5xx and 429 (Rate Limit) as retryable.
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal,
+    });
+    
+    clearTimeout(id);
+
+    // 🛡️ STATUS CHECK: Treat 5xx and 429 as retryable.
     if (!response.ok) {
       if (response.status >= 500 || response.status === 429) {
         throw new Error(`HTTP ${response.status}`);
@@ -216,7 +223,8 @@ async function fetchWithRetry(
     }
     return response;
   } catch (e: any) {
-    if (e.name === "AbortError") throw e;
+    clearTimeout(id);
+    if (e.name === "AbortError" || e === "Global Fetch Timeout") throw e;
 
     if (retries > 0) {
       await new Promise((r) => setTimeout(r, backoff));
@@ -247,9 +255,9 @@ async function gasRequest<T>(
   };
 
   // ⚡ CACHE BUSTING: Prevent stale browser cache during cold starts
-  const cacheBuster = action === 'ping' ? `&_cb=${Date.now()}` : '';
   const separator = url.includes("?") ? "&" : "?";
-  const requestUrl = `${url}${separator}action=${action}${cacheBuster}`;
+  const cacheBuster = `_cb=${Date.now()}`;
+  const requestUrl = `${url}${separator}action=${action}&${cacheBuster}`;
 
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);
