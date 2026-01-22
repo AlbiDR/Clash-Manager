@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🏛️ MODULE: CONFIGURATION
@@ -363,4 +364,4 @@ if (typeof module !== "undefined" && module.exports) {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this, { CONFIG, VER_CONFIGURATION });
+Object.assign(this as any, { CONFIG, VER_CONFIGURATION });
