@@ -4,7 +4,16 @@
 // Optimized for Native System Compatibility (WebAPK)
 import { precacheAndRoute } from "workbox-precaching";
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
+declare const clients: Clients;
+
+interface PeriodicSyncEvent extends ExtendableEvent {
+  tag: string;
+}
+
+interface SyncEvent extends ExtendableEvent {
+  tag: string;
+}
 
 // Type definitions for service worker
 interface BadgeMessageData {
@@ -115,7 +124,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
             shortcutId: "recruit_shortcut_id",
             url: "/#/recruiter",
           },
-        });
+        } as any);
       } else {
         const notifications = await self.registration.getNotifications({
           tag: "com.app.RECRUIT_UPDATES",
@@ -162,7 +171,7 @@ self.addEventListener("push", (event: PushEvent) => {
           badge: "pwa-64.png",
           tag: payload.tag || "push-alert",
           data: payload.data || {},
-        });
+        } as any);
       }
     })(),
   );
@@ -195,7 +204,7 @@ async function handlePushBadge(payload: PushPayload): Promise<void> {
           shortcutId: "recruit_shortcut_id",
           url: "/#/recruiter",
         },
-      },
+      } as any,
     );
   }
 
@@ -213,7 +222,7 @@ async function handlePushBadge(payload: PushPayload): Promise<void> {
 /**
  * Periodic background sync
  */
-self.addEventListener("periodicsync", (event: PeriodicSyncEvent) => {
+self.addEventListener("periodicsync", (event: any) => {
   if (event.tag === "update-recruit-badge") {
     event.waitUntil(handleBackgroundSync());
   }
@@ -232,7 +241,7 @@ async function handleBackgroundSync(): Promise<void> {
     const gasUrl = await getValue(db, "cm_gas_url");
     if (!gasUrl) return;
 
-    const threshold = (await getValue(db, "cm_notification_threshold")) || 75;
+    const threshold = (await getValue(db, "cm_notification_threshold") as number) || 75;
 
     const response = await fetch(gasUrl as string, {
       method: "POST",
@@ -266,7 +275,7 @@ async function handleBackgroundSync(): Promise<void> {
               url: "/#/recruiter",
               timestamp: Date.now(),
             },
-          });
+          } as any);
         } else {
           const notifications = await self.registration.getNotifications({
             tag: "com.app.RECRUIT_UPDATES",
@@ -285,7 +294,7 @@ async function handleBackgroundSync(): Promise<void> {
 /**
  * One-time background sync (recovery)
  */
-self.addEventListener("sync", (event: SyncEvent) => {
+self.addEventListener("sync", (event: any) => {
   if (event.tag === "offline-queue-sync") {
     event.waitUntil(processOfflineQueue());
   }
