@@ -56,6 +56,9 @@ declare const Core: ICore;
 declare const Network: INetwork;
 declare const ScoringSystem: IScoringSystem;
 
+// External module functions
+declare function refreshWebPayload(): void;
+
 /**
  * 🔭 RECRUITER INTERFACES
  */
@@ -234,7 +237,6 @@ function scoutRecruits(): void {
   renderHeadhunterView(sheet, finalPool, avgTrophies);
 
   try {
-    // @ts-ignore
     if (typeof refreshWebPayload === "function") refreshWebPayload();
   } catch (e) {}
 }

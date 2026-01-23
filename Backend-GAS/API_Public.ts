@@ -13,7 +13,6 @@ import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
-import type { INetwork } from "./Network";
 
 // Global Version Constant
 // @ts-ignore
