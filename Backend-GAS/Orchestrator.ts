@@ -14,6 +14,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { ICore } from "./Core";
+import type { INetwork } from "./Network";
 
 // Global Version Constant
 // @ts-ignore
@@ -51,6 +52,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Core: ICore;
+declare const Network: INetwork;
 
 // External module functions
 declare function updateClanDatabase(): void;
@@ -387,7 +389,7 @@ function verifyApiKeysInternal(
   const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
 
   if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
-    const remoteResults = Utils.auditKeysRemote(keysToCheck);
+    const remoteResults = Network.auditKeysRemote(keysToCheck);
     if (remoteResults) {
       console.log("✅ API Audit handled by Remote Worker.");
       return remoteResults;

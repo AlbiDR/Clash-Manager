@@ -7,6 +7,7 @@
 declare var CacheService: any;
 declare var Utils: any;
 declare var Core: any;
+declare var Network: any;
 declare var CONFIG: any;
 declare var Logger: any;
 
@@ -71,7 +72,7 @@ const WarIntelligence = (() => {
           const tag = encodeURIComponent(rawTag);
           
           // @ts-ignore
-          const res = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
+          const res = Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
           
           if (!res?.[0]) throw new Error("API_EMPTY");
           

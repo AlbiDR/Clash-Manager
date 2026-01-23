@@ -12,6 +12,8 @@ import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
+import type { INetwork } from "./Network";
+import type { INetwork } from "./Network";
 
 // Global Version Constant
 // @ts-ignore
@@ -50,6 +52,7 @@ declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Store: IStore;
 declare const Core: ICore;
+declare const Network: INetwork;
 
 // External module functions
 declare function getWebAppData(forceRefresh: boolean): string;
@@ -299,12 +302,12 @@ function getModuleVersions(): Record<string, string> {
  * 📊 DATA FETCHERS
  */
 function getMembers(): any[] {
-  const remoteData = Utils.fetchPublicJson("members");
+  const remoteData = Network.fetchPublicJson("members");
   if (remoteData) return remoteData as any[];
 
   console.log("Members: Using local fallback");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Utils.fetchRoyaleAPI([
+  const data = Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
   ]);
 
@@ -324,12 +327,12 @@ function getMembers(): any[] {
 }
 
 function getWarLog(): WarLogEntry[] {
-  const remoteData = Utils.fetchPublicJson("warlog");
+  const remoteData = Network.fetchPublicJson("warlog");
   if (remoteData) return remoteData as WarLogEntry[];
 
   console.log("WarLog: Using local fallback");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Utils.fetchRoyaleAPI([
+  const data = Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
   ]);
 
