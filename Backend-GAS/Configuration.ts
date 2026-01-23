@@ -96,6 +96,7 @@ export interface AppConfig {
   SCHEMA: {
     LB_HEADERS: Record<string, string>;
     HH_HEADERS: Record<string, string>;
+    DB_HEADERS: Record<string, string>;
     DB: Record<string, number>;
     HH: Record<string, number>;
     LB: Record<string, number>;
@@ -243,6 +244,17 @@ const CONFIG: AppConfig = {
       FOUND_DATE: "Found Date",
       RAW_SCORE: "Potential Raw Score", // ⚡ UPDATED: Explicit Naming
       POTENTIAL_SCORE: "Potential Score",
+    },
+    DB_HEADERS: {
+      TAG: "Player Tag",
+      NAME: "Name",
+      ROLE: "Role",
+      TROPHIES: "Trophies",
+      DON_GIVEN: "Donations Given",
+      DON_REC: "Donations Received",
+      LAST_SEEN: "Last Seen",
+      DATE: "Date",
+      WAR_FAME: "War Fame",
     },
     DB: {
       DATE: 0,

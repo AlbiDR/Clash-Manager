@@ -1087,6 +1087,12 @@ const Utils: AppUtils = {
         CONFIG.SCHEMA.HH,
         this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS),
       );
+    const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+    if (dbSheet)
+      Object.assign(
+        CONFIG.SCHEMA.DB,
+        this.resolveSchemaIndices(dbSheet, CONFIG.SCHEMA.DB_HEADERS),
+      );
   },
   /**
    * 🛡️ ROBUST PROPERTY RESOLVER
