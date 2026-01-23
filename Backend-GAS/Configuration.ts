@@ -246,7 +246,7 @@ const CONFIG: AppConfig = {
       POTENTIAL_SCORE: "Potential Score",
     },
     DB_HEADERS: {
-      TAG: "Player Tag",
+      TAG: "Tag",
       NAME: "Name",
       ROLE: "Role",
       TROPHIES: "Trophies",
