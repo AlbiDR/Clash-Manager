@@ -1,12 +1,13 @@
 
 /**
  * ⚔️ WAR INTELLIGENCE - CLASP EDITION
- * VERSION: 12.0.0 | High-Precision Snapshot Engine
+ * VERSION: 12.1.0 | High-Precision Snapshot Engine
  */
 
 declare var CacheService: any;
 declare var Utils: any;
 declare var CONFIG: any;
+declare var Logger: any;
 
 /**
  * 🚀 WAR SNAPSHOT INTERFACE
@@ -39,14 +40,16 @@ export interface WarSnapshot {
  * 🚀 ENTRY POINT: Triggerable by Apps Script
  */
 function getWarSnapshot(): WarSnapshot {
-  return WarIntelligence.getSnapshot();
+  const snap = WarIntelligence.getSnapshot();
+  WarIntelligence.log(snap);
+  return snap;
 }
 
 const WarIntelligence = (() => {
   const K = "W_SNAP_V12"; // Cache Key
   const TTL = 900;       // 15 Min Cache
   const RESET_H = 10;    // 10:00 UTC Reset (Typical Royale Reset)
-  const VERSION = "12.0.0";
+  const VERSION = "12.1.0";
 
   return {
     getSnapshot(): WarSnapshot {
@@ -156,6 +159,20 @@ const WarIntelligence = (() => {
 
     fallback(): WarSnapshot {
       return this.parse(null, 'ESTIMATED');
+    },
+
+    log(s: WarSnapshot) {
+      const line = "--------------------------------------------------";
+      Logger.log("\n[WAR INTELLIGENCE REPORT]");
+      Logger.log(line);
+      Logger.log(`STATUS: ${s.status} | PHASE: ${s.protocol.label.toUpperCase()}`);
+      Logger.log(`SCHEDULE: Week ${s.schedule.week}, Day ${s.schedule.day}`);
+      Logger.log(`RESET IN: ${s.schedule.remainingTime}`);
+      Logger.log(line);
+      Logger.log("CLAN PERFORMANCE:");
+      Logger.log(`Fame: ${s.performance.fame.toLocaleString()} | Rank: ${s.performance.rank}`);
+      Logger.log(line);
+      Logger.log(`TS: ${s.meta.timestamp} | VER: ${s.meta.version}\n`);
     }
   };
 })();
