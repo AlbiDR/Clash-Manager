@@ -15,7 +15,7 @@ import type { AppUtils } from "./Utilities";
 
 // Global Version Constant
 // @ts-ignore
-const VER_REPAIR_DB = "1.0.1"; // Bumped for Force-Refresh
+const VER_REPAIR_DB = "1.0.2"; // Mid-Day Alignment Fix
 
 declare var CONFIG: any;
 declare var Utils: any;
@@ -83,8 +83,21 @@ function repairDatabase(): void {
     }
     scannedCount++;
 
+    // 🔬 MID-DAY ALIGNMENT: Force 12:00:00 UTC to ensure calendar-day consistency.
+    // This prevents early-morning logs (pre-10:00 UTC) from being skipped as "yesterday".
+    const alignmentDate = new Date(
+      Date.UTC(
+        dateObj.getUTCFullYear(),
+        dateObj.getUTCMonth(),
+        dateObj.getUTCDate(),
+        12,
+        0,
+        0,
+      ),
+    );
+
     // 🔬 DYNAMIC HEURISTIC CHECK (Uses snapshot grounding)
-    const phaseInfo = Utils.getWarPhaseFromDate(dateObj, liveSnap);
+    const phaseInfo = Utils.getWarPhaseFromDate(alignmentDate, liveSnap);
 
     // 🎯 TARGET: Training Days with Numeric Fame (0 or otherwise) that isn't already N/A
     if (phaseInfo.isTraining) {
