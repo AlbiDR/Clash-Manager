@@ -255,6 +255,7 @@ const CONFIG: AppConfig = {
       LAST_SEEN: "Last Seen",
       DATE: "Date",
       WAR_FAME: "War Fame",
+      BATTLE_CREDITS: "Battle Credits",
     },
     DB: {
       DATE: 0,
@@ -266,6 +267,7 @@ const CONFIG: AppConfig = {
       DON_REC: 6,
       LAST_SEEN: 7,
       WAR_FAME: 8,
+      BATTLE_CREDITS: 9,
     },
     // Shifted HH indices +1 to align with absolute column A=0 (Buffer), B=1 (Data Start)
     HH: {

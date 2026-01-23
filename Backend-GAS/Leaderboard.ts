@@ -223,7 +223,7 @@ function updateLeaderboard(): void {
   const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
   const memberDbData = new Map<
     string,
-    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string> }
+    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string>; totalBattleCredits: number }
   >();
 
   if (dbSheet && dbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -232,7 +232,7 @@ function updateLeaderboard(): void {
         CONFIG.LAYOUT.DATA_START_ROW,
         2,
         dbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
-        9, // Increased to 9 to read 'War Fame' column
+        10, // Increased to 10 to read 'Battle Credits' column
       )
       .getValues();
     const S_DB = CONFIG.SCHEMA.DB;
@@ -246,7 +246,7 @@ function updateLeaderboard(): void {
       const weekId = Utils.calculateWarWeekId(date);
 
       if (!memberDbData.has(tag)) {
-        memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map(), battleWeeks: new Set() });
+        memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map(), battleWeeks: new Set(), totalBattleCredits: 0 });
       }
 
       const h = memberDbData.get(tag)!;
@@ -260,6 +260,13 @@ function updateLeaderboard(): void {
       if (!isNaN(fameVal)) {
           addWarEntry(tag, weekId, fameVal);
           h.battleWeeks.add(weekId); // Mark this week as seen during a battle phase
+      }
+      
+      // ⚔️ BATTLE CREDITS AGGREGATION
+      const rawBattleCredits = row[S_DB.BATTLE_CREDITS];
+      const creditVal = Number(rawBattleCredits);
+      if (!isNaN(creditVal) && creditVal > 0) {
+          h.totalBattleCredits += creditVal;
       }
     });
   }
@@ -314,11 +321,12 @@ function updateLeaderboard(): void {
     );
     const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
+    // ⚔️ WAR RATE: Daily Attendance Model
+    const totalBattleCredits = dbRecord?.totalBattleCredits ?? 0;
+    const eligibleBattleDays = Utils.getEligibleBattleDays(daysTracked);
     const warRateVal = ScoringSystem.calculateWarRate(
-      pWarHistory,
-      daysTracked,
-      currentWeekId,
-      currentDayIndex,
+      totalBattleCredits,
+      eligibleBattleDays,
     );
     const scores = ScoringSystem.computeScores(
       currentFame,

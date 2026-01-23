@@ -110,6 +110,7 @@ export interface AppUtils {
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
   calculateWarWeekId(d: Date | null | undefined): string;
   getLogicalDay(date: Date): number;
+  getEligibleBattleDays(daysTracked: number, isColosseum?: boolean): number;
   parseWarHistory(histStr: string | null | undefined): Map<string, number>;
   shuffleArray<T>(array: T[]): T[];
   backupSheet(
@@ -836,6 +837,38 @@ const Utils: AppUtils = {
     }
     const dayIndex = d.getUTCDay(); // 0=Sun, 1=Mon...
     return dayIndex === 0 ? 7 : dayIndex; // Return 1-7 (Mon-Sun)
+  },
+
+  /**
+   * ⚔️ ELIGIBLE BATTLE DAYS CALCULATOR
+   * Determines theoretical maximum battle days based on player tenure.
+   * Standard Week = 4 Battle Days (Thu-Sun)
+   * Colosseum Week = 7 Battle Days (All days count)
+   */
+  getEligibleBattleDays: function (daysTracked, isColosseum = false) {
+    if (daysTracked <= 0) return 0;
+    
+    const BATTLE_DAYS_PER_WEEK = isColosseum ? 7 : 4;
+    const DAYS_PER_WEEK = 7;
+    
+    const fullWeeks = Math.floor(daysTracked / DAYS_PER_WEEK);
+    const remainderDays = daysTracked % DAYS_PER_WEEK;
+    
+    // Full weeks contribute their full quota
+    let eligibleDays = fullWeeks * BATTLE_DAYS_PER_WEEK;
+    
+    // Partial week: For standard weeks, assume 4/7 ratio of remainder
+    // For colosseum, all remainder days count
+    if (remainderDays > 0) {
+      if (isColosseum) {
+        eligibleDays += remainderDays;
+      } else {
+        // Conservative estimate: (remainderDays / 7) * 4, rounded up
+        eligibleDays += Math.ceil((remainderDays / DAYS_PER_WEEK) * BATTLE_DAYS_PER_WEEK);
+      }
+    }
+    
+    return Math.max(1, eligibleDays); // At least 1 to prevent divide-by-zero
   },
 
   parseWarHistory: (histStr) => {

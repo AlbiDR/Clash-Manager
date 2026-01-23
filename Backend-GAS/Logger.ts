@@ -139,6 +139,7 @@ function updateClanDatabase(): void {
       "Donations Received",
       "Last Seen",
       "War Fame",
+      "Battle Credits",
     ];
 
     // Ensure Header exists
@@ -328,10 +329,14 @@ function upsertDailySnapshots(
 
   activeMembers.forEach((m) => {
     let warFame: string | number = warFameMap.get(m.tag) || 0;
+    let battleCredit: number | string = 0;
     
     // ⚔️ SMART LOGGING: Force "N/A" if checking during Non-War Days
     if (!isWarDay) {
         warFame = "N/A";
+        battleCredit = "N/A";
+    } else if (Number(warFame) > 0) {
+        battleCredit = 1; // Player participated today
     }
 
     if (existingMap.has(m.tag)) {
@@ -345,6 +350,7 @@ function upsertDailySnapshots(
       currentRow[S_DB.DON_REC] = m.donationsReceived;
       currentRow[S_DB.LAST_SEEN] = parseTime(m.lastSeen);
       currentRow[S_DB.WAR_FAME] = warFame;
+      currentRow[S_DB.BATTLE_CREDITS] = battleCredit;
 
       updatesMade = true;
       processedTags.add(m.tag);
@@ -359,6 +365,7 @@ function upsertDailySnapshots(
         m.donationsReceived,
         parseTime(m.lastSeen),
         warFame,
+        battleCredit,
       ]);
     }
   });
