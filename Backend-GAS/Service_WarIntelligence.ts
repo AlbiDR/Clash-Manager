@@ -1,7 +1,7 @@
 
 /**
  * ⚔️ WAR INTELLIGENCE - CLASP EDITION
- * VERSION: 12.1.0 | High-Precision Snapshot Engine
+ * VERSION: 12.2.0 | Posh Snapshot Engine
  */
 
 declare var CacheService: any;
@@ -13,10 +13,11 @@ declare var Logger: any;
  * 🚀 WAR SNAPSHOT INTERFACE
  */
 export interface WarSnapshot {
-  status: 'LIVE' | 'CACHED' | 'ESTIMATED';
+  status: 'HIGH-FIDELITY' | 'VAULT-STORED' | 'HEURISTIC';
   protocol: {
     phase: 'TRIAL' | 'ENGAGEMENT' | 'COLOSSEUM' | 'IDLE';
     label: string;
+    dayLabel: string;
     isColosseum: boolean;
   };
   schedule: {
@@ -48,20 +49,18 @@ function getWarSnapshot(): WarSnapshot {
 const WarIntelligence = (() => {
   const K = "W_SNAP_V12"; // Cache Key
   const TTL = 900;       // 15 Min Cache
-  const RESET_H = 10;    // 10:00 UTC Reset (Typical Royale Reset)
-  const VERSION = "12.1.0";
+  const RESET_H = 10;    // 10:00 UTC Reset
+  const VERSION = "12.2.0";
 
   return {
     getSnapshot(): WarSnapshot {
-      // 1. Memory/Cache Handshake
       const cached = CacheService.getScriptCache().get(K);
       if (cached) {
         const snap = JSON.parse(cached);
-        snap.status = 'CACHED';
+        snap.status = 'VAULT-STORED';
         return snap;
       }
 
-      // 2. Atomic Execution
       // @ts-ignore
       return Utils.executeSafely("WAR_SYNC", () => {
         try {
@@ -72,7 +71,7 @@ const WarIntelligence = (() => {
           
           if (!res?.[0]) throw new Error("API_EMPTY");
           
-          const snap = this.parse(res[0], 'LIVE');
+          const snap = this.parse(res[0], 'HIGH-FIDELITY');
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
           return snap;
         } catch (e) {
@@ -81,61 +80,61 @@ const WarIntelligence = (() => {
       });
     },
 
-    parse(d: any, status: 'LIVE' | 'ESTIMATED' = 'LIVE'): WarSnapshot {
+    parse(d: any, status: WarSnapshot['status'] = 'HIGH-FIDELITY'): WarSnapshot {
       const now = new Date();
       const pIdx = d?.periodIndex;
       const sIdx = d?.sectionIndex || 0;
       
-      // 1. Calculate Core Metrics
       const isColosseum = sIdx >= 3;
-      const day = (pIdx !== undefined) ? (pIdx % 7) + 1 : this.estDay(now);
+      const rawDay = (pIdx !== undefined) ? (pIdx % 7) : this.estDay(now); 
+      // API periodIndex % 7 starts at 0 (Thu). 
+      // Manual mapping to match in-game info:
+      // 0=Thu, 1=Fri, 2=Sat, 3=Sun, 4=Mon, 5=Tue, 6=Wed
+      
       const isFinished = d?.state === "full";
       const clanData = d?.clan || {};
       const fame = clanData.fame || 0;
+
+      // Rank calculation: Compare fame with all other clans in the race
+      let rank = clanData.rank || 0; // Fallback to provided rank if available
+      if (d?.clans) {
+        const allClans = [...d.clans].sort((a: any, b: any) => b.fame - a.fame);
+        const myClanIndex = allClans.findIndex((c: any) => c.tag === clanData.tag);
+        if (myClanIndex !== -1) rank = myClanIndex + 1;
+      }
       
-      // 2. Determine War Phase & Label
+      // Phase & Day Labelling
       let phase: WarSnapshot['protocol']['phase'] = "IDLE";
       let label = "War Interval";
+      let dayLabel = `Day ${rawDay + 1}`;
 
-      if (d?.state === "war" || isFinished) {
-        if (isColosseum) {
-          phase = "COLOSSEUM";
-          label = "Colosseum Week";
-        } else {
-          phase = "ENGAGEMENT";
-          label = "Battle Days";
-        }
-      } else if (d?.state === "training") {
+      if (rawDay <= 2) {
         phase = "TRIAL";
         label = "Training Days";
+        dayLabel = `Training Day ${rawDay + 1}`;
       } else {
-        // Heuristic fallback based on day index
-        phase = day <= 3 ? "TRIAL" : "ENGAGEMENT";
-        label = phase === "TRIAL" ? "Training Days" : "Battle Days";
+        phase = isColosseum ? "COLOSSEUM" : "ENGAGEMENT";
+        label = isColosseum ? "Colosseum Week" : "Battle Days";
+        dayLabel = `Battle Day ${rawDay - 2}`;
       }
 
-      // 3. Time Calculations
       const mToReset = this.calcR(now);
       const h = Math.floor(mToReset / 60);
       const m = mToReset % 60;
-      const remainingStr = `${h}h ${m}m`;
+      const remainingStr = `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m`;
 
       return {
-        status: status,
-        protocol: {
-          phase,
-          label,
-          isColosseum
-        },
+        status,
+        protocol: { phase, label, dayLabel, isColosseum },
         schedule: {
           week: sIdx + 1,
-          day: day,
+          day: rawDay + 1,
           minutesToReset: mToReset,
           remainingTime: remainingStr
         },
         performance: {
-          fame: fame,
-          rank: clanData.rank || 0,
+          fame,
+          rank,
           isRaceFinished: isFinished
         },
         meta: {
@@ -146,9 +145,13 @@ const WarIntelligence = (() => {
     },
 
     estDay(n: Date): number {
-      const h = n.getUTCHours();
-      const d = (h < RESET_H) ? (n.getUTCDay() === 0 ? 6 : n.getUTCDay() - 1) : n.getUTCDay();
-      return d === 0 ? 7 : d;
+      // Logic to est periodIndex (0-6) based on UTC time
+      const reset = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
+      let utcDay = n.getUTCDay(); // 0=Sun, 1=Mon, ..., 4=Thu
+      if (n.getTime() < reset.getTime()) utcDay = (utcDay + 6) % 7;
+      
+      // Shift to 0=Thu
+      return (utcDay + 3) % 7;
     },
 
     calcR(n: Date): number {
@@ -158,21 +161,25 @@ const WarIntelligence = (() => {
     },
 
     fallback(): WarSnapshot {
-      return this.parse(null, 'ESTIMATED');
+      return this.parse(null, 'HEURISTIC');
     },
 
     log(s: WarSnapshot) {
-      const line = "--------------------------------------------------";
-      Logger.log("\n[WAR INTELLIGENCE REPORT]");
-      Logger.log(line);
-      Logger.log(`STATUS: ${s.status} | PHASE: ${s.protocol.label.toUpperCase()}`);
-      Logger.log(`SCHEDULE: Week ${s.schedule.week}, Day ${s.schedule.day}`);
-      Logger.log(`RESET IN: ${s.schedule.remainingTime}`);
-      Logger.log(line);
-      Logger.log("CLAN PERFORMANCE:");
-      Logger.log(`Fame: ${s.performance.fame.toLocaleString()} | Rank: ${s.performance.rank}`);
-      Logger.log(line);
-      Logger.log(`TS: ${s.meta.timestamp} | VER: ${s.meta.version}\n`);
+      const v = `[v${s.meta.version}]`;
+      const title = `WAR INTELLIGENCE: ${s.status} ${v}`;
+      const width = 60;
+      
+      const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
+      
+      const line1 = `Week ${s.schedule.week} | ${s.protocol.dayLabel} | Reset in ${s.schedule.remainingTime}`;
+      const line2 = `Tactical: Rank ${s.performance.rank}° | Fame: ${s.performance.fame.toLocaleString()}`;
+
+      const borderTop = `┌── ${title} ${"─".repeat(width - title.length - 5)}┐`;
+      const borderMid1 = `│ ${pad(line1, width - 2)} │`;
+      const borderMid2 = `│ ${pad(line2, width - 2)} │`;
+      const borderBot = `└${"─".repeat(width)}┘`;
+
+      Logger.log(`\n${borderTop}\n${borderMid1}\n${borderMid2}\n${borderBot}\n`);
     }
   };
 })();
