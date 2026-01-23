@@ -123,13 +123,12 @@ const ScoringSystem: IScoringSystem = {
           if (snap) {
               isTrainingPhase = (snap.protocol.phase === "TRIAL");
           } else {
-              // Fallback to day-based logic if Service is missing (Thu/Fri/Sat UTC)
+              // Fallback to day-based logic if Service is missing (Mon/Tue/Wed UTC)
               // currentDayIndex 'u' is 1-7 (Mon-Sun)
-              // Thu=4, Fri=5, Sat=6
-              isTrainingPhase = (currentDayIndex >= 4 && currentDayIndex <= 6);
+              isTrainingPhase = (currentDayIndex >= 1 && currentDayIndex <= 3);
           }
       } catch (e) {
-          isTrainingPhase = (currentDayIndex >= 4 && currentDayIndex <= 6);
+          isTrainingPhase = (currentDayIndex >= 1 && currentDayIndex <= 3);
       }
 
       if (isTrainingPhase) {

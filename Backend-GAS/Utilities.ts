@@ -136,7 +136,7 @@ export interface AppUtils {
    */
   resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
   resolveWarFame(p: any): number;
-  getWarPhaseFromDate(date: Date): {
+  getWarPhaseFromDate(date: Date, snapshot?: any): {
     rawDay: number;
     isTraining: boolean;
     isBattle: boolean;
@@ -1124,7 +1124,7 @@ const Utils: AppUtils = {
    * 🕰️ WAR PHASE HEURISTIC (Single Source of Truth)
    * Determines the War Day based on the deterministic Monday 10:00 UTC cycle.
    */
-  getWarPhaseFromDate: function (date) {
+  getWarPhaseFromDate: function (date, snapshot) {
     const RESET_H = 10; // 10:00 UTC
     // Create a UTC date object for the reset time on the given day
     const reset = new Date(
@@ -1144,9 +1144,25 @@ const Utils: AppUtils = {
       utcDay = (utcDay + 6) % 7;
     }
 
-    // Shift: Mon(1) -> 4, ..., Thu(4) -> 0 (Training Day 1)
-    // 0,1,2 = Training (Thu, Fri, Sat) | 3,4,5,6 = Battle (Sun, Mon, Tue, Wed)
-    const rawDay = (utcDay + 3) % 7;
+    // 🛡️ DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
+    if (snapshot && snapshot.protocol) {
+      const snapDate = new Date(snapshot.meta.timestamp);
+      const isSameDate = snapDate.toISOString().slice(0, 10) === date.toISOString().slice(0, 10);
+      
+      if (isSameDate) {
+        return {
+          rawDay: snapshot.schedule.day - 1, // Snapshot day is 1-based
+          isTraining: snapshot.protocol.phase === "TRIAL",
+          isBattle: snapshot.protocol.phase !== "TRIAL",
+          phase: snapshot.protocol.phase,
+        };
+      }
+    }
+
+    // 🛡️ HEURISTIC FALLBACK (Corrected Mapping)
+    // Shift: Mon(1) -> 0, Tue(2) -> 1, Wed(3) -> 2 (Training)
+    // Thu(4) -> 3, Fri(5) -> 4, Sat(6) -> 5, Sun(0) -> 6 (Battle)
+    const rawDay = (utcDay + 6) % 7;
 
     return {
       rawDay: rawDay,
