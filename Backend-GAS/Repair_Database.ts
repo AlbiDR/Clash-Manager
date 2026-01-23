@@ -66,13 +66,18 @@ function repairDatabase(): void {
     const rawFame = row[H.WAR_FAME];
     
     // Skip if date is missing
-    if (!rawDate || !(rawDate instanceof Date)) {
+    let dateObj = rawDate;
+    if (typeof rawDate === "string") {
+      dateObj = new Date(rawDate);
+    }
+
+    if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
       continue;
     }
     scannedCount++;
 
     // 🔬 HEURISTIC CHECK
-    const phaseInfo = Utils.getWarPhaseFromDate(rawDate);
+    const phaseInfo = Utils.getWarPhaseFromDate(dateObj);
 
     // 🎯 TARGET: Training Days with Numeric Fame (0 or otherwise) that isn't already N/A
     if (phaseInfo.isTraining) {
@@ -93,7 +98,7 @@ function repairDatabase(): void {
         const cellCol = H.WAR_FAME + 1;
         
         // Log the change
-        Logger.log(`[FIX] Row ${cellRow} (${rawDate.toISOString().slice(0,10)}): Phase=${phaseInfo.phase} | Val '${rawFame}' -> 'N/A'`);
+        Logger.log(`[FIX] Row ${cellRow} (${dateObj.toISOString().slice(0,10)}): Phase=${phaseInfo.phase} | Val '${rawFame}' -> 'N/A'`);
         
         // Apply Fix
         dbSheet.getRange(cellRow, cellCol).setValue("N/A");
