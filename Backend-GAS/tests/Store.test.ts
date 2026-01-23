@@ -28,15 +28,80 @@ const mockCacheService = {
   }),
 };
 
+// Mock LockService
+const mockLock = {
+  tryLock: vi.fn().mockReturnValue(true),
+  releaseLock: vi.fn(),
+};
+const mockLockService = {
+  getScriptLock: vi.fn().mockReturnValue(mockLock),
+};
+
+// Mock Utilities (Compression)
+const mockUtilities = {
+  newBlob: vi.fn((data) => ({ getBytes: () => Buffer.from(data, 'utf-8') })),
+  gzip: vi.fn((bytes) => bytes), // Pass-through for mock
+  ungzip: vi.fn((bytes) => ({ getDataAsString: () => Buffer.from(bytes).toString('utf-8') })),
+  base64Encode: vi.fn((bytes) => Buffer.from(bytes).toString('base64')),
+  base64Decode: vi.fn((str) => Buffer.from(str, 'base64')),
+};
+
 // Inject mocks into global scope
 vi.stubGlobal('PropertiesService', mockPropertiesService);
 vi.stubGlobal('CacheService', mockCacheService);
+vi.stubGlobal('LockService', mockLockService);
+vi.stubGlobal('Utilities', mockUtilities);
 
 describe('Store Module', () => {
   beforeEach(() => {
     mockProperties.clear();
     mockCache.clear();
     vi.clearAllMocks();
+  });
+
+  describe('Atomic Locking', () => {
+    it('should acquire lock when writing chunked data', () => {
+      const data = { locked: true };
+      Store.props.setChunked('lockKey', data);
+      expect(mockLockService.getScriptLock).toHaveBeenCalled();
+      expect(mockLock.tryLock).toHaveBeenCalled();
+      expect(mockLock.releaseLock).toHaveBeenCalled();
+    });
+  });
+
+  describe('Compression', () => {
+    it('should compress large objects', () => {
+      // Create large object > 2KB
+      const largeObj = { data: 'x'.repeat(3000) };
+      const compressed = Store.compress(largeObj);
+      
+      expect(compressed).toContain('⚡gzip:');
+      expect(mockUtilities.gzip).toHaveBeenCalled();
+    });
+
+    it('should decompress correctly', () => {
+      const original = { data: 'my secret' };
+      // Manually construct what compress() would output with our mocks
+      // JSON -> Bytes -> Gzip(Mock=Bytes) -> Base64
+      const json = JSON.stringify(original);
+      const b64 = Buffer.from(json).toString('base64');
+      const compressedStr = `⚡gzip:${b64}`;
+
+      const decompressed = Store.decompress(compressedStr);
+      expect(decompressed).toEqual(original);
+    });
+
+    it('should transparently read compressed props', () => {
+      const original = { data: 'auto-decompress' };
+      const json = JSON.stringify(original);
+      const b64 = Buffer.from(json).toString('base64');
+      const compressedStr = `⚡gzip:${b64}`;
+
+      mockProperties.set('autoKey', compressedStr);
+      
+      const result = Store.props.getJSON('autoKey');
+      expect(result).toEqual(original);
+    });
   });
 
   describe('Store.props', () => {
