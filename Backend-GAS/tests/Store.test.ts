@@ -62,9 +62,21 @@ describe('Store Module', () => {
       const data = { id: 1, text: 'small' }; // Should fit in 1 chunks
       Store.props.setChunked('chunkKey', data);
 
-      expect(mockProperties.has('chunkKey_0')).toBe(true);
       expect(mockProperties.has('chunkKey_1')).toBe(false); // Pruned
       expect(mockProperties.has('chunkKey_2')).toBe(false); // Pruned
+    });
+
+    it('should handle keys with special regex characters safely', () => {
+      const complexKey = 'user(123).settings[v1]';
+      const data = { valid: true };
+      
+      Store.props.setChunked(complexKey, data);
+      
+      const stored = Store.props.getChunked(complexKey);
+      expect(stored).toEqual(data);
+      
+      // Verify underlying storage safety
+      expect(mockProperties.has(`${complexKey}_0`)).toBe(true);
     });
   });
 

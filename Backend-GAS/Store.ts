@@ -19,6 +19,21 @@ declare var PropertiesService: GoogleAppsScript.Properties.PropertiesService;
 declare var CacheService: GoogleAppsScript.Cache.CacheService;
 declare var module: any;
 
+const LIMITS = {
+  // PropertiesService is ~9KB per property. We leave 500b buffer.
+  PROPS_CHUNK_SIZE: 8500,
+  PROPS_MAX_SINGLE: 9000,
+  // CacheService is ~100KB. We leave 10KB buffer.
+  CACHE_CHUNK_SIZE: 90000,
+  // Default cache expiration in seconds (6 hours)
+  CACHE_EXPIRATION: 21600,
+};
+
+/**
+ * Escapes characters that have special meaning in regular expressions
+ */
+const escapeRegex = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export interface IStore {
   props: {
     _service?: any;
@@ -49,18 +64,18 @@ const Store: IStore = {
         : null;
     },
 
-    get: function (this: any, key: string, defaultVal: string | null = null) {
+    get(key: string, defaultVal: string | null = null) {
       if (!this._service) return defaultVal;
       const val = this._service.getProperty(key);
       return val !== null ? val : defaultVal;
     },
 
-    set: function (this: any, key: string, val: string | number | boolean) {
+    set(key: string, val: string | number | boolean) {
       if (!this._service) return;
       this._service.setProperty(key, String(val));
     },
 
-    getJSON: function (this: any, key: string, defaultVal: any = {}) {
+    getJSON<T>(key: string, defaultVal: T = {} as T): T {
       const raw = this.get(key);
       if (!raw) return defaultVal;
       try {
@@ -70,11 +85,11 @@ const Store: IStore = {
       }
     },
 
-    setJSON: function (this: any, key: string, val: any) {
+    setJSON(key: string, val: any) {
       try {
         const str = JSON.stringify(val);
-        // Safety check for single property limit (9KB safety buffer)
-        if (str.length > 9000) return false;
+        // Safety check for single property limit
+        if (str.length > LIMITS.PROPS_MAX_SINGLE) return false;
         if (!this._service) return false;
         this._service.setProperty(key, str);
         return true;
@@ -84,7 +99,7 @@ const Store: IStore = {
       }
     },
 
-    getChunked: function (this: any, baseKey: string, defaultVal: any = {}) {
+    getChunked<T>(baseKey: string, defaultVal: T = {} as T): T {
       try {
         if (!this._service) return defaultVal;
         
@@ -94,7 +109,8 @@ const Store: IStore = {
 
         // 2. Scan for chunks
         const allProps = this._service.getProperties();
-        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
+        const safeKey = escapeRegex(baseKey);
+        const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
         const chunks: Array<{ index: number; val: string }> = [];
 
         Object.keys(allProps).forEach((k) => {
@@ -116,22 +132,22 @@ const Store: IStore = {
       }
     },
 
-    setChunked: function (this: any, baseKey: string, val: any) {
+    setChunked(baseKey: string, val: any) {
       try {
         if (!this._service) return false;
         const fullString = JSON.stringify(val);
-        const CHUNK_SIZE = 8500; // Safe buffer under 9KB limit
-        const totalChunks = Math.ceil(fullString.length / CHUNK_SIZE);
+        const totalChunks = Math.ceil(fullString.length / LIMITS.PROPS_CHUNK_SIZE);
 
         // 1. Write new chunks
         for (let i = 0; i < totalChunks; i++) {
-          const chunk = fullString.substr(i * CHUNK_SIZE, CHUNK_SIZE);
+          const chunk = fullString.slice(i * LIMITS.PROPS_CHUNK_SIZE, (i + 1) * LIMITS.PROPS_CHUNK_SIZE);
           this._service.setProperty(`${baseKey}_${i}`, chunk);
         }
 
         // 2. Prune orphaned chunks from previous writes
         const allProps = this._service.getProperties();
-        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
+        const safeKey = escapeRegex(baseKey);
+        const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
 
         Object.keys(allProps).forEach((k) => {
           const match = k.match(chunkPattern);
@@ -150,7 +166,7 @@ const Store: IStore = {
       }
     },
 
-    delete: function (this: any, key: string) {
+    delete(key: string) {
       if (this._service) this._service.deleteProperty(key);
     },
   },
@@ -160,18 +176,17 @@ const Store: IStore = {
    * Wraps CacheService with auto-segmentation for large items.
    */
   cache: {
-    putLarge: function (key, value, expirationSec = 21600) {
+    putLarge(key, value, expirationSec = LIMITS.CACHE_EXPIRATION) {
       const cache = CacheService.getScriptCache();
-      const CHUNK_SIZE = 90000; // 100KB limit safety buffer
 
-      if (value.length <= CHUNK_SIZE) {
+      if (value.length <= LIMITS.CACHE_CHUNK_SIZE) {
         cache.put(key, value, expirationSec);
         // Clean up any potential old meta/chunks for this key
         cache.remove(key + "_meta");
         return;
       }
 
-      const chunks = value.match(new RegExp(".{1," + CHUNK_SIZE + "}", "g"))!;
+      const chunks = value.match(new RegExp(".{1," + LIMITS.CACHE_CHUNK_SIZE + "}", "g"))!;
       chunks.forEach((chunk, i) => {
         cache.put(key + "_" + i, chunk, expirationSec);
       });
@@ -185,7 +200,7 @@ const Store: IStore = {
       cache.remove(key);
     },
 
-    getLarge: function (key) {
+    getLarge(key) {
       const cache = CacheService.getScriptCache();
       
       // 1. Try standard get
