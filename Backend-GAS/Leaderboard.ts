@@ -222,11 +222,11 @@ function updateLeaderboard(): void {
     });
   }
 
-  // B. Load Historical Data (Tenure & Donations)
+  // B. Load Historical Data (Tenure, Donations, and War Fame)
   const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
   const memberDbData = new Map<
     string,
-    { firstSeen: Date; weeklyMax: Map<string, number> }
+    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string> }
   >();
 
   if (dbSheet && dbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -235,7 +235,7 @@ function updateLeaderboard(): void {
         CONFIG.LAYOUT.DATA_START_ROW,
         2,
         dbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
-        8,
+        9, // Increased to 9 to read 'War Fame' column
       )
       .getValues();
     const S_DB = CONFIG.SCHEMA.DB;
@@ -245,10 +245,11 @@ function updateLeaderboard(): void {
       const dateVal = row[S_DB.DATE];
       const date = dateVal ? new Date(dateVal) : new Date();
       const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
+      const rawWarFame = row[S_DB.WAR_FAME];
       const weekId = Utils.calculateWarWeekId(date);
 
       if (!memberDbData.has(tag)) {
-        memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map() });
+        memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map(), battleWeeks: new Set() });
       }
 
       const h = memberDbData.get(tag)!;
@@ -256,6 +257,13 @@ function updateLeaderboard(): void {
 
       const currentMax = h.weeklyMax.get(weekId) || 0;
       if (donGiven > currentMax) h.weeklyMax.set(weekId, donGiven);
+
+      // ⚔️ ROBUST HISTORY POPULATION: If it's a number, it's a battle day record
+      const fameVal = Number(rawWarFame);
+      if (!isNaN(fameVal)) {
+          addWarEntry(tag, weekId, fameVal);
+          h.battleWeeks.add(weekId); // Mark this week as seen during a battle phase
+      }
     });
   }
 
@@ -297,9 +305,12 @@ function updateLeaderboard(): void {
 
     let totalHistoryFame = 0;
     pWarHistory.forEach((val) => (totalHistoryFame += val));
+    
+    // ⚔️ SMART AVERAGING: Use DB 'battleWeeks' to determine eligible weeks for averaging
+    const eligibleWeeks = dbRecord?.battleWeeks?.size || 0;
     const weeksInClan = Math.min(
       52,
-      Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size),
+      Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size, eligibleWeeks),
     );
     const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
