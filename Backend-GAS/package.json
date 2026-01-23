@@ -4,12 +4,15 @@
   "description": "Backend GAS logic",
   "scripts": {
     "build": "./deploy.sh",
-    "deploy": "./deploy.sh"
+    "deploy": "./deploy.sh",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@google/clasp": "^3.1.0",
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "^25.0.9",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^1.2.0",
+    "@vitest/coverage-v8": "^1.2.0"
   }
 }
