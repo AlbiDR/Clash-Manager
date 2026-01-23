@@ -50,10 +50,8 @@ declare const CONFIG: ScoringConfig;
 
 export interface IScoringSystem {
   calculateWarRate(
-    warHistoryMap: Map<string, number> | Record<string, number>,
-    daysTracked: number,
-    currentWeekId: string,
-    currentDayIndex: number,
+    totalBattleCredits: number,
+    eligibleBattleDays: number,
   ): number;
   computeScores(
     currentFame: number,
@@ -81,66 +79,17 @@ export interface IScoringSystem {
 
 const ScoringSystem: IScoringSystem = {
   /**
-   * Calculates the War Participation Rate.
-   * PHASE-AWARE: Uses Service_WarIntelligence if available for precise detection.
+   * ⚔️ Calculates the War Participation Rate (Daily Attendance Model).
+   * Formula: totalBattleCredits / eligibleBattleDays * 100
    */
   calculateWarRate: function (
-    warHistoryMap: Map<string, number> | Record<string, number>,
-    daysTracked: number,
-    currentWeekId: string,
-    currentDayIndex: number,
+    totalBattleCredits: number,
+    eligibleBattleDays: number,
   ): number {
-    let activeWars = 0;
-    let hasCurrentParticipation = false;
-
-    if (warHistoryMap instanceof Map) {
-      warHistoryMap.forEach((fame, weekId) => {
-        // Support for "N/A" strings: If it's a number > 0, they participated.
-        const val = Number(fame);
-        if (!isNaN(val) && val > 0) {
-          activeWars++;
-          if (weekId === currentWeekId) hasCurrentParticipation = true;
-        }
-      });
-    } else {
-      Object.entries(warHistoryMap).forEach(([weekId, fame]) => {
-        const val = Number(fame);
-        if (!isNaN(val) && val > 0) {
-          activeWars++;
-          if (weekId === currentWeekId) hasCurrentParticipation = true;
-        }
-      });
-    }
-
-    let weeksSinceJoin = Math.max(1, Math.ceil(daysTracked / 7));
-
-    // ⚔️ DYNAMIC PHASE DETECTION: If no participation yet this week, check if we're in Training Phase
-    if (!hasCurrentParticipation && weeksSinceJoin > 1) {
-      let isTrainingPhase = false;
-      try {
-          // @ts-ignore
-          const snap = typeof getWarSnapshot === "function" ? getWarSnapshot() : null;
-          if (snap) {
-              isTrainingPhase = (snap.protocol.phase === "TRIAL");
-          } else {
-              // Fallback to day-based logic if Service is missing (Mon/Tue/Wed UTC)
-              // currentDayIndex 'u' is 1-7 (Mon-Sun)
-              isTrainingPhase = (currentDayIndex >= 1 && currentDayIndex <= 3);
-          }
-      } catch (e) {
-          isTrainingPhase = (currentDayIndex >= 1 && currentDayIndex <= 3);
-      }
-
-      if (isTrainingPhase) {
-        // It's a training day, don't penalize for missing participation "yet"
-        weeksSinceJoin--;
-      }
-    }
-
-    const denominator = Math.min(52, weeksSinceJoin);
-    const rateVal =
-      denominator > 0 ? Math.round((activeWars / denominator) * 100) : 0;
-    return Math.min(100, rateVal);
+    if (eligibleBattleDays <= 0) return 100; // New player grace
+    
+    const rate = Math.round((totalBattleCredits / eligibleBattleDays) * 100);
+    return Math.min(100, Math.max(0, rate));
   },
 
   /**
