@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-01-23] PR #59: Refactor views to specialized composables
+**Commit**: `2d8f2beff19595e10b9eb46f1f57fa311c6d83cc`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/59)
+
+### Description
+Decomposed monolithic views into specialized composables to improve modularity and testability. Created useLeaderboard and useRecruiter composables and updated the corresponding views. Added unit tests for the new logic.
+
+---
+*PR created automatically by Jules for task [1667965608069441909](https://jules.google.com/task/1667965608069441909) started by @AlbiDR*
+
+---
+
 ## [2026-01-22] PR #58: docs(worker): document remote worker intent and constraints
 **Commit**: `17674795748d5f28024a32a6846e03e810a1cd88`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/58)
