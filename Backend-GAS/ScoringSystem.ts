@@ -82,6 +82,7 @@ export interface IScoringSystem {
 const ScoringSystem: IScoringSystem = {
   /**
    * Calculates the War Participation Rate.
+   * PHASE-AWARE: Uses Service_WarIntelligence if available for precise detection.
    */
   calculateWarRate: function (
     warHistoryMap: Map<string, number> | Record<string, number>,
@@ -94,14 +95,17 @@ const ScoringSystem: IScoringSystem = {
 
     if (warHistoryMap instanceof Map) {
       warHistoryMap.forEach((fame, weekId) => {
-        if (fame > 0) {
+        // Support for "N/A" strings: If it's a number > 0, they participated.
+        const val = Number(fame);
+        if (!isNaN(val) && val > 0) {
           activeWars++;
           if (weekId === currentWeekId) hasCurrentParticipation = true;
         }
       });
     } else {
       Object.entries(warHistoryMap).forEach(([weekId, fame]) => {
-        if (fame > 0) {
+        const val = Number(fame);
+        if (!isNaN(val) && val > 0) {
           activeWars++;
           if (weekId === currentWeekId) hasCurrentParticipation = true;
         }
@@ -110,9 +114,26 @@ const ScoringSystem: IScoringSystem = {
 
     let weeksSinceJoin = Math.max(1, Math.ceil(daysTracked / 7));
 
+    // ⚔️ DYNAMIC PHASE DETECTION: If no participation yet this week, check if we're in Training Phase
     if (!hasCurrentParticipation && weeksSinceJoin > 1) {
-      const isTrainingDay = currentDayIndex >= 1 && currentDayIndex <= 3;
-      if (isTrainingDay) {
+      let isTrainingPhase = false;
+      try {
+          // @ts-ignore
+          const snap = typeof getWarSnapshot === "function" ? getWarSnapshot() : null;
+          if (snap) {
+              isTrainingPhase = (snap.protocol.phase === "TRIAL");
+          } else {
+              // Fallback to day-based logic if Service is missing (Thu/Fri/Sat UTC)
+              // currentDayIndex 'u' is 1-7 (Mon-Sun)
+              // Thu=4, Fri=5, Sat=6
+              isTrainingPhase = (currentDayIndex >= 4 && currentDayIndex <= 6);
+          }
+      } catch (e) {
+          isTrainingPhase = (currentDayIndex >= 4 && currentDayIndex <= 6);
+      }
+
+      if (isTrainingPhase) {
+        // It's a training day, don't penalize for missing participation "yet"
         weeksSinceJoin--;
       }
     }
