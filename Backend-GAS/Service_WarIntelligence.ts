@@ -6,6 +6,7 @@
 
 declare var CacheService: any;
 declare var Utils: any;
+declare var Core: any;
 declare var CONFIG: any;
 declare var Logger: any;
 
@@ -63,7 +64,7 @@ const WarIntelligence = (() => {
       }
 
       // @ts-ignore
-      return Utils.executeSafely("WAR_SYNC", () => {
+      return Core.executeSafely("WAR_SYNC", () => {
         try {
           let rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
           if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
