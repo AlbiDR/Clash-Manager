@@ -264,8 +264,14 @@ function updateLeaderboard(): void {
       
       // ⚔️ BATTLE CREDITS AGGREGATION
       const rawBattleCredits = row[S_DB.BATTLE_CREDITS];
-      const creditVal = Number(rawBattleCredits);
-      if (!isNaN(creditVal) && creditVal > 0) {
+      let creditVal = Number(rawBattleCredits);
+      
+      // 🛡️ HISTORICAL FALLBACK: If column is empty/NaN, count as 1 if Fame > 0
+      if (isNaN(creditVal) || rawBattleCredits === "") {
+          creditVal = (fameVal > 0) ? 1 : 0;
+      }
+      
+      if (creditVal > 0) {
           h.totalBattleCredits += creditVal;
       }
     });
