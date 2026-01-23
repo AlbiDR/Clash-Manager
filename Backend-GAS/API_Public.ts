@@ -11,6 +11,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
+import type { ICore } from "./Core";
 
 // Global Version Constant
 // @ts-ignore
@@ -48,6 +49,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Store: IStore;
+declare const Core: ICore;
 
 // External module functions
 declare function getWebAppData(forceRefresh: boolean): string;
@@ -399,7 +401,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
     };
   }
 
-  return Utils.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
+  return Core.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
     try {
       const cache = CacheService.getScriptCache();
       if (cache.get("SYSTEM_STATUS") === "BUSY") {
@@ -441,7 +443,7 @@ function dispatchAsyncUpdate(): void {
 
   Store.props.delete("PENDING_UPDATE_TARGET");
 
-  Utils.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
+  Core.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       let sheetName = "";

@@ -11,6 +11,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
+import type { ICore } from "./Core";
 
 // Global Version Constant
 // @ts-ignore
@@ -48,6 +49,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Store: IStore;
+declare const Core: ICore;
 
 // External module functions
 declare function updateClanDatabase(): void;
@@ -124,7 +126,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
   if (!ids || !Array.isArray(ids) || ids.length === 0)
     return { success: true, count: 0 };
 
-  return Utils.executeSafely("WRITE_HH", () => {
+  return Core.executeSafely("WRITE_HH", () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       SpreadsheetApp.flush();
@@ -227,7 +229,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
  * 🔄 CACHE MANAGEMENT
  */
 function refreshWebPayload(): string {
-  return Utils.executeSafely("PAYLOAD_GEN", () => {
+  return Core.executeSafely("PAYLOAD_GEN", () => {
     return _generatePayloadInternal();
   });
 }

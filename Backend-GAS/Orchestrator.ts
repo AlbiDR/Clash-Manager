@@ -13,6 +13,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { ICore } from "./Core";
 
 // Global Version Constant
 // @ts-ignore
@@ -49,6 +50,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare const Core: ICore;
 
 // External module functions
 declare function updateClanDatabase(): void;
@@ -105,7 +107,7 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
 function taskUpdateMemberStats(): void {
   console.log("⏰ TASK START: Update Member Stats (DB + LB)");
 
-  Utils.executeSafely("TASK_MEMBER_STATS", () => {
+  Core.executeSafely("TASK_MEMBER_STATS", () => {
     try {
       console.log("  >> Step 1: Updating Database...");
       updateClanDatabase();
@@ -131,7 +133,7 @@ function taskUpdateMemberStats(): void {
  */
 function taskFastScout(): void {
   console.log("⏰ TASK START: Fast Scout");
-  Utils.executeSafely("TASK_HH", () => {
+  Core.executeSafely("TASK_HH", () => {
     try {
       scoutRecruits();
       console.log("⏰ TASK END: Scout complete.");
@@ -198,7 +200,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   console.log(`📱 Mobile Trigger: ${sheetName}`);
 
   try {
-    Utils.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
+    Core.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
       if (sheetName === CONFIG.SHEETS.LB) {
         updateLeaderboard();
         refreshWebPayload();
@@ -228,7 +230,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
-  Utils.executeSafely("MANUAL_DB", () => {
+  Core.executeSafely("MANUAL_DB", () => {
     try {
       updateClanDatabase();
       refreshWebPayload();
@@ -242,7 +244,7 @@ function triggerUpdateDatabase(): void {
 function triggerUpdateLeaderboard(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Calculating scores...", "Update Leaderboard", 5);
-  Utils.executeSafely("MANUAL_LB", () => {
+  Core.executeSafely("MANUAL_LB", () => {
     try {
       updateLeaderboard();
       refreshWebPayload();
@@ -256,7 +258,7 @@ function triggerUpdateLeaderboard(): void {
 function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Scanning tournaments...", "Headhunter", 20);
-  Utils.executeSafely("MANUAL_HH", () => {
+  Core.executeSafely("MANUAL_HH", () => {
     try {
       scoutRecruits();
       ss.toast("Scout Complete.", "Success", 5);

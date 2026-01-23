@@ -11,6 +11,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
+import type { ICore } from "./Core";
 import type { IScoringSystem } from "./ScoringSystem";
 import type { ScoringWeights } from "./SharedTypes";
 
@@ -50,6 +51,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Store: IStore;
+declare const Core: ICore;
 declare const ScoringSystem: IScoringSystem;
 
 /**
@@ -405,7 +407,7 @@ function scanTournaments(
       ),
     );
 
-  Utils.shuffleArray(lotteryPool);
+  Core.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
@@ -462,7 +464,7 @@ function scanTournaments(
     .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
     .slice(0, playerLimit);
 
-  Utils.shuffleArray(candidatePool);
+  Core.shuffleArray(candidatePool);
   const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
 
   if (tagsToFetch.length === 0) return [];

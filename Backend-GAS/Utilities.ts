@@ -69,7 +69,6 @@ const MAX_FETCH_PER_EXECUTION = 100000;
  * 🛠️ UTILITIES INTERFACE
  */
 export interface AppUtils {
-  executeSafely<T>(lockKey: string, callback: () => T): T;
   auditKeysRemote(
     keys: Array<{ name: string; value: string }>,
   ): Array<{ name: string; success: boolean; error?: string }> | null;
@@ -100,7 +99,6 @@ export interface AppUtils {
   getLogicalDay(date: Date): number;
   getEligibleBattleDays(daysTracked: number, isColosseum?: boolean): number;
   parseWarHistory(histStr: string | null | undefined): Map<string, number>;
-  shuffleArray<T>(array: T[]): T[];
   backupSheet(
     ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
     sheetName: string,
@@ -135,30 +133,6 @@ export interface AppUtils {
 }
 
 const Utils: AppUtils = {
-  /**
-   * 🔒 EXECUTE SAFELY (Mutex Lock)
-   */
-  executeSafely: function (lockKey, callback) {
-    const lock = LockService.getScriptLock();
-    try {
-      const success = lock.tryLock(60000);
-      if (!success) {
-        try {
-          SpreadsheetApp.getActiveSpreadsheet().toast(
-            "System is busy. Please try again in 30s.",
-            "⚠️ Locked",
-          );
-        } catch (e) {}
-        throw new Error(`System Busy: Could not acquire lock for ${lockKey}`);
-      }
-      return callback();
-    } finally {
-      lock.releaseLock();
-    }
-  },
-
-
-
   /**
    * 🔑 REMOTE AUDIT DELEGATE
    */
@@ -701,14 +675,6 @@ const Utils: AppUtils = {
       if (parts.length === 2) historyMap.set(parts[1], Number(parts[0]));
     });
     return historyMap;
-  },
-
-  shuffleArray: (array) => {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
   },
 
   /**
