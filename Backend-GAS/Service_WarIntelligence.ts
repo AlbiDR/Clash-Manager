@@ -4,12 +4,17 @@
  * VERSION: 12.4.1 | High-Resolution Snapshot Engine
  */
 
-declare var CacheService: any;
-declare var Utils: any;
-declare var Core: any;
-declare var Network: any;
-declare var CONFIG: any;
-declare var Logger: any;
+import type { ICore } from "./Core";
+import type { INetwork } from "./Network";
+import type { AppConfig } from "./Configuration";
+import type { AppUtils } from "./Utilities";
+
+declare const CacheService: GoogleAppsScript.Cache.CacheService;
+declare const Utils: AppUtils;
+declare const Core: ICore;
+declare const Network: INetwork;
+declare const CONFIG: AppConfig;
+declare const Logger: any;
 
 /**
  * 🚀 WAR SNAPSHOT INTERFACE
@@ -64,14 +69,12 @@ const WarIntelligence = (() => {
         return snap;
       }
 
-      // @ts-ignore
       return Core.executeSafely("WAR_SYNC", () => {
         try {
           let rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
           if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
           const tag = encodeURIComponent(rawTag);
           
-          // @ts-ignore
           const res = Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
           
           if (!res?.[0]) throw new Error("API_EMPTY");
