@@ -15,8 +15,11 @@
  * ============================================================================
  */
 
+
 declare var PropertiesService: GoogleAppsScript.Properties.PropertiesService;
 declare var CacheService: GoogleAppsScript.Cache.CacheService;
+declare var LockService: GoogleAppsScript.Lock.LockService;
+declare var Utilities: GoogleAppsScript.Utilities.Utilities;
 declare var module: any;
 
 const LIMITS = {
@@ -27,6 +30,8 @@ const LIMITS = {
   CACHE_CHUNK_SIZE: 90000,
   // Default cache expiration in seconds (6 hours)
   CACHE_EXPIRATION: 21600,
+  // Minimum size to attempt compression (2KB)
+  COMPRESSION_THRESHOLD: 2048,
 };
 
 /**
@@ -49,9 +54,76 @@ export interface IStore {
     putLarge(key: string, value: string, expirationSec?: number): void;
     getLarge(key: string): string | null;
   };
+  withLock<T>(key: string, callback: () => T, timeoutMs?: number): T;
+  compress(data: any): string;
+  decompress(str: string): any;
 }
 
 const Store: IStore = {
+  /**
+   * 🔐 ATOMIC TRANSACTIONS
+   * Executes a callback within a named lock to prevent race conditions.
+   */
+  withLock<T>(key: string, callback: () => T, timeoutMs = 10000): T {
+    // @ts-ignore
+    if (typeof LockService === "undefined") return callback();
+    
+    // @ts-ignore
+    const lock = LockService.getScriptLock();
+    try {
+      if (lock.tryLock(timeoutMs)) {
+        return callback();
+      } else {
+        throw new Error(`Store: Could not acquire lock for '${key}'`);
+      }
+    } finally {
+      lock.releaseLock();
+    }
+  },
+
+  /**
+   * 📉 COMPRESSION HELPERS
+   * GZIP compression for maximizing storage efficiency.
+   */
+  compress(data: any): string {
+    try {
+      // @ts-ignore
+      if (typeof Utilities === "undefined") return JSON.stringify(data);
+      
+      const json = JSON.stringify(data);
+      if (json.length < LIMITS.COMPRESSION_THRESHOLD) return json;
+
+      // @ts-ignore
+      const blob = Utilities.newBlob(json).getBytes();
+      // @ts-ignore
+      const zipped = Utilities.gzip(blob);
+      // @ts-ignore
+      return "⚡gzip:" + Utilities.base64Encode(zipped);
+    } catch(e) {
+      console.warn("Store: Compression failed, using raw JSON");
+      return JSON.stringify(data);
+    }
+  },
+
+  decompress(str: string): any {
+    try {
+      if (!str || !str.startsWith("⚡gzip:")) return JSON.parse(str);
+      // @ts-ignore
+      if (typeof Utilities === "undefined") return JSON.parse(str); // Fallback
+
+      const base64 = str.replace("⚡gzip:", "");
+      // @ts-ignore
+      const decoded = Utilities.base64Decode(base64);
+      // @ts-ignore
+      const unzipped = Utilities.ungzip(decoded).getDataAsString();
+      return JSON.parse(unzipped);
+
+    } catch (e) {
+      console.error("Store: Decompression failed");
+      return null;
+    }
+  },
+
   /**
    * 💾 PROPS MANAGER
    * Wraps PropertiesService with JSON and Chunking support.
@@ -78,6 +150,8 @@ const Store: IStore = {
     getJSON<T>(key: string, defaultVal: T = {} as T): T {
       const raw = this.get(key);
       if (!raw) return defaultVal;
+      // Transparent decompression support
+      if (raw.startsWith("⚡gzip:")) return Store.decompress(raw);
       try {
         return JSON.parse(raw);
       } catch (e) {
@@ -87,10 +161,18 @@ const Store: IStore = {
 
     setJSON(key: string, val: any) {
       try {
-        const str = JSON.stringify(val);
+        // Use compression if valid
+        const str = Store.compress(val);
+
         // Safety check for single property limit
         if (str.length > LIMITS.PROPS_MAX_SINGLE) return false;
         if (!this._service) return false;
+        
+        // Critical: atomic write if possible (though single prop is usually safe)
+        // We use lock only if it's high traffic, but basic set is usually fine.
+        // For consistency with 'Advanced', we'll wrap in lock if explicitly asked, 
+        // but for basic setJSON we trust atomic nature of single setProperty call.
+        
         this._service.setProperty(key, str);
         return true;
       } catch (e) {
@@ -105,7 +187,10 @@ const Store: IStore = {
         
         // 1. Try reading as a simple key first (backward compatibility)
         const simple = this._service.getProperty(baseKey);
-        if (simple) return JSON.parse(simple);
+        if (simple) {
+          if (simple.startsWith("⚡gzip:")) return Store.decompress(simple);
+          return JSON.parse(simple);
+        }
 
         // 2. Scan for chunks
         const allProps = this._service.getProperties();
@@ -125,7 +210,11 @@ const Store: IStore = {
         // 3. Reassemble
         chunks.sort((a, b) => a.index - b.index);
         const fullString = chunks.map((c) => c.val).join("");
+        
+        // Support compressed chunks
+        if (fullString.startsWith("⚡gzip:")) return Store.decompress(fullString);
         return JSON.parse(fullString);
+
       } catch (e) {
         console.error(`🧩 Store: Chunk read error for '${baseKey}'`);
         return defaultVal;
@@ -133,37 +222,41 @@ const Store: IStore = {
     },
 
     setChunked(baseKey: string, val: any) {
-      try {
-        if (!this._service) return false;
-        const fullString = JSON.stringify(val);
-        const totalChunks = Math.ceil(fullString.length / LIMITS.PROPS_CHUNK_SIZE);
+      return Store.withLock(`LOCK_${baseKey}`, () => {
+        try {
+            if (!this._service) return false;
+            
+            // 1. Compress & Stringify
+            const fullString = Store.compress(val);
+            const totalChunks = Math.ceil(fullString.length / LIMITS.PROPS_CHUNK_SIZE);
 
-        // 1. Write new chunks
-        for (let i = 0; i < totalChunks; i++) {
-          const chunk = fullString.slice(i * LIMITS.PROPS_CHUNK_SIZE, (i + 1) * LIMITS.PROPS_CHUNK_SIZE);
-          this._service.setProperty(`${baseKey}_${i}`, chunk);
+            // 2. Write new chunks
+            for (let i = 0; i < totalChunks; i++) {
+              const chunk = fullString.slice(i * LIMITS.PROPS_CHUNK_SIZE, (i + 1) * LIMITS.PROPS_CHUNK_SIZE);
+              this._service.setProperty(`${baseKey}_${i}`, chunk);
+            }
+
+            // 3. Prune orphaned chunks from previous writes
+            const allProps = this._service.getProperties();
+            const safeKey = escapeRegex(baseKey);
+            const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
+
+            Object.keys(allProps).forEach((k) => {
+              const match = k.match(chunkPattern);
+              if (match) {
+                const index = parseInt(match[1]);
+                if (index >= totalChunks) this._service.deleteProperty(k);
+              }
+            });
+
+            // 4. Ensure the base key is clear (avoid confusion)
+            this._service.deleteProperty(baseKey);
+            return true;
+        } catch (e) {
+            console.error(`🧩 Store: Chunk write error for '${baseKey}'`);
+            return false;
         }
-
-        // 2. Prune orphaned chunks from previous writes
-        const allProps = this._service.getProperties();
-        const safeKey = escapeRegex(baseKey);
-        const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
-
-        Object.keys(allProps).forEach((k) => {
-          const match = k.match(chunkPattern);
-          if (match) {
-            const index = parseInt(match[1]);
-            if (index >= totalChunks) this._service.deleteProperty(k);
-          }
-        });
-
-        // 3. Ensure the base key is clear (avoid confusion)
-        this._service.deleteProperty(baseKey);
-        return true;
-      } catch (e) {
-        console.error(`🧩 Store: Chunk write error for '${baseKey}'`);
-        return false;
-      }
+      });
     },
 
     delete(key: string) {
@@ -178,6 +271,12 @@ const Store: IStore = {
   cache: {
     putLarge(key, value, expirationSec = LIMITS.CACHE_EXPIRATION) {
       const cache = CacheService.getScriptCache();
+
+      // Attempt compression for cache too if large?
+      // For now, adhere to basic string contracts but could expand.
+      // Given user wants "Advanced", let's apply compression check here too if useful,
+      // BUT 'value' comes in as string. We won't double encode unless we changed signature.
+      // We will leave cache raw string for now to match interface signature.
 
       if (value.length <= LIMITS.CACHE_CHUNK_SIZE) {
         cache.put(key, value, expirationSec);
