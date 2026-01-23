@@ -137,7 +137,7 @@ export interface AppUtils {
    */
   resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
   resolveWarFame(p: any): number;
-  getWarPhaseFromDate(date: Date, snapshot?: any): {
+  getWarPhaseFromDate(date: Date, snapshot?: any, options?: { forceCalendarDay?: boolean }): {
     rawDay: number;
     isTraining: boolean;
     isBattle: boolean;
@@ -1147,30 +1147,41 @@ const Utils: AppUtils = {
    * 🕰️ WAR PHASE HEURISTIC (Single Source of Truth)
    * Determines the War Day based on the deterministic Monday 10:00 UTC cycle.
    */
-  getWarPhaseFromDate: function (date, snapshot) {
+  getWarPhaseFromDate: function (date, snapshot, options = {}) {
     const RESET_H = 10; // 10:00 UTC
-    // Create a UTC date object for the reset time on the given day
-    const reset = new Date(
-      Date.UTC(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate(),
-        RESET_H,
-        0,
-        0,
-      ),
-    );
-
     let utcDay = date.getUTCDay(); // 0=Sun, 1=Mon, ...
-    // If before 10:00 UTC, it belongs to the previous logical day
-    if (date.getTime() < reset.getTime()) {
-      utcDay = (utcDay + 6) % 7;
+
+    // 🛡️ MODE A: High-Precision (Game Clock Aware)
+    // Used for Live Logging & Participation Logic.
+    if (!options.forceCalendarDay) {
+        const reset = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            RESET_H,
+            0,
+            0,
+          ),
+        );
+
+        if (date.getTime() < reset.getTime()) {
+          utcDay = (utcDay + 6) % 7;
+        }
+    } 
+    // 🛡️ MODE B: Calendar-Consistent (Audit Mode)
+    // Used for Repair/Historical Audits where "Monday" means "Monday".
+    else {
+        // No shift. utcDay remains literal.
     }
 
     // 🛡️ DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
     if (snapshot && snapshot.protocol) {
       const snapDate = new Date(snapshot.meta.timestamp);
-      const isSameDate = snapDate.toISOString().slice(0, 10) === date.toISOString().slice(0, 10);
+      // Compare calendar dates (YYYY-MM-DD)
+      const isSameDate = snapDate.getUTCDate() === date.getUTCDate() && 
+                         snapDate.getUTCMonth() === date.getUTCMonth() &&
+                         snapDate.getUTCFullYear() === date.getUTCFullYear();
       
       if (isSameDate) {
         return {
