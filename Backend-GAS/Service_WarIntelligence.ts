@@ -1,7 +1,7 @@
 
 /**
  * ⚔️ WAR INTELLIGENCE - CLASP EDITION
- * VERSION: 12.4.0 | High-Resolution Snapshot Engine
+ * VERSION: 12.4.1 | High-Resolution Snapshot Engine
  */
 
 declare var CacheService: any;
@@ -48,10 +48,10 @@ function getWarSnapshot(): WarSnapshot {
 }
 
 const WarIntelligence = (() => {
-  const K = "W_SNAP_V12"; // Original cache key
+  const K = "W_SNAP_V12_1"; // Busted for v12.4.1 fix
   const TTL = 900;       // 15 Min Cache
   const RESET_H = 10;    // 10:00 UTC Reset
-  const VERSION = "12.4.0";
+  const VERSION = "12.4.1";
 
   return {
     getSnapshot(): WarSnapshot {
