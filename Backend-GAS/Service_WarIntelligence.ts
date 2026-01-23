@@ -95,23 +95,29 @@ const WarIntelligence = (() => {
       const rootClan = d?.clan || {};
       
       // 🛡️ TACTICAL FAME & RANK EXTRACTION
-      let fame = rootClan.fame || rootClan.periodPoints || rootClan.medals || 0;
-      let rank = rootClan.rank || 0;
+      // 🛡️ UNIFIED FAME EXTRACTION
+      let fame = 0;
+      let rank = 0;
+      const clanTag = rootClan.tag || "";
 
       if (d?.clans && Array.isArray(d.clans)) {
         // Find our clan in the race array for potentially fresher data
         const sorted = [...d.clans].sort((a: any, b: any) => {
-          const valA = a.fame || a.periodPoints || a.medals || 0;
-          const valB = b.fame || b.periodPoints || b.medals || 0;
+          const valA = Utils.resolveWarFame(a);
+          const valB = Utils.resolveWarFame(b);
           return valB - valA;
         });
 
-        const myEntry = sorted.find((c: any) => c.tag === rootClan.tag);
+        const myEntry = sorted.find((c: any) => c.tag === clanTag);
         if (myEntry) {
           // Prioritize stand-alone race data as it's often more reactive than root object
-          fame = myEntry.fame || myEntry.periodPoints || myEntry.medals || 0;
+          fame = Utils.resolveWarFame(myEntry);
           rank = sorted.indexOf(myEntry) + 1;
         }
+      } else {
+        // Fallback to rootClan data if 'clans' array is not available
+        fame = Utils.resolveWarFame(rootClan);
+        rank = rootClan.rank || 0; // Rank might still be available on rootClan
       }
       
       // Phase & Day Labelling

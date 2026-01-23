@@ -216,9 +216,8 @@ function updateLeaderboard(): void {
 
   if (raceData && raceData.clan && raceData.clan.participants) {
     raceData.clan.participants.forEach((p: any) => {
-      // 🛡️ ROBUST FAME DETECTION (Synced with Service_WarIntelligence v12.4.0)
-      const val = p.fame || p.medals || p.periodPoints || p.repairPoints || 0;
-      addWarEntry(p.tag, currentWeekId, val);
+      // 🛡️ UNIFIED FAME DETECTION (Synced with Service_WarIntelligence v12.4.0)
+      addWarEntry(p.tag, currentWeekId, Utils.resolveWarFame(p));
     });
   }
 
