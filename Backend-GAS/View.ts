@@ -154,24 +154,29 @@ const View: IView = {
       CONFIG.SHEETS.LB,
       CONFIG.SHEETS.HH,
     ];
+    
+    const SYSTEM_OWNED = [...VISIBLE_WHITELIST];
+    VISIBLE_WHITELIST.forEach((baseName) => {
+      for (let i = 1; i <= 5; i++)
+        SYSTEM_OWNED.push(`Backup ${i} ${baseName}`);
+    });
+
     const allSheets = ss.getSheets();
 
+    // 1. SELECTIVE VISIBILITY: Only touch sheets the system "owns"
     allSheets.forEach((sheet) => {
       const name = sheet.getName();
-      if (VISIBLE_WHITELIST.includes(name)) {
-        if (sheet.isSheetHidden()) sheet.showSheet();
-      } else {
-        if (!sheet.isSheetHidden()) sheet.hideSheet();
+      if (SYSTEM_OWNED.includes(name)) {
+        if (VISIBLE_WHITELIST.includes(name)) {
+          if (sheet.isSheetHidden()) sheet.showSheet();
+        } else {
+          if (!sheet.isSheetHidden()) sheet.hideSheet();
+        }
       }
     });
 
-    const ALL_SORT_ORDER = [...VISIBLE_WHITELIST];
-    VISIBLE_WHITELIST.forEach((baseName) => {
-      for (let i = 1; i <= 5; i++)
-        ALL_SORT_ORDER.push(`Backup ${i} ${baseName}`);
-    });
-
-    ALL_SORT_ORDER.forEach((name, index) => {
+    // 2. SELECTIVE ORDERING: Only sort the system-owned sheets
+    SYSTEM_OWNED.forEach((name, index) => {
       const sheet = ss.getSheetByName(name);
       if (sheet) {
         const targetIndex = index + 1;
