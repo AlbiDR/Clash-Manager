@@ -1135,19 +1135,19 @@ const Utils: AppUtils = {
     if (lbSheet)
       Object.assign(
         CONFIG.SCHEMA.LB,
-        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS),
+        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS, CONFIG.LAYOUT.DATA_START_ROW),
       );
     const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
     if (hhSheet)
       Object.assign(
         CONFIG.SCHEMA.HH,
-        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS),
+        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS, CONFIG.LAYOUT.DATA_START_ROW),
       );
     const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
     if (dbSheet)
       Object.assign(
         CONFIG.SCHEMA.DB,
-        this.resolveSchemaIndices(dbSheet, CONFIG.SCHEMA.DB_HEADERS),
+        this.resolveSchemaIndices(dbSheet, CONFIG.SCHEMA.DB_HEADERS, CONFIG.LAYOUT.DATA_START_ROW, 2),
       );
   },
   /**
