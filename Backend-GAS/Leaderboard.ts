@@ -76,6 +76,34 @@ export interface PlayerResult {
   cleanKey: string;
 }
 
+export interface ClanMemberResult {
+  tag: string;
+  name: string;
+  role: string;
+  trophies: number;
+  donations: number;
+  lastSeen: string;
+  warDayWins: number;
+  donationsReceived: number;
+}
+
+export interface WarLogItem {
+  createdDate: string;
+  standings: Array<{
+    clan: {
+      tag: string;
+      participants: Array<{ tag: string; fame: number }>;
+    };
+  }>;
+}
+
+export interface RaceParticipant {
+  tag: string;
+  fame: number;
+  medals: number;
+  repairPoints: number;
+}
+
 /**
  * ⚡ MAIN ENTRY: Update Leaderboard
  * Calculates player rankings and momentum.
@@ -98,20 +126,18 @@ function updateLeaderboard(): void {
     return;
   }
 
-  // 🛡️ SAFETY & HISTORY SNAPSHOT
   const previousScores = new Map<string, number>();
-  try {
-    const lastRow = lbSheet.getLastRow();
-    const maxCols = lbSheet.getMaxColumns();
-    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+  const lastRow = lbSheet.getLastRow();
+  const maxCols = lbSheet.getMaxColumns();
+  const startRow = CONFIG.LAYOUT.DATA_START_ROW;
 
-    if (lastRow >= startRow && maxCols >= L.TAG) {
+  if (lastRow >= startRow && maxCols >= L.TAG) {
       const oldData = lbSheet
         .getRange(startRow, 1, lastRow - startRow + 1, maxCols)
         .getValues();
 
-      const tagIdx = L.TAG; // Corrected: Mapping is already 0-indexed offset
-      const scoreIdx = L.RAW_SCORE; // Corrected: Mapping is already 0-indexed offset
+      const tagIdx = L.TAG;
+      const scoreIdx = L.RAW_SCORE;
 
       oldData.forEach((row: any) => {
         if (row.length > scoreIdx) {
@@ -128,9 +154,6 @@ function updateLeaderboard(): void {
         }
       });
     }
-  } catch (e: any) {
-    console.warn("⚠️ Snapshot Warning: " + e.message);
-  }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
@@ -161,34 +184,30 @@ function updateLeaderboard(): void {
 
   // 1. REHYDRATE FROM ARCHIVE
   if (lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
-    try {
-      const histColIndex = 1 + CONFIG.SCHEMA.LB.HISTORY; // 1-based col
-      const tagColIndex = 1 + CONFIG.SCHEMA.LB.TAG; // 1-based col
-      const numRows = lbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
+    const histColIndex = 1 + CONFIG.SCHEMA.LB.HISTORY; // 1-based col
+    const tagColIndex = 1 + CONFIG.SCHEMA.LB.TAG; // 1-based col
+    const numRows = lbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1);
 
-      if (lbSheet.getMaxColumns() >= histColIndex) {
-        const tagData = lbSheet
-          .getRange(CONFIG.LAYOUT.DATA_START_ROW, tagColIndex, numRows, 1)
-          .getValues();
-        const histData = lbSheet
-          .getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1)
-          .getValues();
+    if (lbSheet.getMaxColumns() >= histColIndex) {
+      const tagData = lbSheet
+        .getRange(CONFIG.LAYOUT.DATA_START_ROW, tagColIndex, numRows, 1)
+        .getValues();
+      const histData = lbSheet
+        .getRange(CONFIG.LAYOUT.DATA_START_ROW, histColIndex, numRows, 1)
+        .getValues();
 
-        tagData.forEach((row: any, i: number) => {
-          const tag = String(row[0]);
-          const histStr = histData[i][0];
-          if (tag && typeof histStr === "string" && histStr.length > 0) {
-            const archivedMap = Utils.parseWarHistory(histStr);
-            if (archivedMap.size > 0) {
-              if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
-              const userMap = warHistoryMap.get(tag)!;
-              archivedMap.forEach((fame, wk) => userMap.set(wk, fame));
-            }
+      tagData.forEach((row: any, i: number) => {
+        const tag = String(row[0]);
+        const histStr = histData[i][0];
+        if (tag && typeof histStr === "string" && histStr.length > 0) {
+          const archivedMap = Utils.parseWarHistory(histStr);
+          if (archivedMap.size > 0) {
+            if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
+            const userMap = warHistoryMap.get(tag)!;
+            archivedMap.forEach((fame, wk) => userMap.set(wk, fame));
           }
-        });
-      }
-    } catch (e: any) {
-      console.warn("Leaderboard: Failed to rehydrate history", e);
+        }
+      });
     }
   }
 
@@ -201,15 +220,15 @@ function updateLeaderboard(): void {
       });
     });
   } else if (logData && logData.items) {
-    logData.items.forEach((log: any) => {
+    (logData.items as WarLogItem[]).forEach((log) => {
       const weekId = Time.calculateWarWeekId(
         Time.parseRoyaleApiDate(log.createdDate),
       );
       const myClan = log.standings.find(
-        (s: any) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
+        (s) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
       );
       if (myClan && myClan.clan.participants) {
-        myClan.clan.participants.forEach((p: any) =>
+        myClan.clan.participants.forEach((p) =>
           addWarEntry(p.tag, weekId, p.fame),
         );
       }
@@ -217,7 +236,7 @@ function updateLeaderboard(): void {
   }
 
   if (raceData && raceData.clan && raceData.clan.participants) {
-    raceData.clan.participants.forEach((p: any) => {
+    (raceData.clan.participants as RaceParticipant[]).forEach((p) => {
       // 🛡️ UNIFIED FAME DETECTION (Synced with Service_WarIntelligence v12.4.0)
       addWarEntry(p.tag, currentWeekId, Utils.resolveWarFame(p));
     });
@@ -286,7 +305,7 @@ function updateLeaderboard(): void {
   // ----------------------------------------------------------------------------
   const rawMemberResults: PlayerResult[] = [];
 
-  membersData.items.forEach((m: any) => {
+  (membersData.items as ClanMemberResult[]).forEach((m) => {
     const trophies = m.trophies || 0;
     const weeklyDonations = m.donations || 0;
     const pWarHistory = warHistoryMap.get(m.tag) || new Map<string, number>();

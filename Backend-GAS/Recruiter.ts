@@ -60,6 +60,27 @@ declare const ScoringSystem: IScoringSystem;
 
 // External module functions
 declare function refreshWebPayload(): void;
+declare function getWebAppData(forceRefresh: boolean): string;
+
+interface TournamentMember {
+  tag: string;
+  name: string;
+  trophies: number;
+  clan: { tag: string; name: string; badgeId: number };
+}
+
+interface TournamentResult {
+  tag: string;
+  type: string;
+  status: string;
+  creatorTag: string;
+  name: string;
+  description: string;
+  capacity: number;
+  maxCapacity: number;
+  items?: TournamentResult[];
+  membersList?: TournamentMember[];
+}
 
 /**
  * 🔭 RECRUITER INTERFACES
@@ -390,10 +411,10 @@ function scanTournaments(
   );
 
   const searchResults = Network.fetchRoyaleAPI(searchUrls);
-  const uniqueTourneys = new Map<string, any>();
-  searchResults.forEach((res: any) => {
+  const uniqueTourneys = new Map<string, TournamentResult>();
+  searchResults.forEach((res: TournamentResult) => {
     if (res && res.items)
-      res.items.forEach((t: any) => uniqueTourneys.set(t.tag, t));
+      res.items.forEach((t) => uniqueTourneys.set(t.tag, t));
   });
 
   const remoteAvailable = Network.remoteWorkerHealthy();
@@ -442,9 +463,9 @@ function scanTournaments(
       ),
     );
 
-    details.forEach((d: any) => {
+    details.forEach((d: TournamentResult) => {
       if (d && d.membersList && d.membersList.length >= 10) {
-        d.membersList.forEach((p: any) => {
+        d.membersList.forEach((p) => {
           if (
             (!p.clan || p.clan.tag === "") &&
             (!blacklistSet || !blacklistSet.has(p.tag))

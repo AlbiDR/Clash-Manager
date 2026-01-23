@@ -62,7 +62,7 @@ export interface IScoringSystem {
     lastSeenDate: number,
     now: number,
   ): { raw: number; perf: number };
-  comparator(rowA: any[], rowB: any[]): number;
+  comparator(rowA: (string | number)[], rowB: (string | number)[]): number;
   calculateRecruitRawScore(
     trophies: number,
     totalDonations: number,
@@ -147,7 +147,7 @@ const ScoringSystem: IScoringSystem = {
   /**
    * The Holy Grail Sorting Comparator.
    */
-  comparator: function (rowA: any[], rowB: any[]): number {
+  comparator: function (rowA: (string | number)[], rowB: (string | number)[]): number {
     const L =
       typeof CONFIG !== "undefined"
         ? CONFIG.SCHEMA.LB
@@ -160,23 +160,23 @@ const ScoringSystem: IScoringSystem = {
             TROPHIES: 4,
           };
 
-    const diffPerf = rowB[L.PERF_SCORE] - rowA[L.PERF_SCORE];
+    const diffPerf = Number(rowB[L.PERF_SCORE]) - Number(rowA[L.PERF_SCORE]);
     if (diffPerf !== 0) return diffPerf;
 
-    const diffRaw = rowB[L.RAW_SCORE] - rowA[L.RAW_SCORE];
+    const diffRaw = Number(rowB[L.RAW_SCORE]) - Number(rowA[L.RAW_SCORE]);
     if (diffRaw !== 0) return diffRaw;
 
     const getWarVal = (r: any[]) => parseInt(r[L.WAR_RATE]) || 0;
     const diffWar = getWarVal(rowB) - getWarVal(rowA);
     if (diffWar !== 0) return diffWar;
 
-    const diffDon = rowB[L.TOTAL_DON] - rowA[L.TOTAL_DON];
+    const diffDon = Number(rowB[L.TOTAL_DON]) - Number(rowA[L.TOTAL_DON]);
     if (diffDon !== 0) return diffDon;
 
-    const diffDays = rowA[L.DAYS] - rowB[L.DAYS];
+    const diffDays = Number(rowA[L.DAYS]) - Number(rowB[L.DAYS]);
     if (diffDays !== 0) return diffDays;
 
-    return rowB[L.TROPHIES] - rowA[L.TROPHIES];
+    return Number(rowB[L.TROPHIES]) - Number(rowA[L.TROPHIES]);
   },
 
   /**
@@ -232,11 +232,7 @@ const ScoringSystem: IScoringSystem = {
       finalBenchmark = topPoolAvg;
     }
 
-    if (typeof console !== "undefined" && console.log) {
-      console.log(
-        `⚖️ Hybrid Benchmark: Clan(Avg:${Math.round(avgClanRef)}) + Pool(Avg:${Math.round(topPoolAvg)}) = Result:${Math.round(finalBenchmark)}`,
-      );
-    }
+
 
     return Math.max(1, finalBenchmark);
   },
