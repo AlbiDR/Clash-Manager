@@ -1,3 +1,4 @@
+
 /**
  * TypeScript interfaces for Clash Royale Manager
  */
@@ -59,10 +60,10 @@ export interface Recruit {
 
 // Web App Data payload
 export interface WebAppData {
-  lb: LeaderboardMember[];
-  hh: Recruit[];
-  playerTag?: string; // Player tag without # to highlight
-  timestamp: number;
+  readonly lb: readonly LeaderboardMember[];
+  readonly hh: readonly Recruit[];
+  readonly playerTag?: string; // Player tag without # to highlight
+  readonly timestamp: number;
 }
 
 // Real-time clan member

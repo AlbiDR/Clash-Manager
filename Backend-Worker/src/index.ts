@@ -1,0 +1,853 @@
+/**
+ * ============================================================================
+ * CLASH MANAGER WORKER (TypeScript Edition)
+ * ----------------------------------------------------------------------------
+ * High-performance Express server for bulk API operations
+ * Migrated from JavaScript with full type safety and modern TS features
+ * ============================================================================
+ */
+
+import express, {
+  Request,
+  Response,
+  NextFunction,
+  RequestHandler,
+} from "express";
+import fetch from "node-fetch";
+import ScoringSystem from "../../Backend-GAS/ScoringSystem";
+import type {
+  ServerConfig,
+  FetchResult,
+  ScoringWeights,
+  ScoredPlayer,
+  WarHistory,
+  FetchRequest,
+  ScanRequest,
+  ClanFullRequest,
+  ClanApiRequest,
+  AuditRequest,
+  PublicScanRequest,
+  SubscriptionRequest,
+  ApiKeyAuditResult,
+  PlayerTag,
+  TournamentTag,
+  WarWeekId,
+  ClashRoyalePlayer,
+  BattleLogEntry,
+  Tournament,
+  ClanMembers,
+  CurrentRiverRace,
+  RiverRaceLog,
+} from "./types.js";
+
+// ============================================================================
+//  CONFIGURATION
+// ============================================================================
+
+const CONFIG: ServerConfig = {
+  concurrency: parseInt(process.env["WORKER_CONCURRENCY"] ?? "20", 10),
+  timeout: parseInt(process.env["WORKER_TIMEOUT_SEC"] ?? "45", 10) * 1000,
+  maxRetries: parseInt(process.env["WORKER_RETRIES"] ?? "2", 10),
+  port: parseInt(process.env["PORT"] ?? "8080", 10),
+  secret: process.env["WORKER_SECRET"],
+} as const;
+
+// ============================================================================
+//  EXPRESS APP SETUP
+// ============================================================================
+
+const app = express();
+
+// CORS Middleware
+app.use((req: Request, res: Response, next: NextFunction): void => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
+app.use(express.json({ limit: "50mb" }));
+
+// ============================================================================
+//  UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Fetch with timeout protection
+ */
+async function timeoutFetch(
+  url: string,
+  opts: Record<string, unknown> = {},
+  timeout: number = CONFIG.timeout,
+): Promise<fetch.Response> {
+  return Promise.race([
+    fetch(url, { ...opts, timeout }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), timeout),
+    ),
+  ]);
+}
+
+/**
+ * Fetch with automatic retries and exponential backoff
+ */
+async function fetchWithRetries<T = unknown>(
+  url: string,
+  opts: Record<string, unknown>,
+  retries: number = CONFIG.maxRetries,
+): Promise<FetchResult<T>> {
+  let attempt = 0;
+  let lastErr: Error | null = null;
+
+  while (attempt <= retries) {
+    try {
+      const res = await timeoutFetch(url, opts);
+      const code = res.status;
+      const text = await res.text();
+
+      let content: T | string;
+      try {
+        content = JSON.parse(text) as T;
+      } catch {
+        content = text;
+      }
+
+      return { code, content };
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
+      attempt++;
+      if (attempt <= retries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+    }
+  }
+
+  return {
+    code: 520,
+    content: `Fetch failed: ${lastErr?.message ?? "unknown"}`,
+  };
+}
+
+/**
+ * Calculate War Week ID (ISO Week Number format: YYWnn)
+ * Matches GAS implementation for consistency
+ */
+function calculateWarWeekId(dateStr: string): WarWeekId {
+  if (!dateStr) return "Unknown" as WarWeekId;
+
+  let date: Date;
+
+  // Parse Clash Royale ISO format (yyyyMMddTHHmmss)
+  if (/^\d{8}T\d{6}/.test(dateStr)) {
+    const y = parseInt(dateStr.substring(0, 4), 10);
+    const m = parseInt(dateStr.substring(4, 6), 10) - 1;
+    const d = parseInt(dateStr.substring(6, 8), 10);
+    const h = parseInt(dateStr.substring(9, 11), 10);
+    const min = parseInt(dateStr.substring(11, 13), 10);
+    const s = parseInt(dateStr.substring(13, 15), 10);
+    date = new Date(Date.UTC(y, m, d, h, min, s));
+  } else {
+    date = new Date(dateStr);
+  }
+
+  // Adjust to Thursday (War Start Day)
+  const d = new Date(date.getTime());
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+
+  const year = d.getUTCFullYear();
+  const week1 = new Date(Date.UTC(year, 0, 4));
+  const weekNum =
+    1 +
+    Math.round(
+      ((d.getTime() - week1.getTime()) / 86400000 -
+        3 +
+        ((week1.getUTCDay() + 6) % 7)) /
+        7,
+    );
+  const yearShort = year.toString().slice(-2);
+
+  return `${yearShort}W${weekNum.toString().padStart(2, "0")}` as WarWeekId;
+}
+
+/**
+ * Generic batch processor with worker pool pattern
+ */
+async function processBatch<T = unknown>(
+  urls: string[],
+  apiKeys: string[] = [],
+  concurrency: number = CONFIG.concurrency,
+  scoring: ScoringWeights | null = null,
+): Promise<FetchResult<T>[]> {
+  const results: FetchResult<T>[] = new Array(urls.length);
+  let idx = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const i = idx++;
+      if (i >= urls.length) return;
+
+      const url = urls[i];
+      if (!url) continue;
+
+      const headers: Record<string, string> = {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Accept-Encoding": "gzip",
+      };
+
+      if (apiKeys.length > 0) {
+        const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+        if (key) headers["Authorization"] = `Bearer ${key}`;
+      }
+
+      // Special handling for player profiles with scoring
+      if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
+        try {
+          const profileResult = await fetchWithRetries<ClashRoyalePlayer>(url, {
+            method: "GET",
+            headers,
+          });
+
+          if (
+            profileResult.code === 200 &&
+            typeof profileResult.content === "object" &&
+            profileResult.content !== null &&
+            "tag" in profileResult.content
+          ) {
+            const profile = profileResult.content;
+            const logUrl = `${url}/battlelog`;
+            const logsResult = await fetchWithRetries<BattleLogEntry[]>(
+              logUrl,
+              {
+                method: "GET",
+                headers,
+              },
+            );
+
+            let hasWar = false;
+            if (logsResult.code === 200 && Array.isArray(logsResult.content)) {
+              hasWar = logsResult.content.some((b) =>
+                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
+                  b.type,
+                ),
+              );
+            }
+
+            // Use shared scoring system
+            const rawScore = ScoringSystem.calculateRecruitRawScore(
+              profile.trophies ?? 0,
+              profile.totalDonations ?? 0,
+              profile.warDayWins ?? 0,
+              hasWar,
+              scoring,
+            );
+
+            const warBonus = hasWar ? 500 : 0;
+            const totalWarScore = (profile.warDayWins ?? 0) + warBonus;
+
+            results[i] = {
+              code: 200,
+              content: {
+                tag: profile.tag,
+                name: profile.name,
+                trophies: profile.trophies,
+                donations: profile.totalDonations,
+                cards: profile.challengeCardsWon,
+                war: totalWarScore,
+                rawScore,
+              } as T,
+            };
+          } else {
+            results[i] = profileResult as FetchResult<T>;
+          }
+        } catch (e) {
+          results[i] = {
+            code: 500,
+            content: `Scoring fetch failed: ${e instanceof Error ? e.message : "unknown"}`,
+          };
+        }
+      } else {
+        const res = await fetchWithRetries<T>(url, { method: "GET", headers });
+        results[i] = res;
+      }
+    }
+  }
+
+  // Spawn worker pool
+  const workers: Promise<void>[] = [];
+  const spawn = Math.min(concurrency, urls.length);
+  for (let i = 0; i < spawn; i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+
+  // Filter and sort if scoring is enabled
+  if (scoring) {
+    return results
+      .filter(
+        (r): r is FetchResult<T> =>
+          r !== undefined &&
+          r.code === 200 &&
+          typeof r.content === "object" &&
+          r.content !== null &&
+          "rawScore" in r.content,
+      )
+      .sort((a, b) => {
+        const aScore = (a.content as any).rawScore as number;
+        const bScore = (b.content as any).rawScore as number;
+        return bScore - aScore;
+      })
+      .slice(0, 200);
+  }
+
+  return results;
+}
+
+/**
+ * Tournament scan batch processor
+ */
+async function processScanBatch(
+  tags: TournamentTag[],
+  apiKeys: string[] = [],
+  concurrency: number = CONFIG.concurrency,
+  blacklistSet: Set<PlayerTag> = new Set(),
+  minTrophies: number = 4000,
+): Promise<ScoredPlayer[]> {
+  const candidates: ScoredPlayer[] = [];
+  let idx = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const i = idx++;
+      if (i >= tags.length) return;
+
+      const tag = tags[i];
+      if (!tag) continue;
+
+      const url = `https://api.clashroyale.com/v1/tournaments/${encodeURIComponent(tag)}`;
+
+      const headers: Record<string, string> = {
+        "User-Agent": "ClanManagerWorker/1.0",
+        "Accept-Encoding": "gzip",
+      };
+
+      if (apiKeys.length > 0) {
+        const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+        if (key) headers["Authorization"] = `Bearer ${key}`;
+      }
+
+      try {
+        const res = await fetchWithRetries<Tournament>(url, {
+          method: "GET",
+          headers,
+        });
+
+        if (
+          res.code === 200 &&
+          typeof res.content === "object" &&
+          res.content !== null &&
+          "membersList" in res.content
+        ) {
+          res.content.membersList.forEach((p) => {
+            if (p.trophies < minTrophies) return;
+            if (p.clan?.tag) return;
+            if (blacklistSet.has(p.tag)) return;
+
+            candidates.push({
+              tag: p.tag,
+              name: p.name,
+              trophies: p.trophies,
+              donations: 0,
+              cards: 0,
+              war: 0,
+              rawScore: 0,
+            });
+          });
+        }
+      } catch (e) {
+        console.warn(
+          `Scan error for ${tag}: ${e instanceof Error ? e.message : "unknown"}`,
+        );
+      }
+    }
+  }
+
+  const workers: Promise<void>[] = [];
+  const spawn = Math.min(concurrency, tags.length);
+  for (let i = 0; i < spawn; i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+
+  return candidates;
+}
+
+// ============================================================================
+//  MIDDLEWARE
+// ============================================================================
+
+const checkAuth: RequestHandler = (req, res, next) => {
+  if (!CONFIG.secret) return next();
+
+  const auth = (req.get("authorization") ?? "").trim();
+  if (auth !== `Bearer ${CONFIG.secret}`) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  next();
+};
+
+// ============================================================================
+//  ROUTES
+// ============================================================================
+
+app.get("/", (_req: Request, res: Response): void => {
+  res.send("Clash Manager Worker is running");
+});
+
+app.get("/capabilities", checkAuth, (_req: Request, res: Response): void => {
+  res.json({
+    version: "10.0.0",
+    concurrency: CONFIG.concurrency,
+    timeoutMs: CONFIG.timeout,
+    maxRetries: CONFIG.maxRetries,
+  });
+});
+
+app.post(
+  "/audit",
+  checkAuth,
+  async (
+    req: Request<object, object, AuditRequest>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const { apiKeys } = req.body;
+      if (!Array.isArray(apiKeys)) {
+        res.status(400).json({ error: "apiKeys must be array" });
+        return;
+      }
+
+      const auditUrl = "https://api.clashroyale.com/v1/cards";
+      const tasks = apiKeys.map(async (key): Promise<ApiKeyAuditResult> => {
+        try {
+          const response = await timeoutFetch(
+            auditUrl,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${key}`,
+                "User-Agent": "ClanManagerWorker/Audit",
+              },
+            },
+            5000,
+          );
+          return { key, status: response.status };
+        } catch (e) {
+          return {
+            key,
+            status: 500,
+            error: e instanceof Error ? e.message : "unknown",
+          };
+        }
+      });
+
+      const results = await Promise.all(tasks);
+      res.json({ results });
+    } catch (e) {
+      res.status(500).json({
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  },
+);
+
+app.post(
+  "/public/scan",
+  async (
+    req: Request<object, object, PublicScanRequest>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const { tags, blacklist, minTrophies, scoring } = req.body;
+
+      const apiKeys =
+        req.body.apiKeys ??
+        (process.env["API_KEYS"] ? process.env["API_KEYS"].split(",") : []);
+
+      if (!Array.isArray(tags)) {
+        res.status(400).json({ error: "tags must be array" });
+        return;
+      }
+
+      const blacklistSet = new Set(blacklist ?? []);
+      const concurrency = Number(
+        process.env["WORKER_CONCURRENCY"] ??
+          req.query["c"] ??
+          CONFIG.concurrency,
+      );
+
+      const candidates = await processScanBatch(
+        tags as TournamentTag[],
+        apiKeys,
+        concurrency,
+        blacklistSet as Set<PlayerTag>,
+        minTrophies ?? 4000,
+      );
+
+      if (scoring && candidates.length > 0) {
+        const candidateTags = [...new Set(candidates.map((c) => c.tag))];
+        const playerUrls = candidateTags.map(
+          (t) =>
+            `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`,
+        );
+
+        const scoredResults = await processBatch<ScoredPlayer>(
+          playerUrls,
+          apiKeys,
+          concurrency,
+          scoring,
+        );
+
+        res.json({
+          candidates: scoredResults
+            .map((r) => r.content)
+            .filter(
+              (c): c is ScoredPlayer =>
+                typeof c === "object" && c !== null && "tag" in c,
+            ),
+        });
+        return;
+      }
+
+      res.json({ candidates });
+    } catch (e) {
+      console.error("Failed /public/scan", e);
+      res.status(500).json({
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  },
+);
+
+// Push subscription storage (in-memory)
+const subscriptions = new Set<string>();
+
+app.post(
+  "/public/subscribe",
+  (req: Request<object, object, SubscriptionRequest>, res: Response): void => {
+    const sub = req.body;
+    if (!sub?.endpoint) {
+      res.status(400).json({ error: "Invalid subscription" });
+      return;
+    }
+
+    subscriptions.add(JSON.stringify(sub));
+    console.log(` New Push Subscription. Total: ${subscriptions.size}`);
+    res.json({ success: true, count: subscriptions.size });
+  },
+);
+
+app.post(
+  "/scan",
+  checkAuth,
+  async (
+    req: Request<object, object, ScanRequest>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
+
+      if (!Array.isArray(tags)) {
+        res.status(400).json({ error: "tags must be array" });
+        return;
+      }
+
+      const blacklistSet = new Set(blacklist ?? []);
+      const concurrency = Number(
+        process.env["WORKER_CONCURRENCY"] ??
+          req.query["c"] ??
+          CONFIG.concurrency,
+      );
+
+      const candidates = await processScanBatch(
+        tags as TournamentTag[],
+        apiKeys ?? [],
+        concurrency,
+        blacklistSet as Set<PlayerTag>,
+        minTrophies ?? 4000,
+      );
+
+      if (scoring && candidates.length > 0) {
+        const candidateTags = [...new Set(candidates.map((c) => c.tag))];
+        const playerUrls = candidateTags.map(
+          (t) =>
+            `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`,
+        );
+
+        const scoredResults = await processBatch<ScoredPlayer>(
+          playerUrls,
+          apiKeys ?? [],
+          concurrency,
+          scoring,
+        );
+
+        res.json({
+          candidates: scoredResults
+            .map((r) => r.content)
+            .filter(
+              (c): c is ScoredPlayer =>
+                typeof c === "object" && c !== null && "tag" in c,
+            ),
+        });
+        return;
+      }
+
+      res.json({ candidates });
+    } catch (e) {
+      console.error("Failed /scan", e);
+      res.status(500).json({
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  },
+);
+
+app.post(
+  "/clan/full",
+  checkAuth,
+  async (
+    req: Request<object, object, ClanFullRequest>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const { tag, apiKeys } = req.body;
+      if (!tag) {
+        res.status(400).json({ error: "tag required" });
+        return;
+      }
+
+      const cleanTag = encodeURIComponent(tag);
+      const urls = [
+        `https://api.clashroyale.com/v1/clans/${cleanTag}/members`,
+        `https://api.clashroyale.com/v1/clans/${cleanTag}/currentriverrace`,
+        `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`,
+      ];
+
+      const results = await processBatch<
+        ClanMembers | CurrentRiverRace | RiverRaceLog
+      >(urls, apiKeys, 3, null);
+
+      const membersData =
+        results[0]?.code === 200 ? (results[0].content as ClanMembers) : null;
+      const raceData =
+        results[1]?.code === 200
+          ? (results[1].content as CurrentRiverRace)
+          : null;
+      const logData =
+        results[2]?.code === 200 ? (results[2].content as RiverRaceLog) : null;
+
+      if (!membersData) {
+        res.status(500).json({ error: "Failed to fetch members" });
+        return;
+      }
+
+      // Pre-process war history
+      const warHistory: WarHistory = {};
+
+      if (logData?.items) {
+        logData.items.forEach((log) => {
+          const weekId = calculateWarWeekId(log.createdDate);
+          const standings = log.standings ?? [];
+          const myClan = standings.find((s) => s.clan.tag === tag);
+
+          if (myClan?.clan.participants) {
+            myClan.clan.participants.forEach((p) => {
+              if (!warHistory[p.tag]) {
+                warHistory[p.tag] = {};
+              }
+              const currentFame = warHistory[p.tag]?.[weekId] ?? 0;
+              warHistory[p.tag]![weekId] = Math.max(currentFame, p.fame);
+            });
+          }
+        });
+      }
+
+      res.json({
+        members: membersData,
+        race: raceData,
+        history: warHistory,
+      });
+    } catch (e) {
+      console.error("Failed /clan/full", e);
+      res.status(500).json({
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  },
+);
+
+app.post(
+  "/clan/api",
+  checkAuth,
+  async (
+    req: Request<object, object, ClanApiRequest>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const { tag, type, apiKeys } = req.body;
+      if (!tag) {
+        res.status(400).json({ error: "tag required" });
+        return;
+      }
+      if (!type) {
+        res.status(400).json({ error: "type required" });
+        return;
+      }
+
+      const cleanTag = encodeURIComponent(tag);
+      let url = "";
+
+      if (type === "members") {
+        url = `https://api.clashroyale.com/v1/clans/${cleanTag}/members`;
+      } else if (type === "warlog") {
+        url = `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`;
+      } else {
+        res.status(400).json({ error: "invalid type" });
+        return;
+      }
+
+      const { code, content } = await fetchWithRetries(url, {
+        method: "GET",
+        headers: {
+          "User-Agent": "ClanManagerWorker/1.0",
+          Authorization: `Bearer ${apiKeys?.[0] ?? ""}`,
+        },
+      });
+
+      if (code !== 200) {
+        res.status(code).json({ error: "upstream error", details: content });
+        return;
+      }
+
+      let transformed: unknown[] = [];
+
+      if (
+        type === "members" &&
+        typeof content === "object" &&
+        content !== null &&
+        "items" in content
+      ) {
+        const formatRole = (role: string): string =>
+          ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ??
+          "Member";
+
+        transformed = (content.items as any[]).map((m) => ({
+          tag: m.tag,
+          name: m.name,
+          role: formatRole(m.role),
+          kingLevel: m.expLevel,
+          donations: m.donations,
+          donationsReceived: m.donationsReceived,
+        }));
+      } else if (
+        type === "warlog" &&
+        typeof content === "object" &&
+        content !== null &&
+        "items" in content
+      ) {
+        const parseCRDateISO = (t: string): string => {
+          if (!t) return new Date().toISOString().split("T")[0] ?? "";
+          return `${t.substring(0, 4)}-${t.substring(4, 6)}-${t.substring(6, 8)}`;
+        };
+
+        transformed = (content.items as any[]).map((r) => {
+          let myStanding = null;
+          let opponents: any[] = [];
+
+          if (r.standings) {
+            myStanding = r.standings.find((s: any) => s.clan.tag === tag);
+            opponents = r.standings.filter((s: any) => s.clan.tag !== tag);
+          }
+
+          const myFame = myStanding ? myStanding.clan.fame : 0;
+          const myRank = myStanding ? myStanding.rank : null;
+          const bestRival = opponents.sort(
+            (a, b) => b.clan.fame - a.clan.fame,
+          )[0];
+
+          let result = "lose";
+          if (myRank === 1) result = "win";
+          if (myRank === null) result = "n/a";
+
+          return {
+            result,
+            endTime: parseCRDateISO(r.createdDate),
+            opponent: bestRival ? bestRival.clan.name : "No Opponent",
+            teamSize: 50,
+            score: myFame,
+            opponentScore: bestRival ? bestRival.clan.fame : 0,
+          };
+        });
+      }
+
+      res.json({ data: transformed });
+    } catch (e) {
+      console.error("Failed /clan/api", e);
+      res.status(500).json({
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  },
+);
+
+app.post(
+  "/fetch",
+  checkAuth,
+  async (
+    req: Request<object, object, FetchRequest>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const { urls, apiKeys, scoring } = req.body;
+      if (!Array.isArray(urls)) {
+        res.status(400).json({ error: "urls must be array" });
+        return;
+      }
+
+      const concurrency = Number(
+        process.env["WORKER_CONCURRENCY"] ??
+          req.query["c"] ??
+          CONFIG.concurrency,
+      );
+
+      const results = await processBatch(
+        urls,
+        apiKeys ?? [],
+        concurrency,
+        scoring ?? null,
+      );
+
+      res.json({ results });
+    } catch (e) {
+      console.error("Failed /fetch", e);
+      res.status(500).json({
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  },
+);
+
+// ============================================================================
+//  SERVER STARTUP
+// ============================================================================
+
+app.listen(CONFIG.port, () => {
+  console.log(
+    `Worker listening on ${CONFIG.port} (concurrency=${CONFIG.concurrency})`,
+  );
+});

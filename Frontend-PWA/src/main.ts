@@ -2,7 +2,7 @@
  * 🚀 CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import "./style.css";
 import App from "./App.vue";
 import router from "./router";
@@ -99,20 +99,40 @@ async function bootstrap() {
     // 3. Mount App
     app.mount("#app");
 
-    // 4. Initialize Systems (Post-Mount)
+    // 4. Initialize Systems (Immediate)
     const clashData = useClashData();
     const apiState = useApiState();
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
+    // ⚡ INSTANT BOOT: Load local cache immediately for LCP
     clashData.loadLocal();
+    
+    // 🛡️ CONCURRENCY FIX: Start API Handshake FIRST.
+    // Do NOT start background sync (heavy data fetch) until handshake clears.
+    // This prevents GAS 'Too Many Requests' errors on cold boot.
+    apiState.init();
 
-    // Defer network and heavy systems
+    // Watch for API health before triggering heavy data load
+    const unwatch = watch(
+      () => apiState.apiStatus.value,
+      (status) => {
+        if (status === "online") {
+          // Server is awake and reachable, safe to sync data
+          clashData.startBackgroundSync();
+          unwatch(); // Run once per session
+        } else if (status === "offline") {
+          // If handshake fails completely, stop watching (Manual retry required)
+          unwatch();
+        }
+      },
+      { immediate: true }
+    );
+
+    // Defer only truly heavy background tasks
     setTimeout(async () => {
-      apiState.init();
-      clashData.startBackgroundSync();
       wakeLock.init();
-
+      
       // 💾 PERSISTENCE: Request durable storage
       storagePersistence.requestPersistence();
 
@@ -125,7 +145,6 @@ async function bootstrap() {
       }
 
       // ⚡ NATIVE: Register Periodic Sync for WebAPK
-      // This allows the app to update its badge in the background.
       if (
         "serviceWorker" in navigator &&
         "periodicSync" in (navigator as any).serviceWorker
@@ -148,7 +167,7 @@ async function bootstrap() {
           console.warn("Periodic Sync registration failed", e);
         }
       }
-    }, 400);
+    }, 1000);
   } catch (error) {
     showFatalError(error);
   }

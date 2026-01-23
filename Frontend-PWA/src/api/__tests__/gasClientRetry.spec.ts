@@ -1,8 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   fetchRemote,
-  dismissRecruits,
-  triggerBackendUpdate,
 } from "../gasClient";
 
 // Mock fetch global
@@ -101,7 +99,8 @@ describe("gasClient", () => {
         ),
     });
 
-    await expect(fetchRemote()).rejects.toThrow("Google Server Error");
+    // Updated expectation to match gasClient.ts logic
+    await expect(fetchRemote()).rejects.toThrow("Backend Configuration Error (HTML Response)");
   });
 
   it("should handle malformed JSON", async () => {
@@ -110,6 +109,6 @@ describe("gasClient", () => {
       text: () => Promise.resolve('{"incomplete": true'),
     });
 
-    await expect(fetchRemote()).rejects.toThrow("Invalid JSON Response");
+    await expect(fetchRemote()).rejects.toThrow("Malformed JSON Response from Backend");
   });
 });

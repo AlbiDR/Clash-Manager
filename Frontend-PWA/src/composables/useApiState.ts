@@ -7,7 +7,8 @@ export type ApiStatus =
   | "online"
   | "offline"
   | "unconfigured"
-  | "stale";
+  | "stale"
+  | "waking";
 
 // Global Shared State
 const apiUrl = ref("");
@@ -16,28 +17,43 @@ const apiStatus = ref<ApiStatus>("checking");
 const pingData = ref<PingResponse | null>(null);
 
 let isInitialized = false;
-let retryAttempted = false; // State Recovery Retry State
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
+let handshakeController: AbortController | null = null;
 
 async function checkApiStatus() {
-  if (!isInitialized) apiStatus.value = "checking";
+  // Only show "checking" on the very first cold start to avoid flickering during retries
+  if (!isInitialized && consecutiveFailures === 0) {
+    apiStatus.value = "checking";
+  }
 
   apiConfigured.value = isConfigured();
   apiUrl.value = getApiUrl();
 
   if (!apiConfigured.value) {
     apiStatus.value = "unconfigured";
+    isInitialized = true; 
     return;
   }
 
+  // 🛡️ CANCELLATION: Kill any pending handshake before starting a new one
+  if (handshakeController) {
+    handshakeController.abort("Replaced by new check");
+  }
+  handshakeController = new AbortController();
+  const signal = handshakeController.signal;
+
   try {
+    if (consecutiveFailures > 0) {
+      apiStatus.value = "waking";
+    }
+
     const start = Date.now();
 
-    // Ping Timeout (5s)
+    // ⚡ PATIENT HANDSHAKE: Pass the signal through to the ping call
     const response = await Promise.race([
-      ping(),
+      ping({ signal }),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error("Ping Timeout")), 5000),
+        setTimeout(() => reject(new DOMException("Handshake Timeout", "AbortError")), 25000),
       ),
     ]);
     const latency = Date.now() - start;
@@ -48,41 +64,45 @@ async function checkApiStatus() {
         ...response,
         latency,
       };
-      // Reset failure counters on success
       consecutiveFailures = 0;
-      retryAttempted = false;
+      isInitialized = true;
     } else {
-      handleFailure();
+      handleFailure(signal);
     }
-  } catch (e) {
-    console.warn("API Status Check Failed:", e);
-    handleFailure();
+  } catch (e: any) {
+    if (e.name === "AbortError" && signal.aborted) {
+       // Gracefully handle deliberate aborts
+       return;
+    }
+    console.warn("API Handshake Failed:", e);
+    handleFailure(signal);
+  } finally {
+    if (handshakeController?.signal === signal) {
+      handshakeController = null;
+    }
   }
 }
 
-function handleFailure() {
+function handleFailure(signal?: AbortSignal) {
+  if (signal?.aborted) return;
   consecutiveFailures++;
 
-  // Soft Fail: If it's the first failure, keep previous status (or set to stale)
-  // Only invalidating if specific threshold reached
-  if (consecutiveFailures >= 2 || !navigator.onLine) {
+  // 🛡️ SOFT FAIL ARCHITECTURE
+  if (!navigator.onLine) {
     apiStatus.value = "offline";
-  } else {
-    // If we were online, strictly stay online or switch to 'stale' if you prefer
-    // ensuring we don't flash red immediately.
-    // Keeping it "online" for one blip is usually better for UX.
-    if (apiStatus.value !== "checking") {
-      apiStatus.value = "stale";
-    }
+    isInitialized = true; // Stop active retries if physically offline
+    return;
   }
 
-  // State Recovery (Auto-retry once)
-  if (!retryAttempted) {
-    retryAttempted = true;
-    setTimeout(checkApiStatus, 500); // Fast retry
-  } else if (consecutiveFailures < 3) {
-    // Allow a second retry with longer backoff
-    setTimeout(checkApiStatus, 2000);
+  // Increased tolerance: only hard fail after 5 tries (approx 45s with backoff)
+  if (consecutiveFailures >= 5) {
+    apiStatus.value = "offline";
+    isInitialized = true; 
+  } else {
+    // Keep checking with progressive backoff (2s, 4s...)
+    apiStatus.value = "stale";
+    const delay = Math.min(consecutiveFailures * 2000, 10000);
+    setTimeout(checkApiStatus, delay);
   }
 }
 
@@ -107,11 +127,11 @@ export function useApiState() {
     init,
   };
 }
+
 // Test Helper
 export function resetApiState() {
   if (import.meta.env.TEST) {
     isInitialized = false;
-    retryAttempted = false;
     consecutiveFailures = 0;
     apiStatus.value = "checking";
     pingData.value = null;

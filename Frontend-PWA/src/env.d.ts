@@ -3,6 +3,9 @@
  * Defines the shape of import.meta.env and handles static assets.
  */
 
+// Reference removed to prevent "Cannot find type definition file" error
+// Manual declarations below handle the necessary types for this project
+
 interface ImportMetaEnv {
   readonly VITE_GAS_URL: string;
   readonly VITE_WORKER_URL: string;
@@ -23,7 +26,9 @@ interface ImportMeta {
 declare const __APP_VERSION__: string;
 
 declare module "*.vue" {
-  const component: any;
+  import type { DefineComponent } from "vue";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types
+  const component: DefineComponent<{}, {}, any>;
   export default component;
 }
 

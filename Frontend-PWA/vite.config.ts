@@ -79,8 +79,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: "auto",
       strategies: "injectManifest",
-      srcDir: "public",
-      filename: "sw.js",
+      srcDir: "src",
+      filename: "sw.ts",
       manifest: false, // Already exists in public/manifest.json
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],

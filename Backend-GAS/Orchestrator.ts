@@ -1,88 +1,125 @@
+
 /**
  * ============================================================================
- * 🕹️ MODULE: ORCHESTRATOR & TRIGGERS
+ * 🕹️ MODULE: ORCHESTRATOR & TRIGGERS - TypeScript Edition
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Manages Automation Triggers and the "Master Protocol".
  * ⚙️ WORKFLOW:
  *    - Creates a custom UI menu (`onOpen`) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 10.0.4
- *
- * 🧠 REASONING:
- *    - Granularity: Replaced the monolithic "dailymaster" with 2 optimized tasks.
- *    - Chaining: DB update enforces a subsequent LB update to keep data consistent.
- *    - Quota Safety: Health checks now sample connection instead of draining quota.
+ * 🏷️ VERSION: 11.0.0
  * ============================================================================
  */
 
-const VER_ORCHESTRATOR = "10.0.4";
+import type { AppConfig } from "./Configuration";
+import type { AppUtils } from "./Utilities";
+
+// Global Version Constant
+// @ts-ignore
+const VER_ORCHESTRATOR = "11.0.0";
+
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
+// Global Declarations for GAS Environment
+declare const CONFIG: AppConfig;
+declare const Utils: AppUtils;
+
+// External module functions
+declare function updateClanDatabase(): void;
+declare function updateLeaderboard(): void;
+declare function scoutRecruits(): void;
+declare function refreshWebPayload(): void;
+
+// Module Version Constants for Health Check
+declare const VER_CONFIGURATION: string;
+declare const VER_UTILITIES: string;
+declare const VER_LOGGER: string;
+declare const VER_LEADERBOARD: string;
+declare const VER_RECRUITER: string;
+
+/**
+ * 🕹️ ORCHESTRATOR INTERFACES
+ */
+export interface ApiKeyVerificationResult {
+  name: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface ModuleStatus {
+  name: string;
+  current: string;
+  expected: string;
+}
 
 /**
  * Creates a custom menu in the spreadsheet UI when the document is opened.
  */
-function onOpen(e) {
+function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
   const UI = CONFIG.UI;
   const ITEMS = UI.MENU_ITEMS;
 
   SpreadsheetApp.getUi()
     .createMenu(UI.MENU_NAME)
-    // ZONE 1: CORE ACTIONS
     .addItem(ITEMS.DB, "triggerUpdateDatabase")
     .addItem(ITEMS.LB, "triggerUpdateLeaderboard")
     .addItem(ITEMS.HH, "triggerScoutRecruits")
     .addSeparator()
-    // ZONE 2: MOBILE CONTROLS
     .addItem(ITEMS.MOBILE, "setupMobileTriggers")
     .addSeparator()
-    // ZONE 3: MAINTENANCE
     .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
     .addToUi();
 }
 
-// ----------------------------------------------------------------------------
-// ⏰ TRIGGER TASKS (Bind these in Project Settings)
-// ----------------------------------------------------------------------------
-
 /**
  * TASK A: UPDATE MEMBER STATS (Logger + Leaderboard)
  * Recommended Trigger: Time-Based -> Every 6 Hours
- *
- * Description:
- * This is the "Heavy" cycle. It takes a snapshot of current member statistics
- * for the historical database, then immediately recalculates the leaderboard
- * to reflect these new stats.
- *
- * Sequence:
- * 1. Update Database (Slowest op).
- * 2. Wait 10s for data stability.
- * 3. Update Leaderboard (Depends on DB).
- * 4. Refresh Web App Cache.
  */
-function taskUpdateMemberStats() {
+function taskUpdateMemberStats(): void {
   console.log("⏰ TASK START: Update Member Stats (DB + LB)");
 
-  // We use a broader lock key to prevent any other updates during this heavy op
   Utils.executeSafely("TASK_MEMBER_STATS", () => {
     try {
-      // Step 1: Database
       console.log("  >> Step 1: Updating Database...");
       updateClanDatabase();
 
-      // Step 2: Stabilization Delay
-      // Google Sheets sometimes lags between writing data and being able to read it back via API/Values.
       Utilities.sleep(10000);
 
-      // Step 3: Leaderboard
       console.log("  >> Step 2: Updating Leaderboard...");
       updateLeaderboard();
 
-      // Step 4: Cache
       console.log("  >> Step 3: Refreshing PWA...");
       refreshWebPayload();
 
       console.log("⏰ TASK END: Member Stats Sync Complete.");
-    } catch (e) {
+    } catch (e: any) {
       console.error(`❌ TASK FAILED (Member Stats): ${e.message}`);
     }
   });
@@ -91,35 +128,23 @@ function taskUpdateMemberStats() {
 /**
  * TASK B: FAST SCOUT (Headhunter)
  * Recommended Trigger: Time-Based -> Every 30 Minutes
- *
- * Description:
- * This is the "Light" cycle. It runs frequently to catch new players entering
- * tournaments. It does NOT touch the database or leaderboard.
- *
- * Actions:
- * 1. Runs Headhunter (Optimized for 150 tournaments).
- * 2. Refreshes Web App Cache (handled internally by scoutRecruits).
  */
-function taskFastScout() {
+function taskFastScout(): void {
   console.log("⏰ TASK START: Fast Scout");
   Utils.executeSafely("TASK_HH", () => {
     try {
       scoutRecruits();
       console.log("⏰ TASK END: Scout complete.");
-    } catch (e) {
+    } catch (e: any) {
       console.error(`❌ TASK FAILED (HH): ${e.message}`);
     }
   });
 }
 
-// ----------------------------------------------------------------------------
-// 📱 MOBILE TRIGGER SYSTEM
-// ----------------------------------------------------------------------------
-
 /**
  * Creates an INSTALLABLE trigger for the 'onEdit' event.
  */
-function setupMobileTriggers() {
+function setupMobileTriggers(): void {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const triggerName = "handleMobileEdit";
@@ -156,7 +181,7 @@ function setupMobileTriggers() {
 /**
  * Logic handler for Mobile Checkboxes (A1)
  */
-function handleMobileEdit(e) {
+function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   if (!e || !e.range || !e.value) return;
 
   const range = e.range;
@@ -166,7 +191,6 @@ function handleMobileEdit(e) {
   if (range.getA1Notation() !== CONFIG.UI.MOBILE_TRIGGER_CELL) return;
   if (e.value !== "TRUE") return;
 
-  // Visual Feedback
   range.setValue(false);
   sheet.getRange("B1").setValue("⏳ Updating...");
   SpreadsheetApp.flush();
@@ -188,7 +212,7 @@ function handleMobileEdit(e) {
         .getRange("B1")
         .setValue(`✅ Done ${new Date().toLocaleTimeString()}`);
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error(`📱 Mobile Error: ${err.message}`);
     const msg =
       err.message.indexOf("System Busy") > -1
@@ -198,11 +222,10 @@ function handleMobileEdit(e) {
   }
 }
 
-// ----------------------------------------------------------------------------
-// 🟢 WRAPPERS (UI FEEDBACK HANDLERS)
-// ----------------------------------------------------------------------------
-
-function triggerUpdateDatabase() {
+/**
+ * 🟢 UI WRAPPERS
+ */
+function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
   Utils.executeSafely("MANUAL_DB", () => {
@@ -210,13 +233,13 @@ function triggerUpdateDatabase() {
       updateClanDatabase();
       refreshWebPayload();
       ss.toast("Database updated successfully.", "Success", 3);
-    } catch (e) {
+    } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
     }
   });
 }
 
-function triggerUpdateLeaderboard() {
+function triggerUpdateLeaderboard(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Calculating scores...", "Update Leaderboard", 5);
   Utils.executeSafely("MANUAL_LB", () => {
@@ -224,36 +247,33 @@ function triggerUpdateLeaderboard() {
       updateLeaderboard();
       refreshWebPayload();
       ss.toast("Leaderboard refreshed.", "Success", 3);
-    } catch (e) {
+    } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
     }
   });
 }
 
-function triggerScoutRecruits() {
+function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Scanning tournaments...", "Headhunter", 20);
   Utils.executeSafely("MANUAL_HH", () => {
     try {
       scoutRecruits();
       ss.toast("Scout Complete.", "Success", 5);
-    } catch (e) {
+    } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
     }
   });
 }
 
-// ----------------------------------------------------------------------------
-// 🔍 DIAGNOSTICS & ORCHESTRATION
-// ----------------------------------------------------------------------------
-
-function checkSystemHealth() {
+/**
+ * 🔍 DIAGNOSTICS & ORCHESTRATION
+ */
+function checkSystemHealth(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Verifying System...", "Health Check", 5);
 
   const manifest = CONFIG.SYSTEM.MANIFEST;
-
-  // 🛡️ API KEY CHECK
   const keys = CONFIG.SYSTEM.API_KEYS;
   let keyStatusReport = "";
   let keysHealthy = true;
@@ -262,21 +282,23 @@ function checkSystemHealth() {
     keysHealthy = false;
     keyStatusReport = "❌ No API Keys configured.\n";
   } else {
-    // ⚡ OPTIMIZATION: Only sample 1 key to save daily quota
     const verificationResults = verifyApiKeysInternal(false, 1);
-    const isConnectivityActive = verificationResults.length > 0 && verificationResults[0].success;
-    
+    const isConnectivityActive =
+      verificationResults.length > 0 && verificationResults[0].success;
+
     if (isConnectivityActive) {
       keyStatusReport = `🔑 API CONNECTION: ✅ Active (Sampled 1/${keys.length} keys)\n`;
     } else {
       keysHealthy = false;
-      const errorMsg = verificationResults.length > 0 ? verificationResults[0].error : "Unknown Error";
+      const errorMsg =
+        verificationResults.length > 0
+          ? verificationResults[0].error
+          : "Unknown Error";
       keyStatusReport = `❌ API CONNECTION FAILED: ${errorMsg}\n`;
     }
   }
 
-  // Module Check
-  const modules = [
+  const modules: ModuleStatus[] = [
     {
       name: "Configuration",
       current:
@@ -293,9 +315,7 @@ function checkSystemHealth() {
     {
       name: "Orchestrator",
       current:
-        typeof VER_ORCHESTRATOR !== "undefined"
-          ? VER_ORCHESTRATOR
-          : "MISSING",
+        typeof VER_ORCHESTRATOR !== "undefined" ? VER_ORCHESTRATOR : "MISSING",
       expected: manifest.ORCHESTRATOR,
     },
     {
@@ -327,16 +347,12 @@ function checkSystemHealth() {
   );
 }
 
-/**
- * Trigger for the manual API Key Verification from the menu.
- */
-function triggerVerifyApiKeys() {
+function triggerVerifyApiKeys(): void {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Verifying API Keys...", "Security Audit", 10);
 
-  // Check ALL keys (limit 0)
-  const results = verifyApiKeysInternal(true, 0); 
+  const results = verifyApiKeysInternal(true, 0);
 
   let report = "🔑 API KEY SECURITY AUDIT\n---------------------------\n";
   let activeCount = 0;
@@ -356,43 +372,34 @@ function triggerVerifyApiKeys() {
   ui.alert("API Key Verification", report, ui.ButtonSet.OK);
 }
 
-/**
- * Core logic for verifying API keys.
- * Performs a simple request (/cards) to verify validity.
- * 
- * @param {boolean} isUserFacing - (Legacy)
- * @param {number} limit - Max keys to check (0 = All). Use 1 for health checks.
- */
-function verifyApiKeysInternal(isUserFacing, limit = 0) {
+function verifyApiKeysInternal(
+  isUserFacing: boolean,
+  limit: number = 0,
+): ApiKeyVerificationResult[] {
   const keys = CONFIG.SYSTEM.API_KEYS;
   const baseUrl = CONFIG.SYSTEM.API_BASE;
   const url = `${baseUrl}/cards`;
-  const results = [];
-  
-  let quotaExhausted = false;
+  const results: ApiKeyVerificationResult[] = [];
 
-  // Determine subset of keys to check
+  let quotaExhausted = false;
   const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
 
-  // ⚡ STRATEGY A: REMOTE OFFLOAD (Saves 95% Quota)
-  // If a Remote Worker is available, use it to check ALL keys in a single fetch.
-  // We skip this for single-key health checks (limit=1) unless we are desperate,
-  // but generally using the worker is safer for quota even for single checks.
   if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
-      const remoteResults = Utils.auditKeysRemote(keysToCheck);
-      if (remoteResults) {
-          console.log("✅ API Audit handled by Remote Worker.");
-          return remoteResults;
-      }
-      console.warn("⚠️ Remote Audit failed. Falling back to local quota.");
+    const remoteResults = Utils.auditKeysRemote(keysToCheck);
+    if (remoteResults) {
+      console.log("✅ API Audit handled by Remote Worker.");
+      return remoteResults;
+    }
+    console.warn("⚠️ Remote Audit failed. Falling back to local quota.");
   }
 
-  // ⚡ STRATEGY B: LOCAL FETCH (Legacy/Fallback)
   for (const keyObj of keysToCheck) {
-    
-    // 🛡️ CIRCUIT BREAKER: If quota is dead, stop trying to fetch
     if (quotaExhausted) {
-      results.push({ name: keyObj.name, success: false, error: "⚠️ Skipped (Quota Exceeded)" });
+      results.push({
+        name: keyObj.name,
+        success: false,
+        error: "⚠️ Skipped (Quota Exceeded)",
+      });
       continue;
     }
 
@@ -401,7 +408,7 @@ function verifyApiKeysInternal(isUserFacing, limit = 0) {
         method: "get",
         headers: {
           Authorization: `Bearer ${keyObj.value}`,
-          "User-Agent": "ClanManagerBot/6.0 (GAS)",
+          "User-Agent": "ClanManagerBot/11.0 (GAS)",
         },
         muteHttpExceptions: true,
       });
@@ -416,27 +423,47 @@ function verifyApiKeysInternal(isUserFacing, limit = 0) {
         if (code === 503) errorMsg = "⚠️ Maintenance Mode";
         results.push({ name: keyObj.name, success: false, error: errorMsg });
       }
-    } catch (e) {
-      // 🛡️ QUOTA DETECTION
-      if (e.message && e.message.indexOf("Service invoked too many times") > -1) {
+    } catch (e: any) {
+      if (
+        e.message &&
+        e.message.indexOf("Service invoked too many times") > -1
+      ) {
         quotaExhausted = true;
-        results.push({ name: keyObj.name, success: false, error: "⛔ DAILY QUOTA LIMIT REACHED" });
+        results.push({
+          name: keyObj.name,
+          success: false,
+          error: "⛔ DAILY QUOTA LIMIT REACHED",
+        });
       } else {
-        results.push({ name: keyObj.name, success: false, error: `Ex: ${e.message}` });
+        results.push({
+          name: keyObj.name,
+          success: false,
+          error: `Ex: ${e.message}`,
+        });
       }
     }
-    
-    // 🛡️ Safety Pause: 200ms sleep between checks if running multiple
+
     if (keysToCheck.length > 1) {
       Utilities.sleep(200);
     }
   }
-  
+
   return results;
 }
 
-// DEPRECATED: Legacy Monolith (Preserved for compatibility)
-function sequenceFullUpdate() {
-  taskUpdateMemberStats(); // Replaces taskMajorSync
-  taskFastScout();
-}
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this as any, {
+  onOpen,
+  taskUpdateMemberStats,
+  taskFastScout,
+  setupMobileTriggers,
+  handleMobileEdit,
+  triggerUpdateDatabase,
+  triggerUpdateLeaderboard,
+  triggerScoutRecruits,
+  checkSystemHealth,
+  triggerVerifyApiKeys,
+  VER_ORCHESTRATOR,
+});
