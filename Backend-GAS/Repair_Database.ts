@@ -15,7 +15,7 @@ import type { AppUtils } from "./Utilities";
 
 // Global Version Constant
 // @ts-ignore
-const VER_REPAIR_DB = "1.0.3"; // Local Calendar Method Fix
+const VER_REPAIR_DB = "1.1.0"; // Flexible Precision Mode
 
 declare var CONFIG: any;
 declare var Utils: any;
@@ -83,21 +83,10 @@ function repairDatabase(): void {
     }
     scannedCount++;
 
-    // 🔬 MID-DAY ALIGNMENT: Force 12:00:00 UTC using LOCAL calendar methods.
-    // This ensures that if a row says "Monday", it's treated as Monday regardless of UTC hour.
-    const alignmentDate = new Date(
-      Date.UTC(
-        dateObj.getFullYear(),
-        dateObj.getMonth(),
-        dateObj.getDate(),
-        12,
-        0,
-        0,
-      ),
-    );
-
     // 🔬 DYNAMIC HEURISTIC CHECK (Uses snapshot grounding)
-    const phaseInfo = Utils.getWarPhaseFromDate(alignmentDate, liveSnap);
+    // We use forceCalendarDay: true because for repairs, "Monday" means "Training"
+    // regardless of the exact midnight UTC game reset crossover.
+    const phaseInfo = Utils.getWarPhaseFromDate(dateObj, liveSnap, { forceCalendarDay: true });
 
     // 🎯 TARGET: Training Days with Numeric Fame (0 or otherwise) that isn't already N/A
     if (phaseInfo.isTraining) {
