@@ -1,7 +1,7 @@
 
 /**
  * ⚔️ WAR INTELLIGENCE - CLASP EDITION
- * VERSION: 11.6.0 | Optimized for Agentic Quota
+ * VERSION: 12.0.0 | High-Precision Snapshot Engine
  */
 
 declare var CacheService: any;
@@ -9,23 +9,54 @@ declare var Utils: any;
 declare var CONFIG: any;
 
 /**
- * 🚀 ENTRY POINT: Triggerable by Apps Script
- * Returns or logs the current war state.
+ * 🚀 WAR SNAPSHOT INTERFACE
  */
-function getWarSnapshot(): any {
+export interface WarSnapshot {
+  status: 'LIVE' | 'CACHED' | 'ESTIMATED';
+  protocol: {
+    phase: 'TRIAL' | 'ENGAGEMENT' | 'COLOSSEUM' | 'IDLE';
+    label: string;
+    isColosseum: boolean;
+  };
+  schedule: {
+    week: number;
+    day: number;
+    minutesToReset: number;
+    remainingTime: string;
+  };
+  performance: {
+    fame: number;
+    rank: number;
+    isRaceFinished: boolean;
+  };
+  meta: {
+    timestamp: string;
+    version: string;
+  };
+}
+
+/**
+ * 🚀 ENTRY POINT: Triggerable by Apps Script
+ */
+function getWarSnapshot(): WarSnapshot {
   return WarIntelligence.getSnapshot();
 }
 
 const WarIntelligence = (() => {
-  const K = "W_SNAP_V11"; // Cache Key
+  const K = "W_SNAP_V12"; // Cache Key
   const TTL = 900;       // 15 Min Cache
-  const RESET_H = 10;    // 10:00 UTC Reset
+  const RESET_H = 10;    // 10:00 UTC Reset (Typical Royale Reset)
+  const VERSION = "12.0.0";
 
   return {
-    getSnapshot() {
+    getSnapshot(): WarSnapshot {
       // 1. Memory/Cache Handshake
       const cached = CacheService.getScriptCache().get(K);
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const snap = JSON.parse(cached);
+        snap.status = 'CACHED';
+        return snap;
+      }
 
       // 2. Atomic Execution
       // @ts-ignore
@@ -35,8 +66,10 @@ const WarIntelligence = (() => {
           const tag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
           // @ts-ignore
           const res = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${tag}/currentriverrace`]);
-          const snap = this.parse(res?.[0]);
-
+          
+          if (!res?.[0]) throw new Error("API_EMPTY");
+          
+          const snap = this.parse(res[0], 'LIVE');
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
           return snap;
         } catch (e) {
@@ -45,55 +78,84 @@ const WarIntelligence = (() => {
       });
     },
 
-    parse(d: any) {
+    parse(d: any, status: 'LIVE' | 'ESTIMATED' = 'LIVE'): WarSnapshot {
       const now = new Date();
       const pIdx = d?.periodIndex;
       const sIdx = d?.sectionIndex || 0;
       
-      // State Calculation Logic
-      const isCol = sIdx >= 3;
+      // 1. Calculate Core Metrics
+      const isColosseum = sIdx >= 3;
       const day = (pIdx !== undefined) ? (pIdx % 7) + 1 : this.estDay(now);
       const isFinished = d?.state === "full";
+      const clanData = d?.clan || {};
+      const fame = clanData.fame || 0;
       
-      // Phase Logic: Training (Trial) vs War (Engagement)
-      let phase: "Trial Phase" | "Engagement Phase" | "Idle" = "Idle";
-      if (d?.reason === "inMaintenance") phase = "Idle";
-      else if (isCol || d?.state === "war" || isFinished) phase = "Engagement Phase";
-      else if (d?.state === "training") phase = "Trial Phase";
-      else phase = day <= 3 ? "Trial Phase" : "Engagement Phase";
+      // 2. Determine War Phase & Label
+      let phase: WarSnapshot['protocol']['phase'] = "IDLE";
+      let label = "War Interval";
+
+      if (d?.state === "war" || isFinished) {
+        if (isColosseum) {
+          phase = "COLOSSEUM";
+          label = "Colosseum Week";
+        } else {
+          phase = "ENGAGEMENT";
+          label = "Battle Days";
+        }
+      } else if (d?.state === "training") {
+        phase = "TRIAL";
+        label = "Training Days";
+      } else {
+        // Heuristic fallback based on day index
+        phase = day <= 3 ? "TRIAL" : "ENGAGEMENT";
+        label = phase === "TRIAL" ? "Training Days" : "Battle Days";
+      }
+
+      // 3. Time Calculations
+      const mToReset = this.calcR(now);
+      const h = Math.floor(mToReset / 60);
+      const m = mToReset % 60;
+      const remainingStr = `${h}h ${m}m`;
 
       return {
-        protocol: phase,
-        week: sIdx + 1,
-        day: day,
-        isColosseum: isCol,
-        isRaceFinished: isFinished,
-        minutesToReset: this.calcR(now),
-        isEstimated: !d,
-        timestamp: now.toISOString()
+        status: status,
+        protocol: {
+          phase,
+          label,
+          isColosseum
+        },
+        schedule: {
+          week: sIdx + 1,
+          day: day,
+          minutesToReset: mToReset,
+          remainingTime: remainingStr
+        },
+        performance: {
+          fame: fame,
+          rank: clanData.rank || 0,
+          isRaceFinished: isFinished
+        },
+        meta: {
+          timestamp: now.toISOString(),
+          version: VERSION
+        }
       };
     },
 
-    estDay(n: Date) {
+    estDay(n: Date): number {
       const h = n.getUTCHours();
       const d = (h < RESET_H) ? (n.getUTCDay() === 0 ? 6 : n.getUTCDay() - 1) : n.getUTCDay();
       return d === 0 ? 7 : d;
     },
 
-    calcR(n: Date) {
+    calcR(n: Date): number {
       const r = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
       if (n.getTime() >= r.getTime()) r.setUTCDate(r.getUTCDate() + 1);
       return Math.floor((r.getTime() - n.getTime()) / 60000);
     },
 
-    fallback() {
-      const now = new Date();
-      const d = this.estDay(now);
-      return {
-        protocol: d <= 3 ? "Trial Phase" : "Engagement Phase",
-        week: 0, day: d, isColosseum: false, isRaceFinished: false,
-        minutesToReset: this.calcR(now), isEstimated: true, timestamp: now.toISOString()
-      };
+    fallback(): WarSnapshot {
+      return this.parse(null, 'ESTIMATED');
     }
   };
 })();
