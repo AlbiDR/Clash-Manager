@@ -1097,16 +1097,14 @@ const Utils: AppUtils = {
   /**
    * ⚔️ UNIFIED WAR FAME RESOLVER
    * Standardized across Service, Logger, Leaderboard, and Recruiter.
+   * Logic: Uses truthy check to skip 0/undefined/null and find the first active field.
    */
   resolveWarFame: function (p) {
+    if (!p || typeof p !== "object") return 0;
     return (
       Number(
-        this.resolveProperty(
-          p,
-          ["fame", "medals", "periodPoints", "repairPoints"],
-          0,
-        ),
-      ) || 0
+        p.fame || p.medals || p.periodPoints || p.repairPoints || 0
+      )
     );
   },
 };
