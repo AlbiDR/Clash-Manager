@@ -1172,7 +1172,15 @@ const Utils: AppUtils = {
     // 🛡️ MODE B: Calendar-Consistent (Audit Mode)
     // Used for Repair/Historical Audits where "Monday" means "Monday".
     else {
-        // No shift. utcDay remains literal.
+        // Construct a safe "Noon" representation of the LOCAL date to ensure proper day index
+        // This handles cases where local midnight is previous-day UTC
+        const localBasedUTC = new Date(Date.UTC(
+            date.getFullYear(), 
+            date.getMonth(), 
+            date.getDate(), 
+            12, 0, 0
+        ));
+        utcDay = localBasedUTC.getUTCDay();
     }
 
     // 🛡️ DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
