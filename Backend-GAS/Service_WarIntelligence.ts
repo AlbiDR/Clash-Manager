@@ -1,7 +1,7 @@
 
 /**
  * ⚔️ WAR INTELLIGENCE - CLASP EDITION
- * VERSION: 12.3.0 | High-Robustness Snapshot Engine
+ * VERSION: 12.4.0 | High-Resolution Snapshot Engine
  */
 
 declare var CacheService: any;
@@ -48,10 +48,10 @@ function getWarSnapshot(): WarSnapshot {
 }
 
 const WarIntelligence = (() => {
-  const K = "W_SNAP_V12_DBGR"; // Changed key to force fresh fetch for debugging
+  const K = "W_SNAP_V12"; // Original cache key
   const TTL = 900;       // 15 Min Cache
   const RESET_H = 10;    // 10:00 UTC Reset
-  const VERSION = "12.3.1-DEBUG";
+  const VERSION = "12.4.0";
 
   return {
     getSnapshot(): WarSnapshot {
@@ -65,7 +65,6 @@ const WarIntelligence = (() => {
       // @ts-ignore
       return Utils.executeSafely("WAR_SYNC", () => {
         try {
-          // Robust tag handling: Ensure we don't double encode or miss coding
           let rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
           if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
           const tag = encodeURIComponent(rawTag);
@@ -74,19 +73,6 @@ const WarIntelligence = (() => {
           const res = Utils.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
           
           if (!res?.[0]) throw new Error("API_EMPTY");
-
-          // 🛡️ DEBUG LOGS: Surgical inspection of raw API payload
-          Logger.log(`[DEBUG] API URL: ${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`);
-          Logger.log(`[DEBUG] Raw Keys: ${Object.keys(res[0]).join(", ")}`);
-          if (res[0].clan) {
-            Logger.log(`[DEBUG] Clan Found: ${res[0].clan.name} (${res[0].clan.tag}) | Fame: ${res[0].clan.fame}`);
-          } else {
-            Logger.log(`[DEBUG] CRITICAL: .clan object missing in response`);
-          }
-          if (res[0].clans) {
-            Logger.log(`[DEBUG] Total Clans in Race: ${res[0].clans.length}`);
-            Logger.log(`[DEBUG] Clan Tags: ${res[0].clans.map((c: any) => c.tag).join(", ")}`);
-          }
           
           const snap = this.parse(res[0], 'HIGH-FIDELITY');
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
@@ -106,22 +92,26 @@ const WarIntelligence = (() => {
       const rawDay = (pIdx !== undefined) ? (pIdx % 7) : this.estDay(now); 
       
       const isFinished = d?.state === "full";
-      const clanData = d?.clan || {};
+      const rootClan = d?.clan || {};
       
-      // 🛡️ ROBUST FAME DETECTION: API sometimes uses different fields or nested values
-      const fame = clanData.fame || clanData.periodPoints || clanData.medals || 0;
+      // 🛡️ TACTICAL FAME & RANK EXTRACTION
+      let fame = rootClan.fame || rootClan.periodPoints || rootClan.medals || 0;
+      let rank = rootClan.rank || 0;
 
-      // 🛡️ ROBUST RANK CALCULATION
-      let rank = clanData.rank || 0; 
       if (d?.clans && Array.isArray(d.clans)) {
-        // Sort by whatever "points" field is available
+        // Find our clan in the race array for potentially fresher data
         const sorted = [...d.clans].sort((a: any, b: any) => {
           const valA = a.fame || a.periodPoints || a.medals || 0;
           const valB = b.fame || b.periodPoints || b.medals || 0;
           return valB - valA;
         });
-        const myIndex = sorted.findIndex((c: any) => c.tag === clanData.tag);
-        if (myIndex !== -1) rank = myIndex + 1;
+
+        const myEntry = sorted.find((c: any) => c.tag === rootClan.tag);
+        if (myEntry) {
+          // Prioritize stand-alone race data as it's often more reactive than root object
+          fame = myEntry.fame || myEntry.periodPoints || myEntry.medals || 0;
+          rank = sorted.indexOf(myEntry) + 1;
+        }
       }
       
       // Phase & Day Labelling
@@ -157,7 +147,7 @@ const WarIntelligence = (() => {
           fame,
           rank,
           isRaceFinished: isFinished,
-          clanTag: clanData.tag || "Unknown"
+          clanTag: rootClan.tag || "Unknown"
         },
         meta: {
           timestamp: now.toISOString(),
@@ -168,9 +158,9 @@ const WarIntelligence = (() => {
 
     estDay(n: Date): number {
       const reset = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
-      let utcDay = n.getUTCDay(); // 0=Sun, 1=Mon, ..., 4=Thu
+      let utcDay = n.getUTCDay(); 
       if (n.getTime() < reset.getTime()) utcDay = (utcDay + 6) % 7;
-      return (utcDay + 3) % 7; // Shift to 0=Thu
+      return (utcDay + 3) % 7; 
     },
 
     calcR(n: Date): number {
