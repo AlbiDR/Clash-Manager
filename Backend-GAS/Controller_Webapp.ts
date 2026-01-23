@@ -384,10 +384,13 @@ function extractSheetDataStrict(
           case "num":
             return sanitizeNum(val, disp);
           case "rate":
+            if (typeof disp === "string" && disp.toUpperCase().includes("N/A"))
+              return "N/A";
             if (typeof disp === "string" && disp.includes("%"))
               return disp.trim();
             const n = parseFloat(String(val));
-            if (!isNaN(n) && n <= 1.0) return `${Math.round(n * 100)}%`;
+            if (isNaN(n)) return "0%";
+            if (n <= 1.0) return `${Math.round(n * 100)}%`;
             return `${Math.round(n)}%`;
           case "date":
             return val instanceof Date ? val.toISOString() : "";
@@ -418,9 +421,9 @@ function sanitizeNum(v: any, displayV: string): number {
   if (v === null || v === undefined) return 0;
   if (typeof v === "number") return v;
   const s = String(v).replace(/,/g, "").replace(/%/g, "").trim();
+  if (s.toUpperCase() === "N/A") return 0;
   const n = parseFloat(s);
   if (isNaN(n)) return 0;
-  if (displayV && displayV.includes("%")) return n;
   return n;
 }
 
