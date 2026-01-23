@@ -303,7 +303,10 @@ function updateLeaderboard(): void {
         : weeklyDonations;
 
     let totalHistoryFame = 0;
-    pWarHistory.forEach((val) => (totalHistoryFame += val));
+    pWarHistory.forEach((val) => {
+      const num = Number(val);
+      if (!isNaN(num)) totalHistoryFame += num;
+    });
     
     // ⚔️ SMART AVERAGING: Use DB 'battleWeeks' to determine eligible weeks for averaging
     const eligibleWeeks = dbRecord?.battleWeeks?.size || 0;
