@@ -6,6 +6,7 @@
 
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
+import type { ITime } from "./Time";
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 
@@ -13,6 +14,7 @@ declare const CacheService: GoogleAppsScript.Cache.CacheService;
 declare const Utils: AppUtils;
 declare const Core: ICore;
 declare const Network: INetwork;
+declare const Time: ITime;
 declare const CONFIG: AppConfig;
 declare const Logger: any;
 
@@ -99,7 +101,7 @@ const WarIntelligence = (() => {
       if (pIdx !== undefined) {
         rawDay = pIdx % 7;
       } else {
-        const heuristic = Utils.getWarPhaseFromDate(now);
+        const heuristic = Time.getWarPhaseFromDate(now);
         rawDay = heuristic.rawDay;
       }
 

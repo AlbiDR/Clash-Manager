@@ -9,10 +9,10 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
+import type { ITime } from "./Time";
 
 // Global Version Constant
 // @ts-ignore
@@ -48,10 +48,10 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
 declare const Store: IStore;
 declare const Core: ICore;
 declare const Network: INetwork;
+declare const Time: ITime;
 
 // External module functions
 declare function getWebAppData(forceRefresh: boolean): string;
@@ -385,7 +385,7 @@ function parseCRDateISO(t: string): string {
       "$1-$2-$3T$4:$5:$6Z",
     ),
   );
-  return Utils.formatDate(d);
+  return Time.formatDate(d);
 }
 
 /**

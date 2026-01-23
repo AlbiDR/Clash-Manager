@@ -15,6 +15,7 @@ import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
+import type { ITime } from "./Time";
 
 // Global Version Constant
 // @ts-ignore
@@ -53,6 +54,7 @@ declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Core: ICore;
 declare const Network: INetwork;
+declare const Time: ITime;
 
 // External module functions
 declare function updateClanDatabase(): void;
