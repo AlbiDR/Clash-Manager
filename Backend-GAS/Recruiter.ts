@@ -13,6 +13,7 @@ import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
+import type { ITime } from "./Time";
 import type { IScoringSystem } from "./ScoringSystem";
 import type { ScoringWeights } from "./SharedTypes";
 
@@ -54,6 +55,7 @@ declare const Utils: AppUtils;
 declare const Store: IStore;
 declare const Core: ICore;
 declare const Network: INetwork;
+declare const Time: ITime;
 declare const ScoringSystem: IScoringSystem;
 
 // External module functions
@@ -192,7 +194,7 @@ function scoutRecruits(): void {
       const perf = Number(row[L.PERF_SCORE]) || 0;
       if (perf >= 50) {
         const histStr = String(row[L.HISTORY] || "");
-        const currentWk = Utils.calculateWarWeekId(new Date());
+        const currentWk = Time.calculateWarWeekId(new Date());
         const hasRecentWar = histStr.includes(currentWk);
 
         const raw = ScoringSystem.calculateRecruitRawScore(

@@ -16,6 +16,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { INetwork } from "./Network";
+import type { ITime } from "./Time";
 import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
@@ -54,6 +55,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Network: INetwork;
+declare const Time: ITime;
 declare function getWarSnapshot(): WarSnapshot;
 
 /**
@@ -263,7 +265,7 @@ function upsertDailySnapshots(
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
   const S_DB = CONFIG.SCHEMA.DB;
   const today = new Date();
-  const todayStr = Utils.formatDate(today);
+  const todayStr = Time.formatDate(today);
 
   const parseTime = (t: string | undefined): Date => {
     if (!t) return new Date();
@@ -299,7 +301,7 @@ function upsertDailySnapshots(
 
     for (let i = 0; i < dateValues.length; i++) {
       const d = dateValues[i][0] ? new Date(dateValues[i][0]) : null;
-      if (d && Utils.formatDate(d) === todayStr) {
+      if (d && Time.formatDate(d) === todayStr) {
         if (startIdx === -1) startIdx = i;
         count++;
       }

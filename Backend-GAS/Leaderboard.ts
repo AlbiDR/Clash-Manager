@@ -16,6 +16,7 @@
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { INetwork } from "./Network";
+import type { ITime } from "./Time";
 import type { IScoringSystem } from "./ScoringSystem";
 
 // Global Version Constant
@@ -54,6 +55,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Network: INetwork;
+declare const Time: ITime;
 declare const ScoringSystem: IScoringSystem;
 
 /**
@@ -146,8 +148,8 @@ function updateLeaderboard(): void {
   }
 
   const now = new Date();
-  const currentWeekId = Utils.calculateWarWeekId(now);
-  const currentDayIndex = Utils.getLogicalDay(now);
+  const currentWeekId = Time.calculateWarWeekId(now);
+  const currentDayIndex = Time.getLogicalDay(now);
 
   // A. Build War History Map
   const warHistoryMap = new Map<string, Map<string, number>>();
@@ -200,8 +202,8 @@ function updateLeaderboard(): void {
     });
   } else if (logData && logData.items) {
     logData.items.forEach((log: any) => {
-      const weekId = Utils.calculateWarWeekId(
-        Utils.parseRoyaleApiDate(log.createdDate),
+      const weekId = Time.calculateWarWeekId(
+        Time.parseRoyaleApiDate(log.createdDate),
       );
       const myClan = log.standings.find(
         (s: any) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
@@ -245,7 +247,7 @@ function updateLeaderboard(): void {
       const date = dateVal ? new Date(dateVal) : new Date();
       const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
       const rawWarFame = row[S_DB.WAR_FAME];
-      const weekId = Utils.calculateWarWeekId(date);
+      const weekId = Time.calculateWarWeekId(date);
 
       if (!memberDbData.has(tag)) {
         memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map(), battleWeeks: new Set(), totalBattleCredits: 0 });
@@ -289,7 +291,7 @@ function updateLeaderboard(): void {
     const weeklyDonations = m.donations || 0;
     const pWarHistory = warHistoryMap.get(m.tag) || new Map<string, number>();
     const currentFame = pWarHistory.get(currentWeekId) || 0;
-    const lastSeen = Utils.parseRoyaleApiDate(m.lastSeen);
+    const lastSeen = Time.parseRoyaleApiDate(m.lastSeen);
 
     const dbRecord = memberDbData.get(m.tag);
     let daysTracked = 0;
@@ -331,7 +333,7 @@ function updateLeaderboard(): void {
 
     // ⚔️ WAR RATE: Daily Attendance Model
     const totalBattleCredits = dbRecord?.totalBattleCredits ?? 0;
-    const eligibleBattleDays = Utils.getEligibleBattleDays(daysTracked);
+    const eligibleBattleDays = Time.getEligibleBattleDays(daysTracked);
     const warRateVal = ScoringSystem.calculateWarRate(
       totalBattleCredits,
       eligibleBattleDays,
