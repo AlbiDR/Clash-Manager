@@ -10,6 +10,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { IStore } from "./Store";
 
 // Global Version Constant
 // @ts-ignore
@@ -46,6 +47,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare const Store: IStore;
 
 // External module functions
 declare function getWebAppData(forceRefresh: boolean): string;
@@ -114,7 +116,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
     switch (action) {
       case "ping":
         // ⚡ OPTIMIZATION: Check cache first to avoid slow SpreadsheetApp load
-        const cachedPing = Utils.CacheHandler.getLarge("PING_METADATA_V1");
+        const cachedPing = Store.cache.getLarge("PING_METADATA_V1");
         if (cachedPing) {
            return respondRaw(cachedPing);
         }
@@ -141,7 +143,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         };
         
         const pingStr = JSON.stringify(pingResponse);
-        Utils.CacheHandler.putLarge("PING_METADATA_V1", pingStr, 3600); // Cache for 1 hour
+        Store.cache.putLarge("PING_METADATA_V1", pingStr, 3600); // Cache for 1 hour
         return respondRaw(pingStr);
 
       case "getleaderboard":
@@ -408,7 +410,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
         };
       }
 
-      Utils.Props.set("PENDING_UPDATE_TARGET", normTarget);
+      Store.props.set("PENDING_UPDATE_TARGET", normTarget);
       cache.put("SYSTEM_STATUS", "BUSY", 1200);
 
       ScriptApp.getProjectTriggers().forEach((t: any) => {
@@ -431,13 +433,13 @@ function triggerAsyncUpdate(target: string | undefined): any {
 }
 
 function dispatchAsyncUpdate(): void {
-  const target = Utils.Props.get("PENDING_UPDATE_TARGET");
+  const target = Store.props.get("PENDING_UPDATE_TARGET");
   if (!target) {
     console.warn("⚠️ Async Dispatcher: No pending target found.");
     return;
   }
 
-  Utils.Props.delete("PENDING_UPDATE_TARGET");
+  Store.props.delete("PENDING_UPDATE_TARGET");
 
   Utils.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
     try {

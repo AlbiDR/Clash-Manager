@@ -19,6 +19,7 @@
 
 import type { ScoringWeights } from "./SharedTypes";
 import type { AppConfig } from "./Configuration";
+import type { IStore } from "./Store";
 
 // Global Version Constant
 // @ts-ignore
@@ -26,6 +27,7 @@ const VER_UTILITIES = "11.0.0";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
+declare const Store: IStore;
 declare var PropertiesService: any;
 declare var UrlFetchApp: any;
 declare var CacheService: any;
@@ -68,17 +70,6 @@ const MAX_FETCH_PER_EXECUTION = 100000;
  */
 export interface AppUtils {
   executeSafely<T>(lockKey: string, callback: () => T): T;
-  Props: {
-    get(key: string, defaultVal?: string | null): string | null;
-    set(key: string, val: string | number | boolean): void;
-    getJSON<T>(key: string, defaultVal?: T): T;
-    setJSON(key: string, val: any): boolean;
-    getChunked<T>(baseKey: string, defaultVal?: T): T;
-    setChunked(baseKey: string, val: any): boolean;
-    getFetchState(): { date?: string; count?: number };
-    setFetchState(stateObj: { date: string; count: number }): boolean;
-    delete(key: string): void;
-  };
   auditKeysRemote(
     keys: Array<{ name: string; value: string }>,
   ): Array<{ name: string; success: boolean; error?: string }> | null;
@@ -102,10 +93,7 @@ export interface AppUtils {
     scoring?: ScoringWeights | null,
   ): any[];
   remoteWorkerHealthy(): boolean;
-  CacheHandler: {
-    putLarge(key: string, value: string, expirationSec?: number): void;
-    getLarge(key: string): string | null;
-  };
+  remoteWorkerHealthy(): boolean;
   formatDate(date: Date | null | undefined): string;
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
   calculateWarWeekId(d: Date | null | undefined): string;
@@ -169,121 +157,7 @@ const Utils: AppUtils = {
     }
   },
 
-  /**
-   * 💾 PROPS MANAGER
-   */
-  Props: {
-    // @ts-ignore
-    _service:
-      typeof PropertiesService !== "undefined"
-        ? PropertiesService.getScriptProperties()
-        : null,
 
-    get: function (this: any, key: string, defaultVal: string | null = null) {
-      if (!this._service) return defaultVal;
-      const val = this._service.getProperty(key);
-      return val !== null ? val : defaultVal;
-    },
-
-    set: function (this: any, key: string, val: string | number | boolean) {
-      if (!this._service) return;
-      this._service.setProperty(key, String(val));
-    },
-
-    getJSON: function (this: any, key: string, defaultVal: any = {}) {
-      const raw = this.get(key);
-      if (!raw) return defaultVal;
-      try {
-        return JSON.parse(raw);
-      } catch (e) {
-        return defaultVal;
-      }
-    },
-
-    setJSON: function (this: any, key: string, val: any) {
-      try {
-        const str = JSON.stringify(val);
-        if (str.length > 9000) return false;
-        if (!this._service) return false;
-        this._service.setProperty(key, str);
-        return true;
-      } catch (e) {
-        console.error(`⚠️ Props: JSON Stringify error for '${key}'`);
-        return false;
-      }
-    },
-
-    getChunked: function (this: any, baseKey: string, defaultVal: any = {}) {
-      try {
-        if (!this._service) return defaultVal;
-        const simple = this._service.getProperty(baseKey);
-        if (simple) return JSON.parse(simple);
-
-        const allProps = this._service.getProperties();
-        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
-        const chunks: Array<{ index: number; val: string }> = [];
-
-        Object.keys(allProps).forEach((k) => {
-          const match = k.match(chunkPattern);
-          if (match) {
-            chunks.push({ index: parseInt(match[1]), val: allProps[k] });
-          }
-        });
-
-        if (chunks.length === 0) return defaultVal;
-
-        chunks.sort((a, b) => a.index - b.index);
-        const fullString = chunks.map((c) => c.val).join("");
-        return JSON.parse(fullString);
-      } catch (e) {
-        console.error(`🧩 Props: Chunk read error for '${baseKey}'`);
-        return defaultVal;
-      }
-    },
-
-    setChunked: function (this: any, baseKey: string, val: any) {
-      try {
-        if (!this._service) return false;
-        const fullString = JSON.stringify(val);
-        const CHUNK_SIZE = 8500;
-        const totalChunks = Math.ceil(fullString.length / CHUNK_SIZE);
-
-        for (let i = 0; i < totalChunks; i++) {
-          const chunk = fullString.substr(i * CHUNK_SIZE, CHUNK_SIZE);
-          this._service.setProperty(`${baseKey}_${i}`, chunk);
-        }
-
-        const allProps = this._service.getProperties();
-        const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
-
-        Object.keys(allProps).forEach((k) => {
-          const match = k.match(chunkPattern);
-          if (match) {
-            const index = parseInt(match[1]);
-            if (index >= totalChunks) this._service.deleteProperty(k);
-          }
-        });
-
-        this._service.deleteProperty(baseKey);
-        return true;
-      } catch (e) {
-        console.error(`🧩 Props: Chunk write error for '${baseKey}'`);
-        return false;
-      }
-    },
-
-    getFetchState: function (this: any) {
-      return this.getJSON("FETCH_STATE", {});
-    },
-
-    setFetchState: function (this: any, stateObj: any) {
-      return this.setJSON("FETCH_STATE", stateObj);
-    },
-
-    delete: function (this: any, key: string) {
-      if (this._service) this._service.deleteProperty(key);
-    },
-  },
 
   /**
    * 🔑 REMOTE AUDIT DELEGATE
@@ -499,7 +373,7 @@ const Utils: AppUtils = {
     if (!urls || urls.length === 0) return [];
 
     try {
-      const st = this.Props.getFetchState();
+      const st = Store.props.getJSON("FETCH_STATE", {}) as { date?: string; count?: number };
       const today = new Date().toISOString().slice(0, 10);
       if (st && st.date === today) {
         _FETCH_COUNT = Number(st.count || 0);
@@ -546,7 +420,7 @@ const Utils: AppUtils = {
     _FETCH_COUNT += urlsToFetch.length;
     try {
       const today = new Date().toISOString().slice(0, 10);
-      this.Props.setFetchState({ date: today, count: _FETCH_COUNT });
+      Store.props.setJSON("FETCH_STATE", { date: today, count: _FETCH_COUNT });
     } catch (e) {}
 
     let useRemote =
@@ -693,7 +567,7 @@ const Utils: AppUtils = {
     const CACHE_KEY = "WORKER_HEALTH_CACHE";
     const now = Date.now();
     try {
-      const cached = this.Props.getJSON(CACHE_KEY, null) as {
+      const cached = Store.props.getJSON(CACHE_KEY, null) as {
         status: boolean;
         time: number;
       } | null;
@@ -717,66 +591,13 @@ const Utils: AppUtils = {
 
     _EXECUTION_CACHE.set("worker_health", isHealthy);
     try {
-      this.Props.setJSON(CACHE_KEY, { status: isHealthy, time: now });
+      Store.props.setJSON(CACHE_KEY, { status: isHealthy, time: now });
     } catch (e) {}
 
     return isHealthy;
   },
 
-  /**
-   * 💾 CACHE HANDLER
-   */
-  CacheHandler: {
-    putLarge: function (key, value, expirationSec = 21600) {
-      const cache = CacheService.getScriptCache();
-      const CHUNK_SIZE = 90000;
 
-      if (value.length <= CHUNK_SIZE) {
-        cache.put(key, value, expirationSec);
-        cache.remove(key + "_meta");
-        return;
-      }
-
-      const chunks = value.match(new RegExp(".{1," + CHUNK_SIZE + "}", "g"))!;
-      chunks.forEach((chunk, i) => {
-        cache.put(key + "_" + i, chunk, expirationSec);
-      });
-
-      cache.put(
-        key + "_meta",
-        JSON.stringify({ count: chunks.length }),
-        expirationSec,
-      );
-      cache.remove(key);
-    },
-
-    getLarge: function (key) {
-      const cache = CacheService.getScriptCache();
-      const standard = cache.get(key);
-      if (standard) return standard;
-
-      const meta = cache.get(key + "_meta");
-      if (meta) {
-        try {
-          const { count } = JSON.parse(meta);
-          const keys = [];
-          for (let i = 0; i < count; i++) keys.push(key + "_" + i);
-
-          const chunks = cache.getAll(keys);
-          let fullString = "";
-          for (let i = 0; i < count; i++) {
-            const part = chunks[key + "_" + i];
-            if (!part) return null;
-            fullString += part;
-          }
-          return fullString;
-        } catch (e) {
-          return null;
-        }
-      }
-      return null;
-    },
-  },
 
   formatDate: (date) =>
     !date || isNaN(date.getTime())

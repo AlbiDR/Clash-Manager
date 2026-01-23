@@ -10,6 +10,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { IStore } from "./Store";
 
 // Global Version Constant
 // @ts-ignore
@@ -46,6 +47,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare const Store: IStore;
 
 // External module functions
 declare function updateClanDatabase(): void;
@@ -90,7 +92,7 @@ function getWebAppData(forceRefresh: boolean): string {
     let payloadStr: string | null = null;
 
     if (!forceRefresh) {
-      payloadStr = Utils.CacheHandler.getLarge(CONFIG.SYSTEM.JSON_STORE_KEY);
+      payloadStr = Store.cache.getLarge(CONFIG.SYSTEM.JSON_STORE_KEY);
     }
 
     if (payloadStr) return payloadStr;
@@ -275,12 +277,12 @@ function _generatePayloadInternal(): string {
     };
     const payloadStr = JSON.stringify(fullPayload);
 
-    Utils.CacheHandler.putLarge(
+    Store.cache.putLarge(
       CONFIG.SYSTEM.JSON_STORE_KEY,
       payloadStr,
       21600,
     );
-    Utils.Props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
+    Store.props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
 
     return payloadStr;
   } catch (e: any) {

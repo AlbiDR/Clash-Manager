@@ -10,6 +10,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { IStore } from "./Store";
 import type { IScoringSystem } from "./ScoringSystem";
 import type { ScoringWeights } from "./SharedTypes";
 
@@ -48,6 +49,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare const Store: IStore;
 declare const ScoringSystem: IScoringSystem;
 
 /**
@@ -387,7 +389,7 @@ function scanTournaments(
   });
 
   const remoteAvailable = Utils.remoteWorkerHealthy();
-  const remoteExpandEnabled = Utils.Props.get("HH_REMOTE_EXPAND", "1") === "1";
+  const remoteExpandEnabled = Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
   const scanCfg =
     remoteAvailable && remoteExpandEnabled
       ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
