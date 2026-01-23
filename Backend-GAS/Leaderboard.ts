@@ -145,9 +145,7 @@ function updateLeaderboard(): void {
 
   const now = new Date();
   const currentWeekId = Utils.calculateWarWeekId(now);
-  const currentDayIndex = parseInt(
-    Utilities.formatDate(now, CONFIG.SYSTEM.TIMEZONE, "u"),
-  );
+  const currentDayIndex = Utils.getLogicalDay(now);
 
   // A. Build War History Map
   const warHistoryMap = new Map<string, Map<string, number>>();

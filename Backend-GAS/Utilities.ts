@@ -109,6 +109,7 @@ export interface AppUtils {
   formatDate(date: Date | null | undefined): string;
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
   calculateWarWeekId(d: Date | null | undefined): string;
+  getLogicalDay(date: Date): number;
   parseWarHistory(histStr: string | null | undefined): Map<string, number>;
   shuffleArray<T>(array: T[]): T[];
   backupSheet(
@@ -799,20 +800,42 @@ const Utils: AppUtils = {
 
   calculateWarWeekId: function (d) {
     if (!d || isNaN(d.getTime())) return "Unknown";
+    
+    // 🛡️ RESET-AWARE NORMALIZATION (10:00 UTC Monday Reset)
     const date = new Date(d.getTime());
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-    const week1 = new Date(date.getFullYear(), 0, 4);
-    const weekNum =
-      1 +
-      Math.round(
-        ((date.getTime() - week1.getTime()) / 86400000 -
-          3 +
-          ((week1.getDay() + 6) % 7)) /
-          7,
-      );
-    const yearShort = date.getFullYear().toString().slice(-2);
+    const RESET_H = 10;
+    const resetToday = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), RESET_H, 0, 0);
+    
+    // Shift back if before reset to align with previous logical day/week
+    if (date.getTime() < resetToday) {
+      date.setUTCDate(date.getUTCDate() - 1);
+    }
+    
+    // ISO-8601 Week Calculation (Pure UTC)
+    date.setUTCHours(0, 0, 0, 0);
+    const day = (date.getUTCDay() + 6) % 7; // 0=Mon, ..., 6=Sun
+    date.setUTCDate(date.getUTCDate() + 3 - day); // Target Thursday
+    
+    const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+    const firstThursDay = (firstThursday.getUTCDay() + 6) % 7;
+    firstThursday.setUTCDate(firstThursday.getUTCDate() + 3 - firstThursDay);
+    
+    const weekNum = 1 + Math.round((date.getTime() - firstThursday.getTime()) / 604800000);
+    const yearShort = date.getUTCFullYear().toString().slice(-2);
+    
     return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
+  },
+
+  getLogicalDay: function (date) {
+    const d = new Date(date.getTime());
+    const RESET_H = 10;
+    const resetToday = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), RESET_H, 0, 0);
+    
+    if (d.getTime() < resetToday) {
+      d.setUTCDate(d.getUTCDate() - 1);
+    }
+    const dayIndex = d.getUTCDay(); // 0=Sun, 1=Mon...
+    return dayIndex === 0 ? 7 : dayIndex; // Return 1-7 (Mon-Sun)
   },
 
   parseWarHistory: (histStr) => {
