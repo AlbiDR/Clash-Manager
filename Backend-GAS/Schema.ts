@@ -1,0 +1,109 @@
+
+/**
+ * ============================================================================
+ * 🗂️ MODULE: SCHEMA (Data Mapping Engine)
+ * ----------------------------------------------------------------------------
+ * 📝 DESCRIPTION: Manages the mapping between Spreadsheet Columns and Logic.
+ * ⚙️ CAPABILITIES:
+ *    1. Dynamic Discovery: Finds columns by Name, not fixed Index (Safety).
+ *    2. Configuration Sync: Updates Global CONFIG with discovered indices.
+ * 🏷️ VERSION: 1.0.0
+ * ============================================================================
+ */
+
+import type { AppConfig } from "./Configuration";
+
+// Global Version Constant
+// @ts-ignore
+const VER_SCHEMA = "1.0.0";
+
+declare var SpreadsheetApp: GoogleAppsScript.Spreadsheet.SpreadsheetApp;
+declare var module: any;
+
+declare const CONFIG: AppConfig;
+
+export interface ISchema {
+  bootDynamicSchema(): void;
+  resolveSchemaIndices(
+    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    headerMap: Record<string, string>,
+    headerRow?: number,
+    startCol?: number,
+  ): Record<string, number>;
+}
+
+const Schema: ISchema = {
+  
+  resolveSchemaIndices: function (
+    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    headerMap: Record<string, string>,
+    headerRow = 2,
+    startCol = 1,
+  ) {
+    if (!sheet) return {};
+    const sheetName = sheet.getName();
+    // Read headers safely
+    const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
+    const resolved: Record<string, number> = {};
+
+    Object.keys(headerMap).forEach((key) => {
+      const targetLabel = headerMap[key].toLowerCase().trim();
+      const idx = headers.findIndex(
+        (h: any) =>
+          String(h || "")
+            .toLowerCase()
+            .trim() === targetLabel,
+      );
+      if (idx !== -1) {
+        resolved[key] = idx;
+      } else {
+        console.warn(
+          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheetName}. Verify header exists in Row ${headerRow}.`,
+        );
+      }
+    });
+    return resolved;
+  },
+
+  bootDynamicSchema: function () {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+    console.info("⚡ Booting Dynamic Schema Sync...");
+    
+    // Safety check for CONFIG presence
+    if (typeof CONFIG === 'undefined' || !CONFIG.SHEETS) return;
+
+    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
+    if (lbSheet)
+      Object.assign(
+        CONFIG.SCHEMA.LB,
+        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS, CONFIG.LAYOUT.DATA_START_ROW),
+      );
+      
+    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+    if (hhSheet)
+      Object.assign(
+        CONFIG.SCHEMA.HH,
+        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS, CONFIG.LAYOUT.DATA_START_ROW),
+      );
+      
+    const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+    if (dbSheet)
+      Object.assign(
+        CONFIG.SCHEMA.DB,
+        this.resolveSchemaIndices(dbSheet, CONFIG.SCHEMA.DB_HEADERS, CONFIG.LAYOUT.DATA_START_ROW, 2),
+      );
+  },
+};
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Schema;
+}
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this as any, { Schema, VER_SCHEMA });
+
+export default Schema;

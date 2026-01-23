@@ -14,7 +14,9 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
+import type { IView } from "./View";
+import type { ISchema } from "./Schema";
+import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
 import type { ITime } from "./Time";
 import type { IScoringSystem } from "./ScoringSystem";
@@ -53,7 +55,9 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
+declare const View: IView;
+declare const Schema: ISchema;
+declare const Core: ICore;
 declare const Network: INetwork;
 declare const Time: ITime;
 declare const ScoringSystem: IScoringSystem;
@@ -114,7 +118,7 @@ function updateLeaderboard(): void {
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
-  Utils.bootDynamicSchema();
+  Schema.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
 
   // 🛡️ CONFIGURATION CHECK
@@ -200,7 +204,7 @@ function updateLeaderboard(): void {
         const tag = String(row[0]);
         const histStr = histData[i][0];
         if (tag && typeof histStr === "string" && histStr.length > 0) {
-          const archivedMap = Utils.parseWarHistory(histStr);
+          const archivedMap = Core.parseWarHistory(histStr);
           if (archivedMap.size > 0) {
             if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
             const userMap = warHistoryMap.get(tag)!;
@@ -238,7 +242,7 @@ function updateLeaderboard(): void {
   if (raceData && raceData.clan && raceData.clan.participants) {
     (raceData.clan.participants as RaceParticipant[]).forEach((p) => {
       // 🛡️ UNIFIED FAME DETECTION (Synced with Service_WarIntelligence v12.4.0)
-      addWarEntry(p.tag, currentWeekId, Utils.resolveWarFame(p));
+      addWarEntry(p.tag, currentWeekId, ScoringSystem.resolveWarFame(p));
     });
   }
 
@@ -435,7 +439,7 @@ function updateLeaderboard(): void {
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
-  Utils.backupSheet(ss, CONFIG.SHEETS.LB);
+  View.backupSheet(ss, CONFIG.SHEETS.LB);
 
   const HEADERS_ARRAY = new Array(17).fill("");
   (
@@ -528,7 +532,7 @@ function updateLeaderboard(): void {
     .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
   ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
 
-  Utils.applyStandardLayout(
+  View.applyStandardLayout(
     lbSheet,
     finalRows.length,
     HEADERS_ARRAY.length - 1,
