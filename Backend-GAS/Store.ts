@@ -8,13 +8,17 @@
  *    1. Properties Manager: Safe JSON handling for Script Properties.
  *    2. Chunking Engine: Handles >9KB properties and >100KB cache items.
  *    3. Cache Manager: High-capacity caching with auto-segmentation.
+ *    4. Atomic Locking: Prevents race conditions during writes.
+ *    5. Compression: Auto-gzip for optimal storage usage.
  * 
  * 🛡️ ARCHITECTURE: 
- *    - Pure Service (No dependencies on Business Logic).
- *    - Global Singleton 'Store'.
+ *    - Pure Service: Zero dependencies.
+ *    - Internal Core: DRY logic for chunking/compression/locking.
+ *    - Public Facade: Clean, categorized API.
+ * 
+ * 🏷️ VERSION: 2.0.0 (Refactored)
  * ============================================================================
  */
-
 
 declare var PropertiesService: GoogleAppsScript.Properties.PropertiesService;
 declare var CacheService: GoogleAppsScript.Cache.CacheService;
@@ -22,68 +26,131 @@ declare var LockService: GoogleAppsScript.Lock.LockService;
 declare var Utilities: GoogleAppsScript.Utilities.Utilities;
 declare var module: any;
 
-const LIMITS = {
-  // PropertiesService is ~9KB per property. We leave 500b buffer.
-  PROPS_CHUNK_SIZE: 8500,
-  PROPS_MAX_SINGLE: 9000,
-  // CacheService is ~100KB. We leave 10KB buffer.
-  CACHE_CHUNK_SIZE: 90000,
-  // Default cache expiration in seconds (6 hours)
-  CACHE_EXPIRATION: 21600,
-  // Minimum size to attempt compression (2KB)
-  COMPRESSION_THRESHOLD: 2048,
+/* ==========================================================================
+   CONSTANTS & CONFIGURATION
+   ========================================================================== */
+const CONSTANTS = {
+  CACHE: {
+    CHUNK_SIZE: 90000, // 100KB - 10KB buffer
+    EXPIRATION: 21600, // 6 hours
+  },
+  COMPRESSION: {
+    PREFIX: "⚡gzip:",
+    THRESHOLD: 2048,   // 2KB
+  },
+  PROPS: {
+    CHUNK_SIZE: 8500,  // 9KB - 500b buffer
+    MAX_SINGLE: 9000,
+  },
 };
 
-/**
- * Escapes characters that have special meaning in regular expressions
- */
-const escapeRegex = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
+/* ==========================================================================
+   INTERFACES
+   ========================================================================== */
 export interface IStore {
-  props: {
-    _service?: any;
-    get(key: string, defaultVal?: string | null): string | null;
-    set(key: string, val: string | number | boolean): void;
-    getJSON<T>(key: string, defaultVal?: T): T;
-    setJSON(key: string, val: any): boolean;
-    getChunked<T>(baseKey: string, defaultVal?: T): T;
-    setChunked(baseKey: string, val: any): boolean;
-    delete(key: string): void;
-  };
   cache: {
-    putLarge(key: string, value: string, expirationSec?: number): void;
     getLarge(key: string): string | null;
+    putLarge(key: string, value: string, expirationSec?: number): void;
   };
-  withLock<T>(key: string, callback: () => T, timeoutMs?: number): T;
+  props: {
+    _service?: any; // Exposed for testing/mocking
+    delete(key: string): void;
+    get(key: string, defaultVal?: string | null): string | null;
+    getChunked<T>(baseKey: string, defaultVal?: T): T;
+    getJSON<T>(key: string, defaultVal?: T): T;
+    set(key: string, val: string | number | boolean): void;
+    setChunked(baseKey: string, val: any): boolean;
+    setJSON(key: string, val: any): boolean;
+  };
   compress(data: any): string;
   decompress(str: string): any;
+  withLock<T>(key: string, callback: () => T, timeoutMs?: number): T;
 }
 
-const Store: IStore = {
+/* ==========================================================================
+   INTERNAL HELPERS (The "Brain")
+   ========================================================================== */
+const Internal = {
   /**
-   * 🔐 ATOMIC TRANSACTIONS
-   * Executes a callback within a named lock to prevent race conditions.
+   * Safe RegExp escaping
    */
-  withLock<T>(key: string, callback: () => T, timeoutMs = 10000): T {
-    // @ts-ignore
-    if (typeof LockService === "undefined") return callback();
-    
-    // @ts-ignore
-    const lock = LockService.getScriptLock();
-    try {
-      if (lock.tryLock(timeoutMs)) {
-        return callback();
-      } else {
-        throw new Error(`Store: Could not acquire lock for '${key}'`);
-      }
-    } finally {
-      lock.releaseLock();
-    }
+  escapeRegex(string: string): string {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   },
 
   /**
-   * 📉 COMPRESSION HELPERS
-   * GZIP compression for maximizing storage efficiency.
+   * Generic Chunk Reader
+   */
+  readChunks(
+    baseKey: string,
+    fetcher: (k: string) => string | null,
+    scanner: () => string[]
+  ): string | null {
+    // 1. Try standard read
+    const standard = fetcher(baseKey);
+    if (standard) return standard;
+
+    // 2. Scan for indexed chunks
+    const safeKey = this.escapeRegex(baseKey);
+    const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
+    
+    // Scan all keys (expensive but necessary for Props; Cache handles differently usually)
+    const allKeys = scanner();
+    const chunks: Array<{ index: number; val: string }> = [];
+
+    allKeys.forEach(k => {
+      const match = k.match(chunkPattern);
+      if (match) {
+        const part = fetcher(k);
+        if (part) chunks.push({ index: parseInt(match[1]), val: part });
+      }
+    });
+
+    if (chunks.length === 0) return null;
+
+    // 3. Reassemble
+    chunks.sort((a, b) => a.index - b.index);
+    return chunks.map(c => c.val).join("");
+  },
+
+  /**
+   * Generic Chunk Writer
+   */
+  writeChunks(
+    baseKey: string,
+    value: string,
+    chunkSize: number,
+    writer: (k: string, v: string) => void,
+    deleter: (k: string) => void,
+    scanner: () => string[]
+  ): void {
+    const totalChunks = Math.ceil(value.length / chunkSize);
+
+    // 1. Write new chunks
+    for (let i = 0; i < totalChunks; i++) {
+        const chunk = value.slice(i * chunkSize, (i + 1) * chunkSize);
+        writer(`${baseKey}_${i}`, chunk);
+    }
+
+    // 2. Prune orphans
+    const safeKey = this.escapeRegex(baseKey);
+    const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
+    const allKeys = scanner();
+
+    allKeys.forEach(k => {
+        const match = k.match(chunkPattern);
+        if (match) {
+            const index = parseInt(match[1]);
+            if (index >= totalChunks) deleter(k);
+        }
+    });
+
+    // 3. Clear base key
+    deleter(baseKey);
+  },
+
+  /**
+   * GZIP Compression
    */
   compress(data: any): string {
     try {
@@ -91,33 +158,35 @@ const Store: IStore = {
       if (typeof Utilities === "undefined") return JSON.stringify(data);
       
       const json = JSON.stringify(data);
-      if (json.length < LIMITS.COMPRESSION_THRESHOLD) return json;
+      if (json.length < CONSTANTS.COMPRESSION.THRESHOLD) return json;
 
       // @ts-ignore
       const blob = Utilities.newBlob(json).getBytes();
       // @ts-ignore
       const zipped = Utilities.gzip(blob);
       // @ts-ignore
-      return "⚡gzip:" + Utilities.base64Encode(zipped);
+      return CONSTANTS.COMPRESSION.PREFIX + Utilities.base64Encode(zipped);
     } catch(e) {
       console.warn("Store: Compression failed, using raw JSON");
       return JSON.stringify(data);
     }
   },
 
+  /**
+   * GZIP Decompression
+   */
   decompress(str: string): any {
     try {
-      if (!str || !str.startsWith("⚡gzip:")) return JSON.parse(str);
+      if (!str || !str.startsWith(CONSTANTS.COMPRESSION.PREFIX)) return JSON.parse(str);
       // @ts-ignore
-      if (typeof Utilities === "undefined") return JSON.parse(str); // Fallback
+      if (typeof Utilities === "undefined") return JSON.parse(str);
 
-      const base64 = str.replace("⚡gzip:", "");
+      const base64 = str.replace(CONSTANTS.COMPRESSION.PREFIX, "");
       // @ts-ignore
       const decoded = Utilities.base64Decode(base64);
       // @ts-ignore
       const unzipped = Utilities.ungzip(decoded).getDataAsString();
       return JSON.parse(unzipped);
-
     } catch (e) {
       console.error("Store: Decompression failed");
       return null;
@@ -125,9 +194,95 @@ const Store: IStore = {
   },
 
   /**
-   * 💾 PROPS MANAGER
-   * Wraps PropertiesService with JSON and Chunking support.
+   * Atomic Locking Wrapper
    */
+  withLock<T>(key: string, task: () => T, timeoutMs = 10000): T {
+    // @ts-ignore
+    if (typeof LockService === "undefined" || !key) return task();
+    // @ts-ignore
+    const lock = LockService.getScriptLock();
+    try {
+      if (lock.tryLock(timeoutMs)) {
+        return task();
+      } else {
+        throw new Error(`Store: Lock timeout for '${key}'`);
+      }
+    } finally {
+      lock.releaseLock();
+    }
+  }
+};
+
+/* ==========================================================================
+   PUBLIC API
+   ========================================================================== */
+const Store: IStore = {
+  
+  // ------------------------------------------------------------------------
+  // UTILITIES
+  // ------------------------------------------------------------------------
+  compress: Internal.compress,
+  decompress: Internal.decompress,
+  withLock: Internal.withLock,
+
+  // ------------------------------------------------------------------------
+  // CACHE MANANGER (CacheService)
+  // ------------------------------------------------------------------------
+  cache: {
+    getLarge(key) {
+      const cache = CacheService.getScriptCache();
+      
+      // Specialized read for Cache (supports meta optimization)
+      const standard = cache.get(key);
+      if (standard) return standard;
+
+      const meta = cache.get(`${key}_meta`);
+      if (meta) {
+        try {
+          const { count } = JSON.parse(meta);
+          const keys = Array.from({ length: count }, (_, i) => `${key}_${i}`);
+          const chunks = cache.getAll(keys);
+          
+          let fullString = "";
+          for (let i = 0; i < count; i++) {
+             const chunk = chunks[`${key}_${i}`];
+             if (!chunk) return null; // Broken chain
+             fullString += chunk;
+          }
+          return fullString;
+        } catch (e) { return null; }
+      }
+      return null;
+    },
+
+    putLarge(key, value, expirationSec = CONSTANTS.CACHE.EXPIRATION) {
+      const cache = CacheService.getScriptCache();
+
+      if (value.length <= CONSTANTS.CACHE.CHUNK_SIZE) {
+        cache.put(key, value, expirationSec);
+        cache.remove(`${key}_meta`);
+        return;
+      }
+
+      // Chunking (Cache doesn't need scan cleanup, just overwrite)
+      const totalChunks = Math.ceil(value.length / CONSTANTS.CACHE.CHUNK_SIZE);
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = value.slice(i * CONSTANTS.CACHE.CHUNK_SIZE, (i + 1) * CONSTANTS.CACHE.CHUNK_SIZE);
+        cache.put(`${key}_${i}`, chunk, expirationSec);
+      }
+
+      cache.put(
+        `${key}_meta`,
+        JSON.stringify({ count: totalChunks }),
+        expirationSec
+      );
+      cache.remove(key); // Clear base
+    }
+  },
+
+  // ------------------------------------------------------------------------
+  // PROPS MANAGER (PropertiesService)
+  // ------------------------------------------------------------------------
   props: {
     get _service() {
       // @ts-ignore
@@ -136,84 +291,28 @@ const Store: IStore = {
         : null;
     },
 
+    delete(key: string) {
+      if (this._service) this._service.deleteProperty(key);
+    },
+
     get(key: string, defaultVal: string | null = null) {
       if (!this._service) return defaultVal;
       const val = this._service.getProperty(key);
       return val !== null ? val : defaultVal;
     },
 
-    set(key: string, val: string | number | boolean) {
-      if (!this._service) return;
-      this._service.setProperty(key, String(val));
-    },
-
-    getJSON<T>(key: string, defaultVal: T = {} as T): T {
-      const raw = this.get(key);
-      if (!raw) return defaultVal;
-      // Transparent decompression support
-      if (raw.startsWith("⚡gzip:")) return Store.decompress(raw);
-      try {
-        return JSON.parse(raw);
-      } catch (e) {
-        return defaultVal;
-      }
-    },
-
-    setJSON(key: string, val: any) {
-      try {
-        // Use compression if valid
-        const str = Store.compress(val);
-
-        // Safety check for single property limit
-        if (str.length > LIMITS.PROPS_MAX_SINGLE) return false;
-        if (!this._service) return false;
-        
-        // Critical: atomic write if possible (though single prop is usually safe)
-        // We use lock only if it's high traffic, but basic set is usually fine.
-        // For consistency with 'Advanced', we'll wrap in lock if explicitly asked, 
-        // but for basic setJSON we trust atomic nature of single setProperty call.
-        
-        this._service.setProperty(key, str);
-        return true;
-      } catch (e) {
-        console.error(`⚠️ Store: JSON Stringify error for '${key}'`);
-        return false;
-      }
-    },
-
     getChunked<T>(baseKey: string, defaultVal: T = {} as T): T {
+      if (!this._service) return defaultVal;
+
       try {
-        if (!this._service) return defaultVal;
-        
-        // 1. Try reading as a simple key first (backward compatibility)
-        const simple = this._service.getProperty(baseKey);
-        if (simple) {
-          if (simple.startsWith("⚡gzip:")) return Store.decompress(simple);
-          return JSON.parse(simple);
-        }
+        const resultStr = Internal.readChunks(
+           baseKey, 
+           (k) => this._service.getProperty(k), 
+           () => Object.keys(this._service.getProperties())
+        );
 
-        // 2. Scan for chunks
-        const allProps = this._service.getProperties();
-        const safeKey = escapeRegex(baseKey);
-        const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
-        const chunks: Array<{ index: number; val: string }> = [];
-
-        Object.keys(allProps).forEach((k) => {
-          const match = k.match(chunkPattern);
-          if (match) {
-            chunks.push({ index: parseInt(match[1]), val: allProps[k] });
-          }
-        });
-
-        if (chunks.length === 0) return defaultVal;
-
-        // 3. Reassemble
-        chunks.sort((a, b) => a.index - b.index);
-        const fullString = chunks.map((c) => c.val).join("");
-        
-        // Support compressed chunks
-        if (fullString.startsWith("⚡gzip:")) return Store.decompress(fullString);
-        return JSON.parse(fullString);
+        if (!resultStr) return defaultVal;
+        return Internal.decompress(resultStr);
 
       } catch (e) {
         console.error(`🧩 Store: Chunk read error for '${baseKey}'`);
@@ -221,37 +320,38 @@ const Store: IStore = {
       }
     },
 
+    getJSON<T>(key: string, defaultVal: T = {} as T): T {
+      const raw = this.get(key);
+      if (!raw) return defaultVal;
+      try {
+        return Internal.decompress(raw);
+      } catch (e) {
+        return defaultVal;
+      }
+    },
+
+    set(key: string, val: string | number | boolean) {
+      if (!this._service) return;
+      this._service.setProperty(key, String(val));
+    },
+
     setChunked(baseKey: string, val: any) {
-      return Store.withLock(`LOCK_${baseKey}`, () => {
+      return Internal.withLock(`LOCK_${baseKey}`, () => {
         try {
-            if (!this._service) return false;
-            
-            // 1. Compress & Stringify
-            const fullString = Store.compress(val);
-            const totalChunks = Math.ceil(fullString.length / LIMITS.PROPS_CHUNK_SIZE);
-
-            // 2. Write new chunks
-            for (let i = 0; i < totalChunks; i++) {
-              const chunk = fullString.slice(i * LIMITS.PROPS_CHUNK_SIZE, (i + 1) * LIMITS.PROPS_CHUNK_SIZE);
-              this._service.setProperty(`${baseKey}_${i}`, chunk);
-            }
-
-            // 3. Prune orphaned chunks from previous writes
-            const allProps = this._service.getProperties();
-            const safeKey = escapeRegex(baseKey);
-            const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
-
-            Object.keys(allProps).forEach((k) => {
-              const match = k.match(chunkPattern);
-              if (match) {
-                const index = parseInt(match[1]);
-                if (index >= totalChunks) this._service.deleteProperty(k);
-              }
-            });
-
-            // 4. Ensure the base key is clear (avoid confusion)
-            this._service.deleteProperty(baseKey);
-            return true;
+          if (!this._service) return false;
+          
+          const str = Internal.compress(val);
+          
+          Internal.writeChunks(
+            baseKey,
+            str,
+            CONSTANTS.PROPS.CHUNK_SIZE,
+            (k, v) => this._service.setProperty(k, v),
+            (k) => this._service.deleteProperty(k),
+            () => Object.keys(this._service.getProperties())
+          );
+          
+          return true;
         } catch (e) {
             console.error(`🧩 Store: Chunk write error for '${baseKey}'`);
             return false;
@@ -259,87 +359,31 @@ const Store: IStore = {
       });
     },
 
-    delete(key: string) {
-      if (this._service) this._service.deleteProperty(key);
-    },
-  },
-
-  /**
-   * 💾 CACHE HANDLER
-   * Wraps CacheService with auto-segmentation for large items.
-   */
-  cache: {
-    putLarge(key, value, expirationSec = LIMITS.CACHE_EXPIRATION) {
-      const cache = CacheService.getScriptCache();
-
-      // Attempt compression for cache too if large?
-      // For now, adhere to basic string contracts but could expand.
-      // Given user wants "Advanced", let's apply compression check here too if useful,
-      // BUT 'value' comes in as string. We won't double encode unless we changed signature.
-      // We will leave cache raw string for now to match interface signature.
-
-      if (value.length <= LIMITS.CACHE_CHUNK_SIZE) {
-        cache.put(key, value, expirationSec);
-        // Clean up any potential old meta/chunks for this key
-        cache.remove(key + "_meta");
-        return;
+    setJSON(key: string, val: any) {
+       try {
+        const str = Internal.compress(val);
+        
+        if (str.length > CONSTANTS.PROPS.MAX_SINGLE) return false;
+        if (!this._service) return false;
+        
+        this._service.setProperty(key, str);
+        return true;
+      } catch (e) {
+        console.error(`⚠️ Store: JSON Stringify error for '${key}'`);
+        return false;
       }
-
-      const chunks = value.match(new RegExp(".{1," + LIMITS.CACHE_CHUNK_SIZE + "}", "g"))!;
-      chunks.forEach((chunk, i) => {
-        cache.put(key + "_" + i, chunk, expirationSec);
-      });
-
-      cache.put(
-        key + "_meta",
-        JSON.stringify({ count: chunks.length }),
-        expirationSec,
-      );
-      // Clean up the base key to ensure we don't return partial data
-      cache.remove(key);
-    },
-
-    getLarge(key) {
-      const cache = CacheService.getScriptCache();
-      
-      // 1. Try standard get
-      const standard = cache.get(key);
-      if (standard) return standard;
-
-      // 2. Check for meta indicating chunks
-      const meta = cache.get(key + "_meta");
-      if (meta) {
-        try {
-          const { count } = JSON.parse(meta);
-          const keys = [];
-          for (let i = 0; i < count; i++) keys.push(key + "_" + i);
-
-          const chunks = cache.getAll(keys);
-          let fullString = "";
-          for (let i = 0; i < count; i++) {
-            const part = chunks[key + "_" + i];
-            if (!part) return null; // Missing chunk = broken cache
-            fullString += part;
-          }
-          return fullString;
-        } catch (e) {
-          return null;
-        }
-      }
-      return null;
-    },
-  },
+    }
+  }
 };
 
+/* ==========================================================================
+   EXPORTS & GLOBAL BRIDGE
+   ========================================================================== */
 // @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
   module.exports = Store;
 }
 
-/**
- * 🌍 GLOBAL BRIDGE
- * Exposes 'Store' to the GAS global context.
- */
 (function(scope: any) {
   Object.assign(scope, { Store });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

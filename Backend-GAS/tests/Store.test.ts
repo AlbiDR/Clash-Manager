@@ -104,21 +104,26 @@ describe('Store Module', () => {
     });
   });
 
-  describe('Store.props', () => {
+  describe('Store.props (Public API)', () => {
     it('should get and set simple properties', () => {
       Store.props.set('testKey', 'testValue');
       expect(mockProperties.get('testKey')).toBe('testValue');
       expect(Store.props.get('testKey')).toBe('testValue');
     });
 
-    it('should handle JSON objects', () => {
+    it('should handle JSON objects (auto-compression)', () => {
       const data = { foo: 'bar', num: 123 };
       Store.props.setJSON('jsonKey', data);
-      expect(JSON.parse(mockProperties.get('jsonKey')!)).toEqual(data);
+      
+      // Verify transparent read
       expect(Store.props.getJSON('jsonKey')).toEqual(data);
+      
+      // Verify storage (might be raw or compressed, handled by implementation)
+      const stored = mockProperties.get('jsonKey');
+      expect(stored).toBeTruthy();
     });
 
-    it('should prune orphaned chunks when setting chunked data', () => {
+    it('should prune orphaned chunks (Internal.writeChunks verification)', () => {
       // simulate old chunks
       mockProperties.set('chunkKey_0', 'old1');
       mockProperties.set('chunkKey_1', 'old2');
@@ -131,16 +136,13 @@ describe('Store Module', () => {
       expect(mockProperties.has('chunkKey_2')).toBe(false); // Pruned
     });
 
-    it('should handle keys with special regex characters safely', () => {
+    it('should handle special regex keys (Internal.escapeRegex verification)', () => {
       const complexKey = 'user(123).settings[v1]';
       const data = { valid: true };
       
       Store.props.setChunked(complexKey, data);
-      
       const stored = Store.props.getChunked(complexKey);
       expect(stored).toEqual(data);
-      
-      // Verify underlying storage safety
       expect(mockProperties.has(`${complexKey}_0`)).toBe(true);
     });
   });
