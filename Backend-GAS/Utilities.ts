@@ -136,6 +136,12 @@ export interface AppUtils {
    */
   resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
   resolveWarFame(p: any): number;
+  getWarPhaseFromDate(date: Date): {
+    rawDay: number;
+    isTraining: boolean;
+    isBattle: boolean;
+    phase: string;
+  };
 }
 
 const Utils: AppUtils = {
@@ -1106,6 +1112,42 @@ const Utils: AppUtils = {
         p.fame || p.medals || p.periodPoints || p.repairPoints || 0
       )
     );
+  },
+
+  /**
+   * 🕰️ WAR PHASE HEURISTIC (Single Source of Truth)
+   * Determines the War Day based on the deterministic Monday 10:00 UTC cycle.
+   */
+  getWarPhaseFromDate: function (date) {
+    const RESET_H = 10; // 10:00 UTC
+    // Create a UTC date object for the reset time on the given day
+    const reset = new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        RESET_H,
+        0,
+        0,
+      ),
+    );
+
+    let utcDay = date.getUTCDay(); // 0=Sun, 1=Mon, ...
+    // If before 10:00 UTC, it belongs to the previous logical day
+    if (date.getTime() < reset.getTime()) {
+      utcDay = (utcDay + 6) % 7;
+    }
+
+    // Shift: Mon(1) -> 4, ..., Thu(4) -> 0 (Training Day 1)
+    // 0,1,2 = Training (Thu, Fri, Sat) | 3,4,5,6 = Battle (Sun, Mon, Tue, Wed)
+    const rawDay = (utcDay + 3) % 7;
+
+    return {
+      rawDay: rawDay,
+      isTraining: rawDay <= 2,
+      isBattle: rawDay >= 3,
+      phase: rawDay <= 2 ? "TRIAL" : "ENGAGEMENT",
+    };
   },
 };
 

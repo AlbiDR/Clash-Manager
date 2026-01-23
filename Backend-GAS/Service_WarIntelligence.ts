@@ -87,13 +87,20 @@ const WarIntelligence = (() => {
       const now = new Date();
       const pIdx = d?.periodIndex;
       const sIdx = d?.sectionIndex || 0;
-      
       const isColosseum = sIdx >= 3;
-      const rawDay = (pIdx !== undefined) ? (pIdx % 7) : this.estDay(now); 
-      
+
+      // 🛡️ UNIFIED PHASE DETECTION
+      let rawDay: number;
+      if (pIdx !== undefined) {
+        rawDay = pIdx % 7;
+      } else {
+        const heuristic = Utils.getWarPhaseFromDate(now);
+        rawDay = heuristic.rawDay;
+      }
+
       const isFinished = d?.state === "full";
       const rootClan = d?.clan || {};
-      
+
       // 🛡️ TACTICAL FAME & RANK EXTRACTION
       // 🛡️ UNIFIED FAME EXTRACTION
       let fame = 0;
@@ -119,13 +126,15 @@ const WarIntelligence = (() => {
         fame = Utils.resolveWarFame(rootClan);
         rank = rootClan.rank || 0; // Rank might still be available on rootClan
       }
-      
+
       // Phase & Day Labelling
-      let phase: WarSnapshot['protocol']['phase'] = "IDLE";
+      let phase: WarSnapshot["protocol"]["phase"] = "IDLE";
       let label = "War Interval";
       let dayLabel = `Day ${rawDay + 1}`;
 
-      if (rawDay <= 2) {
+      const isTraining = rawDay <= 2;
+
+      if (isTraining) {
         phase = "TRIAL";
         label = "Training Days";
         dayLabel = `Training Day ${rawDay + 1}`;
@@ -138,7 +147,7 @@ const WarIntelligence = (() => {
       const mToReset = this.calcR(now);
       const h = Math.floor(mToReset / 60);
       const m = mToReset % 60;
-      const remainingStr = `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m`;
+      const remainingStr = `${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m`;
 
       return {
         status,
@@ -162,12 +171,7 @@ const WarIntelligence = (() => {
       };
     },
 
-    estDay(n: Date): number {
-      const reset = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
-      let utcDay = n.getUTCDay(); 
-      if (n.getTime() < reset.getTime()) utcDay = (utcDay + 6) % 7;
-      return (utcDay + 3) % 7; 
-    },
+
 
     calcR(n: Date): number {
       const r = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
