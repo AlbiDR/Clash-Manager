@@ -23,7 +23,7 @@ const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
 
-// 📡 Broadcast Channel Integration
+// Broadcast Channel Integration
 const { post: broadcast } = useBroadcastChannel((msg) => {
   if (msg.type === "DATA_SYNC_SUCCESS") {
     // Another tab brought fresh data. Reload from local storage/IDB to sync.
@@ -41,8 +41,14 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
 });
 
 /**
- * 🛠 LOCAL UPDATE HELPER
+ * LOCAL UPDATE HELPER
  * Allows other logic (like optimistic updates) to modify the state directly.
+ *
+ * @param {WebAppData} newData - The fresh state object to apply.
+ * @remarks
+ * Side Effect: Persists the updated state to `localStorage` immediately.
+ * This ensures that if the user refreshes after a manual action (like dismissing
+ * a recruit), the state remains consistent.
  */
 function updateLocalData(newData: WebAppData) {
   clashData.value = newData;
@@ -56,9 +62,27 @@ function updateLocalData(newData: WebAppData) {
   localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(newData));
 }
 
+/**
+ * CENTRAL DATA MANAGEMENT HUB
+ * The primary engine for synchronizing game data across the application.
+ *
+ * @returns {Object} Reactive state and methods for data orchestration.
+ * @property {Readonly<Ref<WebAppData|null>>} data - The core game data (leaderboard, recruiter).
+ * @property {Readonly<Ref<boolean>>} isHydrated - Indicates if local data has been loaded.
+ * @property {Readonly<Ref<boolean>>} isRefreshing - True if a network sync is in progress.
+ * @property {Readonly<Ref<string|null>>} syncStatus - Enum: 'idle' | 'syncing' | 'success' | 'error'.
+ * @property {Readonly<Ref<string|null>>} syncError - Human-readable error message if sync fails.
+ */
 export function useClashData() {
-  // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
-  // Call this AFTER app.mount() to avoid blocking LCP
+  /**
+   * STEP 1: LOAD LOCAL (Sync/Fast)
+   * Hydrates the reactive state from `localStorage` snapshot.
+   *
+   * @remarks
+   * PERFORMANCE: This function should be called AFTER `app.mount()` (e.g., in a
+   * requestIdleCallback) to avoid blocking the Largest Contentful Paint (LCP).
+   * It provides the "Stale" part of the Stale-While-Revalidate (SWR) pattern.
+   */
   function loadLocal() {
     if (isHydrated.value) return; // Already loaded
 
@@ -77,12 +101,12 @@ export function useClashData() {
     }
   }
 
-  // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
+  // STEP 2: LOAD NETWORK (Async/Slow)
   let refreshAbortController: AbortController | null = null;
 
   async function startBackgroundSync() {
     if (isShowcaseMode.value) {
-      // ⚡ PERFORMANCE: Generate only 1 item in Showcase mode
+      // PERFORMANCE: Generate only 1 item in Showcase mode
       const mock = generateMockData({ memberCount: 1, recruitCount: 1 });
       clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
@@ -99,7 +123,7 @@ export function useClashData() {
     }
 
     if (isSyntheticMode.value) {
-      // console.log("🌟 Synthetic Mode Active");
+      // console.log("Synthetic Mode Active");
       const mock = generateMockData();
       clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
@@ -110,21 +134,33 @@ export function useClashData() {
     refresh();
   }
 
+  /**
+   * STEP 2: LOAD NETWORK (Async/Slow)
+   * Triggers a remote fetch from Google Apps Script.
+   *
+   * @remarks
+   * Side Effect: Updates `localStorage` and `IndexedDB` upon success.
+   * Side Effect: Broadcasts completion to other open tabs via `BroadcastChannel`.
+   * Side Effect: Requests a Screen Wake Lock during active synchronization.
+   */
   async function refresh() {
     if (isRefreshing.value) {
       // If already refreshing, decide if we should debounce or replace.
       // For now, we replace to ensure freshest data.
     }
 
-    // Cancel previous pending request
+    // Cancel previous pending request to prevent race conditions.
+    // Using a specific reason allows the error handler to distinguish
+    // between an intentional replacement and a network failure.
     if (refreshAbortController) {
-      // Pass a reason so we can distinguish this from a timeout
       refreshAbortController.abort("replaced");
     }
     refreshAbortController = new AbortController();
     const signal = refreshAbortController.signal;
 
-    // 🛡️ TIMEOUT PROTECTION: Force fail if network hangs (40s)
+    // TIMEOUT PROTECTION: Force fail if network hangs (40s).
+    // Apps Script execution limits and cold starts can vary; 40s provides
+    // enough buffer for heavy ETL without leaving the UI in a permanent skeleton state.
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
         refreshAbortController.abort("timeout");
@@ -164,17 +200,19 @@ export function useClashData() {
         // Note: IDB caching is already handled inside fetchRemote() in gasClient.ts
       });
 
-      // 📡 Broadcast success to other tabs
+      // Broadcast success to other tabs
       broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
     } catch (e: unknown) {
       // Handle AbortSignal logic
       if (signal.aborted) {
-        // If replaced by a new request, we silently exit (do NOT set error)
+        // WHY: If replaced by a new request, we silently exit.
+        // We do NOT want to show an error state if the user manually re-triggered
+        // a refresh or if a mode change canceled the current one.
         if (signal.reason === "replaced") {
-          // console.log("Sync replaced by newer request");
           return;
         }
-        // If timed out, we DO set error
+        // WHY: If timed out, we transition to error to let the user know
+        // the network/server is unresponsive.
         if (signal.reason === "timeout") {
           syncStatus.value = "error";
           syncError.value = "Request Timed Out";
@@ -211,8 +249,7 @@ export function useClashData() {
     { flush: "post" },
   );
 
-  // 🛡️ Logic: Screen Wake Lock (Logic #15)
-  // 🛡️ Logic: Screen Wake Lock (Logic #15)
+  // Logic: Screen Wake Lock (Logic #15)
   // Use shared composable for stability and DRY compliance
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
 
