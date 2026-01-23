@@ -122,8 +122,7 @@ function updateClanDatabase(): void {
     const warFameMap = new Map<string, number>();
     if (raceData && raceData.clan && raceData.clan.participants) {
       raceData.clan.participants.forEach((p: any) => {
-        const val = p.fame || p.medals || p.periodPoints || 0;
-        warFameMap.set(p.tag, val);
+        warFameMap.set(p.tag, Utils.resolveWarFame(p));
       });
     }
 

@@ -131,6 +131,11 @@ export interface AppUtils {
     startCol?: number,
   ): Record<string, number>;
   bootDynamicSchema(): void;
+  /**
+   * 🛡️ ROBUST PROPERTY RESOLVER
+   */
+  resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
+  resolveWarFame(p: any): number;
 }
 
 const Utils: AppUtils = {
@@ -1076,6 +1081,33 @@ const Utils: AppUtils = {
         CONFIG.SCHEMA.HH,
         this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS),
       );
+  },
+  /**
+   * 🛡️ ROBUST PROPERTY RESOLVER
+   * Ingests an object and returns the first matching value from a list of priority keys.
+   */
+  resolveProperty: function (obj, priorityKeys, fallback = 0) {
+    if (!obj || typeof obj !== "object") return fallback;
+    for (const key of priorityKeys) {
+      if (obj[key] !== undefined && obj[key] !== null) return obj[key];
+    }
+    return fallback;
+  },
+
+  /**
+   * ⚔️ UNIFIED WAR FAME RESOLVER
+   * Standardized across Service, Logger, Leaderboard, and Recruiter.
+   */
+  resolveWarFame: function (p) {
+    return (
+      Number(
+        this.resolveProperty(
+          p,
+          ["fame", "medals", "periodPoints", "repairPoints"],
+          0,
+        ),
+      ) || 0
+    );
   },
 };
 
