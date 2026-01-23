@@ -36,12 +36,12 @@ export interface ICore {
   /**
    * Executes a callback within a script-wide mutex lock.
    * Prevents race conditions when multiple triggers fire simultaneously.
-   * @param lockKey - Identifier for the lock (for logging/debugging)
-   * @param callback - The function to execute atomically
+   * @param context - Identifier for the lock (for logging/debugging)
+   * @param operation - The function to execute atomically
    * @returns The return value of the callback
    * @throws Error if lock cannot be acquired within timeout
    */
-  executeSafely<T>(lockKey: string, callback: () => T): T;
+  executeSafely<T>(context: string, operation: () => T): T;
 
   /**
    * Fisher-Yates shuffle algorithm.
@@ -49,6 +49,22 @@ export interface ICore {
    * @returns The shuffled array (same reference)
    */
   shuffleArray<T>(array: T[]): T[];
+
+  /**
+   * Parses a war history string into a Map of player names to scores.
+   * @param histStr - The war history string, e.g., "Player1:10,Player2:5"
+   * @returns A Map where keys are player names and values are their scores.
+   */
+  parseWarHistory(histStr: string | null | undefined): Map<string, number>;
+
+  /**
+   * Resolves a property from an object using a list of priority keys.
+   * @param obj - The object to search within.
+   * @param priorityKeys - An array of keys to try in order of preference.
+   * @param fallback - An optional fallback value if no key is found.
+   * @returns The value of the first found property, or the fallback if none.
+   */
+  resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
 
   /**
    * Runtime metrics for performance tracking.
@@ -119,6 +135,25 @@ const Core: ICore = {
     getElapsedMs(): number {
       return Date.now() - this.startTime;
     },
+  },
+
+  parseWarHistory(histStr: string | null | undefined): Map<string, number> {
+    if (!histStr || histStr === "-" || typeof histStr !== "string")
+      return new Map<string, number>();
+    const historyMap = new Map<string, number>();
+    histStr.split(" | ").forEach((entry) => {
+      const parts = entry.trim().split(" ");
+      if (parts.length === 2) historyMap.set(parts[1], Number(parts[0]));
+    });
+    return historyMap;
+  },
+
+  resolveProperty(obj: any, priorityKeys: string[], fallback: any = 0): any {
+    if (!obj || typeof obj !== "object") return fallback;
+    for (const key of priorityKeys) {
+      if (obj[key] !== undefined && obj[key] !== null) return obj[key];
+    }
+    return fallback;
   },
 };
 

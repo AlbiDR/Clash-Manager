@@ -12,7 +12,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
+import type { IView } from "./View";
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
 import type { ITime } from "./Time";
@@ -51,7 +51,7 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
+declare const View: IView;
 declare const Core: ICore;
 declare const Network: INetwork;
 declare const Time: ITime;
@@ -155,7 +155,7 @@ function setupMobileTriggers(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const triggerName = "handleMobileEdit";
 
-  Utils.refreshMobileControls(ss);
+  View.refreshMobileControls(ss);
 
   const triggers = ScriptApp.getProjectTriggers();
   let exists = false;

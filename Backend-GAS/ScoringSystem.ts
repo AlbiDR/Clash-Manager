@@ -75,6 +75,7 @@ export interface IScoringSystem {
     blacklistScoredList: Array<{ rawScore: number }>,
   ): number;
   calculatePotentialScore(rawScore: number, benchmark: number): number;
+  resolveWarFame(p: any): number;
 }
 
 const ScoringSystem: IScoringSystem = {
@@ -247,6 +248,16 @@ const ScoringSystem: IScoringSystem = {
     if (!benchmark || benchmark <= 0) return 0;
     const score = Math.round((rawScore / benchmark) * 100);
     return Math.min(100, score);
+  },
+
+  /**
+   * ⚔️ UNIFIED WAR FAME RESOLVER
+   */
+  resolveWarFame: function (p: any): number {
+    if (!p || typeof p !== "object") return 0;
+    return Number(
+      p.fame || p.medals || p.periodPoints || p.repairPoints || 0
+    );
   },
 };
 

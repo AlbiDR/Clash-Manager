@@ -8,15 +8,15 @@ import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
 import type { ITime } from "./Time";
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
+
 
 declare const CacheService: GoogleAppsScript.Cache.CacheService;
-declare const Utils: AppUtils;
 declare const Core: ICore;
 declare const Network: INetwork;
 declare const Time: ITime;
 declare const CONFIG: AppConfig;
 declare const Logger: any;
+declare const ScoringSystem: any; // Type check bypass for now to solve circular panic
 
 /**
  * 🚀 WAR SNAPSHOT INTERFACE
@@ -97,6 +97,7 @@ const WarIntelligence = (() => {
       const isColosseum = sIdx >= 3;
 
       // 🛡️ UNIFIED PHASE DETECTION
+      // 🛡️ UNIFIED PHASE DETECTION
       let rawDay: number;
       if (pIdx !== undefined) {
         rawDay = pIdx % 7;
@@ -113,24 +114,27 @@ const WarIntelligence = (() => {
       let fame = 0;
       let rank = 0;
       const clanTag = rootClan.tag || "";
+      
+      // Calculate isTraining EARLY for use in logic
+      const isTraining = rawDay <= 2;
 
       if (d?.clans && Array.isArray(d.clans)) {
         // Find our clan in the race array for potentially fresher data
         const sorted = [...d.clans].sort((a: any, b: any) => {
-          const valA = Utils.resolveWarFame(a);
-          const valB = Utils.resolveWarFame(b);
+          const valA = ScoringSystem.resolveWarFame(a);
+          const valB = ScoringSystem.resolveWarFame(b);
           return valB - valA;
         });
 
         const myEntry = sorted.find((c: any) => c.tag === clanTag);
+        // If player has participated, use their contribution
         if (myEntry) {
-          // Prioritize stand-alone race data as it's often more reactive than root object
-          fame = Utils.resolveWarFame(myEntry);
+          fame = ScoringSystem.resolveWarFame(myEntry);
           rank = sorted.indexOf(myEntry) + 1;
         }
-      } else {
-        // Fallback to rootClan data if 'clans' array is not available
-        fame = Utils.resolveWarFame(rootClan);
+      } else if (isTraining) {
+        // During Training Days, fame is often 0 or meaningless "Medals"
+        fame = ScoringSystem.resolveWarFame(rootClan);
         rank = rootClan.rank || 0; // Rank might still be available on rootClan
       }
 
@@ -138,8 +142,6 @@ const WarIntelligence = (() => {
       let phase: WarSnapshot["protocol"]["phase"] = "IDLE";
       let label = "War Interval";
       let dayLabel = `Day ${rawDay + 1}`;
-
-      const isTraining = rawDay <= 2;
 
       if (isTraining) {
         phase = "TRIAL";

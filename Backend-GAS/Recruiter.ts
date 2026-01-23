@@ -9,7 +9,8 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
+import type { IView } from "./View";
+import type { ISchema } from "./Schema";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
@@ -51,7 +52,8 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
+declare const View: IView;
+declare const Schema: ISchema;
 declare const Store: IStore;
 declare const Core: ICore;
 declare const Network: INetwork;
@@ -114,7 +116,7 @@ function scoutRecruits(): void {
   if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.HH);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
-  Utils.bootDynamicSchema();
+  Schema.bootDynamicSchema();
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
@@ -254,7 +256,7 @@ function scoutRecruits(): void {
   );
 
   // 🛡️ BACKUP
-  Utils.backupSheet(ss, CONFIG.SHEETS.HH);
+  View.backupSheet(ss, CONFIG.SHEETS.HH);
 
   // 7. RENDER
   renderHeadhunterView(sheet, finalPool, avgTrophies);
@@ -716,7 +718,7 @@ function renderHeadhunterView(
   }
 
   sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
-  Utils.applyStandardLayout(
+  View.applyStandardLayout(
     sheet,
     Math.max(rows.length, CONFIG.HEADHUNTER.TARGET),
     HEADERS.length,

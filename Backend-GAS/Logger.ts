@@ -14,9 +14,10 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
+import type { IView } from "./View";
 import type { INetwork } from "./Network";
 import type { ITime } from "./Time";
+import type { IScoringSystem } from "./ScoringSystem";
 import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
@@ -53,9 +54,10 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
+declare const View: IView;
 declare const Network: INetwork;
 declare const Time: ITime;
+declare const ScoringSystem: IScoringSystem;
 declare function getWarSnapshot(): WarSnapshot;
 
 /**
@@ -126,7 +128,7 @@ function updateClanDatabase(): void {
     const warFameMap = new Map<string, number>();
     if (raceData && raceData.clan && raceData.clan.participants) {
       raceData.clan.participants.forEach((p: any) => {
-        warFameMap.set(p.tag, Utils.resolveWarFame(p));
+        warFameMap.set(p.tag, ScoringSystem.resolveWarFame(p));
       });
     }
 
@@ -165,7 +167,7 @@ function updateClanDatabase(): void {
     }
 
     // 🛡️ BACKUP
-    Utils.backupSheet(ss, CONFIG.SHEETS.DB);
+    View.backupSheet(ss, CONFIG.SHEETS.DB);
 
     // 🧹 STEP 1: PRUNE STALE DATA
     pruneStaleData(sheet, activeTags);
@@ -395,7 +397,7 @@ function upsertDailySnapshots(
   sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
 
   // 🧹 LAYOUT & CLEANUP
-  Utils.applyStandardLayout(
+  View.applyStandardLayout(
     sheet,
     sheet.getLastRow() - (startRow - 1),
     headerRow.length,

@@ -9,9 +9,9 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
+import type { ISchema } from "./Schema";
 
 // Global Version Constant
 // @ts-ignore
@@ -47,9 +47,9 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Utils: AppUtils;
 declare const Store: IStore;
 declare const Core: ICore;
+declare const Schema: ISchema;
 
 // External module functions
 declare function updateClanDatabase(): void;
@@ -137,7 +137,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       const tagRowMap = new Map<string, number>();
 
       if (sheet) {
-        Utils.bootDynamicSchema();
+        Schema.bootDynamicSchema();
         const startRow = CONFIG.LAYOUT.DATA_START_ROW;
         const lastRowVisual = sheet.getLastRow();
 
@@ -240,7 +240,7 @@ function refreshWebPayload(): string {
 function _generatePayloadInternal(): string {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    Utils.bootDynamicSchema();
+    Schema.bootDynamicSchema();
 
     const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
     const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
