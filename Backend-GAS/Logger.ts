@@ -15,6 +15,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { INetwork } from "./Network";
 import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
@@ -52,6 +53,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare const Network: INetwork;
 declare function getWarSnapshot(): WarSnapshot;
 
 /**
@@ -94,7 +96,7 @@ function updateClanDatabase(): void {
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
     ];
 
-    const [membersData, raceData] = Utils.fetchRoyaleAPI(urls);
+    const [membersData, raceData] = Network.fetchRoyaleAPI(urls);
 
     // 🛑 CIRCUIT BREAKER: API FAILURE
     if (!membersData || !membersData.items || membersData.items.length === 0) {

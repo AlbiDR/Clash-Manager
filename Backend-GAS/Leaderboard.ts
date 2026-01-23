@@ -15,6 +15,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { INetwork } from "./Network";
 import type { IScoringSystem } from "./ScoringSystem";
 
 // Global Version Constant
@@ -52,6 +53,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare const Network: INetwork;
 declare const ScoringSystem: IScoringSystem;
 
 /**
@@ -136,7 +138,7 @@ function updateLeaderboard(): void {
     race: raceData,
     log: logData,
     history: remoteHistory,
-  } = Utils.fetchClanDataSmart(cleanTag);
+  } = Network.fetchClanDataSmart(cleanTag);
 
   if (!membersData || !membersData.items) {
     console.error("Leaderboard: Failed to fetch members.");

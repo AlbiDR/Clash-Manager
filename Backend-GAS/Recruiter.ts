@@ -12,6 +12,7 @@ import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
 import type { IStore } from "./Store";
 import type { ICore } from "./Core";
+import type { INetwork } from "./Network";
 import type { IScoringSystem } from "./ScoringSystem";
 import type { ScoringWeights } from "./SharedTypes";
 
@@ -52,6 +53,7 @@ declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
 declare const Store: IStore;
 declare const Core: ICore;
+declare const Network: INetwork;
 declare const ScoringSystem: IScoringSystem;
 
 /**
@@ -100,7 +102,7 @@ function scoutRecruits(): void {
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
   // 1. Establish Baseline
-  const baselineData = Utils.fetchRoyaleAPI([
+  const baselineData = Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
   ]);
   let avgTrophies = 4000;
@@ -128,7 +130,7 @@ function scoutRecruits(): void {
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
-    const profiles = Utils.fetchRoyaleAPI(
+    const profiles = Network.fetchRoyaleAPI(
       tagsToCheck.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
       ),
@@ -383,14 +385,14 @@ function scanTournaments(
     (k) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
   );
 
-  const searchResults = Utils.fetchRoyaleAPI(searchUrls);
+  const searchResults = Network.fetchRoyaleAPI(searchUrls);
   const uniqueTourneys = new Map<string, any>();
   searchResults.forEach((res: any) => {
     if (res && res.items)
       res.items.forEach((t: any) => uniqueTourneys.set(t.tag, t));
   });
 
-  const remoteAvailable = Utils.remoteWorkerHealthy();
+  const remoteAvailable = Network.remoteWorkerHealthy();
   const remoteExpandEnabled = Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
   const scanCfg =
     remoteAvailable && remoteExpandEnabled
@@ -419,7 +421,7 @@ function scanTournaments(
 
   if (remoteAvailable && remoteExpandEnabled) {
     try {
-      candidates = Utils.scanTournamentsRemote(
+      candidates = Network.scanTournamentsRemote(
         tourneyTags,
         minTrophies,
         blacklistSet,
@@ -430,7 +432,7 @@ function scanTournaments(
   }
 
   if (!usedRemote) {
-    const details = Utils.fetchRoyaleAPI(
+    const details = Network.fetchRoyaleAPI(
       tourneyTags.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
       ),
@@ -491,7 +493,7 @@ function scanTournaments(
       });
     });
   } else {
-    const playersData = Utils.fetchRoyaleAPI(
+    const playersData = Network.fetchRoyaleAPI(
       tagsToFetch.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
       ),
@@ -525,7 +527,7 @@ function scanTournaments(
     });
 
     if (logUrls.length > 0) {
-      const logs = Utils.fetchRoyaleAPI(logUrls);
+      const logs = Network.fetchRoyaleAPI(logUrls);
       candidatesToProfile.forEach((p, idx) => {
         let hasWar = false;
         if (logs[idx]) {
