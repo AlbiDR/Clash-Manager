@@ -29,10 +29,14 @@ if (typeof indexedDB === "undefined") {
   }
 }
 
+let dbPromise: Promise<IDBDatabase> | null = null;
+
 function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise;
+
+  dbPromise = new Promise((resolve, reject) => {
     if (useMemoryStore || typeof indexedDB === "undefined") {
-      // Return a dummy object if needed, but our methods strictly check flags now
+      dbPromise = null;
       return reject(new Error("IDB Unsupported"));
     }
 
@@ -46,8 +50,13 @@ function openDB(): Promise<IDBDatabase> {
     };
 
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = (e) => {
+      dbPromise = null;
+      reject(request.error || e);
+    };
   });
+
+  return dbPromise;
 }
 
 export const idb = {

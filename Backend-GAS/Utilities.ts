@@ -1,6 +1,7 @@
+
 /**
  * ============================================================================
- * 🛠️ MODULE: UTILITIES
+ * 🛠️ MODULE: UTILITIES (TypeScript Edition)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Centralized helper library for the entire project.
  * ⚙️ CAPABILITIES:
@@ -12,74 +13,185 @@
  *    6. Cache Engine: Handles 100KB+ payloads via chunking (Fixes GAS Limit).
  *    7. Safety Lock: Mutex locking to prevent Race Conditions.
  *    8. Properties Manager: Safe JSON handling for Script Properties.
- * 🏷️ VERSION: 10.0.9
+ * 🏷️ VERSION: 11.0.0
  * ============================================================================
  */
 
-const VER_UTILITIES = "10.0.9";
+import type { ScoringWeights } from "./SharedTypes";
+import type { AppConfig } from "./Configuration";
+
+// Global Version Constant
+// @ts-ignore
+const VER_UTILITIES = "11.0.0";
+
+declare var SpreadsheetApp: any;
+declare var LockService: any;
+declare var PropertiesService: any;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var ContentService: any;
+declare var Utilities: any;
+declare var ScriptApp: any;
+declare var Logger: any;
+declare var module: any;
+
+declare namespace GoogleAppsScript {
+  export namespace Events {
+    export type DoGet = any;
+    export type DoPost = any;
+    export type AppsScriptEvent = any;
+    export type SheetsOnEdit = any;
+  }
+  export namespace Spreadsheet {
+    export type Sheet = any;
+    export type Spreadsheet = any;
+    export type Range = any;
+    export type Banding = any;
+  }
+  export namespace Content {
+    export type TextOutput = any;
+  }
+}
+
+// Global CONFIG and other GAS services declaration
+declare const CONFIG: AppConfig;
 
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
-const _EXECUTION_CACHE = new Map();
+const _EXECUTION_CACHE = new Map<string, any>();
 
 // 🛡️ API BUDGET: Prevents runaway execution from burning daily quotas.
-// UPDATED (v5.2.0): Increased from 400 to 600 to allow "Deep Net Level 2" scans.
 let _FETCH_COUNT = 0;
 const MAX_FETCH_PER_EXECUTION = 100000;
 
-const Utils = {
+/**
+ * 🛠️ UTILITIES INTERFACE
+ */
+export interface AppUtils {
+  executeSafely<T>(lockKey: string, callback: () => T): T;
+  Props: {
+    get(key: string, defaultVal?: string | null): string | null;
+    set(key: string, val: string | number | boolean): void;
+    getJSON<T>(key: string, defaultVal?: T): T;
+    setJSON(key: string, val: any): boolean;
+    getChunked<T>(baseKey: string, defaultVal?: T): T;
+    setChunked(baseKey: string, val: any): boolean;
+    getFetchState(): { date?: string; count?: number };
+    setFetchState(stateObj: { date: string; count: number }): boolean;
+    delete(key: string): void;
+  };
+  auditKeysRemote(
+    keys: Array<{ name: string; value: string }>,
+  ): Array<{ name: string; success: boolean; error?: string }> | null;
+  scanTournamentsRemote(
+    tourneyTags: string[],
+    minTrophies: number,
+    blacklistSet: Set<string> | string[],
+    scoring?: ScoringWeights | null,
+  ): any[];
+  fetchPublicJson(type: "members" | "warlog"): any[] | null;
+  fetchClanDataSmart(cleanTag: string): {
+    members: { items: any[] } | null;
+    race: { clan: any } | null;
+    history: Record<string, Record<string, number>> | null;
+    log: any | null;
+  };
+  fetchRoyaleAPI(urls: string[], scoring?: ScoringWeights | null): any[];
+  remoteFetchChunk(
+    chunkUrls: string[],
+    keyPool: Array<{ name: string; value: string }>,
+    scoring?: ScoringWeights | null,
+  ): any[];
+  remoteWorkerHealthy(): boolean;
+  CacheHandler: {
+    putLarge(key: string, value: string, expirationSec?: number): void;
+    getLarge(key: string): string | null;
+  };
+  formatDate(date: Date | null | undefined): string;
+  parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
+  calculateWarWeekId(d: Date | null | undefined): string;
+  getLogicalDay(date: Date): number;
+  getEligibleBattleDays(daysTracked: number, isColosseum?: boolean): number;
+  parseWarHistory(histStr: string | null | undefined): Map<string, number>;
+  shuffleArray<T>(array: T[]): T[];
+  backupSheet(
+    ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
+    sheetName: string,
+  ): void;
+  enforceGlobalTabHygiene(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
+  drawMobileCheckbox(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
+  refreshMobileControls(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
+  applyStandardLayout(
+    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    contentRows: number,
+    contentCols: number,
+    optHeaders?: string[] | null,
+  ): void;
+  resolveSchemaIndices(
+    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    headerMap: Record<string, string>,
+    headerRow?: number,
+    startCol?: number,
+  ): Record<string, number>;
+  bootDynamicSchema(): void;
+  /**
+   * 🛡️ ROBUST PROPERTY RESOLVER
+   */
+  resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
+  resolveWarFame(p: any): number;
+  getWarPhaseFromDate(date: Date, snapshot?: any, options?: { forceCalendarDay?: boolean }): {
+    rawDay: number;
+    isTraining: boolean;
+    isBattle: boolean;
+    phase: string;
+  };
+}
+
+const Utils: AppUtils = {
   /**
    * 🔒 EXECUTE SAFELY (Mutex Lock)
-   * Prevents race conditions by acquiring a Script Lock before running critical code.
-   * Useful for ensuring only one update runs at a time.
-   *
-   * @param {string} lockKey - Name of the process for logging (e.g. "UPDATE_DB")
-   * @param {Function} callback - The code to run if lock is acquired
-   * @return {any} The result of the callback
    */
   executeSafely: function (lockKey, callback) {
     const lock = LockService.getScriptLock();
     try {
-      // Attempt to acquire lock for 60 seconds.
       const success = lock.tryLock(60000);
-
       if (!success) {
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
         try {
-          ss.toast("System is busy. Please try again in 30s.", "⚠️ Locked");
+          SpreadsheetApp.getActiveSpreadsheet().toast(
+            "System is busy. Please try again in 30s.",
+            "⚠️ Locked",
+          );
         } catch (e) {}
         throw new Error(`System Busy: Could not acquire lock for ${lockKey}`);
       }
-
-      // Lock acquired, run critical section
       return callback();
-    } catch (e) {
-      // Re-throw to ensure caller knows it failed
-      throw e;
     } finally {
-      // Always release the lock, even if callback fails
       lock.releaseLock();
     }
   },
 
   /**
-   * 💾 PROPS MANAGER (Script Properties Wrapper)
-   * Centralizes access to persistent storage for Metadata and Config.
-   * Robust against JSON errors and handles type conversion.
+   * 💾 PROPS MANAGER
    */
   Props: {
-    _service: PropertiesService.getScriptProperties(),
+    // @ts-ignore
+    _service:
+      typeof PropertiesService !== "undefined"
+        ? PropertiesService.getScriptProperties()
+        : null,
 
-    get: function (key, defaultVal = null) {
+    get: function (this: any, key: string, defaultVal: string | null = null) {
+      if (!this._service) return defaultVal;
       const val = this._service.getProperty(key);
       return val !== null ? val : defaultVal;
     },
 
-    set: function (key, val) {
+    set: function (this: any, key: string, val: string | number | boolean) {
+      if (!this._service) return;
       this._service.setProperty(key, String(val));
     },
 
-    getJSON: function (key, defaultVal = {}) {
-      const raw = this._service.getProperty(key);
+    getJSON: function (this: any, key: string, defaultVal: any = {}) {
+      const raw = this.get(key);
       if (!raw) return defaultVal;
       try {
         return JSON.parse(raw);
@@ -88,39 +200,28 @@ const Utils = {
       }
     },
 
-    setJSON: function (key, val) {
+    setJSON: function (this: any, key: string, val: any) {
       try {
         const str = JSON.stringify(val);
-        // Check size limit (9KB per value)
-        if (str.length > 9000) {
-          return false;
-        }
+        if (str.length > 9000) return false;
+        if (!this._service) return false;
         this._service.setProperty(key, str);
         return true;
       } catch (e) {
-        console.error(
-          `⚠️ Props: JSON Stringify error for '${key}': ${e.message}`,
-        );
+        console.error(`⚠️ Props: JSON Stringify error for '${key}'`);
         return false;
       }
     },
 
-    /**
-     * 🧩 CHUNKED STORAGE (For >9KB Properties)
-     * Automatically splits large JSON objects into keys like KEY_0, KEY_1, KEY_2...
-     */
-    getChunked: function (baseKey, defaultVal = {}) {
+    getChunked: function (this: any, baseKey: string, defaultVal: any = {}) {
       try {
-        // 1. Check for legacy single key first (Migration path)
+        if (!this._service) return defaultVal;
         const simple = this._service.getProperty(baseKey);
-        if (simple) {
-          return JSON.parse(simple);
-        }
+        if (simple) return JSON.parse(simple);
 
-        // 2. Scan for chunks
         const allProps = this._service.getProperties();
         const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
-        const chunks = [];
+        const chunks: Array<{ index: number; val: string }> = [];
 
         Object.keys(allProps).forEach((k) => {
           const match = k.match(chunkPattern);
@@ -131,32 +232,27 @@ const Utils = {
 
         if (chunks.length === 0) return defaultVal;
 
-        // 3. Reassemble
         chunks.sort((a, b) => a.index - b.index);
         const fullString = chunks.map((c) => c.val).join("");
         return JSON.parse(fullString);
       } catch (e) {
-        console.error(
-          `🧩 Props: Chunk read error for '${baseKey}': ${e.message}`,
-        );
+        console.error(`🧩 Props: Chunk read error for '${baseKey}'`);
         return defaultVal;
       }
     },
 
-    setChunked: function (baseKey, val) {
+    setChunked: function (this: any, baseKey: string, val: any) {
       try {
+        if (!this._service) return false;
         const fullString = JSON.stringify(val);
-        const CHUNK_SIZE = 8500; // Safety buffer below 9000 limit
+        const CHUNK_SIZE = 8500;
         const totalChunks = Math.ceil(fullString.length / CHUNK_SIZE);
 
-        // 1. Write new chunks
         for (let i = 0; i < totalChunks; i++) {
           const chunk = fullString.substr(i * CHUNK_SIZE, CHUNK_SIZE);
           this._service.setProperty(`${baseKey}_${i}`, chunk);
         }
 
-        // 2. Clean up old excess chunks
-        // If we previously had 5 chunks and now only need 2, delete _2, _3, _4
         const allProps = this._service.getProperties();
         const chunkPattern = new RegExp(`^${baseKey}_(\\d+)$`);
 
@@ -164,43 +260,33 @@ const Utils = {
           const match = k.match(chunkPattern);
           if (match) {
             const index = parseInt(match[1]);
-            if (index >= totalChunks) {
-              this._service.deleteProperty(k);
-            }
+            if (index >= totalChunks) this._service.deleteProperty(k);
           }
         });
 
-        // 3. Clean up legacy single key if it exists
         this._service.deleteProperty(baseKey);
-
         return true;
       } catch (e) {
-        console.error(
-          `🧩 Props: Chunk write error for '${baseKey}': ${e.message}`,
-        );
+        console.error(`🧩 Props: Chunk write error for '${baseKey}'`);
         return false;
       }
     },
 
-    // ---- Fetch state persistence (to coordinate quota across runs)
-    _fetchStateKey: "FETCH_STATE",
-
-    getFetchState: function () {
-      return this.getJSON(this._fetchStateKey, {});
+    getFetchState: function (this: any) {
+      return this.getJSON("FETCH_STATE", {});
     },
 
-    setFetchState: function (stateObj) {
-      return this.setJSON(this._fetchStateKey, stateObj);
+    setFetchState: function (this: any, stateObj: any) {
+      return this.setJSON("FETCH_STATE", stateObj);
     },
 
-    delete: function (key) {
-      this._service.deleteProperty(key);
+    delete: function (this: any, key: string) {
+      if (this._service) this._service.deleteProperty(key);
     },
   },
 
   /**
    * 🔑 REMOTE AUDIT DELEGATE
-   * Offloads API key verification to the worker to save GAS quota.
    */
   auditKeysRemote: function (keys) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
@@ -210,7 +296,9 @@ const Utils = {
         apiKeys: keys.map((k) => k.value),
       };
 
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
@@ -225,23 +313,17 @@ const Utils = {
         },
       );
 
-      if (res.getResponseCode() !== 200) {
-        return null;
-      }
+      if (res.getResponseCode() !== 200) return null;
 
       const json = JSON.parse(res.getContentText());
       if (!json.results || !Array.isArray(json.results)) return null;
 
       return keys.map((k) => {
-        const remoteResult = json.results.find((r) => r.key === k.value);
-
+        const remoteResult = json.results.find((r: any) => r.key === k.value);
         if (!remoteResult) {
           return { name: k.name, success: false, error: "Worker skipped key" };
         }
-
-        if (remoteResult.status === 200) {
-          return { name: k.name, success: true };
-        }
+        if (remoteResult.status === 200) return { name: k.name, success: true };
 
         let errorMsg = `Error ${remoteResult.status}`;
         if (remoteResult.status === 403) errorMsg = "⛔ Access Denied";
@@ -255,8 +337,6 @@ const Utils = {
 
   /**
    * 📡 REMOTE SCAN DELEGATE
-   * Offloads heavy tournament filtering logic to the worker.
-   * Returns: Array of valid candidate objects (filtered and ready for scoring).
    */
   scanTournamentsRemote: function (
     tourneyTags,
@@ -269,7 +349,9 @@ const Utils = {
     }
 
     const keyPool = CONFIG.SYSTEM.API_KEYS;
-    const blacklistArray = Array.from(blacklistSet);
+    const blacklistArray = Array.isArray(blacklistSet)
+      ? blacklistSet
+      : Array.from(blacklistSet);
 
     try {
       const payload = {
@@ -277,10 +359,12 @@ const Utils = {
         apiKeys: keyPool.map((k) => k.value),
         blacklist: blacklistArray,
         minTrophies: minTrophies,
-        scoring: scoring, // Pass scoring weights to worker
+        scoring: scoring,
       };
 
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
@@ -303,19 +387,16 @@ const Utils = {
 
       return json.candidates;
     } catch (e) {
-      // Let caller handle fallback or throw
       throw e;
     }
   },
 
   /**
-   * 🌐 PUBLIC API OFFLOAD (Worker Optimized)
-   * Delegates "Members" and "WarLog" requests to the worker to bypass GAS transformation logic.
-   * Returns transformed array if successful, or null to trigger local fallback.
+   * 🌐 PUBLIC API OFFLOAD
    */
   fetchPublicJson: function (type) {
     const useRemote =
-      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
 
     if (!useRemote) return null;
 
@@ -326,7 +407,9 @@ const Utils = {
         apiKeys: CONFIG.SYSTEM.API_KEYS.map((k) => k.value),
       };
 
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
@@ -344,38 +427,30 @@ const Utils = {
       if (res.getResponseCode() === 200) {
         const json = JSON.parse(res.getContentText());
         return json.data;
-      } else {
-        return null;
       }
+      return null;
     } catch (e) {
       return null;
     }
   },
 
   /**
-   * ⚡ SMART CLAN FETCH (Worker Optimized)
-   * Attempts to fetch Members, Race, and History via the Worker's optimized /clan/full endpoint.
-   * If successful, returns pre-processed history map + raw data.
-   * If failed/disabled, falls back to standard fetchRoyaleAPI calls (handled by caller fallback logic).
+   * ⚡ SMART CLAN FETCH
    */
   fetchClanDataSmart: function (cleanTag) {
     const useRemote =
-      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
 
-    // 1. Try Remote Worker (Aggregated)
     if (useRemote) {
       try {
         const payload = {
-          tag: cleanTag, // Already encoded or raw? Worker expects raw tag, let's decode if needed or pass as is.
-          // Worker uses it to build URL: /clans/${encodeURIComponent(tag)}/members
-          // If we pass "%23TAG", encoding it again is bad.
-          // Standardize: pass CLEAN tag (no #, no URL encoding yet)
+          tag: decodeURIComponent(cleanTag),
           apiKeys: CONFIG.SYSTEM.API_KEYS.map((k) => k.value),
         };
-        // Decode incase it was passed encoded
-        payload.tag = decodeURIComponent(cleanTag);
 
-        const headers = { "Content-Type": "application/json" };
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
         if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
           headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
@@ -392,46 +467,37 @@ const Utils = {
 
         if (res.getResponseCode() === 200) {
           const json = JSON.parse(res.getContentText());
-          // Return standardized structure
           return {
             members: { items: json.members.items },
             race: { clan: json.race.clan },
-            // Worker returns a history object: { tag: { week: fame } }
-            // We return it as 'history' so Leaderboard knows it's pre-processed
             history: json.history,
-            log: null, // No log needed if history exists
+            log: null,
           };
-        } else {
         }
       } catch (e) {}
     }
 
-    // 2. Fallback: Standard Fetch (GAS iterates 3 URLs)
-    // NOTE: This uses fetchRoyaleAPI which *might* still use Worker /fetch for individual calls if configured,
-    // but performs the aggregation logic locally in GAS.
     const urls = [
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
     ];
 
-    const [membersData, raceData, logData] = Utils.fetchRoyaleAPI(urls);
+    const [membersData, raceData, logData] = this.fetchRoyaleAPI(urls);
     return {
       members: membersData,
       race: raceData,
-      history: null, // Null history triggers local parsing logic
+      history: null,
       log: logData,
     };
   },
 
   /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
-   * Includes Circuit Breaker logic for Remote Worker fallbacks.
    */
   fetchRoyaleAPI: function (urls, scoring = null) {
     if (!urls || urls.length === 0) return [];
 
-    // Load persisted fetch state to coordinate across executions
     try {
       const st = this.Props.getFetchState();
       const today = new Date().toISOString().slice(0, 10);
@@ -442,19 +508,15 @@ const Utils = {
       }
     } catch (e) {}
 
-    // 1. Initialize Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
     if (!keyPool || keyPool.length === 0) {
-      throw new Error(
-        "CRITICAL: No API Keys found in Script Properties. Add at least one key (CRK1, CRK2, etc.) to Configuration.",
-      );
+      throw new Error("CRITICAL: No API Keys found.");
     }
 
     const finalResults = new Array(urls.length).fill(null);
-    let urlsToFetch = [];
-    const urlIndices = new Map();
+    let urlsToFetch: string[] = [];
+    const urlIndices = new Map<string, number[]>();
 
-    // 2. Cache Check & Deduplication
     urls.forEach((url, index) => {
       if (_EXECUTION_CACHE.has(url)) {
         finalResults[index] = _EXECUTION_CACHE.get(url);
@@ -463,17 +525,16 @@ const Utils = {
           urlIndices.set(url, []);
           urlsToFetch.push(url);
         }
-        urlIndices.get(url).push(index);
+        urlIndices.get(url)!.push(index);
       }
     });
 
     if (urlsToFetch.length === 0) return finalResults;
 
-    // Post-deduplication quota accounting
     const remainingQuota = MAX_FETCH_PER_EXECUTION - _FETCH_COUNT;
     if (remainingQuota <= 0) {
       console.error(
-        `⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION}). Aborting further fetches.`,
+        `⚠️ API Budget Exceeded (${_FETCH_COUNT}/${MAX_FETCH_PER_EXECUTION})`,
       );
       return finalResults;
     }
@@ -482,24 +543,16 @@ const Utils = {
       urlsToFetch = urlsToFetch.slice(0, remainingQuota);
     }
 
-    // Account for the permitted fetches
     _FETCH_COUNT += urlsToFetch.length;
     try {
       const today = new Date().toISOString().slice(0, 10);
-      this.Props.setFetchState({
-        date: today,
-        count: _FETCH_COUNT,
-      });
+      this.Props.setFetchState({ date: today, count: _FETCH_COUNT });
     } catch (e) {}
 
-    // 🛡️ CIRCUIT BREAKER: Determine remote capability
-    // If worker fails, we will disable this flag for the rest of this batch execution
     let useRemote =
-      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && Utils.remoteWorkerHealthy();
+      !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
 
-    // 3. Batch Processing
     const BATCH_SIZE = 100;
-
     for (let c = 0; c < urlsToFetch.length; c += BATCH_SIZE) {
       const chunkUrls = urlsToFetch.slice(c, c + BATCH_SIZE);
 
@@ -511,7 +564,7 @@ const Utils = {
           const keyObj = keyPool[Math.floor(Math.random() * keyPool.length)];
           return {
             url: u,
-            method: "get",
+            method: "get" as const,
             headers: {
               Authorization: `Bearer ${keyObj.value}`,
               "User-Agent": "ClanManagerBot/6.0 (GAS)",
@@ -522,18 +575,16 @@ const Utils = {
         });
 
         try {
-          let responses;
+          let responses: any[];
 
           if (useRemote) {
             try {
-              // Offload to remote worker
-              responses = Utils.remoteFetchChunk(chunkUrls, keyPool, scoring);
+              responses = this.remoteFetchChunk(chunkUrls, keyPool, scoring);
             } catch (workerErr) {
-              useRemote = false; // Disable remote for subsequent retries/batches
-              throw workerErr; // Throw to trigger the catch block below and retry via local
+              useRemote = false;
+              throw workerErr;
             }
           } else {
-            // Local Fetch (Fallback or Default)
             responses = UrlFetchApp.fetchAll(requests);
           }
 
@@ -548,74 +599,47 @@ const Utils = {
                 const json = JSON.parse(r.getContentText());
                 _EXECUTION_CACHE.set(url, json);
                 urlIndices
-                  .get(url)
+                  .get(url)!
                   .forEach((idx) => (finalResults[idx] = json));
               } catch (e) {}
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
-              urlIndices.get(url).forEach((idx) => (finalResults[idx] = null));
+              urlIndices.get(url)!.forEach((idx) => (finalResults[idx] = null));
             } else if (code === 403 || code === 429) {
-              if (useRemote) {
-                // If using remote worker, the worker manages key rotation.
-
-                retryChunk = true;
-              } else {
+              if (!useRemote) {
                 const badKeyVal = requests[i].headers["Authorization"].replace(
                   "Bearer ",
                   "",
                 );
-                const keyObj = keyPool.find((k) => k.value === badKeyVal);
-                const keyName = keyObj ? keyObj.name : "Unknown Key";
-
                 keyPool = keyPool.filter((k) => k.value !== badKeyVal);
-                const gIdx = CONFIG.SYSTEM.API_KEYS.findIndex(
-                  (k) => k.value === badKeyVal,
-                );
-                if (gIdx > -1) CONFIG.SYSTEM.API_KEYS.splice(gIdx, 1);
-                retryChunk = true;
               }
+              retryChunk = true;
             } else {
-              const errorBody = r.getContentText().substring(0, 200);
-              console.error(
-                `[API ERROR] ${code} at ${url}\nResponse: ${errorBody}`,
-              );
-
               if (code >= 500) retryChunk = true;
             }
           });
 
           if (!retryChunk) break;
-          if (retryChunk && attempt < CONFIG.SYSTEM.RETRY_MAX - 1) {
+          // @ts-ignore
+          if (retryChunk && attempt < CONFIG.SYSTEM.RETRY_MAX - 1)
             Utilities.sleep(1000 * (attempt + 1));
-          }
-        } catch (e) {
-          // If platform reports URLFETCH daily quota reached, mark and abort
-          if (
-            e &&
-            e.message &&
-            e.message.indexOf(
-              "Service invoked too many times for one day: urlfetch",
-            ) > -1
-          ) {
-            // Abort current batch but don't latch for the whole day
+        } catch (e: any) {
+          if (e && e.message && e.message.indexOf("urlfetch") > -1)
             return finalResults;
-          }
-
-          console.error(
-            `Fetch Network Error (Attempt ${attempt + 1}): ${e.message}`,
-          );
+          // @ts-ignore
           if (attempt < CONFIG.SYSTEM.RETRY_MAX - 1) Utilities.sleep(2000);
         }
       }
-
-      // Small pause between batches
+      // @ts-ignore
       Utilities.sleep(200);
     }
 
     return finalResults;
   },
 
-  // Remote worker fetch delegate (uses configured remote worker to offload bulk fetches)
+  /**
+   * Remote worker fetch delegate
+   */
   remoteFetchChunk: function (chunkUrls, keyPool, scoring = null) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL)
       throw new Error("No remote worker configured.");
@@ -625,84 +649,72 @@ const Utils = {
         apiKeys: (keyPool || []).map((k) => k.value),
         scoring: scoring,
       };
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
-      const options = {
-        method: "post",
-        contentType: "application/json",
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true,
-        headers: headers,
-      };
+
       const res = UrlFetchApp.fetch(
         CONFIG.SYSTEM.REMOTE_WORKER_URL + "/fetch",
-        options,
+        {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true,
+          headers: headers,
+        },
       );
-      const code = res.getResponseCode();
-      if (code !== 200) throw new Error("Remote worker returned " + code);
+
+      if (res.getResponseCode() !== 200)
+        throw new Error("Remote worker error " + res.getResponseCode());
       const body = JSON.parse(res.getContentText());
       if (!body || !Array.isArray(body.results))
-        throw new Error("Invalid remote worker response");
-      // Normalize into response-like objects
-      return body.results.map((r) => {
-        return {
-          getResponseCode: function () {
-            return r.code;
-          },
-          getContentText: function () {
-            return typeof r.content === "string"
-              ? r.content
-              : JSON.stringify(r.content);
-          },
-        };
-      });
+        throw new Error("Invalid remote response");
+
+      return body.results.map((r: any) => ({
+        getResponseCode: () => r.code,
+        getContentText: () =>
+          typeof r.content === "string" ? r.content : JSON.stringify(r.content),
+      }));
     } catch (e) {
       throw e;
     }
   },
 
-  // Check remote worker health & capabilities (with 5-min persistent caching)
+  /**
+   * Check remote worker health
+   */
   remoteWorkerHealthy: function () {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return false;
-
-    // 1. Tier 1: Per-execution cache
     if (_EXECUTION_CACHE.has("worker_health"))
       return _EXECUTION_CACHE.get("worker_health");
 
-    // 2. Tier 2: Persistent cache (5-minute TTL)
     const CACHE_KEY = "WORKER_HEALTH_CACHE";
     const now = Date.now();
     try {
-      const cached = this.Props.getJSON(CACHE_KEY, null);
+      const cached = this.Props.getJSON(CACHE_KEY, null) as {
+        status: boolean;
+        time: number;
+      } | null;
       if (cached && now - cached.time < 300000) {
-        // 5 minutes
         _EXECUTION_CACHE.set("worker_health", cached.status);
         return cached.status;
       }
     } catch (e) {}
 
-    // 3. Tier 3: Live check
     let isHealthy = false;
     try {
-      const headers = {};
+      const headers: Record<string, string> = {};
       if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET)
         headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
       const res = UrlFetchApp.fetch(
         CONFIG.SYSTEM.REMOTE_WORKER_URL + "/capabilities",
-        {
-          method: "get",
-          muteHttpExceptions: true,
-          headers: headers,
-        },
+        { method: "get", muteHttpExceptions: true, headers: headers },
       );
-      if (res.getResponseCode() === 200) {
-        isHealthy = true;
-      } else {
-      }
+      if (res.getResponseCode() === 200) isHealthy = true;
     } catch (e) {}
 
-    // Save to all caches
     _EXECUTION_CACHE.set("worker_health", isHealthy);
     try {
       this.Props.setJSON(CACHE_KEY, { status: isHealthy, time: now });
@@ -712,12 +724,12 @@ const Utils = {
   },
 
   /**
-   * 💾 CACHE HANDLER (Chunking for >100KB Payloads)
+   * 💾 CACHE HANDLER
    */
   CacheHandler: {
     putLarge: function (key, value, expirationSec = 21600) {
       const cache = CacheService.getScriptCache();
-      const CHUNK_SIZE = 90000; // 90KB safe limit
+      const CHUNK_SIZE = 90000;
 
       if (value.length <= CHUNK_SIZE) {
         cache.put(key, value, expirationSec);
@@ -725,7 +737,7 @@ const Utils = {
         return;
       }
 
-      const chunks = value.match(new RegExp(".{1," + CHUNK_SIZE + "}", "g"));
+      const chunks = value.match(new RegExp(".{1," + CHUNK_SIZE + "}", "g"))!;
       chunks.forEach((chunk, i) => {
         cache.put(key + "_" + i, chunk, expirationSec);
       });
@@ -748,9 +760,7 @@ const Utils = {
         try {
           const { count } = JSON.parse(meta);
           const keys = [];
-          for (let i = 0; i < count; i++) {
-            keys.push(key + "_" + i);
-          }
+          for (let i = 0; i < count; i++) keys.push(key + "_" + i);
 
           const chunks = cache.getAll(keys);
           let fullString = "";
@@ -771,12 +781,13 @@ const Utils = {
   formatDate: (date) =>
     !date || isNaN(date.getTime())
       ? ""
-      : Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd"),
+      : // @ts-ignore
+        Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd"),
 
   parseRoyaleApiDate: function (dateStr) {
     if (!dateStr) return new Date();
     if (dateStr instanceof Date) return dateStr;
-    if (/^\d{8}T\d{6}/.test(dateStr)) {
+    if (typeof dateStr === "string" && /^\d{8}T\d{6}/.test(dateStr)) {
       const y = parseInt(dateStr.substr(0, 4), 10);
       const m = parseInt(dateStr.substr(4, 2), 10) - 1;
       const d = parseInt(dateStr.substr(6, 2), 10);
@@ -785,31 +796,85 @@ const Utils = {
       const s = parseInt(dateStr.substr(13, 2), 10);
       return new Date(Date.UTC(y, m, d, h, min, s));
     }
-    return new Date(dateStr);
+    return new Date(dateStr as any);
   },
 
   calculateWarWeekId: function (d) {
     if (!d || isNaN(d.getTime())) return "Unknown";
+    
+    // 🛡️ RESET-AWARE NORMALIZATION (10:00 UTC Monday Reset)
     const date = new Date(d.getTime());
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-    const week1 = new Date(date.getFullYear(), 0, 4);
-    const weekNum =
-      1 +
-      Math.round(
-        ((date.getTime() - week1.getTime()) / 86400000 -
-          3 +
-          ((week1.getDay() + 6) % 7)) /
-          7,
-      );
-    const yearShort = date.getFullYear().toString().slice(-2);
+    const RESET_H = 10;
+    const resetToday = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), RESET_H, 0, 0);
+    
+    // Shift back if before reset to align with previous logical day/week
+    if (date.getTime() < resetToday) {
+      date.setUTCDate(date.getUTCDate() - 1);
+    }
+    
+    // ISO-8601 Week Calculation (Pure UTC)
+    date.setUTCHours(0, 0, 0, 0);
+    const day = (date.getUTCDay() + 6) % 7; // 0=Mon, ..., 6=Sun
+    date.setUTCDate(date.getUTCDate() + 3 - day); // Target Thursday
+    
+    const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+    const firstThursDay = (firstThursday.getUTCDay() + 6) % 7;
+    firstThursday.setUTCDate(firstThursday.getUTCDate() + 3 - firstThursDay);
+    
+    const weekNum = 1 + Math.round((date.getTime() - firstThursday.getTime()) / 604800000);
+    const yearShort = date.getUTCFullYear().toString().slice(-2);
+    
     return `${yearShort}W${weekNum.toString().padStart(2, "0")}`;
+  },
+
+  getLogicalDay: function (date) {
+    const d = new Date(date.getTime());
+    const RESET_H = 10;
+    const resetToday = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), RESET_H, 0, 0);
+    
+    if (d.getTime() < resetToday) {
+      d.setUTCDate(d.getUTCDate() - 1);
+    }
+    const dayIndex = d.getUTCDay(); // 0=Sun, 1=Mon...
+    return dayIndex === 0 ? 7 : dayIndex; // Return 1-7 (Mon-Sun)
+  },
+
+  /**
+   * ⚔️ ELIGIBLE BATTLE DAYS CALCULATOR
+   * Determines theoretical maximum battle days based on player tenure.
+   * Standard Week = 4 Battle Days (Thu-Sun)
+   * Colosseum Week = 7 Battle Days (All days count)
+   */
+  getEligibleBattleDays: function (daysTracked, isColosseum = false) {
+    if (daysTracked <= 0) return 0;
+    
+    const BATTLE_DAYS_PER_WEEK = isColosseum ? 7 : 4;
+    const DAYS_PER_WEEK = 7;
+    
+    const fullWeeks = Math.floor(daysTracked / DAYS_PER_WEEK);
+    const remainderDays = daysTracked % DAYS_PER_WEEK;
+    
+    // Full weeks contribute their full quota
+    let eligibleDays = fullWeeks * BATTLE_DAYS_PER_WEEK;
+    
+    // Partial week: For standard weeks, assume 4/7 ratio of remainder
+    // For colosseum, all remainder days count
+    if (remainderDays > 0) {
+      if (isColosseum) {
+        eligibleDays += remainderDays;
+      } else {
+        // Conservative estimate: (remainderDays / 7) * 4, rounded up
+        eligibleDays += Math.ceil((remainderDays / DAYS_PER_WEEK) * BATTLE_DAYS_PER_WEEK);
+      }
+    }
+    
+    return Math.max(1, eligibleDays); // At least 1 to prevent divide-by-zero
   },
 
   parseWarHistory: (histStr) => {
     if (!histStr || histStr === "-" || typeof histStr !== "string")
-      return new Map();
-    const historyMap = new Map();
+      return new Map<string, number>();
+    const historyMap = new Map<string, number>();
     histStr.split(" | ").forEach((entry) => {
       const parts = entry.trim().split(" ");
       if (parts.length === 2) historyMap.set(parts[1], Number(parts[0]));
@@ -827,9 +892,6 @@ const Utils = {
 
   /**
    * 🛡️ ROBUST BACKUP SYSTEM
-   * - Rotates backups (1-5).
-   * - Compares content to prevent redundant backups.
-   * - SELF-HEALING: Enforces Global Sort Order and Visibility on every run.
    */
   backupSheet: function (ss, sheetName) {
     try {
@@ -840,17 +902,14 @@ const Utils = {
       const backup1Name = `Backup 1 ${sheetName}`;
       const existingBackup1 = ss.getSheetByName(backup1Name);
 
-      // 1. REDUNDANCY CHECK: Skip if data hasn't changed
       if (existingBackup1) {
         const currentLastRow = sheet.getLastRow();
         const currentLastCol = sheet.getLastColumn();
 
-        // If dimensions match, check content
         if (
           currentLastRow === existingBackup1.getLastRow() &&
           currentLastCol === existingBackup1.getLastColumn()
         ) {
-          // Optimization: Skip Row 1 (Timestamps often change, data does not)
           const startRow = currentLastRow > 1 ? 2 : 1;
           const numRows =
             currentLastRow > 1 ? currentLastRow - startRow + 1 : 1;
@@ -863,12 +922,8 @@ const Utils = {
               .getRange(startRow, 1, numRows, currentLastCol)
               .getValues();
 
-            // Fast Stringify comparison
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
-              console.log(
-                `🛡️ Backup: Skipped for '${sheetName}' (Content matches Backup 1).`,
-              );
-              // Even if skipped, we MUST run the Global Hygiene logic to fix any sorting errors
+              console.log(`🛡️ Backup skipped for '${sheetName}'`);
               this.enforceGlobalTabHygiene(ss);
               return;
             }
@@ -876,9 +931,7 @@ const Utils = {
         }
       }
 
-      console.log(`🛡️ Creating new backup for '${sheetName}'...`);
-
-      // 2. ROTATION: Delete Oldest, Shift Others
+      console.log(`🛡️ Creating backup for '${sheetName}'...`);
       const oldestName = `Backup ${MAX_BACKUPS} ${sheetName}`;
       const oldest = ss.getSheetByName(oldestName);
       if (oldest) ss.deleteSheet(oldest);
@@ -890,87 +943,55 @@ const Utils = {
         if (existing) existing.setName(nextName);
       }
 
-      // 3. CREATION: Copy current
       const copy = sheet.copyTo(ss);
       copy.setName(backup1Name);
-      copy.setTabColor("#cccccc"); // Set Gray color for backups
-
-      // 4. GLOBAL HYGIENE: Enforce Order and Visibility for ALL tabs
-      // This ensures that even if one tab acted, the whole workbook is tidied up.
+      copy.setTabColor("#cccccc");
       this.enforceGlobalTabHygiene(ss);
-
-      // Activate source to be safe
       sheet.activate();
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
     }
   },
 
   /**
-   * GLOBAL HYGIENE PROTOCOL (AGGRESSIVE)
-   * Enforces strict visibility and ordering for the entire workbook.
-   * STRATEGY: Whitelist only main tabs. HIDE EVERYTHING ELSE.
+   * GLOBAL HYGIENE PROTOCOL
    */
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
-
-    // 1. Define the Whitelist (The ONLY tabs allowed to be seen)
-    // Order matters here for the final sort.
     const VISIBLE_WHITELIST = [
       CONFIG.SHEETS.DB,
       CONFIG.SHEETS.LB,
       CONFIG.SHEETS.HH,
     ];
-
-    // 2. Scan ALL sheets in the workbook
     const allSheets = ss.getSheets();
 
-    allSheets.forEach((sheet) => {
+    allSheets.forEach((sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
       const name = sheet.getName();
-
-      // A. AGGRESSIVE VISIBILITY ENFORCEMENT
       if (VISIBLE_WHITELIST.includes(name)) {
-        // Must be Visible
         if (sheet.isSheetHidden()) sheet.showSheet();
       } else {
-        // Must be Hidden (Backups, random sheets, errors, duplicates)
         if (!sheet.isSheetHidden()) sheet.hideSheet();
       }
     });
 
-    // 3. ENFORCE ORDER (1, 2, 3...)
-    // We sort visible main tabs first, then hidden backup clusters.
     const ALL_SORT_ORDER = [...VISIBLE_WHITELIST];
-
-    // Add backup patterns for each main sheet (1-5)
     VISIBLE_WHITELIST.forEach((baseName) => {
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 5; i++)
         ALL_SORT_ORDER.push(`Backup ${i} ${baseName}`);
-      }
     });
 
     ALL_SORT_ORDER.forEach((name, index) => {
       const sheet = ss.getSheetByName(name);
       if (sheet) {
-        const targetIndex = index + 1; // 1-based index
+        const targetIndex = index + 1;
         if (sheet.getIndex() !== targetIndex) {
           try {
-            // Optimization: If sheet is hidden, we don't NEED to activate it to move it in modern GAS,
-            // but moveActiveSheet is more reliable across different environment states.
-            // However, setActiveSheet on a hidden sheet can be problematic.
-            // Let's use the spreadsheet.moveSheet() method if available, or stay with moveActiveSheet safely.
             ss.setActiveSheet(sheet);
             ss.moveActiveSheet(targetIndex);
-          } catch (e) {
-            console.warn(
-              `Hygiene: Could not move '${name}' to ${targetIndex} - ${e.message}`,
-            );
-          }
+          } catch (e) {}
         }
       }
     });
-
-    // 4. COMMIT CHANGES
     SpreadsheetApp.flush();
   },
 
@@ -979,7 +1000,7 @@ const Utils = {
     const mobileTrigger = sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL || "A1");
     if (
       mobileTrigger.getDataValidation() == null ||
-      mobileTrigger.getDataValidation().getCriteriaType() !=
+      mobileTrigger.getDataValidation()!.getCriteriaType() !=
         SpreadsheetApp.DataValidationCriteria.CHECKBOX
     ) {
       mobileTrigger.insertCheckboxes();
@@ -989,9 +1010,7 @@ const Utils = {
       .setFontColor(null)
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle")
-      .setNote(
-        '⚡ QUICK UPDATE:\nClick/Tap this checkbox to run the update for this specific tab.\n(Requires "Enable Mobile Controls" setup once).',
-      );
+      .setNote("⚡ QUICK UPDATE:\n(Select to run)");
   },
 
   refreshMobileControls: function (ss) {
@@ -999,7 +1018,7 @@ const Utils = {
     sheets.forEach((name) => {
       const sheet = ss.getSheetByName(name);
       if (sheet) {
-        Utils.drawMobileCheckbox(sheet);
+        this.drawMobileCheckbox(sheet);
         sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL || "A1").setValue(false);
       }
     });
@@ -1012,22 +1031,13 @@ const Utils = {
     optHeaders = null,
   ) {
     if (!sheet) return;
-
     const L = CONFIG.LAYOUT;
-    const DATA_START_ROW = L.DATA_START_ROW;
-    const HEADER_ROW = 2;
-    const STATUS_ROW = 1;
-    const COL_BUFFER_LEFT = 1;
-    const COL_DATA_START = 2;
-
-    if (Array.isArray(optHeaders) && optHeaders.length > 0) {
+    if (Array.isArray(optHeaders) && optHeaders.length > 0)
       contentCols = optHeaders.length;
-    }
 
-    const lastDataRow = DATA_START_ROW - 1 + Math.max(contentRows, 0);
-    const totalRows = Math.max(lastDataRow + 1, DATA_START_ROW + 1);
-    const lastDataCol = COL_DATA_START - 1 + contentCols;
-    const totalCols = lastDataCol + 1;
+    const lastDataRow = L.DATA_START_ROW - 1 + Math.max(contentRows, 0);
+    const totalRows = Math.max(lastDataRow + 1, L.DATA_START_ROW + 1);
+    const totalCols = contentCols + 2;
 
     const currentRows = sheet.getMaxRows();
     const currentCols = sheet.getMaxColumns();
@@ -1041,57 +1051,26 @@ const Utils = {
     if (currentCols > totalCols)
       sheet.deleteColumns(totalCols + 1, currentCols - totalCols);
 
-    try {
-      sheet.setColumnWidth(COL_BUFFER_LEFT, L.BUFFER_SIZE);
-      sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
-      sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
-    } catch (e) {
-      console.warn("Layout: Resize buffer failed", e);
-    }
+    sheet.setColumnWidth(1, L.BUFFER_SIZE);
+    sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
+    sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
 
-    const buffers = [];
-    if (totalRows >= 2)
-      buffers.push(sheet.getRange(2, COL_BUFFER_LEFT, totalRows - 1, 1));
-    buffers.push(sheet.getRange(1, totalCols, totalRows, 1));
-    buffers.push(sheet.getRange(totalRows, 1, 1, totalCols));
-
-    buffers.forEach((rng) => {
-      rng
-        .setBackground(null)
-        .clearContent()
-        .clearDataValidations()
-        .clearNote()
-        .setBorder(false, false, false, false, false, false);
-    });
-
-    Utils.drawMobileCheckbox(sheet);
+    this.drawMobileCheckbox(sheet);
 
     if (contentCols > 0) {
-      sheet.setColumnWidths(COL_DATA_START, contentCols, 100);
-
-      sheet.getRange(STATUS_ROW, 1, 1, totalCols).breakApart();
-      const statusRange = sheet.getRange(
-        STATUS_ROW,
-        COL_DATA_START,
-        1,
-        contentCols,
-      );
-      statusRange
+      sheet.setColumnWidths(2, contentCols, 100);
+      sheet.getRange(1, 1, 1, totalCols).breakApart();
+      sheet
+        .getRange(1, 2, 1, contentCols)
         .merge()
         .setHorizontalAlignment("left")
-        .setVerticalAlignment("middle")
         .setFontWeight("bold")
         .setFontColor("#888888");
 
-      const tableRows = 1 + contentRows;
-      const tableRange = sheet.getRange(
-        HEADER_ROW,
-        COL_DATA_START,
-        tableRows,
-        contentCols,
-      );
-      const existingBandings = sheet.getBandings();
-      if (existingBandings) existingBandings.forEach((b) => b.remove());
+      const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
+      tableRange
+        .getBandings()
+        .forEach((b: GoogleAppsScript.Spreadsheet.Banding) => b.remove());
       tableRange.applyRowBanding(
         SpreadsheetApp.BandingTheme.LIGHT_GREY,
         true,
@@ -1099,102 +1078,184 @@ const Utils = {
       );
       tableRange.setBorder(true, true, true, true, null, null);
 
-      const headerRange = sheet.getRange(
-        HEADER_ROW,
-        COL_DATA_START,
-        1,
-        contentCols,
-      );
-      if (Array.isArray(optHeaders) && optHeaders.length > 0) {
+      const headerRange = sheet.getRange(2, 2, 1, contentCols);
+      if (Array.isArray(optHeaders) && optHeaders.length > 0)
         headerRange.setValues([optHeaders]);
-      }
       headerRange
         .setBorder(true, true, true, true, true, true)
         .setFontWeight("bold")
         .setHorizontalAlignment("center")
-        .setVerticalAlignment("middle")
         .setWrap(true);
 
       if (contentRows > 0) {
-        const dataRange = sheet.getRange(
-          DATA_START_ROW,
-          COL_DATA_START,
-          contentRows,
-          contentCols,
-        );
-        dataRange
+        sheet
+          .getRange(L.DATA_START_ROW, 2, contentRows, contentCols)
           .setHorizontalAlignment("center")
-          .setVerticalAlignment("middle")
           .setWrap(false);
       }
     }
     sheet.setHiddenGridlines(true);
   },
 
-  /**
-   * 🏗️ DYNAMIC SCHEMA RESOLVER
-   * Analyzes a sheet with standard headers and returns a mapping of internal keys
-   * to their current column indices (0-based).
-   */
   resolveSchemaIndices: function (
-    sheet,
-    headerMap,
+    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    headerMap: Record<string, string>,
     headerRow = 2,
-    startCol = 1, // Start at Column A (Absolute Indexing)
+    startCol = 1,
   ) {
     if (!sheet) return {};
-
-    // Read a wide range of headers to be safe (up to 40 columns)
+    const sheetName = sheet.getName();
     const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
-    const resolved = {};
+    const resolved: Record<string, number> = {};
 
     Object.keys(headerMap).forEach((key) => {
       const targetLabel = headerMap[key].toLowerCase().trim();
       const idx = headers.findIndex(
-        (h) =>
+        (h: any) =>
           String(h || "")
             .toLowerCase()
             .trim() === targetLabel,
       );
-
       if (idx !== -1) {
         resolved[key] = idx;
       } else {
         console.warn(
-          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheet.getName()}.`,
+          `Dynamic Schema: Could not find column '${headerMap[key]}' in ${sheetName}. Verify header exists in Row ${headerRow}.`,
         );
       }
     });
-
     return resolved;
   },
 
-  /**
-   * ⚡ BOOT DYNAMIC SCHEMA
-   * Automatically updates the CONFIG.SCHEMA indices based on the actual sheet live layout.
-   */
   bootDynamicSchema: function () {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) return;
-
-    console.log("⚡ Booting Dynamic Schema Sync...");
-
+    console.info("⚡ Booting Dynamic Schema Sync...");
     const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
-    if (lbSheet) {
-      const resolvedLB = this.resolveSchemaIndices(
-        lbSheet,
-        CONFIG.SCHEMA.LB_HEADERS,
+    if (lbSheet)
+      Object.assign(
+        CONFIG.SCHEMA.LB,
+        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS, CONFIG.LAYOUT.DATA_START_ROW),
       );
-      Object.assign(CONFIG.SCHEMA.LB, resolvedLB);
+    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+    if (hhSheet)
+      Object.assign(
+        CONFIG.SCHEMA.HH,
+        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS, CONFIG.LAYOUT.DATA_START_ROW),
+      );
+    const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+    if (dbSheet)
+      Object.assign(
+        CONFIG.SCHEMA.DB,
+        this.resolveSchemaIndices(dbSheet, CONFIG.SCHEMA.DB_HEADERS, CONFIG.LAYOUT.DATA_START_ROW, 2),
+      );
+  },
+  /**
+   * 🛡️ ROBUST PROPERTY RESOLVER
+   * Ingests an object and returns the first matching value from a list of priority keys.
+   */
+  resolveProperty: function (obj, priorityKeys, fallback = 0) {
+    if (!obj || typeof obj !== "object") return fallback;
+    for (const key of priorityKeys) {
+      if (obj[key] !== undefined && obj[key] !== null) return obj[key];
+    }
+    return fallback;
+  },
+
+  /**
+   * ⚔️ UNIFIED WAR FAME RESOLVER
+   * Standardized across Service, Logger, Leaderboard, and Recruiter.
+   * Logic: Uses truthy check to skip 0/undefined/null and find the first active field.
+   */
+  resolveWarFame: function (p) {
+    if (!p || typeof p !== "object") return 0;
+    return (
+      Number(
+        p.fame || p.medals || p.periodPoints || p.repairPoints || 0
+      )
+    );
+  },
+
+  /**
+   * 🕰️ WAR PHASE HEURISTIC (Single Source of Truth)
+   * Determines the War Day based on the deterministic Monday 10:00 UTC cycle.
+   */
+  getWarPhaseFromDate: function (date, snapshot, options = {}) {
+    const RESET_H = 10; // 10:00 UTC
+    let utcDay = date.getUTCDay(); // 0=Sun, 1=Mon, ...
+
+    // 🛡️ MODE A: High-Precision (Game Clock Aware)
+    // Used for Live Logging & Participation Logic.
+    if (!options.forceCalendarDay) {
+        const reset = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            RESET_H,
+            0,
+            0,
+          ),
+        );
+
+        if (date.getTime() < reset.getTime()) {
+          utcDay = (utcDay + 6) % 7;
+        }
+    } 
+    // 🛡️ MODE B: Calendar-Consistent (Audit Mode)
+    // Used for Repair/Historical Audits where "Monday" means "Monday".
+    else {
+        // Construct a safe "Noon" representation of the LOCAL date to ensure proper day index
+        // This handles cases where local midnight is previous-day UTC
+        const localBasedUTC = new Date(Date.UTC(
+            date.getFullYear(), 
+            date.getMonth(), 
+            date.getDate(), 
+            12, 0, 0
+        ));
+        utcDay = localBasedUTC.getUTCDay();
     }
 
-    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-    if (hhSheet) {
-      const resolvedHH = this.resolveSchemaIndices(
-        hhSheet,
-        CONFIG.SCHEMA.HH_HEADERS,
-      );
-      Object.assign(CONFIG.SCHEMA.HH, resolvedHH);
+    // 🛡️ DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
+    if (snapshot && snapshot.protocol) {
+      const snapDate = new Date(snapshot.meta.timestamp);
+      // Compare calendar dates (YYYY-MM-DD)
+      const isSameDate = snapDate.getUTCDate() === date.getUTCDate() && 
+                         snapDate.getUTCMonth() === date.getUTCMonth() &&
+                         snapDate.getUTCFullYear() === date.getUTCFullYear();
+      
+      if (isSameDate) {
+        return {
+          rawDay: snapshot.schedule.day - 1, // Snapshot day is 1-based
+          isTraining: snapshot.protocol.phase === "TRIAL",
+          isBattle: snapshot.protocol.phase !== "TRIAL",
+          phase: snapshot.protocol.phase,
+        };
+      }
     }
+
+    // 🛡️ HEURISTIC FALLBACK (Corrected Mapping)
+    // Shift: Mon(1) -> 0, Tue(2) -> 1, Wed(3) -> 2 (Training)
+    // Thu(4) -> 3, Fri(5) -> 4, Sat(6) -> 5, Sun(0) -> 6 (Battle)
+    const rawDay = (utcDay + 6) % 7;
+
+    return {
+      rawDay: rawDay,
+      isTraining: rawDay <= 2,
+      isBattle: rawDay >= 3,
+      phase: rawDay <= 2 ? "TRIAL" : "ENGAGEMENT",
+    };
   },
 };
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Utils;
+}
+
+/**
+ * 🌍 GLOBAL BRIDGE
+ */
+Object.assign(this as any, { Utils, VER_UTILITIES });
+
+export default Utils;

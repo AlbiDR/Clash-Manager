@@ -63,21 +63,30 @@ export function useConnectionStatus() {
     // 1. Physical Offline
     if (!isOnline.value) return "offline";
 
-    // 2. API Offline (only if strictly offline, 'stale' is considered online-ish)
-    if (apiStatus.value === "offline") return "offline";
+    // 2. API Offline
+    if (apiStatus.value === "offline" || apiStatus.value === "unconfigured") return "offline";
 
     // 3. Success State (Visual Priority)
-    // We show success even if syncing is starting again to ensure the user sees the green flash
     if (isSuccessFading.value) return "success-resolve";
 
-    // 4. Checking / Syncing
-    if (isSyncing.value || apiStatus.value === "checking") return "syncing";
+    // 4. Checking / Waking / Stale / Active Syncing
+    // We treat all "in-progress" or "recovering" states as syncing
+    if (
+      isSyncing.value || 
+      apiStatus.value === "checking" || 
+      apiStatus.value === "waking" || 
+      apiStatus.value === "stale"
+    ) {
+      return "syncing";
+    }
 
     // 5. Slow Network
     if (isSlowConnection.value) return "slow";
 
-    // 6. Default Online
-    return "online";
+    // 6. Default Online (Only if strictly online)
+    if (apiStatus.value === "online") return "online";
+
+    return "syncing"; // Default to syncing if we're in an unknown intermediate state
   });
 
   return {

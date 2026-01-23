@@ -1,0 +1,18 @@
+
+{
+  "name": "clash-manager-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "pnpm run deploy:gas",
+    "deploy:gas": "pnpm --filter clash-manager-backend deploy",
+    "deploy:pwa": "pnpm --filter clash-manager-pwa build",
+    "dev:pwa": "pnpm --filter clash-manager-pwa dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "fix:gitignore": "git rm -r --cached . && git add ."
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

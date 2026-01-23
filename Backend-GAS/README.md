@@ -8,14 +8,17 @@ The **Data Processing Core**. A lean, modular Google Apps Script engine that orc
 
 ## Module Architecture
 
-| Module | Filename | Responsibility |
-| :--- | :--- | :--- |
-| **Public API** | `API_Public.js` | Routing, handshake, and error handling |
-| **Controller** | `Controller_Webapp.js` | Payload generation, compression, and caching |
-| **Leaderboard** | `Leaderboard.js` | History aggregation and normalization logic |
-| **Scoring** | `ScoringSystem.js` | Canonical performance algorithms and decay logic |
-| **Scanning** | `Recruiter.js` | Tournament scanning and candidate identification |
-| **Constants** | `Configuration.js` | Weights, thresholds, and schema definitions |
+| Module         | Filename               | Responsibility                                    |
+| :------------- | :--------------------- | :------------------------------------------------ |
+| **Constants**  | `Configuration.ts`     | Weights, thresholds, and schema definitions       |
+| **Utilities**  | `Utilities.ts`         | Shared helper library, API engine, and week logic |
+| **Logic**      | `ScoringSystem.ts`     | Canonical performance algorithms and decay logic  |
+| **Scrutiny**   | `Logger.ts`            | Data persistence, rolling history, and cleanup    |
+| **Ranking**    | `Leaderboard.ts`       | History aggregation and normalization logic       |
+| **Scanning**   | `Recruiter.ts`         | Tournament scanning and candidate identification  |
+| **Control**    | `Orchestrator.ts`      | Automation triggers and master execution protocol |
+| **Public API** | `API_Public.ts`        | Routing, handshake, and error handling            |
+| **Controller** | `Controller_Webapp.ts` | Payload generation, compression, and caching      |
 
 ---
 
@@ -33,9 +36,9 @@ Set the following **Project Script Properties** in the Apps Script Editor (`Proj
 
 To enable automated deployments via GitHub Actions, you must configure the following **Repository Secrets** (`Settings > Secrets and variables > Actions`):
 
-| Secret Name    | Description                                                                 |
-| :------------- | :-------------------------------------------------------------------------- |
-| `SCRIPT_ID`    | The Script ID found in **Apps Script > Project Settings > Script ID**.      |
+| Secret Name    | Description                                                                     |
+| :------------- | :------------------------------------------------------------------------------ |
+| `SCRIPT_ID`    | The Script ID found in **Apps Script > Project Settings > Script ID**.          |
 | `CLASPRC_JSON` | The content of your local `~/.clasprc.json` file (after running `clasp login`). |
 
 ### Triggers
