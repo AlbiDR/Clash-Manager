@@ -15,7 +15,7 @@ import type { AppUtils } from "./Utilities";
 
 // Global Version Constant
 // @ts-ignore
-const VER_REPAIR_DB = "1.0.2"; // Mid-Day Alignment Fix
+const VER_REPAIR_DB = "1.0.3"; // Local Calendar Method Fix
 
 declare var CONFIG: any;
 declare var Utils: any;
@@ -83,13 +83,13 @@ function repairDatabase(): void {
     }
     scannedCount++;
 
-    // 🔬 MID-DAY ALIGNMENT: Force 12:00:00 UTC to ensure calendar-day consistency.
-    // This prevents early-morning logs (pre-10:00 UTC) from being skipped as "yesterday".
+    // 🔬 MID-DAY ALIGNMENT: Force 12:00:00 UTC using LOCAL calendar methods.
+    // This ensures that if a row says "Monday", it's treated as Monday regardless of UTC hour.
     const alignmentDate = new Date(
       Date.UTC(
-        dateObj.getUTCFullYear(),
-        dateObj.getUTCMonth(),
-        dateObj.getUTCDate(),
+        dateObj.getFullYear(),
+        dateObj.getMonth(),
+        dateObj.getDate(),
         12,
         0,
         0,
