@@ -8,16 +8,18 @@
  *    - Captures Daily Snapshots of Donations, Roles, Trophies, AND War Fame.
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
- * 🏷️ VERSION: 11.0.0
+ *    - ⚔️ WAR AWARE: Logs "N/A" for Fame during Training Days.
+ * 🏷️ VERSION: 12.0.0
  * ============================================================================
  */
 
 import type { AppConfig } from "./Configuration";
 import type { AppUtils } from "./Utilities";
+import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
 // @ts-ignore
-const VER_LOGGER = "11.0.0";
+const VER_LOGGER = "12.0.0";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
@@ -50,6 +52,7 @@ declare namespace GoogleAppsScript {
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Utils: AppUtils;
+declare function getWarSnapshot(): WarSnapshot;
 
 /**
  * 📊 ETL INTERFACE
@@ -99,6 +102,19 @@ function updateClanDatabase(): void {
       return;
     }
 
+    // ⚔️ WAR INTELLIGENCE CHECK
+    let isWarDay = false;
+    try {
+        const warSnap = getWarSnapshot();
+        // Log "N/A" if we are in TRIAL phase (Training Days)
+        // Log Numeric Fame if we are in ENGAGEMENT or COLOSSEUM (Battle Days)
+        isWarDay = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
+        Logger.log(`[ETL] War Phase: ${warSnap.protocol.phase} | Logging Fame: ${isWarDay}`);
+    } catch (e) {
+        console.warn("Could not fetch War Snapshot, defaulting to Numeric Logging.");
+        isWarDay = true; // Fallback to safe behavior
+    }
+
     const activeMembers = membersData.items as ClanMemberSnapshot[];
     const activeTags = new Set(activeMembers.map((m) => m.tag));
 
@@ -106,7 +122,7 @@ function updateClanDatabase(): void {
     const warFameMap = new Map<string, number>();
     if (raceData && raceData.clan && raceData.clan.participants) {
       raceData.clan.participants.forEach((p: any) => {
-        const val = p.fame || p.medals || p.repairPoints || 0;
+        const val = p.fame || p.medals || p.periodPoints || 0;
         warFameMap.set(p.tag, val);
       });
     }
@@ -151,7 +167,7 @@ function updateClanDatabase(): void {
     pruneStaleData(sheet, activeTags);
 
     // 📥 STEP 2: SMART MERGE TODAY'S DATA
-    upsertDailySnapshots(sheet, activeMembers, warFameMap, HEADER);
+    upsertDailySnapshots(sheet, activeMembers, warFameMap, HEADER, isWarDay);
 
     console.timeEnd("ETL");
   } catch (e: any) {
@@ -240,6 +256,7 @@ function upsertDailySnapshots(
   activeMembers: ClanMemberSnapshot[],
   warFameMap: Map<string, number>,
   headerRow: string[],
+  isWarDay: boolean,
 ): void {
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
   const S_DB = CONFIG.SCHEMA.DB;
@@ -311,7 +328,12 @@ function upsertDailySnapshots(
   const newRowsToAppend: any[][] = [];
 
   activeMembers.forEach((m) => {
-    const warFame = warFameMap.get(m.tag) || 0;
+    let warFame: string | number = warFameMap.get(m.tag) || 0;
+    
+    // ⚔️ SMART LOGGING: Force "N/A" if checking during Non-War Days
+    if (!isWarDay) {
+        warFame = "N/A";
+    }
 
     if (existingMap.has(m.tag)) {
       const idx = existingMap.get(m.tag)!;
@@ -384,9 +406,12 @@ function upsertDailySnapshots(
     sheet
       .getRange(sRow, 2 + S_DB.LAST_SEEN, dataRowCount, 1)
       .setNumberFormat("yyyy-mm-dd hh:mm:ss");
+      
+    // ⚠️ CRITICAL: Do NOT force number format on War Fame column if it contains strings
+    // We leave it as Automatic (or text compatible) to support "N/A"
     sheet
       .getRange(sRow, 2 + S_DB.WAR_FAME, dataRowCount, 1)
-      .setNumberFormat("0");
+      .setNumberFormat("@"); // Force Text/Automatic to prevent "0" coercion
   }
 }
 
