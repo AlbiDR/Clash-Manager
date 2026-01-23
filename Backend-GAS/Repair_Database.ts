@@ -76,6 +76,11 @@ function repairDatabase(): void {
     }
     scannedCount++;
 
+    // 🐛 DEBUG DATE for first 5 rows
+    if (i < 5) {
+      Logger.log(`[DEBUG] Row ${i}: RawDate='${rawDate}' Type=${typeof rawDate} Parsed=${dateObj}`);
+    }
+
     // 🔬 HEURISTIC CHECK
     const phaseInfo = Utils.getWarPhaseFromDate(dateObj);
 
