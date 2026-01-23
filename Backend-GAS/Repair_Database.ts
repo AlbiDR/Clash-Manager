@@ -15,7 +15,7 @@ import type { AppUtils } from "./Utilities";
 
 // Global Version Constant
 // @ts-ignore
-const VER_REPAIR_DB = "1.0.0";
+const VER_REPAIR_DB = "1.0.1"; // Bumped for Force-Refresh
 
 declare var SpreadsheetApp: any;
 declare var Logger: any;
@@ -116,7 +116,24 @@ function repairDatabase(): void {
   SpreadsheetApp.flush();
 }
 
+function diagnosticDump(): void {
+  Utils.bootDynamicSchema();
+  const H = CONFIG.SCHEMA.DB;
+  Logger.log(`[DIAGNOSTIC] DB Sheet: ${CONFIG.SHEETS.DB}`);
+  Logger.log(`[DIAGNOSTIC] Schema Indices: DATE=${H.DATE} | FAME=${H.WAR_FAME}`);
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+  if (!sheet) { Logger.log("❌ DB Sheet not found."); return; }
+  
+  const headers = sheet.getRange(2, 1, 1, 20).getValues()[0];
+  Logger.log(`[DIAGNOSTIC] Row 2 Headers: ${JSON.stringify(headers)}`);
+  
+  const sample = sheet.getRange(3, 1, 1, 20).getValues()[0];
+  Logger.log(`[DIAGNOSTIC] Row 3 Sample: ${JSON.stringify(sample)}`);
+}
+
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { repairDatabase, VER_REPAIR_DB });
+Object.assign(this as any, { repairDatabase, diagnosticDump, VER_REPAIR_DB });
