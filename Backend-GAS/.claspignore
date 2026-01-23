@@ -9,3 +9,4 @@ node_modules
 # Explicitly whitelist the file types we WANT to upload
 !appsscript.json
 !*.gs
+SharedTypes.gs
