@@ -58,7 +58,7 @@ export interface INetwork {
   fetchPublicJson(type: "members" | "warlog"): any[] | null;
   auditKeysRemote(keys: Array<{ name: string; value: string }>): Array<{ name: string; success: boolean; error?: string }> | null;
   scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring?: ScoringWeights | null): any[];
-  remoteWorkerHealthy(): boolean;
+  remoteWorkerHealthy(force?: boolean): boolean;
   getRemainingQuota(): number;
   getLastWorkerError(): string;
   _clearCache(): void;
@@ -413,22 +413,23 @@ var Network: INetwork = {
     return null;
   },
 
-  remoteWorkerHealthy() {
+  remoteWorkerHealthy(force: boolean = false) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return false;
     
-    // Check execution cache
-    if (_EXECUTION_CACHE.has("worker_health")) return _EXECUTION_CACHE.get("worker_health");
+    // 1. Check execution cache (Skip if force)
+    if (!force && _EXECUTION_CACHE.has("worker_health")) return _EXECUTION_CACHE.get("worker_health");
 
-    // Check Store cache
+    // 2. Check Store cache (Skip if force)
     const now = Date.now();
     try {
-      if (typeof PropertiesService !== "undefined") {
+      if (!force && typeof PropertiesService !== "undefined") {
         const cached = Registry.Services.Store.props.getJSON(
           NETWORK_CONFIG.KEYS.WORKER_HEALTH,
           null,
-        ) as { status: boolean; time: number } | null;
+        ) as { status: boolean; time: number; error?: string } | null;
         if (cached && now - cached.time < 300000) { // 5 min TTL
             _EXECUTION_CACHE.set("worker_health", cached.status);
+            _LAST_WORKER_ERROR = cached.error || "";
             return cached.status;
         }
       }
@@ -466,11 +467,12 @@ var Network: INetwork = {
         console.warn(`[Network] Worker Reachability Error: ${e}`); 
     }
 
-    // Persist
+    // Persist (Atomic Cache Sync)
     _EXECUTION_CACHE.set("worker_health", isHealthy);
     Registry.Services.Store.props.setJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, {
       status: isHealthy,
       time: now,
+      error: _LAST_WORKER_ERROR
     });
     
     return isHealthy;
