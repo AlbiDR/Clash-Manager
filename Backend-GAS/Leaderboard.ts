@@ -26,6 +26,8 @@ declare var PropertiesService: any;
 declare var UrlFetchApp: any;
 declare var CacheService: any;
 declare var ContentService: any;
+declare function scoutRecruits(): void;
+declare function refreshWebPayload(): void;
 declare var Utilities: any;
 declare var ScriptApp: any;
 declare var Logger: any;

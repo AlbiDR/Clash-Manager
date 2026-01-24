@@ -56,6 +56,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Registry: IRegistry;
 declare function getWarSnapshot(): WarSnapshot;
+declare function refreshWebPayload(): void;
 
 /**
  * 📊 ETL INTERFACE
