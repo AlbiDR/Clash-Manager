@@ -448,8 +448,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
   Registry.Services.View.applyStandardLayout(
     lbSheet,
     finalRows.length,
-    HEADERS_ARRAY.length - 1,
-    HEADERS_ARRAY.slice(1),
+    HEADERS_ARRAY.length,
+    HEADERS_ARRAY,
   );
 
   // No changes to preparation logic.
