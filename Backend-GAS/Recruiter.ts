@@ -694,71 +694,56 @@ function renderHeadhunterView(
     const sheetId = sheet.getSheetId();
     const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
 
-    const dataRange = sheet.getRange(
-      CONFIG.LAYOUT.DATA_START_ROW,
-      2,
-      rows.length,
-      rows[0].length,
-    );
-    dataRange.setValues(rows);
+    // 1. DATA DELIVERY (USER_ENTERED)
+    Sheets.Spreadsheets!.Values!.update({
+      values: rows
+    }, ssId, `'${sheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, {
+      valueInputOption: "USER_ENTERED"
+    });
 
-    // 🏗️ ATOMIC RECRUITER DELIVERY (API Sprint)
+    // 2. ATOMIC UI (Formatting & Checkboxes)
     const requests: any[] = [
-      // 1. BATCH CONDITIONAL FORMATTING gradient
+      // Checkboxes (Column 2 relative to start column B, so Column B is dimension 1)
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.INVITED, endColumnIndex: CONFIG.SCHEMA.HH.INVITED + 1 },
+          cell: { dataValidation: { condition: { type: "BOOLEAN" } } },
+          fields: "dataValidation"
+        }
+      },
+      // Gradient Rule
       {
         addConditionalFormatRule: {
           rule: {
-            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: 1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE - 1, endColumnIndex: 1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE }],
+            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 }],
             gradientRule: {
               minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
-              midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" }, // #fff2cc
-              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" } // #6aa84f
+              midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" },
+              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" }
             }
           },
           index: 0
+        }
+      },
+      // Number Formats (Percentage)
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 },
+          cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
+          fields: "userEnteredFormat.numberFormat"
+        }
+      },
+      // Number Formats (Date)
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1 },
+          cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "yyyy-mm-dd HH:mm:ss" } } },
+          fields: "userEnteredFormat.numberFormat"
         }
       }
     ];
 
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-
-    // 🛡️ CHECKBOX PRECISION: Clear all validations in potential target range first
-    sheet.getRange(startIdx + 1, 1 + CONFIG.SCHEMA.HH.INVITED, CONFIG.HEADHUNTER.TARGET, 1).setDataValidation(null);
-
-    if (rows.length > 0) {
-      sheet
-        .getRange(
-          CONFIG.LAYOUT.DATA_START_ROW,
-          1 + CONFIG.SCHEMA.HH.INVITED,
-          rows.length,
-          1,
-        )
-        .insertCheckboxes();
-    }
-    sheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
-        rows.length,
-        1,
-      )
-      .setNumberFormat('0"%"');
-    sheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        1 + CONFIG.SCHEMA.HH.RAW_SCORE,
-        rows.length,
-        1,
-      )
-      .setNumberFormat("@");
-    sheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        1 + CONFIG.SCHEMA.HH.FOUND_DATE,
-        rows.length,
-        1,
-      )
-      .setNumberFormat("yyyy-mm-dd HH:mm:ss");
   }
 
   sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);

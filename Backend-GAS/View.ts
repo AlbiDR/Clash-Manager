@@ -132,25 +132,35 @@ var View: IView = {
     this.drawMobileCheckbox(sheet);
 
     if (contentCols > 0) {
+      // Dimension updates (Widths)
       sheet.setColumnWidths(2, contentCols, 100);
+
+      requests.push(
+        // Status Bar (Row 1Merge replacement)
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
+            fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
+          }
+        },
+        // Table Alignment
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+            cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
+            fields: "userEnteredFormat.horizontalAlignment"
+          }
+        }
+      );
+      
+      // Merge Status Bar
       sheet.getRange(1, 1, 1, totalCols).breakApart();
-      sheet
-        .getRange(1, 2, 1, contentCols)
-        .merge()
-        .setHorizontalAlignment("left")
-        .setFontWeight("bold")
-        .setFontColor("#888888");
-
-      const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
-      tableRange.getBandings().forEach((b: GoogleAppsScript.Spreadsheet.Banding) => b.remove());
-      tableRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
-
-      const headerRange = sheet.getRange(2, 2, 1, contentCols);
-      if (Array.isArray(optHeaders) && optHeaders.length > 0) headerRange.setValues([optHeaders]);
-      headerRange.setFontWeight("bold").setHorizontalAlignment("center").setWrap(true);
-
-      if (contentRows > 0) {
-        sheet.getRange(L.DATA_START_ROW, 2, contentRows, contentCols).setHorizontalAlignment("center").setWrap(false);
+      sheet.getRange(1, 2, 1, contentCols).merge();
+      
+      // Update Headers manually if passed (Legacy bridge for dynamic content)
+      if (Array.isArray(optHeaders) && optHeaders.length > 0) {
+         sheet.getRange(2, 2, 1, contentCols).setValues([optHeaders]);
       }
     }
     sheet.setHiddenGridlines(true);

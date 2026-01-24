@@ -415,7 +415,14 @@ function upsertDailySnapshots(
   // 4. Commit Updates
   if (updatesMade && todayDataRange) {
     console.log(`ETL: Updating ${processedTags.size} records for ${todayStr}.`);
-    todayDataRange.setValues(todayValues);
+    const ssId = sheet.getParent().getId();
+    const sheetName = sheet.getName();
+    
+    Sheets.Spreadsheets!.Values!.update({
+      values: todayValues
+    }, ssId, `'${sheetName}'!B${todayDataRange.getRow()}`, {
+      valueInputOption: "USER_ENTERED"
+    });
   }
 
   // 5. Commit Appends
