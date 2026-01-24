@@ -145,11 +145,15 @@ function updateClanDatabase(): void {
 
     // Ensure Header exists
     if (sheet.getLastRow() < 1) {
-      sheet
-        .getRange(2, 2, 1, HEADER.length)
-        .setValues([HEADER])
-        .setFontWeight("bold")
-        .setWrap(true);
+      const ssId = ss.getId();
+      const sheetName = sheet.getName();
+      Sheets.Spreadsheets!.Values!.update({
+        values: [HEADER]
+      }, ssId, `'${sheetName}'!B2`, {
+        valueInputOption: "USER_ENTERED"
+      });
+      
+      sheet.getRange(2, 2, 1, HEADER.length).setFontWeight("bold").setWrap(true);
     }
 
     // 🛡️ SCHEMA MIGRATION: Ensure enough columns

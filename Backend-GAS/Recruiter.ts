@@ -192,33 +192,53 @@ function scoutRecruits(): void {
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
   if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    const ssId = ss.getId();
+    const sheetName = lbSheet.getName();
     const L = CONFIG.SCHEMA.LB;
-    const lbData = lbSheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        1,
-        lbSheet.getLastRow() - CONFIG.LAYOUT.DATA_START_ROW + 1,
-        20,
-      )
-      .getValues();
+    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+    const lastRow = lbSheet.getLastRow();
+    
+    // 🏗️ HYBRID BENCHMARKING (API Sprint: Selective Column Ingestion)
+    const perfCol = String.fromCharCode(65 + L.PERF_SCORE);
+    const trophiesCol = String.fromCharCode(65 + L.TROPHIES);
+    const donCol = String.fromCharCode(65 + L.TOTAL_DON);
+    const winsCol = String.fromCharCode(65 + L.WAR_DAY_WINS);
+    const historyCol = String.fromCharCode(65 + L.HISTORY);
 
-    lbData.forEach((row: any) => {
-      const perf = Number(row[L.PERF_SCORE]) || 0;
-      if (perf >= 50) {
-        const histStr = String(row[L.HISTORY] || "");
-        const currentWk = Registry.Services.Time.calculateWarWeekId(new Date());
-        const hasRecentWar = histStr.includes(currentWk);
+    const ranges = [
+      `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
+      `'${sheetName}'!${trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
+      `'${sheetName}'!${donCol}${startRow}:${donCol}${lastRow}`,
+      `'${sheetName}'!${winsCol}${startRow}:${winsCol}${lastRow}`,
+      `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`
+    ];
+    
+    const response = Sheets.Spreadsheets!.Values!.batchGet(ssId, { ranges });
+    if (response.valueRanges) {
+      const perfs = response.valueRanges[0].values || [];
+      const trophies = response.valueRanges[1].values || [];
+      const dons = response.valueRanges[2].values || [];
+      const wins = response.valueRanges[3].values || [];
+      const histories = response.valueRanges[4].values || [];
 
-        const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
-          Number(row[L.TROPHIES]) || 0,
-          Number(row[L.TOTAL_DON]) || 0,
-          Number(row[L.WAR_DAY_WINS]) || 0,
-          hasRecentWar,
-          CONFIG.HEADHUNTER.WEIGHTS,
-        );
-        clanEliteData.push({ rawScore: raw, perfScore: perf });
+      for (let i = 0; i < perfs.length; i++) {
+        const perf = Number(perfs[i] ? perfs[i][0] : 0);
+        if (perf >= 50) {
+          const histStr = String(histories[i] ? histories[i][0] : "");
+          const currentWk = Registry.Services.Time.calculateWarWeekId(new Date());
+          const hasRecentWar = histStr.includes(currentWk);
+
+          const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
+            Number(trophies[i] ? trophies[i][0] : 0),
+            Number(dons[i] ? dons[i][0] : 0),
+            Number(wins[i] ? wins[i][0] : 0),
+            hasRecentWar,
+            CONFIG.HEADHUNTER.WEIGHTS
+          );
+          clanEliteData.push({ rawScore: raw, perfScore: perf });
+        }
       }
-    });
+    }
   }
 
   const finalBenchmark = Registry.Services.ScoringSystem.calculateHybridBenchmark(
@@ -624,7 +644,7 @@ function renderHeadhunterView(
   const rows = list.map((c) => [
     c.tag,
     c.invited,
-    `=HYPERLINK("clashroyale://playerInfo?id=${c.tag.replace("#", "")}", "${c.name}")`,
+    c.name, // Unified Rich-Text Anchor
     c.trophies,
     c.donations,
     c.cards,
@@ -640,7 +660,11 @@ function renderHeadhunterView(
     .setFontWeight("bold")
     .setWrap(true);
 
-  if (rows.length > 0) {
+    if (rows.length > 0) {
+    const ssId = sheet.getParent().getId();
+    const sheetId = sheet.getSheetId();
+    const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
+
     const dataRange = sheet.getRange(
       CONFIG.LAYOUT.DATA_START_ROW,
       2,
@@ -648,6 +672,42 @@ function renderHeadhunterView(
       rows[0].length,
     );
     dataRange.setValues(rows);
+
+    // 🏗️ ATOMIC RECRUITER DELIVERY (API Sprint)
+    const requests: any[] = [
+      // 1. HYPERLINK TRANSFORMATION (RichText runs)
+      ...list.map((c, i) => ({
+        updateCells: {
+          rows: [{
+            values: [{
+              userEnteredValue: { stringValue: c.name },
+              textFormatRuns: [{
+                startIndex: 0,
+                format: { link: { uri: `clashroyale://playerInfo?id=${c.tag.replace("#", "")}` } }
+              }]
+            }]
+          }],
+          fields: "userEnteredValue,textFormatRuns",
+          range: { sheetId, startRowIndex: startIdx + i, endRowIndex: startIdx + i + 1, startColumnIndex: 1 + CONFIG.SCHEMA.HH.NAME - 1, endColumnIndex: 1 + CONFIG.SCHEMA.HH.NAME }
+        }
+      })),
+      // 2. BATCH CONDITIONAL FORMATTING gradient
+      {
+        addConditionalFormatRule: {
+          rule: {
+            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: 1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE - 1, endColumnIndex: 1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE }],
+            gradientRule: {
+              minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
+              midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" }, // #fff2cc
+              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" } // #6aa84f
+            }
+          },
+          index: 0
+        }
+      }
+    ];
+
+    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
 
     sheet
       .getRange(
@@ -681,33 +741,6 @@ function renderHeadhunterView(
         1,
       )
       .setNumberFormat("yyyy-mm-dd HH:mm:ss");
-
-    const rule = SpreadsheetApp.newConditionalFormatRule()
-      .setGradientMinpointWithValue(
-        "#ffffff",
-        SpreadsheetApp.InterpolationType.NUMBER,
-        "0",
-      )
-      .setGradientMidpointWithValue(
-        "#fff2cc",
-        SpreadsheetApp.InterpolationType.NUMBER,
-        "50",
-      )
-      .setGradientMaxpointWithValue(
-        "#6aa84f",
-        SpreadsheetApp.InterpolationType.NUMBER,
-        "100",
-      )
-      .setRanges([
-        sheet.getRange(
-          CONFIG.LAYOUT.DATA_START_ROW,
-          1 + CONFIG.SCHEMA.HH.POTENTIAL_SCORE,
-          rows.length,
-          1,
-        ),
-      ])
-      .build();
-    sheet.setConditionalFormatRules([rule]);
   }
 
   sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);

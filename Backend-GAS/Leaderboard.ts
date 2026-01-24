@@ -406,8 +406,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
 
     const row = new Array(17).fill("");
     row[L.TAG] = r.member.tag;
-    row[L.NAME] =
-      `=HYPERLINK("${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${r.member.tag.replace("#", "")}", "${r.member.name}")`;
+    row[L.NAME] = r.member.name; // Unified Rich-Text Anchor
     row[L.ROLE] = r.member.role;
     row[L.TROPHIES] = r.trophies;
     row[L.DAYS] = r.daysTracked;
@@ -442,81 +441,96 @@ function updateLeaderboard(dryRun: boolean = false): void {
     HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.LB_HEADERS[k];
   });
 
+  const ssId = ss.getId();
+  const sheetName = lbSheet.getName();
+
   lbSheet.clear();
-  lbSheet
-    .getRange(2, 1, 1, HEADERS_ARRAY.length)
-    .setValues([HEADERS_ARRAY])
-    .setFontWeight("bold");
+  Sheets.Spreadsheets!.Values!.update({
+    values: [HEADERS_ARRAY]
+  }, ssId, `'${sheetName}'!A2`, {
+    valueInputOption: "USER_ENTERED"
+  });
+  lbSheet.getRange(2, 1, 1, HEADERS_ARRAY.length).setFontWeight("bold");
 
   if (finalRows.length > 0) {
-    lbSheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        1,
-        finalRows.length,
-        HEADERS_ARRAY.length,
-      )
-      .setValues(finalRows);
+    const dataRange = lbSheet.getRange(
+      CONFIG.LAYOUT.DATA_START_ROW,
+      1,
+      finalRows.length,
+      HEADERS_ARRAY.length,
+    );
+    dataRange.setValues(finalRows);
 
-    const scoreColIndex = 1 + L.PERF_SCORE;
-    lbSheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        scoreColIndex,
-        finalRows.length,
-        1,
-      )
+    const ssId = ss.getId();
+    const sheetId = lbSheet.getSheetId();
+    const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
+    const endIdx = startIdx + finalRows.length;
+
+    // 🏗️ ATOMIC LEADERBOARD DELIVERY (API Sprint)
+    const requests: any[] = [
+      // 1. SERVER-SIDE SORT (Performance Column descending)
+      {
+        sortRange: {
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 0, endColumnIndex: HEADERS_ARRAY.length },
+          sortSpecs: [{ dimensionIndex: L.PERF_SCORE, sortOrder: "DESCENDING" }]
+        }
+      },
+      // 2. HYPERLINK TRANSFORMATION (RichText runs)
+      ...finalRows.map((r, i) => ({
+        updateCells: {
+          rows: [{
+            values: [{
+              userEnteredValue: { stringValue: r[L.NAME] },
+              textFormatRuns: [{
+                startIndex: 0,
+                format: { link: { uri: `${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${r[L.TAG].replace("#", "")}` } }
+              }]
+            }]
+          }],
+          fields: "userEnteredValue,textFormatRuns",
+          range: { sheetId, startRowIndex: startIdx + i, endRowIndex: startIdx + i + 1, startColumnIndex: L.NAME, endColumnIndex: L.NAME + 1 }
+        }
+      })),
+      // 3. BATCH CONDITIONAL FORMATTING rules
+      {
+        addConditionalFormatRule: {
+          rule: {
+            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 }],
+            gradientRule: {
+              minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
+              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" } // #6aa84f
+            }
+          },
+          index: 0
+        }
+      }
+    ];
+
+    // Add Trend indicators to Registry Sprint
+    [
+      { color: { red: 0.18, green: 0.49, blue: 0.19 }, criteria: "NUMBER_GREATER", values: ["0"] },
+      { color: { red: 0.77, green: 0.15, blue: 0.15 }, criteria: "NUMBER_LESS", values: ["0"] }
+    ].forEach((cfg, idx) => {
+      requests.push({
+        addConditionalFormatRule: {
+          rule: {
+            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.TREND, endColumnIndex: L.TREND + 1 }],
+            booleanRule: {
+              condition: { type: cfg.criteria, values: [{ userEnteredValue: cfg.values[0] }] },
+              format: { textFormat: { foregroundColor: cfg.color, bold: true } }
+            }
+          },
+          index: idx + 1
+        }
+      });
+    });
+
+    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+    
+    // Cleanup/Formatting runs for Score Column (Manual percentage)
+    lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 1 + L.PERF_SCORE, finalRows.length, 1)
       .setFontWeight("bold")
       .setNumberFormat('0"%"');
-
-    const rule = SpreadsheetApp.newConditionalFormatRule()
-      .setGradientMinpointWithValue(
-        "#ffffff",
-        SpreadsheetApp.InterpolationType.NUMBER,
-        "0",
-      )
-      .setGradientMaxpointWithValue(
-        "#6aa84f",
-        SpreadsheetApp.InterpolationType.NUMBER,
-        "100",
-      )
-      .setRanges([
-        lbSheet.getRange(
-          CONFIG.LAYOUT.DATA_START_ROW,
-          scoreColIndex,
-          finalRows.length,
-          1,
-        ),
-      ])
-      .build();
-
-    const trendColIndex = 1 + L.TREND;
-    const trendRange = lbSheet.getRange(
-      CONFIG.LAYOUT.DATA_START_ROW,
-      trendColIndex,
-      finalRows.length,
-      1,
-    );
-
-    const trendPos = SpreadsheetApp.newConditionalFormatRule()
-      .whenNumberGreaterThan(0)
-      .setFontColor("#2e7d32")
-      .setBold(true)
-      .setRanges([trendRange])
-      .build();
-    const trendNeg = SpreadsheetApp.newConditionalFormatRule()
-      .whenNumberLessThan(0)
-      .setFontColor("#c62828")
-      .setBold(true)
-      .setRanges([trendRange])
-      .build();
-    const trendNeu = SpreadsheetApp.newConditionalFormatRule()
-      .whenNumberEqualTo(0)
-      .setFontColor("#cccccc")
-      .setRanges([trendRange])
-      .build();
-
-    lbSheet.setConditionalFormatRules([rule, trendPos, trendNeg, trendNeu]);
   }
 
   lbSheet
