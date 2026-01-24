@@ -110,9 +110,10 @@ export interface RaceParticipant {
 
 /**
  * ⚡ MAIN ENTRY: Update Leaderboard
- * Calculates player rankings and momentum.
+ * Calculates scores, ranks players, and updates the sheet.
  */
-function updateLeaderboard(): void {
+function updateLeaderboard(dryRun: boolean = false): void {
+  console.time("LEADERBOARD_UPDATE");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);

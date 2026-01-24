@@ -223,7 +223,21 @@ const Network: INetwork = {
               continue; // Retry as local immediately
             }
           } else {
-            responses = UrlFetchApp.fetchAll(requests);
+            let localResponses: any[] = [];
+            try {
+              localResponses = UrlFetchApp.fetchAll(requests);
+            } catch (e: any) {
+              console.warn(`[Network] Batch failed: ${e.message}. Retrying...`);
+              Utilities.sleep(1500);
+              try {
+                localResponses = UrlFetchApp.fetchAll(requests);
+              } catch (e2) {
+                console.error("[Network] Retry failed.");
+                // If retry fails, treat all items in this chunk as failed
+                localResponses = chunk.map(() => ({ getResponseCode: () => 500, getContentText: () => "" }));
+              }
+            }
+            responses = localResponses;
           }
 
           let retryChunk = false;

@@ -32,6 +32,10 @@ export interface ISchema {
   ): Record<string, number>;
 }
 
+const SchemaInternal = {
+  _cache: new Map<string, Record<string, number>>()
+};
+
 const Schema: ISchema = {
   
   resolveSchemaIndices: function (
@@ -42,6 +46,12 @@ const Schema: ISchema = {
   ) {
     if (!sheet) return {};
     const sheetName = sheet.getName();
+    const cacheKey = `${sheetName}:${headerRow}:${startCol}:${Object.keys(headerMap).sort().join(',')}`;
+    
+    if (SchemaInternal._cache.has(cacheKey)) {
+        return SchemaInternal._cache.get(cacheKey)!;
+    }
+
     // Read headers safely
     const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
     const resolved: Record<string, number> = {};
@@ -62,6 +72,8 @@ const Schema: ISchema = {
         );
       }
     });
+    
+    SchemaInternal._cache.set(cacheKey, resolved);
     return resolved;
   },
 

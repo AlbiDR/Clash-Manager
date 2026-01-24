@@ -28,7 +28,7 @@ declare var getWarSnapshot: any;
 /**
  * 🛠️ MAIN REPAIR FUNCTION
  */
-function repairDatabase(): void {
+function repairDatabase(startDate?: Date): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
 
@@ -83,6 +83,10 @@ function repairDatabase(): void {
     if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
       continue;
     }
+    
+    // Optimization: Skip old rows if startDate provided
+    if (startDate && dateObj < startDate) continue;
+
     scannedCount++;
 
     // 🔬 DYNAMIC HEURISTIC CHECK (Uses snapshot grounding)
