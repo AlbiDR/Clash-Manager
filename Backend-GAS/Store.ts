@@ -70,7 +70,7 @@ export interface IStore {
 /* ==========================================================================
    INTERNAL HELPERS (The "Brain")
    ========================================================================== */
-const Internal = {
+const StoreInternal = {
   /**
    * Safe RegExp escaping
    */
@@ -221,9 +221,9 @@ const Store: IStore = {
   // ------------------------------------------------------------------------
   // UTILITIES
   // ------------------------------------------------------------------------
-  compress: Internal.compress,
-  decompress: Internal.decompress,
-  withLock: Internal.withLock,
+  compress: StoreInternal.compress,
+  decompress: StoreInternal.decompress,
+  withLock: StoreInternal.withLock,
 
   // ------------------------------------------------------------------------
   // CACHE MANANGER (CacheService)
@@ -305,14 +305,14 @@ const Store: IStore = {
       if (!this._service) return defaultVal;
 
       try {
-        const resultStr = Internal.readChunks(
+        const resultStr = StoreInternal.readChunks(
            baseKey, 
            (k) => this._service.getProperty(k), 
            () => Object.keys(this._service.getProperties())
         );
 
         if (!resultStr) return defaultVal;
-        return Internal.decompress(resultStr);
+        return StoreInternal.decompress(resultStr);
 
       } catch (e) {
         console.error(`🧩 Store: Chunk read error for '${baseKey}'`);
@@ -324,7 +324,7 @@ const Store: IStore = {
       const raw = this.get(key);
       if (!raw) return defaultVal;
       try {
-        return Internal.decompress(raw);
+        return StoreInternal.decompress(raw);
       } catch (e) {
         return defaultVal;
       }
@@ -336,13 +336,13 @@ const Store: IStore = {
     },
 
     setChunked(baseKey: string, val: any) {
-      return Internal.withLock(`LOCK_${baseKey}`, () => {
+      return StoreInternal.withLock(`LOCK_${baseKey}`, () => {
         try {
           if (!this._service) return false;
           
-          const str = Internal.compress(val);
+          const str = StoreInternal.compress(val);
           
-          Internal.writeChunks(
+          StoreInternal.writeChunks(
             baseKey,
             str,
             CONSTANTS.PROPS.CHUNK_SIZE,
@@ -361,7 +361,7 @@ const Store: IStore = {
 
     setJSON(key: string, val: any) {
        try {
-        const str = Internal.compress(val);
+        const str = StoreInternal.compress(val);
         
         if (str.length > CONSTANTS.PROPS.MAX_SINGLE) return false;
         if (!this._service) return false;
