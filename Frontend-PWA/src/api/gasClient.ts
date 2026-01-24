@@ -16,16 +16,16 @@ import { idb } from "../utils/idb";
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<any>>();
 
-// Default Schemas for fallback (matches V10 Standard)
+// Default Schemas for fallback (matches V11 Controller Standard)
 const DEFAULT_LB_SCHEMA = [
-  "id", "n", "role", "t", "days", "req", "avg", "tot", 
-  "seen", "rate", "wfame", "hist", "performanceRawScore", 
-  "performanceScore", "dt", "war"
+  "id", "n", "role", "t", "performanceScore", "performanceRawScore", 
+  "days", "req", "avg", "tot", "seen", "rate", "wfame", 
+  "hist", "dt", "war"
 ];
 
 const DEFAULT_HH_SCHEMA = [
-  "id", "n", "t", "potentialScore", "don", "war", 
-  "ago", "cards", "potentialRawScore"
+  "id", "n", "t", "potentialScore", "potentialRawScore", "don", 
+  "war", "cards", "ago"
 ];
 
 interface GenericEnvelope<T> {
