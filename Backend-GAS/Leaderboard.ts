@@ -14,7 +14,6 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppConfig } from "./Configuration";
 import type { IRegistry } from "./Registry";
 
 // Global Version Constant
