@@ -415,7 +415,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     row[L.AVG_DAY] = r.avgDailyDonations;
     row[L.TOTAL_DON] = r.totalDonations;
     row[L.LAST_SEEN] = timeAgo(r.lastSeen);
-    row[L.WAR_RATE] = `${r.warRateVal}%`;
+    row[L.WAR_RATE] = r.warRateVal / 100;
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
     row[L.PERF_SCORE] = normalizedPerf;
@@ -527,7 +527,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.WAR_RATE + 1, endColumnIndex: L.WAR_RATE + 2 },
-            cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0%' } } },
             fields: "userEnteredFormat.numberFormat"
           }
         }
