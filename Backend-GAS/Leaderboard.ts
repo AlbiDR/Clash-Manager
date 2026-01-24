@@ -482,23 +482,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
           sortSpecs: [{ dimensionIndex: L.PERF_SCORE, sortOrder: "DESCENDING" }]
         }
       },
-      // 2. HYPERLINK TRANSFORMATION (RichText runs)
-      ...finalRows.map((r, i) => ({
-        updateCells: {
-          rows: [{
-            values: [{
-              userEnteredValue: { stringValue: r[L.NAME] },
-              textFormatRuns: [{
-                startIndex: 0,
-                format: { link: { uri: `${CONFIG.SYSTEM.WEB_APP_URL}?mode=leaderboard&pin=${r[L.TAG].replace("#", "")}` } }
-              }]
-            }]
-          }],
-          fields: "userEnteredValue,textFormatRuns",
-          range: { sheetId, startRowIndex: startIdx + i, endRowIndex: startIdx + i + 1, startColumnIndex: L.NAME, endColumnIndex: L.NAME + 1 }
-        }
-      })),
-      // 3. BATCH CONDITIONAL FORMATTING rules
+      // 2. BATCH CONDITIONAL FORMATTING rules
       {
         addConditionalFormatRule: {
           rule: {

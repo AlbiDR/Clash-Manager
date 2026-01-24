@@ -704,23 +704,7 @@ function renderHeadhunterView(
 
     // 🏗️ ATOMIC RECRUITER DELIVERY (API Sprint)
     const requests: any[] = [
-      // 1. HYPERLINK TRANSFORMATION (RichText runs)
-      ...list.map((c, i) => ({
-        updateCells: {
-          rows: [{
-            values: [{
-              userEnteredValue: { stringValue: c.name },
-              textFormatRuns: [{
-                startIndex: 0,
-                format: { link: { uri: `clashroyale://playerInfo?id=${c.tag.replace("#", "")}` } }
-              }]
-            }]
-          }],
-          fields: "userEnteredValue,textFormatRuns",
-          range: { sheetId, startRowIndex: startIdx + i, endRowIndex: startIdx + i + 1, startColumnIndex: 1 + CONFIG.SCHEMA.HH.NAME - 1, endColumnIndex: 1 + CONFIG.SCHEMA.HH.NAME }
-        }
-      })),
-      // 2. BATCH CONDITIONAL FORMATTING gradient
+      // 1. BATCH CONDITIONAL FORMATTING gradient
       {
         addConditionalFormatRule: {
           rule: {
