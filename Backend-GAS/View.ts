@@ -261,9 +261,15 @@ var View: IView = {
    * 🛡️ ROBUST BACKUP SYSTEM
    */
   backupSheet: function (ss, sheetName) {
+    const lock = LockService.getDocumentLock();
     try {
+      if (!lock!.tryLock(20000)) return; // Wait 20s for previous task to finish
+      
       const sheet = ss.getSheetByName(sheetName);
-      if (!sheet) return;
+      if (!sheet) {
+        lock!.releaseLock();
+        return;
+      }
 
       const MAX_BACKUPS = 5;
       const backup1Name = `Backup 1 ${sheetName}`;
@@ -329,6 +335,8 @@ var View: IView = {
       }
     } catch (e: any) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
+    } finally {
+      try { lock!.releaseLock(); } catch(e) {}
     }
   },
 
