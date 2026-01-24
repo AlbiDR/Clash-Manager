@@ -12,7 +12,6 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { AppConfig } from "./Configuration";
 import type { IRegistry } from "./Registry";
 
 // Global Version Constant
@@ -395,8 +394,6 @@ function verifyApiKeysInternal(
   const results: ApiKeyVerificationResult[] = [];
 
   let quotaExhausted = false;
-  const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
-
   const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
 
   if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
