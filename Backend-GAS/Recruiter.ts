@@ -252,7 +252,9 @@ function scoutRecruits(): void {
 
   try {
     if (typeof refreshWebPayload === "function") refreshWebPayload();
-  } catch (e) {}
+  } catch (e: any) {
+    console.warn(`[Recruiter] Async Payload Refresh failed: ${e.message}`);
+  }
 }
 
 /**
@@ -444,7 +446,9 @@ function scanTournaments(
         W,
       );
       usedRemote = true;
-    } catch (e) {}
+    } catch (e: any) {
+      console.warn(`[Recruiter] Remote tournament scan failed: ${e.message}`);
+    }
   }
 
   if (!usedRemote) {
