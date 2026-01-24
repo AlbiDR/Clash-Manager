@@ -24,7 +24,7 @@ const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
 
-// 📡 Broadcast Channel Integration
+// Broadcast Channel Integration
 const { post: broadcast } = useBroadcastChannel((msg) => {
   if (msg.type === "DATA_SYNC_SUCCESS") {
     // Another tab brought fresh data. Reload from local storage/IDB to sync.
@@ -42,19 +42,52 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
 });
 
 /**
- * 🛠 LOCAL UPDATE HELPER
+ * LOCAL UPDATE HELPER
  * Allows other logic (like optimistic updates) to modify the state directly.
+ *
+ * @param newData - The fresh data object to persist and display.
  */
 function updateLocalData(newData: WebAppData) {
   clashData.value = newData;
   localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(newData));
 }
 
+/**
+ * CLASH DATA COMPOSABLE
+ * The central engine for data fetching, caching, and state management.
+ *
+ * @remarks
+ * This composable implements a Stale-While-Revalidate (SWR) pattern.
+ * It prioritizes fast initial paint by hydrating from LocalStorage and
+ * triggers background refreshes to ensure data freshness.
+ *
+ * @returns An object containing:
+ * - `data`: Readonly reactive reference to the current game data.
+ * - `isHydrated`: Indicates if the initial local storage read is complete.
+ * - `isRefreshing`: True when a network sync is in progress.
+ * - `syncStatus`: The lifecycle state of the current/last synchronization.
+ * - `syncError`: The latest error message if sync fails.
+ * - `lastSyncTime`: Unix timestamp of the last successful data acquisition.
+ * - `loadLocal`: Function to trigger hydration from LocalStorage.
+ * - `startBackgroundSync`: Intelligent refresh that respects UI modes (Demo/Blueprint).
+ * - `refresh`: Force a network-level synchronization.
+ * - `updateLocalData`: Direct state injection for optimistic updates.
+ *
+ * @example
+ * const { data, refresh } = useClashData();
+ * onMounted(() => loadLocal());
+ */
 export function useClashData() {
-  // ⚡ STEP 1: LOAD LOCAL (Sync/Fast)
-  // Call this AFTER app.mount() to avoid blocking LCP
+  /**
+   * HYDRATION STRATEGY
+   * We initialize `clashData` as null and `isHydrated` as false to force
+   * skeleton loaders on the first frame, preventing Layout Shift (CLS).
+   *
+   * @sideeffect Reads from LocalStorage.
+   * @constraint Must be called after app.mount() to avoid blocking LCP.
+   */
   function loadLocal() {
-    if (isHydrated.value) return; // Already loaded
+    if (isHydrated.value) return;
 
     try {
       const raw = localStorage.getItem(SNAPSHOT_KEY);
@@ -71,12 +104,12 @@ export function useClashData() {
     }
   }
 
-  // ⚡ STEP 2: LOAD NETWORK (Async/Slow)
+  // STEP 2: LOAD NETWORK (Async/Slow)
   let refreshAbortController: AbortController | null = null;
 
   async function startBackgroundSync() {
     if (isShowcaseMode.value) {
-      // ⚡ PERFORMANCE: Generate only 1 item in Showcase mode
+      // PERFORMANCE: Generate only 1 item in Showcase mode
       const mock = generateMockData({ memberCount: 1, recruitCount: 1 });
       clashData.value = mock;
       lastSyncTime.value = mock.timestamp;
@@ -100,15 +133,25 @@ export function useClashData() {
     refresh();
   }
 
+  /**
+   * NETWORK SYNCHRONIZATION
+   * Manages concurrent request cancellation and timeout safety.
+   *
+   * @sideeffect Writes to LocalStorage (Async via requestIdleCallback).
+   * @sideeffect Posts to BroadcastChannel on success.
+   * @sideeffect Acquires/Releases WakeLock.
+   */
   async function refresh() {
-    // Cancel previous pending request
+    // CONCURRENCY GUARD: Abort any flighted requests before starting new one.
     if (refreshAbortController) {
       refreshAbortController.abort("replaced");
     }
     refreshAbortController = new AbortController();
     const signal = refreshAbortController.signal;
 
-    // 🛡️ TIMEOUT PROTECTION: Force fail if network hangs (40s)
+    // TIMEOUT PROTECTION: Force fail if network hangs (40s).
+    // Prevents the application from remaining in a permanent "syncing" state
+    // during extreme network degradation or silent GAS failures.
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
         refreshAbortController.abort("timeout");
@@ -120,15 +163,16 @@ export function useClashData() {
     try {
       isRefreshing.value = true;
       syncStatus.value = "syncing";
-      // ⚡ UX FIX: Clear error immediately so UI shows loading state, not stale error
+      // UX FIX: Clear error immediately so UI shows loading state, not stale error.
       syncError.value = null;
 
-      // No-op guard for special modes
+      // No-op guard for special modes: Redirect to mock generation if UI modes are active.
       if (
         isSyntheticMode.value ||
         isBlueprintMode.value ||
         isShowcaseMode.value
       ) {
+        // artificial delay to mimic network feel
         await new Promise((resolve) => setTimeout(resolve, 800));
         startBackgroundSync();
         syncStatus.value = "success";
@@ -139,8 +183,9 @@ export function useClashData() {
 
       const remoteData = await fetchRemote({ signal, force: true });
 
-      // ⚡ UX FIX: Enforce minimum 800ms load time to prevent UI flicker on fast failures/success
-      // This ensures the user sees the "loading" state even if the error happens instantly
+      // UX FIX: Enforce minimum 800ms load time to prevent UI flicker on fast failures/success.
+      // This ensures the user sees the "loading" state (and skeleton loaders) long enough
+      // to understand a refresh occurred, even if the API response is near-instant.
       const elapsed = Date.now() - startTime;
       if (elapsed < 800) {
         await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
@@ -150,10 +195,11 @@ export function useClashData() {
       lastSyncTime.value = remoteData.timestamp;
       syncStatus.value = "success";
       
-      // Notify unified status of success
+      // Notify unified status of success.
       const { setSuccess } = useConnectionStatus();
       setSuccess();
 
+      // PERFORMANCE: Offload disk write to idle period to keep UI responsive.
       const saveTask = window.requestIdleCallback || setTimeout;
       saveTask(() => {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
@@ -171,7 +217,7 @@ export function useClashData() {
         return;
       }
 
-      // ⚡ UX FIX: Ensure we respected minimum delay even on error
+      // UX FIX: Ensure we respected minimum delay even on error to prevent layout thrashing.
       const elapsed = Date.now() - startTime;
       if (elapsed < 800) {
         await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
@@ -197,7 +243,7 @@ export function useClashData() {
     }
   }
 
-  // 🔄 Coordination: Inform status badge of syncing via watcher or direct injection
+  // Coordination: Inform status badge of syncing via watcher or direct injection
   const { setSyncing } = useConnectionStatus();
   watch(isRefreshing, (refreshing) => {
     setSyncing(refreshing);
