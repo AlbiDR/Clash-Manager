@@ -55,6 +55,7 @@ vi.stubGlobal('CONFIG', mockConfig);
 describe('Network Module', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Network._clearCache();
     mockUrlFetch.fetch.mockReturnValue({
       getResponseCode: () => 200,
       getContentText: () => JSON.stringify({ items: [] }),
@@ -84,7 +85,8 @@ describe('Network Module', () => {
   describe('remoteWorkerHealthy', () => {
     it('should check worker health', () => {
         mockUrlFetch.fetch.mockReturnValueOnce({
-            getResponseCode: () => 200
+            getResponseCode: () => 200,
+            getContentText: () => JSON.stringify({ status: "success", checks: { auth: "OK", upstream: "OK", memory: 100000000 } })
         });
         const healthy = Network.remoteWorkerHealthy();
         expect(healthy).toBe(true);

@@ -93,7 +93,7 @@ async function timeoutFetch(
 }
 
 /**
- * Fetch with automatic retries and exponential backoff
+ * Fetch with automatic retries and exponential backoff with jitter
  */
 async function fetchWithRetries<T = unknown>(
   url: string,
@@ -109,6 +109,11 @@ async function fetchWithRetries<T = unknown>(
       const code = res.status;
       const text = await res.text();
 
+      // Industrial Logic: Immediately fail on non-recoverable errors
+      if (code === 403 || code === 404) {
+          return { code, content: text as unknown as T };
+      }
+
       let content: T | string;
       try {
         content = JSON.parse(text) as T;
@@ -116,12 +121,21 @@ async function fetchWithRetries<T = unknown>(
         content = text;
       }
 
-      return { code, content };
+      // If upstream is throttling, count as a retry-able failure
+      if (code === 429) {
+          throw new Error("rate_limit");
+      }
+
+      return { code, content: content as T };
     } catch (e) {
       lastErr = e instanceof Error ? e : new Error(String(e));
       attempt++;
+      
       if (attempt <= retries) {
-        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+        // Exponential Backoff with Jitter: base * 2^attempt + random(0, 1000)
+        const backoff = Math.min(10000, (500 * Math.pow(2, attempt)) + (Math.random() * 1000));
+        console.warn(`[Worker] Retry ${attempt}/${retries} for ${url.slice(-20)}. Backoff: ${Math.round(backoff)}ms. Reason: ${lastErr.message}`);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
       }
     }
   }
@@ -395,11 +409,26 @@ const checkAuth: RequestHandler = (req, res, next) => {
 
   const auth = (req.get("authorization") ?? "").trim();
   if (auth !== `Bearer ${CONFIG.secret}`) {
-    res.status(401).json({ error: "unauthorized" });
+    console.warn(`[Auth] Blocked unauthorized request from ${req.ip}`);
+    res.status(401).json({ status: "error", error: "ERR_UNAUTHORIZED" });
     return;
   }
   next();
 };
+
+/**
+ * 🛠️ REQUEST VALIDATION MIDDLEWARE
+ */
+function validateFields(fields: string[]): RequestHandler {
+  return (req, res, next) => {
+    const missing = fields.filter(f => !req.body[f]);
+    if (missing.length > 0) {
+      res.status(400).json({ status: "error", error: "ERR_MISSING_FIELDS", details: missing });
+      return;
+    }
+    next();
+  };
+}
 
 // ============================================================================
 //  ROUTES
@@ -411,11 +440,44 @@ app.get("/", (_req: Request, res: Response): void => {
 
 app.get("/capabilities", checkAuth, (_req: Request, res: Response): void => {
   res.json({
-    version: "10.0.0",
-    concurrency: CONFIG.concurrency,
-    timeoutMs: CONFIG.timeout,
-    maxRetries: CONFIG.maxRetries,
+    status: "success",
+    data: {
+      version: "10.1.0",
+      concurrency: CONFIG.concurrency,
+      timeoutMs: CONFIG.timeout,
+      maxRetries: CONFIG.maxRetries,
+    }
   });
+});
+
+/**
+ * 🩺 DIAGNOSTIC HEALTH HANDSHAKE
+ */
+app.get("/health", async (req: Request, res: Response): Promise<void> => {
+    // 1. Secret Verification
+    const auth = (req.get("authorization") ?? "").trim();
+    const secretValid = !CONFIG.secret || auth === `Bearer ${CONFIG.secret}`;
+    
+    // 2. Upstream Check (Dry-run of cards API)
+    const testKey = (process.env["API_KEYS"] ?? "").split(",")[0];
+    let upstreamStatus = "UNKNOWN";
+    if (testKey) {
+        try {
+            const upRes = await timeoutFetch("https://api.clashroyale.com/v1/cards", {
+                headers: { Authorization: `Bearer ${testKey}` }
+            }, 3000);
+            upstreamStatus = upRes.status === 200 ? "OK" : `FAIL_${upRes.status}`;
+        } catch(e) { upstreamStatus = "TIMEOUT"; }
+    }
+
+    res.status(secretValid ? 200 : 401).json({
+        status: secretValid ? "success" : "error",
+        checks: {
+            auth: secretValid ? "OK" : "ERR_AUTH",
+            upstream: upstreamStatus,
+            memory: process.memoryUsage().rss
+        }
+    });
 });
 
 app.post(

@@ -59,6 +59,7 @@ export interface INetwork {
   scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring?: ScoringWeights | null): any[];
   remoteWorkerHealthy(): boolean;
   getRemainingQuota(): number;
+  _clearCache(): void;
 }
 
 export interface ClanDataResult {
@@ -110,7 +111,7 @@ const NetworkInternal = {
   },
 
   /**
-   * Sends a remote fetch request
+   * Sends a remote fetch request (Industrial Hardened Edition)
    */
   remoteFetch(chunkUrls: string[], keyPool: any[], scoring: any): any[] {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("No remote worker");
@@ -134,10 +135,14 @@ const NetworkInternal = {
       headers: headers
     });
 
-    if (res.getResponseCode() !== 200) throw new Error(`Remote worker error ${res.getResponseCode()}`);
+    const code = res.getResponseCode();
+    if (code !== 200) {
+        const errBody = JSON.parse(res.getContentText() || "{}");
+        throw new Error(`Worker Error ${code}: ${errBody.error || "Unknown"}`);
+    }
     
     const body = JSON.parse(res.getContentText());
-    if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote response");
+    if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote payload structure");
 
     return body.results.map((r: any) => ({
       getResponseCode: () => r.code,
@@ -427,18 +432,27 @@ var Network: INetwork = {
       }
     } catch(e) {}
 
-    // Verify
+    // Verify (Industrial Diagnostic Handshake)
     let isHealthy = false;
     try {
         const headers: Record<string, string> = {};
         if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
-        const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/capabilities`, {
+        const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/health`, {
             method: "get",
             muteHttpExceptions: true,
             headers: headers
         });
-        if (res.getResponseCode() === 200) isHealthy = true;
-    } catch(e) {}
+        if (res.getResponseCode() === 200) {
+            const diagnostic = JSON.parse(res.getContentText() || "{}");
+            if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
+                isHealthy = true;
+                console.info(`[Network] Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
+            } else {
+                console.warn(`[Network] Worker Degradation: Auth=${diagnostic?.checks?.auth}, Upstream=${diagnostic?.checks?.upstream}`);
+                isHealthy = (diagnostic?.checks?.auth === "OK"); // Degraded but reachable
+            }
+        }
+    } catch(e) { console.warn(`[Network] Worker Reachability Error: ${e}`); }
 
     // Persist
     _EXECUTION_CACHE.set("worker_health", isHealthy);
@@ -512,6 +526,11 @@ var Network: INetwork = {
   getRemainingQuota() {
     NetworkInternal.initQuota();
     return Math.max(0, NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT);
+  },
+
+  _clearCache() {
+    _EXECUTION_CACHE.clear();
+    _FETCH_COUNT = 0;
   }
 };
 
