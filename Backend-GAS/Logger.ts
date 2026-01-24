@@ -146,16 +146,18 @@ function updateClanDatabase(): void {
     ];
 
     // Ensure Header exists
-    if (sheet.getLastRow() < 1) {
+    // Unified Header Handshake
+    if (sheet.getLastRow() < 2) {
       const ssId = ss.getId();
       const sheetName = sheet.getName();
+      const sheetId = sheet.getSheetId();
+      
+      // Atomic write of headers if missing
       Sheets.Spreadsheets!.Values!.update({
         values: [HEADER]
       }, ssId, `'${sheetName}'!B2`, {
         valueInputOption: "USER_ENTERED"
       });
-      
-      sheet.getRange(2, 2, 1, HEADER.length).setFontWeight("bold").setWrap(true);
     }
 
     // 🛡️ SCHEMA MIGRATION: Ensure enough columns
@@ -463,29 +465,78 @@ function upsertDailySnapshots(
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
   }
 
-  sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
-
+  // ----------------------------------------------------------------------------
+  // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
+  // ----------------------------------------------------------------------------
+  const ssId = sheet.getParent().getId();
+  const sheetId = sheet.getSheetId();
   const currentLastRow = sheet.getLastRow();
-  const dataRowCount = currentLastRow - (startRow - 1);
+  const dataRowCount = Math.max(0, currentLastRow - (startRow - 1));
+  const contentCols = headerRow.length;
+
+  const finalVisualRequests: any[] = [
+    // 6A. HEADERS DELIVERY (Row 2 Style & Value Sync)
+    {
+      updateCells: {
+        rows: [{
+          values: headerRow.map(h => ({
+            userEnteredValue: { stringValue: h },
+            userEnteredFormat: { 
+                textFormat: { bold: true }, 
+                wrapStrategy: "WRAP", 
+                horizontalAlignment: "CENTER", 
+                backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } 
+            }
+          }))
+        }],
+        fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }
+      }
+    }
+  ];
+
   if (dataRowCount > 0) {
-    const sRow = startRow;
-    sheet
-      .getRange(sRow, 2 + S_DB.DATE, dataRowCount, 1)
-      .setNumberFormat("yyyy-mm-dd");
-    sheet.getRange(sRow, 2 + S_DB.TAG, dataRowCount, 3).setNumberFormat("@");
-    sheet
-      .getRange(sRow, 2 + S_DB.TROPHIES, dataRowCount, 4)
-      .setNumberFormat("0");
-    sheet
-      .getRange(sRow, 2 + S_DB.LAST_SEEN, dataRowCount, 1)
-      .setNumberFormat("yyyy-mm-dd hh:mm:ss");
-      
-    // ⚠️ CRITICAL: Do NOT force number format on War Fame column if it contains strings
-    // We leave it as Automatic (or text compatible) to support "N/A"
-    sheet
-      .getRange(sRow, 2 + S_DB.WAR_FAME, dataRowCount, 1)
-      .setNumberFormat("@"); // Force Text/Automatic to prevent "0" coercion
+      // 6B. NUMBER FORMATS (Date & Clean Strings)
+      finalVisualRequests.push(
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: currentLastRow, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: currentLastRow, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 4 + S_DB.TAG },
+            cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: currentLastRow, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "yyyy-mm-dd hh:mm:ss" } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: currentLastRow, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
+            cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        }
+      );
   }
+
+  // 6C. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar, Auto-Resize)
+  finalVisualRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, dataRowCount, contentCols));
+
+  // 🚀 EXECUTE UNBREAKABLE TRANSACTION
+  Sheets.Spreadsheets!.batchUpdate({ requests: finalVisualRequests }, ssId);
+
+  Registry.Services.View.setStatusMessage(sheet, `DATABASE • ${new Date().toLocaleString()}`);
+  console.log(`✅ Database View Rendered: ${dataRowCount} entries (Atomic).`);
 }
 
 /**
