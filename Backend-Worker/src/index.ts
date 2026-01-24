@@ -183,12 +183,18 @@ async function fetchWithRotatedRetries<T = unknown>(
   url: string,
   baseOpts: Record<string, any>,
   retries: number = CONFIG.maxRetries,
+  overrideKeys?: string[],
 ): Promise<FetchResult<T>> {
   let attempt = 0;
   let lastErr: Error | null = null;
 
+  // Use temporary KeyManager for overrides if provided, otherwise fallback to global KEYS
+  const manager = (overrideKeys && overrideKeys.length > 0) 
+    ? new KeyManager(overrideKeys)
+    : KEYS;
+
   while (attempt <= retries) {
-    const currentKey = KEYS.getHealthyKey();
+    const currentKey = manager.getHealthyKey();
     if (!currentKey) {
       return { code: 429, content: "ERR_QUOTA_EMPTY" as unknown as T };
     }
@@ -207,7 +213,7 @@ async function fetchWithRotatedRetries<T = unknown>(
       const text = await res.text();
 
       if (code === 200) {
-        KEYS.reportSuccess(currentKey);
+        manager.reportSuccess(currentKey);
         try {
           return { code, content: JSON.parse(text) as T };
         } catch {
@@ -216,7 +222,7 @@ async function fetchWithRotatedRetries<T = unknown>(
       }
 
       // Handle Failures
-      KEYS.reportFailure(currentKey, code);
+      manager.reportFailure(currentKey, code);
       
       if (code === 404) return { code, content: text as unknown as T };
       if (code === 403) throw new Error("auth_denied");
@@ -320,7 +326,7 @@ async function processBatch<T = unknown>(
           const profileResult = await fetchWithRotatedRetries<ClashRoyalePlayer>(url, {
             method: "GET",
             headers,
-          });
+          }, CONFIG.maxRetries, apiKeys);
 
           if (
             profileResult.code === 200 &&
@@ -336,6 +342,8 @@ async function processBatch<T = unknown>(
                 method: "GET",
                 headers,
               },
+              CONFIG.maxRetries,
+              apiKeys,
             );
 
             let hasWar = false;
@@ -381,7 +389,7 @@ async function processBatch<T = unknown>(
           };
         }
       } else {
-        const res = await fetchWithRotatedRetries<T>(url, { method: "GET", headers });
+        const res = await fetchWithRotatedRetries<T>(url, { method: "GET", headers }, CONFIG.maxRetries, apiKeys);
         results[i] = res;
       }
     }
