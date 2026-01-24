@@ -445,10 +445,13 @@ var Network: INetwork = {
         });
         if (res.getResponseCode() === 200) {
             const diagnostic = JSON.parse(res.getContentText() || "{}");
-            if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
                 console.info(`[Network] Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
+            } else if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "UNKNOWN") {
+                isHealthy = true;
+                _LAST_WORKER_ERROR = "";
+                console.info(`[Network] Worker Live (Stateless Mode).`);
             } else {
                 _LAST_WORKER_ERROR = `Degraded: Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
                 console.warn(`[Network] Worker Degradation: ${_LAST_WORKER_ERROR}`);

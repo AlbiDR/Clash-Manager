@@ -129,7 +129,12 @@ class KeyManager {
 }
 
 // Global Key Singleton
-const KEYS = new KeyManager((process.env["API_KEYS"] ?? "").split(","));
+const KEYS = new KeyManager(
+  (process.env["API_KEYS"] ?? "")
+    .split(",")
+    .map(k => k.trim())
+    .filter(k => k && k !== "REPLACE_ME" && k !== "YOUR_KEYS")
+);
 
 // ============================================================================
 //  EXPRESS APP SETUP
