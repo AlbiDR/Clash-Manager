@@ -55,6 +55,7 @@ export interface AppConfig {
       SCORING_SYSTEM: string;
       RECRUITER: string;
       CONTROLLER_WEBAPP: string;
+      REGISTRY: string;
       API_PUBLIC: string;
     };
     CLAN_TAG: string;
@@ -159,6 +160,7 @@ var CONFIG: AppConfig = {
       SCORING_SYSTEM: "10.0.0",
       RECRUITER: "10.0.9",
       CONTROLLER_WEBAPP: "10.0.1",
+      REGISTRY: "1.0.0",
       API_PUBLIC: "10.0.0",
     },
 
