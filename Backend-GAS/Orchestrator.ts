@@ -60,6 +60,8 @@ declare const VER_REGISTRY: string;
 declare const VER_LOGGER: string;
 declare const VER_LEADERBOARD: string;
 declare const VER_RECRUITER: string;
+declare const VER_API_PUBLIC: string;
+declare const VER_CONTROLLER_WEBAPP: string;
 
 /**
  * 🕹️ ORCHESTRATOR INTERFACES
@@ -196,7 +198,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   if (e.value !== "TRUE") return;
 
   range.setValue(false);
-  sheet.getRange("B1").setValue("⏳ Updating...");
+  Registry.Services.View.setStatusMessage(sheet, "⏳ Updating...");
   SpreadsheetApp.flush();
 
   console.log(`📱 Mobile Trigger: ${sheetName}`);
@@ -212,9 +214,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
       } else if (sheetName === CONFIG.SHEETS.HH) {
         Registry.Actions["recruit:scout"]();
       }
-      sheet
-        .getRange("B1")
-        .setValue(`✅ Done ${new Date().toLocaleTimeString()}`);
+      Registry.Services.View.setStatusMessage(sheet, `✅ Done ${new Date().toLocaleTimeString()}`);
     });
   } catch (err: any) {
     console.error(`📱 Mobile Error: ${err.message}`);
@@ -222,7 +222,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
       err.message.indexOf("System Busy") > -1
         ? "⚠️ System Busy (Retry in 60s)"
         : `ERROR: ${err.message}`;
-    sheet.getRange("B1").setValue(msg);
+    Registry.Services.View.setStatusMessage(sheet, msg);
   }
 }
 
@@ -318,8 +318,7 @@ function checkSystemHealth(): void {
     },
     {
       name: "Orchestrator",
-      current:
-        typeof VER_ORCHESTRATOR !== "undefined" ? VER_ORCHESTRATOR : "MISSING",
+      current: typeof VER_ORCHESTRATOR !== "undefined" ? VER_ORCHESTRATOR : "MISSING",
       expected: manifest.ORCHESTRATOR,
     },
     {
@@ -327,6 +326,16 @@ function checkSystemHealth(): void {
       current: typeof VER_RECRUITER !== "undefined" ? VER_RECRUITER : "MISSING",
       expected: manifest.RECRUITER,
     },
+    {
+      name: "API Public",
+      current: typeof VER_API_PUBLIC !== "undefined" ? VER_API_PUBLIC : "MISSING",
+      expected: manifest.API_PUBLIC,
+    },
+    {
+      name: "Webapp Controller",
+      current: typeof VER_CONTROLLER_WEBAPP !== "undefined" ? VER_CONTROLLER_WEBAPP : "MISSING",
+      expected: manifest.CONTROLLER_WEBAPP,
+    }
   ];
 
   let report = `📂 FILE SYSTEM\n`;
@@ -399,56 +408,24 @@ function verifyApiKeysInternal(
 
   for (const keyObj of keysToCheck) {
     if (quotaExhausted) {
-      results.push({
-        name: keyObj.name,
-        success: false,
-        error: "⚠️ Skipped (Quota Exceeded)",
-      });
+      results.push({ name: keyObj.name, success: false, error: "⚠️ Skipped (Quota Exceeded)" });
       continue;
     }
 
     try {
-      const response = UrlFetchApp.fetch(url, {
-        method: "get",
-        headers: {
-          Authorization: `Bearer ${keyObj.value}`,
-          "User-Agent": "ClanManagerBot/11.0 (GAS)",
-        },
-        muteHttpExceptions: true,
-      });
-
-      const code = response.getResponseCode();
-      if (code === 200) {
+      const response = Registry.Services.Network.fetchRoyaleAPI([url]);
+      if (response && response[0]) {
         results.push({ name: keyObj.name, success: true });
       } else {
-        let errorMsg = `Error ${code}`;
-        if (code === 403) errorMsg = "⛔ Access Denied (Invalid Key)";
-        if (code === 429) errorMsg = "⚠️ Rate Limited (Throttled)";
-        if (code === 503) errorMsg = "⚠️ Maintenance Mode";
-        results.push({ name: keyObj.name, success: false, error: errorMsg });
+        results.push({ name: keyObj.name, success: false, error: "Invalid Key or Maintenance" });
       }
     } catch (e: any) {
-      if (
-        e.message &&
-        e.message.indexOf("Service invoked too many times") > -1
-      ) {
+      if (e.message && e.message.indexOf("Service invoked too many times") > -1) {
         quotaExhausted = true;
-        results.push({
-          name: keyObj.name,
-          success: false,
-          error: "⛔ DAILY QUOTA LIMIT REACHED",
-        });
+        results.push({ name: keyObj.name, success: false, error: "⛔ DAILY QUOTA LIMIT REACHED" });
       } else {
-        results.push({
-          name: keyObj.name,
-          success: false,
-          error: `Ex: ${e.message}`,
-        });
+        results.push({ name: keyObj.name, success: false, error: `Ex: ${e.message}` });
       }
-    }
-
-    if (keysToCheck.length > 1) {
-      Utilities.sleep(200);
     }
   }
 

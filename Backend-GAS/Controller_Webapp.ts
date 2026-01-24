@@ -47,10 +47,7 @@ declare namespace GoogleAppsScript {
 declare const CONFIG: AppConfig;
 declare const Registry: IRegistry;
 
-// External module functions
-declare function updateClanDatabase(): void;
-declare function updateLeaderboard(): void;
-declare function scoutRecruits(): void;
+// routed via Registry in modern stack
 
 /**
  * 🌐 CONTROLLER INTERFACES
@@ -132,6 +129,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       const tagScoreMap = new Map<string, number>();
       const tagRowMap = new Map<string, number>();
 
+      const ssId = ss.getId();
       if (sheet) {
         Registry.Services.Schema.bootDynamicSchema();
         const startRow = CONFIG.LAYOUT.DATA_START_ROW;
@@ -179,11 +177,11 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       });
 
       if (dbEntries.length > 0) {
-        const lastRow = Math.max(blSheet.getLastRow(), 1);
-        blSheet
-          .getRange(lastRow + 1, 1, dbEntries.length, 3)
-          .setValues(dbEntries);
-        SpreadsheetApp.flush();
+        Sheets.Spreadsheets!.Values!.append({
+          values: dbEntries
+        }, ssId, `'${CONFIG.SHEETS.BL}'!A1`, {
+          valueInputOption: "USER_ENTERED"
+        });
       }
 
       // 3. SHEET CLEANUP
@@ -196,9 +194,20 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
         });
 
         if (rowsToDelete.length > 0) {
-          rowsToDelete
+          const deleteRequests = rowsToDelete
             .sort((a, b) => b - a)
-            .forEach((idx) => sheet.deleteRow(idx));
+            .map(idx => ({
+              deleteDimension: {
+                range: {
+                  sheetId: sheet.getSheetId(),
+                  dimension: "ROWS",
+                  startIndex: idx - 1,
+                  endIndex: idx
+                }
+              }
+            }));
+          
+          Sheets.Spreadsheets!.batchUpdate({ requests: deleteRequests }, ssId);
           deletedCount = rowsToDelete.length;
         }
       }

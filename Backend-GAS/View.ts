@@ -38,6 +38,7 @@ export interface IView {
   tagSheet(sheet: GoogleAppsScript.Spreadsheet.Sheet, type: string): void;
   findSheetByType(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, type: string): GoogleAppsScript.Spreadsheet.Sheet | null;
   protectHeaders(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
+  setStatusMessage(sheet: GoogleAppsScript.Spreadsheet.Sheet, message: string): void;
 }
 
 var View: IView = {
@@ -417,6 +418,27 @@ var View: IView = {
       }, ssId);
     } catch (e) {
       console.warn(`🔒 Range Protection failed for ${sheet.getName()}: ${e}`);
+    }
+  },
+
+  setStatusMessage: function (sheet, message) {
+    if (!sheet) return;
+    try {
+      sheet.getRange("B1").setValue(message);
+      // Ensure the theme is established (Left-aligned, Gray, Bold)
+      const ssId = sheet.getParent().getId();
+      const sheetId = sheet.getSheetId();
+      Sheets.Spreadsheets!.batchUpdate({
+        requests: [{
+          repeatCell: {
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 30 },
+            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
+            fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
+          }
+        }]
+      }, ssId);
+    } catch (e) {
+      console.warn(`Status Error: ${e}`);
     }
   }
 };

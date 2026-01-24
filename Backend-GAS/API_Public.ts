@@ -119,12 +119,16 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
            return respondRaw(cachedPing);
         }
 
-        // Cache Miss: Perform full load
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        // Cache Miss: Perform full API load (Fast)
+        const ssId = SpreadsheetApp.getActiveSpreadsheet().getId();
+        const ssMeta = Sheets.Spreadsheets!.get(ssId, { fields: "sheets(properties(title,sheetId))" });
         const sheetsMap: Record<string, number> = {};
-        ss.getSheets().forEach(
-          (s: any) => (sheetsMap[s.getName()] = s.getSheetId()),
-        );
+        
+        if (ssMeta && ssMeta.sheets) {
+          ssMeta.sheets.forEach((s: any) => {
+            if (s.properties) sheetsMap[s.properties.title] = s.properties.sheetId;
+          });
+        }
 
         const pingResponse = {
           status: "success",
@@ -132,7 +136,6 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
              version: VER_API_PUBLIC,
              status: "online",
              scriptId: ScriptApp.getScriptId(),
-             spreadsheetUrl: ss.getUrl(),
              sheets: sheetsMap,
              modules: getModuleVersions(),
           },
