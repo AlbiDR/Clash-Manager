@@ -9,9 +9,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IStore } from "./Store";
-import type { ICore } from "./Core";
-import type { ISchema } from "./Schema";
+import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -47,9 +45,7 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Store: IStore;
-declare const Core: ICore;
-declare const Schema: ISchema;
+declare const Registry: IRegistry;
 
 // External module functions
 declare function updateClanDatabase(): void;
@@ -94,7 +90,7 @@ function getWebAppData(forceRefresh: boolean): string {
     let payloadStr: string | null = null;
 
     if (!forceRefresh) {
-      payloadStr = Store.cache.getLarge(CONFIG.SYSTEM.JSON_STORE_KEY);
+      payloadStr = Registry.Services.Store.cache.getLarge(CONFIG.SYSTEM.JSON_STORE_KEY);
     }
 
     if (payloadStr) return payloadStr;
@@ -137,7 +133,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       const tagRowMap = new Map<string, number>();
 
       if (sheet) {
-        Schema.bootDynamicSchema();
+        Registry.Services.Schema.bootDynamicSchema();
         const startRow = CONFIG.LAYOUT.DATA_START_ROW;
         const lastRowVisual = sheet.getLastRow();
 
@@ -240,7 +236,7 @@ function refreshWebPayload(): string {
 function _generatePayloadInternal(): string {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    Schema.bootDynamicSchema();
+    Registry.Services.Schema.bootDynamicSchema();
 
     const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
     const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
@@ -279,12 +275,12 @@ function _generatePayloadInternal(): string {
     };
     const payloadStr = JSON.stringify(fullPayload);
 
-    Store.cache.putLarge(
+    Registry.Services.Store.cache.putLarge(
       CONFIG.SYSTEM.JSON_STORE_KEY,
       payloadStr,
       21600,
     );
-    Store.props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
+    Registry.Services.Store.props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
 
     return payloadStr;
   } catch (e: any) {

@@ -11,16 +11,14 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { ISchema } from "./Schema";
-import type { ITime } from "./Time";
+import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
 const VER_REPAIR_DB = "1.1.0"; // Flexible Precision Mode
 
 declare var CONFIG: any;
-declare var Schema: ISchema;
-declare var Time: ITime;
+declare var Registry: IRegistry;
 declare var Logger: any;
 declare var SpreadsheetApp: any;
 declare var getWarSnapshot: any;
@@ -40,7 +38,7 @@ function repairDatabase(startDate?: Date): void {
   Logger.log("🛠️ Starting Dynamic Database Repair Sequence...");
 
   // 1. Resolve Schema Indices & Live Grounding
-  Schema.bootDynamicSchema();
+  Registry.Services.Schema.bootDynamicSchema();
   const H = CONFIG.SCHEMA.DB;
 
   let liveSnap: any = null;
@@ -92,7 +90,7 @@ function repairDatabase(startDate?: Date): void {
     // 🔬 DYNAMIC HEURISTIC CHECK (Uses snapshot grounding)
     // We use forceCalendarDay: true because for repairs, "Monday" means "Training"
     // regardless of the exact midnight UTC game reset crossover.
-    const phaseInfo = Time.getWarPhaseFromDate(dateObj, liveSnap, { forceCalendarDay: true });
+    const phaseInfo = Registry.Services.Time.getWarPhaseFromDate(dateObj, liveSnap, { forceCalendarDay: true });
 
     // 🎯 TARGET: Training Days with Numeric Fame (0 or otherwise) that isn't already N/A
     if (phaseInfo.isTraining) {
