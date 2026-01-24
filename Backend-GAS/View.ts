@@ -39,6 +39,7 @@ export interface IView {
   findSheetByType(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, type: string): GoogleAppsScript.Spreadsheet.Sheet | null;
   protectHeaders(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
   setStatusMessage(sheet: GoogleAppsScript.Spreadsheet.Sheet, message: string): void;
+  getStandardVisualRequests(sheetId: number, contentRows: number, contentCols: number): any[];
 }
 
 var View: IView = {
@@ -99,47 +100,6 @@ var View: IView = {
     ];
 
     if (contentCols > 0) {
-      // 2. ATOMIC THEME (Header Row Color & Framing)
-      requests.push(
-        // Header background (#f3f3f3)
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 }, textFormat: { bold: true } } },
-            fields: 'userEnteredFormat(backgroundColor,textFormat.bold)'
-          }
-        },
-        // 🏗️ ATOMIC FORMATTING (Borders, Alignment, Merges)
-        // Table Horizontal Alignment
-        {
-            repeatCell: {
-                range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-                cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
-                fields: "userEnteredFormat.horizontalAlignment"
-            }
-        },
-        // Left Edge
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Right Edge
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Top Edge
-        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Bottom Edge
-        { updateBorders: { range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Header Bottom Line
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Internal Gridlines (Thin/Gray)
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
-        // Status Bar (Row 1 Merge replacement & Style)
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
-            fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
-          }
-        }
-      );
-
       // Dimension updates
       sheet.setColumnWidths(2, contentCols, 100);
       
@@ -148,9 +108,57 @@ var View: IView = {
       sheet.getRange(1, 2, 1, contentCols).merge();
     }
 
+    // Structural Batch Update (Resets & Basic Framing)
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
     this.drawMobileCheckbox(sheet);
     sheet.setHiddenGridlines(true);
+  },
+
+  /**
+   * 🏗️ ATOMIC VISUAL ENGINE (Request Generator)
+   * Generates the visual standard for 100% atomic bundling.
+   */
+  getStandardVisualRequests: function (sheetId, contentRows, contentCols) {
+    const L = CONFIG.LAYOUT;
+    const lastDataRow = L.DATA_START_ROW - 1 + Math.max(contentRows, 0);
+    const totalRows = Math.max(lastDataRow + 1, L.DATA_START_ROW + 1);
+    const totalCols = contentCols + 2;
+
+    return [
+        // 1. Header background (#f3f3f3)
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+            cell: { userEnteredFormat: { backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 }, textFormat: { bold: true } } },
+            fields: 'userEnteredFormat(backgroundColor,textFormat.bold)'
+          }
+        },
+        // 2. Table Horizontal Alignment
+        {
+            repeatCell: {
+                range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+                cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
+                fields: "userEnteredFormat.horizontalAlignment"
+            }
+        },
+        // 3. Status Bar Styling (Row 1)
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
+            fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
+          }
+        },
+        // 4. Borders
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
+        // 5. Auto-Size Dimensions
+        { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } }
+    ];
   },
 
   /**

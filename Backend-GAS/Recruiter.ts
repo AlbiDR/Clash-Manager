@@ -697,83 +697,82 @@ function renderHeadhunterView(
   // No changes needed to renderHeadhunterView preparation logic.
 
     if (rows.length > 0) {
-    const ssId = sheet.getParent().getId();
-    const sheetId = sheet.getSheetId();
-    const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
+      const ssId = sheet.getParent().getId();
+      const sheetId = sheet.getSheetId();
+      const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
+      const contentRows = rows.length;
+      const contentCols = HEADERS.length;
 
-    // 1. DATA DELIVERY (USER_ENTERED)
-    Sheets.Spreadsheets!.Values!.update({
-      values: rows
-    }, ssId, `'${sheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, {
-      valueInputOption: "USER_ENTERED"
-    });
+      // 1. DATA DELIVERY (Atomic Update) - Separate call but pre-formatting
+      Sheets.Spreadsheets!.Values!.update({
+        values: rows
+      }, ssId, `'${sheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, {
+        valueInputOption: "USER_ENTERED"
+      });
 
-    // 2. ATOMIC UI (Headers, Formatting & Checkboxes)
-    const requests: any[] = [
-      // 2A. HEADERS DELIVERY (Row 2)
-      {
-        updateCells: {
-          rows: [{
-            values: HEADERS.map(h => ({
-              userEnteredValue: { stringValue: h },
-              userEnteredFormat: { textFormat: { bold: true }, wrapStrategy: "WRAP", horizontalAlignment: "CENTER", backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } }
-            }))
-          }],
-          fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + HEADERS.length }
+      // 2. TOTAL ATOMIC VISUALS (Consolidated)
+      const finalRequests: any[] = [
+        // 2A. HEADERS DELIVERY (Row 2 Style & Value)
+        {
+          updateCells: {
+            rows: [{
+              values: HEADERS.map(h => ({
+                userEnteredValue: { stringValue: h },
+                userEnteredFormat: { textFormat: { bold: true }, wrapStrategy: "WRAP", horizontalAlignment: "CENTER", backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } }
+              }))
+            }],
+            fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }
+          }
+        },
+        // 2B. CHECKBOXES
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.INVITED, endColumnIndex: CONFIG.SCHEMA.HH.INVITED + 1 },
+            cell: { dataValidation: { condition: { type: "BOOLEAN" } } },
+            fields: "dataValidation"
+          }
+        },
+        // 2C. SCORING GRADIENT
+        {
+          addConditionalFormatRule: {
+            rule: {
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 }],
+              gradientRule: {
+                minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
+                midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" },
+                maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" }
+              }
+            },
+            index: 0
+          }
+        },
+        // 2D. NUMBER FORMATS (Percentage & Date)
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 },
+            cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1 },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "yyyy-mm-dd HH:mm:ss" } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
         }
-      },
-      // Checkboxes (Column 2 relative to start column B, so Column B is dimension 1)
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.INVITED, endColumnIndex: CONFIG.SCHEMA.HH.INVITED + 1 },
-          cell: { dataValidation: { condition: { type: "BOOLEAN" } } },
-          fields: "dataValidation"
-        }
-      },
-      // Gradient Rule
-      {
-        addConditionalFormatRule: {
-          rule: {
-            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 }],
-            gradientRule: {
-              minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
-              midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" },
-              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" }
-            }
-          },
-          index: 0
-        }
-      },
-      // Number Formats (Percentage)
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 },
-          cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
-          fields: "userEnteredFormat.numberFormat"
-        }
-      },
-      // Number Formats (Date)
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + rows.length, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1 },
-          cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "yyyy-mm-dd HH:mm:ss" } } },
-          fields: "userEnteredFormat.numberFormat"
-        }
-      }
-    ];
+      ];
 
-    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-  }
+      // 2E. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar)
+      finalRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, contentRows, contentCols));
 
-  sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
-  
-  // 🎨 CONDITIONAL FORMATTING
-  if (sheet && rows.length > 0) {
-      applyHeadhunterFormatting(sheet, rows.length);
-  }
+      // 🚀 EXECUTE UNBREAKABLE TRANSACTION
+      Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
+    }
 
-  console.log(`✅ Headhunter View Rendered: ${rows.length} candidates.`);
+    Registry.Services.View.setStatusMessage(sheet, `HEADHUNTER • ${new Date().toLocaleString()}`);
+    console.log(`✅ Headhunter View Rendered: ${rows.length} candidates (Atomic).`);
 }
 
 function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, numRows: number): void {
