@@ -444,7 +444,14 @@ function updateLeaderboard(dryRun: boolean = false): void {
   const ssId = ss.getId();
   const sheetName = lbSheet.getName();
 
-  lbSheet.clear();
+  // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
+  Registry.Services.View.applyStandardLayout(
+    lbSheet,
+    finalRows.length,
+    HEADERS_ARRAY.length - 1,
+    HEADERS_ARRAY.slice(1),
+  );
+
   Sheets.Spreadsheets!.Values!.update({
     values: [HEADERS_ARRAY]
   }, ssId, `'${sheetName}'!A2`, {
@@ -537,13 +544,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
     .getRange("B1")
     .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
   ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
-
-  Registry.Services.View.applyStandardLayout(
-    lbSheet,
-    finalRows.length,
-    HEADERS_ARRAY.length - 1,
-    HEADERS_ARRAY.slice(1),
-  );
 }
 
 function timeAgo(date: Date | null): string {
