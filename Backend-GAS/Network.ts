@@ -69,7 +69,7 @@ export interface ClanDataResult {
 /* ==========================================================================
    INTERNAL HELPERS
    ========================================================================== */
-const Internal = {
+const NetworkInternal = {
   /**
    * Initializes or refreshes the fetch count from Store
    */
@@ -148,7 +148,7 @@ const Network: INetwork = {
     if (!urls || urls.length === 0) return [];
 
     // 1. Initialize Quota
-    if (_FETCH_COUNT === 0) Internal.initQuota();
+    if (_FETCH_COUNT === 0) NetworkInternal.initQuota();
 
     // 2. Prepare Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
@@ -185,7 +185,7 @@ const Network: INetwork = {
 
     // Truncate if necessary (Safety First)
     const validUrls = urlsToFetch.slice(0, remainingQuota);
-    Internal.updateQuota(validUrls.length);
+    NetworkInternal.updateQuota(validUrls.length);
 
     // 5. Execution Strategy
     let useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
@@ -217,7 +217,7 @@ const Network: INetwork = {
 
           if (useRemote) {
             try {
-              responses = Internal.remoteFetch(chunk, keyPool, scoring);
+              responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e) {
               useRemote = false; // Fallback to local
               continue; // Retry as local immediately

@@ -71,6 +71,8 @@ const View: IView = {
     sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
     sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
 
+    // 🛡️ CANVAS PREPARATION: Clear all borders and reset visibility
+    sheet.getRange(1, 1, totalRows, totalCols).setBorder(false, false, false, false, false, false);
     this.drawMobileCheckbox(sheet);
 
     if (contentCols > 0) {
@@ -83,6 +85,16 @@ const View: IView = {
         .setFontWeight("bold")
         .setFontColor("#888888");
 
+      // 🏗️ BUFFER-ANCHORED FRAMING (Resilient borders)
+      // Left Edge (Right side of Col A)
+      sheet.getRange(1, 1, totalRows, 1).setBorder(null, null, null, true, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
+      // Right Edge (Left side of Last Col)
+      sheet.getRange(1, totalCols, totalRows, 1).setBorder(null, true, null, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
+      // Top Edge (Bottom side of Row 1)
+      sheet.getRange(1, 1, 1, totalCols).setBorder(null, null, true, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
+      // Bottom Edge (Top side of Last Row)
+      sheet.getRange(totalRows, 1, 1, totalCols).setBorder(true, null, null, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
+
       const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
       tableRange
         .getBandings()
@@ -92,16 +104,21 @@ const View: IView = {
         true,
         false,
       );
-      tableRange.setBorder(true, true, true, true, null, null);
+      
+      // Internal Gridlines (Thin/Gray)
+      tableRange.setBorder(null, null, null, null, true, true, "#cccccc", SpreadsheetApp.BorderStyle.SOLID);
 
       const headerRange = sheet.getRange(2, 2, 1, contentCols);
       if (Array.isArray(optHeaders) && optHeaders.length > 0)
         headerRange.setValues([optHeaders]);
+        
       headerRange
-        .setBorder(true, true, true, true, true, true)
         .setFontWeight("bold")
         .setHorizontalAlignment("center")
         .setWrap(true);
+        
+      // Header Bottom Line (Anchor for body)
+      headerRange.setBorder(null, null, true, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
 
       if (contentRows > 0) {
         sheet
