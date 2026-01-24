@@ -532,7 +532,7 @@ app.get("/capabilities", (_req: Request, res: Response): void => {
 /**
  * 🩺 DIAGNOSTIC HEALTH HANDSHAKE
  */
-app.get("/health", async (req: Request, res: Response): Promise<void> => {
+app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     // 1. Local Pool Diagnostics
     const pool = KEYS.getPoolStats();
     
@@ -953,7 +953,6 @@ app.post(
 
 app.post(
   "/fetch",
-  checkAuth,
   async (
     req: Request<object, object, FetchRequest>,
     res: Response,

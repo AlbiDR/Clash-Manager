@@ -1,9 +1,9 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // We need to mock the environment before importing index.ts
-process.env.API_KEYS = "key1,key2,key3";
-process.env.WORKER_SECRET = "secret";
+process.env["API_KEYS"] = "key1,key2,key3";
+process.env["WORKER_SECRET"] = "secret";
 
 // For the sake of testing logic, we'll implement a minimal testable version of the classes
 // Or if the file structure allows, we could export them.
@@ -20,12 +20,12 @@ describe('Worker Smart Engine logic', () => {
         const health = keys.map(k => ({ value: k, isHealthy: true, cooldown: 0 }));
         
         // Simulate failure
-        health[0].isHealthy = false;
-        health[0].cooldown = Date.now() + 60000;
+        health[0]!.isHealthy = false;
+        health[0]!.cooldown = Date.now() + 60000;
         
         const available = health.filter(k => k.isHealthy || Date.now() > k.cooldown);
         expect(available).toHaveLength(1);
-        expect(available[0].value).toBe("k2");
+        expect(available[0]!.value).toBe("k2");
     });
 
     it('should implement jitter backoff calculation', () => {
