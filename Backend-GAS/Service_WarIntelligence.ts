@@ -4,21 +4,14 @@
  * VERSION: 12.4.1 | High-Resolution Snapshot Engine
  */
 
-import type { ICore } from "./Core";
-import type { INetwork } from "./Network";
-import type { ITime } from "./Time";
 import type { AppConfig } from "./Configuration";
-import type { IStore } from "./Store";
+import type { IRegistry } from "./Registry";
 
 
 declare const CacheService: GoogleAppsScript.Cache.CacheService;
-declare const Core: ICore;
-declare const Network: INetwork;
-declare const Time: ITime;
 declare const CONFIG: AppConfig;
+declare const Registry: IRegistry;
 declare const Logger: any;
-declare const Store: IStore;
-declare const ScoringSystem: any; // Type check bypass for now to solve circular panic
 
 /**
  * 🚀 WAR SNAPSHOT INTERFACE
@@ -73,23 +66,23 @@ const WarIntelligence = (() => {
         return snap;
       }
 
-      return Core.executeSafely("WAR_SYNC", () => {
+      return Registry.Services.Core.executeSafely("WAR_SYNC", () => {
         try {
           let rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
           if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
           const tag = encodeURIComponent(rawTag);
           
-          const res = Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
+          const res = Registry.Services.Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
           
           if (!res?.[0]) throw new Error("API_EMPTY");
           
           const snap = this.parse(res[0], 'HIGH-FIDELITY');
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
-          Store.props.setChunked(K + "_PERSIST", snap); // 🛡️ Persist
+          Registry.Services.Store.props.setChunked(K + "_PERSIST", snap); // 🛡️ Persist
           return snap;
         } catch (e) {
           // 🛡️ FALLBACK: Try persistent store if API fails
-          const persisted = Store.props.getChunked<WarSnapshot>(K + "_PERSIST");
+          const persisted = Registry.Services.Store.props.getChunked<WarSnapshot>(K + "_PERSIST");
           if (persisted) {
              persisted.status = 'HEURISTIC';
              return persisted;
@@ -111,7 +104,7 @@ const WarIntelligence = (() => {
       if (pIdx !== undefined) {
         rawDay = pIdx % 7;
       } else {
-        const heuristic = Time.getWarPhaseFromDate(now);
+        const heuristic = Registry.Services.Time.getWarPhaseFromDate(now);
         rawDay = heuristic.rawDay;
       }
 
@@ -130,20 +123,20 @@ const WarIntelligence = (() => {
       if (d?.clans && Array.isArray(d.clans)) {
         // Find our clan in the race array for potentially fresher data
         const sorted = [...d.clans].sort((a: any, b: any) => {
-          const valA = ScoringSystem.resolveWarFame(a);
-          const valB = ScoringSystem.resolveWarFame(b);
+          const valA = Registry.Services.ScoringSystem.resolveWarFame(a);
+          const valB = Registry.Services.ScoringSystem.resolveWarFame(b);
           return valB - valA;
         });
 
         const myEntry = sorted.find((c: any) => c.tag === clanTag);
         // If player has participated, use their contribution
         if (myEntry) {
-          fame = ScoringSystem.resolveWarFame(myEntry);
+          fame = Registry.Services.ScoringSystem.resolveWarFame(myEntry);
           rank = sorted.indexOf(myEntry) + 1;
         }
       } else if (isTraining) {
         // During Training Days, fame is often 0 or meaningless "Medals"
-        fame = ScoringSystem.resolveWarFame(rootClan);
+        fame = Registry.Services.ScoringSystem.resolveWarFame(rootClan);
         rank = rootClan.rank || 0; // Rank might still be available on rootClan
       }
 
