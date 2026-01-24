@@ -47,6 +47,7 @@ const NETWORK_CONFIG = {
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map<string, any>();
 let _FETCH_COUNT = 0;
+let _LAST_WORKER_ERROR = "";
 
 /* ==========================================================================
    INTERFACES
@@ -59,6 +60,7 @@ export interface INetwork {
   scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring?: ScoringWeights | null): any[];
   remoteWorkerHealthy(): boolean;
   getRemainingQuota(): number;
+  getLastWorkerError(): string;
   _clearCache(): void;
 }
 
@@ -446,13 +448,23 @@ var Network: INetwork = {
             const diagnostic = JSON.parse(res.getContentText() || "{}");
             if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
                 isHealthy = true;
+                _LAST_WORKER_ERROR = "";
                 console.info(`[Network] Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
             } else {
-                console.warn(`[Network] Worker Degradation: Auth=${diagnostic?.checks?.auth}, Upstream=${diagnostic?.checks?.upstream}`);
+                _LAST_WORKER_ERROR = `Degraded: Auth=${diagnostic?.checks?.auth || 'Fail'}, Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
+                console.warn(`[Network] Worker Degradation: ${_LAST_WORKER_ERROR}`);
                 isHealthy = (diagnostic?.checks?.auth === "OK"); // Degraded but reachable
             }
+        } else {
+            _LAST_WORKER_ERROR = `HTTP ${res.getResponseCode()}`;
+            console.error(`[Network] Worker Handshake Failed: ${_LAST_WORKER_ERROR}`);
+            if (res.getResponseCode() === 401) _LAST_WORKER_ERROR += " (Secret Mismatch)";
+            if (res.getResponseCode() === 404) _LAST_WORKER_ERROR += " (Wrong version or URL)";
         }
-    } catch(e) { console.warn(`[Network] Worker Reachability Error: ${e}`); }
+    } catch(e) { 
+        _LAST_WORKER_ERROR = String(e);
+        console.warn(`[Network] Worker Reachability Error: ${e}`); 
+    }
 
     // Persist
     _EXECUTION_CACHE.set("worker_health", isHealthy);
@@ -526,6 +538,10 @@ var Network: INetwork = {
   getRemainingQuota() {
     NetworkInternal.initQuota();
     return Math.max(0, NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT);
+  },
+
+  getLastWorkerError() {
+    return _LAST_WORKER_ERROR;
   },
 
   _clearCache() {

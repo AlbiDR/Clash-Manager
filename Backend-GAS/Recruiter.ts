@@ -492,10 +492,13 @@ function scanTournaments(
     }
   }
 
-  if (!usedRemote && !remoteAvailable) {
-    console.warn(`[Recruiter] Worker Offline. Skipping deep player profiling to preserve local URLFetch quota.`);
-    return [];
-  }
+    const useRemote = Registry.Services.Network.remoteWorkerHealthy();
+
+    if (!useRemote) {
+        const lastErr = Registry.Services.Network.getLastWorkerError();
+        console.warn(`[Recruiter] Worker Offline: ${lastErr || "Unknown Error"}. Skipping deep player profiling to preserve local URLFetch quota.`);
+        return [];
+    }
 
   if (!usedRemote) {
     const details = Registry.Services.Network.fetchRoyaleAPI(
