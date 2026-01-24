@@ -49,7 +49,6 @@ const CONFIG: ServerConfig = {
   timeout: parseInt(process.env["WORKER_TIMEOUT_SEC"] ?? "45", 10) * 1000,
   maxRetries: parseInt(process.env["WORKER_RETRIES"] ?? "2", 10),
   port: parseInt(process.env["PORT"] ?? "8080", 10),
-  secret: process.env["WORKER_SECRET"],
 } as const;
 
 // ============================================================================
@@ -496,18 +495,6 @@ async function processScanBatch(
 //  MIDDLEWARE
 // ============================================================================
 
-const checkAuth: RequestHandler = (req, res, next) => {
-  if (!CONFIG.secret) return next();
-
-  const auth = (req.get("authorization") ?? "").trim();
-  if (auth !== `Bearer ${CONFIG.secret}`) {
-    console.warn(`[Auth] Blocked unauthorized request from ${req.ip}`);
-    res.status(401).json({ status: "error", error: "ERR_UNAUTHORIZED" });
-    return;
-  }
-  next();
-};
-
 /**
  * 🛠️ REQUEST VALIDATION MIDDLEWARE
  */
@@ -530,7 +517,7 @@ app.get("/", (_req: Request, res: Response): void => {
   res.send("Clash Manager Worker is running");
 });
 
-app.get("/capabilities", checkAuth, (_req: Request, res: Response): void => {
+app.get("/capabilities", (_req: Request, res: Response): void => {
   res.json({
     status: "success",
     data: {
@@ -546,14 +533,10 @@ app.get("/capabilities", checkAuth, (_req: Request, res: Response): void => {
  * 🩺 DIAGNOSTIC HEALTH HANDSHAKE
  */
 app.get("/health", async (req: Request, res: Response): Promise<void> => {
-    // 1. Secret Verification
-    const auth = (req.get("authorization") ?? "").trim();
-    const secretValid = !CONFIG.secret || auth === `Bearer ${CONFIG.secret}`;
-    
-    // 2. Local Pool Diagnostics
+    // 1. Local Pool Diagnostics
     const pool = KEYS.getPoolStats();
     
-    // 3. Upstream Check (Current Healthiest Key)
+    // 2. Upstream Check (Current Healthiest Key)
     const testKey = KEYS.getHealthyKey();
     let upstreamStatus = "UNKNOWN";
     
@@ -568,10 +551,9 @@ app.get("/health", async (req: Request, res: Response): Promise<void> => {
         } catch(e) { upstreamStatus = "TIMEOUT"; }
     }
 
-    res.status(secretValid ? 200 : 401).json({
-        status: secretValid ? "success" : "error",
+    res.status(200).json({
+        status: "success",
         checks: {
-            auth: secretValid ? "OK" : "ERR_AUTH",
             upstream: upstreamStatus,
             pool: pool,
             memory: process.memoryUsage().rss
@@ -581,7 +563,6 @@ app.get("/health", async (req: Request, res: Response): Promise<void> => {
 
 app.post(
   "/audit",
-  checkAuth,
   validateFields(["apiKeys"]),
   async (
     req: Request<object, object, AuditRequest>,
@@ -720,7 +701,6 @@ app.post(
 
 app.post(
   "/scan",
-  checkAuth,
   validateFields(["tags"]),
   async (
     req: Request<object, object, ScanRequest>,
@@ -786,7 +766,6 @@ app.post(
 
 app.post(
   "/clan/full",
-  checkAuth,
   validateFields(["tag"]),
   async (
     req: Request<object, object, ClanFullRequest>,
@@ -861,7 +840,6 @@ app.post(
 
 app.post(
   "/clan/api",
-  checkAuth,
   validateFields(["tag", "type"]),
   async (
     req: Request<object, object, ClanApiRequest>,
