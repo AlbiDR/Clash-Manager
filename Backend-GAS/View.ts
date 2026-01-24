@@ -340,11 +340,17 @@ var View: IView = {
     const sheetId = sheet.getSheetId();
     
     try {
-      Sheets.Spreadsheets!.DeveloperMetadata!.create({
-        location: { sheetId: sheetId },
-        metadataKey: "cm_type",
-        metadataValue: type,
-        visibility: "DOCUMENT"
+      Sheets.Spreadsheets!.batchUpdate({
+        requests: [{
+          createDeveloperMetadata: {
+            developerMetadata: {
+              location: { sheetId: sheetId },
+              metadataKey: "cm_type",
+              metadataValue: type,
+              visibility: "DOCUMENT"
+            }
+          }
+        }]
       }, ssId);
     } catch (e) {
       console.warn(`🏷️ Metadata Tagging failed for ${sheet.getName()}: ${e}`);
