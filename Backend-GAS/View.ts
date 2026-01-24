@@ -105,65 +105,51 @@ var View: IView = {
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } } },
-            fields: 'userEnteredFormat.backgroundColor'
+            cell: { userEnteredFormat: { backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 }, textFormat: { bold: true } } },
+            fields: 'userEnteredFormat(backgroundColor,textFormat.bold)'
           }
         },
         // 🏗️ ATOMIC FORMATTING (Borders, Alignment, Merges)
-        // Left Edge (Right side of Column A, skipping Row 1 and Last Row)
+        // Table Horizontal Alignment
+        {
+            repeatCell: {
+                range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+                cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
+                fields: "userEnteredFormat.horizontalAlignment"
+            }
+        },
+        // Left Edge
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Right Edge (Left side of Last Column, skipping Row 1 and Last Row)
+        // Right Edge
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Top Edge (Bottom side of Row 1, skipping Column A and Last Column)
+        // Top Edge
         { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Bottom Edge (Top side of Last Row, skipping Column A and Last Column)
+        // Bottom Edge
         { updateBorders: { range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         // Header Bottom Line
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         // Internal Gridlines (Thin/Gray)
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
-        // Auto-Size Dimensions
-        { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } }
-      );
-    }
-
-    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-    
-    // Legacy support for non-API compatible bits (Banding/Merge)
-    this.drawMobileCheckbox(sheet);
-
-    if (contentCols > 0) {
-      // Dimension updates (Widths)
-      sheet.setColumnWidths(2, contentCols, 100);
-
-      requests.push(
-        // Status Bar (Row 1Merge replacement)
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
+        // Status Bar (Row 1 Merge replacement & Style)
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
             cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
             fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
           }
-        },
-        // Table Alignment
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: 1, endRowIndex: 2 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
-            fields: "userEnteredFormat.horizontalAlignment"
-          }
         }
       );
+
+      // Dimension updates
+      sheet.setColumnWidths(2, contentCols, 100);
       
-      // Merge Status Bar
+      // Cleanup existing merges in the header zone
       sheet.getRange(1, 1, 1, totalCols).breakApart();
       sheet.getRange(1, 2, 1, contentCols).merge();
-      
-      // Update Headers manually if passed (Legacy bridge for dynamic content)
-      if (Array.isArray(optHeaders) && optHeaders.length > 0) {
-         sheet.getRange(2, 2, 1, contentCols).setValues([optHeaders]);
-      }
     }
+
+    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+    this.drawMobileCheckbox(sheet);
     sheet.setHiddenGridlines(true);
   },
 

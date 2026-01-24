@@ -694,11 +694,7 @@ function renderHeadhunterView(
     c.potentialScore,
   ]);
 
-  sheet
-    .getRange(2, 2, 1, HEADERS.length)
-    .setValues([HEADERS])
-    .setFontWeight("bold")
-    .setWrap(true);
+  // No changes needed to renderHeadhunterView preparation logic.
 
     if (rows.length > 0) {
     const ssId = sheet.getParent().getId();
@@ -712,8 +708,21 @@ function renderHeadhunterView(
       valueInputOption: "USER_ENTERED"
     });
 
-    // 2. ATOMIC UI (Formatting & Checkboxes)
+    // 2. ATOMIC UI (Headers, Formatting & Checkboxes)
     const requests: any[] = [
+      // 2A. HEADERS DELIVERY (Row 2)
+      {
+        updateCells: {
+          rows: [{
+            values: HEADERS.map(h => ({
+              userEnteredValue: { stringValue: h },
+              userEnteredFormat: { textFormat: { bold: true }, wrapStrategy: "WRAP", horizontalAlignment: "CENTER", backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } }
+            }))
+          }],
+          fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + HEADERS.length }
+        }
+      },
       // Checkboxes (Column 2 relative to start column B, so Column B is dimension 1)
       {
         repeatCell: {
