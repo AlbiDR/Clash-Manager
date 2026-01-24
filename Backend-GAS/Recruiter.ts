@@ -481,6 +481,11 @@ function scanTournaments(
     }
   }
 
+  if (!usedRemote && !remoteAvailable) {
+    console.warn(`[Recruiter] Worker Offline. Skipping deep player profiling to preserve local URLFetch quota.`);
+    return [];
+  }
+
   if (!usedRemote) {
     const details = Registry.Services.Network.fetchRoyaleAPI(
       tourneyTags.map(
@@ -575,6 +580,12 @@ function scanTournaments(
         }
       }
     });
+
+    // 🛡️ WORKER GUARD: Only proceed with localized profile fetching if it's a small chunk
+    if (logUrls.length > 20 && !remoteAvailable) {
+        console.warn(`[Recruiter] High Volume Profile Queue detected (${logUrls.length}). Worker offline; aborting to save quota.`);
+        return validCandidates;
+    }
 
     if (logUrls.length > 0 && !lowQuotaMode) {
       const logs = Registry.Services.Network.fetchRoyaleAPI(logUrls);

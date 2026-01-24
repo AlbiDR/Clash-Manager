@@ -227,21 +227,17 @@ var Network: INetwork = {
 
     for (let c = 0; c < validUrls.length; c += BATCH_SIZE) {
       const chunk = validUrls.slice(c, c + BATCH_SIZE);
+      const isHighVolume = chunk.length > 5;
       
       for (let attempt = 0; attempt < NETWORK_CONFIG.RETRY_MAX; attempt++) {
         if (keyPool.length === 0) break;
 
-        // Local Request Construction
-        const requests = chunk.map(u => {
+        const localRequests = chunk.map(u => {
           const keyObj = keyPool[Math.floor(Math.random() * keyPool.length)];
           return {
             url: u,
             method: "get" as const,
-            headers: {
-              Authorization: `Bearer ${keyObj.value}`,
-              "User-Agent": "ClanManagerBot/Network (GAS)",
-              "Accept-Encoding": "gzip"
-            },
+            headers: { Authorization: `Bearer ${keyObj.value}`, "User-Agent": "ClanManagerBot/Network (GAS)", "Accept-Encoding": "gzip" },
             muteHttpExceptions: true
           };
         });
@@ -249,29 +245,35 @@ var Network: INetwork = {
         try {
           let responses: any[];
 
+          // 🛡️ WORKER FIRST STRATEGY: High volume MUST go through worker if available
           if (useRemote) {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
-            } catch (e) {
-              useRemote = false; // Fallback to local
-              continue; // Retry as local immediately
+            } catch (e: any) {
+                console.warn(`[Network] Worker Failure: ${e.message}.`);
+                if (isHighVolume) {
+                   console.error(`[Network] High Volume Batch FAILED. Blocking local fallback for quota safety.`);
+                   useRemote = false; // Mark for next execution context
+                   break; // Abort chunk
+                }
+                useRemote = false; 
+                continue; // Retry single items locally if allowed
             }
           } else {
-            let localResponses: any[] = [];
-            try {
-              localResponses = UrlFetchApp.fetchAll(requests);
-            } catch (e: any) {
-              console.warn(`[Network] Batch failed: ${e.message}. Retrying...`);
-              Utilities.sleep(1500);
-              try {
-                localResponses = UrlFetchApp.fetchAll(requests);
-              } catch (e2) {
-                console.error("[Network] Retry failed.");
-                // If retry fails, treat all items in this chunk as failed
-                localResponses = chunk.map(() => ({ getResponseCode: () => 500, getContentText: () => "" }));
-              }
+            // Local fallback (only for low volume or critical paths)
+            if (isHighVolume && attempt > 0) {
+               console.warn(`[Network] Quota Guard: Blocking local retry for large batch.`);
+               break; 
             }
-            responses = localResponses;
+            
+            try {
+              responses = UrlFetchApp.fetchAll(localRequests);
+            } catch (e: any) {
+              console.warn(`[Network] Batch failed: ${e.message}.`);
+              if (isHighVolume) break; // Don't even try local retry for large batches
+              Utilities.sleep(1500);
+              responses = UrlFetchApp.fetchAll(localRequests); // Simple retry for small chunks
+            }
           }
 
           let retryChunk = false;
@@ -298,7 +300,7 @@ var Network: INetwork = {
             } else if (code === 403 || code === 429) {
               if (!useRemote) {
                 // Burn bad key locally
-                const badKey = requests[i].headers["Authorization"].replace("Bearer ", "");
+                const badKey = localRequests[i].headers["Authorization"].replace("Bearer ", "");
                 keyPool = keyPool.filter(k => k.value !== badKey);
               }
               retryChunk = true;
@@ -321,6 +323,17 @@ var Network: INetwork = {
   },
 
   fetchClanDataSmart(cleanTag) {
+    const cacheKey = `clan_full_${cleanTag.replace(/%/g, '_')}`;
+    const scriptCache = CacheService.getScriptCache();
+    
+    // 🧠 15-MINUTE PERSISTENT CACHE (Quota Saver)
+    const cachedStr = scriptCache.get(cacheKey);
+    if (cachedStr) {
+      try {
+        return JSON.parse(cachedStr);
+      } catch (e) {}
+    }
+
     const useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
 
     if (useRemote) {
@@ -341,13 +354,17 @@ var Network: INetwork = {
             });
 
             if (res.getResponseCode() === 200) {
-                const json = JSON.parse(res.getContentText());
-                return {
+                const text = res.getContentText();
+                const json = JSON.parse(text);
+                const result = {
                     members: { items: json.members.items },
                     race: { clan: json.race.clan },
                     history: json.history,
                     log: null
                 };
+                // Cache for 15 mins (Quota optimization)
+                scriptCache.put(cacheKey, JSON.stringify(result), NETWORK_CONFIG.CACHE_TTL_LONG);
+                return result;
             }
         } catch(e) {}
     }
