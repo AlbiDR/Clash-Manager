@@ -9,13 +9,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IView } from "./View";
-import type { ISchema } from "./Schema";
-import type { IStore } from "./Store";
-import type { ICore } from "./Core";
-import type { INetwork } from "./Network";
-import type { ITime } from "./Time";
-import type { IScoringSystem } from "./ScoringSystem";
+import type { IRegistry } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
 // Global Version Constant
@@ -51,14 +45,9 @@ declare namespace GoogleAppsScript {
 }
 
 // Global Declarations for GAS Environment
+// Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const View: IView;
-declare const Schema: ISchema;
-declare const Store: IStore;
-declare const Core: ICore;
-declare const Network: INetwork;
-declare const Time: ITime;
-declare const ScoringSystem: IScoringSystem;
+declare const Registry: IRegistry;
 
 // External module functions
 declare function refreshWebPayload(): void;
@@ -116,7 +105,7 @@ function scoutRecruits(): void {
   if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.HH);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
-  Schema.bootDynamicSchema();
+  Registry.Services.Schema.bootDynamicSchema();
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
@@ -130,7 +119,7 @@ function scoutRecruits(): void {
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
   // 1. Establish Baseline
-  const baselineData = Network.fetchRoyaleAPI([
+  const baselineData = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
   ]);
   let avgTrophies = 4000;
@@ -158,7 +147,7 @@ function scoutRecruits(): void {
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
-    const profiles = Network.fetchRoyaleAPI(
+    const profiles = Registry.Services.Network.fetchRoyaleAPI(
       tagsToCheck.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
       ),
@@ -217,10 +206,10 @@ function scoutRecruits(): void {
       const perf = Number(row[L.PERF_SCORE]) || 0;
       if (perf >= 50) {
         const histStr = String(row[L.HISTORY] || "");
-        const currentWk = Time.calculateWarWeekId(new Date());
+        const currentWk = Registry.Services.Time.calculateWarWeekId(new Date());
         const hasRecentWar = histStr.includes(currentWk);
 
-        const raw = ScoringSystem.calculateRecruitRawScore(
+        const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
           Number(row[L.TROPHIES]) || 0,
           Number(row[L.TOTAL_DON]) || 0,
           Number(row[L.WAR_DAY_WINS]) || 0,
@@ -232,7 +221,7 @@ function scoutRecruits(): void {
     });
   }
 
-  const finalBenchmark = ScoringSystem.calculateHybridBenchmark(
+  const finalBenchmark = Registry.Services.ScoringSystem.calculateHybridBenchmark(
     clanEliteData,
     blacklistEntries,
   );
@@ -249,14 +238,14 @@ function scoutRecruits(): void {
 
   finalPool.forEach(
     (p) =>
-      (p.potentialScore = ScoringSystem.calculatePotentialScore(
+      (p.potentialScore = Registry.Services.ScoringSystem.calculatePotentialScore(
         p.rawScore,
         finalBenchmark,
       )),
   );
 
   // 🛡️ BACKUP
-  View.backupSheet(ss, CONFIG.SHEETS.HH);
+  Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.HH);
 
   // 7. RENDER
   renderHeadhunterView(sheet, finalPool, avgTrophies);
@@ -412,15 +401,15 @@ function scanTournaments(
     (k) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
   );
 
-  const searchResults = Network.fetchRoyaleAPI(searchUrls);
+  const searchResults = Registry.Services.Network.fetchRoyaleAPI(searchUrls);
   const uniqueTourneys = new Map<string, TournamentResult>();
   searchResults.forEach((res: TournamentResult) => {
     if (res && res.items)
       res.items.forEach((t) => uniqueTourneys.set(t.tag, t));
   });
 
-  const remoteAvailable = Network.remoteWorkerHealthy();
-  const remoteExpandEnabled = Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
+  const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy();
+  const remoteExpandEnabled = Registry.Services.Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
   const scanCfg =
     remoteAvailable && remoteExpandEnabled
       ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
@@ -436,7 +425,7 @@ function scanTournaments(
       ),
     );
 
-  Core.shuffleArray(lotteryPool);
+  Registry.Services.Core.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
@@ -448,7 +437,7 @@ function scanTournaments(
 
   if (remoteAvailable && remoteExpandEnabled) {
     try {
-      candidates = Network.scanTournamentsRemote(
+      candidates = Registry.Services.Network.scanTournamentsRemote(
         tourneyTags,
         minTrophies,
         blacklistSet,
@@ -459,7 +448,7 @@ function scanTournaments(
   }
 
   if (!usedRemote) {
-    const details = Network.fetchRoyaleAPI(
+    const details = Registry.Services.Network.fetchRoyaleAPI(
       tourneyTags.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
       ),
@@ -493,7 +482,7 @@ function scanTournaments(
     .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
     .slice(0, playerLimit);
 
-  Core.shuffleArray(candidatePool);
+  Registry.Services.Core.shuffleArray(candidatePool);
   const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
 
   if (tagsToFetch.length === 0) return [];
@@ -520,7 +509,7 @@ function scanTournaments(
       });
     });
   } else {
-    const playersData = Network.fetchRoyaleAPI(
+    const playersData = Registry.Services.Network.fetchRoyaleAPI(
       tagsToFetch.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
       ),
@@ -554,7 +543,7 @@ function scanTournaments(
     });
 
     if (logUrls.length > 0) {
-      const logs = Network.fetchRoyaleAPI(logUrls);
+      const logs = Registry.Services.Network.fetchRoyaleAPI(logUrls);
       candidatesToProfile.forEach((p, idx) => {
         let hasWar = false;
         if (logs[idx]) {
@@ -570,7 +559,7 @@ function scanTournaments(
           );
         }
 
-        const rawScore = ScoringSystem.calculateRecruitRawScore(
+        const rawScore = Registry.Services.ScoringSystem.calculateRecruitRawScore(
           p.trophies || 0,
           p.totalDonations || 0,
           p.warDayWins || 0,
@@ -718,7 +707,7 @@ function renderHeadhunterView(
   }
 
   sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
-  View.applyStandardLayout(
+  Registry.Services.View.applyStandardLayout(
     sheet,
     Math.max(rows.length, CONFIG.HEADHUNTER.TARGET),
     HEADERS.length,

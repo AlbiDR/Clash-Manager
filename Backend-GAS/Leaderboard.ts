@@ -14,12 +14,8 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IView } from "./View";
-import type { ISchema } from "./Schema";
-import type { ICore } from "./Core";
-import type { INetwork } from "./Network";
-import type { ITime } from "./Time";
-import type { IScoringSystem } from "./ScoringSystem";
+import type { AppConfig } from "./Configuration";
+import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -54,13 +50,9 @@ declare namespace GoogleAppsScript {
 }
 
 // Global Declarations for GAS Environment
+// Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const View: IView;
-declare const Schema: ISchema;
-declare const Core: ICore;
-declare const Network: INetwork;
-declare const Time: ITime;
-declare const ScoringSystem: IScoringSystem;
+declare const Registry: IRegistry;
 
 /**
  * 🏆 LEADERBOARD INTERFACES
@@ -119,7 +111,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
-  Schema.bootDynamicSchema();
+  Registry.Services.Schema.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
 
   // 🛡️ CONFIGURATION CHECK
@@ -168,7 +160,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     race: raceData,
     log: logData,
     history: remoteHistory,
-  } = Network.fetchClanDataSmart(cleanTag);
+  } = Registry.Services.Network.fetchClanDataSmart(cleanTag);
 
   if (!membersData || !membersData.items) {
     console.error("Leaderboard: Failed to fetch members.");
@@ -176,8 +168,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
   }
 
   const now = new Date();
-  const currentWeekId = Time.calculateWarWeekId(now);
-  const currentDayIndex = Time.getLogicalDay(now);
+  const currentWeekId = Registry.Services.Time.calculateWarWeekId(now);
+  const currentDayIndex = Registry.Services.Time.getLogicalDay(now);
 
   // A. Build War History Map
   const warHistoryMap = new Map<string, Map<string, number>>();
@@ -205,7 +197,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         const tag = String(row[0]);
         const histStr = histData[i][0];
         if (tag && typeof histStr === "string" && histStr.length > 0) {
-          const archivedMap = Core.parseWarHistory(histStr);
+          const archivedMap = Registry.Services.Core.parseWarHistory(histStr);
           if (archivedMap.size > 0) {
             if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
             const userMap = warHistoryMap.get(tag)!;
@@ -226,8 +218,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
     });
   } else if (logData && logData.items) {
     (logData.items as WarLogItem[]).forEach((log) => {
-      const weekId = Time.calculateWarWeekId(
-        Time.parseRoyaleApiDate(log.createdDate),
+      const weekId = Registry.Services.Time.calculateWarWeekId(
+        Registry.Services.Time.parseRoyaleApiDate(log.createdDate),
       );
       const myClan = log.standings.find(
         (s) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
@@ -243,7 +235,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   if (raceData && raceData.clan && raceData.clan.participants) {
     (raceData.clan.participants as RaceParticipant[]).forEach((p) => {
       // 🛡️ UNIFIED FAME DETECTION (Synced with Service_WarIntelligence v12.4.0)
-      addWarEntry(p.tag, currentWeekId, ScoringSystem.resolveWarFame(p));
+      addWarEntry(p.tag, currentWeekId, Registry.Services.ScoringSystem.resolveWarFame(p));
     });
   }
 
@@ -271,7 +263,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
       const date = dateVal ? new Date(dateVal) : new Date();
       const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
       const rawWarFame = row[S_DB.WAR_FAME];
-      const weekId = Time.calculateWarWeekId(date);
+      const weekId = Registry.Services.Time.calculateWarWeekId(date);
 
       if (!memberDbData.has(tag)) {
         memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map(), battleWeeks: new Set(), totalBattleCredits: 0 });
@@ -315,7 +307,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     const weeklyDonations = m.donations || 0;
     const pWarHistory = warHistoryMap.get(m.tag) || new Map<string, number>();
     const currentFame = pWarHistory.get(currentWeekId) || 0;
-    const lastSeen = Time.parseRoyaleApiDate(m.lastSeen);
+    const lastSeen = Registry.Services.Time.parseRoyaleApiDate(m.lastSeen);
 
     const dbRecord = memberDbData.get(m.tag);
     let daysTracked = 0;
@@ -357,12 +349,12 @@ function updateLeaderboard(dryRun: boolean = false): void {
 
     // ⚔️ WAR RATE: Daily Attendance Model
     const totalBattleCredits = dbRecord?.totalBattleCredits ?? 0;
-    const eligibleBattleDays = Time.getEligibleBattleDays(daysTracked);
-    const warRateVal = ScoringSystem.calculateWarRate(
+    const eligibleBattleDays = Registry.Services.Time.getEligibleBattleDays(daysTracked);
+    const warRateVal = Registry.Services.ScoringSystem.calculateWarRate(
       totalBattleCredits,
       eligibleBattleDays,
     );
-    const scores = ScoringSystem.computeScores(
+    const scores = Registry.Services.ScoringSystem.computeScores(
       currentFame,
       avgWarFame,
       avgDailyDonations,
@@ -435,12 +427,12 @@ function updateLeaderboard(dryRun: boolean = false): void {
     finalRows.push(row);
   });
 
-  finalRows.sort(ScoringSystem.comparator);
+  finalRows.sort(Registry.Services.ScoringSystem.comparator);
 
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
-  View.backupSheet(ss, CONFIG.SHEETS.LB);
+  Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.LB);
 
   const HEADERS_ARRAY = new Array(17).fill("");
   (
@@ -533,7 +525,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
   ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
 
-  View.applyStandardLayout(
+  Registry.Services.View.applyStandardLayout(
     lbSheet,
     finalRows.length,
     HEADERS_ARRAY.length - 1,

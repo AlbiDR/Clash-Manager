@@ -12,10 +12,8 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IView } from "./View";
-import type { ICore } from "./Core";
-import type { INetwork } from "./Network";
-import type { ITime } from "./Time";
+import type { AppConfig } from "./Configuration";
+import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -51,16 +49,11 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const View: IView;
-declare const Core: ICore;
-declare const Network: INetwork;
-declare const Time: ITime;
+declare const Registry: IRegistry;
 
 // External module functions
-declare function updateClanDatabase(): void;
-declare function updateLeaderboard(): void;
-declare function scoutRecruits(): void;
-declare function refreshWebPayload(): void;
+// External module functions (Legacy)
+// routed via Registry in modern stack
 
 // Module Version Constants for Health Check
 declare const VER_CONFIGURATION: string;
@@ -117,18 +110,20 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
 function taskUpdateMemberStats(): void {
   console.log("⏰ TASK START: Update Member Stats (DB + LB)");
 
-  Core.executeSafely("TASK_MEMBER_STATS", () => {
+  console.log("⏰ TASK START: Update Member Stats (DB + LB)");
+  
+  Registry.Services.Core.executeSafely("TASK_MEMBER_STATS", () => {
     try {
       console.log("  >> Step 1: Updating Database...");
-      updateClanDatabase();
+      Registry.Actions["sync:database"]();
 
       Utilities.sleep(10000);
 
       console.log("  >> Step 2: Updating Leaderboard...");
-      updateLeaderboard();
+      Registry.Actions["sync:leaderboard"]();
 
       console.log("  >> Step 3: Refreshing PWA...");
-      refreshWebPayload();
+      Registry.Actions["sync:webapp"]();
 
       console.log("⏰ TASK END: Member Stats Sync Complete.");
     } catch (e: any) {
@@ -143,9 +138,10 @@ function taskUpdateMemberStats(): void {
  */
 function taskFastScout(): void {
   console.log("⏰ TASK START: Fast Scout");
-  Core.executeSafely("TASK_HH", () => {
+  console.log("⏰ TASK START: Fast Scout");
+  Registry.Services.Core.executeSafely("TASK_HH", () => {
     try {
-      scoutRecruits();
+      Registry.Actions["recruit:scout"]();
       console.log("⏰ TASK END: Scout complete.");
     } catch (e: any) {
       console.error(`❌ TASK FAILED (HH): ${e.message}`);
@@ -161,7 +157,7 @@ function setupMobileTriggers(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const triggerName = "handleMobileEdit";
 
-  View.refreshMobileControls(ss);
+  Registry.Services.View.refreshMobileControls(ss);
 
   const triggers = ScriptApp.getProjectTriggers();
   let exists = false;
@@ -209,16 +205,18 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 
   console.log(`📱 Mobile Trigger: ${sheetName}`);
 
+  console.log(`📱 Mobile Trigger: ${sheetName}`);
+
   try {
-    Core.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
+    Registry.Services.Core.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
       if (sheetName === CONFIG.SHEETS.LB) {
-        updateLeaderboard();
-        refreshWebPayload();
+        Registry.Actions["sync:leaderboard"]();
+        Registry.Actions["sync:webapp"]();
       } else if (sheetName === CONFIG.SHEETS.DB) {
-        updateClanDatabase();
-        refreshWebPayload();
+        Registry.Actions["sync:database"]();
+        Registry.Actions["sync:webapp"]();
       } else if (sheetName === CONFIG.SHEETS.HH) {
-        scoutRecruits();
+        Registry.Actions["recruit:scout"]();
       }
       sheet
         .getRange("B1")
@@ -240,10 +238,11 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
-  Core.executeSafely("MANUAL_DB", () => {
+  ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
+  Registry.Services.Core.executeSafely("MANUAL_DB", () => {
     try {
-      updateClanDatabase();
-      refreshWebPayload();
+      Registry.Actions["sync:database"]();
+      Registry.Actions["sync:webapp"]();
       ss.toast("Database updated successfully.", "Success", 3);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -254,10 +253,11 @@ function triggerUpdateDatabase(): void {
 function triggerUpdateLeaderboard(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Calculating scores...", "Update Leaderboard", 5);
-  Core.executeSafely("MANUAL_LB", () => {
+  ss.toast("Calculating scores...", "Update Leaderboard", 5);
+  Registry.Services.Core.executeSafely("MANUAL_LB", () => {
     try {
-      updateLeaderboard();
-      refreshWebPayload();
+      Registry.Actions["sync:leaderboard"]();
+      Registry.Actions["sync:webapp"]();
       ss.toast("Leaderboard refreshed.", "Success", 3);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -268,9 +268,10 @@ function triggerUpdateLeaderboard(): void {
 function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Scanning tournaments...", "Headhunter", 20);
-  Core.executeSafely("MANUAL_HH", () => {
+  ss.toast("Scanning tournaments...", "Headhunter", 20);
+  Registry.Services.Core.executeSafely("MANUAL_HH", () => {
     try {
-      scoutRecruits();
+      Registry.Actions["recruit:scout"]();
       ss.toast("Scout Complete.", "Success", 5);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -396,8 +397,10 @@ function verifyApiKeysInternal(
   let quotaExhausted = false;
   const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
 
+  const keysToCheck = limit > 0 ? keys.slice(0, limit) : keys;
+
   if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
-    const remoteResults = Network.auditKeysRemote(keysToCheck);
+    const remoteResults = Registry.Services.Network.auditKeysRemote(keysToCheck);
     if (remoteResults) {
       console.log("✅ API Audit handled by Remote Worker.");
       return remoteResults;
