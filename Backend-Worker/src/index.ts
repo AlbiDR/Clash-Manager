@@ -53,6 +53,86 @@ const CONFIG: ServerConfig = {
 } as const;
 
 // ============================================================================
+//  KEY MANAGEMENT ENGINE (High Performance)
+// ============================================================================
+
+interface KeyState {
+  value: string;
+  isHealthy: boolean;
+  cooldownUntil: number;
+  failureCount: number;
+}
+
+class KeyManager {
+  private keys: KeyState[] = [];
+
+  constructor(rawKeys: string[] = []) {
+    this.keys = rawKeys.filter(Boolean).map(k => ({
+      value: k,
+      isHealthy: true,
+      cooldownUntil: 0,
+      failureCount: 0
+    }));
+  }
+
+  public getHealthyKey(): string | null {
+    const now = Date.now();
+    const healthy = this.keys.filter(k => k.isHealthy || now > k.cooldownUntil);
+    if (healthy.length === 0) return null;
+    
+    const key = healthy[Math.floor(Math.random() * healthy.length)];
+    if (!key) return null;
+    
+    key.isHealthy = true; // Mark as healthy if it passed the cooldown check
+    return key.value;
+  }
+
+  public reportFailure(keyVal: string, code: number): void {
+    const key = this.keys.find(k => k.value === keyVal);
+    if (!key) return;
+
+    if (code === 429) {
+      // ⚠️ THROTTLED: Sidelined for 60s
+      key.isHealthy = false;
+      key.cooldownUntil = Date.now() + 60000;
+      console.warn(`[KeyManager] Key throttled (429). Sidelined for 60s.`);
+    } else if (code === 403) {
+      // ⛔ BANNED/INVALID: Sidelined for 1 hour
+      key.isHealthy = false;
+      key.cooldownUntil = Date.now() + 3600000;
+      console.error(`[KeyManager] Key rejected (403). Sidelined for 1 hour.`);
+    } else {
+      key.failureCount++;
+      if (key.failureCount >= 5) {
+          key.isHealthy = false;
+          key.cooldownUntil = Date.now() + 30000; // 30s jitter penalty
+          key.failureCount = 0;
+      }
+    }
+  }
+
+  public reportSuccess(keyVal: string): void {
+    const key = this.keys.find(k => k.value === keyVal);
+    if (key) {
+      key.isHealthy = true;
+      key.failureCount = 0;
+    }
+  }
+
+  public getPoolStats() {
+    const now = Date.now();
+    return {
+      total: this.keys.length,
+      available: this.keys.filter(k => k.isHealthy || now > k.cooldownUntil).length,
+      throttled: this.keys.filter(k => !k.isHealthy && now <= k.cooldownUntil).length
+    };
+  }
+}
+
+// Global Key Singleton
+const KEYS = new KeyManager((process.env["API_KEYS"] ?? "").split(","));
+
+// ============================================================================
 //  EXPRESS APP SETUP
 // ============================================================================
 
@@ -93,48 +173,60 @@ async function timeoutFetch(
 }
 
 /**
- * Fetch with automatic retries and exponential backoff with jitter
+ * Fetch with automatic retries, exponential backoff with jitter, and SMART KEY ROTATION
  */
-async function fetchWithRetries<T = unknown>(
+async function fetchWithRotatedRetries<T = unknown>(
   url: string,
-  opts: Record<string, unknown>,
+  baseOpts: Record<string, any>,
   retries: number = CONFIG.maxRetries,
 ): Promise<FetchResult<T>> {
   let attempt = 0;
   let lastErr: Error | null = null;
 
   while (attempt <= retries) {
+    const currentKey = KEYS.getHealthyKey();
+    if (!currentKey) {
+      return { code: 429, content: "ERR_QUOTA_EMPTY" as unknown as T };
+    }
+
+    const opts = {
+      ...baseOpts,
+      headers: {
+        ...(baseOpts["headers"] || {}),
+        "Authorization": `Bearer ${currentKey}`
+      }
+    };
+
     try {
       const res = await timeoutFetch(url, opts);
       const code = res.status;
       const text = await res.text();
 
-      // Industrial Logic: Immediately fail on non-recoverable errors
-      if (code === 403 || code === 404) {
+      if (code === 200) {
+        KEYS.reportSuccess(currentKey);
+        try {
+          return { code, content: JSON.parse(text) as T };
+        } catch {
           return { code, content: text as unknown as T };
+        }
       }
 
-      let content: T | string;
-      try {
-        content = JSON.parse(text) as T;
-      } catch {
-        content = text;
-      }
+      // Handle Failures
+      KEYS.reportFailure(currentKey, code);
+      
+      if (code === 404) return { code, content: text as unknown as T };
+      if (code === 403) throw new Error("auth_denied");
+      if (code === 429) throw new Error("rate_limit");
+      
+      throw new Error(`upstream_status_${code}`);
 
-      // If upstream is throttling, count as a retry-able failure
-      if (code === 429) {
-          throw new Error("rate_limit");
-      }
-
-      return { code, content: content as T };
     } catch (e) {
       lastErr = e instanceof Error ? e : new Error(String(e));
       attempt++;
       
       if (attempt <= retries) {
-        // Exponential Backoff with Jitter: base * 2^attempt + random(0, 1000)
         const backoff = Math.min(10000, (500 * Math.pow(2, attempt)) + (Math.random() * 1000));
-        console.warn(`[Worker] Retry ${attempt}/${retries} for ${url.slice(-20)}. Backoff: ${Math.round(backoff)}ms. Reason: ${lastErr.message}`);
+        console.warn(`[Worker] Rotate-Retry ${attempt}/${retries} for ${url.slice(-20)}. Backoff: ${Math.round(backoff)}ms. Reason: ${lastErr.message}`);
         await new Promise((resolve) => setTimeout(resolve, backoff));
       }
     }
@@ -142,7 +234,7 @@ async function fetchWithRetries<T = unknown>(
 
   return {
     code: 520,
-    content: `Fetch failed: ${lastErr?.message ?? "unknown"}`,
+    content: `Fetch exhausted: ${lastErr?.message ?? "unknown"}`,
   };
 }
 
@@ -221,7 +313,7 @@ async function processBatch<T = unknown>(
       // Special handling for player profiles with scoring
       if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
         try {
-          const profileResult = await fetchWithRetries<ClashRoyalePlayer>(url, {
+          const profileResult = await fetchWithRotatedRetries<ClashRoyalePlayer>(url, {
             method: "GET",
             headers,
           });
@@ -234,7 +326,7 @@ async function processBatch<T = unknown>(
           ) {
             const profile = profileResult.content;
             const logUrl = `${url}/battlelog`;
-            const logsResult = await fetchWithRetries<BattleLogEntry[]>(
+            const logsResult = await fetchWithRotatedRetries<BattleLogEntry[]>(
               logUrl,
               {
                 method: "GET",
@@ -285,7 +377,7 @@ async function processBatch<T = unknown>(
           };
         }
       } else {
-        const res = await fetchWithRetries<T>(url, { method: "GET", headers });
+        const res = await fetchWithRotatedRetries<T>(url, { method: "GET", headers });
         results[i] = res;
       }
     }
@@ -355,7 +447,7 @@ async function processScanBatch(
       }
 
       try {
-        const res = await fetchWithRetries<Tournament>(url, {
+        const res = await fetchWithRotatedRetries<Tournament>(url, {
           method: "GET",
           headers,
         });
@@ -458,15 +550,21 @@ app.get("/health", async (req: Request, res: Response): Promise<void> => {
     const auth = (req.get("authorization") ?? "").trim();
     const secretValid = !CONFIG.secret || auth === `Bearer ${CONFIG.secret}`;
     
-    // 2. Upstream Check (Dry-run of cards API)
-    const testKey = (process.env["API_KEYS"] ?? "").split(",")[0];
+    // 2. Local Pool Diagnostics
+    const pool = KEYS.getPoolStats();
+    
+    // 3. Upstream Check (Current Healthiest Key)
+    const testKey = KEYS.getHealthyKey();
     let upstreamStatus = "UNKNOWN";
+    
     if (testKey) {
         try {
             const upRes = await timeoutFetch("https://api.clashroyale.com/v1/cards", {
                 headers: { Authorization: `Bearer ${testKey}` }
             }, 3000);
             upstreamStatus = upRes.status === 200 ? "OK" : `FAIL_${upRes.status}`;
+            if (upRes.status === 200) KEYS.reportSuccess(testKey);
+            if (upRes.status === 429 || upRes.status === 403) KEYS.reportFailure(testKey, upRes.status);
         } catch(e) { upstreamStatus = "TIMEOUT"; }
     }
 
@@ -475,6 +573,7 @@ app.get("/health", async (req: Request, res: Response): Promise<void> => {
         checks: {
             auth: secretValid ? "OK" : "ERR_AUTH",
             upstream: upstreamStatus,
+            pool: pool,
             memory: process.memoryUsage().rss
         }
     });
@@ -483,6 +582,7 @@ app.get("/health", async (req: Request, res: Response): Promise<void> => {
 app.post(
   "/audit",
   checkAuth,
+  validateFields(["apiKeys"]),
   async (
     req: Request<object, object, AuditRequest>,
     res: Response,
@@ -508,6 +608,9 @@ app.post(
             },
             5000,
           );
+          if (response.status === 200) KEYS.reportSuccess(key);
+          if (response.status === 429 || response.status === 403) KEYS.reportFailure(key, response.status);
+          
           return { key, status: response.status };
         } catch (e) {
           return {
@@ -530,6 +633,7 @@ app.post(
 
 app.post(
   "/public/scan",
+  validateFields(["tags"]),
   async (
     req: Request<object, object, PublicScanRequest>,
     res: Response,
@@ -617,6 +721,7 @@ app.post(
 app.post(
   "/scan",
   checkAuth,
+  validateFields(["tags"]),
   async (
     req: Request<object, object, ScanRequest>,
     res: Response,
@@ -682,6 +787,7 @@ app.post(
 app.post(
   "/clan/full",
   checkAuth,
+  validateFields(["tag"]),
   async (
     req: Request<object, object, ClanFullRequest>,
     res: Response,
@@ -756,12 +862,13 @@ app.post(
 app.post(
   "/clan/api",
   checkAuth,
+  validateFields(["tag", "type"]),
   async (
     req: Request<object, object, ClanApiRequest>,
     res: Response,
   ): Promise<void> => {
     try {
-      const { tag, type, apiKeys } = req.body;
+      const { tag, type } = req.body;
       if (!tag) {
         res.status(400).json({ error: "tag required" });
         return;
@@ -783,11 +890,10 @@ app.post(
         return;
       }
 
-      const { code, content } = await fetchWithRetries(url, {
+      const { code, content } = await fetchWithRotatedRetries(url, {
         method: "GET",
         headers: {
           "User-Agent": "ClanManagerWorker/1.0",
-          Authorization: `Bearer ${apiKeys?.[0] ?? ""}`,
         },
       });
 
