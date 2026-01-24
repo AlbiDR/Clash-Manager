@@ -492,7 +492,7 @@ function scanTournaments(
     }
   }
 
-    const useRemote = Registry.Services.Network.remoteWorkerHealthy();
+    const useRemote = Registry.Services.Network.remoteWorkerHealthy(true);
 
     if (!useRemote) {
         const lastErr = Registry.Services.Network.getLastWorkerError();
