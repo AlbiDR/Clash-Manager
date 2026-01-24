@@ -47,7 +47,7 @@ const NETWORK_CONFIG = {
 // 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map<string, any>();
 let _FETCH_COUNT = 0;
-let _LAST_WORKER_ERROR = "";
+let _LAST_WORKER_ERROR = "N/A";
 
 /* ==========================================================================
    INTERFACES
@@ -414,10 +414,12 @@ var Network: INetwork = {
   },
 
   remoteWorkerHealthy(force: boolean = false) {
-    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return false;
+    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
+        _LAST_WORKER_ERROR = "RemoteWorkerUrl is not configured in Script Properties.";
+        return false;
+    }
     
-    // 1. Check execution cache (Skip if force)
-    if (!force && _EXECUTION_CACHE.has("worker_health")) return _EXECUTION_CACHE.get("worker_health");
+    _LAST_WORKER_ERROR = "Initiating Handshake...";
 
     // 2. Check Store cache (Skip if force)
     const now = Date.now();
