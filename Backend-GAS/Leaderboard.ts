@@ -536,12 +536,15 @@ function updateLeaderboard(dryRun: boolean = false): void {
       // 2E. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar)
       finalRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, contentRows, contentCols));
 
-      // 🚀 EXECUTE UNBREAKABLE TRANSACTION
+      // 3. FINAL VISUALS & ATOMIC SYNC
       Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
+      
+      SpreadsheetApp.flush();
+      refreshWebPayload(); // ⚡ PUSH TO WEBAPP
     }
 
     Registry.Services.View.setStatusMessage(lbSheet, `LEADERBOARD • ${new Date().toLocaleString()}`);
-    console.log(`✅ Leaderboard View Rendered: ${finalRows.length} members (Atomic).`);
+    console.log(`✅ Leaderboard Perfect: ${finalRows.length} members.`);
 }
 
 function timeAgo(date: Date | null): string {

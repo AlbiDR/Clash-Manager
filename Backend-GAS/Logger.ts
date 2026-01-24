@@ -186,6 +186,9 @@ function updateClanDatabase(): void {
     // 📥 STEP 2: SMART MERGE TODAY'S DATA
     upsertDailySnapshots(sheet, activeMembers, warFameMap, HEADER, isWarDay);
 
+    SpreadsheetApp.flush();
+    refreshWebPayload(); // ⚡ PUSH TO WEBAPP
+
     console.timeEnd("ETL");
   } catch (e: any) {
     console.error(`ETL Error: ${e.message} \n${e.stack}`);
