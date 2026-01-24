@@ -39,7 +39,7 @@ export interface ITime {
   isWeekend(date: Date): boolean;
 }
 
-const Time: ITime = {
+var Time: ITime = {
   
   /**
    * Formats a date to YYYY-MM-DD using the system timezone.

@@ -36,7 +36,7 @@ const SchemaInternal = {
   _cache: new Map<string, Record<string, number>>()
 };
 
-const Schema: ISchema = {
+var Schema: ISchema = {
   
   resolveSchemaIndices: function (
     sheet: GoogleAppsScript.Spreadsheet.Sheet,

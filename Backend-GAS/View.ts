@@ -35,7 +35,7 @@ export interface IView {
   setTabColor(sheet: GoogleAppsScript.Spreadsheet.Sheet, color: string | null): void;
 }
 
-const View: IView = {
+var View: IView = {
   /**
    * 🖌️ STANDARD LAYOUT ENGINE
    * Applies the signature "Clean Technical" look to any sheet.

@@ -78,7 +78,7 @@ export interface IScoringSystem {
   resolveWarFame(p: any): number;
 }
 
-const ScoringSystem: IScoringSystem = {
+var ScoringSystem: IScoringSystem = {
   /**
    * ⚔️ Calculates the War Participation Rate (Daily Attendance Model).
    * Formula: totalBattleCredits / eligibleBattleDays * 100

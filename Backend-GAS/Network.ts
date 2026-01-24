@@ -138,7 +138,7 @@ const NetworkInternal = {
 /* ==========================================================================
    PUBLIC API
    ========================================================================== */
-const Network: INetwork = {
+var Network: INetwork = {
   
   /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
