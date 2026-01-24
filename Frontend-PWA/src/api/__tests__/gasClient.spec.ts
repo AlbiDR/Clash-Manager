@@ -84,8 +84,8 @@ describe("gasClient Data Inflation", () => {
       format: "matrix",
       schema: { lb: [], hh: [] },
       lb: [],
-      // [id, n, t, potentialScore, don, war, ago, cards, potentialRawScore]
-      hh: [["recruit1", "New Guy", 3000, 60, 500, 20, "2024-01-01", 1000, 42000]],
+      // [id, n, t, potentialScore, potentialRawScore, don, war, cards, ago]
+      hh: [["recruit1", "New Guy", 3000, 60, 42000, 500, 20, 1000, "2024-01-01"]],
       timestamp: 123456789,
     };
 
