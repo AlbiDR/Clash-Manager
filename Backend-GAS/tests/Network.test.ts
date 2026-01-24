@@ -28,9 +28,16 @@ const mockConfig = {
   }
 };
 
+const mockRegistry = {
+  Services: {
+    Store: mockStore,
+    Core: { executeSafely: vi.fn((name, fn) => fn()) }
+  }
+};
+
 vi.stubGlobal('UrlFetchApp', mockUrlFetch);
 vi.stubGlobal('Utilities', mockUtilities);
-vi.stubGlobal('Store', mockStore);
+vi.stubGlobal('Registry', mockRegistry);
 vi.stubGlobal('CONFIG', mockConfig);
 
 describe('Network Module', () => {

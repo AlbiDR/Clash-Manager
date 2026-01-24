@@ -54,7 +54,7 @@ export interface IRegistry {
   Actions: Record<string, () => void>;
 }
 
-const Registry: IRegistry = {
+var Registry: IRegistry = {
   /**
    * 🏢 INFRASTRUCTURE (Singletons)
    * Direct access to the "Clean Stack" services.

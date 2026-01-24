@@ -148,7 +148,7 @@ try {
   );
 }
 
-const CONFIG: AppConfig = {
+var CONFIG: AppConfig = {
   SYSTEM: {
     MANIFEST: {
       CONFIGURATION: "10.0.7",
