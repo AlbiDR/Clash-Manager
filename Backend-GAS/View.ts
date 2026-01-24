@@ -97,14 +97,14 @@ var View: IView = {
     if (contentCols > 0) {
       // 🏗️ ATOMIC FORMATTING (Borders, Alignment, Merges)
       requests.push(
-        // Left Edge
-        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Right Edge
-        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: totalCols-1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Top Edge
-        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        // Bottom Edge
-        { updateBorders: { range: { sheetId, startRowIndex: totalRows-1, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Left Edge (Right side of Column A, skipping Row 1 and Last Row)
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Right Edge (Left side of Last Column, skipping Row 1 and Last Row)
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Top Edge (Bottom side of Row 1, skipping Column A and Last Column)
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Bottom Edge (Top side of Last Row, skipping Column A and Last Column)
+        { updateBorders: { range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         // Header Bottom Line
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         // Internal Gridlines (Thin/Gray)
