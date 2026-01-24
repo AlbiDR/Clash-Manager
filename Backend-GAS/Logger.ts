@@ -26,6 +26,8 @@ declare var Sheets: any; // Advanced Sheets API
 declare var LockService: any;
 declare var PropertiesService: any;
 declare var UrlFetchApp: any;
+declare var SpreadsheetApp: any;
+declare var Sheets: any;
 declare var CacheService: any;
 declare var ContentService: any;
 declare var Utilities: any;
@@ -427,18 +429,38 @@ function upsertDailySnapshots(
 
   // 5. Commit Appends
   if (newRowsToAppend.length > 0) {
-    console.log(
-      `ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Fast-Append).`,
-    );
-    
+    console.log(`ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Fast-Append).`);
     const ssId = sheet.getParent().getId();
     const sheetName = sheet.getName();
-    
+    const sheetId = sheet.getSheetId();
+
     Sheets.Spreadsheets!.Values!.append({
       values: newRowsToAppend
     }, ssId, `'${sheetName}'!B${startRow}`, {
       valueInputOption: "USER_ENTERED"
     });
+
+    // 🏎️ ATOMIC UI: Highlight new entries
+    const startIdx = sheet.getLastRow(); // Approximate start for append highlighting
+    const endIdx = startIdx + newRowsToAppend.length;
+
+    const requests = [
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
+            cell: { userEnteredFormat: { backgroundColor: { red: 0.933, green: 0.988, blue: 0.921 } } },
+            fields: "userEnteredFormat.backgroundColor"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 1, endColumnIndex: 2 },
+            cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 0.18, green: 0.49, blue: 0.18 } } } },
+            fields: "userEnteredFormat.textFormat.foregroundColor"
+          }
+        }
+    ];
+    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
   }
 
   sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
