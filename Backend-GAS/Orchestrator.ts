@@ -56,7 +56,7 @@ declare const Registry: IRegistry;
 
 // Module Version Constants for Health Check
 declare const VER_CONFIGURATION: string;
-declare const VER_UTILITIES: string;
+declare const VER_REGISTRY: string;
 declare const VER_LOGGER: string;
 declare const VER_LEADERBOARD: string;
 declare const VER_RECRUITER: string;
@@ -109,8 +109,6 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
 function taskUpdateMemberStats(): void {
   console.log("⏰ TASK START: Update Member Stats (DB + LB)");
 
-  console.log("⏰ TASK START: Update Member Stats (DB + LB)");
-  
   Registry.Services.Core.executeSafely("TASK_MEMBER_STATS", () => {
     try {
       console.log("  >> Step 1: Updating Database...");
@@ -136,7 +134,6 @@ function taskUpdateMemberStats(): void {
  * Recommended Trigger: Time-Based -> Every 30 Minutes
  */
 function taskFastScout(): void {
-  console.log("⏰ TASK START: Fast Scout");
   console.log("⏰ TASK START: Fast Scout");
   Registry.Services.Core.executeSafely("TASK_HH", () => {
     try {
@@ -204,8 +201,6 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 
   console.log(`📱 Mobile Trigger: ${sheetName}`);
 
-  console.log(`📱 Mobile Trigger: ${sheetName}`);
-
   try {
     Registry.Services.Core.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
       if (sheetName === CONFIG.SHEETS.LB) {
@@ -237,7 +232,6 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
-  ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
   Registry.Services.Core.executeSafely("MANUAL_DB", () => {
     try {
       Registry.Actions["sync:database"]();
@@ -252,7 +246,6 @@ function triggerUpdateDatabase(): void {
 function triggerUpdateLeaderboard(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Calculating scores...", "Update Leaderboard", 5);
-  ss.toast("Calculating scores...", "Update Leaderboard", 5);
   Registry.Services.Core.executeSafely("MANUAL_LB", () => {
     try {
       Registry.Actions["sync:leaderboard"]();
@@ -266,7 +259,6 @@ function triggerUpdateLeaderboard(): void {
 
 function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Scanning tournaments...", "Headhunter", 20);
   ss.toast("Scanning tournaments...", "Headhunter", 20);
   Registry.Services.Core.executeSafely("MANUAL_HH", () => {
     try {
@@ -320,9 +312,9 @@ function checkSystemHealth(): void {
       expected: manifest.CONFIGURATION,
     },
     {
-      name: "Utilities",
-      current: typeof VER_UTILITIES !== "undefined" ? VER_UTILITIES : "MISSING",
-      expected: manifest.UTILITIES,
+      name: "Registry",
+      current: typeof VER_REGISTRY !== "undefined" ? VER_REGISTRY : "MISSING",
+      expected: manifest.REGISTRY || "1.0.0",
     },
     {
       name: "Orchestrator",

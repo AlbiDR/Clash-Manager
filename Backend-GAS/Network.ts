@@ -95,7 +95,9 @@ const NetworkInternal = {
     try {
       const today = new Date().toISOString().slice(0, 10);
       Store.props.setJSON(NETWORK_CONFIG.KEYS.FETCH_STATE, { date: today, count: _FETCH_COUNT });
-    } catch (e) {}
+    } catch (e: any) {
+      console.error(`Quota Update Failed: ${e.message}`);
+    }
   },
 
   /**

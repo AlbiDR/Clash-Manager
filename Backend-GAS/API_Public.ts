@@ -9,10 +9,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IStore } from "./Store";
-import type { ICore } from "./Core";
-import type { INetwork } from "./Network";
-import type { ITime } from "./Time";
+import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -48,10 +45,7 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Store: IStore;
-declare const Core: ICore;
-declare const Network: INetwork;
-declare const Time: ITime;
+declare const Registry: IRegistry;
 
 // External module functions
 declare function getWebAppData(forceRefresh: boolean): string;
@@ -67,7 +61,7 @@ declare function refreshWebPayload(): void;
 // Module Version Constants
 declare const VER_CONFIGURATION: string;
 declare const VER_CONTROLLER_WEBAPP: string;
-declare const VER_UTILITIES: string;
+declare const VER_REGISTRY: string;
 declare const VER_LEADERBOARD: string;
 declare const VER_LOGGER: string;
 declare const VER_RECRUITER: string;
@@ -120,7 +114,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
     switch (action) {
       case "ping":
         // ⚡ OPTIMIZATION: Check cache first to avoid slow SpreadsheetApp load
-        const cachedPing = Store.cache.getLarge("PING_METADATA_V1");
+        const cachedPing = Registry.Services.Store.cache.getLarge("PING_METADATA_V1");
         if (cachedPing) {
            return respondRaw(cachedPing);
         }
@@ -147,7 +141,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         };
         
         const pingStr = JSON.stringify(pingResponse);
-        Store.cache.putLarge("PING_METADATA_V1", pingStr, 3600); // Cache for 1 hour
+        Registry.Services.Store.cache.putLarge("PING_METADATA_V1", pingStr, 3600); // Cache for 1 hour
         return respondRaw(pingStr);
 
       case "getleaderboard":
@@ -280,7 +274,7 @@ function getModuleVersions(): Record<string, string> {
     "API_PUBLIC",
     "CONFIGURATION",
     "CONTROLLER_WEBAPP",
-    "UTILITIES",
+    "REGISTRY",
     "LEADERBOARD",
     "LOGGER",
     "RECRUITER",
@@ -301,12 +295,12 @@ function getModuleVersions(): Record<string, string> {
  * 📊 DATA FETCHERS
  */
 function getMembers(): any[] {
-  const remoteData = Network.fetchPublicJson("members");
+  const remoteData = Registry.Services.Network.fetchPublicJson("members");
   if (remoteData) return remoteData as any[];
 
   console.log("Members: Using local fallback");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Network.fetchRoyaleAPI([
+  const data = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
   ]);
 
@@ -326,12 +320,12 @@ function getMembers(): any[] {
 }
 
 function getWarLog(): WarLogEntry[] {
-  const remoteData = Network.fetchPublicJson("warlog");
+  const remoteData = Registry.Services.Network.fetchPublicJson("warlog");
   if (remoteData) return remoteData as WarLogEntry[];
 
   console.log("WarLog: Using local fallback");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Network.fetchRoyaleAPI([
+  const data = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
   ]);
 
@@ -385,7 +379,7 @@ function parseCRDateISO(t: string): string {
       "$1-$2-$3T$4:$5:$6Z",
     ),
   );
-  return Time.formatDate(d);
+  return Registry.Services.Time.formatDate(d);
 }
 
 /**
@@ -403,7 +397,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
     };
   }
 
-  return Core.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
+  return Registry.Services.Core.executeSafely("ASYNC_TRIGGER_QUEUE", () => {
     try {
       const cache = CacheService.getScriptCache();
       if (cache.get("SYSTEM_STATUS") === "BUSY") {
@@ -414,7 +408,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
         };
       }
 
-      Store.props.set("PENDING_UPDATE_TARGET", normTarget);
+      Registry.Services.Store.props.set("PENDING_UPDATE_TARGET", normTarget);
       cache.put("SYSTEM_STATUS", "BUSY", 1200);
 
       ScriptApp.getProjectTriggers().forEach((t: any) => {
@@ -437,15 +431,15 @@ function triggerAsyncUpdate(target: string | undefined): any {
 }
 
 function dispatchAsyncUpdate(): void {
-  const target = Store.props.get("PENDING_UPDATE_TARGET");
+  const target = Registry.Services.Store.props.get("PENDING_UPDATE_TARGET");
   if (!target) {
     console.warn("⚠️ Async Dispatcher: No pending target found.");
     return;
   }
 
-  Store.props.delete("PENDING_UPDATE_TARGET");
+  Registry.Services.Store.props.delete("PENDING_UPDATE_TARGET");
 
-  Core.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
+  Registry.Services.Core.executeSafely(`ASYNC_EXEC_${target.toUpperCase()}`, () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       let sheetName = "";
@@ -461,13 +455,13 @@ function dispatchAsyncUpdate(): void {
       }
 
       if (target === "members") {
-        updateClanDatabase();
-        refreshWebPayload();
+        Registry.Actions["sync:database"]();
+        Registry.Actions["sync:webapp"]();
       } else if (target === "leaderboard") {
-        updateLeaderboard();
-        refreshWebPayload();
+        Registry.Actions["sync:leaderboard"]();
+        Registry.Actions["sync:webapp"]();
       } else if (target === "headhunters") {
-        scoutRecruits();
+        Registry.Actions["recruit:scout"]();
       }
 
       if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
