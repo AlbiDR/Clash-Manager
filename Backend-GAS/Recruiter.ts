@@ -691,7 +691,7 @@ function renderHeadhunterView(
     c.war,
     c.foundDate,
     c.rawScore,
-    c.potentialScore,
+    (c.potentialScore || 0) / 100,
   ]);
 
   // No changes needed to renderHeadhunterView preparation logic.
@@ -752,7 +752,7 @@ function renderHeadhunterView(
       ...(contentRows > 0 ? [{
         repeatCell: {
           range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 2 },
-          cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
+          cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0%' } } },
           fields: "userEnteredFormat.numberFormat"
         }
       },
