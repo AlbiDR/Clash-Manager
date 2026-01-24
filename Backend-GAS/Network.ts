@@ -125,9 +125,6 @@ const NetworkInternal = {
     };
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) {
-      headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
-    }
 
     const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/fetch`, {
       method: "post",
@@ -437,11 +434,10 @@ var Network: INetwork = {
       }
     } catch(e) {}
 
-    // Verify (Industrial Diagnostic Handshake)
+    // Verify (Industrial Diagnostic Handshake - Simplified)
     let isHealthy = false;
     try {
         const headers: Record<string, string> = {};
-        if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
         const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/health`, {
             method: "get",
             muteHttpExceptions: true,
@@ -454,9 +450,9 @@ var Network: INetwork = {
                 _LAST_WORKER_ERROR = "";
                 console.info(`[Network] Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
             } else {
-                _LAST_WORKER_ERROR = `Degraded: Auth=${diagnostic?.checks?.auth || 'Fail'}, Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
+                _LAST_WORKER_ERROR = `Degraded: Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
                 console.warn(`[Network] Worker Degradation: ${_LAST_WORKER_ERROR}`);
-                isHealthy = (diagnostic?.checks?.auth === "OK"); // Degraded but reachable
+                isHealthy = (diagnostic.status === "success"); // Reachable
             }
         } else {
             _LAST_WORKER_ERROR = `HTTP ${res.getResponseCode()}`;
