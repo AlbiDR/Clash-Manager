@@ -168,6 +168,14 @@ function updateClanDatabase(): void {
     // 🛡️ BACKUP
     Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.DB);
 
+    // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
+    Registry.Services.View.applyStandardLayout(
+      sheet,
+      sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
+      HEADER.length,
+      HEADER,
+    );
+
     // 🧹 STEP 1: PRUNE STALE DATA
     pruneStaleData(sheet, activeTags);
 
@@ -427,14 +435,6 @@ function upsertDailySnapshots(
   }
 
   sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
-
-  // 🧹 LAYOUT & CLEANUP
-  Registry.Services.View.applyStandardLayout(
-    sheet,
-    sheet.getLastRow() - (startRow - 1),
-    headerRow.length,
-    headerRow,
-  );
 
   const currentLastRow = sheet.getLastRow();
   const dataRowCount = currentLastRow - (startRow - 1);

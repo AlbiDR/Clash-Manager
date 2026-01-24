@@ -80,9 +80,12 @@ var View: IView = {
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
     const requests: any[] = [
+      // 1. FULL CANVAS RESET (Borders, Background, Alignment)
       {
         updateBorders: {
-          range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }
+          range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
+          top: { style: "NONE" }, bottom: { style: "NONE" }, left: { style: "NONE" }, right: { style: "NONE" },
+          innerHorizontal: { style: "NONE" }, innerVertical: { style: "NONE" }
         }
       },
       {
@@ -95,8 +98,17 @@ var View: IView = {
     ];
 
     if (contentCols > 0) {
-      // 🏗️ ATOMIC FORMATTING (Borders, Alignment, Merges)
+      // 2. ATOMIC THEME (Header Row Color & Framing)
       requests.push(
+        // Header background (#f3f3f3)
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+            cell: { userEnteredFormat: { backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } } },
+            fields: 'userEnteredFormat.backgroundColor'
+          }
+        },
+        // 🏗️ ATOMIC FORMATTING (Borders, Alignment, Merges)
         // Left Edge (Right side of Column A, skipping Row 1 and Last Row)
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         // Right Edge (Left side of Last Column, skipping Row 1 and Last Row)

@@ -641,6 +641,14 @@ function renderHeadhunterView(
       CONFIG.SCHEMA.HH_HEADERS[key as keyof typeof CONFIG.SCHEMA.HH_HEADERS],
   );
 
+  // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
+  Registry.Services.View.applyStandardLayout(
+    sheet,
+    Math.max(list.length, CONFIG.HEADHUNTER.TARGET),
+    HEADERS.length,
+    HEADERS,
+  );
+
   const rows = list.map((c) => [
     c.tag,
     c.invited,
@@ -709,14 +717,19 @@ function renderHeadhunterView(
 
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
 
-    sheet
-      .getRange(
-        CONFIG.LAYOUT.DATA_START_ROW,
-        1 + CONFIG.SCHEMA.HH.INVITED,
-        rows.length,
-        1,
-      )
-      .insertCheckboxes();
+    // 🛡️ CHECKBOX PRECISION: Clear all validations in potential target range first
+    sheet.getRange(startIdx + 1, 1 + CONFIG.SCHEMA.HH.INVITED, CONFIG.HEADHUNTER.TARGET, 1).setDataValidation(null);
+
+    if (rows.length > 0) {
+      sheet
+        .getRange(
+          CONFIG.LAYOUT.DATA_START_ROW,
+          1 + CONFIG.SCHEMA.HH.INVITED,
+          rows.length,
+          1,
+        )
+        .insertCheckboxes();
+    }
     sheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
@@ -744,12 +757,6 @@ function renderHeadhunterView(
   }
 
   sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
-  Registry.Services.View.applyStandardLayout(
-    sheet,
-    Math.max(rows.length, CONFIG.HEADHUNTER.TARGET),
-    HEADERS.length,
-    HEADERS,
-  );
   
   // 🎨 CONDITIONAL FORMATTING
   applyHeadhunterFormatting(sheet, rows.length);
