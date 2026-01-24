@@ -38,24 +38,28 @@ export const formatTimeAgoShort = (
   dateStr: string | null | undefined,
 ): string => formatTime(dateStr, true);
 
+/**
+ * ⚡ PERFORMANCE: Pre-compiled regex and multiplier map for O(1) unit lookup
+ * during list sorting.
+ */
+const TIME_AGO_REGEX = /^(\d+)([ymdh]) ago$/;
+const TIME_MULTIPLIERS: Record<string, number> = {
+  m: 1,
+  h: 60,
+  d: 1440,
+  y: 525600,
+};
+
 export function parseTimeAgoValue(val: string | null | undefined): number {
   if (!val || val === "-" || val === "Just now") return 0;
-  const match = val.match(/^(\d+)([ymdh]) ago$/);
+
+  const match = val.match(TIME_AGO_REGEX);
   if (!match) return 99999999;
-  const num = parseInt(match[1]);
+
+  const num = parseInt(match[1], 10);
   const unit = match[2];
-  switch (unit) {
-    case "m":
-      return num;
-    case "h":
-      return num * 60;
-    case "d":
-      return num * 1440;
-    case "y":
-      return num * 525600;
-    default:
-      return num;
-  }
+
+  return num * (TIME_MULTIPLIERS[unit] || 1);
 }
 
 export function formatRole(roleStr: string): { label: string; class: string } {
@@ -74,7 +78,7 @@ export function formatRole(roleStr: string): { label: string; class: string } {
  */
 export function cleanTag(tag: string | undefined): string {
   if (!tag) return "";
-  return tag.replace(/^#/, "").toUpperCase().trim();
+  return tag.trim().replace(/^#/, "").toUpperCase();
 }
 /**
  * 🧹 DESCRIPTION FORMATTER

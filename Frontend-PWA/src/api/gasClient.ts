@@ -21,12 +21,33 @@ const DEFAULT_LB_SCHEMA = [
   "id", "n", "role", "t", "days", "req", "avg", "tot", 
   "seen", "rate", "wfame", "hist", "performanceRawScore", 
   "performanceScore", "dt", "war"
-];
+] as const;
 
 const DEFAULT_HH_SCHEMA = [
   "id", "n", "t", "potentialScore", "don", "war", 
   "ago", "cards", "potentialRawScore"
-];
+] as const;
+
+/**
+ * 🛡️ VALIDATION SCHEMA
+ * Moved to module level to prevent redundant object creation during inflation.
+ */
+const WebAppDataSchema = v.object({
+  format: v.optional(v.string()),
+  schema: v.optional(
+    v.object({
+      lb: v.array(v.string()),
+      hh: v.array(v.string()),
+    }),
+  ),
+  lb: v.array(v.array(v.unknown())),
+  hh: v.array(v.array(v.unknown())),
+  timestamp: v.union([v.number(), v.string()]),
+  playerTag: v.optional(v.string()),
+});
+
+// Extract the inferred type from the schema
+type WebAppDataInput = v.InferOutput<typeof WebAppDataSchema>;
 
 interface GenericEnvelope<T> {
   success?: boolean;
@@ -78,7 +99,7 @@ const getWorkerUrl = () => {
  * ⚡ ROBUSTNESS UPDATE: Handles Schema-Driven parsing with Fallbacks and Legacy Keys.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
-  let parsedData: any;
+  let parsedData: unknown;
   if (typeof data === "string") {
     try {
       parsedData = JSON.parse(data);
@@ -93,44 +114,29 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     throw new Error("Invalid payload: data is null or not an object");
   }
 
-  if (parsedData.format !== "matrix") {
+  const rawObj = parsedData as Record<string, unknown>;
+
+  if (rawObj.format !== "matrix") {
     return parsedData as WebAppData;
   }
 
-  const WebAppDataSchema = v.object({
-    format: v.optional(v.string()),
-    schema: v.optional(
-      v.object({
-        lb: v.array(v.string()),
-        hh: v.array(v.string()),
-      }),
-    ),
-    lb: v.array(v.array(v.unknown())),
-    hh: v.array(v.array(v.unknown())),
-    timestamp: v.union([v.number(), v.string()]),
-    playerTag: v.optional(v.string()),
-  });
-
   const check = v.safeParse(WebAppDataSchema, parsedData);
-  const source = check.success ? check.output : (parsedData as any);
+  const source: WebAppDataInput = check.success ? check.output : (parsedData as any);
 
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
   
   // 🛡️ SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
-  let lbSchema = source.schema?.lb;
-  let hhSchema = source.schema?.hh;
-
-  if (!lbSchema || !Array.isArray(lbSchema) || lbSchema.length === 0) {
-    lbSchema = DEFAULT_LB_SCHEMA;
-  }
+  const lbSchema = (Array.isArray(source.schema?.lb) && source.schema!.lb.length > 0)
+    ? source.schema!.lb
+    : [...DEFAULT_LB_SCHEMA];
   
-  if (!hhSchema || !Array.isArray(hhSchema) || hhSchema.length === 0) {
-    hhSchema = DEFAULT_HH_SCHEMA;
-  }
+  const hhSchema = (Array.isArray(source.schema?.hh) && source.schema!.hh.length > 0)
+    ? source.schema!.hh
+    : [...DEFAULT_HH_SCHEMA];
 
-  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
-  const safeNum = (v: any) => {
+  const safeStr = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+  const safeNum = (v: unknown) => {
     if (typeof v === "number") return v;
     if (typeof v === "string") {
       const cleaned = v.replace(/,/g, "").replace(/%/g, "");
@@ -140,59 +146,59 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return 0;
   };
 
-  const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
-    if (!row || !Array.isArray(row)) return null;
-
-    const d: Record<string, any> = {};
-    schema.forEach((key, index) => {
-      if (index < row.length) d[key] = row[index];
-    });
-
-    if (type === "lb") {
-      const perfScore = d.performanceScore ?? d.s;
-      const perfRaw = d.performanceRawScore ?? d.r;
-
-      return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        performanceScore: safeNum(perfScore), 
-        performanceRawScore: safeNum(perfRaw),
-        dt: safeNum(d.dt),
-        d: {
-          role: safeStr(d.role),
-          days: safeNum(d.days),
-          avg: safeNum(d.avg),
-          seen: safeStr(d.seen || "-"),
-          rate: safeStr(d.rate || "0%"),
-          wfame: safeNum(d.wfame),
-          hist: safeStr(d.hist),
-        },
-      };
-    } else {
-      return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        potentialScore: safeNum(d.potentialScore),
-        potentialRawScore: safeNum(d.potentialRawScore),
-        d: {
-          don: safeNum(d.don),
-          war: safeNum(d.war),
-          ago: safeStr(d.ago),
-          cards: safeNum(d.cards),
-        },
-      };
-    }
+  // ⚡ PERFORMANCE: Pre-calculate indices to avoid O(SchemaSize) work per row
+  const getIdx = (schema: string[]) => {
+    const map: Record<string, number> = {};
+    for (let i = 0; i < schema.length; i++) map[schema[i]] = i;
+    return map;
   };
 
+  const L = getIdx(lbSchema);
+  const H = getIdx(hhSchema);
+
   return {
-    lb: lbMatrix
-      .map((r: any) => mapRow(r, lbSchema, "lb"))
-      .filter(Boolean) as any[],
-    hh: hhMatrix
-      .map((r: any) => mapRow(r, hhSchema, "hh"))
-      .filter(Boolean) as any[],
+    lb: lbMatrix.map((row) => {
+      if (!Array.isArray(row)) return null;
+      // Handle legacy 's'/'r' or modern 'performanceScore'/'performanceRawScore'
+      const perfScore = row[L["performanceScore"]] ?? row[L["s"]];
+      const perfRaw = row[L["performanceRawScore"]] ?? row[L["r"]];
+
+      return {
+        id: safeStr(row[L["id"]]),
+        n: safeStr(row[L["n"]]),
+        t: safeNum(row[L["t"]]),
+        performanceScore: safeNum(perfScore), 
+        performanceRawScore: safeNum(perfRaw),
+        dt: safeNum(row[L["dt"]]),
+        d: {
+          role: safeStr(row[L["role"]]),
+          days: safeNum(row[L["days"]]),
+          avg: safeNum(row[L["avg"]]),
+          seen: safeStr(row[L["seen"]] || "-"),
+          rate: safeStr(row[L["rate"]] || "0%"),
+          wfame: safeNum(row[L["wfame"]]),
+          hist: safeStr(row[L["hist"]]),
+        },
+      };
+    }).filter(Boolean) as any[],
+
+    hh: hhMatrix.map((row) => {
+      if (!Array.isArray(row)) return null;
+      return {
+        id: safeStr(row[H["id"]]),
+        n: safeStr(row[H["n"]]),
+        t: safeNum(row[H["t"]]),
+        potentialScore: safeNum(row[H["potentialScore"]]),
+        potentialRawScore: safeNum(row[H["potentialRawScore"]]),
+        d: {
+          don: safeNum(row[H["don"]]),
+          war: safeNum(row[H["war"]]),
+          ago: safeStr(row[H["ago"]]),
+          cards: safeNum(row[H["cards"]]),
+        },
+      };
+    }).filter(Boolean) as any[],
+
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
   };

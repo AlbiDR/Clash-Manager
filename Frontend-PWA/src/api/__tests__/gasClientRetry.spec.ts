@@ -17,14 +17,17 @@ vi.stubGlobal("localStorage", localStorageMock);
 
 // Mock Valibot (since inflatePayload uses it dynamically)
 vi.mock("valibot", () => ({
-  object: () => ({}),
-  array: () => ({}),
-  unknown: () => ({}),
-  number: () => ({}),
-  safeParse: () => ({
+  object: vi.fn(() => ({})),
+  array: vi.fn(() => ({})),
+  unknown: vi.fn(() => ({})),
+  number: vi.fn(() => ({})),
+  string: vi.fn(() => ({})),
+  optional: vi.fn(() => ({})),
+  union: vi.fn(() => ({})),
+  safeParse: vi.fn(() => ({
     success: true,
     output: { lb: [], hh: [], timestamp: 123 },
-  }),
+  })),
 }));
 
 // Mock IDB
