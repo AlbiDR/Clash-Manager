@@ -1,0 +1,55 @@
+name: Deploy Worker (Cloud Run)
+
+on:
+  push:
+    branches: ["Stable", "Beta"]
+    paths:
+      - "Backend-Worker/**"
+      - ".github/workflows/deploy-worker.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: "Backend-Worker/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        working-directory: Backend-Worker
+        run: pnpm install
+
+      - name: Build
+        working-directory: Backend-Worker
+        run: pnpm run build
+
+      # Note: This requires GOOGLE_CREDENTIALS secret
+      - name: Google Auth
+        if: env.GCP_READY == 'true'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Deploy to Cloud Run
+        if: env.GCP_READY == 'true'
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'clash-manager-worker'
+          region: 'us-central1'
+          source: './Backend-Worker'
+          flags: '--allow-unauthenticated'
+          env_vars: 'API_KEYS=${{ secrets.ROYALE_API_KEYS }}'
+    env:
+      GCP_READY: ${{ secrets.GOOGLE_CREDENTIALS != '' }}
