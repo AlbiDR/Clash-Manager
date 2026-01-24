@@ -89,14 +89,14 @@ var Schema: ISchema = {
     if (lbSheet)
       Object.assign(
         CONFIG.SCHEMA.LB,
-        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS, 2, 1),
+        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS, 2, 2),
       );
       
     const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
     if (hhSheet)
       Object.assign(
         CONFIG.SCHEMA.HH,
-        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS, 2, 1),
+        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS, 2, 2),
       );
       
     const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);

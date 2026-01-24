@@ -404,7 +404,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
       trend = r.scores.raw - (previousScores.get(r.cleanKey) || 0);
     }
 
-    const row = new Array(17).fill("");
+    const rowLen = Object.keys(CONFIG.SCHEMA.LB_HEADERS).length;
+    const row = new Array(rowLen).fill("");
     row[L.TAG] = r.member.tag;
     row[L.NAME] = r.member.name; // Unified Rich-Text Anchor
     row[L.ROLE] = r.member.role;
@@ -432,7 +433,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
   // ----------------------------------------------------------------------------
   Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.LB);
 
-  const HEADERS_ARRAY = new Array(17).fill("");
+  const headersLen = Object.keys(CONFIG.SCHEMA.LB_HEADERS).length;
+  const HEADERS_ARRAY = new Array(headersLen).fill("");
   (
     Object.keys(CONFIG.SCHEMA.LB_HEADERS) as Array<
       keyof typeof CONFIG.SCHEMA.LB_HEADERS

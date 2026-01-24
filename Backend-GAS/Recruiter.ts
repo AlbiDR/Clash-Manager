@@ -665,7 +665,7 @@ function renderHeadhunterView(
   ];
 
   CANONICAL_KEYS.forEach((key, index) => {
-    CONFIG.SCHEMA.HH[key] = index + 1;
+    CONFIG.SCHEMA.HH[key] = index;
   });
 
   const HEADERS = CANONICAL_KEYS.map(
