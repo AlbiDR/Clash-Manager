@@ -252,9 +252,9 @@ var Network: INetwork = {
             } catch (e: any) {
                 console.warn(`[Network] Worker Failure: ${e.message}.`);
                 if (isHighVolume) {
-                   console.error(`[Network] High Volume Batch FAILED. Blocking local fallback for quota safety.`);
-                   useRemote = false; // Mark for next execution context
-                   break; // Abort chunk
+                   console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to preserve core quota.`);
+                   useRemote = false; 
+                   break; // Abort chunk immediately - NO local fallback for high volume
                 }
                 useRemote = false; 
                 continue; // Retry single items locally if allowed

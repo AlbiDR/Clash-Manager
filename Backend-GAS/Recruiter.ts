@@ -101,8 +101,18 @@ export interface BlacklistEntry {
  */
 function scoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-  if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.HH);
+  
+  const safeSheet = (name: string) => {
+    let s = ss.getSheetByName(name);
+    if (!s) {
+       console.warn(`[Recruiter] Sheet '${name}' missing; re-acquiring...`);
+       SpreadsheetApp.flush();
+       s = ss.getSheetByName(name) || ss.insertSheet(name);
+    }
+    return s;
+  };
+
+  let sheet = safeSheet(CONFIG.SHEETS.HH);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
   Registry.Services.Schema.bootDynamicSchema();
@@ -148,10 +158,10 @@ function scoutRecruits(): void {
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   const { ids: blacklistSet, entries: blacklistEntries } =
-    updateAndGetBlacklist(sheet);
+    updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
 
   // 2. Load existing tracking data
-  const existing = loadRecruitDatabase(sheet);
+  const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
@@ -277,7 +287,7 @@ function scoutRecruits(): void {
   Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.HH);
 
   // 7. RENDER
-  renderHeadhunterView(sheet, finalPool, avgTrophies);
+  renderHeadhunterView(safeSheet(CONFIG.SHEETS.HH), finalPool, avgTrophies);
 
   try {
     if (typeof refreshWebPayload === "function") refreshWebPayload();
@@ -293,7 +303,8 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
   ids: Set<string>;
   entries: Array<{ rawScore: number }>;
 } {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!sheet) return { ids: new Set(), entries: [] };
+  const ss = sheet.getParent();
   const blSheet =
     ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
   const now = Date.now();
@@ -385,7 +396,7 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
 function loadRecruitDatabase(
   sheet: GoogleAppsScript.Spreadsheet.Sheet,
 ): Map<string, Recruit> {
-  if (sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return new Map();
+  if (!sheet || sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return new Map();
   const H = CONFIG.SCHEMA.HH;
   const rows = sheet
     .getRange(
@@ -749,28 +760,33 @@ function renderHeadhunterView(
   sheet.getRange("B1").setValue(`HEADHUNTER • ${new Date().toLocaleString()}`);
   
   // 🎨 CONDITIONAL FORMATTING
-  applyHeadhunterFormatting(sheet, rows.length);
+  if (sheet && rows.length > 0) {
+      applyHeadhunterFormatting(sheet, rows.length);
+  }
 
   console.log(`✅ Headhunter View Rendered: ${rows.length} candidates.`);
 }
 
 function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, numRows: number): void {
-    if (numRows === 0) return;
-    const rules = sheet.getConditionalFormatRules();
-    
-    // Highlight High Potential > 80 (Column 11 / K)
-    // Note: Column match depends on schema. Hardcoded to K (11) for simplicity based on standard layout.
-    const range = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 11, numRows, 1);
-    
-    const rule = SpreadsheetApp.newConditionalFormatRule()
-        .whenNumberGreaterThan(80)
-        .setBackground("#d9ead3") // Light Green
-        .setBold(true)
-        .setRanges([range])
-        .build();
+    if (!sheet || numRows <= 0) return;
+    try {
+        const rules = sheet.getConditionalFormatRules();
         
-    rules.push(rule);
-    sheet.setConditionalFormatRules(rules);
+        // Highlight High Potential > 80 (Column 11 / K)
+        const range = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 11, numRows, 1);
+        
+        const rule = SpreadsheetApp.newConditionalFormatRule()
+            .whenNumberGreaterThan(80)
+            .setBackground("#d9ead3") // Light Green
+            .setBold(true)
+            .setRanges([range])
+            .build();
+            
+        rules.push(rule);
+        sheet.setConditionalFormatRules(rules);
+    } catch (e) {
+        console.warn(`[Recruiter] Formatting Error: ${e}`);
+    }
 }
 
 /**
