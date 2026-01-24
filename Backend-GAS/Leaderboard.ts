@@ -488,7 +488,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         {
           addConditionalFormatRule: {
             rule: {
-              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 }],
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.PERF_SCORE + 1, endColumnIndex: L.PERF_SCORE + 2 }],
               gradientRule: {
                 minpoint: { color: { red: 0.98, green: 0.92, blue: 0.92 }, type: "NUMBER", value: "0" },
                 midpoint: { color: { red: 1, green: 0.95, blue: 0.8 }, type: "NUMBER", value: "50" },
@@ -502,7 +502,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         {
           addConditionalFormatRule: {
             rule: {
-              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.TREND, endColumnIndex: L.TREND + 1 }],
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.TREND + 1, endColumnIndex: L.TREND + 2 }],
               booleanRule: {
                 condition: { type: "NUMBER_GREATER", values: [{ userEnteredValue: "0" }] },
                 format: { textFormat: { foregroundColor: { green: 0.4 } } }
@@ -514,7 +514,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         {
           addConditionalFormatRule: {
             rule: {
-              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.TREND, endColumnIndex: L.TREND + 1 }],
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.TREND + 1, endColumnIndex: L.TREND + 2 }],
               booleanRule: {
                 condition: { type: "NUMBER_LESS", values: [{ userEnteredValue: "0" }] },
                 format: { textFormat: { foregroundColor: { red: 0.8 } } }
@@ -526,7 +526,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         // 2D. NUMBER FORMATS (Percentages)
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.WAR_RATE, endColumnIndex: L.WAR_RATE + 1 },
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.WAR_RATE + 1, endColumnIndex: L.WAR_RATE + 2 },
             cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
             fields: "userEnteredFormat.numberFormat"
           }

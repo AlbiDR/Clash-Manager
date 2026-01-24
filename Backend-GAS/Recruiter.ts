@@ -728,7 +728,7 @@ function renderHeadhunterView(
         // 2B. CHECKBOXES
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.INVITED, endColumnIndex: CONFIG.SCHEMA.HH.INVITED + 1 },
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.INVITED + 1, endColumnIndex: CONFIG.SCHEMA.HH.INVITED + 2 },
             cell: { dataValidation: { condition: { type: "BOOLEAN" } } },
             fields: "dataValidation"
           }
@@ -737,7 +737,7 @@ function renderHeadhunterView(
         {
           addConditionalFormatRule: {
             rule: {
-              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 }],
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 2 }],
               gradientRule: {
                 minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
                 midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" },
@@ -750,14 +750,14 @@ function renderHeadhunterView(
         // 2D. NUMBER FORMATS (Percentage & Date)
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1 },
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1, endColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 2 },
             cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1 },
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 2 },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "yyyy-mm-dd HH:mm:ss" } } },
             fields: "userEnteredFormat.numberFormat"
           }
