@@ -245,7 +245,7 @@ const ScoringSystem: IScoringSystem = {
     rawScore: number,
     benchmark: number,
   ): number {
-    if (!benchmark || benchmark <= 0) return 0;
+    if (benchmark <= 0) return rawScore > 0 ? 100 : 0;
     const score = Math.round((rawScore / benchmark) * 100);
     return Math.min(100, score);
   },

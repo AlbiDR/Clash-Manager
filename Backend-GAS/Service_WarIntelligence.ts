@@ -8,6 +8,7 @@ import type { ICore } from "./Core";
 import type { INetwork } from "./Network";
 import type { ITime } from "./Time";
 import type { AppConfig } from "./Configuration";
+import type { IStore } from "./Store";
 
 
 declare const CacheService: GoogleAppsScript.Cache.CacheService;
@@ -16,6 +17,7 @@ declare const Network: INetwork;
 declare const Time: ITime;
 declare const CONFIG: AppConfig;
 declare const Logger: any;
+declare const Store: IStore;
 declare const ScoringSystem: any; // Type check bypass for now to solve circular panic
 
 /**
@@ -83,8 +85,15 @@ const WarIntelligence = (() => {
           
           const snap = this.parse(res[0], 'HIGH-FIDELITY');
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
+          Store.props.setChunked(K + "_PERSIST", snap); // 🛡️ Persist
           return snap;
         } catch (e) {
+          // 🛡️ FALLBACK: Try persistent store if API fails
+          const persisted = Store.props.getChunked<WarSnapshot>(K + "_PERSIST");
+          if (persisted) {
+             persisted.status = 'HEURISTIC';
+             return persisted;
+          }
           return this.fallback();
         }
       });

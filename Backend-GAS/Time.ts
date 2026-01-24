@@ -36,6 +36,7 @@ export interface ITime {
   getLogicalDay(date: Date): number;
   getEligibleBattleDays(daysTracked: number, isColosseum?: boolean): number;
   getWarPhaseFromDate(date: Date, snapshot?: any, options?: { forceCalendarDay?: boolean }): WarPhaseResult;
+  isWeekend(date: Date): boolean;
 }
 
 const Time: ITime = {
@@ -217,7 +218,12 @@ const Time: ITime = {
       isBattle: rawDay >= 3,
       phase: rawDay <= 2 ? "TRIAL" : "ENGAGEMENT",
     };
-  }
+  },
+
+  isWeekend(date: Date): boolean {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  },
 };
 
 // @ts-ignore

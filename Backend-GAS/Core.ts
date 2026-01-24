@@ -67,6 +67,12 @@ export interface ICore {
   resolveProperty(obj: any, priorityKeys: string[], fallback?: any): any;
 
   /**
+   * Creates a deep copy of an object or array.
+   * @param obj - The item to clone.
+   */
+  deepClone<T>(obj: T): T;
+
+  /**
    * Runtime metrics for performance tracking.
    */
   runtime: {
@@ -154,6 +160,22 @@ const Core: ICore = {
       if (obj[key] !== undefined && obj[key] !== null) return obj[key];
     }
     return fallback;
+  },
+
+  deepClone<T>(obj: T): T {
+    if (obj === null || typeof obj !== "object") {
+      return obj;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.deepClone(item)) as unknown as T;
+    }
+    const copy = {} as T;
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        copy[key] = this.deepClone(obj[key]);
+      }
+    }
+    return copy;
   },
 };
 

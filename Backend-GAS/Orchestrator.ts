@@ -78,6 +78,12 @@ export interface ApiKeyVerificationResult {
   error?: string;
 }
 
+export interface IOrchestrator {
+  createTriggers(): void;
+  clearAllTriggers(): void;
+  dispatchMaster(): void;
+}
+
 export interface ModuleStatus {
   name: string;
   current: string;
@@ -471,5 +477,12 @@ Object.assign(this as any, {
   triggerScoutRecruits,
   checkSystemHealth,
   triggerVerifyApiKeys,
+  clearAllTriggers,
   VER_ORCHESTRATOR,
 });
+
+function clearAllTriggers(): void {
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach((t: any) => ScriptApp.deleteTrigger(t));
+  console.log(`🧹 Deleted ${triggers.length} triggers.`);
+}

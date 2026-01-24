@@ -32,6 +32,7 @@ export interface IView {
   refreshMobileControls(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
   enforceGlobalTabHygiene(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
   backupSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, sheetName: string): void;
+  setTabColor(sheet: GoogleAppsScript.Spreadsheet.Sheet, color: string | null): void;
 }
 
 const View: IView = {
@@ -250,6 +251,15 @@ const View: IView = {
       sheet.activate();
     } catch (e: any) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
+    }
+  },
+
+  setTabColor: function (sheet, color) {
+    if (!sheet) return;
+    try {
+      sheet.setTabColor(color);
+    } catch (e) {
+      console.warn(`Color Error: ${e}`);
     }
   },
 };

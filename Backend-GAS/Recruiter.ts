@@ -724,6 +724,30 @@ function renderHeadhunterView(
     HEADERS.length,
     HEADERS,
   );
+  
+  // 🎨 CONDITIONAL FORMATTING
+  applyHeadhunterFormatting(sheet, rows.length);
+
+  console.log(`✅ Headhunter View Rendered: ${rows.length} candidates.`);
+}
+
+function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, numRows: number): void {
+    if (numRows === 0) return;
+    const rules = sheet.getConditionalFormatRules();
+    
+    // Highlight High Potential > 80 (Column 11 / K)
+    // Note: Column match depends on schema. Hardcoded to K (11) for simplicity based on standard layout.
+    const range = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 11, numRows, 1);
+    
+    const rule = SpreadsheetApp.newConditionalFormatRule()
+        .whenNumberGreaterThan(80)
+        .setBackground("#d9ead3") // Light Green
+        .setBold(true)
+        .setRanges([range])
+        .build();
+        
+    rules.push(rule);
+    sheet.setConditionalFormatRules(rules);
 }
 
 /**
