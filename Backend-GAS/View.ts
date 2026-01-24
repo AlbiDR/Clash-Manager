@@ -19,6 +19,7 @@ const VER_VIEW = "1.0.0";
 declare var SpreadsheetApp: GoogleAppsScript.Spreadsheet.SpreadsheetApp;
 declare var Sheets: any; // Advanced Sheets API
 declare var module: any;
+declare var Session: GoogleAppsScript.Base.Session;
 
 declare const CONFIG: AppConfig;
 
@@ -34,6 +35,9 @@ export interface IView {
   enforceGlobalTabHygiene(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
   backupSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, sheetName: string): void;
   setTabColor(sheet: GoogleAppsScript.Spreadsheet.Sheet, color: string | null): void;
+  tagSheet(sheet: GoogleAppsScript.Spreadsheet.Sheet, type: string): void;
+  findSheetByType(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, type: string): GoogleAppsScript.Spreadsheet.Sheet | null;
+  protectHeaders(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
 }
 
 var View: IView = {
@@ -72,27 +76,47 @@ var View: IView = {
     sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
     sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
 
-    // 🛡️ CANVAS PREPARATION: Sheets API Batch Reset (Zero-Latency)
+    // 🛡️ CANVAS PREPARATION & ATOMIC LAYOUT ENGINE
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
-    
-    Sheets.Spreadsheets!.batchUpdate({
-      requests: [
-        {
-          updateBorders: {
-            range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }
-          }
-        },
-        {
-          repeatCell: {
-            range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
-            cell: { userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 } } },
-            fields: 'userEnteredFormat.backgroundColor'
-          }
+    const requests: any[] = [
+      {
+        updateBorders: {
+          range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }
         }
-      ]
-    }, ssId);
+      },
+      {
+        repeatCell: {
+          range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
+          cell: { userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } },
+          fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment)'
+        }
+      }
+    ];
 
+    if (contentCols > 0) {
+      // 🏗️ ATOMIC FORMATTING (Borders, Alignment, Merges)
+      requests.push(
+        // Left Edge
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Right Edge
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: totalCols-1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Top Edge
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Bottom Edge
+        { updateBorders: { range: { sheetId, startRowIndex: totalRows-1, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Header Bottom Line
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        // Internal Gridlines (Thin/Gray)
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
+        // Auto-Size Dimensions
+        { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } }
+      );
+    }
+
+    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+    
+    // Legacy support for non-API compatible bits (Banding/Merge)
     this.drawMobileCheckbox(sheet);
 
     if (contentCols > 0) {
@@ -105,65 +129,19 @@ var View: IView = {
         .setFontWeight("bold")
         .setFontColor("#888888");
 
-      // 🏗️ BUFFER-ANCHORED FRAMING (Resilient borders)
-      // Left Edge (Right side of Col A)
-      sheet.getRange(1, 1, totalRows, 1).setBorder(null, null, null, true, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
-      // Right Edge (Left side of Last Col)
-      sheet.getRange(1, totalCols, totalRows, 1).setBorder(null, true, null, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
-      // Top Edge (Bottom side of Row 1)
-      sheet.getRange(1, 1, 1, totalCols).setBorder(null, null, true, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
-      // Bottom Edge (Top side of Last Row)
-      sheet.getRange(totalRows, 1, 1, totalCols).setBorder(true, null, null, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
-
       const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
-      tableRange
-        .getBandings()
-        .forEach((b) => b.remove());
-      tableRange.applyRowBanding(
-        SpreadsheetApp.BandingTheme.LIGHT_GREY,
-        true,
-        false,
-      );
-      
-      // Internal Gridlines (Thin/Gray)
-      tableRange.setBorder(null, null, null, null, true, true, "#cccccc", SpreadsheetApp.BorderStyle.SOLID);
+      tableRange.getBandings().forEach((b) => b.remove());
+      tableRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
 
       const headerRange = sheet.getRange(2, 2, 1, contentCols);
-      if (Array.isArray(optHeaders) && optHeaders.length > 0)
-        headerRange.setValues([optHeaders]);
-        
-      headerRange
-        .setFontWeight("bold")
-        .setHorizontalAlignment("center")
-        .setWrap(true);
-        
-      // Header Bottom Line (Anchor for body)
-      headerRange.setBorder(null, null, true, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID);
+      if (Array.isArray(optHeaders) && optHeaders.length > 0) headerRange.setValues([optHeaders]);
+      headerRange.setFontWeight("bold").setHorizontalAlignment("center").setWrap(true);
 
       if (contentRows > 0) {
-        sheet
-          .getRange(L.DATA_START_ROW, 2, contentRows, contentCols)
-          .setHorizontalAlignment("center")
-          .setWrap(false);
+        sheet.getRange(L.DATA_START_ROW, 2, contentRows, contentCols).setHorizontalAlignment("center").setWrap(false);
       }
     }
     sheet.setHiddenGridlines(true);
-
-    // ⚡ SERVER-SIDE AUTO-SIZING
-    if (contentCols > 0) {
-       Sheets.Spreadsheets!.batchUpdate({
-         requests: [{
-           autoResizeDimensions: {
-             dimensions: {
-               sheetId: sheet.getSheetId(),
-               dimension: "COLUMNS",
-               startIndex: 1,
-               endIndex: 1 + contentCols
-             }
-           }
-         }]
-       }, sheet.getParent().getId());
-    }
   },
 
   /**
@@ -308,11 +286,24 @@ var View: IView = {
         if (existing) existing.setName(nextName);
       }
 
-      const copy = sheet.copyTo(ss);
-      copy.setName(backup1Name);
-      copy.setTabColor("#cccccc");
-      this.enforceGlobalTabHygiene(ss); // 👈 FIXED REGRESSION
-      sheet.activate();
+      // 🛡️ HIGH-PERFORMANCE API CLONE
+      const ssId = ss.getId();
+      const sheetId = sheet.getSheetId();
+      
+      const copyResponse = Sheets.Spreadsheets!.Sheets!.copyTo({
+        destinationSpreadsheetId: ssId
+      }, ssId, sheetId);
+      
+      const copySheetId = copyResponse.sheetId;
+      const copySheet = ss.getSheets().find(s => s.getSheetId() === copySheetId);
+      
+      if (copySheet) {
+        copySheet.setName(backup1Name);
+        copySheet.setTabColor("#cccccc");
+        this.tagSheet(copySheet, "BACKUP");
+        this.enforceGlobalTabHygiene(ss);
+        sheet.activate();
+      }
     } catch (e: any) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
     }
@@ -326,6 +317,80 @@ var View: IView = {
       console.warn(`Color Error: ${e}`);
     }
   },
+
+  /**
+   * 🏷️ DEVELOPER METADATA ENGINE
+   * Tags sheets for resilient identification.
+   */
+  tagSheet: function (sheet, type) {
+    if (!sheet) return;
+    const ssId = sheet.getParent().getId();
+    const sheetId = sheet.getSheetId();
+    
+    try {
+      Sheets.Spreadsheets!.DeveloperMetadata!.create({
+        location: { sheetId: sheetId },
+        metadataKey: "cm_type",
+        metadataValue: type,
+        visibility: "DOCUMENT"
+      }, ssId);
+    } catch (e) {
+      console.warn(`🏷️ Metadata Tagging failed for ${sheet.getName()}: ${e}`);
+    }
+  },
+
+  findSheetByType: function (ss, type) {
+    const ssId = ss.getId();
+    try {
+      const metadata = Sheets.Spreadsheets!.DeveloperMetadata!.search({
+        dataFilters: [{ developerMetadataLookup: { metadataKey: "cm_type", metadataValue: type } }]
+      }, ssId);
+
+      if (metadata && metadata.matchedDeveloperMetadata && metadata.matchedDeveloperMetadata.length > 0) {
+        const meta = metadata.matchedDeveloperMetadata[0].developerMetadata;
+        const sheetId = meta.location.sheetId;
+        return ss.getSheets().find(s => s.getSheetId() === sheetId) || null;
+      }
+    } catch (e) {
+      console.warn(`🏷️ Metadata Lookup failed for type ${type}: ${e}`);
+    }
+    return null;
+  },
+
+  /**
+   * 🔒 PROTECTED RANGE REGISTRY
+   * Locks the header row and system columns.
+   */
+  protectHeaders: function (sheet) {
+    if (!sheet) return;
+    const ssId = sheet.getParent().getId();
+    const sheetId = sheet.getSheetId();
+    
+    try {
+      Sheets.Spreadsheets!.batchUpdate({
+        requests: [
+          {
+            addProtectedRange: {
+              protectedRange: {
+                range: {
+                  sheetId: sheetId,
+                  startRowIndex: 0,
+                  endRowIndex: CONFIG.LAYOUT.DATA_START_ROW - 1, // Header block
+                  startColumnIndex: 0,
+                  endColumnIndex: sheet.getMaxColumns()
+                },
+                description: "🛡️ SYSTEM HEADERS (Read Only)",
+                warningOnly: false,
+                editors: { domainUsersCanEdit: false, users: [Session.getEffectiveUser().getEmail()] }
+              }
+            }
+          }
+        ]
+      }, ssId);
+    } catch (e) {
+      console.warn(`🔒 Range Protection failed for ${sheet.getName()}: ${e}`);
+    }
+  }
 };
 
 // @ts-ignore

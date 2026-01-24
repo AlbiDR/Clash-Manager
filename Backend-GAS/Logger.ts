@@ -189,40 +189,41 @@ function pruneStaleData(
 
   if (lastRow < startRow) return;
 
-  const S_DB = CONFIG.SCHEMA.DB;
-  const numCols = Object.keys(CONFIG.SCHEMA.DB).length;
-  const safeCols = Math.min(numCols, sheet.getMaxColumns() - 1);
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, safeCols);
-  const data = range.getValues();
+  // 1. COLUMN-SELECTIVE INGESTION (API Mode)
+  const ssId = sheet.getParent().getId();
+  const sheetName = sheet.getName();
+  const tagCol = String.fromCharCode(65 + 1 + S_DB.TAG); // Column B is index 0 for range but here we adjust
+  const dateCol = String.fromCharCode(65 + 1 + S_DB.DATE);
+  
+  // We fetch only the columns we need: Tag and Date
+  const ranges = [`'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`, `'${sheetName}'!${dateCol}${startRow}:${dateCol}${lastRow}`];
+  const response = Sheets.Spreadsheets!.Values!.batchGet(ssId, { ranges });
+  
+  if (!response.valueRanges || response.valueRanges.length < 2) return;
+  
+  const tagValues = response.valueRanges[0].values || [];
+  const dateValues = response.valueRanges[1].values || [];
 
-  // 1. Build maps of latest dates and names per tag
-  const tagSeenData = data.reduce(
-    (acc: { lastSeen: Map<string, Date>; names: Map<string, string> }, row: any) => {
-      const tag = String(row[S_DB.TAG]);
-      const dateVal = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : new Date(0);
-      if (
-        !acc.lastSeen.has(tag) ||
-        dateVal > (acc.lastSeen.get(tag) || new Date(0))
-      ) {
-        acc.lastSeen.set(tag, dateVal);
-        acc.names.set(tag, String(row[S_DB.NAME]));
-      }
-      return acc;
-    },
-    { lastSeen: new Map(), names: new Map() },
-  );
+  // 2. Build maps of latest dates per tag
+  const tagSeenData = new Map<string, Date>();
+  const tagsToPurge = new Set<string>();
 
-  // 2. Identify tags to purge
+  for (let i = 0; i < tagValues.length; i++) {
+    const tag = String(tagValues[i][0] || "");
+    const dateVal = dateValues[i] && dateValues[i][0] ? new Date(dateValues[i][0]) : new Date(0);
+    
+    if (!tagSeenData.has(tag) || dateVal > tagSeenData.get(tag)!) {
+      tagSeenData.set(tag, dateVal);
+    }
+  }
+
+  // 3. Identify tags to purge
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - CONFIG.SYSTEM.DB_PURGE_DAYS);
 
-  const tagsToPurge = new Set<string>();
-  const purgedDetails: string[] = [];
-
-  tagSeenData.lastSeen.forEach((lastDate: Date, tag: string) => {
+  tagSeenData.forEach((lastDate, tag) => {
     if (!activeTags.has(tag) && lastDate < cutoff) {
       tagsToPurge.add(tag);
-      purgedDetails.push(`${tagSeenData.names.get(tag) || "Unknown"} (${tag})`);
     }
   });
 
@@ -231,17 +232,23 @@ function pruneStaleData(
     return;
   }
 
-  // 4. Write Back (Atomic Delete via Dimension)
+  // 4. Calculate rows to delete (Need full data pass or another fetch for names if logging names is required)
+  // For efficiency, we just use the indices from the previous fetch
+  const rowsToDelete: number[] = [];
+  for (let i = 0; i < tagValues.length; i++) {
+     if (tagsToPurge.has(String(tagValues[i][0]))) {
+         rowsToDelete.push(startRow + i);
+     }
+  }
+
+  if (tagsToPurge.size === 0) {
+    console.log("🧹 Pruning: No stale members found.");
+    return;
+  }
+
+  // 5. Write Back (Atomic Delete via Dimension)
   if (tagsToPurge.size > 0) {
     console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
-    
-    // Calculate 1-based row indices to delete
-    const rowsToDelete: number[] = [];
-    data.forEach((row, i) => {
-      if (tagsToPurge.has(String(row[S_DB.TAG]))) {
-        rowsToDelete.push(startRow + i);
-      }
-    });
 
     // Delete in reverse to maintain index stability
     const ssId = sheet.getParent().getId();
