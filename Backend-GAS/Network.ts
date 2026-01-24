@@ -445,6 +445,7 @@ var Network: INetwork = {
         });
         if (res.getResponseCode() === 200) {
             const diagnostic = JSON.parse(res.getContentText() || "{}");
+            if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
                 console.info(`[Network] Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
