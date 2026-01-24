@@ -130,7 +130,7 @@ var View: IView = {
         .setFontColor("#888888");
 
       const tableRange = sheet.getRange(2, 2, 1 + contentRows, contentCols);
-      tableRange.getBandings().forEach((b) => b.remove());
+      tableRange.getBandings().forEach((b: GoogleAppsScript.Spreadsheet.Banding) => b.remove());
       tableRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
 
       const headerRange = sheet.getRange(2, 2, 1, contentCols);
@@ -198,10 +198,10 @@ var View: IView = {
     // 🚀 BATCH TAB HYGIENE ENGINE (Sheets API)
     const ssId = ss.getId();
     const sheets = ss.getSheets();
-    const requests = [];
+    const requests: any[] = [];
 
     // 1. Calculate Visibility and Index mapping
-    sheets.forEach((sheet) => {
+    sheets.forEach((sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
       const name = sheet.getName();
       const sheetId = sheet.getSheetId();
       
@@ -295,7 +295,7 @@ var View: IView = {
       }, ssId, sheetId);
       
       const copySheetId = copyResponse.sheetId;
-      const copySheet = ss.getSheets().find(s => s.getSheetId() === copySheetId);
+      const copySheet = ss.getSheets().find((s: GoogleAppsScript.Spreadsheet.Sheet) => s.getSheetId() === copySheetId);
       
       if (copySheet) {
         copySheet.setName(backup1Name);

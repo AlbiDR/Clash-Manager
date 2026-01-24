@@ -189,6 +189,8 @@ function pruneStaleData(
 
   if (lastRow < startRow) return;
 
+  const S_DB = CONFIG.SCHEMA.DB;
+
   // 1. COLUMN-SELECTIVE INGESTION (API Mode)
   const ssId = sheet.getParent().getId();
   const sheetName = sheet.getName();
@@ -236,9 +238,10 @@ function pruneStaleData(
   // For efficiency, we just use the indices from the previous fetch
   const rowsToDelete: number[] = [];
   for (let i = 0; i < tagValues.length; i++) {
-     if (tagsToPurge.has(String(tagValues[i][0]))) {
-         rowsToDelete.push(startRow + i);
-     }
+    const rowContent = tagValues[i];
+    if (rowContent && rowContent[0] && tagsToPurge.has(String(rowContent[0]))) {
+      rowsToDelete.push(startRow + i);
+    }
   }
 
   if (tagsToPurge.size === 0) {
