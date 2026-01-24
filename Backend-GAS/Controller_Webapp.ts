@@ -359,7 +359,7 @@ function extractSheetDataStrict(
 
   const maxColIdx = Math.max(...mapping.map((m) => m.col));
   const numCols = Math.max(20, maxColIdx + 1);
-  const range = sheet.getRange(startRow, 1, lastRow - startRow + 1, numCols);
+  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, numCols);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
