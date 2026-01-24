@@ -452,92 +452,94 @@ function updateLeaderboard(dryRun: boolean = false): void {
     HEADERS_ARRAY.slice(1),
   );
 
-  Sheets.Spreadsheets!.Values!.update({
-    values: [HEADERS_ARRAY]
-  }, ssId, `'${sheetName}'!A2`, {
-    valueInputOption: "USER_ENTERED"
-  });
-  lbSheet.getRange(2, 1, 1, HEADERS_ARRAY.length).setFontWeight("bold");
+  // No changes to preparation logic.
+    if (finalRows.length > 0) {
+      const ssId = ss.getId();
+      const sheetId = lbSheet.getSheetId();
+      const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
+      const contentRows = finalRows.length;
+      const contentCols = HEADERS_ARRAY.length;
 
-  if (finalRows.length > 0) {
-    const ssId = ss.getId();
-    const sheetId = lbSheet.getSheetId();
-    const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
-    const endIdx = startIdx + finalRows.length;
-
-    // 1. DATA DELIVERY (USER_ENTERED)
-    Sheets.Spreadsheets!.Values!.update({
-      values: finalRows
-    }, ssId, `'${sheetName}'!A${CONFIG.LAYOUT.DATA_START_ROW}`, {
-      valueInputOption: "USER_ENTERED"
-    });
-
-    // 2. ATOMIC UI (Formatting & Logic)
-    const requests: any[] = [
-      // Server-side sort
-      {
-        sortRange: {
-          range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 0, endColumnIndex: HEADERS_ARRAY.length },
-          sortSpecs: [{ dimensionIndex: L.PERF_SCORE, sortOrder: "DESCENDING" }]
-        }
-      },
-      // Header weight
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: HEADERS_ARRAY.length },
-          cell: { userEnteredFormat: { textFormat: { bold: true } } },
-          fields: "userEnteredFormat.textFormat.bold"
-        }
-      },
-      // Performance Score Bolding & Percentage Format
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 },
-          cell: { userEnteredFormat: { textFormat: { bold: true }, numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
-          fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.numberFormat"
-        }
-      },
-      // Gradient Rule
-      {
-        addConditionalFormatRule: {
-          rule: {
-            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 }],
-            gradientRule: {
-              minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
-              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" }
-            }
-          },
-          index: 0
-        }
-      }
-    ];
-
-    // Add Trend indicators to Registry Sprint
-    [
-      { color: { red: 0.18, green: 0.49, blue: 0.19 }, criteria: "NUMBER_GREATER", values: ["0"] },
-      { color: { red: 0.77, green: 0.15, blue: 0.15 }, criteria: "NUMBER_LESS", values: ["0"] }
-    ].forEach((cfg, idx) => {
-      requests.push({
-        addConditionalFormatRule: {
-          rule: {
-            ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.TREND, endColumnIndex: L.TREND + 1 }],
-            booleanRule: {
-              condition: { type: cfg.criteria, values: [{ userEnteredValue: cfg.values[0] }] },
-              format: { textFormat: { foregroundColor: cfg.color, bold: true } }
-            }
-          },
-          index: idx + 1
-        }
+      // 1. DATA DELIVERY (Atomic Update) - USER_ENTERED
+      Sheets.Spreadsheets!.Values!.update({
+        values: finalRows
+      }, ssId, `'${lbSheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, {
+        valueInputOption: "USER_ENTERED"
       });
-    });
 
-    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-  }
+      // 2. TOTAL ATOMIC VISUALS (Consolidated)
+      const finalRequests: any[] = [
+        // 2A. HEADERS DELIVERY (Row 2 Style & Value)
+        {
+          updateCells: {
+            rows: [{
+              values: HEADERS_ARRAY.map(h => ({
+                userEnteredValue: { stringValue: h },
+                userEnteredFormat: { textFormat: { bold: true }, wrapStrategy: "WRAP", horizontalAlignment: "CENTER", backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } }
+              }))
+            }],
+            fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }
+          }
+        },
+        // 2B. PERFORMANCE GRADIENT
+        {
+          addConditionalFormatRule: {
+            rule: {
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 }],
+              gradientRule: {
+                minpoint: { color: { red: 0.98, green: 0.92, blue: 0.92 }, type: "NUMBER", value: "0" },
+                midpoint: { color: { red: 1, green: 0.95, blue: 0.8 }, type: "NUMBER", value: "50" },
+                maxpoint: { color: { red: 0.92, green: 0.98, blue: 0.92 }, type: "NUMBER", value: "100" }
+              }
+            },
+            index: 0
+          }
+        },
+        // 2C. TREND COLORS (Conditional)
+        {
+          addConditionalFormatRule: {
+            rule: {
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.TREND, endColumnIndex: L.TREND + 1 }],
+              booleanRule: {
+                condition: { type: "NUMBER_GREATER", values: [{ userEnteredValue: "0" }] },
+                format: { textFormat: { foregroundColor: { green: 0.4 } } }
+              }
+            },
+            index: 0
+          }
+        },
+        {
+          addConditionalFormatRule: {
+            rule: {
+              ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.TREND, endColumnIndex: L.TREND + 1 }],
+              booleanRule: {
+                condition: { type: "NUMBER_LESS", values: [{ userEnteredValue: "0" }] },
+                format: { textFormat: { foregroundColor: { red: 0.8 } } }
+              }
+            },
+            index: 1
+          }
+        },
+        // 2D. NUMBER FORMATS (Percentages)
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.WAR_RATE, endColumnIndex: L.WAR_RATE + 1 },
+            cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        }
+      ];
 
-  lbSheet
-    .getRange("B1")
-    .setValue(`LEADERBOARD • ${new Date().toLocaleString()}`);
-  ss.toast("Success: Leaderboard updated.", "Leaderboard Updated");
+      // 2E. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar)
+      finalRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, contentRows, contentCols));
+
+      // 🚀 EXECUTE UNBREAKABLE TRANSACTION
+      Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
+    }
+
+    Registry.Services.View.setStatusMessage(lbSheet, `LEADERBOARD • ${new Date().toLocaleString()}`);
+    console.log(`✅ Leaderboard View Rendered: ${finalRows.length} members (Atomic).`);
 }
 
 function timeAgo(date: Date | null): string {
