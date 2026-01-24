@@ -369,9 +369,8 @@ function extractSheetDataStrict(
     const rowRaw = vals[i];
     const rowDisplay = displayVals[i];
 
-    const tagRaw = rowRaw[S.TAG];
-    if (!tagRaw || typeof tagRaw !== "string" || !tagRaw.startsWith("#"))
-      continue;
+    const tagRaw = String(rowRaw[S.TAG] || "").trim();
+    if (!tagRaw || tagRaw.length < 3) continue;
 
     if (type === "hh") {
       const invitedVal = rowRaw[S.INVITED];
