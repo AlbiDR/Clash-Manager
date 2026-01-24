@@ -84,7 +84,7 @@ export interface ICore {
 /* ==========================================================================
    IMPLEMENTATION
    ========================================================================== */
-const Core: ICore = {
+var Core: ICore = {
   /**
    * 🔒 EXECUTE SAFELY (Mutex Lock)
    * Wraps any operation in a script-wide lock to prevent race conditions.
