@@ -18,8 +18,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IStore } from "./Store";
-import type { ICore } from "./Core";
+import type { IRegistry } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
 declare var UrlFetchApp: GoogleAppsScript.URL_Fetch.UrlFetchApp;
@@ -27,8 +26,7 @@ declare var Utilities: GoogleAppsScript.Utilities.Utilities;
 declare var module: any;
 
 declare const CONFIG: AppConfig;
-declare const Store: IStore;
-declare const Core: ICore;
+declare const Registry: IRegistry;
 
 /* ==========================================================================
    CONSTANTS & CONFIGURATION
@@ -74,8 +72,12 @@ const NetworkInternal = {
    * Initializes or refreshes the fetch count from Store
    */
   initQuota() {
+    if (_FETCH_COUNT > 0) return;
     try {
-      const st = Store.props.getJSON(NETWORK_CONFIG.KEYS.FETCH_STATE, {}) as { date?: string; count?: number };
+      const st = Registry.Services.Store.props.getJSON(NETWORK_CONFIG.KEYS.FETCH_STATE, {}) as {
+        date?: string;
+        count?: number;
+      };
       const today = new Date().toISOString().slice(0, 10);
       if (st && st.date === today) {
         _FETCH_COUNT = Number(st.count || 0);
@@ -94,7 +96,10 @@ const NetworkInternal = {
     _FETCH_COUNT += count;
     try {
       const today = new Date().toISOString().slice(0, 10);
-      Store.props.setJSON(NETWORK_CONFIG.KEYS.FETCH_STATE, { date: today, count: _FETCH_COUNT });
+      Registry.Services.Store.props.setJSON(NETWORK_CONFIG.KEYS.FETCH_STATE, {
+        date: today,
+        count: _FETCH_COUNT,
+      });
     } catch (e: any) {
       console.error(`Quota Update Failed: ${e.message}`);
     }
@@ -360,11 +365,16 @@ var Network: INetwork = {
     // Check Store cache
     const now = Date.now();
     try {
-        const cached = Store.props.getJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, null) as { status: boolean, time: number } | null;
+      if (typeof PropertiesService !== "undefined") {
+        const cached = Registry.Services.Store.props.getJSON(
+          NETWORK_CONFIG.KEYS.WORKER_HEALTH,
+          null,
+        ) as { status: boolean; time: number } | null;
         if (cached && now - cached.time < 300000) { // 5 min TTL
             _EXECUTION_CACHE.set("worker_health", cached.status);
             return cached.status;
         }
+      }
     } catch(e) {}
 
     // Verify
@@ -382,7 +392,10 @@ var Network: INetwork = {
 
     // Persist
     _EXECUTION_CACHE.set("worker_health", isHealthy);
-    Store.props.setJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, { status: isHealthy, time: now });
+    Registry.Services.Store.props.setJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, {
+      status: isHealthy,
+      time: now,
+    });
     
     return isHealthy;
   },

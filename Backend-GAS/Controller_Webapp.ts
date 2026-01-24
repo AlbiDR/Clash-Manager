@@ -122,7 +122,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
   if (!ids || !Array.isArray(ids) || ids.length === 0)
     return { success: true, count: 0 };
 
-  return Core.executeSafely("WRITE_HH", () => {
+  return Registry.Services.Core.executeSafely("WRITE_HH", () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       SpreadsheetApp.flush();
@@ -225,7 +225,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
  * 🔄 CACHE MANAGEMENT
  */
 function refreshWebPayload(): string {
-  return Core.executeSafely("PAYLOAD_GEN", () => {
+  return Registry.Services.Core.executeSafely("PAYLOAD_GEN", () => {
     return _generatePayloadInternal();
   });
 }
