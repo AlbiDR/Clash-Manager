@@ -22,6 +22,7 @@ import type { IRegistry } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
 declare var UrlFetchApp: GoogleAppsScript.URL_Fetch.UrlFetchApp;
+declare var CacheService: GoogleAppsScript.Cache.CacheService;
 declare var Utilities: GoogleAppsScript.Utilities.Utilities;
 declare var module: any;
 
@@ -32,11 +33,13 @@ declare const Registry: IRegistry;
    CONSTANTS & CONFIGURATION
    ========================================================================== */
 const NETWORK_CONFIG = {
-  MAX_FETCH_PER_EXECUTION: 100000,
+  MAX_FETCH_DAILY_GUARD: 18000, // Safety threshold for daily budget
+  MAX_FETCH_PER_EXECUTION: 2000, 
   RETRY_MAX: 3,
-  CACHE_TTL_SHORT: 900, // 15 mins
+  CACHE_TTL_LONG: 900,  // 15 mins for profile data
+  CACHE_TTL_SHORT: 300, // 5 mins for race stats
   KEYS: {
-    FETCH_STATE: "FETCH_STATE",
+    FETCH_STATE: "FETCH_STATE_V2",
     WORKER_HEALTH: "WORKER_HEALTH_CACHE",
   }
 };
@@ -55,6 +58,7 @@ export interface INetwork {
   auditKeysRemote(keys: Array<{ name: string; value: string }>): Array<{ name: string; success: boolean; error?: string }> | null;
   scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring?: ScoringWeights | null): any[];
   remoteWorkerHealthy(): boolean;
+  getRemainingQuota(): number;
 }
 
 export interface ClanDataResult {
@@ -139,6 +143,13 @@ const NetworkInternal = {
       getResponseCode: () => r.code,
       getContentText: () => typeof r.content === "string" ? r.content : JSON.stringify(r.content)
     }));
+  },
+
+  /**
+   * Generates a stable cache key
+   */
+  hashKey(str: string): string {
+    return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, str)).slice(0, 50);
   }
 };
 
@@ -164,29 +175,45 @@ var Network: INetwork = {
       return new Array(urls.length).fill(null);
     }
 
-    // 3. Check Cache & Deduplicate
+    // 3. Check Cache (Exec + Script Service) & Deduplicate
     const finalResults = new Array(urls.length).fill(null);
     const urlsToFetch: string[] = [];
     const urlIndices = new Map<string, number[]>();
+    const scriptCache = CacheService.getScriptCache();
 
     urls.forEach((url, index) => {
+      // Priority 1: In-memory Execution Cache
       if (_EXECUTION_CACHE.has(url)) {
         finalResults[index] = _EXECUTION_CACHE.get(url);
-      } else {
-        if (!urlIndices.has(url)) {
-          urlIndices.set(url, []);
-          urlsToFetch.push(url);
-        }
-        urlIndices.get(url)!.push(index);
+        return;
       }
+
+      // Priority 2: Persistent Script Cache
+      const cacheKey = NetworkInternal.hashKey(url);
+      const cachedStr = scriptCache.get(cacheKey);
+      if (cachedStr) {
+          try {
+              const json = JSON.parse(cachedStr);
+              _EXECUTION_CACHE.set(url, json);
+              finalResults[index] = json;
+              return;
+          } catch(e) {}
+      }
+
+      // Need fetch
+      if (!urlIndices.has(url)) {
+        urlIndices.set(url, []);
+        urlsToFetch.push(url);
+      }
+      urlIndices.get(url)!.push(index);
     });
 
     if (urlsToFetch.length === 0) return finalResults;
 
-    // 4. Check Quota Limits
-    const remainingQuota = NETWORK_CONFIG.MAX_FETCH_PER_EXECUTION - _FETCH_COUNT;
+    // 4. Check Quota Limits (Daily Guard)
+    const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
     if (remainingQuota <= 0) {
-        console.warn(`⚠️ API Budget Exceeded (${_FETCH_COUNT})`);
+        console.warn(`🛑 CRITICAL: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all requests.`);
         return finalResults;
     }
 
@@ -255,8 +282,14 @@ var Network: INetwork = {
 
             if (code === 200) {
               try {
-                const json = JSON.parse(r.getContentText());
+                const text = r.getContentText();
+                const json = JSON.parse(text);
                 _EXECUTION_CACHE.set(url, json);
+                
+                // Persist to script cache (15 min for player data, shorter for logs)
+                const ttl = url.includes("members") || url.includes("players") ? NETWORK_CONFIG.CACHE_TTL_LONG : NETWORK_CONFIG.CACHE_TTL_SHORT;
+                scriptCache.put(NetworkInternal.hashKey(url), text, ttl);
+
                 urlIndices.get(url)!.forEach(idx => finalResults[idx] = json);
               } catch (e) {}
             } else if (code === 404) {
@@ -457,6 +490,11 @@ var Network: INetwork = {
 
     if (res.getResponseCode() !== 200) throw new Error(`Worker Error ${res.getResponseCode()}`);
     return JSON.parse(res.getContentText()).candidates || [];
+  },
+
+  getRemainingQuota() {
+    NetworkInternal.initQuota();
+    return Math.max(0, NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT);
   }
 };
 

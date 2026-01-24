@@ -9,7 +9,18 @@ const mockUrlFetch = {
 };
 const mockUtilities = {
   sleep: vi.fn(),
-  base64Encode: vi.fn(),
+  base64EncodeWebSafe: vi.fn((s) => s),
+  computeDigest: vi.fn(() => []),
+  DigestAlgorithm: { MD5: 'MD5' }
+};
+
+const mockCache = {
+  get: vi.fn(),
+  put: vi.fn(),
+};
+
+const mockCacheService = {
+  getScriptCache: vi.fn(() => mockCache),
 };
 
 // Mock Dependencies
@@ -37,6 +48,7 @@ const mockRegistry = {
 
 vi.stubGlobal('UrlFetchApp', mockUrlFetch);
 vi.stubGlobal('Utilities', mockUtilities);
+vi.stubGlobal('CacheService', mockCacheService);
 vi.stubGlobal('Registry', mockRegistry);
 vi.stubGlobal('CONFIG', mockConfig);
 

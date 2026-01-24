@@ -137,6 +137,15 @@ function scoutRecruits(): void {
       ) / baselineData[0].items.length;
   }
 
+  // 🛡️ QUOTA GUARD
+  const remaining = Registry.Services.Network.getRemainingQuota();
+  if (remaining < 300) {
+    console.warn(`🛑 Quota Guard: Aborting scan (Remaining: ${remaining}). Core sync preserved.`);
+    sheet.getRange("B1").setValue(`⚠️ Scouting Paused (Quota Low: ${remaining})`);
+    return;
+  }
+  const lowQuotaMode = remaining < 1000;
+
   // 🚫 BLACKLIST & BENCHMARK UPDATE
   const { ids: blacklistSet, entries: blacklistEntries } =
     updateAndGetBlacklist(sheet);
@@ -172,7 +181,7 @@ function scoutRecruits(): void {
   );
 
   // 4. Run the optimized scan
-  const scanned = scanTournaments(minTrophies, existing, blacklistSet);
+  const scanned = scanTournaments(minTrophies, existing, blacklistSet, lowQuotaMode);
 
   // 5. Intelligent Merge
   let newArrivals = 0;
@@ -416,6 +425,7 @@ function scanTournaments(
   minTrophies: number,
   existingRecruits: Map<string, Recruit>,
   blacklistSet: Set<string>,
+  lowQuotaMode: boolean = false
 ): Recruit[] {
   const W = CONFIG.HEADHUNTER.WEIGHTS;
   const keywords = CONFIG.HEADHUNTER.KEYWORDS;
@@ -566,7 +576,7 @@ function scanTournaments(
       }
     });
 
-    if (logUrls.length > 0) {
+    if (logUrls.length > 0 && !lowQuotaMode) {
       const logs = Registry.Services.Network.fetchRoyaleAPI(logUrls);
       candidatesToProfile.forEach((p, idx) => {
         let hasWar = false;
