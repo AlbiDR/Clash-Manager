@@ -17,6 +17,7 @@ import type { AppConfig } from "./Configuration";
 const VER_VIEW = "1.0.0";
 
 declare var SpreadsheetApp: GoogleAppsScript.Spreadsheet.SpreadsheetApp;
+declare var Sheets: any; // Advanced Sheets API
 declare var module: any;
 
 declare const CONFIG: AppConfig;
@@ -71,8 +72,27 @@ var View: IView = {
     sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
     sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
 
-    // 🛡️ CANVAS PREPARATION: Clear all borders and reset visibility
-    sheet.getRange(1, 1, totalRows, totalCols).setBorder(false, false, false, false, false, false);
+    // 🛡️ CANVAS PREPARATION: Sheets API Batch Reset (Zero-Latency)
+    const ssId = sheet.getParent().getId();
+    const sheetId = sheet.getSheetId();
+    
+    Sheets.Spreadsheets!.batchUpdate({
+      requests: [
+        {
+          updateBorders: {
+            range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
+            cell: { userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 } } },
+            fields: 'userEnteredFormat.backgroundColor'
+          }
+        }
+      ]
+    }, ssId);
+
     this.drawMobileCheckbox(sheet);
 
     if (contentCols > 0) {
@@ -128,6 +148,22 @@ var View: IView = {
       }
     }
     sheet.setHiddenGridlines(true);
+
+    // ⚡ SERVER-SIDE AUTO-SIZING
+    if (contentCols > 0) {
+       Sheets.Spreadsheets!.batchUpdate({
+         requests: [{
+           autoResizeDimensions: {
+             dimensions: {
+               sheetId: sheet.getSheetId(),
+               dimension: "COLUMNS",
+               startIndex: 1,
+               endIndex: 1 + contentCols
+             }
+           }
+         }]
+       }, sheet.getParent().getId());
+    }
   },
 
   /**
@@ -181,31 +217,42 @@ var View: IView = {
 
     const allSheets = ss.getSheets();
 
-    // 1. SELECTIVE VISIBILITY: Only touch sheets the system "owns"
-    allSheets.forEach((sheet) => {
+    // 🚀 BATCH TAB HYGIENE ENGINE (Sheets API)
+    const ssId = ss.getId();
+    const sheets = ss.getSheets();
+    const requests = [];
+
+    // 1. Calculate Visibility and Index mapping
+    sheets.forEach((sheet) => {
       const name = sheet.getName();
+      const sheetId = sheet.getSheetId();
+      
       if (SYSTEM_OWNED.includes(name)) {
-        if (VISIBLE_WHITELIST.includes(name)) {
-          if (sheet.isSheetHidden()) sheet.showSheet();
-        } else {
-          if (!sheet.isSheetHidden()) sheet.hideSheet();
-        }
+        const targetVisible = VISIBLE_WHITELIST.includes(name);
+        const targetIndex = SYSTEM_OWNED.indexOf(name); // Desired position
+
+        requests.push({
+          updateSheetProperties: {
+            properties: {
+              sheetId: sheetId,
+              hidden: !targetVisible,
+              index: targetIndex
+            },
+            fields: 'hidden,index'
+          }
+        });
       }
     });
 
-    // 2. SELECTIVE ORDERING: Only sort the system-owned sheets
-    SYSTEM_OWNED.forEach((name, index) => {
-      const sheet = ss.getSheetByName(name);
-      if (sheet) {
-        const targetIndex = index + 1;
-        if (sheet.getIndex() !== targetIndex) {
-          try {
-            ss.setActiveSheet(sheet);
-            ss.moveActiveSheet(targetIndex);
-          } catch (e) {}
-        }
+    if (requests.length > 0) {
+      try {
+        Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+      } catch (e) {
+        console.warn(`⚠️ Batch Hygiene Warning: ${e}`);
+        // Fallback or ignore for minor index conflicts
       }
-    });
+    }
+
     SpreadsheetApp.flush();
   },
 

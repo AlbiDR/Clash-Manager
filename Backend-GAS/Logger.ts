@@ -22,6 +22,7 @@ import type { WarSnapshot } from "./Service_WarIntelligence";
 const VER_LOGGER = "12.0.0";
 
 declare var SpreadsheetApp: any;
+declare var Sheets: any; // Advanced Sheets API
 declare var LockService: any;
 declare var PropertiesService: any;
 declare var UrlFetchApp: any;
@@ -230,22 +231,41 @@ function pruneStaleData(
     return;
   }
 
-  // 3. Filter and count
-  console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
+  // 4. Write Back (Atomic Delete via Dimension)
+  if (tagsToPurge.size > 0) {
+    console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
+    
+    // Calculate 1-based row indices to delete
+    const rowsToDelete: number[] = [];
+    data.forEach((row, i) => {
+      if (tagsToPurge.has(String(row[S_DB.TAG]))) {
+        rowsToDelete.push(startRow + i);
+      }
+    });
 
-  const cleanData = data.filter(
-    (row: any) => !tagsToPurge.has(String(row[S_DB.TAG])),
-  );
-  const purgeCount = data.length - cleanData.length;
+    // Delete in reverse to maintain index stability
+    const ssId = sheet.getParent().getId();
+    const sheetId = sheet.getSheetId();
+    const deleteRequests = rowsToDelete
+      .sort((a, b) => b - a)
+      .map(row => ({
+        deleteDimension: {
+          range: {
+            sheetId: sheetId,
+            dimension: "ROWS",
+            startIndex: row - 1,
+            endIndex: row
+          }
+        }
+      }));
 
-  // 4. Write Back (Atomic Replace)
-  range.clearContent();
-  if (cleanData.length > 0) {
-    sheet
-      .getRange(startRow, 2, cleanData.length, safeCols)
-      .setValues(cleanData);
+    if (deleteRequests.length > 0) {
+        // GAS has a limit on concurrent requests, but for a few dozen rows this is fine.
+        // For larger purges, we could group contiguous rows into single dimension ranges.
+        Sheets.Spreadsheets!.batchUpdate({ requests: deleteRequests }, ssId);
+        console.log(`🧹 Pruning Complete: Removed ${rowsToDelete.length} rows via Sheets API.`);
+    }
   }
-  console.log(`🧹 Pruning Complete: Removed ${purgeCount} rows.`);
 }
 
 /**
@@ -379,13 +399,17 @@ function upsertDailySnapshots(
   // 5. Commit Appends
   if (newRowsToAppend.length > 0) {
     console.log(
-      `ETL: Appending ${newRowsToAppend.length} records for ${todayStr}.`,
+      `ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Fast-Append).`,
     );
-    const writeRow = Math.max(sheet.getLastRow() + 1, startRow);
-    sheet
-      .getRange(writeRow, 2, newRowsToAppend.length, headerRow.length)
-      .setValues(newRowsToAppend)
-      .setHorizontalAlignment("center");
+    
+    const ssId = sheet.getParent().getId();
+    const sheetName = sheet.getName();
+    
+    Sheets.Spreadsheets!.Values!.append({
+      values: newRowsToAppend
+    }, ssId, `'${sheetName}'!B${startRow}`, {
+      valueInputOption: "USER_ENTERED"
+    });
   }
 
   sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
