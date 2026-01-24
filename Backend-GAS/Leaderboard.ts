@@ -460,36 +460,51 @@ function updateLeaderboard(dryRun: boolean = false): void {
   lbSheet.getRange(2, 1, 1, HEADERS_ARRAY.length).setFontWeight("bold");
 
   if (finalRows.length > 0) {
-    const dataRange = lbSheet.getRange(
-      CONFIG.LAYOUT.DATA_START_ROW,
-      1,
-      finalRows.length,
-      HEADERS_ARRAY.length,
-    );
-    dataRange.setValues(finalRows);
-
     const ssId = ss.getId();
     const sheetId = lbSheet.getSheetId();
     const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
     const endIdx = startIdx + finalRows.length;
 
-    // 🏗️ ATOMIC LEADERBOARD DELIVERY (API Sprint)
+    // 1. DATA DELIVERY (USER_ENTERED)
+    Sheets.Spreadsheets!.Values!.update({
+      values: finalRows
+    }, ssId, `'${sheetName}'!A${CONFIG.LAYOUT.DATA_START_ROW}`, {
+      valueInputOption: "USER_ENTERED"
+    });
+
+    // 2. ATOMIC UI (Formatting & Logic)
     const requests: any[] = [
-      // 1. SERVER-SIDE SORT (Performance Column descending)
+      // Server-side sort
       {
         sortRange: {
           range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 0, endColumnIndex: HEADERS_ARRAY.length },
           sortSpecs: [{ dimensionIndex: L.PERF_SCORE, sortOrder: "DESCENDING" }]
         }
       },
-      // 2. BATCH CONDITIONAL FORMATTING rules
+      // Header weight
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: HEADERS_ARRAY.length },
+          cell: { userEnteredFormat: { textFormat: { bold: true } } },
+          fields: "userEnteredFormat.textFormat.bold"
+        }
+      },
+      // Performance Score Bolding & Percentage Format
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 },
+          cell: { userEnteredFormat: { textFormat: { bold: true }, numberFormat: { type: "PERCENT", pattern: '0"%"' } } },
+          fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.numberFormat"
+        }
+      },
+      // Gradient Rule
       {
         addConditionalFormatRule: {
           rule: {
             ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: L.PERF_SCORE, endColumnIndex: L.PERF_SCORE + 1 }],
             gradientRule: {
               minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
-              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" } // #6aa84f
+              maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" }
             }
           },
           index: 0
@@ -517,11 +532,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
     });
 
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-    
-    // Cleanup/Formatting runs for Score Column (Manual percentage)
-    lbSheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 1 + L.PERF_SCORE, finalRows.length, 1)
-      .setFontWeight("bold")
-      .setNumberFormat('0"%"');
   }
 
   lbSheet
