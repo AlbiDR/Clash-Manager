@@ -17,6 +17,7 @@ import type { ICore } from "./Core";
 import type { IView } from "./View";
 import type { ISchema } from "./Schema";
 import type { ITime } from "./Time";
+import type { IScoringSystem } from "./ScoringSystem";
 
 // Global Version Constant
 // @ts-ignore
@@ -31,6 +32,7 @@ declare const Core: ICore;
 declare const View: IView;
 declare const Schema: ISchema;
 declare const Time: ITime;
+declare const ScoringSystem: IScoringSystem;
 
 // 2. Declare Legacy Global Functions (The "Old World")
 declare function updateClanDatabase(): void;
@@ -47,6 +49,7 @@ export interface IRegistry {
     readonly View: IView;
     readonly Schema: ISchema;
     readonly Time: ITime;
+    readonly ScoringSystem: IScoringSystem;
   };
   Actions: Record<string, () => void>;
 }
@@ -62,7 +65,8 @@ const Registry: IRegistry = {
     get Core() { return Core; },
     get View() { return View; },
     get Schema() { return Schema; },
-    get Time() { return Time; }
+    get Time() { return Time; },
+    get ScoringSystem() { return ScoringSystem; }
   },
 
   /**

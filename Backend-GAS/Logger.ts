@@ -14,10 +14,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IView } from "./View";
-import type { INetwork } from "./Network";
-import type { ITime } from "./Time";
-import type { IScoringSystem } from "./ScoringSystem";
+import type { IRegistry } from "./Registry";
 import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
@@ -54,10 +51,7 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const View: IView;
-declare const Network: INetwork;
-declare const Time: ITime;
-declare const ScoringSystem: IScoringSystem;
+declare const Registry: IRegistry;
 declare function getWarSnapshot(): WarSnapshot;
 
 /**
@@ -100,7 +94,7 @@ function updateClanDatabase(): void {
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
     ];
 
-    const [membersData, raceData] = Network.fetchRoyaleAPI(urls);
+    const [membersData, raceData] = Registry.Services.Network.fetchRoyaleAPI(urls);
 
     // 🛑 CIRCUIT BREAKER: API FAILURE
     if (!membersData || !membersData.items || membersData.items.length === 0) {
@@ -128,7 +122,7 @@ function updateClanDatabase(): void {
     const warFameMap = new Map<string, number>();
     if (raceData && raceData.clan && raceData.clan.participants) {
       raceData.clan.participants.forEach((p: any) => {
-        warFameMap.set(p.tag, ScoringSystem.resolveWarFame(p));
+        warFameMap.set(p.tag, Registry.Services.ScoringSystem.resolveWarFame(p));
       });
     }
 
@@ -167,7 +161,7 @@ function updateClanDatabase(): void {
     }
 
     // 🛡️ BACKUP
-    View.backupSheet(ss, CONFIG.SHEETS.DB);
+    Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.DB);
 
     // 🧹 STEP 1: PRUNE STALE DATA
     pruneStaleData(sheet, activeTags);
@@ -267,7 +261,7 @@ function upsertDailySnapshots(
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
   const S_DB = CONFIG.SCHEMA.DB;
   const today = new Date();
-  const todayStr = Time.formatDate(today);
+  const todayStr = Registry.Services.Time.formatDate(today);
 
   const parseTime = (t: string | undefined): Date => {
     if (!t) return new Date();
@@ -303,7 +297,7 @@ function upsertDailySnapshots(
 
     for (let i = 0; i < dateValues.length; i++) {
       const d = dateValues[i][0] ? new Date(dateValues[i][0]) : null;
-      if (d && Time.formatDate(d) === todayStr) {
+      if (d && Registry.Services.Time.formatDate(d) === todayStr) {
         if (startIdx === -1) startIdx = i;
         count++;
       }
@@ -397,7 +391,7 @@ function upsertDailySnapshots(
   sheet.getRange("B1").setValue(`DATABASE • ${new Date().toLocaleString()}`);
 
   // 🧹 LAYOUT & CLEANUP
-  View.applyStandardLayout(
+  Registry.Services.View.applyStandardLayout(
     sheet,
     sheet.getLastRow() - (startRow - 1),
     headerRow.length,
