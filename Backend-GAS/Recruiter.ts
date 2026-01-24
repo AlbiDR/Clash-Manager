@@ -451,8 +451,17 @@ function scanTournaments(
       res.items.forEach((t) => uniqueTourneys.set(t.tag, t));
   });
 
-  const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy();
+  // 1. Unified Health Handshake (Force Refresh for Scout)
+  const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
   const remoteExpandEnabled = Registry.Services.Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
+  lowQuotaMode = false;
+
+  if (!remoteAvailable) {
+      const lastErr = Registry.Services.Network.getLastWorkerError();
+      console.warn(`[Recruiter] Worker Offline: ${lastErr || "Checking Status..."}. Falling back to Local Mode (Throttled).`);
+      lowQuotaMode = true;
+  }
+
   const scanCfg =
     remoteAvailable && remoteExpandEnabled
       ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
@@ -463,7 +472,7 @@ function scanTournaments(
     .slice(
       0,
       Math.min(
-        scanCfg.TOURNEYS || 300,
+        lowQuotaMode ? 5 : (scanCfg.TOURNEYS || 300),
         CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000,
       ),
     );
@@ -478,6 +487,7 @@ function scanTournaments(
   let candidates: any[] = [];
   let usedRemote = false;
 
+  // 2. Tournament Scouting (Remote vs Local)
   if (remoteAvailable && remoteExpandEnabled) {
     try {
       candidates = Registry.Services.Network.scanTournamentsRemote(
@@ -491,14 +501,6 @@ function scanTournaments(
       console.warn(`[Recruiter] Remote tournament scan failed: ${e.message}`);
     }
   }
-
-    const useRemote = Registry.Services.Network.remoteWorkerHealthy(true);
-
-    if (!useRemote) {
-        const lastErr = Registry.Services.Network.getLastWorkerError();
-        console.warn(`[Recruiter] Worker Offline: ${lastErr || "Unknown Error"}. Skipping deep player profiling to preserve local URLFetch quota.`);
-        return [];
-    }
 
   if (!usedRemote) {
     const details = Registry.Services.Network.fetchRoyaleAPI(
@@ -595,13 +597,14 @@ function scanTournaments(
       }
     });
 
-    // 🛡️ WORKER GUARD: Only proceed with localized profile fetching if it's a small chunk
-    if (logUrls.length > 20 && !remoteAvailable) {
-        console.warn(`[Recruiter] High Volume Profile Queue detected (${logUrls.length}). Worker offline; aborting to save quota.`);
-        return validCandidates;
+    // 🛡️ LOCAL QUOTA GUARD: Only proceed with deep profiling if it's a manageable batch
+    if (!remoteAvailable && logUrls.length > 30) {
+        console.warn(`[Recruiter] High Volume Player Queue (${logUrls.length}). Worker offline; capping profiles to preserve quota.`);
+        logUrls.length = 30;
+        candidatesToProfile.length = 30;
     }
 
-    if (logUrls.length > 0 && !lowQuotaMode) {
+    if (logUrls.length > 0) {
       const logs = Registry.Services.Network.fetchRoyaleAPI(logUrls);
       candidatesToProfile.forEach((p, idx) => {
         let hasWar = false;
