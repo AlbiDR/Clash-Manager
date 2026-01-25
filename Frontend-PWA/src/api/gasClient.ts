@@ -9,12 +9,15 @@ import type {
   PingResponse,
   DismissResponse,
   Recruit,
+  LeaderboardMember,
 } from "../types";
 import * as v from "valibot";
 import { idb } from "../utils/idb";
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<any>>();
+
+// --- Schemas & Constants ---
 
 // Default Schemas for fallback (matches V11 Controller Standard)
 const DEFAULT_LB_SCHEMA = [
@@ -27,6 +30,20 @@ const DEFAULT_HH_SCHEMA = [
   "id", "n", "t", "potentialScore", "potentialRawScore", "don", 
   "war", "cards", "ago"
 ];
+
+const WebAppDataSchema = v.object({
+  format: v.optional(v.string()),
+  schema: v.optional(
+    v.object({
+      lb: v.array(v.string()),
+      hh: v.array(v.string()),
+    }),
+  ),
+  lb: v.array(v.array(v.unknown())),
+  hh: v.array(v.array(v.unknown())),
+  timestamp: v.union([v.number(), v.string()]),
+  playerTag: v.optional(v.string()),
+});
 
 interface GenericEnvelope<T> {
   success?: boolean;
@@ -73,6 +90,83 @@ const getWorkerUrl = () => {
   return import.meta.env.VITE_WORKER_URL || "";
 };
 
+// --- Utility Helpers for Data Inflation ---
+
+/**
+ * Creates a mapping from field names to their array indices.
+ * Used for O(1) field lookup during matrix inflation.
+ */
+export function createSchemaMap(schema: string[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (let i = 0; i < schema.length; i++) {
+    map[schema[i]] = i;
+  }
+  return map;
+}
+
+const safeStr = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+const safeNum = (v: unknown) => {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const cleaned = v.replace(/,/g, "").replace(/%/g, "");
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
+  return 0;
+};
+
+/**
+ * Maps a single Leaderboard row to a LeaderboardMember object.
+ * Uses direct index access for maximum performance.
+ */
+export function mapLbRow(row: unknown[], m: Record<string, number>): LeaderboardMember | null {
+  if (!row || !Array.isArray(row)) return null;
+
+  // Optimized field access (with fallbacks for legacy keys 's' and 'r')
+  const perfScore = row[m["performanceScore"]] ?? row[m["s"]];
+  const perfRaw = row[m["performanceRawScore"]] ?? row[m["r"]];
+
+  return {
+    id: safeStr(row[m["id"]]),
+    n: safeStr(row[m["n"]]),
+    t: safeNum(row[m["t"]]),
+    performanceScore: safeNum(perfScore),
+    performanceRawScore: safeNum(perfRaw),
+    dt: safeNum(row[m["dt"]]),
+    d: {
+      role: safeStr(row[m["role"]]),
+      days: safeNum(row[m["days"]]),
+      avg: safeNum(row[m["avg"]]),
+      seen: safeStr(row[m["seen"]] || "-"),
+      rate: safeStr(row[m["rate"]] || "0%"),
+      wfame: safeNum(row[m["wfame"]]),
+      hist: safeStr(row[m["hist"]]),
+    },
+  };
+}
+
+/**
+ * Maps a single Headhunter row to a Recruit object.
+ * Uses direct index access for maximum performance.
+ */
+export function mapHhRow(row: unknown[], m: Record<string, number>): Recruit | null {
+  if (!row || !Array.isArray(row)) return null;
+
+  return {
+    id: safeStr(row[m["id"]]),
+    n: safeStr(row[m["n"]]),
+    t: safeNum(row[m["t"]]),
+    potentialScore: safeNum(row[m["potentialScore"]]),
+    potentialRawScore: safeNum(row[m["potentialRawScore"]]),
+    d: {
+      don: safeNum(row[m["don"]]),
+      war: safeNum(row[m["war"]]),
+      ago: safeStr(row[m["ago"]]),
+      cards: safeNum(row[m["cards"]]),
+    },
+  };
+}
+
 /**
  * Inflates the payload.
  * ⚡ ROBUSTNESS UPDATE: Handles Schema-Driven parsing with Fallbacks and Legacy Keys.
@@ -97,20 +191,6 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     return parsedData as WebAppData;
   }
 
-  const WebAppDataSchema = v.object({
-    format: v.optional(v.string()),
-    schema: v.optional(
-      v.object({
-        lb: v.array(v.string()),
-        hh: v.array(v.string()),
-      }),
-    ),
-    lb: v.array(v.array(v.unknown())),
-    hh: v.array(v.array(v.unknown())),
-    timestamp: v.union([v.number(), v.string()]),
-    playerTag: v.optional(v.string()),
-  });
-
   const check = v.safeParse(WebAppDataSchema, parsedData);
   const source = check.success ? check.output : (parsedData as any);
 
@@ -118,81 +198,28 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
   
   // 🛡️ SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
-  let lbSchema = source.schema?.lb;
-  let hhSchema = source.schema?.hh;
+  let lbSchemaArr = source.schema?.lb;
+  let hhSchemaArr = source.schema?.hh;
 
-  if (!lbSchema || !Array.isArray(lbSchema) || lbSchema.length === 0) {
-    lbSchema = DEFAULT_LB_SCHEMA;
+  if (!lbSchemaArr || !Array.isArray(lbSchemaArr) || lbSchemaArr.length === 0) {
+    lbSchemaArr = DEFAULT_LB_SCHEMA;
   }
   
-  if (!hhSchema || !Array.isArray(hhSchema) || hhSchema.length === 0) {
-    hhSchema = DEFAULT_HH_SCHEMA;
+  if (!hhSchemaArr || !Array.isArray(hhSchemaArr) || hhSchemaArr.length === 0) {
+    hhSchemaArr = DEFAULT_HH_SCHEMA;
   }
 
-  const safeStr = (v: any) => (v === null || v === undefined ? "" : String(v));
-  const safeNum = (v: any) => {
-    if (typeof v === "number") return v;
-    if (typeof v === "string") {
-      const cleaned = v.replace(/,/g, "").replace(/%/g, "");
-      const n = parseFloat(cleaned);
-      return isNaN(n) ? 0 : n;
-    }
-    return 0;
-  };
-
-  const mapRow = (row: any[], schema: string[], type: "lb" | "hh") => {
-    if (!row || !Array.isArray(row)) return null;
-
-    const d: Record<string, any> = {};
-    schema.forEach((key, index) => {
-      if (index < row.length) d[key] = row[index];
-    });
-
-    if (type === "lb") {
-      const perfScore = d.performanceScore ?? d.s;
-      const perfRaw = d.performanceRawScore ?? d.r;
-
-      return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        performanceScore: safeNum(perfScore), 
-        performanceRawScore: safeNum(perfRaw),
-        dt: safeNum(d.dt),
-        d: {
-          role: safeStr(d.role),
-          days: safeNum(d.days),
-          avg: safeNum(d.avg),
-          seen: safeStr(d.seen || "-"),
-          rate: safeStr(d.rate || "0%"),
-          wfame: safeNum(d.wfame),
-          hist: safeStr(d.hist),
-        },
-      };
-    } else {
-      return {
-        id: safeStr(d.id),
-        n: safeStr(d.n),
-        t: safeNum(d.t),
-        potentialScore: safeNum(d.potentialScore),
-        potentialRawScore: safeNum(d.potentialRawScore),
-        d: {
-          don: safeNum(d.don),
-          war: safeNum(d.war),
-          ago: safeStr(d.ago),
-          cards: safeNum(d.cards),
-        },
-      };
-    }
-  };
+  // Pre-calculate Schema Maps (O(S))
+  const lbMap = createSchemaMap(lbSchemaArr);
+  const hhMap = createSchemaMap(hhSchemaArr);
 
   return {
     lb: lbMatrix
-      .map((r: any) => mapRow(r, lbSchema, "lb"))
-      .filter(Boolean) as any[],
+      .map((r) => mapLbRow(r as unknown[], lbMap))
+      .filter((r): r is LeaderboardMember => !!r),
     hh: hhMatrix
-      .map((r: any) => mapRow(r, hhSchema, "hh"))
-      .filter(Boolean) as any[],
+      .map((r) => mapHhRow(r as unknown[], hhMap))
+      .filter((r): r is Recruit => !!r),
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
   };
