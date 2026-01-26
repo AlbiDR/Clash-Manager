@@ -482,8 +482,8 @@ function upsertDailySnapshots(
   // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
   // ----------------------------------------------------------------------------
   meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
-  const currentLastRow = meta.sheets[0].properties.gridProperties.rowCount;
-  const dataRowCount = Math.max(0, currentLastRow - (startRow - 1));
+  const rowCount = meta.sheets[0].properties.gridProperties.rowCount;
+  const dataRowCount = Math.max(0, rowCount - L.DATA_START_ROW - 1);
   const contentCols = headerRow.length;
 
   const finalVisualRequests: any[] = [
