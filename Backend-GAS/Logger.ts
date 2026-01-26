@@ -330,7 +330,10 @@ function upsertDailySnapshots(
   };
 
   let todayValues: any[][] = [];
-  let firstRowIndex = -1;
+  const existingMap = new Map<string, number>();
+  const processedTags = new Set<string>();
+  const individualUpdates: Array<{range: string, values: any[][]}> = [];
+  const newRowsToAppend: any[][] = [];
 
   // 1. Sort & Locate "Today's" Block (Advanced API way)
   const ssId = sheet.getParent().getId();
@@ -358,7 +361,7 @@ function upsertDailySnapshots(
       const scanValues = dataRes.values || [];
 
       // Identify which rows are actually "Today" and map them by Tag
-      scanValues.forEach((row, idx) => {
+      scanValues.forEach((row: any[], idx: number) => {
         const d = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : null;
         if (d && Registry.Services.Time.formatDate(d) === todayStr) {
           const tag = String(row[S_DB.TAG]);
@@ -371,8 +374,6 @@ function upsertDailySnapshots(
   }
 
   // 3. Process API Data
-  const newRowsToAppend: any[][] = [];
-  const individualUpdates: Array<{range: string, values: any[][]}> = [];
 
   activeMembers.forEach((m) => {
     let warFame: string | number = warFameMap.get(m.tag) || 0;
