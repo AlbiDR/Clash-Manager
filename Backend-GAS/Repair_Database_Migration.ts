@@ -73,40 +73,43 @@ function processSheetMigration(
     const response = Sheets.Spreadsheets!.Values!.get(ssId, rangeStr);
     const values = response.values || [];
 
-    // 2. CONVERT STRINGS TO DATES
+    // 2. CONVERT & STANDARDIZE (to ISO 8601 String)
     const correctedValues = values.map((row: any[]) => {
       let val = row && row[0];
       if (!val) return [null];
       
-      // If already a Date object
-      if (val instanceof Date) return [val];
-      
       let d: Date;
-      val = String(val).trim();
 
-      // CASE A: RoyaleAPI Iso-Compact (20260115T143015)
-      if (val.match(/^\d{8}T\d{6}/)) {
-          d = new Date(val.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/, "$1-$2-$3T$4:$5:$6Z"));
-      
-      // CASE B: Legacy Java/GAS toString() (Thu Jan 15 01:00:00 GMT+01:00 2026)
-      // We move the year (at the end) to be after the Month/Day
-      } else if (val.match(/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{2}:\d{2}:\d{2} GMT[+-]\d{2}:\d{2} \d{4}$/)) {
-          const parts = val.split(" ");
-          // parts: [Thu, Jan, 15, 01:00:00, GMT+01:00, 2026]
-          // Reassemble to: Thu Jan 15 2026 01:00:00 GMT+01:00
-          if (parts.length === 6) {
-             const reordered = `${parts[0]} ${parts[1]} ${parts[2]} ${parts[5]} ${parts[3]} ${parts[4]}`;
-             d = new Date(reordered);
-          } else {
-             d = new Date(val); // Fallback
-          }
-
-      // CASE C: Standard JS/ISO
+      // Already a Date?
+      if (val instanceof Date) {
+        d = val;
       } else {
-          d = new Date(val);
+        val = String(val).trim();
+        // CASE A: ISO-Compact (20260115T143015)
+        if (val.match(/^\d{8}T\d{6}/)) {
+            d = new Date(val.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/, "$1-$2-$3T$4:$5:$6Z"));
+        } 
+        // CASE B: Legacy Verbose (Thu Jan 15 01:00:00 2026)
+        else if (val.match(/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{2}:\d{2}:\d{2} GMT[+-]\d{2}:\d{2} \d{4}$/)) {
+            const parts = val.split(" ");
+            if (parts.length === 6) {
+               d = new Date(`${parts[0]} ${parts[1]} ${parts[2]} ${parts[5]} ${parts[3]} ${parts[4]}`);
+            } else {
+               d = new Date(val); 
+            }
+        } 
+        // CASE C: Standard / Other
+        else {
+            d = new Date(val);
+        }
       }
 
-      return isNaN(d.getTime()) ? [val] : [d]; // Return original if parse failed
+      if (isNaN(d.getTime())) return [val]; // Keep original if invalid
+
+      // 🎯 FORCE ISO 8601 OUTPUT (YYYY-MM-DDTHH:mm:ss)
+      // We use Utilities.formatDate to ensure explicit control over the string format.
+      // Using Session.getScriptTimeZone() preserves the 'local' time expectation.
+      return [Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss")];
     });
 
     // 3. WRITE BACK CORRECTED VALUES
