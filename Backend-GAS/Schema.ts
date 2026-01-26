@@ -52,8 +52,8 @@ var Schema: ISchema = {
         return SchemaInternal._cache.get(cacheKey)!;
     }
 
-    // Read headers safely
-    const headers = sheet.getRange(headerRow, startCol, 1, 40).getValues()[0];
+    // Read headers safely (Limit to 30 columns to avoid over-fetching, starting from startCol)
+    const headers = sheet.getRange(headerRow, startCol, 1, 30).getValues()[0];
     const resolved: Record<string, number> = {};
 
     Object.keys(headerMap).forEach((key) => {

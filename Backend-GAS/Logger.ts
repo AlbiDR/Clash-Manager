@@ -433,13 +433,31 @@ function upsertDailySnapshots(
     }, ssId);
   }
 
-  // 5. Commit Appends
+  // 5. Commit Appends (Explicitly target Column B)
   if (newRowsToAppend.length > 0) {
-    console.log(`ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Fast-Append).`);
+    console.log(`ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Explicit-Update).`);
+    
+    // Calculate next available row instead of relying on append heuristics
+    meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+    const nextRow = meta.sheets[0].properties.gridProperties.rowCount + 1;
+    
+    // ⚡ Atomic expansion of grid if needed (safety)
+    const requiredRows = nextRow + newRowsToAppend.length;
+    if (requiredRows > (meta.sheets[0].properties.gridProperties.rowCount || 0)) {
+       Sheets.Spreadsheets!.batchUpdate({
+         requests: [{
+           appendDimension: {
+             sheetId: sheetId,
+             dimension: "ROWS",
+             length: newRowsToAppend.length + 10 // Add buffer
+           }
+         }]
+       }, ssId);
+    }
 
-    Sheets.Spreadsheets!.Values!.append({
+    Sheets.Spreadsheets!.Values!.update({
       values: newRowsToAppend
-    }, ssId, `'${sheetName}'!B${startRow}`, {
+    }, ssId, `'${sheetName}'!B${nextRow}`, {
       valueInputOption: "USER_ENTERED"
     });
   }

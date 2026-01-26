@@ -138,32 +138,33 @@ var View: IView = {
         }
       });
       
-      // 6. HEADER MERGE SYNC (Row 1 Status Bar)
-      requests.push({
-        unmergeCells: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols }
+      },
+      // 7. BUFFER PLACEHOLDER (A2) Delivery
+      {
+        updateCells: {
+          rows: [{
+            values: [{
+              userEnteredValue: { stringValue: "." },
+              userEnteredFormat: {
+                backgroundColor: { red: 1, green: 1, blue: 1 },
+                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } },
+                horizontalAlignment: "CENTER",
+                verticalAlignment: "MIDDLE"
+              }
+            }]
+          }],
+          fields: 'userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor,horizontalAlignment,verticalAlignment)',
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 }
         }
-      });
-      requests.push({
-        mergeCells: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-          mergeType: "MERGE_ALL"
-        }
-      });
-    }
+      }
+    ];
+
+    if (contentCols > 0) {
 
     // 🚀 EXECUTE ATOMIC TRANSACTION (No SpreadsheetApp triggers)
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
 
-    // 🛡️ POPULATE BUFFER PLACEHOLDER (Column A, Row 2)
-    // We use a "." in near-invisible color to ensure Column A is never "ignored" by Spreadsheet operations.
-    const bufferCell = sheet.getRange("A2");
-    bufferCell.setValue(".");
-    bufferCell.setFontColor("#ffffff"); // Match white background
-    bufferCell.setHorizontalAlignment("center");
-    bufferCell.setVerticalAlignment("middle");
-
-    // Minor non-structural tweaks (These rarely cause out of bounds as they don't depend on Grid state as strictly as formatting ranges)
+    // Minor non-structural tweaks (These rarely cause out of bounds)
     this.drawMobileCheckbox(sheet);
     sheet.setHiddenGridlines(true);
   },
