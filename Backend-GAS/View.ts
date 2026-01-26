@@ -64,17 +64,17 @@ var View: IView = {
     const currentRows = sMeta.properties.gridProperties.rowCount;
     const currentCols = sMeta.properties.gridProperties.columnCount;
 
-    if (Array.isArray(optHeaders) && optHeaders.length > 0)
-      contentCols = optHeaders.length;
-
+    // 🛡️ DIMENSION CALCULATION (Status + Header + Data + Buffer)
+    const STATUS_ROWS = 1;
+    const HEADER_ROWS = L.DATA_START_ROW - 1; // Usually 1
+    
     // Use current data row count if -1 passed
     if (contentRows === -1) {
-        contentRows = Math.max(0, currentRows - (L.DATA_START_ROW - 1));
+        contentRows = Math.max(0, currentRows - (L.DATA_START_ROW - 1) - 1); // Subtract 1 for Buffer
     }
 
-    const lastDataRow = L.DATA_START_ROW - 1 + Math.max(contentRows, 0);
-    const totalRows = Math.max(lastDataRow + 1, L.DATA_START_ROW + 1);
-    const totalCols = contentCols + 2;
+    const totalRows = L.DATA_START_ROW + contentRows + 1; // +1 for the Buffer row at the end
+    const totalCols = contentCols + 2; // Buffer + Data + Buffer
 
     // 🛡️ ATOMIC LAYOUT ENGINE (Total Consolidation)
     const requests: any[] = [
@@ -139,7 +139,6 @@ var View: IView = {
       });
       
       // 6. HEADER MERGE SYNC (Row 1 Status Bar)
-      // Note: We use unmerge first to be safe, then merge.
       requests.push({
         unmergeCells: {
           range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols }
@@ -167,8 +166,7 @@ var View: IView = {
    */
   getStandardVisualRequests: function (sheetId, contentRows, contentCols) {
     const L = CONFIG.LAYOUT;
-    const lastDataRow = L.DATA_START_ROW - 1 + Math.max(contentRows, 0);
-    const totalRows = Math.max(lastDataRow + 1, L.DATA_START_ROW + 1);
+    const totalRows = L.DATA_START_ROW + contentRows + 1;
     const totalCols = contentCols + 2;
 
     return [
