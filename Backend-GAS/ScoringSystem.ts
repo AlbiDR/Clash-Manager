@@ -6,15 +6,21 @@
  * 📝 DESCRIPTION: The mathematical heart of the application.
  * ⚙️ ROLE: Pure Logic. Accepts raw data -> Returns Scores & Sort Orders.
  * 🔒 STATUS: PROTECTED "DO NOT MODIFY" ZONE.
- * 🏷️ VERSION: 10.1.0
+ * 🏷️ VERSION: 11.0.0
  * ============================================================================
+ *
+ * @remarks
+ * This module is designed to be environment-agnostic. It is used both in the
+ * Google Apps Script (GAS) environment and the high-concurrency Node.js Worker.
+ * Pure mathematical functions here ensure that scoring remains consistent
+ * regardless of the execution context.
  */
 
 import type { ScoringWeights } from "./SharedTypes";
 
 // Global Version Constant
 // @ts-ignore
-const VER_SCORING_SYSTEM = "10.1.0";
+const VER_SCORING_SYSTEM = "11.0.0";
 
 declare const module: any;
 
@@ -95,6 +101,13 @@ var ScoringSystem: IScoringSystem = {
 
   /**
    * Calculates Raw Score and Final Performance Score (with Decay).
+   *
+   * @remarks
+   * The weights represent the cultural values of the clan:
+   * - Donations (50): High value on supporting others.
+   * - War Rate (150): The absolute highest priority; participation is mandatory.
+   * - Fame (3/15): Rewards consistent weekly activity.
+   * - Trophies (0.0002): Used as a micro tie-breaker for raw skill.
    */
   computeScores: function (
     currentFame: number,
@@ -147,6 +160,16 @@ var ScoringSystem: IScoringSystem = {
 
   /**
    * The Holy Grail Sorting Comparator.
+   *
+   * @remarks
+   * Sorting Priority:
+   * 1. Performance Score: Decayed score reflecting *current* impact.
+   * 2. Raw Score: Undecayed total reflecting *historical* contribution.
+   * 3. War Rate: Direct commitment metric.
+   * 4. Donations/Trophies: Base activity tie-breakers.
+   *
+   * This ensures that a highly active new member can outrank a stale veteran,
+   * while still honoring the veteran if they maintain activity.
    */
   comparator: function (rowA: (string | number)[], rowB: (string | number)[]): number {
     const L =
@@ -161,16 +184,20 @@ var ScoringSystem: IScoringSystem = {
             TROPHIES: 4,
           };
 
+    // Priority 1: Current Performance (includes decay)
     const diffPerf = Number(rowB[L.PERF_SCORE]) - Number(rowA[L.PERF_SCORE]);
     if (diffPerf !== 0) return diffPerf;
 
+    // Priority 2: Lifetime Contribution (tie-breaker for active members)
     const diffRaw = Number(rowB[L.RAW_SCORE]) - Number(rowA[L.RAW_SCORE]);
     if (diffRaw !== 0) return diffRaw;
 
+    // Priority 3: Reliability (War Participation)
     const getWarVal = (r: any[]) => parseInt(r[L.WAR_RATE]) || 0;
     const diffWar = getWarVal(rowB) - getWarVal(rowA);
     if (diffWar !== 0) return diffWar;
 
+    // Priority 4: Support (Donations)
     const diffDon = Number(rowB[L.TOTAL_DON]) - Number(rowA[L.TOTAL_DON]);
     if (diffDon !== 0) return diffDon;
 
@@ -203,6 +230,17 @@ var ScoringSystem: IScoringSystem = {
 
   /**
    * ⚖️ HYBRID BENCHMARK CALCULATOR (V7)
+   *
+   * @remarks
+   * The Benchmark defines "100%" for potential scores.
+   * It uses a hybrid model (40/60) to balance internal standards against
+   * external market potential.
+   *
+   * Why 0.4 and 0.6?
+   * - 0.4 (Clan Avg): Ensures we don't set the bar so high that recruitment
+   *   becomes impossible if the clan is elite.
+   * - 0.6 (Top 5% Blacklist): Sets a high bar based on the best available
+   *   free agents seen recently.
    */
   calculateHybridBenchmark: function (
     clanScoredList: Array<{ rawScore: number; perfScore: number }>,
@@ -214,6 +252,7 @@ var ScoringSystem: IScoringSystem = {
         ? clanPool.reduce((a, b) => a + b.rawScore, 0) / clanPool.length
         : 0;
 
+    // Get Top 5% of external candidates to represent "Elite Market Potential"
     const pool = [...(blacklistScoredList || [])].sort(
       (a, b) => b.rawScore - a.rawScore,
     );
@@ -268,7 +307,13 @@ if (typeof module !== "undefined" && module.exports) {
 
 /**
  * 🌍 GLOBAL BRIDGE
+ *
+ * @remarks
+ * In GAS, 'this' refers to the global scope. In Vitest/Node, it may be undefined.
+ * We guard the assignment to ensure the module is testable in all environments.
  */
-Object.assign(this as any, { ScoringSystem, VER_SCORING_SYSTEM });
+if (typeof this !== "undefined") {
+  Object.assign(this as any, { ScoringSystem, VER_SCORING_SYSTEM });
+}
 
 export default ScoringSystem;
