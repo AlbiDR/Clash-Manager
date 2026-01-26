@@ -155,6 +155,14 @@ var View: IView = {
     // 🚀 EXECUTE ATOMIC TRANSACTION (No SpreadsheetApp triggers)
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
 
+    // 🛡️ POPULATE BUFFER PLACEHOLDER (Column A, Row 2)
+    // We use a "." in near-invisible color to ensure Column A is never "ignored" by Spreadsheet operations.
+    const bufferCell = sheet.getRange("A2");
+    bufferCell.setValue(".");
+    bufferCell.setFontColor("#ffffff"); // Match white background
+    bufferCell.setHorizontalAlignment("center");
+    bufferCell.setVerticalAlignment("middle");
+
     // Minor non-structural tweaks (These rarely cause out of bounds as they don't depend on Grid state as strictly as formatting ranges)
     this.drawMobileCheckbox(sheet);
     sheet.setHiddenGridlines(true);
@@ -202,7 +210,15 @@ var View: IView = {
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
         // 5. Auto-Size Dimensions
-        { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } }
+        { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } },
+        // 6. Buffer Column A Color Match
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
+            cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
+            fields: "userEnteredFormat.textFormat.foregroundColor"
+          }
+        }
     ];
   },
 
