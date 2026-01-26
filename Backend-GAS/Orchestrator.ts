@@ -101,6 +101,8 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
     .addSeparator()
     .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
+    .addSeparator()
+    .addItem(ITEMS.TGR, "createTriggers")
     .addToUi();
 }
 
@@ -145,6 +147,67 @@ function taskFastScout(): void {
       console.error(`❌ TASK FAILED (HH): ${e.message}`);
     }
   });
+}
+
+/**
+ * TASK C: WARM UP WORKER (Render Keep-Alive)
+ * Recommended Trigger: Time-Based -> Every 12 Minutes
+ * (Render sleeps after 15 mins of inactivity)
+ */
+function taskWarmUpWorker(): void {
+  try {
+    // ⚡ LIGHTWEIGHT PING: No locking, no overhead.
+    Registry.Services.Network.remoteWorkerHealthy(true);
+  } catch (e: any) {
+    console.error(`❌ Warm-up Ping Failed: ${e.message}`);
+  }
+}
+
+/**
+ * 🛠️ TRIGGER MANAGEMENT
+ * Sets up the automated lifecycle of the project.
+ */
+function createTriggers(): void {
+  console.log("🧹 Clearing existing triggers...");
+  clearAllTriggers();
+
+  console.log("🚀 Creating fresh triggers...");
+
+  // 1. Member Stats Sync (Every 1 Hour)
+  ScriptApp.newTrigger("taskUpdateMemberStats")
+    .timeBased()
+    .everyHours(1)
+    .create();
+
+  // 2. Headhunter Fast Scout (Every 30 Minutes)
+  ScriptApp.newTrigger("taskFastScout")
+    .timeBased()
+    .everyMinutes(30)
+    .create();
+
+  // 3. Render Worker Warm-up (Every 12 Minutes - to beat the 15m sleep)
+  ScriptApp.newTrigger("taskWarmUpWorker")
+    .timeBased()
+    .everyMinutes(12)
+    .create();
+
+  console.log("✅ All triggers established.");
+}
+
+/**
+ * 🚀 MASTER DISPATCHER
+ * Sequential execution of the entire stack.
+ */
+function dispatchMaster(): void {
+  console.log("🎭 MASTER DISPATCH: Starting orchestrated sequence...");
+  
+  // 1. Warm up first
+  taskWarmUpWorker();
+  
+  // 2. Full Data Sync
+  taskUpdateMemberStats();
+
+  console.log("🎭 MASTER DISPATCH: Sequence complete.");
 }
 
 /**
@@ -447,6 +510,9 @@ Object.assign(this as any, {
   checkSystemHealth,
   triggerVerifyApiKeys,
   clearAllTriggers,
+  createTriggers,
+  dispatchMaster,
+  taskWarmUpWorker,
   VER_ORCHESTRATOR,
 });
 

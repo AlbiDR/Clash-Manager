@@ -213,6 +213,7 @@ var CONFIG: AppConfig = {
       MOBILE: "📱 Enable Mobile Controls",
       KEYS: "🔑 Verify API Keys",
       HEALTH: "🛡️ Health Check",
+      TGR: "⚙️ Setup Triggers",
     },
   },
 
