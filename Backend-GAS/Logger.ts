@@ -390,14 +390,14 @@ function upsertDailySnapshots(
     if (existingMap.has(m.tag)) {
       const rowIdx = existingMap.get(m.tag)!;
       const updateData = [
-        today,
+        today.toISOString(),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        parseTime(m.lastSeen),
+        parseTime(m.lastSeen).toISOString(),
         warFame,
         battleCredit,
       ];
@@ -409,14 +409,14 @@ function upsertDailySnapshots(
       processedTags.add(m.tag);
     } else {
       newRowsToAppend.push([
-        today,
+        today.toISOString(),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        parseTime(m.lastSeen),
+        parseTime(m.lastSeen).toISOString(),
         warFame,
         battleCredit,
       ]);
@@ -492,12 +492,12 @@ function upsertDailySnapshots(
   ];
 
   if (dataRowCount > 0) {
-      // 6B. NUMBER FORMATS (Date & Clean Strings)
+      // 6B. NUMBER FORMATS (ISO Roots -> Visual Display)
       finalVisualRequests.push(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "ddd dd/mm/yyyy" } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "dd/mm/yyyy" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
