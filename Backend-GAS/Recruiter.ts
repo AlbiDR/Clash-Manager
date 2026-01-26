@@ -695,7 +695,7 @@ function renderHeadhunterView(
     c.donations,
     c.cards,
     c.war,
-    c.foundDate,
+    c.foundDate.toISOString(),
     c.rawScore,
     (c.potentialScore || 0),
   ]);
