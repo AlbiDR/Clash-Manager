@@ -92,6 +92,7 @@ export interface AppConfig {
       MOBILE: string;
       KEYS: string;
       HEALTH: string;
+      TGR: string;
     };
   };
   SCHEMA: {

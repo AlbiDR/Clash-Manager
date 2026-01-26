@@ -41,12 +41,18 @@ To enable automated deployments via GitHub Actions, you must configure the follo
 | `SCRIPT_ID`    | The Script ID found in **Apps Script > Project Settings > Script ID**.          |
 | `CLASPRC_JSON` | The content of your local `~/.clasprc.json` file (after running `clasp login`). |
 
-### Triggers
+### Triggers & Automation
 
-The engine is intended to run as a cron-daemon. Configure time-based triggers for:
+The engine operates as a clinical cron-daemon. While you can manually configure triggers, the recommended approach is the **Automated Setup**:
 
-- `hourlyUpdate`: Main ETL and scoring sequence
-- `recruiterSync`: Background tournament scanning
+1. Open the linked Google Sheet.
+2. Navigate to **👑 Clan Manager > ⚙️ Setup Triggers**.
+
+This automatically configures the following lifecycle:
+
+- `taskWarmUpWorker`: Every **12 minutes** (Prevents Render Worker sleep).
+- `taskFastScout`: Every **30 minutes** (Headhunter scanning).
+- `taskUpdateMemberStats`: Every **1 hour** (Main ETL and scoring).
 
 ---
 
