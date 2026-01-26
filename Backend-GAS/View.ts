@@ -76,41 +76,52 @@ var View: IView = {
     const totalRows = Math.max(lastDataRow + 1, L.DATA_START_ROW + 1);
     const totalCols = contentCols + 2;
 
-    // 🚀 ATOMIC DIMENSION SYNC (Advanced API)
-    if (currentRows !== totalRows || currentCols !== totalCols) {
-      Sheets.Spreadsheets!.batchUpdate({
-        requests: [{
-          updateSheetProperties: {
-            properties: {
-              sheetId: sheetId,
-              gridProperties: {
-                rowCount: totalRows,
-                columnCount: totalCols
-              }
-            },
-            fields: 'gridProperties.rowCount,gridProperties.columnCount'
-          }
-        }]
-      }, ssId);
-    }
-
-    sheet.setColumnWidth(1, L.BUFFER_SIZE);
-    sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);
-    sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
-
-    // 🛡️ CANVAS PREPARATION & ATOMIC LAYOUT ENGINE
+    // 🛡️ ATOMIC LAYOUT ENGINE (Total Consolidation)
     const requests: any[] = [
-      // 1. FULL CANVAS RESET (Borders, Background, Alignment)
+      // 1. DIMENSION SYNC (Grid Size)
+      {
+        updateSheetProperties: {
+          properties: {
+            sheetId: sheetId,
+            gridProperties: { rowCount: totalRows, columnCount: totalCols }
+          },
+          fields: 'gridProperties.rowCount,gridProperties.columnCount'
+        }
+      },
+      // 2. BUFFER COLUMN WIDTHS (A and End)
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+          properties: { pixelSize: L.BUFFER_SIZE },
+          fields: "pixelSize"
+        }
+      },
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "COLUMNS", startIndex: totalCols - 1, endIndex: totalCols },
+          properties: { pixelSize: L.BUFFER_SIZE },
+          fields: "pixelSize"
+        }
+      },
+      // 3. BUFFER ROW HEIGHT (End)
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "ROWS", startIndex: totalRows - 1, endIndex: totalRows },
+          properties: { pixelSize: L.BUFFER_SIZE },
+          fields: "pixelSize"
+        }
+      },
+      // 4. FULL CANVAS RESET (Borders, Background, Alignment)
       {
         updateBorders: {
-          range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
+          range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
           top: { style: "NONE" }, bottom: { style: "NONE" }, left: { style: "NONE" }, right: { style: "NONE" },
           innerHorizontal: { style: "NONE" }, innerVertical: { style: "NONE" }
         }
       },
       {
         repeatCell: {
-          range: { sheetId: sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
+          range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
           cell: { userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } },
           fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment)'
         }
@@ -118,16 +129,34 @@ var View: IView = {
     ];
 
     if (contentCols > 0) {
-      // Dimension updates
-      sheet.setColumnWidths(2, contentCols, 100);
+      // 5. DATA COLUMN WIDTHS (Default 100)
+      requests.push({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols },
+          properties: { pixelSize: 100 },
+          fields: "pixelSize"
+        }
+      });
       
-      // Cleanup existing merges in the header zone
-      sheet.getRange(1, 1, 1, totalCols).breakApart();
-      sheet.getRange(1, 2, 1, contentCols).merge();
+      // 6. HEADER MERGE SYNC (Row 1 Status Bar)
+      // Note: We use unmerge first to be safe, then merge.
+      requests.push({
+        unmergeCells: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols }
+        }
+      });
+      requests.push({
+        mergeCells: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+          mergeType: "MERGE_ALL"
+        }
+      });
     }
 
-    // Structural Batch Update (Resets & Basic Framing)
+    // 🚀 EXECUTE ATOMIC TRANSACTION (No SpreadsheetApp triggers)
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+
+    // Minor non-structural tweaks (These rarely cause out of bounds as they don't depend on Grid state as strictly as formatting ranges)
     this.drawMobileCheckbox(sheet);
     sheet.setHiddenGridlines(true);
   },
