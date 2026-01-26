@@ -390,14 +390,14 @@ function upsertDailySnapshots(
     if (existingMap.has(m.tag)) {
       const rowIdx = existingMap.get(m.tag)!;
       const updateData = [
-        today.toISOString(),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        parseTime(m.lastSeen).toISOString(),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
         warFame,
         battleCredit,
       ];
@@ -409,14 +409,14 @@ function upsertDailySnapshots(
       processedTags.add(m.tag);
     } else {
       newRowsToAppend.push([
-        today.toISOString(),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        parseTime(m.lastSeen).toISOString(),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
         warFame,
         battleCredit,
       ]);
