@@ -192,7 +192,8 @@ var View: IView = {
    */
   getStandardVisualRequests: function (sheetId, contentRows, contentCols) {
     const L = CONFIG.LAYOUT;
-    const totalRows = L.DATA_START_ROW + contentRows + 1;
+    // Robust calculation: Data Start + Actual Data Rows + 1 Buffer Row
+    const totalRows = L.DATA_START_ROW + Math.max(0, contentRows) + 1;
     const totalCols = contentCols + 2;
 
     return [

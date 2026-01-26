@@ -467,8 +467,9 @@ function upsertDailySnapshots(
   // ----------------------------------------------------------------------------
   meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
   const gridRowCount = meta.sheets[0].properties.gridProperties.rowCount || 0;
-  // Data rows are between DATA_START_ROW and gridRowCount - 1 (last row is buffer)
-  const dataRowCount = Math.max(0, gridRowCount - CONFIG.LAYOUT.DATA_START_ROW); 
+  // Standard dimension is: HeaderRows + DateRows + 1 BufferRow.
+  // We subtract the header rows and the buffer row to get canonical dataRowCount.
+  const dataRowCount = Math.max(0, gridRowCount - CONFIG.LAYOUT.DATA_START_ROW - 1); 
   const contentCols = headerRow.length;
 
   const finalVisualRequests: any[] = [
