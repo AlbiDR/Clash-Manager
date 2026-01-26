@@ -75,17 +75,33 @@ function processSheetMigration(
 
     // 2. CONVERT STRINGS TO DATES
     const correctedValues = values.map((row: any[]) => {
-      const val = row && row[0];
+      let val = row && row[0];
       if (!val) return [null];
       
-      // If already a Date object (unlikely via Values API but for safety), or looks like one
+      // If already a Date object
       if (val instanceof Date) return [val];
       
-      // Parse ISO or relative strings
-      // Note: RoyaleAPI dates come in format YYYYMMDDTHHMMSS
       let d: Date;
-      if (typeof val === "string" && val.match(/^\d{8}T\d{6}/)) {
+      val = String(val).trim();
+
+      // CASE A: RoyaleAPI Iso-Compact (20260115T143015)
+      if (val.match(/^\d{8}T\d{6}/)) {
           d = new Date(val.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/, "$1-$2-$3T$4:$5:$6Z"));
+      
+      // CASE B: Legacy Java/GAS toString() (Thu Jan 15 01:00:00 GMT+01:00 2026)
+      // We move the year (at the end) to be after the Month/Day
+      } else if (val.match(/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{2}:\d{2}:\d{2} GMT[+-]\d{2}:\d{2} \d{4}$/)) {
+          const parts = val.split(" ");
+          // parts: [Thu, Jan, 15, 01:00:00, GMT+01:00, 2026]
+          // Reassemble to: Thu Jan 15 2026 01:00:00 GMT+01:00
+          if (parts.length === 6) {
+             const reordered = `${parts[0]} ${parts[1]} ${parts[2]} ${parts[5]} ${parts[3]} ${parts[4]}`;
+             d = new Date(reordered);
+          } else {
+             d = new Date(val); // Fallback
+          }
+
+      // CASE C: Standard JS/ISO
       } else {
           d = new Date(val);
       }
