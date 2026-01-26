@@ -466,8 +466,9 @@ function upsertDailySnapshots(
   // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
   // ----------------------------------------------------------------------------
   meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
-  const gridRowCount = meta.sheets[0].properties.gridProperties.rowCount;
-  const dataRowCount = Math.max(0, gridRowCount - CONFIG.LAYOUT.DATA_START_ROW - 1);
+  const gridRowCount = meta.sheets[0].properties.gridProperties.rowCount || 0;
+  // Data rows are between DATA_START_ROW and gridRowCount - 1 (last row is buffer)
+  const dataRowCount = Math.max(0, gridRowCount - CONFIG.LAYOUT.DATA_START_ROW); 
   const contentCols = headerRow.length;
 
   const finalVisualRequests: any[] = [
@@ -491,33 +492,33 @@ function upsertDailySnapshots(
     }
   ];
 
-  if (dataRowCount > 0) {
+  if (gridRowCount >= startRow) {
       // 6B. NUMBER FORMATS (ISO Roots -> Visual Display)
       finalVisualRequests.push(
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "dd/mm/yyyy" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 4 + S_DB.TAG },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 4 + S_DB.TAG },
             cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "dd/mm/yyyy HH:mm" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
             cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
             fields: "userEnteredFormat.numberFormat"
           }
