@@ -146,7 +146,6 @@ function updateClanDatabase(): void {
       "Battle Credits",
     ];
 
-    // Ensure Header exists
     // 🛡️ SCHEMA & GRID MANAGEMENT (Advanced API Way)
     const ssId = ss.getId();
     const sheetMetadata = Sheets.Spreadsheets!.get(ssId, {
