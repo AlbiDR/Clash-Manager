@@ -5,7 +5,7 @@ import Icon from "./Icon.vue";
 import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
 import { useAppSettings } from "../composables/useAppSettings";
-import { getScoreTone, formatRole } from "../utils/formatters";
+import { getScoreTone, formatRole, formatTimeAgo } from "../utils/formatters";
 import { useExternalLink } from "../composables/useExternalLink";
 import StatisticItem from "./StatisticItem.vue";
 
@@ -167,7 +167,7 @@ const trendInfo = computed(() => {
             benchmark-metric="donations"
             :benchmark-raw-value="member.d.avg"
           />
-          <StatisticItem label="Last Seen" :value="member.d.seen" />
+          <StatisticItem label="Last Seen" :value="formatTimeAgo(member.d.seen)" />
         </template>
       </div>
 

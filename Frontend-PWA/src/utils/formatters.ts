@@ -16,20 +16,31 @@ const formatTime = (
   if (!dateStr) return "-";
   if (!shortMode && dateStr === "Just now") return dateStr;
 
-  const ts = new Date(dateStr).getTime();
-  if (isNaN(ts)) return "-";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "-";
+
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 0) return shortMode ? "New" : "Just now";
 
   const units = [
-    { ms: 86400000, s: "d", l: "d ago" },
-    { ms: 3600000, s: "h", l: "h ago" },
-    { ms: 60000, s: "m", l: "m ago" },
+    { s: 31536000, t: "y", l: "y ago" },
+    { s: 2592000, t: "mo", l: "mo ago" },
+    { s: 604800, t: "w", l: "w ago" },
+    { s: 86400, t: "d", l: "d ago" },
+    { s: 3600, t: "h", l: "h ago" },
+    { s: 60, t: "m", l: "m ago" },
   ];
-  const elapsed = Date.now() - ts;
-  const match = units.find((u) => elapsed >= u.ms);
 
-  if (!match) return shortMode ? "New" : "Just now";
-  const val = Math.floor(elapsed / match.ms);
-  return shortMode ? `${val}${match.s}` : `${val}${match.l}`;
+  for (const unit of units) {
+    if (seconds >= unit.s) {
+      const value = Math.floor(seconds / unit.s);
+      return shortMode ? `${value}${unit.t}` : `${value}${unit.l}`;
+    }
+  }
+
+  return shortMode ? "New" : "Just now";
 };
 
 export const formatTimeAgo = (dateStr: string | null | undefined): string =>
