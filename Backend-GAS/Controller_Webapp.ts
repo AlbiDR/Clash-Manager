@@ -335,7 +335,7 @@ function extractSheetDataStrict(
       { key: "req", col: S.WEEKLY_REQ, type: "num" },
       { key: "avg", col: S.AVG_DAY, type: "num" },
       { key: "tot", col: S.TOTAL_DON, type: "num" },
-      { key: "seen", col: S.LAST_SEEN, type: "str" },
+      { key: "seen", col: S.LAST_SEEN, type: "date" },
       { key: "rate", col: S.WAR_RATE, type: "rate" },
       { key: "wfame", col: S.AVG_WAR_FAME, type: "num" },
       { key: "hist", col: S.HISTORY, type: "str" },

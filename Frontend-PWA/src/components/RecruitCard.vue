@@ -5,7 +5,7 @@ import Icon from "./Icon.vue";
 import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
 import { useAppSettings } from "../composables/useAppSettings";
-import { getScoreTone, formatTimeAgoShort } from "../utils/formatters";
+import { getScoreTone, formatTimeAgo } from "../utils/formatters";
 
 import { useExternalLink } from "../composables/useExternalLink";
 import StatisticItem from "./StatisticItem.vue";
@@ -41,7 +41,7 @@ function getTooltip(metric: string, value: number | undefined) {
 }
 
 const toneClass = computed(() => getScoreTone(recruit.potentialScore));
-const timeAgo = computed(() => formatTimeAgoShort(recruit.d.ago));
+const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 </script>
 
 <template>

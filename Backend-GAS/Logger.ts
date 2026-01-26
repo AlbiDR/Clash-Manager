@@ -505,7 +505,7 @@ function upsertDailySnapshots(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: currentLastRow, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "ddd dd/mm/yyyy" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
@@ -519,7 +519,7 @@ function upsertDailySnapshots(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: currentLastRow, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "yyyy-mm-dd hh:mm:ss" } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "dd/mm/yyyy HH:mm" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },

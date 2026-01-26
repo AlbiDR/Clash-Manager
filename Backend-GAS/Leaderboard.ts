@@ -416,7 +416,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     row[L.WEEKLY_REQ] = r.member.donationsReceived;
     row[L.AVG_DAY] = r.avgDailyDonations;
     row[L.TOTAL_DON] = r.totalDonations;
-    row[L.LAST_SEEN] = timeAgo(r.lastSeen);
+    row[L.LAST_SEEN] = r.lastSeen;
     row[L.WAR_RATE] = r.warRateVal / 100;
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
@@ -525,11 +525,18 @@ function updateLeaderboard(dryRun: boolean = false): void {
             index: 1
           }
         },
-        // 2D. NUMBER FORMATS (Percentages)
+      // 2D. NUMBER FORMATS (Percentages & Dates)
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.WAR_RATE + 1, endColumnIndex: L.WAR_RATE + 2 },
             cell: { userEnteredFormat: { numberFormat: { type: "PERCENT", pattern: '0%' } } },
+            fields: "userEnteredFormat.numberFormat"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.LAST_SEEN + 1, endColumnIndex: L.LAST_SEEN + 2 },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "dd/mm/yyyy HH:mm" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         }
@@ -549,21 +556,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     console.log(`✅ Leaderboard Perfect: ${finalRows.length} members.`);
 }
 
-function timeAgo(date: Date | null): string {
-  if (!date) return "-";
-  const units = [
-    { s: 31536000, t: "y" },
-    { s: 2592000, t: "mo" },
-    { s: 86400, t: "d" },
-    { s: 3600, t: "h" },
-    { s: 60, t: "m" },
-  ];
-  const sec = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-  const match = units.find((u) => sec >= u.s);
-  return match ? `${Math.floor(sec / match.s)}${match.t} ago` : "Just now";
-}
-
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { updateLeaderboard, timeAgo, VER_LEADERBOARD });
+Object.assign(this as any, { updateLeaderboard, VER_LEADERBOARD });
