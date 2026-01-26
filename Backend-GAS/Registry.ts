@@ -85,6 +85,9 @@ var Registry: IRegistry = {
 
     // 🛠️ SYSTEM
     "system:health": () => checkSystemHealth(),
+    "system:warmup": () => taskWarmUpWorker(),
+    "system:triggers": () => createTriggers(),
+    "system:master": () => dispatchMaster(),
   }
 };
 
