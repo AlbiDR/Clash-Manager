@@ -458,7 +458,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
 
   // No changes to preparation logic.
     if (finalRows.length > 0) {
-      const ssId = ss.getId();
       const sheetId = lbSheet.getSheetId();
       const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
       const contentRows = finalRows.length;
