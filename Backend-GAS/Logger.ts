@@ -340,51 +340,39 @@ function upsertDailySnapshots(
   let rowCount = meta.sheets[0].properties.gridProperties.rowCount;
 
   if (rowCount >= startRow) {
-      // Atomic Sort
+      // 1A. Atomic Sort by Date (Descending) to bring Today's entries to the top
       Sheets.Spreadsheets!.batchUpdate({
         requests: [{
           sortRange: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: rowCount, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
-            sortSpecs: [{ dimensionIndex: 1 + S_DB.DATE, sortOrder: "ASCENDING" }]
+            sortSpecs: [{ dimensionIndex: 1 + S_DB.DATE, sortOrder: "DESCENDING" }]
           }
         }]
       }, ssId);
 
-      // Fetch Dates to find Today's block
-      const dateRange = `'${sheetName}'!${String.fromCharCode(65 + 1 + S_DB.DATE)}${startRow}:${String.fromCharCode(65 + 1 + S_DB.DATE)}${rowCount}`;
-      const dateRes = Sheets.Spreadsheets!.Values!.get(ssId, dateRange);
-      const dateValues = dateRes.values || [];
+      // 1B. Fetch enough rows to catch any entries from "Today"
+      // We fetch 100 rows as a safety buffer for a 50-member clan
+      const scanLimit = Math.min(100, rowCount - startRow + 1);
+      const dataRange = `'${sheetName}'!B${startRow}:${String.fromCharCode(65 + 1 + headerRow.length)}${startRow + scanLimit - 1}`;
+      const dataRes = Sheets.Spreadsheets!.Values!.get(ssId, dataRange);
+      const scanValues = dataRes.values || [];
 
-      let startIdx = -1;
-      let count = 0;
-
-      for (let i = 0; i < dateValues.length; i++) {
-        const d = dateValues[i][0] ? new Date(dateValues[i][0]) : null;
+      // Identify which rows are actually "Today" and map them by Tag
+      scanValues.forEach((row, idx) => {
+        const d = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : null;
         if (d && Registry.Services.Time.formatDate(d) === todayStr) {
-          if (startIdx === -1) startIdx = i;
-          count++;
+          const tag = String(row[S_DB.TAG]);
+          if (!existingMap.has(tag)) {
+             existingMap.set(tag, startRow + idx);
+             todayValues.push(row);
+          }
         }
-      }
-
-      if (startIdx !== -1) {
-        firstRowIndex = startRow + startIdx;
-        const dataRange = `'${sheetName}'!B${firstRowIndex}:${String.fromCharCode(65 + 1 + headerRow.length)}${firstRowIndex + count - 1}`;
-        const dataRes = Sheets.Spreadsheets!.Values!.get(ssId, dataRange);
-        todayValues = dataRes.values || [];
-      }
+      });
   }
-
-  // 2. Prepare Updates
-  const processedTags = new Set<string>();
-  let updatesMade = false;
-
-  const existingMap = new Map<string, number>();
-  todayValues.forEach((row, idx) => {
-    existingMap.set(String(row[S_DB.TAG]), idx);
-  });
 
   // 3. Process API Data
   const newRowsToAppend: any[][] = [];
+  const individualUpdates: Array<{range: string, values: any[][]}> = [];
 
   activeMembers.forEach((m) => {
     let warFame: string | number = warFameMap.get(m.tag) || 0;
@@ -399,19 +387,24 @@ function upsertDailySnapshots(
     }
 
     if (existingMap.has(m.tag)) {
-      const idx = existingMap.get(m.tag)!;
-      const currentRow = todayValues[idx];
+      const rowIdx = existingMap.get(m.tag)!;
+      const updateData = [
+        today,
+        m.tag,
+        m.name,
+        m.role,
+        m.trophies,
+        Math.max(0, m.donations || 0),
+        Math.max(0, m.donationsReceived || 0),
+        parseTime(m.lastSeen),
+        warFame,
+        battleCredit,
+      ];
 
-      currentRow[S_DB.NAME] = m.name;
-      currentRow[S_DB.ROLE] = m.role;
-      currentRow[S_DB.TROPHIES] = m.trophies;
-      currentRow[S_DB.DON_GIVEN] = m.donations;
-      currentRow[S_DB.DON_REC] = m.donationsReceived;
-      currentRow[S_DB.LAST_SEEN] = parseTime(m.lastSeen);
-      currentRow[S_DB.WAR_FAME] = warFame;
-      currentRow[S_DB.BATTLE_CREDITS] = battleCredit;
-
-      updatesMade = true;
+      individualUpdates.push({
+        range: `'${sheetName}'!B${rowIdx}`,
+        values: [updateData]
+      });
       processedTags.add(m.tag);
     } else {
       newRowsToAppend.push([
@@ -429,53 +422,25 @@ function upsertDailySnapshots(
     }
   });
 
-  // 4. Commit Updates
-  if (updatesMade && firstRowIndex !== -1) {
-    console.log(`ETL: Updating ${processedTags.size} records for ${todayStr}.`);
+  // 4. Commit Updates (Atomic Batch)
+  if (individualUpdates.length > 0) {
+    console.log(`ETL: Updating ${individualUpdates.length} existing records for ${todayStr}.`);
     
-    Sheets.Spreadsheets!.Values!.update({
-      values: todayValues
-    }, ssId, `'${sheetName}'!B${firstRowIndex}`, {
-      valueInputOption: "USER_ENTERED"
-    });
+    Sheets.Spreadsheets!.Values!.batchUpdate({
+      valueInputOption: "USER_ENTERED",
+      data: individualUpdates
+    }, ssId);
   }
 
   // 5. Commit Appends
   if (newRowsToAppend.length > 0) {
     console.log(`ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Fast-Append).`);
 
-    const appendRes = Sheets.Spreadsheets!.Values!.append({
+    Sheets.Spreadsheets!.Values!.append({
       values: newRowsToAppend
     }, ssId, `'${sheetName}'!B${startRow}`, {
       valueInputOption: "USER_ENTERED"
     });
-
-    // 🏎️ ATOMIC UI: Highlight new entries using the ACTUAL range returned by the API
-    const updatedRange = appendRes.updates.updatedRange; // e.g., 'Clan Database'!B3153:K3194
-    const rowMatch = updatedRange.match(/!.*?(\d+):.*?(\d+)$/);
-    
-    if (rowMatch) {
-      const startRowIdx = parseInt(rowMatch[1]) - 1; // Zero-based
-      const endRowIdx = parseInt(rowMatch[2]); // Exclusive
-      
-      const requests = [
-          {
-            repeatCell: {
-              range: { sheetId, startRowIndex: startRowIdx, endRowIndex: endRowIdx, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
-              cell: { userEnteredFormat: { backgroundColor: { red: 0.933, green: 0.988, blue: 0.921 } } },
-              fields: "userEnteredFormat.backgroundColor"
-            }
-          },
-          {
-            repeatCell: {
-              range: { sheetId, startRowIndex: startRowIdx, endRowIndex: endRowIdx, startColumnIndex: 1, endColumnIndex: 2 },
-              cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 0.18, green: 0.49, blue: 0.18 } } } },
-              fields: "userEnteredFormat.textFormat.foregroundColor"
-            }
-          }
-      ];
-      Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-    }
   }
 
   // ----------------------------------------------------------------------------
