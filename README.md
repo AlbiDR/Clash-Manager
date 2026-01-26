@@ -83,7 +83,7 @@ The project is composed of a Google Apps Script backend, an optional Cloud Run w
 
 1.  **Deploy Engine**: Deploy the code in `Backend-GAS/` via `clasp` or the online script editor.
 2.  **Set Properties**: In the script editor, set the required `Script Properties`: `ClanTag` and `WebAppUrl`.
-3.  **Configure Triggers**: Configure a time-based trigger for the `hourlyUpdate` function for automated data fetching.
+3.  **Configure Triggers**: Open the spreadsheet menu (**👑 Clan Manager > ⚙️ Setup Triggers**) to automatically establish the automation lifecycle (Sync, Scout, and Keep-Alive).
 
 </details>
 

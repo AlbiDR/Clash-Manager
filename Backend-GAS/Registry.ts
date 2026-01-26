@@ -40,6 +40,9 @@ declare function updateLeaderboard(): void;
 declare function scoutRecruits(): void;
 declare function checkSystemHealth(): void;
 declare function refreshWebPayload(): void;
+declare function createTriggers(): void;
+declare function taskWarmUpWorker(): void;
+declare function dispatchMaster(): void;
 
 export interface IRegistry {
   Services: {
