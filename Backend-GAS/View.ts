@@ -55,24 +55,44 @@ var View: IView = {
   ) {
     if (!sheet) return;
     const L = CONFIG.LAYOUT;
+    const ssId = sheet.getParent().getId();
+    const sheetId = sheet.getSheetId();
+
+    // 🛡️ FETCH CURRENT STATE (Advanced API)
+    const ssMeta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheet.getName()], includeGridData: false });
+    const sMeta = ssMeta.sheets[0];
+    const currentRows = sMeta.properties.gridProperties.rowCount;
+    const currentCols = sMeta.properties.gridProperties.columnCount;
+
     if (Array.isArray(optHeaders) && optHeaders.length > 0)
       contentCols = optHeaders.length;
+
+    // Use current data row count if -1 passed
+    if (contentRows === -1) {
+        contentRows = Math.max(0, currentRows - (L.DATA_START_ROW - 1));
+    }
 
     const lastDataRow = L.DATA_START_ROW - 1 + Math.max(contentRows, 0);
     const totalRows = Math.max(lastDataRow + 1, L.DATA_START_ROW + 1);
     const totalCols = contentCols + 2;
 
-    const currentRows = sheet.getMaxRows();
-    const currentCols = sheet.getMaxColumns();
-
-    if (currentRows < totalRows)
-      sheet.insertRowsAfter(currentRows, totalRows - currentRows);
-    if (currentCols < totalCols)
-      sheet.insertColumnsAfter(currentCols, totalCols - currentCols);
-    if (currentRows > totalRows)
-      sheet.deleteRows(totalRows + 1, currentRows - totalRows);
-    if (currentCols > totalCols)
-      sheet.deleteColumns(totalCols + 1, currentCols - totalCols);
+    // 🚀 ATOMIC DIMENSION SYNC (Advanced API)
+    if (currentRows !== totalRows || currentCols !== totalCols) {
+      Sheets.Spreadsheets!.batchUpdate({
+        requests: [{
+          updateSheetProperties: {
+            properties: {
+              sheetId: sheetId,
+              gridProperties: {
+                rowCount: totalRows,
+                columnCount: totalCols
+              }
+            },
+            fields: 'gridProperties.rowCount,gridProperties.columnCount'
+          }
+        }]
+      }, ssId);
+    }
 
     sheet.setColumnWidth(1, L.BUFFER_SIZE);
     sheet.setColumnWidth(totalCols, L.BUFFER_SIZE);

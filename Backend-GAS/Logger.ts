@@ -147,27 +147,39 @@ function updateClanDatabase(): void {
     ];
 
     // Ensure Header exists
-    // Unified Header Handshake
-    if (sheet.getLastRow() < 2) {
-      const ssId = ss.getId();
-      const sheetName = sheet.getName();
-      const sheetId = sheet.getSheetId();
-      
-      // Atomic write of headers if missing
-      Sheets.Spreadsheets!.Values!.update({
-        values: [HEADER]
-      }, ssId, `'${sheetName}'!B2`, {
-        valueInputOption: "USER_ENTERED"
-      });
+    // 🛡️ SCHEMA & GRID MANAGEMENT (Advanced API Way)
+    const ssId = ss.getId();
+    const sheetMetadata = Sheets.Spreadsheets!.get(ssId, {
+      ranges: [CONFIG.SHEETS.DB],
+      includeGridData: false
+    });
+    const dbSheetMeta = sheetMetadata.sheets.find((s: any) => s.properties.title === CONFIG.SHEETS.DB);
+    const sheetId = dbSheetMeta.properties.sheetId;
+    const gridProps = dbSheetMeta.properties.gridProperties;
+    const currentMaxRows = gridProps.rowCount;
+    const currentMaxCols = gridProps.columnCount;
+    const requiredCols = HEADER.length + 2;
+
+    // Header Check & Initialization
+    if (currentMaxRows < 2) {
+       // Atomic write of headers if sheet is empty
+       Sheets.Spreadsheets!.Values!.update({
+         values: [HEADER]
+       }, ssId, `'${CONFIG.SHEETS.DB}'!B2`, {
+         valueInputOption: "USER_ENTERED"
+       });
     }
 
-    // 🛡️ SCHEMA MIGRATION: Ensure enough columns
-    const requiredCols = HEADER.length + 2;
-    if (sheet.getMaxColumns() < requiredCols) {
-      sheet.insertColumnsAfter(
-        sheet.getMaxColumns(),
-        requiredCols - sheet.getMaxColumns(),
-      );
+    if (currentMaxCols < requiredCols) {
+      Sheets.Spreadsheets!.batchUpdate({
+        requests: [{
+          appendDimension: {
+            sheetId: sheetId,
+            dimension: "COLUMNS",
+            length: requiredCols - currentMaxCols
+          }
+        }]
+      }, ssId);
     }
 
     // 🛡️ BACKUP
@@ -176,7 +188,7 @@ function updateClanDatabase(): void {
     // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
     Registry.Services.View.applyStandardLayout(
       sheet,
-      sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
+      -1, // Signal to use metadata
       HEADER.length,
       HEADER,
     );
@@ -205,15 +217,16 @@ function pruneStaleData(
   activeTags: Set<string>,
 ): void {
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-  const lastRow = sheet.getLastRow();
+  const ssId = sheet.getParent().getId();
+  const sheetName = sheet.getName();
+  const meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+  const lastRow = meta.sheets[0].properties.gridProperties.rowCount;
 
   if (lastRow < startRow) return;
 
   const S_DB = CONFIG.SCHEMA.DB;
 
   // 1. COLUMN-SELECTIVE INGESTION (API Mode)
-  const ssId = sheet.getParent().getId();
-  const sheetName = sheet.getName();
   const tagCol = String.fromCharCode(65 + 1 + S_DB.TAG); // Column B is index 0 for range but here we adjust
   const dateCol = String.fromCharCode(65 + 1 + S_DB.DATE);
   
@@ -254,8 +267,7 @@ function pruneStaleData(
     return;
   }
 
-  // 4. Calculate rows to delete (Need full data pass or another fetch for names if logging names is required)
-  // For efficiency, we just use the indices from the previous fetch
+  // 4. Calculate rows to delete
   const rowsToDelete: number[] = [];
   for (let i = 0; i < tagValues.length; i++) {
     const rowContent = tagValues[i];
@@ -264,17 +276,10 @@ function pruneStaleData(
     }
   }
 
-  if (tagsToPurge.size === 0) {
-    console.log("🧹 Pruning: No stale members found.");
-    return;
-  }
-
   // 5. Write Back (Atomic Delete via Dimension)
-  if (tagsToPurge.size > 0) {
+  if (rowsToDelete.length > 0) {
     console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
 
-    // Delete in reverse to maintain index stability
-    const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
     const deleteRequests = rowsToDelete
       .sort((a, b) => b - a)
@@ -290,8 +295,6 @@ function pruneStaleData(
       }));
 
     if (deleteRequests.length > 0) {
-        // GAS has a limit on concurrent requests, but for a few dozen rows this is fine.
-        // For larger purges, we could group contiguous rows into single dimension ranges.
         Sheets.Spreadsheets!.batchUpdate({ requests: deleteRequests }, ssId);
         console.log(`🧹 Pruning Complete: Removed ${rowsToDelete.length} rows via Sheets API.`);
     }
@@ -327,42 +330,49 @@ function upsertDailySnapshots(
     }
   };
 
-  const lastRow = sheet.getLastRow();
-  let todayDataRange: GoogleAppsScript.Spreadsheet.Range | null = null;
   let todayValues: any[][] = [];
   let firstRowIndex = -1;
 
-  // 1. Sort & Locate "Today's" Block
-  if (lastRow >= startRow) {
-    sheet
-      .getRange(startRow, 2, lastRow - startRow + 1, headerRow.length)
-      .sort({ column: 2 + S_DB.DATE, ascending: true });
+  // 1. Sort & Locate "Today's" Block (Advanced API way)
+  const ssId = sheet.getParent().getId();
+  const sheetId = sheet.getSheetId();
+  const sheetName = sheet.getName();
+  let meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+  let rowCount = meta.sheets[0].properties.gridProperties.rowCount;
 
-    const dateValues = sheet
-      .getRange(startRow, 2 + S_DB.DATE, lastRow - startRow + 1, 1)
-      .getValues();
+  if (rowCount >= startRow) {
+      // Atomic Sort
+      Sheets.Spreadsheets!.batchUpdate({
+        requests: [{
+          sortRange: {
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: rowCount, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
+            sortSpecs: [{ dimensionIndex: 1 + S_DB.DATE, sortOrder: "ASCENDING" }]
+          }
+        }]
+      }, ssId);
 
-    let startIdx = -1;
-    let count = 0;
+      // Fetch Dates to find Today's block
+      const dateRange = `'${sheetName}'!${String.fromCharCode(65 + 1 + S_DB.DATE)}${startRow}:${String.fromCharCode(65 + 1 + S_DB.DATE)}${rowCount}`;
+      const dateRes = Sheets.Spreadsheets!.Values!.get(ssId, dateRange);
+      const dateValues = dateRes.values || [];
 
-    for (let i = 0; i < dateValues.length; i++) {
-      const d = dateValues[i][0] ? new Date(dateValues[i][0]) : null;
-      if (d && Registry.Services.Time.formatDate(d) === todayStr) {
-        if (startIdx === -1) startIdx = i;
-        count++;
+      let startIdx = -1;
+      let count = 0;
+
+      for (let i = 0; i < dateValues.length; i++) {
+        const d = dateValues[i][0] ? new Date(dateValues[i][0]) : null;
+        if (d && Registry.Services.Time.formatDate(d) === todayStr) {
+          if (startIdx === -1) startIdx = i;
+          count++;
+        }
       }
-    }
 
-    if (startIdx !== -1) {
-      firstRowIndex = startRow + startIdx;
-      todayDataRange = sheet.getRange(
-        firstRowIndex,
-        2,
-        count,
-        headerRow.length,
-      );
-      todayValues = todayDataRange.getValues();
-    }
+      if (startIdx !== -1) {
+        firstRowIndex = startRow + startIdx;
+        const dataRange = `'${sheetName}'!B${firstRowIndex}:${String.fromCharCode(65 + 1 + headerRow.length)}${firstRowIndex + count - 1}`;
+        const dataRes = Sheets.Spreadsheets!.Values!.get(ssId, dataRange);
+        todayValues = dataRes.values || [];
+      }
   }
 
   // 2. Prepare Updates
@@ -421,14 +431,12 @@ function upsertDailySnapshots(
   });
 
   // 4. Commit Updates
-  if (updatesMade && todayDataRange) {
+  if (updatesMade && firstRowIndex !== -1) {
     console.log(`ETL: Updating ${processedTags.size} records for ${todayStr}.`);
-    const ssId = sheet.getParent().getId();
-    const sheetName = sheet.getName();
     
     Sheets.Spreadsheets!.Values!.update({
       values: todayValues
-    }, ssId, `'${sheetName}'!B${todayDataRange.getRow()}`, {
+    }, ssId, `'${sheetName}'!B${firstRowIndex}`, {
       valueInputOption: "USER_ENTERED"
     });
   }
@@ -436,45 +444,46 @@ function upsertDailySnapshots(
   // 5. Commit Appends
   if (newRowsToAppend.length > 0) {
     console.log(`ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Fast-Append).`);
-    const ssId = sheet.getParent().getId();
-    const sheetName = sheet.getName();
-    const sheetId = sheet.getSheetId();
 
-    Sheets.Spreadsheets!.Values!.append({
+    const appendRes = Sheets.Spreadsheets!.Values!.append({
       values: newRowsToAppend
     }, ssId, `'${sheetName}'!B${startRow}`, {
       valueInputOption: "USER_ENTERED"
     });
 
-    // 🏎️ ATOMIC UI: Highlight new entries
-    const startIdx = sheet.getLastRow(); // Approximate start for append highlighting
-    const endIdx = startIdx + newRowsToAppend.length;
-
-    const requests = [
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
-            cell: { userEnteredFormat: { backgroundColor: { red: 0.933, green: 0.988, blue: 0.921 } } },
-            fields: "userEnteredFormat.backgroundColor"
+    // 🏎️ ATOMIC UI: Highlight new entries using the ACTUAL range returned by the API
+    const updatedRange = appendRes.updates.updatedRange; // e.g., 'Clan Database'!B3153:K3194
+    const rowMatch = updatedRange.match(/!.*?(\d+):.*?(\d+)$/);
+    
+    if (rowMatch) {
+      const startRowIdx = parseInt(rowMatch[1]) - 1; // Zero-based
+      const endRowIdx = parseInt(rowMatch[2]); // Exclusive
+      
+      const requests = [
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: startRowIdx, endRowIndex: endRowIdx, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
+              cell: { userEnteredFormat: { backgroundColor: { red: 0.933, green: 0.988, blue: 0.921 } } },
+              fields: "userEnteredFormat.backgroundColor"
+            }
+          },
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: startRowIdx, endRowIndex: endRowIdx, startColumnIndex: 1, endColumnIndex: 2 },
+              cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 0.18, green: 0.49, blue: 0.18 } } } },
+              fields: "userEnteredFormat.textFormat.foregroundColor"
+            }
           }
-        },
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: startIdx, endRowIndex: endIdx, startColumnIndex: 1, endColumnIndex: 2 },
-            cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 0.18, green: 0.49, blue: 0.18 } } } },
-            fields: "userEnteredFormat.textFormat.foregroundColor"
-          }
-        }
-    ];
-    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+      ];
+      Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+    }
   }
 
   // ----------------------------------------------------------------------------
   // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
   // ----------------------------------------------------------------------------
-  const ssId = sheet.getParent().getId();
-  const sheetId = sheet.getSheetId();
-  const currentLastRow = sheet.getLastRow();
+  meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+  const currentLastRow = meta.sheets[0].properties.gridProperties.rowCount;
   const dataRowCount = Math.max(0, currentLastRow - (startRow - 1));
   const contentCols = headerRow.length;
 
