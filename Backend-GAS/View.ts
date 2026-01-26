@@ -99,8 +99,6 @@ var View: IView = {
     sheet.setRowHeight(totalRows, L.BUFFER_SIZE);
 
     // 🛡️ CANVAS PREPARATION & ATOMIC LAYOUT ENGINE
-    const ssId = sheet.getParent().getId();
-    const sheetId = sheet.getSheetId();
     const requests: any[] = [
       // 1. FULL CANVAS RESET (Borders, Background, Alignment)
       {
