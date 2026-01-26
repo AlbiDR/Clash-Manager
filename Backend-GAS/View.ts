@@ -138,9 +138,9 @@ var View: IView = {
         }
       });
       
-      },
-      // 7. BUFFER PLACEHOLDER (A2) Delivery
-      {
+      // 7. BUFFER PLACEHOLDERS (Column A and End Column) Delivery
+      // Left Buffer (A2)
+      requests.push({
         updateCells: {
           rows: [{
             values: [{
@@ -156,10 +156,27 @@ var View: IView = {
           fields: 'userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor,horizontalAlignment,verticalAlignment)',
           range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 }
         }
-      }
-    ];
+      });
 
-    if (contentCols > 0) {
+      // Right Buffer (Last Column, Row 2)
+      requests.push({
+        updateCells: {
+          rows: [{
+            values: [{
+              userEnteredValue: { stringValue: "." },
+              userEnteredFormat: {
+                backgroundColor: { red: 1, green: 1, blue: 1 },
+                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } },
+                horizontalAlignment: "CENTER",
+                verticalAlignment: "MIDDLE"
+              }
+            }]
+          }],
+          fields: 'userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor,horizontalAlignment,verticalAlignment)',
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }
+        }
+      });
+    }
 
     // 🚀 EXECUTE ATOMIC TRANSACTION (No SpreadsheetApp triggers)
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
@@ -212,10 +229,17 @@ var View: IView = {
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
         // 5. Auto-Size Dimensions
         { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } },
-        // 6. Buffer Column A Color Match
+        // 6. Buffer Columns A & End Color Match
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
+            cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
+            fields: "userEnteredFormat.textFormat.foregroundColor"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols },
             cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
             fields: "userEnteredFormat.textFormat.foregroundColor"
           }
