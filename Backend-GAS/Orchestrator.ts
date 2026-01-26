@@ -151,7 +151,7 @@ function taskFastScout(): void {
 
 /**
  * TASK C: WARM UP WORKER (Render Keep-Alive)
- * Recommended Trigger: Time-Based -> Every 12 Minutes
+ * Recommended Trigger: Time-Based -> Every 10 Minutes
  * (Render sleeps after 15 mins of inactivity)
  */
 function taskWarmUpWorker(): void {
@@ -185,10 +185,10 @@ function createTriggers(): void {
     .everyMinutes(30)
     .create();
 
-  // 3. Render Worker Warm-up (Every 12 Minutes - to beat the 15m sleep)
+  // 3. Render Worker Warm-up (Every 10 Minutes - to beat the 15m sleep)
   ScriptApp.newTrigger("taskWarmUpWorker")
     .timeBased()
-    .everyMinutes(12)
+    .everyMinutes(10)
     .create();
 
   console.log("✅ All triggers established.");

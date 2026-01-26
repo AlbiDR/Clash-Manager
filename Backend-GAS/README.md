@@ -50,7 +50,7 @@ The engine operates as a clinical cron-daemon. While you can manually configure 
 
 This automatically configures the following lifecycle:
 
-- `taskWarmUpWorker`: Every **12 minutes** (Prevents Render Worker sleep).
+- `taskWarmUpWorker`: Every **10 minutes** (Prevents Render Worker sleep).
 - `taskFastScout`: Every **30 minutes** (Headhunter scanning).
 - `taskUpdateMemberStats`: Every **1 hour** (Main ETL and scoring).
 
