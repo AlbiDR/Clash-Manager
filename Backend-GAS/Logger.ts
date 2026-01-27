@@ -350,6 +350,12 @@ function upsertDailySnapshots(
   const newRowsToAppend: any[][] = [];
 
   // 1A. Robust Date Parser for 'dd/MM/yyyy' strings
+  const ssId = sheet.getParent().getId();
+  const sheetId = sheet.getSheetId();
+  const sheetName = sheet.getName();
+  let meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+  let rowCount = meta.sheets[0].properties.gridProperties.rowCount;
+
   const parseDateFromCell = (val: any): Date | null => {
     if (val instanceof Date) return val;
     if (!val) return null;
