@@ -430,6 +430,14 @@ function updateLeaderboard(dryRun: boolean = false): void {
 
   finalRows.sort(Registry.Services.ScoringSystem.comparator);
 
+  // 🛡️ PAD TO FIXED SIZE (50 Members + Buffer)
+  // Ensures the leaderboard table maintains a consistent 50-row UI footprint.
+  const LB_LIMIT = 50;
+  while (finalRows.length < LB_LIMIT) {
+    const emptyRow = new Array(Object.keys(CONFIG.SCHEMA.LB_HEADERS).length).fill("");
+    finalRows.push(emptyRow);
+  }
+
   // ----------------------------------------------------------------------------
   // 4. SAFETY LOCK & WRITING
   // ----------------------------------------------------------------------------
