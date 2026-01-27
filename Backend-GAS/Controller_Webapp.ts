@@ -340,7 +340,6 @@ function extractSheetDataStrict(
       { key: "wfame", col: S.AVG_WAR_FAME, type: "num" },
       { key: "hist", col: S.HISTORY, type: "str" },
       { key: "dt", col: S.TREND, type: "num" },
-      { key: "war", col: S.WAR_DAY_WINS, type: "num" },
     ];
   } else {
     mapping = [
