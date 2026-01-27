@@ -97,7 +97,9 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
     .addItem(ITEMS.LB, "triggerUpdateLeaderboard")
     .addItem(ITEMS.HH, "triggerScoutRecruits")
     .addSeparator()
-    .addItem(ITEMS.MOBILE, "setupMobileTriggers")
+    .addItem(ITEMS.ALL, "dispatchMaster")
+    .addSeparator()
+    .addItem(ITEMS.SYSTEM_HEALTH, "triggerHealthCheck")
     .addSeparator()
     .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
@@ -150,7 +152,7 @@ function taskFastScout(): void {
   Registry.Services.Core.executeSafely("TASK_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
-      console.log("⏰ TASK END: Scout complete.");
+      console.log("⏰ TASK END: Headhunter scout complete.");
     } catch (e: any) {
       console.error(`❌ TASK FAILED (HH): ${e.message}`);
     }
@@ -223,6 +225,8 @@ function dispatchMaster(): void {
   
   // 3. Score Calculation & Rendering
   taskUpdateLeaderboard();
+
+  taskFastScout();
 
   console.log("🎭 MASTER DISPATCH: Sequence complete.");
 }
