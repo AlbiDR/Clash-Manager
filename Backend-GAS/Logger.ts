@@ -390,14 +390,14 @@ function upsertDailySnapshots(
     if (existingMap.has(m.tag)) {
       const rowIdx = existingMap.get(m.tag)!;
       const updateData = [
-        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
         warFame,
         battleCredit,
       ];
@@ -409,14 +409,14 @@ function upsertDailySnapshots(
       processedTags.add(m.tag);
     } else {
       newRowsToAppend.push([
-        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, "yyyy-MM-dd HH:mm:ss.SSS"),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
         warFame,
         battleCredit,
       ]);
@@ -499,7 +499,7 @@ function upsertDailySnapshots(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "dd/mm/yyyy" } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
@@ -513,7 +513,7 @@ function upsertDailySnapshots(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: "dd/mm/yyyy HH:mm" } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },

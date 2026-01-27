@@ -109,7 +109,7 @@ function processSheetMigration(
       // 🎯 FORCE ISO 8601 OUTPUT (YYYY-MM-DDTHH:mm:ss)
       // We use Utilities.formatDate to ensure explicit control over the string format.
       // Using Session.getScriptTimeZone() preserves the 'local' time expectation.
-      return [Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss")];
+      return [Utilities.formatDate(d, Session.getScriptTimeZone(), CONFIG.SYSTEM.DATE_FORMAT_DISPLAY)];
     });
 
     // 3. WRITE BACK CORRECTED VALUES
