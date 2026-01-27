@@ -70,6 +70,7 @@ export interface AppConfig {
     JSON_STORE_KEY: string;
     DB_PURGE_DAYS: number;
     DB_ROW_LIMIT: number;
+    DATE_FORMAT_DISPLAY: string;
   };
   SHEETS: {
     DB: string;
@@ -193,6 +194,7 @@ var CONFIG: AppConfig = {
     ).replace(/\./g, "_")}_S5`, // S5 suffix for total absolute 1:1 sync
     DB_PURGE_DAYS: 7,
     DB_ROW_LIMIT: 20000,
+    DATE_FORMAT_DISPLAY: "dd/MM/yyyy HH.mm.ss",
   },
 
   SHEETS: {
