@@ -388,8 +388,8 @@ function upsertDailySnapshots(
         // Identify which rows are actually "Today" and map them by Tag
         scanValues.forEach((row: any[], idx: number) => {
           const d = parseDateFromCell(row[S_DB.DATE]);
-          // Compare YYYY-MM-DD strings
-          if (d && Registry.Services.Time.formatDate(d) === Registry.Services.Time.formatDate(today)) {
+          // Compare YYYY-MM-DD strings (using dd/MM/yyyy format for consistency)
+          if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === Registry.Services.Time.formatDate(today).split(" ")[0]) {
             const tag = String(row[S_DB.TAG]);
             if (!existingMap.has(tag)) {
                existingMap.set(tag, readStart + idx); // Correct row index
