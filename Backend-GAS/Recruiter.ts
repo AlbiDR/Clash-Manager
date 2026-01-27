@@ -695,7 +695,7 @@ function renderHeadhunterView(
     c.donations,
     c.cards,
     c.war,
-    Utilities.formatDate(c.foundDate, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME),
+    Utilities.formatDate(c.foundDate, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
     c.rawScore,
     (c.potentialScore || 0),
   ]);

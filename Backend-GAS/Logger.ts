@@ -390,14 +390,14 @@ function upsertDailySnapshots(
     if (existingMap.has(m.tag)) {
       const rowIdx = existingMap.get(m.tag)!;
       const updateData = [
-        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
         warFame,
         battleCredit,
       ];
@@ -409,14 +409,14 @@ function upsertDailySnapshots(
       processedTags.add(m.tag);
     } else {
       newRowsToAppend.push([
-        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
         warFame,
         battleCredit,
       ]);

@@ -72,6 +72,7 @@ export interface AppConfig {
     DB_ROW_LIMIT: number;
     DATE_FORMAT_DATE: string;
     DATE_FORMAT_DATETIME: string;
+    DATE_FORMAT_VALUE: string;
   };
   SHEETS: {
     DB: string;
@@ -197,6 +198,7 @@ var CONFIG: AppConfig = {
     DB_ROW_LIMIT: 20000,
     DATE_FORMAT_DATE: "dd/MM/yyyy",
     DATE_FORMAT_DATETIME: "dd/MM/yyyy HH:mm",
+    DATE_FORMAT_VALUE: "dd/MM/yyyy HH.mm.ss",
   },
 
   SHEETS: {
