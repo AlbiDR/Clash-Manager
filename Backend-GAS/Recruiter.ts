@@ -221,14 +221,12 @@ function scoutRecruits(): void {
     const perfCol = String.fromCharCode(65 + L.PERF_SCORE);
     const trophiesCol = String.fromCharCode(65 + L.TROPHIES);
     const donCol = String.fromCharCode(65 + L.TOTAL_DON);
-    const winsCol = String.fromCharCode(65 + L.WAR_DAY_WINS);
     const historyCol = String.fromCharCode(65 + L.HISTORY);
 
     const ranges = [
       `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
       `'${sheetName}'!${trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
       `'${sheetName}'!${donCol}${startRow}:${donCol}${lastRow}`,
-      `'${sheetName}'!${winsCol}${startRow}:${winsCol}${lastRow}`,
       `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`
     ];
     
@@ -237,8 +235,7 @@ function scoutRecruits(): void {
       const perfs = response.valueRanges[0].values || [];
       const trophies = response.valueRanges[1].values || [];
       const dons = response.valueRanges[2].values || [];
-      const wins = response.valueRanges[3].values || [];
-      const histories = response.valueRanges[4].values || [];
+      const histories = response.valueRanges[3].values || [];
 
       for (let i = 0; i < perfs.length; i++) {
         const perf = Number(perfs[i] ? perfs[i][0] : 0);
@@ -250,7 +247,7 @@ function scoutRecruits(): void {
           const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
             Number(trophies[i] ? trophies[i][0] : 0),
             Number(dons[i] ? dons[i][0] : 0),
-            Number(wins[i] ? wins[i][0] : 0),
+            0, // War Day Wins (Removed from LB footprint)
             hasRecentWar,
             CONFIG.HEADHUNTER.WEIGHTS
           );
