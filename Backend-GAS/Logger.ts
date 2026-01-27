@@ -509,10 +509,13 @@ function upsertDailySnapshots(
 
   // 🧹 PRE-CLEANUP: Remove existing bandings before re-applying via View
   try {
-      sheet.getBandings().forEach(b => b.remove());
+      sheet.getBandings().forEach((b: any) => b.remove());
   } catch (e) {
       console.warn(`ETL: Could not remove existing bandings: ${e}`);
   }
+
+  // Calculate target grid size for formatting consistency
+  const targetRowCount = (CONFIG.LAYOUT.DATA_START_ROW - 1) + dataRowCount + 1;
 
   const finalVisualRequests: any[] = [
     // 6A. HEADERS DELIVERY (Row 2 Style & Value Sync)
@@ -535,33 +538,33 @@ function upsertDailySnapshots(
     }
   ];
 
-  if (gridRowCount >= startRow) {
+  if (targetRowCount >= startRow) {
       // 6B. NUMBER FORMATS (ISO Roots -> Visual Display)
       finalVisualRequests.push(
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATE } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 4 + S_DB.TAG },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 4 + S_DB.TAG },
             cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
+            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
             cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
             fields: "userEnteredFormat.numberFormat"
           }

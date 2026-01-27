@@ -58,7 +58,7 @@ var View: IView = {
     // 🧹 PRE-CLEANUP: Remove existing bandings locally to prevent conflicts
     // This is safe to do before the batch update
     try {
-      sheet.getBandings().forEach(b => b.remove());
+      sheet.getBandings().forEach((b: any) => b.remove());
     } catch (e) {
       console.warn(`View: Could not remove existing bandings: ${e}`);
     }
