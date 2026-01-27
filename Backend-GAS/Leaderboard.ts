@@ -69,7 +69,6 @@ export interface PlayerResult {
   avgWarFame: number;
   historyString: string;
   scores: { raw: number; perf: number };
-  warDayWins: number;
   cleanKey: string;
 }
 
@@ -381,7 +380,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
       avgWarFame,
       historyString,
       scores,
-      warDayWins: m.warDayWins || 0,
       cleanKey: m.tag.replace("#", "").trim().toLowerCase(),
     });
   });
@@ -423,7 +421,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
     row[L.PERF_SCORE] = normalizedPerf;
     row[L.TREND] = trend;
     row[L.AVG_WAR_FAME] = r.avgWarFame;
-    row[L.WAR_DAY_WINS] = r.warDayWins;
 
     finalRows.push(row);
   });

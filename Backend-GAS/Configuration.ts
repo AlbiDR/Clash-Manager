@@ -241,7 +241,6 @@ var CONFIG: AppConfig = {
       RAW_SCORE: "Performance Raw Score", // ⚡ UPDATED: Explicit Naming
       PERF_SCORE: "Performance Score",
       TREND: "Trend",
-      WAR_DAY_WINS: "War Day Wins",
     },
     HH_HEADERS: {
       TAG: "Tag",
@@ -308,7 +307,6 @@ var CONFIG: AppConfig = {
       RAW_SCORE: 12,
       PERF_SCORE: 13,
       TREND: 14,
-      WAR_DAY_WINS: 15,
     },
   },
 

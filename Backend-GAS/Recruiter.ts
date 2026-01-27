@@ -700,12 +700,20 @@ function renderHeadhunterView(
     (c.potentialScore || 0),
   ]);
 
+  // 🛡️ PAD TO FIXED SIZE (50 Recruits + Buffer)
+  // Ensures the headhunter table maintains a consistent 50-row UI footprint.
+  const HH_LIMIT = CONFIG.HEADHUNTER.TARGET || 50;
+  while (rows.length < HH_LIMIT) {
+    const emptyRow = new Array(HEADERS.length).fill("");
+    rows.push(emptyRow);
+  }
+
   // No changes needed to renderHeadhunterView preparation logic.
 
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
     const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
-    const contentRows = Math.max(rows.length, 0);
+    const contentRows = rows.length; // Now padded to HH_LIMIT
     const contentCols = HEADERS.length;
 
     // 1. DATA DELIVERY (Atomic Update) - USER_ENTERED (Only if rows exist)
