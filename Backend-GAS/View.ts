@@ -285,15 +285,15 @@ var View: IView = {
             repeatCell: {
                 range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
                 cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
-                fields: "userEnteredFormat.horizontalAlignment"
+                fields: "userEnteredFormat(horizontalAlignment)"
             }
         },
-        // 3. Status Bar Styling (Row 1)
+        // 3. Status Bar Styling (Row 1) - Force LEFT
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
             cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
-            fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
+            fields: "userEnteredFormat(horizontalAlignment,textFormat)"
           }
         },
         // 4. Borders
@@ -307,7 +307,7 @@ var View: IView = {
         // 5. ALTERNATING ROW COLORS (Banding)
         {
           addBanding: {
-            banding: {
+            bandedRange: {
               range: {
                 sheetId: sheetId,
                 startRowIndex: L.DATA_START_ROW - 1,
@@ -330,14 +330,14 @@ var View: IView = {
           repeatCell: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
             cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
-            fields: "userEnteredFormat.textFormat.foregroundColor"
+            fields: "userEnteredFormat(textFormat)"
           }
         },
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols },
             cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
-            fields: "userEnteredFormat.textFormat.foregroundColor"
+            fields: "userEnteredFormat(textFormat)"
           }
         }
     ];
