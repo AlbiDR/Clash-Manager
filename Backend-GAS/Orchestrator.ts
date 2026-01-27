@@ -99,8 +99,6 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
     .addSeparator()
     .addItem(ITEMS.ALL, "dispatchMaster")
     .addSeparator()
-    .addItem(ITEMS.SYSTEM_HEALTH, "triggerHealthCheck")
-    .addSeparator()
     .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
     .addSeparator()
