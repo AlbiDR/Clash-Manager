@@ -183,7 +183,7 @@ function queueRetry(functionName: string, minutes: number = 2): void {
  */
 function cleanupTemporaryTriggers(functionName: string): void {
   const triggers = ScriptApp.getProjectTriggers();
-  triggers.forEach((t) => {
+  triggers.forEach((t: any) => {
     if (
       t.getHandlerFunction() === functionName &&
       t.getTriggerSource() === ScriptApp.TriggerSource.CLOCK
@@ -503,7 +503,7 @@ function checkSystemHealth(): void {
   if (!keysHealthy) healthy = false;
   report += keyStatusReport;
 
-  modules.forEach((m) => {
+  modules.forEach((m: any) => {
     if (m.current === m.expected) report += `✅ ${m.name}: v${m.current}\n`;
     else {
       healthy = false;
@@ -529,7 +529,7 @@ function triggerVerifyApiKeys(): void {
   let report = "🔑 API KEY SECURITY AUDIT\n---------------------------\n";
   let activeCount = 0;
 
-  results.forEach((r) => {
+  results.forEach((r: any) => {
     if (r.success) {
       activeCount++;
       report += `✅ ${r.name}: Active\n`;
