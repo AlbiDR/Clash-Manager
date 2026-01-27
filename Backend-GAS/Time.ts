@@ -47,7 +47,7 @@ var Time: ITime = {
   formatDate(date: Date | null | undefined): string {
     if (!date || isNaN(date.getTime())) return "";
     // @ts-ignore
-    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE);
+    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
   },
 
   /**

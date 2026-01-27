@@ -9,7 +9,7 @@ const mockUtilities = {
 const mockConfig = {
   SYSTEM: {
     TIMEZONE: 'GMT',
-    DATE_FORMAT_DATE: 'dd/MM/yyyy',
+    DATE_FORMAT_VALUE: 'dd/MM/yyyy HH.mm.ss',
   },
 };
 
@@ -26,7 +26,7 @@ describe('Time Module', () => {
       const date = new Date('2023-01-01T12:00:00Z');
       mockUtilities.formatDate.mockReturnValue('2023-01-01');
       expect(Time.formatDate(date)).toBe('2023-01-01');
-      expect(mockUtilities.formatDate).toHaveBeenCalledWith(date, 'GMT', 'dd/MM/yyyy');
+      expect(mockUtilities.formatDate).toHaveBeenCalledWith(date, 'GMT', 'dd/MM/yyyy HH.mm.ss');
     });
 
     it('should return empty string for invalid dates', () => {
