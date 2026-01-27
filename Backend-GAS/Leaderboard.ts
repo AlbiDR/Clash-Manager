@@ -429,6 +429,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
 
   // 🛡️ PAD TO FIXED SIZE (50 Members + Buffer)
   // Ensures the leaderboard table maintains a consistent 50-row UI footprint.
+  const actualCount = finalRows.length;
   const LB_LIMIT = 50;
   while (finalRows.length < LB_LIMIT) {
     const emptyRow = new Array(Object.keys(CONFIG.SCHEMA.LB_HEADERS).length).fill("");
@@ -557,7 +558,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
 
     Registry.Services.View.setStatusMessage(lbSheet, `LEADERBOARD • ${new Date().toLocaleString()}`);
-    console.log(`✅ Leaderboard Perfect: ${finalRows.length} members.`);
+    console.log(`✅ Leaderboard Perfect: ${actualCount} members.`);
 }
 
 /**

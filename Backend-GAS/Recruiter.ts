@@ -699,6 +699,7 @@ function renderHeadhunterView(
 
   // 🛡️ PAD TO FIXED SIZE (50 Recruits + Buffer)
   // Ensures the headhunter table maintains a consistent 50-row UI footprint.
+  const actualCount = rows.length;
   const HH_LIMIT = CONFIG.HEADHUNTER.TARGET || 50;
   while (rows.length < HH_LIMIT) {
     const emptyRow = new Array(HEADERS.length).fill("");
@@ -783,7 +784,7 @@ function renderHeadhunterView(
     Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
 
     Registry.Services.View.setStatusMessage(sheet, `HEADHUNTER • ${new Date().toLocaleString()}`);
-    console.log(`✅ Headhunter View Rendered: ${rows.length} candidates (Atomic).`);
+    console.log(`✅ Headhunter View Rendered: ${actualCount} candidates (Atomic).`);
 }
 
 function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, numRows: number): void {
