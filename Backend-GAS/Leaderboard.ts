@@ -243,7 +243,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
   const memberDbData = new Map<
     string,
-    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string>; totalBattleCredits: number }
+    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string>; totalBattleCredits: number; discoveredBattleDays: Set<string> }
   >();
 
   if (dbSheet && dbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -266,7 +266,13 @@ function updateLeaderboard(dryRun: boolean = false): void {
       const weekId = Registry.Services.Time.calculateWarWeekId(date);
 
       if (!memberDbData.has(tag)) {
-        memberDbData.set(tag, { firstSeen: date, weeklyMax: new Map(), battleWeeks: new Set(), totalBattleCredits: 0 });
+        memberDbData.set(tag, { 
+          firstSeen: date, 
+          weeklyMax: new Map(), 
+          battleWeeks: new Set(), 
+          totalBattleCredits: 0,
+          discoveredBattleDays: new Set()
+        });
       }
 
       const h = memberDbData.get(tag)!;
@@ -280,6 +286,9 @@ function updateLeaderboard(dryRun: boolean = false): void {
       if (!isNaN(fameVal)) {
           addWarEntry(tag, weekId, fameVal);
           h.battleWeeks.add(weekId); // Mark this week as seen during a battle phase
+          
+          // 🛡️ DISCOVERY-BASED TRACKING: Add unique logical day string
+          h.discoveredBattleDays.add(Registry.Services.Time.formatDate(date));
       }
       
       // ⚔️ BATTLE CREDITS AGGREGATION
@@ -347,9 +356,9 @@ function updateLeaderboard(dryRun: boolean = false): void {
     );
     const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
-    // ⚔️ WAR RATE: Daily Attendance Model
+    // ⚔️ WAR RATE: Discovery-Based Model (Resilient to Pruning/Downtime)
     const totalBattleCredits = dbRecord?.totalBattleCredits ?? 0;
-    const eligibleBattleDays = Registry.Services.Time.getEligibleBattleDays(daysTracked);
+    const eligibleBattleDays = dbRecord?.discoveredBattleDays.size ?? 0;
     const warRateVal = Registry.Services.ScoringSystem.calculateWarRate(
       totalBattleCredits,
       eligibleBattleDays,
