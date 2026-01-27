@@ -26,18 +26,18 @@ function migrateSystemDates(): void {
   
   // 1. CLAN DATABASE MIGRATION
   processSheetMigration(ss.getSheetByName(CONFIG.SHEETS.DB), [
-    { key: "DATE", column: CONFIG.SCHEMA.DB.DATE, format: "ddd dd/mm/yyyy" },
-    { key: "LAST_SEEN", column: CONFIG.SCHEMA.DB.LAST_SEEN, format: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY }
+    { key: "DATE", column: CONFIG.SCHEMA.DB.DATE, format: CONFIG.SYSTEM.DATE_FORMAT_DATE },
+    { key: "LAST_SEEN", column: CONFIG.SCHEMA.DB.LAST_SEEN, format: CONFIG.SYSTEM.DATE_FORMAT_DATETIME }
   ]);
 
   // 2. LEADERBOARD MIGRATION
   processSheetMigration(ss.getSheetByName(CONFIG.SHEETS.LB), [
-    { key: "LAST_SEEN", column: CONFIG.SCHEMA.LB.LAST_SEEN, format: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY }
+    { key: "LAST_SEEN", column: CONFIG.SCHEMA.LB.LAST_SEEN, format: CONFIG.SYSTEM.DATE_FORMAT_DATETIME }
   ]);
 
   // 3. HEADHUNTER MIGRATION
   processSheetMigration(ss.getSheetByName(CONFIG.SHEETS.HH), [
-    { key: "FOUND_DATE", column: CONFIG.SCHEMA.HH.FOUND_DATE, format: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY }
+    { key: "FOUND_DATE", column: CONFIG.SCHEMA.HH.FOUND_DATE, format: CONFIG.SYSTEM.DATE_FORMAT_DATETIME }
   ]);
 
   console.log("✅ SYSTEM MIGRATION COMPLETE: All dates standardized.");
@@ -109,7 +109,7 @@ function processSheetMigration(
       // 🎯 FORCE ISO 8601 OUTPUT (YYYY-MM-DDTHH:mm:ss)
       // We use Utilities.formatDate to ensure explicit control over the string format.
       // Using Session.getScriptTimeZone() preserves the 'local' time expectation.
-      return [Utilities.formatDate(d, Session.getScriptTimeZone(), CONFIG.SYSTEM.DATE_FORMAT_DISPLAY)];
+      return [Utilities.formatDate(d, Session.getScriptTimeZone(), cfg.format)];
     });
 
     // 3. WRITE BACK CORRECTED VALUES

@@ -416,7 +416,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     row[L.WEEKLY_REQ] = r.member.donationsReceived;
     row[L.AVG_DAY] = r.avgDailyDonations;
     row[L.TOTAL_DON] = r.totalDonations;
-    row[L.LAST_SEEN] = Utilities.formatDate(r.lastSeen, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY);
+    row[L.LAST_SEEN] = Utilities.formatDate(r.lastSeen, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
     row[L.WAR_RATE] = r.warRateVal / 100;
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
@@ -535,7 +535,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.LAST_SEEN + 1, endColumnIndex: L.LAST_SEEN + 2 },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
             fields: "userEnteredFormat.numberFormat"
           }
         }
