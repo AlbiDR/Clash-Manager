@@ -492,9 +492,8 @@ function upsertDailySnapshots(
     });
   }
 
-  // ----------------------------------------------------------------------------
-  // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
-  // ----------------------------------------------------------------------------
+  SpreadsheetApp.flush(); // Ensure grid changes are committed before calculating final bounds
+  
   // ----------------------------------------------------------------------------
   // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
   // ----------------------------------------------------------------------------
@@ -545,28 +544,28 @@ function upsertDailySnapshots(
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATE } } },
-            fields: "userEnteredFormat.numberFormat"
+            fields: "userEnteredFormat(numberFormat)"
           }
         },
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 4 + S_DB.TAG },
             cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
-            fields: "userEnteredFormat.numberFormat"
+            fields: "userEnteredFormat(numberFormat)"
           }
         },
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
             cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
-            fields: "userEnteredFormat.numberFormat"
+            fields: "userEnteredFormat(numberFormat)"
           }
         },
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
             cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
-            fields: "userEnteredFormat.numberFormat"
+            fields: "userEnteredFormat(numberFormat)"
           }
         }
       );
