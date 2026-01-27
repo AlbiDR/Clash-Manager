@@ -451,13 +451,11 @@ function scanTournaments(
   // 1. Unified Health Handshake (Force Refresh for Scout)
   const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
   const remoteExpandEnabled = Registry.Services.Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
-  
-  console.log(`[Scout] Search keywords: ${keywords.length} | Lottery: ${lotteryPool.length} | Mode: ${lowQuotaMode ? "SAFE" : "FULL"}`);
 
   if (!remoteAvailable) {
-      const lastErr = Registry.Services.Network.getLastWorkerError();
-      console.warn(`[Recruiter] Worker Offline: ${lastErr || "Checking Status..."}. Falling back to Local Mode (Throttled).`);
-      lowQuotaMode = true;
+    const lastErr = Registry.Services.Network.getLastWorkerError();
+    console.warn(`[Recruiter] Worker Offline: ${lastErr || "Checking Status..."}. Falling back to Local Mode (Throttled).`);
+    lowQuotaMode = true;
   }
 
   const scanCfg =
@@ -470,10 +468,12 @@ function scanTournaments(
     .slice(
       0,
       Math.min(
-        lowQuotaMode ? 5 : (scanCfg.TOURNEYS || 300),
+        lowQuotaMode ? 100 : (scanCfg.TOURNEYS || 300) * 2,
         CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000,
       ),
     );
+
+  console.log(`[Scout] Search keywords: ${keywords.length} | Lottery: ${lotteryPool.length} | Mode: ${lowQuotaMode ? "SAFE" : "FULL"}`);
 
   Registry.Services.Core.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool
