@@ -390,14 +390,14 @@ function upsertDailySnapshots(
     if (existingMap.has(m.tag)) {
       const rowIdx = existingMap.get(m.tag)!;
       const updateData = [
-        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME),
         warFame,
         battleCredit,
       ];
@@ -409,14 +409,14 @@ function upsertDailySnapshots(
       processedTags.add(m.tag);
     } else {
       newRowsToAppend.push([
-        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
+        Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE),
         m.tag,
         m.name,
         m.role,
         m.trophies,
         Math.max(0, m.donations || 0),
         Math.max(0, m.donationsReceived || 0),
-        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
+        Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME),
         warFame,
         battleCredit,
       ]);
@@ -438,18 +438,21 @@ function upsertDailySnapshots(
     console.log(`ETL: Appending ${newRowsToAppend.length} records for ${todayStr} (Explicit-Update).`);
     
     // Calculate next available row instead of relying on append heuristics
-    meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
-    const nextRow = meta.sheets[0].properties.gridProperties.rowCount + 1;
+    // ⚡ FIX: Use getLastRow() (Native GAS) for accurate data boundary, avoiding empty rows
+    const nextRow = sheet.getLastRow() + 1;
     
     // ⚡ Atomic expansion of grid if needed (safety)
+    meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+    const currentGridRows = meta.sheets[0].properties.gridProperties.rowCount || 0;
     const requiredRows = nextRow + newRowsToAppend.length;
-    if (requiredRows > (meta.sheets[0].properties.gridProperties.rowCount || 0)) {
+
+    if (requiredRows > currentGridRows) {
        Sheets.Spreadsheets!.batchUpdate({
          requests: [{
            appendDimension: {
              sheetId: sheetId,
              dimension: "ROWS",
-             length: newRowsToAppend.length + 10 // Add buffer
+             length: Math.max(10, requiredRows - currentGridRows) // Add modest buffer
            }
          }]
        }, ssId);
@@ -499,7 +502,7 @@ function upsertDailySnapshots(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.DATE, endColumnIndex: 2 + S_DB.DATE },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATE } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },
@@ -513,7 +516,7 @@ function upsertDailySnapshots(
         {
           repeatCell: {
             range: { sheetId, startRowIndex: startRow - 1, endRowIndex: gridRowCount - 1, startColumnIndex: 1 + S_DB.LAST_SEEN, endColumnIndex: 2 + S_DB.LAST_SEEN },
-            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
             fields: "userEnteredFormat.numberFormat"
           }
         },

@@ -695,7 +695,7 @@ function renderHeadhunterView(
     c.donations,
     c.cards,
     c.war,
-    Utilities.formatDate(c.foundDate, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DISPLAY),
+    Utilities.formatDate(c.foundDate, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME),
     c.rawScore,
     (c.potentialScore || 0),
   ]);
@@ -765,7 +765,7 @@ function renderHeadhunterView(
       {
         repeatCell: {
           range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 2 },
-          cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY } } },
+          cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
           fields: "userEnteredFormat.numberFormat"
         }
       }] : [])
