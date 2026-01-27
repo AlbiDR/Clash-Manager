@@ -519,9 +519,9 @@ function updateLeaderboard(dryRun: boolean = false): void {
             rule: {
               ranges: [{ sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: L.PERF_SCORE + 1, endColumnIndex: L.PERF_SCORE + 2 }],
               gradientRule: {
-                minpoint: { color: { red: 0.98, green: 0.92, blue: 0.92 }, type: "NUMBER", value: "0" },
-                midpoint: { color: { red: 1, green: 0.95, blue: 0.8 }, type: "NUMBER", value: "50" },
-                maxpoint: { color: { red: 0.92, green: 0.98, blue: 0.92 }, type: "NUMBER", value: "100" }
+                minpoint: { color: { red: 1, green: 1, blue: 1 }, type: "NUMBER", value: "0" },
+                midpoint: { color: { red: 1, green: 0.949, blue: 0.8 }, type: "NUMBER", value: "50" },
+                maxpoint: { color: { red: 0.415, green: 0.658, blue: 0.309 }, type: "NUMBER", value: "100" }
               }
             },
             index: 0
