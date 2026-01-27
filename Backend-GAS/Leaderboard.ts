@@ -243,7 +243,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
   const memberDbData = new Map<
     string,
-    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string>; totalBattleCredits: number; discoveredBattleDays: Set<string> }
+    { firstSeen: Date; weeklyMax: Map<string, number>; battleWeeks: Set<string>; totalBattleCredits: number; discoveredBattleDays: Set<string>; dailyBattleCredits: Map<string, number> }
   >();
 
   if (dbSheet && dbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -271,7 +271,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
           weeklyMax: new Map(), 
           battleWeeks: new Set(), 
           totalBattleCredits: 0,
-          discoveredBattleDays: new Set()
+          discoveredBattleDays: new Set(),
+          dailyBattleCredits: new Map()
         });
       }
 
@@ -287,11 +288,12 @@ function updateLeaderboard(dryRun: boolean = false): void {
           addWarEntry(tag, weekId, fameVal);
           h.battleWeeks.add(weekId); // Mark this week as seen during a battle phase
           
-          // 🛡️ DISCOVERY-BASED TRACKING: Add unique logical day string
-          h.discoveredBattleDays.add(Registry.Services.Time.formatDate(date));
+          // 🛡️ DISCOVERY-BASED TRACKING: Add unique calendar-day string (dd/MM/yyyy)
+          h.discoveredBattleDays.add(Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE));
       }
       
-      // ⚔️ BATTLE CREDITS AGGREGATION
+      // ⚔️ BATTLE CREDITS AGGREGATION (Day-Aware)
+      const dateKey = Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE);
       const rawBattleCredits = row[S_DB.BATTLE_CREDITS];
       let creditVal = Number(rawBattleCredits);
       
@@ -301,8 +303,19 @@ function updateLeaderboard(dryRun: boolean = false): void {
       }
       
       if (creditVal > 0) {
-          h.totalBattleCredits += creditVal;
+          // Update daily MAX credits to prevent inflation from multiple logs per day
+          const currentDayMax = h.dailyBattleCredits.get(dateKey) || 0;
+          if (creditVal > currentDayMax) {
+              h.dailyBattleCredits.set(dateKey, creditVal);
+          }
       }
+    });
+
+    // ⚔️ SUMMATION: Finalize total battle credits from daily maximums
+    memberDbData.forEach(h => {
+        let sum = 0;
+        h.dailyBattleCredits.forEach(val => sum += val);
+        h.totalBattleCredits = sum;
     });
   }
 
