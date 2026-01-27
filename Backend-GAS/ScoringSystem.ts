@@ -176,12 +176,12 @@ var ScoringSystem: IScoringSystem = {
       typeof CONFIG !== "undefined"
         ? CONFIG.SCHEMA.LB
         : {
-            PERF_SCORE: 14,
-            RAW_SCORE: 13,
-            WAR_RATE: 10,
-            TOTAL_DON: 8,
-            DAYS: 5,
-            TROPHIES: 4,
+            PERF_SCORE: 13,
+            RAW_SCORE: 12,
+            WAR_RATE: 9,
+            TOTAL_DON: 7,
+            DAYS: 4,
+            TROPHIES: 3,
           };
 
     // Priority 1: Current Performance (includes decay)
