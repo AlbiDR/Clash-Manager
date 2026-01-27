@@ -54,6 +54,15 @@ var View: IView = {
     optHeaders = null,
   ) {
     if (!sheet) return;
+    
+    // 🧹 PRE-CLEANUP: Remove existing bandings locally to prevent conflicts
+    // This is safe to do before the batch update
+    try {
+      sheet.getBandings().forEach(b => b.remove());
+    } catch (e) {
+      console.warn(`View: Could not remove existing bandings: ${e}`);
+    }
+
     const L = CONFIG.LAYOUT;
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
@@ -138,6 +147,24 @@ var View: IView = {
         }
       });
       
+      // 5. DATA COLUMN WIDTHS (Default 100)
+      requests.push({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols },
+          properties: { pixelSize: 100 },
+          fields: "pixelSize"
+        }
+      });
+
+      // 6. DATA ROW HEIGHTS (Default 25px for "Clean" look)
+      requests.push({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "ROWS", startIndex: L.DATA_START_ROW - 1, endIndex: totalRows - 1 },
+          properties: { pixelSize: 25 },
+          fields: "pixelSize"
+        }
+      });
+      
       // 7. BUFFER PLACEHOLDERS (Column A and End Column) Delivery
       // Left Buffer (A2)
       requests.push({
@@ -193,10 +220,58 @@ var View: IView = {
   getStandardVisualRequests: function (sheetId, contentRows, contentCols) {
     const L = CONFIG.LAYOUT;
     // Robust calculation: Data Start + Actual Data Rows + 1 Buffer Row
-    const totalRows = L.DATA_START_ROW + Math.max(0, contentRows) + 1;
+    // Robust calculation: Data Start + Actual Data Rows + 1 Buffer Row
+    const totalRows = L.DATA_START_ROW + Math.max(0, contentRows); // contentRows includes the last data row. Buffer row added via gridProperties if needed, but here we define the visual range.
+    // Actually, totalRows for visual requests (borders etc) usually extends to the end of the grid.
+    // Let's rely on the passed contentRows to define the "Table" area.
+    
+    // Strict Grid Calculation
+    // Header (DATA_START_ROW - 1) + Content (contentRows) + Buffer (1)
+    const strictTotalRows = (L.DATA_START_ROW - 1) + contentRows + 1; 
     const totalCols = contentCols + 2;
 
     return [
+        // 0. STRICT GRID RESIZE (Trim the sheet)
+        {
+          updateSheetProperties: {
+            properties: {
+              sheetId: sheetId,
+              gridProperties: { rowCount: strictTotalRows, columnCount: totalCols }
+            },
+            fields: 'gridProperties.rowCount,gridProperties.columnCount'
+          }
+        },
+        // 0.5 DATA ROW HEIGHTS (Ensure 25px)
+        {
+          updateDimensionProperties: {
+            range: { sheetId, dimension: "ROWS", startIndex: L.DATA_START_ROW - 1, endIndex: strictTotalRows - 1 },
+            properties: { pixelSize: 25 },
+            fields: "pixelSize"
+          }
+        },
+        // 0.6 BUFFER ROW HEIGHT (Last Row 25px)
+        {
+            updateDimensionProperties: {
+                range: { sheetId, dimension: "ROWS", startIndex: strictTotalRows - 1, endIndex: strictTotalRows },
+                properties: { pixelSize: L.BUFFER_SIZE },
+                fields: "pixelSize"
+            }
+        },
+        // 0.7 BUFFER COLUMN WIDTHS
+        {
+            updateDimensionProperties: {
+                range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+                properties: { pixelSize: L.BUFFER_SIZE },
+                fields: "pixelSize"
+            }
+        },
+        {
+            updateDimensionProperties: {
+                range: { sheetId, dimension: "COLUMNS", startIndex: totalCols - 1, endIndex: totalCols },
+                properties: { pixelSize: L.BUFFER_SIZE },
+                fields: "pixelSize"
+            }
+        },
         // 1. Header background (#f3f3f3)
         {
           repeatCell: {
@@ -222,13 +297,33 @@ var View: IView = {
           }
         },
         // 4. Borders
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: strictTotalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: strictTotalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: strictTotalRows - 1, endRowIndex: strictTotalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
-        // 5. Auto-Size Dimensions
+        
+        // 5. ALTERNATING ROW COLORS (Banding)
+        {
+          addBanding: {
+            banding: {
+              range: {
+                sheetId: sheetId,
+                startRowIndex: L.DATA_START_ROW - 1,
+                endRowIndex: strictTotalRows - 1, // Exclude buffer row
+                startColumnIndex: 1,
+                endColumnIndex: 1 + contentCols
+              },
+              rowProperties: {
+                firstBandColor: { red: 1, green: 1, blue: 1 }, // White
+                secondBandColor: { red: 0.96, green: 0.96, blue: 0.96 } // Very Light Gray
+              }
+            }
+          }
+        },
+        
+        // 6. Auto-Size Dimensions (Columns Only - Rows are fixed 25px)
         { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } },
         // 6. Buffer Columns A & End Color Match
         {

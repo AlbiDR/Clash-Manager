@@ -495,12 +495,24 @@ function upsertDailySnapshots(
   // ----------------------------------------------------------------------------
   // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
   // ----------------------------------------------------------------------------
-  meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
-  const gridRowCount = meta.sheets[0].properties.gridProperties.rowCount || 0;
-  // Standard dimension is: HeaderRows + DateRows + 1 BufferRow.
-  // We subtract the header rows and the buffer row to get canonical dataRowCount.
-  const dataRowCount = Math.max(0, gridRowCount - CONFIG.LAYOUT.DATA_START_ROW - 1); 
+  // ----------------------------------------------------------------------------
+  // 6. TOTAL ATOMIC VISUAL RESTORATION (Consolidated)
+  // ----------------------------------------------------------------------------
+  
+  // ⚡ FIX: Recalculate LastRow to get the TRUE content size after all edits/appends.
+  // We want the table to end EXACTLY after the data.
+  const finalLastRow = sheet.getLastRow();
+  // Data Rows = FinalLastLine - HeaderBaseIndex. 
+  // If headers end at row 2 (index 2 in 1-based), and data starts at row 3.
+  const dataRowCount = Math.max(0, finalLastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1));
   const contentCols = headerRow.length;
+
+  // 🧹 PRE-CLEANUP: Remove existing bandings before re-applying via View
+  try {
+      sheet.getBandings().forEach(b => b.remove());
+  } catch (e) {
+      console.warn(`ETL: Could not remove existing bandings: ${e}`);
+  }
 
   const finalVisualRequests: any[] = [
     // 6A. HEADERS DELIVERY (Row 2 Style & Value Sync)
