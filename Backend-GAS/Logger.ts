@@ -244,7 +244,21 @@ function pruneStaleData(
 
   for (let i = 0; i < tagValues.length; i++) {
     const tag = String(tagValues[i][0] || "");
-    const dateVal = dateValues[i] && dateValues[i][0] ? new Date(dateValues[i][0]) : new Date(0);
+    let dateVal = new Date(0);
+    const rawDate = dateValues[i] && dateValues[i][0];
+    
+    if (rawDate instanceof Date) {
+       dateVal = rawDate;
+    } else if (rawDate) {
+       const s = String(rawDate).trim();
+       const parts = s.split(/[\/\-\.]/);
+       // Heuristic for dd/MM/yyyy
+       if (parts.length >= 3 && parts[2].length === 4) {
+           dateVal = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+       } else {
+           dateVal = new Date(s);
+       }
+    }
     
     if (!tagSeenData.has(tag) || dateVal > tagSeenData.get(tag)!) {
       tagSeenData.set(tag, dateVal);
@@ -335,42 +349,49 @@ function upsertDailySnapshots(
   const individualUpdates: Array<{range: string, values: any[][]}> = [];
   const newRowsToAppend: any[][] = [];
 
-  // 1. Sort & Locate "Today's" Block (Advanced API way)
-  const ssId = sheet.getParent().getId();
-  const sheetId = sheet.getSheetId();
-  const sheetName = sheet.getName();
-  let meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
-  let rowCount = meta.sheets[0].properties.gridProperties.rowCount;
+  // 1A. Robust Date Parser for 'dd/MM/yyyy' strings
+  const parseDateFromCell = (val: any): Date | null => {
+    if (val instanceof Date) return val;
+    if (!val) return null;
+    const s = String(val).trim();
+    // Match dd/MM/yyyy
+    const parts = s.split(/[\/\-\.]/); 
+    if (parts.length >= 3) {
+      // Assuming dd/MM/yyyy
+       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    }
+    return new Date(s); // Fallback
+  };
 
-  if (rowCount >= startRow) {
-      // 1A. Atomic Sort by Date (Descending) to bring Today's entries to the top
-      Sheets.Spreadsheets!.batchUpdate({
-        requests: [{
-          sortRange: {
-            range: { sheetId, startRowIndex: startRow - 1, endRowIndex: rowCount, startColumnIndex: 1, endColumnIndex: 1 + headerRow.length },
-            sortSpecs: [{ dimensionIndex: 1 + S_DB.DATE, sortOrder: "DESCENDING" }]
+  // 1B. Fetch LAST N rows to check for "Today" (Append-Only Logic)
+  meta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheetName], includeGridData: false });
+  rowCount = meta.sheets[0].properties.gridProperties.rowCount;
+  const lastRow = sheet.getLastRow(); // Actual data end
+  
+  if (lastRow >= startRow) {
+      // Fetch buffer of last 150 rows to catch any recent entries
+      const scanSize = 150;
+      const readStart = Math.max(startRow, lastRow - scanSize + 1);
+      const readLen = lastRow - readStart + 1;
+      
+      if (readLen > 0) {
+        const dataRange = `'${sheetName}'!B${readStart}:${String.fromCharCode(65 + 1 + headerRow.length)}${lastRow}`;
+        const dataRes = Sheets.Spreadsheets!.Values!.get(ssId, dataRange);
+        const scanValues = dataRes.values || [];
+
+        // Identify which rows are actually "Today" and map them by Tag
+        scanValues.forEach((row: any[], idx: number) => {
+          const d = parseDateFromCell(row[S_DB.DATE]);
+          // Compare YYYY-MM-DD strings
+          if (d && Registry.Services.Time.formatDate(d) === Registry.Services.Time.formatDate(today)) {
+            const tag = String(row[S_DB.TAG]);
+            if (!existingMap.has(tag)) {
+               existingMap.set(tag, readStart + idx); // Correct row index
+               todayValues.push(row);
+            }
           }
-        }]
-      }, ssId);
-
-      // 1B. Fetch enough rows to catch any entries from "Today"
-      // We fetch 100 rows as a safety buffer for a 50-member clan
-      const scanLimit = Math.min(100, rowCount - startRow + 1);
-      const dataRange = `'${sheetName}'!B${startRow}:${String.fromCharCode(65 + 1 + headerRow.length)}${startRow + scanLimit - 1}`;
-      const dataRes = Sheets.Spreadsheets!.Values!.get(ssId, dataRange);
-      const scanValues = dataRes.values || [];
-
-      // Identify which rows are actually "Today" and map them by Tag
-      scanValues.forEach((row: any[], idx: number) => {
-        const d = row[S_DB.DATE] ? new Date(row[S_DB.DATE]) : null;
-        if (d && Registry.Services.Time.formatDate(d) === todayStr) {
-          const tag = String(row[S_DB.TAG]);
-          if (!existingMap.has(tag)) {
-             existingMap.set(tag, startRow + idx);
-             todayValues.push(row);
-          }
-        }
-      });
+        });
+      }
   }
 
   // 3. Process API Data
