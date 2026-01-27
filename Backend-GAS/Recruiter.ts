@@ -189,9 +189,11 @@ function scoutRecruits(): void {
     4000,
     Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies),
   );
+  console.log(`[Scout] Target: ${target} | Existing: ${existing.size} | MinTrophies: ${minTrophies}`);
 
   // 4. Run the optimized scan
   const scanned = scanTournaments(minTrophies, existing, blacklistSet, lowQuotaMode);
+  console.log(`[Scout] Scan complete. Found ${scanned.length} candidates.`);
 
   // 5. Intelligent Merge
   let newArrivals = 0;
@@ -206,6 +208,7 @@ function scoutRecruits(): void {
     }
     existing.set(c.tag, c);
   });
+  console.log(`[Scout] Merge: ${newArrivals} New Arrivals | ${updatedExisting} Updated.`);
 
   // 6. Final Pool Scoring & Capping
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
