@@ -331,19 +331,30 @@ var View: IView = {
             fields: "pixelSize"
           }
         },
-        // 6. Buffer Columns A & End Color Match
+        // 6. Buffer Columns A & End Color Match (Invisible ".")
+        // Ensures Schema.ts can correctly resolve indices even on new/empty sheets
         {
-          repeatCell: {
+          updateCells: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
-            cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
-            fields: "userEnteredFormat(textFormat)"
+            rows: [{ 
+              values: [{ 
+                userEnteredValue: { stringValue: "." }, 
+                userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } 
+              }] 
+            }],
+            fields: "userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor)"
           }
         },
         {
-          repeatCell: {
+          updateCells: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols },
-            cell: { userEnteredFormat: { textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } },
-            fields: "userEnteredFormat(textFormat)"
+            rows: [{ 
+              values: [{ 
+                userEnteredValue: { stringValue: "." }, 
+                userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } 
+              }] 
+            }],
+            fields: "userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor)"
           }
         }
     ];
