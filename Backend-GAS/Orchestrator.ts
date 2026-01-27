@@ -107,28 +107,36 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
 }
 
 /**
- * TASK A: UPDATE MEMBER STATS (Logger + Leaderboard)
- * Recommended Trigger: Time-Based -> Every 6 Hours
+ * TASK A1: UPDATE DATABASE (Logger)
+ * Recommended Trigger: Time-Based -> Every 1 Hour
  */
-function taskUpdateMemberStats(): void {
-  console.log("⏰ TASK START: Update Member Stats (DB + LB)");
+function taskUpdateDatabase(): void {
+  console.log("⏰ TASK START: Update Database");
 
-  Registry.Services.Core.executeSafely("TASK_MEMBER_STATS", () => {
+  Registry.Services.Core.executeSafely("TASK_DB", () => {
     try {
-      console.log("  >> Step 1: Updating Database...");
       Registry.Actions["sync:database"]();
-
-      Utilities.sleep(10000);
-
-      console.log("  >> Step 2: Updating Leaderboard...");
-      Registry.Actions["sync:leaderboard"]();
-
-      console.log("  >> Step 3: Refreshing PWA...");
-      Registry.Actions["sync:webapp"]();
-
-      console.log("⏰ TASK END: Member Stats Sync Complete.");
+      console.log("⏰ TASK END: Database Update Complete.");
     } catch (e: any) {
-      console.error(`❌ TASK FAILED (Member Stats): ${e.message}`);
+      console.error(`❌ TASK FAILED (DB): ${e.message}`);
+    }
+  });
+}
+
+/**
+ * TASK A2: UPDATE LEADERBOARD (Scoring)
+ * Recommended Trigger: Time-Based -> Every 1 Hour
+ */
+function taskUpdateLeaderboard(): void {
+  console.log("⏰ TASK START: Update Leaderboard");
+
+  Registry.Services.Core.executeSafely("TASK_LB", () => {
+    try {
+      Registry.Actions["sync:leaderboard"]();
+      Registry.Actions["sync:webapp"]();
+      console.log("⏰ TASK END: Leaderboard Update Complete.");
+    } catch (e: any) {
+      console.error(`❌ TASK FAILED (LB): ${e.message}`);
     }
   });
 }
@@ -173,8 +181,14 @@ function createTriggers(): void {
 
   console.log("🚀 Creating fresh triggers...");
 
-  // 1. Member Stats Sync (Every 1 Hour)
-  ScriptApp.newTrigger("taskUpdateMemberStats")
+  // 1. Database Sync (Every 1 Hour)
+  ScriptApp.newTrigger("taskUpdateDatabase")
+    .timeBased()
+    .everyHours(1)
+    .create();
+
+  // 2. Leaderboard Update (Every 1 Hour)
+  ScriptApp.newTrigger("taskUpdateLeaderboard")
     .timeBased()
     .everyHours(1)
     .create();
@@ -204,8 +218,11 @@ function dispatchMaster(): void {
   // 1. Warm up first
   taskWarmUpWorker();
   
-  // 2. Full Data Sync
-  taskUpdateMemberStats();
+  // 2. Full Data Ingestion
+  taskUpdateDatabase();
+  
+  // 3. Score Calculation & Rendering
+  taskUpdateLeaderboard();
 
   console.log("🎭 MASTER DISPATCH: Sequence complete.");
 }
@@ -500,7 +517,8 @@ function verifyApiKeysInternal(
  */
 Object.assign(this as any, {
   onOpen,
-  taskUpdateMemberStats,
+  taskUpdateDatabase,
+  taskUpdateLeaderboard,
   taskFastScout,
   setupMobileTriggers,
   handleMobileEdit,
