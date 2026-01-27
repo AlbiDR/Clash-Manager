@@ -218,10 +218,10 @@ function scoutRecruits(): void {
     const lastRow = lbSheet.getLastRow();
     
     // 🏗️ HYBRID BENCHMARKING (API Sprint: Selective Column Ingestion)
-    const perfCol = String.fromCharCode(65 + L.PERF_SCORE);
-    const trophiesCol = String.fromCharCode(65 + L.TROPHIES);
-    const donCol = String.fromCharCode(65 + L.TOTAL_DON);
-    const historyCol = String.fromCharCode(65 + L.HISTORY);
+    const perfCol = String.fromCharCode(65 + 1 + L.PERF_SCORE); // Corrected indexing (B=0)
+    const trophiesCol = String.fromCharCode(65 + 1 + L.TROPHIES);
+    const donCol = String.fromCharCode(65 + 1 + L.TOTAL_DON);
+    const historyCol = String.fromCharCode(65 + 1 + L.HISTORY);
 
     const ranges = [
       `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
