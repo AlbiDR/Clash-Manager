@@ -52,7 +52,7 @@ This automatically configures the following lifecycle:
 
 - `taskWarmUpWorker`: Every **10 minutes** (Prevents Render Worker sleep).
 - `taskFastScout`: Every **30 minutes** (Headhunter scanning).
-- `taskUpdateMemberStats`: Every **1 hour** (Main ETL and scoring).
+- `taskUpdateDatabase`: Every **1 hour** (Main ETL and scoring).
 
 ---
 

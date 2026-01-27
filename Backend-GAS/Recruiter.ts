@@ -451,7 +451,8 @@ function scanTournaments(
   // 1. Unified Health Handshake (Force Refresh for Scout)
   const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
   const remoteExpandEnabled = Registry.Services.Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
-  lowQuotaMode = false;
+  
+  console.log(`[Scout] Search keywords: ${keywords.length} | Lottery: ${lotteryPool.length} | Mode: ${lowQuotaMode ? "SAFE" : "FULL"}`);
 
   if (!remoteAvailable) {
       const lastErr = Registry.Services.Network.getLastWorkerError();
@@ -479,13 +480,16 @@ function scanTournaments(
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
 
+  console.log(`[Scout] Selected ${tourneyTags.length} tournaments for deep scanning.`);
+
   if (tourneyTags.length === 0) return [];
 
   let candidates: any[] = [];
   let usedRemote = false;
 
-  // 2. Tournament Scouting (Remote vs Local)
+  // 2. Tournament Scouting
   if (remoteAvailable && remoteExpandEnabled) {
+    console.log(`[Scout] Executing REMOTE SCAN (${tourneyTags.length} units)...`);
     try {
       candidates = Registry.Services.Network.scanTournamentsRemote(
         tourneyTags,
@@ -495,15 +499,12 @@ function scanTournaments(
       );
       usedRemote = true;
     } catch (e: any) {
-      console.warn(`[Recruiter] Remote tournament scan failed: ${e.message}`);
+      console.warn(`[Scout] Remote Scan Failed: ${e.message}`);
     }
-  }
-
-  if (!usedRemote) {
+  } else {
+    console.log(`[Scout] Executing LOCAL SCAN (${tourneyTags.length} units)...`);
     const details = Registry.Services.Network.fetchRoyaleAPI(
-      tourneyTags.map(
-        (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
-      ),
+      tourneyTags.map((tag) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(tag)}`)
     );
 
     details.forEach((d: TournamentResult) => {
