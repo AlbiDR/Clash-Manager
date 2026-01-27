@@ -323,8 +323,14 @@ var View: IView = {
           }
         },
         
-        // 6. Auto-Size Dimensions (Columns Only - Rows are fixed 25px)
-        { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols } } },
+        // 6. Fixed Column Widths (Ensuring 100px for "Technical" look)
+        {
+          updateDimensionProperties: {
+            range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols },
+            properties: { pixelSize: 100 },
+            fields: "pixelSize"
+          }
+        },
         // 6. Buffer Columns A & End Color Match
         {
           repeatCell: {
