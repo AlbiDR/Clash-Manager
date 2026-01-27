@@ -27,17 +27,17 @@ function migrateSystemDates(): void {
   // 1. CLAN DATABASE MIGRATION
   processSheetMigration(ss.getSheetByName(CONFIG.SHEETS.DB), [
     { key: "DATE", column: CONFIG.SCHEMA.DB.DATE, format: "ddd dd/mm/yyyy" },
-    { key: "LAST_SEEN", column: CONFIG.SCHEMA.DB.LAST_SEEN, format: "dd/mm/yyyy HH:mm" }
+    { key: "LAST_SEEN", column: CONFIG.SCHEMA.DB.LAST_SEEN, format: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY }
   ]);
 
   // 2. LEADERBOARD MIGRATION
   processSheetMigration(ss.getSheetByName(CONFIG.SHEETS.LB), [
-    { key: "LAST_SEEN", column: CONFIG.SCHEMA.LB.LAST_SEEN, format: "dd/mm/yyyy HH:mm" }
+    { key: "LAST_SEEN", column: CONFIG.SCHEMA.LB.LAST_SEEN, format: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY }
   ]);
 
   // 3. HEADHUNTER MIGRATION
   processSheetMigration(ss.getSheetByName(CONFIG.SHEETS.HH), [
-    { key: "FOUND_DATE", column: CONFIG.SCHEMA.HH.FOUND_DATE, format: "dd/mm/yyyy HH:mm" }
+    { key: "FOUND_DATE", column: CONFIG.SCHEMA.HH.FOUND_DATE, format: CONFIG.SYSTEM.DATE_FORMAT_DISPLAY }
   ]);
 
   console.log("✅ SYSTEM MIGRATION COMPLETE: All dates standardized.");
