@@ -150,7 +150,11 @@ const NetworkInternal = {
   },
 
   /**
-   * Generates a stable cache key
+   * Generates a stable, filesystem-safe cache key.
+   *
+   * @remarks
+   * Uses MD5 hashing to ensure that non-deterministic or overly long URLs
+   * result in a consistent 50-character identifier for CacheService.
    */
   hashKey(str: string): string {
     return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, str)).slice(0, 50);
@@ -165,8 +169,27 @@ var Network: INetwork = {
   /**
    * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
    * Handles caching, deduplication, key rotation, and quota management.
+   *
+   * @remarks
+   * This engine implements a multi-layer strategy to maximize reliability and
+   * minimize latency:
+   * 1. In-memory Execution Cache: Prevents redundant fetches within the same
+   *    script run.
+   * 2. Persistent Script Cache: Utilizes Google's CacheService for 5-15 minute
+   *    data persistence between runs.
+   * 3. Remote Worker Delegation: Offloads high-volume requests to external
+   *    compute to bypass Google's daily UrlFetchApp limits.
+   * 4. Smart Retry: Handles 429/403 errors by rotating API keys or switching
+   *    to the worker.
+   *
+   * @warning Consumes Google Apps Script UrlFetch quota when no remote worker
+   * is available or for low-volume fallback.
+   *
+   * @param urls - Array of Clash Royale API endpoints to fetch.
+   * @param scoring - Optional weights for candidate scoring during fetch.
+   * @returns Array of parsed JSON responses.
    */
-  fetchRoyaleAPI(urls: string[], scoring = null) {
+  fetchRoyaleAPI(urls: string[], scoring: ScoringWeights | null = null): any[] {
     if (!urls || urls.length === 0) return [];
 
     // 1. Initialize Quota
@@ -222,6 +245,8 @@ var Network: INetwork = {
     }
 
     // Truncate if necessary (Safety First)
+    // Prevents the script from being suspended or failing completely if the
+    // internal budget is exceeded.
     const validUrls = urlsToFetch.slice(0, remainingQuota);
     NetworkInternal.updateQuota(validUrls.length);
 
@@ -247,18 +272,23 @@ var Network: INetwork = {
         });
 
         try {
-          let responses: any[];
+          let responses: any[] = [];
 
-          // 🛡️ WORKER FIRST STRATEGY: High volume MUST go through worker if available
+          // 🛡️ WORKER FIRST STRATEGY: High volume MUST go through worker if available.
+          // This preserves the Google Cloud project's UrlFetch quota for
+          // critical local tasks.
           if (useRemote) {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e: any) {
                 console.warn(`[Network] Worker Failure: ${e.message}.`);
+
+                // Intent: Prevent a single massive job from consuming the
+                // entire daily local quota if the worker is down.
                 if (isHighVolume) {
                    console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to preserve core quota.`);
                    useRemote = false; 
-                   break; // Abort chunk immediately - NO local fallback for high volume
+                   break; // Abort this chunk's attempts - NO local fallback for high volume
                 }
                 useRemote = false; 
                 continue; // Retry single items locally if allowed
@@ -326,7 +356,14 @@ var Network: INetwork = {
     return finalResults;
   },
 
-  fetchClanDataSmart(cleanTag) {
+  /**
+   * Fetches full clan profile, race status, and history.
+   *
+   * @warning Consumes Google Apps Script UrlFetch quota or Remote Worker quota.
+   *
+   * @param cleanTag - URL-encoded clan tag.
+   */
+  fetchClanDataSmart(cleanTag: string): ClanDataResult {
     const cacheKey = `clan_full_${cleanTag.replace(/%/g, '_')}`;
     const scriptCache = CacheService.getScriptCache();
     
@@ -384,7 +421,14 @@ var Network: INetwork = {
     return { members, race, history: null, log };
   },
 
-  fetchPublicJson(type) {
+  /**
+   * Fetches public member or warlog data from the remote worker.
+   *
+   * @warning Consumes Google Apps Script UrlFetch quota for the worker handshake.
+   *
+   * @param type - Type of data to fetch ('members' | 'warlog').
+   */
+  fetchPublicJson(type: "members" | "warlog"): any[] | null {
     if (!this.remoteWorkerHealthy()) return null;
     try {
         const payload = {
@@ -410,7 +454,18 @@ var Network: INetwork = {
     return null;
   },
 
-  remoteWorkerHealthy(force: boolean = false) {
+  /**
+   * Performs a diagnostic handshake with the Remote Worker.
+   *
+   * @remarks
+   * Implements a 5-minute cooldown for health checks to prevent spamming
+   * the worker's /health endpoint during high-frequency trigger execution.
+   *
+   * @warning Consumes Google Apps Script UrlFetch quota.
+   *
+   * @param force - If true, bypasses the 5-minute health cache.
+   */
+  remoteWorkerHealthy(force: boolean = false): boolean {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
         _LAST_WORKER_ERROR = "RemoteWorkerUrl is not configured in Script Properties.";
         return false;
@@ -480,7 +535,14 @@ var Network: INetwork = {
     return isHealthy;
   },
 
-  auditKeysRemote(keys) {
+  /**
+   * Validates a set of API keys via the remote worker.
+   *
+   * @warning Consumes Google Apps Script UrlFetch quota.
+   *
+   * @param keys - Array of name/value pairs representing API keys.
+   */
+  auditKeysRemote(keys: Array<{ name: string; value: string }>): Array<{ name: string; success: boolean; error?: string }> | null {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
     try {
         const payload = { apiKeys: keys.map(k => k.value) };
@@ -512,7 +574,18 @@ var Network: INetwork = {
     } catch(e) { return null; }
   },
 
-  scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, scoring = null) {
+  /**
+   * Scans global tournaments for potential recruits.
+   *
+   * @remarks
+   * This is the highest-volume task in the system. It should almost
+   * exclusively be run through a Remote Worker.
+   *
+   * @warning Consumes Google Apps Script UrlFetch quota for worker communication.
+   *
+   * @throws Error if the remote worker is not configured.
+   */
+  scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring: ScoringWeights | null = null): any[] {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
     
     const blacklist = Array.isArray(blacklistSet) ? blacklistSet : Array.from(blacklistSet);
