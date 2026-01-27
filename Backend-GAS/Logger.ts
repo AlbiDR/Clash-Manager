@@ -369,8 +369,8 @@ function upsertDailySnapshots(
   const lastRow = sheet.getLastRow(); // Actual data end
   
   if (lastRow >= startRow) {
-      // Fetch buffer of last 150 rows to catch any recent entries
-      const scanSize = 150;
+      // Fetch buffer of last 55 rows to catch any recent entries (50 members + buffer)
+      const scanSize = 55;
       const readStart = Math.max(startRow, lastRow - scanSize + 1);
       const readLen = lastRow - readStart + 1;
       
