@@ -93,7 +93,7 @@ var ScoringSystem: IScoringSystem = {
     totalBattleCredits: number,
     eligibleBattleDays: number,
   ): number {
-    if (eligibleBattleDays <= 0) return 100; // New player grace
+    if (eligibleBattleDays <= 0) return 0; // Discovered-based: No days seen = 0%
     
     const rate = Math.round((totalBattleCredits / eligibleBattleDays) * 100);
     return Math.min(100, Math.max(0, rate));
