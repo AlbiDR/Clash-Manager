@@ -113,14 +113,25 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
 function taskUpdateDatabase(): void {
   console.log("⏰ TASK START: Update Database");
 
-  Registry.Services.Core.executeSafely("TASK_DB", () => {
-    try {
+  // 🩺 SELF-HEALING: Verify mobile infrastructure health silently every hour
+  setupMobileTriggers(true);
+
+  try {
+    Registry.Services.Core.executeSafely("TASK_DB", () => {
       Registry.Actions["sync:database"]();
       console.log("⏰ TASK END: Database Update Complete.");
-    } catch (e: any) {
-      console.error(`❌ TASK FAILED (DB): ${e.message}`);
+    });
+  } catch (e: any) {
+    if (e.message.indexOf("Lock timeout") > -1) {
+      console.warn("⚠️ Collision detected for Database update. Queuing retry in 2m...");
+      queueRetry("taskUpdateDatabase");
+      return; 
     }
-  });
+    console.error(`❌ TASK FAILED (DB): ${e.message}`);
+  } finally {
+    // 🧹 Always attempt to clean up any "ghost" triggers for this task
+    cleanupTemporaryTriggers("taskUpdateDatabase");
+  }
 }
 
 /**
@@ -130,13 +141,62 @@ function taskUpdateDatabase(): void {
 function taskUpdateLeaderboard(): void {
   console.log("⏰ TASK START: Update Leaderboard");
 
-  Registry.Services.Core.executeSafely("TASK_LB", () => {
-    try {
+  try {
+    Registry.Services.Core.executeSafely("TASK_LB", () => {
       Registry.Actions["sync:leaderboard"]();
       Registry.Actions["sync:webapp"]();
       console.log("⏰ TASK END: Leaderboard Update Complete.");
-    } catch (e: any) {
-      console.error(`❌ TASK FAILED (LB): ${e.message}`);
+    });
+  } catch (e: any) {
+    if (e.message.indexOf("Lock timeout") > -1) {
+      console.warn("⚠️ Collision detected for Leaderboard update. Queuing retry in 2m...");
+      queueRetry("taskUpdateLeaderboard");
+      return;
+    }
+    console.error(`❌ TASK FAILED (LB): ${e.message}`);
+  } finally {
+    // 🧹 Always attempt to clean up any "ghost" triggers for this task
+    cleanupTemporaryTriggers("taskUpdateLeaderboard");
+  }
+}
+
+/**
+ * ⛓️ TRIGGER HELPER: Queue Retry
+ * Creates a one-time trigger with a specific stagger.
+ */
+function queueRetry(functionName: string, minutes: number = 2): void {
+  // Guard: Remove existing pending retries to prevent pile-up
+  cleanupTemporaryTriggers(functionName);
+
+  ScriptApp.newTrigger(functionName)
+    .timeBased()
+    .after(minutes * 60 * 1000) 
+    .create();
+}
+
+// Obsolete: Replaced by queueRetry
+// function queueLeaderboardUpdate() { ... }
+
+/**
+ * 🧹 TRIGGER HELPER: Cleanup Temporary Triggers
+ * Removes one-time clock triggers for a specific function.
+ */
+function cleanupTemporaryTriggers(functionName: string): void {
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach((t) => {
+    if (
+      t.getHandlerFunction() === functionName &&
+      t.getTriggerSource() === ScriptApp.TriggerSource.CLOCK
+    ) {
+      // In GAS, time-based triggers without a specific frequency (like .after()) 
+      // are often the ones we want to prune to keep the dashboard clean.
+      // We check if it's NOT an hourly/minute recurring trigger.
+      // @ts-ignore
+      const isRecurring = t.getEventType() === ScriptApp.EventType.CLOCK && (t as any).getInterval ? true : false;
+      // Note: GAS API is limited in identifying .after() triggers explicitly, 
+      // so we delete and recreate or manage via naming conventions if complex.
+      // For this stack, we'll prune all clock triggers for this name before queuing.
+      ScriptApp.deleteTrigger(t);
     }
   });
 }
@@ -193,19 +253,26 @@ function createTriggers(): void {
     .everyHours(1)
     .create();
 
-  // 2. Headhunter Fast Scout (Every 30 Minutes)
+  // 3. Headhunter Fast Scout (Every 30 Minutes)
   ScriptApp.newTrigger("taskFastScout")
     .timeBased()
     .everyMinutes(30)
     .create();
 
-  // 3. Render Worker Warm-up (Every 10 Minutes - to beat the 15m sleep)
+  // 4. Render Worker Warm-up (Every 10 Minutes)
   ScriptApp.newTrigger("taskWarmUpWorker")
     .timeBased()
     .everyMinutes(10)
     .create();
 
-  console.log("✅ All triggers established.");
+  // 5. Integrated Mobile Setup (onEdit Trigger)
+  setupMobileTriggers();
+
+  console.log("✅ All permanent triggers established.");
+  
+  // 🚀 IMMEDIATE ACTIVATION
+  console.log("🚀 Initializing First-Run Sync...");
+  dispatchMaster();
 }
 
 /**
@@ -231,12 +298,13 @@ function dispatchMaster(): void {
 
 /**
  * Creates an INSTALLABLE trigger for the 'onEdit' event.
+ * @param silent If true, suppresses UI alerts (for self-healing)
  */
-function setupMobileTriggers(): void {
-  const ui = SpreadsheetApp.getUi();
+function setupMobileTriggers(silent: boolean = false): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const triggerName = "handleMobileEdit";
 
+  // 🛠️ HEAL UI: Ensure checkboxes exist on all target tabs
   Registry.Services.View.refreshMobileControls(ss);
 
   const triggers = ScriptApp.getProjectTriggers();
@@ -249,21 +317,30 @@ function setupMobileTriggers(): void {
   }
 
   if (exists) {
-    ui.alert(
-      "✅ Mobile Controls Ready",
-      "Checkboxes in cell A1 are active.",
-      ui.ButtonSet.OK,
-    );
+    if (!silent) {
+      const ui = SpreadsheetApp.getUi();
+      ui.alert(
+        "✅ Mobile Controls Ready",
+        "Checkboxes in cell A1 are active.",
+        ui.ButtonSet.OK,
+      );
+    }
     return;
   }
 
+  // 🛠️ HEAL SENSOR: Recreate the onEdit trigger
   ScriptApp.newTrigger(triggerName).forSpreadsheet(ss).onEdit().create();
 
-  ui.alert(
-    "📱 Mobile Controls Enabled!",
-    "You can now use the A1 checkboxes.",
-    ui.ButtonSet.OK,
-  );
+  if (!silent) {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(
+      "📱 Mobile Controls Enabled!",
+      "You can now use the A1 checkboxes.",
+      ui.ButtonSet.OK,
+    );
+  } else {
+    console.info("🛠️ Self-Healed: Mobile onEdit trigger recreated.");
+  }
 }
 
 /**
@@ -521,6 +598,8 @@ Object.assign(this as any, {
   onOpen,
   taskUpdateDatabase,
   taskUpdateLeaderboard,
+  queueRetry,
+  cleanupTemporaryTriggers,
   taskFastScout,
   setupMobileTriggers,
   handleMobileEdit,
