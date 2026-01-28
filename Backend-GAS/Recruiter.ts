@@ -145,6 +145,7 @@ function scoutRecruits(): void {
         (a: number, b: any) => a + (b.trophies || 0),
         0,
       ) / baselineData[0].items.length;
+    console.log(`[Scout] Raw Baseline: ${baselineData[0].items.length} members | AvgTrophies: ${avgTrophies}`);
   }
 
   // 🛡️ QUOTA GUARD
@@ -185,10 +186,16 @@ function scoutRecruits(): void {
 
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
-  const minTrophies = Math.max(
+  let minTrophies = Math.max(
     4000,
-    Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies),
+    Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies), // Reverted to 75% / 100%
   );
+
+  // 🛡️ USER OVERRIDE: Prioritize manual config if set
+  if (CONFIG.HEADHUNTER.MIN_TROPHIES > 0) {
+    minTrophies = CONFIG.HEADHUNTER.MIN_TROPHIES;
+  }
+
   console.log(`[Scout] Target: ${target} | Existing: ${existing.size} | MinTrophies: ${minTrophies}`);
 
   // 4. Run the optimized scan
@@ -477,6 +484,7 @@ function scanTournaments(
     );
 
   console.log(`[Scout] Search keywords: ${keywords.length} | Lottery: ${lotteryPool.length} | Mode: ${lowQuotaMode ? "SAFE" : "FULL"}`);
+  console.log(`[Scout] Remote Available: ${remoteAvailable} | Remote Expand Enabled: ${remoteExpandEnabled}`);
 
   Registry.Services.Core.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool
