@@ -323,11 +323,17 @@ function extractSheetDataStrict(
   type: "lb" | "hh",
 ): SheetDataResult {
   const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return { schema: [], rows: [] };
+  if (!sheet) {
+    console.warn(`⚠️ [DATA] extractSheetDataStrict: Sheet '${sheetName}' not found.`);
+    return { schema: [], rows: [] };
+  }
 
   const lastRow = sheet.getLastRow();
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-  if (lastRow < startRow) return { schema: [], rows: [] };
+  if (lastRow < startRow) {
+    console.info(`ℹ️ [DATA] extractSheetDataStrict: Sheet '${sheetName}' has no data rows.`);
+    return { schema: [], rows: [] };
+  }
 
   let mapping: ExtractionMapping[] = [];
   const S = type === "lb" ? CONFIG.SCHEMA.LB : CONFIG.SCHEMA.HH;
@@ -367,7 +373,22 @@ function extractSheetDataStrict(
 
   const maxColIdx = Math.max(...mapping.map((m) => m.col));
   const numCols = Math.max(20, maxColIdx + 1);
-  const range = sheet.getRange(startRow, 2, lastRow - startRow + 1, numCols);
+  
+  // 🛡️ BOUNDS VALIDATION: Ensure we don't exceed sheet dimensions
+  const sheetMaxCols = sheet.getMaxColumns();
+  if (numCols > sheetMaxCols) {
+    console.warn(`⚠️ [DATA] extractSheetDataStrict: Required columns (${numCols}) exceed sheet columns (${sheetMaxCols}). Data may be incomplete.`);
+  }
+  
+  const safeNumCols = Math.min(numCols, sheetMaxCols);
+  const numRows = lastRow - startRow + 1;
+  
+  if (numRows <= 0) {
+    console.warn(`⚠️ [DATA] extractSheetDataStrict: Invalid row count (${numRows}) for sheet '${sheetName}'.`);
+    return { schema: [], rows: [] };
+  }
+  
+  const range = sheet.getRange(startRow, 2, numRows, safeNumCols);
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
@@ -376,6 +397,12 @@ function extractSheetDataStrict(
   for (let i = 0; i < vals.length; i++) {
     const rowRaw = vals[i];
     const rowDisplay = displayVals[i];
+
+    // 🛡️ SAFETY: Ensure row arrays exist and have minimum length
+    if (!Array.isArray(rowRaw) || !Array.isArray(rowDisplay)) {
+      console.warn(`⚠️ [DATA] extractSheetDataStrict: Invalid row data at index ${i}. Skipping.`);
+      continue;
+    }
 
     const tagRaw = String(rowRaw[S.TAG] || "").trim();
     if (!tagRaw || tagRaw.length < 3) continue;
@@ -391,12 +418,18 @@ function extractSheetDataStrict(
       .map((m) => {
         if (m.type === "bool_check") return null;
 
+        // 🛡️ SAFETY: Bounds check for column access
+        if (m.col >= rowRaw.length || m.col >= rowDisplay.length) {
+          console.warn(`⚠️ [DATA] Column index ${m.col} out of bounds for row ${i}. Using default value.`);
+          return m.type === "num" ? 0 : "";
+        }
+
         const val = rowRaw[m.col];
         const disp = rowDisplay[m.col];
 
         switch (m.type) {
           case "tag":
-            return String(val).replace("#", "").trim().toUpperCase();
+            return String(val || "").replace("#", "").trim().toUpperCase();
           case "num":
             return sanitizeNum(val, disp);
           case "rate":
@@ -423,6 +456,8 @@ function extractSheetDataStrict(
 
     rows.push(outputRow);
   }
+
+  console.info(`ℹ️ [DATA] extractSheetDataStrict: Extracted ${rows.length} valid row${rows.length !== 1 ? 's' : ''} from '${sheetName}'.`);
 
   return {
     schema: mapping.filter((m) => m.type !== "bool_check").map((m) => m.key),
