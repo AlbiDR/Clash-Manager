@@ -397,17 +397,29 @@ var View: IView = {
    */
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // 🏠 Main Workspace (Visible)
     const VISIBLE_WHITELIST = [
       CONFIG.SHEETS.DB,
       CONFIG.SHEETS.LB,
       CONFIG.SHEETS.HH,
     ];
     
-    const SYSTEM_OWNED = [...VISIBLE_WHITELIST];
+    // 🛠️ Technical Sheets (Hidden)
+    const TECHNICAL_SHEETS = [
+      CONFIG.SHEETS.BL,
+      CONFIG.SHEETS.EVT,
+    ];
+    
+    // 🛡️ All Registered Sheets in order
+    const SYSTEM_OWNED = [...VISIBLE_WHITELIST, ...TECHNICAL_SHEETS];
+    
+    // 📦 Append Backups to the end
     VISIBLE_WHITELIST.forEach((baseName) => {
       for (let i = 1; i <= 5; i++)
         SYSTEM_OWNED.push(`Backup ${i} ${baseName}`);
     });
+
 
     const allSheets = ss.getSheets();
 
