@@ -145,10 +145,8 @@ function scoutRecruits(): void {
         (a: number, b: any) => a + (b.trophies || 0),
         0,
       ) / baselineData[0].items.length;
-    console.log(`[Scout] Raw Baseline: ${baselineData[0].items.length} members | AvgTrophies: ${avgTrophies}`);
+    // Removed raw console log
   }
-
-  // 🛡️ QUOTA GUARD
   const remaining = Registry.Services.Network.getRemainingQuota();
   if (remaining < 300) {
     console.warn(`🛑 Quota Guard: Aborting scan (Remaining: ${remaining}). Core sync preserved.`);
@@ -165,6 +163,7 @@ function scoutRecruits(): void {
   const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
+  let joinedCount = 0;
   const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
     const profiles = Registry.Services.Network.fetchRoyaleAPI(
@@ -172,16 +171,12 @@ function scoutRecruits(): void {
         (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
       ),
     );
-    let joinedCount = 0;
     profiles.forEach((p: any) => {
       if (p && p.clan && p.clan.tag) {
         existing.delete(p.tag);
         joinedCount++;
       }
     });
-    if (joinedCount > 0) {
-      console.log(`[Recruiter] prune: ${joinedCount} recruits caused update.`);
-    }
   }
 
   // 3. Dynamic Safety Cap
@@ -196,26 +191,6 @@ function scoutRecruits(): void {
     minTrophies = CONFIG.HEADHUNTER.MIN_TROPHIES;
   }
 
-  console.log(`[Scout] Target: ${target} | Existing: ${existing.size} | MinTrophies: ${minTrophies}`);
-
-  // 4. Run the optimized scan
-  const scanned = scanTournaments(minTrophies, existing, blacklistSet, lowQuotaMode);
-  console.log(`[Scout] Scan complete. Found ${scanned.length} candidates.`);
-
-  // 5. Intelligent Merge
-  let newArrivals = 0;
-  let updatedExisting = 0;
-
-  scanned.forEach((c) => {
-    if (existing.has(c.tag)) {
-      c.foundDate = existing.get(c.tag)!.foundDate;
-      updatedExisting++;
-    } else {
-      newArrivals++;
-    }
-    existing.set(c.tag, c);
-  });
-  console.log(`[Scout] Merge: ${newArrivals} New Arrivals | ${updatedExisting} Updated.`);
 
   // 6. Final Pool Scoring & Capping
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
@@ -296,11 +271,44 @@ function scoutRecruits(): void {
   // 7. RENDER
   renderHeadhunterView(safeSheet(CONFIG.SHEETS.HH), finalPool, avgTrophies);
 
+  // 8. LOGGING (Clean)
+  logScoutReport(target, existing.size, minTrophies, scanned.length, newArrivals, updatedExisting);
+
   try {
     if (typeof refreshWebPayload === "function") refreshWebPayload();
   } catch (e: any) {
     console.warn(`[Recruiter] Async Payload Refresh failed: ${e.message}`);
   }
+}
+
+/**
+ * 📦 LOGGING HELPER: Structured Scout Report
+ */
+function logScoutReport(
+  target: number,
+  existingSize: number,
+  minTrophies: number,
+  scannedCount: number,
+  newArrivals: number,
+  updatedExisting: number
+) {
+  const version = VER_RECRUITER;
+  const title = `HEADHUNTER SCOUT [v${version}]`;
+  const width = 65;
+
+  const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
+  
+  const line1 = `Target: ${target} | Pool: ${existingSize} | MinTrophies: ${minTrophies}`;
+  const line2 = `Scan Result: ${scannedCount} Candidates Found`;
+  const line3 = `Pipeline: +${newArrivals} New | ↻${updatedExisting} Updated`;
+
+  const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
+  const borderMid1 = `│ ${pad(line1, width - 2)} │`;
+  const borderMid2 = `│ ${pad(line2, width - 2)} │`;
+  const borderMid3 = `│ ${pad(line3, width - 2)} │`;
+  const borderBot = `└${"─".repeat(width)}┘`;
+
+  Logger.log(`\n${borderTop}\n${borderMid1}\n${borderMid2}\n${borderMid3}\n${borderBot}\n`);
 }
 
 /**
@@ -500,7 +508,7 @@ function scanTournaments(
 
   // 2. Tournament Scouting
   if (remoteAvailable && remoteExpandEnabled) {
-    console.log(`[Scout] Executing REMOTE SCAN (${tourneyTags.length} units)...`);
+    // console.log(`[Scout] Executing REMOTE SCAN (${tourneyTags.length} units)...`);
     try {
       candidates = Registry.Services.Network.scanTournamentsRemote(
         tourneyTags,
@@ -822,3 +830,34 @@ function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, nu
  * 🌍 GLOBAL BRIDGE
  */
 Object.assign(this as any, { scoutRecruits, VER_RECRUITER });
+
+/**
+ * 📦 LOGGING HELPER: Structured Scout Report
+ */
+function logScoutReport(
+  target: number,
+  existingSize: number,
+  minTrophies: number,
+  scannedCount: number,
+  newArrivals: number,
+  updatedExisting: number
+): void {
+  // @ts-ignore - VER_RECRUITER is declared global
+  const version = VER_RECRUITER;
+  const title = `HEADHUNTER SCOUT [v${version}]`;
+  const width = 65;
+
+  const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
+  
+  const line1 = `Target: ${target} | Pool: ${existingSize} | MinTrophies: ${minTrophies}`;
+  const line2 = `Scan Result: ${scannedCount} Candidates Found`;
+  const line3 = `Pipeline: +${newArrivals} New | ↻${updatedExisting} Updated`;
+
+  const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
+  const borderMid1 = `│ ${pad(line1, width - 2)} │`;
+  const borderMid2 = `│ ${pad(line2, width - 2)} │`;
+  const borderMid3 = `│ ${pad(line3, width - 2)} │`;
+  const borderBot = `└${"─".repeat(width)}┘`;
+
+  Logger.log(`\n${borderTop}\n${borderMid1}\n${borderMid2}\n${borderMid3}\n${borderBot}\n`);
+}
