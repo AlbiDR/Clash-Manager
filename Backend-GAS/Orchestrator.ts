@@ -111,7 +111,7 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
  * Recommended Trigger: Time-Based -> Every 1 Hour
  */
 function taskUpdateDatabase(): void {
-  console.log("⏰ TASK START: Update Database");
+  console.info("⏰ [TASK] Clan Database Sync: Starting...");
 
   // 🩺 SELF-HEALING: Verify mobile infrastructure health silently every hour
   setupMobileTriggers(true);
@@ -119,15 +119,15 @@ function taskUpdateDatabase(): void {
   try {
     Registry.Services.Core.executeSafely("TASK_DB", () => {
       Registry.Actions["sync:database"]();
-      console.log("⏰ TASK END: Database Update Complete.");
+      console.info("✅ [TASK] Clan Database Sync: Success.");
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
-      console.warn("⚠️ Collision detected for Database update. Queuing retry in 2m...");
+      console.warn("⚠️ [TASK] Database Sync: Collision detected. Queuing retry in 2m...");
       queueRetry("taskUpdateDatabase");
       return; 
     }
-    console.error(`❌ TASK FAILED (DB): ${e.message}`);
+    console.error(`❌ [TASK] Database Sync: FAILED - ${e.message}`);
   } finally {
     // 🧹 Always attempt to clean up any "ghost" triggers for this task
     cleanupTemporaryTriggers("taskUpdateDatabase");
@@ -139,21 +139,21 @@ function taskUpdateDatabase(): void {
  * Recommended Trigger: Time-Based -> Every 1 Hour
  */
 function taskUpdateLeaderboard(): void {
-  console.log("⏰ TASK START: Update Leaderboard");
+  console.info("⏰ [TASK] Leaderboard Update: Starting...");
 
   try {
     Registry.Services.Core.executeSafely("TASK_LB", () => {
       Registry.Actions["sync:leaderboard"]();
       Registry.Actions["sync:webapp"]();
-      console.log("⏰ TASK END: Leaderboard Update Complete.");
+      console.info("✅ [TASK] Leaderboard Update: Success.");
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
-      console.warn("⚠️ Collision detected for Leaderboard update. Queuing retry in 2m...");
+      console.warn("⚠️ [TASK] Leaderboard Update: Collision detected. Queuing retry in 2m...");
       queueRetry("taskUpdateLeaderboard");
       return;
     }
-    console.error(`❌ TASK FAILED (LB): ${e.message}`);
+    console.error(`❌ [TASK] Leaderboard Update: FAILED - ${e.message}`);
   } finally {
     // 🧹 Always attempt to clean up any "ghost" triggers for this task
     cleanupTemporaryTriggers("taskUpdateLeaderboard");
@@ -206,13 +206,13 @@ function cleanupTemporaryTriggers(functionName: string): void {
  * Recommended Trigger: Time-Based -> Every 30 Minutes
  */
 function taskFastScout(): void {
-  console.log("⏰ TASK START: Fast Scout");
+  console.info("⏰ [TASK] Fast Scout (Headhunter): Starting...");
   Registry.Services.Core.executeSafely("TASK_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
-      console.log("⏰ TASK END: Headhunter scout complete.");
+      console.info("✅ [TASK] Fast Scout: Success.");
     } catch (e: any) {
-      console.error(`❌ TASK FAILED (HH): ${e.message}`);
+      console.error(`❌ [TASK] Fast Scout: FAILED - ${e.message}`);
     }
   });
 }
@@ -227,7 +227,7 @@ function taskWarmUpWorker(): void {
     // ⚡ LIGHTWEIGHT PING: No locking, no overhead.
     Registry.Services.Network.remoteWorkerHealthy(true);
   } catch (e: any) {
-    console.error(`❌ Warm-up Ping Failed: ${e.message}`);
+    console.error(`❌ [WARMUP] Worker ping failed: ${e.message}`);
   }
 }
 
@@ -236,10 +236,10 @@ function taskWarmUpWorker(): void {
  * Sets up the automated lifecycle of the project.
  */
 function createTriggers(): void {
-  console.log("🧹 Clearing existing triggers...");
+  console.info("🧹 [TRIGGERS] Clearing existing automation triggers...");
   clearAllTriggers();
 
-  console.log("🚀 Creating fresh triggers...");
+  console.info("🚀 [TRIGGERS] Installing fresh trigger suite...");
 
   // 1. Database Sync (Every 1 Hour)
   ScriptApp.newTrigger("taskUpdateDatabase")
@@ -268,15 +268,21 @@ function createTriggers(): void {
   // 5. Integrated Mobile Setup (onEdit Trigger)
   setupMobileTriggers();
 
-  console.log("✅ All permanent triggers established.");
+  console.info("✅ [TRIGGERS] All permanent triggers established successfully.");
 }
+
 
 /**
  * 🚀 MASTER DISPATCHER
  * Sequential execution of the entire stack.
  */
 function dispatchMaster(): void {
-  console.log("🎭 MASTER DISPATCH: Starting orchestrated sequence...");
+  const version = VER_ORCHESTRATOR;
+  
+  Registry.Services.Core.logReport(
+    `🎭 MASTER PROTOCOL v${version}`,
+    [`INITIALIZING ORCHESTRATION...`]
+  );
   
   // 1. Warm up first
   taskWarmUpWorker();
@@ -287,9 +293,13 @@ function dispatchMaster(): void {
   // 3. Score Calculation & Rendering
   taskUpdateLeaderboard();
 
+  // 4. Headhunter
   taskFastScout();
 
-  console.log("🎭 MASTER DISPATCH: Sequence complete.");
+  Registry.Services.Core.logReport(
+    `🎭 MASTER PROTOCOL v${version}`,
+    [`MASTER DISPATCH: ALL OPERATIONS COMPLETE.`]
+  );
 }
 
 /**
@@ -335,7 +345,7 @@ function setupMobileTriggers(silent: boolean = false): void {
       ui.ButtonSet.OK,
     );
   } else {
-    console.info("🛠️ Self-Healed: Mobile onEdit trigger recreated.");
+    console.info("🛠️ [MOBILE] Self-Healed: Mobile onEdit trigger recreated.");
   }
 }
 
@@ -356,7 +366,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   Registry.Services.View.setStatusMessage(sheet, "⏳ Updating...");
   SpreadsheetApp.flush();
 
-  console.log(`📱 Mobile Trigger: ${sheetName}`);
+  console.info(`📱 [MOBILE] Trigger activated: ${sheetName}`);
 
   try {
     Registry.Services.Core.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
@@ -372,7 +382,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
       Registry.Services.View.setStatusMessage(sheet, `✅ Done ${new Date().toLocaleTimeString()}`);
     });
   } catch (err: any) {
-    console.error(`📱 Mobile Error: ${err.message}`);
+    console.error(`❌ [MOBILE] Error on ${sheetName}: ${err.message}`);
     const msg =
       err.message.indexOf("System Busy") > -1
         ? "⚠️ System Busy (Retry in 60s)"
@@ -386,41 +396,41 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
  */
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Connecting to RoyaleAPI...", "Update Database", 5);
+  ss.toast("Connecting to Royale API...", "📊 Database Update", 5);
   Registry.Services.Core.executeSafely("MANUAL_DB", () => {
     try {
       Registry.Actions["sync:database"]();
       Registry.Actions["sync:webapp"]();
-      ss.toast("Database updated successfully.", "Success", 3);
+      ss.toast("Database synchronized successfully.", "✅ Success", 3);
     } catch (e: any) {
-      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
+      SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
     }
   });
 }
 
 function triggerUpdateLeaderboard(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Calculating scores...", "Update Leaderboard", 5);
+  ss.toast("Calculating performance scores...", "🏆 Leaderboard Update", 5);
   Registry.Services.Core.executeSafely("MANUAL_LB", () => {
     try {
       Registry.Actions["sync:leaderboard"]();
       Registry.Actions["sync:webapp"]();
-      ss.toast("Leaderboard refreshed.", "Success", 3);
+      ss.toast("Leaderboard synchronized successfully.", "✅ Success", 3);
     } catch (e: any) {
-      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
+      SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
     }
   });
 }
 
 function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Scanning tournaments...", "Headhunter", 20);
+  ss.toast("Scanning global tournaments...", "🔭 Headhunter Scout", 20);
   Registry.Services.Core.executeSafely("MANUAL_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
-      ss.toast("Scout Complete.", "Success", 5);
+      ss.toast("Scout operation completed.", "✅ Success", 5);
     } catch (e: any) {
-      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
+      SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
     }
   });
 }
@@ -430,7 +440,7 @@ function triggerScoutRecruits(): void {
  */
 function checkSystemHealth(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Verifying System...", "Health Check", 5);
+  ss.toast("Running system diagnostics...", "🔍 Health Check", 5);
 
   const manifest = CONFIG.SYSTEM.MANIFEST;
   const keys = CONFIG.SYSTEM.API_KEYS;
@@ -439,7 +449,7 @@ function checkSystemHealth(): void {
 
   if (keys.length === 0) {
     keysHealthy = false;
-    keyStatusReport = "❌ No API Keys configured.\n";
+    keyStatusReport = "❌ No API Keys configured in CONFIG.SYSTEM.API_KEYS.\n";
   } else {
     const verificationResults = verifyApiKeysInternal(false, 1);
     const isConnectivityActive =
@@ -518,7 +528,7 @@ function checkSystemHealth(): void {
 function triggerVerifyApiKeys(): void {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Verifying API Keys...", "Security Audit", 10);
+  ss.toast("Testing API key connectivity...", "🔑 Security Audit", 10);
 
   const results = verifyApiKeysInternal(true, 0);
 
@@ -555,10 +565,10 @@ function verifyApiKeysInternal(
   if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
     const remoteResults = Registry.Services.Network.auditKeysRemote(keysToCheck);
     if (remoteResults) {
-      console.log("✅ API Audit handled by Remote Worker.");
+      console.info("✅ [AUDIT] API key verification handled by remote worker.");
       return remoteResults;
     }
-    console.warn("⚠️ Remote Audit failed. Falling back to local quota.");
+    console.warn("⚠️ [AUDIT] Remote audit unavailable. Falling back to local quota.");
   }
 
   for (const keyObj of keysToCheck) {
@@ -614,5 +624,5 @@ Object.assign(this as any, {
 function clearAllTriggers(): void {
   const triggers = ScriptApp.getProjectTriggers();
   triggers.forEach((t: any) => ScriptApp.deleteTrigger(t));
-  console.log(`🧹 Deleted ${triggers.length} triggers.`);
+  console.info(`🧹 [TRIGGERS] Deleted ${triggers.length} trigger${triggers.length !== 1 ? 's' : ''}.`);
 }

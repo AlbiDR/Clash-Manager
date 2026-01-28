@@ -105,7 +105,7 @@ function scoutRecruits(): void {
   const safeSheet = (name: string) => {
     let s = ss.getSheetByName(name);
     if (!s) {
-       console.info(`[1/9] Sheet '${name}' missing; creating...`);
+       console.info(`[1/9] Sheet '${name}' not found. Creating new sheet...`);
        SpreadsheetApp.flush();
        s = ss.getSheetByName(name) || ss.insertSheet(name);
     }
@@ -116,15 +116,15 @@ function scoutRecruits(): void {
   let sheet = safeSheet(CONFIG.SHEETS.HH);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
-  console.info(`[2/9] Syncing Dynamic Schema indices...`);
+  Registry.Services.Core.logStep(2, 9, "Syncing Dynamic Schema indices...");
   Registry.Services.Schema.bootDynamicSchema();
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
     console.error(
-      "❌ CRITICAL: 'ClanTag' is not set. Aborting Recruiter Scan.",
+      "❌ [CONFIG] CLAN_TAG is not configured. Aborting Headhunter Scout.",
     );
-    sheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    sheet.getRange("B1").setValue("⚠️ Configuration Error: Missing CLAN_TAG");
     return;
   }
 
@@ -151,19 +151,22 @@ function scoutRecruits(): void {
   }
   const remaining = Registry.Services.Network.getRemainingQuota();
   if (remaining < 300) {
-    console.warn(`🛑 Quota Guard: Aborting scan (Remaining: ${remaining}). Core sync preserved.`);
+    console.warn(`⚠️ [QUOTA] Insufficient API quota (${remaining} remaining). Aborting scout to preserve core sync.`);
     sheet.getRange("B1").setValue(`⚠️ Scouting Paused (Quota Low: ${remaining})`);
     return;
   }
   const lowQuotaMode = remaining < 1000;
+  if (lowQuotaMode) {
+    console.info(`⚡ [QUOTA] Low quota mode activated (${remaining} remaining). Scan will be throttled.`);
+  }
 
   // 🚫 BLACKLIST & BENCHMARK UPDATE
-  console.info(`[3/9] Processing Headhunter Blacklist...`);
+  Registry.Services.Core.logStep(3, 9, "Processing Headhunter Blacklist...");
   const { ids: blacklistSet, entries: blacklistEntries } =
     updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
 
   // 2. Load existing tracking data
-  console.info(`[4/9] Loading existing recruit database...`);
+  Registry.Services.Core.logStep(4, 9, "Loading existing recruit database...");
   const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
 
   // 🛡️ PRUNE BLACKLISTED: Remove recruits already marked as invited/blacklisted
@@ -172,14 +175,14 @@ function scoutRecruits(): void {
     if (blacklistSet.has(tag)) existing.delete(tag);
   });
   if (existing.size < beforePrune) {
-    console.info(`[5/9] Pruned ${beforePrune - existing.size} blacklisted members from tracking.`);
+    Registry.Services.Core.logStep(5, 9, `Pruned ${beforePrune - existing.size} blacklisted members from tracking.`);
   }
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   let joinedCount = 0;
   const tagsToCheck = Array.from(existing.keys());
   if (tagsToCheck.length > 0) {
-    console.info(`[6/9] Verifying clan status for ${tagsToCheck.length} survivors...`);
+    Registry.Services.Core.logStep(6, 9, `Verifying clan status for ${tagsToCheck.length} survivors...`);
     const profiles = Registry.Services.Network.fetchRoyaleAPI(
       tagsToCheck.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
@@ -191,7 +194,9 @@ function scoutRecruits(): void {
         joinedCount++;
       }
     });
-    if (joinedCount > 0) console.info(`│ Cleanup: Removed ${joinedCount} recruits who joined a clan.`);
+    if (joinedCount > 0) {
+      console.info(`  └─ Cleanup: Removed ${joinedCount} recruit${joinedCount > 1 ? 's' : ''} who joined a clan.`);
+    }
   }
 
   // 3. Dynamic Safety Cap
@@ -208,9 +213,9 @@ function scoutRecruits(): void {
 
 
   // 4. Run the optimized scan
-  console.info(`[7/9] Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
+  Registry.Services.Core.logStep(7, 9, `Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
   const scanned = scanTournaments(minTrophies, existing, blacklistSet, lowQuotaMode);
-  console.info(`│ Result: Located ${scanned.length} potential candidates.`);
+  console.info(`  └─ Scan Result: Located ${scanned.length} potential candidate${scanned.length !== 1 ? 's' : ''}.`);
 
   // 5. Intelligent Merge
   let newArrivals = 0;
@@ -227,7 +232,7 @@ function scoutRecruits(): void {
   });
 
   // 6. Final Pool Scoring & Capping
-  console.info(`[8/9] Calculating Performance Benchmarks...`);
+  Registry.Services.Core.logStep(8, 9, "Calculating Performance Benchmarks...");
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
   if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -274,7 +279,9 @@ function scoutRecruits(): void {
           clanEliteData.push({ rawScore: raw, perfScore: perf });
         }
       }
-      console.info(`│ Benchmarking: Ingested ${clanEliteData.length} elite clan performance samples.`);
+      if (clanEliteData.length > 0) {
+        console.info(`  └─ Benchmarking: Ingested ${clanEliteData.length} elite clan performance sample${clanEliteData.length !== 1 ? 's' : ''}.`);
+      }
     }
   }
 
@@ -289,7 +296,7 @@ function scoutRecruits(): void {
   const finalPool = rawPool.slice(0, CONFIG.HEADHUNTER.TARGET);
 
   if (finalPool.length === 0 && rawPool.length === 0 && existing.size > 0) {
-    console.error("⛔ Recruiter ABORTED: Logic Error resulted in empty pool.");
+    console.error("⛔ [CRITICAL] Recruiter logic error: Pool is empty despite existing data. Aborting.");
     return;
   }
 
@@ -305,17 +312,32 @@ function scoutRecruits(): void {
   Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.HH);
 
   // 7. RENDER
-  console.info(`[9/9] Preparing final render and cache updates...`);
+  Registry.Services.Core.logStep(9, 9, "Preparing final render and cache updates...");
   renderHeadhunterView(safeSheet(CONFIG.SHEETS.HH), finalPool, avgTrophies);
 
   // 8. LOGGING (Clean)
-  logScoutReport(target, existing.size, minTrophies, scanned.length, newArrivals, updatedExisting);
+  const version = VER_RECRUITER;
+  Registry.Services.Core.logReport(
+    `🔭 HEADHUNTER v${version} REPORT`,
+    [
+      `OPERATION COMPLETE`,
+      `TARGET QUOTA: ${target} Recruits`,
+      `CURRENT POOL: ${existing.size} Valid Members`,
+      `TROPHY FLOOR: ${minTrophies} (Dynamic)`,
+      `─`.repeat(63),
+      `SCAN ACQUISITIONS: ${scanned.length} Found`,
+      `PIPELINE FLOW:    +${newArrivals} New | ↻${updatedExisting} Updated`
+    ]
+  );
+  console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${existing.size}/${target}`);
 
   try {
     if (typeof refreshWebPayload === "function") refreshWebPayload();
   } catch (e: any) {
-    console.warn(`[Recruiter] Async Payload Refresh failed: ${e.message}`);
+    console.warn(`⚠️ [SYNC] Failed to refresh web payload: ${e.message}`);
   }
+
+  SpreadsheetApp.flush();
 }
 
 
@@ -481,7 +503,7 @@ function scanTournaments(
 
   if (!remoteAvailable) {
     const lastErr = Registry.Services.Network.getLastWorkerError();
-    console.warn(`[Recruiter] Worker Offline: ${lastErr || "Checking Status..."}. Falling back to Local Mode (Throttled).`);
+    console.warn(`⚠️ [WORKER] Remote worker offline: ${lastErr || "Unknown"}. Falling back to local mode (throttled).`);
     lowQuotaMode = true;
   }
 
@@ -500,15 +522,14 @@ function scanTournaments(
       ),
     );
 
-  console.info(`│ Keywords: ${keywords.length} | Mode: ${lowQuotaMode ? "SAFE (Quota Guard)" : "FULL"}`);
-  console.info(`│ Worker:  ${remoteAvailable ? "ONLINE" : "OFFLINE"} | Deep Expand: ${remoteExpandEnabled ? "ON" : "OFF"}`);
-
+  console.info(`  ├─ Keywords: ${keywords.length} | Mode: ${lowQuotaMode ? "SAFE (Quota Guard)" : "FULL"}`);
+  console.info(`  ├─ Worker: ${remoteAvailable ? "ONLINE" : "OFFLINE"} | Deep Expand: ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`);
+  console.info(`  └─ Lottery: Selected ${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''} for deep scanning.`);
   Registry.Services.Core.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
 
-  console.info(`│ Lottery: Selected ${tourneyTags.length} tournaments for deep scanning.`);
 
   if (tourneyTags.length === 0) return [];
 
@@ -527,12 +548,12 @@ function scanTournaments(
       );
       usedRemote = true;
     } catch (e: any) {
-      console.warn(`[Scout] Remote Scan Failed: ${e.message}`);
+      console.warn(`⚠️ [REMOTE] Remote scan failed: ${e.message}. Falling back to local.`);
     }
   }
 
   if (!usedRemote) {
-    console.info(`│ Local:   Executing GAS-based scan (${tourneyTags.length} units)...`);
+    console.info(`  └─ Executing GAS-based local scan (${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''})...`);
     const details = Registry.Services.Network.fetchRoyaleAPI(
       tourneyTags.map(
         (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
@@ -840,39 +861,4 @@ function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, nu
  */
 Object.assign(this as any, { scoutRecruits, VER_RECRUITER });
 
-/**
- * 📦 LOGGING HELPER: Structured Scout Report
- */
-function logScoutReport(
-  target: number,
-  existingSize: number,
-  minTrophies: number,
-  scannedCount: number,
-  newArrivals: number,
-  updatedExisting: number
-): void {
-  // @ts-ignore - VER_RECRUITER is declared global
-  const version = VER_RECRUITER;
-  const title = `🔭 HEADHUNTER v${version} REPORT`;
-  const width = 65;
-
-  const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
-  
-  const line0 = `OPERATION COMPLETE`;
-  const line1 = `TARGET QUOTA: ${target} Recruits`;
-  const line2 = `CURRENT POOL: ${existingSize} Valid Members`;
-  const line3 = `TROPHY FLOOR: ${minTrophies} (Dynamic)`;
-  const line4 = `─`.repeat(width - 2);
-  const line5 = `SCAN ACQUISITIONS: ${scannedCount} Found`;
-  const line6 = `PIPELINE FLOW:    +${newArrivals} New | ↻${updatedExisting} Updated`;
-
-  const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
-  const borderBot = `└${"─".repeat(width)}┘`;
-
-  const content = [line0, line1, line2, line3, line4, line5, line6]
-    .map(l => `│ ${pad(l, width - 2)} │`)
-    .join("\n");
-
-  Logger.log(`\n${borderTop}\n${content}\n${borderBot}\n`);
-  console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${existingSize}/${target}`);
-}
+// Removed: logScoutReport() - now using Core.logReport()
