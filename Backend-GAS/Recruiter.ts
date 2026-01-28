@@ -522,13 +522,14 @@ function scanTournaments(
       ),
     );
 
-  console.info(`  ├─ Keywords: ${keywords.length} | Mode: ${lowQuotaMode ? "SAFE (Quota Guard)" : "FULL"}`);
-  console.info(`  ├─ Worker: ${remoteAvailable ? "ONLINE" : "OFFLINE"} | Deep Expand: ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`);
-  console.info(`  └─ Lottery: Selected ${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''} for deep scanning.`);
   Registry.Services.Core.shuffleArray(lotteryPool);
   const tourneyTags = lotteryPool
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
+
+  console.info(`  ├─ Keywords: ${keywords.length} | Mode: ${lowQuotaMode ? "SAFE (Quota Guard)" : "FULL"}`);
+  console.info(`  ├─ Worker: ${remoteAvailable ? "ONLINE" : "OFFLINE"} | Deep Expand: ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`);
+  console.info(`  └─ Lottery: Selected ${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''} for deep scanning.`);
 
 
   if (tourneyTags.length === 0) return [];
