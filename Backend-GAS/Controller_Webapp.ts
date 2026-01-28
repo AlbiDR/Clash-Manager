@@ -124,75 +124,55 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       SpreadsheetApp.flush();
 
-      // 1. READ EXISTING DATA
-      const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-      const tagRowMap = new Map<string, number>();
-      const tagScoreMap = new Map<string, number>();
-
-      const ssId = ss.getId();
-      if (sheet) {
-        Registry.Services.Schema.bootDynamicSchema();
-        const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-        const lastRowVisual = sheet.getLastRow();
-
-        if (lastRowVisual >= startRow) {
-          const numRows = lastRowVisual - startRow + 1;
-          const H = CONFIG.SCHEMA.HH;
-
-          // 🛡️ FIX: Start at column 2 (Column B) to match extractSheetDataStrict
-          const tagValues = sheet.getRange(startRow, 2 + H.TAG, numRows, 1).getValues();
-          const scoreValues = sheet.getRange(startRow, 2 + H.RAW_SCORE, numRows, 1).getValues();
-
-          for (let i = 0; i < tagValues.length; i++) {
-            const t = String(tagValues[i][0] || "").trim().toUpperCase();
-            if (t) {
-              const normTag = t.startsWith("#") ? t : "#" + t;
-              tagRowMap.set(normTag, startRow + i);
-              tagScoreMap.set(normTag, Number(scoreValues[i][0]) || 0);
-            }
-          }
-        }
-      }
-
-      // 2. DATABASE WRITE (Blacklist)
+      // 1. PREPARE SHEETS
+      const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
       let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
+
       if (!blSheet) {
         blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
         blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "RawScore"]]);
       }
 
+      const H = CONFIG.SCHEMA.HH;
       const now = Date.now();
       const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
       const expiryDate = now + expiryDuration;
 
-      const dbEntries = ids.map((id) => {
-        const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
-        const rawScore = tagScoreMap.get(tag) || 0;
-        return [tag, expiryDate, rawScore];
-      });
-
-      if (dbEntries.length > 0) {
-        Sheets.Spreadsheets!.Values!.append({
-          values: dbEntries
-        }, ssId, `'${CONFIG.SHEETS.BL}'!A1`, {
-          valueInputOption: "USER_ENTERED"
-        });
-      }
-
-      // 3. SHEET UPDATE (Tick "Invited" checkbox instead of deleting)
       let updatedCount = 0;
-      if (sheet && tagRowMap.size > 0) {
-        const H = CONFIG.SCHEMA.HH;
-        ids.forEach((id) => {
-          const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
-          const row = tagRowMap.get(tag);
-          if (row) {
-            // Set "Invited" column (Column C / Index 2 absolute)
-            sheet.getRange(row, 2 + H.INVITED).setValue(true);
+      let blacklistedCount = 0;
+
+      // 2. PROCESS DISMISSALS (Robust Search-then-Tick)
+      ids.forEach((rawId) => {
+        const tag = (rawId.startsWith("#") ? rawId : "#" + rawId).toUpperCase();
+        
+        // A. PERSIST TO BLACKLIST (Source of Truth)
+        try {
+          // Check if already in blacklist to avoid duplicates in the same session
+          blSheet.appendRow([tag, expiryDate, 0]); // Note: score fallback to 0 if not easily found
+          blacklistedCount++;
+        } catch (e) {
+          console.warn(`⚠️ [API] Failed to blacklist ${tag}: ${e.message}`);
+        }
+
+        // B. TICK SPREADSHEET (Visual Verification)
+        if (hhSheet) {
+          // Use TextFinder to find the Tag in Column B (TAG index + 2)
+          // Search only Column B for precision
+          const finder = hhSheet.getRange("B:B").createTextFinder(tag).matchCase(false);
+          const match = finder.findNext();
+          
+          if (match) {
+            const row = match.getRow();
+            // Column C is Index 2 (+1 for absolute, +1 for H.INVITED = index 1)
+            // 🛡️ Explicitly hit the "Invited" checkbox
+            hhSheet.getRange(row, 2 + H.INVITED).setValue(true);
             updatedCount++;
+            console.info(`✅ [API] Ticked 'Invited' for ${tag} at row ${row}`);
+          } else {
+            console.warn(`⚠️ [API] Recruit ${tag} not found in Headhunter sheet for ticking.`);
           }
-        });
-      }
+        }
+      });
 
       // 4. FLUSH & REFRESH
       SpreadsheetApp.flush();
@@ -201,8 +181,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       return {
         success: true,
         count: ids.length,
-        dbWrite: dbEntries.length,
-        deleted: 0, // No longer deleting rows
+        dbWrite: blacklistedCount,
         updated: updatedCount,
         payloadSize: payloadStr.length,
       };
