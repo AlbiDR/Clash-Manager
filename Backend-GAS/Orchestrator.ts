@@ -269,10 +269,6 @@ function createTriggers(): void {
   setupMobileTriggers();
 
   console.log("✅ All permanent triggers established.");
-  
-  // 🚀 IMMEDIATE ACTIVATION
-  console.log("🚀 Initializing First-Run Sync...");
-  dispatchMaster();
 }
 
 /**
