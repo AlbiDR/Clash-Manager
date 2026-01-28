@@ -1,5 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Buffer } from 'node:buffer';
 import Store from '../Store';
 
 // Mock GAS services
