@@ -146,6 +146,7 @@ function scoutRecruits(): void {
         0,
       ) / baselineData[0].items.length;
     console.log(`[Scout] Raw Baseline: ${baselineData[0].items.length} members | AvgTrophies: ${avgTrophies}`);
+    console.log(`[Scout] Sample Member: ${baselineData[0].items[0].name} | Trophies: ${baselineData[0].items[0].trophies}`);
   }
 
   // 🛡️ QUOTA GUARD
@@ -163,6 +164,10 @@ function scoutRecruits(): void {
 
   // 2. Load existing tracking data
   const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
+  const sampleRecruit = Array.from(existing.values())[0];
+  if (sampleRecruit) {
+    console.log(`[Scout] Existing Sample: ${sampleRecruit.name} | Trophies: ${sampleRecruit.trophies}`);
+  }
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
