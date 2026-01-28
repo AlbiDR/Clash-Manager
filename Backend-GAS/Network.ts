@@ -1,20 +1,17 @@
 
 /**
- * ============================================================================
- * 📡 MODULE: NETWORK (API Engine)
- * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: The "Foreign Affairs" minister. Handles all external data fetching.
- * ⚙️ CAPABILITIES:
- *    1. Smart Fetching: Key Rotation, Quota Tracking, Error Handling.
- *    2. Remote Delegation: Offloads tasks to external workers if configured.
- *    3. Caching: Persistent & In-Memory caching to minimize network calls.
+ * MODULE: NETWORK (API Engine)
+ *
+ * DESCRIPTION: Handles all external data fetching and communication with the Clash Royale API.
  * 
- * 🛡️ ARCHITECTURE: 
- *    - Dependencies: Store (Keys/Quota), Core (Safety/Shuffle).
- *    - Interface: Pure Data Provider.
+ * CAPABILITIES:
+ * 1. Smart Fetching: Key Rotation, Quota Tracking, Error Handling.
+ * 2. Remote Delegation: Offloads tasks to external workers if configured.
+ * 3. Caching: Persistent & In-Memory caching to minimize network calls.
  * 
- * 🏷️ VERSION: 1.0.0
- * ============================================================================
+ * ARCHITECTURE:
+ * - Dependencies: Store (Keys/Quota), Core (Safety/Shuffle).
+ * - Interface: Pure Data Provider.
  */
 
 import type { AppConfig } from "./Configuration";
@@ -44,7 +41,7 @@ const NETWORK_CONFIG = {
   }
 };
 
-// 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
+// EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map<string, any>();
 let _FETCH_COUNT = 0;
 let _LAST_WORKER_ERROR = "N/A";
@@ -163,8 +160,19 @@ const NetworkInternal = {
 var Network: INetwork = {
   
   /**
-   * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
-   * Handles caching, deduplication, key rotation, and quota management.
+   * Fetch data from the Royale API.
+   *
+   * @remarks
+   * Implements a multi-tier fetch strategy:
+   * 1. Check in-memory execution cache.
+   * 2. Check persistent script cache.
+   * 3. Remote Delegation: If a worker URL is configured and healthy, offload high-volume fetches
+   *    to bypass Google Apps Script's UrlFetchApp quotas.
+   * 4. Local Fallback: Use UrlFetchApp.fetchAll for small batches or if the worker is unavailable.
+   *
+   * Includes quota guards to prevent execution if the daily limit is reached.
+   *
+   * @warning Consumes UrlFetchApp quota and Script Cache quota.
    */
   fetchRoyaleAPI(urls: string[], scoring = null) {
     if (!urls || urls.length === 0) return [];
@@ -249,12 +257,15 @@ var Network: INetwork = {
         try {
           let responses: any[];
 
-          // 🛡️ WORKER FIRST STRATEGY: High volume MUST go through worker if available
+          // WORKER FIRST STRATEGY: High volume should go through worker if available to preserve local quota.
           if (useRemote) {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e: any) {
                 console.warn(`[Network] Worker Failure: ${e.message}.`);
+                // If a high-volume batch fails on the worker, we block local fallback.
+                // This is a safety measure to prevent a single failure from consuming the entire
+                // UrlFetchApp daily quota in one go.
                 if (isHighVolume) {
                    console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to preserve core quota.`);
                    useRemote = false; 
@@ -326,11 +337,16 @@ var Network: INetwork = {
     return finalResults;
   },
 
+  /**
+   * Fetch comprehensive clan data including members, race status, and history.
+   *
+   * @warning Consumes UrlFetchApp quota and Script Cache quota.
+   */
   fetchClanDataSmart(cleanTag) {
     const cacheKey = `clan_full_${cleanTag.replace(/%/g, '_')}`;
     const scriptCache = CacheService.getScriptCache();
     
-    // 🧠 15-MINUTE PERSISTENT CACHE (Quota Saver)
+    // 15-MINUTE PERSISTENT CACHE (Quota Saver)
     const cachedStr = scriptCache.get(cacheKey);
     if (cachedStr) {
       try {
@@ -384,6 +400,11 @@ var Network: INetwork = {
     return { members, race, history: null, log };
   },
 
+  /**
+   * Fetch public JSON data from the remote worker.
+   *
+   * @warning Consumes UrlFetchApp quota.
+   */
   fetchPublicJson(type) {
     if (!this.remoteWorkerHealthy()) return null;
     try {
@@ -410,6 +431,11 @@ var Network: INetwork = {
     return null;
   },
 
+  /**
+   * Check the health and availability of the remote worker.
+   *
+   * @warning Consumes UrlFetchApp quota and Script Cache quota.
+   */
   remoteWorkerHealthy(force: boolean = false) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
         _LAST_WORKER_ERROR = "RemoteWorkerUrl is not configured in Script Properties.";
@@ -434,7 +460,7 @@ var Network: INetwork = {
       }
     } catch(e) {}
 
-    // Verify (Industrial Diagnostic Handshake - Simplified)
+    // Verify (Diagnostic Handshake)
     let isHealthy = false;
     try {
         const headers: Record<string, string> = {};
@@ -480,6 +506,11 @@ var Network: INetwork = {
     return isHealthy;
   },
 
+  /**
+   * Audit API keys via the remote worker.
+   *
+   * @warning Consumes UrlFetchApp quota.
+   */
   auditKeysRemote(keys) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
     try {
@@ -512,6 +543,11 @@ var Network: INetwork = {
     } catch(e) { return null; }
   },
 
+  /**
+   * Scan tournaments for recruitment candidates via the remote worker.
+   *
+   * @warning Consumes UrlFetchApp quota.
+   */
   scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, scoring = null) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
     
