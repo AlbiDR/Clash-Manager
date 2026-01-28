@@ -20,10 +20,10 @@
  * ============================================================================
  */
 
-declare var PropertiesService: GoogleAppsScript.Properties.PropertiesService;
-declare var CacheService: GoogleAppsScript.Cache.CacheService;
-declare var LockService: GoogleAppsScript.Lock.LockService;
-declare var Utilities: GoogleAppsScript.Utilities.Utilities;
+declare var PropertiesService: any;
+declare var CacheService: any;
+declare var LockService: any;
+declare var Utilities: any;
 declare var module: any;
 
 /* ==========================================================================
