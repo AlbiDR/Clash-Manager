@@ -183,40 +183,30 @@ function dismissBulk() {
 }
 
 function executeDismiss(ids: string[]) {
-  // Optimistically hide locally
+  // ⚡ ZERO LATENCY: Point-of-impact hiding
   blacklist.hide(ids);
 
-  // Track backend call state
+  // Track if backend update started
   let backendCalled = false;
-  let cancelled = false;
 
-  // Call backend after short delay (allows quick undo to prevent the call)
-  const timerId = setTimeout(() => {
-    if (cancelled) return;
-    
-    backendCalled = true;
-    dismissRecruitsAction(ids).catch((err) => {
-      if (!cancelled) {
-        error("Failed to sync changes");
-        blacklist.restore(ids);
-      }
-    });
-  }, 500);
+  // Start sync immediately
+  backendCalled = true;
+  dismissRecruitsAction(ids).catch(() => {
+    error("Failed to sync changes");
+    blacklist.restore(ids);
+  });
 
-  // Show undo toast with 4.5 second window
+  // Show undo toast
   undo(`Dismissed ${ids.length} recruits`, () => {
-    cancelled = true;
-    clearTimeout(timerId);
     blacklist.restore(ids);
     
+    // If backend was already hit, we must refresh to regain consistency
     if (backendCalled) {
-      // Backend was already called, need to refresh to restore from server
-      info("Backend already updated. Refreshing to restore...");
+      info("Restoring from server...");
       refreshGas();
-    } else {
-      // Successfully prevented backend call
-      success("Dismissal cancelled");
     }
+    
+    success("Dismissal cancelled");
   });
 }
 
