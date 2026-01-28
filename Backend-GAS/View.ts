@@ -97,7 +97,18 @@ var View: IView = {
     const borderLightRgb = this.hexToRgbColor(T.TABLE.BORDER_LIGHT);
 
     return [
-        // 0. GRID RESIZE
+        // 0. RESET & OVERWRITE (Essential for idempotency)
+        { 
+          updateBorders: { 
+            range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
+            top: { style: "NONE" }, bottom: { style: "NONE" }, left: { style: "NONE" }, right: { style: "NONE" },
+            innerHorizontal: { style: "NONE" }, innerVertical: { style: "NONE" }
+          }
+        },
+        // 0.1 REMOVE BANDING (Sheets API requires explicit removal or specific ID, but easier via Grid Reset)
+        // Note: Apps Script flush handles this via getBandings().forEach(remove) in applyStandardLayout
+
+        // 0.2 GRID RESIZE
         {
           updateSheetProperties: {
             properties: {
@@ -107,7 +118,7 @@ var View: IView = {
             fields: 'gridProperties.rowCount,gridProperties.columnCount'
           }
         },
-        // 0.5 DATA ROW HEIGHTS (25px) - Unified for Status (Row 1) and Data (Row 3+)
+        // 0.5 DATA ROW HEIGHTS (25px)
         {
           updateDimensionProperties: {
             range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 }, // Row 1 (Status)
@@ -175,7 +186,7 @@ var View: IView = {
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: borderDarkRgb } } },
         { updateBorders: { range: { sheetId, startRowIndex: L.DATA_START_ROW - 1, endRowIndex: totalRows - 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: borderLightRgb }, innerVertical: { style: "SOLID", color: borderLightRgb } } },
         
-        // 5. Banding
+        // 5. Banding (Add with Safety: This assumes Apps Script cleared it via flush/remove before)
         {
           addBanding: {
             bandedRange: {
@@ -315,13 +326,13 @@ var View: IView = {
           }
         });
       } else {
-        // Unknown sheet: Hide and move to the very end
+        // 🛡️ UNKNOWN SHEET: Hide and move to a safe high index to prevent overflow
         requests.push({
           updateSheetProperties: {
             properties: {
               sheetId: sheetId,
               hidden: true,
-              index: REGISTER.length + 100
+              index: 999 
             },
             fields: 'hidden,index'
           }
@@ -523,15 +534,20 @@ var View: IView = {
   setStatusMessage: function (sheet, message) {
     if (!sheet) return;
     try {
+      const T = CONFIG.THEME;
+      const statusFgRgb = this.hexToRgbColor(T.STATUS_BAR.FG);
+      
+      // Target B1 (Column 1) to leave A1 for mobile trigger dot
       sheet.getRange("B1").setValue(message);
-      // Ensure the theme is established (Left-aligned, Gray, Bold)
+      
       const ssId = sheet.getParent().getId();
       const sheetId = sheet.getSheetId();
+      
       Sheets.Spreadsheets!.batchUpdate({
         requests: [{
           repeatCell: {
             range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 30 },
-            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
+            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: statusFgRgb } } },
             fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
           }
         }]
