@@ -124,6 +124,7 @@ export interface AppConfig {
     BENCHMARK_DECAY: number;
     BENCHMARK_PERCENTILE: number;
     BENCHMARK_MIN_POOL: number;
+    MIN_TROPHIES: number; // ⚡ NEW: Search override
   };
   LEADERBOARD: {
     WEIGHTS: {
@@ -361,6 +362,7 @@ var CONFIG: AppConfig = {
     BENCHMARK_DECAY: 0.0096, // ~1% Daily Decay (Day 30 = ~75% Value)
     BENCHMARK_PERCENTILE: 0.05, // Top 5% of valid pool
     BENCHMARK_MIN_POOL: 3, // Minimum 3 players for average
+    MIN_TROPHIES: 0, // ⚡ Set to >0 to override auto-threshold (e.g. 5000)
   },
 
   LEADERBOARD: {

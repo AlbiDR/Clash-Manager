@@ -535,8 +535,12 @@ var Network: INetwork = {
         headers: headers
     });
 
-    if (res.getResponseCode() !== 200) throw new Error(`Worker Error ${res.getResponseCode()}`);
-    return JSON.parse(res.getContentText()).candidates || [];
+    const code = res.getResponseCode();
+    const text = res.getContentText();
+    console.log(`[Network] Remote Scan Status: ${code} | Response: ${text.slice(0, 500)}`);
+
+    if (code !== 200) throw new Error(`Worker Error ${code}`);
+    return JSON.parse(text).candidates || [];
   },
 
   getRemainingQuota() {
