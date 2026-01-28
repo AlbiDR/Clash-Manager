@@ -94,13 +94,13 @@ function getWebAppData(forceRefresh: boolean): string {
 
     return refreshWebPayload();
   } catch (e: any) {
-    console.error(`getWebAppData CRITICAL FAILURE: ${e.stack}`);
+    console.error(`❌ [API] getWebAppData CRITICAL FAILURE: ${e.stack}`);
     return JSON.stringify({
       success: false,
       data: null,
       error: {
-        code: "GET_APP_DATA_FAILED",
-        message: `The server encountered a critical error: ${e.message}`,
+        code: "PAYLOAD_GENERATION_FAILED",
+        message: `Unable to generate data payload. ${e.message || 'Unknown error'}. Please check backend logs.`,
       },
     });
   }
@@ -156,6 +156,15 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
             }
           }
         }
+      }
+      const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
+      const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+
+      if (!lbSheet) {
+        throw new Error(`Sheet '${CONFIG.SHEETS.LB}' not found. Please run the Leaderboard update first.`);
+      }
+      if (!hhSheet) {
+        throw new Error(`Sheet '${CONFIG.SHEETS.HH}' not found. Please run the Headhunter scout first.`);
       }
 
       // 2. DATABASE WRITE
@@ -224,7 +233,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
         payloadSize: payloadStr.length,
       };
     } catch (e: any) {
-      console.error(`Bulk Dismiss Error: ${e.message}`);
+      console.error(`❌ [API] Bulk Dismiss Error: ${e.message}`);
       throw new Error(`Dismiss Failed: ${e.message}`);
     }
   });
@@ -293,13 +302,13 @@ function _generatePayloadInternal(): string {
 
     return payloadStr;
   } catch (e: any) {
-    console.error(`refreshWebPayload FAILED: ${e.stack}`);
+    console.error(`❌ [API] refreshWebPayload FAILED: ${e.stack}`);
     return JSON.stringify({
       success: false,
       data: null,
       error: {
-        code: "PAYLOAD_GENERATION_FAILED",
-        message: `Failed to generate data from Sheets: ${e.message}`,
+        code: "PAYLOAD_REFRESH_FAILED",
+        message: `Failed to refresh data: ${e.message || 'Unknown error'}. Check if sheets exist and contain valid data.`,
       },
     });
   }
