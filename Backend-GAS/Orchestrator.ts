@@ -250,55 +250,68 @@ function taskWarmUpWorker(): void {
  * Sets up the automated lifecycle of the project.
  */
 function createTriggers(): void {
-  console.info("🧹 [TRIGGERS] Clearing managed automation triggers...");
-  clearAllTriggers();
+  console.info("🚀 [TRIGGERS] Verifying and repairing trigger suite (Non-Destructive)...");
 
-  console.info("🚀 [TRIGGERS] Installing fresh trigger suite...");
   const permanentIds: string[] = [];
+  const existingTriggers = ScriptApp.getProjectTriggers();
+  const existingHandlers = new Set(existingTriggers.map((t: any) => t.getHandlerFunction()));
+
+  const ensure = (handler: string, createFn: () => any) => {
+    if (existingHandlers.has(handler)) {
+      console.info(`  ✓ [SKIP] ${handler} exists.`);
+      const t = existingTriggers.find((t: any) => t.getHandlerFunction() === handler);
+      if (t) permanentIds.push(t.getUniqueId());
+    } else {
+      console.info(`  ✨ [NEW] Creating ${handler}...`);
+      const t = createFn();
+      permanentIds.push(t.getUniqueId());
+    }
+  };
 
   // 1. Database Sync (Every 1 Hour)
-  permanentIds.push(
+  ensure("taskUpdateDatabase", () => 
     ScriptApp.newTrigger("taskUpdateDatabase")
       .timeBased()
       .everyHours(1)
       .create()
-      .getUniqueId()
   );
 
   // 2. Leaderboard Update (Every 1 Hour)
-  permanentIds.push(
+  ensure("taskUpdateLeaderboard", () => 
     ScriptApp.newTrigger("taskUpdateLeaderboard")
       .timeBased()
       .everyHours(1)
       .create()
-      .getUniqueId()
   );
 
   // 3. Headhunter Fast Scout (Every 30 Minutes)
-  permanentIds.push(
+  ensure("taskFastScout", () => 
     ScriptApp.newTrigger("taskFastScout")
       .timeBased()
       .everyMinutes(30)
       .create()
-      .getUniqueId()
   );
 
   // 4. Render Worker Warm-up (Every 10 Minutes)
-  permanentIds.push(
+  ensure("taskWarmUpWorker", () => 
     ScriptApp.newTrigger("taskWarmUpWorker")
       .timeBased()
       .everyMinutes(10)
       .create()
-      .getUniqueId()
   );
 
   // 5. Integrated Mobile Setup (onEdit Trigger)
   setupMobileTriggers(true);
   
+  // Re-fetch triggers to capture the mobile one (might have been created inside setupMobileTriggers)
+  const allTriggersNow = ScriptApp.getProjectTriggers();
+  const mobileT = allTriggersNow.find((t: any) => t.getHandlerFunction() === "handleMobileEdit");
+  if (mobileT) permanentIds.push(mobileT.getUniqueId());
+  
   // 🛡️ REGISTER PERMANENT IDS: This allows cleanupTemporaryTriggers to skip them
   Registry.Services.Store.props.set(PERMANENT_TRIGGER_KEY, JSON.stringify(permanentIds));
 
-  console.info("✅ [TRIGGERS] All managed triggers established successfully.");
+  console.info("✅ [TRIGGERS] Verification complete.");
 }
 
 
