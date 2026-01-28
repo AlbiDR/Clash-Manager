@@ -295,9 +295,9 @@ var View: IView = {
             range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols },
             cell: { 
               userEnteredFormat: { 
-                backgroundColor: { red: 0.97, green: 0.98, blue: 0.98 }, // #f8f9fa
+                backgroundColor: { red: 0.94, green: 0.95, blue: 0.95 }, // #f1f3f4
                 horizontalAlignment: "LEFT", 
-                textFormat: { bold: true, foregroundColor: { red: 0.46, green: 0.47, blue: 0.47 } } 
+                textFormat: { bold: true, foregroundColor: { red: 0.38, green: 0.38, blue: 0.38 } } 
               } 
             },
             fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
@@ -405,25 +405,25 @@ var View: IView = {
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // 🎨 Master Color Palette
+    // 🎨 Master Color Palette (Premium High-Contrast set)
     const PALETTE = {
-      BLUE: "#4285f4",   // Clan Database
-      GREEN: "#0f9d58",  // Leaderboard
-      RED: "#db4437",    // Headhunter
-      ORANGE: "#ff5722", // Technical
-      GREY: "#999999"    // Backups
+      INDIGO:   "#3f51b5", // Clan Database
+      EMERALD:  "#00796b", // Leaderboard
+      CRIMSON:  "#c62828", // Headhunter
+      SLATE:    "#546e7a", // Technical (BL, EVT)
+      MIST:     "#cfd8dc"  // Backups
     };
 
     // 🏗️ Define Roles and Ordering
     const WORKSPACE = [
-      { name: CONFIG.SHEETS.DB, color: PALETTE.BLUE },
-      { name: CONFIG.SHEETS.LB, color: PALETTE.GREEN },
-      { name: CONFIG.SHEETS.HH, color: PALETTE.RED }
+      { name: CONFIG.SHEETS.DB, color: PALETTE.INDIGO },
+      { name: CONFIG.SHEETS.LB, color: PALETTE.EMERALD },
+      { name: CONFIG.SHEETS.HH, color: PALETTE.CRIMSON }
     ];
 
     const TECHNICAL = [
-      { name: CONFIG.SHEETS.BL, color: PALETTE.ORANGE },
-      { name: CONFIG.SHEETS.EVT, color: PALETTE.ORANGE }
+      { name: CONFIG.SHEETS.BL, color: PALETTE.SLATE },
+      { name: CONFIG.SHEETS.EVT, color: PALETTE.SLATE }
     ];
 
     // 🛡️ Registration Engine
@@ -439,10 +439,10 @@ var View: IView = {
     WORKSPACE.forEach(base => {
       // Standard Rotations
       for (let i = 1; i <= 5; i++) {
-        REGISTER.push({ name: `Backup ${i} ${base.name}`, color: PALETTE.GREY, visible: false });
+        REGISTER.push({ name: `Backup ${i} ${base.name}`, color: PALETTE.MIST, visible: false });
       }
       // Legacy Manual Backups
-      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: PALETTE.GREY, visible: false });
+      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: PALETTE.MIST, visible: false });
     });
 
     // 🚀 BATCH EXECUTION (Sheets API)
@@ -466,6 +466,18 @@ var View: IView = {
               tabColor: this.hexToRgbColor(meta.color)
             },
             fields: 'hidden,index,tabColor'
+          }
+        });
+      } else {
+        // Unknown sheet: Hide and move to the very end
+        requests.push({
+          updateSheetProperties: {
+            properties: {
+              sheetId: sheetId,
+              hidden: true,
+              index: REGISTER.length + 100
+            },
+            fields: 'hidden,index'
           }
         });
       }
