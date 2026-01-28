@@ -9,7 +9,7 @@
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
  *    - ⚔️ WAR AWARE: Logs "N/A" for Fame during Training Days.
- * 🏷️ VERSION: 12.0.0
+ * 🏷️ VERSION: 12.0.1
  * ============================================================================
  */
 
@@ -19,15 +19,13 @@ import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
 // @ts-ignore
-const VER_LOGGER = "12.0.0";
+const VER_LOGGER = "12.0.1";
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any; // Advanced Sheets API
 declare var LockService: any;
 declare var PropertiesService: any;
 declare var UrlFetchApp: any;
-declare var SpreadsheetApp: any;
-declare var Sheets: any;
 declare var CacheService: any;
 declare var ContentService: any;
 declare var Utilities: any;
@@ -121,7 +119,9 @@ function updateClanDatabase(): void {
     }
 
     const activeMembers = membersData.items as ClanMemberSnapshot[];
-    const activeTags = new Set(activeMembers.map((m) => m.tag));
+    
+    // 🛡️ NORMALIZE: Ensure tags are uppercase for robust set matching
+    const activeTags = new Set(activeMembers.map((m) => String(m.tag || "").toUpperCase().trim()));
 
     // 🗺️ MAP WAR FAME: Tag -> Fame
     const warFameMap = new Map<string, number>();
@@ -249,8 +249,11 @@ function pruneStaleData(
   const tagsToPurge = new Set<string>();
 
   for (let i = 0; i < tagValues.length; i++) {
-    const tag = String(tagValues[i][0] || "");
-    let dateVal = new Date(0);
+    // 🛡️ NORMALIZE: Clean tag from sheet to avoid case sensitivity mismatch
+    const tag = String(tagValues[i][0] || "").trim().toUpperCase();
+    if (!tag) continue;
+
+    let dateVal: Date | null = null;
     const rawDate = dateValues[i] && dateValues[i][0];
     
     if (rawDate instanceof Date) {
@@ -262,10 +265,14 @@ function pruneStaleData(
        if (parts.length >= 3 && parts[2].length === 4) {
            dateVal = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
        } else {
-           dateVal = new Date(s);
+           const parsed = new Date(s);
+           if (!isNaN(parsed.getTime())) dateVal = parsed;
        }
     }
     
+    // 🛡️ SAFETY: If date is invalid or missing, assume it's very recent (Today) to prevent accidental purge of bad data
+    if (!dateVal) dateVal = new Date(); 
+
     if (!tagSeenData.has(tag) || dateVal > tagSeenData.get(tag)!) {
       tagSeenData.set(tag, dateVal);
     }
@@ -276,6 +283,7 @@ function pruneStaleData(
   cutoff.setDate(cutoff.getDate() - CONFIG.SYSTEM.DB_PURGE_DAYS);
 
   tagSeenData.forEach((lastDate, tag) => {
+    // Only purge if NOT active AND last seen date is older than cutoff
     if (!activeTags.has(tag) && lastDate < cutoff) {
       tagsToPurge.add(tag);
     }
@@ -290,9 +298,19 @@ function pruneStaleData(
   const rowsToDelete: number[] = [];
   for (let i = 0; i < tagValues.length; i++) {
     const rowContent = tagValues[i];
-    if (rowContent && rowContent[0] && tagsToPurge.has(String(rowContent[0]))) {
-      rowsToDelete.push(startRow + i);
+    // 🛡️ NORMALIZE: Ensure we match normalized tags
+    if (rowContent && rowContent[0]) {
+       const t = String(rowContent[0]).trim().toUpperCase();
+       if (tagsToPurge.has(t)) {
+         rowsToDelete.push(startRow + i);
+       }
     }
+  }
+
+  // 🛑 CIRCUIT BREAKER: Stop if deleting > 20% of rows
+  if (rowsToDelete.length > (tagValues.length * 0.2)) {
+     console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${rowsToDelete.length} rows (${Math.round((rowsToDelete.length/tagValues.length)*100)}% of DB). Threshold is 20%. Manual intervention required.`);
+     return;
   }
 
   // 5. Write Back (Atomic Delete via Dimension)
@@ -314,6 +332,7 @@ function pruneStaleData(
     if (deleteRequests.length > 0) {
         Sheets.Spreadsheets!.batchUpdate({ requests: deleteRequests }, ssId);
         console.info(`  └─ Pruning: Removed ${rowsToDelete.length} stale row${rowsToDelete.length !== 1 ? 's' : ''} via Atomic Dimension.`);
+        SpreadsheetApp.flush(); // 🛡️ FLUSH: Ensure grid state is updated before next step reads LastRow
     }
   }
 }
@@ -394,7 +413,8 @@ function upsertDailySnapshots(
           const d = parseDateFromCell(row[S_DB.DATE]);
           // Compare YYYY-MM-DD strings (using dd/MM/yyyy format for consistency)
           if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === Registry.Services.Time.formatDate(today).split(" ")[0]) {
-            const tag = String(row[S_DB.TAG]);
+            // 🛡️ NORMALIZE: Use uppercase for map key to match API data
+            const tag = String(row[S_DB.TAG]).toUpperCase().trim();
             if (!existingMap.has(tag)) {
                existingMap.set(tag, readStart + idx); // Correct row index
                todayValues.push(row);
@@ -409,6 +429,7 @@ function upsertDailySnapshots(
   activeMembers.forEach((m) => {
     let warFame: string | number = warFameMap.get(m.tag) || 0;
     let battleCredit: number | string = 0;
+    const normalizedTag = m.tag.toUpperCase().trim();
     
     // ⚔️ SMART LOGGING: Force "N/A" if checking during Non-War Days
     if (!isWarDay) {
@@ -418,11 +439,11 @@ function upsertDailySnapshots(
         battleCredit = 1; // Player participated today
     }
 
-    if (existingMap.has(m.tag)) {
-      const rowIdx = existingMap.get(m.tag)!;
+    if (existingMap.has(normalizedTag)) {
+      const rowIdx = existingMap.get(normalizedTag)!;
       const updateData = [
         Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
-        m.tag,
+        m.tag, // Keep original casing for display
         m.name,
         m.role,
         m.trophies,
@@ -437,7 +458,7 @@ function upsertDailySnapshots(
         range: `'${sheetName}'!B${rowIdx}`,
         values: [updateData]
       });
-      processedTags.add(m.tag);
+      processedTags.add(normalizedTag);
     } else {
       newRowsToAppend.push([
         Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
