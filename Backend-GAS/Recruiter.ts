@@ -25,6 +25,7 @@ declare var ContentService: any;
 declare var Utilities: any;
 declare var ScriptApp: any;
 declare var Logger: any;
+declare var Sheets: any;
 declare var module: any;
 
 declare namespace GoogleAppsScript {
@@ -347,7 +348,7 @@ function scoutRecruits(): void {
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
  */
-function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
+function updateAndGetBlacklist(sheet: any): {
   ids: Set<string>;
   entries: Array<{ rawScore: number }>;
 } {
@@ -494,7 +495,7 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
  * Loads recruits from the spreadsheet database.
  */
 function loadRecruitDatabase(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  sheet: any,
 ): Map<string, Recruit> {
   if (!sheet || sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return new Map();
   const H = CONFIG.SCHEMA.HH;
@@ -750,7 +751,7 @@ function scanTournaments(
  * Renders the headhunter view in the spreadsheet.
  */
 function renderHeadhunterView(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  sheet: any,
   list: Recruit[],
   baseline: number,
 ): void {
@@ -889,7 +890,7 @@ function renderHeadhunterView(
     console.log(`✅ Headhunter View Rendered: ${actualCount} candidates (Atomic).`);
 }
 
-function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, numRows: number): void {
+function applyHeadhunterFormatting(sheet: any, numRows: number): void {
     if (!sheet || numRows <= 0) return;
     try {
         const rules = sheet.getConditionalFormatRules();
