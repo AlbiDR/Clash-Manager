@@ -16,29 +16,30 @@ import type { AppConfig } from "./Configuration";
 // @ts-ignore
 const VER_VIEW = "1.0.0";
 
-declare var SpreadsheetApp: GoogleAppsScript.Spreadsheet.SpreadsheetApp;
+declare var SpreadsheetApp: any;
 declare var Sheets: any; // Advanced Sheets API
 declare var module: any;
-declare var Session: GoogleAppsScript.Base.Session;
+declare var Session: any;
+declare var LockService: any;
 
 declare const CONFIG: AppConfig;
 
 export interface IView {
   applyStandardLayout(
-    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    sheet: any,
     contentRows: number,
     contentCols: number,
     optHeaders?: string[] | null,
   ): void;
-  drawMobileCheckbox(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
-  refreshMobileControls(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
-  enforceGlobalTabHygiene(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet): void;
-  backupSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, sheetName: string): void;
-  setTabColor(sheet: GoogleAppsScript.Spreadsheet.Sheet, color: string | null): void;
-  tagSheet(sheet: GoogleAppsScript.Spreadsheet.Sheet, type: string): void;
-  findSheetByType(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, type: string): GoogleAppsScript.Spreadsheet.Sheet | null;
-  protectHeaders(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
-  setStatusMessage(sheet: GoogleAppsScript.Spreadsheet.Sheet, message: string): void;
+  drawMobileCheckbox(sheet: any): void;
+  refreshMobileControls(ss: any): void;
+  enforceGlobalTabHygiene(ss?: any): void;
+  backupSheet(ss: any, sheetName: string): void;
+  setTabColor(sheet: any, color: string | null): void;
+  tagSheet(sheet: any, type: string): void;
+  findSheetByType(ss: any, type: string): any | null;
+  protectHeaders(sheet: any): void;
+  setStatusMessage(sheet: any, message: string): void;
   getStandardVisualRequests(sheetId: number, contentRows: number, contentCols: number): any[];
   hexToRgbColor(hex: string): { red: number; green: number; blue: number };
 }
@@ -308,7 +309,7 @@ var View: IView = {
     const requests: any[] = [];
     const nameMap = new Map(REGISTER.map((item, idx) => [item.name, { ...item, index: idx }]));
 
-    sheets.forEach((sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
+    sheets.forEach((sheet: any) => {
       const name = sheet.getName();
       const sheetId = sheet.getSheetId();
       const meta = nameMap.get(name);
@@ -426,7 +427,7 @@ var View: IView = {
       }, ssId, sheetId);
       
       const copySheetId = copyResponse.sheetId;
-      const copySheet = ss.getSheets().find((s: GoogleAppsScript.Spreadsheet.Sheet) => s.getSheetId() === copySheetId);
+      const copySheet = ss.getSheets().find((s: any) => s.getSheetId() === copySheetId);
       
       if (copySheet) {
         copySheet.setName(backup1Name);
@@ -488,7 +489,7 @@ var View: IView = {
       if (metadata && metadata.matchedDeveloperMetadata && metadata.matchedDeveloperMetadata.length > 0) {
         const meta = metadata.matchedDeveloperMetadata[0].developerMetadata;
         const sheetId = meta.location.sheetId;
-        return ss.getSheets().find(s => s.getSheetId() === sheetId) || null;
+        return ss.getSheets().find((s: any) => s.getSheetId() === sheetId) || null;
       }
     } catch (e: any) {
       console.warn(`🏷️ Metadata Lookup failed for type ${type}: ${e}`);
