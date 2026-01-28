@@ -582,8 +582,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
         }
       ];
 
-      // 2E. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar)
-      finalRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, contentRows, contentCols));
+      // 2E. INJECT ADDITIONAL VISUALS (Consolidated)
+      // Note: Standard Layout (Borders, Status Bar, Banding) was already applied by applyStandardLayout above.
 
       // 3. FINAL VISUALS & ATOMIC SYNC
       Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);

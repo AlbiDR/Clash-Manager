@@ -534,23 +534,36 @@ var View: IView = {
   setStatusMessage: function (sheet, message) {
     if (!sheet) return;
     try {
-      const T = CONFIG.THEME;
-      const statusFgRgb = this.hexToRgbColor(T.STATUS_BAR.FG);
-      
-      // Target B1 (Column 1) to leave A1 for mobile trigger dot
-      sheet.getRange("B1").setValue(message);
-      
       const ssId = sheet.getParent().getId();
       const sheetId = sheet.getSheetId();
+      const T = CONFIG.THEME;
+      const statusFgRgb = this.hexToRgbColor(T.STATUS_BAR.FG);
+      const statusBgRgb = this.hexToRgbColor(T.STATUS_BAR.BG);
       
+      // 🚀 ATOMIC STATUS UPDATE: Value + Theme in one transaction
       Sheets.Spreadsheets!.batchUpdate({
-        requests: [{
-          repeatCell: {
-            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 30 },
-            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: statusFgRgb } } },
-            fields: "userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat"
+        requests: [
+          {
+            updateCells: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 2 },
+              rows: [{ values: [{ userEnteredValue: { stringValue: message } }] }],
+              fields: "userEnteredValue"
+            }
+          },
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 100 },
+              cell: { 
+                userEnteredFormat: { 
+                  backgroundColor: statusBgRgb,
+                  horizontalAlignment: "LEFT", 
+                  textFormat: { bold: true, foregroundColor: statusFgRgb } 
+                } 
+              },
+              fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
+            }
           }
-        }]
+        ]
       }, ssId);
     } catch (e: any) {
       console.warn(`Status Error: ${e}`);

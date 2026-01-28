@@ -879,8 +879,8 @@ function renderHeadhunterView(
       }] : [])
     ];
 
-    // 2E. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar)
-    finalRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, contentRows, contentCols));
+    // 2E. INJECT ADDITIONAL VISUALS (Consolidated)
+    // Note: Standard Layout (Borders, Status Bar, Banding) was already applied by applyStandardLayout above.
 
     // 🚀 EXECUTE UNBREAKABLE TRANSACTION
     Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
