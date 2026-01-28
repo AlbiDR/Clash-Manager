@@ -114,6 +114,7 @@ function scoutRecruits(): void {
 
   console.info(`🚀 Starting Headhunter Scout Pipeline...`);
   let sheet = safeSheet(CONFIG.SHEETS.HH);
+  Registry.Services.View.setStatusMessage(sheet, "⏳ Initializing...");
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
   Registry.Services.Core.logStep(2, 9, "Syncing Dynamic Schema indices...");
