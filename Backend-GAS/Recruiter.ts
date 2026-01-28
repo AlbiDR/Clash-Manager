@@ -174,9 +174,10 @@ function scoutRecruits(): void {
   existing.forEach((_, tag) => {
     if (blacklistSet.has(tag)) existing.delete(tag);
   });
-  if (existing.size < beforePrune) {
-    Registry.Services.Core.logStep(5, 9, `Pruned ${beforePrune - existing.size} blacklisted members from tracking.`);
-  }
+  
+  const prunedCount = beforePrune - existing.size;
+  Registry.Services.Core.logStep(5, 9, `Database filtered: ${existing.size} survivors (${prunedCount} blacklisted removed).`);
+
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   let joinedCount = 0;
