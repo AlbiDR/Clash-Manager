@@ -40,6 +40,7 @@ export interface IView {
   protectHeaders(sheet: GoogleAppsScript.Spreadsheet.Sheet): void;
   setStatusMessage(sheet: GoogleAppsScript.Spreadsheet.Sheet, message: string): void;
   getStandardVisualRequests(sheetId: number, contentRows: number, contentCols: number): any[];
+  hexToRgbColor(hex: string): { red: number; green: number; blue: number };
 }
 
 var View: IView = {
@@ -288,18 +289,24 @@ var View: IView = {
                 fields: "userEnteredFormat(horizontalAlignment)"
             }
         },
-        // 3. Status Bar Styling (Row 1) - Force LEFT
+        // 3. Status Bar Styling (Row 1) - Force LEFT + Subdued Background
         {
           repeatCell: {
-            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { horizontalAlignment: "LEFT", textFormat: { bold: true, foregroundColor: { red: 0.53, green: 0.53, blue: 0.53 } } } },
-            fields: "userEnteredFormat(horizontalAlignment,textFormat)"
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols },
+            cell: { 
+              userEnteredFormat: { 
+                backgroundColor: { red: 0.97, green: 0.98, blue: 0.98 }, // #f8f9fa
+                horizontalAlignment: "LEFT", 
+                textFormat: { bold: true, foregroundColor: { red: 0.46, green: 0.47, blue: 0.47 } } 
+              } 
+            },
+            fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
           }
         },
         // 4. Borders
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: strictTotalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: strictTotalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: strictTotalRows - 1, endRowIndex: strictTotalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
@@ -398,53 +405,67 @@ var View: IView = {
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // 🏠 Main Workspace (Visible)
-    const VISIBLE_WHITELIST = [
-      CONFIG.SHEETS.DB,
-      CONFIG.SHEETS.LB,
-      CONFIG.SHEETS.HH,
+    // 🎨 Master Color Palette
+    const PALETTE = {
+      BLUE: "#4285f4",   // Clan Database
+      GREEN: "#0f9d58",  // Leaderboard
+      RED: "#db4437",    // Headhunter
+      ORANGE: "#ff5722", // Technical
+      GREY: "#999999"    // Backups
+    };
+
+    // 🏗️ Define Roles and Ordering
+    const WORKSPACE = [
+      { name: CONFIG.SHEETS.DB, color: PALETTE.BLUE },
+      { name: CONFIG.SHEETS.LB, color: PALETTE.GREEN },
+      { name: CONFIG.SHEETS.HH, color: PALETTE.RED }
     ];
-    
-    // 🛠️ Technical Sheets (Hidden)
-    const TECHNICAL_SHEETS = [
-      CONFIG.SHEETS.BL,
-      CONFIG.SHEETS.EVT,
+
+    const TECHNICAL = [
+      { name: CONFIG.SHEETS.BL, color: PALETTE.ORANGE },
+      { name: CONFIG.SHEETS.EVT, color: PALETTE.ORANGE }
     ];
+
+    // 🛡️ Registration Engine
+    const REGISTER: Array<{ name: string; color: string; visible: boolean }> = [];
     
-    // 🛡️ All Registered Sheets in order
-    const SYSTEM_OWNED = [...VISIBLE_WHITELIST, ...TECHNICAL_SHEETS];
+    // 1. Primary Visible Workspace
+    WORKSPACE.forEach(item => REGISTER.push({ ...item, visible: true }));
     
-    // 📦 Append Backups to the end
-    VISIBLE_WHITELIST.forEach((baseName) => {
-      for (let i = 1; i <= 5; i++)
-        SYSTEM_OWNED.push(`Backup ${i} ${baseName}`);
+    // 2. Technical Secondary Sheets (Hidden)
+    TECHNICAL.forEach(item => REGISTER.push({ ...item, visible: false }));
+    
+    // 3. Backup Rotation & Legacy (Hidden)
+    WORKSPACE.forEach(base => {
+      // Standard Rotations
+      for (let i = 1; i <= 5; i++) {
+        REGISTER.push({ name: `Backup ${i} ${base.name}`, color: PALETTE.GREY, visible: false });
+      }
+      // Legacy Manual Backups
+      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: PALETTE.GREY, visible: false });
     });
 
-
-    const allSheets = ss.getSheets();
-
-    // 🚀 BATCH TAB HYGIENE ENGINE (Sheets API)
+    // 🚀 BATCH EXECUTION (Sheets API)
     const ssId = ss.getId();
     const sheets = ss.getSheets();
     const requests: any[] = [];
+    const nameMap = new Map(REGISTER.map((item, idx) => [item.name, { ...item, index: idx }]));
 
-    // 1. Calculate Visibility and Index mapping
     sheets.forEach((sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
       const name = sheet.getName();
       const sheetId = sheet.getSheetId();
+      const meta = nameMap.get(name);
       
-      if (SYSTEM_OWNED.includes(name)) {
-        const targetVisible = VISIBLE_WHITELIST.includes(name);
-        const targetIndex = SYSTEM_OWNED.indexOf(name); // Desired position
-
+      if (meta) {
         requests.push({
           updateSheetProperties: {
             properties: {
               sheetId: sheetId,
-              hidden: !targetVisible,
-              index: targetIndex
+              hidden: !meta.visible,
+              index: meta.index,
+              tabColor: this.hexToRgbColor(meta.color)
             },
-            fields: 'hidden,index'
+            fields: 'hidden,index,tabColor'
           }
         });
       }
@@ -454,12 +475,19 @@ var View: IView = {
       try {
         Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
       } catch (e: any) {
-        console.warn(`⚠️ Batch Hygiene Warning: ${e}`);
-        // Fallback or ignore for minor index conflicts
+        console.warn(`🧹 Tab Hygiene Batch Fail: ${e.message}`);
       }
     }
+  },
 
-    SpreadsheetApp.flush();
+  /**
+   * 🎨 Helper: Convert Hex to Sheets API Color object
+   */
+  hexToRgbColor: function(hex: string) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return { red: r, green: g, blue: b };
   },
 
   /**
