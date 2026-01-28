@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-declare var LockService: GoogleAppsScript.Lock.LockService;
+declare var LockService: any;
 declare var SpreadsheetApp: any;
 declare var module: any;
 
