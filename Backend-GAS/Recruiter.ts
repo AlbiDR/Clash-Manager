@@ -1,10 +1,9 @@
-
 /**
  * ============================================================================
  * 🔭 MODULE: RECRUITER - TypeScript Edition
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Scans for un-clanned talent via Tournaments + Battle Logs.
- * 🏷️ VERSION: 11.0.0
+ * 🏷️ VERSION: 11.1.0 (Dynamic Strategy)
  * ============================================================================
  */
 
@@ -14,7 +13,7 @@ import type { ScoringWeights } from "./SharedTypes";
 
 // Global Version Constant
 // @ts-ignore
-const VER_RECRUITER = "11.0.0";
+const VER_RECRUITER = "11.1.0";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
@@ -45,7 +44,6 @@ declare namespace GoogleAppsScript {
   }
 }
 
-// Global Declarations for GAS Environment
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Registry: IRegistry;
@@ -136,7 +134,14 @@ function scoutRecruits(): void {
   const baselineData = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
   ]);
-  let avgTrophies = 4000;
+  
+  // ==========================================================================
+  // 🧠 SMART STRATEGY ENGINE
+  // Context-Aware Requirements based on Clan Capacity
+  // ==========================================================================
+  let calculatedFloor = 4000;
+  let calculationMethod = "Fixed Default";
+  const ELITE_THRESHOLD = 45; // Below this = Rebuild Mode. Above this = Elite Mode.
 
   if (
     baselineData &&
@@ -144,13 +149,36 @@ function scoutRecruits(): void {
     baselineData[0].items &&
     baselineData[0].items.length > 0
   ) {
-    avgTrophies =
-      baselineData[0].items.reduce(
-        (a: number, b: any) => a + (b.trophies || 0),
-        0,
-      ) / baselineData[0].items.length;
-    // Removed raw console log
+    const members = baselineData[0].items;
+    const currentCount = members.length;
+
+    // Sort trophies ascending (Lowest -> Highest)
+    const allTrophies = members
+      .map((m: any) => m.trophies || 0)
+      .sort((a: number, b: number) => a - b);
+    
+    if (currentCount > ELITE_THRESHOLD) {
+      // 🏰 ELITE MODE (Median)
+      // We are nearly full. Only accept players better than our top 50%.
+      const midIndex = Math.floor(allTrophies.length / 2);
+      calculatedFloor = allTrophies[midIndex];
+      calculationMethod = `🏰 Elite Mode (Median of ${currentCount})`;
+    } else {
+      // 🏗️ REBUILD MODE (Bottom 10% Avg)
+      // We have space. Accept players who are statistically better than the ones we kick.
+      const bottomCount = Math.max(1, Math.ceil(allTrophies.length * 0.1));
+      const bottomSlice = allTrophies.slice(0, bottomCount);
+      const sumLow = bottomSlice.reduce((a: number, b: number) => a + b, 0);
+      calculatedFloor = Math.round(sumLow / bottomSlice.length);
+      calculationMethod = `🏗️ Rebuild Mode (Bot 10% Avg of ${currentCount})`;
+    }
   }
+
+  // Log the strategy decision
+  console.info(`  └─ Strategy Active: ${calculationMethod} -> Floor: ${calculatedFloor}`);
+
+  // ==========================================================================
+
   const remaining = Registry.Services.Network.getRemainingQuota();
   if (remaining < 300) {
     console.warn(`⚠️ [QUOTA] Insufficient API quota (${remaining} remaining). Aborting scout to preserve core sync.`);
@@ -167,7 +195,7 @@ function scoutRecruits(): void {
   const { ids: blacklistSet, entries: blacklistEntries } =
     updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
 
-  // 2. Load existing tracking data
+  // 2. Load existing recruit database
   Registry.Services.Core.logStep(4, 9, "Loading existing recruit database...");
   const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
 
@@ -202,18 +230,12 @@ function scoutRecruits(): void {
     }
   }
 
-  // 3. Dynamic Safety Cap
+  // 3. Apply Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
-  let minTrophies = Math.max(
-    7500,
-    Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies), // Reverted to 75% / 100%
-  );
-
-  // 🛡️ USER OVERRIDE: Prioritize manual config if set
-  if (CONFIG.HEADHUNTER.MIN_TROPHIES > 0) {
-    minTrophies = CONFIG.HEADHUNTER.MIN_TROPHIES;
-  }
-
+  
+  // 🛡️ TRUST THE MATH: The Calculated Floor is now the Law.
+  // We ignore static overrides to ensure the strategy (Rebuild vs Elite) is honored.
+  let minTrophies = calculatedFloor;
 
   // 4. Run the optimized scan
   Registry.Services.Core.logStep(7, 9, `Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
@@ -245,8 +267,8 @@ function scoutRecruits(): void {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
     const lastRow = lbSheet.getLastRow();
     
-    // 🏗️ HYBRID BENCHMARKING (API Sprint: Selective Column Ingestion)
-    const perfCol = String.fromCharCode(65 + 1 + L.PERF_SCORE); // Corrected indexing (B=0)
+    // 🏗️ HYBRID BENCHMARKING
+    const perfCol = String.fromCharCode(65 + 1 + L.PERF_SCORE); 
     const trophiesCol = String.fromCharCode(65 + 1 + L.TROPHIES);
     const donCol = String.fromCharCode(65 + 1 + L.TOTAL_DON);
     const historyCol = String.fromCharCode(65 + 1 + L.HISTORY);
@@ -293,14 +315,15 @@ function scoutRecruits(): void {
     blacklistEntries,
   );
 
-  const rawPool = Array.from(existing.values()).sort(
-    (a, b) => b.rawScore - a.rawScore,
-  );
+  // ⚡ STRICT FILTER: Enforce Trophy Floor on FINAL mixed pool
+  const rawPool = Array.from(existing.values())
+    .filter(p => p.trophies >= minTrophies)
+    .sort((a, b) => b.rawScore - a.rawScore);
+
   const finalPool = rawPool.slice(0, CONFIG.HEADHUNTER.TARGET);
 
   if (finalPool.length === 0 && rawPool.length === 0 && existing.size > 0) {
-    console.error("⛔ [CRITICAL] Recruiter logic error: Pool is empty despite existing data. Aborting.");
-    return;
+    console.warn("⚠️ [FILTER] All recruits filtered by Trophy Floor.");
   }
 
   finalPool.forEach(
@@ -316,23 +339,24 @@ function scoutRecruits(): void {
 
   // 7. RENDER
   Registry.Services.Core.logStep(9, 9, "Preparing final render and cache updates...");
-  renderHeadhunterView(safeSheet(CONFIG.SHEETS.HH), finalPool, avgTrophies);
+  renderHeadhunterView(safeSheet(CONFIG.SHEETS.HH), finalPool, calculatedFloor);
 
-  // 8. LOGGING (Clean)
+  // 8. LOGGING (Detailed Strategy Report)
   const version = VER_RECRUITER;
   Registry.Services.Core.logReport(
     `🔭 HEADHUNTER v${version} REPORT`,
     [
       `OPERATION COMPLETE`,
       `TARGET QUOTA: ${target} Recruits`,
-      `CURRENT POOL: ${existing.size} Valid Members`,
-      `TROPHY FLOOR: ${minTrophies} (Dynamic)`,
+      `CURRENT POOL: ${finalPool.length} Qualified Members`,
+      `TROPHY FLOOR: ${minTrophies}`,
+      `STRATEGY:     ${calculationMethod}`, // <--- Shows Elite vs Rebuild
       `─`.repeat(63),
       `SCAN ACQUISITIONS: ${scanned.length} Found`,
       `PIPELINE FLOW:    +${newArrivals} New | ↻${updatedExisting} Updated`
     ]
   );
-  console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${existing.size}/${target}`);
+  console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${target}`);
 
   try {
     if (typeof refreshWebPayload === "function") refreshWebPayload();
@@ -809,8 +833,6 @@ function renderHeadhunterView(
     rows.push(emptyRow);
   }
 
-  // No changes needed to renderHeadhunterView preparation logic.
-
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
     const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
@@ -916,5 +938,3 @@ function applyHeadhunterFormatting(sheet: any, numRows: number): void {
  * 🌍 GLOBAL BRIDGE
  */
 Object.assign(this as any, { scoutRecruits, VER_RECRUITER });
-
-// Removed: logScoutReport() - now using Core.logReport()
