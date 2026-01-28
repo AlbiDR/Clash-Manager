@@ -173,10 +173,12 @@ var View: IView = {
               userEnteredFormat: { 
                 backgroundColor: statusBgRgb,
                 horizontalAlignment: "LEFT", 
+                verticalAlignment: "MIDDLE",
+                wrapStrategy: "WRAP",
                 textFormat: { bold: true, foregroundColor: statusFgRgb } 
               } 
             },
-            fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
+            fields: "userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,wrapStrategy,textFormat)"
           }
         },
         // 3.5 Merge Status Bar (Center content)
@@ -574,10 +576,12 @@ var View: IView = {
                 userEnteredFormat: { 
                   backgroundColor: statusBgRgb,
                   horizontalAlignment: "LEFT", 
+                  verticalAlignment: "MIDDLE",
+                  wrapStrategy: "WRAP",
                   textFormat: { bold: true, foregroundColor: statusFgRgb } 
                 } 
               },
-              fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
+              fields: "userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,wrapStrategy,textFormat)"
             }
           }
         ]
