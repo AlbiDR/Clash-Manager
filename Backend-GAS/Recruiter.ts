@@ -205,7 +205,7 @@ function scoutRecruits(): void {
   // 3. Dynamic Safety Cap
   const target = CONFIG.HEADHUNTER.TARGET;
   let minTrophies = Math.max(
-    4000,
+    7500,
     Math.round(existing.size < target ? avgTrophies * 0.75 : avgTrophies), // Reverted to 75% / 100%
   );
 
