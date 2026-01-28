@@ -179,6 +179,19 @@ var View: IView = {
             fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
           }
         },
+        // 3.5 Merge Status Bar (Center content)
+        {
+          mergeCells: {
+            range: {
+              sheetId: sheetId,
+              startRowIndex: 0,
+              endRowIndex: 1,
+              startColumnIndex: 1,
+              endColumnIndex: totalCols - 1
+            },
+            mergeType: "MERGE_ALL"
+          }
+        },
         // 4. Borders
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: borderDarkRgb } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: borderDarkRgb } } },
