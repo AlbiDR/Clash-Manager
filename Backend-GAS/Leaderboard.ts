@@ -105,21 +105,22 @@ export interface RaceParticipant {
  * Calculates scores, ranks players, and updates the sheet.
  */
 function updateLeaderboard(dryRun: boolean = false): void {
-  console.time("LEADERBOARD_UPDATE");
+  console.info("🏆 Starting Leaderboard Generation Pipeline...");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
+  Registry.Services.Core.logStep(1, 7, "Syncing Dynamic Schema indices...");
   Registry.Services.Schema.bootDynamicSchema();
   const L = CONFIG.SCHEMA.LB;
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
     console.error(
-      "❌ CRITICAL: 'ClanTag' is not set. Aborting Leaderboard Update.",
+      "❌ [CONFIG] CLAN_TAG is not configured. Aborting Leaderboard Update.",
     );
-    lbSheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    lbSheet.getRange("B1").setValue("⚠️ Configuration Error: Missing CLAN_TAG");
     return;
   }
 
@@ -128,6 +129,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   const maxCols = lbSheet.getMaxColumns();
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
 
+  Registry.Services.Core.logStep(2, 7, "Loading momentum deltas (previous scores)...");
   if (lastRow >= startRow && maxCols >= L.TAG) {
       const oldData = lbSheet
         .getRange(startRow, 1, lastRow - startRow + 1, maxCols)
@@ -150,11 +152,15 @@ function updateLeaderboard(dryRun: boolean = false): void {
           }
         }
       });
+      if (previousScores.size > 0) {
+        console.info(`  └─ Momentum: Ingested ${previousScores.size} previous score${previousScores.size !== 1 ? 's' : ''} for trend analysis.`);
+      }
     }
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
   // 1. DATA INGESTION
+  Registry.Services.Core.logStep(3, 7, "Ingesting Live API data (Members & Race)...");
   const {
     members: membersData,
     race: raceData,
@@ -163,9 +169,10 @@ function updateLeaderboard(dryRun: boolean = false): void {
   } = Registry.Services.Network.fetchClanDataSmart(cleanTag);
 
   if (!membersData || !membersData.items) {
-    console.error("Leaderboard: Failed to fetch members.");
+    console.error("❌ [CRITICAL] Failed to fetch clan members from API. Aborting leaderboard update.");
     return;
   }
+  console.info(`  └─ API: Located ${membersData.items.length} active clan member${membersData.items.length !== 1 ? 's' : ''}.`);
 
   const now = new Date();
   const currentWeekId = Registry.Services.Time.calculateWarWeekId(now);
@@ -180,6 +187,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   };
 
   // 1. REHYDRATE FROM ARCHIVE
+  Registry.Services.Core.logStep(4, 7, "Rehydrating War History from archives...");
   if (lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const histColIndex = 1 + CONFIG.SCHEMA.LB.HISTORY; // 1-based col
     const tagColIndex = 1 + CONFIG.SCHEMA.LB.TAG; // 1-based col
@@ -205,6 +213,9 @@ function updateLeaderboard(dryRun: boolean = false): void {
           }
         }
       });
+      if (warHistoryMap.size > 0) {
+        console.info(`  └─ Archive: Reconstituted history for ${warHistoryMap.size} combatant${warHistoryMap.size !== 1 ? 's' : ''}.`);
+      }
     }
   }
 
@@ -240,6 +251,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   }
 
   // B. Load Historical Data (Tenure, Donations, and War Fame)
+  Registry.Services.Core.logStep(5, 7, "Loading Tenure and Battle Credits from Database...");
   const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
   const memberDbData = new Map<
     string,
@@ -322,6 +334,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   // ----------------------------------------------------------------------------
   // 2. LOGIC DELEGATION
   // ----------------------------------------------------------------------------
+  Registry.Services.Core.logStep(6, 7, "Computing final performance scores...");
   const rawMemberResults: PlayerResult[] = [];
 
   (membersData.items as ClanMemberResult[]).forEach((m) => {
@@ -580,7 +593,20 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
 
     Registry.Services.View.setStatusMessage(lbSheet, `LEADERBOARD • ${new Date().toLocaleString()}`);
-    console.log(`✅ Leaderboard Perfect: ${actualCount} members.`);
+    
+    // Final Log
+    const version = VER_LEADERBOARD;
+    Registry.Services.Core.logReport(
+      `🏆 LEADERBOARD v${version} REPORT`,
+      [
+        `SYNC STATUS:  SUCCESS`,
+        `RANKED POOL:  ${actualCount} Active Players`,
+        `ELITE AVG:    ${Math.round(maxPerfScore)} (Benchmark)`,
+        `─`.repeat(63),
+        `RECIPIENTS:   Webapp pushed, Sheet rendered.`
+      ]
+    );
+    console.info(`✅ Leaderboard Cycle Finished: ${actualCount} members ranked.`);
 }
 
 /**

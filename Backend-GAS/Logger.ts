@@ -76,16 +76,16 @@ export interface ClanMemberSnapshot {
  * Fetches latest clan data and persists snapshots.
  */
 function updateClanDatabase(): void {
-  console.time("ETL");
+  console.info("📊 Starting Clan Database ETL Pipeline...");
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // 🛡️ CONFIGURATION CHECK
   if (!CONFIG.SYSTEM.CLAN_TAG) {
     console.error(
-      "❌ CRITICAL: 'ClanTag' is not set. Aborting Database Update.",
+      "❌ [CONFIG] CLAN_TAG is not configured. Aborting Database Update.",
     );
     const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
-    if (sheet) sheet.getRange("B1").setValue("⚠️ Error: Missing ClanTag");
+    if (sheet) sheet.getRange("B1").setValue("⚠️ Configuration Error: Missing CLAN_TAG");
     return;
   }
 
@@ -93,6 +93,7 @@ function updateClanDatabase(): void {
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
     // ⚡ Fetch Members and War Race data
+    Registry.Services.Core.logStep(1, 5, "Extracting Live API data (Members, Race)...");
     const urls = [
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
@@ -102,7 +103,7 @@ function updateClanDatabase(): void {
 
     // 🛑 CIRCUIT BREAKER: API FAILURE
     if (!membersData || !membersData.items || membersData.items.length === 0) {
-      console.error("⛔ ETL ABORTED: API returned invalid data.");
+      console.error("❌ [CRITICAL] API returned invalid/empty data. Aborting ETL to prevent data corruption.");
       return;
     }
 
@@ -113,9 +114,9 @@ function updateClanDatabase(): void {
         // Log "N/A" if we are in TRIAL phase (Training Days)
         // Log Numeric Fame if we are in ENGAGEMENT or COLOSSEUM (Battle Days)
         isWarDay = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
-        Logger.log(`[ETL] War Phase: ${warSnap.protocol.phase} | Logging Fame: ${isWarDay}`);
+        console.info(`  ├─ War Phase: ${warSnap.protocol.phase} | Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
     } catch (e) {
-        console.warn("Could not fetch War Snapshot, defaulting to Numeric Logging.");
+        console.warn("⚠️ [WAR] Could not fetch War Snapshot. Defaulting to numeric fame logging.");
         isWarDay = true; // Fallback to safe behavior
     }
 
@@ -128,6 +129,7 @@ function updateClanDatabase(): void {
       raceData.clan.participants.forEach((p: any) => {
         warFameMap.set(p.tag, Registry.Services.ScoringSystem.resolveWarFame(p));
       });
+      console.info(`  └─ API: Collected ${warFameMap.size} unique participant record${warFameMap.size !== 1 ? 's' : ''}.`);
     }
 
     let sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
@@ -170,6 +172,7 @@ function updateClanDatabase(): void {
     }
 
     if (currentMaxCols < requiredCols) {
+      Registry.Services.Core.logStep(2, 5, `Adjusting Sheet Topology (+${requiredCols - currentMaxCols} cols)...`);
       Sheets.Spreadsheets!.batchUpdate({
         requests: [{
           appendDimension: {
@@ -185,6 +188,7 @@ function updateClanDatabase(): void {
     Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.DB);
 
     // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
+    Registry.Services.Core.logStep(3, 5, "Restoring Standard Layout & Visuals...");
     Registry.Services.View.applyStandardLayout(
       sheet,
       -1, // Signal to use metadata
@@ -193,9 +197,11 @@ function updateClanDatabase(): void {
     );
 
     // 🧹 STEP 1: PRUNE STALE DATA
+    Registry.Services.Core.logStep(4, 5, "Pruning stale historical data...");
     pruneStaleData(sheet, activeTags);
 
     // 📥 STEP 2: SMART MERGE TODAY'S DATA
+    Registry.Services.Core.logStep(5, 5, "Performing Smart-Merge on daily snapshots...");
     upsertDailySnapshots(sheet, activeMembers, warFameMap, HEADER, isWarDay);
 
     SpreadsheetApp.flush();
@@ -276,7 +282,7 @@ function pruneStaleData(
   });
 
   if (tagsToPurge.size === 0) {
-    console.log("🧹 Pruning: No stale members found.");
+    console.info("  └─ Pruning: No stale members found.");
     return;
   }
 
@@ -291,8 +297,6 @@ function pruneStaleData(
 
   // 5. Write Back (Atomic Delete via Dimension)
   if (rowsToDelete.length > 0) {
-    console.log(`🧹 Pruning: Removing ${tagsToPurge.size} old members.`);
-
     const sheetId = sheet.getSheetId();
     const deleteRequests = rowsToDelete
       .sort((a, b) => b - a)
@@ -309,7 +313,7 @@ function pruneStaleData(
 
     if (deleteRequests.length > 0) {
         Sheets.Spreadsheets!.batchUpdate({ requests: deleteRequests }, ssId);
-        console.log(`🧹 Pruning Complete: Removed ${rowsToDelete.length} rows via Sheets API.`);
+        console.info(`  └─ Pruning: Removed ${rowsToDelete.length} stale row${rowsToDelete.length !== 1 ? 's' : ''} via Atomic Dimension.`);
     }
   }
 }
@@ -452,12 +456,11 @@ function upsertDailySnapshots(
 
   // 4. Commit Updates (Atomic Batch)
   if (individualUpdates.length > 0) {
-    console.log(`ETL: Updating ${individualUpdates.length} existing records for ${todayStr}.`);
-    
     Sheets.Spreadsheets!.Values!.batchUpdate({
       valueInputOption: "USER_ENTERED",
       data: individualUpdates
     }, ssId);
+    console.info(`  ├─ Merge: Synchronized ${individualUpdates.length} existing record${individualUpdates.length !== 1 ? 's' : ''}.`);
   }
 
   // 5. Commit Appends (Explicitly target Column B)
@@ -490,6 +493,7 @@ function upsertDailySnapshots(
     }, ssId, `'${sheetName}'!B${nextRow}`, {
       valueInputOption: "USER_ENTERED"
     });
+    console.info(`  └─ Append: Ingested ${newRowsToAppend.length} new record${newRowsToAppend.length !== 1 ? 's' : ''} at row ${nextRow}.`);
   }
 
   SpreadsheetApp.flush(); // Ensure grid changes are committed before calculating final bounds
@@ -578,7 +582,20 @@ function upsertDailySnapshots(
   Sheets.Spreadsheets!.batchUpdate({ requests: finalVisualRequests }, ssId);
 
   Registry.Services.View.setStatusMessage(sheet, `DATABASE • ${new Date().toLocaleString()}`);
-  console.log(`✅ Database View Rendered: ${dataRowCount} entries (Atomic).`);
+  
+  // Final Log
+  const version = VER_LOGGER;
+  Registry.Services.Core.logReport(
+    `📊 CLAN DATABASE v${version} REPORT`,
+    [
+      `OP TYPE:   ETL SNAPSHOT (DAILY)`,
+      `UPDATED:   ${individualUpdates.length} members`,
+      `APPENDED:  ${newRowsToAppend.length} members`,
+      `─`.repeat(63),
+      `HEALTH:    Atomic Transaction Complete.`
+    ]
+  );
+  console.info(`✅ Database ETL Cycle Finished: ${dataRowCount} total rows.`);
 }
 
 /**
