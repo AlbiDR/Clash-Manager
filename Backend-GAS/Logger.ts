@@ -9,7 +9,7 @@
  *    - SMART PRUNING: Deletes historical data of players who left > 7 days ago.
  *    - SMART MERGE: Updates existing rows for Today, appends new ones.
  *    - ⚔️ WAR AWARE: Logs "N/A" for Fame during Training Days.
- * 🏷️ VERSION: 12.0.1
+ * 🏷️ VERSION: 12.0.2
  * ============================================================================
  */
 
@@ -19,7 +19,7 @@ import type { WarSnapshot } from "./Service_WarIntelligence";
 
 // Global Version Constant
 // @ts-ignore
-const VER_LOGGER = "12.0.1";
+const VER_LOGGER = "12.0.2";
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any; // Advanced Sheets API
@@ -189,9 +189,14 @@ function updateClanDatabase(): void {
 
     // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
     Registry.Services.Core.logStep(3, 5, "Restoring Standard Layout & Visuals...");
+    
+    // ⚡ FIX: Calculate ACTUAL row count to prevent View engine from shrinking the grid to default (100)
+    // We pass the existing size so applyStandardLayout treats it as the baseline.
+    const preservedRows = Math.max(100, currentMaxRows - CONFIG.LAYOUT.DATA_START_ROW);
+    
     Registry.Services.View.applyStandardLayout(
       sheet,
-      -1, // Signal to use metadata
+      preservedRows, 
       HEADER.length,
       HEADER,
     );
