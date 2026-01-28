@@ -21,9 +21,10 @@ import type { AppConfig } from "./Configuration";
 import type { IRegistry } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
-declare var UrlFetchApp: GoogleAppsScript.URL_Fetch.UrlFetchApp;
-declare var CacheService: GoogleAppsScript.Cache.CacheService;
-declare var Utilities: GoogleAppsScript.Utilities.Utilities;
+declare var UrlFetchApp: any;
+declare var CacheService: any;
+declare var Utilities: any;
+declare var PropertiesService: any;
 declare var module: any;
 
 declare const CONFIG: AppConfig;
