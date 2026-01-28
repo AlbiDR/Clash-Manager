@@ -570,7 +570,7 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
         checks: {
             upstream: upstreamStatus,
             pool: pool,
-            memory: process.memoryUsage().rss
+            memory: (process as any).memoryUsage().rss
         }
     });
 });
