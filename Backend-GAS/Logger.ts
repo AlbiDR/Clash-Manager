@@ -307,9 +307,10 @@ function pruneStaleData(
     }
   }
 
-  // 🛑 CIRCUIT BREAKER: Stop if deleting > 20% of rows
-  if (rowsToDelete.length > (tagValues.length * 0.2)) {
-     console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${rowsToDelete.length} rows (${Math.round((rowsToDelete.length/tagValues.length)*100)}% of DB). Threshold is 20%. Manual intervention required.`);
+  // 🛑 CIRCUIT BREAKER: Stop if deleting > 55 rows (Safety Cap)
+  // 50 Players + Headers + Buffer = ~55 rows. Anything more implies a catastrophic logic error or mass-wipe.
+  if (rowsToDelete.length > 55) {
+     console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${rowsToDelete.length} rows. Threshold is 55 (Max Clan Size + Buffer). Manual intervention required.`);
      return;
   }
 
