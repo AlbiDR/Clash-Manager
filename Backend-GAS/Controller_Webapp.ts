@@ -126,8 +126,8 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
 
       // 1. READ EXISTING DATA
       const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-      const tagScoreMap = new Map<string, number>();
       const tagRowMap = new Map<string, number>();
+      const tagScoreMap = new Map<string, number>();
 
       const ssId = ss.getId();
       if (sheet) {
@@ -139,35 +139,22 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
           const numRows = lastRowVisual - startRow + 1;
           const H = CONFIG.SCHEMA.HH;
 
-          const tagValues = sheet
-            .getRange(startRow, 1 + H.TAG, numRows, 1)
-            .getValues();
-          const scoreValues = sheet
-            .getRange(startRow, 1 + H.RAW_SCORE, numRows, 1)
-            .getValues();
+          // 🛡️ FIX: Start at column 2 (Column B) to match extractSheetDataStrict
+          const tagValues = sheet.getRange(startRow, 2 + H.TAG, numRows, 1).getValues();
+          const scoreValues = sheet.getRange(startRow, 2 + H.RAW_SCORE, numRows, 1).getValues();
 
           for (let i = 0; i < tagValues.length; i++) {
-            const t = String(tagValues[i][0] || "").trim();
-            const s = Number(scoreValues[i][0]) || 0;
+            const t = String(tagValues[i][0] || "").trim().toUpperCase();
             if (t) {
-              const normTag = (t.startsWith("#") ? t : "#" + t).toUpperCase();
-              tagScoreMap.set(normTag, s);
+              const normTag = t.startsWith("#") ? t : "#" + t;
               tagRowMap.set(normTag, startRow + i);
+              tagScoreMap.set(normTag, Number(scoreValues[i][0]) || 0);
             }
           }
         }
       }
-      const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
-      const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
 
-      if (!lbSheet) {
-        throw new Error(`Sheet '${CONFIG.SHEETS.LB}' not found. Please run the Leaderboard update first.`);
-      }
-      if (!hhSheet) {
-        throw new Error(`Sheet '${CONFIG.SHEETS.HH}' not found. Please run the Headhunter scout first.`);
-      }
-
-      // 2. DATABASE WRITE
+      // 2. DATABASE WRITE (Blacklist)
       let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
       if (!blSheet) {
         blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
@@ -175,8 +162,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       }
 
       const now = Date.now();
-      const expiryDuration =
-        (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
+      const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
       const expiryDate = now + expiryDuration;
 
       const dbEntries = ids.map((id) => {
@@ -193,32 +179,19 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
         });
       }
 
-      // 3. SHEET CLEANUP
-      let deletedCount = 0;
+      // 3. SHEET UPDATE (Tick "Invited" checkbox instead of deleting)
+      let updatedCount = 0;
       if (sheet && tagRowMap.size > 0) {
-        const rowsToDelete: number[] = [];
+        const H = CONFIG.SCHEMA.HH;
         ids.forEach((id) => {
           const tag = (id.startsWith("#") ? id : "#" + id).toUpperCase();
-          if (tagRowMap.has(tag)) rowsToDelete.push(tagRowMap.get(tag)!);
+          const row = tagRowMap.get(tag);
+          if (row) {
+            // Set "Invited" column (Column C / Index 2 absolute)
+            sheet.getRange(row, 2 + H.INVITED).setValue(true);
+            updatedCount++;
+          }
         });
-
-        if (rowsToDelete.length > 0) {
-          const deleteRequests = rowsToDelete
-            .sort((a, b) => b - a)
-            .map(idx => ({
-              deleteDimension: {
-                range: {
-                  sheetId: sheet.getSheetId(),
-                  dimension: "ROWS",
-                  startIndex: idx - 1,
-                  endIndex: idx
-                }
-              }
-            }));
-          
-          Sheets.Spreadsheets!.batchUpdate({ requests: deleteRequests }, ssId);
-          deletedCount = rowsToDelete.length;
-        }
       }
 
       // 4. FLUSH & REFRESH
@@ -229,7 +202,8 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
         success: true,
         count: ids.length,
         dbWrite: dbEntries.length,
-        deleted: deletedCount,
+        deleted: 0, // No longer deleting rows
+        updated: updatedCount,
         payloadSize: payloadStr.length,
       };
     } catch (e: any) {
