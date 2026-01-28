@@ -524,8 +524,6 @@ var Network: INetwork = {
         scoring
     };
 
-    console.log(`[Network] Remote Scan Payload | Tags: ${payload.tags.length} | Keys: ${payload.apiKeys.length} | Blacklist: ${payload.blacklist.length} | MinTrophies: ${payload.minTrophies}`);
-
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
@@ -539,7 +537,6 @@ var Network: INetwork = {
 
     const code = res.getResponseCode();
     const text = res.getContentText();
-    console.log(`[Network] Remote Scan Status: ${code} | Response: ${text.slice(0, 500)}`);
 
     if (code !== 200) throw new Error(`Worker Error ${code}`);
     return JSON.parse(text).candidates || [];
