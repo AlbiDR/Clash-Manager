@@ -495,6 +495,9 @@ function scanTournaments(
 
   if (tourneyTags.length === 0) return [];
 
+  let candidates: any[] = [];
+  let usedRemote = false;
+
   // 2. Tournament Scouting
   if (remoteAvailable && remoteExpandEnabled) {
     console.log(`[Scout] Executing REMOTE SCAN (${tourneyTags.length} units)...`);
@@ -534,7 +537,7 @@ function scanTournaments(
   }
 
   const uniqueCandidates = new Map<string, any>();
-  candidates.forEach((c) => {
+  candidates.forEach((c: any) => {
     if (c.trophies >= minTrophies || c.trophies === undefined)
       uniqueCandidates.set(c.tag, c);
   });
@@ -559,7 +562,7 @@ function scanTournaments(
     candidates.length > 0 &&
     candidates[0].rawScore !== undefined
   ) {
-    candidates.forEach((c) => {
+    candidates.forEach((c: any) => {
       validCandidates.push({
         tag: c.tag,
         name: c.name,
