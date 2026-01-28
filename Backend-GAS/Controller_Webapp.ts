@@ -319,15 +319,15 @@ function extractSheetDataStrict(
   }
 
   const maxColIdx = Math.max(...mapping.map((m) => m.col));
-  const numCols = Math.max(20, maxColIdx + 1);
-  
-  // 🛡️ BOUNDS VALIDATION: Ensure we don't exceed sheet dimensions
+  const requiredCols = maxColIdx + 1;
   const sheetMaxCols = sheet.getMaxColumns();
-  if (numCols > sheetMaxCols) {
-    console.warn(`⚠️ [DATA] extractSheetDataStrict: Required columns (${numCols}) exceed sheet columns (${sheetMaxCols}). Data may be incomplete.`);
+
+  // 🛡️ BOUNDS VALIDATION: Ensure we don't exceed sheet dimensions
+  if (requiredCols > sheetMaxCols) {
+    console.warn(`⚠️ [DATA] extractSheetDataStrict: Required columns (${requiredCols}) exceed sheet columns (${sheetMaxCols}) for '${sheetName}'. Data may be incomplete.`);
   }
-  
-  const safeNumCols = Math.min(numCols, sheetMaxCols);
+
+  const safeNumCols = Math.min(requiredCols, sheetMaxCols);
   const numRows = lastRow - startRow + 1;
   
   if (numRows <= 0) {
@@ -336,6 +336,7 @@ function extractSheetDataStrict(
   }
   
   const range = sheet.getRange(startRow, 2, numRows, safeNumCols);
+
   const vals = range.getValues();
   const displayVals = range.getDisplayValues();
 
