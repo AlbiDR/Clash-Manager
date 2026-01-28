@@ -6,7 +6,7 @@
  * 📝 DESCRIPTION: Handles all Spreadsheet visualization, formatting, and
  *    interactive elements (checkboxes, banding, headers).
  * ⚙️ ROLE: Pure Presentation Layer. "How it looks".
- * 🏷️ VERSION: 1.0.0
+ * 🏷️ VERSION: 1.0.1
  * ============================================================================
  */
 
@@ -14,7 +14,7 @@ import type { AppConfig } from "./Configuration";
 
 // Global Version Constant
 // @ts-ignore
-const VER_VIEW = "1.0.0";
+const VER_VIEW = "1.0.1";
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any; // Advanced Sheets API
@@ -537,6 +537,9 @@ var View: IView = {
     try {
       const ssId = sheet.getParent().getId();
       const sheetId = sheet.getSheetId();
+      // ⚡ DYNAMIC WIDTH: Fetch actual width to avoid "Invalid Range" errors on resized sheets
+      const maxCols = sheet.getMaxColumns(); 
+      
       const T = CONFIG.THEME;
       const statusFgRgb = this.hexToRgbColor(T.STATUS_BAR.FG);
       const statusBgRgb = this.hexToRgbColor(T.STATUS_BAR.BG);
@@ -553,7 +556,7 @@ var View: IView = {
           },
           {
             repeatCell: {
-              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 100 },
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: maxCols },
               cell: { 
                 userEnteredFormat: { 
                   backgroundColor: statusBgRgb,
