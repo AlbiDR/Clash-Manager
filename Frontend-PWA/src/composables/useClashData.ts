@@ -88,7 +88,15 @@ export function useClashData() {
       if (raw) {
         const parsed = JSON.parse(raw);
         clashData.value = parsed;
-        lastSyncTime.value = parsed.timestamp || Date.now();
+        const ts = parsed.timestamp || 0;
+        lastSyncTime.value = ts || Date.now();
+
+        // ⚡ STALE CHECK: If data is > 5 minutes old, trigger background refresh
+        const STALE_THRESHOLD = 5 * 60 * 1000;
+        if (Date.now() - ts > STALE_THRESHOLD) {
+          console.log("[Data] Cache is stale (>5m), triggering background sync...");
+          refresh();
+        }
       }
     } catch (e) {
       localStorage.removeItem(SNAPSHOT_KEY);

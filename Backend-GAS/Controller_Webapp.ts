@@ -287,7 +287,7 @@ function _generatePayloadInternal(): string {
     Registry.Services.Store.cache.putLarge(
       CONFIG.SYSTEM.JSON_STORE_KEY,
       payloadStr,
-      21600,
+      600, // Reduced from 21600 (6h) to 600 (10m) for higher freshness
     );
     Registry.Services.Store.props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
 
