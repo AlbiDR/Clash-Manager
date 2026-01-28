@@ -1,3 +1,4 @@
+
 /**
  * ============================================================================
  * 🕰️ MODULE: TIME (Temporal Engine)
@@ -18,7 +19,7 @@
 
 import type { AppConfig } from "./Configuration";
 
-declare var Utilities: GoogleAppsScript.Utilities.Utilities;
+declare var Utilities: any;
 declare var module: any;
 declare const CONFIG: AppConfig;
 
