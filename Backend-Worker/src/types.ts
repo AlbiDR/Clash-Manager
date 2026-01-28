@@ -210,6 +210,7 @@ export interface ServerConfig {
   readonly timeout: number;
   readonly maxRetries: number;
   readonly port: number;
+  readonly apiBase: string; // ⚡ NEW: API Base URL
   readonly secret?: string;
 }
 

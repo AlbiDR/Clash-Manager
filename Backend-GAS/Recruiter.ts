@@ -146,7 +146,6 @@ function scoutRecruits(): void {
         0,
       ) / baselineData[0].items.length;
     console.log(`[Scout] Raw Baseline: ${baselineData[0].items.length} members | AvgTrophies: ${avgTrophies}`);
-    console.log(`[Scout] Sample Member: ${baselineData[0].items[0].name} | Trophies: ${baselineData[0].items[0].trophies}`);
   }
 
   // 🛡️ QUOTA GUARD
@@ -164,10 +163,6 @@ function scoutRecruits(): void {
 
   // 2. Load existing tracking data
   const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
-  const sampleRecruit = Array.from(existing.values())[0];
-  if (sampleRecruit) {
-    console.log(`[Scout] Existing Sample: ${sampleRecruit.name} | Trophies: ${sampleRecruit.trophies}`);
-  }
 
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   const tagsToCheck = Array.from(existing.keys());
@@ -500,73 +495,54 @@ function scanTournaments(
 
   if (tourneyTags.length === 0) return [];
 
-  let candidates: any[] = [];
-  let usedRemote = false;
-
-  // 2. Tournament Scouting (LOCAL PARALLEL ENGINE)
-  console.log(`[Scout] Executing LOCAL PARALLEL SCAN (${tourneyTags.length} units)...`);
-  
-  const chunks = [];
-  const chunkSize = 40; // Batch size for UrlFetchApp.fetchAll
-  for (let i = 0; i < tourneyTags.length; i += chunkSize) {
-    chunks.push(tourneyTags.slice(i, i + chunkSize));
+  // 2. Tournament Scouting
+  if (remoteAvailable && remoteExpandEnabled) {
+    console.log(`[Scout] Executing REMOTE SCAN (${tourneyTags.length} units)...`);
+    try {
+      candidates = Registry.Services.Network.scanTournamentsRemote(
+        tourneyTags,
+        minTrophies,
+        blacklistSet,
+        W,
+      );
+      usedRemote = true;
+    } catch (e: any) {
+      console.warn(`[Scout] Remote Scan Failed: ${e.message}`);
+    }
   }
 
-  let processedCount = 0;
-  
-  chunks.forEach((chunk, cIdx) => {
-    // Throttle slightly between chunks to prevent burst limit issues
-    if (cIdx > 0) Utilities.sleep(200);
+  if (!usedRemote) {
+    console.log(`[Scout] Executing LOCAL SCAN (${tourneyTags.length} units)...`);
+    const details = Registry.Services.Network.fetchRoyaleAPI(
+      tourneyTags.map(
+        (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
+      ),
+    );
 
-    const requests = chunk.map(tag => ({
-        url: `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(tag)}`,
-        method: "get",
-        headers: { 
-            Authorization: `Bearer ${CONFIG.SYSTEM.API_KEYS[Math.floor(Math.random() * CONFIG.SYSTEM.API_KEYS.length)].value}`,
-            "User-Agent": "ClanManager/LocalScout"
-        },
-        muteHttpExceptions: true
-    }));
-
-    const responses = UrlFetchApp.fetchAll(requests as any[]);
-    
-    responses.forEach((res) => {
-        if (res.getResponseCode() === 200) {
-            try {
-                const d = JSON.parse(res.getContentText());
-                if (d && d.membersList && d.membersList.length >= 5) {
-                    d.membersList.forEach((p: any) => {
-                        if (
-                            (!p.clan || p.clan.tag === "") &&
-                            (!blacklistSet || !blacklistSet.has(p.tag))
-                        ) {
-                            candidates.push(p);
-                        }
-                    });
-                }
-            } catch (e) {}
-        }
+    details.forEach((d: TournamentResult) => {
+      if (d && d.membersList && d.membersList.length >= 10) {
+        d.membersList.forEach((p) => {
+          if (
+            (!p.clan || p.clan.tag === "") &&
+            (!blacklistSet || !blacklistSet.has(p.tag))
+          ) {
+            candidates.push(p);
+          }
+        });
+      }
     });
-
-    processedCount += chunk.length;
-    if (processedCount % 100 === 0) console.log(`[Scout] Processed ${processedCount}/${tourneyTags.length} tournaments...`);
-  });
+  }
 
   const uniqueCandidates = new Map<string, any>();
   candidates.forEach((c) => {
-    // ⚡ FILTER: Strict Trophy Check
-    if (c.trophies >= minTrophies) {
-       uniqueCandidates.set(c.tag, c);
-    }
+    if (c.trophies >= minTrophies || c.trophies === undefined)
+      uniqueCandidates.set(c.tag, c);
   });
-
-  console.log(`[Scout] Raw Candidates Found: ${candidates.length} | Unique Qualified (> ${minTrophies}): ${uniqueCandidates.size}`);
 
   const playerLimit = Math.min(
     CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000,
     scanCfg.PLAYERS || 250,
   );
-  
   const candidatePool = Array.from(uniqueCandidates.values())
     .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
     .slice(0, playerLimit);
@@ -574,49 +550,102 @@ function scanTournaments(
   Registry.Services.Core.shuffleArray(candidatePool);
   const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
 
-  if (tagsToFetch.length === 0) {
-     console.warn("[Scout] No candidates qualified after trophy filter.");
-     return [];
-  }
+  if (tagsToFetch.length === 0) return [];
 
   const validCandidates: Recruit[] = [];
 
-    // 3. Deep Profiling (Local Batch Fetch)
-    console.log(`[Scout] Deep Profiling ${tagsToFetch.length} candidates...`);
-    
-    const profileChunks = [];
-    const pChunkSize = 30;
-    for (let i = 0; i < tagsToFetch.length; i += pChunkSize) {
-        profileChunks.push(tagsToFetch.slice(i, i + pChunkSize));
-    }
+  if (
+    usedRemote &&
+    candidates.length > 0 &&
+    candidates[0].rawScore !== undefined
+  ) {
+    candidates.forEach((c) => {
+      validCandidates.push({
+        tag: c.tag,
+        name: c.name,
+        trophies: c.trophies,
+        donations: c.donations,
+        cards: c.cards,
+        war: c.war,
+        foundDate: new Date(),
+        invited: false,
+        rawScore: c.rawScore,
+        potentialScore: c.potentialScore,
+      });
+    });
+  } else {
+    const playersData = Registry.Services.Network.fetchRoyaleAPI(
+      tagsToFetch.map(
+        (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
+      ),
+      remoteAvailable ? W : null,
+    );
 
-    profileChunks.forEach((chunk, cIdx) => {
-        if (cIdx > 0) Utilities.sleep(150);
-        
-        const urls = chunk.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
-        // Use Network.fetchRoyaleAPI for smart key rotation and caching on profiles
-        const profiles = Registry.Services.Network.fetchRoyaleAPI(urls, W); 
+    const logUrls: string[] = [];
+    const candidatesToProfile: any[] = [];
 
-        profiles.forEach((p: any) => {
-            if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-                 validCandidates.push({
-                    tag: p.tag,
-                    name: p.name,
-                    trophies: p.trophies,
-                    donations: p.totalDonations,
-                    cards: p.challengeCardsWon,
-                    war: p.warDayWins,
-                    foundDate: new Date(),
-                    invited: false,
-                    rawScore: p.rawScore || 0, // Ensure rawScore is populated
-                    potentialScore: p.potentialScore
-                  });
-            }
-        });
+    playersData.forEach((p: any) => {
+      if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
+        if (p.rawScore !== undefined) {
+          validCandidates.push({
+            tag: p.tag,
+            name: p.name,
+            trophies: p.trophies,
+            donations: p.totalDonations,
+            cards: p.challengeCardsWon,
+            war: p.warDayWins,
+            foundDate: new Date(),
+            invited: false,
+            rawScore: p.rawScore,
+          });
+        } else {
+          candidatesToProfile.push(p);
+          logUrls.push(
+            `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
+          );
+        }
+      }
     });
 
-  return validCandidates;
-}
+    if (logUrls.length > 0) {
+      const logs = Registry.Services.Network.fetchRoyaleAPI(logUrls);
+      candidatesToProfile.forEach((p, idx) => {
+        let hasWar = false;
+        if (logs[idx]) {
+          hasWar = logs[idx].some((b: any) =>
+            ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type),
+          );
+        }
+        let totalWarScore = (p.warDayWins || 0) + (hasWar ? 500 : 0);
+        if (existingRecruits?.has(p.tag)) {
+          totalWarScore = Math.max(
+            totalWarScore,
+            existingRecruits.get(p.tag)!.war,
+          );
+        }
+
+        const rawScore = Registry.Services.ScoringSystem.calculateRecruitRawScore(
+          p.trophies || 0,
+          p.totalDonations || 0,
+          p.warDayWins || 0,
+          hasWar,
+          W,
+        );
+
+        validCandidates.push({
+          tag: p.tag,
+          name: p.name,
+          trophies: p.trophies,
+          donations: p.totalDonations,
+          cards: p.challengeCardsWon,
+          war: totalWarScore,
+          foundDate: new Date(),
+          invited: false,
+          rawScore: rawScore,
+        });
+      });
+    }
+  }
 
   return validCandidates;
 }

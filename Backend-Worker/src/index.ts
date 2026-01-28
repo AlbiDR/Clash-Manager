@@ -49,6 +49,7 @@ const CONFIG: ServerConfig = {
   timeout: parseInt(process.env["WORKER_TIMEOUT_SEC"] ?? "45", 10) * 1000,
   maxRetries: parseInt(process.env["WORKER_RETRIES"] ?? "2", 10),
   port: parseInt(process.env["PORT"] ?? "8080", 10),
+  apiBase: process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1", // ⚡ DEFAULT TO PROXY
 } as const;
 
 // ============================================================================
@@ -446,7 +447,7 @@ async function processScanBatch(
       const tag = tags[i];
       if (!tag) continue;
 
-      const url = `https://api.clashroyale.com/v1/tournaments/${encodeURIComponent(tag)}`;
+      const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag)}`;
 
       const headers: Record<string, string> = {
         "User-Agent": "ClanManagerWorker/1.0",
@@ -555,7 +556,7 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     
     if (testKey) {
         try {
-            const upRes = await timeoutFetch("https://api.clashroyale.com/v1/cards", {
+            const upRes = await timeoutFetch(`${CONFIG.apiBase}/cards`, {
                 headers: { Authorization: `Bearer ${testKey}` }
             }, 3000);
             upstreamStatus = upRes.status === 200 ? "OK" : `FAIL_${upRes.status}`;
@@ -588,7 +589,7 @@ app.post(
         return;
       }
 
-      const auditUrl = "https://api.clashroyale.com/v1/cards";
+      const auditUrl = `${CONFIG.apiBase}/cards`;
       const tasks = apiKeys.map(async (key): Promise<ApiKeyAuditResult> => {
         try {
           const response = await timeoutFetch(
@@ -663,7 +664,7 @@ app.post(
         const candidateTags = [...new Set(candidates.map((c) => c.tag))];
         const playerUrls = candidateTags.map(
           (t) =>
-            `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`,
+            `${CONFIG.apiBase}/players/${encodeURIComponent(t)}`,
         );
 
         const scoredResults = await processBatch<ScoredPlayer>(
@@ -746,7 +747,7 @@ app.post(
         const candidateTags = [...new Set(candidates.map((c) => c.tag))];
         const playerUrls = candidateTags.map(
           (t) =>
-            `https://api.clashroyale.com/v1/players/${encodeURIComponent(t)}`,
+            `${CONFIG.apiBase}/players/${encodeURIComponent(t)}`,
         );
 
         const scoredResults = await processBatch<ScoredPlayer>(
@@ -793,9 +794,9 @@ app.post(
 
       const cleanTag = encodeURIComponent(tag);
       const urls = [
-        `https://api.clashroyale.com/v1/clans/${cleanTag}/members`,
-        `https://api.clashroyale.com/v1/clans/${cleanTag}/currentriverrace`,
-        `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`,
+        `${CONFIG.apiBase}/clans/${cleanTag}/members`,
+        `${CONFIG.apiBase}/clans/${cleanTag}/currentriverrace`,
+        `${CONFIG.apiBase}/clans/${cleanTag}/riverracelog?limit=52`,
       ];
 
       const results = await processBatch<
@@ -873,9 +874,9 @@ app.post(
       let url = "";
 
       if (type === "members") {
-        url = `https://api.clashroyale.com/v1/clans/${cleanTag}/members`;
+        url = `${CONFIG.apiBase}/clans/${cleanTag}/members`;
       } else if (type === "warlog") {
-        url = `https://api.clashroyale.com/v1/clans/${cleanTag}/riverracelog?limit=52`;
+        url = `${CONFIG.apiBase}/clans/${cleanTag}/riverracelog?limit=52`;
       } else {
         res.status(400).json({ error: "invalid type" });
         return;
