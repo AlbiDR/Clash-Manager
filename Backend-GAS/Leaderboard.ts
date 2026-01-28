@@ -31,6 +31,7 @@ declare function refreshWebPayload(): void;
 declare var Utilities: any;
 declare var ScriptApp: any;
 declare var Logger: any;
+declare var Sheets: any;
 declare var module: any;
 
 declare namespace GoogleAppsScript {
