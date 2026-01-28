@@ -91,7 +91,7 @@ const NetworkInternal = {
       } else {
         _FETCH_COUNT = 0;
       }
-    } catch (e) {
+    } catch (e: any) {
       _FETCH_COUNT = 0;
     }
   },
@@ -201,7 +201,7 @@ var Network: INetwork = {
               _EXECUTION_CACHE.set(url, json);
               finalResults[index] = json;
               return;
-          } catch(e) {}
+          } catch(e: any) {}
       }
 
       // Need fetch
@@ -297,7 +297,7 @@ var Network: INetwork = {
                 scriptCache.put(NetworkInternal.hashKey(url), text, ttl);
 
                 urlIndices.get(url)!.forEach(idx => finalResults[idx] = json);
-              } catch (e) {}
+              } catch (e: any) {}
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url)!.forEach(idx => finalResults[idx] = null);
@@ -316,7 +316,7 @@ var Network: INetwork = {
           if (!retryChunk) break;
           if (attempt < NETWORK_CONFIG.RETRY_MAX - 1) Utilities.sleep(1000 * (attempt + 1));
 
-        } catch (e) {
+        } catch (e: any) {
            if (attempt < NETWORK_CONFIG.RETRY_MAX - 1) Utilities.sleep(2000);
         }
       }
@@ -335,7 +335,7 @@ var Network: INetwork = {
     if (cachedStr) {
       try {
         return JSON.parse(cachedStr);
-      } catch (e) {}
+      } catch (e: any) {}
     }
 
     const useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
@@ -370,7 +370,7 @@ var Network: INetwork = {
                 scriptCache.put(cacheKey, JSON.stringify(result), NETWORK_CONFIG.CACHE_TTL_LONG);
                 return result;
             }
-        } catch(e) {}
+        } catch(e: any) {}
     }
 
     // Local Fallback
@@ -406,7 +406,7 @@ var Network: INetwork = {
         if (res.getResponseCode() === 200) {
             return JSON.parse(res.getContentText()).data;
         }
-    } catch(e) {}
+    } catch(e: any) {}
     return null;
   },
 
@@ -432,7 +432,7 @@ var Network: INetwork = {
             return cached.status;
         }
       }
-    } catch(e) {}
+    } catch(e: any) {}
 
     // Verify (Industrial Diagnostic Handshake - Simplified)
     let isHealthy = false;
@@ -464,7 +464,7 @@ var Network: INetwork = {
             if (res.getResponseCode() === 401) _LAST_WORKER_ERROR += " (Secret Mismatch)";
             if (res.getResponseCode() === 404) _LAST_WORKER_ERROR += " (Wrong version or URL)";
         }
-    } catch(e) { 
+    } catch(e: any) { 
         _LAST_WORKER_ERROR = String(e);
         console.warn(`[Network] Worker Reachability Error: ${e}`); 
     }
@@ -509,7 +509,7 @@ var Network: INetwork = {
             if (r.status === 429) err = "⚠️ Throttled";
             return { name: k.name, success: false, error: err };
         });
-    } catch(e) { return null; }
+    } catch(e: any) { return null; }
   },
 
   scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, scoring = null) {

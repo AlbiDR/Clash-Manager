@@ -109,85 +109,61 @@ function getWebAppData(forceRefresh: boolean): string {
 /**
  * ✏️ WRITE OPERATIONS
  */
+/**
+ * ✏️ WRITE OPERATIONS
+ */
 function markRecruitsAsInvitedBulk(ids: string[]): {
   success: boolean;
   count: number;
   dbWrite?: number;
-  deleted?: number;
   payloadSize?: number;
 } {
   if (!ids || !Array.isArray(ids) || ids.length === 0)
     return { success: true, count: 0 };
 
-  return Registry.Services.Core.executeSafely("WRITE_HH", () => {
+  return Registry.Services.Core.executeSafely("WRITE_HH_EVT", () => {
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
-      SpreadsheetApp.flush();
-
-      // 1. PREPARE SHEETS
-      const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-      let blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
-
-      if (!blSheet) {
-        blSheet = ss.insertSheet(CONFIG.SHEETS.BL);
-        blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "RawScore"]]);
+      const ssId = ss.getId();
+      
+      // 1. ENSURE EVENT LOG SHEET
+      let evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
+      if (!evtSheet) {
+        evtSheet = ss.insertSheet(CONFIG.SHEETS.EVT);
+        evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+        evtSheet.setTabColor("#ff5722"); // Visual marker for "Hot" data
       }
 
-      const H = CONFIG.SCHEMA.HH;
+      // 2. ATOMIC APPEND (Advanced API)
+      // This is the "Event Stream". We don't search, we just log the event.
       const now = Date.now();
-      const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
-      const expiryDate = now + expiryDuration;
+      const values = ids.map((id) => [
+        (id.startsWith("#") ? id : "#" + id).toUpperCase(),
+        now
+      ]);
 
-      let updatedCount = 0;
-      let blacklistedCount = 0;
+      if (values.length > 0) {
+        // @ts-ignore
+        Sheets.Spreadsheets.Values.append({
+          values: values
+        }, ssId, `'${CONFIG.SHEETS.EVT}'!A1`, {
+          valueInputOption: "USER_ENTERED"
+        });
+      }
 
-      // 2. PROCESS DISMISSALS (Robust Search-then-Tick)
-      ids.forEach((rawId) => {
-        const tag = (rawId.startsWith("#") ? rawId : "#" + rawId).toUpperCase();
-        
-        // A. PERSIST TO BLACKLIST (Source of Truth)
-        try {
-          // Check if already in blacklist to avoid duplicates in the same session
-          blSheet.appendRow([tag, expiryDate, 0]); // Note: score fallback to 0 if not easily found
-          blacklistedCount++;
-        } catch (e) {
-          console.warn(`⚠️ [API] Failed to blacklist ${tag}: ${e.message}`);
-        }
-
-        // B. TICK SPREADSHEET (Visual Verification)
-        if (hhSheet) {
-          // Use TextFinder to find the Tag in Column B (TAG index + 2)
-          // Search only Column B for precision
-          const finder = hhSheet.getRange("B:B").createTextFinder(tag).matchCase(false);
-          const match = finder.findNext();
-          
-          if (match) {
-            const row = match.getRow();
-            // Column C is Index 2 (+1 for absolute, +1 for H.INVITED = index 1)
-            // 🛡️ Explicitly hit the "Invited" checkbox
-            hhSheet.getRange(row, 2 + H.INVITED).setValue(true);
-            updatedCount++;
-            console.info(`✅ [API] Ticked 'Invited' for ${tag} at row ${row}`);
-          } else {
-            console.warn(`⚠️ [API] Recruit ${tag} not found in Headhunter sheet for ticking.`);
-          }
-        }
-      });
-
-      // 4. FLUSH & REFRESH
+      // 3. FLUSH & TRIGGER PAYLOAD REFRESH
       SpreadsheetApp.flush();
       const payloadStr = _generatePayloadInternal();
 
       return {
         success: true,
         count: ids.length,
-        dbWrite: blacklistedCount,
-        updated: updatedCount,
+        dbWrite: values.length,
         payloadSize: payloadStr.length,
       };
     } catch (e: any) {
-      console.error(`❌ [API] Bulk Dismiss Error: ${e.message}`);
-      throw new Error(`Dismiss Failed: ${e.message}`);
+      console.error(`❌ [API] Event-Sourced Dismiss Fail: ${e.message}`);
+      throw new Error(`Dismiss Failed (Event-Log): ${e.message}`);
     }
   });
 }
@@ -212,19 +188,36 @@ function _generatePayloadInternal(): string {
     const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
     const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
 
+    // 1. BUILD GLOBAL EXCLUSION SET (Blacklist + Event Stream)
+    const exclusionSet = new Set<string>();
+
+    // A. Read Permanent Blacklist
     const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
-    const blacklist = new Set<string>();
     if (blSheet) {
       const rawBL = blSheet.getDataRange().getValues();
       const now = Date.now();
       rawBL.forEach((r: any) => {
-        if (Number(r[1]) > now) blacklist.add(String(r[0]).toUpperCase());
+        const tag = String(r[0]).toUpperCase().trim();
+        const expiry = Number(r[1]) || 0;
+        if (tag && expiry > now) exclusionSet.add(tag);
       });
     }
 
+    // B. Read Hot Event Stream (Dismissals not yet reconciled to main sheets)
+    const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
+    if (evtSheet && evtSheet.getLastRow() > 1) {
+      const rawEVT = evtSheet.getDataRange().getValues();
+      rawEVT.forEach((r: any, idx: number) => {
+        if (idx === 0) return; // Skip Header
+        const tag = String(r[0]).toUpperCase().trim();
+        if (tag) exclusionSet.add(tag);
+      });
+    }
+
+    // 2. FILTER RECRUITS
     const filteredHH = hhResult.rows.filter((row) => {
-      const id = "#" + row[0];
-      return !blacklist.has(id.toUpperCase());
+      const id = ("#" + row[0]).toUpperCase();
+      return !exclusionSet.has(id);
     });
 
     const dataPayload = {
@@ -266,6 +259,7 @@ function _generatePayloadInternal(): string {
     });
   }
 }
+
 
 /**
  * 📊 DATA EXTRACTION (STRICT MODE)

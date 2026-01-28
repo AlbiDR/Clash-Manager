@@ -378,6 +378,35 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
     });
   }
 
+  // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
+  const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
+  if (evtSheet && evtSheet.getLastRow() > 1) {
+    const rawEvt = evtSheet.getDataRange().getValues();
+    const H = CONFIG.SCHEMA.HH;
+    
+    // Process each event
+    for (let i = 1; i < rawEvt.length; i++) {
+       const tag = String(rawEvt[i][0]).toUpperCase().trim();
+       if (!tag) continue;
+
+       // A. Add to Blacklist memory
+       if (!entryMap.has(tag)) {
+         entryMap.set(tag, { t: tag, e: now + expiryDuration, s: 0 });
+       }
+
+       // B. Tick main sheet visually
+       const finder = sheet.getRange("B:B").createTextFinder(tag).matchCase(false);
+       const match = finder.findNext();
+       if (match) {
+         sheet.getRange(match.getRow(), 2 + H.INVITED).setValue(true);
+       }
+    }
+    // C. Clear the log (Reconciliation Complete)
+    evtSheet.clear();
+    evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+  }
+
+  // --- 2. AUDIT MANUAL TICKS (Standard Cleanup) ---
   const rowsToDelete: number[] = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const H = CONFIG.SCHEMA.HH;
@@ -397,7 +426,7 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
       .getValues();
 
     for (let i = 0; i < numRows; i++) {
-      const tag = String(tagValues[i][0] || "").trim();
+      const tag = String(tagValues[i][0] || "").trim().toUpperCase();
       const isInvited =
         invitedValues[i][0] === true ||
         String(invitedValues[i][0]).toUpperCase() === "TRUE";
@@ -852,7 +881,7 @@ function applyHeadhunterFormatting(sheet: GoogleAppsScript.Spreadsheet.Sheet, nu
             
         rules.push(rule);
         sheet.setConditionalFormatRules(rules);
-    } catch (e) {
+    } catch (e: any) {
         console.warn(`[Recruiter] Formatting Error: ${e}`);
     }
 }

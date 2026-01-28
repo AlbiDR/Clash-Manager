@@ -64,6 +64,19 @@ declare const VER_API_PUBLIC: string;
 declare const VER_CONTROLLER_WEBAPP: string;
 
 /**
+ * 🔒 MANAGED AUTOMATION KEYS
+ * List of functions that this orchestrator is responsible for.
+ * Setup Trigger will ONLY touch these, leaving other scripts' triggers intact.
+ */
+const MANAGED_TRIGGER_FUNCTIONS = [
+  "taskUpdateDatabase",
+  "taskUpdateLeaderboard",
+  "taskFastScout",
+  "taskWarmUpWorker",
+  "handleMobileEdit"
+];
+
+/**
  * 🕹️ ORCHESTRATOR INTERFACES
  */
 export interface ApiKeyVerificationResult {
@@ -236,7 +249,7 @@ function taskWarmUpWorker(): void {
  * Sets up the automated lifecycle of the project.
  */
 function createTriggers(): void {
-  console.info("🧹 [TRIGGERS] Clearing existing automation triggers...");
+  console.info("🧹 [TRIGGERS] Clearing managed automation triggers...");
   clearAllTriggers();
 
   console.info("🚀 [TRIGGERS] Installing fresh trigger suite...");
@@ -266,9 +279,9 @@ function createTriggers(): void {
     .create();
 
   // 5. Integrated Mobile Setup (onEdit Trigger)
-  setupMobileTriggers();
+  setupMobileTriggers(true);
 
-  console.info("✅ [TRIGGERS] All permanent triggers established successfully.");
+  console.info("✅ [TRIGGERS] All managed triggers established successfully.");
 }
 
 
@@ -623,6 +636,15 @@ Object.assign(this as any, {
 
 function clearAllTriggers(): void {
   const triggers = ScriptApp.getProjectTriggers();
-  triggers.forEach((t: any) => ScriptApp.deleteTrigger(t));
-  console.info(`🧹 [TRIGGERS] Deleted ${triggers.length} trigger${triggers.length !== 1 ? 's' : ''}.`);
+  let deletedCount = 0;
+
+  triggers.forEach((t: any) => {
+    const handler = t.getHandlerFunction();
+    if (MANAGED_TRIGGER_FUNCTIONS.indexOf(handler) > -1) {
+      ScriptApp.deleteTrigger(t);
+      deletedCount++;
+    }
+  });
+
+  console.info(`🧹 [TRIGGERS] Surgical cleanup: Deleted ${deletedCount} managed trigger${deletedCount !== 1 ? 's' : ''}.`);
 }

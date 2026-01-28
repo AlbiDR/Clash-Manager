@@ -79,6 +79,7 @@ export interface AppConfig {
     LB: string;
     HH: string;
     BL: string;
+    EVT: string;
   };
   LAYOUT: {
     BUFFER_SIZE: number;
@@ -148,7 +149,7 @@ const VER_CONFIGURATION = "10.0.7";
 let _PROPS: Record<string, string> = {};
 try {
   _PROPS = PropertiesService.getScriptProperties().getProperties();
-} catch (e) {
+} catch (e: any) {
   console.warn(
     "Could not fetch Script Properties (likely missing permissions). Defaulting to empty config.",
   );
@@ -207,6 +208,7 @@ var CONFIG: AppConfig = {
     LB: "Leaderboard",
     HH: "Headhunter",
     BL: "HH_BLACKLIST",
+    EVT: "HH_EVENT_LOG",
   },
   LAYOUT: { BUFFER_SIZE: 25, DATA_START_ROW: 3 },
 
