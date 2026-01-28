@@ -507,41 +507,52 @@ function scanTournaments(
   if (remoteAvailable && remoteExpandEnabled) {
     console.log(`[Scout] Executing REMOTE SCAN (${tourneyTags.length} units)...`);
     try {
+      // ⚡ PROBE: Temporarily forcing 4000 to validate Worker Data Scale
+      const probeMinTrophies = 4000; 
+
+      const payload = {
+        tags: tourneyTags,
+        apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value),
+        blacklist: Array.from(blacklistSet),
+        minTrophies: probeMinTrophies, 
+        scoring: W 
+      };
+
+      console.log(`[Network] Remote Scan Payload | Tags: ${payload.tags.length} | Keys: ${payload.apiKeys.length} | BL=${payload.blacklist.length} | MinTr (PROBE): ${payload.minTrophies}`);
+
       candidates = Registry.Services.Network.scanTournamentsRemote(
-        tourneyTags,
-        minTrophies,
-        blacklistSet,
-        W,
+        payload.tags,
+        payload.minTrophies,
+        new Set(payload.blacklist),
+        payload.scoring,
       );
       usedRemote = true;
 
-      if (candidates.length === 0) {
-        console.warn("[Scout] Remote Scan returned 0. Triggering Diagnostic Local Sample...");
-        const diagnosticTags = tourneyTags.slice(0, 10);
-        const details = Registry.Services.Network.fetchRoyaleAPI(
-          diagnosticTags.map((tag) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(tag)}`)
-        );
-        let localFound = 0;
-        details.forEach((d: TournamentResult) => {
-          if (d && d.membersList) {
-            d.membersList.forEach((p) => {
-              if ((!p.clan || !p.clan.tag) && p.trophies >= minTrophies) localFound++;
-            });
-          }
-        });
-        console.log(`[Scout] Diagnostic Local Check (10 tourneys): Found ${localFound} clanless players > ${minTrophies}`);
+      if (candidates.length > 0) {
+        console.log(`[Scout] Probe Success: Found ${candidates.length} candidates. Top Candidate Trophies: ${candidates[0].trophies}`);
+      } else {
+        console.warn("[Scout] Remote Scan (Probe 4000) returned 0. Worker might be disconnected from API.");
       }
     } catch (e: any) {
-      console.warn(`[Scout] Remote Scan Failed: ${e.message}`);
+      console.warn(`[Scout] Remote Scan Failed: ${e.message}. Falling back to Local.`);
+      usedRemote = false;
     }
-  } else {
+  }
+
+  if (!usedRemote) {
     console.log(`[Scout] Executing LOCAL SCAN (${tourneyTags.length} units)...`);
     const details = Registry.Services.Network.fetchRoyaleAPI(
       tourneyTags.map((tag) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(tag)}`)
     );
 
+    // 🔬 DIAGNOSTIC: Print one tournament member structure
+    if (details[0] && details[0].membersList && details[0].membersList[0]) {
+       const m = details[0].membersList[0];
+       console.log(`[Scout] Diagnostic Structure: Member=${m.name} | Clan=${m.clan?.tag || 'None'} | Trophies=${m.trophies} | Score=${m.score}`);
+    }
+
     details.forEach((d: TournamentResult) => {
-      if (d && d.membersList && d.membersList.length >= 10) {
+      if (d && d.membersList && d.membersList.length >= 5) { // Loosened from 10
         d.membersList.forEach((p) => {
           if (
             (!p.clan || p.clan.tag === "") &&
@@ -555,6 +566,7 @@ function scanTournaments(
   }
 
   const uniqueCandidates = new Map<string, any>();
+
   candidates.forEach((c) => {
     if (c.trophies >= minTrophies || c.trophies === undefined)
       uniqueCandidates.set(c.tag, c);
