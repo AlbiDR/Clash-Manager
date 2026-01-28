@@ -35,6 +35,7 @@ const {
   syncError,
   lastSyncTime,
   refresh: refreshGas,
+  updateLocalData,
 } = useClashData();
 const { dismissRecruitsAction } = useHeadhunter();
 const blacklist = useRecruitBlacklist();
@@ -77,7 +78,6 @@ const {
   handleBlitz,
   handleSelectAll,
   handleSelectScore,
-  processDeepLink,
 } = useConsoleController({
   data: recruits,
   isHydrated,
@@ -120,7 +120,6 @@ const sortOptions = [
   },
 ];
 
-const listItems = computed(() => visibleItems.value);
 
 // 🧹 CLEANUP: Extra Recruit Logic managed here
 watch(
@@ -159,10 +158,13 @@ async function handleRefresh() {
             added++;
           }
         });
-        // Mutate local state temporarily (will be overwritten by next full sync)
-        data.value.hh = merged.sort(
-          (a, b) => b.potentialScore - a.potentialScore,
-        );
+        // Update local state via helper
+        updateLocalData({
+          ...data.value,
+          hh: merged.sort(
+            (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
+          ),
+        });
         success(`Turbo Scan: Found ${added} new recruits`);
       }
     } else {
