@@ -496,7 +496,7 @@ function scanTournaments(
     .slice(0, scanCfg.TOURNEYS || 300)
     .map((t) => t.tag);
 
-  console.log(`[Scout] Selected ${tourneyTags.length} tournaments for deep scanning.`);
+  console.log(`[Scout] Selected ${tourneyTags.length} tournaments for deep scanning. Sample: ${tourneyTags[0]}`);
 
   if (tourneyTags.length === 0) return [];
 
@@ -514,6 +514,23 @@ function scanTournaments(
         W,
       );
       usedRemote = true;
+
+      if (candidates.length === 0) {
+        console.warn("[Scout] Remote Scan returned 0. Triggering Diagnostic Local Sample...");
+        const diagnosticTags = tourneyTags.slice(0, 10);
+        const details = Registry.Services.Network.fetchRoyaleAPI(
+          diagnosticTags.map((tag) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(tag)}`)
+        );
+        let localFound = 0;
+        details.forEach((d: TournamentResult) => {
+          if (d && d.membersList) {
+            d.membersList.forEach((p) => {
+              if ((!p.clan || !p.clan.tag) && p.trophies >= minTrophies) localFound++;
+            });
+          }
+        });
+        console.log(`[Scout] Diagnostic Local Check (10 tourneys): Found ${localFound} clanless players > ${minTrophies}`);
+      }
     } catch (e: any) {
       console.warn(`[Scout] Remote Scan Failed: ${e.message}`);
     }
