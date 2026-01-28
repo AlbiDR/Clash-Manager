@@ -162,6 +162,11 @@ function scoutRecruits(): void {
   // 2. Load existing tracking data
   const existing = loadRecruitDatabase(safeSheet(CONFIG.SHEETS.HH));
 
+  // 🛡️ PRUNE BLACKLISTED: Remove recruits already marked as invited/blacklisted
+  existing.forEach((_, tag) => {
+    if (blacklistSet.has(tag)) existing.delete(tag);
+  });
+
   // ⚡ OPTIMIZATION: Clanless Check for survivors
   let joinedCount = 0;
   const tagsToCheck = Array.from(existing.keys());
