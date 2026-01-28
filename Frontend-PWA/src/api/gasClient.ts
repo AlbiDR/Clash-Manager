@@ -17,6 +17,17 @@ import { idb } from "../utils/idb";
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<any>>();
 
+/**
+ * ⚡ CUSTOM ERROR TYPE
+ * Used to distinguish between fatal server rejections and temporary network/timeout failures.
+ */
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
 // --- Schemas & Constants ---
 
 // Default Schemas for fallback (matches V11 Controller Standard)
@@ -262,7 +273,7 @@ async function fetchWithRetry(
       await new Promise((r) => setTimeout(r, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
     }
-    throw e;
+    throw new NetworkError(e.message || "Network request failed");
   }
 }
 

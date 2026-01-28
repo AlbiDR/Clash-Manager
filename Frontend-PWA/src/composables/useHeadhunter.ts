@@ -1,5 +1,5 @@
 import { watch } from "vue";
-import { dismissRecruits } from "../api/gasClient";
+import { dismissRecruits, NetworkError } from "../api/gasClient";
 import type { WebAppData } from "../types";
 import { useClashData } from "./useClashData";
 import { useBadge } from "./useBadge";
@@ -152,8 +152,15 @@ export function useHeadhunter() {
       // 📡 Broadcast dismissal to other tabs on success
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
     } catch (e) {
-      // Revert on failure
-      // We need to restore the *exact* old object to rollback
+      // 🛡️ SWIFT RECOVERY:
+      // If the error is a NetworkError, we DON'T rollback. 
+      // The gasClient has already enqueued the request for background sync.
+      if (e instanceof NetworkError) {
+        console.warn("Dismissal delayed due to network. Queued for background sync.");
+        return;
+      }
+
+      // Revert ONLY on logic/server failure (permanent rejection)
       updateLocalData(oldData);
       updateHeadhunterBadge(oldData);
       throw e;
