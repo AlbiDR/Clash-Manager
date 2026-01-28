@@ -192,6 +192,23 @@ function scoutRecruits(): void {
   }
 
 
+  // 4. Run the optimized scan
+  const scanned = scanTournaments(minTrophies, existing, blacklistSet, lowQuotaMode);
+
+  // 5. Intelligent Merge
+  let newArrivals = 0;
+  let updatedExisting = 0;
+
+  scanned.forEach((c: any) => {
+    if (existing.has(c.tag)) {
+      c.foundDate = existing.get(c.tag)!.foundDate;
+      updatedExisting++;
+    } else {
+      newArrivals++;
+    }
+    existing.set(c.tag, c);
+  });
+
   // 6. Final Pool Scoring & Capping
   const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
@@ -281,35 +298,7 @@ function scoutRecruits(): void {
   }
 }
 
-/**
- * 📦 LOGGING HELPER: Structured Scout Report
- */
-function logScoutReport(
-  target: number,
-  existingSize: number,
-  minTrophies: number,
-  scannedCount: number,
-  newArrivals: number,
-  updatedExisting: number
-) {
-  const version = VER_RECRUITER;
-  const title = `HEADHUNTER SCOUT [v${version}]`;
-  const width = 65;
 
-  const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
-  
-  const line1 = `Target: ${target} | Pool: ${existingSize} | MinTrophies: ${minTrophies}`;
-  const line2 = `Scan Result: ${scannedCount} Candidates Found`;
-  const line3 = `Pipeline: +${newArrivals} New | ↻${updatedExisting} Updated`;
-
-  const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
-  const borderMid1 = `│ ${pad(line1, width - 2)} │`;
-  const borderMid2 = `│ ${pad(line2, width - 2)} │`;
-  const borderMid3 = `│ ${pad(line3, width - 2)} │`;
-  const borderBot = `└${"─".repeat(width)}┘`;
-
-  Logger.log(`\n${borderTop}\n${borderMid1}\n${borderMid2}\n${borderMid3}\n${borderBot}\n`);
-}
 
 /**
  * 🚫 BLACKLIST & HISTORY MANAGER
