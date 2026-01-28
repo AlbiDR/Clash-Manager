@@ -166,7 +166,7 @@ const StoreInternal = {
       const zipped = Utilities.gzip(blob);
       // @ts-ignore
       return CONSTANTS.COMPRESSION.PREFIX + Utilities.base64Encode(zipped);
-    } catch(e) {
+    } catch(e: any) {
       console.warn("Store: Compression failed, using raw JSON");
       return JSON.stringify(data);
     }
@@ -187,7 +187,7 @@ const StoreInternal = {
       // @ts-ignore
       const unzipped = Utilities.ungzip(decoded).getDataAsString();
       return JSON.parse(unzipped);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Store: Decompression failed");
       return null;
     }
@@ -250,7 +250,7 @@ var Store: IStore = {
              fullString += chunk;
           }
           return fullString;
-        } catch (e) { return null; }
+        } catch (e: any) { return null; }
       }
       return null;
     },
@@ -314,7 +314,7 @@ var Store: IStore = {
         if (!resultStr) return defaultVal;
         return StoreInternal.decompress(resultStr);
 
-      } catch (e) {
+      } catch (e: any) {
         console.error(`🧩 Store: Chunk read error for '${baseKey}'`);
         return defaultVal;
       }
@@ -325,7 +325,7 @@ var Store: IStore = {
       if (!raw) return defaultVal;
       try {
         return StoreInternal.decompress(raw);
-      } catch (e) {
+      } catch (e: any) {
         return defaultVal;
       }
     },
@@ -352,7 +352,7 @@ var Store: IStore = {
           );
           
           return true;
-        } catch (e) {
+        } catch (e: any) {
             console.error(`🧩 Store: Chunk write error for '${baseKey}'`);
             return false;
         }
@@ -368,7 +368,7 @@ var Store: IStore = {
         
         this._service.setProperty(key, str);
         return true;
-      } catch (e) {
+      } catch (e: any) {
         console.error(`⚠️ Store: JSON Stringify error for '${key}'`);
         return false;
       }

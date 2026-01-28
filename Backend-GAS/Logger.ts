@@ -115,7 +115,7 @@ function updateClanDatabase(): void {
         // Log Numeric Fame if we are in ENGAGEMENT or COLOSSEUM (Battle Days)
         isWarDay = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
         console.info(`  ├─ War Phase: ${warSnap.protocol.phase} | Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
-    } catch (e) {
+    } catch (e: any) {
         console.warn("⚠️ [WAR] Could not fetch War Snapshot. Defaulting to numeric fame logging.");
         isWarDay = true; // Fallback to safe behavior
     }
@@ -513,7 +513,7 @@ function upsertDailySnapshots(
   // 🧹 PRE-CLEANUP: Remove existing bandings before re-applying via View
   try {
       sheet.getBandings().forEach((b: any) => b.remove());
-  } catch (e) {
+  } catch (e: any) {
       console.warn(`ETL: Could not remove existing bandings: ${e}`);
   }
 

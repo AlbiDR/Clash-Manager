@@ -80,7 +80,7 @@ const WarIntelligence = (() => {
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
           Registry.Services.Store.props.setChunked(K + "_PERSIST", snap); // 🛡️ Persist
           return snap;
-        } catch (e) {
+        } catch (e: any) {
           // 🛡️ FALLBACK: Try persistent store if API fails
           const persisted = Registry.Services.Store.props.getChunked<WarSnapshot>(K + "_PERSIST");
           if (persisted) {

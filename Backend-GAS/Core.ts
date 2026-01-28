@@ -126,7 +126,7 @@ var Core: ICore = {
               "⚠️ Locked",
             );
           }
-        } catch (e) { /* Silently ignore notification failures */ }
+        } catch (e: any) { /* Silently ignore notification failures */ }
         
         throw new Error(`Core: Lock timeout for '${lockKey}'`);
       }

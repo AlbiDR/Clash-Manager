@@ -59,7 +59,7 @@ var View: IView = {
     // This is safe to do before the batch update
     try {
       sheet.getBandings().forEach((b: any) => b.remove());
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`View: Could not remove existing bandings: ${e}`);
     }
 
@@ -441,7 +441,7 @@ var View: IView = {
     if (requests.length > 0) {
       try {
         Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-      } catch (e) {
+      } catch (e: any) {
         console.warn(`⚠️ Batch Hygiene Warning: ${e}`);
         // Fallback or ignore for minor index conflicts
       }
@@ -529,7 +529,7 @@ var View: IView = {
     } catch (e: any) {
       console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
     } finally {
-      try { lock!.releaseLock(); } catch(e) {}
+      try { lock!.releaseLock(); } catch(e: any) {}
     }
   },
 
@@ -537,7 +537,7 @@ var View: IView = {
     if (!sheet) return;
     try {
       sheet.setTabColor(color);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`Color Error: ${e}`);
     }
   },
@@ -564,7 +564,7 @@ var View: IView = {
           }
         }]
       }, ssId);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`🏷️ Metadata Tagging failed for ${sheet.getName()}: ${e}`);
     }
   },
@@ -581,7 +581,7 @@ var View: IView = {
         const sheetId = meta.location.sheetId;
         return ss.getSheets().find(s => s.getSheetId() === sheetId) || null;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`🏷️ Metadata Lookup failed for type ${type}: ${e}`);
     }
     return null;
@@ -617,7 +617,7 @@ var View: IView = {
           }
         ]
       }, ssId);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`🔒 Range Protection failed for ${sheet.getName()}: ${e}`);
     }
   },
@@ -638,7 +638,7 @@ var View: IView = {
           }
         }]
       }, ssId);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`Status Error: ${e}`);
     }
   }
