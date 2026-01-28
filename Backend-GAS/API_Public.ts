@@ -179,11 +179,11 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         return respond({ logged: true });
 
       default:
-        return respond(null, "INVALID_ACTION", `Unknown action: "${action}".`);
+        return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: ping, getwebappdata, refresh, log.`);
     }
   } catch (err: any) {
-    console.error(`${method} Handler ERROR: ${err.stack}`);
-    return respond(null, "SERVER_ERROR", err.message);
+    console.error(`❌ [API] ${method} Handler ERROR: ${err.stack}`);
+    return respond(null, "SERVER_ERROR", `Internal server error: ${err.message}`);
   }
 }
 
@@ -238,11 +238,11 @@ function doPost(
         return respond(null, "NO_ACTION", 'Missing "action" in POST body or URL');
 
       default:
-        return respond(null, "INVALID_ACTION", `Unknown action: "${action}"`);
+        return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: dismissrecruits, triggerupdate, ping.`);
     }
   } catch (err: any) {
-    console.error(`doPost ERROR: ${err.stack}`);
-    return respond(null, "SERVER_ERROR", err.message);
+    console.error(`❌ [API] doPost ERROR: ${err.stack}`);
+    return respond(null, "SERVER_ERROR", `Internal server error: ${err.message}`);
   }
 }
 
@@ -301,14 +301,14 @@ function getMembers(): any[] {
   const remoteData = Registry.Services.Network.fetchPublicJson("members");
   if (remoteData) return remoteData as any[];
 
-  console.log("Members: Using local fallback");
+  console.info("ℹ️ [API] getMembers: Using local GAS fallback (remote unavailable).");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
   const data = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
   ]);
 
   if (!data || !data[0] || !data[0].items) {
-    console.warn("API: getMembers returned no data.");
+    console.warn("⚠️ [API] getMembers: No data returned from Clash Royale API.");
     return [];
   }
 
@@ -326,14 +326,14 @@ function getWarLog(): WarLogEntry[] {
   const remoteData = Registry.Services.Network.fetchPublicJson("warlog");
   if (remoteData) return remoteData as WarLogEntry[];
 
-  console.log("WarLog: Using local fallback");
+  console.info("ℹ️ [API] getWarLog: Using local GAS fallback (remote unavailable).");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
   const data = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
   ]);
 
   if (!data || !data[0] || !data[0].items) {
-    console.warn("API: getWarLog returned no data.");
+    console.warn("⚠️ [API] getWarLog: No data returned from Clash Royale API.");
     return [];
   }
 
@@ -396,7 +396,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
     return {
       success: false,
       error: "INVALID_TARGET",
-      message: `Unknown target: "${normTarget}"`,
+      message: `Invalid target: "${normTarget}". Valid targets: ${validTargets.join(', ')}.`,
     };
   }
 
@@ -424,10 +424,10 @@ function triggerAsyncUpdate(target: string | undefined): any {
         .after(500)
         .create();
 
-      console.log(`🚀 Async Trigger Queued: ${normTarget}`);
+      console.info(`🚀 [API] Async Trigger Queued: ${normTarget}`);
       return { success: true, status: "QUEUED", target: normTarget };
     } catch (e: any) {
-      console.error(`triggerAsyncUpdate Failed: ${e.message}`);
+      console.error(`❌ [API] triggerAsyncUpdate Failed: ${e.message}`);
       throw e;
     }
   });
@@ -436,7 +436,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
 function dispatchAsyncUpdate(): void {
   const target = Registry.Services.Store.props.get("PENDING_UPDATE_TARGET");
   if (!target) {
-    console.warn("⚠️ Async Dispatcher: No pending target found.");
+    console.warn("⚠️ [API] Async Dispatcher: No pending target found. Aborting.");
     return;
   }
 
@@ -469,9 +469,9 @@ function dispatchAsyncUpdate(): void {
 
       if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
 
-      console.log(`✅ Async Execution Perfect: ${target}`);
+      console.info(`✅ [API] Async Execution Complete: ${target}`);
     } catch (e: any) {
-      console.error(`❌ Async Execution Failed [${target}]: ${e.message}`);
+      console.error(`❌ [API] Async Execution Failed [${target}]: ${e.message}`);
     } finally {
       CacheService.getScriptCache().remove("SYSTEM_STATUS");
     }
