@@ -352,17 +352,34 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
 } {
   if (!sheet) return { ids: new Set(), entries: [] };
   const ss = sheet.getParent();
-  const blSheet =
-    ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
+  const HOT_COLOR = "#ff5722";
+  
+  // 🛡️ Ensure Technical Sheets exist with proper headers and styling
+  const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
+  if (blSheet.getLastRow() === 0) {
+    blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
+    blSheet.setTabColor(HOT_COLOR);
+  } else {
+    blSheet.setTabColor(HOT_COLOR);
+  }
+
+  const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT) || ss.insertSheet(CONFIG.SHEETS.EVT);
+  if (evtSheet.getLastRow() === 0) {
+    evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+    evtSheet.setTabColor(HOT_COLOR);
+  } else {
+    evtSheet.setTabColor(HOT_COLOR);
+  }
+
   const now = Date.now();
   const expiryDuration = (CONFIG.HEADHUNTER.BLACKLIST_DAYS || 30) * 86400000;
-
   const entryMap = new Map<string, BlacklistEntry>();
 
-  if (blSheet.getLastRow() >= 1) {
-    const rawData = blSheet.getDataRange().getValues();
+  // A. Load existing Blacklist (Skip Header row 1)
+  if (blSheet.getLastRow() > 1) {
+    const rawData = blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).getValues();
     rawData.forEach((row: any) => {
-      const tag = String(row[0]).trim();
+      const tag = String(row[0]).trim().toUpperCase();
       if (!tag) return;
       const expiry = Number(row[1]) || 0;
       const score = Number(row[2]) || 0;
@@ -379,80 +396,86 @@ function updateAndGetBlacklist(sheet: GoogleAppsScript.Spreadsheet.Sheet): {
     });
   }
 
+  // B. Pre-load Recruit Metadata from Main Sheet for matching
+  const H = CONFIG.SCHEMA.HH;
+  const mainDataMap = new Map<string, { row: number; score: number }>();
+  if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+    const numRows = sheet.getLastRow() - startRow + 1;
+    const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
+    rawMain.forEach((r: any, i: number) => {
+      const tag = String(r[H.TAG]).trim().toUpperCase();
+      if (tag) {
+        mainDataMap.set(tag, { 
+          row: startRow + i, 
+          score: Number(r[H.RAW_SCORE]) || 0 
+        });
+      }
+    });
+  }
+
   // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
-  const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
-  if (evtSheet && evtSheet.getLastRow() > 1) {
+  if (evtSheet.getLastRow() > 1) {
     const rawEvt = evtSheet.getDataRange().getValues();
-    const H = CONFIG.SCHEMA.HH;
-    
-    // Process each event
     for (let i = 1; i < rawEvt.length; i++) {
        const tag = String(rawEvt[i][0]).toUpperCase().trim();
        if (!tag) continue;
 
-       // A. Add to Blacklist memory
+       const meta = mainDataMap.get(tag);
+
+       // A. Add to Blacklist memory with Score preservation
        if (!entryMap.has(tag)) {
-         entryMap.set(tag, { t: tag, e: now + expiryDuration, s: 0 });
+         entryMap.set(tag, { t: tag, e: now + expiryDuration, s: meta ? meta.score : 0 });
+       } else if (meta) {
+         entryMap.get(tag)!.s = Math.max(entryMap.get(tag)!.s, meta.score);
        }
 
        // B. Tick main sheet visually
-       const finder = sheet.getRange("B:B").createTextFinder(tag).matchCase(false);
-       const match = finder.findNext();
-       if (match) {
-         sheet.getRange(match.getRow(), 2 + H.INVITED).setValue(true);
+       if (meta) {
+         sheet.getRange(meta.row, 2 + H.INVITED).setValue(true);
        }
     }
     // C. Clear the log (Reconciliation Complete)
-    evtSheet.clear();
-    evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+    const lastRow = evtSheet.getLastRow();
+    if (lastRow > 1) {
+      evtSheet.getRange(2, 1, lastRow - 1, evtSheet.getLastColumn()).clearContent();
+    }
   }
 
   // --- 2. AUDIT MANUAL TICKS (Standard Cleanup) ---
   const rowsToDelete: number[] = [];
   if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
-    const H = CONFIG.SCHEMA.HH;
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-    const lastRow = sheet.getLastRow();
-    const numRows = lastRow - startRow + 1;
+    const numRows = sheet.getLastRow() - startRow + 1;
+    const invitedVals = sheet.getRange(startRow, H.INVITED + 2, numRows, 1).getValues();
 
-    // Correcting for absolute column indices (Data starts at Column 2 / B)
-    const tagValues = sheet
-      .getRange(startRow, H.TAG + 2, numRows, 1)
-      .getValues();
-    const invitedValues = sheet
-      .getRange(startRow, H.INVITED + 2, numRows, 1)
-      .getValues();
-    const rawScoreValues = sheet
-      .getRange(startRow, H.RAW_SCORE + 2, numRows, 1)
-      .getValues();
-
-    for (let i = 0; i < numRows; i++) {
-      const tag = String(tagValues[i][0] || "").trim().toUpperCase();
-      const isInvited =
-        invitedValues[i][0] === true ||
-        String(invitedValues[i][0]).toUpperCase() === "TRUE";
-
-      if (tag && isInvited) {
-        const raw = Number(rawScoreValues[i][0]) || 0;
+    mainDataMap.forEach((meta, tag) => {
+      const isInvited = invitedVals[meta.row - startRow][0] === true || 
+                       String(invitedVals[meta.row - startRow][0]).toUpperCase() === "TRUE";
+      
+      if (isInvited) {
         if (entryMap.has(tag)) {
           const existing = entryMap.get(tag)!;
           existing.e = now + expiryDuration;
-          existing.s = Math.max(existing.s, raw);
+          existing.s = Math.max(existing.s, meta.score);
         } else {
-          entryMap.set(tag, { t: tag, e: now + expiryDuration, s: raw });
+          entryMap.set(tag, { t: tag, e: now + expiryDuration, s: meta.score });
         }
-        rowsToDelete.push(startRow + i);
+        rowsToDelete.push(meta.row);
       }
-    }
+    });
   }
 
+  // --- 3. PERSIST BLACKLIST ---
   const validEntries = Array.from(entryMap.values());
   validEntries.sort((a, b) => b.s - a.s);
 
-  blSheet.clear();
+  if (blSheet.getLastRow() > 1) {
+    blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).clearContent();
+  }
   if (validEntries.length > 0) {
     const output = validEntries.map((e) => [e.t, e.e, e.s]);
-    blSheet.getRange(1, 1, output.length, 3).setValues(output);
+    blSheet.getRange(2, 1, output.length, 3).setValues(output);
   }
 
   if (rowsToDelete.length > 0) {
