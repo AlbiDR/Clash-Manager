@@ -76,6 +76,8 @@ const MANAGED_TRIGGER_FUNCTIONS = [
   "handleMobileEdit"
 ];
 
+const PERMANENT_TRIGGER_KEY = "PERMANENT_TRIGGER_IDS";
+
 /**
  * 🕹️ ORCHESTRATOR INTERFACES
  */
@@ -196,19 +198,18 @@ function queueRetry(functionName: string, minutes: number = 2): void {
  */
 function cleanupTemporaryTriggers(functionName: string): void {
   const triggers = ScriptApp.getProjectTriggers();
+  const rawRegistry = Registry.Services.Store.props.get(PERMANENT_TRIGGER_KEY) || "[]";
+  let permanentIds: string[] = [];
+  try { permanentIds = JSON.parse(rawRegistry); } catch(e: any) {}
+
   triggers.forEach((t: any) => {
+    // 🛡️ Guard: Never delete a trigger that is registered as "Permanent"
+    if (permanentIds.indexOf(t.getUniqueId()) > -1) return;
+
     if (
       t.getHandlerFunction() === functionName &&
       t.getTriggerSource() === ScriptApp.TriggerSource.CLOCK
     ) {
-      // In GAS, time-based triggers without a specific frequency (like .after()) 
-      // are often the ones we want to prune to keep the dashboard clean.
-      // We check if it's NOT an hourly/minute recurring trigger.
-      // @ts-ignore
-      const isRecurring = t.getEventType() === ScriptApp.EventType.CLOCK && (t as any).getInterval ? true : false;
-      // Note: GAS API is limited in identifying .after() triggers explicitly, 
-      // so we delete and recreate or manage via naming conventions if complex.
-      // For this stack, we'll prune all clock triggers for this name before queuing.
       ScriptApp.deleteTrigger(t);
     }
   });
@@ -253,33 +254,49 @@ function createTriggers(): void {
   clearAllTriggers();
 
   console.info("🚀 [TRIGGERS] Installing fresh trigger suite...");
+  const permanentIds: string[] = [];
 
   // 1. Database Sync (Every 1 Hour)
-  ScriptApp.newTrigger("taskUpdateDatabase")
-    .timeBased()
-    .everyHours(1)
-    .create();
+  permanentIds.push(
+    ScriptApp.newTrigger("taskUpdateDatabase")
+      .timeBased()
+      .everyHours(1)
+      .create()
+      .getUniqueId()
+  );
 
   // 2. Leaderboard Update (Every 1 Hour)
-  ScriptApp.newTrigger("taskUpdateLeaderboard")
-    .timeBased()
-    .everyHours(1)
-    .create();
+  permanentIds.push(
+    ScriptApp.newTrigger("taskUpdateLeaderboard")
+      .timeBased()
+      .everyHours(1)
+      .create()
+      .getUniqueId()
+  );
 
   // 3. Headhunter Fast Scout (Every 30 Minutes)
-  ScriptApp.newTrigger("taskFastScout")
-    .timeBased()
-    .everyMinutes(30)
-    .create();
+  permanentIds.push(
+    ScriptApp.newTrigger("taskFastScout")
+      .timeBased()
+      .everyMinutes(30)
+      .create()
+      .getUniqueId()
+  );
 
   // 4. Render Worker Warm-up (Every 10 Minutes)
-  ScriptApp.newTrigger("taskWarmUpWorker")
-    .timeBased()
-    .everyMinutes(10)
-    .create();
+  permanentIds.push(
+    ScriptApp.newTrigger("taskWarmUpWorker")
+      .timeBased()
+      .everyMinutes(10)
+      .create()
+      .getUniqueId()
+  );
 
   // 5. Integrated Mobile Setup (onEdit Trigger)
   setupMobileTriggers(true);
+  
+  // 🛡️ REGISTER PERMANENT IDS: This allows cleanupTemporaryTriggers to skip them
+  Registry.Services.Store.props.set(PERMANENT_TRIGGER_KEY, JSON.stringify(permanentIds));
 
   console.info("✅ [TRIGGERS] All managed triggers established successfully.");
 }
