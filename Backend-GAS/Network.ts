@@ -524,12 +524,7 @@ var Network: INetwork = {
         scoring
     };
 
-    console.group(`[Network] Remote Scan Payload`);
-    console.log(`Tags: ${payload.tags.length}`);
-    console.log(`Keys: ${payload.apiKeys.length}`);
-    console.log(`Blacklist: ${payload.blacklist.length}`);
-    console.log(`MinTrophies: ${payload.minTrophies}`);
-    console.groupEnd();
+    console.log(`[Network] Remote Scan Payload | Tags: ${payload.tags.length} | Keys: ${payload.apiKeys.length} | Blacklist: ${payload.blacklist.length} | MinTrophies: ${payload.minTrophies}`);
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
