@@ -8,7 +8,7 @@ import type { AppConfig } from "./Configuration";
 import type { IRegistry } from "./Registry";
 
 
-declare const CacheService: GoogleAppsScript.Cache.CacheService;
+declare const CacheService: any;
 declare const CONFIG: AppConfig;
 declare const Registry: IRegistry;
 declare const Logger: any;
