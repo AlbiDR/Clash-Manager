@@ -17,7 +17,7 @@ import type { AppConfig } from "./Configuration";
 // @ts-ignore
 const VER_SCHEMA = "1.0.0";
 
-declare var SpreadsheetApp: GoogleAppsScript.Spreadsheet.SpreadsheetApp;
+declare var SpreadsheetApp: any;
 declare var module: any;
 
 declare const CONFIG: AppConfig;
@@ -25,7 +25,7 @@ declare const CONFIG: AppConfig;
 export interface ISchema {
   bootDynamicSchema(): void;
   resolveSchemaIndices(
-    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    sheet: any,
     headerMap: Record<string, string>,
     headerRow?: number,
     startCol?: number,
@@ -39,7 +39,7 @@ const SchemaInternal = {
 var Schema: ISchema = {
   
   resolveSchemaIndices: function (
-    sheet: GoogleAppsScript.Spreadsheet.Sheet,
+    sheet: any,
     headerMap: Record<string, string>,
     headerRow = 2,
     startCol = 1,
