@@ -140,6 +140,27 @@ export interface AppConfig {
       DECAY_RATE: number;
     };
   };
+  THEME: {
+    PALETTE: {
+      WORKSPACE: {
+        DB: string;
+        LB: string;
+        HH: string;
+      };
+      TECHNICAL: string;
+      BACKUP: string;
+    };
+    STATUS_BAR: {
+      BG: string;
+      FG: string;
+    };
+    TABLE: {
+      HEADER_BG: string;
+      ROW_ALT_BG: string;
+      BORDER_DARK: string;
+      BORDER_LIGHT: string;
+    };
+  };
 }
 
 // Global Version Constant for this file
@@ -378,6 +399,27 @@ var CONFIG: AppConfig = {
     PENALTIES: {
       INACTIVITY_GRACE_DAYS: 4,
       DECAY_RATE: 0.08,
+    },
+  },
+  THEME: {
+    PALETTE: {
+      WORKSPACE: {
+        DB: "#3f51b5", // Indigo
+        LB: "#00796b", // Emerald
+        HH: "#c62828", // Crimson
+      },
+      TECHNICAL: "#546e7a", // Slate
+      BACKUP: "#cfd8dc",    // Mist
+    },
+    STATUS_BAR: {
+      BG: "#e9ecef", // Noticeable Light Grey
+      FG: "#495057", // Dark Grey
+    },
+    TABLE: {
+      HEADER_BG: "#f8f9fa",
+      ROW_ALT_BG: "#f1f3f4",
+      BORDER_DARK: "#000000",
+      BORDER_LIGHT: "#dee2e6",
     },
   },
 };

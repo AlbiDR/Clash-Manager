@@ -56,160 +56,23 @@ var View: IView = {
   ) {
     if (!sheet) return;
     
-    // 🧹 PRE-CLEANUP: Remove existing bandings locally to prevent conflicts
-    // This is safe to do before the batch update
+    // 🧹 PRE-CLEANUP: Remove existing bandings
     try {
       sheet.getBandings().forEach((b: any) => b.remove());
     } catch (e: any) {
       console.warn(`View: Could not remove existing bandings: ${e}`);
     }
 
-    const L = CONFIG.LAYOUT;
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
 
-    // 🛡️ FETCH CURRENT STATE (Advanced API)
-    const ssMeta = Sheets.Spreadsheets!.get(ssId, { ranges: [sheet.getName()], includeGridData: false });
-    const sMeta = ssMeta.sheets[0];
-    const currentRows = sMeta.properties.gridProperties.rowCount;
-    const currentCols = sMeta.properties.gridProperties.columnCount;
-
-    // 🛡️ DIMENSION CALCULATION (Status + Header + Data + Buffer)
-    const STATUS_ROWS = 1;
-    const HEADER_ROWS = L.DATA_START_ROW - 1; // Usually 1
+    // 🛡️ ATOMIC LAYOUT ENGINE
+    const requests = this.getStandardVisualRequests(sheetId, contentRows, contentCols);
     
-    // Use current data row count if -1 passed
-    if (contentRows === -1) {
-        contentRows = Math.max(0, currentRows - (L.DATA_START_ROW - 1) - 1); // Subtract 1 for Buffer
-    }
-
-    const totalRows = L.DATA_START_ROW + contentRows + 1; // +1 for the Buffer row at the end
-    const totalCols = contentCols + 2; // Buffer + Data + Buffer
-
-    // 🛡️ ATOMIC LAYOUT ENGINE (Total Consolidation)
-    const requests: any[] = [
-      // 1. DIMENSION SYNC (Grid Size)
-      {
-        updateSheetProperties: {
-          properties: {
-            sheetId: sheetId,
-            gridProperties: { rowCount: totalRows, columnCount: totalCols }
-          },
-          fields: 'gridProperties.rowCount,gridProperties.columnCount'
-        }
-      },
-      // 2. BUFFER COLUMN WIDTHS (A and End)
-      {
-        updateDimensionProperties: {
-          range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
-          properties: { pixelSize: L.BUFFER_SIZE },
-          fields: "pixelSize"
-        }
-      },
-      {
-        updateDimensionProperties: {
-          range: { sheetId, dimension: "COLUMNS", startIndex: totalCols - 1, endIndex: totalCols },
-          properties: { pixelSize: L.BUFFER_SIZE },
-          fields: "pixelSize"
-        }
-      },
-      // 3. BUFFER ROW HEIGHT (End)
-      {
-        updateDimensionProperties: {
-          range: { sheetId, dimension: "ROWS", startIndex: totalRows - 1, endIndex: totalRows },
-          properties: { pixelSize: L.BUFFER_SIZE },
-          fields: "pixelSize"
-        }
-      },
-      // 4. FULL CANVAS RESET (Borders, Background, Alignment)
-      {
-        updateBorders: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
-          top: { style: "NONE" }, bottom: { style: "NONE" }, left: { style: "NONE" }, right: { style: "NONE" },
-          innerHorizontal: { style: "NONE" }, innerVertical: { style: "NONE" }
-        }
-      },
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols },
-          cell: { userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } },
-          fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment)'
-        }
-      }
-    ];
-
-    if (contentCols > 0) {
-      // 5. DATA COLUMN WIDTHS (Default 100)
-      requests.push({
-        updateDimensionProperties: {
-          range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols },
-          properties: { pixelSize: 100 },
-          fields: "pixelSize"
-        }
-      });
-      
-      // 5. DATA COLUMN WIDTHS (Default 100)
-      requests.push({
-        updateDimensionProperties: {
-          range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols },
-          properties: { pixelSize: 100 },
-          fields: "pixelSize"
-        }
-      });
-
-      // 6. DATA ROW HEIGHTS (Default 25px for "Clean" look)
-      requests.push({
-        updateDimensionProperties: {
-          range: { sheetId, dimension: "ROWS", startIndex: L.DATA_START_ROW - 1, endIndex: totalRows - 1 },
-          properties: { pixelSize: 25 },
-          fields: "pixelSize"
-        }
-      });
-      
-      // 7. BUFFER PLACEHOLDERS (Column A and End Column) Delivery
-      // Left Buffer (A2)
-      requests.push({
-        updateCells: {
-          rows: [{
-            values: [{
-              userEnteredValue: { stringValue: "." },
-              userEnteredFormat: {
-                backgroundColor: { red: 1, green: 1, blue: 1 },
-                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } },
-                horizontalAlignment: "CENTER",
-                verticalAlignment: "MIDDLE"
-              }
-            }]
-          }],
-          fields: 'userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor,horizontalAlignment,verticalAlignment)',
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 }
-        }
-      });
-
-      // Right Buffer (Last Column, Row 2)
-      requests.push({
-        updateCells: {
-          rows: [{
-            values: [{
-              userEnteredValue: { stringValue: "." },
-              userEnteredFormat: {
-                backgroundColor: { red: 1, green: 1, blue: 1 },
-                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } },
-                horizontalAlignment: "CENTER",
-                verticalAlignment: "MIDDLE"
-              }
-            }]
-          }],
-          fields: 'userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor,horizontalAlignment,verticalAlignment)',
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }
-        }
-      });
-    }
-
-    // 🚀 EXECUTE ATOMIC TRANSACTION (No SpreadsheetApp triggers)
+    // 🚀 EXECUTE ATOMIC TRANSACTION
     Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
 
-    // Minor non-structural tweaks (These rarely cause out of bounds)
+    // Minor non-structural tweaks
     this.drawMobileCheckbox(sheet);
     sheet.setHiddenGridlines(true);
   },
@@ -220,43 +83,44 @@ var View: IView = {
    */
   getStandardVisualRequests: function (sheetId, contentRows, contentCols) {
     const L = CONFIG.LAYOUT;
-    // Robust calculation: Data Start + Actual Data Rows + 1 Buffer Row
-    // Robust calculation: Data Start + Actual Data Rows + 1 Buffer Row
-    const totalRows = L.DATA_START_ROW + Math.max(0, contentRows); // contentRows includes the last data row. Buffer row added via gridProperties if needed, but here we define the visual range.
-    // Actually, totalRows for visual requests (borders etc) usually extends to the end of the grid.
-    // Let's rely on the passed contentRows to define the "Table" area.
+    const T = CONFIG.THEME;
     
-    // Strict Grid Calculation
-    // Header (DATA_START_ROW - 1) + Content (contentRows) + Buffer (1)
-    const strictTotalRows = (L.DATA_START_ROW - 1) + contentRows + 1; 
+    // Dimensions
+    const totalRows = (L.DATA_START_ROW - 1) + (contentRows === -1 ? 100 : contentRows) + 1; 
     const totalCols = contentCols + 2;
 
+    const bgRgb = this.hexToRgbColor(T.TABLE.ROW_ALT_BG);
+    const headerRgb = this.hexToRgbColor(T.TABLE.HEADER_BG);
+    const statusBgRgb = this.hexToRgbColor(T.STATUS_BAR.BG);
+    const statusFgRgb = this.hexToRgbColor(T.STATUS_BAR.FG);
+    const borderDarkRgb = this.hexToRgbColor(T.TABLE.BORDER_DARK);
+    const borderLightRgb = this.hexToRgbColor(T.TABLE.BORDER_LIGHT);
+
     return [
-        // 0. STRICT GRID RESIZE (Trim the sheet)
+        // 0. GRID RESIZE
         {
           updateSheetProperties: {
             properties: {
               sheetId: sheetId,
-              gridProperties: { rowCount: strictTotalRows, columnCount: totalCols }
+              gridProperties: { rowCount: totalRows, columnCount: totalCols }
             },
             fields: 'gridProperties.rowCount,gridProperties.columnCount'
           }
         },
-        // 0.5 DATA ROW HEIGHTS (Ensure 25px)
+        // 0.5 DATA ROW HEIGHTS (25px) - Unified for Status (Row 1) and Data (Row 3+)
         {
           updateDimensionProperties: {
-            range: { sheetId, dimension: "ROWS", startIndex: L.DATA_START_ROW - 1, endIndex: strictTotalRows - 1 },
+            range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 }, // Row 1 (Status)
             properties: { pixelSize: 25 },
             fields: "pixelSize"
           }
         },
-        // 0.6 BUFFER ROW HEIGHT (Last Row 25px)
         {
-            updateDimensionProperties: {
-                range: { sheetId, dimension: "ROWS", startIndex: strictTotalRows - 1, endIndex: strictTotalRows },
-                properties: { pixelSize: L.BUFFER_SIZE },
-                fields: "pixelSize"
-            }
+          updateDimensionProperties: {
+            range: { sheetId, dimension: "ROWS", startIndex: L.DATA_START_ROW - 1, endIndex: totalRows - 1 }, // Row 3+ (Data)
+            properties: { pixelSize: 25 },
+            fields: "pixelSize"
+          }
         },
         // 0.7 BUFFER COLUMN WIDTHS
         {
@@ -273,64 +137,63 @@ var View: IView = {
                 fields: "pixelSize"
             }
         },
-        // 1. Header background (#f3f3f3)
+        // 1. Header background
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 }, textFormat: { bold: true } } },
+            cell: { userEnteredFormat: { backgroundColor: headerRgb, textFormat: { bold: true } } },
             fields: 'userEnteredFormat(backgroundColor,textFormat.bold)'
           }
         },
-        // 2. Table Horizontal Alignment
+        // 2. Table Alignment
         {
             repeatCell: {
-                range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-                cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
-                fields: "userEnteredFormat(horizontalAlignment)"
+                range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
+                cell: { userEnteredFormat: { horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } },
+                fields: "userEnteredFormat(horizontalAlignment,verticalAlignment)"
             }
         },
-        // 3. Status Bar Styling (Row 1) - Force LEFT + Subdued Background
+        // 3. Status Bar Styling (Row 1)
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols },
             cell: { 
               userEnteredFormat: { 
-                backgroundColor: { red: 0.94, green: 0.95, blue: 0.95 }, // #f1f3f4
+                backgroundColor: statusBgRgb,
                 horizontalAlignment: "LEFT", 
-                textFormat: { bold: true, foregroundColor: { red: 0.38, green: 0.38, blue: 0.38 } } 
+                textFormat: { bold: true, foregroundColor: statusFgRgb } 
               } 
             },
             fields: "userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)"
           }
         },
         // 4. Borders
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: strictTotalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: strictTotalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: strictTotalRows - 1, endRowIndex: strictTotalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: { red: 0, green: 0, blue: 0 } } } },
-        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: L.DATA_START_ROW - 1 + contentRows, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerVertical: { style: "SOLID", color: { red: 0.8, green: 0.8, blue: 0.8 } } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: borderDarkRgb } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: borderDarkRgb } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, bottom: { style: "SOLID", color: borderDarkRgb } } },
+        { updateBorders: { range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, top: { style: "SOLID", color: borderDarkRgb } } },
+        { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, bottom: { style: "SOLID", color: borderDarkRgb } } },
+        { updateBorders: { range: { sheetId, startRowIndex: L.DATA_START_ROW - 1, endRowIndex: totalRows - 1, startColumnIndex: 1, endColumnIndex: 1 + contentCols }, innerHorizontal: { style: "SOLID", color: borderLightRgb }, innerVertical: { style: "SOLID", color: borderLightRgb } } },
         
-        // 5. ALTERNATING ROW COLORS (Banding)
+        // 5. Banding
         {
           addBanding: {
             bandedRange: {
               range: {
                 sheetId: sheetId,
                 startRowIndex: L.DATA_START_ROW - 1,
-                endRowIndex: strictTotalRows - 1, // Exclude buffer row
+                endRowIndex: totalRows - 1,
                 startColumnIndex: 1,
                 endColumnIndex: 1 + contentCols
               },
               rowProperties: {
-                firstBandColor: { red: 1, green: 1, blue: 1 }, // White
-                secondBandColor: { red: 0.96, green: 0.96, blue: 0.96 } // Very Light Gray
+                firstBandColor: { red: 1, green: 1, blue: 1 },
+                secondBandColor: bgRgb
               }
             }
           }
         },
-        
-        // 6. Fixed Column Widths (Ensuring 100px for "Technical" look)
+        // 6. Fixed widths
         {
           updateDimensionProperties: {
             range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 1 + contentCols },
@@ -338,29 +201,18 @@ var View: IView = {
             fields: "pixelSize"
           }
         },
-        // 6. Buffer Columns A & End Color Match (Invisible ".")
-        // Ensures Schema.ts can correctly resolve indices even on new/empty sheets
+        // 7. Invisible Buffer dots
         {
           updateCells: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
-            rows: [{ 
-              values: [{ 
-                userEnteredValue: { stringValue: "." }, 
-                userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } 
-              }] 
-            }],
+            rows: [{ values: [{ userEnteredValue: { stringValue: "." }, userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } }] }],
             fields: "userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor)"
           }
         },
         {
           updateCells: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols },
-            rows: [{ 
-              values: [{ 
-                userEnteredValue: { stringValue: "." }, 
-                userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } 
-              }] 
-            }],
+            rows: [{ values: [{ userEnteredValue: { stringValue: "." }, userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } }] }],
             fields: "userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor)"
           }
         }
@@ -405,25 +257,19 @@ var View: IView = {
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // 🎨 Master Color Palette (Premium High-Contrast set)
-    const PALETTE = {
-      INDIGO:   "#3f51b5", // Clan Database
-      EMERALD:  "#00796b", // Leaderboard
-      CRIMSON:  "#c62828", // Headhunter
-      SLATE:    "#546e7a", // Technical (BL, EVT)
-      MIST:     "#cfd8dc"  // Backups
-    };
+    // 🎨 Theme Palette
+    const P = CONFIG.THEME.PALETTE;
 
     // 🏗️ Define Roles and Ordering
     const WORKSPACE = [
-      { name: CONFIG.SHEETS.DB, color: PALETTE.INDIGO },
-      { name: CONFIG.SHEETS.LB, color: PALETTE.EMERALD },
-      { name: CONFIG.SHEETS.HH, color: PALETTE.CRIMSON }
+      { name: CONFIG.SHEETS.DB, color: P.WORKSPACE.DB },
+      { name: CONFIG.SHEETS.LB, color: P.WORKSPACE.LB },
+      { name: CONFIG.SHEETS.HH, color: P.WORKSPACE.HH }
     ];
 
     const TECHNICAL = [
-      { name: CONFIG.SHEETS.BL, color: PALETTE.SLATE },
-      { name: CONFIG.SHEETS.EVT, color: PALETTE.SLATE }
+      { name: CONFIG.SHEETS.BL, color: P.TECHNICAL },
+      { name: CONFIG.SHEETS.EVT, color: P.TECHNICAL }
     ];
 
     // 🛡️ Registration Engine
@@ -439,10 +285,10 @@ var View: IView = {
     WORKSPACE.forEach(base => {
       // Standard Rotations
       for (let i = 1; i <= 5; i++) {
-        REGISTER.push({ name: `Backup ${i} ${base.name}`, color: PALETTE.MIST, visible: false });
+        REGISTER.push({ name: `Backup ${i} ${base.name}`, color: P.BACKUP, visible: false });
       }
       // Legacy Manual Backups
-      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: PALETTE.MIST, visible: false });
+      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: P.BACKUP, visible: false });
     });
 
     // 🚀 BATCH EXECUTION (Sheets API)
