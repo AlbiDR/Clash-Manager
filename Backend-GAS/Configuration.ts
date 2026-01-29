@@ -393,7 +393,7 @@ var CONFIG: AppConfig = {
       FAME: 3,
       AVG_FAME: 15,
       DONATION: 50,
-      TROPHY: 0.0002,
+      TROPHY: 0.1,
       WAR_RATE: 150,
     },
     PENALTIES: {
