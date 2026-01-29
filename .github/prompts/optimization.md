@@ -32,7 +32,12 @@
 ---
 
 # [4] **Constraint 2: Boundaries & Protocols**
-* **[!] Meta-Exclusion:** Do not read, analyze, or prune any files inside `.github/prompts/`. These are your operating instructions, not project code.
+** **[!] Meta-Logic: Team Awareness
+*   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Verify**, **Optimize**, and **Document**). 
+*   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project’s collective strategy and to avoid overlapping with another agent's role.
+*   **[Boundary]:** These files are **Administrative Context**, not Project Code. 
+    *   **NEVER** include them in your "Target Scope." 
+    *   **NEVER** modify, test, document, or report on any file within this directory.
 * **[>] Naming Law:** New files must be 100% coherent with the parent folder. Example: Inside `user/auth/`, create `useSession.ts`, NOT `dataHelper.ts`.
 * **[!] Test-Driven Stability:** Every refactor must ensure the test suite passes through the corresponding `.test.ts` files (created via the "verification.md" prompt in ".github/prompts").
 * **[X] GAS Firewall:** Absolute **No-Fly Zone** for files ending in `.gs` regarding Service calls.

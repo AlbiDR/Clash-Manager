@@ -31,7 +31,12 @@
 ---
 
 # [4] **Constraint 2: Boundaries & Protocols**
-* **[!] Meta-Exclusion:** Do not read, analyze, or document any files inside `.github/prompts/`. These are your operating instructions, not project code.
+* **[!] Meta-Logic: Team Awareness
+*   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Verify**, **Optimize**, and **Document**). 
+*   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project’s collective strategy and to avoid overlapping with another agent's role.
+*   **[Boundary]:** These files are **Administrative Context**, not Project Code. 
+    *   **NEVER** include them in your "Target Scope." 
+    *   **NEVER** modify, test, document, or report on any file within this directory.
 * **[>] GAS Protocol (Apps Script):**
     *   **Legacy (`.gs`):** Must **ONLY** use standard **JSDoc** (`/** @param */`).
     *   **Modern (`.ts`):** Use **TypeScript** syntax (`x: string`) only if the file has a `.ts` extension.
