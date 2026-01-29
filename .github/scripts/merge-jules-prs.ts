@@ -6,7 +6,7 @@ import path from "path";
  * 🤖 SCRIPT: MERGE JULES PRS (TypeScript Edition)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Automates the merging of PRs from google-labs-jules.
- * 🏷️ VERSION: 3.0.0
+ * 🏷️ VERSION: 3.0.1
  * ============================================================================
  */
 
@@ -17,7 +17,7 @@ const CONFIG = {
   targetOwner: process.env.GITHUB_REPOSITORY?.split("/")[0] || "",
   targetRepo: process.env.GITHUB_REPOSITORY?.split("/")[1] || "",
   targetBranch: "Jules",
-  author: ["google-labs-jules","AlbiDR"]
+  allowedAuthors: ["google-labs-jules", "AlbiDR"], 
   token: process.env.GITHUB_TOKEN || "",
   changelogPath: path.join(".jules", "CHANGELOG.md"),
 };
@@ -204,7 +204,7 @@ async function run() {
         const mergeBody = {
           merge_method: "squash",
           commit_title: `${pr.title} (#${pr.number})`,
-          commit_message: `Auto-merged PR #${pr.number} from ${CONFIG.author}`,
+          commit_message: `Auto-merged PR #${pr.number} from ${pr.user.login}`,
         };
 
         while (!merged && tryCount <= maxTries) {
