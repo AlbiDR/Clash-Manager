@@ -17,7 +17,7 @@ const CONFIG = {
   targetOwner: process.env.GITHUB_REPOSITORY?.split("/")[0] || "",
   targetRepo: process.env.GITHUB_REPOSITORY?.split("/")[1] || "",
   targetBranch: "Jules",
-  author: "google-labs-jules",
+  author: ["google-labs-jules","AlbiDR"]
   token: process.env.GITHUB_TOKEN || "",
   changelogPath: path.join(".jules", "CHANGELOG.md"),
 };
@@ -142,12 +142,21 @@ async function run() {
     console.log(`Found ${prs.length} total open PRs.`);
 
     // 2. Filter for Jules PRs
-    const author = CONFIG.author.toLowerCase();
     const targetPrs = prs.filter((pr) => {
       const login = pr.user.login.toLowerCase();
-      const isAuthor = login === author || login === `${author}[bot]`;
+      // Check if the author is in our allowed list (or is a bot version of them)
+      const isAllowedAuthor = CONFIG.allowedAuthors.some(allowed => 
+        login === allowed.toLowerCase() || login === `${allowed.toLowerCase()}[bot]`
+      );
+      
       const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
-      return isAuthor && isTargetBranch;
+
+      // Debugging Output (so you know why it skips next time)
+      if (isTargetBranch && !isAllowedAuthor) {
+        console.log(`⚠️ Skipping PR #${pr.number} by ${login} (Author not allowed)`);
+      }
+
+      return isAllowedAuthor && isTargetBranch;
     });
 
     if (targetPrs.length === 0) {
