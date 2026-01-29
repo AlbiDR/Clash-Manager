@@ -1,19 +1,19 @@
 
 /**
  * ============================================================================
- * 📡 MODULE: NETWORK (API Engine)
+ * MODULE: NETWORK (API Engine)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: The "Foreign Affairs" minister. Handles all external data fetching.
- * ⚙️ CAPABILITIES:
+ * DESCRIPTION: Handles all external data fetching.
+ * CAPABILITIES:
  *    1. Smart Fetching: Key Rotation, Quota Tracking, Error Handling.
  *    2. Remote Delegation: Offloads tasks to external workers if configured.
  *    3. Caching: Persistent & In-Memory caching to minimize network calls.
  * 
- * 🛡️ ARCHITECTURE: 
+ * ARCHITECTURE:
  *    - Dependencies: Store (Keys/Quota), Core (Safety/Shuffle).
  *    - Interface: Pure Data Provider.
  * 
- * 🏷️ VERSION: 1.0.0
+ * VERSION: 1.0.0
  * ============================================================================
  */
 
@@ -45,7 +45,7 @@ const NETWORK_CONFIG = {
   }
 };
 
-// 🧠 EXECUTION CACHE: Stores API responses for the duration of one script execution.
+// EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map<string, any>();
 let _FETCH_COUNT = 0;
 let _LAST_WORKER_ERROR = "N/A";
@@ -54,11 +54,29 @@ let _LAST_WORKER_ERROR = "N/A";
    INTERFACES
    ========================================================================== */
 export interface INetwork {
+  /**
+   * @warning Consumes UrlFetchApp and CacheService quotas.
+   */
   fetchRoyaleAPI(urls: string[], scoring?: ScoringWeights | null): any[];
+  /**
+   * @warning Consumes UrlFetchApp and CacheService quotas.
+   */
   fetchClanDataSmart(cleanTag: string): ClanDataResult;
+  /**
+   * @warning Consumes UrlFetchApp quota.
+   */
   fetchPublicJson(type: "members" | "warlog"): any[] | null;
+  /**
+   * @warning Consumes UrlFetchApp quota.
+   */
   auditKeysRemote(keys: Array<{ name: string; value: string }>): Array<{ name: string; success: boolean; error?: string }> | null;
+  /**
+   * @warning Consumes UrlFetchApp quota.
+   */
   scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring?: ScoringWeights | null): any[];
+  /**
+   * @warning Consumes UrlFetchApp quota.
+   */
   remoteWorkerHealthy(force?: boolean): boolean;
   getRemainingQuota(): number;
   getLastWorkerError(): string;
@@ -114,7 +132,7 @@ const NetworkInternal = {
   },
 
   /**
-   * Sends a remote fetch request (Industrial Hardened Edition)
+   * Sends a remote fetch request to the worker.
    */
   remoteFetch(chunkUrls: string[], keyPool: any[], scoring: any): any[] {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("No remote worker");
@@ -164,8 +182,15 @@ const NetworkInternal = {
 var Network: INetwork = {
   
   /**
-   * ⚡ ULTRA-OPTIMIZED FETCH ENGINE
-   * Handles caching, deduplication, key rotation, and quota management.
+   * FETCH ENGINE
+   *
+   * @remarks
+   * Implements a multi-tier caching strategy:
+   * 1. Execution Cache (Map): Instant lookup for duplicate URLs within the same script run.
+   * 2. Script Cache (CacheService): Persistent storage (5-15 mins) across different executions.
+   *
+   * High-volume requests (>5 URLs) are prioritized for Remote Worker delegation to preserve
+   * the limited Google Apps Script UrlFetchApp quota for critical operations.
    */
   fetchRoyaleAPI(urls: string[], scoring = null) {
     if (!urls || urls.length === 0) return [];
@@ -176,7 +201,7 @@ var Network: INetwork = {
     // 2. Prepare Key Pool
     let keyPool = [...CONFIG.SYSTEM.API_KEYS];
     if (!keyPool || keyPool.length === 0) {
-      console.error("❌ CRITICAL: No API Keys found.");
+      console.error("CRITICAL: No API Keys found.");
       return new Array(urls.length).fill(null);
     }
 
@@ -218,7 +243,7 @@ var Network: INetwork = {
     // 4. Check Quota Limits (Daily Guard)
     const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
     if (remainingQuota <= 0) {
-        console.warn(`🛑 CRITICAL: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all requests.`);
+        console.warn(`CRITICAL: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all requests.`);
         return finalResults;
     }
 
@@ -250,13 +275,17 @@ var Network: INetwork = {
         try {
           let responses: any[];
 
-          // 🛡️ WORKER FIRST STRATEGY: High volume MUST go through worker if available
+          // WORKER FIRST STRATEGY: High volume MUST go through worker if available
           if (useRemote) {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e: any) {
                 console.warn(`[Network] Worker Failure: ${e.message}.`);
                 if (isHighVolume) {
+                   // CONSTRAINT: High volume local fallback is forbidden.
+                   // If the worker is down, attempting to fetch 50+ items locally
+                   // would exhaust the daily GAS quota (20,000) in just a few minutes
+                   // of concurrent usage, crashing the entire system for all users.
                    console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to preserve core quota.`);
                    useRemote = false; 
                    break; // Abort chunk immediately - NO local fallback for high volume
@@ -304,7 +333,10 @@ var Network: INetwork = {
               urlIndices.get(url)!.forEach(idx => finalResults[idx] = null);
             } else if (code === 403 || code === 429) {
               if (!useRemote) {
-                // Burn bad key locally
+                // KEY ROTATION: Burn bad key locally.
+                // 403 (Invalid) or 429 (Throttled) indicates the specific API key is
+                // no longer viable. We remove it from the pool for the remainder
+                // of this execution to avoid repeated failures.
                 const badKey = localRequests[i].headers["Authorization"].replace("Bearer ", "");
                 keyPool = keyPool.filter(k => k.value !== badKey);
               }
@@ -321,17 +353,24 @@ var Network: INetwork = {
            if (attempt < NETWORK_CONFIG.RETRY_MAX - 1) Utilities.sleep(2000);
         }
       }
-      Utilities.sleep(200); // Friendly pause
+      Utilities.sleep(200);
     }
 
     return finalResults;
   },
 
+  /**
+   * @remarks
+   * Fetches a complete clan snapshot (Members + Race + History).
+   * Prioritizes the Remote Worker's optimized `/clan/full` endpoint which
+   * aggregates these data points into a single network call, significantly
+   * reducing total execution time and quota usage.
+   */
   fetchClanDataSmart(cleanTag) {
     const cacheKey = `clan_full_${cleanTag.replace(/%/g, '_')}`;
     const scriptCache = CacheService.getScriptCache();
     
-    // 🧠 15-MINUTE PERSISTENT CACHE (Quota Saver)
+    // 15-MINUTE PERSISTENT CACHE (Quota Saver)
     const cachedStr = scriptCache.get(cacheKey);
     if (cachedStr) {
       try {
@@ -435,7 +474,7 @@ var Network: INetwork = {
       }
     } catch(e: any) {}
 
-    // Verify (Industrial Diagnostic Handshake - Simplified)
+    // Verify worker reachability and upstream health.
     let isHealthy = false;
     try {
         const headers: Record<string, string> = {};
@@ -470,7 +509,7 @@ var Network: INetwork = {
         console.warn(`[Network] Worker Reachability Error: ${e}`); 
     }
 
-    // Persist (Atomic Cache Sync)
+    // Update local and persistent caches with health status.
     _EXECUTION_CACHE.set("worker_health", isHealthy);
     Registry.Services.Store.props.setJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, {
       status: isHealthy,
@@ -506,8 +545,8 @@ var Network: INetwork = {
             if (r.status === 200) return { name: k.name, success: true };
             
             let err = `Error ${r.status}`;
-            if (r.status === 403) err = "⛔ Access Denied";
-            if (r.status === 429) err = "⚠️ Throttled";
+            if (r.status === 403) err = "Access Denied";
+            if (r.status === 429) err = "Throttled";
             return { name: k.name, success: false, error: err };
         });
     } catch(e: any) { return null; }
