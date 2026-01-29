@@ -139,9 +139,9 @@ function scoutRecruits(): void {
   // 🧠 SMART STRATEGY ENGINE
   // Context-Aware Requirements based on Clan Capacity
   // ==========================================================================
-  let calculatedFloor = 4000;
+  let calculatedFloor = 7500;
   let calculationMethod = "Fixed Default";
-  const ELITE_THRESHOLD = 45; // Below this = Rebuild Mode. Above this = Elite Mode.
+  const ELITE_THRESHOLD = 42; // Below this = Rebuild Mode. Above this = Elite Mode.
 
   if (
     baselineData &&
