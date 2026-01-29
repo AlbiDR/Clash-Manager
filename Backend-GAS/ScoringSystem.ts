@@ -107,7 +107,7 @@ var ScoringSystem: IScoringSystem = {
    * - Donations (50): High value on supporting others.
    * - War Rate (150): The absolute highest priority; participation is mandatory.
    * - Fame (3/15): Rewards consistent weekly activity.
-   * - Trophies (0.0002): Used as a micro tie-breaker for raw skill.
+   * - Trophies (0.1): Mostly useful as a tie-breaker for raw skill.
    */
   computeScores: function (
     currentFame: number,
@@ -125,7 +125,7 @@ var ScoringSystem: IScoringSystem = {
             FAME: 3,
             AVG_FAME: 15,
             DONATION: 50,
-            TROPHY: 0.0002,
+            TROPHY: 0.1,
             WAR_RATE: 150,
           };
     const P =
