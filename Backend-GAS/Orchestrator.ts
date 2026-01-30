@@ -132,7 +132,7 @@ function taskUpdateDatabase(): void {
   setupMobileTriggers(true);
 
   try {
-    Registry.Services.Core.executeSafely("TASK_DB", () => {
+    Registry.Services.Core.executeSafely("SYNC_DB", () => {
       Registry.Actions["sync:database"]();
       console.info("✅ [TASK] Clan Database Sync: Success.");
     });
@@ -157,7 +157,7 @@ function taskUpdateLeaderboard(): void {
   console.info("⏰ [TASK] Leaderboard Update: Starting...");
 
   try {
-    Registry.Services.Core.executeSafely("TASK_LB", () => {
+    Registry.Services.Core.executeSafely("SYNC_LB", () => {
       Registry.Actions["sync:leaderboard"]();
       Registry.Actions["sync:webapp"]();
       console.info("✅ [TASK] Leaderboard Update: Success.");
@@ -221,7 +221,7 @@ function cleanupTemporaryTriggers(functionName: string): void {
  */
 function taskFastScout(): void {
   console.info("⏰ [TASK] Fast Scout (Headhunter): Starting...");
-  Registry.Services.Core.executeSafely("TASK_HH", () => {
+  Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
       console.info("✅ [TASK] Fast Scout: Success.");
@@ -411,8 +411,15 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 
   console.info(`📱 [MOBILE] Trigger activated: ${sheetName}`);
 
+  const lockMap: Record<string, string> = {
+    [CONFIG.SHEETS.LB]: "SYNC_LB",
+    [CONFIG.SHEETS.DB]: "SYNC_DB",
+    [CONFIG.SHEETS.HH]: "SYNC_HH"
+  };
+  const lockKey = lockMap[sheetName] || `MOBILE_${sheetName.toUpperCase()}`;
+
   try {
-    Registry.Services.Core.executeSafely(`MOBILE_${sheetName.toUpperCase()}`, () => {
+    Registry.Services.Core.executeSafely(lockKey, () => {
       if (sheetName === CONFIG.SHEETS.LB) {
         Registry.Actions["sync:leaderboard"]();
         Registry.Actions["sync:webapp"]();
@@ -440,7 +447,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Connecting to Royale API...", "📊 Database Update", 5);
-  Registry.Services.Core.executeSafely("MANUAL_DB", () => {
+  Registry.Services.Core.executeSafely("SYNC_DB", () => {
     try {
       Registry.Actions["sync:database"]();
       Registry.Actions["sync:webapp"]();
@@ -454,7 +461,7 @@ function triggerUpdateDatabase(): void {
 function triggerUpdateLeaderboard(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Calculating performance scores...", "🏆 Leaderboard Update", 5);
-  Registry.Services.Core.executeSafely("MANUAL_LB", () => {
+  Registry.Services.Core.executeSafely("SYNC_LB", () => {
     try {
       Registry.Actions["sync:leaderboard"]();
       Registry.Actions["sync:webapp"]();
@@ -468,7 +475,7 @@ function triggerUpdateLeaderboard(): void {
 function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Scanning global tournaments...", "🔭 Headhunter Scout", 20);
-  Registry.Services.Core.executeSafely("MANUAL_HH", () => {
+  Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
       ss.toast("Scout operation completed.", "✅ Success", 5);
