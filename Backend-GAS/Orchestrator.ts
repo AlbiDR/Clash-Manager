@@ -117,8 +117,6 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
     .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
     .addSeparator()
-    .addItem("🧪 Test Warlog Endpoint", "runWarLogTest")
-    .addSeparator()
     .addItem(ITEMS.TGR, "createTriggers")
     .addToUi();
 }
