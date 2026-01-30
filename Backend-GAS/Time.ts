@@ -87,12 +87,27 @@ var Time: ITime = {
     const s = String(val).trim();
     if (!s || s === "N/A" || s === "-") return new Date();
 
-    // 1. Try numeric parsing (for timestamps stored as numbers/strings)
-    // Matches pure digits, at least 10 (seconds) or 13 (ms)
-    if (/^\d{10,13}$/.test(s)) {
-        const num = Number(s);
-        const date = new Date(num < 10000000000 ? num * 1000 : num);
-        return isNaN(date.getTime()) ? new Date() : date;
+    // 1. Try numeric parsing (Spreadsheet Serial vs Unix Timestamps)
+    const num = Number(val);
+    if (!isNaN(num)) {
+        // 1.1 Spreadsheet Serial Dates (e.g. 46023 for 2026)
+        // Range 30,000 to 70,000 covers roughly 1982 to 2091
+        if (num > 30000 && num < 70000) {
+            // Local-aware conversion for Spreadsheet Serial dates
+            // Sheet base: Dec 30, 1899
+            const date = new Date(1899, 11, 30, 0, 0, 0);
+            const days = Math.floor(num);
+            const ms = Math.round((num - days) * 86400 * 1000);
+            date.setDate(date.getDate() + days);
+            date.setMilliseconds(date.getMilliseconds() + ms);
+            return isNaN(date.getTime()) ? new Date() : date;
+        }
+        
+        // 1.2 Unix Timestamps (Seconds or Milliseconds)
+        if (num >= 1000000000) {
+          const date = new Date(num < 10000000000 ? num * 1000 : num);
+          return isNaN(date.getTime()) ? new Date() : date;
+        }
     }
 
     // 2. Try ISO 8601 parsing (e.g. 2026-01-30T13:42:37Z)
