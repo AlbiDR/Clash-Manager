@@ -36,7 +36,7 @@ function runWarLogTest(): void {
     const tag = encodeURIComponent(rawTag);
     const url = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/warlog`;
 
-    Registry.Services.Core.logStep(`Fetching WarLog for #${rawTag}...`);
+    Registry.Services.Core.logStep(1, 1, `Fetching WarLog for #${rawTag}...`);
     
     const results = Registry.Services.Network.fetchRoyaleAPI([url]);
     const data = results[0];
@@ -74,10 +74,10 @@ function runWarLogTest(): void {
     // 4. Apply Aesthetics
     Registry.Services.View.applyStandardLayout(sheet, rows.length, rows[0].length, headers);
     Registry.Services.View.setStatusMessage(sheet, `Successfully fetched ${data.items.length} war entries.`);
-    Registry.Services.Core.logReport("WARLOG_TEST", `Fetched ${data.items.length} records.`);
+    Registry.Services.Core.logReport("WARLOG_TEST", [`Fetched ${data.items.length} records.`]);
 
   } catch (e: any) {
-    Registry.Services.Core.logReport("WARLOG_TEST_ERROR", e.message);
+    Registry.Services.Core.logReport("WARLOG_TEST_ERROR", [e.message]);
     if (sheet) {
       sheet.getRange("A1").setValue(`Error: ${e.message}`);
     }
