@@ -164,7 +164,7 @@ export interface AppConfig {
 }
 
 // Global Version Constant for this file
-const VER_CONFIGURATION = "10.0.7";
+export const VER_CONFIGURATION = "10.0.7";
 
 // Fetch all script properties once at initialization
 let _PROPS: Record<string, string> = {};
@@ -176,7 +176,7 @@ try {
   );
 }
 
-var CONFIG: AppConfig = {
+export var CONFIG: AppConfig = {
   SYSTEM: {
     MANIFEST: {
       CONFIGURATION: "10.0.7",
@@ -203,7 +203,7 @@ var CONFIG: AppConfig = {
         return numA - numB;
       })
       .map((key) => ({ name: key, value: _PROPS[key] }))
-      .filter((k) => k.value && k.value.trim().length > 0),
+      .filter((k: { name: string; value: string }) => k.value && k.value.trim().length > 0),
 
     TIMEZONE: "Europe/Rome",
     API_BASE: "https://proxy.royaleapi.dev/v1",
