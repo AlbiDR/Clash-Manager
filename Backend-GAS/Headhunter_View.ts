@@ -59,7 +59,7 @@ const HeadhunterView: IHeadhunterView = {
       const dateObj = d instanceof Date ? d : new Date(d);
       // Fallback if Date is invalid
       if (isNaN(dateObj.getTime())) return "N/A";
-      return Utilities.formatDate(dateObj, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+      return Utilities.formatDate(dateObj, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
     };
 
     const rows = list.map((c) => [
@@ -192,5 +192,9 @@ const HeadhunterView: IHeadhunterView = {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = HeadhunterView;
 }
+
+(function(scope: any) {
+  Object.assign(scope, { HeadhunterView });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default HeadhunterView;
