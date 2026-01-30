@@ -28,7 +28,10 @@ function runWarLogTest(): void {
   }
 
   try {
-    const cleanTag = rawTag.trim().toUpperCase();
+    const rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
+    let cleanTag = rawTag.trim().toUpperCase();
+    if (cleanTag.startsWith("#")) cleanTag = cleanTag.substring(1);
+    
     const tag = encodeURIComponent(cleanTag);
     
     const urlClanBase = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}`;
