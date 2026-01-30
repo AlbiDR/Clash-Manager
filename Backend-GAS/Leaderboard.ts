@@ -219,6 +219,33 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
   }
 
+  // 1b. HEADHUNTER CACHE (Recruit Intelligence)
+  // Fetch War Wins from the Headhunter sheet to give new recruits their specific "Potential" score,
+  // bypassing the API limitation on the /members endpoint.
+  const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+  const recruitCache = new Map<string, number>(); // Tag -> WarWins
+  
+  if (hhSheet && hhSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    const hhData = hhSheet.getRange(
+      CONFIG.LAYOUT.DATA_START_ROW, 
+      1, 
+      hhSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
+      10 // Read enough cols to get WAR_WINS
+    ).getValues();
+    const S_HH = CONFIG.SCHEMA.HH;
+    
+    hhData.forEach((row: any) => {
+      const tag = String(row[S_HH.TAG]).trim();
+      const wins = Number(row[S_HH.WAR_WINS]);
+      if (tag && !isNaN(wins)) {
+        recruitCache.set(tag, wins);
+      }
+    });
+    if (recruitCache.size > 0) {
+        console.info(`  └─ Headhunter: Cached war intelligence for ${recruitCache.size} scouted targets.`);
+    }
+  }
+
   // 2. MERGE FRESH API DATA
   if (remoteHistory) {
     Object.keys(remoteHistory).forEach((tag) => {
@@ -393,10 +420,15 @@ function updateLeaderboard(dryRun: boolean = false): void {
       avgWarFame,
       avgDailyDonations,
       trophies,
+    const scores = Registry.Services.ScoringSystem.computeScores(
+      currentFame,
+      avgWarFame,
+      avgDailyDonations,
+      trophies,
       warRateVal,
       lastSeen.getTime(),
       now.getTime(),
-      m.warDayWins || 0,
+      recruitCache.get(m.tag) || 0, // 🛡️ RECRUIT INTEL: Use Cached Wins if available, else 0
       currentFame > 0
     );
 
