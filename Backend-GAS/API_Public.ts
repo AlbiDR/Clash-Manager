@@ -304,16 +304,17 @@ function getMembers(): any[] {
 
   console.info("ℹ️ [API] getMembers: Using local GAS fallback (remote unavailable).");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+  // OPTIMIZATION: Use same endpoint as Recruiter to hit shared cache
   const data = Registry.Services.Network.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
+    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
   ]);
 
-  if (!data || !data[0] || !data[0].items) {
+  if (!data || !data[0] || !data[0].memberList) {
     console.warn("⚠️ [API] getMembers: No data returned from Clash Royale API.");
     return [];
   }
 
-  return data[0].items.map((m: any) => ({
+  return data[0].memberList.map((m: any) => ({
     tag: m.tag,
     name: m.name,
     role: formatRole(m.role),

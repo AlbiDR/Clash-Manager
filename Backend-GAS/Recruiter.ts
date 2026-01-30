@@ -130,51 +130,69 @@ function scoutRecruits(): void {
 
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
-  // 1. Establish Baseline
-  const baselineData = Registry.Services.Network.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
+  // 1. Establish Baseline via Clan Detail (Responsive & Dynamic)
+  // This replaces the old /members fetch to get in-game requirements
+  const clanDetailResponse = Registry.Services.Network.fetchRoyaleAPI([
+    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
   ]);
-  
+
+  let inGameRequirement = 0;
+  let members: any[] = [];
+
+  if (clanDetailResponse && clanDetailResponse[0]) {
+    const clan = clanDetailResponse[0];
+    inGameRequirement = clan.requiredTrophies || 0;
+    // Clan Detail uses 'memberList', /members uses 'items'
+    members = clan.memberList || []; 
+  }
+
   // ==========================================================================
   // 🧠 SMART STRATEGY ENGINE
   // Context-Aware Requirements based on Clan Capacity
   // ==========================================================================
-  let calculatedFloor = 7500;
-  let calculationMethod = "Fixed Default";
-  const ELITE_THRESHOLD = 42; // Below this = Rebuild Mode. Above this = Elite Mode.
+  
+  // Set the "Absolute Hard Floor" from the API
+  let calculatedFloor = inGameRequirement; 
+  let calculationMethod = "In-Game Requirement";
+  
+  // Threshold: 42 or more members = Elite Mode
+  const ELITE_THRESHOLD = 41; 
 
-  if (
-    baselineData &&
-    baselineData[0] &&
-    baselineData[0].items &&
-    baselineData[0].items.length > 0
-  ) {
-    const members = baselineData[0].items;
+  if (members.length > 0) {
     const currentCount = members.length;
-
-    // Sort trophies ascending (Lowest -> Highest)
     const allTrophies = members
       .map((m: any) => m.trophies || 0)
       .sort((a: number, b: number) => a - b);
     
     if (currentCount > ELITE_THRESHOLD) {
       // 🏰 ELITE MODE (Median)
-      // We are nearly full. Only accept players better than our top 50%.
+      // Only accept players better than our top 50%.
       const midIndex = Math.floor(allTrophies.length / 2);
-      calculatedFloor = allTrophies[midIndex];
-      calculationMethod = `🏰 Elite Mode (Median of ${currentCount})`;
+      const median = allTrophies[midIndex];
+      
+      if (median > calculatedFloor) {
+          calculatedFloor = median;
+          calculationMethod = `🏰 Elite Mode (Median: ${median})`;
+      } else {
+          calculationMethod = `🏰 Elite Mode (At In-Game Cap: ${inGameRequirement})`;
+      }
     } else {
       // 🏗️ REBUILD MODE (Bottom 10% Avg)
-      // We have space. Accept players who are statistically better than the ones we kick.
+      // Accept players better than the ones we typically kick.
       const bottomCount = Math.max(1, Math.ceil(allTrophies.length * 0.1));
       const bottomSlice = allTrophies.slice(0, bottomCount);
-      const sumLow = bottomSlice.reduce((a: number, b: number) => a + b, 0);
-      calculatedFloor = Math.round(sumLow / bottomSlice.length);
-      calculationMethod = `🏗️ Rebuild Mode (Bot 10% Avg of ${currentCount})`;
+      const bottomAvg = Math.round(bottomSlice.reduce((a: number, b: number) => a + b, 0) / bottomSlice.length);
+      
+      if (bottomAvg > calculatedFloor) {
+          calculatedFloor = bottomAvg;
+          calculationMethod = `🏗️ Rebuild Mode (Bot 10% Avg: ${bottomAvg})`;
+      } else {
+          calculationMethod = `🏗️ Rebuild Mode (At In-Game Cap: ${inGameRequirement})`;
+      }
     }
   }
 
-  // Log the strategy decision
+  // Log the strategy decision to the console
   console.info(`  └─ Strategy Active: ${calculationMethod} -> Floor: ${calculatedFloor}`);
 
   // ==========================================================================
