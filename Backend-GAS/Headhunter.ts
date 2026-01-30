@@ -105,15 +105,23 @@ const Headhunter: IHeadhunter = {
     const tagsToCheck = Array.from(existing.keys());
     if (tagsToCheck.length > 0) {
       Registry.Services.Core.logStep(6, 9, `Verifying clan status for ${tagsToCheck.length} survivors...`);
-      const profiles = Registry.Services.Network.fetchRoyaleAPI(
-        tagsToCheck.map((t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`)
-      );
-      profiles.forEach((p: any) => {
-        if (p && p.clan && p.clan.tag) {
-          existing.delete(p.tag);
-          joinedCount++;
-        }
-      });
+      
+      // 🛡️ FIX: Batch joined check to prevent 429/Timeout on large databases
+      const batchSize = 25;
+      for (let i = 0; i < tagsToCheck.length; i += batchSize) {
+        const chunk = tagsToCheck.slice(i, i + batchSize);
+        const profiles = Registry.Services.Network.fetchRoyaleAPI(
+          chunk.map((t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`)
+        );
+        profiles.forEach((p: any) => {
+          if (p && p.clan && p.clan.tag) {
+            existing.delete(p.tag);
+            joinedCount++;
+          }
+        });
+        if (i + batchSize < tagsToCheck.length) SpreadsheetApp.flush();
+      }
+
       if (joinedCount > 0) {
         console.info(`  └─ Cleanup: Removed ${joinedCount} recruit${joinedCount > 1 ? 's' : ''} who joined a clan.`);
       }
@@ -176,17 +184,22 @@ const Headhunter: IHeadhunter = {
         const dons = response.valueRanges[2].values || [];
         const histories = response.valueRanges[3].values || [];
   
+        const currentWk = Registry.Services.Time.calculateWarWeekId(new Date());
+
         for (let i = 0; i < perfs.length; i++) {
           const perf = Number(perfs[i] ? perfs[i][0] : 0);
           if (perf >= 50) {
             const histStr = String(histories[i] ? histories[i][0] : "");
-            const currentWk = Registry.Services.Time.calculateWarWeekId(new Date());
             const hasRecentWar = histStr.includes(currentWk);
-  
+            
+            // 🛡️ FIX: Benchmarking requires realistic War Wins to avoid skew.
+            // Elite members typically have ~1000 wins at this level.
+            const estimatedWarWins = 500; 
+
             const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
               Number(trophies[i] ? trophies[i][0] : 0),
               Number(dons[i] ? dons[i][0] : 0),
-              0, 
+              estimatedWarWins, 
               hasRecentWar,
               CONFIG.HEADHUNTER.WEIGHTS
             );
@@ -206,15 +219,13 @@ const Headhunter: IHeadhunter = {
     );
 
     // 10. Filter & Score
-    const rawPool = Array.from(existing.values())
-      .filter(p => p.trophies >= minTrophies)
-      .sort((a, b) => b.rawScore - a.rawScore);
+    // 🛡️ FIX: Removed redundant trophy filter (Scanner already did this)
+    const finalPool = Array.from(existing.values())
+      .sort((a, b) => b.rawScore - a.rawScore)
+      .slice(0, CONFIG.HEADHUNTER.TARGET);
   
-    const target = CONFIG.HEADHUNTER.TARGET;
-    const finalPool = rawPool.slice(0, target);
-  
-    if (finalPool.length === 0 && rawPool.length === 0 && existing.size > 0) {
-      console.warn("⚠️ [FILTER] All recruits filtered by Trophy Floor.");
+    if (finalPool.length === 0 && existing.size > 0) {
+      console.warn("⚠️ [FILTER] All recruits filtered by Score or Pool constraints.");
     }
   
     finalPool.forEach(
@@ -237,7 +248,7 @@ const Headhunter: IHeadhunter = {
       `🔭 HEADHUNTER v12.0.0 REPORT`,
       [
         `OPERATION COMPLETE`,
-        `TARGET QUOTA: ${target} Recruits`,
+        `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
         `CURRENT POOL: ${finalPool.length} Qualified Members`,
         `TROPHY FLOOR: ${minTrophies}`,
         `STRATEGY:     ${strategy.method}`,
@@ -246,7 +257,7 @@ const Headhunter: IHeadhunter = {
         `PIPELINE FLOW:    +${newArrivals} New | ↻${updatedExisting} Updated`
       ]
     );
-    console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${target}`);
+    console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${CONFIG.HEADHUNTER.TARGET}`);
 
     try {
       if (typeof refreshWebPayload === "function") refreshWebPayload();
