@@ -38,14 +38,19 @@ function runWarLogTest(): void {
     const urlPlayerBase = `${CONFIG.SYSTEM.API_BASE}/players/%23${tag}`;
     const urlWarlog = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/warlog`;
     const urlRiverrace = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/riverracelog?limit=5`;
+    const refTag = "L98YCP";
+    const urlRefRiver = `${CONFIG.SYSTEM.API_BASE}/clans/%23${refTag}/riverracelog?limit=1`;
+    const urlRefWar = `${CONFIG.SYSTEM.API_BASE}/clans/%23${refTag}/warlog`;
 
-    Registry.Services.Core.logStep(1, 1, `Probing Tag: #${cleanTag}`);
+    Registry.Services.Core.logStep(1, 1, `Probing Tag: #${cleanTag} + Reference: #${refTag}`);
     
-    const results = Registry.Services.Network.fetchRoyaleAPI([urlClanBase, urlPlayerBase, urlWarlog, urlRiverrace]);
+    const results = Registry.Services.Network.fetchRoyaleAPI([urlClanBase, urlPlayerBase, urlWarlog, urlRiverrace, urlRefRiver, urlRefWar]);
     const dataClan = results[0];
     const dataPlayer = results[1];
     const dataWarlog = results[2];
     const dataRiverrace = results[3];
+    const dataRefRiver = results[4];
+    const dataRefWar = results[5];
 
     sheet.getRange("A1").setValue("🧪 TAG DIAGNOSTIC TEST");
     sheet.getRange("A2").setValue(`Target Tag: #${cleanTag}`);
@@ -54,20 +59,18 @@ function runWarLogTest(): void {
     sheet.getRange("A4").setValue("1. Is this a CLAN tag?");
     sheet.getRange("B4").setValue(dataClan ? `✅ YES (${dataClan.name})` : "❌ NO (404)");
 
-    // 🔍 PROBE 2: Is this a PLAYER?
-    sheet.getRange("A5").setValue("2. Is this a PLAYER tag?");
-    sheet.getRange("B5").setValue(dataPlayer ? `✅ YES (${dataPlayer.name})` : "❌ NO (404)");
+    // 🔍 PROBE 2: War History Connectivity
+    sheet.getRange("A6").setValue(`2. Connectivity Check (Ref: #${refTag})`);
+    sheet.getRange("B6").setValue(dataRefRiver ? "✅ /riverracelog WORKS" : "❌ /riverracelog FAILS");
+    sheet.getRange("C6").setValue(dataRefWar ? "✅ /warlog WORKS" : "❌ /warlog FAILS");
 
-    // 🔍 PROBE 3: Warlog
-    sheet.getRange("A7").setValue("3. Endpoint: /warlog");
-    sheet.getRange("B7").setValue(dataWarlog ? "✅ SUCCESS" : "❌ NULL");
+    // 🔍 PROBE 3: Target Clan War Status
+    sheet.getRange("A8").setValue(`3. Target War Data (#${cleanTag})`);
+    sheet.getRange("B8").setValue(dataRiverrace ? "✅ Found River Log" : "❌ No River Log (Clan likely inactive in wars)");
+    sheet.getRange("C8").setValue(dataWarlog ? "✅ Found War Log" : "❌ No War Log");
 
-    // 🔍 PROBE 4: RiverRaceLog
-    sheet.getRange("A8").setValue("4. Endpoint: /riverracelog");
-    sheet.getRange("B8").setValue(dataRiverrace ? "✅ SUCCESS" : "❌ NULL");
-
-    if (!dataClan && dataPlayer) {
-      sheet.getRange("A10").setValue("💡 TIP: You are using a PLAYER tag for CLAN endpoints. Change the tag in Script Properties to a Clan Tag.");
+    if (dataRefRiver && !dataRiverrace) {
+      sheet.getRange("A10").setValue("💡 CONCLUSION: Connectivity is fine, but TONYeSOSA CORP has no war history data in the API.");
     }
 
     Registry.Services.View.setStatusMessage(sheet, `Probe complete. Clan: ${dataClan ? 'YES' : 'NO'} | Player: ${dataPlayer ? 'YES' : 'NO'}`);
