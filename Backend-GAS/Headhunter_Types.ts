@@ -50,3 +50,14 @@ export interface TournamentResult {
   items?: TournamentResult[];
   membersList?: TournamentMember[];
 }
+
+export const VER_HH_TYPES = "1.0.0";
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { VER_HH_TYPES };
+}
+
+(function(scope: any) {
+  Object.assign(scope, { HeadhunterTypes: { VER_HH_TYPES } });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
