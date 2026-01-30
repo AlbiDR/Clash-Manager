@@ -74,13 +74,13 @@ var Time: ITime = {
 
   /**
    * Robustly parses various date formats back into a Date object.
-   * Handles Date objects, ISO 8601 strings, and custom formats like dd/MM/yyyy HH:mm.
+   * Handles Date objects, ISO 8601 strings, and custom formats like dd/MM/yyyy HH.mm.ss.
    */
   parseFlexibleDate(val: any): Date {
     if (val === null || val === undefined) return new Date();
     
-    // 0. Handle already instantiated Date objects
-    if (val instanceof Date) {
+    // 0. Handle already instantiated Date objects (Safer Type Check)
+    if (Object.prototype.toString.call(val) === "[object Date]") {
         return isNaN(val.getTime()) ? new Date() : val;
     }
     
@@ -89,12 +89,9 @@ var Time: ITime = {
 
     // 1. Try numeric parsing (Spreadsheet Serial vs Unix Timestamps)
     const num = Number(val);
-    if (!isNaN(num)) {
+    if (!isNaN(num) && typeof val !== "string") {
         // 1.1 Spreadsheet Serial Dates (e.g. 46023 for 2026)
-        // Range 30,000 to 70,000 covers roughly 1982 to 2091
         if (num > 30000 && num < 70000) {
-            // Local-aware conversion for Spreadsheet Serial dates
-            // Sheet base: Dec 30, 1899
             const date = new Date(1899, 11, 30, 0, 0, 0);
             const days = Math.floor(num);
             const ms = Math.round((num - days) * 86400 * 1000);
@@ -111,12 +108,14 @@ var Time: ITime = {
     }
 
     // 2. Try ISO 8601 parsing (e.g. 2026-01-30T13:42:37Z)
-    const isoDate = new Date(s);
-    if (!isNaN(isoDate.getTime()) && s.includes("-")) return isoDate;
+    if (s.includes("-") && s.includes("T")) {
+        const isoDate = new Date(s);
+        if (!isNaN(isoDate.getTime())) return isoDate;
+    }
 
-    // 3. Try dd/MM/yyyy HH:mm parsing (custom format used in HH sheet)
-    // Matches "30/01/2026 13:42" or "30/01/2026 13.42.56"
-    const match = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4}) (\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
+    // 3. Try dd/MM/yyyy HH.mm.ss parsing (Project Standard compatible format)
+    // Matches "30/01/2026 13:42" or "30/01/2026 13.42.56" using dots or colons
+    const match = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
     if (match) {
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10) - 1;
