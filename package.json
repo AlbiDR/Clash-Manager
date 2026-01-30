@@ -1,4 +1,3 @@
-
 {
   "name": "clash-manager-monorepo",
   "version": "1.0.0",
@@ -13,6 +12,7 @@
     "fix:gitignore": "git rm -r --cached . && git add ."
   },
   "devDependencies": {
+    "@types/node": "^20.19.30",
     "typescript": "^5.0.0"
   }
 }
