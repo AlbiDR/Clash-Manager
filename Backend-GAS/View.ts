@@ -228,14 +228,22 @@ var View: IView = {
             fields: "pixelSize"
           }
         },
-        // 7. Invisible Buffer dots
+        // 7. Invisible Column A (Sort Numbers) from Row 2 down
         {
-          updateCells: {
-            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
-            rows: [{ values: [{ userEnteredValue: { stringValue: "." }, userEnteredFormat: { backgroundColor: { red: 1, green: 1, blue: 1 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } } }] }],
-            fields: "userEnteredValue,userEnteredFormat(backgroundColor,textFormat.foregroundColor)"
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 },
+            cell: { 
+              userEnteredFormat: { 
+                horizontalAlignment: "CENTER",
+                verticalAlignment: "MIDDLE",
+                backgroundColor: { red: 1, green: 1, blue: 1 }, 
+                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 } } 
+              } 
+            },
+            fields: "userEnteredFormat(horizontalAlignment,verticalAlignment,backgroundColor,textFormat.foregroundColor)"
           }
         },
+        // 7.5 Invisible Buffer dot for Right Margin
         {
           updateCells: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: totalCols - 1, endColumnIndex: totalCols },
