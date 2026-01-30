@@ -33,51 +33,49 @@ function runWarLogTest(): void {
     if (cleanTag.startsWith("#")) cleanTag = cleanTag.substring(1);
     
     const tag = encodeURIComponent(cleanTag);
+    const apiBase = CONFIG.SYSTEM.API_BASE;
+
+    // Test Matrix: With vs Without %23 prefix
+    const urlClanNoHash = `${apiBase}/clans/${tag}`;
+    const urlClanHash = `${apiBase}/clans/%23${tag}`;
+    const urlRiverNoHash = `${apiBase}/clans/${tag}/riverracelog?limit=1`;
+    const urlWarNoHash = `${apiBase}/clans/${tag}/warlog`;
+
+    console.info(`[Probing] Tag: ${cleanTag}`);
+    console.info(`[URL 1] No Hash Clan: ${urlClanNoHash}`);
+    console.info(`[URL 2] Hash Clan: ${urlClanHash}`);
+
+    const results = Registry.Services.Network.fetchRoyaleAPI([urlClanNoHash, urlClanHash, urlRiverNoHash, urlWarNoHash]);
+    const dataClanNo = results[0];
+    const dataClanYes = results[1];
+    const dataRiver = results[2];
+    const dataWar = results[3];
+
+    sheet.getRange("A1").setValue("🧪 URL FORMAT DIAGNOSTIC");
+    sheet.getRange("A2").setValue(`Tag: ${cleanTag} | Base: ${apiBase}`);
     
-    const urlClanBase = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}`;
-    const urlPlayerBase = `${CONFIG.SYSTEM.API_BASE}/players/%23${tag}`;
-    const urlWarlog = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/warlog`;
-    const urlRiverrace = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/riverracelog?limit=5`;
-    const refTag = "L98YCP";
-    const urlRefRiver = `${CONFIG.SYSTEM.API_BASE}/clans/%23${refTag}/riverracelog?limit=1`;
-    const urlRefWar = `${CONFIG.SYSTEM.API_BASE}/clans/%23${refTag}/warlog`;
+    sheet.getRange("A4").setValue("1. Clan Info (NO #)");
+    sheet.getRange("B4").setValue(dataClanNo ? `✅ SUCCESS (${dataClanNo.name})` : "❌ FAIL");
 
-    Registry.Services.Core.logStep(1, 1, `Probing Tag: #${cleanTag} + Reference: #${refTag}`);
-    
-    const results = Registry.Services.Network.fetchRoyaleAPI([urlClanBase, urlPlayerBase, urlWarlog, urlRiverrace, urlRefRiver, urlRefWar]);
-    const dataClan = results[0];
-    const dataPlayer = results[1];
-    const dataWarlog = results[2];
-    const dataRiverrace = results[3];
-    const dataRefRiver = results[4];
-    const dataRefWar = results[5];
+    sheet.getRange("A5").setValue("2. Clan Info (WITH #)");
+    sheet.getRange("B5").setValue(dataClanYes ? `✅ SUCCESS (${dataClanYes.name})` : "❌ FAIL");
 
-    sheet.getRange("A1").setValue("🧪 TAG DIAGNOSTIC TEST");
-    sheet.getRange("A2").setValue(`Target Tag: #${cleanTag}`);
-    
-    // 🔍 PROBE 1: Is this a Clan?
-    sheet.getRange("A4").setValue("1. Is this a CLAN tag?");
-    sheet.getRange("B4").setValue(dataClan ? `✅ YES (${dataClan.name})` : "❌ NO (404)");
+    sheet.getRange("A7").setValue("3. River Log (NO #)");
+    sheet.getRange("B7").setValue(dataRiver ? "✅ SUCCESS" : "❌ FAIL");
 
-    // 🔍 PROBE 2: War History Connectivity
-    sheet.getRange("A6").setValue(`2. Connectivity Check (Ref: #${refTag})`);
-    sheet.getRange("B6").setValue(dataRefRiver ? "✅ /riverracelog WORKS" : "❌ /riverracelog FAILS");
-    sheet.getRange("C6").setValue(dataRefWar ? "✅ /warlog WORKS" : "❌ /warlog FAILS");
+    sheet.getRange("A8").setValue("4. War Log (NO #)");
+    sheet.getRange("B8").setValue(dataWar ? "✅ SUCCESS" : "❌ FAIL");
 
-    // 🔍 PROBE 3: Target Clan War Status
-    sheet.getRange("A8").setValue(`3. Target War Data (#${cleanTag})`);
-    sheet.getRange("B8").setValue(dataRiverrace ? "✅ Found River Log" : "❌ No River Log (Clan likely inactive in wars)");
-    sheet.getRange("C8").setValue(dataWarlog ? "✅ Found War Log" : "❌ No War Log");
+    console.info(`[Result] ClanNo: ${!!dataClanNo}, ClanYes: ${!!dataClanYes}, River: ${!!dataRiver}, War: ${!!dataWar}`);
 
-    if (dataRefRiver && !dataRiverrace) {
-      sheet.getRange("A10").setValue("💡 CONCLUSION: Connectivity is fine, but TONYeSOSA CORP has no war history data in the API.");
+    if (!dataRiver && dataClanNo) {
+      console.warn("Hypothesis: Clan exists but has no war history, or endpoints are legacy.");
     }
 
-    Registry.Services.View.setStatusMessage(sheet, `Probe complete. Clan: ${dataClan ? 'YES' : 'NO'} | Player: ${dataPlayer ? 'YES' : 'NO'}`);
-
-    Registry.Services.View.setStatusMessage(sheet, `Test complete: ${new Date().toLocaleTimeString()}`);
+    Registry.Services.View.setStatusMessage(sheet, `Test DONE. Check console for details.`);
 
   } catch (e: any) {
+    console.error(`[CRITICAL] ${e.message}`);
     Registry.Services.Core.logReport("WARLOG_TEST_ERROR", [e.message]);
     if (sheet) sheet.getRange("A1").setValue(`Error: ${e.message}`);
   }
