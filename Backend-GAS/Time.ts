@@ -33,6 +33,7 @@ export interface WarPhaseResult {
 export interface ITime {
   formatDate(date: Date | null | undefined): string;
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
+  parseFlexibleDate(val: any): Date;
   calculateWarWeekId(d: Date | null | undefined): string;
   getLogicalDay(date: Date): number;
   getEligibleBattleDays(daysTracked: number, isColosseum?: boolean): number;
@@ -69,6 +70,39 @@ var Time: ITime = {
     }
     
     return new Date(dateStr as any);
+  },
+
+  /**
+   * Robustly parses various date formats back into a Date object.
+   * Handles Date objects, ISO 8601 strings, and custom formats like dd/MM/yyyy HH:mm.
+   */
+  parseFlexibleDate(val: any): Date {
+    if (!val) return new Date();
+    if (val instanceof Date) return val;
+    
+    const s = String(val).trim();
+    if (!s || s === "N/A") return new Date();
+
+    // 1. Try ISO 8601 parsing (e.g. 2026-01-30T13:42:37Z)
+    const isoDate = new Date(s);
+    if (!isNaN(isoDate.getTime()) && s.includes("-")) return isoDate;
+
+    // 2. Try dd/MM/yyyy HH:mm parsing (custom format used in HH sheet)
+    // Matches "30/01/2026 13:42" or "30/01/2026 13.42.56"
+    const match = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4}) (\d{2})[:.](\d{2})(?:[:.](\d{2}))?$/);
+    if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1;
+        const year = parseInt(match[3], 10);
+        const hour = parseInt(match[4], 10);
+        const min = parseInt(match[5], 10);
+        const sec = match[6] ? parseInt(match[6], 10) : 0;
+        return new Date(year, month, day, hour, min, sec);
+    }
+
+    // 3. Last resort standard parser
+    const fallback = new Date(s);
+    return isNaN(fallback.getTime()) ? new Date() : fallback;
   },
 
   /**

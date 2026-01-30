@@ -390,7 +390,8 @@ function extractSheetDataStrict(
             if (n <= 1.0) return `${Math.round(n * 100)}%`;
             return `${Math.round(n)}%`;
           case "date":
-            return val instanceof Date ? val.toISOString() : "";
+            const dateObj = Registry.Services.Time.parseFlexibleDate(val);
+            return dateObj.getTime() > 0 ? dateObj.toISOString() : "";
           case "str":
           default:
             const s = val === null || val === undefined ? "" : String(val);

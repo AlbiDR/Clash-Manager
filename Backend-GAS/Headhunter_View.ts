@@ -56,9 +56,9 @@ const HeadhunterView: IHeadhunterView = {
     
     // Format Date using Utilities
     const fmt = (d: any) => {
-      const dateObj = d instanceof Date ? d : new Date(d);
-      // Fallback if Date is invalid
-      if (isNaN(dateObj.getTime())) return "N/A";
+      const dateObj = Registry.Services.Time.parseFlexibleDate(d);
+      // Fallback if Date is invalid or Unix Epoch
+      if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) return "N/A";
       return Utilities.formatDate(dateObj, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
     };
 
