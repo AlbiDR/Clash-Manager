@@ -61,7 +61,7 @@ const HeadhunterView: IHeadhunterView = {
       const dateObj = Registry.Services.Time.parseFlexibleDate(d);
       // Fallback if Date is invalid or Unix Epoch
       if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) return "-";
-      return Utilities.formatDate(dateObj, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+      return Registry.Services.Time.formatDate(dateObj);
     };
 
     const rows = list.map((c) => [

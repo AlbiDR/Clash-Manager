@@ -272,7 +272,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     dbValues.forEach((row: any) => {
       const tag = String(row[S_DB.TAG]);
       const dateVal = row[S_DB.DATE];
-      const date = dateVal ? new Date(dateVal) : new Date();
+      const date = Registry.Services.Time.parseFlexibleDate(dateVal);
       const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
       const rawWarFame = row[S_DB.WAR_FAME];
       const weekId = Registry.Services.Time.calculateWarWeekId(date);
@@ -299,13 +299,12 @@ function updateLeaderboard(dryRun: boolean = false): void {
       if (!isNaN(fameVal)) {
           addWarEntry(tag, weekId, fameVal);
           h.battleWeeks.add(weekId); // Mark this week as seen during a battle phase
-          
           // 🛡️ DISCOVERY-BASED TRACKING: Add unique calendar-day string (dd/MM/yyyy)
-          h.discoveredBattleDays.add(Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE));
+          h.discoveredBattleDays.add(Registry.Services.Time.formatShortDate(date));
       }
       
       // ⚔️ BATTLE CREDITS AGGREGATION (Day-Aware)
-      const dateKey = Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE);
+      const dateKey = Registry.Services.Time.formatShortDate(date);
       const rawBattleCredits = row[S_DB.BATTLE_CREDITS];
       let creditVal = Number(rawBattleCredits);
       
@@ -449,7 +448,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     row[L.WEEKLY_REQ] = r.member.donationsReceived;
     row[L.AVG_DAY] = r.avgDailyDonations;
     row[L.TOTAL_DON] = r.totalDonations;
-    row[L.LAST_SEEN] = Utilities.formatDate(r.lastSeen, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+    row[L.LAST_SEEN] = Registry.Services.Time.formatDate(r.lastSeen);
     row[L.WAR_RATE] = r.warRateVal / 100;
     row[L.HISTORY] = r.historyString;
     row[L.RAW_SCORE] = r.scores.raw;
