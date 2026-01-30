@@ -67,6 +67,8 @@ export interface IScoringSystem {
     warRateVal: number,
     lastSeenDate: number,
     now: number,
+    warDayWins?: number,
+    hasRecentWar?: boolean,
   ): { raw: number; perf: number };
   comparator(rowA: (string | number)[], rowB: (string | number)[]): number;
   calculateRecruitRawScore(
@@ -117,6 +119,8 @@ var ScoringSystem: IScoringSystem = {
     warRateVal: number,
     lastSeenDate: number,
     now: number,
+    warDayWins: number = 0,
+    hasRecentWar: boolean = false,
   ): { raw: number; perf: number } {
     const W =
       typeof CONFIG !== "undefined"
@@ -152,9 +156,25 @@ var ScoringSystem: IScoringSystem = {
       finalScore = rawScore * decayFactor;
     }
 
+
+    // ⚔️ HERITAGE SCORING PROTOCOL (v11.1.0)
+    // "Talent Floor": Adds 1/10th of Recruit Potential to Performance Score.
+    // This solves the cold-start problem by giving recruits a valid baseline
+    // derived from their lifetime stats.
+    const ghostPotential = ScoringSystem.calculateRecruitRawScore(
+      trophies,
+      weeklyDonations, // Proxy for total donations
+      warDayWins,
+      hasRecentWar,
+      null // use default weights
+    );
+    
+    // The "Talent Floor"
+    const talentBias = Math.round(ghostPotential / 10);
+
     return {
       raw: Math.round(rawScore),
-      perf: Math.round(finalScore),
+      perf: Math.round(finalScore + talentBias),
     };
   },
 

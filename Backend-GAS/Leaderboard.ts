@@ -396,6 +396,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
       warRateVal,
       lastSeen.getTime(),
       now.getTime(),
+      m.warDayWins || 0,
+      currentFame > 0
     );
 
     const historyString = Array.from(pWarHistory.entries())
