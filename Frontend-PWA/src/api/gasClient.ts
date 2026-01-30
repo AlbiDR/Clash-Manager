@@ -197,7 +197,7 @@ export function mapHhRow(row: unknown[], m: Record<string, number>): Recruit | n
     d: {
       don: safeNum(row[m["don"]]),
       war: safeNum(row[m["war"]]),
-      ago: safeStr(row[m["ago"]]),
+      ago: safeStr(row[m["ago"]]) || new Date().toISOString(),
       cards: safeNum(row[m["cards"]]),
     },
   };
