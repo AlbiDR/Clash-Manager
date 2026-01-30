@@ -194,7 +194,15 @@ const HeadhunterStore: IHeadhunterStore = {
     }
 
     if (rowsToDelete.length > 0) {
-      rowsToDelete.sort((a, b) => b - a).forEach((idx) => sheet.deleteRow(idx));
+      // Sort descending to maintain index integrity during deletion
+      const sortedRows = [...new Set(rowsToDelete)].sort((a, b) => b - a);
+      sortedRows.forEach((idx) => {
+        try {
+          sheet.deleteRow(idx);
+        } catch (e) {
+          console.warn(`⚠️ [STORE] Failed to delete row ${idx}: ${e}`);
+        }
+      });
       // @ts-ignore
       if (typeof SpreadsheetApp !== 'undefined') SpreadsheetApp.flush();
     }
@@ -210,5 +218,9 @@ const HeadhunterStore: IHeadhunterStore = {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = HeadhunterStore;
 }
+
+(function(scope: any) {
+  Object.assign(scope, { HeadhunterStore });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default HeadhunterStore;

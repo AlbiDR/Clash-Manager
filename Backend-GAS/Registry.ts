@@ -11,6 +11,15 @@
  * ============================================================================
  */
 
+import Store from "./Store";
+import Network from "./Network";
+import Core from "./Core";
+import View from "./View";
+import Schema from "./Schema";
+import Time from "./Time";
+import ScoringSystem from "./ScoringSystem";
+import Headhunter from "./Headhunter";
+
 import type { IStore } from "./Store";
 import type { INetwork } from "./Network";
 import type { ICore } from "./Core";
@@ -26,15 +35,7 @@ const VER_REGISTRY = "1.0.0";
 
 declare var module: any;
 
-// 1. Declare Existing Singletons
-declare const Store: IStore;
-declare const Network: INetwork;
-declare const Core: ICore;
-declare const View: IView;
-declare const Schema: ISchema;
-declare const Time: ITime;
-declare const ScoringSystem: IScoringSystem;
-declare const Headhunter: IHeadhunter;
+// 1. Singletons are now explicitly imported above
 
 // 2. Declare Legacy Global Functions (The "Old World")
 declare function updateClanDatabase(): void;
@@ -87,7 +88,6 @@ var Registry: IRegistry = {
     "sync:leaderboard": () => updateLeaderboard(),
     "sync:webapp": () => refreshWebPayload(),
 
-    // 🕵️ RECRUITMENT
     // 🕵️ RECRUITMENT
     "recruit:scout": () => Headhunter.scout(),
 

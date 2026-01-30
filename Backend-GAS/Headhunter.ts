@@ -263,6 +263,10 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = Headhunter;
 }
 
+(function(scope: any) {
+  Object.assign(scope, { Headhunter });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
 /**
  * 🌍 GLOBAL BRIDGE (Legacy Support)
  * Preserves compatibility with existing GAS Triggers.

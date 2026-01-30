@@ -52,7 +52,6 @@ declare namespace GoogleAppsScript {
 }
 
 // Global Declarations for GAS Environment
-// Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
 declare const Registry: IRegistry;
 
@@ -131,7 +130,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
 
   Registry.Services.Core.logStep(2, 7, "Loading momentum deltas (previous scores)...");
-  if (lastRow >= startRow && maxCols >= L.TAG) {
+  if (lastRow >= startRow && maxCols > L.RAW_SCORE) {
       const oldData = lbSheet
         .getRange(startRow, 1, lastRow - startRow + 1, maxCols)
         .getValues();

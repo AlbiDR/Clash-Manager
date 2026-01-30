@@ -273,7 +273,6 @@ var ScoringSystem: IScoringSystem = {
     }
 
 
-
     return Math.max(1, finalBenchmark);
   },
 

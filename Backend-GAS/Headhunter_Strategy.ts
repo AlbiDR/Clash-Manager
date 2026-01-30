@@ -83,6 +83,10 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = HeadhunterStrategy;
 }
 
+(function(scope: any) {
+  Object.assign(scope, { HeadhunterStrategy });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
 // @ts-ignore
 // (function(scope: any) {
 //   Object.assign(scope, { HeadhunterStrategy });

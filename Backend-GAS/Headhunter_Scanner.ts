@@ -142,6 +142,24 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     const validCandidates: Recruit[] = [];
 
+    /**
+     * Helper: Batch fetcher to avoid RoyaleAPI 429 and GAS timeouts.
+     */
+    const batchFetch = (tags: string[], chunkSize: number, fetchFn: (chunk: string[]) => any[]) => {
+      const results: any[] = [];
+      for (let i = 0; i < tags.length; i += chunkSize) {
+        const chunk = tags.slice(i, i + chunkSize);
+        try {
+          const res = fetchFn(chunk);
+          if (Array.isArray(res)) results.push(...res);
+          Utilities.sleep(100); // 100ms jitter between batches
+        } catch (e: any) {
+          console.warn(`⚠️ [SCANNER] Batch fetch failed: ${e.message}`);
+        }
+      }
+      return results;
+    };
+
     // 6. Deep Profiling
     if (
       usedRemote &&
@@ -165,11 +183,13 @@ const HeadhunterScanner: IHeadhunterScanner = {
       });
     } else {
       // Local scoring required
-      const playersData: any[] = Registry.Services.Network.fetchRoyaleAPI(
-        tagsToFetch.map(
-          (t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`,
-        ),
-        remoteAvailable ? W : null,
+      const playersData: any[] = batchFetch(
+        tagsToFetch,
+        25,
+        (chunk) => Registry.Services.Network.fetchRoyaleAPI(
+          chunk.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+          remoteAvailable ? W : null,
+        )
       );
 
       const logUrls: string[] = [];
@@ -201,7 +221,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
       });
 
       if (logUrls.length > 0) {
-        const logs: any[][] = Registry.Services.Network.fetchRoyaleAPI(logUrls);
+        const logs: any[][] = batchFetch(
+          logUrls,
+          25,
+          (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
+        );
+
         candidatesToProfile.forEach((p, idx) => {
           let hasWar = false;
           if (logs[idx]) {
@@ -248,5 +273,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = HeadhunterScanner;
 }
+
+(function(scope: any) {
+  Object.assign(scope, { HeadhunterScanner });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default HeadhunterScanner;
