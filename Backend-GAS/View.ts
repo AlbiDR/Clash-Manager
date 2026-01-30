@@ -324,36 +324,31 @@ var View: IView = {
     const requests: any[] = [];
     const nameMap = new Map(REGISTER.map((item, idx) => [item.name, { ...item, index: idx }]));
 
-    sheets.forEach((sheet: any) => {
+    // ⚔️ SORTING ENGINE: Pre-calculate valid sequential indices
+    const sortedSheets = [...sheets].sort((a, b) => {
+      const metaA = nameMap.get(a.getName());
+      const metaB = nameMap.get(b.getName());
+      const idxA = metaA ? metaA.index : 999;
+      const idxB = metaB ? metaB.index : 999;
+      return idxA - idxB;
+    });
+
+    sortedSheets.forEach((sheet: any, i: number) => {
       const name = sheet.getName();
       const sheetId = sheet.getSheetId();
       const meta = nameMap.get(name);
       
-      if (meta) {
-        requests.push({
-          updateSheetProperties: {
-            properties: {
-              sheetId: sheetId,
-              hidden: !meta.visible,
-              index: meta.index,
-              tabColor: this.hexToRgbColor(meta.color)
-            },
-            fields: 'hidden,index,tabColor'
-          }
-        });
-      } else {
-        // 🛡️ UNKNOWN SHEET: Hide and move to a safe high index to prevent overflow
-        requests.push({
-          updateSheetProperties: {
-            properties: {
-              sheetId: sheetId,
-              hidden: true,
-              index: 999 
-            },
-            fields: 'hidden,index'
-          }
-        });
-      }
+      requests.push({
+        updateSheetProperties: {
+          properties: {
+            sheetId: sheetId,
+            hidden: meta ? !meta.visible : true,
+            index: i, // Force sequential valid index
+            tabColor: this.hexToRgbColor(meta ? meta.color : P.TECHNICAL)
+          },
+          fields: 'hidden,index,tabColor'
+        }
+      });
     });
 
     if (requests.length > 0) {
