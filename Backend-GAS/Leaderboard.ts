@@ -420,11 +420,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
       avgWarFame,
       avgDailyDonations,
       trophies,
-    const scores = Registry.Services.ScoringSystem.computeScores(
-      currentFame,
-      avgWarFame,
-      avgDailyDonations,
-      trophies,
       warRateVal,
       lastSeen.getTime(),
       now.getTime(),
