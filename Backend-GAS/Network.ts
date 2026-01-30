@@ -1,19 +1,18 @@
 
 /**
  * ============================================================================
- * MODULE: NETWORK (API Engine)
+ * MODULE: NETWORK (API ENGINE)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Handles all external data fetching.
- * CAPABILITIES:
- *    1. Smart Fetching: Key Rotation, Quota Tracking, Error Handling.
- *    2. Remote Delegation: Offloads tasks to external workers if configured.
- *    3. Caching: Persistent & In-Memory caching to minimize network calls.
+ * DESCRIPTION: The central orchestration layer for all external data
+ * acquisition. Manages the lifecycle of API requests, quota preservation,
+ * and distributed execution via remote workers.
  * 
  * ARCHITECTURE:
- *    - Dependencies: Store (Keys/Quota), Core (Safety/Shuffle).
- *    - Interface: Pure Data Provider.
+ *    - Multi-Tier Caching: In-memory (L1) and CacheService (L2).
+ *    - Intelligent Delegation: Offloads high-concurrency tasks to Cloud Run.
+ *    - Quota Guard: Hard limits on UrlFetchApp usage to prevent script failure.
  * 
- * VERSION: 1.0.0
+ * VERSION: 1.0.1
  * ============================================================================
  */
 
@@ -53,33 +52,82 @@ let _LAST_WORKER_ERROR = "N/A";
 /* ==========================================================================
    INTERFACES
    ========================================================================== */
+/**
+ * Interface for the Network Service.
+ * Orchestrates API calls with built-in quota management and remote delegation.
+ */
 export interface INetwork {
   /**
+   * Executes a batch of Royale API requests with smart caching and rotation.
+   *
+   * @param urls - Array of fully qualified API endpoints to fetch.
+   * @param scoring - Optional weights for server-side recruit scoring.
+   * @returns Array of parsed JSON responses corresponding to the input URLs.
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchRoyaleAPI(urls: string[], scoring?: ScoringWeights | null): any[];
+
   /**
+   * Fetches an aggregated clan snapshot (Members + Race + History).
+   *
+   * @param cleanTag - The encoded clan tag (including %23).
+   * @returns A structured result containing members, race, and history data.
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchClanDataSmart(cleanTag: string): ClanDataResult;
+
   /**
-   * @warning Consumes UrlFetchApp quota.
+   * Retrieves public JSON data via the remote worker's proxy.
+   *
+   * @param type - The data type to retrieve ('members' or 'warlog').
+   * @returns Array of transformed objects or null if the worker is offline.
+   * @warning Consumes UrlFetchApp quota for the worker handshake.
    */
   fetchPublicJson(type: "members" | "warlog"): any[] | null;
+
   /**
+   * Audits a pool of API keys using the remote worker to avoid local rate limits.
+   *
+   * @param keys - Array of key objects { name, value } to validate.
+   * @returns Audit results with success/error status per key.
    * @warning Consumes UrlFetchApp quota.
    */
   auditKeysRemote(keys: Array<{ name: string; value: string }>): Array<{ name: string; success: boolean; error?: string }> | null;
+
   /**
+   * Scans global tournaments for potential recruits using the remote worker.
+   *
+   * @param tourneyTags - List of tournament tags to scan.
+   * @param minTrophies - Minimum trophy threshold for filtering.
+   * @param blacklistSet - Set or array of player tags to ignore.
+   * @param scoring - Optional weights for calculating recruit potential.
+   * @returns List of scored player candidates.
    * @warning Consumes UrlFetchApp quota.
    */
   scanTournamentsRemote(tourneyTags: string[], minTrophies: number, blacklistSet: Set<string> | string[], scoring?: ScoringWeights | null): any[];
+
   /**
+   * Performs a diagnostic health check on the Remote Worker.
+   *
+   * @param force - If true, bypasses the health cache and performs a fresh handshake.
+   * @returns Boolean indicating if the worker is reachable and healthy.
    * @warning Consumes UrlFetchApp quota.
    */
   remoteWorkerHealthy(force?: boolean): boolean;
+
+  /**
+   * Returns the remaining UrlFetchApp quota for the current 24-hour period.
+   */
   getRemainingQuota(): number;
+
+  /**
+   * Returns the last recorded error from a remote worker interaction.
+   */
   getLastWorkerError(): string;
+
+  /**
+   * Resets the internal execution cache. Used primarily for testing.
+   */
   _clearCache(): void;
 }
 
@@ -182,7 +230,7 @@ const NetworkInternal = {
 var Network: INetwork = {
   
   /**
-   * FETCH ENGINE
+   * NETWORK FETCH ENGINE
    *
    * @remarks
    * Implements a multi-tier caching strategy:
@@ -212,13 +260,17 @@ var Network: INetwork = {
     const scriptCache = CacheService.getScriptCache();
 
     urls.forEach((url, index) => {
-      // Priority 1: In-memory Execution Cache
+      // LEVEL 1: Execution Cache (Intra-run)
+      // Prevents redundant network calls if the same URL is requested multiple
+      // times within a single trigger execution (e.g. nested logic loops).
       if (_EXECUTION_CACHE.has(url)) {
         finalResults[index] = _EXECUTION_CACHE.get(url);
         return;
       }
 
-      // Priority 2: Persistent Script Cache
+      // LEVEL 2: Script Cache (Inter-run)
+      // Shared across all concurrent and subsequent executions. Significant
+      // quota saver for frequently accessed player profiles and clan stats.
       const cacheKey = NetworkInternal.hashKey(url);
       const cachedStr = scriptCache.get(cacheKey);
       if (cachedStr) {
@@ -230,7 +282,7 @@ var Network: INetwork = {
           } catch(e: any) {}
       }
 
-      // Need fetch
+      // COLLECT: Identify unique URLs requiring a fresh network fetch.
       if (!urlIndices.has(url)) {
         urlIndices.set(url, []);
         urlsToFetch.push(url);
@@ -275,27 +327,32 @@ var Network: INetwork = {
         try {
           let responses: any[];
 
-          // WORKER FIRST STRATEGY: High volume MUST go through worker if available
+          // STRATEGY: Prioritize Remote Worker for all batches to maximize GAS lifespan.
           if (useRemote) {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e: any) {
                 console.warn(`[Network] Worker Failure: ${e.message}.`);
+
+                // CONSTRAINT: High volume local fallback is strictly forbidden.
+                // Fetching large batches (50+) locally consumes ~0.25% of the total
+                // daily UrlFetchApp quota (20,000) per call. Under concurrent load,
+                // this would crash the entire clan infrastructure within minutes.
                 if (isHighVolume) {
-                   // CONSTRAINT: High volume local fallback is forbidden.
-                   // If the worker is down, attempting to fetch 50+ items locally
-                   // would exhaust the daily GAS quota (20,000) in just a few minutes
-                   // of concurrent usage, crashing the entire system for all users.
-                   console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to preserve core quota.`);
+                   console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to protect core service quota.`);
                    useRemote = false; 
-                   break; // Abort chunk immediately - NO local fallback for high volume
+                   break; // Abort this chunk; do not fall back.
                 }
+
+                // ELEGANT DEGRADATION: Small batches can safely fall back to local fetch.
                 useRemote = false; 
-                continue; // Retry single items locally if allowed
+                continue;
             }
           } else {
-            // Local fallback (only for low volume or critical paths)
+            // LOCAL EXECUTION: Only for low-volume or when worker is confirmed offline.
             if (isHighVolume && attempt > 0) {
+               // QUOTA GUARD: Large batches are never retried locally to prevent
+               // accidental exhaustion during "retry storms".
                console.warn(`[Network] Quota Guard: Blocking local retry for large batch.`);
                break; 
             }
@@ -304,9 +361,11 @@ var Network: INetwork = {
               responses = UrlFetchApp.fetchAll(localRequests);
             } catch (e: any) {
               console.warn(`[Network] Batch failed: ${e.message}.`);
-              if (isHighVolume) break; // Don't even try local retry for large batches
+              if (isHighVolume) break; // No retry for high-volume local failures.
+
+              // JITTER: Brief sleep before retry to allow transient network issues to resolve.
               Utilities.sleep(1500);
-              responses = UrlFetchApp.fetchAll(localRequests); // Simple retry for small chunks
+              responses = UrlFetchApp.fetchAll(localRequests);
             }
           }
 
@@ -450,6 +509,18 @@ var Network: INetwork = {
     return null;
   },
 
+  /**
+   * DIAGNOSTIC HEALTH HANDSHAKE
+   *
+   * @remarks
+   * The Remote Worker's health status is cached in two places:
+   * 1. In-memory (_EXECUTION_CACHE): For immediate reuse within a script run.
+   * 2. Persistent Store (PropertiesService): To avoid redundant handshakes
+   *    across multiple script executions (5-minute TTL).
+   *
+   * This ensures the system remains responsive even if the worker is cold-starting
+   * or experiencing temporary latency.
+   */
   remoteWorkerHealthy(force: boolean = false) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
         _LAST_WORKER_ERROR = "RemoteWorkerUrl is not configured in Script Properties.";
@@ -458,7 +529,7 @@ var Network: INetwork = {
     
     _LAST_WORKER_ERROR = "Initiating Handshake...";
 
-    // 2. Check Store cache (Skip if force)
+    // HYDRATION: Check persistent health cache to avoid unnecessary handshakes.
     const now = Date.now();
     try {
       if (!force && typeof PropertiesService !== "undefined") {
@@ -474,7 +545,7 @@ var Network: INetwork = {
       }
     } catch(e: any) {}
 
-    // Verify worker reachability and upstream health.
+    // HANDSHAKE: Verify worker reachability and upstream health.
     let isHealthy = false;
     try {
         const headers: Record<string, string> = {};
@@ -509,7 +580,7 @@ var Network: INetwork = {
         console.warn(`[Network] Worker Reachability Error: ${e}`); 
     }
 
-    // Update local and persistent caches with health status.
+    // PERSISTENCE: Synchronize health status across the architecture.
     _EXECUTION_CACHE.set("worker_health", isHealthy);
     Registry.Services.Store.props.setJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, {
       status: isHealthy,
