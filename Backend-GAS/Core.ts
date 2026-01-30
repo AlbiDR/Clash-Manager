@@ -26,7 +26,7 @@ declare var module: any;
    ========================================================================== */
 const CORE_CONFIG = {
   /** Default lock timeout in milliseconds (30 seconds) */
-  LOCK_TIMEOUT_MS: 30000,
+  LOCK_TIMEOUT_MS: 60000,
 };
 
 /* ==========================================================================
