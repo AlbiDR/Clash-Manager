@@ -403,31 +403,42 @@ function upsertDailySnapshots(
   rowCount = meta.sheets[0].properties.gridProperties.rowCount;
   const lastRow = sheet.getLastRow(); // Actual data end
   
+  let maxSortNumber = 0;
   if (lastRow >= startRow) {
-      // Fetch buffer of last 55 rows to catch any recent entries (50 members + buffer)
+      // Fetch buffer of last 55 rows to check for "Today" AND all Column A for sort numbers
       const scanSize = 55;
       const readStart = Math.max(startRow, lastRow - scanSize + 1);
-      const readLen = lastRow - readStart + 1;
       
-      if (readLen > 0) {
-        const dataRange = `'${sheetName}'!B${readStart}:${String.fromCharCode(65 + 1 + headerRow.length)}${lastRow}`;
-        const dataRes = Sheets.Spreadsheets!.Values!.get(ssId, dataRange);
-        const scanValues = dataRes.values || [];
+      const ranges = [
+        `'${sheetName}'!A${startRow}:A${lastRow}`, // Column A for sort numbers
+        `'${sheetName}'!B${readStart}:${String.fromCharCode(65 + 1 + headerRow.length)}${lastRow}` // Data for Today check
+      ];
+      const dataRes = Sheets.Spreadsheets!.Values!.batchGet(ssId, { ranges });
+      
+      const sortValues = dataRes.valueRanges?.[0].values || [];
+      const scanValues = dataRes.valueRanges?.[1].values || [];
 
-        // Identify which rows are actually "Today" and map them by Tag
-        scanValues.forEach((row: any[], idx: number) => {
-          const d = parseDateFromCell(row[S_DB.DATE]);
-          // Compare YYYY-MM-DD strings (using dd/MM/yyyy format for consistency)
-          if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === Registry.Services.Time.formatDate(today).split(" ")[0]) {
-            // 🛡️ NORMALIZE: Use uppercase for map key to match API data
-            const tag = String(row[S_DB.TAG]).toUpperCase().trim();
-            if (!existingMap.has(tag)) {
-               existingMap.set(tag, readStart + idx); // Correct row index
-               todayValues.push(row);
-            }
+      // Find max sort number
+      sortValues.forEach((valArr: any[]) => {
+        const n = parseInt(valArr[0]);
+        if (!isNaN(n) && n > maxSortNumber) maxSortNumber = n;
+      });
+
+      // BACKFILL: If any existing row (Row 3 to Last) is missing a sort number, we should ideally fix it.
+      // However, for performance, we only ensure our new logic continues from the highest found.
+      // If the sheet is empty, maxSortNumber is 0, first number will be 1.
+
+      // Identify which rows are actually "Today" and map them by Tag
+      scanValues.forEach((row: any[], idx: number) => {
+        const d = parseDateFromCell(row[S_DB.DATE]);
+        if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === Registry.Services.Time.formatDate(today).split(" ")[0]) {
+          const tag = String(row[S_DB.TAG]).toUpperCase().trim();
+          if (!existingMap.has(tag)) {
+             existingMap.set(tag, readStart + idx);
+             todayValues.push(row);
           }
-        });
-      }
+        }
+      });
   }
 
   // 3. Process API Data
@@ -466,7 +477,9 @@ function upsertDailySnapshots(
       });
       processedTags.add(normalizedTag);
     } else {
+      maxSortNumber++;
       newRowsToAppend.push([
+        maxSortNumber, // ⚡ Column A: Sort Number
         Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
         m.tag,
         m.name,
@@ -517,10 +530,10 @@ function upsertDailySnapshots(
 
     Sheets.Spreadsheets!.Values!.update({
       values: newRowsToAppend
-    }, ssId, `'${sheetName}'!B${nextRow}`, {
+    }, ssId, `'${sheetName}'!A${nextRow}`, {
       valueInputOption: "USER_ENTERED"
     });
-    console.info(`  └─ Append: Ingested ${newRowsToAppend.length} new record${newRowsToAppend.length !== 1 ? 's' : ''} at row ${nextRow}.`);
+    console.info(`  └─ Append: Ingested ${newRowsToAppend.length} new record${newRowsToAppend.length !== 1 ? 's' : ''} at row ${nextRow} (with Sort Numbers).`);
   }
 
   SpreadsheetApp.flush(); // Ensure grid changes are committed before calculating final bounds
