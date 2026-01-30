@@ -8,6 +8,10 @@ on:
       - ".github/workflows/deploy-worker.yml"
   workflow_dispatch:
 
+concurrency:
+  group: worker-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
