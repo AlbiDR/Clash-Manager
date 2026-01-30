@@ -131,18 +131,21 @@ const HeadhunterStore: IHeadhunterStore = {
 
     // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
     if (evtSheet.getLastRow() > 1) {
+      // 🛡️ Upgraded to support optional 3rd column: [Tag, Timestamp, Score]
       const rawEvt = evtSheet.getDataRange().getValues();
       for (let i = 1; i < rawEvt.length; i++) {
          const tag = String(rawEvt[i][0]).toUpperCase().trim();
          if (!tag) continue;
 
          const meta = mainDataMap.get(tag);
+         const evtScore = Number(rawEvt[i][2]) || 0; // Optional 3rd column
 
-         // A. Add to Blacklist memory with Score preservation
+         // A. Add to Blacklist memory with Score preservation (EVT vs Main vs Existing)
          if (!entryMap.has(tag)) {
-           entryMap.set(tag, { t: tag, e: now + expiryDuration, s: meta ? meta.score : 0 });
-         } else if (meta) {
-           entryMap.get(tag)!.s = Math.max(entryMap.get(tag)!.s, meta.score);
+           entryMap.set(tag, { t: tag, e: now + expiryDuration, s: Math.max(evtScore, meta ? meta.score : 0) });
+         } else {
+           const existing = entryMap.get(tag)!;
+           existing.s = Math.max(existing.s, evtScore, meta ? meta.score : 0);
          }
 
          // B. Tick main sheet visually

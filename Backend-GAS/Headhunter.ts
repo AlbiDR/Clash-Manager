@@ -100,13 +100,18 @@ const Headhunter: IHeadhunter = {
     const prunedCount = beforePrune - existing.size;
     Registry.Services.Core.logStep(5, 9, `Database filtered: ${existing.size} survivors (${prunedCount} blacklisted removed).`);
 
+    // Helper: Record dismissal to Event Log for Score-aware Blacklisting
+    const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
+    const logDismissal = (tag: string, score: number) => {
+      evtSheet.appendRow([tag, new Date(), score]);
+    };
+
     // 6. Network: Prune Joined (Clanless Check)
     let joinedCount = 0;
     const tagsToCheck = Array.from(existing.keys());
     if (tagsToCheck.length > 0) {
       Registry.Services.Core.logStep(6, 9, `Verifying clan status for ${tagsToCheck.length} survivors...`);
       
-      // 🛡️ FIX: Batch joined check to prevent 429/Timeout on large databases
       const batchSize = 25;
       for (let i = 0; i < tagsToCheck.length; i += batchSize) {
         const chunk = tagsToCheck.slice(i, i + batchSize);
@@ -115,6 +120,10 @@ const Headhunter: IHeadhunter = {
         );
         profiles.forEach((p: any) => {
           if (p && p.clan && p.clan.tag) {
+            // 🛡️ SCORE PRESERVATION: Record score before deleting
+            const recruit = existing.get(p.tag);
+            if (recruit) logDismissal(p.tag, recruit.rawScore);
+            
             existing.delete(p.tag);
             joinedCount++;
           }
@@ -131,7 +140,6 @@ const Headhunter: IHeadhunter = {
     const minTrophies = strategy.floor;
     Registry.Services.Core.logStep(7, 9, `Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
     
-    // Pass strategy-derived minTrophies to scanner
     const scanned = HeadhunterScanner.scanTournaments(
       minTrophies,
       existing, // Used for War Score fallback
@@ -154,6 +162,7 @@ const Headhunter: IHeadhunter = {
     });
 
     // 9. Benchmarking (Hybrid)
+    // ... (unchanged benchmarking logic) ...
     Registry.Services.Core.logStep(8, 9, "Calculating Performance Benchmarks...");
     const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
     const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
@@ -191,9 +200,6 @@ const Headhunter: IHeadhunter = {
           if (perf >= 50) {
             const histStr = String(histories[i] ? histories[i][0] : "");
             const hasRecentWar = histStr.includes(currentWk);
-            
-            // 🛡️ FIX: Benchmarking requires realistic War Wins to avoid skew.
-            // Elite members typically have ~1000 wins at this level.
             const estimatedWarWins = 500; 
 
             const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
@@ -206,9 +212,6 @@ const Headhunter: IHeadhunter = {
             clanEliteData.push({ rawScore: raw, perfScore: perf });
           }
         }
-        if (clanEliteData.length > 0) {
-          console.info(`  └─ Benchmarking: Ingested ${clanEliteData.length} elite clan performance sample${clanEliteData.length !== 1 ? 's' : ''}.`);
-        }
       }
     }
 
@@ -219,10 +222,18 @@ const Headhunter: IHeadhunter = {
     );
 
     // 10. Filter & Score
-    // 🛡️ FIX: Removed redundant trophy filter (Scanner already did this)
-    const finalPool = Array.from(existing.values())
-      .sort((a, b) => b.rawScore - a.rawScore)
-      .slice(0, CONFIG.HEADHUNTER.TARGET);
+    const allCandidates = Array.from(existing.values())
+      .sort((a, b) => b.rawScore - a.rawScore);
+
+    const targetLimit = CONFIG.HEADHUNTER.TARGET;
+    const finalPool = allCandidates.slice(0, targetLimit);
+    const droppedPool = allCandidates.slice(targetLimit);
+
+    // 🛡️ SCORE PRESERVATION: Record scores for recruits dropped due to pool size
+    if (droppedPool.length > 0) {
+      console.info(`  └─ Cleanup: Recording scores for ${droppedPool.length} overflow recruits for Blacklist parity.`);
+      droppedPool.forEach(p => logDismissal(p.tag, p.rawScore));
+    }
   
     if (finalPool.length === 0 && existing.size > 0) {
       console.warn("⚠️ [FILTER] All recruits filtered by Score or Pool constraints.");
