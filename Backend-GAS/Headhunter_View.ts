@@ -54,14 +54,14 @@ const HeadhunterView: IHeadhunterView = {
       HEADERS,
     );
     
-    // 🛡️ NATIVE DATE WRITE: Pass Date objects directly to the sheet.
-    // The numberFormat applied later handles human-readable display.
-    // This ensures getValues() returns Date objects, not ambiguous strings.
-    const ensureDate = (d: any): Date => {
+    // 🛡️ COMPATIBLE DATE WRITE: Use dot-separated strings (dd/MM/yyyy HH.mm.ss)
+    // This prevents Sheets from auto-formatting in ways that break scripts.
+    // The numberFormat applied later handles the visual display (dd/MM/yyyy HH:mm).
+    const fmt = (d: any): string => {
       const dateObj = Registry.Services.Time.parseFlexibleDate(d);
-      // If date is invalid (NaN or Unix Epoch 0), return current time as fallback
-      if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) return new Date();
-      return dateObj;
+      // Fallback if Date is invalid or Unix Epoch
+      if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) return "-";
+      return Utilities.formatDate(dateObj, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
     };
 
     const rows = list.map((c) => [
@@ -72,7 +72,7 @@ const HeadhunterView: IHeadhunterView = {
       c.donations,
       c.cards,
       c.war,
-      ensureDate(c.foundDate),
+      fmt(c.foundDate),
       c.rawScore,
       (c.potentialScore || 0),
     ]);
