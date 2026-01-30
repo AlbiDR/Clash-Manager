@@ -28,36 +28,46 @@ function runWarLogTest(): void {
   }
 
   try {
-    let rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
-    if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
-    const tag = encodeURIComponent(rawTag);
+    const cleanTag = rawTag.trim().toUpperCase();
+    const tag = encodeURIComponent(cleanTag);
+    
+    const urlClanBase = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}`;
+    const urlPlayerBase = `${CONFIG.SYSTEM.API_BASE}/players/%23${tag}`;
     const urlWarlog = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/warlog`;
-    const urlRiverrace = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/riverracelog?limit=10`;
+    const urlRiverrace = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/riverracelog?limit=5`;
 
-    Registry.Services.Core.logStep(1, 1, `Testing Warlog vs RiverRaceLog...`);
+    Registry.Services.Core.logStep(1, 1, `Probing Tag: #${cleanTag}`);
     
-    const results = Registry.Services.Network.fetchRoyaleAPI([urlWarlog, urlRiverrace]);
-    const dataWarlog = results[0];
-    const dataRiverrace = results[1];
+    const results = Registry.Services.Network.fetchRoyaleAPI([urlClanBase, urlPlayerBase, urlWarlog, urlRiverrace]);
+    const dataClan = results[0];
+    const dataPlayer = results[1];
+    const dataWarlog = results[2];
+    const dataRiverrace = results[3];
 
-    sheet.getRange("A1").setValue("🧪 ENDPOINT COMPARISON TEST");
+    sheet.getRange("A1").setValue("🧪 TAG DIAGNOSTIC TEST");
+    sheet.getRange("A2").setValue(`Target Tag: #${cleanTag}`);
     
-    // Result 1: Warlog
-    sheet.getRange("A3").setValue("1. Endpoint: /warlog");
-    sheet.getRange("B3").setValue(dataWarlog ? "✅ DATA RECEIVED" : "❌ NULL (404?)");
-    if (dataWarlog) {
-      sheet.getRange("A4").setValue(JSON.stringify(dataWarlog, null, 2).substring(0, 1000));
+    // 🔍 PROBE 1: Is this a Clan?
+    sheet.getRange("A4").setValue("1. Is this a CLAN tag?");
+    sheet.getRange("B4").setValue(dataClan ? `✅ YES (${dataClan.name})` : "❌ NO (404)");
+
+    // 🔍 PROBE 2: Is this a PLAYER?
+    sheet.getRange("A5").setValue("2. Is this a PLAYER tag?");
+    sheet.getRange("B5").setValue(dataPlayer ? `✅ YES (${dataPlayer.name})` : "❌ NO (404)");
+
+    // 🔍 PROBE 3: Warlog
+    sheet.getRange("A7").setValue("3. Endpoint: /warlog");
+    sheet.getRange("B7").setValue(dataWarlog ? "✅ SUCCESS" : "❌ NULL");
+
+    // 🔍 PROBE 4: RiverRaceLog
+    sheet.getRange("A8").setValue("4. Endpoint: /riverracelog");
+    sheet.getRange("B8").setValue(dataRiverrace ? "✅ SUCCESS" : "❌ NULL");
+
+    if (!dataClan && dataPlayer) {
+      sheet.getRange("A10").setValue("💡 TIP: You are using a PLAYER tag for CLAN endpoints. Change the tag in Script Properties to a Clan Tag.");
     }
 
-    // Result 2: RiverRaceLog
-    sheet.getRange("A6").setValue("2. Endpoint: /riverracelog");
-    sheet.getRange("B6").setValue(dataRiverrace ? "✅ DATA RECEIVED" : "❌ NULL");
-    if (dataRiverrace) {
-      sheet.getRange("A7").setValue("Sample Data from /riverracelog:");
-      sheet.getRange("A8").setValue(JSON.stringify(dataRiverrace, null, 2).substring(0, 2000));
-    }
-
-    Registry.Services.View.setStatusMessage(sheet, `Test complete. Warlog: ${dataWarlog ? 'OK' : 'FAIL'} | River: ${dataRiverrace ? 'OK' : 'FAIL'}`);
+    Registry.Services.View.setStatusMessage(sheet, `Probe complete. Clan: ${dataClan ? 'YES' : 'NO'} | Player: ${dataPlayer ? 'YES' : 'NO'}`);
 
     Registry.Services.View.setStatusMessage(sheet, `Test complete: ${new Date().toLocaleTimeString()}`);
 
