@@ -32,6 +32,7 @@ export interface WarPhaseResult {
 
 export interface ITime {
   formatDate(date: Date | null | undefined): string;
+  formatShortDate(date: Date | null | undefined): string;
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
   parseFlexibleDate(val: any): Date;
   calculateWarWeekId(d: Date | null | undefined): string;
@@ -44,12 +45,22 @@ export interface ITime {
 var Time: ITime = {
   
   /**
-   * Formats a date to YYYY-MM-DD using the system timezone.
+   * Formats a date using the system's precise dot-separated pattern (dd/MM/yyyy HH.mm.ss).
+   * Used for sheet-stored values to prevent ambiguous auto-formatting.
    */
   formatDate(date: Date | null | undefined): string {
     if (!date || isNaN(date.getTime())) return "";
     // @ts-ignore
     return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+  },
+
+  /**
+   * Formats a date to a simple dd/MM/yyyy string.
+   */
+  formatShortDate(date: Date | null | undefined): string {
+    if (!date || isNaN(date.getTime())) return "";
+    // @ts-ignore
+    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE);
   },
 
   /**
