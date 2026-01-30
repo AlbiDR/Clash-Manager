@@ -95,6 +95,7 @@ const {
         v-memo="[
           recruit.potentialScore,
           recruit.t,
+          recruit.d.ago,
           expandedIds.has(recruit.id),
           selectedSet.has(recruit.id),
           isSelectionMode,

@@ -77,19 +77,31 @@ var Time: ITime = {
    * Handles Date objects, ISO 8601 strings, and custom formats like dd/MM/yyyy HH:mm.
    */
   parseFlexibleDate(val: any): Date {
-    if (!val) return new Date();
-    if (val instanceof Date) return val;
+    if (val === null || val === undefined) return new Date();
+    
+    // 0. Handle already instantiated Date objects
+    if (val instanceof Date) {
+        return isNaN(val.getTime()) ? new Date() : val;
+    }
     
     const s = String(val).trim();
-    if (!s || s === "N/A") return new Date();
+    if (!s || s === "N/A" || s === "-") return new Date();
 
-    // 1. Try ISO 8601 parsing (e.g. 2026-01-30T13:42:37Z)
+    // 1. Try numeric parsing (for timestamps stored as numbers/strings)
+    // Matches pure digits, at least 10 (seconds) or 13 (ms)
+    if (/^\d{10,13}$/.test(s)) {
+        const num = Number(s);
+        const date = new Date(num < 10000000000 ? num * 1000 : num);
+        return isNaN(date.getTime()) ? new Date() : date;
+    }
+
+    // 2. Try ISO 8601 parsing (e.g. 2026-01-30T13:42:37Z)
     const isoDate = new Date(s);
     if (!isNaN(isoDate.getTime()) && s.includes("-")) return isoDate;
 
-    // 2. Try dd/MM/yyyy HH:mm parsing (custom format used in HH sheet)
+    // 3. Try dd/MM/yyyy HH:mm parsing (custom format used in HH sheet)
     // Matches "30/01/2026 13:42" or "30/01/2026 13.42.56"
-    const match = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4}) (\d{2})[:.](\d{2})(?:[:.](\d{2}))?$/);
+    const match = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4}) (\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
     if (match) {
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10) - 1;
@@ -97,10 +109,11 @@ var Time: ITime = {
         const hour = parseInt(match[4], 10);
         const min = parseInt(match[5], 10);
         const sec = match[6] ? parseInt(match[6], 10) : 0;
-        return new Date(year, month, day, hour, min, sec);
+        const date = new Date(year, month, day, hour, min, sec);
+        return isNaN(date.getTime()) ? new Date() : date;
     }
 
-    // 3. Last resort standard parser
+    // 4. Last resort standard parser
     const fallback = new Date(s);
     return isNaN(fallback.getTime()) ? new Date() : fallback;
   },

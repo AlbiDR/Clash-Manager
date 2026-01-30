@@ -391,7 +391,11 @@ function extractSheetDataStrict(
             return `${Math.round(n)}%`;
           case "date":
             const dateObj = Registry.Services.Time.parseFlexibleDate(val);
-            return dateObj.getTime() > 0 ? dateObj.toISOString() : "";
+            // 🛡️ Ensure valid ISO or fallback to 'Now' ISO if data exists but is unparsable
+            if (isNaN(dateObj.getTime()) || dateObj.getTime() <= 0) {
+                return val ? new Date().toISOString() : "";
+            }
+            return dateObj.toISOString();
           case "str":
           default:
             const s = val === null || val === undefined ? "" : String(val);
