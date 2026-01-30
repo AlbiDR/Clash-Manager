@@ -31,45 +31,33 @@ function runWarLogTest(): void {
     let rawTag = CONFIG.SYSTEM.CLAN_TAG || "";
     if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
     const tag = encodeURIComponent(rawTag);
-    const url = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/warlog`;
+    const urlWarlog = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/warlog`;
+    const urlRiverrace = `${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/riverracelog?limit=10`;
 
-    Registry.Services.Core.logStep(1, 1, `Fetching: ${url}`);
+    Registry.Services.Core.logStep(1, 1, `Testing Warlog vs RiverRaceLog...`);
     
-    const results = Registry.Services.Network.fetchRoyaleAPI([url]);
-    const data = results[0];
+    const results = Registry.Services.Network.fetchRoyaleAPI([urlWarlog, urlRiverrace]);
+    const dataWarlog = results[0];
+    const dataRiverrace = results[1];
 
-    if (!data) {
-      throw new Error(`API returned null for ${url}. Worker might be down or endpoint invalid.`);
+    sheet.getRange("A1").setValue("🧪 ENDPOINT COMPARISON TEST");
+    
+    // Result 1: Warlog
+    sheet.getRange("A3").setValue("1. Endpoint: /warlog");
+    sheet.getRange("B3").setValue(dataWarlog ? "✅ DATA RECEIVED" : "❌ NULL (404?)");
+    if (dataWarlog) {
+      sheet.getRange("A4").setValue(JSON.stringify(dataWarlog, null, 2).substring(0, 1000));
     }
 
-    // SIMPLICITY FIRST: If items exist, draw table. Else, dump raw JSON.
-    if (data.items && Array.isArray(data.items)) {
-      const headers = ["Created Date", "Season ID", "Rank", "Fame", "Opponents..."];
-      const rows: any[][] = [headers];
-
-      data.items.forEach((item: any) => {
-        const standings = item.standings || [];
-        const ourClan = standings.find((s: any) => s.clan.tag === `#${rawTag}`);
-        const row = [
-          item.createdDate,
-          item.seasonId,
-          ourClan ? ourClan.rank : "N/A",
-          ourClan ? ourClan.clan.fame : 0
-        ];
-        standings.filter((s: any) => s.clan.tag !== `#${rawTag}`).forEach((s: any) => {
-          row.push(`${s.clan.name} (${s.clan.fame})`);
-        });
-        rows.push(row);
-      });
-
-      sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
-      Registry.Services.View.applyStandardLayout(sheet, rows.length, rows[0].length, headers);
-    } else {
-      // RAW DUMP
-      sheet.getRange("A1").setValue("⚠️ STRUCTURE MISMATCH - RAW DATA BELOW:");
-      sheet.getRange("A2").setValue(JSON.stringify(data, null, 2).substring(0, 50000));
-      Registry.Services.View.setStatusMessage(sheet, "Fetched data but structure is unexpected.");
+    // Result 2: RiverRaceLog
+    sheet.getRange("A6").setValue("2. Endpoint: /riverracelog");
+    sheet.getRange("B6").setValue(dataRiverrace ? "✅ DATA RECEIVED" : "❌ NULL");
+    if (dataRiverrace) {
+      sheet.getRange("A7").setValue("Sample Data from /riverracelog:");
+      sheet.getRange("A8").setValue(JSON.stringify(dataRiverrace, null, 2).substring(0, 2000));
     }
+
+    Registry.Services.View.setStatusMessage(sheet, `Test complete. Warlog: ${dataWarlog ? 'OK' : 'FAIL'} | River: ${dataRiverrace ? 'OK' : 'FAIL'}`);
 
     Registry.Services.View.setStatusMessage(sheet, `Test complete: ${new Date().toLocaleTimeString()}`);
 
