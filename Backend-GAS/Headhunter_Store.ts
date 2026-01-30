@@ -162,21 +162,27 @@ const HeadhunterStore: IHeadhunterStore = {
     if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const numRows = sheet.getLastRow() - startRow + 1;
-      const invitedVals = sheet.getRange(startRow, H.INVITED + 2, numRows, 1).getValues();
+      
+      // 🛡️ FIX: Deduplicate read. Use the H.INVITED index within the already-loaded rawMain.
+      const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
 
-      mainDataMap.forEach((meta, tag) => {
-        const isInvited = invitedVals[meta.row - startRow][0] === true || 
-                         String(invitedVals[meta.row - startRow][0]).toUpperCase() === "TRUE";
-        
+      rawMain.forEach((r: any, i: number) => {
+        const tag = String(r[H.TAG]).trim().toUpperCase();
+        if (!tag) return;
+
+        const isInvited = r[H.INVITED] === true || String(r[H.INVITED]).toUpperCase() === "TRUE";
+        const score = Number(r[H.RAW_SCORE]) || 0;
+        const rowNum = startRow + i;
+
         if (isInvited) {
           if (entryMap.has(tag)) {
-            const existing = entryMap.get(tag)!;
-            existing.e = now + expiryDuration;
-            existing.s = Math.max(existing.s, meta.score);
+            const existingEntry = entryMap.get(tag)!;
+            existingEntry.e = now + expiryDuration;
+            existingEntry.s = Math.max(existingEntry.s, score);
           } else {
-            entryMap.set(tag, { t: tag, e: now + expiryDuration, s: meta.score });
+            entryMap.set(tag, { t: tag, e: now + expiryDuration, s: score });
           }
-          rowsToDelete.push(meta.row);
+          rowsToDelete.push(rowNum);
         }
       });
     }

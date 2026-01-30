@@ -181,12 +181,14 @@ describe('HeadhunterStore', () => {
              // Mock Data Helper
              // 1. Main Data Load: Tag #TICKED, Score 300
              // 2. Invited Column Load: TRUE
-             mockSheet.getRange.mockImplementation((row, col) => {
+             mockSheet.getRange.mockImplementation(() => {
                  return {
                      getValues: () => {
-                         // Invited Column is roughly col 3 (INVITED=1 + 2 offset)
-                         if (col > 2) return [[true]]; 
-                         return [["#TICKED", "", "", "", "", "", "", "", 300]]; 
+                         const row = new Array(10).fill("");
+                         row[0] = "#TICKED";
+                         row[1] = true;
+                         row[8] = 300;
+                         return [row];
                      },
                      setValue: vi.fn(),
                      clearContent: vi.fn(),

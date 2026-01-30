@@ -144,6 +144,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     /**
      * Helper: Batch fetcher to avoid RoyaleAPI 429 and GAS timeouts.
+     * 🛡️ FIX: Ensures array parity by padding results on batch failure.
      */
     const batchFetch = (tags: string[], chunkSize: number, fetchFn: (chunk: string[]) => any[]) => {
       const results: any[] = [];
@@ -151,10 +152,16 @@ const HeadhunterScanner: IHeadhunterScanner = {
         const chunk = tags.slice(i, i + chunkSize);
         try {
           const res = fetchFn(chunk);
-          if (Array.isArray(res)) results.push(...res);
-          Utilities.sleep(100); // 100ms jitter between batches
+          if (Array.isArray(res)) {
+            results.push(...res);
+          } else {
+            // Padding if result is not an array but expected to be
+            results.push(...new Array(chunk.length).fill(null));
+          }
+          if (typeof Utilities !== 'undefined') Utilities.sleep(100); // 100ms jitter between batches
         } catch (e: any) {
-          console.warn(`⚠️ [SCANNER] Batch fetch failed: ${e.message}`);
+          console.warn(`⚠️ [SCANNER] Batch fetch failed part way: ${e.message}`);
+          results.push(...new Array(chunk.length).fill(null));
         }
       }
       return results;
