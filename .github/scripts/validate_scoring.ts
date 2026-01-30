@@ -107,7 +107,7 @@ const keys = ["FAME", "AVG_FAME", "DONATION", "TROPHY", "WAR_RATE"];
 let ok = true;
 
 keys.forEach((k) => {
-  const cfgVal = cfgWeights[k];
+  const cfgVal = cfgWeights![k];
   const docVal = docWeights[k];
 
   if (typeof cfgVal === "undefined") {
