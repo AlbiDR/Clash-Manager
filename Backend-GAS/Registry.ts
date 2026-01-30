@@ -18,6 +18,7 @@ import type { IView } from "./View";
 import type { ISchema } from "./Schema";
 import type { ITime } from "./Time";
 import type { IScoringSystem } from "./ScoringSystem";
+import type { IHeadhunter } from "./Headhunter";
 
 // Global Version Constant
 // @ts-ignore
@@ -33,6 +34,7 @@ declare const View: IView;
 declare const Schema: ISchema;
 declare const Time: ITime;
 declare const ScoringSystem: IScoringSystem;
+declare const Headhunter: IHeadhunter;
 
 // 2. Declare Legacy Global Functions (The "Old World")
 declare function updateClanDatabase(): void;
@@ -53,6 +55,7 @@ export interface IRegistry {
     readonly Schema: ISchema;
     readonly Time: ITime;
     readonly ScoringSystem: IScoringSystem;
+    readonly Headhunter: IHeadhunter;
   };
   Actions: Record<string, () => void>;
 }
@@ -69,7 +72,8 @@ var Registry: IRegistry = {
     get View() { return View; },
     get Schema() { return Schema; },
     get Time() { return Time; },
-    get ScoringSystem() { return ScoringSystem; }
+    get ScoringSystem() { return ScoringSystem; },
+    get Headhunter() { return Headhunter; }
   },
 
   /**
@@ -84,7 +88,8 @@ var Registry: IRegistry = {
     "sync:webapp": () => refreshWebPayload(),
 
     // 🕵️ RECRUITMENT
-    "recruit:scout": () => scoutRecruits(),
+    // 🕵️ RECRUITMENT
+    "recruit:scout": () => Headhunter.scout(),
 
     // 🛠️ SYSTEM
     "system:health": () => checkSystemHealth(),
