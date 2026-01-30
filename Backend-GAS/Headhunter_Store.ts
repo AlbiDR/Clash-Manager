@@ -1,5 +1,6 @@
 
 import { CONFIG } from './Configuration';
+import Registry from './Registry';
 import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Types';
 
 /**
@@ -50,8 +51,7 @@ const HeadhunterStore: IHeadhunterStore = {
           donations: Number(r[H.DONATIONS]),
           cards: Number(r[H.CARDS]),
           war: Number(r[H.WAR_WINS]),
-          foundDate:
-            r[H.FOUND_DATE] instanceof Date ? r[H.FOUND_DATE] : new Date(),
+          foundDate: Registry.Services.Time.parseFlexibleDate(r[H.FOUND_DATE]),
           rawScore: Number(r[H.RAW_SCORE]),
           potentialScore: Number(r[H.POTENTIAL_SCORE]),
         });
