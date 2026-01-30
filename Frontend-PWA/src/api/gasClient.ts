@@ -1,6 +1,22 @@
 /**
- * GAS API Client
- * Optimized for reliability, test passing, and backward compatibility.
+ * ============================================================================
+ * MODULE: GAS API CLIENT (THE BRIDGE)
+ * ----------------------------------------------------------------------------
+ * DESCRIPTION: The primary communication layer between the PWA and the
+ * Google Apps Script (GAS) backend.
+ *
+ * ARCHITECTURE:
+ *  - POST-Only Protocol: All commands are routed through a single 'exec'
+ *    endpoint to handle GAS deployment constraints.
+ *  - Matrix Transport: Data is transmitted as optimized arrays of arrays to
+ *    minimize JSON overhead (omitting repeated keys).
+ *  - Offline Resiliency: Integrated with IndexedDB and a background sync
+ *    queue for unreliable network environments.
+ *
+ * PERFORMANCE:
+ *  - Uses 'text/plain' to bypass CORS preflight (OPTIONS) overhead.
+ *  - Implements exponential backoff and request deduplication.
+ * ============================================================================
  */
 
 import type {
@@ -18,7 +34,7 @@ const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<any>>();
 
 /**
- * ⚡ CUSTOM ERROR TYPE
+ * CUSTOM ERROR TYPE
  * Used to distinguish between fatal server rejections and temporary network/timeout failures.
  */
 export class NetworkError extends Error {
@@ -64,9 +80,18 @@ interface GenericEnvelope<T> {
   message?: string;
 }
 
+/**
+ * Resolves the target Google Apps Script URL.
+ *
+ * @remarks
+ * Prioritizes LocalStorage over environment variables to allow users to
+ * swap backend deployments (e.g. switching between Dev/Prod) without
+ * re-building the entire application.
+ */
 const getGasUrl = () => {
   let url = "";
   if (typeof localStorage !== "undefined") {
+    //  CONFIG PRIORITY: User override (LocalStorage) > Build Config (Env)
     url =
       localStorage.getItem("cm_gas_url") || import.meta.env.VITE_GAS_URL || "";
   } else {
@@ -77,12 +102,12 @@ const getGasUrl = () => {
   
   url = url.trim();
 
-  // ⚡ SMART RESOLUTION: Handle raw Deployment IDs (format: AKfycb...)
+  //  SMART RESOLUTION: Handle raw Deployment IDs (format: AKfycb...)
   if (!url.includes("/") && !url.includes(".") && url.length > 20) {
      return `https://script.google.com/macros/s/${url}/exec`;
   }
 
-  // 🛡️ SYNC: Ensure SW can see the URL via IDB
+  //  SYNC: Ensure SW can see the URL via IDB
   idb.set("cm_gas_url", url).catch(() => {});
 
   if (!url.startsWith("https://") && !url.startsWith("http://")) {
@@ -92,7 +117,7 @@ const getGasUrl = () => {
   return url;
 };
 
-// ⚡ DIRECT WORKER SUPPORT
+//  DIRECT WORKER SUPPORT
 const getWorkerUrl = () => {
   if (typeof localStorage !== "undefined") {
     const override = localStorage.getItem("cm_worker_url");
@@ -179,8 +204,16 @@ export function mapHhRow(row: unknown[], m: Record<string, number>): Recruit | n
 }
 
 /**
- * Inflates the payload.
- * ⚡ ROBUSTNESS UPDATE: Handles Schema-Driven parsing with Fallbacks and Legacy Keys.
+ * Transforms a compressed matrix payload into a structured WebAppData object.
+ *
+ * @remarks
+ * The backend sends data as a 'matrix' (arrays of arrays) to save up to 70%
+ * in payload size by not repeating field names for every record. This function
+ * uses a schema map to "re-hydrate" the records into typed objects.
+ *
+ * @param data - The raw JSON or string payload from the backend.
+ * @returns A fully inflated WebAppData object ready for the UI.
+ * @throws Error if the payload is malformed or invalid.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
   let parsedData: any;
@@ -208,7 +241,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
   
-  // 🛡️ SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
+  //  SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
   let lbSchemaArr = source.schema?.lb;
   let hhSchemaArr = source.schema?.hh;
 
@@ -236,6 +269,17 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   };
 }
 
+/**
+ * Executes a network fetch with built-in retry logic and exponential backoff.
+ *
+ * @param url - The full destination URL.
+ * @param options - Standard RequestInit options.
+ * @param retries - Number of remaining attempts (defaults to 3).
+ * @param backoff - Starting delay in milliseconds (defaults to 1000ms).
+ * @returns The successful Fetch Response.
+ * @throws NetworkError if all retries are exhausted.
+ * @throws AbortError if the request was cancelled by the caller.
+ */
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
@@ -248,7 +292,7 @@ async function fetchWithRetry(
   try {
     const response = await fetch(url, {
       ...options,
-      cache: "no-store", // 🛡️ RELIABILITY: Prevent stale redirects or "Blocked" responses
+      cache: "no-store", //  RELIABILITY: Prevent stale redirects or "Blocked" responses
       signal: options.signal || controller.signal,
     });
     
@@ -264,12 +308,14 @@ async function fetchWithRetry(
   } catch (e: any) {
     clearTimeout(timeoutId);
     
-    // 🛡️ RECOGNITION: Correctly identify if the error was a deliberate abort vs timeout
+    //  RECOGNITION: Correctly identify if the error was a deliberate abort vs timeout
     if (e.name === "AbortError") {
       throw e; 
     }
 
     if (retries > 0) {
+      //  EXPONENTIAL BACKOFF: Multiplier of 1.5 helps mitigate transient
+      // network congestion without overwhelming the server during recovery.
       await new Promise((r) => setTimeout(r, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
     }
@@ -282,6 +328,18 @@ type GasRequestOptions = {
   force?: boolean;
 };
 
+/**
+ * Orchestrates a routed request to the Google Apps Script backend.
+ *
+ * @remarks
+ * Implements a Singleton Pattern for pending requests; multiple calls for
+ * the same action/payload within the same tick will share the same promise.
+ *
+ * @param action - The backend command identifier (routes to the GAS switch block).
+ * @param payload - Optional data to send with the request.
+ * @param options - Coordination options (signal for cancellation, force for cache bypass).
+ * @returns The generic data type T returned by the backend.
+ */
 async function gasRequest<T>(
   action: string,
   payload?: Record<string, unknown>,
@@ -320,7 +378,7 @@ async function _executeGasRequest<T>(
     signal: options?.signal,
   };
 
-  // ⚡ MANDATORY: GAS requires 'action' in the URL for proper routing and redirects.
+  //  MANDATORY: GAS requires 'action' in the URL for proper routing and redirects.
   // Cache busting is also essential to prevent the browser from skipping the redirect.
   const separator = url.includes("?") ? "&" : "?";
   const cacheBuster = `_cb=${Date.now()}`;
@@ -338,9 +396,11 @@ async function _executeGasRequest<T>(
       throw new Error("Empty Response from Server");
     }
 
-    // 🛡️ ROBUST ERROR DETECTION: 
-    // GAS returns HTML (starting with <) when auth fails or script crashes completely.
-    // This is the most common cause of "Load Failed" loops.
+    //  AUTH/CRASH DETECTION:
+    // Google Apps Script returns HTML (starting with '<') instead of JSON
+    // when a session expires, permissions are revoked, or the script
+    // crashes at the global scope. Catching this early prevents 'Unexpected
+    // Token' syntax errors during JSON.parse.
     if (text.trim().startsWith("<")) {
       console.warn("GAS returned HTML instead of JSON. Possible Auth/Config issue:", text.substring(0, 100));
       throw new Error("Backend Configuration Error (HTML Response)");
@@ -393,6 +453,13 @@ export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
+/**
+ * High-level helper to refresh application data from the remote backend.
+ *
+ * @param options - Object containing AbortSignal and force refresh flag.
+ * @returns The fully inflated and validated WebAppData.
+ * @sideeffects Updates the IndexedDB 'CLAN_MANAGER_DATA_V7' cache.
+ */
 export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
