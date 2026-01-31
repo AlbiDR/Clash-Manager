@@ -37,6 +37,7 @@ export interface ScoringConfig {
     PENALTIES: {
       INACTIVITY_GRACE_DAYS: number;
       DECAY_RATE: number;
+      HERITAGE_DIVISOR: number;
     };
   };
   SCHEMA: {
@@ -69,6 +70,7 @@ export interface IScoringSystem {
     now: number,
     warDayWins?: number,
     hasRecentWar?: boolean,
+    tenureDays?: number,
   ): { raw: number; perf: number };
   comparator(rowA: (string | number)[], rowB: (string | number)[]): number;
   calculateRecruitRawScore(
@@ -121,6 +123,7 @@ var ScoringSystem: IScoringSystem = {
     now: number,
     warDayWins: number = 0,
     hasRecentWar: boolean = false,
+    tenureDays: number = 0,
   ): { raw: number; perf: number } {
     const W =
       typeof CONFIG !== "undefined"
@@ -135,7 +138,7 @@ var ScoringSystem: IScoringSystem = {
     const P =
       typeof CONFIG !== "undefined"
         ? CONFIG.LEADERBOARD.PENALTIES
-        : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08 };
+        : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08, HERITAGE_DIVISOR: 5 };
 
     const rawScore =
       currentFame * W.FAME +
@@ -157,20 +160,27 @@ var ScoringSystem: IScoringSystem = {
     }
 
 
-    // ⚔️ HERITAGE SCORING PROTOCOL (v11.1.0)
-    // "Talent Floor": Adds 1/10th of Recruit Potential to Performance Score.
-    // This solves the cold-start problem by giving recruits a valid baseline
-    // derived from their lifetime stats.
-    const ghostPotential = ScoringSystem.calculateRecruitRawScore(
-      trophies,
-      weeklyDonations, // Proxy for total donations
-      warDayWins,
-      hasRecentWar,
-      null // use default weights
-    );
+    // ⚔️ INDUCTION BLESSING MODEL (v13.0.0)
+    // "Talent Floor": Provides a generous but rapidly decaying induction period.
+    // 
+    // Logic: 
+    // 1. Time-Limited: Heritage bias is strictly for recruits (<10 days).
+    // 2. Quadratic Decay: Blessing drops to 25% at Day 5 and 0% at Day 10.
     
-    // The "Talent Floor"
-    const talentBias = Math.round(ghostPotential / 5);
+    // Step 1: Calculate Total Potential (Skill + War)
+    const skillPotential = (trophies || 0) * (W.TROPHY || 0.1) * 10; // Normalized scale
+    const warBonus = hasRecentWar ? 500 : 0;
+    const warPotential = ((warDayWins || 0) + warBonus) * 20.0;
+    
+    // Step 2: Apply Quadratic Decay Factor
+    const maxBlessingDays = typeof CONFIG !== "undefined" ? CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD : 10;
+    const timeRatio = Math.max(0, (maxBlessingDays - tenureDays) / maxBlessingDays);
+    const blessingFactor = Math.pow(timeRatio, 2); // Quadratic Decay
+    
+    const ghostPotential = (skillPotential + warPotential) * blessingFactor;
+    
+    // The "Induction Bias" (Configurable)
+    const talentBias = Math.round(ghostPotential / (P.HERITAGE_DIVISOR || 5));
 
     return {
       raw: Math.round(rawScore),
