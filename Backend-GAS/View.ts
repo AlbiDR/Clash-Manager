@@ -482,6 +482,11 @@ var View: IView = {
         clonedSheet.setName(backup1Name);
         clonedSheet.hideSheet(); // Proactive hide
         this.tagSheet(clonedSheet, "BACKUP");
+
+        // ⚡ STATUS OVERRIDE: Prevent backups from showing "Initializing..." forever
+        // @ts-ignore
+        const timestamp = Utilities.formatDate(new Date(), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
+        this.setStatusMessage(clonedSheet, `✅ Backup: ${timestamp}`);
       } else {
         throw new Error("Cloned sheet not found in spreadsheet after copyTo.");
       }
