@@ -116,6 +116,8 @@ if (typeof module !== "undefined" && module.exports) {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { Schema, VER_SCHEMA });
+(function(scope: any) {
+  Object.assign(scope, { Schema, VER_SCHEMA });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Schema;

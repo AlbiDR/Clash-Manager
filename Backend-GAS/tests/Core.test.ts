@@ -26,7 +26,7 @@ describe('Core Module', () => {
       const result = Core.executeSafely('TEST_LOCK', callback);
       
       expect(mockLockService.getScriptLock).toHaveBeenCalled();
-      expect(mockLock.tryLock).toHaveBeenCalledWith(30000);
+      expect(mockLock.tryLock).toHaveBeenCalledWith(60000);
       expect(callback).toHaveBeenCalled();
       expect(mockLock.releaseLock).toHaveBeenCalled();
       expect(result).toBe('result');

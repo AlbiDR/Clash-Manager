@@ -13,8 +13,17 @@ const mockConfig = {
   },
 };
 
+vi.mock('../Configuration', () => ({
+  CONFIG: {
+    SYSTEM: {
+      TIMEZONE: 'GMT',
+      DATE_FORMAT_VALUE: 'dd/MM/yyyy HH.mm.ss',
+      DATE_FORMAT_DATE: 'dd/MM/yyyy'
+    }
+  }
+}));
+
 vi.stubGlobal('Utilities', mockUtilities);
-vi.stubGlobal('CONFIG', mockConfig);
 
 describe('Time Module', () => {
   beforeEach(() => {

@@ -1,34 +1,51 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import HeadhunterView from '../Headhunter_View';
+import { CONFIG } from '../Configuration';
 
 // Mock Config
-vi.mock('../Configuration', () => ({
-  CONFIG: {
+vi.mock('../Configuration', () => {
+  const mockConfig = {
     HEADHUNTER: { TARGET: 5 }, // Small target for testing
     SCHEMA: {
       HH: { TAG: 0, INVITED: 1, NAME: 2, TROPHIES: 3, DONATIONS: 4, CARDS: 5, WAR_WINS: 6, FOUND_DATE: 7, RAW_SCORE: 8, POTENTIAL_SCORE: 9 },
       HH_HEADERS: { TAG: 'Tag' }
     },
     LAYOUT: { DATA_START_ROW: 3 },
-    SYSTEM: { TIMEZONE: 'UTC', DATE_FORMAT_VALUE: 'yyyy-MM-dd' }
+    SYSTEM: { TIMEZONE: 'UTC', DATE_FORMAT_VALUE: 'yyyy-MM-dd', DATE_FORMAT_DATETIME: 'yyyy-MM-dd HH:mm', MAX_BACKUPS: 5 }
+  };
+  // @ts-ignore
+  global.CONFIG = mockConfig;
+  return { CONFIG: mockConfig };
+});
+
+const mocks = vi.hoisted(() => ({
+  View: {
+    applyStandardLayout: vi.fn(),
+    setStatusMessage: vi.fn(),
+    render: vi.fn(),
+    enforceGlobalTabHygiene: vi.fn(),
+    backupSheet: vi.fn()
+  },
+  Time: {
+    parseFlexibleDate: vi.fn((val: any) => new Date(val)),
+    formatDate: vi.fn(() => 'mock-date')
   }
 }));
 
-// Mock Registry - Hoisted
-const mocks = vi.hoisted(() => ({
-    View: {
-        applyStandardLayout: vi.fn(),
-        setStatusMessage: vi.fn()
-    }
-}));
-
 vi.mock('../Registry', () => ({
-    default: {
-        Services: {
-            View: mocks.View
-        }
+  default: {
+    Services: {
+      View: mocks.View,
+      Time: mocks.Time
     }
+  },
+  Registry: {
+    Services: {
+      View: mocks.View,
+      Time: mocks.Time
+    }
+  }
 }));
 
 

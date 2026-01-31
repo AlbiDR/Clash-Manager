@@ -339,6 +339,9 @@ function dispatchMaster(): void {
   // 4. Headhunter
   taskFastScout();
 
+  // 5. Final Tab Hygiene (Visual Persistence)
+  Registry.Services.View.enforceGlobalTabHygiene();
+
   Registry.Services.Core.logReport(
     `🎭 MASTER PROTOCOL v${version}`,
     [`MASTER DISPATCH: ALL OPERATIONS COMPLETE.`]
@@ -650,26 +653,27 @@ function verifyApiKeysInternal(
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, {
-  onOpen,
-  taskUpdateDatabase,
-  taskUpdateLeaderboard,
-  queueRetry,
-  cleanupTemporaryTriggers,
-  taskFastScout,
-  setupMobileTriggers,
-  handleMobileEdit,
-  triggerUpdateDatabase,
-  triggerUpdateLeaderboard,
-  triggerScoutRecruits,
-  checkSystemHealth,
-  triggerVerifyApiKeys,
-  clearAllTriggers,
-  createTriggers,
-  dispatchMaster,
-  taskWarmUpWorker,
-  VER_ORCHESTRATOR,
-});
+(function(scope: any) {
+  Object.assign(scope, {
+    onOpen,
+    taskUpdateDatabase,
+    taskUpdateLeaderboard,
+    queueRetry,
+    cleanupTemporaryTriggers,
+    taskFastScout,
+    setupMobileTriggers,
+    handleMobileEdit,
+    triggerUpdateDatabase,
+    triggerUpdateLeaderboard,
+    triggerScoutRecruits,
+    checkSystemHealth,
+    triggerVerifyApiKeys,
+    setupTriggers,
+    dispatchMaster,
+    taskWarmUpWorker,
+    VER_ORCHESTRATOR,
+  });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 function clearAllTriggers(): void {
   const triggers = ScriptApp.getProjectTriggers();

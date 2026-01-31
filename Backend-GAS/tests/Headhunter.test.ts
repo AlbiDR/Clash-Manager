@@ -1,11 +1,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Headhunter from '../Headhunter';
+import { CONFIG } from '../Configuration';
 
 // Mock Config
-vi.mock('../Configuration', () => ({
-  CONFIG: {
-    SYSTEM: { CLAN_TAG: "#CLAN", API_BASE: "https://api", TIMEZONE: "UTC", DATE_FORMAT_VALUE: "YYYY" },
+vi.mock('../Configuration', () => {
+  const mockConfig = {
+    SYSTEM: { CLAN_TAG: "#CLAN", API_BASE: "https://api", TIMEZONE: "UTC", DATE_FORMAT_VALUE: "YYYY", MAX_BACKUPS: 5 },
     SHEETS: { HH: "Headhunter", LB: "Leaderboard" },
     HEADHUNTER: { TARGET: 50, WEIGHTS: {} },
     SCHEMA: { 
@@ -13,8 +14,11 @@ vi.mock('../Configuration', () => ({
         HH: {} 
     },
     LAYOUT: { DATA_START_ROW: 3 }
-  }
-}));
+  };
+  // @ts-ignore
+  global.CONFIG = mockConfig;
+  return { CONFIG: mockConfig };
+});
 
 // Mock Sub-Modules - Hoisted
 const mocks = vi.hoisted(() => ({
@@ -63,6 +67,8 @@ describe('Headhunter Orchestrator', () => {
 
     beforeEach(() => {
         vi.restoreAllMocks();
+        // @ts-ignore
+        global.CONFIG = CONFIG;
         
         mockSheet = { 
             getRange: vi.fn().mockReturnThis(), 

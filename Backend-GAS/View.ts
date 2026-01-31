@@ -319,7 +319,7 @@ var View: IView = {
     // 3. Backup Rotation & Legacy (Hidden)
     WORKSPACE.forEach(base => {
       // Standard Rotations
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= CONFIG.SYSTEM.MAX_BACKUPS; i++) {
         REGISTER.push({ name: `Backup ${i} ${base.name}`, color: P.BACKUP, visible: false });
       }
       // Legacy Manual Backups
@@ -392,7 +392,7 @@ var View: IView = {
         return;
       }
 
-      const MAX_BACKUPS = 5;
+      const MAX_BACKUPS = CONFIG.SYSTEM.MAX_BACKUPS;
       const backup1Name = `Backup 1 ${sheetName}`;
       const existingBackup1 = ss.getSheetByName(backup1Name);
 
@@ -418,6 +418,7 @@ var View: IView = {
 
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
               console.log(`🛡️ Backup skipped for '${sheetName}'`);
+              this.enforceGlobalTabHygiene(ss);
               return;
             }
           }
@@ -603,6 +604,8 @@ if (typeof module !== "undefined" && module.exports) {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { View, VER_VIEW });
+(function(scope: any) {
+  Object.assign(scope, { View, VER_VIEW });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default View;
