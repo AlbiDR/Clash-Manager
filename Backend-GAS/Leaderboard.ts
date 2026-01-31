@@ -109,6 +109,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
   if (!lbSheet) lbSheet = ss.insertSheet(CONFIG.SHEETS.LB);
+  const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
 
   // ⚡ DYNAMIC SYNC: Resolve column indices from current sheet headers first
   Registry.Services.Core.logStep(1, 7, "Syncing Dynamic Schema indices...");
