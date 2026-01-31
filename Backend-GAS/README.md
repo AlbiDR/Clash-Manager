@@ -15,7 +15,7 @@ The **Data Processing Core**. A lean, modular Google Apps Script engine that orc
 | **Logic**      | `Scoring.ts`     | Canonical performance algorithms and decay logic  |
 | **Scrutiny**   | `Logger.ts`            | Data persistence, rolling history, and cleanup    |
 | **Ranking**    | `Leaderboard.ts`       | History aggregation and normalization logic       |
-| **Scanning**   | `Recruiter.ts`         | Tournament scanning and candidate identification  |
+| **Scanning**   | `Headhunter.ts`         | Tournament scanning and candidate identification  |
 | **Control**    | `Orchestrator.ts`      | Automation triggers and master execution protocol |
 | **Public API** | `API_Public.ts`        | Routing, handshake, and error handling            |
 | **Controller** | `Controller_Webapp.ts` | Payload generation, compression, and caching      |

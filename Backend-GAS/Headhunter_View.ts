@@ -159,10 +159,7 @@ const HeadhunterView: IHeadhunterView = {
     Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
 
     // Apply specific formatting (Green Highlight for high potential)
-    // Replaces applyHeadhunterFormatting
-    // We can do this atomically or via GAS object. Recruiter.ts did it via GAS object.
     // Creating Conditional Formatting via API is better (atomic), but I'll stick to GAS if complex.
-    // Actually, `addConditionalFormatRule` was used in `Recruiter.ts` lines 936.
     // I can implement it here.
     
     // We already added gradient. Let's add the Highlight Rule via API too?
@@ -173,14 +170,11 @@ const HeadhunterView: IHeadhunterView = {
     // B is index 1. 1 + 9 = 10. So it is Column 10 (K).
     // Correct logic: `startColumnIndex: CONFIG.SCHEMA.HH.POTENTIAL_SCORE + 1`.
 
-    // In `Recruiter.ts`, `applyHeadhunterFormatting` was a separate function.
-    // I will integrate it properly if possible, or leave it as a separate call if it uses `sheet.setConditionalFormatRules` (GAS API).
     // Using GAS API for conditional formatting usually overwrites all rules.
     // The Batch Update `addConditionalFormatRule` appends.
     // I'll stick to the Batch Update for gradients.
     // For the >80 rule, I'll add it to `finalRequests` as well.
     
-    // Note: Recruiter.ts line 933: `applyHeadhunterFormatting` used `sheet.setConditionalFormatRules`.
     // Mixing Batch Update and GAS Object calls is risky for Conditional Formatting.
     // Ideally do ALL or NONE via API.
     // Since `applyStandardLayout` clears things, I should probably do ALL via API.

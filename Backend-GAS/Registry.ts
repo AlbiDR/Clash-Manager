@@ -101,7 +101,7 @@ var Registry: IRegistry = {
     "sync:webapp": () => refreshWebPayload(),
 
     // 🕵️ RECRUITMENT
-    "recruit:scout": () => Headhunter.scout(),
+    "headhunter:scout": () => Headhunter.scout(),
 
     // 🛠️ SYSTEM
     "system:health": () => checkSystemHealth(),

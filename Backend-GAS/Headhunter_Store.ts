@@ -114,7 +114,7 @@ const HeadhunterStore: IHeadhunterStore = {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const numRows = sheet.getLastRow() - startRow + 1;
       // Get TAG (Column B is index 1, but SCHEMA.HH.TAG is 0 relative to start?)
-      // Wait, Recruiter.ts line 449: sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
+      // 🛡️ BATCH LOAD SURVIVAL: Map tags to recruits
       // SCHEMA.HH.TAG is 0. So it gets columns B to ...
       
       const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
