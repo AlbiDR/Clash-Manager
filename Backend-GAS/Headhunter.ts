@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.13";
+const VER_HEADHUNTER = "12.1.14";
 
 export interface IHeadhunter {
   scout(): void;
@@ -40,6 +40,9 @@ const Headhunter: IHeadhunter = {
     console.info(`🚀 Starting Headhunter Scout Pipeline (${VER_HEADHUNTER})...`);
     let sheet = safeSheet(CONFIG.SHEETS.HH);
     Registry.Services.View.setStatusMessage(sheet, "⏳ Initializing...");
+
+    // 🛡️ L1 CACHE PURGE: Ensure a fresh start for this execution
+    Registry.Services.Network._clearCache();
 
     // ⚡ DYNAMIC SYNC
     Registry.Services.Reporting.logStep(2, 9, "Syncing Dynamic Schema indices...");

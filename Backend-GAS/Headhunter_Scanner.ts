@@ -71,7 +71,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
         ),
       );
 
-    Registry.Services.Core.shuffleArray(lotteryPool);
     const tourneyTags = lotteryPool
       .slice(0, scanCfg.TOURNEYS || 300)
       .map((t: TournamentResult) => t.tag);
@@ -228,8 +227,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
       
       if (seedTags.length > 0) {
         console.info(`  🕵️ [SHADOW] Initiating recursive crawl for ${seedTags.length} potential seeds...`);
+        // 🛡️ L2 CACHE BUSTER: 15-minute resolution to bypass Script Cache
+        const cb = Math.floor(Date.now() / 900000); 
         const seedLogs: any[][] = batchFetch(
-          seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`),
+          seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog?__cb=${cb}`),
           15,
           (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
         );
@@ -238,12 +239,13 @@ const HeadhunterScanner: IHeadhunterScanner = {
         let totalOpponents = 0;
         let rejectedClanned = 0;
 
-        seedLogs.forEach((b: any) => {
+        seedLogs.forEach((b: any, sIdx: number) => {
           if (!b || shadowTags.size >= 100) return;
           
-          // 🛡️ RECURSION FIX: Treat seedLogs as a flattened array of battles
-          // We support both nested (old) and flat (new) structures for maximum resilience
           const battles = Array.isArray(b) ? b : [b];
+          if (sIdx === 0 && battles.length > 0) {
+             console.info(`  🔍 [DEBUG] First seed: Type=${battles[0].type}, Opponents=${battles[0].opponent?.length || 0}`);
+          }
           
           battles.forEach((battle: any) => {
             if (!battle || shadowTags.size >= 100) return;
