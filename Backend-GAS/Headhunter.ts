@@ -66,6 +66,10 @@ const Headhunter: IHeadhunter = {
       const clan = clanDetailResponse[0];
       inGameRequirement = clan.requiredTrophies || 0;
       members = clan.memberList || []; 
+      console.info(`  ├─ Clan Detail: ReqTrophies=${inGameRequirement} | Members=${members.length}`);
+      if (members.length > 0) {
+        console.info(`  ├─ Member Data Sample (First 3): ${members.slice(0, 3).map(m => `${m.name}: ${m.trophies}`).join(", ")}`);
+      }
     }
 
     // 2. Strategy Calculation
