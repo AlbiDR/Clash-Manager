@@ -219,7 +219,10 @@ const HeadhunterStore: IHeadhunterStore = {
       }));
 
       if (deleteRequests.length > 0) {
-        Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
+        // @ts-ignore
+        if (typeof Sheets !== 'undefined' && Sheets.Spreadsheets) {
+          Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
+        }
         console.info(`  └─ Cleanup: Atomic deletion of ${deleteRequests.length} row(s) complete.`);
         // @ts-ignore
         if (typeof SpreadsheetApp !== 'undefined') SpreadsheetApp.flush();
