@@ -211,6 +211,10 @@ const NetworkInternal = {
     
     const body = JSON.parse(res.getContentText());
     if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote payload structure");
+    
+    if (body.results.length === 0 && chunkUrls.length > 0) {
+      console.warn(`⚠️ [Network] Worker returned ZERO results for ${chunkUrls.length} URLs.`);
+    }
 
     return body.results.map((r: any) => ({
       getResponseCode: () => r.code,
