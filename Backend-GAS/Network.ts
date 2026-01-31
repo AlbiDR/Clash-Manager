@@ -271,6 +271,7 @@ var Network: INetwork = {
       // times within a single trigger execution (e.g. nested logic loops).
       if (_EXECUTION_CACHE.has(url)) {
         finalResults[index] = _EXECUTION_CACHE.get(url);
+        // console.log(`[Network] L1 Hit: ${url.slice(-30)}`);
         return;
       }
 
@@ -284,6 +285,7 @@ var Network: INetwork = {
               const json = JSON.parse(cachedStr);
               _EXECUTION_CACHE.set(url, json);
               finalResults[index] = json;
+              // console.log(`[Network] L2 Hit: ${url.slice(-30)}`);
               return;
           } catch(e: any) {}
       }
@@ -385,6 +387,13 @@ var Network: INetwork = {
               try {
                 const text = r.getContentText();
                 const json = JSON.parse(text);
+                
+                // 🛡️ DIAGNOSTIC: Label data source
+                const isRecursive = url.includes("battlelog") || url.includes("players/");
+                if (isRecursive) {
+                   console.info(`  🔍 [WORKER] ${url.slice(-30)}: Items=${Array.isArray(json) ? json.length : '1'}`);
+                }
+
                 _EXECUTION_CACHE.set(url, json);
                 
                 // Persist to script cache (15 min for player data, shorter for logs)
