@@ -231,7 +231,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
         const seedLogs: any[][] = batchFetch(
           seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`),
           15,
-          (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
+          (chunk) => {
+            // 🛡️ DEBUG: Force local fetch for battle logs to bypass worker variables
+            return Registry.Services.Network.fetchRoyaleAPI(chunk, null);
+          }
         );
 
         let totalBattles = 0;
