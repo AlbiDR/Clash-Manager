@@ -9,6 +9,12 @@ export interface ScoringWeights {
   WAR: number;
 }
 
+export interface RecruitingWeights {
+  TROPHY: number;
+  DON: number;
+  WAR: number;
+}
+
 export interface RosterWeights {
   FAME: number;
   AVG_FAME: number;

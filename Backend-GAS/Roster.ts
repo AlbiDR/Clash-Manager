@@ -70,7 +70,7 @@ const Roster: IRoster = {
     // Merge current race
     if (race && race.clan && race.clan.participants) {
       race.clan.participants.forEach((p: any) => {
-        addWarEntry(p.tag, currentWeekId, Registry.Services.ScoringSystem.resolveWarFame(p));
+        addWarEntry(p.tag, currentWeekId, Registry.Services.Scoring.resolveWarFame(p));
       });
     }
 
@@ -105,13 +105,13 @@ const Roster: IRoster = {
       const weeksInClan = Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size, eligibleWeeks);
       const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
-      const warRateVal = Registry.Services.ScoringSystem.calculateWarRate(
+      const warRateVal = Registry.Services.Scoring.calculateWarRate(
         dbRecord?.totalBattleCredits ?? 0,
         dbRecord?.discoveredBattleDays?.size ?? 0
       );
 
       const cachedIntel = recruitCache.get(m.tag);
-      const scores = Registry.Services.ScoringSystem.computeScores(
+      const scores = Registry.Services.Scoring.computeScores(
         currentFame, avgWarFame, avgDailyDonations, m.trophies || 0,
         warRateVal, lastSeen.getTime(), now.getTime(),
         cachedIntel ? cachedIntel.wins : 0,
@@ -142,7 +142,7 @@ const Roster: IRoster = {
     rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
 
     const finalRows = rawResults.map(r => {
-      const normPerf = Registry.Services.ScoringSystem.calculatePotentialScore(r.scores.perf, maxPerfScore);
+      const normPerf = Registry.Services.Scoring.calculatePotentialScore(r.scores.perf, maxPerfScore);
       const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
       
       const row = new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill("");
@@ -164,7 +164,7 @@ const Roster: IRoster = {
       return row;
     });
 
-    finalRows.sort(Registry.Services.ScoringSystem.comparator);
+    finalRows.sort(Registry.Services.Scoring.comparator);
     while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill(""));
 
     // 7. RENDERING

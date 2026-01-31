@@ -123,20 +123,20 @@ const WarIntelligence = (() => {
       if (d?.clans && Array.isArray(d.clans)) {
         // Find our clan in the race array for potentially fresher data
         const sorted = [...d.clans].sort((a: any, b: any) => {
-          const valA = Registry.Services.ScoringSystem.resolveWarFame(a);
-          const valB = Registry.Services.ScoringSystem.resolveWarFame(b);
+          const valA = Registry.Services.Scoring.resolveWarFame(a);
+          const valB = Registry.Services.Scoring.resolveWarFame(b);
           return valB - valA;
         });
 
         const myEntry = sorted.find((c: any) => c.tag === clanTag);
         // If player has participated, use their contribution
         if (myEntry) {
-          fame = Registry.Services.ScoringSystem.resolveWarFame(myEntry);
+          fame = Registry.Services.Scoring.resolveWarFame(myEntry);
           rank = sorted.indexOf(myEntry) + 1;
         }
       } else if (isTraining) {
         // During Training Days, fame is often 0 or meaningless "Medals"
-        fame = Registry.Services.ScoringSystem.resolveWarFame(rootClan);
+        fame = Registry.Services.Scoring.resolveWarFame(rootClan);
         rank = rootClan.rank || 0; // Rank might still be available on rootClan
       }
 

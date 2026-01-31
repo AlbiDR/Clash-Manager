@@ -52,8 +52,8 @@ export interface AppConfig {
       ORCHESTRATOR: string;
       DATABASE: string;
       ROSTER: string;
-      SCORING_SYSTEM: string;
-      KERNEL_SCORING: string;
+      SCORING: string;
+      SCORING_KERNEL: string;
       HEADHUNTER: string;
       CONTROLLER_WEBAPP: string;
       REGISTRY: string;
@@ -190,12 +190,12 @@ export var CONFIG: AppConfig = {
       ORCHESTRATOR: "11.0.0",
       DATABASE: "13.0.0",
       ROSTER: "1.0.0",
-      SCORING_SYSTEM: "13.0.0",
-      KERNEL_SCORING: "1.0.0",
+      SCORING: "13.0.0",
+      SCORING_KERNEL: "1.0.0",
       HEADHUNTER: "12.0.0",
-      CONTROLLER_WEBAPP: "11.0.0",
+      CONTROLLER_WEBAPP: "1.0.0",
       REGISTRY: "1.0.0",
-      API_PUBLIC: "10.0.0",
+      API_PUBLIC: "1.0.0"
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",

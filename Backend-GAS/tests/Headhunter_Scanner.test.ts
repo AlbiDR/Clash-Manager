@@ -48,7 +48,7 @@ vi.mock('../Registry', () => ({
             Network: mocks.Network,
             Store: mocks.Store,
             Core: mocks.Core,
-            ScoringSystem: mocks.Scoring
+            Scoring: mocks.Scoring
         }
     }
 }));

@@ -256,7 +256,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
 
 
-          const rawScore = Registry.Services.ScoringSystem.calculateRecruitRawScore(
+          const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
             p.trophies || 0,
             p.totalDonations || 0,
             p.warDayWins || 0,

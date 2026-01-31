@@ -1,8 +1,8 @@
 
 import { describe, it, expect } from 'vitest';
-import ScoringSystem from '../ScoringSystem';
+import Scoring from '../Scoring';
 
-describe('ScoringSystem Heritage Protocol', () => {
+describe('Scoring Heritage Protocol', () => {
   it('should apply Heritage Floor (Potential/5) to Performance Score', () => {
     // ⚔️ Scenario: A "Perfect Recruit" fresh joiner
     // Trophies: 9000
@@ -24,7 +24,7 @@ describe('ScoringSystem Heritage Protocol', () => {
     // 3. Expected Total Perf = Internal (900) + Floor (2200) = 3100
     
     // @ts-ignore
-    const result = ScoringSystem.computeScores(
+    const result = Scoring.computeScores(
         0, // currentFame
         0, // avgFame
         0, // donations
@@ -49,7 +49,7 @@ describe('ScoringSystem Heritage Protocol', () => {
     // Total Perf = 900 + 2200 = 3100
     
     // @ts-ignore
-    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 0);
+    const result = Scoring.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 0);
     expect(result.perf).toBeGreaterThanOrEqual(3099);
     expect(result.perf).toBeLessThanOrEqual(3101);
   });
@@ -62,7 +62,7 @@ describe('ScoringSystem Heritage Protocol', () => {
     // 5. Final Perf = 900 + 550 = 1450
     
     // @ts-ignore
-    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 5);
+    const result = Scoring.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 5);
     expect(result.perf).toBeGreaterThanOrEqual(1449);
     expect(result.perf).toBeLessThanOrEqual(1451);
   });
@@ -73,7 +73,7 @@ describe('ScoringSystem Heritage Protocol', () => {
     // 3. Final Perf = 900
     
     // @ts-ignore
-    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 10);
+    const result = Scoring.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 10);
     expect(result.perf).toBe(900);
   });
   it('should apply Recent War Activity bonus (500 points potential)', () => {
@@ -87,7 +87,7 @@ describe('ScoringSystem Heritage Protocol', () => {
     // Total Perf = 900 (Internal) + 3800 (Bias) = 4700
     
     // @ts-ignore
-    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 0, true, 0);
+    const result = Scoring.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 0, true, 0);
     expect(result.perf).toBe(4700);
   });
 });

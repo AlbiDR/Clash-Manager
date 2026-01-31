@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
             View: { setStatusMessage: vi.fn(), backupSheet: vi.fn() },
             Core: { logStep: vi.fn(), logReport: vi.fn() },
             Schema: { bootDynamicSchema: vi.fn() },
-            ScoringSystem: { 
+            Scoring: { 
                 calculateHybridBenchmark: vi.fn(), 
                 calculatePotentialScore: vi.fn(),
                 calculateRecruitRawScore: vi.fn()
@@ -104,7 +104,7 @@ describe('Headhunter Orchestrator', () => {
                 { values: [] }  // History
             ] 
         });
-        mocks.Registry.Services.ScoringSystem.calculateHybridBenchmark.mockReturnValue({});
+        mocks.Registry.Services.Scoring.calculateHybridBenchmark.mockReturnValue({});
     });
 
     it('should run full scout pipeline successfully', () => {
