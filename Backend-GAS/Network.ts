@@ -481,7 +481,7 @@ var Network: INetwork = {
     ];
 
     const [members, race, log] = this.fetchRoyaleAPI(urls);
-    return { members, race, history: null, log };
+    return { members, race, history: null, log: log || null };
   },
 
   fetchPublicJson(type) {
