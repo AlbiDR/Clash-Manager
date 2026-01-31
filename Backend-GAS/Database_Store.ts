@@ -270,38 +270,6 @@ const DatabaseStore = {
     };
   },
 
-  /**
-   * 🛡️ ENFORCEMENT: Ensures the database does not exceed the hard row limit.
-   * If exceeded, prunes the oldest N rows (FIFO).
-   */
-  enforceRowLimit(sheet: any): void {
-    const lastRow = sheet.getLastRow();
-    const limit = CONFIG.SYSTEM.DB_ROW_LIMIT || 20000;
-    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-
-    if (lastRow > limit) {
-      const rowsToPrune = lastRow - limit;
-      console.warn(`⚠️ [DATABASE] Row limit reached (${lastRow}/${limit}). Pruning ${rowsToPrune} oldest records.`);
-      
-      const ssId = sheet.getParent().getId();
-      const sheetId = sheet.getSheetId();
-
-      Sheets.Spreadsheets.batchUpdate({
-        requests: [{
-          deleteDimension: {
-            range: {
-              sheetId: sheetId,
-              dimension: "ROWS",
-              startIndex: startRow - 1,
-              endIndex: startRow - 1 + rowsToPrune
-            }
-          }
-        }]
-      }, ssId);
-      
-      SpreadsheetApp.flush();
-      console.info(`  └─ Pruning: Removed ${rowsToPrune} records successfully.`);
-    }
   }
 };
 

@@ -130,8 +130,6 @@ const Database: IDatabase = {
             
             DatabaseView.restoreVisuals(sheet, sheetId, dataRowCount);
 
-            // 7. ENFORCEMENT: Hard Row Limit
-            DatabaseStore.enforceRowLimit(sheet);
 
             // Final Log
             Registry.Services.Core.logReport(
