@@ -165,7 +165,7 @@ const Roster: IRoster = {
     });
 
     finalRows.sort(Registry.Services.ScoringSystem.comparator);
-    while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.LB_HEADERS).length).fill(""));
+    while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill(""));
 
     // 7. RENDERING
     Registry.Services.Core.logStep(7, 7, "Applying visual layout & pushing to web...");

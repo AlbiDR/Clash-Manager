@@ -93,7 +93,7 @@ export interface AppConfig {
     MOBILE_TRIGGER_CELL: string;
     MENU_ITEMS: {
       DB: string;
-      LB: string;
+      ROSTER: string;
       HH: string;
       ALL: string;
       MOBILE: string;
