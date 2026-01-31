@@ -70,6 +70,7 @@ export interface AppConfig {
     JSON_STORE_KEY: string;
     DB_PURGE_DAYS: number;
     DB_ROW_LIMIT: number;
+    MAX_BACKUPS: number;
     DATE_FORMAT_DATE: string;
     DATE_FORMAT_DATETIME: string;
     DATE_FORMAT_VALUE: string;
@@ -219,6 +220,7 @@ export var CONFIG: AppConfig = {
     ).replace(/\./g, "_")}_S5`, // S5 suffix for total absolute 1:1 sync
     DB_PURGE_DAYS: 7,
     DB_ROW_LIMIT: 20000,
+    MAX_BACKUPS: 5,
     DATE_FORMAT_DATE: "dd/MM/yyyy",
     DATE_FORMAT_DATETIME: "dd/MM/yyyy HH:mm",
     DATE_FORMAT_VALUE: "dd/MM/yyyy HH.mm.ss",
@@ -431,5 +433,8 @@ if (typeof module !== "undefined" && module.exports) {
 
 /**
  * 🌍 GLOBAL BRIDGE
+ * Ensures CONFIG is available globally in both GAS and Node/Vitest environments.
  */
-Object.assign(this as any, { CONFIG, VER_CONFIGURATION });
+(function(scope: any) {
+  Object.assign(scope, { CONFIG, VER_CONFIGURATION });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

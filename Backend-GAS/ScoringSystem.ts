@@ -332,7 +332,9 @@ if (typeof module !== "undefined" && module.exports) {
  * We guard the assignment to ensure the module is testable in all environments.
  */
 if (typeof this !== "undefined") {
-  Object.assign(this as any, { ScoringSystem, VER_SCORING_SYSTEM });
+  (function(scope: any) {
+  Object.assign(scope, { ScoringSystem, VER_SCORING_SYSTEM });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 }
 
 export default ScoringSystem;

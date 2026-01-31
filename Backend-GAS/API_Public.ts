@@ -483,4 +483,6 @@ function dispatchAsyncUpdate(): void {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { doGet, doPost, dispatchAsyncUpdate, VER_API_PUBLIC });
+(function(scope: any) {
+  Object.assign(scope, { doGet, doPost, dispatchAsyncUpdate, VER_API_PUBLIC });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

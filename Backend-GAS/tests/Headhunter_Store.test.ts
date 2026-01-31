@@ -4,16 +4,20 @@ import HeadhunterStore from '../Headhunter_Store';
 import { CONFIG } from '../Configuration';
 
 // Mock Configuration
-vi.mock('../Configuration', () => ({
-  CONFIG: {
+vi.mock('../Configuration', () => {
+  const mockConfig = {
     LAYOUT: { DATA_START_ROW: 3 },
     SCHEMA: {
       HH: { TAG: 0, INVITED: 1, NAME: 2, TROPHIES: 3, DONATIONS: 4, CARDS: 5, WAR_WINS: 6, FOUND_DATE: 7, RAW_SCORE: 8, POTENTIAL_SCORE: 9 },
     },
     SHEETS: { BL: 'HH_BLACKLIST', EVT: 'HH_EVENT_LOG', HH: 'Headhunter' },
-    HEADHUNTER: { BLACKLIST_DAYS: 30 }
-  }
-}));
+    HEADHUNTER: { BLACKLIST_DAYS: 30 },
+    SYSTEM: { MAX_BACKUPS: 5 }
+  };
+  // @ts-ignore
+  global.CONFIG = mockConfig;
+  return { CONFIG: mockConfig };
+});
 
 describe('HeadhunterStore', () => {
     let mockSheet: any;
@@ -23,6 +27,8 @@ describe('HeadhunterStore', () => {
 
     beforeEach(() => {
         vi.restoreAllMocks();
+        // @ts-ignore
+        global.CONFIG = CONFIG;
         
         mockBlSheet = {
             getLastRow: vi.fn(),

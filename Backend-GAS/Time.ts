@@ -17,11 +17,11 @@
  * ============================================================================
  */
 
+import { CONFIG } from "./Configuration";
 import type { AppConfig } from "./Configuration";
 
 declare var Utilities: any;
 declare var module: any;
-declare const CONFIG: AppConfig;
 
 export interface WarPhaseResult {
   rawDay: number;
@@ -306,6 +306,6 @@ if (typeof module !== "undefined" && module.exports) {
 
 (function(scope: any) {
   Object.assign(scope, { Time });
-})(typeof globalThis !== 'undefined' ? globalThis : this);
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Time;

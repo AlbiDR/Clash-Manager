@@ -12,11 +12,11 @@
  *    - Intelligent Delegation: Offloads high-concurrency tasks to Cloud Run.
  *    - Quota Guard: Hard limits on UrlFetchApp usage to prevent script failure.
  * 
- * VERSION: 1.0.1
- * ============================================================================
  */
 
-import type { AppConfig } from "./Configuration";
+// Global Version Constant
+// @ts-ignore
+const VER_NETWORK = "1.0.1";
 import type { IRegistry } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
@@ -673,11 +673,11 @@ var Network: INetwork = {
    ========================================================================== */
 // @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = Network;
+  module.exports = { Network, VER_NETWORK };
 }
 
 (function(scope: any) {
-  Object.assign(scope, { Network });
-})(typeof globalThis !== 'undefined' ? globalThis : this);
+  Object.assign(scope, { Network, VER_NETWORK });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Network;

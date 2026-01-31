@@ -1,10 +1,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import HeadhunterScanner from '../Headhunter_Scanner';
+import { CONFIG } from '../Configuration';
 
 // Mock Configuration
-vi.mock('../Configuration', () => ({
-  CONFIG: {
+vi.mock('../Configuration', () => {
+  const mockConfig = {
     HEADHUNTER: {
       KEYWORDS: ['test'],
       WEIGHTS: { TROPHY: 1, DON: 0.1, WAR: 10 },
@@ -15,9 +16,12 @@ vi.mock('../Configuration', () => ({
         MAX_PLAYERS: 50
       }
     },
-    SYSTEM: { API_BASE: 'https://api.test' }
-  }
-}));
+    SYSTEM: { API_BASE: 'https://api.test', MAX_BACKUPS: 5 }
+  };
+  // @ts-ignore
+  global.CONFIG = mockConfig;
+  return { CONFIG: mockConfig };
+});
 
 // Mock Registry - Hoisted to ensure availability before vi.mock
 const mocks = vi.hoisted(() => ({
@@ -52,6 +56,9 @@ vi.mock('../Registry', () => ({
 describe('HeadhunterScanner', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        // @ts-ignore
+        global.CONFIG = CONFIG;
+
         // Defaults
         mocks.Store.props.get.mockReturnValue("1"); // Remote Expand Enabled
         mocks.Network.remoteWorkerHealthy.mockReturnValue(false); // Default to Local to start safe

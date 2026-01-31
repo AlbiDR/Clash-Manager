@@ -312,10 +312,10 @@ function pruneStaleData(
     }
   }
 
-  // 🛑 CIRCUIT BREAKER: Stop if deleting > 55 rows (Safety Cap)
-  // 50 Players + Headers + Buffer = ~55 rows. Anything more implies a catastrophic logic error or mass-wipe.
-  if (rowsToDelete.length > 55) {
-     console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${rowsToDelete.length} rows. Threshold is 55 (Max Clan Size + Buffer). Manual intervention required.`);
+  // 🛑 CIRCUIT BREAKER: Stop if deleting > 10 unique players (Safety Cap)
+  // Pruning is intended for small incremental cleanups. Mass-wipes are blocked.
+  if (tagsToPurge.size > 10) {
+     console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${tagsToPurge.size} unique players (${rowsToDelete.length} rows). Threshold is 10 players. Manual intervention required.`);
      return;
   }
 
@@ -641,4 +641,6 @@ function upsertDailySnapshots(
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { updateClanDatabase, VER_LOGGER });
+(function(scope: any) {
+  Object.assign(scope, { updateClanDatabase, VER_LOGGER });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

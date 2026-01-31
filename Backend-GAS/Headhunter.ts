@@ -17,9 +17,9 @@ declare function refreshWebPayload(): void;
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: The Director of the Recruitment Pipeline.
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
- * 🏷️ VERSION: 12.0.0 (Atomic Refactor)
  * ============================================================================
  */
+const VER_HEADHUNTER = "12.0.0";
 
 export interface IHeadhunter {
   scout(): void;
@@ -286,8 +286,8 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { Headhunter });
-})(typeof globalThis !== 'undefined' ? globalThis : this);
+  Object.assign(scope, { Headhunter, VER_HEADHUNTER });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 /**
  * 🌍 GLOBAL BRIDGE (Legacy Support)

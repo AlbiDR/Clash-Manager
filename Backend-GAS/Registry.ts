@@ -107,6 +107,8 @@ if (typeof module !== "undefined" && module.exports) {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { Registry, VER_REGISTRY });
+(function(scope: any) {
+  Object.assign(scope, { Registry, VER_REGISTRY });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Registry;

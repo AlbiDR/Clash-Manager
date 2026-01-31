@@ -672,4 +672,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, { updateLeaderboard, VER_LEADERBOARD });
+(function(scope: any) {
+  Object.assign(scope, { Leaderboard, VER_LEADERBOARD });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
