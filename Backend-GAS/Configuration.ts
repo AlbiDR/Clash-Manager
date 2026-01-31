@@ -413,11 +413,11 @@ export var CONFIG: AppConfig = {
       WORKSPACE: {
         DB: "#3f51b5", // Indigo
         LB: "#00796b", // Emerald
-        HH: "#c62828", // Crimson
+        HH: "#3c0c0c", // Dark subtle burgundy
       },
       TECHNICAL: "#546e7a", // Slate
-      BACKUP: "#eceff1",    // Light Mist
-      LEGACY: "#455a64",    // Dark Slate
+      BACKUP: "#455a64",    // Dark Slate
+      LEGACY: "#eceff1",    // Light Mist
       STRAY: "#fbc02d",     // Vivid Yellow
     },
     STATUS_BAR: {
