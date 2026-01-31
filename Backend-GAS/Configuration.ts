@@ -152,6 +152,7 @@ export interface AppConfig {
       };
       TECHNICAL: string;
       BACKUP: string;
+      LEGACY: string;
       STRAY: string;
     };
     STATUS_BAR: {
@@ -416,6 +417,7 @@ export var CONFIG: AppConfig = {
       },
       TECHNICAL: "#546e7a", // Slate
       BACKUP: "#cfd8dc",    // Mist
+      LEGACY: "#90a4ae",    // Blue Grey (Darker)
       STRAY: "#fbc02d",     // Vivid Yellow
     },
     STATUS_BAR: {

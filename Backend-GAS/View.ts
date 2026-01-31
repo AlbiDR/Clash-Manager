@@ -323,7 +323,7 @@ var View: IView = {
         REGISTER.push({ name: `Backup ${i} ${base.name}`, color: P.BACKUP, visible: false });
       }
       // Legacy Manual Backups
-      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: P.BACKUP, visible: false });
+      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: P.LEGACY, visible: false });
     });
 
     // 🚀 BATCH EXECUTION (Sheets API)
