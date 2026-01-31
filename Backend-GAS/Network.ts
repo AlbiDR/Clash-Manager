@@ -400,8 +400,14 @@ var Network: INetwork = {
                 const ttl = url.includes("members") || url.includes("players") ? NETWORK_CONFIG.CACHE_TTL_LONG : NETWORK_CONFIG.CACHE_TTL_SHORT;
                 scriptCache.put(NetworkInternal.hashKey(url), text, ttl);
 
-                urlIndices.get(url)!.forEach(idx => finalResults[idx] = json);
-              } catch (e: any) {}
+                urlIndices.get(url)!.forEach(idx => {
+                   finalResults[idx] = json;
+                   if (isRecursive) console.info(`  🔍 [DEBUG] Populated finalResults[${idx}] for ${url.slice(-20)}`);
+                });
+              } catch (e: any) {
+                const isRecursive = url.includes("battlelog") || url.includes("players/");
+                if (isRecursive) console.error(`  ❌ [DEBUG] JSON Parse failed for ${url.slice(-20)}: ${e.message}`);
+              }
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url)!.forEach(idx => finalResults[idx] = null);
