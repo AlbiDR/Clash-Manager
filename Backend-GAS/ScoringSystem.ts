@@ -6,7 +6,7 @@
  * 📝 DESCRIPTION: The mathematical heart of the application.
  * ⚙️ ROLE: Pure Logic. Accepts raw data -> Returns Scores & Sort Orders.
  * 🔒 STATUS: PROTECTED "DO NOT MODIFY" ZONE.
- * 🏷️ VERSION: 11.0.0
+ * 🏷️ VERSION: 13.0.0
  * ============================================================================
  *
  * @remarks
@@ -20,12 +20,15 @@ import type { ScoringWeights } from "./SharedTypes";
 
 // Global Version Constant
 // @ts-ignore
-const VER_SCORING_SYSTEM = "11.0.0";
+const VER_SCORING_SYSTEM = "13.0.0";
 
 declare const module: any;
 
 // Define the scoring configuration interface
 export interface ScoringConfig {
+  SYSTEM: {
+    PROPHET_TENURE_THRESHOLD: number;
+  };
   LEADERBOARD: {
     WEIGHTS: {
       FAME: number;
@@ -135,10 +138,15 @@ var ScoringSystem: IScoringSystem = {
             TROPHY: 0.1,
             WAR_RATE: 150,
           };
-    const P =
-      typeof CONFIG !== "undefined"
+    const hasConfigLB = typeof CONFIG !== "undefined" && (CONFIG as any).LEADERBOARD;
+    const P = hasConfigLB
         ? CONFIG.LEADERBOARD.PENALTIES
         : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08, HERITAGE_DIVISOR: 5 };
+    
+    // Safety check for threshold to avoid division by zero
+    const maxBlessingDays = (typeof CONFIG !== "undefined" && (CONFIG as any).SYSTEM)
+        ? (CONFIG.SYSTEM?.PROPHET_TENURE_THRESHOLD || 10) 
+        : 10;
 
     const rawScore =
       currentFame * W.FAME +
@@ -168,19 +176,23 @@ var ScoringSystem: IScoringSystem = {
     // 2. Quadratic Decay: Blessing drops to 25% at Day 5 and 0% at Day 10.
     
     // Step 1: Calculate Total Potential (Skill + War)
-    const skillPotential = (trophies || 0) * (W.TROPHY || 0.1) * 10; // Normalized scale
-    const warBonus = hasRecentWar ? 500 : 0;
-    const warPotential = ((warDayWins || 0) + warBonus) * 20.0;
-    
+    // We use calculateRecruitRawScore to ensure weight consistency
+    const ghostPotentialFull = ScoringSystem.calculateRecruitRawScore(
+      trophies,
+      0, // Exclude donations from Heritage
+      warDayWins,
+      hasRecentWar,
+      null
+    );
+
     // Step 2: Apply Quadratic Decay Factor
-    const maxBlessingDays = typeof CONFIG !== "undefined" ? CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD : 10;
     const timeRatio = Math.max(0, (maxBlessingDays - tenureDays) / maxBlessingDays);
-    const blessingFactor = Math.pow(timeRatio, 2); // Quadratic Decay
+    const blessingFactor = timeRatio * timeRatio; // Faster than Math.pow in GAS
     
-    const ghostPotential = (skillPotential + warPotential) * blessingFactor;
+    const ghostPotentialAdjusted = ghostPotentialFull * blessingFactor;
     
     // The "Induction Bias" (Configurable)
-    const talentBias = Math.round(ghostPotential / (P.HERITAGE_DIVISOR || 5));
+    const talentBias = Math.round(ghostPotentialAdjusted / (P.HERITAGE_DIVISOR || 5));
 
     return {
       raw: Math.round(rawScore),
