@@ -346,14 +346,13 @@ var View: IView = {
       const sheetId = sheet.getSheetId();
       const meta = nameMap.get(name);
       
-      // AUTO-PRUNE: If it's a "Copy of..." stray, we color it red for visibility but do NOT hide it
-      // as the user may be troubleshooting a failed backup.
-      const isStray = !meta && (name.startsWith("Copy of") || name.startsWith("Copia di"));
-
+      // 🛡️ UNKNOWN / STRAY DETECTOR
+      // If a sheet is not in our register, we color it Yellow for visibility.
+      // This helps the user identify unexpected sheets or failed backup artifacts.
       const properties: any = {
         sheetId: sheetId,
         index: i,
-        tabColor: this.hexToRgbColor(meta ? meta.color : (isStray ? "#ff4444" : P.TECHNICAL))
+        tabColor: this.hexToRgbColor(meta ? meta.color : P.STRAY)
       };
 
       const fields = ["index", "tabColor"];
