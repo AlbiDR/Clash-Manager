@@ -474,7 +474,6 @@ var View: IView = {
 
       if (clonedSheet) {
         clonedSheet.setName(backup1Name);
-        clonedSheet.setTabColor("#cccccc");
         clonedSheet.hideSheet(); // Proactive hide
         this.tagSheet(clonedSheet, "BACKUP");
       } else {

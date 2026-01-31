@@ -416,8 +416,8 @@ export var CONFIG: AppConfig = {
         HH: "#c62828", // Crimson
       },
       TECHNICAL: "#546e7a", // Slate
-      BACKUP: "#cfd8dc",    // Mist
-      LEGACY: "#90a4ae",    // Blue Grey (Darker)
+      BACKUP: "#eceff1",    // Light Mist
+      LEGACY: "#455a64",    // Dark Slate
       STRAY: "#fbc02d",     // Vivid Yellow
     },
     STATUS_BAR: {
