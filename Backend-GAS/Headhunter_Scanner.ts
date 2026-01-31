@@ -242,17 +242,19 @@ const HeadhunterScanner: IHeadhunterScanner = {
         seedLogs.forEach((b: any, sIdx: number) => {
           if (!b || shadowTags.size >= 100) return;
           
-          const battles = Array.isArray(b) ? b : [b];
-          if (sIdx === 0 && battles.length > 0) {
-             console.info(`  🔍 [DEBUG] First seed: Type=${battles[0].type}, Opponents=${battles[0].opponent?.length || 0}`);
-          }
-          
-          battles.forEach((battle: any) => {
-            if (!battle || shadowTags.size >= 100) return;
-            totalBattles++;
+          // 🛡️ STRUCTURAL SAFETY: Recursively find battles regardless of wrapping
+          const processEntry = (entry: any) => {
+            if (!entry || shadowTags.size >= 100) return;
+            
+            if (Array.isArray(entry)) {
+              entry.forEach(processEntry);
+              return;
+            }
 
-            if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(battle.type)) {
-              const opponents = battle.opponent || [];
+            // We are at a single battle object
+            totalBattles++;
+            if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP"].includes(entry.type)) {
+              const opponents = entry.opponent || [];
               if (Array.isArray(opponents)) {
                 totalOpponents += opponents.length;
                 opponents.forEach((opp: any) => {
@@ -269,7 +271,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
                 });
               }
             }
-          });
+          };
+
+          processEntry(b);
         });
         console.info(`  🕵️ [SHADOW] Trace: Battles=${totalBattles}, Opponents=${totalOpponents}, RejectedClanned=${rejectedClanned}, DiscoveredTags=${shadowTags.size}`);
       }
