@@ -170,7 +170,7 @@ var ScoringSystem: IScoringSystem = {
     );
     
     // The "Talent Floor"
-    const talentBias = Math.round(ghostPotential / 10);
+    const talentBias = Math.round(ghostPotential / 5);
 
     return {
       raw: Math.round(rawScore),
