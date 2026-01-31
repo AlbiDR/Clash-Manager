@@ -33,6 +33,9 @@ const Database: IDatabase = {
         console.info("📊 Starting Clan Database ETL Pipeline...");
         const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+        // 🛡️ SCHEMA SYNC: Ensure we find the right columns if they were moved
+        Registry.Services.Schema.bootDynamicSchema();
+
         // 🛡️ CONFIGURATION CHECK
         if (!CONFIG.SYSTEM.CLAN_TAG) {
             console.error("❌ [CONFIG] CLAN_TAG is not configured. Aborting Database Update.");

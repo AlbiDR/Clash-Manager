@@ -54,25 +54,8 @@ const DatabaseStore = {
         const tag = String(tagValues[i][0] || "").trim().toUpperCase();
         if (!tag) continue;
 
-        let dateVal: Date | null = null;
         const rawDate = dateValues[i] && dateValues[i][0];
-        
-        if (rawDate instanceof Date) {
-           dateVal = rawDate;
-        } else if (rawDate) {
-           const s = String(rawDate).trim();
-           const parts = s.split(/[\/\-\.]/);
-           // Heuristic for dd/MM/yyyy
-           if (parts.length >= 3 && parts[2].length === 4) {
-               dateVal = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-           } else {
-               const parsed = new Date(s);
-               if (!isNaN(parsed.getTime())) dateVal = parsed;
-           }
-        }
-        
-        // 🛡️ SAFETY: If date is invalid or missing, assume it's very recent (Today)
-        if (!dateVal) dateVal = new Date(); 
+        dateVal = Registry.Services.Time.parseFlexibleDate(rawDate);
 
         if (!tagSeenData.has(tag) || dateVal > tagSeenData.get(tag)!) {
           tagSeenData.set(tag, dateVal);
@@ -108,8 +91,8 @@ const DatabaseStore = {
     }
 
     // 🛑 CIRCUIT BREAKER
-    if (tagsToPurge.size > 10) {
-       console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${tagsToPurge.size} players. Threshold is 10.`);
+    if (tagsToPurge.size > CONFIG.SYSTEM.DB_PRUNE_THRESHOLD) {
+       console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${tagsToPurge.size} players. Threshold is ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD}.`);
        return;
     }
 
@@ -151,42 +134,15 @@ const DatabaseStore = {
     const today = new Date();
     const todayStr = Registry.Services.Time.formatDate(today);
 
-    // Private helper for precise timestamp parsing
-    const parseTime = (t: string | undefined): Date => {
-      if (!t) return new Date();
-      try {
-        return new Date(
-          t.replace(
-            /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
-            "$1-$2-$3T$4:$5:$6Z",
-          ),
-        );
-      } catch {
-        return new Date();
-      }
-    };
-
     let todayValues: any[][] = [];
     const existingMap = new Map<string, number>();
     const processedTags = new Set<string>();
     const individualUpdates: Array<{range: string, values: any[][]}> = [];
     const newRowsToAppend: any[][] = [];
 
-    // 1A. Robust Date Parser for 'dd/MM/yyyy' strings
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
     const sheetName = sheet.getName();
-    
-    const parseDateFromCell = (val: any): Date | null => {
-      if (val instanceof Date) return val;
-      if (!val) return null;
-      const s = String(val).trim();
-      const parts = s.split(/[\/\-\.]/); 
-      if (parts.length >= 3) {
-         return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-      }
-      return new Date(s);
-    };
 
     // 1B. Fetch LAST N rows to check for "Today"
     const lastRow = sheet.getLastRow(); 
@@ -214,8 +170,8 @@ const DatabaseStore = {
 
         // Identify which rows are actually "Today" and map them by Tag
         scanValues.forEach((row: any[], idx: number) => {
-          const d = parseDateFromCell(row[S_DB.DATE]);
-          if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === Registry.Services.Time.formatDate(today).split(" ")[0]) {
+          const d = Registry.Services.Time.parseFlexibleDate(row[S_DB.DATE]);
+          if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === todayStr.split(" ")[0]) {
             const tag = String(row[S_DB.TAG]).toUpperCase().trim();
             if (!existingMap.has(tag)) {
                existingMap.set(tag, readStart + idx);
@@ -238,40 +194,31 @@ const DatabaseStore = {
           battleCredit = 1;
       }
 
+      const rowData = [
+        Registry.Services.Time.formatDate(today),
+        m.tag,
+        m.name,
+        m.role,
+        m.trophies,
+        Math.max(0, m.donations || 0),
+        Math.max(0, m.donationsReceived || 0),
+        Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(m.lastSeen)),
+        warFame,
+        battleCredit,
+      ];
+
       if (existingMap.has(normalizedTag)) {
         const rowIdx = existingMap.get(normalizedTag)!;
-        const updateData = [
-          Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
-          m.tag,
-          m.name,
-          m.role,
-          m.trophies,
-          Math.max(0, m.donations || 0),
-          Math.max(0, m.donationsReceived || 0),
-          Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
-          warFame,
-          battleCredit,
-        ];
-
         individualUpdates.push({
           range: `'${sheetName}'!B${rowIdx}`,
-          values: [updateData]
+          values: [rowData]
         });
         processedTags.add(normalizedTag);
       } else {
         maxSortNumber++;
         newRowsToAppend.push([
           maxSortNumber, 
-          Utilities.formatDate(today, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
-          m.tag,
-          m.name,
-          m.role,
-          m.trophies,
-          Math.max(0, m.donations || 0),
-          Math.max(0, m.donationsReceived || 0),
-          Utilities.formatDate(parseTime(m.lastSeen), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE),
-          warFame,
-          battleCredit,
+          ...rowData
         ]);
       }
     });
@@ -319,7 +266,7 @@ const DatabaseStore = {
     return {
         updated: individualUpdates.length,
         appended: newRowsToAppend.length,
-        pruned: 0 // Logic mismatch: Pruning is separate call, passing 0 here.
+        pruned: 0 
     };
   }
 };

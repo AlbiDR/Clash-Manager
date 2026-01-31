@@ -12,22 +12,12 @@ declare var Sheets: any;
  * ============================================================================
  */
 
-export const HEADERS = [
-  "Date",
-  "Tag",
-  "Name",
-  "Role",
-  "Trophies",
-  "Donations Given",
-  "Donations Received",
-  "Last Seen",
-  "War Fame",
-  "Battle Credits",
-];
-
 const DatabaseView = {
-  getHeaders() {
-    return HEADERS;
+  /**
+   * 📑 HEADERS: Single source of truth from SCHEMA.
+   */
+  getHeaders(): string[] {
+    return Object.values(CONFIG.SCHEMA.DB_HEADERS);
   },
 
   /**
@@ -35,6 +25,7 @@ const DatabaseView = {
    */
   ensureStructure(ss: any, sheet: any) {
     const ssId = ss.getId();
+    const headers = this.getHeaders();
     
     // 🛡️ SCHEMA & GRID MANAGEMENT
     const sheetMetadata = Sheets.Spreadsheets.get(ssId, {
@@ -47,13 +38,13 @@ const DatabaseView = {
     const gridProps = dbSheetMeta.properties.gridProperties;
     const currentMaxRows = gridProps.rowCount;
     const currentMaxCols = gridProps.columnCount;
-    const requiredCols = HEADERS.length + 2; // +2 buffer/standard logic
+    const requiredCols = headers.length + 2; // +2 buffer/standard logic
 
     // Header Check & Initialization
     if (currentMaxRows < 2) {
        // Atomic write of headers if sheet is empty
        Sheets.Spreadsheets.Values.update({
-         values: [HEADERS]
+         values: [headers]
        }, ssId, `'${CONFIG.SHEETS.DB}'!B2`, {
          valueInputOption: "USER_ENTERED"
        });
@@ -82,12 +73,13 @@ const DatabaseView = {
      const startRow = CONFIG.LAYOUT.DATA_START_ROW;
      const S_DB = CONFIG.SCHEMA.DB;
      const ssId = sheet.getParent().getId();
-     const contentCols = HEADERS.length;
+     const headers = this.getHeaders();
+     const contentCols = headers.length;
      
      // Calculate target grid size for formatting consistency
      const targetRowCount = (CONFIG.LAYOUT.DATA_START_ROW - 1) + dataRowCount + 1;
 
-     // 🧹 PRE-CLEANUP: Remove existing bandings
+     // Sweep for existing bandings
      try {
          sheet.getBandings().forEach((b: any) => b.remove());
      } catch (e: any) {
@@ -99,7 +91,7 @@ const DatabaseView = {
        {
          updateCells: {
            rows: [{
-             values: HEADERS.map(h => ({
+             values: headers.map(h => ({
                userEnteredValue: { stringValue: h },
                userEnteredFormat: { 
                    textFormat: { bold: true }, 
