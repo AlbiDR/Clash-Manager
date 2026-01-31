@@ -50,3 +50,14 @@ export interface RaceParticipant {
 export interface IRoster {
   update(): void;
 }
+
+export const VER_ROSTER_TYPES = "1.0.0";
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { VER_ROSTER_TYPES };
+}
+
+(function(scope: any) {
+  Object.assign(scope, { RosterTypes: { VER_ROSTER_TYPES } });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
