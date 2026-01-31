@@ -43,6 +43,7 @@ export interface IView {
   getStandardVisualRequests(sheetId: number, contentRows: number, contentCols: number): any[];
   hexToRgbColor(hex: string): { red: number; green: number; blue: number };
   darkenRgb(rgb: { red: number; green: number; blue: number }, factor: number): { red: number; green: number; blue: number };
+  interact(sheet: any, startMsg: string, taskFn: () => void): void;
 }
 
 var View: IView = {
@@ -630,6 +631,23 @@ var View: IView = {
       }, ssId);
     } catch (e: any) {
       console.warn(`Status Error: ${e}`);
+    }
+  },
+
+  /**
+   * 🛡️ ATOMIC UI TRANSACTION
+   * Safe wrapper for user-facing scripts ensuring consistent status updates.
+   */
+  interact: function(sheet: any, startMsg: string, taskFn: () => void) {
+    if (!sheet) return;
+    try {
+      this.setStatusMessage(sheet, `⏳ ${startMsg}`);
+      SpreadsheetApp.flush();
+      taskFn();
+    } catch (e: any) {
+      console.error(e);
+      this.setStatusMessage(sheet, `❌ Error: ${e.message}`);
+      throw e; 
     }
   }
 };

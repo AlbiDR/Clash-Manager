@@ -79,22 +79,6 @@ export interface ICore {
     startTime: number;
     getElapsedMs(): number;
   };
-
-  /**
-   * Logs a stylized report box to the console.
-   * @param title - The title of the report.
-   * @param lines - Substantive lines of text for the report body.
-   * @param width - Optional fixed width (default 65).
-   */
-  logReport(title: string, lines: string[], width?: number): void;
-
-  /**
-   * Logs a standardized pipeline step.
-   * @param step - Current step index.
-   * @param total - Total steps in pipeline.
-   * @param message - Informational message.
-   */
-  logStep(step: number, total: number, message: string): void;
 }
 
 /* ==========================================================================
@@ -192,26 +176,7 @@ var Core: ICore = {
       }
     }
     return copy;
-  },
-
-  logReport(title: string, lines: string[], width: number = 65): void {
-    const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
-    const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
-    const borderBot = `└${"─".repeat(width)}┘`;
-    
-    // @ts-ignore
-    const logFunc = (typeof Logger !== "undefined") ? Logger.log : console.log;
-    
-    const content = lines
-      .map(l => `│ ${pad(l, width - 2)} │`)
-      .join("\n");
-
-    logFunc(`\n${borderTop}\n${content}\n${borderBot}\n`);
-  },
-
-  logStep(step: number, total: number, message: string): void {
-    console.info(`[${step}/${total}] ${message}`);
-  },
+  }
 };
 
 /* ==========================================================================

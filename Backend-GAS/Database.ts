@@ -48,7 +48,7 @@ const Database: IDatabase = {
             const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
             // ⚡ Fetch Members and War Race data
-            Registry.Services.Core.logStep(1, 6, "Extracting Live API data (Members, Race)..."); // Updated step count to 6
+            Registry.Services.Reporting.logStep(1, 6, "Extracting Live API data (Members, Race)..."); // Updated step count to 6
             const urls = [
                 `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
                 `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
@@ -98,14 +98,14 @@ const Database: IDatabase = {
             if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.DB);
 
             // 1. VIEW: Ensure Structure
-            Registry.Services.Core.logStep(2, 6, "Verifying Sheet Structure...");
+            Registry.Services.Reporting.logStep(2, 6, "Verifying Sheet Structure...");
             const { sheetId, currentMaxRows } = DatabaseView.ensureStructure(ss, sheet);
 
             // 🛡️ BACKUP
             Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.DB);
 
             // 2. VIEW: Layout Prep
-            Registry.Services.Core.logStep(3, 6, "Restoring Standard Layout...");
+            Registry.Services.Reporting.logStep(3, 6, "Restoring Standard Layout...");
             const preservedRows = Math.max(100, currentMaxRows - CONFIG.LAYOUT.DATA_START_ROW);
             Registry.Services.View.applyStandardLayout(
                 sheet,
@@ -115,15 +115,15 @@ const Database: IDatabase = {
             );
 
             // 3. STORE: Prune Stale Data
-            Registry.Services.Core.logStep(4, 6, "Pruning stale historical data...");
+            Registry.Services.Reporting.logStep(4, 6, "Pruning stale historical data...");
             DatabaseStore.pruneStaleData(sheet, activeTags);
 
             // 4. STORE: Upsert Daily Snapshots
-            Registry.Services.Core.logStep(5, 6, "Performing Smart-Merge on daily snapshots...");
+            Registry.Services.Reporting.logStep(5, 6, "Performing Smart-Merge on daily snapshots...");
             const updateResult = DatabaseStore.upsertDailySnapshots(sheet, activeMembers, warFameMap, isWarDay);
 
             // 5. VIEW: Final Visuals
-            Registry.Services.Core.logStep(6, 6, "Finalizing Visuals...");
+            Registry.Services.Reporting.logStep(6, 6, "Finalizing Visuals...");
             // Recalculate last row after updates
             const finalLastRow = sheet.getLastRow();
             const dataRowCount = Math.max(0, finalLastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1));
@@ -132,7 +132,7 @@ const Database: IDatabase = {
 
 
             // Final Log
-            Registry.Services.Core.logReport(
+            Registry.Services.Reporting.logReport(
                 `📊 CLAN DATABASE v${VER_DATABASE} REPORT`,
                 [
                     `OP TYPE:   ETL SNAPSHOT (DAILY)`,

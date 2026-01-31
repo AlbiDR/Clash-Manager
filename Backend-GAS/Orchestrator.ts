@@ -317,18 +317,18 @@ function createTriggers(): void {
  */
 function dispatchMaster(): void {
   const version = VER_ORCHESTRATOR;
-  
-  Registry.Services.Core.logReport(
+
+  Registry.Services.Reporting.logReport(
     `🎭 MASTER PROTOCOL v${version}`,
     [`INITIALIZING ORCHESTRATION...`]
   );
-  
+
   // 1. Warm up first
   taskWarmUpWorker();
-  
+
   // 2. Full Data Ingestion
   taskUpdateDatabase();
-  
+
   // 3. Score Calculation & Rendering
   taskUpdateRoster();
 
@@ -338,7 +338,7 @@ function dispatchMaster(): void {
   // 5. Final Tab Hygiene (Visual Persistence)
   Registry.Services.View.enforceGlobalTabHygiene();
 
-  Registry.Services.Core.logReport(
+  Registry.Services.Reporting.logReport(
     `🎭 MASTER PROTOCOL v${version}`,
     [`MASTER DISPATCH: ALL OPERATIONS COMPLETE.`]
   );
