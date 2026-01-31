@@ -29,7 +29,7 @@ export interface ScoringConfig {
   SYSTEM: {
     PROPHET_TENURE_THRESHOLD: number;
   };
-  LEADERBOARD: {
+  ROSTER: {
     WEIGHTS: {
       FAME: number;
       AVG_FAME: number;
@@ -44,7 +44,7 @@ export interface ScoringConfig {
     };
   };
   SCHEMA: {
-    LB: {
+    ROSTER: {
       PERF_SCORE: number;
       RAW_SCORE: number;
       WAR_RATE: number;
@@ -130,7 +130,7 @@ var ScoringSystem: IScoringSystem = {
   ): { raw: number; perf: number } {
     const W =
       typeof CONFIG !== "undefined"
-        ? CONFIG.LEADERBOARD.WEIGHTS
+        ? CONFIG.ROSTER.WEIGHTS
         : {
             FAME: 3,
             AVG_FAME: 15,
@@ -138,9 +138,9 @@ var ScoringSystem: IScoringSystem = {
             TROPHY: 0.1,
             WAR_RATE: 150,
           };
-    const hasConfigLB = typeof CONFIG !== "undefined" && (CONFIG as any).LEADERBOARD;
-    const P = hasConfigLB
-        ? CONFIG.LEADERBOARD.PENALTIES
+    const hasConfigRoster = typeof CONFIG !== "undefined" && (CONFIG as any).ROSTER;
+    const P = hasConfigRoster
+        ? CONFIG.ROSTER.PENALTIES
         : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08, HERITAGE_DIVISOR: 5 };
     
     // Safety check for threshold to avoid division by zero or negative days
@@ -217,7 +217,7 @@ var ScoringSystem: IScoringSystem = {
   comparator: function (rowA: (string | number)[], rowB: (string | number)[]): number {
     const L =
       typeof CONFIG !== "undefined"
-        ? CONFIG.SCHEMA.LB
+        ? CONFIG.SCHEMA.ROSTER
         : {
             PERF_SCORE: 13,
             RAW_SCORE: 12,

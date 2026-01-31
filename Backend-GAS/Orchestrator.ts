@@ -415,7 +415,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   console.info(`📱 [MOBILE] Trigger activated: ${sheetName}`);
 
   const lockMap: Record<string, string> = {
-    [CONFIG.SHEETS.LB]: "SYNC_ROSTER",
+    [CONFIG.SHEETS.ROSTER]: "SYNC_ROSTER",
     [CONFIG.SHEETS.DB]: "SYNC_DB",
     [CONFIG.SHEETS.HH]: "SYNC_HH"
   };
@@ -423,7 +423,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 
   try {
     Registry.Services.Core.executeSafely(lockKey, () => {
-      if (sheetName === CONFIG.SHEETS.LB) {
+      if (sheetName === CONFIG.SHEETS.ROSTER) {
         Registry.Actions["sync:roster"]();
         Registry.Actions["sync:webapp"]();
       } else if (sheetName === CONFIG.SHEETS.DB) {
@@ -543,6 +543,11 @@ function checkSystemHealth(): void {
       name: "Roster",
       current: typeof VER_ROSTER !== "undefined" ? VER_ROSTER : "MISSING",
       expected: manifest.ROSTER || "1.0.0",
+    },
+    {
+      name: "Database",
+      current: typeof VER_DATABASE !== "undefined" ? VER_DATABASE : "MISSING",
+      expected: manifest.DATABASE || "13.0.0",
     },
     {
       name: "Recruiter",

@@ -185,7 +185,7 @@ function _generatePayloadInternal(): string {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     Registry.Services.Schema.bootDynamicSchema();
 
-    const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.LB, "lb");
+    const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.ROSTER, "lb");
     const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
 
     // 1. BUILD GLOBAL EXCLUSION SET (Blacklist + Event Stream)
@@ -283,7 +283,7 @@ function extractSheetDataStrict(
   }
 
   let mapping: ExtractionMapping[] = [];
-  const S = type === "lb" ? CONFIG.SCHEMA.LB : CONFIG.SCHEMA.HH;
+  const S = type === "lb" ? CONFIG.SCHEMA.ROSTER : CONFIG.SCHEMA.HH;
 
   if (type === "lb") {
     mapping = [
