@@ -57,8 +57,8 @@ declare const Registry: IRegistry;
 // Module Version Constants for Health Check
 declare const VER_CONFIGURATION: string;
 declare const VER_REGISTRY: string;
-declare const VER_LOGGER: string;
-declare const VER_LEADERBOARD: string;
+declare const VER_DATABASE: string;
+declare const VER_ROSTER: string;
 declare const VER_RECRUITER: string;
 declare const VER_API_PUBLIC: string;
 declare const VER_CONTROLLER_WEBAPP: string;
@@ -70,7 +70,7 @@ declare const VER_CONTROLLER_WEBAPP: string;
  */
 const MANAGED_TRIGGER_FUNCTIONS = [
   "taskUpdateDatabase",
-  "taskUpdateLeaderboard",
+  "taskUpdateRoster",
   "taskFastScout",
   "taskWarmUpWorker",
   "handleMobileEdit"
@@ -108,11 +108,11 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
 
   SpreadsheetApp.getUi()
     .createMenu(UI.MENU_NAME)
-    .addItem(ITEMS.DB, "triggerUpdateDatabase")
-    .addItem(ITEMS.LB, "triggerUpdateLeaderboard")
-    .addItem(ITEMS.HH, "triggerScoutRecruits")
+    .addItem(UI.MENU_ITEMS.DB, "triggerUpdateDatabase")
+    .addItem("🏆 Update Roster", "triggerUpdateRoster")
+    .addItem(UI.MENU_ITEMS.HH, "triggerScoutRecruits")
     .addSeparator()
-    .addItem(ITEMS.ALL, "dispatchMaster")
+    .addItem(UI.MENU_ITEMS.ALL, "dispatchMaster")
     .addSeparator()
     .addItem(ITEMS.KEYS, "triggerVerifyApiKeys")
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
@@ -150,28 +150,28 @@ function taskUpdateDatabase(): void {
 }
 
 /**
- * TASK A2: UPDATE LEADERBOARD (Scoring)
+ * TASK A2: UPDATE ROSTER (Leadership & Scopes)
  * Recommended Trigger: Time-Based -> Every 1 Hour
  */
-function taskUpdateLeaderboard(): void {
-  console.info("⏰ [TASK] Leaderboard Update: Starting...");
+function taskUpdateRoster(): void {
+  console.info("⏰ [TASK] Roster Update: Starting...");
 
   try {
-    Registry.Services.Core.executeSafely("SYNC_LB", () => {
-      Registry.Actions["sync:leaderboard"]();
+    Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
+      Registry.Actions["sync:roster"]();
       Registry.Actions["sync:webapp"]();
-      console.info("✅ [TASK] Leaderboard Update: Success.");
+      console.info("✅ [TASK] Roster Update: Success.");
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
-      console.warn("⚠️ [TASK] Leaderboard Update: Collision detected. Queuing retry in 2m...");
-      queueRetry("taskUpdateLeaderboard");
+      console.warn("⚠️ [TASK] Roster Update: Collision detected. Queuing retry in 2m...");
+      queueRetry("taskUpdateRoster");
       return;
     }
-    console.error(`❌ [TASK] Leaderboard Update: FAILED - ${e.message}`);
+    console.error(`❌ [TASK] Roster Update: FAILED - ${e.message}`);
   } finally {
     // 🧹 Always attempt to clean up any "ghost" triggers for this task
-    cleanupTemporaryTriggers("taskUpdateLeaderboard");
+    cleanupTemporaryTriggers("taskUpdateRoster");
   }
 }
 
@@ -276,9 +276,9 @@ function createTriggers(): void {
       .create()
   );
 
-  // 2. Leaderboard Update (Every 1 Hour)
-  ensure("taskUpdateLeaderboard", () => 
-    ScriptApp.newTrigger("taskUpdateLeaderboard")
+  // 2. Roster Update (Every 1 Hour)
+  ensure("taskUpdateRoster", () => 
+    ScriptApp.newTrigger("taskUpdateRoster")
       .timeBased()
       .everyHours(1)
       .create()
@@ -334,7 +334,7 @@ function dispatchMaster(): void {
   taskUpdateDatabase();
   
   // 3. Score Calculation & Rendering
-  taskUpdateLeaderboard();
+  taskUpdateRoster();
 
   // 4. Headhunter
   taskFastScout();
@@ -415,7 +415,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   console.info(`📱 [MOBILE] Trigger activated: ${sheetName}`);
 
   const lockMap: Record<string, string> = {
-    [CONFIG.SHEETS.LB]: "SYNC_LB",
+    [CONFIG.SHEETS.LB]: "SYNC_ROSTER",
     [CONFIG.SHEETS.DB]: "SYNC_DB",
     [CONFIG.SHEETS.HH]: "SYNC_HH"
   };
@@ -424,7 +424,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   try {
     Registry.Services.Core.executeSafely(lockKey, () => {
       if (sheetName === CONFIG.SHEETS.LB) {
-        Registry.Actions["sync:leaderboard"]();
+        Registry.Actions["sync:roster"]();
         Registry.Actions["sync:webapp"]();
       } else if (sheetName === CONFIG.SHEETS.DB) {
         Registry.Actions["sync:database"]();
@@ -461,14 +461,14 @@ function triggerUpdateDatabase(): void {
   });
 }
 
-function triggerUpdateLeaderboard(): void {
+function triggerUpdateRoster(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Calculating performance scores...", "🏆 Leaderboard Update", 5);
-  Registry.Services.Core.executeSafely("SYNC_LB", () => {
+  ss.toast("Calculating performance scores...", "🏆 Roster Update", 5);
+  Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
     try {
-      Registry.Actions["sync:leaderboard"]();
+      Registry.Actions["sync:roster"]();
       Registry.Actions["sync:webapp"]();
-      ss.toast("Leaderboard synchronized successfully.", "✅ Success", 3);
+      ss.toast("Roster synchronized successfully.", "✅ Success", 3);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
     }
@@ -538,6 +538,11 @@ function checkSystemHealth(): void {
       name: "Orchestrator",
       current: typeof VER_ORCHESTRATOR !== "undefined" ? VER_ORCHESTRATOR : "MISSING",
       expected: manifest.ORCHESTRATOR,
+    },
+    {
+      name: "Roster",
+      current: typeof VER_ROSTER !== "undefined" ? VER_ROSTER : "MISSING",
+      expected: manifest.ROSTER || "1.0.0",
     },
     {
       name: "Recruiter",
@@ -657,14 +662,14 @@ function verifyApiKeysInternal(
   Object.assign(scope, {
     onOpen,
     taskUpdateDatabase,
-    taskUpdateLeaderboard,
+    taskUpdateRoster,
     queueRetry,
     cleanupTemporaryTriggers,
     taskFastScout,
     setupMobileTriggers,
     handleMobileEdit,
     triggerUpdateDatabase,
-    triggerUpdateLeaderboard,
+    triggerUpdateRoster,
     triggerScoutRecruits,
     checkSystemHealth,
     triggerVerifyApiKeys,

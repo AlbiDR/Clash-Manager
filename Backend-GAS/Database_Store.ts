@@ -55,7 +55,7 @@ const DatabaseStore = {
         if (!tag) continue;
 
         const rawDate = dateValues[i] && dateValues[i][0];
-        dateVal = Registry.Services.Time.parseFlexibleDate(rawDate);
+        const dateVal = Registry.Services.Time.parseFlexibleDate(rawDate);
 
         if (!tagSeenData.has(tag) || dateVal > tagSeenData.get(tag)!) {
           tagSeenData.set(tag, dateVal);
