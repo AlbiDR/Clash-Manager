@@ -142,7 +142,7 @@ const Roster: IRoster = {
     rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
 
     const finalRows = rawResults.map(r => {
-      const normPerf = maxPerfScore > 0 ? Math.min(100, Math.round((r.scores.perf / maxPerfScore) * 100)) : 0;
+      const normPerf = Registry.Services.ScoringSystem.calculatePotentialScore(r.scores.perf, maxPerfScore);
       const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
       
       const row = new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill("");

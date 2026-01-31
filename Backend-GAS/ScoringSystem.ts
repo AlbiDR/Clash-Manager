@@ -17,6 +17,7 @@
  */
 
 import type { ScoringWeights } from "./SharedTypes";
+import Registry from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -88,6 +89,7 @@ export interface IScoringSystem {
     blacklistScoredList: Array<{ rawScore: number }>,
   ): number;
   calculatePotentialScore(rawScore: number, benchmark: number): number;
+  calculateTrophyFloor(members: any[], inGameReq: number): { floor: number; method: string; mode: string };
   resolveWarFame(p: any): number;
 }
 
@@ -127,8 +129,8 @@ var ScoringSystem: IScoringSystem = {
     const P = (typeof CONFIG !== "undefined" && (CONFIG as any).ROSTER) ? CONFIG.ROSTER.PENALTIES
         : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08, HERITAGE_DIVISOR: 5 };
 
-    const sys = (typeof CONFIG !== "undefined" && (CONFIG as any).SYSTEM) ? CONFIG.SYSTEM : {};
-    const prophetThreshold = sys.PROPHET_TENURE_THRESHOLD || 10;
+    const sys = (typeof CONFIG !== "undefined" && (CONFIG as any).SYSTEM) ? CONFIG.SYSTEM : null;
+    const prophetThreshold = sys ? sys.PROPHET_TENURE_THRESHOLD : 10;
 
     // 2. Kernel: Calculate Roster Raw
     const rawScore = Registry.Services.KernelScoring.calcRosterRaw(
@@ -212,6 +214,14 @@ var ScoringSystem: IScoringSystem = {
    */
   calculatePotentialScore: function (rawScore: number, benchmark: number): number {
     return Registry.Services.KernelScoring.calcPotential(rawScore, benchmark);
+  },
+
+  /**
+   * 🏹 Calculates the dynamic trophy floor based on clan capacity.
+   * Delegates to Kernel.
+   */
+  calculateTrophyFloor: function (members: any[], inGameReq: number): { floor: number; method: string; mode: string } {
+    return Registry.Services.KernelScoring.calcTrophyFloor(members, inGameReq);
   },
 
   /**
