@@ -57,11 +57,12 @@ declare const Registry: IRegistry;
 // Module Version Constants for Health Check
 declare const VER_CONFIGURATION: string;
 declare const VER_REGISTRY: string;
-declare const VER_DATABASE: string;
-declare const VER_ROSTER: string;
-declare const VER_HEADHUNTER: string;
-declare const VER_KERNEL_SCORING: string;
-declare const VER_API_PUBLIC: string;
+declare var VER_DATABASE: string;
+declare var VER_ROSTER: string;
+declare var VER_SCORING: string;
+declare var VER_SCORING_KERNEL: string;
+declare var VER_HEADHUNTER: string;
+declare var VER_API_PUBLIC: string;
 declare const VER_CONTROLLER_WEBAPP: string;
 
 /**
@@ -541,6 +542,11 @@ function checkSystemHealth(): void {
       expected: manifest.ROSTER || "1.0.0",
     },
     {
+      name: "Scoring",
+      current: typeof VER_SCORING !== "undefined" ? VER_SCORING : "MISSING",
+      expected: manifest.SCORING,
+    },
+    {
       name: "Database",
       current: typeof VER_DATABASE !== "undefined" ? VER_DATABASE : "MISSING",
       expected: manifest.DATABASE || "13.0.0",
@@ -551,9 +557,9 @@ function checkSystemHealth(): void {
       expected: manifest.HEADHUNTER,
     },
     {
-      name: "Kernel Scoring",
-      current: typeof VER_KERNEL_SCORING !== "undefined" ? VER_KERNEL_SCORING : "MISSING",
-      expected: manifest.KERNEL_SCORING,
+      name: "Scoring Kernel",
+      current: typeof VER_SCORING_KERNEL !== "undefined" ? VER_SCORING_KERNEL : "MISSING",
+      expected: manifest.SCORING_KERNEL,
     },
     {
       name: "API Public",

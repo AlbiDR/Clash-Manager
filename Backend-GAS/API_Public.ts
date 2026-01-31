@@ -66,7 +66,7 @@ declare const VER_REGISTRY: string;
 declare const VER_ROSTER: string;
 declare const VER_DATABASE: string;
 declare const VER_RECRUITER: string;
-declare const VER_SCORING_SYSTEM: string;
+declare const VER_SCORING: string;
 declare const VER_ORCHESTRATOR: string;
 
 /**
@@ -282,7 +282,8 @@ function getModuleVersions(): Record<string, string> {
     "ROSTER",
     "DATABASE",
     "RECRUITER",
-    "SCORING_SYSTEM",
+    "SCORING",
+    "SCORING_KERNEL",
     "ORCHESTRATOR",
   ];
 

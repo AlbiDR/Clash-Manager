@@ -69,7 +69,7 @@ const Headhunter: IHeadhunter = {
     }
 
     // 2. Strategy Calculation
-    const strategy = Registry.Services.ScoringSystem.calculateTrophyFloor(members, inGameRequirement);
+    const strategy = Registry.Services.Scoring.calculateTrophyFloor(members, inGameRequirement);
     console.info(`  └─ Strategy Active: ${strategy.method} -> Floor: ${strategy.floor}`);
 
     // 3. Quota Check
@@ -201,7 +201,7 @@ const Headhunter: IHeadhunter = {
             const hasRecentWar = histStr.includes(currentWk);
             const estimatedWarWins = 500; 
 
-            const raw = Registry.Services.ScoringSystem.calculateRecruitRawScore(
+            const raw = Registry.Services.Scoring.calculateRecruitRawScore(
               Number(trophies[i] ? trophies[i][0] : 0),
               Number(dons[i] ? dons[i][0] : 0),
               estimatedWarWins, 
@@ -215,7 +215,7 @@ const Headhunter: IHeadhunter = {
     }
 
     // Benchmark Calculation
-    const finalBenchmark = Registry.Services.ScoringSystem.calculateHybridBenchmark(
+    const finalBenchmark = Registry.Services.Scoring.calculateHybridBenchmark(
         clanEliteData,
         blacklistResult.entries,
     );
@@ -240,7 +240,7 @@ const Headhunter: IHeadhunter = {
   
     finalPool.forEach(
       (p) =>
-        (p.potentialScore = Registry.Services.ScoringSystem.calculatePotentialScore(
+        (p.potentialScore = Registry.Services.Scoring.calculatePotentialScore(
           p.rawScore,
           finalBenchmark,
         )),

@@ -17,11 +17,11 @@ import Core from "./Core";
 import View from "./View";
 import Schema from "./Schema";
 import Time from "./Time";
-import ScoringSystem from "./ScoringSystem";
+import Scoring from "./Scoring"; // Renamed
 import Headhunter from "./Headhunter";
 import Database from "./Database";
 import Roster from "./Roster";
-import KernelScoring, { IKernelScoring } from './Kernel_Scoring';
+import ScoringKernel, { IScoringKernel } from './Scoring_Kernel'; // Renamed
 import Reporting, { IReporting } from './Service_Reporting';
 
 import type { IStore } from "./Store";
@@ -30,11 +30,10 @@ import type { ICore } from "./Core";
 import type { IView } from "./View";
 import type { ISchema } from "./Schema";
 import type { ITime } from "./Time";
-import type { IScoringSystem } from "./ScoringSystem";
+import type { IScoring } from "./Scoring"; // Renamed
 import type { IHeadhunter } from "./Headhunter";
 import type { IDatabase } from "./Database";
 import type { IRoster } from "./Roster_Types";
-
 
 // Global Version Constant
 // @ts-ignore
@@ -59,11 +58,11 @@ export interface IRegistry {
     readonly View: IView;
     readonly Schema: ISchema;
     readonly Time: ITime;
-    readonly ScoringSystem: IScoringSystem;
+    readonly Scoring: IScoring; // Renamed
     readonly Headhunter: IHeadhunter;
     readonly Database: IDatabase;
     readonly Roster: IRoster;
-    readonly KernelScoring: IKernelScoring;
+    readonly ScoringKernel: IScoringKernel; // Renamed
     readonly Reporting: IReporting;
   };
   Actions: Record<string, () => void>;
@@ -81,11 +80,11 @@ var Registry: IRegistry = {
     get View() { return View; },
     get Schema() { return Schema; },
     get Time() { return Time; },
-    get ScoringSystem() { return ScoringSystem; },
+    get Scoring() { return Scoring; }, // Renamed
     get Headhunter() { return Headhunter; },
     get Database() { return Database; },
     get Roster() { return Roster; },
-    get KernelScoring() { return KernelScoring; },
+    get ScoringKernel() { return ScoringKernel; }, // Renamed
     get Reporting() { return Reporting; }
   },
 

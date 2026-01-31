@@ -89,7 +89,7 @@ const Database: IDatabase = {
             const warFameMap = new Map<string, number>();
             if (raceData && raceData.clan && raceData.clan.participants) {
                 raceData.clan.participants.forEach((p: any) => {
-                    warFameMap.set(p.tag, Registry.Services.ScoringSystem.resolveWarFame(p));
+                    warFameMap.set(p.tag, Registry.Services.Scoring.resolveWarFame(p));
                 });
                 console.info(`  └─ API: Collected ${warFameMap.size} unique participant record${warFameMap.size !== 1 ? 's' : ''}.`);
             }
