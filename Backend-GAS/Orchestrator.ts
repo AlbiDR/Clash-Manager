@@ -59,7 +59,8 @@ declare const VER_CONFIGURATION: string;
 declare const VER_REGISTRY: string;
 declare const VER_DATABASE: string;
 declare const VER_ROSTER: string;
-declare const VER_RECRUITER: string;
+declare const VER_HEADHUNTER: string;
+declare const VER_KERNEL_SCORING: string;
 declare const VER_API_PUBLIC: string;
 declare const VER_CONTROLLER_WEBAPP: string;
 
@@ -250,68 +251,63 @@ function taskWarmUpWorker(): void {
  * Sets up the automated lifecycle of the project.
  */
 function createTriggers(): void {
-  console.info("🚀 [TRIGGERS] Verifying and repairing trigger suite (Non-Destructive)...");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  console.info("🚀 [TRIGGERS] Verifying and repairing trigger suite (Surgical Sync)...");
 
   const permanentIds: string[] = [];
   const existingTriggers = ScriptApp.getProjectTriggers();
-  const existingHandlers = new Set(existingTriggers.map((t: any) => t.getHandlerFunction()));
 
-  const ensure = (handler: string, createFn: () => any) => {
-    if (existingHandlers.has(handler)) {
-      console.info(`  ✓ [SKIP] ${handler} exists.`);
-      const t = existingTriggers.find((t: any) => t.getHandlerFunction() === handler);
-      if (t) permanentIds.push(t.getUniqueId());
+  /**
+   * High-Precision verification: Checks both Handler and Source.
+   */
+  const ensure = (handler: string, source: any, createFn: () => any) => {
+    const existing = existingTriggers.find((t: any) => 
+      t.getHandlerFunction() === handler && 
+      t.getTriggerSource() === source
+    );
+
+    if (existing) {
+      console.info(`  ✓ [SKIP] ${handler} exists (Source: ${source}).`);
+      permanentIds.push(existing.getUniqueId());
     } else {
-      console.info(`  ✨ [NEW] Creating ${handler}...`);
+      console.info(`  ✨ [NEW] Recreating ${handler}...`);
       const t = createFn();
       permanentIds.push(t.getUniqueId());
     }
   };
 
   // 1. Database Sync (Every 1 Hour)
-  ensure("taskUpdateDatabase", () => 
-    ScriptApp.newTrigger("taskUpdateDatabase")
-      .timeBased()
-      .everyHours(1)
-      .create()
+  ensure("taskUpdateDatabase", ScriptApp.TriggerSource.CLOCK, () => 
+    ScriptApp.newTrigger("taskUpdateDatabase").timeBased().everyHours(1).create()
   );
 
   // 2. Roster Update (Every 1 Hour)
-  ensure("taskUpdateRoster", () => 
-    ScriptApp.newTrigger("taskUpdateRoster")
-      .timeBased()
-      .everyHours(1)
-      .create()
+  ensure("taskUpdateRoster", ScriptApp.TriggerSource.CLOCK, () => 
+    ScriptApp.newTrigger("taskUpdateRoster").timeBased().everyHours(1).create()
   );
 
   // 3. Headhunter Fast Scout (Every 30 Minutes)
-  ensure("taskFastScout", () => 
-    ScriptApp.newTrigger("taskFastScout")
-      .timeBased()
-      .everyMinutes(30)
-      .create()
+  ensure("taskFastScout", ScriptApp.TriggerSource.CLOCK, () => 
+    ScriptApp.newTrigger("taskFastScout").timeBased().everyMinutes(30).create()
   );
 
   // 4. Render Worker Warm-up (Every 10 Minutes)
-  ensure("taskWarmUpWorker", () => 
-    ScriptApp.newTrigger("taskWarmUpWorker")
-      .timeBased()
-      .everyMinutes(10)
-      .create()
+  ensure("taskWarmUpWorker", ScriptApp.TriggerSource.CLOCK, () => 
+    ScriptApp.newTrigger("taskWarmUpWorker").timeBased().everyMinutes(10).create()
   );
 
   // 5. Integrated Mobile Setup (onEdit Trigger)
   setupMobileTriggers(true);
   
-  // Re-fetch triggers to capture the mobile one (might have been created inside setupMobileTriggers)
   const allTriggersNow = ScriptApp.getProjectTriggers();
   const mobileT = allTriggersNow.find((t: any) => t.getHandlerFunction() === "handleMobileEdit");
   if (mobileT) permanentIds.push(mobileT.getUniqueId());
   
-  // 🛡️ REGISTER PERMANENT IDS: This allows cleanupTemporaryTriggers to skip them
+  // 🛡️ REGISTER PERMANENT IDS
   Registry.Services.Store.props.set(PERMANENT_TRIGGER_KEY, JSON.stringify(permanentIds));
 
-  console.info("✅ [TRIGGERS] Verification complete.");
+  ss.toast("Triggers synchronized successfully.", "⚙️ Trigger Engine", 3);
+  console.info("✅ [TRIGGERS] Surgical sync complete.");
 }
 
 
@@ -550,9 +546,14 @@ function checkSystemHealth(): void {
       expected: manifest.DATABASE || "13.0.0",
     },
     {
-      name: "Recruiter",
-      current: typeof VER_RECRUITER !== "undefined" ? VER_RECRUITER : "MISSING",
-      expected: manifest.RECRUITER,
+      name: "Headhunter",
+      current: typeof VER_HEADHUNTER !== "undefined" ? VER_HEADHUNTER : "MISSING",
+      expected: manifest.HEADHUNTER,
+    },
+    {
+      name: "Kernel Scoring",
+      current: typeof VER_KERNEL_SCORING !== "undefined" ? VER_KERNEL_SCORING : "MISSING",
+      expected: manifest.KERNEL_SCORING,
     },
     {
       name: "API Public",
