@@ -238,8 +238,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
         let totalOpponents = 0;
         let rejectedClanned = 0;
 
-        seedLogs.forEach((logList) => {
+        seedLogs.forEach((logList, sIdx) => {
           if (logList && Array.isArray(logList)) {
+            if (sIdx === 0) console.info(`  🕵️ [SHADOW] Sample seed log: Length=${logList.length}, Type=${typeof logList[0]}`);
             totalBattles += logList.length;
             logList.forEach((b: any) => {
               if (shadowTags.size >= 100) return;

@@ -385,6 +385,12 @@ var Network: INetwork = {
               try {
                 const text = r.getContentText();
                 const json = JSON.parse(text);
+                
+                // 🛡️ DEBUG: log sample payload structure
+                if (url.includes("battlelog")) {
+                   console.info(`  🔍 [DEBUG] Battlelog for ${url.slice(-15)}: Code 200, Items: ${Array.isArray(json) ? json.length : 'NOT_ARRAY'}`);
+                }
+
                 _EXECUTION_CACHE.set(url, json);
                 
                 // Persist to script cache (15 min for player data, shorter for logs)
