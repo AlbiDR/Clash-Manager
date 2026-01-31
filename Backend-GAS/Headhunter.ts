@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.0.0";
+const VER_HEADHUNTER = "12.0.2";
 
 export interface IHeadhunter {
   scout(): void;
@@ -140,7 +140,7 @@ const Headhunter: IHeadhunter = {
     }
 
     // 7. Scanner: Launch
-    const discoveryFloor = Math.min(strategy.floor, inGameRequirement || 7500);
+    const discoveryFloor = Math.min(strategy.floor, 7500); 
     Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Discovery Floor: ${discoveryFloor})...`);
     
     const scanned = HeadhunterScanner.scanTournaments(
@@ -259,7 +259,7 @@ const Headhunter: IHeadhunter = {
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v12.0.1 REPORT`,
+      `🔭 HEADHUNTER v12.0.2 REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
