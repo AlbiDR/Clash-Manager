@@ -185,8 +185,26 @@ const HeadhunterScanner: IHeadhunterScanner = {
       candidates.length > 0 &&
       candidates[0].rawScore !== undefined
     ) {
-      // Remote worker returned fully scored recruits
-      candidates.forEach((c: any) => {
+      // 6A. Process Remote Scored Candidates
+      // 🛡️ DEDUPLICATION: Use playerLimit and deduplicated tags
+      const remoteMap = new Map<string, any>();
+      candidates.forEach(c => remoteMap.set(c.tag, c));
+      
+      const remotePool = tagsToFetch
+        .map(t => remoteMap.get(t))
+        .filter(c => c !== undefined);
+
+      remotePool.forEach((c: any) => {
+        let finalScore = c.rawScore;
+        // Apply Prophet Bonus
+        if (heritageTags.has(c.tag.replace("#", "").trim().toLowerCase())) {
+          const intel = prophetCache.get(c.tag.replace("#", "").trim().toLowerCase());
+          if (intel && intel.wins > 5) {
+             finalScore *= 1.25;
+             console.info(`  ✨ [PROPHET] Heritage found for ${c.name}: 25% Participation Bonus.`);
+          }
+        }
+
         validCandidates.push({
           tag: c.tag,
           name: c.name,
@@ -196,11 +214,44 @@ const HeadhunterScanner: IHeadhunterScanner = {
           war: c.war,
           foundDate: new Date(),
           invited: false,
-          rawScore: c.rawScore,
+          rawScore: finalScore,
           potentialScore: c.potentialScore,
           source: "TOURNAMENT",
         });
       });
+
+      // 🕵️ RECURSIVE SEEDING: Fetch logs for Top 5 Remote Recruits to trigger Shadow Scout
+      const seedTags = validCandidates
+        .sort((a, b) => b.rawScore - a.rawScore)
+        .slice(0, 5)
+        .map(c => c.tag);
+      
+      if (seedTags.length > 0) {
+        const seedLogs: any[][] = batchFetch(
+          seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`),
+          5,
+          (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
+        );
+
+        seedLogs.forEach((logList) => {
+          if (logList && Array.isArray(logList)) {
+            logList.forEach((b: any) => {
+              if (shadowTags.size >= 100) return;
+              if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
+                const opponents = b.opponent || [];
+                opponents.forEach((opp: any) => {
+                  if (shadowTags.size >= 100) return;
+                  const isClanless = !opp.clan || !opp.clan.tag;
+                  if (isClanless && opp.tag && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
+                    shadowTags.add(opp.tag);
+                    processedTags.add(opp.tag);
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
     } else {
       // Local scoring required
       const playersData: any[] = batchFetch(
