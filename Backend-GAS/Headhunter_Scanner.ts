@@ -1,6 +1,7 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
+import RosterStore from './Roster_Store';
 import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_Types';
 
 /**
@@ -140,6 +141,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     if (tagsToFetch.length === 0) return [];
 
+    // 5B. Prophet Intelligence Integration
+    const prophetCache = RosterStore.getProphetCache();
+    const heritageTags = new Set(prophetCache.keys());
+
     const validCandidates: Recruit[] = [];
 
     /**
@@ -249,6 +254,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
             );
           }
 
+
+
           const rawScore = Registry.Services.ScoringSystem.calculateRecruitRawScore(
             p.trophies || 0,
             p.totalDonations || 0,
@@ -256,6 +263,16 @@ const HeadhunterScanner: IHeadhunterScanner = {
             hasWar,
             W,
           );
+
+          // 🛡️ HERITAGE INTELLIGENCE: Apply Prophet Bonus
+          let finalScore = rawScore;
+          if (heritageTags.has(p.tag.replace("#", "").trim().toLowerCase())) {
+            const intel = prophetCache.get(p.tag.replace("#", "").trim().toLowerCase());
+            if (intel && intel.wins > 5) {
+               finalScore *= 1.25; // 25% Boost for proven high-participation alumni
+               console.info(`  ✨ [PROPHET] Heritage found for ${p.name}: Participation Bonus Applied.`);
+            }
+          }
 
           validCandidates.push({
             tag: p.tag,
@@ -266,7 +283,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
             war: totalWarScore,
             foundDate: new Date(),
             invited: false,
-            rawScore: rawScore,
+            rawScore: finalScore,
           });
         });
       }
