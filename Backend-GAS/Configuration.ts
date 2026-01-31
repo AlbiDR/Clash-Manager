@@ -74,6 +74,7 @@ export interface AppConfig {
     DATE_FORMAT_DATE: string;
     DATE_FORMAT_DATETIME: string;
     DATE_FORMAT_VALUE: string;
+    PROPHET_TENURE_THRESHOLD: number;
   };
   SHEETS: {
     DB: string;
@@ -139,6 +140,7 @@ export interface AppConfig {
     PENALTIES: {
       INACTIVITY_GRACE_DAYS: number;
       DECAY_RATE: number;
+      HERITAGE_DIVISOR: number;
     };
   };
   THEME: {
@@ -223,6 +225,7 @@ export var CONFIG: AppConfig = {
     DATE_FORMAT_DATE: "dd/MM/yyyy",
     DATE_FORMAT_DATETIME: "dd/MM/yyyy HH:mm",
     DATE_FORMAT_VALUE: "dd/MM/yyyy HH.mm.ss",
+    PROPHET_TENURE_THRESHOLD: 10,
   },
 
   SHEETS: {
@@ -400,6 +403,7 @@ export var CONFIG: AppConfig = {
     PENALTIES: {
       INACTIVITY_GRACE_DAYS: 4,
       DECAY_RATE: 0.08,
+      HERITAGE_DIVISOR: 5,
     },
   },
   THEME: {

@@ -41,38 +41,39 @@ describe('ScoringSystem Heritage Protocol', () => {
     expect(result.perf).toBeLessThanOrEqual(3101);
   });
 
-  it('should boost Veterans with Heritage Score', () => {
-    // ⚔️ Scenario: An Active Veteran
-    // Trophies: 9000
-    // WarDayWins: 100
-    // Internal Stats: 1000 Fame (Week), 1000 Donations
-    
-    // 1. Potential Calculation:
-    // (9000 * 1) + (1000 * 0.07) + (100+500 warBonus)*20
-    // 9000 + 70 + 12000 = 21070
-    // Floor (1/5) = 4214
-    
-    // 2. Internal Raw:
-    //    Fame (1000 * 3) = 3000
-    //    Donations (1000 * 50) = 50,000
-    //    Trophies (9000 * 0.1) = 900
-    //    Total Internal = 53,900
-    // 3. Expected Total = 53,900 + 4,214 = 58,114
+  it('should apply Quadratic Induction Blessing (Day 0 = 100%)', () => {
+    // Trophies: 9000 -> 9000 Skill
+    // WarWins: 100 -> 2000 War
+    // Total Potential = 11,000 / 5 = 2200
+    // Internal Raw = 900
+    // Total Perf = 900 + 2200 = 3100
     
     // @ts-ignore
-    const result = ScoringSystem.computeScores(
-        1000, 
-        0, 
-        1000, 
-        9000, 
-        0, 
-        Date.now(), 
-        Date.now(),
-        100, 
-        true
-    );
+    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 0);
+    expect(result.perf).toBeGreaterThanOrEqual(3099);
+    expect(result.perf).toBeLessThanOrEqual(3101);
+  });
 
-    expect(result.perf).toBeGreaterThanOrEqual(58110);
-    expect(result.perf).toBeLessThanOrEqual(58120);
+  it('should apply Quadratic Decay at Day 5 (Factor = 0.25)', () => {
+    // 1. Total Blessing (at Day 0) = 2200
+    // 2. Factor = ((10 - 5) / 10)^2 = 0.5^2 = 0.25
+    // 3. Adjusted Bias = 2200 * 0.25 = 550
+    // 4. Internal Raw = 900
+    // 5. Final Perf = 900 + 550 = 1450
+    
+    // @ts-ignore
+    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 5);
+    expect(result.perf).toBeGreaterThanOrEqual(1449);
+    expect(result.perf).toBeLessThanOrEqual(1451);
+  });
+
+  it('should hit exactly zero at Day 10 (Induction End)', () => {
+    // 1. Internal Raw (9000 trophies * 0.1) = 900
+    // 2. Heritage Bias = 0
+    // 3. Final Perf = 900
+    
+    // @ts-ignore
+    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 10);
+    expect(result.perf).toBe(900);
   });
 });

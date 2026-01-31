@@ -246,37 +246,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
   }
 
-  // 1c. PROPHET FETCH (Blind Spot Recovery)
-  // For members who joined without being scouted (Manual recruits), we fetch their
-  // profile once to populate their 'Heritage' score.
-  const unknownTags: string[] = [];
-  membersData.items.forEach((m: any) => {
-    const isNew = !warHistoryMap.has(m.tag);
-    if (isNew && !recruitCache.has(m.tag)) {
-        unknownTags.push(m.tag);
-    }
-  });
-
-  if (unknownTags.length > 0) {
-    const fetchBatch = unknownTags.slice(0, 20); // Safety limit
-    console.info(`  └─ Prophet: Detecting ${unknownTags.length} new members in blind spot. Fetching stats for top ${fetchBatch.length}...`);
-    
-    const urls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
-    try {
-        const profiles = Registry.Services.Network.fetchRoyaleAPI(urls);
-        profiles.forEach((p: any) => {
-            if (p && p.tag) {
-                const wins = Number(p.warDayWins || 0);
-                recruitCache.set(p.tag, wins);
-            }
-        });
-        if (profiles.length > 0) {
-            console.info(`  └─ Prophet: Recovered war intelligence for ${profiles.length} unknown members.`);
-        }
-    } catch (e: any) {
-        console.warn(`  ⚠️ Prophet: Background fetch failed: ${e.message}`);
-    }
-  }
+  // 1c. PROPHET ENGINE (Deferred to Step B for tenure context)
 
   // 2. MERGE FRESH API DATA
   if (remoteHistory) {
@@ -389,6 +359,44 @@ function updateLeaderboard(dryRun: boolean = false): void {
     });
   }
 
+  // 1c. PROPHET FETCH (Blind Spot Recovery - Tenure Aware)
+  // For members who joined recently, we fetch their profile once to populate their 
+  // 'Heritage' score if they weren't already scouted.
+  const prophetTags: string[] = [];
+  membersData.items.forEach((m: any) => {
+    const dbRecord = memberDbData.get(m.tag);
+    let daysTracked = 0;
+    if (dbRecord) {
+      const diffTime = Math.abs(now.getTime() - dbRecord.firstSeen.getTime());
+      daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    if (daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && !recruitCache.has(m.tag)) {
+        prophetTags.push(m.tag);
+    }
+  });
+
+  if (prophetTags.length > 0) {
+    const fetchBatch = prophetTags.slice(0, 20); // Safety limit
+    console.info(`  └─ Prophet: Detecting ${prophetTags.length} members in Blessing Period. Fetching stats for top ${fetchBatch.length}...`);
+    
+    const urls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
+    try {
+        const profiles = Registry.Services.Network.fetchRoyaleAPI(urls);
+        profiles.forEach((p: any) => {
+            if (p && p.tag) {
+                const wins = Number(p.warDayWins || 0);
+                recruitCache.set(p.tag, wins);
+            }
+        });
+        if (profiles.length > 0) {
+            console.info(`  └─ Prophet: Recovered war intelligence for ${profiles.length} recent recruits.`);
+        }
+    } catch (e: any) {
+        console.warn(`  ⚠️ Prophet: Background fetch failed: ${e.message}`);
+    }
+  }
+
   // ----------------------------------------------------------------------------
   // 2. LOGIC DELEGATION
   // ----------------------------------------------------------------------------
@@ -456,7 +464,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
       lastSeen.getTime(),
       now.getTime(),
       recruitCache.get(m.tag) || 0, // 🛡️ RECRUIT INTEL: Use Cached Wins if available, else 0
-      currentFame > 0
+      currentFame > 0,
+      daysTracked
     );
 
     const historyString = Array.from(pWarHistory.entries())
