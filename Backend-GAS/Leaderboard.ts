@@ -219,14 +219,23 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
   }
 
-  // 1b. HERITAGE INTELLIGENCE CACHE
-  // We use PropertiesService to persist recruit stats (Wins & Activity) across runs.
+  // 1b. HERITAGE INTELLIGENCE CACHE (Persistent Intelligence Hub)
+  // We use the Store service to persist recruit stats (Wins & Activity) across runs.
   // This saves API quota and ensures score stability during the 10-day induction.
-  const intelStore = PropertiesService.getScriptProperties();
-  const rawIntel = intelStore.getProperty("PROPHET_CACHE_V1") || "{}";
-  const prophetCache = JSON.parse(rawIntel);
-  const recruitCache = new Map<string, { wins: number; active: boolean }>();
-  Object.keys(prophetCache).forEach(tag => recruitCache.set(tag, prophetCache[tag]));
+  const CACHE_KEY = "PROPHET_CACHE_V1";
+  const FRESHNESS_THRESHOLD_MS = 1000 * 60 * 60 * 48; // 48 Hours
+  
+  const recruitCache = new Map<string, { wins: number; active: boolean; lastFetch: number }>();
+  const prophetCache = Registry.Services.Store.props.getJSON<Record<string, any>>(CACHE_KEY, {});
+  
+  Object.keys(prophetCache).forEach(tag => {
+    const val = prophetCache[tag];
+    recruitCache.set(tag, {
+      wins: val.wins || 0,
+      active: val.active !== undefined ? val.active : true,
+      lastFetch: val.lastFetch || 0
+    });
+  });
   
   // Also ingest current Headhunter sheet for the latest scouted targets
   if (hhSheet && hhSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
@@ -241,8 +250,9 @@ function updateLeaderboard(dryRun: boolean = false): void {
     hhData.forEach((row: any) => {
       const tag = String(row[S_HH.TAG] || "").trim().toUpperCase();
       const wins = Number(row[S_HH.WAR_WINS]);
+      // Only ingest from HH if we don't have a fresher API version in cache
       if (tag && !isNaN(wins) && !recruitCache.has(tag)) {
-        recruitCache.set(tag, { wins, active: true }); // Scouted = assumed active
+        recruitCache.set(tag, { wins, active: true, lastFetch: 0 }); // Scouted = assumed active
       }
     });
   }
@@ -361,6 +371,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
   }
 
   // 1c. PROPHET FETCH (Blind Spot Recovery - Tenure Aware)
+  // We identify members who have incomplete stats or stale cached data.
   const prophetTags: string[] = [];
   membersData.items.forEach((m: any) => {
     const dbRecord = memberDbData.get(m.tag);
@@ -370,22 +381,27 @@ function updateLeaderboard(dryRun: boolean = false): void {
       daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
 
-    if (daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && !recruitCache.has(m.tag)) {
+    const cached = recruitCache.get(m.tag);
+    const isStale = !cached || (now.getTime() - cached.lastFetch) > FRESHNESS_THRESHOLD_MS;
+
+    if (daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && isStale) {
         prophetTags.push(m.tag);
     }
   });
 
-  if (prophetTags.length > 0) {
-    const fetchBatch = prophetTags.slice(0, 5); // Conservative safety limit
-    console.info(`  └─ Prophet: Detecting ${prophetTags.length} members in Blessing Period. Fetching full profiles...`);
+  if (prophetTags.length > 0 && !dryRun) {
+    const fetchBatch = prophetTags.slice(0, 5);
+    console.info(`  └─ Prophet: Evaluating ${prophetTags.length} recruits. Refreshing stats for ${fetchBatch.length}...`);
     
     const profileUrls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
     const logUrls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog`);
+    
     try {
-        const profiles = Registry.Services.Network.fetchRoyaleAPI(profileUrls);
-        const logsBatch = Registry.Services.Network.fetchRoyaleAPI(logUrls);
-
-        // Local update of cache (Persistence moved to loop end for housekeeping)
+        // Combined API Batch for performance
+        const allResults = Registry.Services.Network.fetchRoyaleAPI([...profileUrls, ...logUrls]);
+        const profiles = allResults.slice(0, fetchBatch.length);
+        const logsBatch = allResults.slice(fetchBatch.length);
+        
         profiles.forEach((p: any, i: number) => {
             if (p && p.tag) {
                 const wins = Number(p.warDayWins || 0);
@@ -393,12 +409,12 @@ function updateLeaderboard(dryRun: boolean = false): void {
                 const isActive = Array.isArray(logs) && logs.some((b: any) => 
                     ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)
                 );
-                recruitCache.set(p.tag, { wins, active: isActive });
-                console.info(`    └─ [${p.name}] Recovered: ${wins} wins, Active: ${isActive}`);
+                recruitCache.set(p.tag, { wins, active: isActive, lastFetch: now.getTime() });
+                console.info(`    └─ [${p.name}] Fresh Intel: ${wins} wins, Active: ${isActive}`);
             }
         });
     } catch (e: any) {
-        console.warn(`  ⚠️ Prophet: Background fetch failed: ${e.message}`);
+        console.warn(`  ⚠️ Prophet: Refresh failed: ${e.message}`);
     }
   }
 
@@ -495,13 +511,17 @@ function updateLeaderboard(dryRun: boolean = false): void {
   });
 
   // 🛡️ PERSISTENT HOUSEKEEPING: Save recruit intelligence while purging veterans/graduates
-  const exportIntel: any = {};
-  rawMemberResults.forEach(r => {
-    if (r.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && recruitCache.has(r.member.tag)) {
-        exportIntel[r.member.tag] = recruitCache.get(r.member.tag);
-    }
-  });
-  intelStore.setProperty("PROPHET_CACHE_V1", JSON.stringify(exportIntel));
+  if (!dryRun) {
+    Registry.Services.Store.withLock(`LOCK_${CACHE_KEY}`, () => {
+        const finalExport: any = {};
+        rawMemberResults.forEach(r => {
+            if (r.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && recruitCache.has(r.member.tag)) {
+                finalExport[r.member.tag] = recruitCache.get(r.member.tag);
+            }
+        });
+        Registry.Services.Store.props.setJSON(CACHE_KEY, finalExport);
+    });
+  }
 
   let maxPerfScore = 0;
   rawMemberResults.forEach((r) => {

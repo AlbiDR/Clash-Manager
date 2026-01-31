@@ -76,4 +76,18 @@ describe('ScoringSystem Heritage Protocol', () => {
     const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 100, false, 10);
     expect(result.perf).toBe(900);
   });
+  it('should apply Recent War Activity bonus (500 points potential)', () => {
+    // ⚔️ Scenario: A recruit who has fought recently according to Prophet log
+    // Trophies: 9000 (900 raw)
+    // Wins: 0 (0 potential)
+    // Recent War: True (500 bonus * 20 weight = 10,000 potential)
+    // Trophies Skill Potential: 9000 * 1.0 = 9000
+    // Total Potential = 19,000
+    // Bias = 19,000 / 5 = 3800
+    // Total Perf = 900 (Internal) + 3800 (Bias) = 4700
+    
+    // @ts-ignore
+    const result = ScoringSystem.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 0, true, 0);
+    expect(result.perf).toBe(4700);
+  });
 });
