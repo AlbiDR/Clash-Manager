@@ -318,32 +318,35 @@ var View: IView = {
     const P = CONFIG.THEME.PALETTE;
     const SH = CONFIG.SHEETS;
 
-    // 🏗️ Define Roles (Invisible system logic - order matters for index calculation)
-    const REGISTER: Array<{ name: string; color: any; visible: boolean }> = [
-      { name: SH.DB, color: this.hexToRgbColor(P.WORKSPACE.DB), visible: true },
-      { name: SH.LB, color: this.hexToRgbColor(P.WORKSPACE.LB), visible: true },
-      { name: SH.HH, color: this.hexToRgbColor(P.WORKSPACE.HH), visible: true },
-      { name: SH.BL, color: this.hexToRgbColor(P.TECHNICAL), visible: false },
-      { name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false }
+    // 🏗️ Define Roles (Interleaved ordering: Parent -> Backups -> Legacy)
+    const REGISTER: Array<{ name: string; color: any; visible: boolean }> = [];
+
+    const WORKSPACE_CONFIGS = [
+      { name: SH.DB, baseColor: P.WORKSPACE.DB, visible: true },
+      { name: SH.LB, baseColor: P.WORKSPACE.LB, visible: true },
+      { name: SH.HH, baseColor: P.WORKSPACE.HH, visible: true }
     ];
 
-    // 🧬 Hue Inheritance Logic: Backups inherit parent color but darker
-    const WORKSPACE_BASES = [
-      { name: SH.DB, base: this.hexToRgbColor(P.WORKSPACE.DB) },
-      { name: SH.LB, base: this.hexToRgbColor(P.WORKSPACE.LB) },
-      { name: SH.HH, base: this.hexToRgbColor(P.WORKSPACE.HH) }
-    ];
+    WORKSPACE_CONFIGS.forEach(ws => {
+      const baseRgb = this.hexToRgbColor(ws.baseColor);
+      
+      // 1. Primary Sheet
+      REGISTER.push({ name: ws.name, color: baseRgb, visible: ws.visible });
 
-    WORKSPACE_BASES.forEach(ws => {
-      // 1. Rotation Backups (Subtle Darkening: 70% brightness)
-      const backupColor = this.darkenRgb(ws.base, 0.7);
+      // 2. Rotation Backups (70% brightness)
+      const backupColor = this.darkenRgb(baseRgb, 0.7);
       for (let i = 1; i <= CONFIG.SYSTEM.MAX_BACKUPS; i++) {
         REGISTER.push({ name: `Backup ${i} ${ws.name}`, color: backupColor, visible: false });
       }
-      // 2. Legacy Backups (Aggressive Darkening: 45% brightness)
-      const legacyColor = this.darkenRgb(ws.base, 0.45);
+
+      // 3. Legacy Backups (45% brightness)
+      const legacyColor = this.darkenRgb(baseRgb, 0.45);
       REGISTER.push({ name: `Backup LEGACY ${ws.name}`, color: legacyColor, visible: false });
     });
+
+    // 4. Technical / Infrastructure (Trailing)
+    REGISTER.push({ name: SH.BL, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
+    REGISTER.push({ name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
 
     // 🚀 BATCH EXECUTION
     const ssId = ss.getId();
