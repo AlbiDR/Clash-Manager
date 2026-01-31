@@ -64,7 +64,6 @@ export interface IRegistry {
     readonly ScoringSystem: IScoringSystem;
     readonly Headhunter: IHeadhunter;
     readonly Database: IDatabase;
-    readonly Database: IDatabase;
     readonly Roster: IRoster;
     readonly KernelScoring: IKernelScoring;
   };
