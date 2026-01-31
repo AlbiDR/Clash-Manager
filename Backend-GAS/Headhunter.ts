@@ -140,11 +140,11 @@ const Headhunter: IHeadhunter = {
     }
 
     // 7. Scanner: Launch
-    const minTrophies = strategy.floor;
-    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
+    const discoveryFloor = Math.min(strategy.floor, inGameRequirement || 5000);
+    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Floor: ${discoveryFloor})...`);
     
     const scanned = HeadhunterScanner.scanTournaments(
-      minTrophies,
+      discoveryFloor,
       existing, // Used for War Score fallback
       blacklistResult.ids,
       lowQuotaMode
@@ -264,7 +264,7 @@ const Headhunter: IHeadhunter = {
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
         `CURRENT POOL: ${finalPool.length} Qualified Members`,
-        `TROPHY FLOOR: ${minTrophies}`,
+        `TROPHY FLOOR: ${strategy.floor}`,
         `STRATEGY:     ${strategy.method}`,
         `─`.repeat(63),
         `SCAN ACQUISITIONS: ${scanned.length} Found`,

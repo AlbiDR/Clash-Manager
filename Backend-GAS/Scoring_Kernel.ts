@@ -189,9 +189,10 @@ const ScoringKernel: IScoringKernel = {
       if (members.length > ELITE_THRESHOLD) {
         mode = "ELITE";
         const median = ts[Math.floor(ts.length / 2)];
+        console.info(`  [KERNEL] calcTrophyFloor: Elite Mode | Median: ${median} | InGameReq: ${inGameReq}`);
         if (median > floor) {
-          floor = median;
-          method = `🏰 Elite Mode (Median: ${median})`;
+          floor = Math.min(9000, median);
+          method = `🏰 Elite Mode (Median: ${floor})`;
         } else {
           method = `🏰 Elite Mode (At In-Game Cap: ${inGameReq})`;
         }
