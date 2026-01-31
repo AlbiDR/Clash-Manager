@@ -37,7 +37,7 @@ const Headhunter: IHeadhunter = {
       return s;
     };
 
-    console.info(`🚀 Starting Headhunter Scout Pipeline (v12.0.0)...`);
+    console.info(`🚀 Starting Headhunter Scout Pipeline (${VER_HEADHUNTER})...`);
     let sheet = safeSheet(CONFIG.SHEETS.HH);
     Registry.Services.View.setStatusMessage(sheet, "⏳ Initializing...");
 
