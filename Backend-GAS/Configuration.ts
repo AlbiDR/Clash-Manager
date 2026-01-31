@@ -53,7 +53,8 @@ export interface AppConfig {
       DATABASE: string;
       ROSTER: string;
       SCORING_SYSTEM: string;
-      RECRUITER: string;
+      KERNEL_SCORING: string;
+      HEADHUNTER: string;
       CONTROLLER_WEBAPP: string;
       REGISTRY: string;
       API_PUBLIC: string;
@@ -190,8 +191,9 @@ export var CONFIG: AppConfig = {
       DATABASE: "13.0.0",
       ROSTER: "1.0.0",
       SCORING_SYSTEM: "13.0.0",
-      RECRUITER: "10.0.9",
-      CONTROLLER_WEBAPP: "10.0.1",
+      KERNEL_SCORING: "1.0.0",
+      HEADHUNTER: "12.0.0",
+      CONTROLLER_WEBAPP: "11.0.0",
       REGISTRY: "1.0.0",
       API_PUBLIC: "10.0.0",
     },

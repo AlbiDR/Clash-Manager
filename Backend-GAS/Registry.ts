@@ -44,9 +44,6 @@ declare var module: any;
 // 1. Singletons are now explicitly imported above
 
 // 2. Declare Legacy Global Functions (The "Old World")
-declare function updateClanDatabase(): void;
-declare function updateLeaderboard(): void;
-declare function scoutRecruits(): void;
 declare function checkSystemHealth(): void;
 declare function refreshWebPayload(): void;
 declare function createTriggers(): void;
