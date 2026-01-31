@@ -143,10 +143,11 @@ var ScoringSystem: IScoringSystem = {
         ? CONFIG.LEADERBOARD.PENALTIES
         : { INACTIVITY_GRACE_DAYS: 4, DECAY_RATE: 0.08, HERITAGE_DIVISOR: 5 };
     
-    // Safety check for threshold to avoid division by zero
-    const maxBlessingDays = (typeof CONFIG !== "undefined" && (CONFIG as any).SYSTEM)
+    // Safety check for threshold to avoid division by zero or negative days
+    let maxBlessingDays = (typeof CONFIG !== "undefined" && (CONFIG as any).SYSTEM)
         ? (CONFIG.SYSTEM?.PROPHET_TENURE_THRESHOLD || 10) 
         : 10;
+    if (maxBlessingDays <= 0) maxBlessingDays = 10; // Fallback
 
     const rawScore =
       currentFame * W.FAME +
@@ -186,7 +187,7 @@ var ScoringSystem: IScoringSystem = {
     );
 
     // Step 2: Apply Quadratic Decay Factor
-    const timeRatio = Math.max(0, (maxBlessingDays - tenureDays) / maxBlessingDays);
+    const timeRatio = Math.min(1, Math.max(0, (maxBlessingDays - tenureDays) / maxBlessingDays));
     const blessingFactor = timeRatio * timeRatio; // Faster than Math.pow in GAS
     
     const ghostPotentialAdjusted = ghostPotentialFull * blessingFactor;
