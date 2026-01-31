@@ -346,18 +346,29 @@ var View: IView = {
       const sheetId = sheet.getSheetId();
       const meta = nameMap.get(name);
       
-      // AUTO-PRUNE: If it's a "Copy of..." stray, we proactively hide it
+      // AUTO-PRUNE: If it's a "Copy of..." stray, we color it red for visibility but do NOT hide it
+      // as the user may be troubleshooting a failed backup.
       const isStray = !meta && (name.startsWith("Copy of") || name.startsWith("Copia di"));
+
+      const properties: any = {
+        sheetId: sheetId,
+        index: i,
+        tabColor: this.hexToRgbColor(meta ? meta.color : (isStray ? "#ff4444" : P.TECHNICAL))
+      };
+
+      const fields = ["index", "tabColor"];
+
+      // 🛡️ VISIBILITY: Only manage visibility for sheets in our REGISTER.
+      // Unknown/Stray sheets are left visible for user troubleshooting.
+      if (meta) {
+        properties.hidden = !meta.visible;
+        fields.push("hidden");
+      }
 
       requests.push({
         updateSheetProperties: {
-          properties: {
-            sheetId: sheetId,
-            hidden: meta ? !meta.visible : true,
-            index: i, // Force sequential valid index
-            tabColor: this.hexToRgbColor(meta ? meta.color : (isStray ? "#ff4444" : P.TECHNICAL))
-          },
-          fields: 'hidden,index,tabColor'
+          properties: properties,
+          fields: fields.join(",")
         }
       });
     });
