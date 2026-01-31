@@ -239,15 +239,20 @@ const HeadhunterScanner: IHeadhunterScanner = {
         let totalOpponents = 0;
         let rejectedClanned = 0;
 
-        seedLogs.forEach((b: any, sIdx: number) => {
-          if (!b || shadowTags.size >= 100) return;
+        console.info(`  🕵️ [SHADOW] Iterating ${seedLogs.length} results logic...`);
+        for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
+          const b = seedLogs[sIdx];
+          if (!b || shadowTags.size >= 100) continue;
           
-          // 🛡️ STRUCTURAL SAFETY: Recursively find battles regardless of wrapping
+          console.info(`  🔍 [DEBUG] Seed ${sIdx}: Type=${typeof b}, IsArray=${Array.isArray(b)}`);
+          
           const processEntry = (entry: any) => {
             if (!entry || shadowTags.size >= 100) return;
             
             if (Array.isArray(entry)) {
-              entry.forEach(processEntry);
+              for (let j = 0; j < entry.length; j++) {
+                processEntry(entry[j]);
+              }
               return;
             }
 
@@ -257,7 +262,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
               const opponents = entry.opponent || [];
               if (Array.isArray(opponents)) {
                 totalOpponents += opponents.length;
-                opponents.forEach((opp: any) => {
+                for (let k = 0; k < opponents.length; k++) {
+                  const opp = opponents[k];
                   if (shadowTags.size >= 100) return;
                   const isClanless = !opp.clan || !opp.clan.tag;
                   if (isClanless) {
@@ -268,14 +274,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
                   } else {
                     rejectedClanned++;
                   }
-                });
+                }
               }
             }
           };
 
           processEntry(b);
-        });
-        console.info(`  🕵️ [SHADOW] Trace: Battles=${totalBattles}, Opponents=${totalOpponents}, RejectedClanned=${rejectedClanned}, DiscoveredTags=${shadowTags.size}`);
+        }
+        console.info(`  🕵️ [SHADOW] Trace complete. Battles=${totalBattles}, Opponents=${totalOpponents}, Tags=${shadowTags.size}`);
       }
     } else {
       // Local scoring required
