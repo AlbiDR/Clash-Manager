@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.4";
+const VER_HEADHUNTER = "12.1.5";
 
 export interface IHeadhunter {
   scout(): void;
@@ -264,7 +264,7 @@ const Headhunter: IHeadhunter = {
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v12.1.3 REPORT`,
+      `🔭 HEADHUNTER v12.1.5 REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,

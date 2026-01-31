@@ -369,45 +369,46 @@ const HeadhunterScanner: IHeadhunterScanner = {
         });
       }
 
-      // 7. Shadow Profiling Pass
-      if (shadowTags.size > 0) {
-        const shadowList = Array.from(shadowTags);
-        console.info(`  🕵️ [SHADOW] Extraction Complete: Found ${shadowList.length} potential recursive seeds.`);
-        
-        const shadowData: any[] = batchFetch(
-          shadowList,
-          25,
-          (chunk) => Registry.Services.Network.fetchRoyaleAPI(
-            chunk.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
-            remoteAvailable ? W : null,
-          )
-        );
+    }
 
-        shadowData.forEach((p: any) => {
-          if (p && p.tag && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-            const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
-              p.trophies || 0,
-              p.totalDonations || 0,
-              p.warDayWins || 0,
-              false, // Assume no recent war for shadow recruits
-              W,
-            );
+    // 7. Shadow Profiling Pass (Applies to both Remote and Local seeds)
+    if (shadowTags.size > 0) {
+      const shadowList = Array.from(shadowTags);
+      console.info(`  🕵️ [SHADOW] Extraction Complete: Found ${shadowList.length} potential recursive seeds.`);
+      
+      const shadowData: any[] = batchFetch(
+        shadowList,
+        25,
+        (chunk) => Registry.Services.Network.fetchRoyaleAPI(
+          chunk.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+          remoteAvailable ? W : null,
+        )
+      );
 
-            validCandidates.push({
-              tag: p.tag,
-              name: p.name,
-              trophies: p.trophies,
-              donations: p.totalDonations,
-              cards: p.challengeCardsWon,
-              war: p.warDayWins || 0,
-              foundDate: new Date(),
-              invited: false,
-              rawScore: rawScore,
-              source: "SHADOW",
-            });
-          }
-        });
-      }
+      shadowData.forEach((p: any) => {
+        if (p && p.tag && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
+          const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
+            p.trophies || 0,
+            p.totalDonations || 0,
+            p.warDayWins || 0,
+            false, // Assume no recent war for shadow recruits
+            W,
+          );
+
+          validCandidates.push({
+            tag: p.tag,
+            name: p.name,
+            trophies: p.trophies,
+            donations: p.totalDonations,
+            cards: p.challengeCardsWon,
+            war: p.warDayWins || 0,
+            foundDate: new Date(),
+            invited: false,
+            rawScore: rawScore,
+            source: "SHADOW",
+          });
+        }
+      });
     }
 
     return validCandidates;
