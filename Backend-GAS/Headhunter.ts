@@ -140,8 +140,8 @@ const Headhunter: IHeadhunter = {
     }
 
     // 7. Scanner: Launch
-    const discoveryFloor = Math.min(strategy.floor, inGameRequirement || 5000);
-    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Floor: ${discoveryFloor})...`);
+    const discoveryFloor = Math.min(strategy.floor, inGameRequirement || 7500);
+    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Discovery Floor: ${discoveryFloor})...`);
     
     const scanned = HeadhunterScanner.scanTournaments(
       discoveryFloor,
@@ -259,7 +259,7 @@ const Headhunter: IHeadhunter = {
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v12.0.0 REPORT`,
+      `🔭 HEADHUNTER v12.0.1 REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
