@@ -8,3 +8,26 @@ export interface ScoringWeights {
   DON: number;
   WAR: number;
 }
+
+export interface RosterWeights {
+  FAME: number;
+  AVG_FAME: number;
+  DONATION: number;
+  TROPHY: number;
+  WAR_RATE: number;
+}
+
+export interface PenaltiesConfig {
+  INACTIVITY_GRACE_DAYS: number;
+  DECAY_RATE: number;
+  HERITAGE_DIVISOR: number;
+}
+
+export interface RosterSchemaIndex {
+  PERF_SCORE: number;
+  RAW_SCORE: number;
+  WAR_RATE: number;
+  TOTAL_DON: number;
+  DAYS: number;
+  TROPHIES: number;
+}
