@@ -17,6 +17,7 @@
 // Global Version Constant
 // @ts-ignore
 const VER_NETWORK = "1.0.1";
+import type { AppConfig } from "./Configuration";
 import type { IRegistry } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
@@ -443,7 +444,7 @@ var Network: INetwork = {
         try {
             const payload = {
                 tag: decodeURIComponent(cleanTag),
-                apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value)
+                apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: { name: string; value: string }) => k.value)
             };
             const headers: Record<string, string> = { "Content-Type": "application/json" };
             if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
@@ -489,7 +490,7 @@ var Network: INetwork = {
         const payload = {
             tag: CONFIG.SYSTEM.CLAN_TAG,
             type: type,
-            apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value)
+            apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: { name: string; value: string }) => k.value)
         };
         const headers: Record<string, string> = { "Content-Type": "application/json" };
         if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
@@ -591,10 +592,10 @@ var Network: INetwork = {
     return isHealthy;
   },
 
-  auditKeysRemote(keys) {
+  auditKeysRemote(keys: { name: string; value: string }[]) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
     try {
-        const payload = { apiKeys: keys.map(k => k.value) };
+        const payload = { apiKeys: keys.map((k: { name: string; value: string }) => k.value) };
         const headers: Record<string, string> = { "Content-Type": "application/json" };
         if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
@@ -629,7 +630,7 @@ var Network: INetwork = {
     const blacklist = Array.isArray(blacklistSet) ? blacklistSet : Array.from(blacklistSet);
     const payload = {
         tags: tourneyTags,
-        apiKeys: CONFIG.SYSTEM.API_KEYS.map(k => k.value),
+        apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: { name: string; value: string }) => k.value),
         blacklist: blacklist,
         minTrophies,
         scoring

@@ -40,7 +40,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     const uniqueTourneys = new Map<string, TournamentResult>();
     searchResults.forEach((res: TournamentResult) => {
       if (res && res.items)
-        res.items.forEach((t: TournamentMember) => uniqueTourneys.set(t.tag, t));
+        res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
     });
 
     // 2. Worker Handshake
