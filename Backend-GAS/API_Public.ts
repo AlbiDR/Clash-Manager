@@ -65,7 +65,7 @@ declare const VER_CONTROLLER_WEBAPP: string;
 declare const VER_REGISTRY: string;
 declare const VER_ROSTER: string;
 declare const VER_DATABASE: string;
-declare const VER_RECRUITER: string;
+declare const VER_HEADHUNTER: string;
 declare const VER_SCORING: string;
 declare const VER_ORCHESTRATOR: string;
 
@@ -281,7 +281,7 @@ function getModuleVersions(): Record<string, string> {
     "REGISTRY",
     "ROSTER",
     "DATABASE",
-    "RECRUITER",
+    "HEADHUNTER",
     "SCORING",
     "SCORING_KERNEL",
     "ORCHESTRATOR",
@@ -305,7 +305,7 @@ function getMembers(): any[] {
 
   console.info("ℹ️ [API] getMembers: Using local GAS fallback (remote unavailable).");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  // OPTIMIZATION: Use same endpoint as Recruiter to hit shared cache
+  // OPTIMIZATION: Use same endpoint as Headhunter to hit shared cache
   const data = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
   ]);
@@ -393,7 +393,7 @@ function parseCRDateISO(t: string): string {
  */
 function triggerAsyncUpdate(target: string | undefined): any {
   const normTarget = (target || "").toLowerCase().trim();
-  const validTargets = ["members", "leaderboard", "roster", "headhunters"];
+  const validTargets = ["members", "leaderboard", "roster", "headhunter"];
 
   if (!validTargets.includes(normTarget)) {
     return {
@@ -451,7 +451,7 @@ function dispatchAsyncUpdate(): void {
       let sheetName = "";
       if (target === "members") sheetName = CONFIG.SHEETS.DB;
       else if (target === "leaderboard" || target === "roster") sheetName = CONFIG.SHEETS.ROSTER;
-      else if (target === "headhunters") sheetName = CONFIG.SHEETS.HH;
+      else if (target === "headhunter") sheetName = CONFIG.SHEETS.HH;
 
       const sheet = ss.getSheetByName(sheetName);
 
@@ -466,8 +466,8 @@ function dispatchAsyncUpdate(): void {
       } else if (target === "leaderboard" || target === "roster") {
         Registry.Actions["sync:roster"]();
         Registry.Actions["sync:webapp"]();
-      } else if (target === "headhunters") {
-        Registry.Actions["recruit:scout"]();
+      } else if (target === "headhunter") {
+        Registry.Actions["headhunter:scout"]();
       }
 
       if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
