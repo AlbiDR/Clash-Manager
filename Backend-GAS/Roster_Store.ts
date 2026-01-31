@@ -18,9 +18,9 @@ const RosterStore = {
       const oldData = sheet.getRange(startRow, 1, lastRow - startRow + 1, maxCols).getValues();
       oldData.forEach((row: any) => {
         if (row.length > L.RAW_SCORE) {
-          const rawTag = String(row[L.TAG]);
+          const rawTag = String(row[L.TAG]).trim();
           const score = row[L.RAW_SCORE];
-          if (rawTag && rawTag.startsWith("#")) {
+          if (rawTag) {
             const cleanKey = rawTag.replace("#", "").trim().toLowerCase();
             const scoreVal = Number(score);
             if (!isNaN(scoreVal)) scores.set(cleanKey, scoreVal);
@@ -44,11 +44,12 @@ const RosterStore = {
       const histData = sheet.getRange(startRow, 1 + L.HISTORY, lastRow - startRow + 1, 1).getValues();
 
       tagData.forEach((row: any, i: number) => {
-        const tag = String(row[0]);
+        const tag = String(row[0]).trim();
         const histStr = histData[i][0];
         if (tag && typeof histStr === "string" && histStr.length > 0) {
+          const cleanKey = tag.replace("#", "").trim().toUpperCase();
           const archivedMap = Registry.Services.Core.parseWarHistory(histStr);
-          if (archivedMap.size > 0) historyMap.set(tag, archivedMap);
+          if (archivedMap.size > 0) historyMap.set(cleanKey, archivedMap);
         }
       });
     }
