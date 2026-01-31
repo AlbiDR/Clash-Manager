@@ -16,7 +16,7 @@ import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
-const VER_ORCHESTRATOR = "11.0.2";
+const VER_ORCHESTRATOR = "11.0.3";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
