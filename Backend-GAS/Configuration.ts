@@ -170,7 +170,7 @@ export interface AppConfig {
 }
 
 // Global Version Constant for this file
-export const VER_CONFIGURATION = "10.0.7";
+export const VER_CONFIGURATION = "10.0.13";
 
 // Fetch all script properties once at initialization
 let _PROPS: Record<string, string> = {};
@@ -345,44 +345,7 @@ export var CONFIG: AppConfig = {
   HEADHUNTER: {
     TARGET: 50,
     BLACKLIST_DAYS: 30,
-    KEYWORDS: [
-      "0",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "a",
-      "b",
-      "c",
-      "d",
-      "e",
-      "f",
-      "g",
-      "h",
-      "i",
-      "j",
-      "k",
-      "l",
-      "m",
-      "n",
-      "o",
-      "p",
-      "q",
-      "r",
-      "s",
-      "t",
-      "u",
-      "v",
-      "w",
-      "x",
-      "y",
-      "z",
-    ],
+    KEYWORDS: ["pro", "7x", "practice", "war", "elite", "top", "12w", "draft", "master", "tournament", "mega"],
     WEIGHTS: { TROPHY: 0.1, DON: 0.07, WAR: 20.0 },
     DEEP_SCAN: {
       LOCAL: { TOURNEYS: 600, PLAYERS: 500 },
