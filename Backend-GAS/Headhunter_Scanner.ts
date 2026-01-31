@@ -177,6 +177,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
     };
 
     // 6. Deep Profiling
+    const shadowTags = new Set<string>();
+    const processedTags = new Set<string>(tagsToFetch);
+
     if (
       usedRemote &&
       candidates.length > 0 &&
@@ -195,6 +198,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           invited: false,
           rawScore: c.rawScore,
           potentialScore: c.potentialScore,
+          source: "TOURNAMENT",
         });
       });
     } else {
@@ -225,6 +229,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
               foundDate: new Date(),
               invited: false,
               rawScore: p.rawScore,
+              source: "TOURNAMENT",
             });
           } else {
              // Need Battle Logs for War Score
@@ -249,6 +254,25 @@ const HeadhunterScanner: IHeadhunterScanner = {
             hasWar = logs[idx].some((b: any) =>
               ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type),
             );
+
+            // 🕵️ SHADOW SCOUT: Extract Elite Clanless Opponents
+            if (shadowTags.size < 100) {
+              logs[idx].forEach((b: any) => {
+                if (shadowTags.size >= 100) return;
+                // Focus on high-skill matchmaking types
+                if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
+                  const opponents = b.opponent || [];
+                  opponents.forEach((opp: any) => {
+                    if (shadowTags.size >= 100) return;
+                    const isClanless = !opp.clan || !opp.clan.tag;
+                    if (isClanless && opp.tag && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
+                      shadowTags.add(opp.tag);
+                      processedTags.add(opp.tag);
+                    }
+                  });
+                }
+              });
+            }
           }
           let totalWarScore = (p.warDayWins || 0);
           if (existingRecruits && existingRecruits.has(p.tag)) {
@@ -288,7 +312,48 @@ const HeadhunterScanner: IHeadhunterScanner = {
             foundDate: new Date(),
             invited: false,
             rawScore: finalScore,
+            source: "TOURNAMENT",
           });
+        });
+      }
+
+      // 7. Shadow Profiling Pass
+      if (shadowTags.size > 0) {
+        const shadowList = Array.from(shadowTags);
+        console.info(`  🕵️ [SHADOW] Extraction Complete: Found ${shadowList.length} potential recursive seeds.`);
+        
+        const shadowData: any[] = batchFetch(
+          shadowList,
+          25,
+          (chunk) => Registry.Services.Network.fetchRoyaleAPI(
+            chunk.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+            remoteAvailable ? W : null,
+          )
+        );
+
+        shadowData.forEach((p: any) => {
+          if (p && p.tag && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
+            const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
+              p.trophies || 0,
+              p.totalDonations || 0,
+              p.warDayWins || 0,
+              false, // Assume no recent war for shadow recruits
+              W,
+            );
+
+            validCandidates.push({
+              tag: p.tag,
+              name: p.name,
+              trophies: p.trophies,
+              donations: p.totalDonations,
+              cards: p.challengeCardsWon,
+              war: p.warDayWins || 0,
+              foundDate: new Date(),
+              invited: false,
+              rawScore: rawScore,
+              source: "SHADOW",
+            });
+          }
         });
       }
     }

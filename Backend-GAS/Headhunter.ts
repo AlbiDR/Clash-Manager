@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.0.3";
+const VER_HEADHUNTER = "12.1.0";
 
 export interface IHeadhunter {
   scout(): void;
@@ -154,7 +154,8 @@ const Headhunter: IHeadhunter = {
       blacklistResult.ids,
       lowQuotaMode
     );
-    console.info(`  └─ Scan Result: Located ${scanned.length} potential candidate${scanned.length !== 1 ? 's' : ''}.`);
+    const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
+    console.info(`  └─ Scan Result: Located ${scanned.length} potential candidates (${shadowCount} from Shadow Scout).`);
 
     // 8. Merge
     let newArrivals = 0;
@@ -264,7 +265,7 @@ const Headhunter: IHeadhunter = {
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v12.0.3 REPORT`,
+      `🔭 HEADHUNTER v12.1.0 REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
