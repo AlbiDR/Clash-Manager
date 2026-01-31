@@ -239,7 +239,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
     const S_HH = CONFIG.SCHEMA.HH;
     
     hhData.forEach((row: any) => {
-      const tag = String(row[S_HH.TAG]).trim();
+      const tag = String(row[S_HH.TAG] || "").trim().toUpperCase();
       const wins = Number(row[S_HH.WAR_WINS]);
       if (tag && !isNaN(wins) && !recruitCache.has(tag)) {
         recruitCache.set(tag, { wins, active: true }); // Scouted = assumed active
