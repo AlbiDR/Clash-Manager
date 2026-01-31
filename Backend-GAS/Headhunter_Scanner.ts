@@ -238,33 +238,36 @@ const HeadhunterScanner: IHeadhunterScanner = {
         let totalOpponents = 0;
         let rejectedClanned = 0;
 
-        seedLogs.forEach((logList, sIdx) => {
-          if (logList && Array.isArray(logList)) {
-            if (sIdx === 0) console.info(`  🕵️ [SHADOW] Sample seed log: Length=${logList.length}, Type=${typeof logList[0]}`);
-            totalBattles += logList.length;
-            logList.forEach((b: any) => {
-              if (shadowTags.size >= 100) return;
-              // 🛡️ PRECISION SCOUTING: Only look for opponents in Non-Clan modes
-              if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
-                const opponents = b.opponent || [];
-                if (Array.isArray(opponents)) {
-                  totalOpponents += opponents.length;
-                  opponents.forEach((opp: any) => {
-                    if (shadowTags.size >= 100) return;
-                    const isClanless = !opp.clan || !opp.clan.tag;
-                    if (isClanless) {
-                      if (opp.tag && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
-                        shadowTags.add(opp.tag);
-                        processedTags.add(opp.tag);
-                      }
-                    } else {
-                      rejectedClanned++;
+        seedLogs.forEach((b: any) => {
+          if (!b || shadowTags.size >= 100) return;
+          
+          // 🛡️ RECURSION FIX: Treat seedLogs as a flattened array of battles
+          // We support both nested (old) and flat (new) structures for maximum resilience
+          const battles = Array.isArray(b) ? b : [b];
+          
+          battles.forEach((battle: any) => {
+            if (!battle || shadowTags.size >= 100) return;
+            totalBattles++;
+
+            if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(battle.type)) {
+              const opponents = battle.opponent || [];
+              if (Array.isArray(opponents)) {
+                totalOpponents += opponents.length;
+                opponents.forEach((opp: any) => {
+                  if (shadowTags.size >= 100) return;
+                  const isClanless = !opp.clan || !opp.clan.tag;
+                  if (isClanless) {
+                    if (opp.tag && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
+                      shadowTags.add(opp.tag);
+                      processedTags.add(opp.tag);
                     }
-                  });
-                }
+                  } else {
+                    rejectedClanned++;
+                  }
+                });
               }
-            });
-          }
+            }
+          });
         });
         console.info(`  🕵️ [SHADOW] Trace: Battles=${totalBattles}, Opponents=${totalOpponents}, RejectedClanned=${rejectedClanned}, DiscoveredTags=${shadowTags.size}`);
       }
