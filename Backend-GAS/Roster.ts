@@ -191,4 +191,22 @@ const Roster: IRoster = {
   }
 };
 
+/**
+ * 🌍 GLOBAL BRIDGE (Legacy Support)
+ */
+function updateLeaderboard() {
+  Roster.update();
+}
+
+const VER_ROSTER = "1.0.0";
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Roster;
+}
+
+(function(scope: any) {
+  Object.assign(scope, { Roster, updateLeaderboard, VER_ROSTER });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
+
 export default Roster;
