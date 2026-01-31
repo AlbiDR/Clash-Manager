@@ -219,31 +219,32 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
   }
 
-  // 1b. HEADHUNTER CACHE (Recruit Intelligence)
-  // Fetch War Wins from the Headhunter sheet to give new recruits their specific "Potential" score,
-  // bypassing the API limitation on the /members endpoint.
-  const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-  const recruitCache = new Map<string, number>(); // Tag -> WarWins
+  // 1b. HERITAGE INTELLIGENCE CACHE
+  // We use PropertiesService to persist recruit stats (Wins & Activity) across runs.
+  // This saves API quota and ensures score stability during the 10-day induction.
+  const intelStore = PropertiesService.getScriptProperties();
+  const rawIntel = intelStore.getProperty("PROPHET_CACHE_V1") || "{}";
+  const prophetCache = JSON.parse(rawIntel);
+  const recruitCache = new Map<string, { wins: number; active: boolean }>();
+  Object.keys(prophetCache).forEach(tag => recruitCache.set(tag, prophetCache[tag]));
   
+  // Also ingest current Headhunter sheet for the latest scouted targets
   if (hhSheet && hhSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
     const hhData = hhSheet.getRange(
       CONFIG.LAYOUT.DATA_START_ROW, 
       1, 
       hhSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
-      10 // Read enough cols to get WAR_WINS
+      10
     ).getValues();
     const S_HH = CONFIG.SCHEMA.HH;
     
     hhData.forEach((row: any) => {
       const tag = String(row[S_HH.TAG]).trim();
       const wins = Number(row[S_HH.WAR_WINS]);
-      if (tag && !isNaN(wins)) {
-        recruitCache.set(tag, wins);
+      if (tag && !isNaN(wins) && !recruitCache.has(tag)) {
+        recruitCache.set(tag, { wins, active: true }); // Scouted = assumed active
       }
     });
-    if (recruitCache.size > 0) {
-        console.info(`  └─ Headhunter: Cached war intelligence for ${recruitCache.size} scouted targets.`);
-    }
   }
 
   // 1c. PROPHET ENGINE (Deferred to Step B for tenure context)
@@ -360,8 +361,6 @@ function updateLeaderboard(dryRun: boolean = false): void {
   }
 
   // 1c. PROPHET FETCH (Blind Spot Recovery - Tenure Aware)
-  // For members who joined recently, we fetch their profile once to populate their 
-  // 'Heritage' score if they weren't already scouted.
   const prophetTags: string[] = [];
   membersData.items.forEach((m: any) => {
     const dbRecord = memberDbData.get(m.tag);
@@ -377,21 +376,27 @@ function updateLeaderboard(dryRun: boolean = false): void {
   });
 
   if (prophetTags.length > 0) {
-    const fetchBatch = prophetTags.slice(0, 20); // Safety limit
-    console.info(`  └─ Prophet: Detecting ${prophetTags.length} members in Blessing Period. Fetching stats for top ${fetchBatch.length}...`);
+    const fetchBatch = prophetTags.slice(0, 5); // Conservative safety limit
+    console.info(`  └─ Prophet: Detecting ${prophetTags.length} members in Blessing Period. Fetching full profiles...`);
     
-    const urls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
+    const profileUrls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
+    const logUrls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog`);
     try {
-        const profiles = Registry.Services.Network.fetchRoyaleAPI(urls);
-        profiles.forEach((p: any) => {
+        const profiles = Registry.Services.Network.fetchRoyaleAPI(profileUrls);
+        const logsBatch = Registry.Services.Network.fetchRoyaleAPI(logUrls);
+
+        // Local update of cache (Persistence moved to loop end for housekeeping)
+        profiles.forEach((p: any, i: number) => {
             if (p && p.tag) {
                 const wins = Number(p.warDayWins || 0);
-                recruitCache.set(p.tag, wins);
+                const logs = logsBatch[i] || [];
+                const isActive = Array.isArray(logs) && logs.some((b: any) => 
+                    ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)
+                );
+                recruitCache.set(p.tag, { wins, active: isActive });
+                console.info(`    └─ [${p.name}] Recovered: ${wins} wins, Active: ${isActive}`);
             }
         });
-        if (profiles.length > 0) {
-            console.info(`  └─ Prophet: Recovered war intelligence for ${profiles.length} recent recruits.`);
-        }
     } catch (e: any) {
         console.warn(`  ⚠️ Prophet: Background fetch failed: ${e.message}`);
     }
@@ -455,6 +460,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
       totalBattleCredits,
       eligibleBattleDays,
     );
+    const cachedIntel = recruitCache.get(m.tag);
     const scores = Registry.Services.ScoringSystem.computeScores(
       currentFame,
       avgWarFame,
@@ -463,8 +469,8 @@ function updateLeaderboard(dryRun: boolean = false): void {
       warRateVal,
       lastSeen.getTime(),
       now.getTime(),
-      recruitCache.get(m.tag) || 0, // 🛡️ RECRUIT INTEL: Use Cached Wins if available, else 0
-      currentFame > 0,
+      cachedIntel ? cachedIntel.wins : 0,
+      currentFame > 0 || (cachedIntel ? cachedIntel.active : false),
       daysTracked
     );
 
@@ -487,6 +493,15 @@ function updateLeaderboard(dryRun: boolean = false): void {
       cleanKey: m.tag.replace("#", "").trim().toLowerCase(),
     });
   });
+
+  // 🛡️ PERSISTENT HOUSEKEEPING: Save recruit intelligence while purging veterans/graduates
+  const exportIntel: any = {};
+  rawMemberResults.forEach(r => {
+    if (r.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && recruitCache.has(r.member.tag)) {
+        exportIntel[r.member.tag] = recruitCache.get(r.member.tag);
+    }
+  });
+  intelStore.setProperty("PROPHET_CACHE_V1", JSON.stringify(exportIntel));
 
   let maxPerfScore = 0;
   rawMemberResults.forEach((r) => {
