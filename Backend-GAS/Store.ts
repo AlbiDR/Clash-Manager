@@ -110,7 +110,7 @@ const StoreInternal = {
 
     // 3. Reassemble
     chunks.sort((a, b) => a.index - b.index);
-    return chunks.map(c => c.val).join("");
+    return chunks.map((c: { val: string }) => c.val).join("");
   },
 
   /**
@@ -229,7 +229,7 @@ var Store: IStore = {
   // CACHE MANANGER (CacheService)
   // ------------------------------------------------------------------------
   cache: {
-    getLarge(key) {
+    getLarge(key: string) {
       const cache = CacheService.getScriptCache();
       
       // Specialized read for Cache (supports meta optimization)
@@ -255,7 +255,7 @@ var Store: IStore = {
       return null;
     },
 
-    putLarge(key, value, expirationSec = CONSTANTS.CACHE.EXPIRATION) {
+    putLarge(key: string, value: string, expirationSec = CONSTANTS.CACHE.EXPIRATION) {
       const cache = CacheService.getScriptCache();
 
       if (value.length <= CONSTANTS.CACHE.CHUNK_SIZE) {
@@ -386,6 +386,6 @@ if (typeof module !== "undefined" && module.exports) {
 
 (function(scope: any) {
   Object.assign(scope, { Store });
-})(typeof globalThis !== 'undefined' ? globalThis : this);
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Store;

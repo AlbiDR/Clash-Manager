@@ -209,7 +209,7 @@ function updateLeaderboard(dryRun: boolean = false): void {
           if (archivedMap.size > 0) {
             if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
             const userMap = warHistoryMap.get(tag)!;
-            archivedMap.forEach((fame, wk) => userMap.set(wk, fame));
+            archivedMap.forEach((fame: number, wk: string) => userMap.set(wk, fame));
           }
         }
       });
@@ -667,6 +667,18 @@ function updateLeaderboard(dryRun: boolean = false): void {
       ]
     );
     console.info(`✅ Leaderboard Cycle Finished: ${actualCount} members ranked.`);
+}
+
+/**
+ * 🏆 LEADERBOARD SERVICE SINGLETON
+ */
+const Leaderboard = {
+  updateLeaderboard
+};
+
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { Leaderboard, VER_LEADERBOARD };
 }
 
 /**

@@ -668,7 +668,7 @@ function verifyApiKeysInternal(
     triggerScoutRecruits,
     checkSystemHealth,
     triggerVerifyApiKeys,
-    setupTriggers,
+    createTriggers,
     dispatchMaster,
     taskWarmUpWorker,
     VER_ORCHESTRATOR,
