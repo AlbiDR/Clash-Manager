@@ -5,7 +5,7 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Single Source of Truth for the entire application.
  * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 10.0.9
+ * 🏷️ VERSION: 10.0.10
  * ============================================================================
  */
 
@@ -385,10 +385,10 @@ export var CONFIG: AppConfig = {
     ],
     WEIGHTS: { TROPHY: 0.1, DON: 0.07, WAR: 20.0 },
     DEEP_SCAN: {
-      LOCAL: { TOURNEYS: 300, PLAYERS: 250 },
-      REMOTE: { TOURNEYS: 1000, PLAYERS: 1000 },
-      MAX_TOURNEYS: 2000,
-      MAX_PLAYERS: 2000,
+      LOCAL: { TOURNEYS: 600, PLAYERS: 500 },
+      REMOTE: { TOURNEYS: 1500, PLAYERS: 1500 },
+      MAX_TOURNEYS: 3000,
+      MAX_PLAYERS: 3000,
     },
     BENCHMARK_DECAY: 0.0096, // ~1% Daily Decay (Day 30 = ~75% Value)
     BENCHMARK_PERCENTILE: 0.05, // Top 5% of valid pool
