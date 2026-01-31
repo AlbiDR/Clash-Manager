@@ -85,11 +85,11 @@ var Schema: ISchema = {
     // Safety check for CONFIG presence
     if (typeof CONFIG === 'undefined' || !CONFIG.SHEETS) return;
 
-    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
-    if (lbSheet)
+    const rosterSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
+    if (rosterSheet)
       Object.assign(
-        CONFIG.SCHEMA.LB,
-        this.resolveSchemaIndices(lbSheet, CONFIG.SCHEMA.LB_HEADERS, 2, 2),
+        CONFIG.SCHEMA.ROSTER,
+        this.resolveSchemaIndices(rosterSheet, CONFIG.SCHEMA.ROSTER_HEADERS, 2, 2),
       );
       
     const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);

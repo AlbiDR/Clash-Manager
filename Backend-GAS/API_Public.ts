@@ -63,8 +63,8 @@ declare function refreshWebPayload(): void;
 declare const VER_CONFIGURATION: string;
 declare const VER_CONTROLLER_WEBAPP: string;
 declare const VER_REGISTRY: string;
-declare const VER_LEADERBOARD: string;
-declare const VER_LOGGER: string;
+declare const VER_ROSTER: string;
+declare const VER_DATABASE: string;
 declare const VER_RECRUITER: string;
 declare const VER_SCORING_SYSTEM: string;
 declare const VER_ORCHESTRATOR: string;
@@ -279,8 +279,8 @@ function getModuleVersions(): Record<string, string> {
     "CONFIGURATION",
     "CONTROLLER_WEBAPP",
     "REGISTRY",
-    "LEADERBOARD",
-    "LOGGER",
+    "ROSTER",
+    "DATABASE",
     "RECRUITER",
     "SCORING_SYSTEM",
     "ORCHESTRATOR",
@@ -392,7 +392,7 @@ function parseCRDateISO(t: string): string {
  */
 function triggerAsyncUpdate(target: string | undefined): any {
   const normTarget = (target || "").toLowerCase().trim();
-  const validTargets = ["members", "leaderboard", "headhunters"];
+  const validTargets = ["members", "leaderboard", "roster", "headhunters"];
 
   if (!validTargets.includes(normTarget)) {
     return {
@@ -449,7 +449,7 @@ function dispatchAsyncUpdate(): void {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       let sheetName = "";
       if (target === "members") sheetName = CONFIG.SHEETS.DB;
-      else if (target === "leaderboard") sheetName = CONFIG.SHEETS.LB;
+      else if (target === "leaderboard" || target === "roster") sheetName = CONFIG.SHEETS.ROSTER;
       else if (target === "headhunters") sheetName = CONFIG.SHEETS.HH;
 
       const sheet = ss.getSheetByName(sheetName);
@@ -462,8 +462,8 @@ function dispatchAsyncUpdate(): void {
       if (target === "members") {
         Registry.Actions["sync:database"]();
         Registry.Actions["sync:webapp"]();
-      } else if (target === "leaderboard") {
-        Registry.Actions["sync:leaderboard"]();
+      } else if (target === "leaderboard" || target === "roster") {
+        Registry.Actions["sync:roster"]();
         Registry.Actions["sync:webapp"]();
       } else if (target === "headhunters") {
         Registry.Actions["recruit:scout"]();

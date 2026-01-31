@@ -277,7 +277,7 @@ var View: IView = {
   },
 
   refreshMobileControls: function (ss) {
-    const sheets = [CONFIG.SHEETS.DB, CONFIG.SHEETS.LB, CONFIG.SHEETS.HH];
+    const sheets = [CONFIG.SHEETS.DB, CONFIG.SHEETS.ROSTER, CONFIG.SHEETS.HH];
     sheets.forEach((name) => {
       const sheet = ss.getSheetByName(name);
       if (sheet) {
@@ -323,7 +323,7 @@ var View: IView = {
 
     const WORKSPACE_CONFIGS = [
       { name: SH.DB, baseColor: P.WORKSPACE.DB, visible: true },
-      { name: SH.LB, baseColor: P.WORKSPACE.LB, visible: true },
+      { name: SH.ROSTER, baseColor: P.WORKSPACE.ROSTER, visible: true },
       { name: SH.HH, baseColor: P.WORKSPACE.HH, visible: true }
     ];
 

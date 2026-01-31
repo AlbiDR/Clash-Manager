@@ -50,8 +50,8 @@ export interface AppConfig {
       CONFIGURATION: string;
       UTILITIES: string;
       ORCHESTRATOR: string;
-      LOGGER: string;
-      LEADERBOARD: string;
+      DATABASE: string;
+      ROSTER: string;
       SCORING_SYSTEM: string;
       RECRUITER: string;
       CONTROLLER_WEBAPP: string;
@@ -79,7 +79,7 @@ export interface AppConfig {
   };
   SHEETS: {
     DB: string;
-    LB: string;
+    ROSTER: string;
     HH: string;
     BL: string;
     EVT: string;
@@ -103,12 +103,12 @@ export interface AppConfig {
     };
   };
   SCHEMA: {
-    LB_HEADERS: Record<string, string>;
+    ROSTER_HEADERS: Record<string, string>;
     HH_HEADERS: Record<string, string>;
     DB_HEADERS: Record<string, string>;
     DB: Record<string, number>;
     HH: Record<string, number>;
-    LB: Record<string, number>;
+    ROSTER: Record<string, number>;
   };
   HEADHUNTER: {
     TARGET: number;
@@ -130,7 +130,7 @@ export interface AppConfig {
     BENCHMARK_MIN_POOL: number;
     MIN_TROPHIES: number; // ⚡ NEW: Search override
   };
-  LEADERBOARD: {
+  ROSTER: {
     WEIGHTS: {
       FAME: number;
       AVG_FAME: number;
@@ -148,7 +148,7 @@ export interface AppConfig {
     PALETTE: {
       WORKSPACE: {
         DB: string;
-        LB: string;
+        ROSTER: string;
         HH: string;
       };
       TECHNICAL: string;
@@ -187,10 +187,10 @@ export var CONFIG: AppConfig = {
     MANIFEST: {
       CONFIGURATION: "10.0.7",
       UTILITIES: "10.0.6",
-      ORCHESTRATOR: "10.0.4",
-      LOGGER: "10.0.1",
-      LEADERBOARD: "10.0.1",
-      SCORING_SYSTEM: "10.0.0",
+      ORCHESTRATOR: "11.0.0",
+      DATABASE: "13.0.0",
+      ROSTER: "1.0.0",
+      SCORING_SYSTEM: "13.0.0",
       RECRUITER: "10.0.9",
       CONTROLLER_WEBAPP: "10.0.1",
       REGISTRY: "1.0.0",
@@ -234,7 +234,7 @@ export var CONFIG: AppConfig = {
 
   SHEETS: {
     DB: "Clan Database",
-    LB: "Leaderboard",
+    ROSTER: "Leaderboard",
     HH: "Headhunter",
     BL: "HH_BLACKLIST",
     EVT: "HH_EVENT_LOG",
@@ -246,7 +246,7 @@ export var CONFIG: AppConfig = {
     MOBILE_TRIGGER_CELL: "A1",
     MENU_ITEMS: {
       DB: "☁️ Sync Database",
-      LB: "🏆 Update Leaderboard",
+      ROSTER: "🏆 Update Leaderboard",
       HH: "🔭 Scout Recruits",
       ALL: "🚀 Run Master Sequence",
       MOBILE: "📱 Enable Mobile Controls",
@@ -257,7 +257,7 @@ export var CONFIG: AppConfig = {
   },
 
   SCHEMA: {
-    LB_HEADERS: {
+    ROSTER_HEADERS: {
       TAG: "Tag",
       NAME: "Name",
       ROLE: "Role",
@@ -270,7 +270,7 @@ export var CONFIG: AppConfig = {
       WAR_RATE: "War Rate",
       AVG_WAR_FAME: "Average War Fame",
       HISTORY: "War History",
-      RAW_SCORE: "Performance Raw Score", // ⚡ UPDATED: Explicit Naming
+      RAW_SCORE: "Performance Raw Score",
       PERF_SCORE: "Performance Score",
       TREND: "Trend",
     },
@@ -323,7 +323,7 @@ export var CONFIG: AppConfig = {
       RAW_SCORE: 8,
       POTENTIAL_SCORE: 9,
     },
-    LB: {
+    ROSTER: {
       TAG: 0,
       NAME: 1,
       ROLE: 2,
@@ -396,7 +396,7 @@ export var CONFIG: AppConfig = {
     MIN_TROPHIES: 0, // ⚡ Set to >0 to override auto-threshold (e.g. 5000)
   },
 
-  LEADERBOARD: {
+  ROSTER: {
     WEIGHTS: {
       FAME: 3,
       AVG_FAME: 15,
@@ -414,7 +414,7 @@ export var CONFIG: AppConfig = {
     PALETTE: {
       WORKSPACE: {
         DB: "#3f51b5", // Indigo
-        LB: "#00796b", // Emerald
+        ROSTER: "#00796b", // Emerald
         HH: "#c62828", // Vibrant Crimson
       },
       TECHNICAL: "#546e7a", // Slate

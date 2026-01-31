@@ -17,13 +17,13 @@ const Roster: IRoster = {
   update(): void {
     console.info("🏆 Starting Roster/Leaderboard Generation Pipeline...");
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(CONFIG.SHEETS.LB);
-    if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.LB);
+    let sheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
+    if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.ROSTER);
 
     // 1. DYNAMIC SYNC
     Registry.Services.Core.logStep(1, 7, "Syncing Dynamic Schema indices...");
     Registry.Services.Schema.bootDynamicSchema();
-    const L = CONFIG.SCHEMA.LB;
+    const L = CONFIG.SCHEMA.ROSTER;
 
     // 2. CONFIG CHECK
     if (!CONFIG.SYSTEM.CLAN_TAG) {
@@ -145,7 +145,7 @@ const Roster: IRoster = {
       const normPerf = maxPerfScore > 0 ? Math.min(100, Math.round((r.scores.perf / maxPerfScore) * 100)) : 0;
       const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
       
-      const row = new Array(Object.keys(CONFIG.SCHEMA.LB_HEADERS).length).fill("");
+      const row = new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill("");
       row[L.TAG] = r.tag;
       row[L.NAME] = r.name;
       row[L.ROLE] = r.role;
@@ -169,9 +169,9 @@ const Roster: IRoster = {
 
     // 7. RENDERING
     Registry.Services.Core.logStep(7, 7, "Applying visual layout & pushing to web...");
-    const headersLen = Object.keys(CONFIG.SCHEMA.LB_HEADERS).length;
+    const headersLen = Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length;
     const HEADERS_ARRAY = new Array(headersLen).fill("");
-    (Object.keys(CONFIG.SCHEMA.LB_HEADERS) as any[]).forEach(k => HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.LB_HEADERS[k]);
+    (Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS) as any[]).forEach(k => HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.ROSTER_HEADERS[k]);
 
     Sheets.Spreadsheets.Values.update({ values: finalRows }, ss.getId(), `'${sheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, { valueInputOption: "USER_ENTERED" });
     RosterView.restoreVisuals(sheet, finalRows.length, HEADERS_ARRAY);

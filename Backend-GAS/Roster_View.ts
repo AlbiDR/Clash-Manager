@@ -11,7 +11,7 @@ const RosterView = {
   restoreVisuals(sheet: any, rowCount: number, HEADERS_ARRAY: string[]) {
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
-    const L = CONFIG.SCHEMA.LB; 
+    const L = CONFIG.SCHEMA.ROSTER; 
     const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
     const contentCols = HEADERS_ARRAY.length;
 

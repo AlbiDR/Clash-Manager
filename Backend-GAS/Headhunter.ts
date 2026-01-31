@@ -164,13 +164,13 @@ const Headhunter: IHeadhunter = {
     // 9. Benchmarking (Hybrid)
     // ... (unchanged benchmarking logic) ...
     Registry.Services.Core.logStep(8, 9, "Calculating Performance Benchmarks...");
-    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.LB);
+    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
     const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
     
     if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const ssId = ss.getId();
       const sheetName = lbSheet.getName();
-      const L = CONFIG.SCHEMA.LB;
+      const L = CONFIG.SCHEMA.ROSTER;
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const lastRow = lbSheet.getLastRow();
       
