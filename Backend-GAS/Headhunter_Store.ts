@@ -203,17 +203,27 @@ const HeadhunterStore: IHeadhunterStore = {
     }
 
     if (rowsToDelete.length > 0) {
-      // Sort descending to maintain index integrity during deletion
       const sortedRows = [...new Set(rowsToDelete)].sort((a, b) => b - a);
-      sortedRows.forEach((idx) => {
-        try {
-          sheet.deleteRow(idx);
-        } catch (e) {
-          console.warn(`⚠️ [STORE] Failed to delete row ${idx}: ${e}`);
+      const sheetId = sheet.getSheetId();
+      const ssId = ss.getId();
+
+      const deleteRequests = sortedRows.map(rowIdx => ({
+        deleteDimension: {
+          range: {
+            sheetId: sheetId,
+            dimension: "ROWS",
+            startIndex: rowIdx - 1,
+            endIndex: rowIdx
+          }
         }
-      });
-      // @ts-ignore
-      if (typeof SpreadsheetApp !== 'undefined') SpreadsheetApp.flush();
+      }));
+
+      if (deleteRequests.length > 0) {
+        Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
+        console.info(`  └─ Cleanup: Atomic deletion of ${deleteRequests.length} row(s) complete.`);
+        // @ts-ignore
+        if (typeof SpreadsheetApp !== 'undefined') SpreadsheetApp.flush();
+      }
     }
 
     return {
