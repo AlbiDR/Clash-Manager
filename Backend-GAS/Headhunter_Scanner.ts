@@ -237,8 +237,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
           if (logList && Array.isArray(logList)) {
             logList.forEach((b: any) => {
               if (shadowTags.size >= 100) return;
-              // 🛡️ WIDE NET: Include War and Multi-stage modes
-              if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)) {
+              // 🛡️ PRECISION SCOUTING: Only look for opponents in Non-Clan modes
+              if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
                 const opponents = b.opponent || [];
                 opponents.forEach((opp: any) => {
                   if (shadowTags.size >= 100) return;
@@ -311,8 +311,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
             if (shadowTags.size < 100) {
               logs[idx].forEach((b: any) => {
                 if (shadowTags.size >= 100) return;
-                // 🛡️ WIDE NET: Include War and Multi-stage modes
-                if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)) {
+                // 🛡️ PRECISION SCOUTING: Only look for opponents in Non-Clan modes
+                if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
                   const opponents = b.opponent || [];
                   opponents.forEach((opp: any) => {
                     if (shadowTags.size >= 100) return;
