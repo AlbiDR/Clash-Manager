@@ -346,13 +346,16 @@ var View: IView = {
       const sheetId = sheet.getSheetId();
       const meta = nameMap.get(name);
       
+      // AUTO-PRUNE: If it's a "Copy of..." stray, we proactively hide it
+      const isStray = !meta && (name.startsWith("Copy of") || name.startsWith("Copia di"));
+
       requests.push({
         updateSheetProperties: {
           properties: {
             sheetId: sheetId,
             hidden: meta ? !meta.visible : true,
             index: i, // Force sequential valid index
-            tabColor: this.hexToRgbColor(meta ? meta.color : P.TECHNICAL)
+            tabColor: this.hexToRgbColor(meta ? meta.color : (isStray ? "#ff4444" : P.TECHNICAL))
           },
           fields: 'hidden,index,tabColor'
         }
@@ -380,84 +383,99 @@ var View: IView = {
 
   /**
    * 🛡️ ROBUST BACKUP SYSTEM
+   * Rotates backups and creates a fresh clone using atomic operations.
    */
   backupSheet: function (ss, sheetName) {
     const lock = LockService.getDocumentLock();
     try {
-      if (!lock!.tryLock(20000)) return; // Wait 20s for previous task to finish
+      if (!lock!.tryLock(20000)) return; 
       
       const sheet = ss.getSheetByName(sheetName);
-      if (!sheet) {
-        lock!.releaseLock();
-        return;
-      }
+      if (!sheet) return;
 
       const MAX_BACKUPS = CONFIG.SYSTEM.MAX_BACKUPS;
       const backup1Name = `Backup 1 ${sheetName}`;
+      const ssId = ss.getId();
+      const sheetId = sheet.getSheetId();
+
+      // 1. Check if backup is even necessary (Idempotency)
       const existingBackup1 = ss.getSheetByName(backup1Name);
-
       if (existingBackup1) {
-        const currentLastRow = sheet.getLastRow();
-        const currentLastCol = sheet.getLastColumn();
-
-        if (
-          currentLastRow === existingBackup1.getLastRow() &&
-          currentLastCol === existingBackup1.getLastColumn()
-        ) {
-          const startRow = currentLastRow > 1 ? 2 : 1;
-          const numRows =
-            currentLastRow > 1 ? currentLastRow - startRow + 1 : 1;
-
-          if (currentLastRow > 0) {
-            const currentData = sheet
-              .getRange(startRow, 1, numRows, currentLastCol)
-              .getValues();
-            const backupData = existingBackup1
-              .getRange(startRow, 1, numRows, currentLastCol)
-              .getValues();
-
+        const lastRow = sheet.getLastRow();
+        const lastCol = sheet.getLastColumn();
+        if (lastRow === existingBackup1.getLastRow() && lastCol === existingBackup1.getLastColumn()) {
+          const numRows = Math.min(100, lastRow); // Sample check
+          if (numRows > 0) {
+            const currentData = sheet.getRange(1, 1, numRows, lastCol).getValues();
+            const backupData = existingBackup1.getRange(1, 1, numRows, lastCol).getValues();
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
-              console.log(`🛡️ Backup skipped for '${sheetName}'`);
-              this.enforceGlobalTabHygiene(ss);
-              return;
+              console.log(`🛡️ Backup skipped for '${sheetName}' (No changes)`);
+              return; // No hygiene needed if nothing changed
             }
           }
         }
       }
 
-      console.log(`🛡️ Creating backup for '${sheetName}'...`);
+      console.log(`🛡️ Rotating backups for '${sheetName}'...`);
+      
+      // 2. Atomic Rotation Strategy (Batch Update)
+      const requests: any[] = [];
+      const sheets = ss.getSheets();
+      
+      // A. Delete oldest
       const oldestName = `Backup ${MAX_BACKUPS} ${sheetName}`;
-      const oldest = ss.getSheetByName(oldestName);
-      if (oldest) ss.deleteSheet(oldest);
-
-      for (let i = MAX_BACKUPS - 1; i >= 1; i--) {
-        const currentName = `Backup ${i} ${sheetName}`;
-        const nextName = `Backup ${i + 1} ${sheetName}`;
-        const existing = ss.getSheetByName(currentName);
-        if (existing) existing.setName(nextName);
+      const oldest = sheets.find((s: any) => s.getName() === oldestName);
+      if (oldest) {
+        requests.push({ deleteSheet: { sheetId: oldest.getSheetId() } });
       }
 
-      // 🛡️ HIGH-PERFORMANCE API CLONE
-      const ssId = ss.getId();
-      const sheetId = sheet.getSheetId();
-      
+      // B. Shift others backwards
+      for (let i = MAX_BACKUPS - 1; i >= 1; i--) {
+        const curName = `Backup ${i} ${sheetName}`;
+        const targetName = `Backup ${i + 1} ${sheetName}`;
+        const s = sheets.find((sh: any) => sh.getName() === curName);
+        if (s) {
+          requests.push({
+            updateSheetProperties: {
+              properties: { sheetId: s.getSheetId(), title: targetName },
+              fields: "title"
+            }
+          });
+        }
+      }
+
+      if (requests.length > 0) {
+        Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+      }
+
+      // 3. High-Performance Clone
+      console.log(`🛡️ Cloning '${sheetName}'...`);
       const copyResponse = Sheets.Spreadsheets!.Sheets!.copyTo({
         destinationSpreadsheetId: ssId
       }, ssId, sheetId);
-      
+
       const copySheetId = copyResponse.sheetId;
-      const copySheet = ss.getSheets().find((s: any) => s.getSheetId() === copySheetId);
       
-      if (copySheet) {
-        copySheet.setName(backup1Name);
-        copySheet.setTabColor("#cccccc");
-        this.tagSheet(copySheet, "BACKUP");
-        this.enforceGlobalTabHygiene(ss);
-        sheet.activate();
+      // 4. Finalize Clone (Rename & Tag)
+      // ⚡ Robust Verification: Ensure the copied sheet is found even if GAS is slow
+      SpreadsheetApp.flush(); 
+      const allSheets = ss.getSheets();
+      const clonedSheet = allSheets.find((s: any) => s.getSheetId() === copySheetId);
+
+      if (clonedSheet) {
+        clonedSheet.setName(backup1Name);
+        clonedSheet.setTabColor("#cccccc");
+        clonedSheet.hideSheet(); // Proactive hide
+        this.tagSheet(clonedSheet, "BACKUP");
+      } else {
+        throw new Error("Cloned sheet not found in spreadsheet after copyTo.");
       }
+
     } catch (e: any) {
-      console.warn(`⚠️ Backup Failed for '${sheetName}': ${e.message}`);
+      console.warn(`⚠️ Backup Error for '${sheetName}': ${e.message}`);
     } finally {
+      // Always run hygiene to clean up any stray "Copy of..." tabs created by failed attempts
+      this.enforceGlobalTabHygiene(ss);
       try { lock!.releaseLock(); } catch(e: any) {}
     }
   },
