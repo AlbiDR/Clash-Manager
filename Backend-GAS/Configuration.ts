@@ -413,7 +413,7 @@ export var CONFIG: AppConfig = {
       WORKSPACE: {
         DB: "#3f51b5", // Indigo
         LB: "#00796b", // Emerald
-        HH: "#3c0c0c", // Dark subtle burgundy
+        HH: "#c62828", // Vibrant Crimson
       },
       TECHNICAL: "#546e7a", // Slate
       BACKUP: "#455a64",    // Dark Slate

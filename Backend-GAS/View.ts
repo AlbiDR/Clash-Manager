@@ -42,6 +42,7 @@ export interface IView {
   setStatusMessage(sheet: any, message: string): void;
   getStandardVisualRequests(sheetId: number, contentRows: number, contentCols: number): any[];
   hexToRgbColor(hex: string): { red: number; green: number; blue: number };
+  darkenRgb(rgb: { red: number; green: number; blue: number }, factor: number): { red: number; green: number; blue: number };
 }
 
 var View: IView = {
@@ -287,6 +288,27 @@ var View: IView = {
   },
 
   /**
+   * 🎨 Helper: Convert Hex to Sheets API Color object
+   */
+  hexToRgbColor: function(hex: string) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return { red: r, green: g, blue: b };
+  },
+
+  /**
+   * 🎨 Helper: Darken an RGB color by a multiplier
+   */
+  darkenRgb: function(rgb: { red: number; green: number; blue: number }, factor: number) {
+    return {
+        red: Math.max(0, rgb.red * factor),
+        green: Math.max(0, rgb.green * factor),
+        blue: Math.max(0, rgb.blue * factor)
+    };
+  },
+
+  /**
    * 🧹 GLOBAL HYGIENE PROTOCOL
    */
   enforceGlobalTabHygiene: function (ss) {
@@ -294,71 +316,58 @@ var View: IView = {
     
     // 🎨 Theme Palette
     const P = CONFIG.THEME.PALETTE;
+    const SH = CONFIG.SHEETS;
 
-    // 🏗️ Define Roles and Ordering
-    const WORKSPACE = [
-      { name: CONFIG.SHEETS.DB, color: P.WORKSPACE.DB },
-      { name: CONFIG.SHEETS.LB, color: P.WORKSPACE.LB },
-      { name: CONFIG.SHEETS.HH, color: P.WORKSPACE.HH }
+    // 🏗️ Define Roles (Invisible system logic - order matters for index calculation)
+    const REGISTER: Array<{ name: string; color: any; visible: boolean }> = [
+      { name: SH.DB, color: this.hexToRgbColor(P.WORKSPACE.DB), visible: true },
+      { name: SH.LB, color: this.hexToRgbColor(P.WORKSPACE.LB), visible: true },
+      { name: SH.HH, color: this.hexToRgbColor(P.WORKSPACE.HH), visible: true },
+      { name: SH.BL, color: this.hexToRgbColor(P.TECHNICAL), visible: false },
+      { name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false }
     ];
 
-    const TECHNICAL = [
-      { name: CONFIG.SHEETS.BL, color: P.TECHNICAL },
-      { name: CONFIG.SHEETS.EVT, color: P.TECHNICAL }
+    // 🧬 Hue Inheritance Logic: Backups inherit parent color but darker
+    const WORKSPACE_BASES = [
+      { name: SH.DB, base: this.hexToRgbColor(P.WORKSPACE.DB) },
+      { name: SH.LB, base: this.hexToRgbColor(P.WORKSPACE.LB) },
+      { name: SH.HH, base: this.hexToRgbColor(P.WORKSPACE.HH) }
     ];
 
-    // 🛡️ Registration Engine
-    const REGISTER: Array<{ name: string; color: string; visible: boolean }> = [];
-    
-    // 1. Primary Visible Workspace
-    WORKSPACE.forEach(item => REGISTER.push({ ...item, visible: true }));
-    
-    // 2. Technical Secondary Sheets (Hidden)
-    TECHNICAL.forEach(item => REGISTER.push({ ...item, visible: false }));
-    
-    // 3. Backup Rotation & Legacy (Hidden)
-    WORKSPACE.forEach(base => {
-      // Standard Rotations
+    WORKSPACE_BASES.forEach(ws => {
+      // 1. Rotation Backups (Subtle Darkening: 70% brightness)
+      const backupColor = this.darkenRgb(ws.base, 0.7);
       for (let i = 1; i <= CONFIG.SYSTEM.MAX_BACKUPS; i++) {
-        REGISTER.push({ name: `Backup ${i} ${base.name}`, color: P.BACKUP, visible: false });
+        REGISTER.push({ name: `Backup ${i} ${ws.name}`, color: backupColor, visible: false });
       }
-      // Legacy Manual Backups
-      REGISTER.push({ name: `Backup LEGACY ${base.name}`, color: P.LEGACY, visible: false });
+      // 2. Legacy Backups (Aggressive Darkening: 45% brightness)
+      const legacyColor = this.darkenRgb(ws.base, 0.45);
+      REGISTER.push({ name: `Backup LEGACY ${ws.name}`, color: legacyColor, visible: false });
     });
 
-    // 🚀 BATCH EXECUTION (Sheets API)
+    // 🚀 BATCH EXECUTION
     const ssId = ss.getId();
     const sheets = ss.getSheets();
     const requests: any[] = [];
     const nameMap = new Map(REGISTER.map((item, idx) => [item.name, { ...item, index: idx }]));
 
-    // ⚔️ SORTING ENGINE: Pre-calculate valid sequential indices
     const sortedSheets = [...sheets].sort((a, b) => {
-      const metaA = nameMap.get(a.getName());
-      const metaB = nameMap.get(b.getName());
-      const idxA = metaA ? metaA.index : 999;
-      const idxB = metaB ? metaB.index : 999;
+      const idxA = nameMap.get(a.getName())?.index ?? 999;
+      const idxB = nameMap.get(b.getName())?.index ?? 999;
       return idxA - idxB;
     });
 
     sortedSheets.forEach((sheet: any, i: number) => {
       const name = sheet.getName();
-      const sheetId = sheet.getSheetId();
       const meta = nameMap.get(name);
       
-      // 🛡️ UNKNOWN / STRAY DETECTOR
-      // If a sheet is not in our register, we color it Yellow for visibility.
-      // This helps the user identify unexpected sheets or failed backup artifacts.
       const properties: any = {
-        sheetId: sheetId,
+        sheetId: sheet.getSheetId(),
         index: i,
-        tabColor: this.hexToRgbColor(meta ? meta.color : P.STRAY)
+        tabColor: meta ? meta.color : this.hexToRgbColor(P.STRAY)
       };
 
       const fields = ["index", "tabColor"];
-
-      // 🛡️ VISIBILITY: Only manage visibility for sheets in our REGISTER.
-      // Unknown/Stray sheets are left visible for user troubleshooting.
       if (meta) {
         properties.hidden = !meta.visible;
         fields.push("hidden");
@@ -384,12 +393,6 @@ var View: IView = {
   /**
    * 🎨 Helper: Convert Hex to Sheets API Color object
    */
-  hexToRgbColor: function(hex: string) {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    return { red: r, green: g, blue: b };
-  },
 
   /**
    * 🛡️ ROBUST BACKUP SYSTEM
