@@ -170,7 +170,7 @@ export interface AppConfig {
 }
 
 // Global Version Constant for this file
-export const VER_CONFIGURATION = "10.0.17";
+export const VER_CONFIGURATION = "10.0.18";
 
 // Fetch all script properties once at initialization
 let _PROPS: Record<string, string> = {};

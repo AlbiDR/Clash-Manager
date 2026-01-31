@@ -193,6 +193,7 @@ const NetworkInternal = {
     };
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
     const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/fetch`, {
       method: "post",
