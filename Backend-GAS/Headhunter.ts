@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.0.2";
+const VER_HEADHUNTER = "12.0.3";
 
 export interface IHeadhunter {
   scout(): void;
@@ -140,8 +140,13 @@ const Headhunter: IHeadhunter = {
     }
 
     // 7. Scanner: Launch
-    const discoveryFloor = Math.min(strategy.floor, 7500); 
-    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Discovery Floor: ${discoveryFloor})...`);
+    const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
+    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Strict Floor: ${discoveryFloor})...`);
+    
+    // Safety check for empty scan when requirement is set too high
+    if (discoveryFloor > 9000) {
+      console.warn("⚠️ [FILTER] Discovery Floor capped at 9,000 to match game limits.");
+    }
     
     const scanned = HeadhunterScanner.scanTournaments(
       discoveryFloor,
@@ -259,7 +264,7 @@ const Headhunter: IHeadhunter = {
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v12.0.2 REPORT`,
+      `🔭 HEADHUNTER v12.0.3 REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
