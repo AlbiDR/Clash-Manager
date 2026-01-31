@@ -377,7 +377,7 @@ export var CONFIG: AppConfig = {
       "y",
       "z",
     ],
-    WEIGHTS: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
+    WEIGHTS: { TROPHY: 0.1, DON: 0.07, WAR: 20.0 },
     DEEP_SCAN: {
       LOCAL: { TOURNEYS: 300, PLAYERS: 250 },
       REMOTE: { TOURNEYS: 1000, PLAYERS: 1000 },
@@ -395,7 +395,7 @@ export var CONFIG: AppConfig = {
       FAME: 3,
       AVG_FAME: 15,
       DONATION: 50,
-      TROPHY: 1.0,
+      TROPHY: 0.1,
       WAR_RATE: 150,
     },
     PENALTIES: {
