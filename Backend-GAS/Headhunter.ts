@@ -264,7 +264,7 @@ const Headhunter: IHeadhunter = {
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v12.1.5 REPORT`,
+      `🔭 HEADHUNTER v${VER_HEADHUNTER} REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
