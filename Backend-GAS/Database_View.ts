@@ -51,7 +51,7 @@ const DatabaseView = {
     }
 
     if (currentMaxCols < requiredCols) {
-      Registry.Services.Core.logStep(2, 5, `Adjusting Sheet Topology (+${requiredCols - currentMaxCols} cols)...`);
+      Registry.Services.Reporting.logStep(2, 5, `Adjusting Sheet Topology (+${requiredCols - currentMaxCols} cols)...`);
       Sheets.Spreadsheets.batchUpdate({
         requests: [{
           appendDimension: {

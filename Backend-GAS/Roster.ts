@@ -21,7 +21,7 @@ const Roster: IRoster = {
     if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.ROSTER);
 
     // 1. DYNAMIC SYNC
-    Registry.Services.Core.logStep(1, 7, "Syncing Dynamic Schema indices...");
+    Registry.Services.Reporting.logStep(1, 7, "Syncing Dynamic Schema indices...");
     Registry.Services.Schema.bootDynamicSchema();
     const L = CONFIG.SCHEMA.ROSTER;
 
@@ -33,14 +33,14 @@ const Roster: IRoster = {
     }
 
     // 3. DATA LOADING
-    Registry.Services.Core.logStep(2, 7, "Loading momentum deltas & archives...");
+    Registry.Services.Reporting.logStep(2, 7, "Loading momentum deltas & archives...");
     const previousScores = RosterStore.loadPreviousScores(sheet, L);
     const warHistoryMap = RosterStore.rehydrateWarHistory(sheet, L);
     const recruitCache = RosterStore.getProphetCache();
     const marketIntelligence = RosterStore.loadMarketIntelligence();
 
     // 4. API INGESTION
-    Registry.Services.Core.logStep(3, 7, "Ingesting Live API data (Members & Race)...");
+    Registry.Services.Reporting.logStep(3, 7, "Ingesting Live API data (Members & Race)...");
     const clanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
     const { members, race, history: remoteHistory, log: logData } = Registry.Services.Network.fetchClanDataSmart(clanTag);
 
@@ -75,7 +75,7 @@ const Roster: IRoster = {
     }
 
     // 5. PROPHET & SCORING
-    Registry.Services.Core.logStep(4, 7, "Computing performance scores...");
+    Registry.Services.Reporting.logStep(4, 7, "Computing performance scores...");
     const rawResults: PlayerResult[] = [];
 
     (members.items as ClanMemberResult[]).forEach(m => {
@@ -168,7 +168,7 @@ const Roster: IRoster = {
     while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill(""));
 
     // 7. RENDERING
-    Registry.Services.Core.logStep(7, 7, "Applying visual layout & pushing to web...");
+    Registry.Services.Reporting.logStep(7, 7, "Applying visual layout & pushing to web...");
     const headersLen = Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length;
     const HEADERS_ARRAY = new Array(headersLen).fill("");
     (Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS) as any[]).forEach(k => HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.ROSTER_HEADERS[k]);
@@ -183,7 +183,7 @@ const Roster: IRoster = {
     // @ts-ignore
     if (typeof refreshWebPayload === "function") refreshWebPayload();
 
-    Registry.Services.Core.logReport(`🏆 ROSTER v1.0.0 REPORT`, [
+    Registry.Services.Reporting.logReport(`🏆 ROSTER v1.0.0 REPORT`, [
       `SYNC STATUS:  SUCCESS`,
       `RANKED POOL:  ${rawResults.length} Combatants`,
       `ELITE AVG:    ${Math.round(maxPerfScore)} (Benchmark)`

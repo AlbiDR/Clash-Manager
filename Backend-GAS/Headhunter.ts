@@ -42,7 +42,7 @@ const Headhunter: IHeadhunter = {
     Registry.Services.View.setStatusMessage(sheet, "⏳ Initializing...");
 
     // ⚡ DYNAMIC SYNC
-    Registry.Services.Core.logStep(2, 9, "Syncing Dynamic Schema indices...");
+    Registry.Services.Reporting.logStep(2, 9, "Syncing Dynamic Schema indices...");
     Registry.Services.Schema.bootDynamicSchema();
 
     // 🛡️ CONFIGURATION CHECK
@@ -85,10 +85,10 @@ const Headhunter: IHeadhunter = {
     }
 
     // 4. Store: Blacklist & Load
-    Registry.Services.Core.logStep(3, 9, "Processing Headhunter Blacklist...");
+    Registry.Services.Reporting.logStep(3, 9, "Processing Headhunter Blacklist...");
     const blacklistResult = HeadhunterStore.updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
 
-    Registry.Services.Core.logStep(4, 9, "Loading existing recruit database...");
+    Registry.Services.Reporting.logStep(4, 9, "Loading existing recruit database...");
     const existing = HeadhunterStore.loadDatabase(safeSheet(CONFIG.SHEETS.HH));
 
     // 5. Store: Prune Blacklisted
@@ -97,7 +97,7 @@ const Headhunter: IHeadhunter = {
       if (blacklistResult.ids.has(tag)) existing.delete(tag);
     });
     const prunedCount = beforePrune - existing.size;
-    Registry.Services.Core.logStep(5, 9, `Database filtered: ${existing.size} survivors (${prunedCount} blacklisted removed).`);
+    Registry.Services.Reporting.logStep(5, 9, `Database filtered: ${existing.size} survivors (${prunedCount} blacklisted removed).`);
 
     // Helper: Record dismissal to Event Log for Score-aware Blacklisting
     const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
@@ -109,7 +109,7 @@ const Headhunter: IHeadhunter = {
     let joinedCount = 0;
     const tagsToCheck = Array.from(existing.keys());
     if (tagsToCheck.length > 0) {
-      Registry.Services.Core.logStep(6, 9, `Verifying clan status for ${tagsToCheck.length} survivors...`);
+      Registry.Services.Reporting.logStep(6, 9, `Verifying clan status for ${tagsToCheck.length} survivors...`);
       
       const batchSize = 25;
       for (let i = 0; i < tagsToCheck.length; i += batchSize) {
@@ -137,7 +137,7 @@ const Headhunter: IHeadhunter = {
 
     // 7. Scanner: Launch
     const minTrophies = strategy.floor;
-    Registry.Services.Core.logStep(7, 9, `Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
+    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (MinTrophies: ${minTrophies})...`);
     
     const scanned = HeadhunterScanner.scanTournaments(
       minTrophies,
@@ -162,7 +162,7 @@ const Headhunter: IHeadhunter = {
 
     // 9. Benchmarking (Hybrid)
     // ... (unchanged benchmarking logic) ...
-    Registry.Services.Core.logStep(8, 9, "Calculating Performance Benchmarks...");
+    Registry.Services.Reporting.logStep(8, 9, "Calculating Performance Benchmarks...");
     const lbSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
     const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
     
@@ -250,11 +250,11 @@ const Headhunter: IHeadhunter = {
     Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.HH);
 
     // 12. View Render
-    Registry.Services.Core.logStep(9, 9, "Preparing final render and cache updates...");
+    Registry.Services.Reporting.logStep(9, 9, "Preparing final render and cache updates...");
     HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
 
     // 13. Report
-    Registry.Services.Core.logReport(
+    Registry.Services.Reporting.logReport(
       `🔭 HEADHUNTER v12.0.0 REPORT`,
       [
         `OPERATION COMPLETE`,

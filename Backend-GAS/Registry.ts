@@ -21,7 +21,8 @@ import ScoringSystem from "./ScoringSystem";
 import Headhunter from "./Headhunter";
 import Database from "./Database";
 import Roster from "./Roster";
-import KernelScoring from "./Kernel_Scoring";
+import KernelScoring, { IKernelScoring } from './Kernel_Scoring';
+import Reporting, { IReporting } from './Service_Reporting';
 
 import type { IStore } from "./Store";
 import type { INetwork } from "./Network";
@@ -33,7 +34,7 @@ import type { IScoringSystem } from "./ScoringSystem";
 import type { IHeadhunter } from "./Headhunter";
 import type { IDatabase } from "./Database";
 import type { IRoster } from "./Roster_Types";
-import type { IKernelScoring } from "./Kernel_Scoring";
+
 
 // Global Version Constant
 // @ts-ignore
@@ -63,6 +64,7 @@ export interface IRegistry {
     readonly Database: IDatabase;
     readonly Roster: IRoster;
     readonly KernelScoring: IKernelScoring;
+    readonly Reporting: IReporting;
   };
   Actions: Record<string, () => void>;
 }
@@ -83,7 +85,8 @@ var Registry: IRegistry = {
     get Headhunter() { return Headhunter; },
     get Database() { return Database; },
     get Roster() { return Roster; },
-    get KernelScoring() { return KernelScoring; }
+    get KernelScoring() { return KernelScoring; },
+    get Reporting() { return Reporting; }
   },
 
   /**
