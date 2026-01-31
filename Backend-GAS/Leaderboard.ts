@@ -246,6 +246,38 @@ function updateLeaderboard(dryRun: boolean = false): void {
     }
   }
 
+  // 1c. PROPHET FETCH (Blind Spot Recovery)
+  // For members who joined without being scouted (Manual recruits), we fetch their
+  // profile once to populate their 'Heritage' score.
+  const unknownTags: string[] = [];
+  membersData.items.forEach((m: any) => {
+    const isNew = !warHistoryMap.has(m.tag);
+    if (isNew && !recruitCache.has(m.tag)) {
+        unknownTags.push(m.tag);
+    }
+  });
+
+  if (unknownTags.length > 0) {
+    const fetchBatch = unknownTags.slice(0, 20); // Safety limit
+    console.info(`  └─ Prophet: Detecting ${unknownTags.length} new members in blind spot. Fetching stats for top ${fetchBatch.length}...`);
+    
+    const urls = fetchBatch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`);
+    try {
+        const profiles = Registry.Services.Network.fetchRoyaleAPI(urls);
+        profiles.forEach((p: any) => {
+            if (p && p.tag) {
+                const wins = Number(p.warDayWins || 0);
+                recruitCache.set(p.tag, wins);
+            }
+        });
+        if (profiles.length > 0) {
+            console.info(`  └─ Prophet: Recovered war intelligence for ${profiles.length} unknown members.`);
+        }
+    } catch (e: any) {
+        console.warn(`  ⚠️ Prophet: Background fetch failed: ${e.message}`);
+    }
+  }
+
   // 2. MERGE FRESH API DATA
   if (remoteHistory) {
     Object.keys(remoteHistory).forEach((tag) => {
