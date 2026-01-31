@@ -227,6 +227,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
         .map(c => c.tag);
       
       if (seedTags.length > 0) {
+        console.info(`  🕵️ [SHADOW] Initiating recursive crawl for ${seedTags.length} potential seeds...`);
         const seedLogs: any[][] = batchFetch(
           seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`),
           15,
