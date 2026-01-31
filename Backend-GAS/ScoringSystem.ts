@@ -236,7 +236,7 @@ var ScoringSystem: IScoringSystem = {
     if (diffRaw !== 0) return diffRaw;
 
     // Priority 3: Reliability (War Participation)
-    const getWarVal = (r: any[]) => parseInt(r[L.WAR_RATE]) || 0;
+    const getWarVal = (r: any[]) => Number(r[L.WAR_RATE]) || 0;
     const diffWar = getWarVal(rowB) - getWarVal(rowA);
     if (diffWar !== 0) return diffWar;
 
