@@ -285,6 +285,7 @@ export var CONFIG: AppConfig = {
       POTENTIAL_SCORE: "Potential Score",
     },
     DB_HEADERS: {
+      DATE: "Date",
       TAG: "Tag",
       NAME: "Name",
       ROLE: "Role",
@@ -292,7 +293,6 @@ export var CONFIG: AppConfig = {
       DON_GIVEN: "Donations Given",
       DON_REC: "Donations Received",
       LAST_SEEN: "Last Seen",
-      DATE: "Date",
       WAR_FAME: "War Fame",
       BATTLE_CREDITS: "Battle Credits",
     },
