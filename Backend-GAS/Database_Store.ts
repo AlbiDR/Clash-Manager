@@ -268,8 +268,6 @@ const DatabaseStore = {
         appended: newRowsToAppend.length,
         pruned: 0 
     };
-  },
-
   }
 };
 
