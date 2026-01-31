@@ -75,6 +75,7 @@ export interface AppConfig {
     DATE_FORMAT_DATETIME: string;
     DATE_FORMAT_VALUE: string;
     PROPHET_TENURE_THRESHOLD: number;
+    DB_PRUNE_THRESHOLD: number;
   };
   SHEETS: {
     DB: string;
@@ -228,6 +229,7 @@ export var CONFIG: AppConfig = {
     DATE_FORMAT_DATETIME: "dd/MM/yyyy HH:mm",
     DATE_FORMAT_VALUE: "dd/MM/yyyy HH.mm.ss",
     PROPHET_TENURE_THRESHOLD: 10,
+    DB_PRUNE_THRESHOLD: 10,
   },
 
   SHEETS: {
