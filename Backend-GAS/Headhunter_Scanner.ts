@@ -220,16 +220,16 @@ const HeadhunterScanner: IHeadhunterScanner = {
         });
       });
 
-      // 🕵️ RECURSIVE SEEDING: Fetch logs for Top 5 Remote Recruits to trigger Shadow Scout
+      // 🕵️ RECURSIVE SEEDING: Fetch logs for Top 15 Remote Recruits to trigger Shadow Scout
       const seedTags = validCandidates
         .sort((a, b) => b.rawScore - a.rawScore)
-        .slice(0, 5)
+        .slice(0, 15)
         .map(c => c.tag);
       
       if (seedTags.length > 0) {
         const seedLogs: any[][] = batchFetch(
           seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog`),
-          5,
+          15,
           (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
         );
 
@@ -237,7 +237,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
           if (logList && Array.isArray(logList)) {
             logList.forEach((b: any) => {
               if (shadowTags.size >= 100) return;
-              if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
+              // 🛡️ WIDE NET: Include War and Multi-stage modes
+              if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)) {
                 const opponents = b.opponent || [];
                 opponents.forEach((opp: any) => {
                   if (shadowTags.size >= 100) return;
@@ -310,8 +311,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
             if (shadowTags.size < 100) {
               logs[idx].forEach((b: any) => {
                 if (shadowTags.size >= 100) return;
-                // Focus on high-skill matchmaking types
-                if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
+                // 🛡️ WIDE NET: Include War and Multi-stage modes
+                if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type)) {
                   const opponents = b.opponent || [];
                   opponents.forEach((opp: any) => {
                     if (shadowTags.size >= 100) return;
