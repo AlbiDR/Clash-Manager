@@ -43,6 +43,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       if (res && res.items)
         res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
     });
+    console.info(`  ├─ Discovery: Found ${uniqueTourneys.size} total active tournaments.`);
 
     // 2. Worker Handshake
     const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
@@ -138,6 +139,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     Registry.Services.Core.shuffleArray(candidatePool);
     const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
+    
+    console.info(`  ├─ Candidates: Located ${uniqueCandidates.size} unique clanless players.`);
+    console.info(`  └─ Sampling: Profiling ${tagsToFetch.length} players (Limit: ${playerLimit}).`);
 
     if (tagsToFetch.length === 0) return [];
 
