@@ -393,7 +393,7 @@ export var CONFIG: AppConfig = {
       FAME: 3,
       AVG_FAME: 15,
       DONATION: 50,
-      TROPHY: 0.1,
+      TROPHY: 1.0,
       WAR_RATE: 150,
     },
     PENALTIES: {
