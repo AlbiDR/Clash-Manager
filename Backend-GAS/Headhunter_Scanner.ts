@@ -32,7 +32,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     const W = CONFIG.HEADHUNTER.WEIGHTS;
     const keywords = CONFIG.HEADHUNTER.KEYWORDS;
     const searchUrls = keywords.map(
-      (k) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
+      (k: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
     );
 
     // 1. Discovery: Find Tournaments
@@ -40,7 +40,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     const uniqueTourneys = new Map<string, TournamentResult>();
     searchResults.forEach((res: TournamentResult) => {
       if (res && res.items)
-        res.items.forEach((t) => uniqueTourneys.set(t.tag, t));
+        res.items.forEach((t: TournamentMember) => uniqueTourneys.set(t.tag, t));
     });
 
     // 2. Worker Handshake
@@ -72,7 +72,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     Registry.Services.Core.shuffleArray(lotteryPool);
     const tourneyTags = lotteryPool
       .slice(0, scanCfg.TOURNEYS || 300)
-      .map((t) => t.tag);
+      .map((t: TournamentResult) => t.tag);
     
     console.info(`  ├─ Keywords: ${keywords.length} | Mode: ${lowQuotaMode ? "SAFE (Quota Guard)" : "FULL"}`);
     console.info(`  ├─ Worker: ${remoteAvailable ? "ONLINE" : "OFFLINE"} | Deep Expand: ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`);

@@ -196,14 +196,13 @@ export var CONFIG: AppConfig = {
     PLAYER_TAG: _PROPS["PlayerTag"] || "",
 
     API_KEYS: Object.keys(_PROPS)
-      .filter((key) => /^CRK\d+$/.test(key)) // Match CRK followed by one or more digits
-      .sort((a, b) => {
-        // Sort numerically by the number part (CRK2 before CRK10)
+      .filter((key: string) => /^CRK\d+$/.test(key)) 
+      .sort((a: string, b: string) => {
         const numA = parseInt(a.replace("CRK", ""), 10);
         const numB = parseInt(b.replace("CRK", ""), 10);
         return numA - numB;
       })
-      .map((key) => ({ name: key, value: _PROPS[key] }))
+      .map((key: string) => ({ name: key, value: _PROPS[key] }))
       .filter((k: { name: string; value: string }) => k.value && k.value.trim().length > 0),
 
     TIMEZONE: "Europe/Rome",

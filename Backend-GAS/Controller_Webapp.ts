@@ -434,9 +434,11 @@ function sanitizeNum(v: any, displayV: string): number {
 /**
  * 🌍 GLOBAL BRIDGE
  */
-Object.assign(this as any, {
-  getWebAppData,
-  markRecruitsAsInvitedBulk,
-  refreshWebPayload,
-  VER_CONTROLLER_WEBAPP,
-});
+(function(scope: any) {
+  Object.assign(scope, {
+    getWebAppData,
+    markRecruitsAsInvitedBulk,
+    refreshWebPayload,
+    VER_CONTROLLER_WEBAPP,
+  });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
