@@ -66,13 +66,18 @@ const Database: IDatabase = {
             let isWarDay = false;
             try {
                 const warSnap = getWarSnapshot();
-                // Log "N/A" if we are in TRIAL phase (Training Days)
-                // Log Numeric Fame if we are in ENGAGEMENT or COLOSSEUM (Battle Days)
-                isWarDay = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
-                console.info(`  ├─ War Phase: ${warSnap.protocol.phase} | Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
+                // 🛡️ REFINEMENT: Combine Protocol Phase with Royale API Period Type for maximum precision
+                const phaseIsBattle = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
+                const periodIsWar = (raceData && raceData.periodType === 'war');
+                
+                // If API says it's war, or protocol says we are in battle phase
+                isWarDay = phaseIsBattle || periodIsWar;
+                
+                console.info(`  ├─ War Phase: ${warSnap.protocol.phase} | Period: ${raceData?.periodType || 'N/A'}`);
+                console.info(`  └─ Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
             } catch (e: any) {
-                console.warn("⚠️ [WAR] Could not fetch War Snapshot. Defaulting to numeric fame logging.");
-                isWarDay = true; // Fallback to safe behavior
+                console.warn("⚠️ [WAR] Could not fetch War Intelligence. Defaulting to state-based detection.");
+                isWarDay = !!(raceData && raceData.clan); // Simple fallback
             }
 
             const activeMembers = membersData.items as ClanMemberSnapshot[];
