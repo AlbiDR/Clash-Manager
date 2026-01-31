@@ -19,6 +19,7 @@ import Schema from "./Schema";
 import Time from "./Time";
 import ScoringSystem from "./ScoringSystem";
 import Headhunter from "./Headhunter";
+import Database from "./Database";
 
 import type { IStore } from "./Store";
 import type { INetwork } from "./Network";
@@ -28,6 +29,7 @@ import type { ISchema } from "./Schema";
 import type { ITime } from "./Time";
 import type { IScoringSystem } from "./ScoringSystem";
 import type { IHeadhunter } from "./Headhunter";
+import type { IDatabase } from "./Database";
 
 // Global Version Constant
 // @ts-ignore
@@ -57,6 +59,7 @@ export interface IRegistry {
     readonly Time: ITime;
     readonly ScoringSystem: IScoringSystem;
     readonly Headhunter: IHeadhunter;
+    readonly Database: IDatabase;
   };
   Actions: Record<string, () => void>;
 }
@@ -74,7 +77,8 @@ var Registry: IRegistry = {
     get Schema() { return Schema; },
     get Time() { return Time; },
     get ScoringSystem() { return ScoringSystem; },
-    get Headhunter() { return Headhunter; }
+    get Headhunter() { return Headhunter; },
+    get Database() { return Database; }
   },
 
   /**
@@ -84,7 +88,7 @@ var Registry: IRegistry = {
    */
   Actions: {
     // 📊 DATA SYNC
-    "sync:database": () => updateClanDatabase(),
+    "sync:database": () => Database.update(),
     "sync:leaderboard": () => updateLeaderboard(),
     "sync:webapp": () => refreshWebPayload(),
 
