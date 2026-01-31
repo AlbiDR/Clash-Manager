@@ -1,7 +1,6 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import HeadhunterStrategy from './Headhunter_Strategy';
 import HeadhunterStore from './Headhunter_Store';
 import HeadhunterScanner from './Headhunter_Scanner';
 import HeadhunterView from './Headhunter_View';
@@ -70,7 +69,7 @@ const Headhunter: IHeadhunter = {
     }
 
     // 2. Strategy Calculation
-    const strategy = HeadhunterStrategy.calculateTrophyFloor(members, inGameRequirement);
+    const strategy = Registry.Services.ScoringSystem.calculateTrophyFloor(members, inGameRequirement);
     console.info(`  └─ Strategy Active: ${strategy.method} -> Floor: ${strategy.floor}`);
 
     // 3. Quota Check

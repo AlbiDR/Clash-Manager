@@ -17,18 +17,12 @@ const VER_KERNEL_SCORING = "1.0.0";
 export interface IKernelScoring {
   calcWarRate(credits: number, days: number): number;
   calcRecruitRaw(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number;
-  calcRosterRaw(
-    fame: number, 
-    avgFame: number, 
-    dons: number, 
-    trophies: number, 
-    warRate: number, 
-    w: RosterWeights
-  ): number;
+  calcRosterRaw(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number;
   applyDecay(score: number, daysInactive: number, p: PenaltiesConfig): number;
   calcHeritage(recruitRaw: number, tenureDays: number, threshold: number, divisor: number): number;
   calcPotential(raw: number, benchmark: number): number;
   calcHybridBenchmark(clanAvg: number, marketAvg: number): number;
+  calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
   compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number;
 }
 
@@ -76,37 +70,32 @@ const KernelScoring: IKernelScoring = {
     if (daysInactive <= p.INACTIVITY_GRACE_DAYS) return score;
     
     const decayDays = daysInactive - p.INACTIVITY_GRACE_DAYS;
-    // P.DECAY_RATE is e.g. 0.08 (8%)
     const factor = Math.pow(1 - p.DECAY_RATE, decayDays);
     return score * factor;
   },
 
   /**
    * ✨ Induction "Heritage" Blessing
-   * Quadratic decay of a "potential" bonus for new members.
    */
   calcHeritage(recruitRaw: number, tenureDays: number, threshold: number, divisor: number): number {
-    if (threshold <= 0) return 0; // Config safety
-    
+    if (threshold <= 0) return 0;
     const timeRatio = Math.min(1, Math.max(0, (threshold - tenureDays) / threshold));
     const factor = timeRatio * timeRatio;
-    
-    // The blessing is derived from their "Recruit Potential" (Skill + War)
-    return Math.round((recruitRaw * factor) / divisor);
+    return Math.round((recruitRaw * factor) / (divisor || 5));
   },
 
   /**
    * 🎯 Potential Score (vs Benchmark)
+   * Hardened: Always returns 0 if benchmark is invalid (<=0).
    */
   calcPotential(raw: number, benchmark: number): number {
-    if (benchmark <= 0) return raw > 0 ? 100 : 0;
+    if (benchmark <= 0) return 0;
     const s = Math.round((raw / benchmark) * 100);
     return Math.min(100, s);
   },
 
   /**
    * ⚖️ Hybrid Benchmark
-   * 40% Internal Clan Avg / 60% External Market Top 5%
    */
   calcHybridBenchmark(clanAvg: number, marketAvg: number): number {
     let b = 1;
@@ -118,6 +107,42 @@ const KernelScoring: IKernelScoring = {
       b = marketAvg;
     }
     return Math.max(1, b);
+  },
+
+  /**
+   * 🏹 Trophy Floor Strategy
+   * Absorbed from Headhunter_Strategy.ts
+   */
+  calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
+    const ELITE_THRESHOLD = 41;
+    let floor = inGameReq;
+    let method = "In-Game Requirement";
+    let mode: "ELITE" | "REBUILD" | "BASE" = "BASE";
+
+    if (members.length > 0) {
+      const ts = members.map(m => m.trophies || 0).sort((a,b) => a - b);
+      if (members.length > ELITE_THRESHOLD) {
+        mode = "ELITE";
+        const median = ts[Math.floor(ts.length / 2)];
+        if (median > floor) {
+          floor = median;
+          method = `🏰 Elite Mode (Median: ${median})`;
+        } else {
+          method = `🏰 Elite Mode (At In-Game Cap: ${inGameReq})`;
+        }
+      } else {
+        mode = "REBUILD";
+        const bCount = Math.max(1, Math.ceil(ts.length * 0.1));
+        const bAvg = Math.round(ts.slice(0, bCount).reduce((a,b) => a + b, 0) / bCount);
+        if (bAvg > floor) {
+          floor = bAvg;
+          method = `🏗️ Rebuild Mode (Bot 10% Avg: ${bAvg})`;
+        } else {
+          method = `🏗️ Rebuild Mode (At In-Game Cap: ${inGameReq})`;
+        }
+      }
+    }
+    return { floor, method, mode };
   },
 
   /**
