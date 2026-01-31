@@ -65,12 +65,17 @@ function updateLocalData(newData: WebAppData) {
  * - `syncStatus`: Unified status enum ('idle', 'syncing', 'success', 'error').
  * - `syncError`: Error message if the last sync attempt failed.
  * - `lastSyncTime`: Epoch timestamp of the last successful data acquisition.
+ * - `loadLocal`: Function to hydrate state from LocalStorage.
+ * - `startBackgroundSync`: Triggered when specialized modes change or on initial load.
+ * - `refresh`: Force a network fetch from the GAS backend.
+ * - `updateLocalData`: Direct state/storage override for optimistic updates.
  *
  * @sideeffects
  * - Writes to `localStorage` (key: `cm_hydration_snapshot`) on every successful sync.
  * - Broadcasts 'DATA_SYNC_SUCCESS' messages via `BroadcastChannel` to synchronize other tabs.
  * - Listens for 'DATA_SYNC_SUCCESS' messages to trigger background reloads.
  * - Acquires/Releases `WakeLock` during active sync to prevent device sleep.
+ * - Interacts with `useConnectionStatus` to update global system health state.
  */
 export function useClashData() {
   /**
@@ -91,7 +96,9 @@ export function useClashData() {
         const ts = parsed.timestamp || 0;
         lastSyncTime.value = ts || Date.now();
 
-        // ⚡ STALE CHECK: If data is > 5 minutes old, trigger background refresh
+        // STALE CHECK
+        // If data is > 5 minutes old, trigger background refresh to ensure
+        // the user is not looking at significantly outdated clan metrics.
         const STALE_THRESHOLD = 5 * 60 * 1000;
         if (Date.now() - ts > STALE_THRESHOLD) {
           console.log("[Data] Cache is stale (>5m), triggering background sync...");
@@ -142,16 +149,18 @@ export function useClashData() {
    * timeout protection, and UX stabilization delays.
    */
   async function refresh() {
-    // CONCURRENCY MANAGEMENT:
-    // Cancel any previous pending request to prevent race conditions where
-    // an older request might overwrite newer data.
+    // CONCURRENCY MANAGEMENT
+    // Abort existing requests to ensure only the latest sync attempt resolves.
+    // Prevents "stale overwrite" race conditions on slow networks.
     if (refreshAbortController) {
       refreshAbortController.abort("replaced");
     }
     refreshAbortController = new AbortController();
     const signal = refreshAbortController.signal;
 
-    // TIMEOUT PROTECTION: Force fail if network hangs (40s)
+    // TIMEOUT PROTECTION
+    // Force termination after 40s to prevent the UI from hanging indefinitely
+    // in 'syncing' state if the Google Script or network pipe dies silently.
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
         refreshAbortController.abort("timeout");
@@ -163,19 +172,19 @@ export function useClashData() {
     try {
       isRefreshing.value = true;
       syncStatus.value = "syncing";
-      // UX FIX: Clear error immediately so UI shows loading state, not stale error
+      // UX FIX: Clear previous error to reset the visual state to 'loading'.
       syncError.value = null;
 
-      // MODE GUARD:
-      // If special modes are active, we mock the network success state.
+      // MODE GUARD
+      // Mock network success if demo/synthetic modes are engaged.
       if (
         isSyntheticMode.value ||
         isBlueprintMode.value ||
         isShowcaseMode.value
       ) {
-        // UX STABILITY:
-        // Maintain the 800ms "thinking" time even in mock modes to prevent
-        // the UI from feeling jarringly fast/nervous.
+        // UX STABILITY
+        // Enforce a minimum "thinking" period to prevent UI jitter when
+        // switching modes, maintaining a consistent interaction rhythm.
         await new Promise((resolve) => setTimeout(resolve, 800));
         startBackgroundSync();
         syncStatus.value = "success";
@@ -186,11 +195,10 @@ export function useClashData() {
 
       const remoteData = await fetchRemote({ signal, force: true });
 
-      // UX STABILITY (Anti-Flicker):
-      // On extremely fast connections (or when GAS responds instantly), the
-      // transition from Skeletons -> Content can happen too fast to be
-      // perceived comfortably. We enforce a minimum 800ms visibility for
-      // the loading state to ensure a stable visual rhythm.
+      // UX STABILITY (Anti-Flicker)
+      // If the backend responds too quickly, the jump from Skeletons to
+      // content can feel jarring. We enforce an 800ms minimum visibility
+      // for the loading state to allow the user's eye to track the change.
       const elapsed = Date.now() - startTime;
       if (elapsed < 800) {
         await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
@@ -200,14 +208,14 @@ export function useClashData() {
       lastSyncTime.value = remoteData.timestamp;
       syncStatus.value = "success";
       
-      // Notify unified status of success
+      // Update global system status to reflect successful connectivity.
       const { setSuccess } = useConnectionStatus();
       setSuccess();
 
-      // PERFORMANCE OPTIMIZATION:
-      // Disk I/O (localStorage) is blocking. We offload the snapshot write
-      // to the browser's idle period to ensure the main thread remains
-      // responsive for the immediate post-sync UI re-renders.
+      // PERFORMANCE OPTIMIZATION
+      // Offload LocalStorage write to the browser's idle period.
+      // Prevents Disk I/O from blocking the main thread during heavy
+      // UI re-renders that follow a data sync.
       const saveTask = window.requestIdleCallback || setTimeout;
       saveTask(() => {
         localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
@@ -225,9 +233,8 @@ export function useClashData() {
         return;
       }
 
-      // UX STABILITY:
-      // Even on error, we maintain the 800ms delay to prevent the error state
-      // from "flashing" before the user can recognize the loading phase.
+      // UX STABILITY
+      // Maintain minimum visibility on error to prevent state "flashing".
       const elapsed = Date.now() - startTime;
       if (elapsed < 800) {
         await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
@@ -239,13 +246,14 @@ export function useClashData() {
     } finally {
       clearTimeout(timeoutId);
       
-      // Release syncing state
+      // Release syncing state in global status tracker.
       const { setSyncing } = useConnectionStatus();
       setSyncing(false);
 
       if (refreshAbortController?.signal === signal) {
         isRefreshing.value = false;
         refreshAbortController = null;
+        // UX DELAY: Hold success state briefly before reverting to idle.
         setTimeout(() => {
           if (syncStatus.value === "success") syncStatus.value = "idle";
         }, 2000);
@@ -253,13 +261,13 @@ export function useClashData() {
     }
   }
 
-  // Coordination: Inform status badge of syncing via watcher or direct injection
+  // Coordination: Synchronize status badge with active sync state.
   const { setSyncing } = useConnectionStatus();
   watch(isRefreshing, (refreshing) => {
     setSyncing(refreshing);
   }, { immediate: true });
 
-  // Synchronize data source when special modes change
+  // Mode synchronization: Re-evaluate data source when specialized modes change.
   watch(
     [isSyntheticMode, isBlueprintMode, isShowcaseMode],
     () => {
@@ -270,6 +278,11 @@ export function useClashData() {
 
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
 
+  /**
+   * WAKE LOCK MANAGEMENT
+   * Prevents the mobile screen from dimming or the OS from suspending the
+   * network thread during an active synchronization process.
+   */
   watch(syncStatus, (status: string) => {
     if (status === "syncing") requestWakeLock();
     else releaseWakeLock();
