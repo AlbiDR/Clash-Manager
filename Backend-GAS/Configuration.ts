@@ -187,12 +187,12 @@ export var CONFIG: AppConfig = {
     MANIFEST: {
       CONFIGURATION: "10.0.7",
       UTILITIES: "10.0.6",
-      ORCHESTRATOR: "11.0.0",
+      ORCHESTRATOR: "11.0.7",
       DATABASE: "13.0.0",
       ROSTER: "1.0.0",
       SCORING: "13.0.0",
       SCORING_KERNEL: "1.0.0",
-      HEADHUNTER: "12.0.0",
+      HEADHUNTER: "12.1.20",
       CONTROLLER_WEBAPP: "1.0.0",
       REGISTRY: "1.0.0",
       API_PUBLIC: "1.0.0"

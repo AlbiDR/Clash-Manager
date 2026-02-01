@@ -11,7 +11,7 @@
  *    2. Report Boxes: ASCII-art style boxes for summaries.
  *    3. Banners: High-visibility section headers.
  * 
- * 🏷️ VERSION: 1.0.0
+ * 🏷️ VERSION: 1.1.0
  * ============================================================================
  */
 
@@ -31,55 +31,42 @@ var Reporting: IReporting = {
   },
 
   /**
-   * Logs a stylized report box to the console.
-   * Optimized for Gemini quota by reducing whitespace padding.
+   * Logs a high-density, frameless report.
+   * Optimized for Gemini: One single log call (one timestamp) with zero ASCII borders.
    */
-  logReport(title: string, lines: string[], width?: number): void {
-    const padding = 2; // Left + Right padding characters
-    const minWidth = title.length + 8;
+  logReport(title: string, lines: string[]): void {
+    const dividerLen = Math.max(title.length + 2, 40);
+    const divider = "─".repeat(dividerLen);
     
-    // Calculate optimal width based on content
-    const maxContent = lines.reduce((max, line) => {
-      // Ignore lines intended to be separators for width calculation
-      if (line.trim().startsWith("─") || line.trim().startsWith("-")) return max;
-      return Math.max(max, line.length);
-    }, 0);
+    // Header section
+    let output = `\n${title.toUpperCase()}\n${divider}\n`;
     
-    const finalWidth = width || Math.max(minWidth, maxContent + 4);
-    const contentWidth = finalWidth - 4; // Space available inside │ │
-
-    const pad = (str: string, len: number) => {
-      if (str.length >= len) return str.substring(0, len);
-      return str + " ".repeat(len - str.length);
-    };
-
-    const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, finalWidth - title.length - 5))}┐`;
-    const borderBot = `└${"─".repeat(finalWidth - 2)}┘`;
-    
-    // @ts-ignore
-    const logFunc = (typeof Logger !== "undefined") ? Logger.log : console.log;
-    
-    const content = lines.map(l => {
+    // Body section with slight indentation for sophisticated structure
+    output += lines.map(l => {
       const trimmed = l.trim();
-      // Smart Dividers: If line starts with divider char, repeat it for full width
+      // Smart Dividers within the report
       if (trimmed === "─" || trimmed === "-" || trimmed === "=") {
-        return `├${trimmed.repeat(finalWidth - 2)}┤`;
+        return divider;
       }
-      return `│ ${pad(l, contentWidth)} │`;
+      return `  ${l}`; // 2-space signal indentation
     }).join("\n");
 
-    logFunc(`\n${borderTop}\n${content}\n${borderBot}\n`);
+    output += `\n${divider}\n`;
+
+    // @ts-ignore
+    const logFunc = (typeof Logger !== "undefined") ? Logger.log : console.log;
+    logFunc(output);
   },
 
   /**
    * Logs a high-visibility banner for major section headers.
    */
   logBanner(message: string): void {
-    console.log(`\n============== ${message.toUpperCase()} ==============\n`);
+    console.log(`\n▶▶▶ ${message.toUpperCase()} ◀◀◀\n`);
   }
 };
 
-export const VER_REPORTING = "1.0.0";
+export const VER_REPORTING = "1.1.0";
 
 // @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
