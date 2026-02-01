@@ -16,7 +16,7 @@
  *    - Internal Core: DRY logic for chunking/compression/locking.
  *    - Public Facade: Clean, categorized API.
  * 
- * 🏷️ VERSION: 2.0.0 (Refactored)
+ * VERSION: 2.0.0 (Refactored)
  * ============================================================================
  */
 

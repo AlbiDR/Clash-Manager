@@ -1,10 +1,9 @@
 
 /**
- * ============================================================================
- * 🌐 MODULE: CONTROLLER_WEBAPP - TypeScript Edition
+ * MODULE: CONTROLLER_WEBAPP - TypeScript Edition
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * 🏷️ VERSION: 11.0.0
+ * DESCRIPTION: Data generation and caching layer for the JSON REST API.
+ * VERSION: 11.0.0
  * ============================================================================
  */
 
@@ -50,7 +49,7 @@ declare const Registry: IRegistry;
 // routed via Registry in modern stack
 
 /**
- * 🌐 CONTROLLER INTERFACES
+ * CONTROLLER INTERFACES
  */
 export interface ExtractionMapping {
   key: string;
@@ -80,7 +79,7 @@ export interface AppPayload {
 }
 
 /**
- * 📦 DATA RETRIEVAL (Called by API_Public.ts)
+ * DATA RETRIEVAL (Called by API_Public.ts)
  */
 function getWebAppData(forceRefresh: boolean): string {
   try {
@@ -94,7 +93,7 @@ function getWebAppData(forceRefresh: boolean): string {
 
     return refreshWebPayload();
   } catch (e: any) {
-    console.error(`❌ [API] getWebAppData CRITICAL FAILURE: ${e.stack}`);
+    console.error(`[API] getWebAppData CRITICAL FAILURE: ${e.stack}`);
     return JSON.stringify({
       success: false,
       data: null,
@@ -107,10 +106,10 @@ function getWebAppData(forceRefresh: boolean): string {
 }
 
 /**
- * ✏️ WRITE OPERATIONS
+ * WRITE OPERATIONS
  */
 /**
- * ✏️ WRITE OPERATIONS
+ * WRITE OPERATIONS
  */
 function markRecruitsAsInvitedBulk(ids: string[]): {
   success: boolean;
@@ -134,7 +133,7 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
         evtSheet.setTabColor("#ff5722"); // Visual marker for "Hot" data
       }
 
-      // 2. ATOMIC APPEND (Advanced API)
+      // ATOMIC APPEND (Advanced API)
       // This is the "Event Stream". We don't search, we just log the event.
       const now = Date.now();
       const values = ids.map((id) => [
@@ -162,14 +161,14 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
         payloadSize: payloadStr.length,
       };
     } catch (e: any) {
-      console.error(`❌ [API] Event-Sourced Dismiss Fail: ${e.message}`);
+      console.error(`[API] Event-Sourced Dismiss Fail: ${e.message}`);
       throw new Error(`Dismiss Failed (Event-Log): ${e.message}`);
     }
   });
 }
 
 /**
- * 🔄 CACHE MANAGEMENT
+ * CACHE MANAGEMENT
  */
 function refreshWebPayload(): string {
   return Registry.Services.Core.executeSafely("PAYLOAD_GEN", () => {
@@ -178,7 +177,7 @@ function refreshWebPayload(): string {
 }
 
 /**
- * 🔒 INTERNAL GENERATOR
+ * INTERNAL GENERATOR
  */
 function _generatePayloadInternal(): string {
   try {
@@ -188,7 +187,7 @@ function _generatePayloadInternal(): string {
     const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.ROSTER, "lb");
     const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
 
-    // 1. BUILD GLOBAL EXCLUSION SET (Blacklist + Event Stream)
+    // BUILD GLOBAL EXCLUSION SET (Blacklist + Event Stream)
     const exclusionSet = new Set<string>();
 
     // A. Read Permanent Blacklist
@@ -214,7 +213,7 @@ function _generatePayloadInternal(): string {
       });
     }
 
-    // 2. FILTER RECRUITS
+    // FILTER RECRUITS
     const filteredHH = hhResult.rows.filter((row) => {
       const id = ("#" + row[0]).toUpperCase();
       return !exclusionSet.has(id);
@@ -248,7 +247,7 @@ function _generatePayloadInternal(): string {
 
     return payloadStr;
   } catch (e: any) {
-    console.error(`❌ [API] refreshWebPayload FAILED: ${e.stack}`);
+    console.error(`[API] refreshWebPayload FAILED: ${e.stack}`);
     return JSON.stringify({
       success: false,
       data: null,
@@ -262,7 +261,7 @@ function _generatePayloadInternal(): string {
 
 
 /**
- * 📊 DATA EXTRACTION (STRICT MODE)
+ * DATA EXTRACTION (STRICT MODE)
  */
 function extractSheetDataStrict(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
@@ -271,14 +270,14 @@ function extractSheetDataStrict(
 ): SheetDataResult {
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
-    console.warn(`⚠️ [DATA] extractSheetDataStrict: Sheet '${sheetName}' not found.`);
+    console.warn(`[DATA] extractSheetDataStrict: Sheet '${sheetName}' not found.`);
     return { schema: [], rows: [] };
   }
 
   const lastRow = sheet.getLastRow();
   const startRow = CONFIG.LAYOUT.DATA_START_ROW;
   if (lastRow < startRow) {
-    console.info(`ℹ️ [DATA] extractSheetDataStrict: Sheet '${sheetName}' has no data rows.`);
+    console.info(`[DATA] extractSheetDataStrict: Sheet '${sheetName}' has no data rows.`);
     return { schema: [], rows: [] };
   }
 
@@ -322,16 +321,16 @@ function extractSheetDataStrict(
   const requiredCols = maxColIdx + 1;
   const sheetMaxCols = sheet.getMaxColumns();
 
-  // 🛡️ BOUNDS VALIDATION: Ensure we don't exceed sheet dimensions
+  // BOUNDS VALIDATION: Ensure we don't exceed sheet dimensions
   if (requiredCols > sheetMaxCols) {
-    console.warn(`⚠️ [DATA] extractSheetDataStrict: Required columns (${requiredCols}) exceed sheet columns (${sheetMaxCols}) for '${sheetName}'. Data may be incomplete.`);
+    console.warn(`[DATA] extractSheetDataStrict: Required columns (${requiredCols}) exceed sheet columns (${sheetMaxCols}) for '${sheetName}'. Data may be incomplete.`);
   }
 
   const safeNumCols = Math.min(requiredCols, sheetMaxCols);
   const numRows = lastRow - startRow + 1;
   
   if (numRows <= 0) {
-    console.warn(`⚠️ [DATA] extractSheetDataStrict: Invalid row count (${numRows}) for sheet '${sheetName}'.`);
+    console.warn(`[DATA] extractSheetDataStrict: Invalid row count (${numRows}) for sheet '${sheetName}'.`);
     return { schema: [], rows: [] };
   }
   
@@ -346,9 +345,9 @@ function extractSheetDataStrict(
     const rowRaw = vals[i];
     const rowDisplay = displayVals[i];
 
-    // 🛡️ SAFETY: Ensure row arrays exist and have minimum length
+    // SAFETY: Ensure row arrays exist and have minimum length
     if (!Array.isArray(rowRaw) || !Array.isArray(rowDisplay)) {
-      console.warn(`⚠️ [DATA] extractSheetDataStrict: Invalid row data at index ${i}. Skipping.`);
+      console.warn(`[DATA] extractSheetDataStrict: Invalid row data at index ${i}. Skipping.`);
       continue;
     }
 
@@ -366,9 +365,9 @@ function extractSheetDataStrict(
       .map((m) => {
         if (m.type === "bool_check") return null;
 
-        // 🛡️ SAFETY: Bounds check for column access
+        // SAFETY: Bounds check for column access
         if (m.col >= rowRaw.length || m.col >= rowDisplay.length) {
-          console.warn(`⚠️ [DATA] Column index ${m.col} out of bounds for row ${i}. Using default value.`);
+          console.warn(`[DATA] Column index ${m.col} out of bounds for row ${i}. Using default value.`);
           return m.type === "num" ? 0 : "";
         }
 
@@ -391,7 +390,7 @@ function extractSheetDataStrict(
             return `${Math.round(n)}%`;
           case "date":
             const dateObj = Registry.Services.Time.parseFlexibleDate(val);
-            // 🛡️ Ensure valid ISO or fallback to 'Now' ISO if data exists but is unparsable
+            // Ensure valid ISO or fallback to 'Now' ISO if data exists but is unparsable
             if (isNaN(dateObj.getTime()) || dateObj.getTime() <= 0) {
                 return val ? new Date().toISOString() : "";
             }
@@ -432,7 +431,7 @@ function sanitizeNum(v: any, displayV: string): number {
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  */
 (function(scope: any) {
   Object.assign(scope, {

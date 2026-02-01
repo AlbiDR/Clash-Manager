@@ -1,13 +1,11 @@
-
 /**
- * ============================================================================
  * MODULE: ORCHESTRATOR & TRIGGERS - TypeScript Edition
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Manages Automation Triggers and the "Master Protocol".
  * WORKFLOW:
  *    - Creates a custom UI menu (onOpen) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * 🏷️ VERSION: 11.0.0
+ * VERSION: 11.0.0
  * ============================================================================
  */
 
@@ -178,8 +176,7 @@ function taskUpdateRoster(): void {
 }
 
 /**
- * ⛓️ TRIGGER HELPER: Queue Retry
- * Creates a one-time trigger with a specific stagger.
+ * TRIGGER HELPER: Queue Retry
  */
 function queueRetry(functionName: string, minutes: number = 2): void {
   // Guard: Remove existing pending retries to prevent pile-up
@@ -195,8 +192,7 @@ function queueRetry(functionName: string, minutes: number = 2): void {
 // function queueLeaderboardUpdate() { ... }
 
 /**
- * 🧹 TRIGGER HELPER: Cleanup Temporary Triggers
- * Removes one-time clock triggers for a specific function.
+ * TRIGGER HELPER: Cleanup Temporary Triggers
  */
 function cleanupTemporaryTriggers(functionName: string): void {
   const triggers = ScriptApp.getProjectTriggers();
@@ -442,7 +438,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
 }
 
 /**
- * 🟢 UI WRAPPERS
+ * UI WRAPPERS
  */
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -486,7 +482,7 @@ function triggerScoutRecruits(): void {
 }
 
 /**
- * 🔍 DIAGNOSTICS & ORCHESTRATION
+ * DIAGNOSTICS & ORCHESTRATION
  */
 function checkSystemHealth(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -668,7 +664,7 @@ function verifyApiKeysInternal(
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  */
 (function(scope: any) {
   Object.assign(scope, {

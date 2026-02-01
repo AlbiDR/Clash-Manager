@@ -284,7 +284,7 @@ const Headhunter: IHeadhunter = {
         `STRATEGY:     ${strategy.method}`,
         `─`,
         `SCAN ACQUISITIONS: ${scanned.length} Found`,
-        `PIPELINE FLOW:    +${newArrivals} New | Updated: ${updatedExisting}`
+        `PIPELINE FLOW:    +${newArrivals} New, Updated: ${updatedExisting}`
       ]
     );
     console.info(`Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${CONFIG.HEADHUNTER.TARGET}`);

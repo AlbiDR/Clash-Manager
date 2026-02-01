@@ -3,7 +3,7 @@
  * ============================================================================
  * 🔭 MODULE: HEADHUNTER TYPES
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Shared interfaces for the Recruitment system.
+ *  DESCRIPTION: Shared interfaces for the Recruitment system.
  * ============================================================================
  */
 

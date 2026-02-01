@@ -6,7 +6,7 @@
  * DESCRIPTION: Handles all Spreadsheet visualization, formatting, and
  *    interactive elements (checkboxes, banding, headers).
  * ROLE: Pure Presentation Layer. "How it looks".
- * 🏷️ VERSION: 1.0.1
+ * VERSION: 1.0.1
  * ============================================================================
  */
 
@@ -269,7 +269,7 @@ var View: IView = {
   },
 
   /**
-   * 📱 MOBILE INTERFACE ELEMENTS
+   * MOBILE INTERFACE ELEMENTS
    */
   drawMobileCheckbox: function (sheet) {
     if (!sheet) return;
@@ -301,7 +301,7 @@ var View: IView = {
   },
 
   /**
-   * 🎨 Helper: Convert Hex to Sheets API Color object
+   * Helper: Convert Hex to Sheets API Color object
    */
   hexToRgbColor: function(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -311,7 +311,7 @@ var View: IView = {
   },
 
   /**
-   * 🎨 Helper: Darken an RGB color by a multiplier
+   * Helper: Darken an RGB color by a multiplier
    */
   darkenRgb: function(rgb: { red: number; green: number; blue: number }, factor: number) {
     return {
@@ -327,11 +327,11 @@ var View: IView = {
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // 🎨 Theme Palette
+    // Theme Palette
     const P = CONFIG.THEME.PALETTE;
     const SH = CONFIG.SHEETS;
 
-    // 🏗️ Define Roles (Interleaved ordering: Parent -> Backups -> Legacy)
+    // Define Roles (Interleaved ordering: Parent -> Backups -> Legacy)
     const REGISTER: Array<{ name: string; color: any; visible: boolean }> = [];
 
     const WORKSPACE_CONFIGS = [
@@ -407,7 +407,7 @@ var View: IView = {
   },
 
   /**
-   * 🎨 Helper: Convert Hex to Sheets API Color object
+   * Helper: Convert Hex to Sheets API Color object
    */
 
   /**
@@ -486,7 +486,7 @@ var View: IView = {
       const copySheetId = copyResponse.sheetId;
       
       // 4. Finalize Clone (Rename & Tag)
-      // ⚡ Robust Verification: Ensure the copied sheet is found even if GAS is slow
+      // Robust Verification: Ensure the copied sheet is found even if GAS is slow
       SpreadsheetApp.flush(); 
       const allSheets = ss.getSheets();
       const clonedSheet = allSheets.find((s: any) => s.getSheetId() === copySheetId);
@@ -505,7 +505,7 @@ var View: IView = {
       }
 
     } catch (e: any) {
-      console.warn(`⚠️ Backup Error for '${sheetName}': ${e.message}`);
+      console.warn(`Backup Error for '${sheetName}': ${e.message}`);
     } finally {
       // Always run hygiene to clean up any stray "Copy of..." tabs created by failed attempts
       this.enforceGlobalTabHygiene(ss);
@@ -545,7 +545,7 @@ var View: IView = {
         }]
       }, ssId);
     } catch (e: any) {
-      console.warn(`🏷️ Metadata Tagging failed for ${sheet.getName()}: ${e}`);
+      console.warn(`Metadata Tagging failed for ${sheet.getName()}: ${e}`);
     }
   },
 
@@ -562,13 +562,13 @@ var View: IView = {
         return ss.getSheets().find((s: any) => s.getSheetId() === sheetId) || null;
       }
     } catch (e: any) {
-      console.warn(`🏷️ Metadata Lookup failed for type ${type}: ${e}`);
+      console.warn(`Metadata Lookup failed for type ${type}: ${e}`);
     }
     return null;
   },
 
   /**
-   * 🔒 PROTECTED RANGE REGISTRY
+   * PROTECTED RANGE REGISTRY
    * Locks the header row and system columns.
    */
   protectHeaders: function (sheet) {
@@ -598,7 +598,7 @@ var View: IView = {
         ]
       }, ssId);
     } catch (e: any) {
-      console.warn(`🔒 Range Protection failed for ${sheet.getName()}: ${e}`);
+      console.warn(`Range Protection failed for ${sheet.getName()}: ${e}`);
     }
   },
 
@@ -670,7 +670,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  */
 (function(scope: any) {
   Object.assign(scope, { View, VER_VIEW });

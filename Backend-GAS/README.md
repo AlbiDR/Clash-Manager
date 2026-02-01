@@ -46,7 +46,7 @@ To enable automated deployments via GitHub Actions, you must configure the follo
 The engine operates as a clinical cron-daemon. While you can manually configure triggers, the recommended approach is the **Automated Setup**:
 
 1. Open the linked Google Sheet.
-2. Navigate to **👑 Clan Manager > ⚙️ Setup Triggers**.
+2. Navigate to ** Clan Manager >  Setup Triggers**.
 
 This automatically configures the following lifecycle:
 
