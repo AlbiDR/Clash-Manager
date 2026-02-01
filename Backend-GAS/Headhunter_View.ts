@@ -5,9 +5,9 @@ import type { Recruit } from './Headhunter_Types';
 
 /**
  * ============================================================================
- * 🎨 MODULE: HEADHUNTER VIEW
+ * MODULE: HEADHUNTER VIEW
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Rendering engine for the Headhunter Interface.
+ * DESCRIPTION: Rendering engine for the Headhunter Interface.
  *    Handles Atomic Data Delivery + Visual Formatting.
  * ============================================================================
  */
@@ -179,8 +179,8 @@ const HeadhunterView: IHeadhunterView = {
     // Ideally do ALL or NONE via API.
     // Since `applyStandardLayout` clears things, I should probably do ALL via API.
     
-    Registry.Services.View.setStatusMessage(sheet, `HEADHUNTER • ${new Date().toLocaleString()}`);
-    console.log(`✅ Headhunter View Rendered: ${actualCount} candidates (Atomic).`);
+    Registry.Services.View.setStatusMessage(sheet, `HEADHUNTER | ${new Date().toLocaleString()}`);
+    console.log(`Headhunter View Rendered: ${actualCount} candidates (Atomic).`);
   }
 };
 

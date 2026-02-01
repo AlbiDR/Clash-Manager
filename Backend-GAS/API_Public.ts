@@ -1,9 +1,9 @@
 
 /**
  * ============================================================================
- * 🔌 MODULE: API_PUBLIC - TypeScript Edition
+ * MODULE: API_PUBLIC - TypeScript Edition
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
+ * DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
  * 🏷️ VERSION: 11.0.1
  * ============================================================================
  */
@@ -70,7 +70,7 @@ declare const VER_SCORING: string;
 declare const VER_ORCHESTRATOR: string;
 
 /**
- * 🔌 API INTERFACES
+ * API INTERFACES
  */
 export interface ApiResponseEnvelope<T = any> {
   status: "success" | "error";
@@ -96,7 +96,7 @@ export interface WarLogEntry {
 }
 
 /**
- * 🌐 GET Handler
+ * GET Handler
  */
 function doGet(
   e: GoogleAppsScript.Events.DoGet,
@@ -114,7 +114,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
 
     switch (action) {
       case "ping":
-        // ⚡ OPTIMIZATION: Check cache first to avoid slow SpreadsheetApp load
+        // OPTIMIZATION: Check cache first to avoid slow SpreadsheetApp load
         const cachedPing = Registry.Services.Store.cache.getLarge("PING_METADATA_V1");
         if (cachedPing) {
            return respondRaw(cachedPing);
@@ -183,13 +183,13 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: ping, getwebappdata, refresh, log.`);
     }
   } catch (err: any) {
-    console.error(`❌ [API] ${method} Handler ERROR: ${err.stack}`);
+    console.error(`API: ${method} Handler ERROR: ${err.stack}`);
     return respond(null, "SERVER_ERROR", `Internal server error: ${err.message}`);
   }
 }
 
 /**
- * 🌐 POST Handler
+ * POST Handler
  */
 function doPost(
   e: GoogleAppsScript.Events.DoPost,
@@ -242,13 +242,13 @@ function doPost(
         return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: dismissrecruits, triggerupdate, ping.`);
     }
   } catch (err: any) {
-    console.error(`❌ [API] doPost ERROR: ${err.stack}`);
+    console.error(`API: doPost ERROR: ${err.stack}`);
     return respond(null, "SERVER_ERROR", `Internal server error: ${err.message}`);
   }
 }
 
 /**
- * 📦 RESPONSE UTILITIES
+ * RESPONSE UTILITIES
  */
 function respond<T>(
   data: T,
@@ -297,13 +297,13 @@ function getModuleVersions(): Record<string, string> {
 }
 
 /**
- * 📊 DATA FETCHERS
+ * DATA FETCHERS
  */
 function getMembers(): any[] {
   const remoteData = Registry.Services.Network.fetchPublicJson("members");
   if (remoteData) return remoteData as any[];
 
-  console.info("ℹ️ [API] getMembers: Using local GAS fallback (remote unavailable).");
+  console.info("API: getMembers: Using local GAS fallback (remote unavailable).");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
   // OPTIMIZATION: Use same endpoint as Headhunter to hit shared cache
   const data = Registry.Services.Network.fetchRoyaleAPI([
@@ -311,7 +311,7 @@ function getMembers(): any[] {
   ]);
 
   if (!data || !data[0] || !data[0].memberList) {
-    console.warn("⚠️ [API] getMembers: No data returned from Clash Royale API.");
+    console.warn("API: getMembers: No data returned from Clash Royale API.");
     return [];
   }
 
@@ -329,14 +329,14 @@ function getWarLog(): WarLogEntry[] {
   const remoteData = Registry.Services.Network.fetchPublicJson("warlog");
   if (remoteData) return remoteData as WarLogEntry[];
 
-  console.info("ℹ️ [API] getWarLog: Using local GAS fallback (remote unavailable).");
+  console.info("API: getWarLog: Using local GAS fallback (remote unavailable).");
   const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
   const data = Registry.Services.Network.fetchRoyaleAPI([
     `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
   ]);
 
   if (!data || !data[0] || !data[0].items) {
-    console.warn("⚠️ [API] getWarLog: No data returned from Clash Royale API.");
+    console.warn("API: getWarLog: No data returned from Clash Royale API.");
     return [];
   }
 
@@ -389,7 +389,7 @@ function parseCRDateISO(t: string): string {
 }
 
 /**
- * 🤖 ASYNC UPDATE DISPATCHER
+ * ASYNC UPDATE DISPATCHER
  */
 function triggerAsyncUpdate(target: string | undefined): any {
   const normTarget = (target || "").toLowerCase().trim();
@@ -427,10 +427,10 @@ function triggerAsyncUpdate(target: string | undefined): any {
         .after(500)
         .create();
 
-      console.info(`🚀 [API] Async Trigger Queued: ${normTarget}`);
+      console.info(`API: Async Trigger Queued: ${normTarget}`);
       return { success: true, status: "QUEUED", target: normTarget };
     } catch (e: any) {
-      console.error(`❌ [API] triggerAsyncUpdate Failed: ${e.message}`);
+      console.error(`API: triggerAsyncUpdate Failed: ${e.message}`);
       throw e;
     }
   });
@@ -439,7 +439,7 @@ function triggerAsyncUpdate(target: string | undefined): any {
 function dispatchAsyncUpdate(): void {
   const target = Registry.Services.Store.props.get("PENDING_UPDATE_TARGET");
   if (!target) {
-    console.warn("⚠️ [API] Async Dispatcher: No pending target found. Aborting.");
+    console.warn("API: Async Dispatcher: No pending target found. Aborting.");
     return;
   }
 
@@ -472,9 +472,8 @@ function dispatchAsyncUpdate(): void {
 
       if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
 
-      console.info(`✅ [API] Async Execution Complete: ${target}`);
-    } catch (e: any) {
-      console.error(`❌ [API] Async Execution Failed [${target}]: ${e.message}`);
+      console.info(`API: Async Execution Complete: ${target}`);
+      console.error(`API: Async Execution Failed [${target}]: ${e.message}`);
     } finally {
       CacheService.getScriptCache().remove("SYSTEM_STATUS");
     }

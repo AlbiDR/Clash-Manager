@@ -1,15 +1,15 @@
 
 /**
  * ============================================================================
- * 🕰️ MODULE: TIME (Temporal Engine)
+ * MODULE: TIME (Temporal Engine)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Centralized date, time, and war-cycle logic.
- * ⚙️ CAPABILITIES:
+ * DESCRIPTION: Centralized date, time, and war-cycle logic.
+ * CAPABILITIES:
  *    1. War Cycle Logic: Calculates Week ID and Phases based on 10:00 UTC Reset.
  *    2. Date Parsing: Robust ISO 8601 parsing for RoyaleAPI dates.
  *    3. Logical Days: Handles "Monday" logic regardless of local timezone.
  * 
- * 🛡️ ARCHITECTURE: 
+ * ARCHITECTURE:
  *    - Pure Service: Deterministic logic, no external dependencies.
  *    - Single Source of Truth for "When is War?".
  * 
@@ -157,7 +157,7 @@ var Time: ITime = {
   calculateWarWeekId(d: Date | null | undefined): string {
     if (!d || isNaN(d.getTime())) return "Unknown";
     
-    // 🛡️ RESET-AWARE NORMALIZATION (10:00 UTC Monday Reset)
+    // RESET-AWARE NORMALIZATION (10:00 UTC Monday Reset)
     const date = new Date(d.getTime());
     const RESET_H = 10;
     const resetToday = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), RESET_H, 0, 0);
@@ -198,7 +198,7 @@ var Time: ITime = {
   },
 
   /**
-   * ⚔️ ELIGIBLE BATTLE DAYS CALCULATOR
+   * ELIGIBLE BATTLE DAYS CALCULATOR
    * Determines theoretical maximum battle days based on player tenure.
    * Standard Week = 4 Battle Days (Thu-Sun)
    * Colosseum Week = 7 Battle Days (All days count)
@@ -230,14 +230,14 @@ var Time: ITime = {
   },
 
   /**
-   * 🕰️ WAR PHASE HEURISTIC (Single Source of Truth)
+   * WAR PHASE HEURISTIC (Single Source of Truth)
    * Determines the War Day based on the deterministic Monday 10:00 UTC cycle.
    */
   getWarPhaseFromDate(date: Date, snapshot?: any, options: { forceCalendarDay?: boolean } = {}): WarPhaseResult {
     const RESET_H = 10; // 10:00 UTC
     let utcDay = date.getUTCDay(); // 0=Sun, 1=Mon, ...
 
-    // 🛡️ MODE A: High-Precision (Game Clock Aware)
+    // MODE A: High-Precision (Game Clock Aware)
     // Used for Live Logging & Participation Logic.
     if (!options.forceCalendarDay) {
         const reset = new Date(
@@ -256,7 +256,7 @@ var Time: ITime = {
           utcDay = (utcDay + 6) % 7;
         }
     } 
-    // 🛡️ MODE B: Calendar-Consistent (Audit Mode)
+    // MODE B: Calendar-Consistent (Audit Mode)
     // Used for Repair/Historical Audits where "Monday" means "Monday".
     else {
         // Construct a safe "Noon" representation of the LOCAL date to ensure proper day index
@@ -270,7 +270,7 @@ var Time: ITime = {
         utcDay = localBasedUTC.getUTCDay();
     }
 
-    // 🛡️ DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
+    // DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
     if (snapshot && snapshot.protocol) {
       const snapDate = new Date(snapshot.meta.timestamp);
       // Compare calendar dates (YYYY-MM-DD)
@@ -288,7 +288,7 @@ var Time: ITime = {
       }
     }
 
-    // 🛡️ HEURISTIC FALLBACK (Corrected Mapping)
+    // HEURISTIC FALLBACK (Corrected Mapping)
     // Shift: Mon(1) -> 0, Tue(2) -> 1, Wed(3) -> 2 (Training)
     // Thu(4) -> 3, Fri(5) -> 4, Sat(6) -> 5, Sun(0) -> 6 (Battle)
     const rawDay = (utcDay + 6) % 7;

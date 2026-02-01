@@ -1,15 +1,15 @@
 
 /**
  * ============================================================================
- * ⚙️ MODULE: CORE (Execution Engine)
+ * MODULE: CORE (Execution Engine)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Low-level execution safety and primitive utilities.
- * ⚙️ CAPABILITIES:
+ * DESCRIPTION: Low-level execution safety and primitive utilities.
+ * CAPABILITIES:
  *    1. Mutex Locking: Script-wide atomic execution via LockService.
  *    2. Data Primitives: Pure helper functions (shuffleArray).
  *    3. Runtime Tracking: Execution metrics for performance monitoring.
  * 
- * 🛡️ ARCHITECTURE: 
+ * ARCHITECTURE: 
  *    - Pure Service: Zero business logic dependencies.
  *    - Global Singleton 'Core'.
  * 
@@ -86,7 +86,7 @@ export interface ICore {
    ========================================================================== */
 var Core: ICore = {
   /**
-   * 🔒 EXECUTE SAFELY (Mutex Lock)
+   * EXECUTE SAFELY (Mutex Lock)
    * Wraps any operation in a script-wide lock to prevent race conditions.
    */
   executeSafely<T>(lockKey: string, callback: () => T): T {
@@ -107,7 +107,7 @@ var Core: ICore = {
           if (typeof SpreadsheetApp !== "undefined") {
             SpreadsheetApp.getActiveSpreadsheet().toast(
               "System is busy. Please try again.",
-              "⚠️ Locked",
+              "Locked",
             );
           }
         } catch (e: any) { /* Silently ignore notification failures */ }
@@ -121,7 +121,7 @@ var Core: ICore = {
   },
 
   /**
-   * 🔀 SHUFFLE ARRAY (Fisher-Yates)
+   * SHUFFLE ARRAY (Fisher-Yates)
    * Randomizes array order in O(n) time.
    */
   shuffleArray<T>(array: T[]): T[] {
@@ -133,7 +133,7 @@ var Core: ICore = {
   },
 
   /**
-   * ⏱️ RUNTIME METRICS
+   * RUNTIME METRICS
    * Tracks execution time for performance monitoring.
    */
   runtime: {

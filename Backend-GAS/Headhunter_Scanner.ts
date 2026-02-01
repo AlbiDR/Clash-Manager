@@ -8,7 +8,7 @@ import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_T
  * ============================================================================
  * MODULE: HEADHUNTER SCANNER
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Discovery engine for finding new recruits.
+ * DESCRIPTION: Discovery engine for finding new recruits.
  *    Handles Tournament Searching -> Lottery -> Member Scanning -> Profiling.
  * ============================================================================
  */
@@ -75,7 +75,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       .slice(0, scanCfg.TOURNEYS || 300)
       .map((t: TournamentResult) => t.tag);
     
-    // 🛡️ BLOCK LOG: Scout Discovery Context
+    // Scout Discovery Context
     Registry.Services.Reporting.logReport("Scout Discovery", [
       `TOTAL TOURNAMENTS: ${uniqueTourneys.size}`,
       `SEARCH KEYWORDS:  ${keywords.length}`,
@@ -145,7 +145,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     Registry.Services.Core.shuffleArray(candidatePool);
     const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
     
-    // 🛡️ BLOCK LOG: Sampling Context
+    // Sampling Context
     Registry.Services.Reporting.logReport("Sampling Metrics", [
       `UNIQUE CLANLESS: ${uniqueCandidates.size}`,
       `SAMPLING LIMIT:  ${playerLimit}`,
@@ -162,7 +162,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     /**
      * Helper: Batch fetcher to avoid RoyaleAPI 429 and GAS timeouts.
-     * 🛡️ FIX: Ensures array parity by padding results on batch failure.
+     * FIX: Ensures array parity by padding results on batch failure.
      */
     const batchFetch = (tags: string[], chunkSize: number, fetchFn: (chunk: string[]) => any[]) => {
       const results: any[] = [];
@@ -195,7 +195,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       candidates[0].rawScore !== undefined
     ) {
       // 6A. Process Remote Scored Candidates
-      // 🛡️ DEDUPLICATION: Use playerLimit and deduplicated tags
+      // DEDUPLICATION: Use playerLimit and deduplicated tags
       const remoteMap = new Map<string, any>();
       candidates.forEach(c => remoteMap.set(c.tag, c));
       
@@ -229,7 +229,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
         });
       });
 
-      // 🕵️ RECURSIVE SEEDING: Fetch logs for Top 15 Remote Recruits to trigger Shadow Scout
+      // RECURSIVE SEEDING: Fetch logs for Top 15 Remote Recruits to trigger Shadow Scout
       const seedTags = validCandidates
         .sort((a, b) => b.rawScore - a.rawScore)
         .slice(0, 15)
@@ -287,7 +287,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           processEntry(b);
         }
 
-        // 🛡️ BLOCK LOG: Shadow Trace Summary
+        // Shadow Trace Summary
         Registry.Services.Reporting.logReport("Shadow Scout Trace", [
           `INCOMING SEEDS:   ${seedTags.length}`,
           `BATTLES TRACED:   ${totalBattles}`,
@@ -351,11 +351,11 @@ const HeadhunterScanner: IHeadhunterScanner = {
               ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type),
             );
 
-            // 🕵️ SHADOW SCOUT: Extract Elite Clanless Opponents
+            // SHADOW SCOUT: Extract Elite Clanless Opponents
             if (shadowTags.size < 100) {
               logs[idx].forEach((b: any) => {
                 if (shadowTags.size >= 100) return;
-                // 🛡️ PRECISION SCOUTING: Only look for opponents in Non-Clan modes
+                // PRECISION SCOUTING: Only look for opponents in Non-Clan modes
                 if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
                   const opponents = b.opponent || [];
                   if (Array.isArray(opponents)) {
@@ -390,7 +390,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
             W,
           );
 
-          // 🛡️ HERITAGE INTELLIGENCE: Apply Prophet Bonus
+          // HERITAGE INTELLIGENCE: Apply Prophet Bonus
           let finalScore = rawScore;
           if (heritageTags.has(p.tag.replace("#", "").trim().toLowerCase())) {
             const intel = prophetCache.get(p.tag.replace("#", "").trim().toLowerCase());

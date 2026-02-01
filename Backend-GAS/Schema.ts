@@ -1,10 +1,10 @@
 
 /**
  * ============================================================================
- * 🗂️ MODULE: SCHEMA (Data Mapping Engine)
+ * MODULE: SCHEMA (Data Mapping Engine)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Manages the mapping between Spreadsheet Columns and Logic.
- * ⚙️ CAPABILITIES:
+ * DESCRIPTION: Manages the mapping between Spreadsheet Columns and Logic.
+ * CAPABILITIES:
  *    1. Dynamic Discovery: Finds columns by Name, not fixed Index (Safety).
  *    2. Configuration Sync: Updates Global CONFIG with discovered indices.
  * 🏷️ VERSION: 1.0.0
@@ -80,7 +80,7 @@ var Schema: ISchema = {
   bootDynamicSchema: function () {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) return;
-    console.info("⚡ Booting Dynamic Schema Sync...");
+    console.info("Schema: Booting Dynamic Schema Sync...");
     
     // Safety check for CONFIG presence
     if (typeof CONFIG === 'undefined' || !CONFIG.SHEETS) return;

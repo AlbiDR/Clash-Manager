@@ -6,7 +6,7 @@ declare var SpreadsheetApp: any;
 
 const RosterView = {
   /**
-   * 🏗️ LAYOUT: Applies visual standards (Conditional formatting, numbering, banding).
+   * LAYOUT: Applies visual standards (Conditional formatting, numbering, banding).
    */
   restoreVisuals(sheet: any, rowCount: number, HEADERS_ARRAY: string[]) {
     const ssId = sheet.getParent().getId();
@@ -82,7 +82,7 @@ const RosterView = {
     ];
 
     Sheets.Spreadsheets.batchUpdate({ requests: finalRequests }, ssId);
-    Registry.Services.View.setStatusMessage(sheet, `ROSTER • ${new Date().toLocaleString()}`);
+    Registry.Services.View.setStatusMessage(sheet, `ROSTER | ${new Date().toLocaleString()}`);
   }
 };
 

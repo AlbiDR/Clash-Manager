@@ -5,16 +5,16 @@ declare var Sheets: any;
 
 /**
  * ============================================================================
- * 👁️ MODULE: DATABASE VIEW
+ * MODULE: DATABASE VIEW
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Handles all Spreadsheet rendering, formatting, and layout
+ * DESCRIPTION: Handles all Spreadsheet rendering, formatting, and layout
  *    for the Clan Database.
  * ============================================================================
  */
 
 const DatabaseView = {
   /**
-   * 📑 HEADERS: Single source of truth from SCHEMA.
+   * HEADERS: Single source of truth from SCHEMA.
    */
   getHeaders(): string[] {
     return Object.values(CONFIG.SCHEMA.DB_HEADERS);
@@ -27,7 +27,7 @@ const DatabaseView = {
     const ssId = ss.getId();
     const headers = this.getHeaders();
     
-    // 🛡️ SCHEMA & GRID MANAGEMENT
+    // SCHEMA & GRID MANAGEMENT
     const sheetMetadata = Sheets.Spreadsheets.get(ssId, {
       ranges: [CONFIG.SHEETS.DB],
       includeGridData: false
@@ -147,7 +147,7 @@ const DatabaseView = {
      // 🚀 EXECUTE UNBREAKABLE TRANSACTION
      Sheets.Spreadsheets.batchUpdate({ requests: finalVisualRequests }, ssId);
 
-     Registry.Services.View.setStatusMessage(sheet, `DATABASE • ${new Date().toLocaleString()}`);
+     Registry.Services.View.setStatusMessage(sheet, `DATABASE | ${new Date().toLocaleString()}`);
   }
 };
 
