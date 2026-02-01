@@ -49,24 +49,28 @@ export const formatTimeAgoShort = (
   dateStr: string | null | undefined,
 ): string => formatTime(dateStr, true);
 
+const TIME_AGO_REGEX = /^(\d+)(mo|[ymdhw]) ago$/;
+const TIME_AGO_MULTIPLIERS: Record<string, number> = {
+  m: 1,
+  h: 60,
+  d: 1440,
+  w: 10080,
+  mo: 43200,
+  y: 525600,
+};
+
+/**
+ * ⚡ OPTIMIZED PARSER
+ * Converts human-readable time strings (e.g. "2d ago") into numeric minutes
+ * for O(1) sorting performance.
+ */
 export function parseTimeAgoValue(val: string | null | undefined): number {
   if (!val || val === "-" || val === "Just now") return 0;
-  const match = val.match(/^(\d+)([ymdh]) ago$/);
+  const match = val.match(TIME_AGO_REGEX);
   if (!match) return 99999999;
-  const num = parseInt(match[1]);
+  const num = parseInt(match[1], 10);
   const unit = match[2];
-  switch (unit) {
-    case "m":
-      return num;
-    case "h":
-      return num * 60;
-    case "d":
-      return num * 1440;
-    case "y":
-      return num * 525600;
-    default:
-      return num;
-  }
+  return num * (TIME_AGO_MULTIPLIERS[unit] || 1);
 }
 
 export function formatRole(roleStr: string): { label: string; class: string } {
