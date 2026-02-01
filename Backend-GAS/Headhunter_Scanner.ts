@@ -281,7 +281,23 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
           processEntry(b);
         }
-        console.info(`  🕵️ [SHADOW] Trace complete. Battles=${totalBattles}, Opponents=${totalOpponents}, Tags=${shadowTags.size}`);
+
+        // 🛡️ BLOCK LOG: Shadow Trace Summary
+        Registry.Services.Reporting.logReport("Shadow Scout Trace", [
+          `INCOMING SEEDS:   ${seedTags.length}`,
+          `BATTLES TRACED:   ${totalBattles}`,
+          `OPPONENTS FOUND:  ${totalOpponents}`,
+          `BLACKBOX REJECT:  ${rejectedClanned}`,
+          `DISCOVERED TAGS:  ${shadowTags.size}`
+        ], 50);
+
+        if (totalBattles === 0 && seedTags.length > 0) {
+           console.warn(`🚨 [DEEP_PROBE] Yield is ZERO despite ${seedTags.length} seeds. seedLogs type: ${typeof seedLogs}, Length: ${seedLogs.length}`);
+           if (seedLogs.length > 0) {
+              const sample = seedLogs[0];
+              console.warn(`🚨 [DEEP_PROBE] First seed record: type=${typeof sample}, isArray=${Array.isArray(sample)}, keys=${Object.keys(sample || {}).join(',')}`);
+           }
+        }
       }
     } else {
       // Local scoring required
