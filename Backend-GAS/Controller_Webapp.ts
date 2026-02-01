@@ -410,7 +410,7 @@ function extractSheetDataStrict(
     rows.push(outputRow);
   }
 
-  console.info(`ℹ️ [DATA] extractSheetDataStrict: Extracted ${rows.length} valid row${rows.length !== 1 ? 's' : ''} from '${sheetName}'.`);
+  console.info(`[DATA] extractSheetDataStrict: Extracted ${rows.length} valid row${rows.length !== 1 ? 's' : ''} from '${sheetName}'.`);
 
   return {
     schema: mapping.filter((m) => m.type !== "bool_check").map((m) => m.key),

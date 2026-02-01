@@ -24,7 +24,7 @@ export interface IReporting {
 var Reporting: IReporting = {
   
   /**
-   * Logs a standardized pipeline step: [Step X/Y] Message
+   * Logs a standardized pipeline step: [X/Y] Message
    */
   logStep(step: number, total: number, message: string): void {
     console.info(`[${step}/${total}] ${message}`);
@@ -32,41 +32,36 @@ var Reporting: IReporting = {
 
   /**
    * Logs a high-density, frameless report.
-   * Optimized for Gemini: One single log call (one timestamp) with zero ASCII borders.
+   * Optimized for zero-token waste: Significant whitespace replaces ASCII dividers.
    */
   logReport(title: string, lines: string[]): void {
-    const dividerLen = Math.max(title.length + 2, 40);
-    const divider = "─".repeat(dividerLen);
-    
     // Header section
-    let output = `\n${title.toUpperCase()}\n${divider}\n`;
+    let output = `\n${title.toUpperCase()}\n`;
     
-    // Body section with slight indentation for sophisticated structure
+    // Body section with slight indentation
     output += lines.map(l => {
       const trimmed = l.trim();
-      // Smart Dividers within the report
+      // Use significant whitespace (empty line) as a divider
       if (trimmed === "─" || trimmed === "-" || trimmed === "=") {
-        return divider;
+        return "";
       }
-      return `  ${l}`; // 2-space signal indentation
+      return `  ${l}`; 
     }).join("\n");
-
-    output += `\n${divider}\n`;
 
     // @ts-ignore
     const logFunc = (typeof Logger !== "undefined") ? Logger.log : console.log;
-    logFunc(output);
+    logFunc(output + "\n");
   },
 
   /**
    * Logs a high-visibility banner for major section headers.
    */
   logBanner(message: string): void {
-    console.log(`\n▶▶▶ ${message.toUpperCase()} ◀◀◀\n`);
+    console.log(`\n>>> ${message.toUpperCase()} <<<\n`);
   }
 };
 
-export const VER_REPORTING = "1.1.0";
+export const VER_REPORTING = "1.2.0";
 
 // @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
