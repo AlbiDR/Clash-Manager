@@ -15,7 +15,7 @@ const RosterView = {
     const startIdx = CONFIG.LAYOUT.DATA_START_ROW - 1;
     const contentCols = HEADERS_ARRAY.length;
 
-    // 🏗️ Step 1: Standard Base Layout
+    // Step 1: Standard Base Layout
     Registry.Services.View.applyStandardLayout(
       sheet,
       rowCount,
@@ -23,7 +23,7 @@ const RosterView = {
       HEADERS_ARRAY
     );
 
-    // 🏗️ Step 2: Specialized Roster Visuals
+    // Step 2: Specialized Roster Visuals
     const finalRequests: any[] = [
       // 2A. PERFORMANCE GRADIENT
       {

@@ -8,10 +8,9 @@ declare var Utilities: any;
 declare var SpreadsheetApp: any;
 
 /**
- * ============================================================================
- * 💾 MODULE: DATABASE STORE
+ * MODULE: DATABASE STORE
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Persistence handling for the Clan Database.
+ * DESCRIPTION: Persistence handling for the Clan Database.
  *    Manages fetching, parsing, pruning, and upserting records.
  * ============================================================================
  */
@@ -149,7 +148,7 @@ const DatabaseStore = {
     let maxSortNumber = 0;
     
     if (lastRow >= startRow) {
-        // 🛡️ SCAN WINDOW: Increased to 1000 to handle existing duplication bloat
+        // SCAN WINDOW: Increased to 1000 to handle existing duplication bloat
         // A 50-member clan with 24 updates/day = 1200 rows. 1000 is a safe middle ground
         // to find Today's entries even if partially bloated.
         const scanSize = 1000; 
@@ -276,9 +275,8 @@ const DatabaseStore = {
   },
 
   /**
-   * 🧹 DEDUPLICATION UTILITY
+   * DEDUPLICATION UTILITY
    * Scans the entire database and removes redundant entries for the same Tag + Day.
-   * Keeps the most recent entry for each day.
    */
   deduplicateDatabase(sheet: any): { pruned: number } {
     console.warn("Deduplication: Starting Clan Database sweep...");
@@ -313,7 +311,7 @@ const DatabaseStore = {
 
       const dateObj = Registry.Services.Time.parseFlexibleDate(rawDate);
       
-      // 🛡️ CRITICAL FIX: Skip rows with invalid dates to prevent wiping out data
+      // CRITICAL FIX: Skip rows with invalid dates to prevent wiping out data
       // If parsing fails, parseFlexibleDate now returns Epoch 0 (1970).
       if (!dateObj || dateObj.getTime() <= 0) {
         console.warn(`Deduplication: Skipping row ${startRow + i}: Invalid date format "${rawDate}"`);

@@ -10,10 +10,9 @@ declare function getWarSnapshot(): WarSnapshot;
 declare var module: any;
 
 /**
- * ============================================================================
- * 💾 MODULE: DATABASE (Orchestrator)
+ * MODULE: DATABASE (Orchestrator)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: The Director of the Clan Database.
+ * DESCRIPTION: The Director of the Clan Database.
  *    Orchestrates: Network -> Store -> View.
  *    Replaces the legacy 'Logger.ts'.
  * ============================================================================
@@ -27,17 +26,17 @@ export interface IDatabase {
 
 const Database: IDatabase = {
     /**
-     * ⚡ MAIN ENTRY: Update Clan Database
+     * MAIN ENTRY: Update Clan Database
      * Fetches latest clan data and persists snapshots.
      */
     update(): void {
         console.info("Starting Clan Database ETL pipeline...");
         const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-        // 🛡️ SCHEMA SYNC: Ensure we find the right columns if they were moved
+        // SCHEMA SYNC: Ensure we find the right columns if they were moved
         Registry.Services.Schema.bootDynamicSchema();
 
-        // 🛡️ CONFIGURATION CHECK
+        // CONFIGURATION CHECK
         if (!CONFIG.SYSTEM.CLAN_TAG) {
             console.error("Configuration Error: CLAN_TAG is not configured. Aborting Database Update.");
             const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
@@ -48,7 +47,7 @@ const Database: IDatabase = {
         try {
             const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
-            // ⚡ Fetch Members and War Race data
+            // Fetch Members and War Race data
             Registry.Services.Reporting.logStep(1, 6, "Extracting Live API data (Members, Race)..."); // Updated step count to 6
             const urls = [
                 `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
@@ -63,11 +62,11 @@ const Database: IDatabase = {
                 return;
             }
 
-            // ⚔️ WAR INTELLIGENCE CHECK
+            // WAR INTELLIGENCE CHECK
             let isWarDay = false;
             try {
                 const warSnap = getWarSnapshot();
-                // 🛡️ REFINEMENT: Combine Protocol Phase with Royale API Period Type for maximum precision
+                // REFINEMENT: Combine Protocol Phase with Royale API Period Type for maximum precision
                 const phaseIsBattle = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
                 const periodIsWar = (raceData && raceData.periodType === 'war');
                 
@@ -83,10 +82,10 @@ const Database: IDatabase = {
 
             const activeMembers = membersData.items as ClanMemberSnapshot[];
     
-            // 🛡️ NORMALIZE: Ensure tags are uppercase for robust set matching
+            // NORMALIZE: Ensure tags are uppercase for robust set matching
             const activeTags = new Set(activeMembers.map((m) => String(m.tag || "").toUpperCase().trim()));
 
-            // 🗺️ MAP WAR FAME: Tag -> Fame
+            // MAP WAR FAME: Tag -> Fame
             const warFameMap = new Map<string, number>();
             if (raceData && raceData.clan && raceData.clan.participants) {
                 raceData.clan.participants.forEach((p: any) => {
@@ -102,7 +101,7 @@ const Database: IDatabase = {
             Registry.Services.Reporting.logStep(2, 6, "Verifying Sheet Structure...");
             const { sheetId, currentMaxRows } = DatabaseView.ensureStructure(ss, sheet);
 
-            // 🛡️ BACKUP
+            // BACKUP
             Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.DB);
 
             // 2. VIEW: Layout Prep
@@ -152,7 +151,7 @@ const Database: IDatabase = {
     },
 
     /**
-     * 🧹 DEDUPLICATION: Removes redundant entries for the same Tag + Day.
+     * DEDUPLICATION: Removes redundant entries for the same Tag + Day.
      */
     deduplicate(): { pruned: number } {
         const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -163,7 +162,7 @@ const Database: IDatabase = {
 };
 
 /**
- * 🌍 GLOBAL BRIDGE (Legacy Support)
+ * GLOBAL BRIDGE (Legacy Support)
  * Preserves compatibility with existing GAS Triggers.
  */
 function updateClanDatabase() {

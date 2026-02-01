@@ -1,8 +1,7 @@
 /**
- * ============================================================================
- * 📊 MODULE: DATABASE TYPES
+ * MODULE: DATABASE TYPES
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Type definitions for the Clan Database system.
+ * DESCRIPTION: Type definitions for the Clan Database system.
  * ============================================================================
  */
 

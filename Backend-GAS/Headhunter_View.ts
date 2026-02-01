@@ -46,7 +46,7 @@ const HeadhunterView: IHeadhunterView = {
         CONFIG.SCHEMA.HH_HEADERS[key as keyof typeof CONFIG.SCHEMA.HH_HEADERS],
     );
 
-    // 🏗️ LAYOUT PREPARATION (Run FIRST to establish canvas)
+    // LAYOUT PREPARATION (Run FIRST to establish canvas)
     Registry.Services.View.applyStandardLayout(
       sheet,
       Math.max(list.length, CONFIG.HEADHUNTER.TARGET),
@@ -54,7 +54,7 @@ const HeadhunterView: IHeadhunterView = {
       HEADERS,
     );
     
-    // 🛡️ COMPATIBLE DATE WRITE: Use dot-separated strings (dd/MM/yyyy HH.mm.ss)
+    // COMPATIBLE DATE WRITE: Use dot-separated strings (dd/MM/yyyy HH.mm.ss)
     // This prevents Sheets from auto-formatting in ways that break scripts.
     // The numberFormat applied later handles the visual display (dd/MM/yyyy HH:mm).
     const fmt = (d: any): string => {
@@ -77,7 +77,7 @@ const HeadhunterView: IHeadhunterView = {
       (c.potentialScore || 0),
     ]);
 
-    // 🛡️ PAD TO FIXED SIZE (50 Recruits + Buffer)
+    // PAD TO FIXED SIZE (50 Recruits + Buffer)
     // Ensures the headhunter table maintains a consistent 50-row UI footprint.
     const actualCount = rows.length;
     const HH_LIMIT = CONFIG.HEADHUNTER.TARGET || 50;
@@ -155,7 +155,7 @@ const HeadhunterView: IHeadhunterView = {
       }] : [])
     ];
 
-    // 🚀 EXECUTE UNBREAKABLE TRANSACTION
+    // EXECUTE UNBREAKABLE TRANSACTION
     Sheets.Spreadsheets!.batchUpdate({ requests: finalRequests }, ssId);
 
     // Apply specific formatting (Green Highlight for high potential)
