@@ -1,17 +1,15 @@
-
 /**
- * ============================================================================
- * 📢 MODULE: REPORTING (Service)
+ * MODULE: REPORTING (Service)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Standardized logging and observability service.
+ * DESCRIPTION: Standardized logging and observability service.
  *    Provides consistent visual formatting for Execution Logs.
  * 
- * ⚙️ CAPABILITIES:
+ * CAPABILITIES:
  *    1. Step Logging: [1/N] formatting for pipeline stages.
  *    2. Report Boxes: ASCII-art style boxes for summaries.
  *    3. Banners: High-visibility section headers.
  * 
- * 🏷️ VERSION: 1.1.0
+ * VERSION: 1.1.0
  * ============================================================================
  */
 

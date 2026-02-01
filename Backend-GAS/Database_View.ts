@@ -144,7 +144,7 @@ const DatabaseView = {
      // 6C. INJECT STANDARD LAYOUT (Borders, Alignment, Status Bar, Auto-Resize)
      finalVisualRequests.push(...Registry.Services.View.getStandardVisualRequests(sheetId, dataRowCount, contentCols));
 
-     // 🚀 EXECUTE UNBREAKABLE TRANSACTION
+     // EXECUTE UNBREAKABLE TRANSACTION
      Sheets.Spreadsheets.batchUpdate({ requests: finalVisualRequests }, ssId);
 
      Registry.Services.View.setStatusMessage(sheet, `DATABASE | ${new Date().toLocaleString()}`);

@@ -1,11 +1,9 @@
-
 /**
- * ============================================================================
- * 🏛️ MODULE: CONFIGURATION
+ * MODULE: CONFIGURATION
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Single Source of Truth for the entire application.
- * ⚙️ ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * 🏷️ VERSION: 10.0.13
+ * DESCRIPTION: Single Source of Truth for the entire application.
+ * ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
+ * VERSION: 10.0.13
  * ============================================================================
  */
 
@@ -41,7 +39,7 @@ declare namespace GoogleAppsScript {
 }
 
 /**
- * 🏛️ APP CONFIG INTERFACE
+ * APP CONFIG INTERFACE
  * Centralized definition for the entire application state.
  */
 export interface AppConfig {
@@ -128,7 +126,7 @@ export interface AppConfig {
     BENCHMARK_DECAY: number;
     BENCHMARK_PERCENTILE: number;
     BENCHMARK_MIN_POOL: number;
-    MIN_TROPHIES: number; // ⚡ NEW: Search override
+    MIN_TROPHIES: number; // Search override
   };
   ROSTER: {
     WEIGHTS: {
@@ -215,7 +213,7 @@ export var CONFIG: AppConfig = {
     API_BASE: "https://proxy.royaleapi.dev/v1",
     REMOTE_WORKER_URL: _PROPS["RemoteWorkerUrl"] || "https://clash-manager-worker.onrender.com",
     REMOTE_WORKER_SECRET: _PROPS["RemoteWorkerSecret"] || "",
-    // ⚡ UPDATE: Prioritize Script Property for PWA URL, fallback to default
+    // UPDATE: Prioritize Script Property for PWA URL, fallback to default
     WEB_APP_URL:
       _PROPS["WebAppUrl"] || "https://albidr.github.io/Clash-Manager/",
     RETRY_MAX: 3,
@@ -242,17 +240,17 @@ export var CONFIG: AppConfig = {
   LAYOUT: { BUFFER_SIZE: 25, DATA_START_ROW: 3 },
 
   UI: {
-    MENU_NAME: "👑 Clan Manager",
+    MENU_NAME: "Clan Manager",
     MOBILE_TRIGGER_CELL: "A1",
     MENU_ITEMS: {
-      DB: "☁️ Sync Database",
-      ROSTER: "🏆 Update Leaderboard",
-      HH: "🔭 Scout Recruits",
-      ALL: "🚀 Run Master Sequence",
-      MOBILE: "📱 Enable Mobile Controls",
-      KEYS: "🔑 Verify API Keys",
-      HEALTH: "🛡️ Health Check",
-      TGR: "⚙️ Setup Triggers",
+      DB: "Sync Database",
+      ROSTER: "Update Leaderboard",
+      HH: "Scout Recruits",
+      ALL: "Run Master Sequence",
+      MOBILE: "Enable Mobile Controls",
+      KEYS: "Verify API Keys",
+      HEALTH: "Health Check",
+      TGR: "Setup Triggers",
     },
   },
 
@@ -283,7 +281,7 @@ export var CONFIG: AppConfig = {
       CARDS: "Cards Won",
       WAR_WINS: "War Wins",
       FOUND_DATE: "Found Date",
-      RAW_SCORE: "Potential Raw Score", // ⚡ UPDATED: Explicit Naming
+      RAW_SCORE: "Potential Raw Score", // UPDATED: Explicit Naming
       POTENTIAL_SCORE: "Potential Score",
     },
     DB_HEADERS: {
@@ -393,7 +391,7 @@ export var CONFIG: AppConfig = {
     BENCHMARK_DECAY: 0.0096, // ~1% Daily Decay (Day 30 = ~75% Value)
     BENCHMARK_PERCENTILE: 0.05, // Top 5% of valid pool
     BENCHMARK_MIN_POOL: 3, // Minimum 3 players for average
-    MIN_TROPHIES: 0, // ⚡ Set to >0 to override auto-threshold (e.g. 5000)
+    MIN_TROPHIES: 0, // Set to >0 to override auto-threshold (e.g. 5000)
   },
 
   ROSTER: {
@@ -441,7 +439,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  * Ensures CONFIG is available globally in both GAS and Node/Vitest environments.
  */
 (function(scope: any) {

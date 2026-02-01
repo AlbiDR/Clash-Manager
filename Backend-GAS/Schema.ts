@@ -1,13 +1,12 @@
 
 /**
- * ============================================================================
  * MODULE: SCHEMA (Data Mapping Engine)
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Manages the mapping between Spreadsheet Columns and Logic.
  * CAPABILITIES:
  *    1. Dynamic Discovery: Finds columns by Name, not fixed Index (Safety).
  *    2. Configuration Sync: Updates Global CONFIG with discovered indices.
- * 🏷️ VERSION: 1.0.0
+ * VERSION: 1.0.0
  * ============================================================================
  */
 
@@ -114,7 +113,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  */
 (function(scope: any) {
   Object.assign(scope, { Schema, VER_SCHEMA });

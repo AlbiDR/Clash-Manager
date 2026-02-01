@@ -1,5 +1,4 @@
 /**
- * ============================================================================
  * MODULE: REGISTRY (System Hub)
  * ----------------------------------------------------------------------------
  * DESCRIPTION: The Central Hub for service coordination and legacy action mapping.
@@ -7,7 +6,7 @@
  * CAPABILITIES:
  *    1. Service Aggregation: Access all pure singletons from one object.
  *    2. Action Mapping: Maps legacy global functions to structured, queryable keys.
- * 🏷️ VERSION: 1.0.0
+ * VERSION: 1.0.0
  * ============================================================================
  */
 
@@ -94,16 +93,16 @@ var Registry: IRegistry = {
    * Ideal for AI Agents to query capabilities.
    */
   Actions: {
-    // 📊 DATA SYNC
+    // DATA SYNC
     "sync:database": () => Database.update(),
     "sync:roster": () => Roster.update(),
     "sync:leaderboard": () => Roster.update(),
     "sync:webapp": () => refreshWebPayload(),
 
-    // 🕵️ RECRUITMENT
+    // RECRUITMENT
     "headhunter:scout": () => Headhunter.scout(),
 
-    // 🛠️ SYSTEM
+    // SYSTEM
     "system:health": () => checkSystemHealth(),
     "system:warmup": () => taskWarmUpWorker(),
     "system:triggers": () => createTriggers(),
@@ -117,7 +116,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  */
 (function(scope: any) {
   Object.assign(scope, { Registry, VER_REGISTRY });

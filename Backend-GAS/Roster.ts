@@ -12,7 +12,7 @@ declare var Sheets: any;
  */
 const Roster: IRoster = {
   /**
-   * ⚡ MAIN ENTRY: Update Roster
+   * MAIN ENTRY: Update Roster
    */
   update(): void {
     console.info("Starting Roster/Leaderboard generation pipeline...");
@@ -192,7 +192,7 @@ const Roster: IRoster = {
 };
 
 /**
- * 🌍 GLOBAL BRIDGE (Legacy Support)
+ * GLOBAL BRIDGE (Legacy Support)
  */
 function updateLeaderboard() {
   Roster.update();

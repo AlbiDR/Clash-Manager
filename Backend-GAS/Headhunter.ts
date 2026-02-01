@@ -11,10 +11,9 @@ declare var Sheets: any;
 declare function refreshWebPayload(): void;
 
 /**
- * ============================================================================
  * MODULE: HEADHUNTER (Core Orchestrator)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: The Director of the Recruitment Pipeline.
+ * DESCRIPTION: The Director of the Recruitment Pipeline.
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
@@ -87,7 +86,7 @@ const Headhunter: IHeadhunter = {
     const blacklistResult = HeadhunterStore.updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
     const existing = HeadhunterStore.loadDatabase(safeSheet(CONFIG.SHEETS.HH));
 
-    // 🛡️ Data collection for consolidated logging
+    // Data collection for consolidated logging
     const initData = [
       `CLAN TAG:      ${CONFIG.SYSTEM.CLAN_TAG}`,
       `CLAN MEMBERS:  ${members.length}`,
@@ -134,7 +133,7 @@ const Headhunter: IHeadhunter = {
       }
     }
 
-    // 🛡️ CONSOLIDATED BLOCK LOG: Runtime Context
+    // CONSOLIDATED BLOCK LOG: Runtime Context
     Registry.Services.Reporting.logReport("Runtime Context", [
       ...initData,
       "─",
@@ -161,7 +160,7 @@ const Headhunter: IHeadhunter = {
 
     const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
     
-    // 🛡️ BLOCK LOG: Resource Metrics
+    // BLOCK LOG: Resource Metrics
     Registry.Services.Reporting.logReport("Discovery Phase", [
       `TARGET FLOOR: ${discoveryFloor}`,
       `SCANNED TOTAL: ${scanned.length}`,
@@ -249,7 +248,7 @@ const Headhunter: IHeadhunter = {
     const finalPool = allCandidates.slice(0, targetLimit);
     const droppedPool = allCandidates.slice(targetLimit);
 
-    // 🛡️ SCORE PRESERVATION: Record scores for recruits dropped due to pool size
+    // SCORE PRESERVATION: Record scores for recruits dropped due to pool size
     if (droppedPool.length > 0) {
       console.info(`  Cleanup: Recording scores for ${droppedPool.length} overflow recruits for blacklisting.`);
       droppedPool.forEach(p => logDismissal(p.tag, p.rawScore));
@@ -308,7 +307,7 @@ if (typeof module !== "undefined" && module.exports) {
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 /**
- * 🌍 GLOBAL BRIDGE (Legacy Support)
+ * GLOBAL BRIDGE (Legacy Support)
  * Preserves compatibility with existing GAS Triggers.
  */
 function scoutRecruits() {
