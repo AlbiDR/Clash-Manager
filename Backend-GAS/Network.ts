@@ -213,7 +213,7 @@ const NetworkInternal = {
     if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote payload structure");
     
     if (body.results.length === 0 && chunkUrls.length > 0) {
-      console.warn(`⚠️ [Network] Worker returned ZERO results for ${chunkUrls.length} URLs.`);
+      console.warn(`Network: Worker returned ZERO results for ${chunkUrls.length} URLs.`);
     }
 
     return body.results.map((r: any) => ({
@@ -302,7 +302,7 @@ var Network: INetwork = {
     // 4. Check Quota Limits (Daily Guard)
     const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
     if (remainingQuota <= 0) {
-        console.warn(`CRITICAL: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all requests.`);
+        console.warn(`Critical: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all requests.`);
         return finalResults;
     }
 
@@ -339,14 +339,14 @@ var Network: INetwork = {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e: any) {
-                console.warn(`[Network] Worker Failure: ${e.message}.`);
+                console.warn(`Network: Worker Failure: ${e.message}.`);
 
                 // CONSTRAINT: High volume local fallback is strictly forbidden.
                 // Fetching large batches (50+) locally consumes ~0.25% of the total
                 // daily UrlFetchApp quota (20,000) per call. Under concurrent load,
                 // this would crash the entire clan infrastructure within minutes.
                 if (isHighVolume) {
-                   console.error(`[Network] High Volume Batch FAILED. Blocking local fallback to protect core service quota.`);
+                   console.error(`Network: High Volume Batch FAILED. Blocking local fallback to protect core service quota.`);
                    useRemote = false; 
                    break; // Abort this chunk; do not fall back.
                 }
@@ -360,14 +360,14 @@ var Network: INetwork = {
             if (isHighVolume && attempt > 0) {
                // QUOTA GUARD: Large batches are never retried locally to prevent
                // accidental exhaustion during "retry storms".
-               console.warn(`[Network] Quota Guard: Blocking local retry for large batch.`);
+               console.warn(`Network: Quota Guard: Blocking local retry for large batch.`);
                break; 
             }
             
             try {
               responses = UrlFetchApp.fetchAll(localRequests);
             } catch (e: any) {
-              console.warn(`[Network] Batch failed: ${e.message}.`);
+              console.warn(`Network: Batch failed: ${e.message}.`);
               if (isHighVolume) break; // No retry for high-volume local failures.
 
               // JITTER: Brief sleep before retry to allow transient network issues to resolve.
@@ -574,25 +574,25 @@ var Network: INetwork = {
             if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
-                console.info(`[Network] Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
+                console.info(`Network: Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
             } else if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "UNKNOWN") {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
-                console.info(`[Network] Worker Live (Stateless Mode).`);
+                console.info(`Network: Worker Live (Stateless Mode).`);
             } else {
                 _LAST_WORKER_ERROR = `Degraded: Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
-                console.warn(`[Network] Worker Degradation: ${_LAST_WORKER_ERROR}`);
+                console.warn(`Network: Worker Degradation: ${_LAST_WORKER_ERROR}`);
                 isHealthy = (diagnostic.status === "success"); // Reachable
             }
         } else {
             _LAST_WORKER_ERROR = `HTTP ${res.getResponseCode()}`;
-            console.error(`[Network] Worker Handshake Failed: ${_LAST_WORKER_ERROR}`);
+            console.error(`Network: Worker Handshake Failed: ${_LAST_WORKER_ERROR}`);
             if (res.getResponseCode() === 401) _LAST_WORKER_ERROR += " (Secret Mismatch)";
             if (res.getResponseCode() === 404) _LAST_WORKER_ERROR += " (Wrong version or URL)";
         }
     } catch(e: any) { 
         _LAST_WORKER_ERROR = String(e);
-        console.warn(`[Network] Worker Reachability Error: ${e}`); 
+        console.warn(`Network: Worker Reachability Error: ${e}`); 
     }
 
     // PERSISTENCE: Synchronize health status across the architecture.

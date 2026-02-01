@@ -6,7 +6,7 @@ import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_T
 
 /**
  * ============================================================================
- * 🔭 MODULE: HEADHUNTER SCANNER
+ * MODULE: HEADHUNTER SCANNER
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Discovery engine for finding new recruits.
  *    Handles Tournament Searching -> Lottery -> Member Scanning -> Profiling.
@@ -51,7 +51,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     if (!remoteAvailable) {
       const lastErr = Registry.Services.Network.getLastWorkerError();
-      console.warn(`⚠️ [WORKER] Remote worker offline: ${lastErr || "Unknown"}. Falling back to local mode (throttled).`);
+      console.warn(`Remote worker offline: ${lastErr || "Unknown"}. Falling back to local mode (throttled).`);
       lowQuotaMode = true;
     }
 
@@ -101,12 +101,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
         );
         usedRemote = true;
       } catch (e: any) {
-        console.warn(`⚠️ [REMOTE] Remote scan failed: ${e.message}. Falling back to local.`);
+        console.warn(`Remote scan failed: ${e.message}. Falling back to local.`);
       }
     }
 
     if (!usedRemote) {
-      console.info(`  └─ Executing GAS-based local scan (${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''})...`);
+      console.info(`Executing GAS-based local scan (${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''})...`);
       const details: TournamentResult[] = Registry.Services.Network.fetchRoyaleAPI(
         tourneyTags.map(
           (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
@@ -178,7 +178,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           }
           if (typeof Utilities !== 'undefined') Utilities.sleep(100); // 100ms jitter between batches
         } catch (e: any) {
-          console.warn(`⚠️ [SCANNER] Batch fetch failed part way: ${e.message}`);
+          console.warn(`Batch fetch failed part way: ${e.message}`);
           results.push(...new Array(chunk.length).fill(null));
         }
       }
@@ -210,7 +210,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           const intel = prophetCache.get(c.tag.replace("#", "").trim().toLowerCase());
           if (intel && intel.wins > 5) {
              finalScore *= 1.25;
-             console.info(`  ✨ [PROPHET] Heritage found for ${c.name}: 25% Participation Bonus.`);
+             console.info(`Prophet: Heritage found for ${c.name}: 25% Participation Bonus.`);
           }
         }
 
@@ -396,7 +396,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
             const intel = prophetCache.get(p.tag.replace("#", "").trim().toLowerCase());
             if (intel && intel.wins > 5) {
                finalScore *= 1.25; // 25% Boost for proven high-participation alumni
-               console.info(`  ✨ [PROPHET] Heritage found for ${p.name}: Participation Bonus Applied.`);
+               console.info(`Prophet: Heritage found for ${p.name}: Participation Bonus Applied.`);
             }
           }
 
@@ -420,7 +420,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     // 7. Shadow Profiling Pass (Applies to both Remote and Local seeds)
     if (shadowTags.size > 0) {
       const shadowList = Array.from(shadowTags);
-      console.info(`  🕵️ [SHADOW] Extraction Complete: Found ${shadowList.length} potential recursive seeds.`);
+      console.info(`Shadow: Extraction Complete: Found ${shadowList.length} potential recursive seeds.`);
       
       const shadowData: any[] = batchFetch(
         shadowList,

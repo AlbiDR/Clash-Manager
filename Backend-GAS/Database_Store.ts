@@ -74,7 +74,7 @@ const DatabaseStore = {
     });
 
     if (tagsToPurge.size === 0) {
-      console.info("  └─ Pruning: No stale members found.");
+      console.info("Pruning: No stale members found.");
       return;
     }
 
@@ -92,7 +92,7 @@ const DatabaseStore = {
 
     // 🛑 CIRCUIT BREAKER
     if (tagsToPurge.size > CONFIG.SYSTEM.DB_PRUNE_THRESHOLD) {
-       console.warn(`🛑 [SAFETY] Pruning ABORTED. Attempted to delete ${tagsToPurge.size} players. Threshold is ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD}.`);
+       console.warn(`Pruning Aborted: Attempted to delete ${tagsToPurge.size} players. Threshold is ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD}.`);
        return;
     }
 
@@ -114,7 +114,7 @@ const DatabaseStore = {
 
       if (deleteRequests.length > 0) {
           Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
-          console.info(`  └─ Pruning: Removed ${rowsToDelete.length} stale row(s).`);
+          console.info(`Pruning: Removed ${rowsToDelete.length} stale row(s).`);
           SpreadsheetApp.flush();
       }
     }
@@ -234,7 +234,7 @@ const DatabaseStore = {
         valueInputOption: "USER_ENTERED",
         data: individualUpdates
       }, ssId);
-      console.info(`  ├─ Merge: Synchronized ${individualUpdates.length} existing record(s).`);
+      console.info(`Merge: Synchronized ${individualUpdates.length} existing record(s).`);
     }
 
     // 5. Commit Appends
@@ -263,7 +263,7 @@ const DatabaseStore = {
       }, ssId, `'${sheetName}'!A${nextRow}`, {
         valueInputOption: "USER_ENTERED"
       });
-      console.info(`  └─ Append: Ingested ${newRowsToAppend.length} new record(s).`);
+      console.info(`Append: Ingested ${newRowsToAppend.length} new record(s).`);
     }
     
     SpreadsheetApp.flush();
@@ -281,7 +281,7 @@ const DatabaseStore = {
    * Keeps the most recent entry for each day.
    */
   deduplicateDatabase(sheet: any): { pruned: number } {
-    console.warn("🧹 Starting Clan Database Deduplication...");
+    console.warn("Deduplication: Starting Clan Database sweep...");
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
     const ssId = sheet.getParent().getId();
     const sheetName = sheet.getName();
@@ -316,7 +316,7 @@ const DatabaseStore = {
       // 🛡️ CRITICAL FIX: Skip rows with invalid dates to prevent wiping out data
       // If parsing fails, parseFlexibleDate now returns Epoch 0 (1970).
       if (!dateObj || dateObj.getTime() <= 0) {
-        console.warn(`  ⚠ Skipping row ${startRow + i}: Invalid date format "${rawDate}"`);
+        console.warn(`Deduplication: Skipping row ${startRow + i}: Invalid date format "${rawDate}"`);
         continue;
       }
 
@@ -330,7 +330,7 @@ const DatabaseStore = {
     }
 
     if (rowsToDelete.length === 0) {
-      console.info("  └─ Deduplication: No duplicates found.");
+      console.info("Deduplication: No duplicates found.");
       return { pruned: 0 };
     }
 
@@ -354,7 +354,7 @@ const DatabaseStore = {
     for (let i = 0; i < deleteRequests.length; i += batchSize) {
       const batch = deleteRequests.slice(i, i + batchSize);
       Sheets.Spreadsheets.batchUpdate({ requests: batch }, ssId);
-      console.info(`  └─ Deduplication: Removed ${batch.length} row(s) (${i + batch.length}/${rowsToDelete.length}).`);
+      console.info(`Deduplication: Removed ${batch.length} row(s) (${i + batch.length}/${rowsToDelete.length}).`);
     }
 
     SpreadsheetApp.flush();

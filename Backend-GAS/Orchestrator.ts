@@ -1,11 +1,11 @@
 
 /**
  * ============================================================================
- * 🕹️ MODULE: ORCHESTRATOR & TRIGGERS - TypeScript Edition
+ * MODULE: ORCHESTRATOR & TRIGGERS - TypeScript Edition
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Manages Automation Triggers and the "Master Protocol".
- * ⚙️ WORKFLOW:
- *    - Creates a custom UI menu (`onOpen`) for manual control.
+ * DESCRIPTION: Manages Automation Triggers and the "Master Protocol".
+ * WORKFLOW:
+ *    - Creates a custom UI menu (onOpen) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
  * 🏷️ VERSION: 11.0.0
  * ============================================================================
@@ -66,7 +66,7 @@ declare var VER_API_PUBLIC: string;
 declare const VER_CONTROLLER_WEBAPP: string;
 
 /**
- * 🔒 MANAGED AUTOMATION KEYS
+ * MANAGED AUTOMATION KEYS
  * List of functions that this orchestrator is responsible for.
  * Setup Trigger will ONLY touch these, leaving other scripts' triggers intact.
  */
@@ -81,7 +81,7 @@ const MANAGED_TRIGGER_FUNCTIONS = [
 const PERMANENT_TRIGGER_KEY = "PERMANENT_TRIGGER_IDS";
 
 /**
- * 🕹️ ORCHESTRATOR INTERFACES
+ * ORCHESTRATOR INTERFACES
  */
 export interface ApiKeyVerificationResult {
   name: string;
@@ -111,8 +111,8 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
   SpreadsheetApp.getUi()
     .createMenu(UI.MENU_NAME)
     .addItem(UI.MENU_ITEMS.DB, "triggerUpdateDatabase")
-    .addItem("🏆 Update Roster", "triggerUpdateRoster")
-    .addItem(UI.MENU_ITEMS.HH, "triggerScoutRecruits")
+    .addItem("Update Roster", "triggerUpdateRoster")
+    .addItem("Scout Recruits", "triggerScoutRecruits")
     .addSeparator()
     .addItem(UI.MENU_ITEMS.ALL, "dispatchMaster")
     .addSeparator()
@@ -128,15 +128,15 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
  * Recommended Trigger: Time-Based -> Every 1 Hour
  */
 function taskUpdateDatabase(): void {
-  console.info("⏰ [TASK] Clan Database Sync: Starting...");
+  console.info("Task: Clan Database Sync: Starting...");
 
-  // 🩺 SELF-HEALING: Verify mobile infrastructure health silently every hour
+  // Self-Healing: Verify mobile infrastructure health silently every hour
   setupMobileTriggers(true);
 
   try {
     Registry.Services.Core.executeSafely("SYNC_DB", () => {
       Registry.Actions["sync:database"]();
-      console.info("✅ [TASK] Clan Database Sync: Success.");
+      console.info("Task: Clan Database Sync: Success.");
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
@@ -162,7 +162,7 @@ function taskUpdateRoster(): void {
     Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
       Registry.Actions["sync:roster"]();
       Registry.Actions["sync:webapp"]();
-      console.info("✅ [TASK] Roster Update: Success.");
+      console.info("Task: Roster Update: Success.");
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
@@ -226,9 +226,9 @@ function taskFastScout(): void {
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
-      console.info("✅ [TASK] Fast Scout: Success.");
+      console.info("Task: Fast Scout: Success.");
     } catch (e: any) {
-      console.error(`❌ [TASK] Fast Scout: FAILED - ${e.message}`);
+      console.error(`Task: Fast Scout: FAILED - ${e.message}`);
     }
   });
 }
@@ -240,10 +240,10 @@ function taskFastScout(): void {
  */
 function taskWarmUpWorker(): void {
   try {
-    // ⚡ LIGHTWEIGHT PING: No locking, no overhead.
+    // Lightweight Ping: No locking, no overhead.
     Registry.Services.Network.remoteWorkerHealthy(true);
   } catch (e: any) {
-    console.error(`❌ [WARMUP] Worker ping failed: ${e.message}`);
+    console.error(`Warmup: Worker ping failed: ${e.message}`);
   }
 }
 
@@ -253,7 +253,7 @@ function taskWarmUpWorker(): void {
  */
 function createTriggers(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  console.info("🚀 [TRIGGERS] Verifying and repairing trigger suite (Surgical Sync)...");
+  console.info("Triggers: Verifying and repairing trigger suite...");
 
   const permanentIds: string[] = [];
   const existingTriggers = ScriptApp.getProjectTriggers();
@@ -268,10 +268,10 @@ function createTriggers(): void {
     );
 
     if (existing) {
-      console.info(`  ✓ [SKIP] ${handler} exists (Source: ${source}).`);
+      console.info(`  [SKIP] ${handler} exists.`);
       permanentIds.push(existing.getUniqueId());
     } else {
-      console.info(`  ✨ [NEW] Recreating ${handler}...`);
+      console.info(`  [NEW] Recreating ${handler}...`);
       const t = createFn();
       permanentIds.push(t.getUniqueId());
     }
@@ -308,7 +308,7 @@ function createTriggers(): void {
   Registry.Services.Store.props.set(PERMANENT_TRIGGER_KEY, JSON.stringify(permanentIds));
 
   ss.toast("Triggers synchronized successfully.", "⚙️ Trigger Engine", 3);
-  console.info("✅ [TRIGGERS] Surgical sync complete.");
+  console.info("Triggers: Sync complete.");
 }
 
 
@@ -320,7 +320,7 @@ function dispatchMaster(): void {
   const version = VER_ORCHESTRATOR;
 
   Registry.Services.Reporting.logReport(
-    `🎭 MASTER PROTOCOL v${version}`,
+    `MASTER PROTOCOL v${version}`,
     [`INITIALIZING ORCHESTRATION...`]
   );
 
@@ -340,7 +340,7 @@ function dispatchMaster(): void {
   Registry.Services.View.enforceGlobalTabHygiene();
 
   Registry.Services.Reporting.logReport(
-    `🎭 MASTER PROTOCOL v${version}`,
+    `MASTER PROTOCOL v${version}`,
     [`MASTER DISPATCH: ALL OPERATIONS COMPLETE.`]
   );
 }
@@ -353,7 +353,7 @@ function setupMobileTriggers(silent: boolean = false): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const triggerName = "handleMobileEdit";
 
-  // 🛠️ HEAL UI: Ensure checkboxes exist on all target tabs
+  // Heal UI: Ensure checkboxes exist on all target tabs
   Registry.Services.View.refreshMobileControls(ss);
 
   const triggers = ScriptApp.getProjectTriggers();
@@ -377,7 +377,7 @@ function setupMobileTriggers(silent: boolean = false): void {
     return;
   }
 
-  // 🛠️ HEAL SENSOR: Recreate the onEdit trigger
+  // Heal Sensor: Recreate the onEdit trigger
   ScriptApp.newTrigger(triggerName).forSpreadsheet(ss).onEdit().create();
 
   if (!silent) {
@@ -388,7 +388,7 @@ function setupMobileTriggers(silent: boolean = false): void {
       ui.ButtonSet.OK,
     );
   } else {
-    console.info("🛠️ [MOBILE] Self-Healed: Mobile onEdit trigger recreated.");
+    console.info("Mobile: Self-Healed: Mobile onEdit trigger recreated.");
   }
 }
 
@@ -409,7 +409,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   Registry.Services.View.setStatusMessage(sheet, "⏳ Updating...");
   SpreadsheetApp.flush();
 
-  console.info(`📱 [MOBILE] Trigger activated: ${sheetName}`);
+  console.info(`Mobile: Trigger activated: ${sheetName}`);
 
   const lockMap: Record<string, string> = {
     [CONFIG.SHEETS.ROSTER]: "SYNC_ROSTER",
@@ -429,7 +429,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
       } else if (sheetName === CONFIG.SHEETS.HH) {
         Registry.Actions["recruit:scout"]();
       }
-      Registry.Services.View.setStatusMessage(sheet, `✅ Done ${new Date().toLocaleTimeString()}`);
+      Registry.Services.View.setStatusMessage(sheet, `Done ${new Date().toLocaleTimeString()}`);
     });
   } catch (err: any) {
     console.error(`❌ [MOBILE] Error on ${sheetName}: ${err.message}`);
@@ -451,9 +451,9 @@ function triggerUpdateDatabase(): void {
     try {
       Registry.Actions["sync:database"]();
       Registry.Actions["sync:webapp"]();
-      ss.toast("Database synchronized successfully.", "✅ Success", 3);
+      ss.toast("Database synchronized successfully.", "Success", 3);
     } catch (e: any) {
-      SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
+      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
     }
   });
 }
@@ -465,9 +465,9 @@ function triggerUpdateRoster(): void {
     try {
       Registry.Actions["sync:roster"]();
       Registry.Actions["sync:webapp"]();
-      ss.toast("Roster synchronized successfully.", "✅ Success", 3);
+      ss.toast("Roster synchronized successfully.", "Success", 3);
     } catch (e: any) {
-      SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
+      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
     }
   });
 }
@@ -478,9 +478,9 @@ function triggerScoutRecruits(): void {
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
-      ss.toast("Scout operation completed.", "✅ Success", 5);
+      ss.toast("Scout operation completed.", "Success", 5);
     } catch (e: any) {
-      SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
+      SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
     }
   });
 }
@@ -499,21 +499,21 @@ function checkSystemHealth(): void {
 
   if (keys.length === 0) {
     keysHealthy = false;
-    keyStatusReport = "❌ No API Keys configured in CONFIG.SYSTEM.API_KEYS.\n";
+    keyStatusReport = "No API Keys configured in CONFIG.SYSTEM.API_KEYS.\n";
   } else {
     const verificationResults = verifyApiKeysInternal(false, 1);
     const isConnectivityActive =
       verificationResults.length > 0 && verificationResults[0].success;
 
     if (isConnectivityActive) {
-      keyStatusReport = `🔑 API CONNECTION: ✅ Active (Sampled 1/${keys.length} keys)\n`;
+      keyStatusReport = `API Connection: Active (Sampled 1/${keys.length} keys)\n`;
     } else {
       keysHealthy = false;
       const errorMsg =
         verificationResults.length > 0
           ? verificationResults[0].error
           : "Unknown Error";
-      keyStatusReport = `❌ API CONNECTION FAILED: ${errorMsg}\n`;
+      keyStatusReport = `API Connection Failed: ${errorMsg}\n`;
     }
   }
 
@@ -580,16 +580,16 @@ function checkSystemHealth(): void {
   report += keyStatusReport;
 
   modules.forEach((m: any) => {
-    if (m.current === m.expected) report += `✅ ${m.name}: v${m.current}\n`;
+    if (m.current === m.expected) report += `[OK] ${m.name}: v${m.current}\n`;
     else {
       healthy = false;
-      report += `❌ ${m.name}: Found v${m.current} (Expected v${m.expected})\n`;
+      report += `[FAIL] ${m.name}: Found v${m.current} (Expected v${m.expected})\n`;
     }
   });
 
   const ui = SpreadsheetApp.getUi();
   ui.alert(
-    healthy ? "System Healthy" : "⚠️ System Issues Detected",
+    healthy ? "System Healthy" : "System Issues Detected",
     report,
     ui.ButtonSet.OK,
   );
@@ -608,9 +608,9 @@ function triggerVerifyApiKeys(): void {
   results.forEach((r: any) => {
     if (r.success) {
       activeCount++;
-      report += `✅ ${r.name}: Active\n`;
+      report += `${r.name}: Active\n`;
     } else {
-      report += `❌ ${r.name}: ${r.error}\n`;
+      report += `${r.name}: ${r.error}\n`;
     }
   });
 
@@ -635,7 +635,7 @@ function verifyApiKeysInternal(
   if (CONFIG.SYSTEM.REMOTE_WORKER_URL) {
     const remoteResults = Registry.Services.Network.auditKeysRemote(keysToCheck);
     if (remoteResults) {
-      console.info("✅ [AUDIT] API key verification handled by remote worker.");
+      console.info("Audit: API key verification handled by remote worker.");
       return remoteResults;
     }
     console.warn("⚠️ [AUDIT] Remote audit unavailable. Falling back to local quota.");

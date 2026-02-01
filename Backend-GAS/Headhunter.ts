@@ -12,13 +12,13 @@ declare function refreshWebPayload(): void;
 
 /**
  * ============================================================================
- * 🔭 MODULE: HEADHUNTER (Core Orchestrator)
+ * MODULE: HEADHUNTER (Core Orchestrator)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: The Director of the Recruitment Pipeline.
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.20";
+const VER_HEADHUNTER = "12.1.21";
 
 export interface IHeadhunter {
   scout(): void;
@@ -38,22 +38,22 @@ const Headhunter: IHeadhunter = {
     };
 
     let sheet = safeSheet(CONFIG.SHEETS.HH);
-    Registry.Services.Reporting.logBanner(`Headhunter Scout v${VER_HEADHUNTER}`);
-    Registry.Services.View.setStatusMessage(sheet, "⏳ Initializing...");
+    Registry.Services.Reporting.logStep(1, 9, "Initializing recruitment pipeline...");
+    Registry.Services.View.setStatusMessage(sheet, "Initializing...");
 
     // 🛡️ L1 CACHE PURGE: Ensure a fresh start for this execution
     Registry.Services.Network._clearCache();
 
-    // 🛡️ CONFIGURATION CHECK
     if (!CONFIG.SYSTEM.CLAN_TAG) {
-      console.error("❌ [CONFIG] CLAN_TAG is not configured. Aborting Headhunter Scout.");
-      sheet.getRange("B1").setValue("⚠️ Configuration Error: Missing CLAN_TAG");
+      console.error("Configuration Error: CLAN_TAG is not configured. Aborting Headhunter Scout.");
+      sheet.getRange("B1").setValue("Configuration Error: Missing CLAN_TAG");
       return;
     }
 
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
-    // 1. Establish Baseline via Clan Detail
+    // 2. Establish Baseline via Clan Detail
+    Registry.Services.Reporting.logStep(2, 9, "Fetching clan baseline...");
     const clanDetailResponse = Registry.Services.Network.fetchRoyaleAPI([
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
     ]);
@@ -67,19 +67,22 @@ const Headhunter: IHeadhunter = {
       members = clan.memberList || [];
     }
 
-    // 2. Strategy Calculation
+    // 3. Strategy Calculation
+    Registry.Services.Reporting.logStep(3, 9, "Calculating recruitment strategy...");
     const strategy = Registry.Services.Scoring.calculateTrophyFloor(members, inGameRequirement);
 
-    // 3. Quota Check
+    // 4. Quota Check
+    Registry.Services.Reporting.logStep(4, 9, "Checking resource quota...");
     const remaining = Registry.Services.Network.getRemainingQuota();
     if (remaining < 300) {
-      console.warn(`⚠️ [QUOTA] Insufficient API quota (${remaining} remaining). Aborting scout.`);
-      sheet.getRange("B1").setValue(`⚠️ Scouting Paused (Quota Low: ${remaining})`);
+      console.warn(`Insufficient API quota (${remaining} remaining). Aborting scout.`);
+      sheet.getRange("B1").setValue(`Scouting Paused (Quota Low: ${remaining})`);
       return;
     }
     const lowQuotaMode = remaining < 1000;
 
-    // 4. Store: Blacklist & Load
+    // 5. Store: Blacklist & Load
+    Registry.Services.Reporting.logStep(5, 9, "Loading local recruit database...");
     const blacklistResult = HeadhunterStore.updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
     const existing = HeadhunterStore.loadDatabase(safeSheet(CONFIG.SHEETS.HH));
 
@@ -88,7 +91,7 @@ const Headhunter: IHeadhunter = {
       `CLAN TAG:      ${CONFIG.SYSTEM.CLAN_TAG}`,
       `CLAN MEMBERS:  ${members.length}`,
       `IN-GAME REQ:   ${inGameRequirement}`,
-      `STRATEGY:      ${strategy.method} (${strategy.floor})`,
+      `STRATEGY:      ${strategy.method}`,
       `BLACKBOX SIZE: ${blacklistResult.ids.size}`,
       `SURVIVOR POOL: ${existing.size}`,
       `QUOTA STATUS:  ${remaining} (${lowQuotaMode ? 'THROTTLED' : 'FULL'})`
@@ -107,7 +110,8 @@ const Headhunter: IHeadhunter = {
       evtSheet.appendRow([tag, new Date(), score]);
     };
 
-    // 6. Network: Prune Joined (Clanless Check)
+    // 6. Network: Prune Coupled Recruits
+    Registry.Services.Reporting.logStep(6, 9, "Performing clan membership validation...");
     let joinedCount = 0;
     const tagsToCheck = Array.from(existing.keys());
     if (tagsToCheck.length > 0) {
@@ -140,11 +144,11 @@ const Headhunter: IHeadhunter = {
 
     // 7. Scanner: Launch
     const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
-    Registry.Services.Reporting.logStep(7, 9, `Launching Tournament Scan (Strict Floor: ${discoveryFloor})...`);
+    Registry.Services.Reporting.logStep(7, 9, `Launching tournament scan (Floor: ${discoveryFloor})...`);
     
     // Safety check for empty scan when requirement is set too high
     if (discoveryFloor > 9000) {
-      console.warn("⚠️ [FILTER] Discovery Floor capped at 9,000 to match game limits.");
+      console.warn("Discovery Floor capped at 9,000 to match game limits.");
     }
     
     const scanned = HeadhunterScanner.scanTournaments(
@@ -178,7 +182,7 @@ const Headhunter: IHeadhunter = {
 
     // 9. Benchmarking (Hybrid)
     // ... (unchanged benchmarking logic) ...
-    Registry.Services.Reporting.logStep(8, 9, "Calculating Performance Benchmarks...");
+    Registry.Services.Reporting.logStep(8, 9, "Calculating performance benchmarks...");
     const lbSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
     const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
     
@@ -246,12 +250,12 @@ const Headhunter: IHeadhunter = {
 
     // 🛡️ SCORE PRESERVATION: Record scores for recruits dropped due to pool size
     if (droppedPool.length > 0) {
-      console.info(`  └─ Cleanup: Recording scores for ${droppedPool.length} overflow recruits for Blacklist parity.`);
+      console.info(`  Cleanup: Recording scores for ${droppedPool.length} overflow recruits for blacklisting.`);
       droppedPool.forEach(p => logDismissal(p.tag, p.rawScore));
     }
   
     if (finalPool.length === 0 && existing.size > 0) {
-      console.warn("⚠️ [FILTER] All recruits filtered by Score or Pool constraints.");
+      console.warn("All recruits filtered by score or pool constraints.");
     }
   
     finalPool.forEach(
@@ -266,12 +270,12 @@ const Headhunter: IHeadhunter = {
     Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.HH);
 
     // 12. View Render
-    Registry.Services.Reporting.logStep(9, 9, "Preparing final render and cache updates...");
+    Registry.Services.Reporting.logStep(9, 9, "Applying visual render and cache synchronization...");
     HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
 
     // 13. Report
     Registry.Services.Reporting.logReport(
-      `🔭 HEADHUNTER v${VER_HEADHUNTER} REPORT`,
+      `HEADHUNTER v${VER_HEADHUNTER} REPORT`,
       [
         `OPERATION COMPLETE`,
         `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
@@ -280,15 +284,13 @@ const Headhunter: IHeadhunter = {
         `STRATEGY:     ${strategy.method}`,
         `─`,
         `SCAN ACQUISITIONS: ${scanned.length} Found`,
-        `PIPELINE FLOW:    +${newArrivals} New | ↻${updatedExisting} Updated`
+        `PIPELINE FLOW:    +${newArrivals} New | Updated: ${updatedExisting}`
       ]
     );
-    console.info(`✅ Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${CONFIG.HEADHUNTER.TARGET}`);
+    console.info(`Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${CONFIG.HEADHUNTER.TARGET}`);
 
-    try {
-      if (typeof refreshWebPayload === "function") refreshWebPayload();
     } catch (e: any) {
-      console.warn(`⚠️ [SYNC] Failed to refresh web payload: ${e.message}`);
+      console.warn(`Failed to refresh web payload: ${e.message}`);
     }
 
     SpreadsheetApp.flush();

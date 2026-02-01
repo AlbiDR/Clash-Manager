@@ -31,7 +31,7 @@ const Database: IDatabase = {
      * Fetches latest clan data and persists snapshots.
      */
     update(): void {
-        console.info("📊 Starting Clan Database ETL Pipeline...");
+        console.info("Starting Clan Database ETL pipeline...");
         const ss = SpreadsheetApp.getActiveSpreadsheet();
 
         // 🛡️ SCHEMA SYNC: Ensure we find the right columns if they were moved
@@ -39,9 +39,9 @@ const Database: IDatabase = {
 
         // 🛡️ CONFIGURATION CHECK
         if (!CONFIG.SYSTEM.CLAN_TAG) {
-            console.error("❌ [CONFIG] CLAN_TAG is not configured. Aborting Database Update.");
+            console.error("Configuration Error: CLAN_TAG is not configured. Aborting Database Update.");
             const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
-            if (sheet) sheet.getRange("B1").setValue("⚠️ Configuration Error: Missing CLAN_TAG");
+            if (sheet) sheet.getRange("B1").setValue("Configuration Error: Missing CLAN_TAG");
             return;
         }
 
@@ -59,7 +59,7 @@ const Database: IDatabase = {
 
             // 🛑 CIRCUIT BREAKER: API FAILURE
             if (!membersData || !membersData.items || membersData.items.length === 0) {
-                console.error("❌ [CRITICAL] API returned invalid/empty data. Aborting ETL to prevent data corruption.");
+                console.error("Critical: API returned invalid/empty data. Aborting ETL to prevent data corruption.");
                 return;
             }
 
@@ -74,10 +74,10 @@ const Database: IDatabase = {
                 // If API says it's war, or protocol says we are in battle phase
                 isWarDay = phaseIsBattle || periodIsWar;
                 
-                console.info(`  ├─ War Phase: ${warSnap.protocol.phase} | Period: ${raceData?.periodType || 'N/A'}`);
-                console.info(`  └─ Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
+                console.info(`  War Phase: ${warSnap.protocol.phase} | Period: ${raceData?.periodType || 'N/A'}`);
+                console.info(`  Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
             } catch (e: any) {
-                console.warn("⚠️ [WAR] Could not fetch War Intelligence. Defaulting to state-based detection.");
+                console.warn("War Intelligence: Could not fetch data. Defaulting to state-based detection.");
                 isWarDay = !!(raceData && raceData.clan); // Simple fallback
             }
 
@@ -92,7 +92,7 @@ const Database: IDatabase = {
                 raceData.clan.participants.forEach((p: any) => {
                     warFameMap.set(p.tag, Registry.Services.Scoring.resolveWarFame(p));
                 });
-                console.info(`  └─ API: Collected ${warFameMap.size} unique participant record${warFameMap.size !== 1 ? 's' : ''}.`);
+                console.info(`  API: Collected ${warFameMap.size} unique participant record${warFameMap.size !== 1 ? 's' : ''}.`);
             }
 
             let sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
@@ -134,16 +134,16 @@ const Database: IDatabase = {
 
             // Final Log
             Registry.Services.Reporting.logReport(
-                `📊 CLAN DATABASE v${VER_DATABASE} REPORT`,
+                `CLAN DATABASE v${VER_DATABASE} REPORT`,
                 [
                     `OP TYPE:   ETL SNAPSHOT (DAILY)`,
                     `UPDATED:   ${updateResult.updated} members`,
                     `APPENDED:  ${updateResult.appended} members`,
-                    `─`.repeat(63),
+                    `─`,
                     `HEALTH:    Atomic Transaction Complete.`
                 ]
             );
-            console.info(`✅ Database ETL Cycle Finished.`);
+            console.info(`Database ETL Cycle Finished.`);
             console.timeEnd("ETL");
 
         } catch(e: any) {

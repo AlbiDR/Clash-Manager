@@ -8,14 +8,14 @@ declare var SpreadsheetApp: any;
 declare var Sheets: any;
 
 /**
- * 🏆 MODULE: ROSTER (Leaderboard & Roster Management)
+ * MODULE: ROSTER (Leaderboard & Roster Management)
  */
 const Roster: IRoster = {
   /**
    * ⚡ MAIN ENTRY: Update Roster
    */
   update(): void {
-    console.info("🏆 Starting Roster/Leaderboard Generation Pipeline...");
+    console.info("Starting Roster/Leaderboard generation pipeline...");
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
     if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.ROSTER);
@@ -27,8 +27,8 @@ const Roster: IRoster = {
 
     // 2. CONFIG CHECK
     if (!CONFIG.SYSTEM.CLAN_TAG) {
-      console.error("❌ [CONFIG] CLAN_TAG is not configured. Aborting update.");
-      sheet.getRange("B1").setValue("⚠️ Configuration Error: Missing CLAN_TAG");
+      console.error("Configuration Error: CLAN_TAG is not configured. Aborting update.");
+      sheet.getRange("B1").setValue("Configuration Error: Missing CLAN_TAG");
       return;
     }
 
@@ -45,7 +45,7 @@ const Roster: IRoster = {
     const { members, race, history: remoteHistory, log: logData } = Registry.Services.Network.fetchClanDataSmart(clanTag);
 
     if (!members || !members.items) {
-      console.error("❌ [CRITICAL] Failed to fetch clan members. Aborting.");
+      console.error("Critical: Failed to fetch clan members. Aborting.");
       return;
     }
 
@@ -183,7 +183,7 @@ const Roster: IRoster = {
     // @ts-ignore
     if (typeof refreshWebPayload === "function") refreshWebPayload();
 
-    Registry.Services.Reporting.logReport(`🏆 ROSTER v1.0.0 REPORT`, [
+    Registry.Services.Reporting.logReport(`ROSTER v1.0.0 REPORT`, [
       `SYNC STATUS:  SUCCESS`,
       `RANKED POOL:  ${rawResults.length} Combatants`,
       `ELITE AVG:    ${Math.round(maxPerfScore)} (Benchmark)`
