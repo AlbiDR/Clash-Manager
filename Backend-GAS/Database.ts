@@ -22,6 +22,7 @@ const VER_DATABASE = "13.0.0";
 
 export interface IDatabase {
     update(): void;
+    deduplicate(): { pruned: number };
 }
 
 const Database: IDatabase = {
@@ -148,6 +149,16 @@ const Database: IDatabase = {
         } catch(e: any) {
             console.error(`ETL Error: ${e.message} \n${e.stack}`);
         }
+    },
+
+    /**
+     * 🧹 DEDUPLICATION: Removes redundant entries for the same Tag + Day.
+     */
+    deduplicate(): { pruned: number } {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+        if (!sheet) return { pruned: 0 };
+        return DatabaseStore.deduplicateDatabase(sheet);
     }
 };
 
