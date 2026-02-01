@@ -271,7 +271,6 @@ var Network: INetwork = {
       // times within a single trigger execution (e.g. nested logic loops).
       if (_EXECUTION_CACHE.has(url)) {
         finalResults[index] = _EXECUTION_CACHE.get(url);
-        // console.log(`[Network] L1 Hit: ${url.slice(-30)}`);
         return;
       }
 

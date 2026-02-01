@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.16";
+const VER_HEADHUNTER = "12.1.17";
 
 export interface IHeadhunter {
   scout(): void;
@@ -68,16 +68,11 @@ const Headhunter: IHeadhunter = {
     if (clanDetailResponse && clanDetailResponse[0]) {
       const clan = clanDetailResponse[0];
       inGameRequirement = clan.requiredTrophies || 0;
-      members = clan.memberList || []; 
-      console.info(`  ├─ Clan Detail: ReqTrophies=${inGameRequirement} | Members=${members.length}`);
-      if (members.length > 0) {
-        console.info(`  ├─ Member Data Sample (First 3): ${members.slice(0, 3).map(m => `${m.name}: ${m.trophies}`).join(", ")}`);
-      }
+      members = clan.memberList || [];
     }
 
     // 2. Strategy Calculation
     const strategy = Registry.Services.Scoring.calculateTrophyFloor(members, inGameRequirement);
-    console.info(`  └─ Strategy Active: ${strategy.method} -> Floor: ${strategy.floor}`);
 
     // 3. Quota Check
     const remaining = Registry.Services.Network.getRemainingQuota();
@@ -137,9 +132,6 @@ const Headhunter: IHeadhunter = {
         if (i + batchSize < tagsToCheck.length) SpreadsheetApp.flush();
       }
 
-      if (joinedCount > 0) {
-        console.info(`  └─ Cleanup: Removed ${joinedCount} recruit${joinedCount > 1 ? 's' : ''} who joined a clan.`);
-      }
     }
 
     // 7. Scanner: Launch

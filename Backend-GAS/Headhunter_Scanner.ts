@@ -226,8 +226,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
         .map(c => c.tag);
       
       if (seedTags.length > 0) {
-        console.info(`  🕵️ [SHADOW] Initiating recursive crawl for ${seedTags.length} potential seeds...`);
-        // 🛡️ L2 CACHE BUSTER: 15-minute resolution to bypass Script Cache
         const cb = Math.floor(Date.now() / 900000); 
         const seedLogs: any[][] = batchFetch(
           seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog?__cb=${cb}`),
@@ -239,12 +237,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
         let totalOpponents = 0;
         let rejectedClanned = 0;
 
-        console.info(`  🕵️ [SHADOW] Iterating ${seedLogs.length} results logic...`);
         for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
           const b = seedLogs[sIdx];
           if (!b || shadowTags.size >= 100) continue;
-          
-          console.info(`  🔍 [DEBUG] Seed ${sIdx}: Type=${typeof b}, IsArray=${Array.isArray(b)}`);
           
           const processEntry = (entry: any) => {
             if (!entry || shadowTags.size >= 100) return;
