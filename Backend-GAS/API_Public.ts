@@ -473,6 +473,7 @@ function dispatchAsyncUpdate(): void {
       if (sheet) sheet.getRange(CONFIG.UI.MOBILE_TRIGGER_CELL).setValue(false);
 
       console.info(`API: Async Execution Complete: ${target}`);
+    } catch (e: any) {
       console.error(`API: Async Execution Failed [${target}]: ${e.message}`);
     } finally {
       CacheService.getScriptCache().remove("SYSTEM_STATUS");

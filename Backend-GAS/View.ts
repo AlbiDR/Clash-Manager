@@ -48,26 +48,16 @@ export interface IView {
 
 var View: IView = {
   /**
-   * STANDARD LAYOUT ENGINE
-   * Applies the signature "Clean Technical" look to any sheet.
+   * STANDARD VISUAL GENERATOR
+   * Produces the signature "Clean Technical" request stack for batch updates.
    */
-  applyStandardLayout: function (
-    sheet,
+  getStandardVisualRequests: function (
+    sheetId,
     contentRows,
-    contentCols,
-    optHeaders = null,
+    contentCols
   ) {
-    if (!sheet) return;
-    
-    // 🧹 PRE-CLEANUP: Remove existing bandings
-    try {
-      sheet.getBandings().forEach((b: any) => b.remove());
-    } catch (e: any) {
-      console.warn(`View: Could not remove existing bandings: ${e}`);
-    }
-
-    const ssId = sheet.getParent().getId();
-    const sheetId = sheet.getSheetId();
+    const L = CONFIG.LAYOUT;
+    const T = CONFIG.THEME;
 
     // Dimensions
     const totalRows = (L.DATA_START_ROW - 1) + (contentRows === -1 ? 100 : contentRows) + 1; 
@@ -235,6 +225,47 @@ var View: IView = {
           }
         }
     ];
+  },
+
+  /**
+   * STANDARD LAYOUT ENGINE
+   * Atomic execution of visual standards.
+   */
+  applyStandardLayout: function (
+    sheet,
+    contentRows,
+    contentCols,
+    optHeaders = null
+  ) {
+    if (!sheet) return;
+    const sheetId = sheet.getSheetId();
+    const ssId = sheet.getParent().getId();
+
+    // 1. Cleanup
+    try {
+      sheet.getBandings().forEach((b: any) => b.remove());
+    } catch (e: any) { /* Handled */ }
+
+    // 2. Base Requests
+    const requests = this.getStandardVisualRequests(sheetId, contentRows, contentCols);
+
+    // 3. Optional Headers sync
+    if (optHeaders && optHeaders.length > 0) {
+      requests.push({
+        updateCells: {
+          rows: [{
+            values: optHeaders.map(h => ({
+              userEnteredValue: { stringValue: h }
+            }))
+          }],
+          fields: 'userEnteredValue',
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + optHeaders.length }
+        }
+      });
+    }
+
+    // 4. Execute
+    Sheets.Spreadsheets.batchUpdate({ requests }, ssId);
   },
 
   /**

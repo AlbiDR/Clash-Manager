@@ -41,7 +41,8 @@ const Headhunter: IHeadhunter = {
     Registry.Services.Reporting.logStep(1, 9, "Initializing recruitment pipeline...");
     Registry.Services.View.setStatusMessage(sheet, "Initializing...");
 
-    // 🛡️ L1 CACHE PURGE: Ensure a fresh start for this execution
+    try {
+    // L1 CACHE PURGE: Ensure a fresh start for this execution
     Registry.Services.Network._clearCache();
 
     if (!CONFIG.SYSTEM.CLAN_TAG) {
