@@ -391,7 +391,7 @@ var Network: INetwork = {
                 // 🛡️ DIAGNOSTIC: Label data source
                 const isRecursive = url.includes("battlelog") || url.includes("players/");
                 if (isRecursive) {
-                   console.info(`  🔍 [WORKER] ${url.slice(-30)}: Items=${Array.isArray(json) ? json.length : '1'}`);
+                   console.info(`  🔍 [WORKER] ${url.slice(-30)}: Items=${Array.isArray(json) ? json.length : '1'}, Type=${typeof json}`);
                 }
 
                 _EXECUTION_CACHE.set(url, json);

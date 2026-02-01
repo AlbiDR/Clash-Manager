@@ -37,8 +37,8 @@ const Headhunter: IHeadhunter = {
       return s;
     };
 
-    console.info(`🚀 Starting Headhunter Scout Pipeline (${VER_HEADHUNTER})...`);
     let sheet = safeSheet(CONFIG.SHEETS.HH);
+    Registry.Services.Reporting.logBanner(`Headhunter Scout v${VER_HEADHUNTER}`);
     Registry.Services.View.setStatusMessage(sheet, "⏳ Initializing...");
 
     // 🛡️ L1 CACHE PURGE: Ensure a fresh start for this execution
@@ -157,8 +157,16 @@ const Headhunter: IHeadhunter = {
       blacklistResult.ids,
       lowQuotaMode
     );
+
     const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
-    console.info(`  └─ Scan Result: Located ${scanned.length} potential candidates (${shadowCount} from Shadow Scout).`);
+    
+    // 🛡️ BLOCK LOG: Resource Metrics
+    Registry.Services.Reporting.logReport("Discovery Phase", [
+      `TARGET FLOOR: ${discoveryFloor}`,
+      `SCANNED TOTAL: ${scanned.length}`,
+      `SHADOW YIELD:  ${shadowCount}`,
+      `PIPELINE:      ${lowQuotaMode ? 'QUOTA_GUARD' : 'UNRESTRICTED'}`
+    ]);
     // 8. Merge
     let newArrivals = 0;
     let updatedExisting = 0;
