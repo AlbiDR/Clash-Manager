@@ -120,8 +120,6 @@ function onOpen(e: GoogleAppsScript.Events.AppsScriptEvent): void {
     .addItem(ITEMS.HEALTH, "checkSystemHealth")
     .addSeparator()
     .addItem(ITEMS.TGR, "createTriggers")
-    .addSeparator()
-    .addItem("🧹 Deduplicate DB", "triggerDeduplicateDatabase")
     .addToUi();
 }
 
@@ -487,22 +485,6 @@ function triggerScoutRecruits(): void {
   });
 }
 
-function triggerDeduplicateDatabase(): void {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
-  if (!sheet) return;
-
-  ss.toast("Scanning for duplicates (700+ entries detected)...", "🧹 Deduplication", 10);
-  try {
-    Registry.Services.Core.executeSafely("SYNC_DB", () => {
-      const result = Registry.Services.Database.deduplicate();
-      ss.toast(`Cleaned up ${result.pruned} duplicate entries.`, "✅ Deduplication Complete", 5);
-    });
-  } catch (e: any) {
-    SpreadsheetApp.getUi().alert(`❌ Error: ${e.message}`);
-  }
-}
-
 /**
  * 🔍 DIAGNOSTICS & ORCHESTRATION
  */
@@ -701,7 +683,6 @@ function verifyApiKeysInternal(
     triggerUpdateDatabase,
     triggerUpdateRoster,
     triggerScoutRecruits,
-    triggerDeduplicateDatabase,
     checkSystemHealth,
     triggerVerifyApiKeys,
     createTriggers,
