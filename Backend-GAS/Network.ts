@@ -386,26 +386,21 @@ var Network: INetwork = {
               try {
                 const text = r.getContentText();
                 const json = JSON.parse(text);
-                
-                // 🛡️ DIAGNOSTIC: Label data source
-                const isRecursive = url.includes("battlelog") || url.includes("players/");
-                if (isRecursive) {
-                   console.info(`  🔍 [WORKER] ${url.slice(-30)}: Items=${Array.isArray(json) ? json.length : '1'}, Type=${typeof json}`);
-                }
-
                 _EXECUTION_CACHE.set(url, json);
                 
-                // Persist to script cache (15 min for player data, shorter for logs)
-                const ttl = url.includes("members") || url.includes("players") ? NETWORK_CONFIG.CACHE_TTL_LONG : NETWORK_CONFIG.CACHE_TTL_SHORT;
-                scriptCache.put(NetworkInternal.hashKey(url), text, ttl);
+                // Persist to script cache (SKIP for battle logs due to size limits)
+                if (!url.includes("/battlelog")) {
+                  const ttl = url.includes("members") || url.includes("players") ? NETWORK_CONFIG.CACHE_TTL_LONG : NETWORK_CONFIG.CACHE_TTL_SHORT;
+                  try {
+                    scriptCache.put(NetworkInternal.hashKey(url), text, ttl);
+                  } catch (e: any) {
+                    // Silently skip if cache write fails
+                  }
+                }
 
-                urlIndices.get(url)!.forEach(idx => {
-                   finalResults[idx] = json;
-                   if (isRecursive) console.info(`  🔍 [DEBUG] Populated finalResults[${idx}] for ${url.slice(-20)}`);
-                });
+                urlIndices.get(url)!.forEach(idx => finalResults[idx] = json);
               } catch (e: any) {
-                const isRecursive = url.includes("battlelog") || url.includes("players/");
-                if (isRecursive) console.error(`  ❌ [DEBUG] JSON Parse failed for ${url.slice(-20)}: ${e.message}`);
+                // Silently skip parse errors
               }
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
