@@ -76,7 +76,7 @@ describe('Store Module', () => {
       const largeObj = { data: 'x'.repeat(3000) };
       const compressed = Store.compress(largeObj);
       
-      expect(compressed).toContain('⚡gzip:');
+      expect(compressed).toContain('gzip:');
       expect(mockUtilities.gzip).toHaveBeenCalled();
     });
 
@@ -86,7 +86,7 @@ describe('Store Module', () => {
       // JSON -> Bytes -> Gzip(Mock=Bytes) -> Base64
       const json = JSON.stringify(original);
       const b64 = Buffer.from(json).toString('base64');
-      const compressedStr = `⚡gzip:${b64}`;
+      const compressedStr = `gzip:${b64}`;
 
       const decompressed = Store.decompress(compressedStr);
       expect(decompressed).toEqual(original);
@@ -96,7 +96,7 @@ describe('Store Module', () => {
       const original = { data: 'auto-decompress' };
       const json = JSON.stringify(original);
       const b64 = Buffer.from(json).toString('base64');
-      const compressedStr = `⚡gzip:${b64}`;
+      const compressedStr = `gzip:${b64}`;
 
       mockProperties.set('autoKey', compressedStr);
       

@@ -13,7 +13,7 @@
  *    - Pure Service: Deterministic logic, no external dependencies.
  *    - Single Source of Truth for "When is War?".
  * 
- * 🏷️ VERSION: 1.0.0
+ *  VERSION: 1.0.0
  * ============================================================================
  */
 

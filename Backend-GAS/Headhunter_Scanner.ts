@@ -263,7 +263,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
             // We are at a single battle object
             totalBattles++;
-            if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP"].includes(entry.type)) {
+            if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar"].includes(entry.type)) {
               const opponents = entry.opponent || [];
               if (Array.isArray(opponents)) {
                 totalOpponents += opponents.length;

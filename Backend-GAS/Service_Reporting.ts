@@ -55,7 +55,7 @@ var Reporting: IReporting = {
    * Logs a high-visibility banner for major section headers.
    */
   logBanner(message: string): void {
-    console.log(`\n>>> ${message.toUpperCase()} <<<\n`);
+    console.log(`\n${message.toUpperCase()}\n`);
   }
 };
 

@@ -13,7 +13,7 @@
  *    - Pure Service: Zero business logic dependencies.
  *    - Global Singleton 'Core'.
  * 
- * 🏷️ VERSION: 1.0.0
+ *  VERSION: 1.0.0
  * ============================================================================
  */
 

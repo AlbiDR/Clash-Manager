@@ -4,7 +4,7 @@
  * MODULE: API_PUBLIC - TypeScript Edition
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
- * 🏷️ VERSION: 11.0.1
+ * VERSION: 11.0.1
  * ============================================================================
  */
 
@@ -482,7 +482,7 @@ function dispatchAsyncUpdate(): void {
 }
 
 /**
- * 🌍 GLOBAL BRIDGE
+ * GLOBAL BRIDGE
  */
 (function(scope: any) {
   Object.assign(scope, { doGet, doPost, dispatchAsyncUpdate, VER_API_PUBLIC });
