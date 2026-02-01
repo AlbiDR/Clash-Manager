@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.19";
+const VER_HEADHUNTER = "12.1.20";
 
 export interface IHeadhunter {
   scout(): void;
@@ -83,8 +83,8 @@ const Headhunter: IHeadhunter = {
     const blacklistResult = HeadhunterStore.updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
     const existing = HeadhunterStore.loadDatabase(safeSheet(CONFIG.SHEETS.HH));
 
-    // 🛡️ BLOCK LOG: Initialization Context
-    Registry.Services.Reporting.logReport("Initialization Context", [
+    // 🛡️ Data collection for consolidated logging
+    const initData = [
       `CLAN TAG:      ${CONFIG.SYSTEM.CLAN_TAG}`,
       `CLAN MEMBERS:  ${members.length}`,
       `IN-GAME REQ:   ${inGameRequirement}`,
@@ -92,7 +92,7 @@ const Headhunter: IHeadhunter = {
       `BLACKBOX SIZE: ${blacklistResult.ids.size}`,
       `SURVIVOR POOL: ${existing.size}`,
       `QUOTA STATUS:  ${remaining} (${lowQuotaMode ? 'THROTTLED' : 'FULL'})`
-    ]);
+    ];
 
     // 5. Store: Prune Blacklisted
     const beforePrune = existing.size;
@@ -129,8 +129,10 @@ const Headhunter: IHeadhunter = {
       }
     }
 
-    // 🛡️ BLOCK LOG: Database Integrity
-    Registry.Services.Reporting.logReport("Database Integrity", [
+    // 🛡️ CONSOLIDATED BLOCK LOG: Runtime Context
+    Registry.Services.Reporting.logReport("Runtime Context", [
+      ...initData,
+      "─",
       `BLACKBOX PRUNED: ${prunedCount}`,
       `JOINED CLAN:     ${joinedCount}`,
       `FINAL SURVIVORS: ${existing.size}`
@@ -276,7 +278,7 @@ const Headhunter: IHeadhunter = {
         `CURRENT POOL: ${finalPool.length} Qualified Members`,
         `TROPHY FLOOR: ${strategy.floor}`,
         `STRATEGY:     ${strategy.method}`,
-        `─`.repeat(63),
+        `─`,
         `SCAN ACQUISITIONS: ${scanned.length} Found`,
         `PIPELINE FLOW:    +${newArrivals} New | ↻${updatedExisting} Updated`
       ]
