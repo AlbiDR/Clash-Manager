@@ -43,7 +43,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       if (res && res.items)
         res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
     });
-    console.info(`  ├─ Discovery: Found ${uniqueTourneys.size} total active tournaments.`);
+    // 46: Removed single-line discovery log
 
     // 2. Worker Handshake
     const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
@@ -75,9 +75,15 @@ const HeadhunterScanner: IHeadhunterScanner = {
       .slice(0, scanCfg.TOURNEYS || 300)
       .map((t: TournamentResult) => t.tag);
     
-    console.info(`  ├─ Keywords: ${keywords.length} | Mode: ${lowQuotaMode ? "SAFE (Quota Guard)" : "FULL"}`);
-    console.info(`  ├─ Worker: ${remoteAvailable ? "ONLINE" : "OFFLINE"} | Deep Expand: ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`);
-    console.info(`  └─ Lottery: Selected ${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''} for deep scanning.`);
+    // 🛡️ BLOCK LOG: Scout Discovery Context
+    Registry.Services.Reporting.logReport("Scout Discovery", [
+      `TOTAL TOURNAMENTS: ${uniqueTourneys.size}`,
+      `SEARCH KEYWORDS:  ${keywords.length}`,
+      `EXECUTION MODE:   ${lowQuotaMode ? "QUOTA_GUARD" : "UNRESTRICTED"}`,
+      `REMOTE WORKER:    ${remoteAvailable ? "ONLINE" : "OFFLINE"}`,
+      `DEEP EXPANSION:   ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`,
+      `LOTTERY WINNERS:  ${tourneyTags.length}`
+    ], 50);
 
     if (tourneyTags.length === 0) return [];
 
@@ -139,8 +145,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
     Registry.Services.Core.shuffleArray(candidatePool);
     const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
     
-    console.info(`  ├─ Candidates: Located ${uniqueCandidates.size} unique clanless players.`);
-    console.info(`  └─ Sampling: Profiling ${tagsToFetch.length} players (Limit: ${playerLimit}).`);
+    // 🛡️ BLOCK LOG: Sampling Context
+    Registry.Services.Reporting.logReport("Sampling Metrics", [
+      `UNIQUE CLANLESS: ${uniqueCandidates.size}`,
+      `SAMPLING LIMIT:  ${playerLimit}`,
+      `FINAL POOL:      ${tagsToFetch.length}`
+    ], 50);
 
     if (tagsToFetch.length === 0) return [];
 
