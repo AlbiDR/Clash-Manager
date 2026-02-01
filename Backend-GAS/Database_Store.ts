@@ -35,18 +35,25 @@ const DatabaseStore = {
     // 1. COLUMN-SELECTIVE INGESTION (API Mode)
     const tagCol = String.fromCharCode(65 + 1 + S_DB.TAG); 
     const dateCol = String.fromCharCode(65 + 1 + S_DB.DATE);
+    const nameCol = String.fromCharCode(65 + 1 + S_DB.NAME);
     
-    // We fetch only the columns we need: Tag and Date
-    const ranges = [`'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`, `'${sheetName}'!${dateCol}${startRow}:${dateCol}${lastRow}`];
+    // We fetch only the columns we need: Tag, Date, and Name
+    const ranges = [
+      `'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`, 
+      `'${sheetName}'!${dateCol}${startRow}:${dateCol}${lastRow}`,
+      `'${sheetName}'!${nameCol}${startRow}:${nameCol}${lastRow}`
+    ];
     const response = Sheets.Spreadsheets.Values.batchGet(ssId, { ranges });
     
-    if (!response.valueRanges || response.valueRanges.length < 2) return;
+    if (!response.valueRanges || response.valueRanges.length < 3) return;
     
     const tagValues = response.valueRanges[0].values || [];
     const dateValues = response.valueRanges[1].values || [];
+    const nameValues = response.valueRanges[2].values || [];
 
-    // 2. Build maps of latest dates per tag
+    // 2. Build maps of latest dates and names per tag
     const tagSeenData = new Map<string, Date>();
+    const tagToName = new Map<string, string>();
     const tagsToPurge = new Set<string>();
 
     for (let i = 0; i < tagValues.length; i++) {
@@ -55,9 +62,11 @@ const DatabaseStore = {
 
         const rawDate = dateValues[i] && dateValues[i][0];
         const dateVal = Registry.Services.Time.parseFlexibleDate(rawDate);
+        const name = String(nameValues[i] && nameValues[i][0] || "Unknown").trim();
 
         if (!tagSeenData.has(tag) || dateVal > tagSeenData.get(tag)!) {
           tagSeenData.set(tag, dateVal);
+          tagToName.set(tag, name);
         }
     }
 
@@ -91,7 +100,9 @@ const DatabaseStore = {
 
     // 🛑 CIRCUIT BREAKER
     if (tagsToPurge.size > CONFIG.SYSTEM.DB_PRUNE_THRESHOLD) {
+       const names = Array.from(tagsToPurge).map(tag => tagToName.get(tag) || tag);
        console.warn(`Pruning Aborted: Attempted to delete ${tagsToPurge.size} players. Threshold is ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD}.`);
+       Registry.Services.Reporting.logReport("Pending Purge Players", names);
        return;
     }
 
