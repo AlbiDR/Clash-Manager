@@ -149,7 +149,10 @@ const DatabaseStore = {
     let maxSortNumber = 0;
     
     if (lastRow >= startRow) {
-        const scanSize = 55;
+        // 🛡️ SCAN WINDOW: Increased to 1000 to handle existing duplication bloat
+        // A 50-member clan with 24 updates/day = 1200 rows. 1000 is a safe middle ground
+        // to find Today's entries even if partially bloated.
+        const scanSize = 1000; 
         const readStart = Math.max(startRow, lastRow - scanSize + 1);
         const headers = DatabaseView.getHeaders(); 
         
@@ -169,16 +172,18 @@ const DatabaseStore = {
         });
 
         // Identify which rows are actually "Today" and map them by Tag
-        scanValues.forEach((row: any[], idx: number) => {
+        // Reverse scan to find the LATEST entry for each tag
+        for (let i = scanValues.length - 1; i >= 0; i--) {
+          const row = scanValues[i];
           const d = Registry.Services.Time.parseFlexibleDate(row[S_DB.DATE]);
           if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === todayStr.split(" ")[0]) {
             const tag = String(row[S_DB.TAG]).toUpperCase().trim();
             if (!existingMap.has(tag)) {
-               existingMap.set(tag, readStart + idx);
+               existingMap.set(tag, readStart + i);
                todayValues.push(row);
             }
           }
-        });
+        }
     }
 
     // 3. Process API Data
@@ -268,6 +273,84 @@ const DatabaseStore = {
         appended: newRowsToAppend.length,
         pruned: 0 
     };
+  },
+
+  /**
+   * 🧹 DEDUPLICATION UTILITY
+   * Scans the entire database and removes redundant entries for the same Tag + Day.
+   * Keeps the most recent entry for each day.
+   */
+  deduplicateDatabase(sheet: any): { pruned: number } {
+    console.warn("🧹 Starting Clan Database Deduplication...");
+    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+    const ssId = sheet.getParent().getId();
+    const sheetName = sheet.getName();
+    const lastRow = sheet.getLastRow();
+    
+    if (lastRow < startRow) return { pruned: 0 };
+
+    const S_DB = CONFIG.SCHEMA.DB;
+    // Fetch Tag, Date columns
+    const tagCol = String.fromCharCode(65 + 1 + S_DB.TAG); 
+    const dateCol = String.fromCharCode(65 + 1 + S_DB.DATE);
+    
+    const ranges = [`'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`, `'${sheetName}'!${dateCol}${startRow}:${dateCol}${lastRow}`];
+    const response = Sheets.Spreadsheets.Values.batchGet(ssId, { ranges });
+    
+    if (!response.valueRanges || response.valueRanges.length < 2) return { pruned: 0 };
+    
+    const tagValues = response.valueRanges[0].values || [];
+    const dateValues = response.valueRanges[1].values || [];
+
+    const uniqueMap = new Map<string, number>(); // Key: "TAG_YYYYMMDD" -> Row Index
+    const rowsToDelete: number[] = [];
+
+    // Scan from bottom to top to keep the LATEST entry for each day
+    for (let i = tagValues.length - 1; i >= 0; i--) {
+      const tag = String(tagValues[i]?.[0] || "").trim().toUpperCase();
+      const rawDate = dateValues[i]?.[0];
+      if (!tag || !rawDate) continue;
+
+      const dateObj = Registry.Services.Time.parseFlexibleDate(rawDate);
+      const dayKey = `${tag}_${Registry.Services.Time.formatShortDate(dateObj)}`;
+
+      if (uniqueMap.has(dayKey)) {
+        rowsToDelete.push(startRow + i);
+      } else {
+        uniqueMap.set(dayKey, startRow + i);
+      }
+    }
+
+    if (rowsToDelete.length === 0) {
+      console.info("  └─ Deduplication: No duplicates found.");
+      return { pruned: 0 };
+    }
+
+    // Sort descending to avoid index shift during deletion
+    const sheetId = sheet.getSheetId();
+    const deleteRequests = rowsToDelete
+      .sort((a, b) => b - a)
+      .map(row => ({
+        deleteDimension: {
+          range: {
+            sheetId: sheetId,
+            dimension: "ROWS",
+            startIndex: row - 1,
+            endIndex: row
+          }
+        }
+      }));
+
+    // Batch update in chunks of 500 to prevent API limits if massive
+    const batchSize = 500;
+    for (let i = 0; i < deleteRequests.length; i += batchSize) {
+      const batch = deleteRequests.slice(i, i + batchSize);
+      Sheets.Spreadsheets.batchUpdate({ requests: batch }, ssId);
+      console.info(`  └─ Deduplication: Removed ${batch.length} row(s) (${i + batch.length}/${rowsToDelete.length}).`);
+    }
+
+    SpreadsheetApp.flush();
+    return { pruned: rowsToDelete.length };
   }
 };
 
