@@ -83,7 +83,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       `REMOTE WORKER:    ${remoteAvailable ? "ONLINE" : "OFFLINE"}`,
       `DEEP EXPANSION:   ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`,
       `LOTTERY WINNERS:  ${tourneyTags.length}`
-    ], 50);
+    ]);
 
     if (tourneyTags.length === 0) return [];
 
@@ -150,7 +150,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       `UNIQUE CLANLESS: ${uniqueCandidates.size}`,
       `SAMPLING LIMIT:  ${playerLimit}`,
       `FINAL POOL:      ${tagsToFetch.length}`
-    ], 50);
+    ]);
 
     if (tagsToFetch.length === 0) return [];
 
@@ -294,7 +294,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           `OPPONENTS FOUND:  ${totalOpponents}`,
           `BLACKBOX REJECT:  ${rejectedClanned}`,
           `DISCOVERED TAGS:  ${shadowTags.size}`
-        ], 50);
+        ]);
 
       }
     } else {

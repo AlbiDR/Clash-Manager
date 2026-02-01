@@ -32,18 +32,41 @@ var Reporting: IReporting = {
 
   /**
    * Logs a stylized report box to the console.
+   * Optimized for Gemini quota by reducing whitespace padding.
    */
-  logReport(title: string, lines: string[], width: number = 65): void {
-    const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
-    const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
-    const borderBot = `└${"─".repeat(width)}┘`;
+  logReport(title: string, lines: string[], width?: number): void {
+    const padding = 2; // Left + Right padding characters
+    const minWidth = title.length + 8;
+    
+    // Calculate optimal width based on content
+    const maxContent = lines.reduce((max, line) => {
+      // Ignore lines intended to be separators for width calculation
+      if (line.trim().startsWith("─") || line.trim().startsWith("-")) return max;
+      return Math.max(max, line.length);
+    }, 0);
+    
+    const finalWidth = width || Math.max(minWidth, maxContent + 4);
+    const contentWidth = finalWidth - 4; // Space available inside │ │
+
+    const pad = (str: string, len: number) => {
+      if (str.length >= len) return str.substring(0, len);
+      return str + " ".repeat(len - str.length);
+    };
+
+    const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, finalWidth - title.length - 5))}┐`;
+    const borderBot = `└${"─".repeat(finalWidth - 2)}┘`;
     
     // @ts-ignore
     const logFunc = (typeof Logger !== "undefined") ? Logger.log : console.log;
     
-    const content = lines
-      .map(l => `│ ${pad(l, width - 2)} │`)
-      .join("\n");
+    const content = lines.map(l => {
+      const trimmed = l.trim();
+      // Smart Dividers: If line starts with divider char, repeat it for full width
+      if (trimmed === "─" || trimmed === "-" || trimmed === "=") {
+        return `├${trimmed.repeat(finalWidth - 2)}┤`;
+      }
+      return `│ ${pad(l, contentWidth)} │`;
+    }).join("\n");
 
     logFunc(`\n${borderTop}\n${content}\n${borderBot}\n`);
   },
