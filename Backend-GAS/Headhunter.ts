@@ -18,7 +18,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.18";
+const VER_HEADHUNTER = "12.1.19";
 
 export interface IHeadhunter {
   scout(): void;
@@ -43,10 +43,6 @@ const Headhunter: IHeadhunter = {
 
     // 🛡️ L1 CACHE PURGE: Ensure a fresh start for this execution
     Registry.Services.Network._clearCache();
-
-    // ⚡ DYNAMIC SYNC
-    Registry.Services.Reporting.logStep(2, 9, "Syncing Dynamic Schema indices...");
-    Registry.Services.Schema.bootDynamicSchema();
 
     // 🛡️ CONFIGURATION CHECK
     if (!CONFIG.SYSTEM.CLAN_TAG) {
@@ -82,16 +78,21 @@ const Headhunter: IHeadhunter = {
       return;
     }
     const lowQuotaMode = remaining < 1000;
-    if (lowQuotaMode) {
-      console.info(`⚡ [QUOTA] Low quota mode activated (${remaining} remaining). Scan will be throttled.`);
-    }
 
     // 4. Store: Blacklist & Load
-    Registry.Services.Reporting.logStep(3, 9, "Processing Headhunter Blacklist...");
     const blacklistResult = HeadhunterStore.updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
-
-    Registry.Services.Reporting.logStep(4, 9, "Loading existing recruit database...");
     const existing = HeadhunterStore.loadDatabase(safeSheet(CONFIG.SHEETS.HH));
+
+    // 🛡️ BLOCK LOG: Initialization Context
+    Registry.Services.Reporting.logReport("Initialization Context", [
+      `CLAN TAG:      ${CONFIG.SYSTEM.CLAN_TAG}`,
+      `CLAN MEMBERS:  ${members.length}`,
+      `IN-GAME REQ:   ${inGameRequirement}`,
+      `STRATEGY:      ${strategy.method} (${strategy.floor})`,
+      `BLACKBOX SIZE: ${blacklistResult.ids.size}`,
+      `SURVIVOR POOL: ${existing.size}`,
+      `QUOTA STATUS:  ${remaining} (${lowQuotaMode ? 'THROTTLED' : 'FULL'})`
+    ]);
 
     // 5. Store: Prune Blacklisted
     const beforePrune = existing.size;
@@ -99,7 +100,6 @@ const Headhunter: IHeadhunter = {
       if (blacklistResult.ids.has(tag)) existing.delete(tag);
     });
     const prunedCount = beforePrune - existing.size;
-    Registry.Services.Reporting.logStep(5, 9, `Database filtered: ${existing.size} survivors (${prunedCount} blacklisted removed).`);
 
     // Helper: Record dismissal to Event Log for Score-aware Blacklisting
     const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
@@ -111,8 +111,6 @@ const Headhunter: IHeadhunter = {
     let joinedCount = 0;
     const tagsToCheck = Array.from(existing.keys());
     if (tagsToCheck.length > 0) {
-      Registry.Services.Reporting.logStep(6, 9, `Verifying clan status for ${tagsToCheck.length} survivors...`);
-      
       const batchSize = 25;
       for (let i = 0; i < tagsToCheck.length; i += batchSize) {
         const chunk = tagsToCheck.slice(i, i + batchSize);
@@ -121,18 +119,22 @@ const Headhunter: IHeadhunter = {
         );
         profiles.forEach((p: any) => {
           if (p && p.clan && p.clan.tag) {
-            // 🛡️ SCORE PRESERVATION: Record score before deleting
             const recruit = existing.get(p.tag);
             if (recruit) logDismissal(p.tag, recruit.rawScore);
-            
             existing.delete(p.tag);
             joinedCount++;
           }
         });
         if (i + batchSize < tagsToCheck.length) SpreadsheetApp.flush();
       }
-
     }
+
+    // 🛡️ BLOCK LOG: Database Integrity
+    Registry.Services.Reporting.logReport("Database Integrity", [
+      `BLACKBOX PRUNED: ${prunedCount}`,
+      `JOINED CLAN:     ${joinedCount}`,
+      `FINAL SURVIVORS: ${existing.size}`
+    ]);
 
     // 7. Scanner: Launch
     const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
