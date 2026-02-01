@@ -312,6 +312,14 @@ const DatabaseStore = {
       if (!tag || !rawDate) continue;
 
       const dateObj = Registry.Services.Time.parseFlexibleDate(rawDate);
+      
+      // 🛡️ CRITICAL FIX: Skip rows with invalid dates to prevent wiping out data
+      // If parsing fails, parseFlexibleDate now returns Epoch 0 (1970).
+      if (!dateObj || dateObj.getTime() <= 0) {
+        console.warn(`  ⚠ Skipping row ${startRow + i}: Invalid date format "${rawDate}"`);
+        continue;
+      }
+
       const dayKey = `${tag}_${Registry.Services.Time.formatShortDate(dateObj)}`;
 
       if (uniqueMap.has(dayKey)) {
