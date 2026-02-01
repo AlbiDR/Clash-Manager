@@ -5,9 +5,9 @@ import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Type
 
 /**
  * ============================================================================
- * 💾 MODULE: HEADHUNTER STORE
+ * MODULE: HEADHUNTER STORE
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Persistence handling for the Headhunter system.
+ * DESCRIPTION: Persistence handling for the Headhunter system.
  *    Manages the Recruit Database and the Blacklist Event Stream.
  * ============================================================================
  */
@@ -65,7 +65,7 @@ const HeadhunterStore: IHeadhunterStore = {
     const ss = sheet.getParent();
     const HOT_COLOR = "#ff5722";
     
-    // 🛡️ Ensure Technical Sheets exist with proper headers and styling
+    // Ensure Technical Sheets exist with proper headers and styling
     const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
     if (blSheet.getLastRow() === 0) {
       blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
@@ -114,7 +114,7 @@ const HeadhunterStore: IHeadhunterStore = {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const numRows = sheet.getLastRow() - startRow + 1;
       // Get TAG (Column B is index 1, but SCHEMA.HH.TAG is 0 relative to start?)
-      // 🛡️ BATCH LOAD SURVIVAL: Map tags to recruits
+      // BATCH LOAD SURVIVAL: Map tags to recruits
       // SCHEMA.HH.TAG is 0. So it gets columns B to ...
       
       const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
@@ -131,7 +131,7 @@ const HeadhunterStore: IHeadhunterStore = {
 
     // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
     if (evtSheet.getLastRow() > 1) {
-      // 🛡️ Upgraded to support optional 3rd column: [Tag, Timestamp, Score]
+      // Upgraded to support optional 3rd column: [Tag, Timestamp, Score]
       const rawEvt = evtSheet.getDataRange().getValues();
       for (let i = 1; i < rawEvt.length; i++) {
          const tag = String(rawEvt[i][0]).toUpperCase().trim();
@@ -166,7 +166,7 @@ const HeadhunterStore: IHeadhunterStore = {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const numRows = sheet.getLastRow() - startRow + 1;
       
-      // 🛡️ FIX: Deduplicate read. Use the H.INVITED index within the already-loaded rawMain.
+      // FIX: Deduplicate read. Use the H.INVITED index within the already-loaded rawMain.
       const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
 
       rawMain.forEach((r: any, i: number) => {
@@ -223,7 +223,7 @@ const HeadhunterStore: IHeadhunterStore = {
         if (typeof Sheets !== 'undefined' && Sheets.Spreadsheets) {
           Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
         }
-        console.info(`  └─ Cleanup: Atomic deletion of ${deleteRequests.length} row(s) complete.`);
+        console.info(`Cleanup: Atomic deletion of ${deleteRequests.length} row(s) complete.`);
         // @ts-ignore
         if (typeof SpreadsheetApp !== 'undefined') SpreadsheetApp.flush();
       }

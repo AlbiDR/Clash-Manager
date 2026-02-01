@@ -140,13 +140,13 @@ function taskUpdateDatabase(): void {
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
-      console.warn("⚠️ [TASK] Database Sync: Collision detected. Queuing retry in 2m...");
+      console.warn("Task: Database Sync: Collision detected. Queuing retry in 2m...");
       queueRetry("taskUpdateDatabase");
       return; 
     }
-    console.error(`❌ [TASK] Database Sync: FAILED - ${e.message}`);
+    console.error(`Task: Database Sync: FAILED - ${e.message}`);
   } finally {
-    // 🧹 Always attempt to clean up any "ghost" triggers for this task
+    // Always attempt to clean up any "ghost" triggers for this task
     cleanupTemporaryTriggers("taskUpdateDatabase");
   }
 }
@@ -156,7 +156,7 @@ function taskUpdateDatabase(): void {
  * Recommended Trigger: Time-Based -> Every 1 Hour
  */
 function taskUpdateRoster(): void {
-  console.info("⏰ [TASK] Roster Update: Starting...");
+  console.info("Task: Roster Update: Starting...");
 
   try {
     Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
@@ -166,13 +166,13 @@ function taskUpdateRoster(): void {
     });
   } catch (e: any) {
     if (e.message.indexOf("Lock timeout") > -1) {
-      console.warn("⚠️ [TASK] Roster Update: Collision detected. Queuing retry in 2m...");
+      console.warn("Task: Roster Update: Collision detected. Queuing retry in 2m...");
       queueRetry("taskUpdateRoster");
       return;
     }
-    console.error(`❌ [TASK] Roster Update: FAILED - ${e.message}`);
+    console.error(`Task: Roster Update: FAILED - ${e.message}`);
   } finally {
-    // 🧹 Always attempt to clean up any "ghost" triggers for this task
+    // Always attempt to clean up any "ghost" triggers for this task
     cleanupTemporaryTriggers("taskUpdateRoster");
   }
 }
@@ -205,7 +205,7 @@ function cleanupTemporaryTriggers(functionName: string): void {
   try { permanentIds = JSON.parse(rawRegistry); } catch(e: any) {}
 
   triggers.forEach((t: any) => {
-    // 🛡️ Guard: Never delete a trigger that is registered as "Permanent"
+    // Guard: Never delete a trigger that is registered as "Permanent"
     if (permanentIds.indexOf(t.getUniqueId()) > -1) return;
 
     if (
@@ -222,7 +222,7 @@ function cleanupTemporaryTriggers(functionName: string): void {
  * Recommended Trigger: Time-Based -> Every 30 Minutes
  */
 function taskFastScout(): void {
-  console.info("⏰ [TASK] Fast Scout (Headhunter): Starting...");
+  console.info("Task: Fast Scout (Headhunter): Starting...");
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
@@ -248,7 +248,7 @@ function taskWarmUpWorker(): void {
 }
 
 /**
- * 🛠️ TRIGGER MANAGEMENT
+ * TRIGGER MANAGEMENT
  * Sets up the automated lifecycle of the project.
  */
 function createTriggers(): void {
@@ -304,16 +304,16 @@ function createTriggers(): void {
   const mobileT = allTriggersNow.find((t: any) => t.getHandlerFunction() === "handleMobileEdit");
   if (mobileT) permanentIds.push(mobileT.getUniqueId());
   
-  // 🛡️ REGISTER PERMANENT IDS
+  // REGISTER PERMANENT IDS
   Registry.Services.Store.props.set(PERMANENT_TRIGGER_KEY, JSON.stringify(permanentIds));
 
-  ss.toast("Triggers synchronized successfully.", "⚙️ Trigger Engine", 3);
+  ss.toast("Triggers synchronized successfully.", "Trigger Engine", 3);
   console.info("Triggers: Sync complete.");
 }
 
 
 /**
- * 🚀 MASTER DISPATCHER
+ * MASTER DISPATCHER
  * Sequential execution of the entire stack.
  */
 function dispatchMaster(): void {
@@ -369,7 +369,7 @@ function setupMobileTriggers(silent: boolean = false): void {
     if (!silent) {
       const ui = SpreadsheetApp.getUi();
       ui.alert(
-        "✅ Mobile Controls Ready",
+        "Mobile Controls Ready",
         "Checkboxes in cell A1 are active.",
         ui.ButtonSet.OK,
       );
@@ -383,7 +383,7 @@ function setupMobileTriggers(silent: boolean = false): void {
   if (!silent) {
     const ui = SpreadsheetApp.getUi();
     ui.alert(
-      "📱 Mobile Controls Enabled!",
+      "Mobile Controls Enabled!",
       "You can now use the A1 checkboxes.",
       ui.ButtonSet.OK,
     );
@@ -406,7 +406,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   if (e.value !== "TRUE") return;
 
   range.setValue(false);
-  Registry.Services.View.setStatusMessage(sheet, "⏳ Updating...");
+  Registry.Services.View.setStatusMessage(sheet, "Updating...");
   SpreadsheetApp.flush();
 
   console.info(`Mobile: Trigger activated: ${sheetName}`);
@@ -432,10 +432,10 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
       Registry.Services.View.setStatusMessage(sheet, `Done ${new Date().toLocaleTimeString()}`);
     });
   } catch (err: any) {
-    console.error(`❌ [MOBILE] Error on ${sheetName}: ${err.message}`);
+    console.error(`Mobile: Error on ${sheetName}: ${err.message}`);
     const msg =
       err.message.indexOf("System Busy") > -1
-        ? "⚠️ System Busy (Retry in 60s)"
+        ? "System Busy (Retry in 60s)"
         : `ERROR: ${err.message}`;
     Registry.Services.View.setStatusMessage(sheet, msg);
   }
@@ -446,7 +446,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
  */
 function triggerUpdateDatabase(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Connecting to Royale API...", "📊 Database Update", 5);
+  ss.toast("Connecting to Royale API...", "Database Update", 5);
   Registry.Services.Core.executeSafely("SYNC_DB", () => {
     try {
       Registry.Actions["sync:database"]();
@@ -460,7 +460,7 @@ function triggerUpdateDatabase(): void {
 
 function triggerUpdateRoster(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Calculating performance scores...", "🏆 Roster Update", 5);
+  ss.toast("Calculating performance scores...", "Roster Update", 5);
   Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
     try {
       Registry.Actions["sync:roster"]();
@@ -474,7 +474,7 @@ function triggerUpdateRoster(): void {
 
 function triggerScoutRecruits(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Scanning global tournaments...", "🔭 Headhunter Scout", 20);
+  ss.toast("Scanning global tournaments...", "Headhunter Scout", 20);
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
@@ -490,7 +490,7 @@ function triggerScoutRecruits(): void {
  */
 function checkSystemHealth(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Running system diagnostics...", "🔍 Health Check", 5);
+  ss.toast("Running system diagnostics...", "Health Check", 5);
 
   const manifest = CONFIG.SYSTEM.MANIFEST;
   const keys = CONFIG.SYSTEM.API_KEYS;
@@ -573,7 +573,7 @@ function checkSystemHealth(): void {
     }
   ];
 
-  let report = `📂 FILE SYSTEM\n`;
+  let report = `FILE SYSTEM\n`;
   let healthy = true;
 
   if (!keysHealthy) healthy = false;
@@ -598,11 +598,11 @@ function checkSystemHealth(): void {
 function triggerVerifyApiKeys(): void {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.toast("Testing API key connectivity...", "🔑 Security Audit", 10);
+  ss.toast("Testing API key connectivity...", "Security Audit", 10);
 
   const results = verifyApiKeysInternal(true, 0);
 
-  let report = "🔑 API KEY SECURITY AUDIT\n---------------------------\n";
+  let report = "API KEY SECURITY AUDIT\n---------------------------\n";
   let activeCount = 0;
 
   results.forEach((r: any) => {
@@ -615,7 +615,7 @@ function triggerVerifyApiKeys(): void {
   });
 
   report += "---------------------------\n";
-  report += `📊 SUMMARY: ${activeCount}/${results.length} Keys Operational`;
+  report += `SUMMARY: ${activeCount}/${results.length} Keys Operational`;
 
   ui.alert("API Key Verification", report, ui.ButtonSet.OK);
 }
@@ -638,12 +638,12 @@ function verifyApiKeysInternal(
       console.info("Audit: API key verification handled by remote worker.");
       return remoteResults;
     }
-    console.warn("⚠️ [AUDIT] Remote audit unavailable. Falling back to local quota.");
+    console.warn("Audit: Remote audit unavailable. Falling back to local quota.");
   }
 
   for (const keyObj of keysToCheck) {
     if (quotaExhausted) {
-      results.push({ name: keyObj.name, success: false, error: "⚠️ Skipped (Quota Exceeded)" });
+      results.push({ name: keyObj.name, success: false, error: "Skipped (Quota Exceeded)" });
       continue;
     }
 
@@ -657,7 +657,7 @@ function verifyApiKeysInternal(
     } catch (e: any) {
       if (e.message && e.message.indexOf("Service invoked too many times") > -1) {
         quotaExhausted = true;
-        results.push({ name: keyObj.name, success: false, error: "⛔ DAILY QUOTA LIMIT REACHED" });
+        results.push({ name: keyObj.name, success: false, error: "DAILY QUOTA LIMIT REACHED" });
       } else {
         results.push({ name: keyObj.name, success: false, error: `Ex: ${e.message}` });
       }
@@ -704,5 +704,5 @@ function clearAllTriggers(): void {
     }
   });
 
-  console.info(`🧹 [TRIGGERS] Surgical cleanup: Deleted ${deletedCount} managed trigger${deletedCount !== 1 ? 's' : ''}.`);
+  console.info(`Triggers: Surgical cleanup: Deleted ${deletedCount} managed trigger${deletedCount !== 1 ? 's' : ''}.`);
 }

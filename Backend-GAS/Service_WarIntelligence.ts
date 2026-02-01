@@ -1,6 +1,6 @@
 
 /**
- * ⚔️ WAR INTELLIGENCE - CLASP EDITION
+ * WAR INTELLIGENCE - CLASP EDITION
  * VERSION: 12.4.1 | High-Resolution Snapshot Engine
  */
 
@@ -14,7 +14,7 @@ declare const Registry: IRegistry;
 declare const Logger: any;
 
 /**
- * 🚀 WAR SNAPSHOT INTERFACE
+ * WAR SNAPSHOT INTERFACE
  */
 export interface WarSnapshot {
   status: 'HIGH-FIDELITY' | 'VAULT-STORED' | 'HEURISTIC';
@@ -43,7 +43,7 @@ export interface WarSnapshot {
 }
 
 /**
- * 🚀 ENTRY POINT: Triggerable by Apps Script
+ * ENTRY POINT: Triggerable by Apps Script
  */
 function getWarSnapshot(): WarSnapshot {
   const snap = WarIntelligence.getSnapshot();
@@ -78,10 +78,10 @@ const WarIntelligence = (() => {
           
           const snap = this.parse(res[0], 'HIGH-FIDELITY');
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
-          Registry.Services.Store.props.setChunked(K + "_PERSIST", snap); // 🛡️ Persist
+          Registry.Services.Store.props.setChunked(K + "_PERSIST", snap); // Persist
           return snap;
         } catch (e: any) {
-          // 🛡️ FALLBACK: Try persistent store if API fails
+          // FALLBACK: Try persistent store if API fails
           const persisted = Registry.Services.Store.props.getChunked<WarSnapshot>(K + "_PERSIST");
           if (persisted) {
              persisted.status = 'HEURISTIC';
@@ -98,8 +98,8 @@ const WarIntelligence = (() => {
       const sIdx = d?.sectionIndex || 0;
       const isColosseum = sIdx >= 3;
 
-      // 🛡️ UNIFIED PHASE DETECTION
-      // 🛡️ UNIFIED PHASE DETECTION
+      // UNIFIED PHASE DETECTION
+      // UNIFIED PHASE DETECTION
       let rawDay: number;
       if (pIdx !== undefined) {
         rawDay = pIdx % 7;
@@ -111,8 +111,8 @@ const WarIntelligence = (() => {
       const isFinished = d?.state === "full";
       const rootClan = d?.clan || {};
 
-      // 🛡️ TACTICAL FAME & RANK EXTRACTION
-      // 🛡️ UNIFIED FAME EXTRACTION
+      // TACTICAL FAME & RANK EXTRACTION
+      // UNIFIED FAME EXTRACTION
       let fame = 0;
       let rank = 0;
       const clanTag = rootClan.tag || "";
@@ -195,21 +195,11 @@ const WarIntelligence = (() => {
     },
 
     log(s: WarSnapshot) {
-      const v = `[v${s.meta.version}]`;
-      const title = `WAR INTELLIGENCE: ${s.status} ${v}`;
-      const width = 60;
-      
-      const pad = (str: string, len: number) => str + " ".repeat(Math.max(0, len - str.length));
-      
+      const title = `WAR INTELLIGENCE: ${s.status} [v${s.meta.version}]`;
       const line1 = `Week ${s.schedule.week} | ${s.protocol.dayLabel} | Reset in ${s.schedule.remainingTime}`;
-      const line2 = `Tactical: Rank ${s.performance.rank}° | Fame: ${s.performance.fame.toLocaleString()}`;
+      const line2 = `Tactical: Rank ${s.performance.rank} | Fame: ${s.performance.fame.toLocaleString()}`;
 
-      const borderTop = `┌── ${title} ${"─".repeat(Math.max(0, width - title.length - 5))}┐`;
-      const borderMid1 = `│ ${pad(line1, width - 2)} │`;
-      const borderMid2 = `│ ${pad(line2, width - 2)} │`;
-      const borderBot = `└${"─".repeat(width)}┘`;
-
-      Logger.log(`\n${borderTop}\n${borderMid1}\n${borderMid2}\n${borderBot}\n`);
+      Logger.log(`\n${title.toUpperCase()}\n  ${line1}\n  ${line2}\n`);
     }
   };
 })();

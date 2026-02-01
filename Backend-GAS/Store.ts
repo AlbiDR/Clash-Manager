@@ -1,17 +1,17 @@
 
 /**
  * ============================================================================
- * 💾 MODULE: STORE (Persistence Layer)
+ * MODULE: STORE (Persistence Layer)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Centralized persistence engine for Google Apps Script.
- * ⚙️ CAPABILITIES:
+ * DESCRIPTION: Centralized persistence engine for Google Apps Script.
+ * CAPABILITIES:
  *    1. Properties Manager: Safe JSON handling for Script Properties.
  *    2. Chunking Engine: Handles >9KB properties and >100KB cache items.
  *    3. Cache Manager: High-capacity caching with auto-segmentation.
  *    4. Atomic Locking: Prevents race conditions during writes.
  *    5. Compression: Auto-gzip for optimal storage usage.
  * 
- * 🛡️ ARCHITECTURE: 
+ * ARCHITECTURE: 
  *    - Pure Service: Zero dependencies.
  *    - Internal Core: DRY logic for chunking/compression/locking.
  *    - Public Facade: Clean, categorized API.
@@ -35,7 +35,7 @@ const CONSTANTS = {
     EXPIRATION: 21600, // 6 hours
   },
   COMPRESSION: {
-    PREFIX: "⚡gzip:",
+    PREFIX: "gzip:",
     THRESHOLD: 2048,   // 2KB
   },
   PROPS: {
@@ -315,7 +315,7 @@ var Store: IStore = {
         return StoreInternal.decompress(resultStr);
 
       } catch (e: any) {
-        console.error(`🧩 Store: Chunk read error for '${baseKey}'`);
+        console.error(`Store: Chunk read error for '${baseKey}'`);
         return defaultVal;
       }
     },
@@ -353,7 +353,7 @@ var Store: IStore = {
           
           return true;
         } catch (e: any) {
-            console.error(`🧩 Store: Chunk write error for '${baseKey}'`);
+            console.error(`Store: Chunk write error for '${baseKey}'`);
             return false;
         }
       });
@@ -369,7 +369,7 @@ var Store: IStore = {
         this._service.setProperty(key, str);
         return true;
       } catch (e: any) {
-        console.error(`⚠️ Store: JSON Stringify error for '${key}'`);
+        console.error(`Store: JSON Stringify error for '${key}'`);
         return false;
       }
     }

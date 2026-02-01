@@ -1,11 +1,11 @@
 
 /**
  * ============================================================================
- * 🎨 MODULE: VIEW (UI & Layout Engine)
+ * MODULE: VIEW (UI & Layout Engine)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Handles all Spreadsheet visualization, formatting, and
+ * DESCRIPTION: Handles all Spreadsheet visualization, formatting, and
  *    interactive elements (checkboxes, banding, headers).
- * ⚙️ ROLE: Pure Presentation Layer. "How it looks".
+ * ROLE: Pure Presentation Layer. "How it looks".
  * 🏷️ VERSION: 1.0.1
  * ============================================================================
  */
@@ -48,7 +48,7 @@ export interface IView {
 
 var View: IView = {
   /**
-   * 🖌️ STANDARD LAYOUT ENGINE
+   * STANDARD LAYOUT ENGINE
    * Applies the signature "Clean Technical" look to any sheet.
    */
   applyStandardLayout: function (
@@ -69,25 +69,6 @@ var View: IView = {
     const ssId = sheet.getParent().getId();
     const sheetId = sheet.getSheetId();
 
-    // 🛡️ ATOMIC LAYOUT ENGINE
-    const requests = this.getStandardVisualRequests(sheetId, contentRows, contentCols);
-    
-    // 🚀 EXECUTE ATOMIC TRANSACTION
-    Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
-
-    // Minor non-structural tweaks
-    this.drawMobileCheckbox(sheet);
-    sheet.setHiddenGridlines(true);
-  },
-
-  /**
-   * 🏗️ ATOMIC VISUAL ENGINE (Request Generator)
-   * Generates the visual standard for 100% atomic bundling.
-   */
-  getStandardVisualRequests: function (sheetId, contentRows, contentCols) {
-    const L = CONFIG.LAYOUT;
-    const T = CONFIG.THEME;
-    
     // Dimensions
     const totalRows = (L.DATA_START_ROW - 1) + (contentRows === -1 ? 100 : contentRows) + 1; 
     const totalCols = contentCols + 2;
@@ -274,7 +255,7 @@ var View: IView = {
       .setFontColor(null)
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle")
-      .setNote("⚡ QUICK UPDATE:\n(Select to run)");
+      .setNote("QUICK UPDATE:\n(Select to run)");
   },
 
   refreshMobileControls: function (ss) {
@@ -310,7 +291,7 @@ var View: IView = {
   },
 
   /**
-   * 🧹 GLOBAL HYGIENE PROTOCOL
+   * GLOBAL HYGIENE PROTOCOL
    */
   enforceGlobalTabHygiene: function (ss) {
     if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -349,7 +330,7 @@ var View: IView = {
     REGISTER.push({ name: SH.BL, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
     REGISTER.push({ name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
 
-    // 🚀 BATCH EXECUTION
+    // EXECUTION
     const ssId = ss.getId();
     const sheets = ss.getSheets();
     const requests: any[] = [];
@@ -389,7 +370,7 @@ var View: IView = {
       try {
         Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
       } catch (e: any) {
-        console.warn(`🧹 Tab Hygiene Batch Fail: ${e.message}`);
+        console.warn(`Tab Hygiene Batch Fail: ${e.message}`);
       }
     }
   },
@@ -399,7 +380,7 @@ var View: IView = {
    */
 
   /**
-   * 🛡️ ROBUST BACKUP SYSTEM
+   * BACKUP SYSTEM
    * Rotates backups and creates a fresh clone using atomic operations.
    */
   backupSheet: function (ss, sheetName) {
@@ -426,14 +407,14 @@ var View: IView = {
             const currentData = sheet.getRange(1, 1, numRows, lastCol).getValues();
             const backupData = existingBackup1.getRange(1, 1, numRows, lastCol).getValues();
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
-              console.log(`🛡️ Backup skipped for '${sheetName}' (No changes)`);
-              return; // No hygiene needed if nothing changed
+              console.log(`Backup skipped for '${sheetName}' (No changes)`);
+              return; 
             }
           }
         }
       }
 
-      console.log(`🛡️ Rotating backups for '${sheetName}'...`);
+      console.log(`Rotating backups for '${sheetName}'...`);
       
       // 2. Atomic Rotation Strategy (Batch Update)
       const requests: any[] = [];
@@ -466,7 +447,7 @@ var View: IView = {
       }
 
       // 3. High-Performance Clone
-      console.log(`🛡️ Cloning '${sheetName}'...`);
+      console.log(`Cloning '${sheetName}'...`);
       const copyResponse = Sheets.Spreadsheets!.Sheets!.copyTo({
         destinationSpreadsheetId: ssId
       }, ssId, sheetId);
@@ -484,10 +465,10 @@ var View: IView = {
         clonedSheet.hideSheet(); // Proactive hide
         this.tagSheet(clonedSheet, "BACKUP");
 
-        // ⚡ STATUS OVERRIDE: Prevent backups from showing "Initializing..." forever
+        // STATUS OVERRIDE: Prevent backups from showing "Initializing..." forever
         // @ts-ignore
         const timestamp = Utilities.formatDate(new Date(), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
-        this.setStatusMessage(clonedSheet, `✅ Backup: ${timestamp}`);
+        this.setStatusMessage(clonedSheet, `Backup: ${timestamp}`);
       } else {
         throw new Error("Cloned sheet not found in spreadsheet after copyTo.");
       }
@@ -511,7 +492,7 @@ var View: IView = {
   },
 
   /**
-   * 🏷️ DEVELOPER METADATA ENGINE
+   * DEVELOPER METADATA ENGINE
    * Tags sheets for resilient identification.
    */
   tagSheet: function (sheet, type) {
@@ -577,7 +558,7 @@ var View: IView = {
                   startColumnIndex: 0,
                   endColumnIndex: sheet.getMaxColumns()
                 },
-                description: "🛡️ SYSTEM HEADERS (Read Only)",
+                description: "SYSTEM HEADERS (Read Only)",
                 warningOnly: false,
                 editors: { domainUsersCanEdit: false, users: [Session.getEffectiveUser().getEmail()] }
               }
@@ -595,14 +576,14 @@ var View: IView = {
     try {
       const ssId = sheet.getParent().getId();
       const sheetId = sheet.getSheetId();
-      // ⚡ DYNAMIC WIDTH: Fetch actual width to avoid "Invalid Range" errors on resized sheets
+      // DYNAMIC WIDTH: Fetch actual width to avoid "Invalid Range" errors on resized sheets
       const maxCols = sheet.getMaxColumns(); 
       
       const T = CONFIG.THEME;
       const statusFgRgb = this.hexToRgbColor(T.STATUS_BAR.FG);
       const statusBgRgb = this.hexToRgbColor(T.STATUS_BAR.BG);
       
-      // 🚀 ATOMIC STATUS UPDATE: Value + Theme in one transaction
+      // ATOMIC STATUS UPDATE: Value + Theme in one transaction
       Sheets.Spreadsheets!.batchUpdate({
         requests: [
           {
@@ -635,18 +616,18 @@ var View: IView = {
   },
 
   /**
-   * 🛡️ ATOMIC UI TRANSACTION
+   * ATOMIC UI TRANSACTION
    * Safe wrapper for user-facing scripts ensuring consistent status updates.
    */
   interact: function(sheet: any, startMsg: string, taskFn: () => void) {
     if (!sheet) return;
     try {
-      this.setStatusMessage(sheet, `⏳ ${startMsg}`);
+      this.setStatusMessage(sheet, `Initializing: ${startMsg}`);
       SpreadsheetApp.flush();
       taskFn();
     } catch (e: any) {
       console.error(e);
-      this.setStatusMessage(sheet, `❌ Error: ${e.message}`);
+      this.setStatusMessage(sheet, `Error: ${e.message}`);
       throw e; 
     }
   }

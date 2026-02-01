@@ -1,9 +1,9 @@
 
 /**
  * ============================================================================
- * 🧠 MODULE: SCORING (Manager)
+ * MODULE: SCORING (Manager)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: The Diplomat. Manages configuration and implementation choices,
+ * DESCRIPTION: The Diplomat. Manages configuration and implementation choices,
  *    but delegates pure math to the Kernel.
  * 🏷️ VERSION: 13.0.0
  * ============================================================================

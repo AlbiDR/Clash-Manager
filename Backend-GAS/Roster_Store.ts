@@ -6,7 +6,7 @@ declare var SpreadsheetApp: any;
 
 const RosterStore = {
   /**
-   * 🏗️ MOMENTUM: Loads previous scores for trend analysis.
+   * MOMENTUM: Loads previous scores for trend analysis.
    */
   loadPreviousScores(sheet: any, L: any): Map<string, number> {
     const scores = new Map<string, number>();
@@ -32,7 +32,7 @@ const RosterStore = {
   },
 
   /**
-   * ⚔️ REHYDRATION: Reconstitutes War History from LB sheet archives.
+   * REHYDRATION: Reconstitutes War History from LB sheet archives.
    */
   rehydrateWarHistory(sheet: any, L: any): Map<string, Map<string, number>> {
     const historyMap = new Map<string, Map<string, number>>();
@@ -57,7 +57,7 @@ const RosterStore = {
   },
 
   /**
-   * 💾 PROPHET CACHE: Loads/Saves recruit intelligence.
+   * PROPHET CACHE: Loads/Saves recruit intelligence.
    */
   getProphetCache(): Map<string, { wins: number; active: boolean; lastFetch: number }> {
     const CACHE_KEY = "PROPHET_CACHE_V1";
@@ -88,7 +88,7 @@ const RosterStore = {
   },
 
   /**
-   * 📉 RECOVERY: Loads Tenure and Battle Credits from database.
+   * RECOVERY: Loads Tenure and Battle Credits from database.
    */
   loadMarketIntelligence(): Map<string, any> {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
