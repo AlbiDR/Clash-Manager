@@ -495,8 +495,7 @@ function triggerDeduplicateDatabase(): void {
   ss.toast("Scanning for duplicates (700+ entries detected)...", "🧹 Deduplication", 10);
   try {
     Registry.Services.Core.executeSafely("SYNC_DB", () => {
-      // @ts-ignore - access to internal store for utility
-      const result = Registry.Services.Database_Store.deduplicateDatabase(sheet);
+      const result = Registry.Services.Database.deduplicate();
       ss.toast(`Cleaned up ${result.pruned} duplicate entries.`, "✅ Deduplication Complete", 5);
     });
   } catch (e: any) {
