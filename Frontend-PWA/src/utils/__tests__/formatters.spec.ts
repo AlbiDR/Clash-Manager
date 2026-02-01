@@ -144,14 +144,14 @@ describe("formatters", () => {
       expect(parseTimeAgoValue("1y ago")).toBe(525600);
     });
 
+    it("correctly parses weeks and months", () => {
+      expect(parseTimeAgoValue("1w ago")).toBe(10080);
+      expect(parseTimeAgoValue("2mo ago")).toBe(86400);
+    });
+
     it("returns 99999999 for unknown patterns", () => {
       expect(parseTimeAgoValue("some text")).toBe(99999999);
       expect(parseTimeAgoValue("10 days ago")).toBe(99999999);
-    });
-
-    it('documents the "mo" (month) fallback bug', () => {
-      // Current regex /^(\d+)([ymdh]) ago$/ does not include 'mo'
-      expect(parseTimeAgoValue("2mo ago")).toBe(99999999);
     });
   });
 
