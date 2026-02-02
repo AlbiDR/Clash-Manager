@@ -25,122 +25,114 @@ export interface IHeadhunter {
 
 const Headhunter: IHeadhunter = {
   scout(): void {
+    const startTime = Date.now();
+    console.info("HEADHUNTER: Starting Recruitment Pipeline");
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const safeSheet = (name: string) => {
       let s = ss.getSheetByName(name);
       if (!s) {
-         console.info(`[1/9] Sheet '${name}' not found. Creating new sheet...`);
-         SpreadsheetApp.flush();
-         s = ss.getSheetByName(name) || ss.insertSheet(name);
+         s = ss.insertSheet(name);
       }
       return s;
     };
 
     let sheet = safeSheet(CONFIG.SHEETS.HH);
-    Registry.Services.Reporting.logStep(1, 9, "Initializing recruitment pipeline...");
-    Registry.Services.View.setStatusMessage(sheet, "Initializing...");
+    Registry.Services.Schema.bootDynamicSchema();
 
-    try {
-    // L1 CACHE PURGE: Ensure a fresh start for this execution
-    Registry.Services.Network._clearCache();
+    // 1. RUNTIME CONTEXT
+    Registry.Services.Reporting.logReport("HEADHUNTER RUNTIME CONTEXT", [
+      `VERSION:    ${VER_HEADHUNTER}`,
+      `CLAN TAG:   ${CONFIG.SYSTEM.CLAN_TAG || "NOT_CONFIGURED"}`,
+      `TARGET:     ${CONFIG.HEADHUNTER.TARGET} Recruits`,
+      `BLACKLIST:  ${CONFIG.HEADHUNTER.BLACKLIST_DAYS} Days`,
+      `MODE:        RAPID_GLOBAL_SCOUT`
+    ]);
 
     if (!CONFIG.SYSTEM.CLAN_TAG) {
-      console.error("Configuration Error: CLAN_TAG is not configured. Aborting Headhunter Scout.");
-      sheet.getRange("B1").setValue("Configuration Error: Missing CLAN_TAG");
+      console.error("CONFIGURATION ERROR: Missing CLAN_TAG. Aborting Headhunter Scout.");
       return;
     }
 
-    const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+    try {
+      // L1 CACHE PURGE: Ensure a fresh start for this execution
+      Registry.Services.Network._clearCache();
 
-    // 2. Establish Baseline via Clan Detail
-    Registry.Services.Reporting.logStep(2, 9, "Fetching clan baseline...");
-    const clanDetailResponse = Registry.Services.Network.fetchRoyaleAPI([
-      `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
-    ]);
+      const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
-    let inGameRequirement = 0;
-    let members: any[] = [];
+      // 2. RESOURCE HYDRATION (Baseline & Quota)
+      Registry.Services.Reporting.logStep(1, 9, "Fetching clan baseline and quota...");
+      const clanDetailResponse = Registry.Services.Network.fetchRoyaleAPI([
+        `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
+      ]);
 
-    if (clanDetailResponse && clanDetailResponse[0]) {
-      const clan = clanDetailResponse[0];
-      inGameRequirement = clan.requiredTrophies || 0;
-      members = clan.memberList || [];
-    }
-
-    // 3. Strategy Calculation
-    Registry.Services.Reporting.logStep(3, 9, "Calculating recruitment strategy...");
-    const strategy = Registry.Services.Scoring.calculateTrophyFloor(members, inGameRequirement);
-
-    // 4. Quota Check
-    Registry.Services.Reporting.logStep(4, 9, "Checking resource quota...");
-    const remaining = Registry.Services.Network.getRemainingQuota();
-    if (remaining < 300) {
-      console.warn(`Insufficient API quota (${remaining} remaining). Aborting scout.`);
-      sheet.getRange("B1").setValue(`Scouting Paused (Quota Low: ${remaining})`);
-      return;
-    }
-    const lowQuotaMode = remaining < 1000;
-
-    // 5. Store: Blacklist & Load
-    Registry.Services.Reporting.logStep(5, 9, "Loading local recruit database...");
-    const blacklistResult = HeadhunterStore.updateAndGetBlacklist(safeSheet(CONFIG.SHEETS.HH));
-    const existing = HeadhunterStore.loadDatabase(safeSheet(CONFIG.SHEETS.HH));
-
-    // Data collection for consolidated logging
-    const initData = [
-      `CLAN TAG:      ${CONFIG.SYSTEM.CLAN_TAG}`,
-      `CLAN MEMBERS:  ${members.length}`,
-      `IN-GAME REQ:   ${inGameRequirement}`,
-      `STRATEGY:      ${strategy.method}`,
-      `BLACKBOX SIZE: ${blacklistResult.ids.size}`,
-      `SURVIVOR POOL: ${existing.size}`,
-      `QUOTA STATUS:  ${remaining} (${lowQuotaMode ? 'THROTTLED' : 'FULL'})`
-    ];
-
-    // 5. Store: Prune Blacklisted
-    const beforePrune = existing.size;
-    existing.forEach((_, tag) => {
-      if (blacklistResult.ids.has(tag)) existing.delete(tag);
-    });
-    const prunedCount = beforePrune - existing.size;
-
-    // Helper: Record dismissal to Event Log for Score-aware Blacklisting
-    const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
-    const logDismissal = (tag: string, score: number) => {
-      evtSheet.appendRow([tag, new Date(), score]);
-    };
-
-    // 6. Network: Prune Coupled Recruits
-    Registry.Services.Reporting.logStep(6, 9, "Performing clan membership validation...");
-    let joinedCount = 0;
-    const tagsToCheck = Array.from(existing.keys());
-    if (tagsToCheck.length > 0) {
-      const batchSize = 25;
-      for (let i = 0; i < tagsToCheck.length; i += batchSize) {
-        const chunk = tagsToCheck.slice(i, i + batchSize);
-        const profiles = Registry.Services.Network.fetchRoyaleAPI(
-          chunk.map((t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`)
-        );
-        profiles.forEach((p: any) => {
-          if (p && p.clan && p.clan.tag) {
-            const recruit = existing.get(p.tag);
-            if (recruit) logDismissal(p.tag, recruit.rawScore);
-            existing.delete(p.tag);
-            joinedCount++;
-          }
-        });
-        if (i + batchSize < tagsToCheck.length) SpreadsheetApp.flush();
+      let inGameRequirement = 0;
+      let members: any[] = [];
+      if (clanDetailResponse && clanDetailResponse[0]) {
+        const clan = clanDetailResponse[0];
+        inGameRequirement = clan.requiredTrophies || 0;
+        members = clan.memberList || [];
       }
-    }
 
-    // CONSOLIDATED BLOCK LOG: Runtime Context
-    Registry.Services.Reporting.logReport("Runtime Context", [
-      ...initData,
-      "─",
-      `BLACKBOX PRUNED: ${prunedCount}`,
-      `JOINED CLAN:     ${joinedCount}`,
-      `FINAL SURVIVORS: ${existing.size}`
-    ]);
+      const remaining = Registry.Services.Network.getRemainingQuota();
+      if (remaining < 300) {
+        console.warn(`QUOTA ALERT: Insufficient API capacity (${remaining}). Aborting.`);
+        return;
+      }
+      const lowQuotaMode = remaining < 1000;
+
+      // 3. STATE HYDRATION
+      Registry.Services.Reporting.logStep(2, 9, "Loading local recruit state...");
+      const strategy = Registry.Services.Scoring.calculateTrophyFloor(members, inGameRequirement);
+      const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
+      const existing = HeadhunterStore.loadDatabase(sheet);
+
+      // 4. STORAGE MAINTENANCE
+      Registry.Services.Reporting.logStep(3, 9, "Executing Blacklist pruning...");
+      const beforePrune = existing.size;
+      existing.forEach((_, tag) => {
+        if (blacklistResult.ids.has(tag)) existing.delete(tag);
+      });
+      const prunedCount = beforePrune - existing.size;
+
+      // 5. MEMBERSHIP VALIDATION
+      Registry.Services.Reporting.logStep(4, 9, "Validating current recruitment status...");
+      const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
+      const logDismissal = (tag: string, score: number) => {
+        evtSheet.appendRow([tag, new Date(), score]);
+      };
+
+      let joinedCount = 0;
+      const tagsToCheck = Array.from(existing.keys());
+      if (tagsToCheck.length > 0) {
+        const batchSize = 25;
+        for (let i = 0; i < tagsToCheck.length; i += batchSize) {
+          const chunk = tagsToCheck.slice(i, i + batchSize);
+          const profiles = Registry.Services.Network.fetchRoyaleAPI(
+            chunk.map((t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`)
+          );
+          profiles.forEach((p: any) => {
+            if (p?.clan?.tag) {
+              const recruit = existing.get(p.tag);
+              if (recruit) logDismissal(p.tag, recruit.rawScore);
+              existing.delete(p.tag);
+              joinedCount++;
+            }
+          });
+          SpreadsheetApp.flush();
+        }
+      }
+
+      // REPORT: INGESTION METRICS
+      Registry.Services.Reporting.logReport("PIPELINE HEALTH METRICS", [
+        `CLAN MEMBERS:  ${members.length}`,
+        `TROPHY FLOOR:  ${strategy.floor}`,
+        `BLACKBOX SIZE: ${blacklistResult.ids.size}`,
+        `PRUNED ENTRIES: ${prunedCount}`,
+        `JOINED CLAN:    ${joinedCount}`,
+        `ACTIVE POOL:   ${existing.size}`,
+        `QUOTA REMAINING: ${remaining}`
+      ]);
 
     // 7. Scanner: Launch
     const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
