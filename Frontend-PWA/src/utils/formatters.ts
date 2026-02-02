@@ -67,14 +67,31 @@ const TIME_AGO_MULTIPLIERS: Record<string, number> = {
 export function parseTimeAgoValue(val: string | null | undefined): number {
   if (!val || val === "-") return 99999999;
 
-  // 1. Try parsing as Standard Date / ISO String (Modern Backend)
+  // 1. Try parsing custom format: dd/MM/yyyy HH.mm.ss (Project Standard)
+  // Example: "02/02/2026 18.46.52"
+  const customMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/);
+  if (customMatch) {
+    const day = parseInt(customMatch[1], 10);
+    const month = parseInt(customMatch[2], 10) - 1; // JS months are 0-indexed
+    const year = parseInt(customMatch[3], 10);
+    const hour = parseInt(customMatch[4], 10);
+    const min = parseInt(customMatch[5], 10);
+    const sec = parseInt(customMatch[6], 10);
+    const date = new Date(year, month, day, hour, min, sec);
+    if (!isNaN(date.getTime())) {
+      const diffMs = Date.now() - date.getTime();
+      return Math.floor(diffMs / 60000); // Return minutes
+    }
+  }
+
+  // 2. Try parsing as Standard Date / ISO String (Fallback)
   const date = new Date(val);
   if (!isNaN(date.getTime())) {
     const diffMs = Date.now() - date.getTime();
     return Math.floor(diffMs / 60000); // Return minutes
   }
 
-  // 2. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
+  // 3. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
   if (val === "Just now") return 0;
   const match = val.match(TIME_AGO_REGEX);
   if (!match) return 99999999;
