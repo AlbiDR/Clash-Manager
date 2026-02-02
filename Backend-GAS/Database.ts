@@ -30,123 +30,127 @@ const Database: IDatabase = {
      * Fetches latest clan data and persists snapshots.
      */
     update(): void {
-        console.info("Starting Clan Database ETL pipeline...");
+        const startTime = Date.now();
+        console.info("DATABASE: Starting ETL Pipeline Initialization");
+        
         const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-        // SCHEMA SYNC: Ensure we find the right columns if they were moved
         Registry.Services.Schema.bootDynamicSchema();
 
-        // CONFIGURATION CHECK
+        // 1. RUNTIME CONTEXT
+        Registry.Services.Reporting.logReport("DATABASE RUNTIME CONTEXT", [
+            `VERSION:    ${VER_DATABASE}`,
+            `CLAN TARGET: ${CONFIG.SYSTEM.CLAN_TAG || "NOT_CONFIGURED"}`,
+            `PURGE DAYS:  ${CONFIG.SYSTEM.DB_PURGE_DAYS} Days`,
+            `THRESHOLD:   ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD} Players`,
+            `MODE:        ATOMIC_UPSERT`
+        ]);
+
         if (!CONFIG.SYSTEM.CLAN_TAG) {
-            console.error("Configuration Error: CLAN_TAG is not configured. Aborting Database Update.");
-            const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
-            if (sheet) sheet.getRange("B1").setValue("Configuration Error: Missing CLAN_TAG");
+            console.error("CONFIGURATION ERROR: Missing CLAN_TAG. Aborting Pipeline.");
             return;
         }
 
         try {
             const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
 
-            // Fetch Members and War Race data
-            Registry.Services.Reporting.logStep(1, 6, "Extracting Live API data (Members, Race)..."); // Updated step count to 6
+            // 2. DATA ACQUISITION
+            Registry.Services.Reporting.logStep(1, 6, "Extracting Remote API Data...");
+            const apiStart = Date.now();
             const urls = [
                 `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
                 `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
             ];
 
             const [membersData, raceData] = Registry.Services.Network.fetchRoyaleAPI(urls);
+            const apiDuration = Date.now() - apiStart;
 
-            // 🛑 CIRCUIT BREAKER: API FAILURE
-            if (!membersData || !membersData.items || membersData.items.length === 0) {
-                console.error("Critical: API returned invalid/empty data. Aborting ETL to prevent data corruption.");
+            // CIRCUIT BREAKER: Validation
+            if (!membersData || !membersData.items) {
+                console.error("CIRCUIT BREAKER: API returned invalid data structure. Terminating ETL.");
                 return;
             }
 
-            // WAR INTELLIGENCE CHECK
-            let isWarDay = false;
-            try {
-                const warSnap = getWarSnapshot();
-                // REFINEMENT: Combine Protocol Phase with Royale API Period Type for maximum precision
-                const phaseIsBattle = (warSnap.protocol.phase === "ENGAGEMENT" || warSnap.protocol.phase === "COLOSSEUM");
-                const periodIsWar = (raceData && raceData.periodType === 'war');
-                
-                // If API says it's war, or protocol says we are in battle phase
-                isWarDay = phaseIsBattle || periodIsWar;
-                
-                console.info(`  War Phase: ${warSnap.protocol.phase} | Period: ${raceData?.periodType || 'N/A'}`);
-                console.info(`  Logging Fame: ${isWarDay ? "NUMERIC" : "N/A"}`);
-            } catch (e: any) {
-                console.warn("War Intelligence: Could not fetch data. Defaulting to state-based detection.");
-                isWarDay = !!(raceData && raceData.clan); // Simple fallback
+            const activeMembers = membersData.items as ClanMemberSnapshot[];
+            if (activeMembers.length === 0) {
+                console.warn("VALIDATION: Clan appears empty in API response. Aborting to prevent mass-pruning.");
+                return;
             }
 
-            const activeMembers = membersData.items as ClanMemberSnapshot[];
-    
-            // NORMALIZE: Ensure tags are uppercase for robust set matching
-            const activeTags = new Set(activeMembers.map((m) => String(m.tag || "").toUpperCase().trim()));
+            // 3. WAR INTELLIGENCE PROCESSING
+            Registry.Services.Reporting.logStep(2, 6, "Processing War Intelligence...");
+            let isWarDay = false;
+            let protocolPhase = "UNKNOWN";
+            
+            try {
+                const warSnap = getWarSnapshot();
+                protocolPhase = warSnap.protocol.phase;
+                const phaseIsBattle = (protocolPhase === "ENGAGEMENT" || protocolPhase === "COLOSSEUM");
+                const periodIsWar = (raceData && raceData.periodType === 'war');
+                isWarDay = phaseIsBattle || periodIsWar;
+            } catch (e: any) {
+                console.warn("INTELLIGENCE: Protocol unreachable, using state-based detection.");
+                isWarDay = !!(raceData && raceData.clan);
+            }
 
-            // MAP WAR FAME: Tag -> Fame
+            // MAPPING: Tag Normalization & Fame Extraction
+            const activeTags = new Set(activeMembers.map((m) => String(m.tag || "").toUpperCase().trim()));
             const warFameMap = new Map<string, number>();
             if (raceData && raceData.clan && raceData.clan.participants) {
                 raceData.clan.participants.forEach((p: any) => {
                     warFameMap.set(p.tag, Registry.Services.Scoring.resolveWarFame(p));
                 });
-                console.info(`  API: Collected ${warFameMap.size} unique participant record${warFameMap.size !== 1 ? 's' : ''}.`);
             }
 
+            // REPORT: INGESTION METRICS
+            Registry.Services.Reporting.logReport("DATA INGESTION METRICS", [
+                `ACTIVE MEMBERS: ${activeMembers.length}`,
+                `WAR PARTICIPANTS: ${warFameMap.size}`,
+                `WAR STATUS:     ${isWarDay ? "ACTIVE" : "INACTIVE"}`,
+                `API LATENCY:    ${apiDuration}ms`,
+                `PROTOCOL:       ${protocolPhase}`
+            ]);
+
+            // 4. STORAGE PREPARATION
             let sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
             if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.DB);
 
-            // 1. VIEW: Ensure Structure
-            Registry.Services.Reporting.logStep(2, 6, "Verifying Sheet Structure...");
+            Registry.Services.Reporting.logStep(3, 6, "Verifying Visual Architecture...");
             const { sheetId, currentMaxRows } = DatabaseView.ensureStructure(ss, sheet);
 
-            // BACKUP
+            Registry.Services.Reporting.logStep(4, 6, "Executing Atomic Backup...");
             Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.DB);
 
-            // 2. VIEW: Layout Prep
-            Registry.Services.Reporting.logStep(3, 6, "Restoring Standard Layout...");
-            const preservedRows = Math.max(100, currentMaxRows - CONFIG.LAYOUT.DATA_START_ROW);
-            Registry.Services.View.applyStandardLayout(
-                sheet,
-                preservedRows, 
-                DatabaseView.getHeaders().length,
-                DatabaseView.getHeaders(),
-            );
-
-            // 3. STORE: Prune Stale Data
-            Registry.Services.Reporting.logStep(4, 6, "Pruning stale historical data...");
+            // 5. STORAGE OPERATIONS
+            Registry.Services.Reporting.logStep(5, 6, "Pruning Stale Secondary Data...");
             DatabaseStore.pruneStaleData(sheet, activeTags);
 
-            // 4. STORE: Upsert Daily Snapshots
-            Registry.Services.Reporting.logStep(5, 6, "Performing Smart-Merge on daily snapshots...");
+            Registry.Services.Reporting.logStep(6, 6, "Executing Snapshot Upsert...");
             const updateResult = DatabaseStore.upsertDailySnapshots(sheet, activeMembers, warFameMap, isWarDay);
 
-            // 5. VIEW: Final Visuals
-            Registry.Services.Reporting.logStep(6, 6, "Finalizing Visuals...");
-            // Recalculate last row after updates
+            // 6. VISUAL FINALIZATION
             const finalLastRow = sheet.getLastRow();
             const dataRowCount = Math.max(0, finalLastRow - (CONFIG.LAYOUT.DATA_START_ROW - 1));
-            
             DatabaseView.restoreVisuals(sheet, sheetId, dataRowCount);
 
-
-            // Final Log
-            Registry.Services.Reporting.logReport(
-                `CLAN DATABASE v${VER_DATABASE} REPORT`,
-                [
-                    `OP TYPE:   ETL SNAPSHOT (DAILY)`,
-                    `UPDATED:   ${updateResult.updated} members`,
-                    `APPENDED:  ${updateResult.appended} members`,
-                    `─`,
-                    `HEALTH:    Atomic Transaction Complete.`
-                ]
-            );
-            console.info(`Database ETL Cycle Finished.`);
-            console.timeEnd("ETL");
+            // FINAL REPORT
+            const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+            Registry.Services.Reporting.logReport("DATABASE SYNC COMPLETE", [
+                `STATUS:     SUCCESS`,
+                `MERGED:     ${updateResult.updated} Members`,
+                `APPENDED:   ${updateResult.appended} Members`,
+                `TOTAL ROWS: ${finalLastRow}`,
+                `RUNTIME:    ${totalDuration}s`,
+                `─`,
+                `HEALTH:     Integrity Verified.`
+            ]);
 
         } catch(e: any) {
-            console.error(`ETL Error: ${e.message} \n${e.stack}`);
+            console.error(`PIPELINE FAILURE: ${e.message} \n${e.stack}`);
+            Registry.Services.Reporting.logReport("DATABASE CRITICAL FAILURE", [
+                `ERROR: ${e.message}`,
+                `STATE: UNSTABLE`,
+                `ACTION: CHECK LOGS`
+            ]);
         }
     },
 
