@@ -410,6 +410,9 @@ var View: IView = {
         console.warn(`Tab Hygiene Batch Fail: ${e.message}`);
       }
     }
+
+    // 5. INFRASTRUCTURE HEALING: Ensure mobile triggers exist on all system tabs
+    this.refreshMobileControls(ss);
   },
 
   /**
