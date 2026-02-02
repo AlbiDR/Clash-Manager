@@ -47,12 +47,15 @@ let hasFailure = false;
  */
 function extractWeightsFromConfig(
   text: string,
-  section: string = "LEADERBOARD",
+  section: string = "ROSTER",
 ): Record<string, number> | null {
-  const secIdx = text.lastIndexOf(section + ":");
-  if (secIdx === -1) return null;
-  const weightsIdx = text.indexOf("WEIGHTS", secIdx);
+  // Search for "ROSTER: {" then "WEIGHTS: {" inside it
+  const rosterIdx = text.search(/ROSTER\s*:\s*{/);
+  if (rosterIdx === -1) return null;
+  
+  const weightsIdx = text.indexOf("WEIGHTS", rosterIdx);
   if (weightsIdx === -1) return null;
+
   const braceStart = text.indexOf("{", weightsIdx);
   if (braceStart === -1) return null;
 
