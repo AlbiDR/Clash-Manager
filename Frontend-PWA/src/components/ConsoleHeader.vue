@@ -67,7 +67,7 @@ function openOverlay() {
           <!-- Title is now the Link -->
           <h1 class="view-title">
             <a
-              v-if="sheetUrl && !loading"
+              v-if="sheetUrl"
               :href="sheetUrl"
               target="_blank"
               rel="noopener noreferrer"
