@@ -54,6 +54,10 @@ declare function markRecruitsAsInvitedBulk(ids: string[]): {
   success: boolean;
   count: number;
 };
+declare function undismissRecruitsBulk(ids: string[]): {
+  success: boolean;
+  count: number;
+};
 declare function updateClanDatabase(): void;
 declare function updateLeaderboard(): void;
 declare function scoutRecruits(): void;
@@ -220,6 +224,17 @@ function doPost(
           );
         }
         return respond(markRecruitsAsInvitedBulk(ids));
+
+      case "undismissrecruits":
+        const undoIds = payload.ids;
+        if (!undoIds || !Array.isArray(undoIds)) {
+          return respond(
+            null,
+            "INVALID_PARAMS",
+            'undismissRecruits requires "ids" array',
+          );
+        }
+        return respond(undismissRecruitsBulk(undoIds));
 
       case "triggerupdate":
         return respond(triggerAsyncUpdate(payload.target));

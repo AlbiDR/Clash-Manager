@@ -485,6 +485,12 @@ export async function dismissRecruits(
   return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { ids });
 }
 
+export async function undismissRecruits(
+  ids: string[],
+): Promise<ApiResponse<DismissResponse>> {
+  return gasRequest<ApiResponse<DismissResponse>>("undismissRecruits", { ids });
+}
+
 export async function triggerBackendUpdate(
   target?: string,
 ): Promise<ApiResponse<{ success: boolean; message: string }>> {
