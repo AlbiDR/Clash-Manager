@@ -33,6 +33,7 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
       title="Settings"
       :status="apiStatusObject"
       :loading="isRefreshing"
+      sheet-url="https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH"
       @refresh="refresh()"
     />
 
