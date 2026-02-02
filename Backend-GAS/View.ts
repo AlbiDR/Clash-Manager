@@ -174,6 +174,33 @@ var View: IView = {
           }
         },
         // 4. Borders
+        // 4.1 White Masks (Margins & Bottom Buffer)
+        { 
+          updateBorders: { 
+            range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: 1 }, 
+            innerHorizontal: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            top: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            bottom: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } }
+          } 
+        },
+        { 
+          updateBorders: { 
+            range: { sheetId, startRowIndex: 0, endRowIndex: totalRows, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, 
+            innerHorizontal: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            top: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            bottom: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } }
+          } 
+        },
+        { 
+          updateBorders: { 
+            range: { sheetId, startRowIndex: totalRows - 1, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: totalCols }, 
+            innerVertical: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            left: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            right: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } }
+          } 
+        },
+
+        // 4.2 Dark Table Borders
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: 0, endColumnIndex: 1 }, right: { style: "SOLID", color: borderDarkRgb } } },
         { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: totalRows - 1, startColumnIndex: totalCols - 1, endColumnIndex: totalCols }, left: { style: "SOLID", color: borderDarkRgb } } },
         { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: totalCols - 1 }, bottom: { style: "SOLID", color: borderDarkRgb } } },
