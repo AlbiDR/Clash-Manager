@@ -203,6 +203,8 @@ var View: IView = {
         { 
           updateBorders: { 
             range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, 
+            innerVertical: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            top: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
             bottom: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } }
           } 
         },
