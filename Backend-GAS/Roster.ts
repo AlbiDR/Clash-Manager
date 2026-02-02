@@ -8,11 +8,38 @@ declare var SpreadsheetApp: any;
 declare var Sheets: any;
 
 /**
- * 🏆 MODULE: ROSTER (Leaderboard & Roster Management)
+ * ============================================================================
+ * MODULE: ROSTER (Leaderboard & Roster Management)
+ * ----------------------------------------------------------------------------
+ * DESCRIPTION: The Commander of the Roster Pipeline. Orchestrates the
+ * lifecycle of clan member data, from API ingestion and historical
+ * rehydration to performance scoring and spreadsheet rendering.
+ *
+ * ARCHITECTURE:
+ *    - Data Ingestion: Aggregates Member, Race, and Historical data.
+ *    - Scoring Engine: Delegates mathematical heavy lifting to Scoring Kernel.
+ *    - Persistence: Synchronizes results to Google Sheets and Prophet Cache.
+ *
+ * DICTIONARY:
+ *    - Prophet Intel: Cached recruitment data (wins, activity) used to grant
+ *      "Heritage" bonuses to new members before internal stats stabilize.
+ *    - Momentum Deltas: The delta between current raw score and the
+ *      last recorded score, indicating immediate activity trends.
+ *    - Elite Avg: The performance score of the top-performing member,
+ *      used as a benchmark for normalizing the clan's potential.
+ *
  */
 const Roster: IRoster = {
   /**
-   * ⚡ MAIN ENTRY: Update Roster
+   * ROSTER UPDATE PIPELINE
+   *
+   * @remarks
+   * Executes the full ETL (Extract, Transform, Load) cycle for the clan roster.
+   * 1. Extracts: Live data from Royale API and historical data from Sheets/Store.
+   * 2. Transforms: Calculates performance scores, momentum deltas, and trends.
+   * 3. Loads: Updates the Leaderboard sheet and synchronizes the web payload.
+   *
+   * @warning Consumes UrlFetchApp, SpreadsheetApp, and CacheService quotas.
    */
   update(): void {
     console.info("🏆 Starting Roster/Leaderboard Generation Pipeline...");
@@ -33,6 +60,8 @@ const Roster: IRoster = {
     }
 
     // 3. DATA LOADING
+    // Intent: Rehydrate historical context. "Momentum Deltas" are calculated
+    // by comparing current scores against 'previousScores'.
     Registry.Services.Reporting.logStep(2, 7, "Loading momentum deltas & archives...");
     const previousScores = RosterStore.loadPreviousScores(sheet, L);
     const warHistoryMap = RosterStore.rehydrateWarHistory(sheet, L);
@@ -60,6 +89,8 @@ const Roster: IRoster = {
     };
 
     // Merge remote history
+    // Logic: Historical data from the Remote Worker (if available) takes
+    // precedence to ensure data continuity across script executions.
     if (remoteHistory) {
       Object.keys(remoteHistory).forEach(tag => {
         const h = (remoteHistory as any)[tag];
@@ -75,6 +106,9 @@ const Roster: IRoster = {
     }
 
     // 5. PROPHET & SCORING
+    // Intent: Process each member through the Scoring Kernel.
+    // "Prophet Intel" is used here to ensure recruits who recently joined
+    // are not penalized for having zero internal clan history.
     Registry.Services.Reporting.logStep(4, 7, "Computing performance scores...");
     const rawResults: PlayerResult[] = [];
 
@@ -138,6 +172,9 @@ const Roster: IRoster = {
     });
 
     // 6. FINALIZE AGGREGATION
+    // Logic: We identify the 'Elite Avg' (max score) to normalize the
+    // 'Potential' metric, ensuring the leaderboard remains relative
+    // to the clan's current ceiling.
     let maxPerfScore = 0;
     rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
 
