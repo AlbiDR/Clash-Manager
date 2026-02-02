@@ -126,8 +126,14 @@ var View: IView = {
         {
           repeatCell: {
             range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols },
-            cell: { userEnteredFormat: { backgroundColor: headerRgb, textFormat: { bold: true } } },
-            fields: 'userEnteredFormat(backgroundColor,textFormat.bold)'
+            cell: { 
+              userEnteredFormat: { 
+                backgroundColor: headerRgb, 
+                textFormat: { bold: true },
+                wrapStrategy: "WRAP"
+              } 
+            },
+            fields: 'userEnteredFormat(backgroundColor,textFormat.bold,wrapStrategy)'
           }
         },
         // 2. Table Alignment
