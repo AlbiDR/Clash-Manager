@@ -87,9 +87,9 @@ var View: IView = {
           updateSheetProperties: {
             properties: {
               sheetId: sheetId,
-              gridProperties: { rowCount: totalRows, columnCount: totalCols }
+              gridProperties: { rowCount: totalRows, columnCount: totalCols, frozenRowCount: 2 }
             },
-            fields: 'gridProperties.rowCount,gridProperties.columnCount'
+            fields: 'gridProperties.rowCount,gridProperties.columnCount,gridProperties.frozenRowCount'
           }
         },
         // 0.5 DATA ROW HEIGHTS (25px)
@@ -197,6 +197,12 @@ var View: IView = {
             innerVertical: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
             left: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
             right: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } },
+            bottom: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } }
+          } 
+        },
+        { 
+          updateBorders: { 
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: totalCols }, 
             bottom: { style: "SOLID", color: { red: 1, green: 1, blue: 1 } }
           } 
         },
