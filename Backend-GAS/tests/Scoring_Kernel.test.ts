@@ -1,27 +1,25 @@
 
 import { describe, it, expect } from 'vitest';
-import HeadhunterStrategy from '../Headhunter_Strategy';
+import ScoringKernel from '../Scoring_Kernel';
 
-describe('HeadhunterStrategy', () => {
+describe('ScoringKernel Strategy', () => {
   const IN_GAME_REQ = 6000;
 
   it('should return in-game requirement if no members', () => {
-    const result = HeadhunterStrategy.calculateTrophyFloor([], IN_GAME_REQ);
+    const result = ScoringKernel.calcTrophyFloor([], IN_GAME_REQ);
     expect(result.floor).toBe(IN_GAME_REQ);
     expect(result.mode).toBe('BASE');
   });
 
   describe('Elite Mode (>41 members)', () => {
     it('should use Median when it is higher than In-Game Req', () => {
-      // 50 members. Trophies 0 to 4900 -> Median around 2500?
-      // Let's make it simpler.
       // 42 members. Sorted: [1000, 1000, ... 7000, 7000]
       // Median index of 42 is 21.
       
       const members = Array(42).fill(0).map((_, i) => ({ trophies: 10000 + i })); 
       // All > 6000. Median ~ 10021.
       
-      const result = HeadhunterStrategy.calculateTrophyFloor(members, IN_GAME_REQ);
+      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ);
       expect(result.mode).toBe('ELITE');
       expect(result.floor).toBeGreaterThan(IN_GAME_REQ);
       expect(result.method).toContain('Elite Mode (Median');
@@ -31,7 +29,7 @@ describe('HeadhunterStrategy', () => {
       // 42 members. All 5000.
       const members = Array(42).fill({ trophies: 5000 });
       
-      const result = HeadhunterStrategy.calculateTrophyFloor(members, IN_GAME_REQ);
+      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ);
       expect(result.mode).toBe('ELITE');
       expect(result.floor).toBe(IN_GAME_REQ);
       expect(result.method).toContain('At In-Game Cap');
@@ -48,7 +46,7 @@ describe('HeadhunterStrategy', () => {
         ...Array(36).fill({ trophies: 8000 })
       ];
 
-      const result = HeadhunterStrategy.calculateTrophyFloor(members, IN_GAME_REQ);
+      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ);
       expect(result.mode).toBe('REBUILD');
       expect(result.floor).toBe(7000);
       expect(result.method).toContain('Bot 10% Avg');
@@ -61,7 +59,7 @@ describe('HeadhunterStrategy', () => {
         ...Array(36).fill({ trophies: 8000 })
       ];
 
-      const result = HeadhunterStrategy.calculateTrophyFloor(members, IN_GAME_REQ);
+      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ);
       expect(result.mode).toBe('REBUILD');
       expect(result.floor).toBe(IN_GAME_REQ);
       expect(result.method).toContain('At In-Game Cap');
