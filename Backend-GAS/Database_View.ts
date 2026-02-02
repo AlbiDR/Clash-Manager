@@ -131,13 +131,19 @@ const DatabaseView = {
                fields: "userEnteredFormat(numberFormat)"
              }
            },
-           {
-             repeatCell: {
-               range: { sheetId, startRowIndex: startRow - 1, endRowIndex: targetRowCount - 1, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.WAR_FAME },
-               cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
-               fields: "userEnteredFormat(numberFormat)"
-             }
-           }
+            {
+              repeatCell: {
+                range: { 
+                  sheetId, 
+                  startRowIndex: startRow - 1, 
+                  endRowIndex: targetRowCount - 1, 
+                  startColumnIndex: 1 + S_DB.WAR_FAME, 
+                  endColumnIndex: 2 + S_DB.BATTLE_CREDITS 
+                },
+                cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+                fields: "userEnteredFormat(numberFormat)"
+              }
+            }
          );
      }
 
