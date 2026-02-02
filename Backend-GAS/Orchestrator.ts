@@ -134,6 +134,7 @@ function taskUpdateDatabase(): void {
   try {
     Registry.Services.Core.executeSafely("SYNC_DB", () => {
       Registry.Actions["sync:database"]();
+      Registry.Services.View.enforceGlobalTabHygiene();
       console.info("Task: Clan Database Sync: Success.");
     });
   } catch (e: any) {
@@ -160,6 +161,7 @@ function taskUpdateRoster(): void {
     Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
       Registry.Actions["sync:roster"]();
       Registry.Actions["sync:webapp"]();
+      Registry.Services.View.enforceGlobalTabHygiene();
       console.info("Task: Roster Update: Success.");
     });
   } catch (e: any) {
@@ -222,6 +224,7 @@ function taskFastScout(): void {
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
+      Registry.Services.View.enforceGlobalTabHygiene();
       console.info("Task: Fast Scout: Success.");
     } catch (e: any) {
       console.error(`Task: Fast Scout: FAILED - ${e.message}`);
