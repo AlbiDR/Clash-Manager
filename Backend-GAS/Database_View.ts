@@ -63,6 +63,27 @@ const DatabaseView = {
       }, ssId);
     }
     
+    // STABILITY FORMATTING: Standardize hybrid/identifier columns across total vertical
+    const S_DB = CONFIG.SCHEMA.DB;
+    Sheets.Spreadsheets.batchUpdate({
+      requests: [
+        {
+          repeatCell: {
+            range: { sheetId, startColumnIndex: 1 + S_DB.TAG, endColumnIndex: 2 + S_DB.TAG },
+            cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+            fields: "userEnteredFormat(numberFormat)"
+          }
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.BATTLE_CREDITS },
+            cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+            fields: "userEnteredFormat(numberFormat)"
+          }
+        }
+      ]
+    }, ssId);
+    
     return { sheetId, currentMaxRows };
   },
 

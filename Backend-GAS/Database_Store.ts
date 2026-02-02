@@ -198,15 +198,18 @@ const DatabaseStore = {
 
     // 3. Process API Data
     activeMembers.forEach((m) => {
-      let warFame: string | number = warFameMap.get(m.tag) || 0;
-      let battleCredit: number | string = 0;
+      let rawFame = warFameMap.get(m.tag) || 0;
+      let warFame: string;
+      let battleCredit: string;
       const normalizedTag = m.tag.toUpperCase().trim();
       
       if (!isWarDay) {
           warFame = "N/A";
           battleCredit = "N/A";
-      } else if (Number(warFame) > 0) {
-          battleCredit = 1;
+      } else {
+          // Explicitly cast to String for visual coherency and sort stability
+          warFame = String(rawFame);
+          battleCredit = (Number(rawFame) > 0) ? "1" : "0";
       }
 
       const rowData = [
