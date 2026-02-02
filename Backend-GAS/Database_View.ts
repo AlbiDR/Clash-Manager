@@ -63,7 +63,6 @@ const DatabaseView = {
       }, ssId);
     }
     
-    // STABILITY FORMATTING: Standardize hybrid/identifier columns across total vertical
     const S_DB = CONFIG.SCHEMA.DB;
     Sheets.Spreadsheets.batchUpdate({
       requests: [
@@ -76,8 +75,15 @@ const DatabaseView = {
         },
         {
           repeatCell: {
+            range: { sheetId, startColumnIndex: 1 + S_DB.TROPHIES, endColumnIndex: 2 + S_DB.DON_REC },
+            cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0" } } },
+            fields: "userEnteredFormat(numberFormat)"
+          }
+        },
+        {
+          repeatCell: {
             range: { sheetId, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.BATTLE_CREDITS },
-            cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+            cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0" } } },
             fields: "userEnteredFormat(numberFormat)"
           }
         }
@@ -158,10 +164,23 @@ const DatabaseView = {
                   sheetId, 
                   startRowIndex: startRow - 1, 
                   endRowIndex: targetRowCount - 1, 
+                  startColumnIndex: 1 + S_DB.TROPHIES, 
+                  endColumnIndex: 2 + S_DB.DON_REC 
+                },
+                cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0" } } },
+                fields: "userEnteredFormat(numberFormat)"
+              }
+            },
+            {
+              repeatCell: {
+                range: { 
+                  sheetId, 
+                  startRowIndex: startRow - 1, 
+                  endRowIndex: targetRowCount - 1, 
                   startColumnIndex: 1 + S_DB.WAR_FAME, 
                   endColumnIndex: 2 + S_DB.BATTLE_CREDITS 
                 },
-                cell: { userEnteredFormat: { numberFormat: { type: "TEXT" } } },
+                cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0" } } },
                 fields: "userEnteredFormat(numberFormat)"
               }
             }

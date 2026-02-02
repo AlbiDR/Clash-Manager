@@ -58,6 +58,8 @@ export interface IScoring {
 
   calculateWarRate(totalCredits: number, daysSeen: number): number;
 
+  toStrictValue(val: any): number | string;
+
   comparator(a: any[], b: any[]): number;
 }
 
@@ -167,6 +169,16 @@ const Scoring: IScoring = {
   resolveWarFame: function (p: any): number {
     if (!p || typeof p !== "object") return 0;
     return Number(p.fame || p.medals || p.periodPoints || p.repairPoints || 0);
+  },
+
+  /**
+   * DATA PRIMITIVE: Normalizes values for Spreadsheet Purity.
+   * Ensures numbers are actual integers and non-numeric states are strings.
+   */
+  toStrictValue: function (val: any): number | string {
+    if (val === "N/A" || val === "-" || val === "" || val === null || val === undefined) return "N/A";
+    const num = Number(val);
+    return isNaN(num) ? "N/A" : num;
   },
 };
 
