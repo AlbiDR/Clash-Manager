@@ -130,10 +130,13 @@ describe("formatters", () => {
   });
 
   describe("parseTimeAgoValue", () => {
-    it("returns 0 for special cases", () => {
-      expect(parseTimeAgoValue(null)).toBe(0);
-      expect(parseTimeAgoValue(undefined)).toBe(0);
-      expect(parseTimeAgoValue("-")).toBe(0);
+    it("returns sentinel value for null/undefined/-", () => {
+      expect(parseTimeAgoValue(null)).toBe(99999999);
+      expect(parseTimeAgoValue(undefined)).toBe(99999999);
+      expect(parseTimeAgoValue("-")).toBe(99999999);
+    });
+
+    it("returns 0 for 'Just now'", () => {
       expect(parseTimeAgoValue("Just now")).toBe(0);
     });
 
