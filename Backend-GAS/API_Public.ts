@@ -119,13 +119,15 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
     switch (action) {
       case "ping":
         // OPTIMIZATION: Check cache first to avoid slow SpreadsheetApp load
-        const cachedPing = Registry.Services.Store.cache.getLarge("PING_METADATA_V1");
+        const cachedPing = Registry.Services.Store.cache.getLarge("PING_METADATA_V2");
         if (cachedPing) {
            return respondRaw(cachedPing);
         }
 
         // Cache Miss: Perform full API load (Fast)
-        const ssId = SpreadsheetApp.getActiveSpreadsheet().getId();
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const ssId = ss.getId();
+        const ssUrl = ss.getUrl();
         const ssMeta = Sheets.Spreadsheets!.get(ssId, { fields: "sheets(properties(title,sheetId))" });
         const sheetsMap: Record<string, number> = {};
         
@@ -141,6 +143,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
              version: VER_API_PUBLIC,
              status: "online",
              scriptId: ScriptApp.getScriptId(),
+             spreadsheetUrl: ssUrl,
              sheets: sheetsMap,
              modules: getModuleVersions(),
           },
@@ -149,7 +152,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         };
         
         const pingStr = JSON.stringify(pingResponse);
-        Registry.Services.Store.cache.putLarge("PING_METADATA_V1", pingStr, 3600); // Cache for 1 hour
+        Registry.Services.Store.cache.putLarge("PING_METADATA_V2", pingStr, 3600); // Cache for 1 hour
         return respondRaw(pingStr);
 
       case "getleaderboard":
