@@ -437,9 +437,11 @@ function extractSheetDataStrict(
             return `${Math.round(n)}%`;
           case "date":
             const dateObj = Registry.Services.Time.parseFlexibleDate(val);
-            // Ensure valid ISO or fallback to 'Now' ISO if data exists but is unparsable
+            // Ensure valid ISO. If parsing fails but data exists, PRESERVE IT as string.
+            // This allows relative times like "2d ago" to pass through to the frontend
+            // where the improved parser can handle them, instead of crushing them to "Now".
             if (isNaN(dateObj.getTime()) || dateObj.getTime() <= 0) {
-                return val ? new Date().toISOString() : "";
+                return val ? String(val) : "";
             }
             return dateObj.toISOString();
           case "str":
