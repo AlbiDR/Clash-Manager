@@ -10,7 +10,7 @@ vi.mock('../Configuration', () => {
     SHEETS: { HH: "Headhunter", LB: "Leaderboard" },
     HEADHUNTER: { TARGET: 50, WEIGHTS: {} },
     SCHEMA: { 
-        LB: { PERF_SCORE: 1, TROPHIES: 2, TOTAL_DON: 3, HISTORY: 4 },
+        ROSTER: { PERF_SCORE: 1, TROPHIES: 2, TOTAL_DON: 3, HISTORY: 4 },
         HH: {} 
     },
     LAYOUT: { DATA_START_ROW: 3 }
@@ -28,14 +28,16 @@ const mocks = vi.hoisted(() => ({
     View: { render: vi.fn() },
     Registry: {
         Services: {
-            Network: { fetchRoyaleAPI: vi.fn(), getRemainingQuota: vi.fn() },
+            Network: { fetchRoyaleAPI: vi.fn(), getRemainingQuota: vi.fn(), _clearCache: vi.fn() },
             View: { setStatusMessage: vi.fn(), backupSheet: vi.fn() },
+            Reporting: { logStep: vi.fn(), logReport: vi.fn() },
             Core: { logStep: vi.fn(), logReport: vi.fn() },
             Schema: { bootDynamicSchema: vi.fn() },
             Scoring: { 
                 calculateHybridBenchmark: vi.fn(), 
                 calculatePotentialScore: vi.fn(),
-                calculateRecruitRawScore: vi.fn()
+                calculateRecruitRawScore: vi.fn(),
+                calculateTrophyFloor: vi.fn()
             },
             Time: { calculateWarWeekId: vi.fn() }
         }
@@ -90,7 +92,7 @@ describe('Headhunter Orchestrator', () => {
         ]);
         mocks.Registry.Services.Network.getRemainingQuota.mockReturnValue(5000);
         
-        mocks.Strategy.calculateTrophyFloor.mockReturnValue({ floor: 3000, method: "Base" });
+        mocks.Registry.Services.Scoring.calculateTrophyFloor.mockReturnValue({ floor: 3000, method: "Base" });
         mocks.Store.updateAndGetBlacklist.mockReturnValue({ ids: new Set(), entries: [] });
         mocks.Store.loadDatabase.mockReturnValue(new Map());
         mocks.Scanner.scanTournaments.mockReturnValue([]);
@@ -115,7 +117,7 @@ describe('Headhunter Orchestrator', () => {
         expect(mocks.Registry.Services.Network.fetchRoyaleAPI).toHaveBeenCalled(); // Clan Details
 
         // 2. Strategy
-        expect(mocks.Strategy.calculateTrophyFloor).toHaveBeenCalled();
+        expect(mocks.Registry.Services.Scoring.calculateTrophyFloor).toHaveBeenCalled();
 
         // 3. Store
         expect(mocks.Store.updateAndGetBlacklist).toHaveBeenCalled();

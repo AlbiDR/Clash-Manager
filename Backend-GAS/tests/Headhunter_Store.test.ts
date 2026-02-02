@@ -19,6 +19,17 @@ vi.mock('../Configuration', () => {
   return { CONFIG: mockConfig };
 });
 
+// Mock Globals
+global.SpreadsheetApp = {
+    getActiveSpreadsheet: vi.fn(),
+    flush: vi.fn()
+};
+global.Sheets = {
+    Spreadsheets: {
+        batchUpdate: vi.fn()
+    }
+} as any;
+
 describe('HeadhunterStore', () => {
     let mockSheet: any;
     let mockParent: any;
@@ -38,6 +49,7 @@ describe('HeadhunterStore', () => {
             getValues: vi.fn().mockReturnValue([]),
             clearContent: vi.fn(),
             insertSheet: vi.fn().mockReturnThis(),
+            getSheetId: vi.fn().mockReturnValue(1),
         };
 
         mockEvtSheet = {
@@ -49,6 +61,7 @@ describe('HeadhunterStore', () => {
             getValues: vi.fn().mockReturnValue([]), // Header only
             clearContent: vi.fn(),
             getLastColumn: vi.fn().mockReturnValue(2),
+            getSheetId: vi.fn().mockReturnValue(2),
         };
 
         mockSheet = {
@@ -59,6 +72,7 @@ describe('HeadhunterStore', () => {
             getName: vi.fn().mockReturnValue('Headhunter'),
             getParent: vi.fn(),
             setTabColor: vi.fn(),
+            getSheetId: vi.fn().mockReturnValue(0),
         };
 
         mockParent = {
@@ -208,8 +222,8 @@ describe('HeadhunterStore', () => {
              expect(result.ids.has("#TICKED")).toBe(true);
              expect(result.entries[0].rawScore).toBe(300);
              
-             // Should delete the row
-             expect(mockSheet.deleteRow).toHaveBeenCalledWith(3);
+             // Should delete the row via batchUpdate
+             expect(global.Sheets.Spreadsheets.batchUpdate).toHaveBeenCalled();
         });
     });
 });

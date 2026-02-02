@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
         scanTournamentsRemote: vi.fn(),
     },
     Store: {
-        props: { get: vi.fn() }
+        props: { get: vi.fn(), getJSON: vi.fn() }
     },
     Core: {
         shuffleArray: vi.fn((arr) => arr),
@@ -61,6 +61,7 @@ describe('HeadhunterScanner', () => {
 
         // Defaults
         mocks.Store.props.get.mockReturnValue("1"); // Remote Expand Enabled
+        mocks.Store.props.getJSON.mockReturnValue({}); // Default empty cache
         mocks.Network.remoteWorkerHealthy.mockReturnValue(false); // Default to Local to start safe
         mocks.Core.shuffleArray.mockImplementation((a: any) => a);
     });
@@ -122,13 +123,17 @@ describe('HeadhunterScanner', () => {
             { tag: "#P1", rawScore: 200, potentialScore: 90, trophies: 6000 }
         ]);
 
+        // 3. Shadow Scout Battle Log Fetch
+        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([[]]); // Empty log for P1
+
         const result = HeadhunterScanner.scanTournaments(5000, new Map(), new Set());
         
         expect(result.length).toBe(1);
         expect(result[0].rawScore).toBe(200);
         expect(mocks.Network.scanTournamentsRemote).toHaveBeenCalled();
-        // Should NOT call local details fetch
-        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(1); 
+
+        // Discovery + Shadow Scout Battle Log Fetch = 2 calls
+        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(2);
     });
 
     it('should fallback to Local if Remote fails', () => {

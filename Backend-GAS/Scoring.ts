@@ -5,21 +5,29 @@
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: The Diplomat. Manages configuration and implementation choices,
  *    but delegates pure math to the Kernel.
- * 🏷️ VERSION: 13.0.0
+ * 🏷️ VERSION: 14.0.0
  * ============================================================================
  */
 
 import { CONFIG } from "./Configuration";
-import type { RecruitingWeights, ScoringWeights, RosterSchemaIndex } from "./SharedTypes"; // Fixed Import
+import type {
+  RecruitingWeights,
+  ScoringWeights,
+  RosterSchemaIndex,
+  RosterRow,
+  MemberWithTrophies
+} from "./SharedTypes";
 import Registry from "./Registry";
 
 // Global Version Constant
-// @ts-ignore
-const VER_SCORING = "13.0.0";
+const VER_SCORING = "14.0.0";
 
 declare const module: any;
 
 export interface IScoring {
+  /**
+   * Orchestrates score calculation for roster members.
+   */
   computeScores(
     currentFame: number,
     avgWarFame: number,
@@ -33,6 +41,9 @@ export interface IScoring {
     daysTracked: number
   ): { raw: number; perf: number };
 
+  /**
+   * Wrapper for recruitment raw score calculation.
+   */
   calculateRecruitRawScore(
     trophies: number,
     donations: number,
@@ -41,24 +52,42 @@ export interface IScoring {
     weights: RecruitingWeights | null
   ): number;
 
-  resolveWarFame(participant: any): number;
+  /**
+   * Resolves war fame from a participant object.
+   */
+  resolveWarFame(participant: Record<string, any> | null): number;
 
+  /**
+   * Wrapper for trophy floor calculation.
+   */
   calculateTrophyFloor(
-    members: any[], 
+    members: MemberWithTrophies[],
     inGameReq: number
   ): { floor: number; method: string; mode: string };
 
+  /**
+   * Wrapper for hybrid benchmark calculation.
+   */
   calculateHybridBenchmark(
     clanElite: Array<{ rawScore: number; perfScore: number }>,
     blacklist: Array<{ rawScore: number }>,
     minpoolFromConfig?: number
   ): number;
   
+  /**
+   * Wrapper for potential score calculation.
+   */
   calculatePotentialScore(raw: number, benchmark: number): number;
 
+  /**
+   * Wrapper for war rate calculation.
+   */
   calculateWarRate(totalCredits: number, daysSeen: number): number;
 
-  comparator(a: any[], b: any[]): number;
+  /**
+   * Comparator for roster rows.
+   */
+  comparator(a: RosterRow, b: RosterRow): number;
 }
 
 const Scoring: IScoring = {
@@ -99,11 +128,13 @@ const Scoring: IScoring = {
 
     // 4. Kernel: Calculate Heritage (Blessing)
     const recruitWeights: RecruitingWeights = { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
+
+    // FIX: Pass isActiveMember as hasRecentWar to correctly apply the activity bonus
+    // for roster members who are being evaluated for heritage status.
     const recruitRaw = Registry.Services.ScoringKernel.calcRecruitRaw(
-        trophies, 0, cachedWins, false, recruitWeights
+        trophies, 0, cachedWins, isActiveMember, recruitWeights
     );
     
-    // Using calcHeritage from Kernel (assuming it exists there as it was called in previous version)
     const heritageBonus = Registry.Services.ScoringKernel.calcHeritage(
         recruitRaw, daysTracked, prophetThreshold, P.HERITAGE_DIVISOR
     );
@@ -114,7 +145,7 @@ const Scoring: IScoring = {
     };
   },
 
-  comparator: function (rowA: (string | number)[], rowB: (string | number)[]): number {
+  comparator: function (rowA: RosterRow, rowB: RosterRow): number {
     const L = CONFIG.SCHEMA.ROSTER as unknown as RosterSchemaIndex;
     return Registry.Services.ScoringKernel.compareRosterRows(rowA, rowB, L);
   },
@@ -135,11 +166,7 @@ const Scoring: IScoring = {
     blacklist: Array<{ rawScore: number }>,
     minpoolFromConfig?: number
   ): number {
-    // Prepare Data for Kernel
     const minPoolTarget = minpoolFromConfig || CONFIG.HEADHUNTER.TARGET;
-    
-    // Re-verify logic: Kernel expects (avgClanRef, topPoolAvg).
-    // Logic extraction to keep Manager doing the "Prep" and Kernel doing the "Math".
     
     const clanPool = (clanElite || []).filter((c) => c.perfScore >= 50);
     const avgClanRef = clanPool.length > 0
@@ -160,12 +187,12 @@ const Scoring: IScoring = {
     return Registry.Services.ScoringKernel.calcPotential(raw, benchmark);
   },
 
-  calculateTrophyFloor: function (members: any[], inGameReq: number): { floor: number; method: string; mode: string } {
+  calculateTrophyFloor: function (members: MemberWithTrophies[], inGameReq: number): { floor: number; method: string; mode: string } {
     return Registry.Services.ScoringKernel.calcTrophyFloor(members, inGameReq);
   },
 
-  resolveWarFame: function (p: any): number {
-    if (!p || typeof p !== "object") return 0;
+  resolveWarFame: function (p: Record<string, any> | null): number {
+    if (!p) return 0;
     return Number(p.fame || p.medals || p.periodPoints || p.repairPoints || 0);
   },
 };

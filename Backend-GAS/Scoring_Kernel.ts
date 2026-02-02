@@ -8,16 +8,24 @@
  * ============================================================================
  */
 
-import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex, RecruitingWeights } from "./SharedTypes";
+import type {
+  RosterWeights,
+  ScoringWeights,
+  PenaltiesConfig,
+  RosterSchemaIndex,
+  RecruitingWeights,
+  RosterRow,
+  MemberWithTrophies
+} from "./SharedTypes";
 
 declare var module: any;
 
 /**
  * @remarks
  * The Scoring Kernel version tracks breaking changes in the mathematical
- * formulas. V1.0.0 represents the initial stabilized pure-math extraction.
+ * formulas. V1.1.0 represents improvements in type safety and integrity.
  */
-const VER_SCORING_KERNEL = "1.0.0"; 
+const VER_SCORING_KERNEL = "1.1.0";
 
 /**
  * Interface for the Scoring Kernel.
@@ -89,12 +97,12 @@ export interface IScoringKernel {
   /**
    * Determines the optimal trophy floor strategy based on clan composition.
    */
-  calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
+  calcTrophyFloor(members: MemberWithTrophies[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
 
   /**
    * Standard comparator for sorting roster rows by performance and reliability.
    */
-  compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number;
+  compareRosterRows(a: RosterRow, b: RosterRow, idx: RosterSchemaIndex): number;
 
   /**
    * Calculates the percentage of war participation.
@@ -176,11 +184,11 @@ const ScoringKernel: IScoringKernel = {
    */
   calcRosterRaw(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number {
     return (
-      fame * w.FAME +
-      avgFame * w.AVG_FAME +
-      dons * w.DONATION +
-      trophies * w.TROPHY +
-      warRate * w.WAR_RATE
+      (fame || 0) * w.FAME +
+      (avgFame || 0) * w.AVG_FAME +
+      (dons || 0) * w.DONATION +
+      (trophies || 0) * w.TROPHY +
+      (warRate || 0) * w.WAR_RATE
     );
   },
 
@@ -251,7 +259,7 @@ const ScoringKernel: IScoringKernel = {
    * Above this, the median is used to filter out bottom-tier performers.
    * Below this, the bottom 10% average is used to support rebuilding efforts.
    */
-  calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
+  calcTrophyFloor(members: MemberWithTrophies[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
     const ELITE_THRESHOLD = 41;
     let floor = inGameReq;
     let method = "In-Game Requirement";
@@ -294,24 +302,24 @@ const ScoringKernel: IScoringKernel = {
    * 4. Total Donations (Contribution)
    * 5. Days Tracked (Newer players win ties)
    */
-  compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number {
-    const dPerf = Number(b[idx.PERF_SCORE]) - Number(a[idx.PERF_SCORE]);
+  compareRosterRows(a: RosterRow, b: RosterRow, idx: RosterSchemaIndex): number {
+    const dPerf = (Number(b[idx.PERF_SCORE]) || 0) - (Number(a[idx.PERF_SCORE]) || 0);
     if (dPerf !== 0) return dPerf;
 
-    const dRaw = Number(b[idx.RAW_SCORE]) - Number(a[idx.RAW_SCORE]);
+    const dRaw = (Number(b[idx.RAW_SCORE]) || 0) - (Number(a[idx.RAW_SCORE]) || 0);
     if (dRaw !== 0) return dRaw;
 
-    const getWar = (r: any[]) => Number(r[idx.WAR_RATE]) || 0;
+    const getWar = (r: RosterRow) => Number(r[idx.WAR_RATE]) || 0;
     const dWar = getWar(b) - getWar(a);
     if (dWar !== 0) return dWar;
 
-    const dDon = Number(b[idx.TOTAL_DON]) - Number(a[idx.TOTAL_DON]);
+    const dDon = (Number(b[idx.TOTAL_DON]) || 0) - (Number(a[idx.TOTAL_DON]) || 0);
     if (dDon !== 0) return dDon;
 
-    const dDays = Number(a[idx.DAYS]) - Number(b[idx.DAYS]);
+    const dDays = (Number(a[idx.DAYS]) || 0) - (Number(b[idx.DAYS]) || 0);
     if (dDays !== 0) return dDays;
 
-    return Number(b[idx.TROPHIES]) - Number(a[idx.TROPHIES]);
+    return (Number(b[idx.TROPHIES]) || 0) - (Number(a[idx.TROPHIES]) || 0);
   }
 };
 
