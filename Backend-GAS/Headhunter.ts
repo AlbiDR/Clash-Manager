@@ -33,6 +33,7 @@ const Headhunter: IHeadhunter = {
       let s = ss.getSheetByName(name);
       if (!s) {
          s = ss.insertSheet(name);
+         Registry.Services.View.enforceGlobalTabHygiene();
       }
       return s;
     };

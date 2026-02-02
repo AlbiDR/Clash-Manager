@@ -113,7 +113,10 @@ const Database: IDatabase = {
 
             // 4. STORAGE PREPARATION
             let sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
-            if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.DB);
+            if (!sheet) {
+                sheet = ss.insertSheet(CONFIG.SHEETS.DB);
+                Registry.Services.View.enforceGlobalTabHygiene();
+            }
 
             Registry.Services.Reporting.logStep(3, 6, "Verifying Visual Architecture...");
             const { sheetId, currentMaxRows } = DatabaseView.ensureStructure(ss, sheet);

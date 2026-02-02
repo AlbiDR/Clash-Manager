@@ -476,6 +476,7 @@ function triggerUpdateDatabase(): void {
     try {
       Registry.Actions["sync:database"]();
       Registry.Actions["sync:webapp"]();
+      Registry.Services.View.enforceGlobalTabHygiene();
       ss.toast("Database synchronized successfully.", "Success", 3);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -490,6 +491,7 @@ function triggerUpdateRoster(): void {
     try {
       Registry.Actions["sync:roster"]();
       Registry.Actions["sync:webapp"]();
+      Registry.Services.View.enforceGlobalTabHygiene();
       ss.toast("Roster synchronized successfully.", "Success", 3);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);
@@ -503,6 +505,7 @@ function triggerScoutRecruits(): void {
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
       Registry.Actions["recruit:scout"]();
+      Registry.Services.View.enforceGlobalTabHygiene();
       ss.toast("Scout operation completed.", "Success", 5);
     } catch (e: any) {
       SpreadsheetApp.getUi().alert(`Error: ${e.message}`);

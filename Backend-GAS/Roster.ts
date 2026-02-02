@@ -23,7 +23,10 @@ const Roster: IRoster = {
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
-    if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.ROSTER);
+    if (!sheet) {
+      sheet = ss.insertSheet(CONFIG.SHEETS.ROSTER);
+      Registry.Services.View.enforceGlobalTabHygiene();
+    }
 
     // 1. RUNTIME CONTEXT
     Registry.Services.Schema.bootDynamicSchema();
