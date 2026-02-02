@@ -14,180 +14,214 @@ const Roster: IRoster = {
   /**
    * MAIN ENTRY: Update Roster
    */
+  /**
+   * MAIN ENTRY: Update Roster
+   */
   update(): void {
-    console.info("Starting Roster/Leaderboard generation pipeline...");
+    const startTime = Date.now();
+    console.info("ROSTER: Starting Leaderboard Refresh Pipeline");
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
     if (!sheet) sheet = ss.insertSheet(CONFIG.SHEETS.ROSTER);
 
-    // 1. DYNAMIC SYNC
-    Registry.Services.Reporting.logStep(1, 7, "Syncing Dynamic Schema indices...");
+    // 1. RUNTIME CONTEXT
     Registry.Services.Schema.bootDynamicSchema();
     const L = CONFIG.SCHEMA.ROSTER;
 
-    // 2. CONFIG CHECK
+    Registry.Services.Reporting.logReport("ROSTER RUNTIME CONTEXT", [
+      `VERSION:    ${VER_ROSTER}`,
+      `CLAN TAG:   ${CONFIG.SYSTEM.CLAN_TAG || "NOT_CONFIGURED"}`,
+      `DATA START: Row ${CONFIG.LAYOUT.DATA_START_ROW}`,
+      `MODE:        FULL_RECALCULATION`
+    ]);
+
     if (!CONFIG.SYSTEM.CLAN_TAG) {
-      console.error("Configuration Error: CLAN_TAG is not configured. Aborting update.");
-      sheet.getRange("B1").setValue("Configuration Error: Missing CLAN_TAG");
+      console.error("CONFIGURATION ERROR: Missing CLAN_TAG. Aborting Roster Update.");
       return;
     }
 
-    // 3. DATA LOADING
-    Registry.Services.Reporting.logStep(2, 7, "Loading momentum deltas & archives...");
-    const previousScores = RosterStore.loadPreviousScores(sheet, L);
-    const warHistoryMap = RosterStore.rehydrateWarHistory(sheet, L);
-    const recruitCache = RosterStore.getProphetCache();
-    const marketIntelligence = RosterStore.loadMarketIntelligence();
+    try {
+      // 2. RESOURCE HYDRATION
+      Registry.Services.Reporting.logStep(1, 6, "Hydrating Momentum & Heritage Data...");
+      const previousScores = RosterStore.loadPreviousScores(sheet, L);
+      const warHistoryMap = RosterStore.rehydrateWarHistory(sheet, L);
+      const recruitCache = RosterStore.getProphetCache();
+      const marketIntelligence = RosterStore.loadMarketIntelligence();
 
-    // 4. API INGESTION
-    Registry.Services.Reporting.logStep(3, 7, "Ingesting Live API data (Members & Race)...");
-    const clanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-    const { members, race, history: remoteHistory, log: logData } = Registry.Services.Network.fetchClanDataSmart(clanTag);
+      // 3. API DATA ACQUISITION
+      Registry.Services.Reporting.logStep(2, 6, "Ingesting Live API Intelligence...");
+      const apiStart = Date.now();
+      const clanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+      const { members, race, history: remoteHistory } = Registry.Services.Network.fetchClanDataSmart(clanTag);
+      const apiDuration = Date.now() - apiStart;
 
-    if (!members || !members.items) {
-      console.error("Critical: Failed to fetch clan members. Aborting.");
-      return;
-    }
-
-    const now = new Date();
-    const currentWeekId = Registry.Services.Time.calculateWarWeekId(now);
-    
-    // Add War Entries helper
-    const addWarEntry = (tag: string, weekId: string, fame: number) => {
-      if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
-      const userMap = warHistoryMap.get(tag)!;
-      userMap.set(weekId, Math.max(userMap.get(weekId) || 0, fame));
-    };
-
-    // Merge remote history
-    if (remoteHistory) {
-      Object.keys(remoteHistory).forEach(tag => {
-        const h = (remoteHistory as any)[tag];
-        Object.keys(h).forEach(weekId => addWarEntry(tag, weekId, h[weekId]));
-      });
-    }
-
-    // Merge current race
-    if (race && race.clan && race.clan.participants) {
-      race.clan.participants.forEach((p: any) => {
-        addWarEntry(p.tag, currentWeekId, Registry.Services.Scoring.resolveWarFame(p));
-      });
-    }
-
-    // 5. PROPHET & SCORING
-    Registry.Services.Reporting.logStep(4, 7, "Computing performance scores...");
-    const rawResults: PlayerResult[] = [];
-
-    (members.items as ClanMemberResult[]).forEach(m => {
-      const pWarHistory = warHistoryMap.get(m.tag) || new Map<string, number>();
-      const currentFame = pWarHistory.get(currentWeekId) || 0;
-      const lastSeen = Registry.Services.Time.parseRoyaleApiDate(m.lastSeen);
-      const dbRecord = marketIntelligence.get(m.tag);
-
-      let daysTracked = 0;
-      let totalDonations = 0;
-
-      if (dbRecord) {
-        const diffTime = Math.abs(now.getTime() - dbRecord.firstSeen.getTime());
-        daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const liveMax = Math.max(dbRecord.weeklyMax.get(currentWeekId) || 0, m.donations || 0);
-        dbRecord.weeklyMax.set(currentWeekId, liveMax);
-        dbRecord.weeklyMax.forEach((val: number) => totalDonations += val);
-      } else {
-        totalDonations = m.donations || 0;
+      if (!members || !members.items) {
+          console.error("CIRCUIT BREAKER: API returned invalid data. Terminating Pipeline.");
+          return;
       }
 
-      const avgDailyDonations = daysTracked > 0 ? Math.round(totalDonations / daysTracked) : (m.donations || 0);
-
-      let totalHistoryFame = 0;
-      pWarHistory.forEach(val => totalHistoryFame += Number(val) || 0);
-      const eligibleWeeks = dbRecord?.battleWeeks?.size || 0;
-      const weeksInClan = Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size, eligibleWeeks);
-      const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
-
-      const warRateVal = Registry.Services.Scoring.calculateWarRate(
-        dbRecord?.totalBattleCredits ?? 0,
-        dbRecord?.discoveredBattleDays?.size ?? 0
-      );
-
-      const cachedIntel = recruitCache.get(m.tag);
-      const scores = Registry.Services.Scoring.computeScores(
-        currentFame, avgWarFame, avgDailyDonations, m.trophies || 0,
-        warRateVal, lastSeen.getTime(), now.getTime(),
-        cachedIntel ? cachedIntel.wins : 0,
-        currentFame > 0 || (cachedIntel ? cachedIntel.active : false),
-        daysTracked
-      );
-
-      rawResults.push({
-        member: m,
-        tag: m.tag,
-        name: m.name,
-        role: m.role,
-        trophies: m.trophies || 0,
-        daysTracked,
-        avgDailyDonations,
-        totalDonations,
-        lastSeen,
-        warRateVal,
-        avgWarFame,
-        historyString: Array.from(pWarHistory.entries()).sort((a,b) => b[0].localeCompare(a[0])).map(([wk,f]) => `${f} ${wk}`).join(" | "),
-        scores,
-        cleanKey: m.tag.replace("#", "").trim().toLowerCase()
-      });
-    });
-
-    // 6. FINALIZE AGGREGATION
-    let maxPerfScore = 0;
-    rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
-
-    const finalRows = rawResults.map(r => {
-      const normPerf = Registry.Services.Scoring.calculatePotentialScore(r.scores.perf, maxPerfScore);
-      const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
+      const now = new Date();
+      const currentWeekId = Registry.Services.Time.calculateWarWeekId(now);
       
-      const row = new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill("");
-      row[L.TAG] = r.tag;
-      row[L.NAME] = r.name;
-      row[L.ROLE] = r.role;
-      row[L.TROPHIES] = r.trophies;
-      row[L.DAYS] = r.daysTracked;
-      row[L.WEEKLY_REQ] = r.member.donationsReceived;
-      row[L.AVG_DAY] = r.avgDailyDonations;
-      row[L.TOTAL_DON] = r.totalDonations;
-      row[L.LAST_SEEN] = Registry.Services.Time.formatDate(r.lastSeen);
-      row[L.WAR_RATE] = r.warRateVal / 100;
-      row[L.HISTORY] = r.historyString;
-      row[L.RAW_SCORE] = r.scores.raw;
-      row[L.PERF_SCORE] = normPerf;
-      row[L.TREND] = trend;
-      row[L.AVG_WAR_FAME] = r.avgWarFame;
-      return row;
-    });
+      // War History Reconciliation
+      const addWarEntry = (tag: string, weekId: string, fame: number) => {
+        if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
+        const userMap = warHistoryMap.get(tag)!;
+        userMap.set(weekId, Math.max(userMap.get(weekId) || 0, fame));
+      };
 
-    finalRows.sort(Registry.Services.Scoring.comparator);
-    while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill(""));
+      if (remoteHistory) {
+        Object.keys(remoteHistory).forEach(tag => {
+          const h = (remoteHistory as any)[tag];
+          Object.keys(h).forEach(weekId => addWarEntry(tag, weekId, h[weekId]));
+        });
+      }
 
-    // 7. RENDERING
-    Registry.Services.Reporting.logStep(7, 7, "Applying visual layout & pushing to web...");
-    const headersLen = Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length;
-    const HEADERS_ARRAY = new Array(headersLen).fill("");
-    (Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS) as any[]).forEach(k => HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.ROSTER_HEADERS[k]);
+      if (race?.clan?.participants) {
+        race.clan.participants.forEach((p: any) => {
+          addWarEntry(p.tag, currentWeekId, Registry.Services.Scoring.resolveWarFame(p));
+        });
+      }
 
-    Sheets.Spreadsheets.Values.update({ values: finalRows }, ss.getId(), `'${sheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, { valueInputOption: "USER_ENTERED" });
-    RosterView.restoreVisuals(sheet, finalRows.length, HEADERS_ARRAY);
-    
-    // Save Prophet Intel
-    RosterStore.saveProphetCache(rawResults, recruitCache);
+      // 4. PERFORMANCE SCORING KERNEL
+      Registry.Services.Reporting.logStep(3, 6, "Executing Cumulative Scoring Engine...");
+      const rawResults: PlayerResult[] = [];
+      const activeMembers = members.items as ClanMemberResult[];
 
-    SpreadsheetApp.flush();
-    // @ts-ignore
-    if (typeof refreshWebPayload === "function") refreshWebPayload();
+      activeMembers.forEach(m => {
+        const pWarHistory = warHistoryMap.get(m.tag) || new Map<string, number>();
+        const currentFame = pWarHistory.get(currentWeekId) || 0;
+        const lastSeen = Registry.Services.Time.parseRoyaleApiDate(m.lastSeen);
+        const dbRecord = marketIntelligence.get(m.tag);
 
-    Registry.Services.Reporting.logReport(`ROSTER v1.0.0 REPORT`, [
-      `SYNC STATUS:  SUCCESS`,
-      `RANKED POOL:  ${rawResults.length} Combatants`,
-      `ELITE AVG:    ${Math.round(maxPerfScore)} (Benchmark)`
-    ]);
+        let daysTracked = 0;
+        let totalDonations = 0;
+
+        if (dbRecord) {
+          const diffTime = Math.abs(now.getTime() - dbRecord.firstSeen.getTime());
+          daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const liveMax = Math.max(dbRecord.weeklyMax.get(currentWeekId) || 0, m.donations || 0);
+          dbRecord.weeklyMax.set(currentWeekId, liveMax);
+          dbRecord.weeklyMax.forEach((val: number) => totalDonations += val);
+        } else {
+          totalDonations = m.donations || 0;
+        }
+
+        const avgDailyDonations = daysTracked > 0 ? Math.round(totalDonations / daysTracked) : (m.donations || 0);
+        let totalHistoryFame = 0;
+        pWarHistory.forEach(val => totalHistoryFame += Number(val) || 0);
+        
+        const eligibleWeeks = dbRecord?.battleWeeks?.size || 0;
+        const weeksInClan = Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size, eligibleWeeks);
+        const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
+
+        const warRateVal = Registry.Services.Scoring.calculateWarRate(
+          dbRecord?.totalBattleCredits ?? 0,
+          dbRecord?.discoveredBattleDays?.size ?? 0
+        );
+
+        const cachedIntel = recruitCache.get(m.tag);
+        const scores = Registry.Services.Scoring.computeScores(
+          currentFame, avgWarFame, avgDailyDonations, m.trophies || 0,
+          warRateVal, lastSeen.getTime(), now.getTime(),
+          cachedIntel ? cachedIntel.wins : 0,
+          currentFame > 0 || (cachedIntel ? cachedIntel.active : false),
+          daysTracked
+        );
+
+        rawResults.push({
+          member: m,
+          tag: m.tag,
+          name: m.name,
+          role: m.role,
+          trophies: m.trophies || 0,
+          daysTracked,
+          avgDailyDonations,
+          totalDonations,
+          lastSeen,
+          warRateVal,
+          avgWarFame,
+          historyString: Array.from(pWarHistory.entries())
+            .sort((a,b) => b[0].localeCompare(a[0]))
+            .map(([wk,f]) => `${f} ${wk}`)
+            .join(" , "),
+          scores,
+          cleanKey: m.tag.replace("#", "").trim().toLowerCase()
+        });
+      });
+
+      // 5. NORMALIZATION & RANKING
+      Registry.Services.Reporting.logStep(4, 6, "Normalizing Elite Benchmarks...");
+      let maxPerfScore = 0;
+      rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
+
+      const finalRows = rawResults.map(r => {
+        const normPerf = Registry.Services.Scoring.calculatePotentialScore(r.scores.perf, maxPerfScore);
+        const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
+        
+        const row = new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill("");
+        row[L.TAG] = r.tag;
+        row[L.NAME] = r.name;
+        row[L.ROLE] = r.role;
+        row[L.TROPHIES] = r.trophies;
+        row[L.DAYS] = r.daysTracked;
+        row[L.WEEKLY_REQ] = r.member.donationsReceived;
+        row[L.AVG_DAY] = r.avgDailyDonations;
+        row[L.TOTAL_DON] = r.totalDonations;
+        row[L.LAST_SEEN] = Registry.Services.Time.formatDate(r.lastSeen);
+        row[L.WAR_RATE] = r.warRateVal / 100;
+        row[L.HISTORY] = r.historyString;
+        row[L.RAW_SCORE] = r.scores.raw;
+        row[L.PERF_SCORE] = normPerf;
+        row[L.TREND] = trend;
+        row[L.AVG_WAR_FAME] = r.avgWarFame;
+        return row;
+      });
+
+      finalRows.sort(Registry.Services.Scoring.comparator);
+      while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill(""));
+
+      // 6. VISUAL RENDERING
+      Registry.Services.Reporting.logStep(5, 6, "Applying Visual Architecture...");
+      const headersLen = Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length;
+      const HEADERS_ARRAY = new Array(headersLen).fill("");
+      (Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS) as any[]).forEach(k => HEADERS_ARRAY[L[k]] = CONFIG.SCHEMA.ROSTER_HEADERS[k]);
+
+      Sheets.Spreadsheets.Values.update(
+        { values: finalRows }, 
+        ss.getId(), 
+        `'${sheet.getName()}'!B${CONFIG.LAYOUT.DATA_START_ROW}`, 
+        { valueInputOption: "USER_ENTERED" }
+      );
+      RosterView.restoreVisuals(sheet, finalRows.length, HEADERS_ARRAY);
+      
+      // PERSISTENCE
+      Registry.Services.Reporting.logStep(6, 6, "Synchronizing Prophet & Web Payloads...");
+      RosterStore.saveProphetCache(rawResults, recruitCache);
+      SpreadsheetApp.flush();
+      
+      // @ts-ignore
+      if (typeof refreshWebPayload === "function") refreshWebPayload();
+
+      // FINAL REPORT
+      const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+      Registry.Services.Reporting.logReport("ROSTER UPDATE COMPLETE", [
+        `STATUS:      SUCCESS`,
+        `RANKED POOL: ${rawResults.length} Members`,
+        `ELITE AVG:   ${Math.round(maxPerfScore)} (Benchmark)`,
+        `API LATENCY: ${apiDuration}ms`,
+        `RUNTIME:     ${totalDuration}s`
+      ]);
+
+    } catch (e: any) {
+        console.error(`ROSTER PIPELINE FAILURE: ${e.message} \n${e.stack}`);
+        Registry.Services.Reporting.logReport("ROSTER CRITICAL FAILURE", [
+            `ERROR: ${e.message}`,
+            `STATE: UNSTABLE`,
+            `ACTION: CHECK LOGS`
+        ]);
+    }
   }
 };
 

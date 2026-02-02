@@ -313,32 +313,58 @@ function createTriggers(): void {
  * Sequential execution of the entire stack.
  */
 function dispatchMaster(): void {
+  const startTime = Date.now();
   const version = VER_ORCHESTRATOR;
 
-  Registry.Services.Reporting.logReport(
-    `MASTER PROTOCOL v${version}`,
-    [`INITIALIZING ORCHESTRATION...`]
-  );
+  console.info("ORCHESTRATOR: Initializing Master Protocol Execution");
 
-  // 1. Warm up first
-  taskWarmUpWorker();
+  // 1. RUNTIME CONTEXT
+  Registry.Services.Reporting.logReport("MASTER PROTOCOL RUNTIME CONTEXT", [
+    `VERSION:    ${version}`,
+    `CLAN TAG:   ${CONFIG.SYSTEM.CLAN_TAG || "NOT_CONFIGURED"}`,
+    `MODE:        SEQUENTIAL_FULL_SYNC`,
+    `USER:        ADMIN_DISPATCH`
+  ]);
 
-  // 2. Full Data Ingestion
-  taskUpdateDatabase();
+  try {
+    // 2. STAGE 1: Infrastructure
+    Registry.Services.Reporting.logStep(1, 5, "Infrastructure: Warming up remote worker...");
+    taskWarmUpWorker();
 
-  // 3. Score Calculation & Rendering
-  taskUpdateRoster();
+    // 3. STAGE 2: Historical Persistence
+    Registry.Services.Reporting.logStep(2, 5, "Persistence: Executing Data Ingestion (ETL)...");
+    taskUpdateDatabase();
 
-  // 4. Headhunter
-  taskFastScout();
+    // 4. STAGE 3: Performance Analysis
+    Registry.Services.Reporting.logStep(3, 5, "Intelligence: Calculating Leaderboard & Roster...");
+    taskUpdateRoster();
 
-  // 5. Final Tab Hygiene (Visual Persistence)
-  Registry.Services.View.enforceGlobalTabHygiene();
+    // 5. STAGE 4: Recruitment Scanning
+    Registry.Services.Reporting.logStep(4, 5, "Recruitment: Executing Rapid Global Scout...");
+    taskFastScout();
 
-  Registry.Services.Reporting.logReport(
-    `MASTER PROTOCOL v${version}`,
-    [`MASTER DISPATCH: ALL OPERATIONS COMPLETE.`]
-  );
+    // 6. STAGE 5: UI Integrity
+    Registry.Services.Reporting.logStep(5, 5, "UI Integrity: Enforcing Global Tab Hygiene...");
+    Registry.Services.View.enforceGlobalTabHygiene();
+
+    // FINAL REPORT
+    const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+    Registry.Services.Reporting.logReport("MASTER PROTOCOL COMPLETE", [
+      `STATUS:      SUCCESS`,
+      `STAGES:      5/5 Passed`,
+      `RUNTIME:     ${totalDuration}s`,
+      `─`,
+      `DISPATCH:    All Systems Synchronized.`
+    ]);
+
+  } catch (e: any) {
+    console.error(`MASTER PROTOCOL FAILURE: ${e.message} \n${e.stack}`);
+    Registry.Services.Reporting.logReport("MASTER PROTOCOL CRITICAL FAILURE", [
+      `ERROR:  ${e.message}`,
+      `STATE:  INCOMPLETE`,
+      `ACTION: CHECK SYSTEM LOGS`
+    ]);
+  }
 }
 
 /**
