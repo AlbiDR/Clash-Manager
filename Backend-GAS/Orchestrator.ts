@@ -223,7 +223,7 @@ function taskFastScout(): void {
   console.info("Task: Fast Scout (Headhunter): Starting...");
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
-      Registry.Actions["recruit:scout"]();
+      Registry.Actions["headhunter:scout"]();
       Registry.Services.View.enforceGlobalTabHygiene();
       console.info("Task: Fast Scout: Success.");
     } catch (e: any) {
@@ -452,7 +452,7 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
         Registry.Actions["sync:database"]();
         Registry.Actions["sync:webapp"]();
       } else if (sheetName === CONFIG.SHEETS.HH) {
-        Registry.Actions["recruit:scout"]();
+        Registry.Actions["headhunter:scout"]();
       }
       Registry.Services.View.setStatusMessage(sheet, `Done ${new Date().toLocaleTimeString()}`);
     });
@@ -504,7 +504,7 @@ function triggerScoutRecruits(): void {
   ss.toast("Scanning global tournaments...", "Headhunter Scout", 20);
   Registry.Services.Core.executeSafely("SYNC_HH", () => {
     try {
-      Registry.Actions["recruit:scout"]();
+      Registry.Actions["headhunter:scout"]();
       Registry.Services.View.enforceGlobalTabHygiene();
       ss.toast("Scout operation completed.", "Success", 5);
     } catch (e: any) {
