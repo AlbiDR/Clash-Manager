@@ -64,20 +64,21 @@ function openOverlay() {
       <!-- Top Row: Identity & Status -->
       <div class="header-row top">
         <div class="left-cluster">
-          <a
-            v-if="sheetUrl && !loading"
-            :href="sheetUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="icon-button"
-            title="Open in Sheets"
-            aria-label="Open Google Sheet"
-            @click="haptics.tap()"
-          >
-            <Icon name="spreadsheet" size="20" />
-          </a>
-
-          <h1 class="view-title">{{ title }}</h1>
+          <!-- Title is now the Link -->
+          <h1 class="view-title">
+            <a
+              v-if="sheetUrl && !loading"
+              :href="sheetUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="title-link"
+              @click="haptics.tap()"
+            >
+              {{ title }}
+              <Icon name="spreadsheet" size="14" class="title-icon" />
+            </a>
+            <span v-else>{{ title }}</span>
+          </h1>
 
           <div v-if="stats && !loading" class="stats-pill">
             <span class="sp-value">{{ stats.value }}</span>
@@ -404,5 +405,40 @@ function openOverlay() {
     width: 100%;
     box-sizing: border-box;
   }
+}
+
+.title-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+}
+
+.title-link::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--sys-color-primary);
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.title-icon {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  color: var(--sys-color-primary);
+}
+
+.title-link:active {
+  opacity: 0.7;
+}
+
+.title-link:active .title-icon {
+  opacity: 1;
 }
 </style>
