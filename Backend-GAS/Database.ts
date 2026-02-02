@@ -89,7 +89,8 @@ const Database: IDatabase = {
                 isWarDay = phaseIsBattle || periodIsWar;
             } catch (e: any) {
                 console.warn("INTELLIGENCE: Protocol unreachable, using state-based detection.");
-                isWarDay = !!(raceData && raceData.clan);
+                // FALLBACK: Only trust the API if it explicitly confirms a 'war' period.
+                isWarDay = !!(raceData && raceData.periodType === 'war');
             }
 
             // MAPPING: Tag Normalization & Fame Extraction
