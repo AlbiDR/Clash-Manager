@@ -156,6 +156,10 @@ export function useRecruiter() {
   }
 
   function executeDismiss(ids: string[]) {
+    // Capture recruits to restore in case of undo
+    const recruitsToRestore = (data.value?.hh || []).filter(r => ids.includes(r.id));
+    const { undismissRecruitsAction } = useHeadhunter();
+
     // ⚡ ZERO LATENCY: Point-of-impact hiding
     blacklist.hide(ids);
 
@@ -171,10 +175,15 @@ export function useRecruiter() {
 
     // Show undo toast
     undo(`Dismissed ${ids.length} recruits`, () => {
+      // 1. Immediate Local Restore
       blacklist.restore(ids);
-
-      // If backend was already hit, we must refresh to regain consistency
-      if (backendCalled) {
+      
+      // If we have the original recruit data, restore it to the local state
+      // to avoid waiting for a refresh or showing filtered out items.
+      if (recruitsToRestore.length > 0) {
+        undismissRecruitsAction(ids, recruitsToRestore);
+      } else if (backendCalled) {
+        // Fallback if we don't have local data
         info("Restoring from server...");
         refreshGas();
       }

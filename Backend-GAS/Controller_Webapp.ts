@@ -134,7 +134,6 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       }
 
       // ATOMIC APPEND (Advanced API)
-      // This is the "Event Stream". We don't search, we just log the event.
       const now = Date.now();
       const values = ids.map((id) => [
         (id.startsWith("#") ? id : "#" + id).toUpperCase(),
@@ -163,6 +162,54 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
     } catch (e: any) {
       console.error(`[API] Event-Sourced Dismiss Fail: ${e.message}`);
       throw new Error(`Dismiss Failed (Event-Log): ${e.message}`);
+    }
+  });
+}
+
+/**
+ * REVERSAL: Remove tags from the Event Stream.
+ */
+function undismissRecruitsBulk(ids: string[]): {
+  success: boolean;
+  count: number;
+} {
+  if (!ids || !Array.isArray(ids) || ids.length === 0)
+    return { success: true, count: 0 };
+
+  return Registry.Services.Core.executeSafely("REVERSE_HH_EVT", () => {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
+      if (!evtSheet) return { success: true, count: 0 };
+
+      const lastRow = evtSheet.getLastRow();
+      if (lastRow <= 1) return { success: true, count: 0 };
+
+      const rawEVT = evtSheet.getDataRange().getValues();
+      const tagsToUndo = new Set(ids.map(id => (id.startsWith("#") ? id : "#" + id).toUpperCase()));
+      
+      // Work backwards to delete rows to avoid index shifts
+      let removedCount = 0;
+      for (let i = rawEVT.length - 1; i >= 1; i--) {
+        const tag = String(rawEVT[i][0]).toUpperCase().trim();
+        if (tagsToUndo.has(tag)) {
+          evtSheet.deleteRow(i + 1);
+          removedCount++;
+        }
+      }
+
+      if (removedCount > 0) {
+        SpreadsheetApp.flush();
+        _generatePayloadInternal();
+      }
+
+      return {
+        success: true,
+        count: removedCount
+      };
+    } catch (e: any) {
+      console.error(`[API] Event-Sourced Undismiss Fail: ${e.message}`);
+      throw new Error(`Undismiss Failed: ${e.message}`);
     }
   });
 }
@@ -437,6 +484,7 @@ function sanitizeNum(v: any, displayV: string): number {
   Object.assign(scope, {
     getWebAppData,
     markRecruitsAsInvitedBulk,
+    undismissRecruitsBulk,
     refreshWebPayload,
     VER_CONTROLLER_WEBAPP,
   });

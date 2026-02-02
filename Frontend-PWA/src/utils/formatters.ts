@@ -65,7 +65,17 @@ const TIME_AGO_MULTIPLIERS: Record<string, number> = {
  * for O(1) sorting performance.
  */
 export function parseTimeAgoValue(val: string | null | undefined): number {
-  if (!val || val === "-" || val === "Just now") return 0;
+  if (!val || val === "-") return 99999999;
+
+  // 1. Try parsing as Standard Date / ISO String (Modern Backend)
+  const date = new Date(val);
+  if (!isNaN(date.getTime())) {
+    const diffMs = Date.now() - date.getTime();
+    return Math.floor(diffMs / 60000); // Return minutes
+  }
+
+  // 2. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
+  if (val === "Just now") return 0;
   const match = val.match(TIME_AGO_REGEX);
   if (!match) return 99999999;
   const num = parseInt(match[1], 10);

@@ -74,6 +74,36 @@ function applyLocalDismissal(ids: string[]) {
   updateHeadhunterBadge(updatedData);
 }
 
+/**
+ * REVERSAL HELPER
+ * Restores recruits to the local state. Used for undo operations.
+ */
+function applyLocalRestoration(recruits: Recruit[]) {
+  if (!clashData.value || recruits.length === 0) return;
+
+  const currentHH = [...clashData.value.hh];
+  const existingIds = new Set(currentHH.map(r => r.id));
+  
+  let added = 0;
+  recruits.forEach(r => {
+    if (!existingIds.has(r.id)) {
+      currentHH.push(r);
+      added++;
+    }
+  });
+
+  if (added === 0) return;
+
+  // Re-sort by potential score
+  const updatedData = { 
+    ...clashData.value, 
+    hh: currentHH.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0)) 
+  };
+
+  updateLocalData(updatedData);
+  updateHeadhunterBadge(updatedData);
+}
+
 // 📡 Broadcast Channel Integration (Recruit Dismissal only)
 const { post: broadcast } = useBroadcastChannel((msg) => {
   if (msg.type === "RECRUIT_DISMISSAL") {
@@ -169,6 +199,22 @@ export function useHeadhunter() {
 
   return {
     dismissRecruitsAction,
-    // Expose helpers if needed by views, or they can trust the watcher
+    undismissRecruitsAction: async (ids: string[], originalRecruits?: Recruit[]) => {
+      // 1. Optimistic Restore
+      if (originalRecruits && originalRecruits.length > 0) {
+        applyLocalRestoration(originalRecruits);
+      }
+
+      try {
+        await (async () => {
+          const { undismissRecruits } = await import("../api/gasClient");
+          return undismissRecruits(ids);
+        })();
+        broadcast({ type: "RECRUIT_RESTORATION", ids }); // Optional: add to switch in broadcast listener if needed
+      } catch (e) {
+        // Rollback on failure if needed, but undo is already a "revert"
+        console.error("Undo Sync Failed:", e);
+      }
+    }
   };
 }
