@@ -198,28 +198,25 @@ const DatabaseStore = {
 
     // 3. Process API Data
     activeMembers.forEach((m) => {
-      let rawFame = warFameMap.get(m.tag) || 0;
-      let warFame: string;
-      let battleCredit: string;
       const normalizedTag = m.tag.toUpperCase().trim();
+      const rawFame = warFameMap.get(m.tag) || 0;
       
-      if (!isWarDay) {
-          warFame = "N/A";
-          battleCredit = "N/A";
-      } else {
-          // Explicitly cast to String for visual coherency and sort stability
-          warFame = String(rawFame);
-          battleCredit = (Number(rawFame) > 0) ? "1" : "0";
-      }
+      const warFame = isWarDay 
+          ? Registry.Services.Scoring.toStrictValue(rawFame) 
+          : "N/A";
+          
+      const battleCredit = isWarDay 
+          ? Registry.Services.Scoring.toStrictValue(Number(rawFame) > 0 ? 1 : 0) 
+          : "N/A";
 
       const rowData = [
         Registry.Services.Time.formatDate(today),
         m.tag,
         m.name,
         m.role,
-        m.trophies,
-        Math.max(0, m.donations || 0),
-        Math.max(0, m.donationsReceived || 0),
+        Registry.Services.Scoring.toStrictValue(m.trophies),
+        Registry.Services.Scoring.toStrictValue(m.donations),
+        Registry.Services.Scoring.toStrictValue(m.donationsReceived),
         Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(m.lastSeen)),
         warFame,
         battleCredit,
