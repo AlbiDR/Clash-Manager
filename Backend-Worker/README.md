@@ -1,8 +1,8 @@
-# Clash Manager — Remote Worker (Cloud Run)
+# Clash Manager — Remote Worker (Render)
 
 [![Version](https://img.shields.io/badge/Version-10.1.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
-The **Scaling Engine**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas.
+The **Scaling Engine**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
 ---
 
@@ -118,20 +118,20 @@ Validates a list of API keys against the upstream provider to check for validity
 
 ## Deployment
 
-Deploy directly to Google Cloud Run (Source-based deployment or Buildpacks).
+Deploy directly to **Render** as a Web Service.
 
-```bash
-# Submit build to Container Registry (uses Google Cloud Buildpacks)
-gcloud builds submit --tag gcr.io/PROJECT_ID/clash-manager-worker
+### Build & Start Command
+- **Build Command**: `pnpm install && pnpm build`
+- **Start Command**: `pnpm start`
 
-# Deploy to Cloud Run
-gcloud run deploy clash-manager-worker \
-  --image gcr.io/PROJECT_ID/clash-manager-worker \
-  --region us-central1 \
-  --platform managed \
-  --allow-unauthenticated \
-  --set-env-vars WORKER_CONCURRENCY=20
-```
+### Environment Variables
+Ensure the following variables are set in the Render Dashboard:
+
+- `WORKER_CONCURRENCY`: `20`
+- `WORKER_TIMEOUT_SEC`: `45`
+- `API_BASE`: `https://proxy.royaleapi.dev/v1`
+- `API_KEYS`: (Comma-separated list)
+
 
 ---
 

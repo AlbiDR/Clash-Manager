@@ -26,7 +26,7 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 ### 1. Network Engine (`Network.ts`)
 A sophisticated API gateway that manages the limited Google Apps Script quotas.
 - **Multi-Tier Caching**: Uses L1 (Execution Memory) and L2 (ScriptCache) to deduplicate requests.
-- **Remote Delegation**: Automatically offloads high-volume batches (>5 requests) and heavy computations to the **Backend-Worker** (Cloud Run).
+- **Remote Delegation**: Automatically offloads high-volume batches (>5 requests) and heavy computations to the **Backend-Worker** (Render).
 - **Smart Rotation**: Manages a pool of API keys with automatic failure handling and cooling periods.
 
 ### 2. The Orchestrator (`Orchestrator.ts`)
@@ -49,7 +49,7 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 
 | Task Function | Frequency | Purpose |
 | :--- | :--- | :--- |
-| `taskWarmUpWorker` | **10 Mins** | Keeps the remote Cloud Run instance active to prevent cold starts. |
+| `taskWarmUpWorker` | **10 Mins** | Keeps the remote Render instance active to prevent cold starts. |
 | `taskFastScout` | **30 Mins** | Rapidly scans tournament brackets for new potential recruits (Headhunter). |
 | `taskUpdateDatabase` | **1 Hour** | Ingests clan war history and performs deep data deduplication. |
 | `taskUpdateRoster` | **1 Hour** | Recalculates member scores, updates ranks, and enforces roles. |
@@ -63,7 +63,7 @@ Required environment variables in **Project Settings > Script Properties**:
 
 - `CLAN_TAG`: Target clan tag (e.g., `#2PP...`).
 - `API_KEYS`: JSON array of Clash Royale API keys.
-- `REMOTE_WORKER_URL`: Endpoint of the Cloud Run worker (e.g., `https://clash-worker-xyz.run.app`).
+- `REMOTE_WORKER_URL`: Endpoint of the Render worker (e.g., `https://clash-worker-xyz.onrender.com`).
 - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
 
 ### 2. Initial Setup
