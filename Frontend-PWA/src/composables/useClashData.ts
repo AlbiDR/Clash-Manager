@@ -1,5 +1,5 @@
 import { ref, shallowRef, readonly, watch } from "vue";
-import { fetchRemote } from "../api/gasClient";
+import { fetchRemote, loadCache, saveCache } from "../api/gasClient";
 import type { WebAppData } from "../types";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
@@ -17,7 +17,6 @@ const isRefreshing = ref(false);
 const lastSyncTime = ref<number | null>(null);
 const syncStatus = ref<"idle" | "syncing" | "success" | "error">("idle");
 const syncError = ref<string | null>(null);
-const SNAPSHOT_KEY = "cm_hydration_snapshot";
 
 // Singleton Composables (Module Level)
 const { isSyntheticMode } = useSyntheticMode();
@@ -25,16 +24,15 @@ const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
 
 // Broadcast Channel Integration
-const { post: broadcast } = useBroadcastChannel((msg) => {
+const { post: broadcast } = useBroadcastChannel(async (msg) => {
   if (msg.type === "DATA_SYNC_SUCCESS") {
-    // Another tab brought fresh data. Reload from local storage/IDB to sync.
+    // Another tab brought fresh data. Reload from IndexedDB to sync.
     if (!isRefreshing.value) {
-      const raw = localStorage.getItem(SNAPSHOT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.timestamp > (lastSyncTime.value || 0)) {
-          clashData.value = parsed;
-          lastSyncTime.value = parsed.timestamp;
+      const cached = await loadCache();
+      if (cached) {
+        if (cached.timestamp > (lastSyncTime.value || 0)) {
+          clashData.value = cached;
+          lastSyncTime.value = cached.timestamp;
         }
       }
     }
@@ -47,7 +45,8 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
  */
 function updateLocalData(newData: WebAppData) {
   clashData.value = newData;
-  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(newData));
+  // PERSISTENCE: Ensure optimistic updates are saved to IndexedDB
+  saveCache(newData).catch((e) => console.warn("[Data] Failed to persist optimistic update:", e));
 }
 
 /**
@@ -65,13 +64,13 @@ function updateLocalData(newData: WebAppData) {
  * - `syncStatus`: Unified status enum ('idle', 'syncing', 'success', 'error').
  * - `syncError`: Error message if the last sync attempt failed.
  * - `lastSyncTime`: Epoch timestamp of the last successful data acquisition.
- * - `loadLocal`: Function to hydrate state from LocalStorage.
+ * - `loadLocal`: Function to hydrate state from IndexedDB.
  * - `startBackgroundSync`: Triggered when specialized modes change or on initial load.
  * - `refresh`: Force a network fetch from the GAS backend.
  * - `updateLocalData`: Direct state/storage override for optimistic updates.
  *
  * @sideeffects
- * - Writes to `localStorage` (key: `cm_hydration_snapshot`) on every successful sync.
+ * - Persists data to `IndexedDB` (via `gasClient`) on every successful sync.
  * - Broadcasts 'DATA_SYNC_SUCCESS' messages via `BroadcastChannel` to synchronize other tabs.
  * - Listens for 'DATA_SYNC_SUCCESS' messages to trigger background reloads.
  * - Acquires/Releases `WakeLock` during active sync to prevent device sleep.
@@ -79,21 +78,21 @@ function updateLocalData(newData: WebAppData) {
  */
 export function useClashData() {
   /**
-   * STEP 1: LOAD LOCAL (Sync/Fast)
+   * STEP 1: LOAD LOCAL (Async/Fast-ish)
    *
    * @remarks
-   * Essential for LCP optimization. This should be called immediately after
-   * app mounting to hydrate the UI with cached data before the network responds.
+   * Essential for LCP optimization. Hydrates the UI from IndexedDB.
+   * While async, IndexedDB is faster for large data than blocking the
+   * main thread with synchronous LocalStorage JSON.parse.
    */
-  function loadLocal() {
+  async function loadLocal() {
     if (isHydrated.value) return; // Already loaded
 
     try {
-      const raw = localStorage.getItem(SNAPSHOT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        clashData.value = parsed;
-        const ts = parsed.timestamp || 0;
+      const cached = await loadCache();
+      if (cached) {
+        clashData.value = cached;
+        const ts = cached.timestamp || 0;
         lastSyncTime.value = ts || Date.now();
 
         // STALE CHECK
@@ -106,7 +105,7 @@ export function useClashData() {
         }
       }
     } catch (e) {
-      localStorage.removeItem(SNAPSHOT_KEY);
+      console.warn("[Data] Failed to load local cache:", e);
       clashData.value = null;
     } finally {
       isHydrated.value = true;
@@ -212,14 +211,8 @@ export function useClashData() {
       const { setSuccess } = useConnectionStatus();
       setSuccess();
 
-      // PERFORMANCE OPTIMIZATION
-      // Offload LocalStorage write to the browser's idle period.
-      // Prevents Disk I/O from blocking the main thread during heavy
-      // UI re-renders that follow a data sync.
-      const saveTask = window.requestIdleCallback || setTimeout;
-      saveTask(() => {
-        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(remoteData));
-      });
+      // REDUNDANCY REMOVED: fetchRemote already persists remoteData to IndexedDB.
+      // We no longer need to manually write to localStorage here.
 
       broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
     } catch (e: unknown) {

@@ -14,7 +14,7 @@ const { syncStatus, refresh, loadLocal } = useClashData();
 useHeadhunter();
 
 // Load local data immediately
-loadLocal();
+loadLocal(); // Non-blocking: main.ts also calls this, but we ensure hydration here.
 const haptics = useHaptics();
 const route = useRoute();
 const currentRoute = computed(() => route);

@@ -453,6 +453,10 @@ export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
+export async function saveCache(data: WebAppData): Promise<void> {
+  return idb.set(CACHE_KEY_MAIN, data);
+}
+
 /**
  * High-level helper to refresh application data from the remote backend.
  *
