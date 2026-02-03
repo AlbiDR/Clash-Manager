@@ -28,7 +28,7 @@ export function parseHistoryString(
   if (!historyStr || historyStr === "-") return [];
 
   return historyStr
-    .split("|")
+    .split(/[|,]/)
     .map((x) => x.trim())
     .filter(Boolean)
     .map((entry) => {
