@@ -14,30 +14,27 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 ## Visual Experience
 
 <p align="center">
-  The interface adapts fluidly to your device and system theme preferences.
+  <em>The interface adapts fluidly to your device and system theme preferences.</em>
 </p>
 
-<p align="center">
-  <strong>Desktop View</strong>
-</p>
-
-<p align="center">
-  <img src="Frontend-PWA/public/screenshot-desktop-light.webp" width="48%" />
-  &nbsp;
-  <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="48%" />
-</p>
+<div align="center">
+  <p><strong>DESKTOP</strong></p>
+  <img src="Frontend-PWA/public/screenshot-desktop-light.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
+  <br />
+  <br />
+  <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
+</div>
 
 <br />
 
-<p align="center">
-  <strong>Mobile View</strong>
-</p>
+<div align="center">
+  <p><strong>MOBILE</strong></p>
+  <img src="Frontend-PWA/public/screenshot-mobile-light.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
+  &nbsp;
+  <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
+</div>
 
-<p align="center">
-  <img src="Frontend-PWA/public/screenshot-mobile-light.webp" width="28%" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="28%" />
-</p>
+<br />
 
 ---
 
