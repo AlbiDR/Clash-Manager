@@ -14,7 +14,7 @@ import express, {
   RequestHandler,
 } from "express";
 import fetch from "node-fetch";
-import ScoringSystem from "../../Backend-GAS/ScoringSystem";
+import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import type {
   ServerConfig,
   FetchResult,
@@ -356,13 +356,13 @@ async function processBatch<T = unknown>(
               );
             }
 
-            // Use shared scoring system
-            const rawScore = ScoringSystem.calculateRecruitRawScore(
+            // Use shared scoring system (Kernel)
+            const rawScore = ScoringKernel.calcRecruitRaw(
               profile.trophies ?? 0,
               profile.totalDonations ?? 0,
               profile.warDayWins ?? 0,
               hasWar,
-              scoring,
+              scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
             );
 
             const warBonus = hasWar ? 500 : 0;
