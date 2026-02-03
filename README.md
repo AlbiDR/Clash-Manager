@@ -18,7 +18,7 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 </p>
 
 <p align="center">
-  <strong>Desktop Command Center</strong>
+  <strong>Desktop View</strong>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 <br />
 
 <p align="center">
-  <strong>Mobile Operations</strong>
+  <strong>Mobile View</strong>
 </p>
 
 <p align="center">
