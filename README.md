@@ -1,138 +1,134 @@
-# Clash Manager: Clan Manager for Clash Royale
+# Clash Manager
 
-[![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager)
+[![System Version](https://img.shields.io/badge/System-v13.0.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
+[![Client Version](https://img.shields.io/badge/Client-v10.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+[![Worker Version](https://img.shields.io/badge/Worker-v10.1.0-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
+[![License](https://img.shields.io/badge/License-Proprietary-333333?style=flat-square)](LICENSE)
 
-A high-precision, production-grade toolkit for elite Clash Royale clan leadership. This system orchestrates a synchronized stack: a **Google Apps Script Backend** for heavy-lift ETL, and a versatile **Frontend Core** that operates as a **Standalone Progressive Web App (PWA)** which supports virtually any platform.
+**An engineered ecosystem for high-precision clan leadership.**
 
----
-
-## Visual Experience
-
-<p align="center">
-  The interface adapts fluidly to your device and system theme preferences.
-</p>
-
-<p align="center">
-  <strong>Desktop Command Center</strong>
-</p>
-
-<p align="center">
-  <img src="Frontend-PWA/public/screenshot-desktop-light.webp" width="48%" />
-  &nbsp;
-  <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="48%" />
-</p>
-
-<br />
-
-<p align="center">
-  <strong>Mobile Operations</strong>
-</p>
-
-<p align="center">
-  <img src="Frontend-PWA/public/screenshot-mobile-light.webp" width="28%" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="28%" />
-</p>
+Clash Manager is a production-grade, distributed architecture designed to automate the administrative complexities of competitive Clash Royale clans. It orchestrates a synchronized stack comprising a serverless orchestration engine, a high-concurrency proxy worker, and an offline-first progressive web application.
 
 ---
 
-## Architecture
+## System Ecosystem
 
-The system utilizes a distributed architecture to ensure high data integrity and low-latency interaction. Detailed technical specifications are available in the [Architecture Hub](docs/ARCHITECTURE.md).
+The architecture is composed of three distinct, loosely coupled domains. Each domain facilitates a specific operational layer of the clan infrastructure.
 
-<details>
-<summary>View System Diagram</summary>
+### 1. Operations Core (`Backend-GAS`)
+The central nervous system. A serverless execution engine hosted on **Google Apps Script**.
+- **Role**: Orchestrates ETL pipelines, manages persistent state, and executes the proprietary scoring kernel.
+- **Architecture**: Registry-based Service Pattern with isolated business modules.
+- **Documentation**: [Read Technical Specifications](Backend-GAS/README.md)
+
+### 2. Client Interface (`Frontend-PWA`)
+The command center. A **Vue 3 Progressive Web Application** designed for administrative operations.
+- **Role**: Provides a fluid, low-latency interface for data visualization and deeper analytics.
+- **Features**: Sovereign Design System, Offline-First (IndexedDB), and Hardware Haptics.
+- **Documentation**: [Read Technical Specifications](Frontend-PWA/README.md)
+
+### 3. Scaling Engine (`Backend-Worker`)
+The muscle. A high-performance Node.js service hosted on **Render**.
+- **Role**: Offloads high-volume network operations and scanning tasks to circumvent platform quotas.
+- **Capabilities**: Parallel processing, Smart Key Rotation, and "Headless" API proxying.
+- **Documentation**: [Read Technical Specifications](Backend-Worker/README.md)
+
+---
+
+## Architectural Topology
+
+The system utilizes a distributed data flow to ensure high integrity and sub-second interaction latency.
 
 ```mermaid
 flowchart TD
-    subgraph External
+    subgraph Upstream
         CRAPI["Clash Royale API"]
     end
 
-    subgraph "Cloud Core"
-        GAS["Backend Engine<br/>(Google Apps Script)"]
-        GS["Sheet Data Store<br/>(Google Sheets)"]
+    subgraph "Serverless Core (GAS)"
+        Orchestrator["Orchestrator<br/>(Cron & Events)"]
+        Kernel["Scoring Kernel<br/>(Math & Logic)"]
+        Store["Google Sheets<br/>(Persistence)"]
     end
 
-    subgraph "Cloud Worker"
-        Worker["Remote Worker<br/>(Cloud Run)"]
+    subgraph "Compute Layer (Render)"
+        Worker["Remote Worker<br/>(Node.js/Express)"]
     end
 
-    subgraph "Client Core"
-        VueUI["Vue 3 Frontend<br/>(PWA)"]
-        IDB[(IndexedDB Cache)]
+    subgraph "Client Layer (PWA)"
+        UI["Vue 3 Interface<br/>(Sovereign Design)"]
+        Cache[(IndexedDB)]
     end
 
-    GAS -->|Bulk Fetch| Worker
-    Worker -->|Proxy| CRAPI
-    GAS <--> GS
-    GAS -->|Headless JSON| VueUI
-    VueUI <--> IDB
+    Orchestrator -->|Delegates Scan| Worker
+    Worker <-->|High-Volume Fetch| CRAPI
+    Orchestrator <-->|Sync| Store
+    UI <-->|JSON Headless| Orchestrator
+    UI <-->|Hydration| Cache
 ```
 
-</details>
-
 ---
 
-## Quick Start
+## Deployment Protocol
 
-The project is composed of a Google Apps Script backend, an optional Cloud Run worker, and a Vue 3 frontend. Follow the steps below for local setup.
-
-<details>
-<summary><strong>Backend Setup (Google Apps Script)</strong></summary>
-
-1.  **Deploy Engine**: Deploy the code in `Backend-GAS/` via `clasp` or the online script editor.
-2.  **Set Properties**: In the script editor, set the required `Script Properties`: `ClanTag` and `WebAppUrl`.
-3.  **Configure Triggers**: Open the spreadsheet menu (**👑 Clan Manager > ⚙️ Setup Triggers**) to automatically establish the automation lifecycle (Sync, Scout, and Keep-Alive).
-
-</details>
+The system requires a synchronized deployment across all three environments.
 
 <details>
-<summary><strong>Cloud Worker Setup (Optional)</strong></summary>
+<summary><strong>Phase 1: Computing Layer (Render)</strong></summary>
 
-The Remote Worker offloads bulk URL fetching to bypass GAS quotas.
+The worker must be online first to provide endpoints for the orchestration engine.
 
-1.  **Navigate to Directory**: `cd Backend-Worker`
-2.  **Build & Deploy**: Follow the instructions in [Backend-Worker/README.md](Backend-Worker/README.md) to deploy to Google Cloud Run.
-3.  **Link to Backend**: Set the `RemoteWorkerUrl` script property in your GAS deployment.
+1.  **Source**: `Backend-Worker/`
+2.  **Environment**: Node.js Service
+3.  **Requirements**:
+    *   `WORKER_CONCURRENCY`: `20`
+    *   `API_KEYS`: Comma-separated list of tokens.
+4.  **Action**: `pnpm build && pnpm start`
 
 </details>
 
 <details>
-<summary><strong>Frontend Setup (PWA)</strong></summary>
+<summary><strong>Phase 2: Orchestration Engine (Apps Script)</strong></summary>
 
-1.  **Navigate to Directory**: `cd Frontend-PWA`
-2.  **Install Dependencies**: `pnpm install`
-3.  **Configure Environment**: Create a `.env` file in `Frontend-PWA/` and add the `VITE_GAS_URL` from your backend deployment.
+The Core connects the database (Sheets) to the Worker.
 
-```env
-VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-```
+1.  **Source**: `Backend-GAS/`
+2.  **Environment**: Google Apps Script
+3.  **Configuration**:
+    *   `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
+    *   `CLAN_TAG`: Target resource identifier.
+4.  **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
 
 </details>
 
-The frontend is deployed to GitHub Pages via a GitHub Actions pipeline (`deploy-pwa.yml`).
+<details>
+<summary><strong>Phase 3: Operational Interface (PWA)</strong></summary>
+
+The Client consumes the headless JSON API exposed by the Core.
+
+1.  **Source**: `Frontend-PWA/`
+2.  **Environment**: Static Web Host (e.g., GitHub Pages)
+3.  **Configuration**:
+    *   `VITE_GAS_URL`: The Web App URL generated in Phase 2.
+4.  **Action**: `pnpm build`
+
+</details>
 
 ---
 
-## The Performance Model
+## Development Standards
 
-The core value of Clash Manager is its multi-dimensional scoring algorithm. It transforms raw metrics into a single, actionable **Performance Score** to drive recruitment and clan management decisions.
+We adhere to a strict "Clean Stack" philosophy to maintain long-term stability and code purity.
 
-> **Technical Detail**: The scoring logic and decay formulas are documented in the [Architecture Hub](docs/ARCHITECTURE.md#the-scoring-model).
-
----
-
-## Contributing
-
-We prioritize technical purity and architectural coherence.
-
-- **Refactor First**: If logic violates DRY or Modularization, split it before extending.
-- **Test-Driven**: Every feature or hotfix MUST include a `Vitest` suite.
-- **Semantic Integrity**: Use [Conventional Commits](https://www.conventionalcommits.org/).
+*   **Pristine Logic**: Business logic is isolated in pure functions (`Scoring_Kernel`) or composables (`useHeadhunter`).
+*   **Zero-Drift**: All modules must maintain synchronicity with their respective README specifications.
+*   **Semantic Versioning**: Strict adherence to `Major.Minor.Patch` protocols across the monorepo.
+*   **Visual Integrity**: The interfaces must strictly follow the Sovereign Design System (No utility-class pollution).
 
 ---
 
 ## License
 
-Proprietary. © 2026 AlbiDR. All rights reserved.
+**Proprietary Software**.
+© 2026 AlbiDR. All rights reserved. 
+Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
