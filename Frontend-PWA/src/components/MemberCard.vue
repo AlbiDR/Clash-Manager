@@ -283,9 +283,14 @@ const trendInfo = computed(() => {
   display: flex;
   align-items: center;
   gap: 2px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
   z-index: 10;
-  border: 1px solid var(--sys-surface-glass-border);
+  border: 1px solid var(--sys-color-outline-variant);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+:root.dark .momentum-pill {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 .momentum-pill.up {
   color: #166534;

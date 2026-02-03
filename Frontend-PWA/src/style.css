@@ -368,8 +368,15 @@ button:active {
 
   --shape-corner-l: 24px;
   --shape-corner-full: 9999px;
-  --sys-elevation-2: 0 4px 16px -4px rgba(0, 0, 0, 0.1);
-  --sys-elevation-3: 0 16px 48px rgba(0, 0, 0, 0.18);
+  /* REFINED ELEVATION: Multi-layered shadows for organic depth */
+  --sys-elevation-2: 
+    0 4px 12px -2px rgba(0, 0, 0, 0.08),
+    0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  
+  --sys-elevation-3: 
+    0 12px 32px -4px rgba(0, 0, 0, 0.1),
+    0 8px 16px -4px rgba(0, 0, 0, 0.08),
+    0 4px 8px -2px rgba(0, 0, 0, 0.04);
 
   /* SHARED SKELETON VARS (Synced with index.html) */
   --sh-bg: #fdfcff;
@@ -409,6 +416,16 @@ button:active {
   --sys-color-surface-container: #1b1f27;
   --sys-color-surface-container-high: #242932;
   --sys-color-surface-container-highest: #2f343e;
+
+  /* ELEVATION INVERSION: Deep black shadows + subtle rim light for dark surfaces */
+  --sys-elevation-2: 
+    0 8px 16px -4px rgba(0, 0, 0, 0.5),
+    0 4px 8px -4px rgba(0, 0, 0, 0.4);
+
+  --sys-elevation-3: 
+    0 20px 40px -8px rgba(0, 0, 0, 0.7),
+    0 12px 24px -8px rgba(0, 0, 0, 0.6),
+    0 0 1px 0 rgba(255, 255, 255, 0.08); /* Subtle surface definition */
 
   --sys-color-inverse-surface: #e6e1e5;
   --sys-color-inverse-on-surface: #313033;
