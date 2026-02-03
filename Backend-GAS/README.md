@@ -37,7 +37,7 @@ The central nervous system that manages automation lifecycles.
 
 ### 3. Scoring Kernel (`Scoring_Kernel.ts`)
 A pure mathematical engine isolated from the rest of the system.
-- **Performance Metrics**: Calculates member value via `Raw Performance` (Lifetime) and `Final Performance` (Decayed + Heritage).
+- **Performance Metrics**: Calculates member value via `Raw Performance` (Lifetime and Unweighted) and `Final Performance` (Decayed + Heritage and Normalized to against the clan's best).
 - **Potential Metrics**: Evaluates recruits via `Raw Potential` (Unweighted) and `Final Potential` (Normalized against clan benchmark).
 - **Mechanics**: Implements **Heritage** (momentum bonuses) and **Inertia** (inactivity decay).
 
