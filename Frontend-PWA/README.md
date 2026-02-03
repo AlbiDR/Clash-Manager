@@ -2,96 +2,99 @@
 
 [![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
-The heart of the Clash Manager interface. This is a high-performance Vue 3 application built as a **Progressive Web App (PWA)** for desktop-class administrative excellence.
+The **Operational Command Center**. A high-performance, offline-first Vue 3 application that serves as the primary interface for clan management. Built as a installable **Progressive Web App (PWA)**, it bridges the gap between complex data operations and a fluid, native-like user experience.
 
 ---
 
-## Visual Experience
+## 🎨 Sovereign Design System
 
-<p align="center">
-  The interface adapts fluidly to your device and system theme preferences.
-</p>
+The application has migrated away from utility frameworks to a custom, highly-optimized **Vanilla CSS** architecture (`style.css`).
 
-<p align="center">
-  <strong>Desktop Command Center</strong>
-</p>
-
-<p align="center">
-  <img src="public/screenshot-desktop-light.webp" width="48%" />
-  &nbsp;
-  <img src="public/screenshot-desktop-dark.webp" width="48%" />
-</p>
-
-<br />
-
-<p align="center">
-  <strong>Mobile Operations</strong>
-</p>
-
-<p align="center">
-  <img src="public/screenshot-mobile-light.webp" width="28%" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="public/screenshot-mobile-dark.webp" width="28%" />
-</p>
+- **Theme Engine**: Real-time HSL variable injection for seamless Light/Dark mode transitions.
+- **Glassmorphism**: Hardware-accelerated blurs and translucency effects.
+- **Fluid Topology**: Layouts that adapt continuously from mobile viewports to ultra-wide desktop dashboards.
+- **Micro-Interactions**: Haptic feedback patterns (vibration) synchronized with visual cues.
 
 ---
 
-## Architectural Components
+## 🏗️ Technical Stack
 
-- **Logic**: Vue 3 + TypeScript
-- **Aesthetics**: Tailwind CSS (Sovereign Design System)
-- **State**: Reactive Composables + IndexedDB (Local Cache)
-- **Validation**: Valibot (Dynamic API Inflation)
-- **Testing**: Vitest + JSDOM
+| Layer | Technology | Description |
+| :--- | :--- | :--- |
+| **Core** | **Vue 3** | Composition API (`<script setup>`) for maximum type inference. |
+| **Language** | **TypeScript** | Strict mode enabled for 100% type safety. |
+| **State** | **Composables** | Decentralized, atomic state management (No Pinia/Vuex overhead). |
+| **Network** | **GasClient** | Specialized bridge for communicating with Google Apps Script. |
+| **Schema** | **Valibot** | Runtime payload validation to ensure data integrity. |
+| **PWA** | **Vite PWA** | Service Worker registration, asset caching, and offline support. |
+| **Testing** | **Vitest** | Unit and component testing with JSDOM environment. |
 
 ---
 
-## Development
+## 📂 Project Structure
 
-<details>
-<summary>Local Development Environment</summary>
+The codebase follows a functional "Domain-Driven" organization within `src/composables` while keeping UI components atomic.
+
+```text
+src/
+├── api/             # gasClient.ts (The HEADLESS Bridge)
+├── components/      # Atomic UI elements (Buttons, Cards, Inputs)
+├── composables/     # The "Brain" - All business logic lives here
+│   ├── useClashData.ts    # Main data hydration
+│   ├── useHeadhunter.ts   # Recruitment logic
+│   └── useTheme.ts        # Design system controller
+├── views/           # Page-level orchestration (Router targets)
+├── style.css        # The Sovereign Design System (Global Variables)
+└── sw.ts            # Service Worker logic (Offline caching)
+```
+
+---
+
+## 🚀 Development
 
 ### Prerequisites
-- Node.js (v20+)
-- pnpm (v9+)
+- Node.js `v20+`
+- pnpm `v9+`
 
-### Execution
-To start the Vite development server with Hot Module Replacement:
+### Quick Start
 
 ```bash
+# Install dependencies
+pnpm install
+
+# Start local development server (Hot Module Replacement)
 pnpm dev
+# > Available at http://localhost:5173
 ```
 
-The application will be available at `http://localhost:5173`.
+### Environment Setup
+Create a `.env` file in the root directory to link to your backend:
 
-### Environment Configuration
-Ensure a `.env` file exists in the `Frontend-PWA/` root with `VITE_GAS_URL` pointing to your Google Apps Script deployment.
-
-</details>
+```ini
+# URL of your Google Apps Script Web App execution
+VITE_GAS_URL=https://script.google.com/macros/s/.../exec
+```
 
 ---
 
-## Quality Assurance
+## 🧪 Quality Assurance
 
-We maintain a 100% logic coverage goal for all business logic and reactive states.
+The project adheres to strict testing standards to prevent regression in critical clan operations.
 
 ```bash
-pnpm test                # Run unit tests
-pnpm test:ui             # Visual test runner
-pnpm test:coverage       # Generate coverage reports
+pnpm test          # Run unit logic tests
+pnpm test:ui       # Open the Vitest UI dashboard
+pnpm type-check    # Verify TypeScript types
 ```
-
-> **Note**: The project is configured with a `jsdom` global setup. Ensure `vitest.setup.ts` is present for hardware/API mocking.
 
 ---
 
-## System Resilience
+## 📱 Mobile-First Features
 
-The client implements several "Self-Healing" patterns:
-
-- **Reactive Integrity**: Direct reactive state access without `.value` pitfalls
-- **Double-Unwrap Protection**: Robust API envelope handling in `gasClient.ts`
-- **Offline Persistence**: Automatic SWR (Stale-While-Revalidate) caching via IndexedDB
+- **Installable**: Meets all PWA criteria for installation on iOS and Android.
+- **Offline Capable**: Views cache automatically (`Stale-While-Revalidate` strategy).
+- **Haptics**: Uses `navigator.vibrate` for tactile feedback on interactions.
+- **Deep Linking**: Supports URL routing for sharing specific clan profiles or searches.
 
 ---
 
