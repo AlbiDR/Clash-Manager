@@ -1,6 +1,7 @@
 {
   "name": "clash-manager-monorepo",
   "version": "1.0.0",
+  "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
     "deploy": "pnpm run deploy:gas",

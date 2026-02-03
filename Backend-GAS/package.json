@@ -1,6 +1,7 @@
 {
   "name": "clash-manager-backend",
   "version": "1.0.0",
+  "license": "GPL-3.0-only",
   "description": "Backend GAS logic",
   "scripts": {
     "build": "./deploy.sh",
