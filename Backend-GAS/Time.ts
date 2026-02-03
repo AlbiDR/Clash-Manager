@@ -124,7 +124,22 @@ var Time: ITime = {
         if (!isNaN(isoDate.getTime())) return isoDate;
     }
 
-    // 3. Try dd/MM/yyyy HH.mm.ss parsing (Project Standard compatible format)
+    // 3. Try dd/MM/yyyy (Project Standard without time)
+    // Matches "30/01/2026" using dots, colons, or spaces
+    const matchNoTime = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})$/);
+    if (matchNoTime) {
+        const day = parseInt(matchNoTime[1], 10);
+        const month = parseInt(matchNoTime[2], 10) - 1;
+        const year = parseInt(matchNoTime[3], 10);
+        
+        // Validation:
+        if (month < 0 || month > 11 || day < 1 || day > 31) return new Date(0); 
+        
+        const date = new Date(year, month, day, 0, 0, 0); // No time, default to midnight
+        return isNaN(date.getTime()) ? new Date(0) : date;
+    }
+
+    // 4. Try dd/MM/yyyy HH.mm.ss parsing (Project Standard compatible format)
     // Matches "30/01/2026 13:42" or "30 01 2026 13 42 56" using dots, colons, or spaces
     const match = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})\s+(\d{1,2})[:.\s](\d{2})(?:[:.\s](\d{2}))?$/);
     if (match) {
