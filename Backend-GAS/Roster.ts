@@ -148,7 +148,7 @@ const Roster: IRoster = {
           historyString: Array.from(pWarHistory.entries())
             .sort((a,b) => b[0].localeCompare(a[0]))
             .map(([wk,f]) => `${f} ${wk}`)
-            .join(" , "),
+            .join(" | "),
           scores,
           cleanKey: m.tag.replace("#", "").trim().toLowerCase()
         });
