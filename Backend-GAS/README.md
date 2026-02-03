@@ -68,7 +68,7 @@ Required environment variables in **Project Settings > Script Properties**:
 - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
 
 ### 2. Initial Setup
-Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the **Clan Manager > Admin > Reset Triggers** menu) to initialize the automation suite.
+Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadheet's toolbar) to initialize the automation suite.
 
 ---
 
