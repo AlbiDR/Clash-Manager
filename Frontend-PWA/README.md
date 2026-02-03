@@ -6,7 +6,7 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 
 ---
 
-## 🎨 Sovereign Design System
+## Sovereign Design System
 
 The application has migrated away from utility frameworks to a custom, highly-optimized **Vanilla CSS** architecture (`style.css`).
 
@@ -17,7 +17,7 @@ The application has migrated away from utility frameworks to a custom, highly-op
 
 ---
 
-## 🏗️ Technical Stack
+## Technical Stack
 
 | Layer | Technology | Description |
 | :--- | :--- | :--- |
@@ -31,7 +31,7 @@ The application has migrated away from utility frameworks to a custom, highly-op
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 The codebase follows a functional "Domain-Driven" organization within `src/composables` while keeping UI components atomic.
 
@@ -50,7 +50,7 @@ src/
 
 ---
 
-## 🚀 Development
+## Development
 
 ### Prerequisites
 - Node.js `v20+`
@@ -77,7 +77,7 @@ VITE_GAS_URL=https://script.google.com/macros/s/.../exec
 
 ---
 
-## 🧪 Quality Assurance
+## Quality Assurance
 
 The project adheres to strict testing standards to prevent regression in critical clan operations.
 
@@ -89,7 +89,7 @@ pnpm type-check    # Verify TypeScript types
 
 ---
 
-## 📱 Mobile-First Features
+## Mobile-First Features
 
 - **Installable**: Meets all PWA criteria for installation on iOS and Android.
 - **Offline Capable**: Views cache automatically (`Stale-While-Revalidate` strategy).
