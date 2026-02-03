@@ -37,9 +37,10 @@ The central nervous system that manages automation lifecycles.
 
 ### 3. Scoring Kernel (`Scoring_Kernel.ts`)
 A pure mathematical engine isolated from the rest of the system.
-- **Heritage Scoring**: Awards "momentum" bonuses to new recruits.
-- **Inertia Decay**: Applies exponential decay to inactive members' scores.
-- **Dual-Metric**: Calculates both `Raw Score` (Lifetime Achievement) and `Performance Score` (Current Form).
+- **Performance Metrics**: Calculates member value via `Raw Performance` (Lifetime) and `Final Performance` (Decayed + Heritage).
+- **Potential Metrics**: Evaluates recruits via `Raw Potential` (Unweighted) and `Final Potential` (Normalized against clan benchmark).
+- **Mechanics**: Implements **Heritage** (momentum bonuses) and **Inertia** (inactivity decay).
+
 
 ---
 
