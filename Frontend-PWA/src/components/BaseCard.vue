@@ -108,9 +108,8 @@ function handleScoreClick(e: Event) {
   box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   will-change: transform, box-shadow, margin;
 
-  /* ⚡ PERFORMANCE: Strict containment for Speed Index */
-  contain: layout paint style;
-  contain-intrinsic-size: auto 76px;
+  /* ⚡ PERFORMANCE: Removed 'paint' containment to allow shadow/scale bleed */
+  contain: layout style;
   content-visibility: auto;
 }
 
