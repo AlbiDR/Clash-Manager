@@ -1,85 +1,83 @@
-# Clash Manager — Backend Engine
+# Clash Manager — Google Apps Script Engine
 
-[![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
+[![Version](https://img.shields.io/badge/Version-13.0.0-0F9D58?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
-The **Data Processing Core**. A lean, modular Google Apps Script engine that orchestrates high-volume ETL, multi-dimensional performance scoring, and a high-availability headless JSON API.
-
----
-
-## Module Architecture
-
-| Module         | Filename               | Responsibility                                    |
-| :------------- | :--------------------- | :------------------------------------------------ |
-| **Constants**  | `Configuration.ts`     | Weights, thresholds, and schema definitions       |
-| **Utilities**  | `Utilities.ts`         | Shared helper library, API engine, and week logic |
-| **Logic**      | `Scoring.ts`     | Canonical performance algorithms and decay logic  |
-| **Scrutiny**   | `Logger.ts`            | Data persistence, rolling history, and cleanup    |
-| **Ranking**    | `Leaderboard.ts`       | History aggregation and normalization logic       |
-| **Scanning**   | `Headhunter.ts`         | Tournament scanning and candidate identification  |
-| **Control**    | `Orchestrator.ts`      | Automation triggers and master execution protocol |
-| **Public API** | `API_Public.ts`        | Routing, handshake, and error handling            |
-| **Controller** | `Controller_Webapp.ts` | Payload generation, compression, and caching      |
+The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the "Brain" of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
 ---
 
-## Deployment & Setup
+## 🏛️ System Architecture
 
-### Script Configuration
+The codebase adheres to the **"Clean Stack"** philosophy, organized into distinct layers:
 
-Set the following **Project Script Properties** in the Apps Script Editor (`Project Settings > Script Properties`) to activate the engine:
-
-- `ClanTag`: Your primary clan tag (Format: `2PP...`)
-- `WebAppUrl`: The URL of this deployment (for cross-service calls)
-- `CRK1..CRKn`: Clash Royale API keys (Multiple keys enable round-robin load balancing)
-
-### Continuous Deployment (GitHub Actions)
-
-To enable automated deployments via GitHub Actions, you must configure the following **Repository Secrets** (`Settings > Secrets and variables > Actions`):
-
-| Secret Name    | Description                                                                     |
-| :------------- | :------------------------------------------------------------------------------ |
-| `SCRIPT_ID`    | The Script ID found in **Apps Script > Project Settings > Script ID**.          |
-| `CLASPRC_JSON` | The content of your local `~/.clasprc.json` file (after running `clasp login`). |
-
-### Triggers & Automation
-
-The engine operates as a clinical cron-daemon. While you can manually configure triggers, the recommended approach is the **Automated Setup**:
-
-1. Open the linked Google Sheet.
-2. Navigate to ** Clan Manager >  Setup Triggers**.
-
-This automatically configures the following lifecycle:
-
-- `taskWarmUpWorker`: Every **10 minutes** (Prevents Render Worker sleep).
-- `taskFastScout`: Every **30 minutes** (Headhunter scanning).
-- `taskUpdateDatabase`: Every **1 hour** (Main ETL and scoring).
+| Layer | Responsibility | Key Modules |
+| :--- | :--- | :--- |
+| **Orchestrator** | Event handling, cron jobs, and master protocol execution | `Orchestrator.ts`, `Triggers.ts` |
+| **Registry** | Dependency injection and service location | `Registry.ts`, `Core.ts` |
+| **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts` |
+| **Modules** | Domain-specific features (MVCS Pattern) | `Roster`, `Headhunter`, `Database` |
+| **Views** | Sheet manipulation and UI rendering | `View.ts`, `*_View.ts` |
+| **Stores** | Data persistence and state management | `Store.ts`, `*_Store.ts` |
 
 ---
 
-## Headless API Handshake
+## 🧩 Key Components
 
-The backend communicates via a standardized JSON envelope consumed by the Vue 3 Frontend (PWA).
+### 1. Network Engine (`Network.ts`)
+A sophisticated API gateway that manages the limited Google Apps Script quotas.
+- **Multi-Tier Caching**: Uses L1 (Execution Memory) and L2 (ScriptCache) to deduplicate requests.
+- **Remote Delegation**: Automatically offloads high-volume batches (>5 requests) and heavy computations to the **Backend-Worker** (Cloud Run).
+- **Smart Rotation**: Manages a pool of API keys with automatic failure handling and cooling periods.
 
-### Actions
+### 2. The Orchestrator (`Orchestrator.ts`)
+The central nervous system that manages automation lifecycles.
+- **Master Protocol**: `dispatchMaster()` executes the full ETL pipeline sequentially (Ingest -> Analyze -> Scout -> Clean).
+- **Self-Healing**: Automatically detects and repairs broken triggers or UI controls.
+- **Mobile Controls**: Listens for checkbox interactions on specific sheets (`handleMobileEdit`) to trigger on-demand syncs.
 
-- `GET ?action=getwebappdata`: Returns the unified matrix payload (LB + HH)
-- `GET ?action=ping`: Health check, versioning info, and latency metrics
-- `POST { action: 'dismissRecruits', ids: [...] }`: Mutation for recruiter state
+### 3. Scoring Kernel (`Scoring_Kernel.ts`)
+A pure mathematical engine isolated from the rest of the system.
+- **Heritage Scoring**: Awards "momentum" bonuses to new recruits.
+- **Inertia Decay**: Applies exponential decay to inactive members' scores.
+- **Dual-Metric**: Calculates both `Raw Score` (Lifetime Achievement) and `Performance Score` (Current Form).
 
 ---
 
-## Scaling Engine
+## ⚙️ Automation Tasks
 
-For high-volume scanning (1000+ members/candidates), the engine supports the **Remote Worker Protocol**.
-By setting `RemoteWorkerUrl` in the script properties, the GAS engine offloads bulk URL fetching to an external compute layer (e.g., Cloud Run), bypassing Google's `UrlFetchApp` daily quotas.
+The system runs on a precise cron schedule configured by the Orchestrator:
+
+| Task Function | Frequency | Purpose |
+| :--- | :--- | :--- |
+| `taskWarmUpWorker` | **10 Mins** | Keeps the remote Cloud Run instance active to prevent cold starts. |
+| `taskFastScout` | **30 Mins** | Rapidly scans tournament brackets for new potential recruits (Headhunter). |
+| `taskUpdateDatabase` | **1 Hour** | Ingests clan war history and performs deep data deduplication. |
+| `taskUpdateRoster` | **1 Hour** | Recalculates member scores, updates ranks, and enforces roles. |
 
 ---
 
-## Reliability & Safety
+## 📲 Deployment & Configuration
 
-- **Idempotency**: All ETL jobs are safely re-runnable without data duplication
-- **Matrix Normalization**: Data is transported in compressed matrices to minimize GAS execution time and client download weight
-- **Fail-Safe Scoring**: Scoring logic is isolated and unit-tested to ensure performance metrics stay accurate even with partial API data
+### 1. Script Properties
+Required environment variables in **Project Settings > Script Properties**:
+
+- `CLAN_TAG`: Target clan tag (e.g., `#2PP...`).
+- `API_KEYS`: JSON array of Clash Royale API keys.
+- `REMOTE_WORKER_URL`: Endpoint of the Cloud Run worker (e.g., `https://clash-worker-xyz.run.app`).
+- `REMOTE_WORKER_SECRET`: Auth token for worker communication.
+
+### 2. Initial Setup
+Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the **Clan Manager > Admin > Reset Triggers** menu) to initialize the automation suite.
+
+---
+
+## 📊 Data Flow & Logic
+
+1.  **Ingestion**: `Database` module pulls raw battle logs via `Network` (Worker Proxy).
+2.  **Processing**: `Scoring_Kernel` computes metrics based on `Configuration` weights.
+3.  **Persistence**: `Store` modules save state to Sheet Properties and hidden JSON structures.
+4.  **Presentation**: `View` modules render pixel-perfect, hygiene-enforced tables in Google Sheets.
+5.  **Recruitment**: `Headhunter` module scans external tournaments and updates the "scout feed".
 
 ---
 
