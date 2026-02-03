@@ -1,6 +1,6 @@
 # Clash Manager — Client Core (PWA)
 
-[![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
+[![Client](https://img.shields.io/badge/Client-v10.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
 The **Operational Command Center**. A high-performance, offline-first Vue 3 application that serves as the primary interface for clan management. Built as an installable **Progressive Web App (PWA)** (recommended to be minted through Google Chrome to become a WebAPK), it bridges the gap between complex data operations and a fluid, native-like user experience.
 
