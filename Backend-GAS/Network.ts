@@ -245,6 +245,11 @@ var Network: INetwork = {
    *
    * High-volume requests (>5 URLs) are prioritized for Remote Worker delegation to preserve
    * the limited Google Apps Script UrlFetchApp quota for critical operations.
+   *
+   * @param urls - Array of fully qualified API endpoints to fetch.
+   * @param scoring - Optional weights for server-side recruit scoring.
+   * @returns Array of parsed JSON responses corresponding to the input URLs.
+   * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchRoyaleAPI(urls: string[], scoring = null) {
     if (!urls || urls.length === 0) return [];
@@ -312,6 +317,9 @@ var Network: INetwork = {
 
     // 5. Execution Strategy
     let useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
+    // BATCH SIZE: 100
+    // Intent: Balancing request overhead with Remote Worker payload limits.
+    // Smaller batches increase overhead; larger batches risk memory/timeout issues.
     const BATCH_SIZE = 100;
 
     for (let c = 0; c < validUrls.length; c += BATCH_SIZE) {
@@ -370,7 +378,8 @@ var Network: INetwork = {
               console.warn(`Network: Batch failed: ${e.message}.`);
               if (isHighVolume) break; // No retry for high-volume local failures.
 
-              // JITTER: Brief sleep before retry to allow transient network issues to resolve.
+              // JITTER: Brief sleep before retry.
+              // Intent: Allow transient network issues to resolve during local fallback.
               Utilities.sleep(1500);
               responses = UrlFetchApp.fetchAll(localRequests);
             }
@@ -434,11 +443,17 @@ var Network: INetwork = {
   },
 
   /**
+   * CLAN DATA AGGREGATOR
+   *
    * @remarks
    * Fetches a complete clan snapshot (Members + Race + History).
    * Prioritizes the Remote Worker's optimized `/clan/full` endpoint which
    * aggregates these data points into a single network call, significantly
    * reducing total execution time and quota usage.
+   *
+   * @param cleanTag - The encoded clan tag (including %23).
+   * @returns A structured result containing members, race, and history data.
+   * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchClanDataSmart(cleanTag) {
     const cacheKey = `clan_full_${cleanTag.replace(/%/g, '_')}`;
@@ -498,6 +513,18 @@ var Network: INetwork = {
     return { members, race, history: null, log: log || null };
   },
 
+  /**
+   * REMOTE DATA PROXY
+   *
+   * @remarks
+   * Retrieves public JSON data via the remote worker's proxy.
+   * Utilizes worker-cached data to bypass direct API rate limits and
+   * preserve the local GAS UrlFetchApp quota.
+   *
+   * @param type - The data type to retrieve ('members' or 'warlog').
+   * @returns Array of transformed objects or null if the worker is offline.
+   * @warning Consumes UrlFetchApp quota for the worker handshake.
+   */
   fetchPublicJson(type) {
     if (!this.remoteWorkerHealthy()) return null;
     try {
@@ -535,6 +562,10 @@ var Network: INetwork = {
    *
    * This ensures the system remains responsive even if the worker is cold-starting
    * or experiencing temporary latency.
+   *
+   * @param force - If true, bypasses the health cache and performs a fresh handshake.
+   * @returns Boolean indicating if the worker is reachable and healthy.
+   * @warning Consumes UrlFetchApp and PropertiesService quotas.
    */
   remoteWorkerHealthy(force: boolean = false) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
@@ -606,6 +637,18 @@ var Network: INetwork = {
     return isHealthy;
   },
 
+  /**
+   * REMOTE KEY AUDIT
+   *
+   * @remarks
+   * Audits a pool of API keys using the remote worker to avoid local rate limits.
+   * Delegation to the worker prevents GAS from being throttled by Supercell's
+   * IP-based rate limiting during high-volume key validation.
+   *
+   * @param keys - Array of key objects { name, value } to validate.
+   * @returns Audit results with success/error status per key.
+   * @warning Consumes UrlFetchApp quota.
+   */
   auditKeysRemote(keys: { name: string; value: string }[]) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
     try {
@@ -638,6 +681,21 @@ var Network: INetwork = {
     } catch(e: any) { return null; }
   },
 
+  /**
+   * REMOTE TOURNAMENT SCANNER
+   *
+   * @remarks
+   * Scans global tournaments for potential recruits using the remote worker.
+   * This high-concurrency operation is delegated to the worker to circumvent
+   * GAS execution time limits and UrlFetchApp daily quotas.
+   *
+   * @param tourneyTags - List of tournament tags to scan.
+   * @param minTrophies - Minimum trophy threshold for filtering.
+   * @param blacklistSet - Set or array of player tags to ignore.
+   * @param scoring - Optional weights for calculating recruit potential.
+   * @returns List of scored player candidates.
+   * @warning Consumes UrlFetchApp quota.
+   */
   scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, scoring = null) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
     
