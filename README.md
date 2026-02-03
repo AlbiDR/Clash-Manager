@@ -57,7 +57,7 @@ Not all members are equal. The system replaces intuition with a **Complex Valuat
 This allows leadership to objectively identify the clan's bottom players for rotation and the top clan members for promotion, free from bias.
 
 ### The Headhunter Protocol
-Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuously scans global tournament brackets to populate a pool of high-potential, clanless players.
+Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuously scans global tournament brackets, and their individual battles, to populate a pool of high-potential, clanless players.
 - **Smart Filtering**: Automatically rejects players who don't meet the clan's exact "Hybrid Benchmark".
 - **Batch Operations**: The PWA allows leaders to select promising recruits and trigger a **Batch Open** flow, launching their in-game profiles sequentially for rapid-fire inviting.
 
