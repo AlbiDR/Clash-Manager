@@ -6,7 +6,7 @@ The **Operational Core**. A high-performance, event-driven Google Apps Script ru
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 The codebase adheres to the **"Clean Stack"** philosophy, organized into distinct layers:
 
@@ -21,7 +21,7 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 
 ---
 
-## 🧩 Key Components
+## Key Components
 
 ### 1. Network Engine (`Network.ts`)
 A sophisticated API gateway that manages the limited Google Apps Script quotas.
@@ -43,7 +43,7 @@ A pure mathematical engine isolated from the rest of the system.
 
 ---
 
-## ⚙️ Automation Tasks
+## Automation Tasks
 
 The system runs on a precise cron schedule configured by the Orchestrator:
 
@@ -56,7 +56,7 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 
 ---
 
-## 📲 Deployment & Configuration
+## Deployment & Configuration
 
 ### 1. Script Properties
 Required environment variables in **Project Settings > Script Properties**:
@@ -71,7 +71,7 @@ Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the 
 
 ---
 
-## 📊 Data Flow & Logic
+## Data Flow & Logic
 
 1.  **Ingestion**: `Database` module pulls raw battle logs via `Network` (Worker Proxy).
 2.  **Processing**: `Scoring_Kernel` computes metrics based on `Configuration` weights.
