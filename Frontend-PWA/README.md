@@ -13,7 +13,7 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 </p>
 
 <p align="center">
-  <strong>Desktop Command Center</strong>
+  <strong>Desktop View</strong>
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 <br />
 
 <p align="center">
-  <strong>Mobile Operations</strong>
+  <strong>Mobile View</strong>
 </p>
 
 <p align="center">
