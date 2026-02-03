@@ -159,10 +159,10 @@ const DatabaseStore = {
     let maxSortNumber = 0;
     
     if (lastRow >= startRow) {
-        // SCAN WINDOW: Increased to 1000 to handle existing duplication bloat
-        // A 50-member clan with 24 updates/day = 1200 rows. 1000 is a safe middle ground
-        // to find Today's entries even if partially bloated.
-        const scanSize = 1000; 
+        // SCAN WINDOW: Increased to 3000 to handle existing duplication bloat
+        // A 50-member clan with 24 updates/day = 1200 rows. 3000 ensures roughly 2-3 days of
+        // margin to find Today's entries even if partially bloated.
+        const scanSize = 3000; 
         const readStart = Math.max(startRow, lastRow - scanSize + 1);
         const headers = DatabaseView.getHeaders(); 
         
@@ -278,10 +278,14 @@ const DatabaseStore = {
     
     SpreadsheetApp.flush();
 
+    // 6. AUTO-DEDUPLICATE
+    // Ensure idempotency by removing any redundant entries created during race conditions
+    const dedupRes = this.deduplicateDatabase(sheet);
+
     return {
         updated: individualUpdates.length,
         appended: newRowsToAppend.length,
-        pruned: 0 
+        pruned: dedupRes.pruned
     };
   },
 

@@ -142,6 +142,7 @@ const Database: IDatabase = {
                 `STATUS:     SUCCESS`,
                 `MERGED:     ${updateResult.updated} Members`,
                 `APPENDED:   ${updateResult.appended} Members`,
+                `PRUNED:     ${updateResult.pruned} Rows`,
                 `TOTAL ROWS: ${finalLastRow}`,
                 `RUNTIME:    ${totalDuration}s`,
                 `─`,

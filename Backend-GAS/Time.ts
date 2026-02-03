@@ -96,7 +96,7 @@ var Time: ITime = {
     }
     
     const s = String(val).trim();
-    if (!s || s === "N/A" || s === "-") return new Date();
+    if (!s || s === "N/A" || s === "-") return new Date(0);
 
     // 1. Try numeric parsing (Spreadsheet Serial vs Unix Timestamps)
     const num = Number(val);
