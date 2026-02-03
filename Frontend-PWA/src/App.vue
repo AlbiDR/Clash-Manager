@@ -8,6 +8,7 @@ import { useConnectionStatus } from "./composables/useConnectionStatus";
 import FloatingDock from "./components/FloatingDock.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ErrorBoundary from "./components/ErrorBoundary.vue";
+import { useShowcaseMode } from "./composables/useShowcaseMode";
 
 const { syncStatus, refresh, loadLocal } = useClashData();
 // Initialize Headhunter (starts watchers for notifications/badge)
@@ -25,6 +26,8 @@ const {
   setSyncing,
   isOnline,
 } = useConnectionStatus();
+
+const { isShowcaseMode } = useShowcaseMode();
 
 watch(syncStatus, (newStatus, oldStatus) => {
   if (oldStatus === "syncing" && newStatus === "success") {
@@ -80,7 +83,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'showcase-frame': isShowcaseMode }">
     <div class="connectivity-strip" :class="connectionState"></div>
 
     <main class="app-container">
@@ -103,6 +106,17 @@ onMounted(() => {
   min-height: 100vh;
   background-color: var(--sys-color-background);
   overflow-x: hidden;
+  transition: outline 0.3s ease;
+}
+
+/* 🖼️ SHOWCASE FRAME: 1px clinical boundary for screenshots */
+.app-shell.showcase-frame {
+  outline: 1px solid #000000;
+  outline-offset: -1px;
+  z-index: 9999;
+}
+:root.dark .app-shell.showcase-frame {
+  outline: 1px solid #ffffff;
 }
 
 /* ⚡ TRANSITION: Smooth transform for page container */
