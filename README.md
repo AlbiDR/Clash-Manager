@@ -54,7 +54,7 @@ Not all members are equal. The system replaces intuition with a **Complex Valuat
 - **Performance Score**: Current form, momentum, and reliability.
 - **Inertia**: Penalties for stagnation and inactivity.
 
-This allows leadership to objectively identify the "Bottom 10%" for rotation and the "Top 10%" for promotion, free from bias.
+This allows leadership to objectively identify the clan's bottom players for rotation and the top clan members for promotion, free from bias.
 
 ### The Headhunter Protocol
 Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuously scans global tournament brackets to populate a pool of high-potential, clanless players.
