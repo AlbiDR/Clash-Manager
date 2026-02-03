@@ -3,10 +3,14 @@ import { ref, nextTick } from "vue";
 
 // --- Mocks ---
 const mockFetchRemote = vi.hoisted(() => vi.fn());
+const mockLoadCache = vi.hoisted(() => vi.fn());
+const mockSaveCache = vi.hoisted(() => vi.fn());
 const mockGenerateMockData = vi.hoisted(() => vi.fn());
 
 vi.mock("../../api/gasClient", () => ({
   fetchRemote: mockFetchRemote,
+  loadCache: mockLoadCache,
+  saveCache: mockSaveCache,
 }));
 
 vi.mock("../../utils/mockData", () => ({
@@ -56,7 +60,6 @@ vi.mock("../useConnectionStatus", () => ({
 }));
 
 describe("useClashData", () => {
-  const SNAPSHOT_KEY = "cm_hydration_snapshot";
   let useClashData: any;
 
   beforeEach(async () => {
@@ -83,6 +86,9 @@ describe("useClashData", () => {
       hh: [],
       timestamp: Date.now(),
     });
+
+    // Default saveCache mock (returns promise)
+    mockSaveCache.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -101,36 +107,36 @@ describe("useClashData", () => {
   });
 
   describe("loadLocal", () => {
-    it("hydrates data from localStorage if available", () => {
+    it("hydrates data from IndexedDB if available", async () => {
       const mockData = { lb: [], hh: [], timestamp: Date.now() };
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(mockData));
+      mockLoadCache.mockResolvedValue(mockData);
 
       const { data, isHydrated, loadLocal } = useClashData();
-      loadLocal();
+      await loadLocal();
 
       expect(isHydrated.value).toBe(true);
       expect(data.value).toEqual(mockData);
+      expect(mockLoadCache).toHaveBeenCalled();
     });
 
-    it("handles corrupt localStorage data", () => {
-      localStorage.setItem(SNAPSHOT_KEY, "invalid-json");
+    it("handles missing/null cache data", async () => {
+      mockLoadCache.mockResolvedValue(null);
       const { data, isHydrated, loadLocal } = useClashData();
 
-      loadLocal();
+      await loadLocal();
 
       expect(isHydrated.value).toBe(true);
       expect(data.value).toBeNull();
-      expect(localStorage.getItem(SNAPSHOT_KEY)).toBeNull();
     });
 
     it("triggers refresh if data is stale (> 5 mins)", async () => {
       const staleTime = Date.now() - (5 * 60 * 1000 + 1000);
       const staleData = { lb: [], hh: [], timestamp: staleTime };
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(staleData));
+      mockLoadCache.mockResolvedValue(staleData);
 
       const { loadLocal } = useClashData();
 
-      loadLocal();
+      await loadLocal();
 
       expect(mockFetchRemote).toHaveBeenCalled();
     });
@@ -263,17 +269,17 @@ describe("useClashData", () => {
     it("updates local state when DATA_SYNC_SUCCESS is broadcast", async () => {
       const { data, lastSyncTime } = useClashData();
       const newData = { lb: [], hh: [], timestamp: Date.now() + 1000 };
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(newData));
+      mockLoadCache.mockResolvedValue(newData);
 
       if (broadcastStore.handler) {
-        broadcastStore.handler({ type: "DATA_SYNC_SUCCESS", timestamp: newData.timestamp });
+        await broadcastStore.handler({ type: "DATA_SYNC_SUCCESS", timestamp: newData.timestamp });
       }
 
       expect(data.value).toEqual(newData);
       expect(lastSyncTime.value).toBe(newData.timestamp);
     });
 
-    it("saves to localStorage on successful sync", async () => {
+    it("does not write to localStorage on successful sync (now in gasClient)", async () => {
       const remoteData = { lb: [], hh: [], timestamp: 777 };
       mockFetchRemote.mockResolvedValue(remoteData);
 
@@ -282,20 +288,20 @@ describe("useClashData", () => {
       vi.advanceTimersByTime(800);
       await refreshPromise;
 
-      const saved = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "{}");
-      expect(saved).toEqual(remoteData);
+      const saved = localStorage.getItem("cm_hydration_snapshot");
+      expect(saved).toBeNull();
     });
   });
 
   describe("updateLocalData", () => {
-    it("updates state and localStorage", () => {
+    it("updates local state and persists to IndexedDB", () => {
       const { data, updateLocalData } = useClashData();
       const newData = { lb: [], hh: [], timestamp: 888 };
 
       updateLocalData(newData);
 
       expect(data.value).toEqual(newData);
-      expect(JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "{}")).toEqual(newData);
+      expect(mockSaveCache).toHaveBeenCalledWith(newData);
     });
   });
 });

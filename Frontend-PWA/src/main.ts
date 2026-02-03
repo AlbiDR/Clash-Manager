@@ -106,7 +106,7 @@ async function bootstrap() {
     const storagePersistence = useStoragePersistence();
 
     // ⚡ INSTANT BOOT: Load local cache immediately for LCP
-    clashData.loadLocal();
+    await clashData.loadLocal();
     
     // 🛡️ CONCURRENCY FIX: Start API Handshake FIRST.
     // Do NOT start background sync (heavy data fetch) until handshake clears.

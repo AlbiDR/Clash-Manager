@@ -152,6 +152,15 @@ describe("formatters", () => {
       expect(parseTimeAgoValue("2mo ago")).toBe(86400);
     });
 
+    it("correctly parses custom Project Standard date format", () => {
+      // Set fixed system time using local date components to match parser behavior
+      const now = new Date(2026, 1, 2, 19, 0, 0); // Feb 2, 2026, 19:00:00
+      vi.setSystemTime(now);
+
+      const customDateStr = "02/02/2026 18.50.00";
+      expect(parseTimeAgoValue(customDateStr)).toBe(10);
+    });
+
     it("returns 99999999 for unknown patterns", () => {
       expect(parseTimeAgoValue("some text")).toBe(99999999);
       expect(parseTimeAgoValue("10 days ago")).toBe(99999999);
