@@ -46,7 +46,7 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 Most clan tools rely on ephemeral API fetches—displaying a snapshot of the present moment that vanishes upon refresh. **Clash Manager is different.**
 
 ### Persistence vs. Ephemerality
-We build a **Persistent Clan Database**. By archiving every war, every donation cycle, and every member interaction, the system constructs a rich historical tapestry. This allows for deep trend analysis, "heritage" tracking for long-term members, and the ability to spot performance decay before it becomes a problem.
+The system builds a **Persistent Clan Database**. By archiving every war, every donation cycle, and every member interaction, the system constructs a rich historical tapestry. This allows for deep trend analysis, "heritage" tracking for long-term members, and the ability to spot performance decay before it becomes a problem.
 
 ### The Valuation Engine
 Not all members are equal. The system replaces intuition with a **Complex Valuation Metric** that sorts members by their true worth.
