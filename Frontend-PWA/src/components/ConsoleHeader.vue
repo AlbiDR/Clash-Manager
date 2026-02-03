@@ -172,10 +172,10 @@ function openOverlay() {
 <style scoped>
 .header-wrapper {
   position: sticky;
-  top: 0;
+  top: var(--sys-safe-frame-offset, 0px);
   z-index: 100;
-  padding: 12px 0;
-  padding-top: calc(12px + env(safe-area-inset-top));
+  padding: 12px var(--sys-safe-frame-offset, 0px);
+  padding-top: calc(12px + env(safe-area-inset-top) + var(--sys-safe-frame-offset, 0px));
   box-sizing: border-box;
   transition: padding 0.4s var(--sys-motion-spring);
 }

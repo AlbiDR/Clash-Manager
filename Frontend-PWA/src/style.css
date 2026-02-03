@@ -368,6 +368,9 @@ button:active {
 
   --shape-corner-l: 24px;
   --shape-corner-full: 9999px;
+  
+  /* SAFE FRAME: Offset for fixed/sticky items (default 0) */
+  --sys-safe-frame-offset: 0px;
   /* REFINED ELEVATION: Multi-layered shadows for organic depth */
   --sys-elevation-2: 
     0 4px 12px -2px rgba(0, 0, 0, 0.08),
