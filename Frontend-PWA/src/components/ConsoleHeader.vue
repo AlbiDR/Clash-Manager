@@ -91,7 +91,7 @@ function openOverlay() {
           v-if="status && !loading"
           :type="status.type"
           :text="status.text"
-          @refresh="emit('refresh')"
+          @refresh="$emit('refresh')"
         />
         <div v-else-if="loading" class="sk-pill skeleton-anim"></div>
       </div>
@@ -122,7 +122,7 @@ function openOverlay() {
               :class="{ 'has-info': !!activeSortDescription }"
               @change="
                 (e) =>
-                  emit('update:sort', (e.target as HTMLSelectElement).value)
+                  $emit('update:sort', (e.target as HTMLSelectElement).value)
               "
               aria-label="Sort by"
             >

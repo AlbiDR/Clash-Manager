@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useClashData } from "./composables/useClashData";
 import { useHeadhunter } from "./composables/useHeadhunter";
@@ -9,6 +9,7 @@ import FloatingDock from "./components/FloatingDock.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ErrorBoundary from "./components/ErrorBoundary.vue";
 import { useShowcaseMode } from "./composables/useShowcaseMode";
+import { useRegisterSW } from "virtual:pwa-register/vue";
 
 const { syncStatus, refresh, loadLocal } = useClashData();
 // Initialize Headhunter (starts watchers for notifications/badge)
@@ -48,9 +49,8 @@ watch(isOnline, (online, wasOnline) => {
 });
 
 // 🔄 SMART UPDATE: Automated PWA registration and update logic
-import { useRegisterSW } from "virtual:pwa-register/vue";
-const { needRefresh, updateServiceWorker } = useRegisterSW({
-  onRegistered(r) {
+const { updateServiceWorker } = useRegisterSW({
+  onRegistered(r: any) {
     // Check for updates every hour
     r &&
       setInterval(

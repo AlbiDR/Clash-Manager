@@ -36,14 +36,10 @@ const containerStyle = computed(() => ({
   </div>
 </template>
 
-
 <style scoped>
 .toast-container {
   position: fixed;
   left: 50%;
-  /* Center horizontally using transform instead of full-width overlay */
-  /* margin-left: -50%; removed */
-  /* width: 100%; removed */
   display: flex;
   flex-direction: column;
   align-items: center;
