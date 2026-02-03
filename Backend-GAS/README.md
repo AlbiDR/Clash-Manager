@@ -63,7 +63,7 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 Required environment variables in **Project Settings > Script Properties**:
 
 - `CLAN_TAG`: Target clan tag (e.g., `#2PP...`).
-- `API_KEYS`: JSON array of Clash Royale API keys.
+- `API_KEYS`: JSON array of Clash Royale API keys (comma-separated).
 - `REMOTE_WORKER_URL`: Endpoint of the Render worker (e.g., `https://clash-worker-xyz.onrender.com`).
 - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
 
