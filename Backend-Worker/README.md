@@ -1,67 +1,137 @@
 # Clash Manager — Remote Worker (Cloud Run)
 
-[![Version](https://img.shields.io/badge/Version-10.0.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
+[![Version](https://img.shields.io/badge/Version-10.1.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
-The **Scaling Engine**. A high-concurrency Express.js proxy designed to offload bulk URL fetching from the Google Apps Script environment, circumventing platform quotas and execution timeouts.
+The **Scaling Engine**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas.
 
 ---
 
 ## Technical Specifications
 
-- **Runtime**: Node.js (Express)
-- **Capacity**: Configurable concurrency (default `8`) with automatic retries.
-- **Security**: Supports Bearer token authentication and IAM-restricted invocation.
-
----
-
-## Deployment Workflow
-
-### 1. Build & Push
-
-Deploy the container to Google Container Registry:
-
-```bash
-gcloud builds submit --tag gcr.io/PROJECT_ID/clash-manager-worker
-```
-
-### 2. Provisioning
-
-Deploy to Cloud Run with optimal scaling parameters:
-
-```bash
-gcloud run deploy clash-manager-worker \
-  --image gcr.io/PROJECT_ID/clash-manager-worker \
-  --region us-central1 \
-  --platform managed \
-  --allow-unauthenticated
-```
-
----
-
-## Protocol Interface
-
-The worker operates as a transparent bulk-fetching proxy for the GAS `RemoteWorker` engine.
-
-### `POST /fetch`
-
-**Payload**:
-
-```json
-{
-  "urls": ["https://api.clashroyale.com/...", ...],
-  "apiKeys": ["sk_...", ...]
-}
-```
-
-**Response**:
-A serialized result set containing status codes and parsed JSON/string content for each target URI.
+- **Runtime**: Node.js (Express) with TypeScript.
+- **Architecture**: Stateless, high-concurrency worker pool.
+- **Security**: Bearer token authentication (optional), IAM-restricted invocation, and Smart Key Rotation.
+- **Resilience**: Automatic retries with exponential backoff and jitter.
 
 ---
 
 ## Configuration
 
-- `WORKER_CONCURRENCY`: Adjust based on target API rate limits.
-- `WORKER_TIMEOUT_SEC`: Standardized at `45` seconds to respect serverless request windows.
+The worker behavior is controlled via environment variables:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `WORKER_CONCURRENCY` | `20` | Max concurrent outbound requests. |
+| `WORKER_TIMEOUT_SEC` | `45` | Request timeout in seconds. |
+| `WORKER_RETRIES` | `2` | Number of retry attempts for failed upstream requests. |
+| `PORT` | `8080` | Server listening port. |
+| `API_BASE` | `https://proxy.royaleapi.dev/v1` | Upstream API endpoint. |
+| `API_KEYS` | - | Comma-separated list of fallback Clash Royale API keys. |
+
+---
+
+## API Reference
+
+### 1. System Diagnostics
+
+#### `GET /health`
+Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
+
+**Response:**
+```json
+{
+  "status": "success",
+  "checks": {
+    "upstream": "OK",
+    "pool": { "total": 5, "available": 5, "throttled": 0 },
+    "memory": 102400
+  }
+}
+```
+
+### 2. Batch Operations
+
+#### `POST /fetch`
+The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
+
+**Payload:**
+```json
+{
+  "urls": ["/players/%23TAG1", "/clans/%23TAG2"],
+  "apiKeys": ["sk_..."], // Optional: Overrides server keys
+  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 } // Optional: For player scoring
+}
+```
+
+### 3. Intelligence & Scanning
+
+#### `POST /scan` / `POST /public/scan`
+Scans tournament brackets to discover new recruits. Configurable with blacklists and minimum trophy requirements.
+
+**Payload:**
+```json
+{
+  "tags": ["#TOURNEY1", "#TOURNEY2"],
+  "blacklist": ["#PLAYER1"],
+  "minTrophies": 5000,
+  "scoring": null // Optional: Include weights to auto-score found players
+}
+```
+
+### 4. Clan Data
+
+#### `POST /clan/full`
+Aggregates a complete snapshot of a clan: Members, Current River Race, and aggregated War History.
+
+**Payload:**
+```json
+{
+  "tag": "#CLAN_TAG",
+  "apiKeys": []
+}
+```
+
+#### `POST /clan/api`
+Fetches a specific slice of clan data (`members` or `warlog`) and transforms it for frontend consumption.
+
+**Payload:**
+```json
+{
+  "tag": "#CLAN_TAG",
+  "type": "members" // or "warlog"
+}
+```
+
+### 5. Administration
+
+#### `POST /audit`
+Validates a list of API keys against the upstream provider to check for validity and quotas.
+
+**Payload:**
+```json
+{
+  "apiKeys": ["sk_key1", "sk_key2"]
+}
+```
+
+---
+
+## Deployment
+
+Deploy directly to Google Cloud Run (Source-based deployment or Buildpacks).
+
+```bash
+# Submit build to Container Registry (uses Google Cloud Buildpacks)
+gcloud builds submit --tag gcr.io/PROJECT_ID/clash-manager-worker
+
+# Deploy to Cloud Run
+gcloud run deploy clash-manager-worker \
+  --image gcr.io/PROJECT_ID/clash-manager-worker \
+  --region us-central1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --set-env-vars WORKER_CONCURRENCY=20
+```
 
 ---
 
