@@ -10,6 +10,7 @@
 Clash Manager is a production-grade, distributed architecture designed to automate the administrative complexities of competitive Clash Royale clans. It orchestrates a synchronized stack comprising a serverless orchestration engine, a high-concurrency proxy worker, and an offline-first progressive web application.
 
 ---
+<br />
 
 ## Visual Experience
 
@@ -24,7 +25,6 @@ Clash Manager is a production-grade, distributed architecture designed to automa
   <br />
   <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
 </div>
-
 <br />
 
 <div align="center">
@@ -34,9 +34,8 @@ Clash Manager is a production-grade, distributed architecture designed to automa
   <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
 </div>
 
-<br />
-
 ---
+<br />
 
 ## Mission Architecture
 
@@ -59,6 +58,7 @@ Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuo
 - **Batch Operations**: The PWA allows leaders to select promising recruits and trigger a **Batch Open** flow, launching their in-game profiles sequentially for rapid-fire inviting.
 
 ---
+<br />
 
 ## System Ecosystem
 
@@ -93,6 +93,7 @@ The muscle. A high-performance Node.js service hosted on **Render**.
 </details>
 
 ---
+<br />
 
 ## Architectural Topology
 
@@ -127,6 +128,7 @@ flowchart TD
 ```
 
 ---
+<br />
 
 ## Deployment Protocol
 
@@ -174,6 +176,7 @@ The Client consumes the headless JSON API exposed by the Core.
 </details>
 
 ---
+<br />
 
 ## Development Standards
 
@@ -185,6 +188,7 @@ The system adheres to a strict "Clean Stack" philosophy to maintain long-term st
 *   **Visual Integrity**: The interfaces must strictly follow the Sovereign Design System (No utility-class pollution).
 
 ---
+<br />
 
 ## License
 
