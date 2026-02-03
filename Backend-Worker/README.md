@@ -1,6 +1,6 @@
 # Clash Manager — Remote Worker (Render)
 
-[![Version](https://img.shields.io/badge/Version-10.1.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
+[![Version](https://img.shields.io/badge/Version-10.1.0-0066CC?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Render](https://img.shields.io/badge/Render-Hosted-6D409F?style=flat-square&logo=render&logoColor=white)](https://render.com) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
 The **Scaling Engine**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 

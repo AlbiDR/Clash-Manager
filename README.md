@@ -45,10 +45,10 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 
 Most clan tools rely on ephemeral API fetches—displaying a snapshot of the present moment that vanishes upon refresh. **Clash Manager is different.**
 
-### 🏛️ Persistence vs. Ephemerality
+### Persistence vs. Ephemerality
 We build a **Persistent Clan Database**. By archiving every war, every donation cycle, and every member interaction, the system constructs a rich historical tapestry. This allows for deep trend analysis, "heritage" tracking for long-term members, and the ability to spot performance decay before it becomes a problem.
 
-### ⚖️ The Valuation Engine
+### The Valuation Engine
 Not all members are equal. The system replaces intuition with a **Complex Valuation Metric** that sorts members by their true worth.
 - **Raw Score**: Lifetime achievement and grind.
 - **Performance Score**: Current form, momentum, and reliability.
@@ -56,7 +56,7 @@ Not all members are equal. The system replaces intuition with a **Complex Valuat
 
 This allows leadership to objectively identify the "Bottom 10%" for rotation and the "Top 10%" for promotion, free from bias.
 
-### 🕵️ The Headhunter Protocol
+### The Headhunter Protocol
 Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuously scans global tournament brackets to populate a pool of high-potential, clanless players.
 - **Smart Filtering**: Automatically rejects players who don't meet the clan's exact "Hybrid Benchmark".
 - **Batch Operations**: The PWA allows leaders to select promising recruits and trigger a **Batch Open** flow, launching their in-game profiles sequentially for rapid-fire inviting.
@@ -66,7 +66,7 @@ Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuo
 ## System Ecosystem
 
 <details>
-<summary><strong>1. Operations Core (Backend-GAS)</strong></summary>
+<summary><strong>1. Backend Engine (Google Apps Script)</strong></summary>
 
 The central nervous system. A serverless execution engine hosted on **Google Apps Script**.
 - **Role**: Orchestrates ETL pipelines, manages persistent state, and executes the proprietary scoring kernel.
@@ -76,7 +76,7 @@ The central nervous system. A serverless execution engine hosted on **Google App
 </details>
 
 <details>
-<summary><strong>2. Client Interface (Frontend-PWA)</strong></summary>
+<summary><strong>2. Client Core (PWA)</strong></summary>
 
 The command center. A **Vue 3 Progressive Web Application** designed for administrative operations.
 - **Role**: Provides a fluid, low-latency interface for data visualization and deeper analytics.
@@ -86,7 +86,7 @@ The command center. A **Vue 3 Progressive Web Application** designed for adminis
 </details>
 
 <details>
-<summary><strong>3. Scaling Engine (Backend-Worker)</strong></summary>
+<summary><strong>3. Remote Worker (Render)</strong></summary>
 
 The muscle. A high-performance Node.js service hosted on **Render**.
 - **Role**: Offloads high-volume network operations and scanning tasks to circumvent platform quotas.

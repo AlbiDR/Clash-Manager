@@ -1,6 +1,6 @@
 # Clash Manager — Google Apps Script Engine
 
-[![Version](https://img.shields.io/badge/Version-13.0.0-0F9D58?style=flat-square)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
+[![System](https://img.shields.io/badge/System-v13.0.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md)
 
 The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the "Brain" of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
