@@ -111,6 +111,7 @@ onMounted(() => {
 
 /* 🖼️ SHOWCASE FRAME: 1px clinical boundary for screenshots */
 .app-shell.showcase-frame {
+  --sys-safe-frame-offset: 1px;
   outline: 1px solid #000000;
   outline-offset: -1px;
   z-index: 9999;

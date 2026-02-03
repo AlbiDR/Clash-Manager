@@ -158,8 +158,8 @@ function handleFabDismiss() {
 <style scoped>
 .dock-container {
   position: fixed;
-  /* Respect safe area insets for notched devices */
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  /* Respect safe area insets for notched devices + Showcase Frame */
+  bottom: calc(24px + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
   left: 50%;
   transform: translateX(-50%);
   background: var(--sys-surface-glass);
