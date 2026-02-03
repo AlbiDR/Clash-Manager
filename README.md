@@ -118,7 +118,7 @@ The Client consumes the headless JSON API exposed by the Core.
 
 ## Development Standards
 
-We adhere to a strict "Clean Stack" philosophy to maintain long-term stability and code purity.
+The system adheres to a strict "Clean Stack" philosophy to maintain long-term stability and code purity.
 
 *   **Pristine Logic**: Business logic is isolated in pure functions (`Scoring_Kernel`) or composables (`useHeadhunter`).
 *   **Zero-Drift**: All modules must maintain synchronicity with their respective README specifications.
