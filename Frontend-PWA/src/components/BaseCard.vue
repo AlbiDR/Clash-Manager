@@ -103,8 +103,10 @@ function handleScoreClick(e: Event) {
     transform 0.2s var(--sys-motion-spring),
     background-color 0.2s ease,
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
-  will-change: transform;
+    box-shadow 0.25s ease,
+    margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  will-change: transform, box-shadow, margin;
 
   /* ⚡ PERFORMANCE: Strict containment for Speed Index */
   contain: layout paint style;
@@ -115,8 +117,11 @@ function handleScoreClick(e: Event) {
 .card.expanded {
   background: var(--sys-color-surface-container-high);
   box-shadow: var(--sys-elevation-3);
-  margin: 16px 0;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  transform: scale(1.02);
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+  z-index: 10;
   contain: none;
   content-visibility: visible;
   contain-intrinsic-size: auto 300px;
@@ -160,6 +165,7 @@ function handleScoreClick(e: Event) {
   ) !important;
   color: var(--sys-color-on-primary-container) !important;
   border: 1px solid rgba(var(--sys-color-on-primary-container-rgb), 0.1);
+  transition: all 0.2s ease;
 }
 .card.selected :deep(.badge:not(.role)) {
   background: rgba(
