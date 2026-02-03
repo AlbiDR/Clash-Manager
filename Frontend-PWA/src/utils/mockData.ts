@@ -104,6 +104,7 @@ export function generateMockData(options?: {
         avg: Math.floor(Math.random() * 800) + 200,
         seen: "Just now",
         rate: `${Math.floor(Math.random() * 20) + 80}%`,
+        wfame: Math.floor(Math.random() * 800) + 2400, // Realistically high for active members
         hist: generateWarHistory(),
       },
     });
