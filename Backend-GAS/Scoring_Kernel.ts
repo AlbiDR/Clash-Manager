@@ -8,7 +8,7 @@
  * ============================================================================
  */
 
-import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex, RecruitingWeights } from "./SharedTypes";
+import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex } from "./SharedTypes";
 
 declare var module: any;
 
@@ -117,9 +117,9 @@ const ScoringKernel: IScoringKernel = {
     warRate: number,
     lastSeenDate: number,
     nowDate: number,
-    cachedWins: number,
+    _cachedWins: number,
     isActiveMember: boolean,
-    daysTracked: number,
+    _daysTracked: number,
     weights: RosterWeights,
     penalties: PenaltiesConfig
   ): { raw: number; perf: number } {
@@ -261,7 +261,7 @@ const ScoringKernel: IScoringKernel = {
       const ts = members.map(m => m.trophies || 0).sort((a,b) => a - b);
       if (members.length > ELITE_THRESHOLD) {
         mode = "ELITE";
-        const median = ts[Math.floor(ts.length / 2)];
+        const median = ts[Math.floor(ts.length / 2)] ?? 0;
         if (median > floor) {
           floor = Math.min(9000, median);
           method = `Elite Mode (Median: ${floor})`;
@@ -269,6 +269,7 @@ const ScoringKernel: IScoringKernel = {
           method = `Elite Mode (At In-Game Cap: ${inGameReq})`;
         }
       } else {
+
         mode = "REBUILD";
         const bCount = Math.max(1, Math.ceil(ts.length * 0.1));
         const bAvg = Math.round(ts.slice(0, bCount).reduce((a,b) => a + b, 0) / bCount);
