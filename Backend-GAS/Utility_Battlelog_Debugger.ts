@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Testing tool for analyzing battle logs.
- * VERSION: 1.6.0
+ * VERSION: 1.7.0
  * ============================================================================
  */
 
@@ -15,24 +15,37 @@ import Registry from './Registry';
 
 /**
  * Analyzes a player's recent matches to find clanless opponents.
+ * Uses a dynamic trophy floor based on the target player's trophies.
  */
 function debugPlayerBattlelogs(): void {
   const S = Registry.Services;
   const tag = CONFIG.SYSTEM.PLAYER_TAG;
-  const MIN_TROPHIES = 5000; // Skip players below this value
 
   if (!tag) {
     console.error("Error: Player tag not found.");
     return;
   }
 
-  // Get data from API
+  // Get subject player info for dynamic baseline
+  const playerUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
+  const playerProfile = S.Network.fetchRoyaleAPI([playerUrl])[0];
+  
+  if (!playerProfile) {
+    console.error(`Error: Could not fetch profile for ${tag}`);
+    return;
+  }
+
+  const subjectTrophies = playerProfile.trophies || 0;
+  // DYNAMIC FLOOR: 90% of the player's trophies to ensure relevant quality
+  const dynamicFloor = Math.floor(subjectTrophies * 0.9);
+
+  // Get battle logs
   const cb = Math.floor(Date.now() / 900000); 
-  const url = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`;
-  const rawLogs = S.Network.fetchRoyaleAPI([url])[0];
+  const logUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`;
+  const rawLogs = S.Network.fetchRoyaleAPI([logUrl])[0];
 
   if (!rawLogs || !Array.isArray(rawLogs)) {
-    console.error(`Error: Could not get data for ${tag}`);
+    console.error(`Error: Could not get battle data for ${tag}`);
     return;
   }
 
@@ -42,12 +55,12 @@ function debugPlayerBattlelogs(): void {
 
   let counts = {
     total: 0,
-    matches_checked: 0,
-    opponents_seen: 0,
-    clanless_found: 0,
-    alumni_found: 0,
-    low_score_skipped: 0,
-    game_types: {} as Record<string, number>
+    matches_scanned: 0,
+    opponents_found: 0,
+    potential_recruits: 0,
+    alumni: 0,
+    skipped_low_score: 0,
+    match_types: {} as Record<string, number>
   };
 
   const allowedModes = [
@@ -56,29 +69,29 @@ function debugPlayerBattlelogs(): void {
     "riverRaceDuelColosseum", "PvP", "trail"
   ];
   
-  const found_players: Array<{ t: string; n: string; s: number; h: boolean; mode: string }> = [];
+  const results: Array<{ tag: string; name: string; score: number; returning: boolean; mode: string }> = [];
 
   rawLogs.forEach((battle: any) => {
     counts.total++;
     const type = battle.type || "unknown";
-    counts.game_types[type] = (counts.game_types[type] || 0) + 1;
+    counts.match_types[type] = (counts.match_types[type] || 0) + 1;
     
     if (allowedModes.includes(type)) {
-      counts.matches_checked++;
+      counts.matches_scanned++;
       (battle.opponent || []).forEach((opp: any) => {
-        counts.opponents_seen++;
+        counts.opponents_found++;
         const isClanless = !opp.clan || !opp.clan.tag;
         
         if (isClanless) {
-          if ((opp.trophies || 0) < MIN_TROPHIES) {
-            counts.low_score_skipped++;
+          if ((opp.trophies || 0) < dynamicFloor) {
+            counts.skipped_low_score++;
             return;
           }
 
-          counts.clanless_found++;
+          counts.potential_recruits++;
           const cleanTag = opp.tag.replace("#", "").trim().toLowerCase();
           const isReturning = !!savedPlayers[cleanTag];
-          if (isReturning) counts.alumni_found++;
+          if (isReturning) counts.alumni++;
 
           const score = S.Scoring.calculateRecruitRawScore(
             opp.trophies || 0,
@@ -88,11 +101,11 @@ function debugPlayerBattlelogs(): void {
             weights
           );
 
-          found_players.push({ 
-            t: opp.tag, 
-            n: opp.name || "Unknown", 
-            s: Math.round(score),
-            h: isReturning,
+          results.push({ 
+            tag: opp.tag, 
+            name: opp.name || "Unknown", 
+            score: Math.round(score),
+            returning: isReturning,
             mode: type
           });
         }
@@ -102,20 +115,21 @@ function debugPlayerBattlelogs(): void {
 
   // Create the final summary
   const summary = [
-    `Player: ${tag} | v1.6.0`,
+    `Target: ${tag} (${subjectTrophies} trophies) | v1.7.0`,
     `----------------------------------------`,
+    `Trophy Floor (Dynamic): ${dynamicFloor}`,
     `Total matches: ${counts.total}`,
-    `Match types: ${Object.entries(counts.game_types).map(([k, v]) => `${k}:${v}`).join(", ")}`,
-    `Matches scanned: ${counts.matches_checked}`,
-    `Clanless found: ${counts.clanless_found} (Alumni: ${counts.alumni_found})`,
-    `Skipped (low trophies): ${counts.low_score_skipped}`,
+    `Match types: ${Object.entries(counts.match_types).map(([k, v]) => `${k}:${v}`).join(", ")}`,
+    `Matches scanned: ${counts.matches_scanned}`,
+    `Clanless found: ${counts.potential_recruits} (Alumni: ${counts.alumni})`,
+    `Skipped (below floor): ${counts.skipped_low_score}`,
     `----------------------------------------`,
-    ...found_players.sort((a,b) => b.s - a.s).map(p => 
-      `${p.h ? "[★]" : "[+]"} ${p.t.padEnd(12)} | ${String(p.s).padStart(4)} pts | ${p.mode.padEnd(12)} | ${p.n}`
+    ...results.sort((a,b) => b.score - a.score).map(p => 
+      `${p.returning ? "[★]" : "[+]"} ${p.tag.padEnd(12)} | ${String(p.score).padStart(4)} pts | ${p.mode.padEnd(12)} | ${p.name}`
     )
   ];
 
-  S.Reporting.logReport("BATTLE_LOG_TEST_RESULTS", summary);
+  S.Reporting.logReport("BATTLE_LOG_ANALYSIS_SUMMARY", summary);
 }
 
 /**
