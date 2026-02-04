@@ -129,6 +129,7 @@ flowchart TD
     UI <-->|Hydration| Cache
 ```
 
+
 ---
 <br />
 
@@ -144,8 +145,9 @@ The worker must be online first to provide endpoints for the orchestration engin
   **Source**: `Backend-Worker/`
   **Environment**: Node.js Service
   **Requirements**:
-    *   `WORKER_CONCURRENCY`: `20`
-    *   `API_KEYS`: Comma-separated list of tokens.
+    - `WORKER_CONCURRENCY`: `20`
+    - `API_KEYS`: Comma-separated list of tokens.
+    - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
   **Action**: `pnpm build && pnpm start`
 
 </details>
@@ -158,8 +160,8 @@ The Core connects the database (Sheets) to the Worker.
   **Source**: `Backend-GAS/`
   **Environment**: Google Apps Script
   **Configuration**:
-    *   `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
-    *   `CLAN_TAG`: Target resource identifier.
+    - `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
+    - `CLAN_TAG`: Target resource identifier.
   **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
 
 </details>
@@ -184,10 +186,10 @@ The Client consumes the headless JSON API exposed by the Core.
 
 The system adheres to a strict "Clean Stack" philosophy to maintain long-term stability and code purity.
 
-*   **Pristine Logic**: Business logic is isolated in pure functions (`Scoring_Kernel`) or composables (`useHeadhunter`).
-*   **Zero-Drift**: All modules must maintain synchronicity with their respective README specifications.
-*   **Semantic Versioning**: Strict adherence to `Major.Minor.Patch` protocols across the monorepo.
-*   **Visual Integrity**: The interfaces must strictly follow the Sovereign Design System (No utility-class pollution).
+- **Pristine Logic**: Business logic is isolated in pure functions (`Scoring_Kernel`) or composables (`useHeadhunter`).
+- **Zero-Drift**: All modules must maintain synchronicity with their respective README specifications.
+- **Semantic Versioning**: Strict adherence to `Major.Minor.Patch` protocols across the monorepo.
+- **Visual Integrity**: The interfaces must strictly follow the Sovereign Design System (No utility-class pollution).
 
 ---
 <br />

@@ -35,7 +35,7 @@ The worker behavior is controlled via environment variables:
 
 ## API Reference
 
-### 1. System Diagnostics
+### System Diagnostics
 
 #### `GET /health`
 Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
@@ -52,7 +52,7 @@ Performs a deep health check, including upstream API connectivity validation and
 }
 ```
 
-### 2. Batch Operations
+### Batch Operations
 
 #### `POST /fetch`
 The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
@@ -66,7 +66,7 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 }
 ```
 
-### 3. Intelligence & Scanning
+### Intelligence & Scanning
 
 #### `POST /scan` / `POST /public/scan`
 Scans tournament brackets to discover new recruits. Configurable with blacklists and minimum trophy requirements.
@@ -81,7 +81,7 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 }
 ```
 
-### 4. Clan Data
+### Clan Data
 
 #### `POST /clan/full`
 Aggregates a complete snapshot of a clan: Members, Current River Race, and aggregated War History.
@@ -105,7 +105,7 @@ Fetches a specific slice of clan data (`members` or `warlog`) and transforms it 
 }
 ```
 
-### 5. Administration
+### Administration
 
 #### `POST /audit`
 Validates a list of API keys against the upstream provider to check for validity and quotas.
