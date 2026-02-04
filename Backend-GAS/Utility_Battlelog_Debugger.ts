@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Technical purity validator for battlelog analysis.
- * VERSION: 1.2.0
+ * VERSION: 1.3.0 (Synced with Prod)
  * ============================================================================
  */
 
@@ -29,7 +29,7 @@ function debugPlayerBattlelogs(): void {
 
   S.Reporting.logBanner("Battlelog Analysis Context");
   console.info(`TARGET_SUBJECT: ${playerTag}`);
-  console.info(`SYSTEM_STATUS:  ACTIVE_DIAGNOSTIC`);
+  console.info(`SYSTEM_STATUS:  ACTIVE_DIAGNOSTIC (Sync: v12.1.21)`);
 
   // 1. DATA ACQUISITION
   const cb = Math.floor(Date.now() / 900000); 

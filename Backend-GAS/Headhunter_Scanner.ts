@@ -263,7 +263,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
             // We are at a single battle object
             totalBattles++;
-            if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar"].includes(entry.type)) {
+            if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar", "riverRaceDuelColosseum", "PvP", "trail"].includes(entry.type)) {
               const opponents = entry.opponent || [];
               if (Array.isArray(opponents)) {
                 totalOpponents += opponents.length;
@@ -356,7 +356,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
               logs[idx].forEach((b: any) => {
                 if (shadowTags.size >= 100) return;
                 // PRECISION SCOUTING: Only look for opponents in Non-Clan modes
-                if (["ladder", "pathOfLegends", "challenge", "tournament"].includes(b.type)) {
+                if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar", "riverRaceDuelColosseum", "PvP", "trail"].includes(b.type)) {
                   const opponents = b.opponent || [];
                   if (Array.isArray(opponents)) {
                     opponents.forEach((opp: any) => {
