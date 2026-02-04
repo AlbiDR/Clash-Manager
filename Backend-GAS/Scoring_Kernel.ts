@@ -11,6 +11,7 @@
 import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex } from "./SharedTypes";
 
 declare var module: any;
+declare var CONFIG: any;
 
 /**
  * @remarks

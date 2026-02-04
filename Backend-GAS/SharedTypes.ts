@@ -7,12 +7,14 @@ export interface ScoringWeights {
   TROPHY: number;
   DON: number;
   WAR: number;
+  WAR_BASELINE_BONUS?: number;
 }
 
 export interface RecruitingWeights {
   TROPHY: number;
   DON: number;
   WAR: number;
+  WAR_BASELINE_BONUS?: number;
 }
 
 export interface RosterWeights {
