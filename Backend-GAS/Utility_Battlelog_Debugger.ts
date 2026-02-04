@@ -6,171 +6,13 @@
  *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.7.1 (Robust Data Extraction)
+ * VERSION: 2.8.0 (Service Consumer)
  * ============================================================================
  */
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-
-/**
- * Defines the goal of the log analysis.
- */
-export enum AnalysisGoal {
-  // CORE FUNCTIONS
-  RECRUITMENT = "RECRUITMENT",       // Find clanless players
-  WAR_INTELLIGENCE = "WAR_STATS",    // Track medals, decks, and participation
-
-  // [PLACEHOLDER] FUTURE ARCHITECTURES
-  /**
-   * DRAFT: Audit a specific player's activity patterns.
-   * Potential use: Check if a member is playing Ladder while skipping War, or determine active timezones.
-   */
-  ACTIVITY_AUDIT = "ACTIVITY_AUDIT"
-}
-
-/**
- * BATTLELOG_PROCESSOR: A modular engine designed to be injected into different modules.
- */
-export class BattleLogProcessor {
-  
-  /**
-   * Main entry point. 
-   * Orchestrates fetching, statistical analysis, and purpose-driven extraction.
-   */
-  public static digest(subjectTag: string, goal: AnalysisGoal = AnalysisGoal.RECRUITMENT): any[] {
-    const rawData = this.fetch(subjectTag);
-    if (!rawData || !rawData.logs.length) return [];
-
-    const stats = this.analyzeBracket(rawData.logs);
-    const context = {
-      ...stats,
-      playerTrophies: rawData.profile.trophies || 0,
-      clanRequirement: rawData.profile.clan?.requiredTrophies || 0
-    };
-
-    return this.process(rawData.logs, goal, context);
-  }
-
-  /**
-   * Acquisition: Fetches raw profile and log data.
-   */
-  private static fetch(tag: string): { profile: any, logs: any[] } | null {
-    const S = Registry.Services;
-    const pUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
-    const lUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
-    const [profile, logs] = S.Network.fetchRoyaleAPI([pUrl, lUrl]);
-    
-    return (profile && logs) ? { profile, logs } : null;
-  }
-
-  /**
-   * Helper: Extracts trophy count from either 'trophies' or 'startingTrophies'.
-   * Handles API inconsistencies across different game modes.
-   */
-  private static extractTrophies(opponent: any): number | null {
-    if (typeof opponent.trophies === 'number') return opponent.trophies;
-    if (typeof opponent.startingTrophies === 'number') return opponent.startingTrophies;
-    return null;
-  }
-
-  /**
-   * Statistical Utility: Calculates the bracket average and deviation.
-   */
-  private static analyzeBracket(logs: any[]): { mean: number, floor: number } {
-    const trophies: number[] = [];
-    logs.forEach(b => (b.opponent || []).forEach((o: any) => {
-       const tr = this.extractTrophies(o);
-       if (tr !== null) trophies.push(tr);
-    }));
-
-    if (trophies.length === 0) return { mean: 0, floor: 0 };
-
-    const mean = trophies.reduce((a, b) => a + b, 0) / trophies.length;
-    const variance = trophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / trophies.length;
-    const stdDev = Math.sqrt(variance);
-
-    // Dynamic quality floor
-    return { mean, floor: Math.round(mean - stdDev) };
-  }
-
-  /**
-   * Processing: Loops through logs and extracts data based on the goal.
-   */
-  private static process(logs: any[], goal: AnalysisGoal, ctx: any): any[] {
-    const results: any[] = [];
-
-    logs.forEach(battle => {
-      // PRUNING STEP 1: Purpose-specific mode filtering
-      if (goal === AnalysisGoal.WAR_INTELLIGENCE && !battle.type.toLowerCase().includes("race")) return;
-
-      (battle.opponent || []).forEach((opp: any) => {
-        
-        // PRUNING STEP 2: Goal-specific filtering
-        switch (goal) {
-          case AnalysisGoal.RECRUITMENT:
-            if (opp.clan && opp.clan.tag) return; // Must be clanless
-            
-            const tr = this.extractTrophies(opp);
-            if (tr === null) return; // STRICT QUALITY: Must have data
-            if (tr < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
-            break;
-            
-          case AnalysisGoal.ACTIVITY_AUDIT:
-             // [DRAFT] Future Logic: Filter by last 24h only?
-             break;
-        }
-
-        // PRUNING STEP 3: Universal filters
-        if (!opp.tag) return;
-
-        // EXTRACTION: Capture data defined by the goal
-        results.push(this.transform(battle, opp, goal, ctx));
-      });
-    });
-
-    return results;
-  }
-
-  /**
-   * Transformation: Maps raw API data to a clean, purpose-driven object.
-   */
-  private static transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any {
-    const base = {
-      tag: opponent.tag,
-      name: opponent.name || "Unknown",
-      mode: battle.type,
-      time: battle.battleTime
-    };
-
-    switch (goal) {
-      case AnalysisGoal.RECRUITMENT:
-        const tr = this.extractTrophies(opponent) || 0;
-        return {
-          ...base,
-          trophies: tr,
-          rel: Math.round(tr - ctx.mean)
-        };
-
-      case AnalysisGoal.WAR_INTELLIGENCE:
-        return {
-          ...base,
-          medals: battle.challengeId || 0,
-          deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
-        };
-
-      case AnalysisGoal.ACTIVITY_AUDIT:
-        // [PLACEHOLDER] Return time delta analysis
-        return {
-          ...base,
-          minutesAgo: Math.floor((Date.now() - new Date(battle.battleTime).getTime()) / 60000)
-        };
-        
-      default:
-        return base;
-    }
-  }
-}
+import { BattleLogProcessor, AnalysisGoal } from './Service_BattleLog';
 
 /**
  * Entry point for the laboratory tool (Research Mode).
@@ -186,7 +28,7 @@ function debugPlayerBattlelogs(): void {
   const candidates = BattleLogProcessor.digest(tag, AnalysisGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.7.1 (Goal: Recruitment)`,
+    `Target: ${tag} | v2.8.0 (Goal: Recruitment)`,
     `----------------------------------------`,
     `Found: ${candidates.length} candidates.`,
     `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
