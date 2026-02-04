@@ -6,7 +6,7 @@
  *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.7.0 (Precision Nomenclature)
+ * VERSION: 2.7.1 (Robust Data Extraction)
  * ============================================================================
  */
 
@@ -65,12 +65,23 @@ export class BattleLogProcessor {
   }
 
   /**
+   * Helper: Extracts trophy count from either 'trophies' or 'startingTrophies'.
+   * Handles API inconsistencies across different game modes.
+   */
+  private static extractTrophies(opponent: any): number | null {
+    if (typeof opponent.trophies === 'number') return opponent.trophies;
+    if (typeof opponent.startingTrophies === 'number') return opponent.startingTrophies;
+    return null;
+  }
+
+  /**
    * Statistical Utility: Calculates the bracket average and deviation.
    */
   private static analyzeBracket(logs: any[]): { mean: number, floor: number } {
     const trophies: number[] = [];
     logs.forEach(b => (b.opponent || []).forEach((o: any) => {
-       if (typeof o.trophies === 'number') trophies.push(o.trophies);
+       const tr = this.extractTrophies(o);
+       if (tr !== null) trophies.push(tr);
     }));
 
     if (trophies.length === 0) return { mean: 0, floor: 0 };
@@ -99,8 +110,10 @@ export class BattleLogProcessor {
         switch (goal) {
           case AnalysisGoal.RECRUITMENT:
             if (opp.clan && opp.clan.tag) return; // Must be clanless
-            if (typeof opp.trophies !== 'number') return; // STRICT QUALITY: Must have data
-            if (opp.trophies < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
+            
+            const tr = this.extractTrophies(opp);
+            if (tr === null) return; // STRICT QUALITY: Must have data
+            if (tr < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
             break;
             
           case AnalysisGoal.ACTIVITY_AUDIT:
@@ -132,10 +145,11 @@ export class BattleLogProcessor {
 
     switch (goal) {
       case AnalysisGoal.RECRUITMENT:
+        const tr = this.extractTrophies(opponent) || 0;
         return {
           ...base,
-          trophies: opponent.trophies,
-          rel: Math.round(opponent.trophies - ctx.mean)
+          trophies: tr,
+          rel: Math.round(tr - ctx.mean)
         };
 
       case AnalysisGoal.WAR_INTELLIGENCE:
@@ -172,7 +186,7 @@ function debugPlayerBattlelogs(): void {
   const candidates = BattleLogProcessor.digest(tag, AnalysisGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.7.0 (Goal: Recruitment)`,
+    `Target: ${tag} | v2.7.1 (Goal: Recruitment)`,
     `----------------------------------------`,
     `Found: ${candidates.length} candidates.`,
     `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
