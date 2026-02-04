@@ -87,6 +87,13 @@ export interface PingResponse {
   latency?: number;
 }
 
+// Momentum / Trend Calculation Result
+export interface MomentumInfo {
+  val: string;
+  dir: "up" | "down";
+  raw: number;
+}
+
 // Dismiss response
 export interface DismissResponse {
   success: boolean;
