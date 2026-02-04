@@ -5,6 +5,7 @@
 The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the "Brain" of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
 ---
+<br />
 
 ## System Architecture
 
@@ -20,6 +21,7 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 | **Stores** | Data persistence and state management | `Store.ts`, `*_Store.ts` |
 
 ---
+<br />
 
 ## Key Components
 
@@ -41,8 +43,8 @@ A pure mathematical engine isolated from the rest of the system.
 - **Potential Metrics**: Evaluates recruits via `Raw Potential` (Unweighted) and `Final Potential` (Normalized against clan benchmark).
 - **Mechanics**: Implements **Heritage** (momentum bonuses) and **Inertia** (inactivity decay).
 
-
 ---
+<br />
 
 ## Automation Tasks
 
@@ -56,6 +58,7 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 | `taskUpdateRoster` | **1 Hour** | Recalculates member scores, updates ranks, and enforces roles. |
 
 ---
+<br />
 
 ## Deployment & Configuration
 
@@ -71,6 +74,7 @@ Required environment variables in **Project Settings > Script Properties**:
 Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadheet's toolbar) to initialize the automation suite.
 
 ---
+<br />
 
 ## Data Flow & Logic
 
@@ -81,6 +85,7 @@ Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the 
 5.  **Recruitment**: `Headhunter` module scans external tournaments and updates the "scout feed".
 
 ---
+<br />
 
 ## License
 
