@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Technical purity validator for battlelog analysis.
- * VERSION: 1.3.0 (Synced with Prod)
+ * VERSION: 1.4.0 (Laboratory Edition)
  * ============================================================================
  */
 
@@ -14,40 +14,31 @@ import { CONFIG } from './Configuration';
 import Registry from './Registry';
 
 /**
- * Diagnostic function to analyze a player's battle history and identify
- * elite clanless opponents for potential recruitment.
+ * Diagnostic function to analyze a player's battle history.
+ * Optimized for token efficiency and high-density technical reporting.
  */
 function debugPlayerBattlelogs(): void {
   const S = Registry.Services;
-  const playerTag = CONFIG.SYSTEM.PLAYER_TAG;
+  const tag = CONFIG.SYSTEM.PLAYER_TAG;
 
-  if (!playerTag || playerTag === "") {
-    S.Reporting.logBanner("DEBUG ERROR: MISSING CONFIGURATION");
-    console.error("No PlayerTag found in script properties. Analysis aborted.");
+  if (!tag) {
+    console.error("ERR: Missing PLAYER_TAG");
     return;
   }
 
-  S.Reporting.logBanner("Battlelog Analysis Context");
-  console.info(`TARGET_SUBJECT: ${playerTag}`);
-  console.info(`SYSTEM_STATUS:  ACTIVE_DIAGNOSTIC (Sync: v12.1.21)`);
-
   // 1. DATA ACQUISITION
   const cb = Math.floor(Date.now() / 900000); 
-  const url = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(playerTag)}/battlelog?__cb=${cb}`;
+  const url = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`;
   
-  S.Reporting.logStep(1, 2, "Initializing RoyaleAPI Data Feed...");
   const results = S.Network.fetchRoyaleAPI([url]);
   const rawLogs = results[0];
 
   if (!rawLogs || !Array.isArray(rawLogs)) {
-    S.Reporting.logBanner("ACQUISITION FAILURE");
-    console.error("Payload Empty or Malformed. Verify API Key functionality.");
+    console.error(`ERR: Acquisition Failed for ${tag}`);
     return;
   }
 
   // 2. ANALYTICAL PROCESSING
-  S.Reporting.logStep(2, 2, "Executing Shadow Scout Logic Layer...");
-  
   let metrics = {
     total: 0,
     scoutable: 0,
@@ -58,66 +49,56 @@ function debugPlayerBattlelogs(): void {
   };
 
   const scoutableModes = [
-    "ladder", 
-    "pathOfLegends", 
-    "challenge", 
-    "tournament", 
-    "riverRacePvP", 
-    "riverRaceDuel", 
-    "riverRaceTugOfWar",
-    "riverRaceDuelColosseum",
-    "PvP",
-    "trail"
+    "ladder", "pathOfLegends", "challenge", "tournament", 
+    "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar",
+    "riverRaceDuelColosseum", "PvP", "trail"
   ];
-  const clanlessOpponents: Array<{ tag: string; name: string }> = [];
+  
+  const seeds: Array<{ t: string; n: string }> = [];
 
-  rawLogs.forEach((battle: any) => {
+  rawLogs.forEach((b: any) => {
     metrics.total++;
-    const type = battle.type || "unknown";
+    const type = b.type || "unk";
     metrics.rawTypes[type] = (metrics.rawTypes[type] || 0) + 1;
     
-    // PRECISION FILTER: Only analyze modes where recruitment is viable.
-    if (scoutableModes.includes(battle.type)) {
+    if (scoutableModes.includes(type)) {
       metrics.scoutable++;
-      const opponents = battle.opponent || [];
-      
-      if (Array.isArray(opponents)) {
-        opponents.forEach((opp: any) => {
-          metrics.opponents++;
-          const isClanless = !opp.clan || !opp.clan.tag;
-          
-          if (isClanless) {
-            metrics.yielding++;
-            clanlessOpponents.push({
-              tag: opp.tag,
-              name: opp.name || "Unknown"
-            });
-          } else {
-            metrics.rejected++;
-          }
-        });
-      }
+      (b.opponent || []).forEach((opp: any) => {
+        metrics.opponents++;
+        if (!opp.clan || !opp.clan.tag) {
+          metrics.yielding++;
+          seeds.push({ t: opp.tag, n: opp.name || "???" });
+        } else {
+          metrics.rejected++;
+        }
+      });
     }
   });
 
-  // 3. STRUCTURED OBSERVABILITY
-  const summaryReport = [
-    `PLAYER_METRIC:    ${playerTag}`,
-    `INGESTION_TOTAL:  ${metrics.total} Battles`,
-    `SCOUT_VIABLE:     ${metrics.scoutable} Battles (Standard Modes)`,
-    `OPPONENT_POOL:    ${metrics.opponents} Total Subjects`,
-    `REJECTION_RATE:   ${metrics.rejected} (Clanned / Ineligible)`,
-    `EXTRACTION_YIELD: ${metrics.yielding} Recruitment Seeds Found`,
-    "",
-    "RAW_TYPE_DISTRIBUTION:",
-    ...Object.entries(metrics.rawTypes).map(([type, count]) => `  - ${type.padEnd(20)}: ${count}`),
-    "",
-    "IDENTIFIED SEEDS [CLANLESS]:",
-    ...clanlessOpponents.map(o => `  [+] ${o.tag.padEnd(12)} | ${o.name}`)
+  // 3. TOKEN-EFFICIENT OBSERVABILITY
+  const report = [
+    `CTX: ${tag} | v1.4.0`,
+    `----------------------------------------`,
+    `INGESTION: ${metrics.total} total`,
+    `DIST: ${Object.entries(metrics.rawTypes).map(([k, v]) => `${k}:${v}`).join(", ")}`,
+    `SCOUT: ${metrics.scoutable} matches`,
+    `POOL:  ${metrics.opponents} subj`,
+    `YIELD: ${metrics.yielding} seeds found`,
+    `----------------------------------------`,
+    ...seeds.map(s => `+ ${s.t.padEnd(12)} | ${s.n}`)
   ];
 
-  S.Reporting.logReport("Shadow Scout Diagnostic Result", summaryReport);
+  S.Reporting.logReport("SHADOW_LAB_DIAGNOSTIC", report);
 }
+
+/**
+ * GLOBAL BRIDGE
+ */
+(function(scope: any) {
+  Object.assign(scope, { debugPlayerBattlelogs });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+export default debugPlayerBattlelogs;
 
 /**
  * GLOBAL BRIDGE
