@@ -6,7 +6,7 @@
  *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.4.0 (Future-Proofed Modular Engine)
+ * VERSION: 2.5.0 (Refined Modular Engine)
  * ============================================================================
  */
 
@@ -22,12 +22,6 @@ export enum ShadowGoal {
   WAR_INTELLIGENCE = "WAR_STATS",    // Track medals, decks, and participation
 
   // [PLACEHOLDER] FUTURE ARCHITECTURES
-  /** 
-   * DRAFT: Analyze the "Meta" of the current bracket.
-   * Potential use: Determine which cards/decks are dominating the player's trophy range.
-   */
-  META_ANALYSIS = "META_ANALYSIS",
-
   /**
    * DRAFT: Audit a specific player's activity patterns.
    * Potential use: Check if a member is playing Ladder while skipping War, or determine active timezones.
@@ -106,10 +100,6 @@ export class ShadowLogic {
             if ((opp.trophies || 0) < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
             break;
             
-          case ShadowGoal.META_ANALYSIS:
-            // [DRAFT] Future Logic: No pruning, we want all card data
-            break;
-
           case ShadowGoal.ACTIVITY_AUDIT:
              // [DRAFT] Future Logic: Filter by last 24h only?
              break;
@@ -150,14 +140,6 @@ export class ShadowLogic {
           ...base,
           medals: battle.challengeId || 0,
           deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
-        };
-
-      case ShadowGoal.META_ANALYSIS:
-        // [PLACEHOLDER] Return card composition and win/loss result
-        return {
-          ...base,
-          opponentDeck: (opponent.cards || []).map((c: any) => c.name),
-          outcome: battle.team[0].crowns > opponent.crowns ? "WIN" : "LOSS"
         };
 
       case ShadowGoal.ACTIVITY_AUDIT:
