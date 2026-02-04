@@ -5,6 +5,7 @@
 The **Scaling Engine**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
 ---
+<br />
 
 ## Technical Specifications
 
@@ -14,6 +15,7 @@ The **Scaling Engine**. A high-performance, strictly typed Express.js server des
 - **Resilience**: Automatic retries with exponential backoff and jitter.
 
 ---
+<br />
 
 ## Configuration
 
@@ -29,6 +31,7 @@ The worker behavior is controlled via environment variables:
 | `API_KEYS` | - | Comma-separated list of fallback Clash Royale API keys. |
 
 ---
+<br />
 
 ## API Reference
 
@@ -115,6 +118,7 @@ Validates a list of API keys against the upstream provider to check for validity
 ```
 
 ---
+<br />
 
 ## Deployment
 
@@ -132,8 +136,8 @@ Ensure the following variables are set in the Render Dashboard:
 - `API_BASE`: `https://proxy.royaleapi.dev/v1`
 - `API_KEYS`: (Comma-separated list)
 
-
 ---
+<br />
 
 ## License
 
