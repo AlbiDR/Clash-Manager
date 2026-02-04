@@ -2,11 +2,11 @@
  * ============================================================================
  * MODULE: UTILITY - BATTLELOG DEBUGGER
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Modular engine for extracting recruitment seeds from battle logs.
- *    Uses statistical analysis and pure rule-based pruning.
+ * DESCRIPTION: Multi-purpose modular engine for battle log analysis.
+ *    Supports recruitment discovery and war participation tracking.
  * 
- * ROLE: Modular researcher for log-based recruitment.
- * VERSION: 2.2.0 (Open-Mode Dynamic Engine)
+ * ROLE: Modular researcher for log-based recruitment and war data.
+ * VERSION: 2.3.0 (Multi-Purpose Engine)
  * ============================================================================
  */
 
@@ -14,99 +14,146 @@ import { CONFIG } from './Configuration';
 import Registry from './Registry';
 
 /**
- * SHADOW_LOGIC: A modular class for log-based recruitment discovery.
+ * Defines the goal of the log analysis.
+ */
+export enum ShadowGoal {
+  RECRUITMENT = "RECRUITMENT",       // Find clanless players
+  WAR_INTELLIGENCE = "WAR_STATS",    // Track medals, decks, and participation
+  RAW_DATA = "RAW_DATA"              // Total data capture for debugging
+}
+
+/**
+ * SHADOW_LOGIC: A modular engine designed to be injected into different modules.
  */
 export class ShadowLogic {
+  
   /**
-   * Main entry point for log extraction.
-   * Returns a clean list of candidates that passed all statistical and policy filters.
+   * Main entry point. 
+   * Orchestrates fetching, statistical analysis, and purpose-driven extraction.
    */
-  public static extractFromLogs(subjectTag: string): any[] {
+  public static digest(subjectTag: string, goal: ShadowGoal = ShadowGoal.RECRUITMENT): any[] {
+    const rawData = this.fetch(subjectTag);
+    if (!rawData || !rawData.logs.length) return [];
+
+    const stats = this.analyzeBracket(rawData.logs);
+    const context = {
+      ...stats,
+      playerTrophies: rawData.profile.trophies || 0,
+      clanRequirement: rawData.profile.clan?.requiredTrophies || 0
+    };
+
+    return this.process(rawData.logs, goal, context);
+  }
+
+  /**
+   * Acquisition: Fetches raw profile and log data.
+   */
+  private static fetch(tag: string): { profile: any, logs: any[] } | null {
     const S = Registry.Services;
-    
-    // 1. DATA ACQUISITION
-    const pUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(subjectTag)}`;
-    const lUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(subjectTag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
-    
+    const pUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
+    const lUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
     const [profile, logs] = S.Network.fetchRoyaleAPI([pUrl, lUrl]);
     
-    if (!profile || !logs || !Array.isArray(logs)) return [];
+    return (profile && logs) ? { profile, logs } : null;
+  }
 
-    // 2. STATISTICAL ANALYSIS
-    // We analyze ALL opponents found in the logs to understand the bracket.
-    const allOpponentTrophies: number[] = [];
-    logs.forEach(b => {
-      (b.opponent || []).forEach((opp: any) => {
-        if (opp.trophies) allOpponentTrophies.push(opp.trophies);
-      });
-    });
+  /**
+   * Statistical Utility: Calculates the bracket average and deviation.
+   */
+  private static analyzeBracket(logs: any[]): { mean: number, floor: number } {
+    const trophies: number[] = [];
+    logs.forEach(b => (b.opponent || []).forEach((o: any) => o.trophies && trophies.push(o.trophies)));
 
-    if (allOpponentTrophies.length === 0) return [];
+    if (trophies.length === 0) return { mean: 0, floor: 0 };
 
-    const mean = allOpponentTrophies.reduce((a, b) => a + b, 0) / allOpponentTrophies.length;
-    const variance = allOpponentTrophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / allOpponentTrophies.length;
+    const mean = trophies.reduce((a, b) => a + b, 0) / trophies.length;
+    const variance = trophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / trophies.length;
     const stdDev = Math.sqrt(variance);
 
-    // 3. POLICY & BRACKET FLOOR
-    const statisticalFloor = Math.round(mean - stdDev);
-    const clanInGameRequirement = profile.clan?.requiredTrophies || 0;
-    const projectFloor = CONFIG.HEADHUNTER.MIN_TROPHIES || 0;
+    // Dynamic quality floor
+    return { mean, floor: Math.round(mean - stdDev) };
+  }
 
-    const effectiveFloor = Math.max(statisticalFloor, clanInGameRequirement, projectFloor);
+  /**
+   * Processing: Loops through logs and extracts data based on the goal.
+   */
+  private static process(logs: any[], goal: ShadowGoal, ctx: any): any[] {
+    const results: any[] = [];
 
-    const candidates: any[] = [];
-
-    // 4. OPEN-MODE PRUNING LOOP
-    // We no longer skip any modes. If an opponent is clanless and meets the quality 
-    // requirements, they are a valid lead regardless of where they were found.
     logs.forEach(battle => {
+      // PRUNING STEP 1: Purpose-specific mode filtering
+      if (goal === ShadowGoal.WAR_INTELLIGENCE && !battle.type.toLowerCase().includes("race")) return;
+
       (battle.opponent || []).forEach((opp: any) => {
         
-        // PRUNING 1: Clan Presence (Exclude those we can't recruit)
-        if (opp.clan && opp.clan.tag) return;
+        // PRUNING STEP 2: Goal-specific filtering
+        if (goal === ShadowGoal.RECRUITMENT) {
+          if (opp.clan && opp.clan.tag) return; // Must be clanless
+          if ((opp.trophies || 0) < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
+        }
 
-        // PRUNING 2: Quality Floor (Exclude outliers and policy violations)
-        const tr = opp.trophies || 0;
-        if (tr < effectiveFloor) return;
+        // PRUNING STEP 3: Universal filters
+        if (!opp.tag) return;
 
-        // All filters passed: Capture potential recruit
-        candidates.push({
-          tag: opp.tag,
-          name: opp.name || "Unknown",
-          trophies: tr,
-          mode: battle.type || "unknown",
-          source: "SHADOW_SCOUT",
-          bracketAvg: Math.round(mean)
-        });
+        // EXTRACTION: Capture data defined by the goal
+        results.push(this.transform(battle, opp, goal, ctx));
       });
     });
 
-    return candidates;
+    return results;
+  }
+
+  /**
+   * Transformation: Maps raw API data to a clean, purpose-driven object.
+   */
+  private static transform(battle: any, opponent: any, goal: ShadowGoal, ctx: any): any {
+    const base = {
+      tag: opponent.tag,
+      name: opponent.name || "Unknown",
+      mode: battle.type,
+      time: battle.battleTime
+    };
+
+    if (goal === ShadowGoal.RECRUITMENT) {
+      return {
+        ...base,
+        trophies: opponent.trophies,
+        rel: Math.round((opponent.trophies || 0) - ctx.mean)
+      };
+    }
+
+    if (goal === ShadowGoal.WAR_INTELLIGENCE) {
+      return {
+        ...base,
+        medals: battle.challengeId || 0, // Simplified for this example
+        deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
+      };
+    }
+
+    return base;
   }
 }
 
 /**
- * Entry point for the laboratory tool.
+ * Entry point for the laboratory tool (Research Mode).
  */
 function debugPlayerBattlelogs(): void {
   const tag = CONFIG.SYSTEM.PLAYER_TAG;
-  if (!tag) {
-    console.error("Error: Player tag missing from configuration.");
-    return;
-  }
+  if (!tag) return;
 
   const S = Registry.Services;
   const startTime = Date.now();
 
-  const candidates = ShadowLogic.extractFromLogs(tag);
+  // Test the recruitment purpose
+  const candidates = ShadowLogic.digest(tag, ShadowGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.2.0 (Open-Mode)`,
+    `Target: ${tag} | v2.3.0 (Goal: Recruitment)`,
     `----------------------------------------`,
-    `Extracted: ${candidates.length} candidates.`,
-    `Execution: ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+    `Found: ${candidates.length} candidates.`,
+    `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
     `----------------------------------------`,
-    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (vs ${c.bracketAvg}) | ${c.mode.padEnd(12)} | ${c.name}`)
+    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (${Math.sign(c.rel) >= 0 ? '+' : ''}${c.rel}) | ${c.name}`)
   ];
 
   S.Reporting.logReport("SHADOW_ENGINE_YIELD", summary);
@@ -116,7 +163,7 @@ function debugPlayerBattlelogs(): void {
  * GLOBAL BRIDGE
  */
 (function(scope: any) {
-  Object.assign(scope, { debugPlayerBattlelogs });
+  Object.assign(scope, { debugPlayerBattlelogs, ShadowLogic, ShadowGoal });
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default debugPlayerBattlelogs;
