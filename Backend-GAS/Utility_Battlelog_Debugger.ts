@@ -6,7 +6,7 @@
  *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.5.0 (Refined Modular Engine)
+ * VERSION: 2.5.1 (Strict Quality Engine)
  * ============================================================================
  */
 
@@ -69,7 +69,9 @@ export class ShadowLogic {
    */
   private static analyzeBracket(logs: any[]): { mean: number, floor: number } {
     const trophies: number[] = [];
-    logs.forEach(b => (b.opponent || []).forEach((o: any) => o.trophies && trophies.push(o.trophies)));
+    logs.forEach(b => (b.opponent || []).forEach((o: any) => {
+       if (typeof o.trophies === 'number') trophies.push(o.trophies);
+    }));
 
     if (trophies.length === 0) return { mean: 0, floor: 0 };
 
@@ -97,7 +99,8 @@ export class ShadowLogic {
         switch (goal) {
           case ShadowGoal.RECRUITMENT:
             if (opp.clan && opp.clan.tag) return; // Must be clanless
-            if ((opp.trophies || 0) < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
+            if (typeof opp.trophies !== 'number') return; // STRICT QUALITY: Must have data
+            if (opp.trophies < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
             break;
             
           case ShadowGoal.ACTIVITY_AUDIT:
@@ -132,7 +135,7 @@ export class ShadowLogic {
         return {
           ...base,
           trophies: opponent.trophies,
-          rel: Math.round((opponent.trophies || 0) - ctx.mean)
+          rel: Math.round(opponent.trophies - ctx.mean)
         };
 
       case ShadowGoal.WAR_INTELLIGENCE:
@@ -169,12 +172,12 @@ function debugPlayerBattlelogs(): void {
   const candidates = ShadowLogic.digest(tag, ShadowGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.4.0 (Goal: Recruitment)`,
+    `Target: ${tag} | v2.5.1 (Goal: Recruitment)`,
     `----------------------------------------`,
     `Found: ${candidates.length} candidates.`,
     `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
     `----------------------------------------`,
-    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (${Math.sign(c.rel) >= 0 ? '+' : ''}${c.rel}) | ${c.name}`)
+    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (${Math.sign(c.rel) >= 0 ? '+' : ''}${c.rel}) | ${c.mode.padEnd(12)} | ${c.name}`)
   ];
 
   S.Reporting.logReport("SHADOW_ENGINE_YIELD", summary);
