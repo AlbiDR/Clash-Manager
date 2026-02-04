@@ -1,3 +1,5 @@
+import type { MomentumInfo } from "../types";
+
 /**
  * Centralized formatting utilities for consistency across the application.
  */
@@ -98,6 +100,38 @@ export function parseTimeAgoValue(val: string | null | undefined): number {
   const num = parseInt(match[1], 10);
   const unit = match[2];
   return num * (TIME_AGO_MULTIPLIERS[unit] || 1);
+}
+
+/**
+ * 📈 MOMENTUM CALCULATOR
+ * Analyzes the delta in Raw Score to produce a human-readable trend % and direction.
+ */
+export function calculateMomentum(
+  dt: number,
+  currentRaw: number,
+): MomentumInfo | null {
+  if (dt === 0 || currentRaw === 0) return null;
+  const previousRaw = currentRaw - dt;
+
+  // Safeguard: Score must be significant to show momentum
+  if (previousRaw < 50) return null;
+
+  // Safeguard: Ignore massive outliers/glitches (>1000% jump)
+  if (previousRaw > 0 && dt / previousRaw > 10) return null;
+
+  const percentChange = (dt / previousRaw) * 100;
+  const absPercent = Math.abs(percentChange);
+
+  let valStr = "";
+  if (absPercent < 0.1 && absPercent > 0) valStr = "<0.1%";
+  else if (absPercent < 10) valStr = absPercent.toFixed(1) + "%";
+  else valStr = Math.round(absPercent) + "%";
+
+  return {
+    val: valStr,
+    dir: dt > 0 ? "up" : "down",
+    raw: dt,
+  };
 }
 
 export function formatRole(roleStr: string): { label: string; class: string } {

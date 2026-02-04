@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+/**
+ * SHARED COMPONENT: BaseCardSkeleton
+ *
+ * @remarks
+ * A unified skeleton placeholder for both Leaderboard and Recruitment cards.
+ * Uses deterministic widths based on index to provide visual variety during loading.
+ */
 const props = defineProps<{
   index?: number;
 }>();
 
-// Deterministic variation based on index to mimic real data diversity
 const nameWidth = computed(() => {
   if (props.index === undefined) return "120px";
   const widths = ["120px", "140px", "90px", "130px", "100px", "150px"];
@@ -43,6 +49,5 @@ const metaWidth = computed(() => {
 </template>
 
 <style scoped>
-/* All styles are now in style.css to share with index.html */
-/* We only keep vue-specific overrides if absolutely necessary, but here we want exact parity */
+/* All styles are in style.css for sharing with the static index.html shell */
 </style>

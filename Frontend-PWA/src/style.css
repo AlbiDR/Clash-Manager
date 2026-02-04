@@ -256,29 +256,30 @@ button:active {
    ========================================= */
 .ptr-indicator {
   position: absolute;
-  top: -40px;
+  top: calc(-1 * var(--ptr-offset, 0px));
   left: 0;
   right: 0;
-  height: 40px;
+  height: var(--ptr-offset, 0px);
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: var(--ptr-opacity, 0);
   pointer-events: none;
   z-index: 1001;
-  transform: translateY(var(--ptr-offset, 0px));
-  opacity: var(--ptr-opacity, 0);
-  transition:
-    transform 0.1s linear,
-    opacity 0.1s linear;
+  transition: opacity 0.1s;
 }
 
 .ptr-spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--sys-color-primary-container);
-  border-top-color: var(--sys-color-primary);
+  width: 36px;
+  height: 36px;
+  background: var(--sys-surface-glass);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  border: 1px solid var(--sys-surface-glass-border);
   border-radius: 50%;
-  transform: rotate(calc(var(--ptr-offset, 0px) * 2deg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sys-elevation-2);
 }
 
 .ptr-indicator.is-refreshing .ptr-spinner {
@@ -287,8 +288,11 @@ button:active {
 
 .ptr-icon {
   color: var(--sys-color-primary);
-  transform: rotate(calc(var(--ptr-offset, 0px) * 2deg));
-  transition: transform 0.1s linear;
+  transition: transform 0.2s;
+}
+
+.is-pulling .ptr-icon {
+  transform: rotate(var(--ptr-rotate, 0deg));
 }
 
 /* =========================================
@@ -868,4 +872,58 @@ a {
   font-weight: 800;
   text-align: center;
   color: var(--sys-color-primary);
+}
+
+/* =========================================
+   SHARED CARD COMPONENTS
+   ========================================= */
+.player-name {
+  font-size: 16px;
+  font-weight: 850;
+  color: var(--sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.trophy-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #854d0e;
+  margin-top: 2px;
+  width: fit-content;
+}
+
+:root.dark .trophy-meta {
+  color: #fbbf24;
+}
+
+.trophy-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--sys-font-family-mono);
+}
+
+.badge {
+  height: 18px;
+  width: 100%;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--sys-color-on-surface);
+  font-family: var(--sys-font-family-mono);
+  text-transform: uppercase;
+}
+
+.stat-score {
+  font-size: 18px;
+  font-weight: 900;
+  font-family: var(--sys-font-family-mono);
 }

@@ -5,7 +5,12 @@ import Icon from "./Icon.vue";
 import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
 import { useAppSettings } from "../composables/useAppSettings";
-import { getScoreTone, formatRole, formatTimeAgo } from "../utils/formatters";
+import {
+  getScoreTone,
+  formatRole,
+  formatTimeAgo,
+  calculateMomentum,
+} from "../utils/formatters";
 import { useExternalLink } from "../composables/useExternalLink";
 import StatisticItem from "./StatisticItem.vue";
 
@@ -45,23 +50,8 @@ const scoreTone = (score: number) => getScoreTone(score);
 
 const trendInfo = computed(() => {
   const dt = Number(member.dt) || 0;
-  // Use explicit RAW property
   const currentRaw = Number(member.performanceRawScore) || 0;
-  if (dt === 0 || currentRaw === 0) return null;
-  const previousRaw = currentRaw - dt;
-  if (previousRaw < 50) return null;
-  if (previousRaw > 0 && dt / previousRaw > 10) return null;
-  const percentChange = (dt / previousRaw) * 100;
-  const absPercent = Math.abs(percentChange);
-  let valStr = "";
-  if (absPercent < 0.1 && absPercent > 0) valStr = "<0.1%";
-  else if (absPercent < 10) valStr = absPercent.toFixed(1) + "%";
-  else valStr = Math.round(absPercent) + "%";
-  return {
-    val: valStr,
-    dir: dt > 0 ? "up" : "down",
-    raw: dt,
-  };
+  return calculateMomentum(dt, currentRaw);
 });
 </script>
 
@@ -198,47 +188,6 @@ const trendInfo = computed(() => {
 
 <style scoped>
 /* Content specific styles only */
-.player-name {
-  font-size: 16px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-.trophy-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #854d0e;
-  margin-top: 2px;
-  width: fit-content;
-}
-:root.dark .trophy-meta {
-  color: #fbbf24;
-}
-.trophy-val {
-  font-size: 13px;
-  font-weight: 700;
-  font-family: var(--sys-font-family-mono);
-}
-
-.badge {
-  height: 18px;
-  width: 100%;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-mono);
-  text-transform: uppercase;
-}
 .badge.role {
   font-family: var(--sys-font-family-body);
   font-weight: 900;
@@ -263,12 +212,6 @@ const trendInfo = computed(() => {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   border: 1px solid var(--sys-color-outline-variant);
-}
-
-.stat-score {
-  font-size: 18px;
-  font-weight: 900;
-  font-family: var(--sys-font-family-mono);
 }
 
 .momentum-pill {
