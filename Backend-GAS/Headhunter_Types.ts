@@ -52,7 +52,12 @@ export interface TournamentResult {
   membersList?: TournamentMember[];
 }
 
-export const VER_HH_TYPES = "1.0.0";
+export interface QueueResult {
+  count: number;
+  pruned: number;
+}
+
+export const VER_HH_TYPES = "1.0.1";
 
 // @ts-ignore
 if (typeof module !== "undefined" && module.exports) {

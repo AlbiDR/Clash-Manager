@@ -23,6 +23,16 @@ export interface IHeadhunterStore {
    * and Manual Ticks (HH Sheet). Persists changes and cleans up.
    */
   updateAndGetBlacklist(sheet: any): BlacklistResult;
+
+  /**
+   * Loads the recruitment queue reservoir.
+   */
+  loadQueue(ss: any): Map<string, Recruit>;
+
+  /**
+   * Persists the recruitment queue reservoir with freshness pruning.
+   */
+  saveQueue(ss: any, recruits: Recruit[]): { count: number; pruned: number };
 }
 
 const HeadhunterStore: IHeadhunterStore = {
@@ -233,6 +243,78 @@ const HeadhunterStore: IHeadhunterStore = {
       ids: new Set(validEntries.map((e) => e.t)),
       entries: validEntries.map((e) => ({ rawScore: e.s })),
     };
+  },
+
+  loadQueue(ss: any): Map<string, Recruit> {
+    const queueSheet = ss.getSheetByName(CONFIG.SHEETS.QUEUE);
+    if (!queueSheet || queueSheet.getLastRow() < 2) return new Map();
+
+    const data = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 9).getValues();
+    const map = new Map<string, Recruit>();
+    const now = Date.now();
+    const expiryMs = (CONFIG.HEADHUNTER.QUEUE_EXPIRY_DAYS || 7) * 86400000;
+
+    data.forEach((r: any) => {
+      const tag = String(r[0]).trim().toUpperCase();
+      const foundDate = Registry.Services.Time.parseFlexibleDate(r[7]);
+      
+      // Expiry check
+      if (now - foundDate.getTime() > expiryMs) return;
+
+      if (tag) {
+        map.set(tag, {
+          tag,
+          name: String(r[1]),
+          trophies: Number(r[2]),
+          donations: Number(r[3]),
+          cards: Number(r[4]),
+          war: Number(r[5]),
+          rawScore: Number(r[6]),
+          foundDate: foundDate,
+          invited: false,
+          source: r[8] || "TOURNAMENT",
+        });
+      }
+    });
+
+    return map;
+  },
+
+  saveQueue(ss: any, recruits: Recruit[]): { count: number; pruned: number } {
+    const sheetName = CONFIG.SHEETS.QUEUE;
+    const queueSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    const HOT_COLOR = "#795548"; // Brownish color for the Queue (Bench)
+
+    if (queueSheet.getLastRow() === 0) {
+      queueSheet.getRange(1, 1, 1, 9).setValues([["Tag", "Name", "Trophies", "Donations", "Cards", "War", "Raw Score", "Found Date", "Source"]]);
+      queueSheet.setTabColor(HOT_COLOR);
+      Registry.Services.View.tagSheet(queueSheet, "TECHNICAL");
+      queueSheet.hideSheet();
+    }
+
+    const maxQueue = CONFIG.HEADHUNTER.MAX_QUEUE_SIZE || 500;
+    const toSave = recruits.slice(0, maxQueue);
+
+    if (queueSheet.getLastRow() > 1) {
+      queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 9).clearContent();
+    }
+
+    if (toSave.length > 0) {
+      const values = toSave.map(r => [
+        r.tag,
+        r.name,
+        r.trophies,
+        r.donations,
+        r.cards,
+        r.war,
+        r.rawScore,
+        Registry.Services.Time.formatDate(r.foundDate),
+        r.source || "TOURNAMENT"
+      ]);
+      queueSheet.getRange(2, 1, values.length, 9).setValues(values);
+    }
+
+    return { count: toSave.length, pruned: Math.max(0, recruits.length - maxQueue) };
   }
 };
 

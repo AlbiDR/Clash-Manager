@@ -82,31 +82,38 @@ const Headhunter: IHeadhunter = {
       // 3. STATE HYDRATION
       const strategy = S.Scoring.calculateTrophyFloor(members, inGameRequirement);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
-      const existing = HeadhunterStore.loadDatabase(sheet);
+      
+      const existingPool = HeadhunterStore.loadDatabase(sheet);
+      const queuePool = HeadhunterStore.loadQueue(ss);
+      
+      // Merge for unified processing
+      const combinedRegistry = new Map<string, Recruit>();
+      existingPool.forEach(r => combinedRegistry.set(r.tag, r));
+      queuePool.forEach(r => combinedRegistry.set(r.tag, r));
 
       // 4. STORAGE MAINTENANCE
-      const beforePrune = existing.size;
-      existing.forEach((_, tag) => {
-        if (blacklistResult.ids.has(tag)) existing.delete(tag);
+      const beforePrune = combinedRegistry.size;
+      combinedRegistry.forEach((_, tag) => {
+        if (blacklistResult.ids.has(tag)) combinedRegistry.delete(tag);
       });
-      const prunedCount = beforePrune - existing.size;
+      const prunedCount = beforePrune - combinedRegistry.size;
 
       // REPORT [2-4]: STATE & METRICS
       S.Reporting.logReport(`[2-4] STATE: Local Registry & Metrics`, [
         `NETWORK: ${S.Network.getWorkerSummary()}`,
         `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement}`,
-        `POOL:    ${existing.size} Active | ${blacklistResult.ids.size} Blacklisted | ${prunedCount} Pruned`,
+        `POOL:    ${existingPool.size} Active | ${queuePool.size} Queued | ${prunedCount} Removed`,
         `QUOTA:   ${remainingQuota} Remaining`
       ]);
 
       // 5. MEMBERSHIP VALIDATION
       const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
       const logDismissal = (tag: string, score: number) => {
-        evtSheet.appendRow([tag, new Date(), score]);
+        evtSheet.appendRow([tag, Date.now(), score]);
       };
 
       let joinedCount = 0;
-      const tagsToCheck = Array.from(existing.keys());
+      const tagsToCheck = Array.from(combinedRegistry.keys());
       if (tagsToCheck.length > 0) {
         const batchSize = 25;
         for (let i = 0; i < tagsToCheck.length; i += batchSize) {
@@ -116,9 +123,9 @@ const Headhunter: IHeadhunter = {
           );
           profiles.forEach((p: any) => {
             if (p?.clan?.tag) {
-              const recruit = existing.get(p.tag);
+              const recruit = combinedRegistry.get(p.tag);
               if (recruit) logDismissal(p.tag, recruit.rawScore);
-              existing.delete(p.tag);
+              combinedRegistry.delete(p.tag);
               joinedCount++;
             }
           });
@@ -135,7 +142,7 @@ const Headhunter: IHeadhunter = {
       
       const scanned = HeadhunterScanner.scanTournaments(
         discoveryFloor,
-        existing, 
+        combinedRegistry, 
         blacklistResult.ids,
         lowQuotaMode
       );
@@ -143,14 +150,15 @@ const Headhunter: IHeadhunter = {
       const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
       let newArrivals = 0;
       let updatedExisting = 0;
+      
       scanned.forEach((c) => {
-        if (existing.has(c.tag)) {
-          c.foundDate = existing.get(c.tag)!.foundDate;
+        if (combinedRegistry.has(c.tag)) {
+          c.foundDate = combinedRegistry.get(c.tag)!.foundDate;
           updatedExisting++;
         } else {
           newArrivals++;
         }
-        existing.set(c.tag, c);
+        combinedRegistry.set(c.tag, c);
       });
 
       // 8. ANALYSIS & ARCHIVE [8/9]
@@ -206,22 +214,22 @@ const Headhunter: IHeadhunter = {
       }
 
       const finalBenchmark = S.Scoring.calculateHybridBenchmark(clanEliteData, blacklistResult.entries);
-      const allCandidates = Array.from(existing.values()).sort((a, b) => b.rawScore - a.rawScore);
-      const targetLimit = CONFIG.HEADHUNTER.TARGET;
-      const finalPool = allCandidates.slice(0, targetLimit);
-      const droppedPool = allCandidates.slice(targetLimit);
-
-      if (droppedPool.length > 0) {
-        droppedPool.forEach(p => logDismissal(p.tag, p.rawScore));
-      }
+      const allSorted = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
+      
+      const targetActive = CONFIG.HEADHUNTER.TARGET;
+      const finalPool = allSorted.slice(0, targetActive);
+      const queueList = allSorted.slice(targetActive);
     
       finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
+      queueList.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
 
       const backupSummary = S.View.backupSheet(ss, CONFIG.SHEETS.HH);
+      const queueRes = HeadhunterStore.saveQueue(ss, queueList);
       
       S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Archive`, [
         `DISCOVERY: ${scanned.length} Scanned | ${shadowCount} Shadow Yield`,
-        `BACKUP:    '${CONFIG.SHEETS.HH}' ${backupSummary}`
+        `BACKUP:    '${CONFIG.SHEETS.HH}' ${backupSummary}`,
+        `QUEUE:     ${queueRes.count} Benched | ${queueRes.pruned} Overflowed`
       ]);
 
       // 9. RENDER: Visual Sync [9/9]
@@ -236,7 +244,7 @@ const Headhunter: IHeadhunter = {
       // [SUMMARY]
       S.Reporting.logReport(`[SUMMARY] OPERATION SUCCESSFUL`, [
         `STRATEGY: ${strategy.method}`,
-        `CAPACITY: [${members.length}] -> [${finalPool.length}/${targetLimit}]`,
+        `CAPACITY: [${members.length}] -> ACTIVE: ${finalPool.length} | QUEUE: ${queueRes.count}`,
         `DELTA:    +${newArrivals} Added | -${joinedCount} Joined | ~${updatedExisting} Updated`
       ]);
 
