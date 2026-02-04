@@ -53,7 +53,8 @@ function debugPlayerBattlelogs(): void {
     scoutable: 0,
     opponents: 0,
     rejected: 0,
-    yielding: 0
+    yielding: 0,
+    rawTypes: {} as Record<string, number>
   };
 
   const scoutableModes = ["ladder", "pathOfLegends", "challenge", "tournament"];
@@ -61,6 +62,8 @@ function debugPlayerBattlelogs(): void {
 
   rawLogs.forEach((battle: any) => {
     metrics.total++;
+    const type = battle.type || "unknown";
+    metrics.rawTypes[type] = (metrics.rawTypes[type] || 0) + 1;
     
     // PRECISION FILTER: Only analyze modes where recruitment is viable.
     if (scoutableModes.includes(battle.type)) {
@@ -94,6 +97,9 @@ function debugPlayerBattlelogs(): void {
     `OPPONENT_POOL:    ${metrics.opponents} Total Subjects`,
     `REJECTION_RATE:   ${metrics.rejected} (Clanned / Ineligible)`,
     `EXTRACTION_YIELD: ${metrics.yielding} Recruitment Seeds Found`,
+    "",
+    "RAW_TYPE_DISTRIBUTION:",
+    ...Object.entries(metrics.rawTypes).map(([type, count]) => `  - ${type.padEnd(20)}: ${count}`),
     "",
     "IDENTIFIED SEEDS [CLANLESS]:",
     ...clanlessOpponents.map(o => `  [+] ${o.tag.padEnd(12)} | ${o.name}`)
