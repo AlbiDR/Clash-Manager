@@ -17,7 +17,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.1.21";
+const VER_HEADHUNTER = "12.2.0";
 
 export interface IHeadhunter {
   scout(): void;
