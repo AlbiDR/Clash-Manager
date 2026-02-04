@@ -79,31 +79,26 @@ var Schema: ISchema = {
   bootDynamicSchema: function () {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) return;
-    console.info("Schema: Booting Dynamic Schema Sync...");
     
     // Safety check for CONFIG presence
     if (typeof CONFIG === 'undefined' || !CONFIG.SHEETS) return;
 
-    const rosterSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
-    if (rosterSheet)
-      Object.assign(
-        CONFIG.SCHEMA.ROSTER,
-        this.resolveSchemaIndices(rosterSheet, CONFIG.SCHEMA.ROSTER_HEADERS, 2, 2),
-      );
-      
-    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-    if (hhSheet)
-      Object.assign(
-        CONFIG.SCHEMA.HH,
-        this.resolveSchemaIndices(hhSheet, CONFIG.SCHEMA.HH_HEADERS, 2, 2),
-      );
-      
-    const dbSheet = ss.getSheetByName(CONFIG.SHEETS.DB);
-    if (dbSheet)
-      Object.assign(
-        CONFIG.SCHEMA.DB,
-        this.resolveSchemaIndices(dbSheet, CONFIG.SCHEMA.DB_HEADERS, 2, 2),
-      );
+    const results: string[] = [];
+    const sync = (sheetName: string, targetConfig: any, headerMap: any) => {
+      const s = ss.getSheetByName(sheetName);
+      if (s) {
+        Object.assign(targetConfig, this.resolveSchemaIndices(s, headerMap, 2, 2));
+        results.push(sheetName);
+      }
+    };
+
+    if (CONFIG.SHEETS.ROSTER) sync(CONFIG.SHEETS.ROSTER, CONFIG.SCHEMA.ROSTER, CONFIG.SCHEMA.ROSTER_HEADERS);
+    if (CONFIG.SHEETS.HH) sync(CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, CONFIG.SCHEMA.HH_HEADERS);
+    if (CONFIG.SHEETS.DB) sync(CONFIG.SHEETS.DB, CONFIG.SCHEMA.DB, CONFIG.SCHEMA.DB_HEADERS);
+
+    if (results.length > 0) {
+      console.info(`Schema: Synced ${results.length} sheets (${results.join(', ')}).`);
+    }
   },
 };
 
