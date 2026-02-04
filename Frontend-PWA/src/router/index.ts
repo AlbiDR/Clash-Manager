@@ -45,7 +45,7 @@ const router = createRouter({
       path: "/leaderboard",
       name: "leaderboard",
       component: LeaderboardView, // Eager load for better LCP
-      meta: { title: "Leaderboard" },
+      meta: { title: "Roster" },
     },
     {
       path: "/recruiter",

@@ -30,7 +30,7 @@ const targets = reactive<Record<TargetKey, RefreshTarget>>({
   },
   leaderboard: {
     key: "leaderboard",
-    label: "Leaderboard",
+    label: "Roster",
     desc: "Recalculate scores and ranks",
     icon: "leaderboard",
     cooldown: 0,
