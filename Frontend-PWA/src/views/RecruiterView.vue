@@ -2,7 +2,7 @@
 import { useRecruiter } from "../composables/useRecruiter";
 
 import RecruitCard from "../components/RecruitCard.vue";
-import RecruitCardSkeleton from "../components/RecruitCardSkeleton.vue";
+import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
 import Icon from "../components/Icon.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
@@ -49,7 +49,7 @@ const {
     :sort-options="sortOptions"
     :current-sort="sortBy"
     :loading="isRefreshing && !isHydrated"
-    :skeleton-component="RecruitCardSkeleton"
+    :skeleton-component="BaseCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
     :total-count="filteredItems.length"
@@ -86,7 +86,12 @@ const {
         @toggle-expand="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
       />
-      <RecruitCardSkeleton v-for="i in 7" :key="'ex-' + i" />
+      <BaseCardSkeleton
+        v-for="i in 7"
+        :key="'ex-' + i"
+        :index="i + 1"
+        :style="{ '--i': i + 1 }"
+      />
     </template>
     <template v-else>
       <RecruitCard
