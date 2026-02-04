@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Technical purity validator for battlelog analysis.
- * VERSION: 1.0.0
+ * VERSION: 1.1.0
  * ============================================================================
  */
 
@@ -57,7 +57,15 @@ function debugPlayerBattlelogs(): void {
     rawTypes: {} as Record<string, number>
   };
 
-  const scoutableModes = ["ladder", "pathOfLegends", "challenge", "tournament"];
+  const scoutableModes = [
+    "ladder", 
+    "pathOfLegends", 
+    "challenge", 
+    "tournament", 
+    "riverRacePvP", 
+    "riverRaceDuel", 
+    "riverRaceTugOfWar"
+  ];
   const clanlessOpponents: Array<{ tag: string; name: string }> = [];
 
   rawLogs.forEach((battle: any) => {
