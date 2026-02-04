@@ -8,31 +8,30 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 
 ## Visual Experience
 
-<p align="center">
-  The interface adapts fluidly to your device and system theme preferences.
-</p>
-
-<p align="center">
-  <strong>Desktop View</strong>
-</p>
-
-<p align="center">
-  <img src="public/roster-light.webp" width="48%" />
-  &nbsp;
-  <img src="public/roster-dark.webp" width="48%" />
-</p>
-
-<br />
-
-<p align="center">
-  <strong>Mobile View</strong>
-</p>
-
-<p align="center">
-  <img src="public/headhunter-light.webp" width="28%" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="public/headhunter-dark.webp" width="28%" />
-</p>
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="50%">
+        <strong>Roster View</strong><br />
+        <img src="public/roster-light.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
+      </td>
+      <td align="center" width="50%">
+        <strong>Roster (Dark)</strong><br />
+        <img src="public/roster-dark.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="50%">
+        <strong>Headhunter View</strong><br />
+        <img src="public/headhunter-light.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
+      </td>
+      <td align="center" width="50%">
+        <strong>Headhunter (Dark)</strong><br />
+        <img src="public/headhunter-dark.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
