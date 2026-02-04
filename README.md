@@ -1,8 +1,9 @@
 # Clash Manager
 
-[![System Version](https://img.shields.io/badge/System-v13.0.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
-[![Client Version](https://img.shields.io/badge/Client-v10.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
-[![Worker Version](https://img.shields.io/badge/Worker-v10.1.0-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
+[![System](https://img.shields.io/badge/System-v13.0.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
+[![Client](https://img.shields.io/badge/Client-v10.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.0-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
+[![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 
 **An engineered ecosystem for high-precision clan leadership.**
@@ -174,7 +175,7 @@ The Client consumes the headless JSON API exposed by the Core.
   **Source**: `Frontend-PWA/`
   **Environment**: Static Web Host (e.g., GitHub Pages)
   **Configuration**:
-    *   `VITE_GAS_URL`: The Web App URL generated in Phase 2.
+    - `VITE_GAS_URL`: The Web App URL generated in Phase 2.
   **Action**: `pnpm build`
 
 </details>

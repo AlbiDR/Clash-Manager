@@ -48,13 +48,13 @@ The application has migrated away from utility frameworks to a custom, highly-op
 
 | Layer | Technology | Description |
 | :--- | :--- | :--- |
-| **Core** | **Vue 3** | Composition API (`<script setup>`) for maximum type inference. |
-| **Language** | **TypeScript** | Strict mode enabled for 100% type safety. |
-| **State** | **Composables** | Decentralized, atomic state management (No Pinia/Vuex overhead). |
-| **Network** | **GasClient** | Specialized bridge for communicating with Google Apps Script. |
-| **Schema** | **Valibot** | Runtime payload validation to ensure data integrity. |
-| **PWA** | **Vite PWA** | Service Worker registration, asset caching, and offline support. |
-| **Testing** | **Vitest** | Unit and component testing with JSDOM environment. |
+| **Core** | **Vue 3** | Composition API (`<script setup>`) for maximum type inference |
+| **Language** | **TypeScript** | Strict mode enabled for 100% type safety |
+| **State** | **Composables** | Decentralized, atomic state management (No Pinia/Vuex overhead) |
+| **Network** | **GasClient** | Specialized bridge for communicating with Google Apps Script |
+| **Schema** | **Valibot** | Runtime payload validation to ensure data integrity |
+| **PWA** | **Vite PWA** | Service Worker registration, asset caching, and offline support |
+| **Testing** | **Vitest** | Unit and component testing with JSDOM environment |
 
 ---
 <br />
