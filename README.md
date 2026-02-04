@@ -16,8 +16,8 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 
 <div align="left">
   <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #f6f8fa;">
-    <summary style="cursor: pointer; font-weight: 600; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
-      Light Mode
+    <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+      <strong>Light Mode</strong>
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #ffffff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
       <img src="Frontend-PWA/public/roster-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
@@ -26,8 +26,8 @@ Clash Manager is a production-grade, distributed architecture designed to automa
   </details>
 
   <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #161b22;">
-    <summary style="cursor: pointer; font-weight: 600; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
-      Dark Mode
+    <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+      <strong>Dark Mode</strong>
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
       <img src="Frontend-PWA/public/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
@@ -65,7 +65,7 @@ Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuo
 ## System Ecosystem
 
 <details>
-<summary><strong>1. Backend Engine (Google Apps Script)</strong></summary>
+<summary><strong>Backend Engine (Google Apps Script)</strong></summary>
 
 The central nervous system. A serverless execution engine hosted on **Google Apps Script**.
 - **Role**: Orchestrates ETL pipelines, manages persistent state, and executes the proprietary scoring kernel.
@@ -75,7 +75,7 @@ The central nervous system. A serverless execution engine hosted on **Google App
 </details>
 
 <details>
-<summary><strong>2. Client Core (PWA)</strong></summary>
+<summary><strong>Client Core (PWA)</strong></summary>
 
 The command center. A **Vue 3 Progressive Web Application** designed for administrative operations.
 - **Role**: Provides a fluid, low-latency interface for data visualization and deeper analytics.
@@ -85,7 +85,7 @@ The command center. A **Vue 3 Progressive Web Application** designed for adminis
 </details>
 
 <details>
-<summary><strong>3. Remote Worker (Render)</strong></summary>
+<summary><strong>Remote Worker (Render)</strong></summary>
 
 The muscle. A high-performance Node.js service hosted on **Render**.
 - **Role**: Offloads high-volume network operations and scanning tasks to circumvent platform quotas.
@@ -141,12 +141,12 @@ The system requires a synchronized deployment across all three environments.
 
 The worker must be online first to provide endpoints for the orchestration engine.
 
-1.  **Source**: `Backend-Worker/`
-2.  **Environment**: Node.js Service
-3.  **Requirements**:
+  **Source**: `Backend-Worker/`
+  **Environment**: Node.js Service
+  **Requirements**:
     *   `WORKER_CONCURRENCY`: `20`
     *   `API_KEYS`: Comma-separated list of tokens.
-4.  **Action**: `pnpm build && pnpm start`
+  **Action**: `pnpm build && pnpm start`
 
 </details>
 
@@ -155,12 +155,12 @@ The worker must be online first to provide endpoints for the orchestration engin
 
 The Core connects the database (Sheets) to the Worker.
 
-1.  **Source**: `Backend-GAS/`
-2.  **Environment**: Google Apps Script
-3.  **Configuration**:
+  **Source**: `Backend-GAS/`
+  **Environment**: Google Apps Script
+  **Configuration**:
     *   `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
     *   `CLAN_TAG`: Target resource identifier.
-4.  **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
+  **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
 
 </details>
 
@@ -169,11 +169,11 @@ The Core connects the database (Sheets) to the Worker.
 
 The Client consumes the headless JSON API exposed by the Core.
 
-1.  **Source**: `Frontend-PWA/`
-2.  **Environment**: Static Web Host (e.g., GitHub Pages)
-3.  **Configuration**:
+  **Source**: `Frontend-PWA/`
+  **Environment**: Static Web Host (e.g., GitHub Pages)
+  **Configuration**:
     *   `VITE_GAS_URL`: The Web App URL generated in Phase 2.
-4.  **Action**: `pnpm build`
+  **Action**: `pnpm build`
 
 </details>
 
