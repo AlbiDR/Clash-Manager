@@ -82,6 +82,7 @@ export interface AppConfig {
     HH: string;
     BL: string;
     EVT: string;
+    QUEUE: string;
   };
   LAYOUT: {
     BUFFER_SIZE: number;
@@ -133,6 +134,8 @@ export interface AppConfig {
     BENCHMARK_CLAN_WEIGHT: number;
     BENCHMARK_MARKET_WEIGHT: number;
     REBUILD_MIN_PERCENTILE: number;
+    MAX_QUEUE_SIZE: number;
+    QUEUE_EXPIRY_DAYS: number;
     STRATEGY: {
       SCAN_FLOOR_FALLBACK: number;
       TROPHY_FLOOR_MAX: number;
@@ -248,6 +251,7 @@ export var CONFIG: AppConfig = {
     HH: "Headhunter",
     BL: "HH_BLACKLIST",
     EVT: "HH_EVENT_LOG",
+    QUEUE: "HH_QUEUE",
   },
   LAYOUT: { BUFFER_SIZE: 25, DATA_START_ROW: 3 },
 
@@ -408,6 +412,8 @@ export var CONFIG: AppConfig = {
     BENCHMARK_CLAN_WEIGHT: 0.4,
     BENCHMARK_MARKET_WEIGHT: 0.6,
     REBUILD_MIN_PERCENTILE: 0.1,
+    MAX_QUEUE_SIZE: 500,
+    QUEUE_EXPIRY_DAYS: 7,
     STRATEGY: {
       SCAN_FLOOR_FALLBACK: 5000,
       TROPHY_FLOOR_MAX: 10000,
