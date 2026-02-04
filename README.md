@@ -12,31 +12,28 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 ---
 <br />
 
-## Visual Experience
+## Screenshots
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="50%">
-        <strong>ROSTER INTERFACE</strong><br />
-        <img src="Frontend-PWA/public/roster-light.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
-      </td>
-      <td align="center" width="50%">
-        <strong>ROSTER (DARK)</strong><br />
-        <img src="Frontend-PWA/public/roster-dark.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
-      </td>
-    </tr>
-    <tr>
-      <td align="center" width="50%">
-        <strong>HEADHUNTER INTERFACE</strong><br />
-        <img src="Frontend-PWA/public/headhunter-light.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
-      </td>
-      <td align="center" width="50%">
-        <strong>HEADHUNTER (DARK)</strong><br />
-        <img src="Frontend-PWA/public/headhunter-dark.webp" width="100%" style="border: 1.5px solid #3178C6; border-radius: 10px;" />
-      </td>
-    </tr>
-  </table>
+<div align="left">
+  <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #f6f8fa;">
+    <summary style="cursor: pointer; font-weight: 600; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+      Light Mode
+    </summary>
+    <div style="display: flex; gap: 10px; padding: 10px; background-color: #ffffff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+      <img src="Frontend-PWA/public/roster-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="Frontend-PWA/public/headhunter-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+    </div>
+  </details>
+
+  <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #161b22;">
+    <summary style="cursor: pointer; font-weight: 600; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+      Dark Mode
+    </summary>
+    <div style="display: flex; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+      <img src="Frontend-PWA/public/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="Frontend-PWA/public/headhunter-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+    </div>
+  </details>
 </div>
 
 ---
