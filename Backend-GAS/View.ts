@@ -489,13 +489,13 @@ var View: IView = {
    * BACKUP SYSTEM
    * Rotates backups and creates a fresh clone using atomic operations.
    */
-  backupSheet: function (ss, sheetName) {
+  backupSheet: function (ss, sheetName): string {
     const lock = LockService.getDocumentLock();
     try {
-      if (!lock!.tryLock(20000)) return; 
+      if (!lock!.tryLock(20000)) return "Lock Timeout"; 
       
       const sheet = ss.getSheetByName(sheetName);
-      if (!sheet) return;
+      if (!sheet) return "Sheet Not Found";
 
       const MAX_BACKUPS = CONFIG.SYSTEM.MAX_BACKUPS;
       const backup1Name = `Backup 1 ${sheetName}`;
@@ -513,14 +513,11 @@ var View: IView = {
             const currentData = sheet.getRange(1, 1, numRows, lastCol).getValues();
             const backupData = existingBackup1.getRange(1, 1, numRows, lastCol).getValues();
             if (JSON.stringify(currentData) === JSON.stringify(backupData)) {
-              console.log(`Backup skipped for '${sheetName}' (No changes)`);
-              return; 
+              return "No Changes"; 
             }
           }
         }
       }
-
-      console.log(`Rotating backups for '${sheetName}'...`);
       
       // 2. Atomic Rotation Strategy (Batch Update)
       const requests: any[] = [];
@@ -553,7 +550,6 @@ var View: IView = {
       }
 
       // 3. High-Performance Clone
-      console.log(`Cloning '${sheetName}'...`);
       const copyResponse = Sheets.Spreadsheets!.Sheets!.copyTo({
         destinationSpreadsheetId: ssId
       }, ssId, sheetId);
@@ -576,11 +572,13 @@ var View: IView = {
         const timestamp = Utilities.formatDate(new Date(), CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
         this.setStatusMessage(clonedSheet, `Backup: ${timestamp}`);
       } else {
-        throw new Error("Cloned sheet not found in spreadsheet after copyTo.");
+        throw new Error("Cloned sheet not found");
       }
 
+      return "Archives Rotated";
+
     } catch (e: any) {
-      console.warn(`Backup Error for '${sheetName}': ${e.message}`);
+      return `Backup Fail: ${e.message}`;
     } finally {
       // Always run hygiene to clean up any stray "Copy of..." tabs created by failed attempts
       this.enforceGlobalTabHygiene(ss);

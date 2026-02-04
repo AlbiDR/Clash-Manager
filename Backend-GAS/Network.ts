@@ -610,25 +610,20 @@ var Network: INetwork = {
             if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
-                console.info(`Network: Worker Healthy: Upstream OK, Memory ${Math.round((diagnostic?.checks?.memory || 0) / 1024 / 1024)}MB`);
             } else if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "UNKNOWN") {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
-                console.info(`Network: Worker Live (Stateless Mode).`);
             } else {
                 _LAST_WORKER_ERROR = `Degraded: Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
-                console.warn(`Network: Worker Degradation: ${_LAST_WORKER_ERROR}`);
                 isHealthy = (diagnostic.status === "success"); // Reachable
             }
         } else {
             _LAST_WORKER_ERROR = `HTTP ${res.getResponseCode()}`;
-            console.error(`Network: Worker Handshake Failed: ${_LAST_WORKER_ERROR}`);
             if (res.getResponseCode() === 401) _LAST_WORKER_ERROR += " (Secret Mismatch)";
             if (res.getResponseCode() === 404) _LAST_WORKER_ERROR += " (Wrong version or URL)";
         }
     } catch(e: any) { 
         _LAST_WORKER_ERROR = String(e);
-        console.warn(`Network: Worker Reachability Error: ${e}`); 
     }
 
     // PERSISTENCE: Synchronize health status across the architecture.
