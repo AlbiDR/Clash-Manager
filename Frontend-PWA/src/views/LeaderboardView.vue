@@ -2,7 +2,7 @@
 import { useLeaderboard } from "../composables/useLeaderboard";
 
 import MemberCard from "../components/MemberCard.vue";
-import MemberCardSkeleton from "../components/MemberCardSkeleton.vue";
+import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
 const {
@@ -53,7 +53,7 @@ const {
     :sort-options="sortOptions"
     :current-sort="sortBy"
     :loading="showSkeletons"
-    :skeleton-component="MemberCardSkeleton"
+    :skeleton-component="BaseCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
     :total-count="filteredItems.length"
@@ -85,9 +85,10 @@ const {
         @toggle="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
       />
-      <MemberCardSkeleton
+      <BaseCardSkeleton
         v-for="i in 7"
         :key="'ex-' + i"
+        :index="i + 1"
         :style="{ '--i': i + 1 }"
       />
     </template>
