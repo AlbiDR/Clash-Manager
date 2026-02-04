@@ -20,18 +20,18 @@ Clash Manager is a production-grade, distributed architecture designed to automa
 
 <div align="center">
   <p><strong>DESKTOP INTERFACE</strong></p>
-  <img src="Frontend-PWA/public/screenshot-desktop-light.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
+  <img src="Frontend-PWA/public/roster-light.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
   <br />
   <br />
-  <img src="Frontend-PWA/public/screenshot-desktop-dark.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
+  <img src="Frontend-PWA/public/roster-dark.webp" width="72%" style="border: 2px solid #3178C6; border-radius: 8px;" />
 </div>
 <br />
 
 <div align="center">
   <p><strong>MOBILE INTERFACE</strong></p>
-  <img src="Frontend-PWA/public/screenshot-mobile-light.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
+  <img src="Frontend-PWA/public/headhunter-light.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
   &nbsp;
-  <img src="Frontend-PWA/public/screenshot-mobile-dark.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
+  <img src="Frontend-PWA/public/headhunter-dark.webp" width="35.3%" style="border: 2px solid #3178C6; border-radius: 12px;" />
 </div>
 
 ---

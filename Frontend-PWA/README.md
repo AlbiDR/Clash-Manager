@@ -17,9 +17,9 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 </p>
 
 <p align="center">
-  <img src="public/screenshot-desktop-light.webp" width="48%" />
+  <img src="public/roster-light.webp" width="48%" />
   &nbsp;
-  <img src="public/screenshot-desktop-dark.webp" width="48%" />
+  <img src="public/roster-dark.webp" width="48%" />
 </p>
 
 <br />
@@ -29,9 +29,9 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 </p>
 
 <p align="center">
-  <img src="public/screenshot-mobile-light.webp" width="28%" />
+  <img src="public/headhunter-light.webp" width="28%" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="public/screenshot-mobile-dark.webp" width="28%" />
+  <img src="public/headhunter-dark.webp" width="28%" />
 </p>
 
 ---
