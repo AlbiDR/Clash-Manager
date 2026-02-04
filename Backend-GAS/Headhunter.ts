@@ -17,7 +17,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.3.0";
+const VER_HEADHUNTER = "12.3.1";
 
 export interface IHeadhunter {
   scout(): void;
@@ -130,7 +130,7 @@ const Headhunter: IHeadhunter = {
       // The user draft has it in 'METRICS: Recruitment Health'.
 
       // 7. Scanner: Launch
-      const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
+      const discoveryFloor = inGameRequirement || 5000; 
       
       const scanned = HeadhunterScanner.scanTournaments(
         discoveryFloor,
@@ -216,11 +216,11 @@ const Headhunter: IHeadhunter = {
     
       finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
 
-      S.View.backupSheet(ss, CONFIG.SHEETS.HH);
+      const backupSummary = S.View.backupSheet(ss, CONFIG.SHEETS.HH);
       
       S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Archive`, [
         `DISCOVERY: ${scanned.length} Scanned | ${shadowCount} Shadow Yield`,
-        `BACKUP:    'Headhunter' Archives Rotated`
+        `BACKUP:    '${CONFIG.SHEETS.HH}' ${backupSummary}`
       ]);
 
       // 9. RENDER: Visual Sync [9/9]
@@ -230,7 +230,7 @@ const Headhunter: IHeadhunter = {
       S.Reporting.logReport(`[9/9] RENDER: Visual Sync`, [
         `HYGIENE: ${hygieneSummary}`,
         `ATOMIC:  ${finalPool.length} Candidates Synchronized`
-      ]);
+      ], 150);
 
       // [SUMMARY]
       S.Reporting.logReport(`[SUMMARY] OPERATION SUCCESSFUL`, [

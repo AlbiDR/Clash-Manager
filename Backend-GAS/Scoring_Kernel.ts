@@ -263,7 +263,7 @@ const ScoringKernel: IScoringKernel = {
         mode = "ELITE";
         const median = ts[Math.floor(ts.length / 2)] ?? 0;
         if (median > floor) {
-          floor = Math.min(9000, median);
+          floor = Math.min(10000, median);
           method = `Elite Mode (Median: ${floor})`;
         } else {
           method = `Elite Mode (At In-Game Cap: ${inGameReq})`;
