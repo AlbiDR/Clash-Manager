@@ -7,12 +7,10 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 ---
 <br />
 
-## Screenshots
-
 <div align="left">
   <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #f6f8fa;">
-    <summary style="cursor: pointer; font-weight: 600; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
-      Light Mode
+    <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+      <strong>Light Mode</strong>
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #ffffff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
       <img src="public/roster-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
@@ -21,8 +19,8 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
   </details>
 
   <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #161b22;">
-    <summary style="cursor: pointer; font-weight: 600; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
-      Dark Mode
+    <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+      <strong>Dark Mode</strong>
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
       <img src="public/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
