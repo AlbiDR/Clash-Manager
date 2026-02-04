@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Testing tool for analyzing battle logs.
- * VERSION: 1.7.0
+ * VERSION: 1.8.0
  * ============================================================================
  */
 
@@ -15,7 +15,7 @@ import Registry from './Registry';
 
 /**
  * Analyzes a player's recent matches to find clanless opponents.
- * Uses a dynamic trophy floor based on the target player's trophies.
+ * Uses adaptive benchmarking to detect the actual skill bracket.
  */
 function debugPlayerBattlelogs(): void {
   const S = Registry.Services;
@@ -26,110 +26,117 @@ function debugPlayerBattlelogs(): void {
     return;
   }
 
-  // Get subject player info for dynamic baseline
+  // 1. Initial Data Fetch
   const playerUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
-  const playerProfile = S.Network.fetchRoyaleAPI([playerUrl])[0];
+  const logUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
   
-  if (!playerProfile) {
-    console.error(`Error: Could not fetch profile for ${tag}`);
+  const [playerProfile, rawLogs] = S.Network.fetchRoyaleAPI([playerUrl, logUrl]);
+  
+  if (!playerProfile || !rawLogs || !Array.isArray(rawLogs)) {
+    console.error(`Error: Could not fetch complete data for ${tag}`);
     return;
   }
 
   const subjectTrophies = playerProfile.trophies || 0;
-  // DYNAMIC FLOOR: 90% of the player's trophies to ensure relevant quality
-  const dynamicFloor = Math.floor(subjectTrophies * 0.9);
+  
+  // 2. Adaptive Bracket Analysis
+  // We look at EVERY opponent to see what the actual matchmaking environment looks like.
+  let allOpponentTrophies: number[] = [];
+  rawLogs.forEach(b => {
+    (b.opponent || []).forEach((opp: any) => {
+      if (opp.trophies) allOpponentTrophies.push(opp.trophies);
+    });
+  });
 
-  // Get battle logs
-  const cb = Math.floor(Date.now() / 900000); 
-  const logUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`;
-  const rawLogs = S.Network.fetchRoyaleAPI([logUrl])[0];
+  const bracketAvg = allOpponentTrophies.length > 0 
+    ? Math.round(allOpponentTrophies.reduce((a, b) => a + b, 0) / allOpponentTrophies.length)
+    : subjectTrophies;
 
-  if (!rawLogs || !Array.isArray(rawLogs)) {
-    console.error(`Error: Could not get battle data for ${tag}`);
-    return;
-  }
+  // DYNAMIC FILTER: Focus on players within a reasonable range of the bracket average.
+  // Instead of a fixed floor, we ignore players more than 1000 trophies below the bracket.
+  const adaptiveFloor = bracketAvg - 1000;
 
-  // Load saved data for comparison
+  // 3. Processing
   const savedPlayers = S.Store.props.getJSON<Record<string, any>>("PROPHET_CACHE_V1", {});
   const weights = CONFIG.HEADHUNTER.WEIGHTS;
 
   let counts = {
     total: 0,
-    matches_scanned: 0,
-    opponents_found: 0,
-    potential_recruits: 0,
+    opponents_evaluated: 0,
+    recruits_found: 0,
     alumni: 0,
-    skipped_low_score: 0,
-    match_types: {} as Record<string, number>
+    filtered_out: 0,
+    modes: {} as Record<string, number>
   };
 
-  const allowedModes = [
-    "ladder", "pathOfLegends", "challenge", "tournament", 
-    "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar",
-    "riverRaceDuelColosseum", "PvP", "trail"
-  ];
+  const ignoredModes = ["boatBattle", "unknown"];
   
-  const results: Array<{ tag: string; name: string; score: number; returning: boolean; mode: string }> = [];
+  interface ScoutResult {
+    tag: string;
+    name: string;
+    score: number;
+    trophies: number;
+    delta: number;
+    returning: boolean;
+    mode: string;
+  }
+  const results: ScoutResult[] = [];
 
   rawLogs.forEach((battle: any) => {
     counts.total++;
     const type = battle.type || "unknown";
-    counts.match_types[type] = (counts.match_types[type] || 0) + 1;
+    counts.modes[type] = (counts.modes[type] || 0) + 1;
     
-    if (allowedModes.includes(type)) {
-      counts.matches_scanned++;
-      (battle.opponent || []).forEach((opp: any) => {
-        counts.opponents_found++;
-        const isClanless = !opp.clan || !opp.clan.tag;
-        
-        if (isClanless) {
-          if ((opp.trophies || 0) < dynamicFloor) {
-            counts.skipped_low_score++;
-            return;
-          }
+    if (ignoredModes.includes(type)) return;
 
-          counts.potential_recruits++;
-          const cleanTag = opp.tag.replace("#", "").trim().toLowerCase();
-          const isReturning = !!savedPlayers[cleanTag];
-          if (isReturning) counts.alumni++;
-
-          const score = S.Scoring.calculateRecruitRawScore(
-            opp.trophies || 0,
-            0,
-            0,
-            false,
-            weights
-          );
-
-          results.push({ 
-            tag: opp.tag, 
-            name: opp.name || "Unknown", 
-            score: Math.round(score),
-            returning: isReturning,
-            mode: type
-          });
+    (battle.opponent || []).forEach((opp: any) => {
+      counts.opponents_evaluated++;
+      const isClanless = !opp.clan || !opp.clan.tag;
+      
+      if (isClanless) {
+        const tr = opp.trophies || 0;
+        if (tr < adaptiveFloor) {
+          counts.filtered_out++;
+          return;
         }
-      });
-    }
+
+        counts.recruits_found++;
+        const cleanTag = opp.tag.replace("#", "").trim().toLowerCase();
+        const isReturning = !!savedPlayers[cleanTag];
+        if (isReturning) counts.alumni++;
+
+        const score = S.Scoring.calculateRecruitRawScore(tr, 0, 0, false, weights);
+
+        results.push({ 
+          tag: opp.tag, 
+          name: opp.name || "Unknown", 
+          score: Math.round(score),
+          trophies: tr,
+          delta: tr - bracketAvg, // Difference from the bracket average
+          returning: isReturning,
+          mode: type
+        });
+      }
+    });
   });
 
-  // Create the final summary
+  // 4. Reporting
   const summary = [
-    `Target: ${tag} (${subjectTrophies} trophies) | v1.7.0`,
+    `Subject: ${tag} (${subjectTrophies} trophies) | v1.8.0`,
     `----------------------------------------`,
-    `Trophy Floor (Dynamic): ${dynamicFloor}`,
-    `Total matches: ${counts.total}`,
-    `Match types: ${Object.entries(counts.match_types).map(([k, v]) => `${k}:${v}`).join(", ")}`,
-    `Matches scanned: ${counts.matches_scanned}`,
-    `Clanless found: ${counts.potential_recruits} (Alumni: ${counts.alumni})`,
-    `Skipped (below floor): ${counts.skipped_low_score}`,
+    `Detected Bracket Avg: ${bracketAvg} trophies`,
+    `Adaptive Floor:       ${adaptiveFloor} trophies`,
+    `Matches scanned:      ${counts.total}`,
+    `Found recruits:       ${counts.recruits_found} (Alumni: ${counts.alumni})`,
+    `Skipped (Low Quality): ${counts.filtered_out}`,
     `----------------------------------------`,
-    ...results.sort((a,b) => b.score - a.score).map(p => 
-      `${p.returning ? "[★]" : "[+]"} ${p.tag.padEnd(12)} | ${String(p.score).padStart(4)} pts | ${p.mode.padEnd(12)} | ${p.name}`
-    )
+    ...results.sort((a,b) => b.score - a.score).map(p => {
+      const deltaStr = p.delta >= 0 ? `+${p.delta}` : `${p.delta}`;
+      return `${p.returning ? "[★]" : "[+]"} ${p.tag.padEnd(12)} | ${String(p.score).padStart(4)} pts | ${deltaStr.padStart(5)} rel | ${p.mode.padEnd(12)} | ${p.name}`;
+    })
   ];
 
-  S.Reporting.logReport("BATTLE_LOG_ANALYSIS_SUMMARY", summary);
+  S.Reporting.logReport("DYNAMIC_BRACKET_ANALYSIS", summary);
 }
 
 /**
