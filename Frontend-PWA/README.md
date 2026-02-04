@@ -25,8 +25,8 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
       Dark Mode
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="Frontend-PWA/public/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/headhunter-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/headhunter-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
     </div>
   </details>
 </div>
