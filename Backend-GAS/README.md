@@ -2,7 +2,7 @@
 
 [![System](https://img.shields.io/badge/System-v13.0.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
-The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the "Brain" of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
+The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the **Central Nervous System** of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
 ---
 <br />
@@ -25,21 +25,21 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 
 ## Key Components
 
-### 1. Network Engine (`Network.ts`)
+### Network Engine (`Network.ts`)
 A sophisticated API gateway that manages the limited Google Apps Script quotas.
 - **Multi-Tier Caching**: Uses L1 (Execution Memory) and L2 (ScriptCache) to deduplicate requests.
 - **Remote Delegation**: Automatically offloads high-volume batches (>5 requests) and heavy computations to the **Backend-Worker** (Render).
 - **Smart Rotation**: Manages a pool of API keys with automatic failure handling and cooling periods.
 
-### 2. The Orchestrator (`Orchestrator.ts`)
+### The Orchestrator (`Orchestrator.ts`)
 The central nervous system that manages automation lifecycles.
 - **Master Protocol**: `dispatchMaster()` executes the full ETL pipeline sequentially (Ingest -> Analyze -> Scout -> Clean).
 - **Self-Healing**: Automatically detects and repairs broken triggers or UI controls.
 - **Mobile Controls**: Listens for checkbox interactions on specific sheets (`handleMobileEdit`) to trigger on-demand syncs.
 
-### 3. Scoring Kernel (`Scoring_Kernel.ts`)
+### Scoring Kernel (`Scoring_Kernel.ts`)
 A pure mathematical engine isolated from the rest of the system.
-- **Performance Metrics**: Calculates member value via `Raw Performance` (Lifetime and Unweighted) and `Final Performance` (Decayed + Heritage and Normalized to against the clan's best).
+- **Performance Metrics**: Calculates member value via `Raw Performance` (Lifetime and Unweighted) and `Final Performance` (Decayed + Heritage and Normalized against the clan's best).
 - **Potential Metrics**: Evaluates recruits via `Raw Potential` (Unweighted) and `Final Potential` (Normalized against clan benchmark).
 - **Mechanics**: Implements **Heritage** (momentum bonuses) and **Inertia** (inactivity decay).
 
@@ -62,16 +62,16 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 
 ## Deployment & Configuration
 
-### 1. Script Properties
+### Script Properties
 Required environment variables in **Project Settings > Script Properties**:
 
 - `CLAN_TAG`: Target clan tag (e.g., `#2PP...`).
-- `API_KEYS`: Personal `CRK01..CRKn` array of Clash Royale API keys necessary to enable round-robin load balancing and support heavy loads (a minimum of 10 indivisual keys is recommended).
+- `API_KEYS`: Personal `CRK01..CRKn` array of Clash Royale API keys necessary to enable round-robin load balancing and support heavy loads (a minimum of 10 individual keys is recommended).
 - `REMOTE_WORKER_URL`: Endpoint of the Render worker (e.g., `https://clash-worker-xyz.onrender.com`).
 - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
 
-### 2. Initial Setup
-Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadheet's toolbar) to initialize the automation suite.
+### Initial Setup
+Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadsheet's toolbar) to initialize the automation suite.
 
 ---
 <br />
