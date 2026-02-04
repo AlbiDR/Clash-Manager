@@ -16,7 +16,7 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 | **Orchestrator** | Event handling, cron jobs, and master protocol execution | `Orchestrator.ts`, `Triggers.ts` |
 | **Registry** | Dependency injection and service location | `Registry.ts`, `Core.ts` |
 | **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts` |
-| **Modules** | Domain-specific features (MVCS Pattern) | `Roster`, `Headhunter`, `Database` |
+| **Modules** | Domain-specific features (MVCS Pattern) | `Roster.ts`, `Headhunter.ts`, `Database.ts` |
 | **Views** | Sheet manipulation and UI rendering | `View.ts`, `*_View.ts` |
 | **Stores** | Data persistence and state management | `Store.ts`, `*_Store.ts` |
 
@@ -52,10 +52,10 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 
 | Task Function | Frequency | Purpose |
 | :--- | :--- | :--- |
-| `taskWarmUpWorker` | **10 Mins** | Keeps the remote Render instance active to prevent cold starts. |
-| `taskFastScout` | **30 Mins** | Rapidly scans tournament brackets for new potential recruits (Headhunter). |
-| `taskUpdateDatabase` | **1 Hour** | Ingests clan war history and performs deep data deduplication. |
-| `taskUpdateRoster` | **1 Hour** | Recalculates member scores, updates ranks, and enforces roles. |
+| `taskWarmUpWorker` | **10 Mins** | Keeps the remote Render instance active to prevent cold starts |
+| `taskFastScout` | **30 Mins** | Rapidly scans tournament brackets for new potential recruits (Headhunter) |
+| `taskUpdateDatabase` | **1 Hour** | Ingests clan war history and performs deep data deduplication |
+| `taskUpdateRoster` | **1 Hour** | Recalculates member scores, updates ranks, and enforces roles |
 
 ---
 <br />

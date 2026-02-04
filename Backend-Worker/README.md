@@ -2,7 +2,7 @@
 
 [![Worker](https://img.shields.io/badge/Worker-v10.1.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
-The **Scaling Engine**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
+The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
 ---
 <br />
@@ -23,12 +23,12 @@ The worker behavior is controlled via environment variables:
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `WORKER_CONCURRENCY` | `20` | Max concurrent outbound requests. |
-| `WORKER_TIMEOUT_SEC` | `45` | Request timeout in seconds. |
-| `WORKER_RETRIES` | `2` | Number of retry attempts for failed upstream requests. |
-| `PORT` | `8080` | Server listening port. |
-| `API_BASE` | `https://proxy.royaleapi.dev/v1` | Upstream API endpoint. |
-| `API_KEYS` | - | Comma-separated list of fallback Clash Royale API keys. |
+| `WORKER_CONCURRENCY` | `20` | Max concurrent outbound requests |
+| `WORKER_TIMEOUT_SEC` | `45` | Request timeout in seconds |
+| `WORKER_RETRIES` | `2` | Number of retry attempts for failed upstream requests |
+| `PORT` | `8080` | Server listening port |
+| `API_BASE` | `https://proxy.royaleapi.dev/v1` | Upstream API endpoint |
+| `API_KEYS` | - | Comma-separated list of fallback Clash Royale API keys |
 
 ---
 <br />
