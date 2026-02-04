@@ -92,18 +92,18 @@ export function useTheme() {
     // 2. Define targeted screenshots
     const manualScreenshots = [
       {
-        src: `screenshot-mobile-${suffix}.webp`,
+        src: `headhunter-${suffix}.webp`,
         sizes: "1080x1920",
         type: "image/webp",
         form_factor: "narrow",
-        label: `Clash Manager Mobile (${suffix})`,
+        label: `Clash Manager Headhunter (${suffix})`,
       },
       {
-        src: `screenshot-desktop-${suffix}.webp`,
+        src: `roster-${suffix}.webp`,
         sizes: "1920x1080",
         type: "image/webp",
         form_factor: "wide",
-        label: `Clash Manager Desktop (${suffix})`,
+        label: `Clash Manager Roster (${suffix})`,
       },
     ];
 

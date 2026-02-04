@@ -57,32 +57,32 @@
   ],
   "screenshots": [
     {
-      "src": "screenshot-mobile-light.webp",
+      "src": "headhunter-light.webp",
       "sizes": "1080x1920",
       "type": "image/webp",
       "form_factor": "narrow",
-      "label": "Clash Manager Mobile (Light)"
+      "label": "Clash Manager Headhunter (Light)"
     },
     {
-      "src": "screenshot-mobile-dark.webp",
+      "src": "headhunter-dark.webp",
       "sizes": "1080x1920",
       "type": "image/webp",
       "form_factor": "narrow",
-      "label": "Clash Manager Mobile (Dark)"
+      "label": "Clash Manager Headhunter (Dark)"
     },
     {
-      "src": "screenshot-desktop-light.webp",
+      "src": "roster-light.webp",
       "sizes": "1920x1080",
       "type": "image/webp",
       "form_factor": "wide",
-      "label": "Clash Manager Desktop (Light)"
+      "label": "Clash Manager Roster (Light)"
     },
     {
-      "src": "screenshot-desktop-dark.webp",
+      "src": "roster-dark.webp",
       "sizes": "1920x1080",
       "type": "image/webp",
       "form_factor": "wide",
-      "label": "Clash Manager Desktop (Dark)"
+      "label": "Clash Manager Roster (Dark)"
     }
   ],
   "related_applications": [
@@ -97,9 +97,9 @@
   },
   "shortcuts": [
     {
-      "name": "Leaderboard",
-      "short_name": "Leaderboard",
-      "description": "View clan performance leaderboard",
+      "name": "Roster",
+      "short_name": "Roster",
+      "description": "View clan performance roster",
       "url": "./#/leaderboard",
       "icons": [
         { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
