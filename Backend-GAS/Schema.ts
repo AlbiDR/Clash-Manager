@@ -76,12 +76,12 @@ var Schema: ISchema = {
     return resolved;
   },
 
-  bootDynamicSchema: function () {
+  bootDynamicSchema: function (): string {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss) return;
+    if (!ss) return "No Spreadsheet";
     
     // Safety check for CONFIG presence
-    if (typeof CONFIG === 'undefined' || !CONFIG.SHEETS) return;
+    if (typeof CONFIG === 'undefined' || !CONFIG.SHEETS) return "Missing Config";
 
     const results: string[] = [];
     const sync = (sheetName: string, targetConfig: any, headerMap: any) => {
@@ -96,9 +96,7 @@ var Schema: ISchema = {
     if (CONFIG.SHEETS.HH) sync(CONFIG.SHEETS.HH, CONFIG.SCHEMA.HH, CONFIG.SCHEMA.HH_HEADERS);
     if (CONFIG.SHEETS.DB) sync(CONFIG.SHEETS.DB, CONFIG.SCHEMA.DB, CONFIG.SCHEMA.DB_HEADERS);
 
-    if (results.length > 0) {
-      console.info(`Schema: Synced ${results.length} sheets (${results.join(', ')}).`);
-    }
+    return results.length > 0 ? results.join(', ') : "None";
   },
 };
 

@@ -76,15 +76,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
       .slice(0, scanCfg.TOURNEYS || 300)
       .map((t: TournamentResult) => t.tag);
     
-    // Scout Discovery Context
-    Registry.Services.Reporting.logReport("Scout Discovery", [
-      `TOTAL TOURNAMENTS: ${uniqueTourneys.size}`,
-      `SEARCH KEYWORDS:  ${keywords.length}`,
-      `EXECUTION MODE:   ${lowQuotaMode ? "QUOTA_GUARD" : "UNRESTRICTED"}`,
-      `REMOTE WORKER:    ${remoteAvailable ? "ONLINE" : "OFFLINE"}`,
-      `DEEP EXPANSION:   ${remoteExpandEnabled ? "ENABLED" : "DISABLED"}`,
-      `LOTTERY WINNERS:  ${tourneyTags.length}`
-    ]);
+    // Discovery metrics captured for possible consolidation
+    const lotteryWinners = tourneyTags.length;
 
     if (tourneyTags.length === 0) return [];
 
@@ -146,13 +139,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
     Registry.Services.Core.shuffleArray(candidatePool);
     const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
     
-    // Sampling Context
-    Registry.Services.Reporting.logReport("Sampling Metrics", [
-      `UNIQUE CLANLESS: ${uniqueCandidates.size}`,
-      `SAMPLING LIMIT:  ${playerLimit}`,
-      `FINAL POOL:      ${tagsToFetch.length}`
-    ]);
-
     if (tagsToFetch.length === 0) return [];
 
     // 5B. Prophet Intelligence Integration
@@ -288,18 +274,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
           processEntry(b);
         }
 
-        // Shadow Trace Summary
-        const yieldRatio = seedTags.length > 0 ? ((shadowTags.size / seedTags.length) * 100).toFixed(1) : "0.0";
-        const seedContext = seedTags.length < 10 ? "(High Scarcity - Strict Floor)" : "(Healthy Pool)";
-
-        Registry.Services.Reporting.logReport("Shadow Scout Trace", [
-          `INCOMING SEEDS:   ${seedTags.length} ${seedContext}`,
-          `BATTLES TRACED:   ${totalBattles}`,
-          `OPPONENTS FOUND:  ${totalOpponents}`,
-          `DISCOVERED TAGS:  ${shadowTags.size}`,
-          `YIELD RATIO:      ${yieldRatio}% (Recruits per Seed)`
-        ]);
-
       }
     } else {
       // Local scoring required
@@ -414,8 +388,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
     // 7. Shadow Profiling Pass (Applies to both Remote and Local seeds)
     if (shadowTags.size > 0) {
       const shadowList = Array.from(shadowTags);
-      console.info(`Shadow: Extraction Complete: Found ${shadowList.length} potential recursive seeds.`);
-      
       const shadowData: any[] = batchFetch(
         shadowList,
         25,
@@ -427,13 +399,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
       shadowData.forEach((p: any) => {
         if (p && p.tag && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-          const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
-            p.trophies || 0,
-            p.totalDonations || 0,
-            p.warDayWins || 0,
-            false, // Assume no recent war for shadow recruits
-            W,
-          );
+          const rs = p.rawScore !== undefined 
+            ? p.rawScore 
+            : Registry.Services.Scoring.calculateRecruitRawScore(p.trophies || 0, p.totalDonations || 0, p.warDayWins || 0, false, W);
 
           validCandidates.push({
             tag: p.tag,
@@ -444,12 +412,20 @@ const HeadhunterScanner: IHeadhunterScanner = {
             war: p.warDayWins || 0,
             foundDate: new Date(),
             invited: false,
-            rawScore: rawScore,
+            rawScore: rs,
             source: "SHADOW",
           });
         }
       });
     }
+
+    // 8. FINAL SCAN SUMMARY [7/9]
+    const yieldRatio = tagsToFetch.length > 0 ? ((shadowTags.size / tagsToFetch.length) * 100).toFixed(1) : "0.0";
+    Registry.Services.Reporting.logReport(`[7/9] SCANNING: Discovery @ ${minTrophies}+`, [
+      `SCOUT: ${uniqueTourneys.size} Tournaments | ${keywords.length} Keywords`,
+      `TRACE: ${shadowTags.size} Shadow Yield | ${validCandidates.length} Filtered Leads`,
+      `YIELD: ${yieldRatio}% (${shadowTags.size} Potential Matches)`
+    ]);
 
     return validCandidates;
   }
