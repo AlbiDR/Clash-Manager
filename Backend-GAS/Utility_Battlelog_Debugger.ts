@@ -3,10 +3,10 @@
  * MODULE: UTILITY - BATTLELOG DEBUGGER
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Modular engine for extracting recruitment seeds from battle logs.
- *    Uses statistical bracket detection and strict rule-based pruning.
+ *    Uses statistical analysis and pure rule-based pruning.
  * 
  * ROLE: Modular researcher for log-based recruitment.
- * VERSION: 2.1.0 (Dynamic Modular Engine)
+ * VERSION: 2.2.0 (Open-Mode Dynamic Engine)
  * ============================================================================
  */
 
@@ -15,7 +15,6 @@ import Registry from './Registry';
 
 /**
  * SHADOW_LOGIC: A modular class for log-based recruitment discovery.
- * Designed for direct integration into the Headhunter scanner.
  */
 export class ShadowLogic {
   /**
@@ -33,8 +32,8 @@ export class ShadowLogic {
     
     if (!profile || !logs || !Array.isArray(logs)) return [];
 
-    // 2. STATISTICAL BRACKET ANALYSIS
-    // We determine the "skill level" of the session by looking at all opponents encountered.
+    // 2. STATISTICAL ANALYSIS
+    // We analyze ALL opponents found in the logs to understand the bracket.
     const allOpponentTrophies: number[] = [];
     logs.forEach(b => {
       (b.opponent || []).forEach((opp: any) => {
@@ -48,36 +47,34 @@ export class ShadowLogic {
     const variance = allOpponentTrophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / allOpponentTrophies.length;
     const stdDev = Math.sqrt(variance);
 
-    // 3. DYNAMIC PRUNING RULES
-    // We calculate a floor that adapts to the session while respecting clan policy.
+    // 3. POLICY & BRACKET FLOOR
     const statisticalFloor = Math.round(mean - stdDev);
     const clanInGameRequirement = profile.clan?.requiredTrophies || 0;
-    const projectFloor = CONFIG.HEADHUNTER.MIN_TROPHIES || 0; // Removing fallback '5000'
+    const projectFloor = CONFIG.HEADHUNTER.MIN_TROPHIES || 0;
 
-    // The effective floor is the highest of all dynamic and static rules.
     const effectiveFloor = Math.max(statisticalFloor, clanInGameRequirement, projectFloor);
 
     const candidates: any[] = [];
-    const ignoredModes = ["boatBattle", "unknown"];
 
-    // 4. EFFICIENT FILTERING LOOP
+    // 4. OPEN-MODE PRUNING LOOP
+    // We no longer skip any modes. If an opponent is clanless and meets the quality 
+    // requirements, they are a valid lead regardless of where they were found.
     logs.forEach(battle => {
-      if (ignoredModes.includes(battle.type)) return;
-
       (battle.opponent || []).forEach((opp: any) => {
-        // PRIORITY PRUNING: Clanless check first (Fastest/Least overhead)
+        
+        // PRUNING 1: Clan Presence (Exclude those we can't recruit)
         if (opp.clan && opp.clan.tag) return;
 
-        // QUALITY PRUNING: Trophy Floor check
+        // PRUNING 2: Quality Floor (Exclude outliers and policy violations)
         const tr = opp.trophies || 0;
         if (tr < effectiveFloor) return;
 
-        // All filters passed
+        // All filters passed: Capture potential recruit
         candidates.push({
           tag: opp.tag,
           name: opp.name || "Unknown",
           trophies: tr,
-          mode: battle.type,
+          mode: battle.type || "unknown",
           source: "SHADOW_SCOUT",
           bracketAvg: Math.round(mean)
         });
@@ -90,7 +87,6 @@ export class ShadowLogic {
 
 /**
  * Entry point for the laboratory tool.
- * Utilizes the modular ShadowLogic class above.
  */
 function debugPlayerBattlelogs(): void {
   const tag = CONFIG.SYSTEM.PLAYER_TAG;
@@ -102,17 +98,15 @@ function debugPlayerBattlelogs(): void {
   const S = Registry.Services;
   const startTime = Date.now();
 
-  // Call the modular logic
   const candidates = ShadowLogic.extractFromLogs(tag);
 
-  // Simple, efficient report
   const summary = [
-    `Target: ${tag} | v2.1.0 (Dynamic)`,
+    `Target: ${tag} | v2.2.0 (Open-Mode)`,
     `----------------------------------------`,
-    `Analysis: ${candidates.length} candidates extracted.`,
+    `Extracted: ${candidates.length} candidates.`,
     `Execution: ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
     `----------------------------------------`,
-    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (vs ${c.bracketAvg} avg) | ${c.mode.padEnd(12)} | ${c.name}`)
+    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (vs ${c.bracketAvg}) | ${c.mode.padEnd(12)} | ${c.name}`)
   ];
 
   S.Reporting.logReport("SHADOW_ENGINE_YIELD", summary);
