@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Technical purity validator for battlelog analysis.
- * VERSION: 1.4.0 (Laboratory Edition)
+ * VERSION: 1.5.0 (Laboratory Edition)
  * ============================================================================
  */
 
@@ -15,7 +15,7 @@ import Registry from './Registry';
 
 /**
  * Diagnostic function to analyze a player's battle history.
- * Optimized for token efficiency and high-density technical reporting.
+ * v1.5.0: Integrated Heritage Intelligence & Scoring Simulation.
  */
 function debugPlayerBattlelogs(): void {
   const S = Registry.Services;
@@ -26,25 +26,26 @@ function debugPlayerBattlelogs(): void {
     return;
   }
 
-  // 1. DATA ACQUISITION
+  // DATA ACQUISITION
   const cb = Math.floor(Date.now() / 900000); 
   const url = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`;
-  
-  const results = S.Network.fetchRoyaleAPI([url]);
-  const rawLogs = results[0];
+  const rawLogs = S.Network.fetchRoyaleAPI([url])[0];
 
   if (!rawLogs || !Array.isArray(rawLogs)) {
-    console.error(`ERR: Acquisition Failed for ${tag}`);
+    console.error(`ERR: Empty Payload for ${tag}`);
     return;
   }
 
-  // 2. ANALYTICAL PROCESSING
+  // INTEL HYDRATION
+  const prophet = S.Store.props.getJSON<Record<string, any>>("PROPHET_CACHE_V1", {});
+  const W = CONFIG.HEADHUNTER.WEIGHTS;
+
   let metrics = {
     total: 0,
     scoutable: 0,
     opponents: 0,
-    rejected: 0,
     yielding: 0,
+    heritage: 0,
     rawTypes: {} as Record<string, number>
   };
 
@@ -54,7 +55,7 @@ function debugPlayerBattlelogs(): void {
     "riverRaceDuelColosseum", "PvP", "trail"
   ];
   
-  const seeds: Array<{ t: string; n: string }> = [];
+  const seeds: Array<{ t: string; n: string; s: number; h: boolean }> = [];
 
   rawLogs.forEach((b: any) => {
     metrics.total++;
@@ -65,40 +66,51 @@ function debugPlayerBattlelogs(): void {
       metrics.scoutable++;
       (b.opponent || []).forEach((opp: any) => {
         metrics.opponents++;
-        if (!opp.clan || !opp.clan.tag) {
+        const isClanless = !opp.clan || !opp.clan.tag;
+        
+        if (isClanless) {
           metrics.yielding++;
-          seeds.push({ t: opp.tag, n: opp.name || "???" });
-        } else {
-          metrics.rejected++;
+          const cleanTag = opp.tag.replace("#", "").trim().toLowerCase();
+          const hasHeritage = !!prophet[cleanTag];
+          if (hasHeritage) metrics.heritage++;
+
+          // Simulation: Score based on Trophies + simulated weight
+          const score = S.Scoring.calculateRecruitRawScore(
+            opp.trophies || 0,
+            0, // Unknown donations
+            0, // Unknown war wins
+            false,
+            W
+          );
+
+          seeds.push({ 
+            t: opp.tag, 
+            n: opp.name || "???", 
+            s: Math.round(score),
+            h: hasHeritage
+          });
         }
       });
     }
   });
 
-  // 3. TOKEN-EFFICIENT OBSERVABILITY
+  // TECHNICAL OBSERVABILITY
   const report = [
-    `CTX: ${tag} | v1.4.0`,
+    `CTX: ${tag} | v1.5.0`,
     `----------------------------------------`,
     `INGESTION: ${metrics.total} total`,
     `DIST: ${Object.entries(metrics.rawTypes).map(([k, v]) => `${k}:${v}`).join(", ")}`,
     `SCOUT: ${metrics.scoutable} matches`,
     `POOL:  ${metrics.opponents} subj`,
-    `YIELD: ${metrics.yielding} seeds found`,
+    `YIELD: ${metrics.yielding} seeds (ALUMNI: ${metrics.heritage})`,
     `----------------------------------------`,
-    ...seeds.map(s => `+ ${s.t.padEnd(12)} | ${s.n}`)
+    ...seeds.sort((a,b) => b.s - a.s).map(s => 
+      `${s.h ? "★" : "+"} ${s.t.padEnd(12)} | ${String(s.s).padStart(4)}pts | ${s.n}`
+    )
   ];
 
   S.Reporting.logReport("SHADOW_LAB_DIAGNOSTIC", report);
 }
-
-/**
- * GLOBAL BRIDGE
- */
-(function(scope: any) {
-  Object.assign(scope, { debugPlayerBattlelogs });
-})(typeof globalThis !== 'undefined' ? globalThis : this);
-
-export default debugPlayerBattlelogs;
 
 /**
  * GLOBAL BRIDGE
