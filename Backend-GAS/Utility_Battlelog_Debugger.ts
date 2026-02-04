@@ -6,7 +6,7 @@
  *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.5.1 (Strict Quality Engine)
+ * VERSION: 2.6.0 (Refined Nomenclature)
  * ============================================================================
  */
 
@@ -16,7 +16,7 @@ import Registry from './Registry';
 /**
  * Defines the goal of the log analysis.
  */
-export enum ShadowGoal {
+export enum AnalysisGoal {
   // CORE FUNCTIONS
   RECRUITMENT = "RECRUITMENT",       // Find clanless players
   WAR_INTELLIGENCE = "WAR_STATS",    // Track medals, decks, and participation
@@ -30,15 +30,15 @@ export enum ShadowGoal {
 }
 
 /**
- * SHADOW_LOGIC: A modular engine designed to be injected into different modules.
+ * LOG_PROCESSOR: A modular engine designed to be injected into different modules.
  */
-export class ShadowLogic {
+export class LogProcessor {
   
   /**
    * Main entry point. 
    * Orchestrates fetching, statistical analysis, and purpose-driven extraction.
    */
-  public static digest(subjectTag: string, goal: ShadowGoal = ShadowGoal.RECRUITMENT): any[] {
+  public static digest(subjectTag: string, goal: AnalysisGoal = AnalysisGoal.RECRUITMENT): any[] {
     const rawData = this.fetch(subjectTag);
     if (!rawData || !rawData.logs.length) return [];
 
@@ -86,24 +86,24 @@ export class ShadowLogic {
   /**
    * Processing: Loops through logs and extracts data based on the goal.
    */
-  private static process(logs: any[], goal: ShadowGoal, ctx: any): any[] {
+  private static process(logs: any[], goal: AnalysisGoal, ctx: any): any[] {
     const results: any[] = [];
 
     logs.forEach(battle => {
       // PRUNING STEP 1: Purpose-specific mode filtering
-      if (goal === ShadowGoal.WAR_INTELLIGENCE && !battle.type.toLowerCase().includes("race")) return;
+      if (goal === AnalysisGoal.WAR_INTELLIGENCE && !battle.type.toLowerCase().includes("race")) return;
 
       (battle.opponent || []).forEach((opp: any) => {
         
         // PRUNING STEP 2: Goal-specific filtering
         switch (goal) {
-          case ShadowGoal.RECRUITMENT:
+          case AnalysisGoal.RECRUITMENT:
             if (opp.clan && opp.clan.tag) return; // Must be clanless
             if (typeof opp.trophies !== 'number') return; // STRICT QUALITY: Must have data
             if (opp.trophies < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
             break;
             
-          case ShadowGoal.ACTIVITY_AUDIT:
+          case AnalysisGoal.ACTIVITY_AUDIT:
              // [DRAFT] Future Logic: Filter by last 24h only?
              break;
         }
@@ -122,7 +122,7 @@ export class ShadowLogic {
   /**
    * Transformation: Maps raw API data to a clean, purpose-driven object.
    */
-  private static transform(battle: any, opponent: any, goal: ShadowGoal, ctx: any): any {
+  private static transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any {
     const base = {
       tag: opponent.tag,
       name: opponent.name || "Unknown",
@@ -131,21 +131,21 @@ export class ShadowLogic {
     };
 
     switch (goal) {
-      case ShadowGoal.RECRUITMENT:
+      case AnalysisGoal.RECRUITMENT:
         return {
           ...base,
           trophies: opponent.trophies,
           rel: Math.round(opponent.trophies - ctx.mean)
         };
 
-      case ShadowGoal.WAR_INTELLIGENCE:
+      case AnalysisGoal.WAR_INTELLIGENCE:
         return {
           ...base,
           medals: battle.challengeId || 0,
           deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
         };
 
-      case ShadowGoal.ACTIVITY_AUDIT:
+      case AnalysisGoal.ACTIVITY_AUDIT:
         // [PLACEHOLDER] Return time delta analysis
         return {
           ...base,
@@ -169,10 +169,10 @@ function debugPlayerBattlelogs(): void {
   const startTime = Date.now();
 
   // Test the recruitment purpose
-  const candidates = ShadowLogic.digest(tag, ShadowGoal.RECRUITMENT);
+  const candidates = LogProcessor.digest(tag, AnalysisGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.5.1 (Goal: Recruitment)`,
+    `Target: ${tag} | v2.6.0 (Goal: Recruitment)`,
     `----------------------------------------`,
     `Found: ${candidates.length} candidates.`,
     `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
@@ -180,14 +180,14 @@ function debugPlayerBattlelogs(): void {
     ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (${Math.sign(c.rel) >= 0 ? '+' : ''}${c.rel}) | ${c.mode.padEnd(12)} | ${c.name}`)
   ];
 
-  S.Reporting.logReport("SHADOW_ENGINE_YIELD", summary);
+  S.Reporting.logReport("LOG_EXTRACTOR_YIELD", summary);
 }
 
 /**
  * GLOBAL BRIDGE
  */
 (function(scope: any) {
-  Object.assign(scope, { debugPlayerBattlelogs, ShadowLogic, ShadowGoal });
+  Object.assign(scope, { debugPlayerBattlelogs, LogProcessor, AnalysisGoal });
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default debugPlayerBattlelogs;
