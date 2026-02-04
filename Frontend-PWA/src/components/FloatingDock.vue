@@ -20,7 +20,7 @@ const navItems: NavItem[] = [
   {
     path: "/leaderboard",
     name: "leaderboard",
-    label: "Leaderboard",
+    label: "Roster",
     icon: "leaderboard",
   },
   {

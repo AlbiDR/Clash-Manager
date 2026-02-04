@@ -45,7 +45,7 @@ const {
 
 <template>
   <ConsoleLayout
-    title="Leaderboard"
+    title="Roster"
     :status="status"
     :show-search="true"
     :sheet-url="sheetUrl"
