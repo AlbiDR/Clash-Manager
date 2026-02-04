@@ -2,6 +2,7 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import RosterStore from './Roster_Store';
+import { BattleLogProcessor, AnalysisGoal } from './Service_BattleLog';
 import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_Types';
 
 /**
@@ -351,24 +352,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
               ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type),
             );
 
-            // SHADOW SCOUT: Extract Elite Clanless Opponents
+            // SHADOW SCOUT: Advanced Extraction Engine
             if (shadowTags.size < 100) {
-              logs[idx].forEach((b: any) => {
-                if (shadowTags.size >= 100) return;
-                // PRECISION SCOUTING: Only look for opponents in Non-Clan modes
-                if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar", "riverRaceDuelColosseum", "PvP", "trail"].includes(b.type)) {
-                  const opponents = b.opponent || [];
-                  if (Array.isArray(opponents)) {
-                    opponents.forEach((opp: any) => {
-                      if (shadowTags.size >= 100) return;
-                      const isClanless = !opp.clan || !opp.clan.tag;
-                      if (isClanless && opp.tag && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
-                        shadowTags.add(opp.tag);
-                        processedTags.add(opp.tag);
-                      }
-                    });
-                  }
-                }
+              const recruits = BattleLogProcessor.digest(p.tag, AnalysisGoal.RECRUITMENT);
+              recruits.forEach((r: any) => {
+                 if (shadowTags.size < 100 && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
+                   shadowTags.add(r.tag);
+                   processedTags.add(r.tag);
+                 }
               });
             }
           }
