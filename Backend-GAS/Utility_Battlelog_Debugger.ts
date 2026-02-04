@@ -2,11 +2,11 @@
  * ============================================================================
  * MODULE: UTILITY - BATTLELOG DEBUGGER
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Standalone diagnostic engine for verifying Shadow Scout
- *    extraction and recursive seeding logic.
+ * DESCRIPTION: Modular engine for extracting recruitment seeds from battle logs.
+ *    Optimized for pruning efficiency and future Headhunter integration.
  * 
- * ROLE: Testing tool for analyzing battle logs.
- * VERSION: 1.9.0
+ * ROLE: Modular researcher for log-based recruitment.
+ * VERSION: 2.0.0 (Modular Engine)
  * ============================================================================
  */
 
@@ -14,140 +14,90 @@ import { CONFIG } from './Configuration';
 import Registry from './Registry';
 
 /**
- * Analyzes a player's recent matches to find clanless opponents.
- * Uses statistical standard deviation to eliminate outliers without fixed values.
+ * SHADOW_LOGIC: A modular class designed for injection into the Headhunter.
+ */
+export class ShadowLogic {
+  /**
+   * Main entry point for log extraction.
+   * Returns a clean list of candidates that passed all pruning filters.
+   */
+  public static extractFromLogs(subjectTag: string): any[] {
+    const S = Registry.Services;
+    
+    // 1. DATA ACQUISITION
+    const pUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(subjectTag)}`;
+    const lUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(subjectTag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
+    
+    const [profile, logs] = S.Network.fetchRoyaleAPI([pUrl, lUrl]);
+    
+    if (!profile || !logs || !Array.isArray(logs)) return [];
+
+    // 2. DYNAMIC REQUIREMENTS
+    // We fetch the Clan's in-game requirement via the subject player's current clan data 
+    // OR we could use a cached clan profile. For this laboratory, we use the subject's local context.
+    const clanInGameRequirement = profile.clan?.tag === CONFIG.SYSTEM.CLAN_TAG ? profile.clan.requiredTrophies : 0;
+    const globalMin = CONFIG.HEADHUNTER.MIN_TROPHIES || 5000;
+    const effectiveFloor = Math.max(clanInGameRequirement, globalMin);
+
+    const candidates: any[] = [];
+    const ignoredModes = ["boatBattle", "unknown"];
+
+    // 3. EFFICIENT PRUNING LOOP
+    logs.forEach(battle => {
+      // Filter 1: Mode Check
+      if (ignoredModes.includes(battle.type)) return;
+
+      (battle.opponent || []).forEach((opp: any) => {
+        // Filter 2: Clanless Check (Primary Pruning)
+        if (opp.clan && opp.clan.tag) return;
+
+        // Filter 3: Trophy Floor (Quality Pruning)
+        const tr = opp.trophies || 0;
+        if (tr < effectiveFloor) return;
+
+        // All filters passed: Add to the recruitment seed pool
+        candidates.push({
+          tag: opp.tag,
+          name: opp.name || "Unknown",
+          trophies: tr,
+          mode: battle.type,
+          source: "SHADOW_SCOUT"
+        });
+      });
+    });
+
+    return candidates;
+  }
+}
+
+/**
+ * Entry point for the laboratory tool.
+ * Utilizes the modular ShadowLogic class above.
  */
 function debugPlayerBattlelogs(): void {
-  const S = Registry.Services;
   const tag = CONFIG.SYSTEM.PLAYER_TAG;
-
   if (!tag) {
-    console.error("Error: Player tag not found.");
+    console.error("Error: Player tag missing from configuration.");
     return;
   }
 
-  // 1. Initial Data Fetch
-  const playerUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
-  const logUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
-  
-  const [playerProfile, rawLogs] = S.Network.fetchRoyaleAPI([playerUrl, logUrl]);
-  
-  if (!playerProfile || !rawLogs || !Array.isArray(rawLogs)) {
-    console.error(`Error: Could not fetch complete data for ${tag}`);
-    return;
-  }
+  const S = Registry.Services;
+  const startTime = Date.now();
 
-  const subjectTrophies = playerProfile.trophies || 0;
-  
-  // 2. Statistical Analysis of the Matchmaking Environment
-  let allTrophies: number[] = [];
-  rawLogs.forEach(b => {
-    (b.opponent || []).forEach((opp: any) => {
-      if (opp.trophies) allTrophies.push(opp.trophies);
-    });
-  });
+  // Call the modular logic
+  const candidates = ShadowLogic.extractFromLogs(tag);
 
-  if (allTrophies.length === 0) {
-    console.error("Error: No opponent data found in logs.");
-    return;
-  }
-
-  // Calculate Mean
-  const mean = allTrophies.reduce((a, b) => a + b, 0) / allTrophies.length;
-  
-  // Calculate Standard Deviation (SD)
-  // This measures the "spread" of player skill in the current session.
-  const variance = allTrophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / allTrophies.length;
-  const stdDev = Math.sqrt(variance);
-
-  // DYNAMIC STATISTICAL FLOOR: 
-  // We set the floor at (Mean - 1 Standard Deviation). 
-  // This mathematically targets the top ~84% of players encountered, 
-  // naturally filtering out the low-skill outliers of that specific session.
-  const statisticalFloor = Math.round(mean - stdDev);
-
-  // 3. Processing
-  const savedPlayers = S.Store.props.getJSON<Record<string, any>>("PROPHET_CACHE_V1", {});
-  const weights = CONFIG.HEADHUNTER.WEIGHTS;
-
-  let counts = {
-    total: 0,
-    opponents_evaluated: 0,
-    recruits_found: 0,
-    alumni: 0,
-    filtered_out: 0,
-    modes: {} as Record<string, number>
-  };
-
-  const ignoredModes = ["boatBattle", "unknown"];
-  
-  interface ScoutResult {
-    tag: string;
-    name: string;
-    score: number;
-    trophies: number;
-    delta: number;
-    returning: boolean;
-    mode: string;
-  }
-  const results: ScoutResult[] = [];
-
-  rawLogs.forEach((battle: any) => {
-    counts.total++;
-    const type = battle.type || "unknown";
-    counts.modes[type] = (counts.modes[type] || 0) + 1;
-    
-    if (ignoredModes.includes(type)) return;
-
-    (battle.opponent || []).forEach((opp: any) => {
-      counts.opponents_evaluated++;
-      const isClanless = !opp.clan || !opp.clan.tag;
-      
-      if (isClanless) {
-        const tr = opp.trophies || 0;
-        if (tr < statisticalFloor) {
-          counts.filtered_out++;
-          return;
-        }
-
-        counts.recruits_found++;
-        const cleanTag = opp.tag.replace("#", "").trim().toLowerCase();
-        const isReturning = !!savedPlayers[cleanTag];
-        if (isReturning) counts.alumni++;
-
-        const score = S.Scoring.calculateRecruitRawScore(tr, 0, 0, false, weights);
-
-        results.push({ 
-          tag: opp.tag, 
-          name: opp.name || "Unknown", 
-          score: Math.round(score),
-          trophies: tr,
-          delta: Math.round(tr - mean), 
-          returning: isReturning,
-          mode: type
-        });
-      }
-    });
-  });
-
-  // 4. Reporting
+  // Simple, efficient report
   const summary = [
-    `Subject: ${tag} (${subjectTrophies} trophies) | v1.9.0`,
+    `Context: ${tag} | v2.0.0`,
     `----------------------------------------`,
-    `Session Average: ${Math.round(mean)} trophies`,
-    `Session Spread:  ±${Math.round(stdDev)} (Standard Deviation)`,
-    `Statistical Floor: ${statisticalFloor} trophies`,
-    `Current matches:   ${counts.total}`,
-    `Found recruits:    ${counts.recruits_found} (Alumni: ${counts.alumni})`,
-    `Filtered Out:      ${counts.filtered_out} (Outliers)`,
+    `Analysis result: ${candidates.length} candidates found.`,
+    `Execution time: ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
     `----------------------------------------`,
-    ...results.sort((a,b) => b.score - a.score).map(p => {
-      const deltaStr = p.delta >= 0 ? `+${p.delta}` : `${p.delta}`;
-      return `${p.returning ? "[★]" : "[+]"} ${p.tag.padEnd(12)} | ${String(p.score).padStart(4)} pts | ${deltaStr.padStart(5)} rel | ${p.mode.padEnd(12)} | ${p.name}`;
-    })
+    ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR | ${c.mode.padEnd(12)} | ${c.name}`)
   ];
 
-  S.Reporting.logReport("STATISTICAL_BRACKET_ANALYSIS", summary);
+  S.Reporting.logReport("BATTLELOG_EXTRACTION_SUCCESS", summary);
 }
 
 /**
