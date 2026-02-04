@@ -6,7 +6,7 @@
  *    extraction and recursive seeding logic.
  * 
  * ROLE: Testing tool for analyzing battle logs.
- * VERSION: 1.8.0
+ * VERSION: 1.9.0
  * ============================================================================
  */
 
@@ -15,7 +15,7 @@ import Registry from './Registry';
 
 /**
  * Analyzes a player's recent matches to find clanless opponents.
- * Uses adaptive benchmarking to detect the actual skill bracket.
+ * Uses statistical standard deviation to eliminate outliers without fixed values.
  */
 function debugPlayerBattlelogs(): void {
   const S = Registry.Services;
@@ -39,22 +39,32 @@ function debugPlayerBattlelogs(): void {
 
   const subjectTrophies = playerProfile.trophies || 0;
   
-  // 2. Adaptive Bracket Analysis
-  // We look at EVERY opponent to see what the actual matchmaking environment looks like.
-  let allOpponentTrophies: number[] = [];
+  // 2. Statistical Analysis of the Matchmaking Environment
+  let allTrophies: number[] = [];
   rawLogs.forEach(b => {
     (b.opponent || []).forEach((opp: any) => {
-      if (opp.trophies) allOpponentTrophies.push(opp.trophies);
+      if (opp.trophies) allTrophies.push(opp.trophies);
     });
   });
 
-  const bracketAvg = allOpponentTrophies.length > 0 
-    ? Math.round(allOpponentTrophies.reduce((a, b) => a + b, 0) / allOpponentTrophies.length)
-    : subjectTrophies;
+  if (allTrophies.length === 0) {
+    console.error("Error: No opponent data found in logs.");
+    return;
+  }
 
-  // DYNAMIC FILTER: Focus on players within a reasonable range of the bracket average.
-  // Instead of a fixed floor, we ignore players more than 1000 trophies below the bracket.
-  const adaptiveFloor = bracketAvg - 1000;
+  // Calculate Mean
+  const mean = allTrophies.reduce((a, b) => a + b, 0) / allTrophies.length;
+  
+  // Calculate Standard Deviation (SD)
+  // This measures the "spread" of player skill in the current session.
+  const variance = allTrophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / allTrophies.length;
+  const stdDev = Math.sqrt(variance);
+
+  // DYNAMIC STATISTICAL FLOOR: 
+  // We set the floor at (Mean - 1 Standard Deviation). 
+  // This mathematically targets the top ~84% of players encountered, 
+  // naturally filtering out the low-skill outliers of that specific session.
+  const statisticalFloor = Math.round(mean - stdDev);
 
   // 3. Processing
   const savedPlayers = S.Store.props.getJSON<Record<string, any>>("PROPHET_CACHE_V1", {});
@@ -95,7 +105,7 @@ function debugPlayerBattlelogs(): void {
       
       if (isClanless) {
         const tr = opp.trophies || 0;
-        if (tr < adaptiveFloor) {
+        if (tr < statisticalFloor) {
           counts.filtered_out++;
           return;
         }
@@ -112,7 +122,7 @@ function debugPlayerBattlelogs(): void {
           name: opp.name || "Unknown", 
           score: Math.round(score),
           trophies: tr,
-          delta: tr - bracketAvg, // Difference from the bracket average
+          delta: Math.round(tr - mean), 
           returning: isReturning,
           mode: type
         });
@@ -122,13 +132,14 @@ function debugPlayerBattlelogs(): void {
 
   // 4. Reporting
   const summary = [
-    `Subject: ${tag} (${subjectTrophies} trophies) | v1.8.0`,
+    `Subject: ${tag} (${subjectTrophies} trophies) | v1.9.0`,
     `----------------------------------------`,
-    `Detected Bracket Avg: ${bracketAvg} trophies`,
-    `Adaptive Floor:       ${adaptiveFloor} trophies`,
-    `Matches scanned:      ${counts.total}`,
-    `Found recruits:       ${counts.recruits_found} (Alumni: ${counts.alumni})`,
-    `Skipped (Low Quality): ${counts.filtered_out}`,
+    `Session Average: ${Math.round(mean)} trophies`,
+    `Session Spread:  ±${Math.round(stdDev)} (Standard Deviation)`,
+    `Statistical Floor: ${statisticalFloor} trophies`,
+    `Current matches:   ${counts.total}`,
+    `Found recruits:    ${counts.recruits_found} (Alumni: ${counts.alumni})`,
+    `Filtered Out:      ${counts.filtered_out} (Outliers)`,
     `----------------------------------------`,
     ...results.sort((a,b) => b.score - a.score).map(p => {
       const deltaStr = p.delta >= 0 ? `+${p.delta}` : `${p.delta}`;
@@ -136,7 +147,7 @@ function debugPlayerBattlelogs(): void {
     })
   ];
 
-  S.Reporting.logReport("DYNAMIC_BRACKET_ANALYSIS", summary);
+  S.Reporting.logReport("STATISTICAL_BRACKET_ANALYSIS", summary);
 }
 
 /**
