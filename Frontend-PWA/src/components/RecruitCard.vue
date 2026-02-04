@@ -143,53 +143,6 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 
 <style scoped>
 /* Content specific styles only */
-.player-name {
-  font-size: 16px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-.trophy-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #854d0e;
-  margin-top: 2px;
-  width: fit-content;
-}
-:root.dark .trophy-meta {
-  color: #fbbf24;
-}
-.trophy-val {
-  font-size: 13px;
-  font-weight: 700;
-  font-family: var(--sys-font-family-mono);
-}
-
-.badge {
-  height: 18px;
-  width: 100%;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-mono);
-  text-transform: uppercase;
-}
-
-.stat-score {
-  font-size: 18px;
-  font-weight: 900;
-  font-family: var(--sys-font-family-mono);
-}
 
 /* Recruit Specific Stats Layout */
 .stats-grid {
