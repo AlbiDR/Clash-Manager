@@ -8,14 +8,37 @@ declare var SpreadsheetApp: any;
 declare var Sheets: any;
 
 /**
+ * ============================================================================
  * MODULE: ROSTER (Leaderboard & Roster Management)
+ * ----------------------------------------------------------------------------
+ * DESCRIPTION: The "Commander" of the Leaderboard refresh pipeline.
+ * Orchestrates the full ETL lifecycle for member data, from live API
+ * ingestion to historical scoring and visual rendering.
+ *
+ * ARCHITECTURE:
+ *    - Resource Hydration: Re-syncs previous momentum and war history.
+ *    - API Intelligence: Ingests live clan data via the Network service.
+ *    - Scoring & Normalization: Executes the scoring kernel and scales results.
+ *    - Visual Rendering: Direct manipulation of Google Sheets for the UI.
+ *
+ * ROLE: The Commander (Orchestrator).
+ * ============================================================================
  */
 const Roster: IRoster = {
   /**
    * MAIN ENTRY: Update Roster
-   */
-  /**
-   * MAIN ENTRY: Update Roster
+   *
+   * @remarks
+   * Executes the full Leaderboard synchronization pipeline:
+   * 1. Hydrate: Loads previous state and historical context.
+   * 2. Ingest: Fetches live data from Royale API.
+   * 3. Score: Calculates multi-dimensional performance metrics.
+   * 4. Normalize: Scales scores against the current elite average.
+   * 5. Render: Updates the Google Sheet with pixel-perfect visuals.
+   *
+   * @warning
+   * Consumes significant UrlFetchApp and CacheService quotas during API ingestion
+   * and state persistence.
    */
   update(): void {
     const startTime = Date.now();
@@ -68,6 +91,10 @@ const Roster: IRoster = {
       const currentWeekId = Registry.Services.Time.calculateWarWeekId(now);
       
       // War History Reconciliation
+      // Intent: Blending ephemeral API history with local persistent maps.
+      // We use Math.max to ensure that if the same week is reported by both
+      // the remote history and the live participants list, we retain the
+      // most complete fame value (preventing data loss from API lag).
       const addWarEntry = (tag: string, weekId: string, fame: number) => {
         if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
         const userMap = warHistoryMap.get(tag)!;
@@ -116,6 +143,11 @@ const Roster: IRoster = {
         pWarHistory.forEach(val => totalHistoryFame += Number(val) || 0);
         
         const eligibleWeeks = dbRecord?.battleWeeks?.size || 0;
+        // WEEKS IN CLAN (Normalization Baseline)
+        // Rationale: Blending multiple time-based signals to create a fair
+        // denominator for historical averaging. This prevents "averaging amnesia"
+        // for long-term members whose early history might have been pruned
+        // from the live Royale API war log.
         const weeksInClan = Math.max(1, Math.ceil(daysTracked / 7), pWarHistory.size, eligibleWeeks);
         const avgWarFame = Math.round(totalHistoryFame / weeksInClan);
 
@@ -156,10 +188,16 @@ const Roster: IRoster = {
 
       // 5. NORMALIZATION & RANKING
       Registry.Services.Reporting.logStep(4, 6, "Normalizing Elite Benchmarks...");
+
+      // ELITE AVERAGE CALCULATION
+      // Intent: We identify the top-performing member's score to act as the
+      // 100% benchmark. This ensures the leaderboard remains a "relative curve"
+      // based on current clan performance rather than a static goalpost.
       let maxPerfScore = 0;
       rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
 
       const finalRows = rawResults.map(r => {
+        // SCALING: Convert raw performance into a relative percentage (0-100%).
         const normPerf = Registry.Services.Scoring.calculatePotentialScore(r.scores.perf, maxPerfScore);
         const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
         
@@ -183,6 +221,11 @@ const Roster: IRoster = {
       });
 
       finalRows.sort(Registry.Services.Scoring.comparator);
+
+      // VISUAL HYGIENE (Padding)
+      // Intent: Enforcing a consistent 50-row pool for visual stability.
+      // Prevents the Google Sheet's UI (conditional formatting, borders)
+      // from collapsing if the clan is under-populated.
       while (finalRows.length < 50) finalRows.push(new Array(Object.keys(CONFIG.SCHEMA.ROSTER_HEADERS).length).fill(""));
 
       // 6. VISUAL RENDERING
