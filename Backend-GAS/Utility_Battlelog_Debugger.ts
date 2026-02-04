@@ -3,10 +3,10 @@
  * MODULE: UTILITY - BATTLELOG DEBUGGER
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Multi-purpose modular engine for battle log analysis.
- *    Supports recruitment discovery and war participation tracking.
+ *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.3.0 (Multi-Purpose Engine)
+ * VERSION: 2.4.0 (Future-Proofed Modular Engine)
  * ============================================================================
  */
 
@@ -17,9 +17,22 @@ import Registry from './Registry';
  * Defines the goal of the log analysis.
  */
 export enum ShadowGoal {
+  // CORE FUNCTIONS
   RECRUITMENT = "RECRUITMENT",       // Find clanless players
   WAR_INTELLIGENCE = "WAR_STATS",    // Track medals, decks, and participation
-  RAW_DATA = "RAW_DATA"              // Total data capture for debugging
+
+  // [PLACEHOLDER] FUTURE ARCHITECTURES
+  /** 
+   * DRAFT: Analyze the "Meta" of the current bracket.
+   * Potential use: Determine which cards/decks are dominating the player's trophy range.
+   */
+  META_ANALYSIS = "META_ANALYSIS",
+
+  /**
+   * DRAFT: Audit a specific player's activity patterns.
+   * Potential use: Check if a member is playing Ladder while skipping War, or determine active timezones.
+   */
+  ACTIVITY_AUDIT = "ACTIVITY_AUDIT"
 }
 
 /**
@@ -87,9 +100,19 @@ export class ShadowLogic {
       (battle.opponent || []).forEach((opp: any) => {
         
         // PRUNING STEP 2: Goal-specific filtering
-        if (goal === ShadowGoal.RECRUITMENT) {
-          if (opp.clan && opp.clan.tag) return; // Must be clanless
-          if ((opp.trophies || 0) < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
+        switch (goal) {
+          case ShadowGoal.RECRUITMENT:
+            if (opp.clan && opp.clan.tag) return; // Must be clanless
+            if ((opp.trophies || 0) < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
+            break;
+            
+          case ShadowGoal.META_ANALYSIS:
+            // [DRAFT] Future Logic: No pruning, we want all card data
+            break;
+
+          case ShadowGoal.ACTIVITY_AUDIT:
+             // [DRAFT] Future Logic: Filter by last 24h only?
+             break;
         }
 
         // PRUNING STEP 3: Universal filters
@@ -114,23 +137,39 @@ export class ShadowLogic {
       time: battle.battleTime
     };
 
-    if (goal === ShadowGoal.RECRUITMENT) {
-      return {
-        ...base,
-        trophies: opponent.trophies,
-        rel: Math.round((opponent.trophies || 0) - ctx.mean)
-      };
-    }
+    switch (goal) {
+      case ShadowGoal.RECRUITMENT:
+        return {
+          ...base,
+          trophies: opponent.trophies,
+          rel: Math.round((opponent.trophies || 0) - ctx.mean)
+        };
 
-    if (goal === ShadowGoal.WAR_INTELLIGENCE) {
-      return {
-        ...base,
-        medals: battle.challengeId || 0, // Simplified for this example
-        deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
-      };
-    }
+      case ShadowGoal.WAR_INTELLIGENCE:
+        return {
+          ...base,
+          medals: battle.challengeId || 0,
+          deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
+        };
 
-    return base;
+      case ShadowGoal.META_ANALYSIS:
+        // [PLACEHOLDER] Return card composition and win/loss result
+        return {
+          ...base,
+          opponentDeck: (opponent.cards || []).map((c: any) => c.name),
+          outcome: battle.team[0].crowns > opponent.crowns ? "WIN" : "LOSS"
+        };
+
+      case ShadowGoal.ACTIVITY_AUDIT:
+        // [PLACEHOLDER] Return time delta analysis
+        return {
+          ...base,
+          minutesAgo: Math.floor((Date.now() - new Date(battle.battleTime).getTime()) / 60000)
+        };
+        
+      default:
+        return base;
+    }
   }
 }
 
@@ -148,7 +187,7 @@ function debugPlayerBattlelogs(): void {
   const candidates = ShadowLogic.digest(tag, ShadowGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.3.0 (Goal: Recruitment)`,
+    `Target: ${tag} | v2.4.0 (Goal: Recruitment)`,
     `----------------------------------------`,
     `Found: ${candidates.length} candidates.`,
     `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
