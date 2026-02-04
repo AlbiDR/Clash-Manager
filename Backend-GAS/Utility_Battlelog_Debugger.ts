@@ -6,7 +6,7 @@
  *    Supports recruitment discovery, war participation, and future intel modes.
  * 
  * ROLE: Modular researcher for log-based recruitment and war data.
- * VERSION: 2.6.0 (Refined Nomenclature)
+ * VERSION: 2.7.0 (Precision Nomenclature)
  * ============================================================================
  */
 
@@ -30,9 +30,9 @@ export enum AnalysisGoal {
 }
 
 /**
- * LOG_PROCESSOR: A modular engine designed to be injected into different modules.
+ * BATTLELOG_PROCESSOR: A modular engine designed to be injected into different modules.
  */
-export class LogProcessor {
+export class BattleLogProcessor {
   
   /**
    * Main entry point. 
@@ -169,10 +169,10 @@ function debugPlayerBattlelogs(): void {
   const startTime = Date.now();
 
   // Test the recruitment purpose
-  const candidates = LogProcessor.digest(tag, AnalysisGoal.RECRUITMENT);
+  const candidates = BattleLogProcessor.digest(tag, AnalysisGoal.RECRUITMENT);
 
   const summary = [
-    `Target: ${tag} | v2.6.0 (Goal: Recruitment)`,
+    `Target: ${tag} | v2.7.0 (Goal: Recruitment)`,
     `----------------------------------------`,
     `Found: ${candidates.length} candidates.`,
     `Time:  ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
@@ -180,14 +180,14 @@ function debugPlayerBattlelogs(): void {
     ...candidates.map(c => `[+] ${c.tag.padEnd(12)} | ${c.trophies} TR (${Math.sign(c.rel) >= 0 ? '+' : ''}${c.rel}) | ${c.mode.padEnd(12)} | ${c.name}`)
   ];
 
-  S.Reporting.logReport("LOG_EXTRACTOR_YIELD", summary);
+  S.Reporting.logReport("BATTLELOG_EXTRACTOR_YIELD", summary);
 }
 
 /**
  * GLOBAL BRIDGE
  */
 (function(scope: any) {
-  Object.assign(scope, { debugPlayerBattlelogs, LogProcessor, AnalysisGoal });
+  Object.assign(scope, { debugPlayerBattlelogs, BattleLogProcessor, AnalysisGoal });
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default debugPlayerBattlelogs;
