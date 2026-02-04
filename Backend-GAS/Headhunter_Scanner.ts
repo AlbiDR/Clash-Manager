@@ -236,10 +236,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
         for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
           const b = seedLogs[sIdx];
-          if (!b || shadowTags.size >= 100) continue;
+          if (!b || shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) continue;
           
           const processEntry = (entry: any) => {
-            if (!entry || shadowTags.size >= 100) return;
+            if (!entry || shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) return;
             
             if (Array.isArray(entry)) {
               for (let j = 0; j < entry.length; j++) {
@@ -330,10 +330,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
             );
 
             // SHADOW SCOUT: Advanced Extraction Engine
-            if (shadowTags.size < 100) {
+            if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
               const recruits = BattleLogProcessor.digest(p.tag, AnalysisGoal.RECRUITMENT);
               recruits.forEach((r: any) => {
-                 if (shadowTags.size < 100 && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
+                 if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
                    shadowTags.add(r.tag);
                    processedTags.add(r.tag);
                  }

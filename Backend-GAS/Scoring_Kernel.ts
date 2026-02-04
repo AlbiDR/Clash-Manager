@@ -162,7 +162,7 @@ const ScoringKernel: IScoringKernel = {
    * too heavily compared to inactive players with high historical wins.
    */
   calcRecruitRaw(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number {
-    const warBonus = recentWar ? 500 : 0;
+    const warBonus = recentWar ? (w.WAR_BASELINE_BONUS || 500) : 0;
     const totalWar = (wins || 0) + warBonus;
     return Math.round(
       (trophies || 0) * w.TROPHY +
@@ -232,9 +232,10 @@ const ScoringKernel: IScoringKernel = {
    * where a weak clan's standards drop too low to find elite recruits.
    */
   calcHybridBenchmark(clanAvg: number, marketAvg: number): number {
+    const H = CONFIG.HEADHUNTER;
     let b = 1;
     if (clanAvg > 0 && marketAvg > 0) {
-      b = clanAvg * 0.4 + marketAvg * 0.6;
+      b = clanAvg * H.BENCHMARK_CLAN_WEIGHT + marketAvg * H.BENCHMARK_MARKET_WEIGHT;
     } else if (clanAvg > 0) {
       b = clanAvg;
     } else if (marketAvg > 0) {
@@ -252,7 +253,10 @@ const ScoringKernel: IScoringKernel = {
    * Below this, the bottom 10% average is used to support rebuilding efforts.
    */
   calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
-    const ELITE_THRESHOLD = 41;
+    const H = CONFIG.HEADHUNTER;
+    const S = H.STRATEGY;
+    const ELITE_THRESHOLD = CONFIG.SYSTEM.ELITE_MEMBERSHIP_THRESHOLD;
+    
     let floor = inGameReq;
     let method = "In-Game Requirement";
     let mode: "ELITE" | "REBUILD" | "BASE" = "BASE";
@@ -263,7 +267,7 @@ const ScoringKernel: IScoringKernel = {
         mode = "ELITE";
         const median = ts[Math.floor(ts.length / 2)] ?? 0;
         if (median > floor) {
-          floor = Math.min(10000, median);
+          floor = Math.min(S.TROPHY_FLOOR_MAX, median);
           method = `Elite Mode (Median: ${floor})`;
         } else {
           method = `Elite Mode (At In-Game Cap: ${inGameReq})`;
@@ -271,11 +275,11 @@ const ScoringKernel: IScoringKernel = {
       } else {
 
         mode = "REBUILD";
-        const bCount = Math.max(1, Math.ceil(ts.length * 0.1));
+        const bCount = Math.max(1, Math.ceil(ts.length * H.REBUILD_MIN_PERCENTILE));
         const bAvg = Math.round(ts.slice(0, bCount).reduce((a,b) => a + b, 0) / bCount);
         if (bAvg > floor) {
           floor = bAvg;
-          method = `Rebuild Mode (Bot 10% Avg: ${bAvg})`;
+          method = `Rebuild Mode (Bot ${Math.round(H.REBUILD_MIN_PERCENTILE * 100)}% Avg: ${bAvg})`;
         } else {
           method = `Rebuild Mode (At In-Game Cap: ${inGameReq})`;
         }

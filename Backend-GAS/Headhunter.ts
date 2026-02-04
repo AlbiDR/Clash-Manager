@@ -17,7 +17,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.3.1";
+const VER_HEADHUNTER = "12.3.2";
 
 export interface IHeadhunter {
   scout(): void;
@@ -130,7 +130,8 @@ const Headhunter: IHeadhunter = {
       // The user draft has it in 'METRICS: Recruitment Health'.
 
       // 7. Scanner: Launch
-      const discoveryFloor = inGameRequirement || 5000; 
+      const H = CONFIG.HEADHUNTER.STRATEGY;
+      const discoveryFloor = inGameRequirement || H.SCAN_FLOOR_FALLBACK; 
       
       const scanned = HeadhunterScanner.scanTournaments(
         discoveryFloor,
@@ -170,7 +171,7 @@ const Headhunter: IHeadhunter = {
     
         const ranges = [
           `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
-          `'${sheetName}'!${trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
+          `'${sheetName}'!${ trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
           `'${sheetName}'!${donCol}${startRow}:${donCol}${lastRow}`,
           `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`
         ];
@@ -186,10 +187,10 @@ const Headhunter: IHeadhunter = {
 
           for (let i = 0; i < perfs.length; i++) {
             const perf = Number(perfs[i] ? perfs[i][0] : 0);
-            if (perf >= 50) {
+            if (perf >= H.PERFORMANCE_BENCHMARK_MIN) {
               const histStr = String(histories[i] ? histories[i][0] : "");
               const hasRecentWar = histStr.includes(currentWk);
-              const estimatedWarWins = 500; 
+              const estimatedWarWins = CONFIG.HEADHUNTER.WEIGHTS.WAR_BASELINE_BONUS; 
 
               const raw = S.Scoring.calculateRecruitRawScore(
                 Number(trophies[i] ? trophies[i][0] : 0),

@@ -74,6 +74,7 @@ export interface AppConfig {
     DATE_FORMAT_VALUE: string;
     PROPHET_TENURE_THRESHOLD: number;
     DB_PRUNE_THRESHOLD: number;
+    ELITE_MEMBERSHIP_THRESHOLD: number;
   };
   SHEETS: {
     DB: string;
@@ -116,6 +117,7 @@ export interface AppConfig {
       TROPHY: number;
       DON: number;
       WAR: number;
+      WAR_BASELINE_BONUS: number;
     };
     DEEP_SCAN: {
       LOCAL: { TOURNEYS: number; PLAYERS: number };
@@ -127,6 +129,15 @@ export interface AppConfig {
     BENCHMARK_PERCENTILE: number;
     BENCHMARK_MIN_POOL: number;
     MIN_TROPHIES: number; // Search override
+    MAX_SHADOW_RECRUITS: number;
+    BENCHMARK_CLAN_WEIGHT: number;
+    BENCHMARK_MARKET_WEIGHT: number;
+    REBUILD_MIN_PERCENTILE: number;
+    STRATEGY: {
+      SCAN_FLOOR_FALLBACK: number;
+      TROPHY_FLOOR_MAX: number;
+      PERFORMANCE_BENCHMARK_MIN: number;
+    };
   };
   ROSTER: {
     WEIGHTS: {
@@ -228,6 +239,7 @@ export var CONFIG: AppConfig = {
     DATE_FORMAT_VALUE: "dd/MM/yyyy HH.mm.ss",
     PROPHET_TENURE_THRESHOLD: 10,
     DB_PRUNE_THRESHOLD: 10,
+    ELITE_MEMBERSHIP_THRESHOLD: 41,
   },
 
   SHEETS: {
@@ -381,7 +393,7 @@ export var CONFIG: AppConfig = {
       "y",
       "z",
     ],
-    WEIGHTS: { TROPHY: 0.1, DON: 0.07, WAR: 20.0 },
+    WEIGHTS: { TROPHY: 0.1, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
     DEEP_SCAN: {
       LOCAL: { TOURNEYS: 600, PLAYERS: 500 },
       REMOTE: { TOURNEYS: 1500, PLAYERS: 1500 },
@@ -392,6 +404,15 @@ export var CONFIG: AppConfig = {
     BENCHMARK_PERCENTILE: 0.05, // Top 5% of valid pool
     BENCHMARK_MIN_POOL: 3, // Minimum 3 players for average
     MIN_TROPHIES: 0, // Set to >0 to override auto-threshold (e.g. 5000)
+    MAX_SHADOW_RECRUITS: 100,
+    BENCHMARK_CLAN_WEIGHT: 0.4,
+    BENCHMARK_MARKET_WEIGHT: 0.6,
+    REBUILD_MIN_PERCENTILE: 0.1,
+    STRATEGY: {
+      SCAN_FLOOR_FALLBACK: 5000,
+      TROPHY_FLOOR_MAX: 10000,
+      PERFORMANCE_BENCHMARK_MIN: 50,
+    },
   },
 
   ROSTER: {
