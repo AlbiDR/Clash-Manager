@@ -17,7 +17,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "12.2.0";
+const VER_HEADHUNTER = "12.3.0";
 
 export interface IHeadhunter {
   scout(): void;
@@ -26,28 +26,25 @@ export interface IHeadhunter {
 const Headhunter: IHeadhunter = {
   scout(): void {
     const startTime = Date.now();
-    console.info("HEADHUNTER: Starting Recruitment Pipeline");
-
+    const S = Registry.Services;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+
     const safeSheet = (name: string) => {
       let s = ss.getSheetByName(name);
       if (!s) {
          s = ss.insertSheet(name);
-         Registry.Services.View.enforceGlobalTabHygiene();
+         S.View.enforceGlobalTabHygiene();
       }
       return s;
     };
 
     let sheet = safeSheet(CONFIG.SHEETS.HH);
-    Registry.Services.Schema.bootDynamicSchema();
-
-    // 1. RUNTIME CONTEXT
-    Registry.Services.Reporting.logReport("HEADHUNTER RUNTIME CONTEXT", [
-      `VERSION:    ${VER_HEADHUNTER}`,
-      `CLAN TAG:   ${CONFIG.SYSTEM.CLAN_TAG || "NOT_CONFIGURED"}`,
-      `TARGET:     ${CONFIG.HEADHUNTER.TARGET} Recruits`,
-      `BLACKLIST:  ${CONFIG.HEADHUNTER.BLACKLIST_DAYS} Days`,
-      `MODE:        RAPID_GLOBAL_SCOUT`
+    
+    // 1. INITIALIZE [1/9]
+    const schemaResults = S.Schema.bootDynamicSchema();
+    S.Reporting.logReport(`[1/9] INITIALIZE: HEADHUNTER PIPELINE v${VER_HEADHUNTER}`, [
+      `CONFIG: Clan ${CONFIG.SYSTEM.CLAN_TAG || "ERR"} | Mode: RAPID_GLOBAL_SCOUT | Target: ${CONFIG.HEADHUNTER.TARGET}`,
+      `STATUS: Sheets Synced (${schemaResults})`
     ]);
 
     if (!CONFIG.SYSTEM.CLAN_TAG) {
@@ -57,14 +54,14 @@ const Headhunter: IHeadhunter = {
 
     try {
       // L1 CACHE PURGE: Ensure a fresh start for this execution
-      Registry.Services.Network._clearCache();
+      S.Network._clearCache();
 
       const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+      const cb = Date.now();
 
       // 2. RESOURCE HYDRATION (Baseline & Quota)
-      Registry.Services.Reporting.logStep(1, 9, "Fetching clan baseline and quota...");
-      const clanDetailResponse = Registry.Services.Network.fetchRoyaleAPI([
-        `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
+      const clanDetailResponse = S.Network.fetchRoyaleAPI([
+        `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}?__cb=${cb}`,
       ]);
 
       let inGameRequirement = 0;
@@ -75,29 +72,34 @@ const Headhunter: IHeadhunter = {
         members = clan.memberList || [];
       }
 
-      const remaining = Registry.Services.Network.getRemainingQuota();
-      if (remaining < 300) {
-        console.warn(`QUOTA ALERT: Insufficient API capacity (${remaining}). Aborting.`);
+      const remainingQuota = S.Network.getRemainingQuota();
+      if (remainingQuota < 300) {
+        console.warn(`QUOTA ALERT: Insufficient API capacity (${remainingQuota}). Aborting.`);
         return;
       }
-      const lowQuotaMode = remaining < 1000;
+      const lowQuotaMode = remainingQuota < 1000;
 
       // 3. STATE HYDRATION
-      Registry.Services.Reporting.logStep(2, 9, "Loading local recruit state...");
-      const strategy = Registry.Services.Scoring.calculateTrophyFloor(members, inGameRequirement);
+      const strategy = S.Scoring.calculateTrophyFloor(members, inGameRequirement);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
       const existing = HeadhunterStore.loadDatabase(sheet);
 
       // 4. STORAGE MAINTENANCE
-      Registry.Services.Reporting.logStep(3, 9, "Executing Blacklist pruning...");
       const beforePrune = existing.size;
       existing.forEach((_, tag) => {
         if (blacklistResult.ids.has(tag)) existing.delete(tag);
       });
       const prunedCount = beforePrune - existing.size;
 
+      // REPORT [2-4]: STATE & METRICS
+      S.Reporting.logReport(`[2-4] STATE: Local Registry & Metrics`, [
+        `NETWORK: ${S.Network.getWorkerSummary()}`,
+        `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement}`,
+        `POOL:    ${existing.size} Active | ${blacklistResult.ids.size} Blacklisted | ${prunedCount} Pruned`,
+        `QUOTA:   ${remainingQuota} Remaining`
+      ]);
+
       // 5. MEMBERSHIP VALIDATION
-      Registry.Services.Reporting.logStep(4, 9, "Validating current recruitment status...");
       const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
       const logDismissal = (tag: string, score: number) => {
         evtSheet.appendRow([tag, new Date(), score]);
@@ -109,7 +111,7 @@ const Headhunter: IHeadhunter = {
         const batchSize = 25;
         for (let i = 0; i < tagsToCheck.length; i += batchSize) {
           const chunk = tagsToCheck.slice(i, i + batchSize);
-          const profiles = Registry.Services.Network.fetchRoyaleAPI(
+          const profiles = S.Network.fetchRoyaleAPI(
             chunk.map((t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`)
           );
           profiles.forEach((p: any) => {
@@ -124,166 +126,121 @@ const Headhunter: IHeadhunter = {
         }
       }
 
-      // REPORT: INGESTION METRICS
-      Registry.Services.Reporting.logReport("PIPELINE HEALTH METRICS", [
-        `CLAN MEMBERS:  ${members.length}`,
-        `TROPHY FLOOR:  ${strategy.floor}`,
-        `BLACKBOX SIZE: ${blacklistResult.ids.size}`,
-        `PRUNED ENTRIES: ${prunedCount}`,
-        `JOINED CLAN:    ${joinedCount}`,
-        `ACTIVE POOL:   ${existing.size}`,
-        `QUOTA REMAINING: ${remaining}`
-      ]);
+      // [UPDATE] We can add joinedCount to the previous report or next one. 
+      // The user draft has it in 'METRICS: Recruitment Health'.
 
-    // 7. Scanner: Launch
-    const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
-    Registry.Services.Reporting.logStep(7, 9, `Launching tournament scan (Floor: ${discoveryFloor})...`);
-    
-    // Safety check for empty scan when requirement is set too high
-    if (discoveryFloor > 9000) {
-      console.warn("Discovery Floor capped at 9,000 to match game limits.");
-    }
-    
-    const scanned = HeadhunterScanner.scanTournaments(
-      discoveryFloor,
-      existing, // Used for War Score fallback
-      blacklistResult.ids,
-      lowQuotaMode
-    );
-
-    const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
-    
-    // BLOCK LOG: Resource Metrics
-    Registry.Services.Reporting.logReport("Discovery Phase", [
-      `TARGET FLOOR: ${discoveryFloor}`,
-      `SCANNED TOTAL: ${scanned.length}`,
-      `SHADOW YIELD:  ${shadowCount}`,
-      `PIPELINE:      ${lowQuotaMode ? 'QUOTA_GUARD' : 'UNRESTRICTED'}`
-    ]);
-    // 8. Merge
-    let newArrivals = 0;
-    let updatedExisting = 0;
-    scanned.forEach((c) => {
-      if (existing.has(c.tag)) {
-        c.foundDate = existing.get(c.tag)!.foundDate;
-        updatedExisting++;
-      } else {
-        newArrivals++;
-      }
-      existing.set(c.tag, c);
-    });
-
-    // 9. Benchmarking (Hybrid)
-    // ... (unchanged benchmarking logic) ...
-    Registry.Services.Reporting.logStep(8, 9, "Calculating performance benchmarks...");
-    const lbSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
-    const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
-    
-    if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
-      const ssId = ss.getId();
-      const sheetName = lbSheet.getName();
-      const L = CONFIG.SCHEMA.ROSTER;
-      const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-      const lastRow = lbSheet.getLastRow();
+      // 7. Scanner: Launch
+      const discoveryFloor = Math.min(9000, inGameRequirement || 5000); 
       
-      const perfCol = String.fromCharCode(65 + 1 + L.PERF_SCORE); 
-      const trophiesCol = String.fromCharCode(65 + 1 + L.TROPHIES);
-      const donCol = String.fromCharCode(65 + 1 + L.TOTAL_DON);
-      const historyCol = String.fromCharCode(65 + 1 + L.HISTORY);
-  
-      const ranges = [
-        `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
-        `'${sheetName}'!${trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
-        `'${sheetName}'!${donCol}${startRow}:${donCol}${lastRow}`,
-        `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`
-      ];
+      const scanned = HeadhunterScanner.scanTournaments(
+        discoveryFloor,
+        existing, 
+        blacklistResult.ids,
+        lowQuotaMode
+      );
+
+      const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
+      let newArrivals = 0;
+      let updatedExisting = 0;
+      scanned.forEach((c) => {
+        if (existing.has(c.tag)) {
+          c.foundDate = existing.get(c.tag)!.foundDate;
+          updatedExisting++;
+        } else {
+          newArrivals++;
+        }
+        existing.set(c.tag, c);
+      });
+
+      // 8. ANALYSIS & ARCHIVE [8/9]
+      const lbSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
+      const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
       
-      const response = Sheets.Spreadsheets!.Values!.batchGet(ssId, { ranges });
-      if (response.valueRanges) {
-        const perfs = response.valueRanges[0].values || [];
-        const trophies = response.valueRanges[1].values || [];
-        const dons = response.valueRanges[2].values || [];
-        const histories = response.valueRanges[3].values || [];
-  
-        const currentWk = Registry.Services.Time.calculateWarWeekId(new Date());
+      if (lbSheet && lbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+        const ssId = ss.getId();
+        const sheetName = lbSheet.getName();
+        const L = CONFIG.SCHEMA.ROSTER;
+        const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+        const lastRow = lbSheet.getLastRow();
+        
+        const perfCol = String.fromCharCode(65 + 1 + L.PERF_SCORE); 
+        const trophiesCol = String.fromCharCode(65 + 1 + L.TROPHIES);
+        const donCol = String.fromCharCode(65 + 1 + L.TOTAL_DON);
+        const historyCol = String.fromCharCode(65 + 1 + L.HISTORY);
+    
+        const ranges = [
+          `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
+          `'${sheetName}'!${trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
+          `'${sheetName}'!${donCol}${startRow}:${donCol}${lastRow}`,
+          `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`
+        ];
+        
+        const response = S.Network.fetchRoyaleAPI(ranges);
+        if (response) {
+          const perfs = response[0]?.values || [];
+          const trophies = response[1]?.values || [];
+          const dons = response[2]?.values || [];
+          const histories = response[3]?.values || [];
+    
+          const currentWk = S.Time.calculateWarWeekId(new Date());
 
-        for (let i = 0; i < perfs.length; i++) {
-          const perf = Number(perfs[i] ? perfs[i][0] : 0);
-          if (perf >= 50) {
-            const histStr = String(histories[i] ? histories[i][0] : "");
-            const hasRecentWar = histStr.includes(currentWk);
-            const estimatedWarWins = 500; 
+          for (let i = 0; i < perfs.length; i++) {
+            const perf = Number(perfs[i] ? perfs[i][0] : 0);
+            if (perf >= 50) {
+              const histStr = String(histories[i] ? histories[i][0] : "");
+              const hasRecentWar = histStr.includes(currentWk);
+              const estimatedWarWins = 500; 
 
-            const raw = Registry.Services.Scoring.calculateRecruitRawScore(
-              Number(trophies[i] ? trophies[i][0] : 0),
-              Number(dons[i] ? dons[i][0] : 0),
-              estimatedWarWins, 
-              hasRecentWar,
-              CONFIG.HEADHUNTER.WEIGHTS
-            );
-            clanEliteData.push({ rawScore: raw, perfScore: perf });
+              const raw = S.Scoring.calculateRecruitRawScore(
+                Number(trophies[i] ? trophies[i][0] : 0),
+                Number(dons[i] ? dons[i][0] : 0),
+                estimatedWarWins, 
+                hasRecentWar,
+                CONFIG.HEADHUNTER.WEIGHTS
+              );
+              clanEliteData.push({ rawScore: raw, perfScore: perf });
+            }
           }
         }
       }
-    }
 
-    // Benchmark Calculation
-    const finalBenchmark = Registry.Services.Scoring.calculateHybridBenchmark(
-        clanEliteData,
-        blacklistResult.entries,
-    );
+      const finalBenchmark = S.Scoring.calculateHybridBenchmark(clanEliteData, blacklistResult.entries);
+      const allCandidates = Array.from(existing.values()).sort((a, b) => b.rawScore - a.rawScore);
+      const targetLimit = CONFIG.HEADHUNTER.TARGET;
+      const finalPool = allCandidates.slice(0, targetLimit);
+      const droppedPool = allCandidates.slice(targetLimit);
 
-    // 10. Filter & Score
-    const allCandidates = Array.from(existing.values())
-      .sort((a, b) => b.rawScore - a.rawScore);
+      if (droppedPool.length > 0) {
+        droppedPool.forEach(p => logDismissal(p.tag, p.rawScore));
+      }
+    
+      finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
 
-    const targetLimit = CONFIG.HEADHUNTER.TARGET;
-    const finalPool = allCandidates.slice(0, targetLimit);
-    const droppedPool = allCandidates.slice(targetLimit);
+      S.View.backupSheet(ss, CONFIG.SHEETS.HH);
+      
+      S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Archive`, [
+        `DISCOVERY: ${scanned.length} Scanned | ${shadowCount} Shadow Yield`,
+        `BACKUP:    'Headhunter' Archives Rotated`
+      ]);
 
-    // SCORE PRESERVATION: Record scores for recruits dropped due to pool size
-    if (droppedPool.length > 0) {
-      console.info(`  Cleanup: Recording scores for ${droppedPool.length} overflow recruits for blacklisting.`);
-      droppedPool.forEach(p => logDismissal(p.tag, p.rawScore));
-    }
-  
-    if (finalPool.length === 0 && existing.size > 0) {
-      console.warn("All recruits filtered by score or pool constraints.");
-    }
-  
-    finalPool.forEach(
-      (p) =>
-        (p.potentialScore = Registry.Services.Scoring.calculatePotentialScore(
-          p.rawScore,
-          finalBenchmark,
-        )),
-    );
+      // 9. RENDER: Visual Sync [9/9]
+      const hygieneSummary = S.View.enforceGlobalTabHygiene(ss);
+      HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
 
-    // 11. Backup
-    Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.HH);
+      S.Reporting.logReport(`[9/9] RENDER: Visual Sync`, [
+        `HYGIENE: ${hygieneSummary}`,
+        `ATOMIC:  ${finalPool.length} Candidates Synchronized`
+      ]);
 
-    // 12. View Render
-    Registry.Services.Reporting.logStep(9, 9, "Applying visual render and cache synchronization...");
-    HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
-
-    // 13. Report
-    Registry.Services.Reporting.logReport(
-      `HEADHUNTER v${VER_HEADHUNTER} REPORT`,
-      [
-        `OPERATION COMPLETE`,
-        `TARGET QUOTA: ${CONFIG.HEADHUNTER.TARGET} Recruits`,
-        `CURRENT POOL: ${finalPool.length} Qualified Members`,
-        `TROPHY FLOOR: ${strategy.floor}`,
-        `STRATEGY:     ${strategy.method}`,
-        `─`,
-        `SCAN ACQUISITIONS: ${scanned.length} Found`,
-        `PIPELINE FLOW:    +${newArrivals} New, Updated: ${updatedExisting}`
-      ]
-    );
-    console.info(`Headhunter Scout cycle finished successfully. Pool: ${finalPool.length}/${CONFIG.HEADHUNTER.TARGET}`);
+      // [SUMMARY]
+      S.Reporting.logReport(`[SUMMARY] OPERATION SUCCESSFUL`, [
+        `STRATEGY: ${strategy.method}`,
+        `CAPACITY: [${members.length}] -> [${finalPool.length}/${targetLimit}]`,
+        `DELTA:    +${newArrivals} Added | -${joinedCount} Joined | ~${updatedExisting} Updated`
+      ]);
 
     } catch (e: any) {
-      console.warn(`Failed to refresh web payload: ${e.message}`);
+      console.error(`CRITICAL FAILURE: ${e.message}\n${e.stack}`);
     }
 
     SpreadsheetApp.flush();

@@ -117,6 +117,11 @@ export interface INetwork {
   remoteWorkerHealthy(force?: boolean): boolean;
 
   /**
+   * Returns a concise summary of worker health and memory.
+   */
+  getWorkerSummary(): string;
+
+  /**
    * Returns the remaining UrlFetchApp quota for the current 24-hour period.
    */
   getRemainingQuota(): number;
@@ -729,6 +734,15 @@ var Network: INetwork = {
   getRemainingQuota() {
     NetworkInternal.initQuota();
     return Math.max(0, NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT);
+  },
+
+  getWorkerSummary() {
+    const isHealthy = this.remoteWorkerHealthy();
+    if (!isHealthy) return `Worker Offline (${_LAST_WORKER_ERROR})`;
+    
+    // Attempt to find memory info from last handshake
+    // Since we don't store it in health cache yet, just return status
+    return `Worker Healthy (Remote Enabled)`;
   },
 
   getLastWorkerError() {

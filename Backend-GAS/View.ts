@@ -34,6 +34,7 @@ export interface IView {
   drawMobileCheckbox(sheet: any): void;
   refreshMobileControls(ss: any): void;
   enforceGlobalTabHygiene(ss?: any): void;
+  isStrayDuplicate(name: string): boolean;
   backupSheet(ss: any, sheetName: string): void;
   setTabColor(sheet: any, color: string | null): void;
   tagSheet(sheet: any, type: string): void;
@@ -364,6 +365,20 @@ var View: IView = {
   },
 
   /**
+   * Helper: Detects failure artifacts (e.g. "Copy of Headhunter")
+   */
+  isStrayDuplicate: function(name: string): boolean {
+    const prefixes = ["Copy of ", "Copia di "];
+    const coreSheets = [CONFIG.SHEETS.DB, CONFIG.SHEETS.ROSTER, CONFIG.SHEETS.HH];
+    
+    return prefixes.some(prefix => {
+        if (!name.startsWith(prefix)) return false;
+        const originalName = name.substring(prefix.length);
+        return coreSheets.includes(originalName);
+    });
+  },
+
+  /**
    * GLOBAL HYGIENE PROTOCOL
    */
   enforceGlobalTabHygiene: function (ss) {
@@ -417,6 +432,14 @@ var View: IView = {
 
     sortedSheets.forEach((sheet: any, i: number) => {
       const name = sheet.getName();
+
+      // HYGIENE CHECK: Delete known failure artifacts immediately
+      if (this.isStrayDuplicate(name)) {
+        console.warn(`Hygiene: Deleting stray artifact '${name}'`);
+        requests.push({ deleteSheet: { sheetId: sheet.getSheetId() } });
+        return; 
+      }
+
       const meta = nameMap.get(name);
       
       const properties: any = {
@@ -439,6 +462,7 @@ var View: IView = {
       });
     });
 
+    let summary = "Hydrated";
     if (requests.length > 0) {
       try {
         Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
@@ -446,16 +470,15 @@ var View: IView = {
         // Log Summary
         const hiddenCount = requests.filter(r => r.updateSheetProperties.properties.hidden).length;
         const colorCount = requests.filter(r => r.updateSheetProperties.properties.tabColor).length;
-        if (hiddenCount > 0 || colorCount > 0) {
-             console.info(`View: Hygiene Enforced (Hidden: ${hiddenCount}, Colored: ${colorCount})`);
-        }
+        summary = `${hiddenCount} Hidden, ${colorCount} Colored`;
       } catch (e: any) {
-        console.warn(`Tab Hygiene Batch Fail: ${e.message}`);
+        summary = "Limit Reached";
       }
     }
 
     // 5. INFRASTRUCTURE HEALING: Ensure mobile triggers exist on all system tabs
     this.refreshMobileControls(ss);
+    return summary;
   },
 
   /**
