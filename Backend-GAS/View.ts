@@ -442,6 +442,13 @@ var View: IView = {
     if (requests.length > 0) {
       try {
         Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+        
+        // Log Summary
+        const hiddenCount = requests.filter(r => r.updateSheetProperties.properties.hidden).length;
+        const colorCount = requests.filter(r => r.updateSheetProperties.properties.tabColor).length;
+        if (hiddenCount > 0 || colorCount > 0) {
+             console.info(`View: Hygiene Enforced (Hidden: ${hiddenCount}, Colored: ${colorCount})`);
+        }
       } catch (e: any) {
         console.warn(`Tab Hygiene Batch Fail: ${e.message}`);
       }

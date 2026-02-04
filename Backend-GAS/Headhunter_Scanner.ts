@@ -289,12 +289,15 @@ const HeadhunterScanner: IHeadhunterScanner = {
         }
 
         // Shadow Trace Summary
+        const yieldRatio = seedTags.length > 0 ? ((shadowTags.size / seedTags.length) * 100).toFixed(1) : "0.0";
+        const seedContext = seedTags.length < 10 ? "(High Scarcity - Strict Floor)" : "(Healthy Pool)";
+
         Registry.Services.Reporting.logReport("Shadow Scout Trace", [
-          `INCOMING SEEDS:   ${seedTags.length}`,
+          `INCOMING SEEDS:   ${seedTags.length} ${seedContext}`,
           `BATTLES TRACED:   ${totalBattles}`,
           `OPPONENTS FOUND:  ${totalOpponents}`,
-          `BLACKBOX REJECT:  ${rejectedClanned}`,
-          `DISCOVERED TAGS:  ${shadowTags.size}`
+          `DISCOVERED TAGS:  ${shadowTags.size}`,
+          `YIELD RATIO:      ${yieldRatio}% (Recruits per Seed)`
         ]);
 
       }
