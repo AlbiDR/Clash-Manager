@@ -15,6 +15,26 @@ import type { Recruit } from "../types";
  * @remarks
  * Specialized logic for the Recruiter view (Headhunter). Extracts data orchestration,
  * sorting strategies, turbo scan logic, and console controller configuration from the view.
+ *
+ * @returns
+ * - All state and methods from `useConsoleController` (search, sort, selection).
+ * - `sheetUrl`: Computed URL to the Headhunter tab in the backing Google Sheet.
+ * - `isHydrated`: Indicates if initial data has been loaded from IndexedDB.
+ * - `isShowcaseMode`: Boolean flag for demo/showcase state.
+ * - `isRefreshing`: Indicates if a standard GAS sync is in progress.
+ * - `isTurboScanning`: Indicates if a direct-to-worker "Turbo Scan" is active.
+ * - `syncError`: Error message from the last sync attempt.
+ * - `sortOptions`: Configuration for the recruitment-specific sorting UI.
+ * - `handleRefresh`: Orchestrates both Turbo Scan and full GAS sync.
+ * - `dismissBulk`: Triggers dismissal for all currently selected recruits.
+ * - `onSelectScore`: Selection helper for score-based filtering.
+ * - `handleSearchUpdate`: Proxy for controller search updates.
+ *
+ * @sideeffects
+ * - Updates local state and IndexedDB via `updateLocalData`.
+ * - Triggers asynchronous dismissals on the GAS backend.
+ * - Interacts with `useRecruitBlacklist` to manage dismissal tombstones.
+ * - Dispatches toast notifications for user feedback.
  */
 export function useRecruiter() {
   const { pingData } = useApiState();
@@ -114,19 +134,30 @@ export function useRecruiter() {
   );
 
   // ⚡ DIRECT SCAN: Turbo Mode
+  // Intent: Bypass the GAS orchestration layer to fetch fresh data directly
+  // from the Cloud Worker. This reduces latency and GAS quota consumption.
   const isTurboScanning = ref(false);
 
+  /**
+   * ORCHESTRATED REFRESH
+   *
+   * @remarks
+   * Performs a dual-phase sync:
+   * 1. Turbo Scan: Direct worker-to-client fetch for immediate recruitment updates.
+   * 2. GAS Sync: Full system synchronization to ensure the local database matches the sheet.
+   */
   async function handleRefresh() {
     if (isWorkerConfigured()) {
       isTurboScanning.value = true;
       info("Starting Turbo Scan via Worker...");
 
-      // Direct Fetch (Bypassing GAS)
+      // HYBRID MERGE
+      // Intent: Injecting worker results directly into the local reactive state
+      // allows the UI to update instantly without waiting for the slower
+      // GAS execution cycle to complete and propagate changes.
       const newCandidates = await scanRecruitsDirect();
       if (newCandidates && newCandidates.length > 0) {
-        // Merge with existing data locally to update view instantly
         if (data.value) {
-          // Simple merge: append new ones
           const existingIds = new Set(data.value.hh.map((r) => r.id));
           const merged = [...data.value.hh];
           let added = 0;
@@ -136,7 +167,7 @@ export function useRecruiter() {
               added++;
             }
           });
-          // Update local state via helper
+
           updateLocalData({
             ...data.value,
             hh: merged.sort(
@@ -155,21 +186,30 @@ export function useRecruiter() {
     refreshGas();
   }
 
+  /**
+   * RECRUIT DISMISSAL ENGINE
+   *
+   * @remarks
+   * Implements a "Zero Latency" pattern for UI responsiveness.
+   *
+   * 1. POINT-OF-IMPACT: Hide recruits immediately using local tombstones.
+   * 2. BACKGROUND SYNC: Dispatch the dismissal to the GAS backend.
+   * 3. RECOVERY: Roll back local state only if the server explicitly rejects the change.
+   */
   function executeDismiss(ids: string[]) {
-    // Capture recruits to restore in case of undo
+    // PRESERVATION: Capture state for potential undo operations.
     const recruitsToRestore = (data.value?.hh || []).filter(r => ids.includes(r.id));
     const { undismissRecruitsAction } = useHeadhunter();
 
-    // ⚡ ZERO LATENCY: Point-of-impact hiding
+    // ⚡ ZERO LATENCY: Visual hide (Tombstone injection)
     blacklist.hide(ids);
 
-    // Track if backend update started
     let backendCalled = false;
 
-    // Start sync immediately
     backendCalled = true;
     dismissRecruitsAction(ids).catch(() => {
       error("Failed to sync changes");
+      // ERROR RECOVERY: Remove tombstones to restore visibility.
       blacklist.restore(ids);
     });
 
