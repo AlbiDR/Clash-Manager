@@ -6,6 +6,7 @@ import { useAppSettings } from "../composables/useAppSettings";
 const props = defineProps<{
   label: string;
   value: string | number;
+  loading?: boolean;
   benchmarkType?: "lb" | "hh";
   benchmarkMetric?: string;
   benchmarkRawValue?: number;
@@ -16,6 +17,7 @@ const { getBenchmark } = useBenchmarking();
 
 const tooltipVal = computed(() => {
   if (
+    !props.loading &&
     modules.ghostBenchmarking &&
     props.benchmarkType &&
     props.benchmarkMetric &&
@@ -32,7 +34,11 @@ const tooltipVal = computed(() => {
 </script>
 
 <template>
-  <div class="stat-item hit-target" v-tooltip="tooltipVal">
+  <div v-if="loading" class="stat-item skeleton-anim">
+    <div class="sk-label-box"></div>
+    <div class="sk-value-box"></div>
+  </div>
+  <div v-else class="stat-item hit-target" v-tooltip="tooltipVal">
     <span class="label">{{ label }}</span>
     <span class="value">{{ value }}</span>
   </div>
