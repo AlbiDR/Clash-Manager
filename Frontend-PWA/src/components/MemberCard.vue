@@ -11,8 +11,8 @@ import {
   formatTimeAgo,
   calculateMomentum,
 } from "../utils/formatters";
-import { useExternalLink } from "../composables/useExternalLink";
 import StatisticItem from "./StatisticItem.vue";
+import CardActions from "./CardActions.vue";
 
 const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
@@ -42,7 +42,6 @@ const emit = defineEmits<{
 
 const { getBenchmark } = useBenchmarking();
 const { modules } = useAppSettings();
-const { openExternal, openInGame } = useExternalLink();
 
 // Formatters
 const roleInfo = (role: string) => formatRole(role);
@@ -131,57 +130,45 @@ const trendInfo = computed(() => {
 
     <!-- Expanded Content -->
     <template #expanded-content>
-      <div class="stats-grid" :aria-busy="appIsRefreshing">
-        <template v-if="appIsRefreshing">
-          <div v-for="i in 4" :key="i" class="stat-item skeleton-anim">
-            <div class="sk-label-box"></div>
-            <div class="sk-value-box"></div>
-          </div>
-        </template>
-        <template v-else>
-          <StatisticItem
-            label="War Rate"
-            :value="member.d.rate || '0%'"
-            benchmark-type="lb"
-            benchmark-metric="warRate"
-            :benchmark-raw-value="parseFloat(member.d.rate || '0')"
-          />
-          <StatisticItem
-            label="Average Fame"
-            :value="(member.d.wfame || 0).toLocaleString()"
-          />
-          <StatisticItem
-            label="Daily Donations"
-            :value="member.d.avg"
-            benchmark-type="lb"
-            benchmark-metric="donations"
-            :benchmark-raw-value="member.d.avg"
-          />
-          <StatisticItem label="Last Seen" :value="formatTimeAgo(member.d.seen)" />
-        </template>
+      <div
+        class="stats-grid lb-grid"
+        :aria-busy="appIsRefreshing"
+      >
+        <StatisticItem
+          label="War Rate"
+          :value="member.d.rate || '0%'"
+          :loading="appIsRefreshing"
+          benchmark-type="lb"
+          benchmark-metric="warRate"
+          :benchmark-raw-value="parseFloat(member.d.rate || '0')"
+        />
+        <StatisticItem
+          label="Average Fame"
+          :loading="appIsRefreshing"
+          :value="(member.d.wfame || 0).toLocaleString()"
+        />
+        <StatisticItem
+          label="Daily Donations"
+          :value="member.d.avg"
+          :loading="appIsRefreshing"
+          benchmark-type="lb"
+          benchmark-metric="donations"
+          :benchmark-raw-value="member.d.avg"
+        />
+        <StatisticItem
+          label="Last Seen"
+          :loading="appIsRefreshing"
+          :value="formatTimeAgo(member.d.seen)"
+        />
       </div>
 
       <WarHistoryChart :history="member.d.hist" :loading="appIsRefreshing" />
 
-      <div class="actions">
-        <template v-if="appIsRefreshing">
-          <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
-          <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
-        </template>
-        <template v-else>
-          <button
-            @click="openExternal(`https://royaleapi.com/player/${member.id}`)"
-            class="btn-action"
-          >
-            <Icon name="analytics" size="16" />
-            <span>RoyaleAPI</span>
-          </button>
-          <button @click="openInGame(member.id)" class="btn-action primary">
-            <Icon name="crown" size="16" />
-            <span>Open Game</span>
-          </button>
-        </template>
-      </div>
+      <CardActions
+        class="card-actions-margin"
+        :id="member.id"
+        :loading="appIsRefreshing"
+      />
     </template>
   </BaseCard>
 </template>
@@ -192,26 +179,6 @@ const trendInfo = computed(() => {
   font-family: var(--sys-font-family-body);
   font-weight: 900;
   font-size: 9px;
-}
-
-/* Role Colors */
-.role-leader {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-}
-.role-coleader {
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
-}
-.role-elder {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-}
-.role-member {
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface);
-  border: 1px solid var(--sys-color-outline-variant);
 }
 
 .momentum-pill {
@@ -253,42 +220,18 @@ const trendInfo = computed(() => {
   font-family: var(--sys-font-family-mono);
 }
 
-/* Expanded Content Stats */
-.stats-grid {
-  display: grid;
+/* Expanded Content Layout */
+.lb-grid {
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
 }
 
 @media (max-width: 360px) {
-  .stats-grid {
+  .lb-grid {
     gap: 6px;
   }
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
+.card-actions-margin {
   margin-top: 16px;
-}
-.btn-action {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface);
-  font-weight: 700;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-}
-.btn-action.primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
 }
 </style>

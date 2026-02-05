@@ -927,3 +927,56 @@ a {
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
 }
+
+.stats-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn-action {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface);
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.btn-action:active {
+  transform: scale(0.96);
+}
+.btn-action.primary {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+.btn-action.compact {
+  font-size: 13px;
+}
+
+/* Role Colors */
+.role-leader {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+.role-coleader {
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
+}
+.role-elder {
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+}
+.role-member {
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface);
+  border: 1px solid var(--sys-color-outline-variant);
+}
