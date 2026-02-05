@@ -400,8 +400,11 @@ var View: IView = {
     WORKSPACE_CONFIGS.forEach(ws => {
       const baseRgb = this.hexToRgbColor(ws.baseColor);
       
-      // 1. Primary Sheet (Apply 60% darkening for HH ecosystem to satisfy hierarchy)
-      const color = ws.name === SH.HH ? this.darkenRgb(baseRgb, 0.6) : baseRgb;
+      // 1. Primary Sheet (Applied user's hierarchal philosophy: HH is the most specialized/darkest ecosystem)
+      let color = baseRgb;
+      if (ws.name === SH.HH) {
+        color = this.darkenRgb(baseRgb, 0.3); // Deepest main tab (30% brightness)
+      }
       REGISTER.push({ name: ws.name, color: color, visible: ws.visible });
 
       // 2. Rotation Backups (70% brightness)
@@ -416,11 +419,11 @@ var View: IView = {
     });
 
     // 4. Technical / Infrastructure (Trailing)
-    const hhDarkRgb = this.darkenRgb(this.hexToRgbColor(P.WORKSPACE.HH), 0.6);
+    const hhDarkRgb = this.darkenRgb(this.hexToRgbColor(P.WORKSPACE.HH), 0.3); // Unified deep red for HH ecosystem
     
     REGISTER.push({ name: SH.QUEUE, color: hhDarkRgb, visible: false });
     REGISTER.push({ name: SH.BL, color: hhDarkRgb, visible: false });
-    REGISTER.push({ name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
+    REGISTER.push({ name: SH.EVT, color: hhDarkRgb, visible: false });
 
     // EXECUTION
     const ssId = ss.getId();
