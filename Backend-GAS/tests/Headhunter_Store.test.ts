@@ -59,7 +59,10 @@ global.Utilities = {
 // @ts-ignore
 global.Sheets = {
   Spreadsheets: {
-    batchUpdate: vi.fn()
+    batchUpdate: vi.fn(),
+    Values: {
+        update: vi.fn()
+    }
   }
 };
 

@@ -294,13 +294,14 @@ const HeadhunterStore: IHeadhunterStore = {
 
     const maxQueue = CONFIG.HEADHUNTER.MAX_QUEUE_SIZE || 500;
     const toSave = recruits.slice(0, maxQueue);
+    const ssId = ss.getId();
 
-    if (queueSheet.getLastRow() > 1) {
-      queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 9).clearContent();
-    }
-
-    if (toSave.length > 0) {
-      const values = toSave.map(r => [
+    // Prepare the 2D array for the entire queue range (2 to maxQueue + 1)
+    // This allows us to overwrite old data and set new data in ONE ATOMIC CALL.
+    const values = new Array(maxQueue).fill(0).map(() => new Array(9).fill(""));
+    
+    toSave.forEach((r, i) => {
+      values[i] = [
         r.tag,
         r.name,
         r.trophies,
@@ -310,8 +311,25 @@ const HeadhunterStore: IHeadhunterStore = {
         r.rawScore,
         Registry.Services.Time.formatDate(r.foundDate),
         r.source || "TOURNAMENT"
-      ]);
-      queueSheet.getRange(2, 1, values.length, 9).setValues(values);
+      ];
+    });
+
+    if (typeof Sheets !== 'undefined' && Sheets.Spreadsheets) {
+      const range = `'${sheetName}'!A2:I${maxQueue + 1}`;
+      Sheets.Spreadsheets.Values!.update(
+        { values: values },
+        ssId,
+        range,
+        { valueInputOption: "USER_ENTERED" }
+      );
+    } else {
+      // Fallback for non-Advanced API environments (though unlikely in production)
+      if (queueSheet.getLastRow() > 1) {
+        queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 9).clearContent();
+      }
+      if (toSave.length > 0) {
+        queueSheet.getRange(2, 1, toSave.length, 9).setValues(values.slice(0, toSave.length));
+      }
     }
 
     return { count: toSave.length, pruned: Math.max(0, recruits.length - maxQueue) };
