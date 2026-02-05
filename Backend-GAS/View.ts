@@ -397,6 +397,9 @@ var View: IView = {
       { name: SH.HH, baseColor: P.WORKSPACE.HH, visible: true }
     ];
 
+    WORKSPACE_CONFIGS.forEach(ws => {
+      const baseRgb = this.hexToRgbColor(ws.baseColor);
+      
       // 1. Primary Sheet (Apply 60% darkening for HH ecosystem to satisfy hierarchy)
       const color = ws.name === SH.HH ? this.darkenRgb(baseRgb, 0.6) : baseRgb;
       REGISTER.push({ name: ws.name, color: color, visible: ws.visible });
