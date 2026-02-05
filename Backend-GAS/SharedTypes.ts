@@ -31,6 +31,13 @@ export interface PenaltiesConfig {
   HERITAGE_DIVISOR: number;
 }
 
+export interface HeadhunterMathConfig {
+  ELITE_THRESHOLD: number;
+  REBUILD_MIN_PERCENTILE: number;
+  BENCHMARK_CLAN_WEIGHT: number;
+  BENCHMARK_MARKET_WEIGHT: number;
+}
+
 export interface RosterSchemaIndex {
   PERF_SCORE: number;
   RAW_SCORE: number;

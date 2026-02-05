@@ -8,10 +8,9 @@
  * ============================================================================
  */
 
-import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex } from "./SharedTypes";
+import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex, HeadhunterMathConfig } from "./SharedTypes";
 
 declare var module: any;
-declare var CONFIG: any;
 
 /**
  * @remarks
@@ -85,12 +84,12 @@ export interface IScoringKernel {
   /**
    * Calculates a hybrid benchmark by blending clan performance with market standards.
    */
-  calcHybridBenchmark(clanAvg: number, marketAvg: number): number;
+  calcHybridBenchmark(clanAvg: number, marketAvg: number, config: HeadhunterMathConfig): number;
 
   /**
    * Determines the optimal trophy floor strategy based on clan composition.
    */
-  calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
+  calcTrophyFloor(members: { trophies: number }[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
 
   /**
    * Standard comparator for sorting roster rows by performance and reliability.
@@ -228,15 +227,14 @@ const ScoringKernel: IScoringKernel = {
    * Calculates a blended benchmark.
    *
    * @remarks
-   * Uses a 0.4/0.6 split to prioritize market standards (Global) over
+   * Uses a blended split to prioritize market standards (Global) over
    * internal clan performance. This prevents the "Echo Chamber" effect
    * where a weak clan's standards drop too low to find elite recruits.
    */
-  calcHybridBenchmark(clanAvg: number, marketAvg: number): number {
-    const H = CONFIG.HEADHUNTER;
+  calcHybridBenchmark(clanAvg: number, marketAvg: number, config: HeadhunterMathConfig): number {
     let b = 1;
     if (clanAvg > 0 && marketAvg > 0) {
-      b = clanAvg * H.BENCHMARK_CLAN_WEIGHT + marketAvg * H.BENCHMARK_MARKET_WEIGHT;
+      b = clanAvg * config.BENCHMARK_CLAN_WEIGHT + marketAvg * config.BENCHMARK_MARKET_WEIGHT;
     } else if (clanAvg > 0) {
       b = clanAvg;
     } else if (marketAvg > 0) {
@@ -251,12 +249,10 @@ const ScoringKernel: IScoringKernel = {
    * @remarks
    * 'ELITE_THRESHOLD' (41) is the critical mass required for a competitive clan.
    * Above this, the median is used to filter out bottom-tier performers.
-   * Below this, the bottom 10% average is used to support rebuilding efforts.
+   * Below this, the bottom percentile average is used to support rebuilding efforts.
    */
-  calcTrophyFloor(members: { trophies: number }[], inGameReq: number): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
-    const H = CONFIG.HEADHUNTER;
-    const S = H.STRATEGY;
-    const ELITE_THRESHOLD = CONFIG.SYSTEM.ELITE_MEMBERSHIP_THRESHOLD;
+  calcTrophyFloor(members: { trophies: number }[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
+    const ELITE_THRESHOLD = config.ELITE_THRESHOLD;
     
     let floor = inGameReq;
     let method = "In-Game Requirement";
@@ -274,13 +270,12 @@ const ScoringKernel: IScoringKernel = {
           method = `Elite Mode (At In-Game Cap: ${inGameReq})`;
         }
       } else {
-
         mode = "REBUILD";
-        const bCount = Math.max(1, Math.ceil(ts.length * H.REBUILD_MIN_PERCENTILE));
+        const bCount = Math.max(1, Math.ceil(ts.length * config.REBUILD_MIN_PERCENTILE));
         const bAvg = Math.round(ts.slice(0, bCount).reduce((a,b) => a + b, 0) / bCount);
         if (bAvg > floor) {
           floor = bAvg;
-          method = `Rebuild Mode (Bot ${Math.round(H.REBUILD_MIN_PERCENTILE * 100)}% Avg: ${bAvg})`;
+          method = `Rebuild Mode (Bot ${Math.round(config.REBUILD_MIN_PERCENTILE * 100)}% Avg: ${bAvg})`;
         } else {
           method = `Rebuild Mode (At In-Game Cap: ${inGameReq})`;
         }

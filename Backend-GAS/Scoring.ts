@@ -10,7 +10,7 @@
  */
 
 import { CONFIG } from "./Configuration";
-import type { RecruitingWeights, ScoringWeights, RosterSchemaIndex } from "./SharedTypes"; // Fixed Import
+import type { RecruitingWeights, ScoringWeights, RosterSchemaIndex, HeadhunterMathConfig } from "./SharedTypes"; // Fixed Import
 import Registry from "./Registry";
 
 // Global Version Constant
@@ -45,13 +45,14 @@ export interface IScoring {
 
   calculateTrophyFloor(
     members: any[], 
-    inGameReq: number
+    inGameReq: number,
+    config: HeadhunterMathConfig
   ): { floor: number; method: string; mode: string };
 
   calculateHybridBenchmark(
     clanElite: Array<{ rawScore: number; perfScore: number }>,
     blacklist: Array<{ rawScore: number }>,
-    minpoolFromConfig?: number
+    config: HeadhunterMathConfig
   ): number;
   
   calculatePotentialScore(raw: number, benchmark: number): number;
@@ -100,12 +101,11 @@ const Scoring: IScoring = {
     const decayedScore = Registry.Services.ScoringKernel.applyDecay(rawScore, daysInactive, P);
 
     // 4. Kernel: Calculate Heritage (Blessing)
-    const recruitWeights: RecruitingWeights = { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
+    const recruitWeights = CONFIG.HEADHUNTER.WEIGHTS;
     const recruitRaw = Registry.Services.ScoringKernel.calcRecruitRaw(
-        trophies, 0, cachedWins, false, recruitWeights
+        trophies, 0, cachedWins, isActiveMember, recruitWeights
     );
     
-    // Using calcHeritage from Kernel (assuming it exists there as it was called in previous version)
     const heritageBonus = Registry.Services.ScoringKernel.calcHeritage(
         recruitRaw, daysTracked, prophetThreshold, P.HERITAGE_DIVISOR
     );
@@ -135,19 +135,15 @@ const Scoring: IScoring = {
   calculateHybridBenchmark: function (
     clanElite: Array<{ rawScore: number; perfScore: number }>,
     blacklist: Array<{ rawScore: number }>,
-    minpoolFromConfig?: number
+    config: HeadhunterMathConfig
   ): number {
-    // Prepare Data for Kernel
-    const minPoolTarget = minpoolFromConfig || CONFIG.HEADHUNTER.TARGET;
-    
-    // Re-verify logic: Kernel expects (avgClanRef, topPoolAvg).
-    // Logic extraction to keep Manager doing the "Prep" and Kernel doing the "Math".
-    
+    // 1. Calculate Clan Reference Average (Elite Roster)
     const clanPool = (clanElite || []).filter((c) => c.perfScore >= 50);
     const avgClanRef = clanPool.length > 0
         ? clanPool.reduce((a, b) => a + b.rawScore, 0) / clanPool.length
         : 0;
 
+    // 2. Calculate Market Reference Average (Top 5% of Blacklist/Pool)
     const pool = [...(blacklist || [])].sort((a, b) => b.rawScore - a.rawScore);
     const poolSize = Math.max(3, Math.ceil(pool.length * 0.05));
     const topPool = pool.slice(0, poolSize);
@@ -155,15 +151,16 @@ const Scoring: IScoring = {
         ? topPool.reduce((a, b) => a + b.rawScore, 0) / topPool.length
         : 0;
 
-    return Registry.Services.ScoringKernel.calcHybridBenchmark(avgClanRef, topPoolAvg);
+    // 3. Delegate Blending to Kernel
+    return Registry.Services.ScoringKernel.calcHybridBenchmark(avgClanRef, topPoolAvg, config);
   },
 
   calculatePotentialScore: function (raw: number, benchmark: number): number {
     return Registry.Services.ScoringKernel.calcPotential(raw, benchmark);
   },
 
-  calculateTrophyFloor: function (members: any[], inGameReq: number): { floor: number; method: string; mode: string } {
-    return Registry.Services.ScoringKernel.calcTrophyFloor(members, inGameReq);
+  calculateTrophyFloor: function (members: any[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: string } {
+    return Registry.Services.ScoringKernel.calcTrophyFloor(members, inGameReq, config);
   },
 
   resolveWarFame: function (p: any): number {

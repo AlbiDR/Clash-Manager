@@ -10,14 +10,58 @@ vi.mock('../Configuration', () => {
     SCHEMA: {
       HH: { TAG: 0, INVITED: 1, NAME: 2, TROPHIES: 3, DONATIONS: 4, CARDS: 5, WAR_WINS: 6, FOUND_DATE: 7, RAW_SCORE: 8, POTENTIAL_SCORE: 9 },
     },
-    SHEETS: { BL: 'HH_BLACKLIST', EVT: 'HH_EVENT_LOG', HH: 'Headhunter' },
-    HEADHUNTER: { BLACKLIST_DAYS: 30 },
+    SHEETS: { BL: 'HH_BLACKLIST', EVT: 'HH_EVENT_LOG', HH: 'Headhunter', DB: 'Clan Database', QUEUE: 'HH_QUEUE' },
+    HEADHUNTER: { BLACKLIST_DAYS: 30, TARGET: 50, MAX_QUEUE_SIZE: 500 },
     SYSTEM: { MAX_BACKUPS: 5 }
   };
   // @ts-ignore
   global.CONFIG = mockConfig;
   return { CONFIG: mockConfig };
 });
+
+// Mock Registry - Hoisted
+const mocks = vi.hoisted(() => ({
+    Time: {
+        formatDate: vi.fn().mockReturnValue('2023-01-01'),
+        parseFlexibleDate: vi.fn().mockReturnValue(new Date('2023-01-01')),
+        calculateWarWeekId: vi.fn().mockReturnValue('W1')
+    },
+    View: {
+        tagSheet: vi.fn()
+    },
+    Store: {
+        props: {
+            getJSON: vi.fn().mockReturnValue({}),
+            setJSON: vi.fn()
+        },
+        withLock: vi.fn((key, fn) => fn())
+    }
+}));
+
+vi.mock('../Registry', () => ({
+    default: {
+        Services: {
+            Time: mocks.Time,
+            View: mocks.View,
+            Store: mocks.Store
+        }
+    }
+}));
+
+// Mock Global Utilities
+// @ts-ignore
+global.Utilities = {
+  sleep: vi.fn(),
+  formatDate: vi.fn().mockReturnValue('2023-01-01')
+};
+
+// Mock Global Sheets API
+// @ts-ignore
+global.Sheets = {
+  Spreadsheets: {
+    batchUpdate: vi.fn()
+  }
+};
 
 describe('HeadhunterStore', () => {
     let mockSheet: any;
@@ -30,6 +74,10 @@ describe('HeadhunterStore', () => {
         // @ts-ignore
         global.CONFIG = CONFIG;
         
+        // Defaults
+        mocks.Time.parseFlexibleDate.mockReturnValue(new Date());
+        mocks.Store.props.getJSON.mockReturnValue({});
+
         mockBlSheet = {
             getLastRow: vi.fn(),
             getRange: vi.fn().mockReturnThis(),
@@ -38,6 +86,9 @@ describe('HeadhunterStore', () => {
             getValues: vi.fn().mockReturnValue([]),
             clearContent: vi.fn(),
             insertSheet: vi.fn().mockReturnThis(),
+            getParent: vi.fn().mockReturnValue({ getId: vi.fn().mockReturnValue('mock-ss-id') }),
+            hideSheet: vi.fn(),
+            getSheetId: vi.fn().mockReturnValue(456),
         };
 
         mockEvtSheet = {
@@ -49,6 +100,9 @@ describe('HeadhunterStore', () => {
             getValues: vi.fn().mockReturnValue([]), // Header only
             clearContent: vi.fn(),
             getLastColumn: vi.fn().mockReturnValue(2),
+            getParent: vi.fn().mockReturnValue({ getId: vi.fn().mockReturnValue('mock-ss-id') }),
+            hideSheet: vi.fn(),
+            getSheetId: vi.fn().mockReturnValue(789),
         };
 
         mockSheet = {
@@ -57,6 +111,7 @@ describe('HeadhunterStore', () => {
             getValues: vi.fn(),
             deleteRow: vi.fn(),
             getName: vi.fn().mockReturnValue('Headhunter'),
+            getSheetId: vi.fn().mockReturnValue(123),
             getParent: vi.fn(),
             setTabColor: vi.fn(),
         };
@@ -74,7 +129,7 @@ describe('HeadhunterStore', () => {
                  return null;
             }),
             toast: vi.fn(),
-            getId: vi.fn(),
+            getId: vi.fn().mockReturnValue('mock-ss-id'),
         };
         
         mockSheet.getParent.mockReturnValue(mockParent);
@@ -208,8 +263,44 @@ describe('HeadhunterStore', () => {
              expect(result.ids.has("#TICKED")).toBe(true);
              expect(result.entries[0].rawScore).toBe(300);
              
-             // Should delete the row
-             expect(mockSheet.deleteRow).toHaveBeenCalledWith(3);
+             // Should use batchUpdate for deletion
+             expect(global.Sheets.Spreadsheets.batchUpdate).toHaveBeenCalled();
+        });
+    });
+
+    describe('Queue System', () => {
+        it('should load candidates from the queue sheet', () => {
+            const recentDate = new Date().toISOString();
+            const row = ["#QUEUE1", "QueuedPlayer", 7000, 100, 10, 5, 250, recentDate, "TOURNAMENT"];
+            mockEvtSheet.getLastRow.mockReturnValue(2);
+            mockEvtSheet.getRange.mockReturnValue({
+                getValues: () => [row]
+            });
+            mockParent.getSheetByName.mockImplementation((name) => {
+                if (name === 'HH_QUEUE') return mockEvtSheet;
+                return null;
+            });
+            
+            const map = HeadhunterStore.loadQueue(mockParent);
+            expect(map.size).toBe(1);
+            expect(map.get("#QUEUE1")).toMatchObject({ tag: "#QUEUE1", rawScore: 250 });
+        });
+
+        it('should save candidates to the queue sheet', () => {
+             const recruits = [{ 
+                 tag: "#NEW1", name: "New", trophies: 8000, donations: 0, 
+                 cards: 0, war: 0, rawScore: 400, foundDate: new Date(),
+                 invited: false 
+             }];
+             
+             mockParent.getSheetByName.mockReturnValue(null); // Force insert
+             mockParent.insertSheet.mockReturnValue(mockEvtSheet);
+             mockEvtSheet.getLastRow.mockReturnValue(0);
+             
+             HeadhunterStore.saveQueue(mockParent, recruits);
+             
+             expect(mockParent.insertSheet).toHaveBeenCalledWith('HH_QUEUE');
+             expect(mockEvtSheet.setValues).toHaveBeenCalled();
         });
     });
 });
