@@ -14,6 +14,7 @@ declare var SpreadsheetApp: any;
  *    Manages fetching, parsing, pruning, and upserting records.
  * ============================================================================
  */
+const VER_DATABASE_STORE = "13.1.0";
 
 const DatabaseStore = {
   
@@ -31,11 +32,12 @@ const DatabaseStore = {
     if (lastRow < startRow) return;
 
     const S_DB = CONFIG.SCHEMA.DB;
+    const V = Registry.Services.View;
 
     // 1. COLUMN-SELECTIVE INGESTION (API Mode)
-    const tagCol = String.fromCharCode(65 + 1 + S_DB.TAG); 
-    const dateCol = String.fromCharCode(65 + 1 + S_DB.DATE);
-    const nameCol = String.fromCharCode(65 + 1 + S_DB.NAME);
+    const tagCol = V.getColLetter(1 + S_DB.TAG); 
+    const dateCol = V.getColLetter(1 + S_DB.DATE);
+    const nameCol = V.getColLetter(1 + S_DB.NAME);
     
     // We fetch only the columns we need: Tag, Date, and Name
     const ranges = [
@@ -111,16 +113,7 @@ const DatabaseStore = {
       const sheetId = sheet.getSheetId();
       const deleteRequests = rowsToDelete
         .sort((a, b) => b - a)
-        .map(row => ({
-          deleteDimension: {
-            range: {
-              sheetId: sheetId,
-              dimension: "ROWS",
-              startIndex: row - 1,
-              endIndex: row
-            }
-          }
-        }));
+        .map(row => V.createDeleteRequest(sheetId, row));
 
       if (deleteRequests.length > 0) {
           Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
@@ -303,9 +296,11 @@ const DatabaseStore = {
     if (lastRow < startRow) return { pruned: 0 };
 
     const S_DB = CONFIG.SCHEMA.DB;
+    const V = Registry.Services.View;
+
     // Fetch Tag, Date columns
-    const tagCol = String.fromCharCode(65 + 1 + S_DB.TAG); 
-    const dateCol = String.fromCharCode(65 + 1 + S_DB.DATE);
+    const tagCol = V.getColLetter(1 + S_DB.TAG); 
+    const dateCol = V.getColLetter(1 + S_DB.DATE);
     
     const ranges = [`'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`, `'${sheetName}'!${dateCol}${startRow}:${dateCol}${lastRow}`];
     const response = Sheets.Spreadsheets.Values.batchGet(ssId, { ranges });
@@ -351,16 +346,7 @@ const DatabaseStore = {
     const sheetId = sheet.getSheetId();
     const deleteRequests = rowsToDelete
       .sort((a, b) => b - a)
-      .map(row => ({
-        deleteDimension: {
-          range: {
-            sheetId: sheetId,
-            dimension: "ROWS",
-            startIndex: row - 1,
-            endIndex: row
-          }
-        }
-      }));
+      .map(row => V.createDeleteRequest(sheetId, row));
 
     // Batch update in chunks of 500 to prevent API limits if massive
     const batchSize = 500;

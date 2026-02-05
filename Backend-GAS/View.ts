@@ -41,6 +41,8 @@ export interface IView {
   findSheetByType(ss: any, type: string): any | null;
   protectHeaders(sheet: any): void;
   setStatusMessage(sheet: any, message: string): void;
+  getColLetter(index: number): string;
+  createDeleteRequest(sheetId: number, row: number): any;
   getStandardVisualRequests(sheetId: number, contentRows: number, contentCols: number): any[];
   hexToRgbColor(hex: string): { red: number; green: number; blue: number };
   darkenRgb(rgb: { red: number; green: number; blue: number }, factor: number): { red: number; green: number; blue: number };
@@ -52,6 +54,29 @@ var View: IView = {
    * STANDARD VISUAL GENERATOR
    * Produces the signature "Clean Technical" request stack for batch updates.
    */
+  createDeleteRequest: function (sheetId, row) {
+    return {
+      deleteDimension: {
+        range: {
+          sheetId: sheetId,
+          dimension: "ROWS",
+          startIndex: row - 1,
+          endIndex: row
+        }
+      }
+    };
+  },
+
+  getColLetter: function (index) {
+    let letter = "";
+    while (index > 0) {
+      const temp = (index - 1) % 26;
+      letter = String.fromCharCode(65 + temp) + letter;
+      index = Math.floor((index - temp) / 26);
+    }
+    return letter;
+  },
+
   getStandardVisualRequests: function (
     sheetId,
     contentRows,
