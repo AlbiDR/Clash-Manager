@@ -400,12 +400,8 @@ var View: IView = {
     WORKSPACE_CONFIGS.forEach(ws => {
       const baseRgb = this.hexToRgbColor(ws.baseColor);
       
-      // 1. Primary Sheet (Applied user's hierarchal philosophy: HH is the most specialized/darkest ecosystem)
-      let color = baseRgb;
-      if (ws.name === SH.HH) {
-        color = this.darkenRgb(baseRgb, 0.3); // Deepest main tab (30% brightness)
-      }
-      REGISTER.push({ name: ws.name, color: color, visible: ws.visible });
+      // 1. Primary Sheet (Use base color for visibility; technical companions will be darkened)
+      REGISTER.push({ name: ws.name, color: baseRgb, visible: ws.visible });
 
       // 2. Rotation Backups (70% brightness)
       const backupColor = this.darkenRgb(baseRgb, 0.7);
