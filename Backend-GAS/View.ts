@@ -416,10 +416,9 @@ var View: IView = {
 
     // 4. Technical / Infrastructure (Trailing)
     const hhBaseRgb = this.hexToRgbColor(P.WORKSPACE.HH);
-    const queueColor = this.darkenRgb(hhBaseRgb, 0.7); // HH_QUEUE inherits HH workspace color
     
-    REGISTER.push({ name: SH.QUEUE, color: queueColor, visible: false });
-    REGISTER.push({ name: SH.BL, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
+    REGISTER.push({ name: SH.QUEUE, color: hhBaseRgb, visible: false });
+    REGISTER.push({ name: SH.BL, color: hhBaseRgb, visible: false });
     REGISTER.push({ name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
 
     // EXECUTION
