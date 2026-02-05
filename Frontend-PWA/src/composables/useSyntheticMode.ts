@@ -1,6 +1,9 @@
 /**
- * 🛠️ USE SYNTHETIC MODE
- * Global toggle for mock data demonstration.
+ * COMPOSABLE: useSyntheticMode
+ * 
+ * @remarks
+ * Global toggle for high-fidelity mock data demonstration. Decouples the UI
+ * from live backend dependencies for showcase and testing purposes.
  */
 import { ref } from "vue";
 

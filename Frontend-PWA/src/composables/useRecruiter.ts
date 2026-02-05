@@ -6,6 +6,7 @@ import { useToast } from "./useToast";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { useConsoleController } from "./useConsoleController";
 import { useShowcaseMode } from "./useShowcaseMode";
+import { useSyntheticMode } from "./useSyntheticMode";
 import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
 import type { Recruit } from "../types";
 
@@ -39,6 +40,7 @@ import type { Recruit } from "../types";
 export function useRecruiter() {
   const { pingData } = useApiState();
   const { isShowcaseMode } = useShowcaseMode();
+  const { isSyntheticMode } = useSyntheticMode();
   const {
     data,
     isHydrated,
@@ -147,6 +149,12 @@ export function useRecruiter() {
    * 2. GAS Sync: Full system synchronization to ensure the local database matches the sheet.
    */
   async function handleRefresh() {
+    if (isSyntheticMode.value || isShowcaseMode.value) {
+      // Mock refresh already handled by useClashData watcher for mode changes,
+      // but explicit refresh button should still feel responsive.
+      return refreshGas();
+    }
+
     if (isWorkerConfigured()) {
       isTurboScanning.value = true;
       info("Starting Turbo Scan via Worker...");

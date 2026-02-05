@@ -5,11 +5,13 @@ import { useClashData } from "./useClashData";
 import { useBadge } from "./useBadge";
 import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
+import { useSyntheticMode } from "./useSyntheticMode";
 
 // Singleton Composables
 const { setBadge, sendLocalNotification } = useBadge();
 const { modules } = useAppSettings();
 const { data: clashData, updateLocalData } = useClashData();
+const { isSyntheticMode } = useSyntheticMode();
 
 function updateHeadhunterBadge(data: WebAppData | null) {
   if (data?.hh) {
@@ -177,6 +179,8 @@ export function useHeadhunter() {
     const oldData = clashData.value; // Keep reference for rollback
     applyLocalDismissal(ids);
 
+    if (isSyntheticMode.value) return;
+
     try {
       await dismissRecruits(ids);
       // 📡 Broadcast dismissal to other tabs on success
@@ -204,6 +208,8 @@ export function useHeadhunter() {
       if (originalRecruits && originalRecruits.length > 0) {
         applyLocalRestoration(originalRecruits);
       }
+
+      if (isSyntheticMode.value) return;
 
       try {
         await (async () => {

@@ -1,6 +1,9 @@
 /**
- * 🛠️ USE BLUEPRINT MODE
- * Global toggle for forcing skeleton view.
+ * COMPOSABLE: useBlueprintMode
+ * 
+ * @remarks
+ * Global toggle for forcing skeleton view. Strips UI to geometric skeletons
+ * to audit layout stability and interaction design without content distraction.
  */
 import { ref } from "vue";
 
