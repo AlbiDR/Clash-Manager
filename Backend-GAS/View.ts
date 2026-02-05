@@ -397,11 +397,9 @@ var View: IView = {
       { name: SH.HH, baseColor: P.WORKSPACE.HH, visible: true }
     ];
 
-    WORKSPACE_CONFIGS.forEach(ws => {
-      const baseRgb = this.hexToRgbColor(ws.baseColor);
-      
-      // 1. Primary Sheet
-      REGISTER.push({ name: ws.name, color: baseRgb, visible: ws.visible });
+      // 1. Primary Sheet (Apply 60% darkening for HH ecosystem to satisfy hierarchy)
+      const color = ws.name === SH.HH ? this.darkenRgb(baseRgb, 0.6) : baseRgb;
+      REGISTER.push({ name: ws.name, color: color, visible: ws.visible });
 
       // 2. Rotation Backups (70% brightness)
       const backupColor = this.darkenRgb(baseRgb, 0.7);
@@ -415,10 +413,10 @@ var View: IView = {
     });
 
     // 4. Technical / Infrastructure (Trailing)
-    const hhBaseRgb = this.hexToRgbColor(P.WORKSPACE.HH);
+    const hhDarkRgb = this.darkenRgb(this.hexToRgbColor(P.WORKSPACE.HH), 0.6);
     
-    REGISTER.push({ name: SH.QUEUE, color: hhBaseRgb, visible: false });
-    REGISTER.push({ name: SH.BL, color: hhBaseRgb, visible: false });
+    REGISTER.push({ name: SH.QUEUE, color: hhDarkRgb, visible: false });
+    REGISTER.push({ name: SH.BL, color: hhDarkRgb, visible: false });
     REGISTER.push({ name: SH.EVT, color: this.hexToRgbColor(P.TECHNICAL), visible: false });
 
     // EXECUTION
