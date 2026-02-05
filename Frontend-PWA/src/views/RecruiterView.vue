@@ -48,7 +48,7 @@ const {
     :stats="statsBadge"
     :sort-options="sortOptions"
     :current-sort="sortBy"
-    :loading="isRefreshing && !isHydrated"
+    :loading="showSkeletons"
     :skeleton-component="BaseCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
