@@ -476,7 +476,7 @@ var View: IView = {
         const colorCount = requests.filter(r => r.updateSheetProperties.properties.tabColor).length;
         summary = `${hiddenCount} Hidden, ${colorCount} Colored`;
       } catch (e: any) {
-        summary = "Limit Reached";
+        summary = `Hygiene Error: ${e.message}`;
       }
     }
 
@@ -550,7 +550,11 @@ var View: IView = {
       }
 
       if (requests.length > 0) {
-        Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+        try {
+          Sheets.Spreadsheets!.batchUpdate({ requests }, ssId);
+        } catch (rotError: any) {
+          console.warn(`Backup Rotation (Rotation) failed for ${sheetName}: ${rotError.message}. Proceeding to Clone.`);
+        }
       }
 
       // 3. High-Performance Clone
@@ -582,10 +586,12 @@ var View: IView = {
       return "Archives Rotated";
 
     } catch (e: any) {
+      console.error(`Backup Error for ${sheetName}: ${e.message}`);
       return `Backup Fail: ${e.message}`;
     } finally {
       // Always run hygiene to clean up any stray "Copy of..." tabs created by failed attempts
-      this.enforceGlobalTabHygiene(ss);
+      // PASS ss to avoid re-fetching active spreadsheet if possible
+      try { this.enforceGlobalTabHygiene(ss); } catch(e: any) {}
       try { lock!.releaseLock(); } catch(e: any) {}
     }
   },
