@@ -109,6 +109,11 @@ export function useClashData() {
       clashData.value = null;
     } finally {
       isHydrated.value = true;
+      // MODE RECOVERY: If a specialized mode is active, trigger the override sync 
+      // immediately instead of waiting for the API handshake in main.ts.
+      if (isBlueprintMode.value || isSyntheticMode.value || isShowcaseMode.value) {
+        startBackgroundSync();
+      }
     }
   }
 
