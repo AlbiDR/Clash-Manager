@@ -6,9 +6,8 @@ import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
 import { useAppSettings } from "../composables/useAppSettings";
 import { getScoreTone, formatTimeAgo } from "../utils/formatters";
-
-import { useExternalLink } from "../composables/useExternalLink";
 import StatisticItem from "./StatisticItem.vue";
+import CardActions from "./CardActions.vue";
 
 const {
   id,
@@ -33,7 +32,6 @@ const emit = defineEmits<{
 
 const { getBenchmark } = useBenchmarking();
 const { modules } = useAppSettings();
-const { openExternal, openInGame } = useExternalLink();
 
 function getTooltip(metric: string, value: number | undefined) {
   if (!modules.ghostBenchmarking || value === undefined) return null;
@@ -83,60 +81,39 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 
     <!-- SLOT: Expanded Content -->
     <template #expanded-content>
-      <div class="stats-grid" :aria-busy="appIsRefreshing">
-        <template v-if="appIsRefreshing">
-          <div v-for="i in 3" :key="i" class="stat-item skeleton-anim">
-            <div class="sk-label-box"></div>
-            <div class="sk-value-box"></div>
-          </div>
-        </template>
-        <template v-else>
-          <StatisticItem
-            label="Donations"
-            :value="recruit.d.don"
-            benchmark-type="hh"
-            benchmark-metric="donations"
-            :benchmark-raw-value="recruit.d.don"
-          />
-          <StatisticItem
-            label="War Wins"
-            :value="recruit.d.war"
-            benchmark-type="hh"
-            benchmark-metric="warWins"
-            :benchmark-raw-value="recruit.d.war"
-          />
-          <StatisticItem
-            label="Cards Won"
-            :value="recruit.d.cards || '-'"
-            benchmark-type="hh"
-            benchmark-metric="cardsWon"
-            :benchmark-raw-value="recruit.d.cards || 0"
-          />
-        </template>
+      <div class="stats-grid hh-grid" :aria-busy="appIsRefreshing">
+        <StatisticItem
+          label="Donations"
+          :value="recruit.d.don"
+          :loading="appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="donations"
+          :benchmark-raw-value="recruit.d.don"
+        />
+        <StatisticItem
+          label="War Wins"
+          :value="recruit.d.war"
+          :loading="appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="warWins"
+          :benchmark-raw-value="recruit.d.war"
+        />
+        <StatisticItem
+          label="Cards Won"
+          :value="recruit.d.cards || '-'"
+          :loading="appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="cardsWon"
+          :benchmark-raw-value="recruit.d.cards || 0"
+        />
       </div>
 
-      <div class="actions-toolbar">
-        <template v-if="appIsRefreshing">
-          <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
-          <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
-        </template>
-        <template v-else>
-          <button
-            @click="openExternal(`https://royaleapi.com/player/${recruit.id}`)"
-            class="btn-action compact"
-          >
-            <Icon name="analytics" size="14" />
-            <span>RoyaleAPI</span>
-          </button>
-          <button
-            @click="openInGame(recruit.id)"
-            class="btn-action primary compact"
-          >
-            <Icon name="crown" size="14" />
-            <span>Open Game</span>
-          </button>
-        </template>
-      </div>
+      <CardActions
+        class="card-actions-margin"
+        :id="recruit.id"
+        :loading="appIsRefreshing"
+        compact
+      />
     </template>
   </BaseCard>
 </template>
@@ -144,43 +121,18 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 <style scoped>
 /* Content specific styles only */
 
-/* Recruit Specific Stats Layout */
-.stats-grid {
-  display: grid;
+/* Expanded Content Layout */
+.hh-grid {
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
 }
 
 @media (max-width: 380px) {
-  .stats-grid {
+  .hh-grid {
     gap: 4px;
   }
 }
 
-.actions-toolbar {
-  display: flex;
-  gap: 8px;
+.card-actions-margin {
   margin-top: 8px;
-}
-.btn-action {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 44px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface);
-}
-.btn-action.primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
 }
 </style>
