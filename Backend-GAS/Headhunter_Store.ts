@@ -73,23 +73,22 @@ const HeadhunterStore: IHeadhunterStore = {
   updateAndGetBlacklist(sheet: any): BlacklistResult {
     if (!sheet) return { ids: new Set(), entries: [] };
     const ss = sheet.getParent();
-    const HOT_COLOR = "#ff5722";
-    
-    // Ensure Technical Sheets exist with proper headers and styling
+    // Ensure Technical Sheets exist with proper headers
     const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
     if (blSheet.getLastRow() === 0) {
       blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
-      blSheet.setTabColor(HOT_COLOR);
-    } else {
-      blSheet.setTabColor(HOT_COLOR);
+    }
+    // Robust header verification (Ensures headers persist even if cleared)
+    if (blSheet.getRange(1,1).getValue() !== "Tag") {
+       blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
     }
 
     const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT) || ss.insertSheet(CONFIG.SHEETS.EVT);
     if (evtSheet.getLastRow() === 0) {
       evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
-      evtSheet.setTabColor(HOT_COLOR);
-    } else {
-      evtSheet.setTabColor(HOT_COLOR);
+    }
+    if (evtSheet.getRange(1,1).getValue() !== "Tag") {
+       evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
     }
 
     const now = Date.now();
