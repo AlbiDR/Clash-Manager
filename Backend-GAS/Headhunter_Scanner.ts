@@ -142,7 +142,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     if (tagsToFetch.length === 0) return [];
 
     // 5B. Prophet Intelligence Integration
-    const prophetCache = RosterStore.getProphetCache();
+    const prophetCache = RosterStore?.getProphetCache?.() || new Map();
     const heritageTags = new Set(prophetCache.keys());
 
     const validCandidates: Recruit[] = [];

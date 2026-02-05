@@ -16,14 +16,15 @@ vi.mock('../Configuration', () => {
         MAX_PLAYERS: 50
       }
     },
-    SYSTEM: { API_BASE: 'https://api.test', MAX_BACKUPS: 5 }
+    SHEETS: { QUEUE: 'HH_QUEUE' },
+    SYSTEM: { API_BASE: 'https://api.test', MAX_BACKUPS: 5, PROPHET_TENURE_THRESHOLD: 10 }
   };
   // @ts-ignore
   global.CONFIG = mockConfig;
   return { CONFIG: mockConfig };
 });
 
-// Mock Registry - Hoisted to ensure availability before vi.mock
+// Mock Registry - Hoisted
 const mocks = vi.hoisted(() => ({
     Network: {
         fetchRoyaleAPI: vi.fn(),
@@ -32,13 +33,17 @@ const mocks = vi.hoisted(() => ({
         scanTournamentsRemote: vi.fn(),
     },
     Store: {
-        props: { get: vi.fn() }
+        props: { get: vi.fn(), getJSON: vi.fn().mockReturnValue({}), setJSON: vi.fn() }
     },
+    Reporting: { logReport: vi.fn() },
     Core: {
         shuffleArray: vi.fn((arr) => arr),
     },
     Scoring: {
         calculateRecruitRawScore: vi.fn()
+    },
+    RosterStore: {
+        getProphetCache: vi.fn().mockReturnValue(new Map())
     }
 }));
 
@@ -47,11 +52,20 @@ vi.mock('../Registry', () => ({
         Services: {
             Network: mocks.Network,
             Store: mocks.Store,
+            Reporting: mocks.Reporting,
             Core: mocks.Core,
             Scoring: mocks.Scoring
         }
     }
 }));
+
+vi.mock('../Roster_Store', () => {
+    return {
+        default: {
+            getProphetCache: vi.fn().mockReturnValue(new Map())
+        }
+    };
+});
 
 describe('HeadhunterScanner', () => {
     beforeEach(() => {
@@ -60,6 +74,8 @@ describe('HeadhunterScanner', () => {
         global.CONFIG = CONFIG;
 
         // Defaults
+        mocks.RosterStore.getProphetCache.mockReturnValue(new Map());
+        mocks.Store.props.getJSON.mockReturnValue({});
         mocks.Store.props.get.mockReturnValue("1"); // Remote Expand Enabled
         mocks.Network.remoteWorkerHealthy.mockReturnValue(false); // Default to Local to start safe
         mocks.Core.shuffleArray.mockImplementation((a: any) => a);
@@ -128,7 +144,7 @@ describe('HeadhunterScanner', () => {
         expect(result[0].rawScore).toBe(200);
         expect(mocks.Network.scanTournamentsRemote).toHaveBeenCalled();
         // Should NOT call local details fetch
-        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(1); 
+        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(2); 
     });
 
     it('should fallback to Local if Remote fails', () => {

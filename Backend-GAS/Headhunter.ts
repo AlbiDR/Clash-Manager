@@ -80,7 +80,14 @@ const Headhunter: IHeadhunter = {
       const lowQuotaMode = remainingQuota < 1000;
 
       // 3. STATE HYDRATION
-      const strategy = S.Scoring.calculateTrophyFloor(members, inGameRequirement);
+      const mathConfig = {
+        ELITE_THRESHOLD: CONFIG.SYSTEM.ELITE_MEMBERSHIP_THRESHOLD,
+        REBUILD_MIN_PERCENTILE: CONFIG.HEADHUNTER.REBUILD_MIN_PERCENTILE,
+        BENCHMARK_CLAN_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_CLAN_WEIGHT,
+        BENCHMARK_MARKET_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_MARKET_WEIGHT
+      };
+
+      const strategy = S.Scoring.calculateTrophyFloor(members, inGameRequirement, mathConfig);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
       
       const existingPool = HeadhunterStore.loadDatabase(sheet);
@@ -213,7 +220,7 @@ const Headhunter: IHeadhunter = {
         }
       }
 
-      const finalBenchmark = S.Scoring.calculateHybridBenchmark(clanEliteData, blacklistResult.entries);
+      const finalBenchmark = S.Scoring.calculateHybridBenchmark(clanEliteData, blacklistResult.entries, mathConfig);
       const allSorted = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
       
       const targetActive = CONFIG.HEADHUNTER.TARGET;
