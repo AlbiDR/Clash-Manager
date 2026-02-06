@@ -356,13 +356,17 @@ const HeadhunterScanner: IHeadhunterScanner = {
     }
 
     // 8. FINAL SCAN SUMMARY [7/9]
-    const shadowLabel = shadowStatus === "ACTIVE" ? `${shadowTags.size} Shadow Yield` : shadowStatus;
-    const yieldRatio = tagsToFetch.length > 0 ? ((shadowTags.size / tagsToFetch.length) * 100).toFixed(1) : "0.0";
+    const scoutYield = validCandidates.filter(c => c.source === "TOURNAMENT").length;
+    const shadowYield = validCandidates.filter(c => c.source === "SHADOW").length;
+    const totalYield = validCandidates.length;
+    const yieldRatio = tagsToFetch.length > 0 ? ((totalYield / tagsToFetch.length) * 100).toFixed(1) : "0.0";
+
+    const shadowLabel = shadowStatus === "ACTIVE" ? `${shadowYield} Shadow Leads` : shadowStatus;
     
     Registry.Services.Reporting.logReport(`[7/9] SCANNING: Discovery @ ${minTrophies}+`, [
-      `SCOUT: ${uniqueTourneys.size} Tournaments | ${keywords.length} Keywords`,
-      `TRACE: ${shadowLabel} | ${validCandidates.length} Filtered Leads`,
-      `YIELD: ${yieldRatio}% (${shadowTags.size} Potential Matches)`
+      `SCOUT: ${uniqueTourneys.size} Tournaments | ${scoutYield} Discoveries`,
+      `TRACE: ${shadowLabel} | ${totalYield} Total Candidates`,
+      `YIELD: ${yieldRatio}% (${totalYield} Potential Matches)`
     ]);
 
 
