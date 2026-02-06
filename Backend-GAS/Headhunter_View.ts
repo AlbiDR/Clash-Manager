@@ -123,7 +123,12 @@ const HeadhunterView: IHeadhunterView = {
           rows: [{
             values: HEADERS.map(h => ({
               userEnteredValue: { stringValue: h },
-              userEnteredFormat: { textFormat: { bold: true }, wrapStrategy: "WRAP", horizontalAlignment: "CENTER", backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } }
+              userEnteredFormat: { 
+                textFormat: { bold: true }, 
+                wrapStrategy: "WRAP", 
+                horizontalAlignment: "CENTER", 
+                backgroundColor: Registry.Services.View.hexToRgbColor(CONFIG.THEME.TABLE.HEADER_BG) 
+              }
             }))
           }],
           fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
