@@ -34,6 +34,7 @@ const HeadhunterView: IHeadhunterView = {
       "FOUND_DATE",
       "RAW_SCORE",
       "POTENTIAL_SCORE",
+      "LAST_SCAN",
     ];
 
     // Ensure numeric indices are synced (Redundant if Config is static but safe)
@@ -64,6 +65,12 @@ const HeadhunterView: IHeadhunterView = {
       return Registry.Services.Time.formatDate(dateObj);
     };
 
+    const fmtDt = (d: any): string => {
+      const dateObj = Registry.Services.Time.parseFlexibleDate(d);
+      if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) return "-";
+      return Registry.Services.Time.formatDatetime(dateObj);
+    };
+
     const rows = list.map((c) => [
       c.tag,
       c.invited,
@@ -75,6 +82,7 @@ const HeadhunterView: IHeadhunterView = {
       fmt(c.foundDate),
       c.rawScore,
       (c.potentialScore || 0),
+      fmtDt(c.lastScan),
     ]);
 
     // PAD TO FIXED SIZE (50 Recruits + Buffer)
@@ -148,7 +156,7 @@ const HeadhunterView: IHeadhunterView = {
       },
       {
         repeatCell: {
-          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 2 },
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.LAST_SCAN + 1, endColumnIndex: CONFIG.SCHEMA.HH.LAST_SCAN + 2 },
           cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
           fields: "userEnteredFormat.numberFormat"
         }

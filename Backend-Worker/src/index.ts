@@ -299,6 +299,7 @@ async function processBatch<T = unknown>(
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,
   scoring: ScoringWeights | null = null,
+  prophetCache?: Record<string, any>
 ): Promise<FetchResult<T>[]> {
   const results: FetchResult<T>[] = new Array(urls.length);
   let idx = 0;
@@ -357,13 +358,22 @@ async function processBatch<T = unknown>(
             }
 
             // Use shared scoring system (Kernel)
-            const rawScore = ScoringKernel.calcRecruitRaw(
+            let rawScore = ScoringKernel.calcRecruitRaw(
               profile.trophies ?? 0,
               profile.totalDonations ?? 0,
               profile.warDayWins ?? 0,
               hasWar,
               scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
             );
+
+            // STRATEGY 2: Apply Prophet Bonus remotely
+            if (prophetCache) {
+                 const normTag = profile.tag.replace("#", "").trim().toLowerCase();
+                 const intel = prophetCache[normTag];
+                 if (intel && intel.wins > 5) {
+                    rawScore *= 1.25;
+                 }
+            }
 
             const warBonus = hasWar ? 500 : 0;
             const totalWarScore = (profile.warDayWins ?? 0) + warBonus;
@@ -435,6 +445,7 @@ async function processScanBatch(
   concurrency: number = CONFIG.concurrency,
   blacklistSet: Set<PlayerTag> = new Set(),
   minTrophies: number = 4000,
+  prophetCache?: Record<string, any>
 ): Promise<ScoredPlayer[]> {
   const candidates: ScoredPlayer[] = [];
   let idx = 0;
@@ -476,6 +487,19 @@ async function processScanBatch(
             if (p.clan?.tag) return;
             if (blacklistSet.has(p.tag)) return;
 
+            // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
+            let rawScore = 0; // Default
+            if (prophetCache) {
+                const normTag = p.tag.replace("#", "").trim().toLowerCase();
+                const intel = prophetCache[normTag];
+                // Lightweight scoring estimation (detailed scoring happens in profile fetch phase)
+                // But we can flag "Heritage" candidates early here if needed.
+                if (intel) {
+                   // Bonus logic could go here, but strictly we need profile stats for true score.
+                   // For now, we just pass them through.
+                }
+            }
+
             candidates.push({
               tag: p.tag,
               name: p.name,
@@ -488,9 +512,7 @@ async function processScanBatch(
           });
         }
       } catch (e) {
-        console.warn(
-          `Scan error for ${tag}: ${e instanceof Error ? e.message : "unknown"}`,
-        );
+        // Silent fail for speed
       }
     }
   }
@@ -658,6 +680,7 @@ app.post(
         concurrency,
         blacklistSet as Set<PlayerTag>,
         minTrophies ?? 4000,
+        req.body.prophetCache
       );
 
       if (scoring && candidates.length > 0) {
@@ -672,6 +695,7 @@ app.post(
           apiKeys,
           concurrency,
           scoring,
+          req.body.prophetCache
         );
 
         res.json({
@@ -741,6 +765,7 @@ app.post(
         concurrency,
         blacklistSet as Set<PlayerTag>,
         minTrophies ?? 4000,
+        req.body.prophetCache
       );
 
       if (scoring && candidates.length > 0) {
@@ -755,6 +780,7 @@ app.post(
           apiKeys ?? [],
           concurrency,
           scoring,
+          req.body.prophetCache
         );
 
         res.json({

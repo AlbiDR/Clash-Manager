@@ -56,6 +56,7 @@ export interface Recruit {
     ago: string; // Found Date ISO
     cards?: number; // Cards Won (optional)
   };
+  lastScan?: number; // Timestamp of last API validation
 }
 
 // Web App Data payload
