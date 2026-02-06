@@ -39,11 +39,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
     const saturation = registrySize / (CONFIG.HEADHUNTER.TARGET + 500);
     const isSaturated = saturation > 0.8; // >440 candidates
 
-    let keywords = CONFIG.HEADHUNTER.KEYWORDS; 
+    const keywords = CONFIG.HEADHUNTER.KEYWORDS; 
     if (isSaturated) {
-      // Throttle: Use only the Top 10 keywords when saturated
-      keywords = keywords.slice(0, 10);
-      console.info(`Scanner: Recruitment Intensity Throttled (Saturation: ${(saturation * 100).toFixed(1)}%).`);
+      console.info(`Scanner: Recruitment Intensity Throttled (Saturation: ${(saturation * 100).toFixed(1)}%). Searching full pool with reduced depth.`);
     }
 
     const searchUrls = keywords.map(
