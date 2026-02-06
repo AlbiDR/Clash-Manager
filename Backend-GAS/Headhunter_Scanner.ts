@@ -32,18 +32,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     lowQuotaMode: boolean = false
   ): Recruit[] {
     const W = CONFIG.HEADHUNTER.WEIGHTS;
-    
-    // RECRUITMENT INTENSITY: Scale effort based on Registry Saturation
-    // Target is roughly TARGET (50) + QUEUE (500) = 550 total.
-    const registrySize = existingRecruits ? existingRecruits.size : 0;
-    const saturation = registrySize / (CONFIG.HEADHUNTER.TARGET + 500);
-    const isSaturated = saturation > 0.8; // >440 candidates
-
     const keywords = CONFIG.HEADHUNTER.KEYWORDS; 
-    if (isSaturated) {
-      console.info(`Scanner: Recruitment Intensity Throttled (Saturation: ${(saturation * 100).toFixed(1)}%). Searching full pool with reduced depth.`);
-    }
-
     const searchUrls = keywords.map(
       (k: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
     );
@@ -71,15 +60,15 @@ const HeadhunterScanner: IHeadhunterScanner = {
         ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
         : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
 
-    // 3. Lottery Selection (Scaled by Saturation)
-    const lotteryLimit = isSaturated ? 50 : (scanCfg.TOURNEYS || 300);
+    // 3. Lottery Selection
+    const lotteryLimit = scanCfg.TOURNEYS || 300;
     const lotteryPool = Array.from(uniqueTourneys.values())
       .sort((a, b) => (b.capacity || 0) - (a.capacity || 0)) // Prioritize bigger tourneys
       .slice(
         0,
         Math.min(
           lowQuotaMode ? 100 : lotteryLimit * 2,
-          CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000,
+          CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 3000,
         ),
       );
 
@@ -108,7 +97,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
     }
 
     if (!usedRemote) {
-      console.info(`Executing GAS-based local scan (${tourneyTags.length} tournament${tourneyTags.length !== 1 ? 's' : ''})...`);
+      console.info(`Executing GAS-based local scan (${tourneyTags.length} tournaments)...`);
       const details: TournamentResult[] = Registry.Services.Network.fetchRoyaleAPI(
         tourneyTags.map(
           (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
@@ -136,10 +125,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
         uniqueCandidates.set(c.tag, c);
     });
 
-    const playerCfgLimit = isSaturated ? 100 : (scanCfg.PLAYERS || 250);
     const playerLimit = Math.min(
-      CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000,
-      playerCfgLimit,
+      CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 3000,
+      scanCfg.PLAYERS || 250,
     );
     const candidatePool = Array.from(uniqueCandidates.values())
       .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
@@ -150,9 +138,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
     
     if (tagsToFetch.length === 0) return [];
 
-    // 5B. Prophet Intelligence Integration
+    // 5B. Prophet Intelligence Integration: Pre-Normalization for O(1) Speed
     const prophetCache = RosterStore?.getProphetCache?.() || new Map();
-    const heritageTags = new Set(prophetCache.keys());
+    const normalizedProphet = new Map<string, any>();
+    prophetCache.forEach((v: any, k: string) => {
+        normalizedProphet.set(k.replace("#", "").trim().toLowerCase(), v);
+    });
 
     const validCandidates: Recruit[] = [];
 
@@ -175,13 +166,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
       remotePool.forEach((c: any) => {
         let finalScore = c.rawScore;
-        // Apply Prophet Bonus
-        if (heritageTags.has(c.tag.replace("#", "").trim().toLowerCase())) {
-          const intel = prophetCache.get(c.tag.replace("#", "").trim().toLowerCase());
-          if (intel && intel.wins > 5) {
+        const normTag = c.tag.replace("#", "").trim().toLowerCase();
+        const intel = normalizedProphet.get(normTag);
+        
+        if (intel && intel.wins > 5) {
              finalScore *= 1.25;
              console.info(`Prophet: Heritage found for ${c.name}: 25% Participation Bonus.`);
-          }
         }
 
         validCandidates.push({
@@ -305,12 +295,11 @@ const HeadhunterScanner: IHeadhunterScanner = {
           );
 
           let finalScore = rawScore;
-          if (heritageTags.has(p.tag.replace("#", "").trim().toLowerCase())) {
-            const intel = prophetCache.get(p.tag.replace("#", "").trim().toLowerCase());
-            if (intel && intel.wins > 5) {
-               finalScore *= 1.25;
-               console.info(`Prophet: Heritage found for ${p.name}: Participation Bonus Applied.`);
-            }
+          const normTag = p.tag.replace("#", "").trim().toLowerCase();
+          const intel = normalizedProphet.get(normTag);
+          if (intel && intel.wins > 5) {
+             finalScore *= 1.25;
+             console.info(`Prophet: Heritage found for ${p.name}: Participation Bonus Applied.`);
           }
 
           validCandidates.push({
@@ -367,13 +356,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
       `YIELD: ${yieldRatio}% (${shadowTags.size} Potential Matches)`
     ]);
 
-    // 8. FINAL SCAN SUMMARY [7/9]
-    const yieldRatio = tagsToFetch.length > 0 ? ((shadowTags.size / tagsToFetch.length) * 100).toFixed(1) : "0.0";
-    Registry.Services.Reporting.logReport(`[7/9] SCANNING: Discovery @ ${minTrophies}+`, [
-      `SCOUT: ${uniqueTourneys.size} Tournaments | ${keywords.length} Keywords`,
-      `TRACE: ${shadowTags.size} Shadow Yield | ${validCandidates.length} Filtered Leads`,
-      `YIELD: ${yieldRatio}% (${shadowTags.size} Potential Matches)`
-    ]);
 
     return validCandidates;
   }
