@@ -62,7 +62,7 @@ const RosterStore = {
   getProphetCache(): Map<string, { wins: number; active: boolean; lastFetch: number }> {
     const CACHE_KEY = "PROPHET_CACHE_V1";
     const cache = new Map<string, { wins: number; active: boolean; lastFetch: number }>();
-    const raw = Registry.Services.Store.props.getJSON<Record<string, any>>(CACHE_KEY, {});
+    const raw = Registry.Services.Store.props.getChunked<Record<string, any>>(CACHE_KEY, {});
     
     Object.keys(raw).forEach(tag => {
       cache.set(tag, {
@@ -76,15 +76,13 @@ const RosterStore = {
 
   saveProphetCache(results: PlayerResult[], cache: Map<string, any>): void {
     const CACHE_KEY = "PROPHET_CACHE_V1";
-    Registry.Services.Store.withLock(`LOCK_${CACHE_KEY}`, () => {
-      const finalExport: any = {};
-      results.forEach(r => {
-        if (r.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && cache.has(r.tag)) {
-          finalExport[r.tag] = cache.get(r.tag);
-        }
-      });
-      Registry.Services.Store.props.setJSON(CACHE_KEY, finalExport);
+    const finalExport: any = {};
+    results.forEach(r => {
+      if (r.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && cache.has(r.tag)) {
+        finalExport[r.tag] = cache.get(r.tag);
+      }
     });
+    Registry.Services.Store.props.setChunked(CACHE_KEY, finalExport);
   },
 
   /**
