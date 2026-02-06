@@ -155,7 +155,15 @@ const Headhunter: IHeadhunter = {
           }
         });
         
-        console.info(`Validation: Checked ${candidatesToValidate.length} candidates. ${validationHead.length - candidatesToValidate.length} skipped (fresh).`);
+        S.Reporting.logReport(`[5/9] VALIDATION: Live Membership Verification`, [
+          `VERIFY: ${candidatesToValidate.length} candidates checked`,
+          `EXEMPT: ${validationHead.length - candidatesToValidate.length} verified recently (skipped)`,
+          `JOINED: ${joinedCount} candidates discovered in other clans and removed`
+        ]);
+      } else {
+        S.Reporting.logReport(`[5/9] VALIDATION: Live Membership Verification`, [
+          `STATUS: All candidates recently verified. Skipping remote check.`
+        ]);
       }
 
       // [UPDATE] We can add joinedCount to the previous report or next one. 
@@ -251,10 +259,13 @@ const Headhunter: IHeadhunter = {
       const backupSummary = S.View.backupSheet(ss, CONFIG.SHEETS.HH);
       const queueRes = HeadhunterStore.saveQueue(ss, queueList);
       
-      S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Archive`, [
-        `DISCOVERY: ${scanned.length} Scanned | ${shadowCount} Shadow Yield`,
-        `BACKUP:    '${CONFIG.SHEETS.HH}' ${backupSummary}`,
-        `QUEUE:     ${queueRes.count} Benched | ${queueRes.pruned} Overflowed`
+      const scoutCount = scanned.filter(s => s.source === "TOURNAMENT").length;
+      const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
+
+      S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Reserve Management`, [
+        `SOURCE:  ${scoutCount} from tournaments | ${shadowCount} from shadows`,
+        `RESERVE: ${queueRes.count} benched | ${queueRes.pruned} overflowed`,
+        `STORAGE: '${CONFIG.SHEETS.HH}' sheet backed up`
       ]);
 
       // 9. RENDER: Visual Sync [9/9]
@@ -263,14 +274,14 @@ const Headhunter: IHeadhunter = {
 
       S.Reporting.logReport(`[9/9] RENDER: Visual Sync`, [
         `HYGIENE: ${hygieneSummary}`,
-        `ATOMIC:  ${finalPool.length} Candidates Synchronized`
+        `DISPLAY: ${finalPool.length} candidates updated in sheet`
       ], 150);
 
       // [SUMMARY]
       S.Reporting.logReport(`[SUMMARY] OPERATION SUCCESSFUL`, [
         `STRATEGY: ${strategy.method}`,
-        `CAPACITY: [${members.length}] -> ACTIVE: ${finalPool.length} | QUEUE: ${queueRes.count}`,
-        `DELTA:    +${newArrivals} Added | -${joinedCount} Joined | ~${updatedExisting} Updated`
+        `CAPACITY: [${members.length}/50] clan capacity used`,
+        `DELTA:    +${newArrivals} new | -${joinedCount} joined others | ~${updatedExisting} updated`
       ]);
 
     } catch (e: any) {

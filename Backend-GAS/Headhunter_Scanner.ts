@@ -359,14 +359,15 @@ const HeadhunterScanner: IHeadhunterScanner = {
     const scoutYield = validCandidates.filter(c => c.source === "TOURNAMENT").length;
     const shadowYield = validCandidates.filter(c => c.source === "SHADOW").length;
     const totalYield = validCandidates.length;
-    const yieldRatio = tagsToFetch.length > 0 ? ((totalYield / tagsToFetch.length) * 100).toFixed(1) : "0.0";
 
-    const shadowLabel = shadowStatus === "ACTIVE" ? `${shadowYield} Shadow Leads` : shadowStatus;
+    const shadowReport = shadowStatus === "ACTIVE" 
+      ? `${shadowYield} battlelogs traced | ${shadowYield} candidates found`
+      : shadowStatus;
     
-    Registry.Services.Reporting.logReport(`[7/9] SCANNING: Discovery @ ${minTrophies}+`, [
-      `SCOUT: ${uniqueTourneys.size} Tournaments | ${scoutYield} Discoveries`,
-      `TRACE: ${shadowLabel} | ${totalYield} Total Candidates`,
-      `YIELD: ${yieldRatio}% (${totalYield} Potential Matches)`
+    Registry.Services.Reporting.logReport(`[7/9] DISCOVERY: Tournament & Shadow Scouting`, [
+      `TOURNAMENTS: ${uniqueTourneys.size} scanned | ${scoutYield} candidates found`,
+      `SHADOWS:     ${shadowReport}`,
+      `TOTAL:       ${totalYield} candidates identified for profiling`
     ]);
 
 
