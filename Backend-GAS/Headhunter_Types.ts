@@ -18,6 +18,7 @@ export interface Recruit {
   invited: boolean;
   rawScore: number;
   potentialScore?: number;
+  lastScan?: number;
   source?: "TOURNAMENT" | "SHADOW";
 }
 

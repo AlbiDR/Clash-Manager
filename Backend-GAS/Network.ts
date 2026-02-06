@@ -700,12 +700,22 @@ var Network: INetwork = {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
     
     const blacklist = Array.isArray(blacklistSet) ? blacklistSet : Array.from(blacklistSet);
+    
+    // Strategy 2: Inject Prophet Intelligence for Remote Scoring
+    // We pre-normalize it here securely before sending over the wire
+    const prophetData = {}; 
+    const prophetCache = Registry?.Services?.Store?.getProphetCache?.() || new Map();
+    prophetCache.forEach((v: any, k: string) => {
+        prophetData[k.replace("#", "").trim().toLowerCase()] = v;
+    });
+
     const payload = {
         tags: tourneyTags,
         apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: { name: string; value: string }) => k.value),
         blacklist: blacklist,
         minTrophies,
-        scoring
+        scoring,
+        prophetCache: prophetData
     };
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
