@@ -32,6 +32,7 @@ export interface WarPhaseResult {
 
 export interface ITime {
   formatDate(date: Date | null | undefined): string;
+  formatDatetime(date: Date | null | undefined): string;
   formatShortDate(date: Date | null | undefined): string;
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date;
   parseFlexibleDate(val: any): Date;
@@ -52,6 +53,15 @@ var Time: ITime = {
     if (!date || isNaN(date.getTime())) return "";
     // @ts-ignore
     return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+  },
+
+  /**
+   * Formats a date using the system's human-readable pattern (dd/MM/yyyy HH:mm).
+   */
+  formatDatetime(date: Date | null | undefined): string {
+    if (!date || isNaN(date.getTime())) return "";
+    // @ts-ignore
+    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
   },
 
   /**
