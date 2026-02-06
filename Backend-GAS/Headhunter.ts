@@ -180,7 +180,6 @@ const Headhunter: IHeadhunter = {
         lowQuotaMode
       );
 
-      const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
       let newArrivals = 0;
       let updatedExisting = 0;
       
