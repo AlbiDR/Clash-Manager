@@ -14,7 +14,7 @@ declare var SpreadsheetApp: any;
  *    Manages fetching, parsing, pruning, and upserting records.
  * ============================================================================
  */
-const VER_DATABASE_STORE = "13.1.0";
+const VER_DATABASE_STORE = "13.1.1";
 
 const DatabaseStore = {
   
@@ -35,9 +35,9 @@ const DatabaseStore = {
     const V = Registry.Services.View;
 
     // 1. COLUMN-SELECTIVE INGESTION (API Mode)
-    const tagCol = V.getColLetter(1 + S_DB.TAG); 
-    const dateCol = V.getColLetter(1 + S_DB.DATE);
-    const nameCol = V.getColLetter(1 + S_DB.NAME);
+    const tagCol = V.getColLetter(2 + S_DB.TAG); 
+    const dateCol = V.getColLetter(2 + S_DB.DATE);
+    const nameCol = V.getColLetter(2 + S_DB.NAME);
     
     // We fetch only the columns we need: Tag, Date, and Name
     const ranges = [
@@ -58,8 +58,10 @@ const DatabaseStore = {
     const tagToName = new Map<string, string>();
     const tagsToPurge = new Set<string>();
 
+    const sanitizeTag = (t: any) => String(t || "").trim().toUpperCase().replace(/[^A-Z0-9#]/g, '');
+
     for (let i = 0; i < tagValues.length; i++) {
-        const tag = String(tagValues[i][0] || "").trim().toUpperCase();
+        const tag = sanitizeTag(tagValues[i][0]);
         if (!tag) continue;
 
         const rawDate = dateValues[i] && dateValues[i][0];
@@ -93,7 +95,7 @@ const DatabaseStore = {
     for (let i = 0; i < tagValues.length; i++) {
       const rowContent = tagValues[i];
       if (rowContent && rowContent[0]) {
-         const t = String(rowContent[0]).trim().toUpperCase();
+         const t = sanitizeTag(rowContent[0]);
          if (tagsToPurge.has(t)) {
            rowsToDelete.push(startRow + i);
          }
@@ -101,10 +103,14 @@ const DatabaseStore = {
     }
 
     // 🛑 CIRCUIT BREAKER
+    // Ensure we don't wipe the clan due to API or logic anomalies.
+    // Threshold is 10 players or > clan size.
     if (tagsToPurge.size > CONFIG.SYSTEM.DB_PRUNE_THRESHOLD) {
-       const names = Array.from(tagsToPurge).map(tag => tagToName.get(tag) || tag);
+       // Clinical reported list: deduplicated and sorted for user review
+       const uniqueReportList = Array.from(new Set(Array.from(tagsToPurge).map(tag => tagToName.get(tag) || tag))).sort();
+       
        console.warn(`Pruning Aborted: Attempted to delete ${tagsToPurge.size} players. Threshold is ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD}.`);
-       Registry.Services.Reporting.logReport("Pending Purge Players", names);
+       Registry.Services.Reporting.logReport("Pending Purge Players", uniqueReportList);
        return;
     }
 
@@ -271,8 +277,8 @@ const DatabaseStore = {
     
     SpreadsheetApp.flush();
 
-    // 6. AUTO-DEDUPLICATE
-    // Ensure idempotency by removing any redundant entries created during race conditions
+    // 6. AUTO-DEDUPLICATE (v13.1.1)
+    // Ensure idempotency
     const dedupRes = this.deduplicateDatabase(sheet);
 
     return {
@@ -299,8 +305,8 @@ const DatabaseStore = {
     const V = Registry.Services.View;
 
     // Fetch Tag, Date columns
-    const tagCol = V.getColLetter(1 + S_DB.TAG); 
-    const dateCol = V.getColLetter(1 + S_DB.DATE);
+    const tagCol = V.getColLetter(2 + S_DB.TAG); 
+    const dateCol = V.getColLetter(2 + S_DB.DATE);
     
     const ranges = [`'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`, `'${sheetName}'!${dateCol}${startRow}:${dateCol}${lastRow}`];
     const response = Sheets.Spreadsheets.Values.batchGet(ssId, { ranges });

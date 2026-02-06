@@ -113,26 +113,26 @@ const DatabaseView = {
          console.warn(`[VIEW] Could not remove existing bandings: ${e}`);
      }
 
-     const finalVisualRequests: any[] = [
-       // 6A. HEADERS DELIVERY (Row 2 Style & Value Sync)
-       {
-         updateCells: {
-           rows: [{
-             values: headers.map(h => ({
-               userEnteredValue: { stringValue: h },
-               userEnteredFormat: { 
-                   textFormat: { bold: true }, 
-                   wrapStrategy: "WRAP", 
-                   horizontalAlignment: "CENTER", 
-                   backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 } 
-               }
-             }))
-           }],
-           fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
-           range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }
-         }
-       }
-     ];
+      const finalVisualRequests: any[] = [
+        // 6A. HEADERS DELIVERY (Row 2 Style & Value Sync)
+        {
+          updateCells: {
+            rows: [{
+              values: headers.map(h => ({
+                userEnteredValue: { stringValue: h },
+                userEnteredFormat: { 
+                    textFormat: { bold: true }, 
+                    wrapStrategy: "WRAP", 
+                    horizontalAlignment: "CENTER", 
+                    backgroundColor: Registry.Services.View.hexToRgbColor(CONFIG.THEME.TABLE.HEADER_BG)
+                }
+              }))
+            }],
+            fields: 'userEnteredValue,userEnteredFormat(textFormat.bold,wrapStrategy,horizontalAlignment,backgroundColor)',
+            range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 1 + contentCols }
+          }
+        }
+      ];
 
      if (targetRowCount >= startRow) {
          // 6B. NUMBER FORMATS (ISO Roots -> Visual Display)
