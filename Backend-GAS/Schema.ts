@@ -45,12 +45,24 @@ var Schema: ISchema = {
   ) {
     if (!sheet) return {};
     const sheetName = sheet.getName();
-    const cacheKey = `${sheetName}:${headerRow}:${startCol}:${Object.keys(headerMap).sort().join(',')}`;
+    const cacheKey = `SCHEMA_V2:${sheetName}:${headerRow}:${startCol}:${Object.keys(headerMap).sort().join(',')}`;
     
+    // 1. Memory Cache
     if (SchemaInternal._cache.has(cacheKey)) {
         return SchemaInternal._cache.get(cacheKey)!;
     }
 
+    // 2. Persistent Cache (CacheService)
+    try {
+      const cached = CacheService.getScriptCache().get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        SchemaInternal._cache.set(cacheKey, parsed);
+        return parsed;
+      }
+    } catch (e) {}
+
+    // 3. Discovery (Slow Path)
     // Read headers safely (Limit to 30 columns to avoid over-fetching, starting from startCol)
     const headers = sheet.getRange(headerRow, startCol, 1, 30).getValues()[0];
     const resolved: Record<string, number> = {};
@@ -72,7 +84,12 @@ var Schema: ISchema = {
       }
     });
     
+    // Save to caches
     SchemaInternal._cache.set(cacheKey, resolved);
+    try {
+      CacheService.getScriptCache().put(cacheKey, JSON.stringify(resolved), 3600); // 1 hour cache
+    } catch (e) {}
+    
     return resolved;
   },
 
