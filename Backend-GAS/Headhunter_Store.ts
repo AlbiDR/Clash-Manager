@@ -249,13 +249,21 @@ const HeadhunterStore: IHeadhunterStore = {
     const queueSheet = ss.getSheetByName(CONFIG.SHEETS.QUEUE);
     if (!queueSheet || queueSheet.getLastRow() < 2) return new Map();
 
-    const data = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 10).getValues();
+    // SAFETY CHECK: Use getDataRange to avoid "Range coordinates are invalid" on legacy 9-col sheets
+    const range = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, queueSheet.getLastColumn());
+    const data = range.getValues();
+    
     const map = new Map<string, Recruit>();
     const now = Date.now();
     const expiryMs = (CONFIG.HEADHUNTER.QUEUE_EXPIRY_DAYS || 7) * 86400000;
+    
+    // Index mapping based on current width
+    const INDEX_TAG = 0;
+    const INDEX_LAST_SCAN = 9; // Expected index for Column J
 
     data.forEach((r: any) => {
-      const tag = String(r[0]).trim().toUpperCase();
+      const tag = String(r[INDEX_TAG]).trim().toUpperCase();
+      // Safety: Check if row has enough columns, else undefined
       const foundDate = Registry.Services.Time.parseFlexibleDate(r[7]);
       
       // Expiry check
@@ -273,7 +281,8 @@ const HeadhunterStore: IHeadhunterStore = {
           foundDate: foundDate,
           invited: false,
           source: r[8] || "TOURNAMENT",
-          lastScan: r[9] ? new Date(r[9]).getTime() : 0 // Column J = Index 9 = LAST_SCAN
+          // Safety: Access index only if it exists in this row
+          lastScan: (r.length > INDEX_LAST_SCAN && r[INDEX_LAST_SCAN]) ? new Date(r[INDEX_LAST_SCAN]).getTime() : 0 
         });
       }
     });
@@ -296,6 +305,14 @@ const HeadhunterStore: IHeadhunterStore = {
     const maxQueue = CONFIG.HEADHUNTER.MAX_QUEUE_SIZE || 500;
     const toSave = recruits.slice(0, maxQueue);
     const ssId = ss.getId();
+
+    // SAFETY: Ensure sheet has at least 10 columns (A-J) for the new schema
+    // The previous version (v12.1.16) only used 9 columns (A-I).
+    if (queueSheet.getMaxColumns() < 10) {
+       queueSheet.insertColumnsAfter(queueSheet.getMaxColumns(), 10 - queueSheet.getMaxColumns());
+       // Update header for the new column if we just created it
+       queueSheet.getRange(1, 10).setValue("Last Scan");
+    }
 
     // Prepare the 2D array for the entire queue range (2 to maxQueue + 1)
     // This allows us to overwrite old data and set new data in ONE ATOMIC CALL.
