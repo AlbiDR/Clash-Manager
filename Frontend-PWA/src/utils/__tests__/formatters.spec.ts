@@ -258,15 +258,11 @@ describe("formatters", () => {
       const input = "• Item 1\nInterruption\n• Item 2";
       const output = formatHeaderDescription(input);
 
-      // CRACK FOUND: The current greedy regex wraps everything between the first and last bullet in a single UL,
-      // even if there is non-bullet text in between.
-      expect(output).toContain('<ul class="desc-list">');
-      expect(output).toContain('<li class="bullet-item">Item 1</li>');
-      expect(output).toContain('Interruption');
-      expect(output).toContain('<li class="bullet-item">Item 2</li>');
-
-      // The entire block is wrapped due to greedy .* matching
-      expect(output).toBe('<ul class="desc-list"><li class="bullet-item">Item 1</li><br>Interruption<br><li class="bullet-item">Item 2</li></ul>');
+      // FIX VERIFIED: Separate lists should NOT be merged.
+      // We expect two separate ULs with the interruption in between.
+      expect(output).toBe(
+        '<ul class="desc-list"><li class="bullet-item">Item 1</li></ul><br>Interruption<br><ul class="desc-list"><li class="bullet-item">Item 2</li></ul>',
+      );
     });
 
     it("handles complex mixed markdown", () => {
