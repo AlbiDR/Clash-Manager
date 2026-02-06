@@ -113,31 +113,33 @@ const Headhunter: IHeadhunter = {
         `QUOTA:   ${remainingQuota} Remaining`
       ]);
 
-      // 5. MEMBERSHIP VALIDATION
+      // 5. MEMBERSHIP VALIDATION (Smart Lazy Loader)
       const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
       const logDismissal = (tag: string, score: number) => {
         evtSheet.appendRow([tag, Date.now(), score]);
       };
 
+      // OPTIMIZATION: Sort FIRST, then only validate the Top 100 Candidates.
+      // This prevents wasting quota on the tail end of the queue (500+ items).
+      const sortedRegistry = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
+      const validationHead = sortedRegistry.slice(0, 100); 
+      
       let joinedCount = 0;
-      const tagsToCheck = Array.from(combinedRegistry.keys());
-      if (tagsToCheck.length > 0) {
-        const batchSize = 25;
-        for (let i = 0; i < tagsToCheck.length; i += batchSize) {
-          const chunk = tagsToCheck.slice(i, i + batchSize);
-          const profiles = S.Network.fetchRoyaleAPI(
-            chunk.map((t) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`)
-          );
-          profiles.forEach((p: any) => {
-            if (p?.clan?.tag) {
-              const recruit = combinedRegistry.get(p.tag);
-              if (recruit) logDismissal(p.tag, recruit.rawScore);
-              combinedRegistry.delete(p.tag);
-              joinedCount++;
-            }
-          });
-          SpreadsheetApp.flush();
-        }
+      
+      if (validationHead.length > 0) {
+        // Network Layer handles the batching (upto 100 is safe for one call)
+        const profiles = S.Network.fetchRoyaleAPI(
+          validationHead.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
+        );
+        
+        profiles.forEach((p: any) => {
+          if (p?.clan?.tag) {
+             const recruit = combinedRegistry.get(p.tag);
+             if (recruit) logDismissal(p.tag, recruit.rawScore);
+             combinedRegistry.delete(p.tag);
+             joinedCount++;
+          }
+        });
       }
 
       // [UPDATE] We can add joinedCount to the previous report or next one. 
