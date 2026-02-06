@@ -170,12 +170,17 @@ export function formatHeaderDescription(text: string): string {
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       // Bullet points (• item)
       .replace(/^• (.+)$/gm, '<li class="bullet-item">$1</li>')
+      // Wrap lists in ul (BEFORE converting newlines to <br>)
+      // ⚡ FIX: Use non-greedy matching and group only consecutive li elements.
+      // We use a lookahead (?=<li) to ensure we only eat newlines BETWEEN items,
+      // preserving the trailing newline after the last item for proper spacing.
+      .replace(
+        /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li class="bullet-item">))?)+/g,
+        (match) => {
+          return `<ul class="desc-list">${match.trim().replace(/\n/g, "")}</ul>`;
+        },
+      )
       // Actual Line breaks
       .replace(/\n/g, "<br>")
-      // Wrap lists in ul
-      .replace(
-        /(<li class="bullet-item">.*<\/li>\s*)+/g,
-        '<ul class="desc-list">$&</ul>',
-      )
   );
 }
