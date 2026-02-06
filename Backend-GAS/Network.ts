@@ -214,17 +214,22 @@ const NetworkInternal = {
         throw new Error(`Worker Error ${code}: ${errBody.error || "Unknown"}`);
     }
     
-    const body = JSON.parse(res.getContentText());
-    if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote payload structure");
-    
-    if (body.results.length === 0 && chunkUrls.length > 0) {
-      console.warn(`Network: Worker returned ZERO results for ${chunkUrls.length} URLs.`);
-    }
+    try {
+      const body = JSON.parse(res.getContentText());
+      if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote payload structure");
+      
+      if (body.results.length === 0 && chunkUrls.length > 0) {
+        console.warn(`Network: Worker returned ZERO results for ${chunkUrls.length} URLs.`);
+      }
 
-    return body.results.map((r: any) => ({
-      getResponseCode: () => r.code,
-      getContentText: () => typeof r.content === "string" ? r.content : JSON.stringify(r.content)
-    }));
+      return body.results.map((r: any) => ({
+        getResponseCode: () => r.code,
+        getContentText: () => typeof r.content === "string" ? r.content : JSON.stringify(r.content)
+      }));
+    } catch (e: any) {
+      console.error(`Network: Failed to parse remote response: ${e.message}`);
+      throw new Error("Worker responded with malformed JSON");
+    }
   },
 
   /**
