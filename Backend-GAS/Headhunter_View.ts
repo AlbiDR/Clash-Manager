@@ -37,6 +37,11 @@ const HeadhunterView: IHeadhunterView = {
       "LAST_SCAN",
     ];
 
+    // STRUCTURAL SANITY CHECK: Enforce 11 Columns (index 0-10)
+    if (CANONICAL_KEYS.length !== 11 || CANONICAL_KEYS[10] !== "LAST_SCAN") {
+       throw new Error(`CRITICAL SCHEMA DRIFT: Expected 11 Headhunter keys, found ${CANONICAL_KEYS.length}. Check Configuration.ts`);
+    }
+
     // Ensure numeric indices are synced (Redundant if Config is static but safe)
     CANONICAL_KEYS.forEach((key, index) => {
       CONFIG.SCHEMA.HH[key] = index;
@@ -48,6 +53,7 @@ const HeadhunterView: IHeadhunterView = {
     );
 
     // LAYOUT PREPARATION (Run FIRST to establish canvas)
+    // HEADERS.length must be exactly 11.
     Registry.Services.View.applyStandardLayout(
       sheet,
       Math.max(list.length, CONFIG.HEADHUNTER.TARGET),

@@ -310,9 +310,9 @@ const HeadhunterStore: IHeadhunterStore = {
     // The previous version (v12.1.16) only used 9 columns (A-I).
     if (queueSheet.getMaxColumns() < 10) {
        queueSheet.insertColumnsAfter(queueSheet.getMaxColumns(), 10 - queueSheet.getMaxColumns());
-       // Update header for the new column if we just created it
-       queueSheet.getRange(1, 10).setValue("Last Scan");
     }
+    // ALWAYS enforce headers to ensure Schema Sync
+    queueSheet.getRange(1, 1, 1, 10).setValues([["Tag", "Name", "Trophies", "Donations", "Cards", "War", "Raw Score", "Found Date", "Source", "Last Scan"]]);
 
     // Prepare the 2D array for the entire queue range (2 to maxQueue + 1)
     // This allows us to overwrite old data and set new data in ONE ATOMIC CALL.
