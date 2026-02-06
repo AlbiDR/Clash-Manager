@@ -226,38 +226,49 @@ function refreshWebPayload(): string {
 /**
  * INTERNAL GENERATOR
  */
+/**
+ * INTERNAL GENERATOR
+ */
 function _generatePayloadInternal(): string {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ssId = ss.getId();
     Registry.Services.Schema.bootDynamicSchema();
 
     const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.ROSTER, "lb");
     const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
 
     // BUILD GLOBAL EXCLUSION SET (Blacklist + Event Stream)
+    // OPTIMIZATION: Use Advanced API for faster metadata fetch
     const exclusionSet = new Set<string>();
 
     // A. Read Permanent Blacklist
-    const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL);
-    if (blSheet) {
-      const rawBL = blSheet.getDataRange().getValues();
+    try {
+      // @ts-ignore
+      const blResponse = Sheets.Spreadsheets.Values.get(ssId, `'${CONFIG.SHEETS.BL}'!A:B`);
+      const rawBL = blResponse.values || [];
       const now = Date.now();
       rawBL.forEach((r: any) => {
-        const tag = String(r[0]).toUpperCase().trim();
+        const tag = String(r[0] || "").toUpperCase().trim();
         const expiry = Number(r[1]) || 0;
         if (tag && expiry > now) exclusionSet.add(tag);
       });
+    } catch (e) {
+      console.warn("[API] Blacklist read skipped (Sheet might not exist or be empty)");
     }
 
     // B. Read Hot Event Stream (Dismissals not yet reconciled to main sheets)
-    const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
-    if (evtSheet && evtSheet.getLastRow() > 1) {
-      const rawEVT = evtSheet.getDataRange().getValues();
+    try {
+      // @ts-ignore
+      const evtResponse = Sheets.Spreadsheets.Values.get(ssId, `'${CONFIG.SHEETS.EVT}'!A:A`);
+      const rawEVT = evtResponse.values || [];
       rawEVT.forEach((r: any, idx: number) => {
         if (idx === 0) return; // Skip Header
-        const tag = String(r[0]).toUpperCase().trim();
+        const tag = String(r[0] || "").toUpperCase().trim();
         if (tag) exclusionSet.add(tag);
       });
+    } catch (e) {
+       console.warn("[API] Event stream read skipped (Sheet might not exist or be empty)");
     }
 
     // FILTER RECRUITS
@@ -288,7 +299,7 @@ function _generatePayloadInternal(): string {
     Registry.Services.Store.cache.putLarge(
       CONFIG.SYSTEM.JSON_STORE_KEY,
       payloadStr,
-      600, // Reduced from 21600 (6h) to 600 (10m) for higher freshness
+      600, // Freshness window
     );
     Registry.Services.Store.props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
 
@@ -309,6 +320,7 @@ function _generatePayloadInternal(): string {
 
 /**
  * DATA EXTRACTION (STRICT MODE)
+ * PERFORMANCE: Uses single getValues() call to minimize RPC overhead.
  */
 function extractSheetDataStrict(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
@@ -368,35 +380,20 @@ function extractSheetDataStrict(
   const requiredCols = maxColIdx + 1;
   const sheetMaxCols = sheet.getMaxColumns();
 
-  // BOUNDS VALIDATION: Ensure we don't exceed sheet dimensions
-  if (requiredCols > sheetMaxCols) {
-    console.warn(`[DATA] extractSheetDataStrict: Required columns (${requiredCols}) exceed sheet columns (${sheetMaxCols}) for '${sheetName}'. Data may be incomplete.`);
-  }
-
   const safeNumCols = Math.min(requiredCols, sheetMaxCols);
   const numRows = lastRow - startRow + 1;
   
-  if (numRows <= 0) {
-    console.warn(`[DATA] extractSheetDataStrict: Invalid row count (${numRows}) for sheet '${sheetName}'.`);
-    return { schema: [], rows: [] };
-  }
+  if (numRows <= 0) return { schema: [], rows: [] };
   
-  const range = sheet.getRange(startRow, 2, numRows, safeNumCols);
-
-  const vals = range.getValues();
-  const displayVals = range.getDisplayValues();
-
+  // SINGLE RPC CALL: Fetch only raw values. 
+  // Formatting is handled in JS to avoid the slow getDisplayValues() RPC.
+  const vals = sheet.getRange(startRow, 2, numRows, safeNumCols).getValues();
   const rows: any[][] = [];
 
   for (let i = 0; i < vals.length; i++) {
     const rowRaw = vals[i];
-    const rowDisplay = displayVals[i];
 
-    // SAFETY: Ensure row arrays exist and have minimum length
-    if (!Array.isArray(rowRaw) || !Array.isArray(rowDisplay)) {
-      console.warn(`[DATA] extractSheetDataStrict: Invalid row data at index ${i}. Skipping.`);
-      continue;
-    }
+    if (!Array.isArray(rowRaw)) continue;
 
     const tagRaw = String(rowRaw[S.TAG] || "").trim();
     if (!tagRaw || tagRaw.length < 3) continue;
@@ -412,34 +409,29 @@ function extractSheetDataStrict(
       .map((m) => {
         if (m.type === "bool_check") return null;
 
-        // SAFETY: Bounds check for column access
-        if (m.col >= rowRaw.length || m.col >= rowDisplay.length) {
-          console.warn(`[DATA] Column index ${m.col} out of bounds for row ${i}. Using default value.`);
-          return m.type === "num" ? 0 : "";
-        }
+        if (m.col >= rowRaw.length) return m.type === "num" ? 0 : "";
 
         const val = rowRaw[m.col];
-        const disp = rowDisplay[m.col];
 
         switch (m.type) {
           case "tag":
             return String(val || "").replace("#", "").trim().toUpperCase();
           case "num":
-            return sanitizeNum(val, disp);
+            return sanitizeNum(val, "");
           case "rate":
-            if (typeof disp === "string" && disp.toUpperCase().includes("N/A"))
-              return "N/A";
-            if (typeof disp === "string" && disp.includes("%"))
-              return disp.trim();
-            const n = parseFloat(String(val));
-            if (isNaN(n)) return "0%";
-            if (n <= 1.0) return `${Math.round(n * 100)}%`;
-            return `${Math.round(n)}%`;
+            // Performance Optimization: Manual percentage formatting
+            if (val === null || val === undefined || val === "") return "0%";
+            if (typeof val === "number") {
+                if (val <= 1.0) return `${Math.round(val * 100)}%`;
+                return `${Math.round(val)}%`;
+            }
+            const sVal = String(val);
+            if (sVal.toUpperCase().includes("N/A")) return "N/A";
+            if (sVal.includes("%")) return sVal.trim();
+            const n = parseFloat(sVal);
+            return isNaN(n) ? "0%" : `${Math.round(n * 100)}%`;
           case "date":
             const dateObj = Registry.Services.Time.parseFlexibleDate(val);
-            // Ensure valid ISO. If parsing fails but data exists, PRESERVE IT as string.
-            // This allows relative times like "2d ago" to pass through to the frontend
-            // where the improved parser can handle them, instead of crushing them to "Now".
             if (isNaN(dateObj.getTime()) || dateObj.getTime() <= 0) {
                 return val ? String(val) : "";
             }
@@ -457,8 +449,6 @@ function extractSheetDataStrict(
 
     rows.push(outputRow);
   }
-
-  console.info(`[DATA] extractSheetDataStrict: Extracted ${rows.length} valid row${rows.length !== 1 ? 's' : ''} from '${sheetName}'.`);
 
   return {
     schema: mapping.filter((m) => m.type !== "bool_check").map((m) => m.key),
