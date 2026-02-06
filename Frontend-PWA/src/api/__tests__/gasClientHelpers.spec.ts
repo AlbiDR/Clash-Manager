@@ -98,6 +98,7 @@ describe("gasClient Helpers", () => {
         t: 4500,
         potentialScore: 70,
         potentialRawScore: 35000,
+        lastScan: 0,
         d: {
           don: 200,
           war: 15,

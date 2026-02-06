@@ -534,7 +534,8 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
           war: c.war,
           cards: c.cards,
           ago: new Date().toISOString()
-        }
+        },
+        lastScan: 0
       }));
     }
     return null;

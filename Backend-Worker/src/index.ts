@@ -488,7 +488,6 @@ async function processScanBatch(
             if (blacklistSet.has(p.tag)) return;
 
             // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
-            let rawScore = 0; // Default
             if (prophetCache) {
                 const normTag = p.tag.replace("#", "").trim().toLowerCase();
                 const intel = prophetCache[normTag];
