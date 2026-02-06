@@ -80,6 +80,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     let candidates: any[] = [];
     let usedRemote = false;
+    let shadowStatus = "ACTIVE";
 
     // 4. Execution (Remote vs Local)
     if (remoteAvailable && remoteExpandEnabled) {
@@ -229,6 +230,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
             }
           }
         }
+      } else {
+        shadowStatus = "SKIPPED (High Yield)";
+        console.info(`Shadow Scout: ${shadowStatus} - ${discoveryYield} elite leads found.`);
       }
     } else {
       // Local scoring required
@@ -279,6 +283,8 @@ const HeadhunterScanner: IHeadhunterScanner = {
                    processedTags.add(r.tag);
                  }
               });
+            } else if (validCandidates.length >= 40) {
+               shadowStatus = "SKIPPED (Threshold Met)";
             }
           }
           
@@ -350,10 +356,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
     }
 
     // 8. FINAL SCAN SUMMARY [7/9]
+    const shadowLabel = shadowStatus === "ACTIVE" ? `${shadowTags.size} Shadow Yield` : shadowStatus;
     const yieldRatio = tagsToFetch.length > 0 ? ((shadowTags.size / tagsToFetch.length) * 100).toFixed(1) : "0.0";
+    
     Registry.Services.Reporting.logReport(`[7/9] SCANNING: Discovery @ ${minTrophies}+`, [
       `SCOUT: ${uniqueTourneys.size} Tournaments | ${keywords.length} Keywords`,
-      `TRACE: ${shadowTags.size} Shadow Yield | ${validCandidates.length} Filtered Leads`,
+      `TRACE: ${shadowLabel} | ${validCandidates.length} Filtered Leads`,
       `YIELD: ${yieldRatio}% (${shadowTags.size} Potential Matches)`
     ]);
 
