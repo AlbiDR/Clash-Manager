@@ -29,7 +29,7 @@ const DatabaseStore = {
     const meta = Sheets.Spreadsheets.get(ssId, { ranges: [sheetName], includeGridData: false });
     const lastRow = meta.sheets[0].properties.gridProperties.rowCount;
 
-    if (lastRow < startRow) return;
+    if (lastRow < startRow) return 0;
 
     const S_DB = CONFIG.SCHEMA.DB;
     const V = Registry.Services.View;
@@ -47,7 +47,7 @@ const DatabaseStore = {
     ];
     const response = Sheets.Spreadsheets.Values.batchGet(ssId, { ranges });
     
-    if (!response.valueRanges || response.valueRanges.length < 3) return;
+    if (!response.valueRanges || response.valueRanges.length < 3) return 0;
     
     const tagValues = response.valueRanges[0].values || [];
     const dateValues = response.valueRanges[1].values || [];
