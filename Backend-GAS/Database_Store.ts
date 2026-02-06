@@ -22,7 +22,7 @@ const DatabaseStore = {
    * Prunes rows for players who are NOT currently in the clan AND
    * whose most recent entry in the DB is older than CONFIG.SYSTEM.DB_PURGE_DAYS.
    */
-  pruneStaleData(sheet: any, activeTags: Set<string>): void {
+  pruneStaleData(sheet: any, activeTags: Set<string>): number {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
     const ssId = sheet.getParent().getId();
     const sheetName = sheet.getName();
@@ -87,7 +87,7 @@ const DatabaseStore = {
 
     if (tagsToPurge.size === 0) {
       console.info("Pruning: No stale members found.");
-      return;
+      return 0;
     }
 
     // 4. Calculate rows to delete
@@ -111,7 +111,7 @@ const DatabaseStore = {
        
        console.warn(`Pruning Aborted: Attempted to delete ${tagsToPurge.size} players. Threshold is ${CONFIG.SYSTEM.DB_PRUNE_THRESHOLD}.`);
        Registry.Services.Reporting.logReport("Pending Purge Players", uniqueReportList);
-       return;
+       return 0;
     }
 
     // 5. Write Back (Atomic Delete via Dimension)
@@ -125,8 +125,10 @@ const DatabaseStore = {
           Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
           console.info(`Pruning: Removed ${rowsToDelete.length} stale row(s).`);
           SpreadsheetApp.flush();
+          return rowsToDelete.length;
       }
     }
+    return 0;
   },
 
   /**

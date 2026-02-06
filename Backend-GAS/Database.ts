@@ -17,7 +17,7 @@ declare var module: any;
  *    Replaces the legacy 'Logger.ts'.
  * ============================================================================
  */
-const VER_DATABASE = "13.0.0";
+const VER_DATABASE = "13.1.0";
 
 export interface IDatabase {
     update(): void;
@@ -126,7 +126,7 @@ const Database: IDatabase = {
 
             // 5. STORAGE OPERATIONS
             Registry.Services.Reporting.logStep(5, 6, "Pruning Stale Secondary Data...");
-            DatabaseStore.pruneStaleData(sheet, activeTags);
+            const stalePruned = DatabaseStore.pruneStaleData(sheet, activeTags);
 
             Registry.Services.Reporting.logStep(6, 6, "Executing Snapshot Upsert...");
             const updateResult = DatabaseStore.upsertDailySnapshots(sheet, activeMembers, warFameMap, isWarDay);
@@ -142,7 +142,7 @@ const Database: IDatabase = {
                 `STATUS:     SUCCESS`,
                 `MERGED:     ${updateResult.updated} Members`,
                 `APPENDED:   ${updateResult.appended} Members`,
-                `PRUNED:     ${updateResult.pruned} Rows`,
+                `PRUNED:     ${stalePruned + updateResult.pruned} Rows`,
                 `TOTAL ROWS: ${finalLastRow}`,
                 `RUNTIME:    ${totalDuration}s`,
                 `─`,
