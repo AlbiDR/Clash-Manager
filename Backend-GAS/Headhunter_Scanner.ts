@@ -32,7 +32,20 @@ const HeadhunterScanner: IHeadhunterScanner = {
     lowQuotaMode: boolean = false
   ): Recruit[] {
     const W = CONFIG.HEADHUNTER.WEIGHTS;
-    const keywords = CONFIG.HEADHUNTER.KEYWORDS;
+    
+    // RECRUITMENT INTENSITY: Scale effort based on Registry Saturation
+    // Target is roughly TARGET (50) + QUEUE (500) = 550 total.
+    const registrySize = existingRecruits ? existingRecruits.size : 0;
+    const saturation = registrySize / (CONFIG.HEADHUNTER.TARGET + 500);
+    const isSaturated = saturation > 0.8; // >440 candidates
+
+    let keywords = CONFIG.HEADHUNTER.KEYWORDS; 
+    if (isSaturated) {
+      // Throttle: Use only the Top 10 keywords when saturated
+      keywords = keywords.slice(0, 10);
+      console.info(`Scanner: Recruitment Intensity Throttled (Saturation: ${(saturation * 100).toFixed(1)}%).`);
+    }
+
     const searchUrls = keywords.map(
       (k: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
     );
@@ -44,7 +57,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
       if (res && res.items)
         res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
     });
-    // 46: Removed single-line discovery log
 
     // 2. Worker Handshake
     const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
@@ -61,24 +73,22 @@ const HeadhunterScanner: IHeadhunterScanner = {
         ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
         : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
 
-    // 3. Lottery Selection
+    // 3. Lottery Selection (Scaled by Saturation)
+    const lotteryLimit = isSaturated ? 50 : (scanCfg.TOURNEYS || 300);
     const lotteryPool = Array.from(uniqueTourneys.values())
       .sort((a, b) => (b.capacity || 0) - (a.capacity || 0)) // Prioritize bigger tourneys
       .slice(
         0,
         Math.min(
-          lowQuotaMode ? 100 : (scanCfg.TOURNEYS || 300) * 2,
+          lowQuotaMode ? 100 : lotteryLimit * 2,
           CONFIG.HEADHUNTER.DEEP_SCAN.MAX_TOURNEYS || 2000,
         ),
       );
 
     const tourneyTags = lotteryPool
-      .slice(0, scanCfg.TOURNEYS || 300)
+      .slice(0, lotteryLimit)
       .map((t: TournamentResult) => t.tag);
     
-    // Discovery metrics captured for possible consolidation
-    const lotteryWinners = tourneyTags.length;
-
     if (tourneyTags.length === 0) return [];
 
     let candidates: any[] = [];
@@ -128,9 +138,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
         uniqueCandidates.set(c.tag, c);
     });
 
+    const playerCfgLimit = isSaturated ? 100 : (scanCfg.PLAYERS || 250);
     const playerLimit = Math.min(
       CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 2000,
-      scanCfg.PLAYERS || 250,
+      playerCfgLimit,
     );
     const candidatePool = Array.from(uniqueCandidates.values())
       .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
@@ -146,31 +157,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
     const heritageTags = new Set(prophetCache.keys());
 
     const validCandidates: Recruit[] = [];
-
-    /**
-     * Helper: Batch fetcher to avoid RoyaleAPI 429 and GAS timeouts.
-     * FIX: Ensures array parity by padding results on batch failure.
-     */
-    const batchFetch = (tags: string[], chunkSize: number, fetchFn: (chunk: string[]) => any[]) => {
-      const results: any[] = [];
-      for (let i = 0; i < tags.length; i += chunkSize) {
-        const chunk = tags.slice(i, i + chunkSize);
-        try {
-          const res = fetchFn(chunk);
-          if (Array.isArray(res)) {
-            results.push(...res);
-          } else {
-            // Padding if result is not an array but expected to be
-            results.push(...new Array(chunk.length).fill(null));
-          }
-          if (typeof Utilities !== 'undefined') Utilities.sleep(100); // 100ms jitter between batches
-        } catch (e: any) {
-          console.warn(`Batch fetch failed part way: ${e.message}`);
-          results.push(...new Array(chunk.length).fill(null));
-        }
-      }
-      return results;
-    };
 
     // 6. Deep Profiling
     const shadowTags = new Set<string>();
@@ -218,7 +204,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       // 6B. RECURSIVE SEEDING: Dynamic Shadow Threshold
       // CRITICAL: If remote discovery already yielded massive elite leads, skip expensive Shadow Scout.
       const discoveryYield = validCandidates.length;
-      const shadowThreshold = 75; // If we have 75+ elite leads, we don't need the extra latency of battlelog parsing.
+      const shadowThreshold = 40; // AGGRESSIVE: If we have 40+ elite leads, we don't need the extra latency of battlelog parsing.
 
       if (discoveryYield < shadowThreshold) {
         // TOP 5 Seeds instead of 15 to reduce network overhead
@@ -296,7 +282,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
             hasWar = logs[idx].some((b: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type));
 
             // SHADOW SCOUT (LOCAL): Only if under threshold
-            if (validCandidates.length < 75 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
+            if (validCandidates.length < 40 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
               const recruits = BattleLogProcessor.digest(p.tag, AnalysisGoal.RECRUITMENT);
               recruits.forEach((r: any) => {
                  if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
@@ -374,6 +360,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
         }
       });
     }
+
+    // 8. FINAL SCAN SUMMARY [7/9]
+    const yieldRatio = tagsToFetch.length > 0 ? ((shadowTags.size / tagsToFetch.length) * 100).toFixed(1) : "0.0";
+    Registry.Services.Reporting.logReport(`[7/9] SCANNING: Discovery @ ${minTrophies}+`, [
+      `SCOUT: ${uniqueTourneys.size} Tournaments | ${keywords.length} Keywords`,
+      `TRACE: ${shadowTags.size} Shadow Yield | ${validCandidates.length} Filtered Leads`,
+      `YIELD: ${yieldRatio}% (${shadowTags.size} Potential Matches)`
+    ]);
 
     // 8. FINAL SCAN SUMMARY [7/9]
     const yieldRatio = tagsToFetch.length > 0 ? ((shadowTags.size / tagsToFetch.length) * 100).toFixed(1) : "0.0";
