@@ -1,12 +1,23 @@
 
 /**
- * WAR INTELLIGENCE - CLASP EDITION
- * VERSION: 12.4.1 | High-Resolution Snapshot Engine
+ * ============================================================================
+ * MODULE: WAR INTELLIGENCE (Snapshot Engine)
+ * ----------------------------------------------------------------------------
+ * DESCRIPTION: Provides high-resolution snapshots of the current River Race
+ * state. Orchestrates data acquisition from the Royale API and manages a
+ * multi-tier fallback system to ensure UI stability.
+ *
+ * ARCHITECTURE:
+ *    - Snapshot Lifecycle: High-Fidelity (Live) -> Vault-Stored (Cache) -> Heuristic (Fallback).
+ *    - Phase Normalization: Maps the 7-day API period index to tactical phases.
+ *    - Quota Preservation: Uses CacheService and PropertiesService to minimize API calls.
+ *
+ * ROLE: The Scout (Information Gathering).
+ * ============================================================================
  */
 
 import type { AppConfig } from "./Configuration";
 import type { IRegistry } from "./Registry";
-
 
 declare const CacheService: any;
 declare const CONFIG: AppConfig;
@@ -15,6 +26,14 @@ declare const Logger: any;
 
 /**
  * WAR SNAPSHOT INTERFACE
+ *
+ * @property status - Quality of the data:
+ *    - HIGH-FIDELITY: Freshly fetched from Royale API.
+ *    - VAULT-STORED: Retrieved from L2 Script Cache.
+ *    - HEURISTIC: Fallback from persistent storage (potentially stale).
+ * @property protocol - Phase-specific metadata.
+ * @property schedule - Time-based metrics and reset countdowns.
+ * @property performance - Score and rank data for the clan.
  */
 export interface WarSnapshot {
   status: 'HIGH-FIDELITY' | 'VAULT-STORED' | 'HEURISTIC';
@@ -44,6 +63,7 @@ export interface WarSnapshot {
 
 /**
  * ENTRY POINT: Triggerable by Apps Script
+ * Orchestrates the snapshot acquisition and logs the result.
  */
 function getWarSnapshot(): WarSnapshot {
   const snap = WarIntelligence.getSnapshot();
@@ -51,14 +71,30 @@ function getWarSnapshot(): WarSnapshot {
   return snap;
 }
 
+/**
+ * WAR INTELLIGENCE ENGINE
+ * Singleton module for managing war state snapshots.
+ */
 const WarIntelligence = (() => {
-  const K = "W_SNAP_V12_1"; // Busted for v12.4.1 fix
-  const TTL = 900;       // 15 Min Cache
-  const RESET_H = 10;    // 10:00 UTC Reset
+  const K = "W_SNAP_V12_1"; // Cache Key
+  const TTL = 900;          // 15 Min Cache (Quota Preservation)
+  const RESET_H = 10;       // 10:00 UTC Reset (Game Standard)
   const VERSION = "12.4.1";
 
   return {
+    /**
+     * Primary data acquisition loop.
+     *
+     * @remarks
+     * Implements a "Graceful Degradation" pattern. If the API fetch fails or
+     * quotas are exceeded, it attempts to hydrate the snapshot from the
+     * persistent "VAULT" (PropertiesService).
+     *
+     * @returns {WarSnapshot} A validated war state snapshot.
+     * @warning Consumes CacheService, UrlFetchApp, and PropertiesService quotas.
+     */
     getSnapshot(): WarSnapshot {
+      // LEVEL 1: L2 CACHE (ScriptCache)
       const cached = CacheService.getScriptCache().get(K);
       if (cached) {
         const snap = JSON.parse(cached);
@@ -72,16 +108,22 @@ const WarIntelligence = (() => {
           if (rawTag.startsWith("#")) rawTag = rawTag.substring(1);
           const tag = encodeURIComponent(rawTag);
           
+          // API HANDSHAKE
           const res = Registry.Services.Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
           
           if (!res?.[0]) throw new Error("API_EMPTY");
           
           const snap = this.parse(res[0], 'HIGH-FIDELITY');
+
+          // PERSISTENCE SYNC
+          // Save to both short-term cache and long-term persistent storage.
           CacheService.getScriptCache().put(K, JSON.stringify(snap), TTL);
-          Registry.Services.Store.props.setChunked(K + "_PERSIST", snap); // Persist
+          Registry.Services.Store.props.setChunked(K + "_PERSIST", snap);
+
           return snap;
         } catch (e: any) {
-          // FALLBACK: Try persistent store if API fails
+          // LEVEL 2: PERSISTENT FALLBACK (PropertiesService)
+          // Essential for maintaining UI functionality during Royale API outages.
           const persisted = Registry.Services.Store.props.getChunked<WarSnapshot>(K + "_PERSIST");
           if (persisted) {
              persisted.status = 'HEURISTIC';
@@ -92,6 +134,13 @@ const WarIntelligence = (() => {
       });
     },
 
+    /**
+     * Transforms raw API response into a structured WarSnapshot.
+     *
+     * @param d - Raw JSON response from /currentriverrace.
+     * @param status - Intentional quality status to assign.
+     * @returns {WarSnapshot} The normalized snapshot.
+     */
     parse(d: any, status: WarSnapshot['status'] = 'HIGH-FIDELITY'): WarSnapshot {
       const now = new Date();
       const pIdx = d?.periodIndex;
@@ -99,11 +148,13 @@ const WarIntelligence = (() => {
       const isColosseum = sIdx >= 3;
 
       // UNIFIED PHASE DETECTION
-      // UNIFIED PHASE DETECTION
+      // Rationale: Converting the zero-indexed 7-day cycle (Monday-Sunday)
+      // into descriptive game phases (Training vs Battle).
       let rawDay: number;
       if (pIdx !== undefined) {
-        rawDay = pIdx % 7;
+        rawDay = pIdx % 7; // API Period Index normalization
       } else {
+        // Fallback to time-based heuristic if API response is partial
         const heuristic = Registry.Services.Time.getWarPhaseFromDate(now);
         rawDay = heuristic.rawDay;
       }
@@ -112,16 +163,15 @@ const WarIntelligence = (() => {
       const rootClan = d?.clan || {};
 
       // TACTICAL FAME & RANK EXTRACTION
-      // UNIFIED FAME EXTRACTION
+      // Intent: Finding the clan entry within the race array ensures we get
+      // the most competitive "fresher" metrics compared to the root clan object.
       let fame = 0;
       let rank = 0;
       const clanTag = rootClan.tag || "";
       
-      // Calculate isTraining EARLY for use in logic
-      const isTraining = rawDay <= 2;
+      const isTraining = rawDay <= 2; // Training Days: Days 0, 1, 2
 
       if (d?.clans && Array.isArray(d.clans)) {
-        // Find our clan in the race array for potentially fresher data
         const sorted = [...d.clans].sort((a: any, b: any) => {
           const valA = Registry.Services.Scoring.resolveWarFame(a);
           const valB = Registry.Services.Scoring.resolveWarFame(b);
@@ -129,15 +179,13 @@ const WarIntelligence = (() => {
         });
 
         const myEntry = sorted.find((c: any) => c.tag === clanTag);
-        // If player has participated, use their contribution
         if (myEntry) {
           fame = Registry.Services.Scoring.resolveWarFame(myEntry);
           rank = sorted.indexOf(myEntry) + 1;
         }
       } else if (isTraining) {
-        // During Training Days, fame is often 0 or meaningless "Medals"
         fame = Registry.Services.Scoring.resolveWarFame(rootClan);
-        rank = rootClan.rank || 0; // Rank might still be available on rootClan
+        rank = rootClan.rank || 0;
       }
 
       // Phase & Day Labelling
@@ -182,18 +230,30 @@ const WarIntelligence = (() => {
       };
     },
 
-
-
+    /**
+     * Calculates minutes until the 10:00 UTC Daily Reset.
+     *
+     * @param n - Current date.
+     * @returns {number} Minutes remaining.
+     */
     calcR(n: Date): number {
       const r = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), RESET_H, 0, 0));
       if (n.getTime() >= r.getTime()) r.setUTCDate(r.getUTCDate() + 1);
       return Math.floor((r.getTime() - n.getTime()) / 60000);
     },
 
+    /**
+     * Generates a structural fallback snapshot when no data is available.
+     */
     fallback(): WarSnapshot {
       return this.parse(null, 'HEURISTIC');
     },
 
+    /**
+     * Logs the snapshot to the GAS Logger for debugging.
+     *
+     * @param s - The snapshot to log.
+     */
     log(s: WarSnapshot) {
       const title = `WAR INTELLIGENCE: ${s.status} [v${s.meta.version}]`;
       const line1 = `Week ${s.schedule.week} | ${s.protocol.dayLabel} | Reset in ${s.schedule.remainingTime}`;
