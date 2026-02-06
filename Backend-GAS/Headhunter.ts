@@ -126,9 +126,15 @@ const Headhunter: IHeadhunter = {
       
       let joinedCount = 0;
       
-      // DELTA-VALIDATION: Filter out candidates scanned recently (< 4 hours)
-      const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
-      const candidatesToValidate = validationHead.filter(r => !r.lastScan || r.lastScan < fourHoursAgo);
+      // DELTA-VALIDATION: Filter out candidates scanned recently (< 6 hours)
+      // Active recruits (existingPool) are ALWAYS validated to ensure the UI is 100% fresh.
+      // The 6-hour threshold applies ONLY to the bench/queue reservoir.
+      const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
+      const candidatesToValidate = validationHead.filter(r => {
+        const isActiveRecruit = existingPool.has(r.tag);
+        if (isActiveRecruit) return true; // Force validation for people on the main sheet
+        return !r.lastScan || r.lastScan < sixHoursAgo; // 6h Delta for queue/bench
+      });
 
       if (candidatesToValidate.length > 0) {
         // Network Layer handles the batching (upto 100 is safe for one call)
