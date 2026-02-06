@@ -262,9 +262,9 @@ const Headhunter: IHeadhunter = {
       const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
 
       S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Reserve Management`, [
-        `SOURCE:  ${scoutCount} from tournaments | ${shadowCount} from shadows`,
-        `RESERVE: ${queueRes.count} benched | ${queueRes.pruned} overflowed`,
-        `STORAGE: '${CONFIG.SHEETS.HH}' sheet backed up`
+        `DISCOVERY: ${scoutCount} from tournaments | ${shadowCount} from shadows`,
+        `RESERVE:   ${queueRes.count} benched | ${queueRes.pruned} overflowed`,
+        `STORAGE:   '${CONFIG.SHEETS.HH}' sheet backed up`
       ]);
 
       // 9. RENDER: Visual Sync [9/9]
