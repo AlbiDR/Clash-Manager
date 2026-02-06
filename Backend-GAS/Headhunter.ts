@@ -126,10 +126,14 @@ const Headhunter: IHeadhunter = {
       
       let joinedCount = 0;
       
-      if (validationHead.length > 0) {
+      // DELTA-VALIDATION: Filter out candidates scanned recently (< 4 hours)
+      const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
+      const candidatesToValidate = validationHead.filter(r => !r.lastScan || r.lastScan < fourHoursAgo);
+
+      if (candidatesToValidate.length > 0) {
         // Network Layer handles the batching (upto 100 is safe for one call)
         const profiles = S.Network.fetchRoyaleAPI(
-          validationHead.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
+          candidatesToValidate.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
         );
         
         profiles.forEach((p: any) => {
@@ -138,8 +142,14 @@ const Headhunter: IHeadhunter = {
              if (recruit) logDismissal(p.tag, recruit.rawScore);
              combinedRegistry.delete(p.tag);
              joinedCount++;
+          } else if (p && p.tag) {
+             // UPDATE FRESHNESS
+             const recruit = combinedRegistry.get(p.tag);
+             if (recruit) recruit.lastScan = Date.now();
           }
         });
+        
+        console.info(`Validation: Checked ${candidatesToValidate.length} candidates. ${validationHead.length - candidatesToValidate.length} skipped (fresh).`);
       }
 
       // [UPDATE] We can add joinedCount to the previous report or next one. 

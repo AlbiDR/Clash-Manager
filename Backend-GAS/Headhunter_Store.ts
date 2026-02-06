@@ -64,6 +64,7 @@ const HeadhunterStore: IHeadhunterStore = {
           foundDate: Registry.Services.Time.parseFlexibleDate(r[H.FOUND_DATE]),
           rawScore: Number(r[H.RAW_SCORE]),
           potentialScore: Number(r[H.POTENTIAL_SCORE]),
+          lastScan: r[H.LAST_SCAN] ? new Date(r[H.LAST_SCAN]).getTime() : 0,
         });
       }
     });
@@ -126,7 +127,7 @@ const HeadhunterStore: IHeadhunterStore = {
       // BATCH LOAD SURVIVAL: Map tags to recruits
       // SCHEMA.HH.TAG is 0. So it gets columns B to ...
       
-      const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
+      const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
       rawMain.forEach((r: any, i: number) => {
         const tag = String(r[H.TAG]).trim().toUpperCase();
         if (tag) {
@@ -176,7 +177,7 @@ const HeadhunterStore: IHeadhunterStore = {
       const numRows = sheet.getLastRow() - startRow + 1;
       
       // FIX: Deduplicate read. Use the H.INVITED index within the already-loaded rawMain.
-      const rawMain = sheet.getRange(startRow, 2, numRows, H.RAW_SCORE + 1).getValues();
+      const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
 
       rawMain.forEach((r: any, i: number) => {
         const tag = String(r[H.TAG]).trim().toUpperCase();
@@ -248,7 +249,7 @@ const HeadhunterStore: IHeadhunterStore = {
     const queueSheet = ss.getSheetByName(CONFIG.SHEETS.QUEUE);
     if (!queueSheet || queueSheet.getLastRow() < 2) return new Map();
 
-    const data = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 9).getValues();
+    const data = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 10).getValues();
     const map = new Map<string, Recruit>();
     const now = Date.now();
     const expiryMs = (CONFIG.HEADHUNTER.QUEUE_EXPIRY_DAYS || 7) * 86400000;
@@ -272,6 +273,7 @@ const HeadhunterStore: IHeadhunterStore = {
           foundDate: foundDate,
           invited: false,
           source: r[8] || "TOURNAMENT",
+          lastScan: r[9] ? new Date(r[9]).getTime() : 0 // Column J = Index 9 = LAST_SCAN
         });
       }
     });
@@ -285,7 +287,7 @@ const HeadhunterStore: IHeadhunterStore = {
     const HOT_COLOR = "#795548"; // Brownish color for the Queue (Bench)
 
     if (queueSheet.getLastRow() === 0) {
-      queueSheet.getRange(1, 1, 1, 9).setValues([["Tag", "Name", "Trophies", "Donations", "Cards", "War", "Raw Score", "Found Date", "Source"]]);
+      queueSheet.getRange(1, 1, 1, 10).setValues([["Tag", "Name", "Trophies", "Donations", "Cards", "War", "Raw Score", "Found Date", "Source", "Last Scan"]]);
       queueSheet.setTabColor(HOT_COLOR);
       Registry.Services.View.tagSheet(queueSheet, "TECHNICAL");
       queueSheet.hideSheet();
@@ -297,7 +299,7 @@ const HeadhunterStore: IHeadhunterStore = {
 
     // Prepare the 2D array for the entire queue range (2 to maxQueue + 1)
     // This allows us to overwrite old data and set new data in ONE ATOMIC CALL.
-    const values = new Array(maxQueue).fill(0).map(() => new Array(9).fill(""));
+    const values = new Array(maxQueue).fill(0).map(() => new Array(10).fill(""));
     
     toSave.forEach((r, i) => {
       values[i] = [
@@ -309,12 +311,13 @@ const HeadhunterStore: IHeadhunterStore = {
         r.war,
         r.rawScore,
         Registry.Services.Time.formatDate(r.foundDate),
-        r.source || "TOURNAMENT"
+        r.source || "TOURNAMENT",
+        r.lastScan ? Registry.Services.Time.formatDatetime(new Date(r.lastScan)) : ""
       ];
     });
 
     if (typeof Sheets !== 'undefined' && Sheets.Spreadsheets) {
-      const range = `'${sheetName}'!A2:I${maxQueue + 1}`;
+      const range = `'${sheetName}'!A2:J${maxQueue + 1}`;
       Sheets.Spreadsheets.Values!.update(
         { values: values },
         ssId,
@@ -324,10 +327,10 @@ const HeadhunterStore: IHeadhunterStore = {
     } else {
       // Fallback for non-Advanced API environments (though unlikely in production)
       if (queueSheet.getLastRow() > 1) {
-        queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 9).clearContent();
+        queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 10).clearContent();
       }
       if (toSave.length > 0) {
-        queueSheet.getRange(2, 1, toSave.length, 9).setValues(values.slice(0, toSave.length));
+        queueSheet.getRange(2, 1, toSave.length, 10).setValues(values.slice(0, toSave.length));
       }
     }
 

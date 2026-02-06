@@ -299,6 +299,7 @@ export var CONFIG: AppConfig = {
       FOUND_DATE: "Found Date",
       RAW_SCORE: "Potential Raw Score", // UPDATED: Explicit Naming
       POTENTIAL_SCORE: "Potential Score",
+      LAST_SCAN: "Last Scan (Timestamp)",
     },
     DB_HEADERS: {
       DATE: "Date",
@@ -336,6 +337,7 @@ export var CONFIG: AppConfig = {
       FOUND_DATE: 7,
       RAW_SCORE: 8,
       POTENTIAL_SCORE: 9,
+      LAST_SCAN: 10,
     },
     ROSTER: {
       TAG: 0,

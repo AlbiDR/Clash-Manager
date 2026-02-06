@@ -185,6 +185,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           invited: false,
           rawScore: finalScore,
           potentialScore: c.potentialScore,
+          lastScan: Date.now(), // Freshly scanned
           source: "TOURNAMENT",
         });
       });
