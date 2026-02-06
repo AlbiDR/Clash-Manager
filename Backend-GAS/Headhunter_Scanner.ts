@@ -182,7 +182,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
       candidates[0].rawScore !== undefined
     ) {
       // 6A. Process Remote Scored Candidates
-      // DEDUPLICATION: Use playerLimit and deduplicated tags
       const remoteMap = new Map<string, any>();
       candidates.forEach(c => remoteMap.set(c.tag, c));
       
@@ -204,10 +203,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
         validCandidates.push({
           tag: c.tag,
           name: c.name,
-          trophies: c.trophies,
-          donations: c.donations,
-          cards: c.cards,
-          war: c.war,
+          trophies: c.trophies || 0,
+          donations: c.donations || 0,
+          cards: c.cards || 0,
+          war: c.war || 0,
           foundDate: new Date(),
           invited: false,
           rawScore: finalScore,
@@ -216,74 +215,51 @@ const HeadhunterScanner: IHeadhunterScanner = {
         });
       });
 
-      // RECURSIVE SEEDING: Fetch logs for Top 15 Remote Recruits to trigger Shadow Scout
-      const seedTags = validCandidates
-        .sort((a, b) => b.rawScore - a.rawScore)
-        .slice(0, 15)
-        .map(c => c.tag);
-      
-      if (seedTags.length > 0) {
-        const cb = Math.floor(Date.now() / 900000); 
-        const seedLogs: any[][] = batchFetch(
-          seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog?__cb=${cb}`),
-          15,
-          (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
-        );
+      // 6B. RECURSIVE SEEDING: Dynamic Shadow Threshold
+      // CRITICAL: If remote discovery already yielded massive elite leads, skip expensive Shadow Scout.
+      const discoveryYield = validCandidates.length;
+      const shadowThreshold = 75; // If we have 75+ elite leads, we don't need the extra latency of battlelog parsing.
 
-        let totalBattles = 0;
-        let totalOpponents = 0;
-        let rejectedClanned = 0;
+      if (discoveryYield < shadowThreshold) {
+        // TOP 5 Seeds instead of 15 to reduce network overhead
+        const seedTags = validCandidates
+          .sort((a, b) => b.rawScore - a.rawScore)
+          .slice(0, 5) 
+          .map(c => c.tag);
+        
+        if (seedTags.length > 0) {
+          const cb = Math.floor(Date.now() / 900000); 
+          const seedLogs: any[][] = Registry.Services.Network.fetchRoyaleAPI(
+            seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog?__cb=${cb}`)
+          );
 
-        for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
-          const b = seedLogs[sIdx];
-          if (!b || shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) continue;
-          
-          const processEntry = (entry: any) => {
-            if (!entry || shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) return;
+          for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
+            const logBatch = seedLogs[sIdx];
+            if (!logBatch || !Array.isArray(logBatch) || shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) continue;
             
-            if (Array.isArray(entry)) {
-              for (let j = 0; j < entry.length; j++) {
-                processEntry(entry[j]);
-              }
-              return;
-            }
+            // FLATTENED PROCESSOR: Avoid recursive stack overhead in GAS
+            for (const entry of logBatch) {
+              if (shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) break;
+              if (!entry || !entry.opponent) continue;
 
-            // We are at a single battle object
-            totalBattles++;
-            if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar", "riverRaceDuelColosseum", "PvP", "trail"].includes(entry.type)) {
-              const opponents = entry.opponent || [];
-              if (Array.isArray(opponents)) {
-                totalOpponents += opponents.length;
-                for (let k = 0; k < opponents.length; k++) {
-                  const opp = opponents[k];
-                  if (shadowTags.size >= 100) return;
+              if (["ladder", "pathOfLegends", "challenge", "tournament", "riverRacePvP", "riverRaceDuel", "riverRaceTugOfWar", "riverRaceDuelColosseum", "PvP", "trail"].includes(entry.type)) {
+                for (const opp of entry.opponent) {
                   const isClanless = !opp.clan || !opp.clan.tag;
-                  if (isClanless) {
-                    if (opp.tag && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
-                      shadowTags.add(opp.tag);
-                      processedTags.add(opp.tag);
-                    }
-                  } else {
-                    rejectedClanned++;
+                  if (opp.tag && isClanless && !processedTags.has(opp.tag) && !blacklistSet.has(opp.tag)) {
+                    shadowTags.add(opp.tag);
+                    processedTags.add(opp.tag);
                   }
                 }
               }
             }
-          };
-
-          processEntry(b);
+          }
         }
-
       }
     } else {
       // Local scoring required
-      const playersData: any[] = batchFetch(
-        tagsToFetch,
-        25,
-        (chunk) => Registry.Services.Network.fetchRoyaleAPI(
-          chunk.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
-          remoteAvailable ? W : null,
-        )
+      const playersData: any[] = Registry.Services.Network.fetchRoyaleAPI(
+        tagsToFetch.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+        remoteAvailable ? W : null,
       );
 
       const logUrls: string[] = [];
@@ -291,7 +267,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
       playersData.forEach((p: any) => {
         if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-           // If remote worker scored it during player fetch (some weird edge case or optimization)
            if (p.rawScore !== undefined) {
             validCandidates.push({
               tag: p.tag,
@@ -306,31 +281,22 @@ const HeadhunterScanner: IHeadhunterScanner = {
               source: "TOURNAMENT",
             });
           } else {
-             // Need Battle Logs for War Score
              candidatesToProfile.push(p);
-             logUrls.push(
-               `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`,
-             );
+             logUrls.push(`${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`);
           }
         }
       });
 
       if (logUrls.length > 0) {
-        const logs: any[][] = batchFetch(
-          logUrls,
-          25,
-          (chunk) => Registry.Services.Network.fetchRoyaleAPI(chunk)
-        );
+        const logs: any[][] = Registry.Services.Network.fetchRoyaleAPI(logUrls);
 
         candidatesToProfile.forEach((p, idx) => {
           let hasWar = false;
           if (logs[idx]) {
-            hasWar = logs[idx].some((b: any) =>
-              ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type),
-            );
+            hasWar = logs[idx].some((b: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type));
 
-            // SHADOW SCOUT: Advanced Extraction Engine
-            if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
+            // SHADOW SCOUT (LOCAL): Only if under threshold
+            if (validCandidates.length < 75 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
               const recruits = BattleLogProcessor.digest(p.tag, AnalysisGoal.RECRUITMENT);
               recruits.forEach((r: any) => {
                  if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
@@ -340,15 +306,11 @@ const HeadhunterScanner: IHeadhunterScanner = {
               });
             }
           }
+          
           let totalWarScore = (p.warDayWins || 0);
           if (existingRecruits && existingRecruits.has(p.tag)) {
-            totalWarScore = Math.max(
-              totalWarScore,
-              existingRecruits.get(p.tag)!.war,
-            );
+            totalWarScore = Math.max(totalWarScore, existingRecruits.get(p.tag)!.war);
           }
-
-
 
           const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
             p.trophies || 0,
@@ -358,12 +320,11 @@ const HeadhunterScanner: IHeadhunterScanner = {
             W,
           );
 
-          // HERITAGE INTELLIGENCE: Apply Prophet Bonus
           let finalScore = rawScore;
           if (heritageTags.has(p.tag.replace("#", "").trim().toLowerCase())) {
             const intel = prophetCache.get(p.tag.replace("#", "").trim().toLowerCase());
             if (intel && intel.wins > 5) {
-               finalScore *= 1.25; // 25% Boost for proven high-participation alumni
+               finalScore *= 1.25;
                console.info(`Prophet: Heritage found for ${p.name}: Participation Bonus Applied.`);
             }
           }
@@ -382,19 +343,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
           });
         });
       }
-
     }
 
-    // 7. Shadow Profiling Pass (Applies to both Remote and Local seeds)
+    // 7. Shadow Profiling Pass
     if (shadowTags.size > 0) {
       const shadowList = Array.from(shadowTags);
-      const shadowData: any[] = batchFetch(
-        shadowList,
-        25,
-        (chunk) => Registry.Services.Network.fetchRoyaleAPI(
-          chunk.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
-          remoteAvailable ? W : null,
-        )
+      const shadowData: any[] = Registry.Services.Network.fetchRoyaleAPI(
+        shadowList.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+        remoteAvailable ? W : null,
       );
 
       shadowData.forEach((p: any) => {
