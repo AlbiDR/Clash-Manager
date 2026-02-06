@@ -703,8 +703,8 @@ var Network: INetwork = {
     
     // Strategy 2: Inject Prophet Intelligence for Remote Scoring
     // We pre-normalize it here securely before sending over the wire
-    const prophetData = {}; 
-    const prophetCache = Registry?.Services?.Store?.getProphetCache?.() || new Map();
+    const prophetData: Record<string, any> = {}; 
+    const prophetCache = Registry.Services.Roster.getProphetCache();
     prophetCache.forEach((v: any, k: string) => {
         prophetData[k.replace("#", "").trim().toLowerCase()] = v;
     });

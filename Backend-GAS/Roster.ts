@@ -268,6 +268,13 @@ const Roster: IRoster = {
             `ACTION: CHECK LOGS`
         ]);
     }
+  },
+
+  /**
+   * EXPOSURE: Returns the current Prophet Intel cache.
+   */
+  getProphetCache(): Map<string, any> {
+    return RosterStore.getProphetCache();
   }
 };
 

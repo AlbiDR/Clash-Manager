@@ -49,6 +49,7 @@ export interface RaceParticipant {
 
 export interface IRoster {
   update(): void;
+  getProphetCache(): Map<string, any>;
 }
 
 export const VER_ROSTER_TYPES = "1.0.0";
