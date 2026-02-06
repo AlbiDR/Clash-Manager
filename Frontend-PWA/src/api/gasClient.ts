@@ -55,7 +55,7 @@ const DEFAULT_LB_SCHEMA = [
 
 const DEFAULT_HH_SCHEMA = [
   "id", "n", "t", "potentialScore", "potentialRawScore", "don", 
-  "war", "cards", "ago"
+  "war", "cards", "ago", "lastScan"
 ];
 
 const WebAppDataSchema = v.object({
@@ -194,6 +194,7 @@ export function mapHhRow(row: unknown[], m: Record<string, number>): Recruit | n
     t: safeNum(row[m["t"]]),
     potentialScore: safeNum(row[m["potentialScore"]]),
     potentialRawScore: safeNum(row[m["potentialRawScore"]]),
+    lastScan: row[m["lastScan"]] ? new Date(row[m["lastScan"]] as string).getTime() : 0,
     d: {
       don: safeNum(row[m["don"]]),
       war: safeNum(row[m["war"]]),

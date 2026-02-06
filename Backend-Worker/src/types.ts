@@ -168,6 +168,7 @@ export interface ScanRequest {
   blacklist?: PlayerTag[];
   minTrophies?: number;
   scoring?: ScoringWeights | null;
+  prophetCache?: Record<string, any>; // Strategy 2: Deep Delegation
 }
 
 export interface ClanFullRequest {
@@ -191,6 +192,7 @@ export interface PublicScanRequest {
   blacklist?: PlayerTag[];
   minTrophies?: number;
   scoring?: ScoringWeights | null;
+  prophetCache?: Record<string, any>; // Strategy 2: Deep Delegation
 }
 
 export interface SubscriptionRequest {

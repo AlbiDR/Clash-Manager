@@ -372,6 +372,7 @@ function extractSheetDataStrict(
       { key: "war", col: S.WAR_WINS, type: "num" },
       { key: "cards", col: S.CARDS, type: "num" },
       { key: "ago", col: S.FOUND_DATE, type: "date" },
+      { key: "lastScan", col: S.LAST_SCAN, type: "date" },
       { key: "invited", col: S.INVITED, type: "bool_check" },
     ];
   }
