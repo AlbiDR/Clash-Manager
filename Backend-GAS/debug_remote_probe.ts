@@ -14,17 +14,19 @@ function probeRemoteWorker() {
     return;
   }
 
-  // 1. Mock Data - Fetch Real Tournaments
-  // Use a known high-volume keyword like "1k" or "a"
-  const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=1k`;
-  console.log(`Fetching tournaments from: ${searchUrl}`);
-
-  const discovery = Registry.Services.Network.fetchRoyaleAPI([searchUrl]);
+  // 1. Mock Data - Fetch Real Tournaments from Configured Keywords
+  const keywords = CONFIG.HEADHUNTER.KEYWORDS.slice(0, 5); // Use first 5 keywords
+  const searchUrls = keywords.map(k => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(k)}`);
+  
+  console.log(`Fetching tournaments for keywords: ${keywords.join(", ")}`);
+  const responses = Registry.Services.Network.fetchRoyaleAPI(searchUrls);
   
   let realTags: string[] = [];
-  if (discovery && discovery[0] && discovery[0].items) {
-      realTags = discovery[0].items.map((t: any) => t.tag);
-  }
+  responses.forEach((r: any) => {
+      if (r && r.items) {
+          r.items.forEach((t: any) => realTags.push(t.tag));
+      }
+  });
   
   if (realTags.length === 0) {
       console.error("Probe failed: Could not fetch real tournaments. Response was empty.");
