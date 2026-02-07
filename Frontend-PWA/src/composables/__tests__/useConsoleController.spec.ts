@@ -52,6 +52,17 @@ vi.mock("../useConnectionStatus", () => ({
   })),
 }));
 
+const mockPingData = ref({
+  spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
+  sheets: { Leaderboard: 456, Headhunter: 789 },
+});
+vi.mock("../useApiState", () => ({
+  useApiState: vi.fn(() => ({
+    pingData: mockPingData,
+    apiStatus: ref("online"),
+  })),
+}));
+
 const mockBlueprintMode = ref(false);
 vi.mock("../useBlueprintMode", () => ({
   useBlueprintMode: vi.fn(() => ({
@@ -120,5 +131,41 @@ describe("useConsoleController", () => {
     };
     const { showSkeletons } = useConsoleController(options);
     expect(showSkeletons.value).toBe(false);
+  });
+
+  it("calculates sheetUrl correctly with string input", () => {
+    const options = {
+      ...defaultOptions,
+      sheetName: "Leaderboard",
+    };
+    const { sheetUrl } = useConsoleController(options);
+    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=456");
+  });
+
+  it("calculates sheetUrl correctly with array input (first match)", () => {
+    const options = {
+      ...defaultOptions,
+      sheetName: ["NonExistent", "Headhunter"],
+    };
+    const { sheetUrl } = useConsoleController(options);
+    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=789");
+  });
+
+  it("updates searchQuery via handleSearch", () => {
+    const { handleSearch, searchQuery } = useConsoleController(defaultOptions);
+    handleSearch("New Query");
+    expect(searchQuery.value).toBe("New Query");
+  });
+
+  it("uses default scoreGetter in handleSelectScore if not provided", () => {
+    const scoreGetter = vi.fn((item: any) => item.score);
+    const options = {
+      ...defaultOptions,
+      scoreGetter,
+      data: ref([{ id: "1", n: "Test", score: 100 }]),
+    };
+    const { handleSelectScore } = useConsoleController(options);
+    handleSelectScore(50, "ge");
+    expect(scoreGetter).toHaveBeenCalled();
   });
 });
