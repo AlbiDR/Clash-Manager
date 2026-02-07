@@ -484,6 +484,10 @@ export async function ping(options?: GasRequestOptions): Promise<PingResponse> {
   return gasRequest<PingResponse>("ping", undefined, options);
 }
 
+export async function getPlayerProfile(tag: string): Promise<any> {
+  return gasRequest<any>("getPlayerProfile", { tag });
+}
+
 export async function dismissRecruits(
   ids: string[],
 ): Promise<ApiResponse<DismissResponse>> {
