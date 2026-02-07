@@ -92,8 +92,8 @@ describe("useRecruiter", () => {
   });
 
   it("handles search updates", () => {
-    const { handleSearchUpdate, searchQuery } = useRecruiter();
-    handleSearchUpdate("Recruit A");
+    const { handleSearch, searchQuery } = useRecruiter();
+    handleSearch("Recruit A");
     expect(searchQuery.value).toBe("Recruit A");
   });
 

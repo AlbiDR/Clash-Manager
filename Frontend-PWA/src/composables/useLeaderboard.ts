@@ -26,15 +26,6 @@ export function useLeaderboard() {
   const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } =
     useClashData();
 
-  const sheetUrl = computed(() => {
-    if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets)
-      return undefined;
-    const gid = pingData.value.sheets["Leaderboard"];
-    return gid !== undefined
-      ? `${pingData.value.spreadsheetUrl}#gid=${gid}`
-      : pingData.value.spreadsheetUrl;
-  });
-
   const members = computed(() => data.value?.lb || []);
 
   const sortStrategies: Record<
@@ -63,6 +54,9 @@ export function useLeaderboard() {
     deepLinkPrefix: "member-",
     batchIdMapper: (m: LeaderboardMember) => m.id,
     statsLabel: "Member",
+    sheetName: "Leaderboard",
+    scoreGetter: (m: LeaderboardMember) => m.performanceScore || 0,
+    refresh,
   });
 
   const sortOptions = [
@@ -103,24 +97,12 @@ export function useLeaderboard() {
     },
   ];
 
-  function onSelectScore(threshold: number, mode: "ge" | "le") {
-    controller.handleSelectScore(threshold, mode, (m) => m.performanceScore || 0);
-  }
-
-  function handleSearch(val: string) {
-    controller.searchQuery.value = val;
-  }
-
   return {
     ...controller,
     data,
-    sheetUrl,
     isRefreshing,
     syncError,
-    refresh,
     isShowcaseMode,
     sortOptions,
-    onSelectScore,
-    handleSearch,
   };
 }

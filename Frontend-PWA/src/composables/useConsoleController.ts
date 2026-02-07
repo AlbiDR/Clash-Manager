@@ -39,6 +39,9 @@ interface ConsoleLogicOptions<T> {
   deepLinkPrefix: string;
   batchIdMapper: (item: T) => string;
   statsLabel: string;
+  sheetName?: string | string[];
+  scoreGetter?: (item: T) => number;
+  refresh?: () => void | Promise<void>;
 }
 
 /**
@@ -93,6 +96,9 @@ export function useConsoleController<T extends { id: string }>(
     deepLinkPrefix,
     batchIdMapper,
     statsLabel,
+    sheetName,
+    scoreGetter,
+    refresh: refreshFn,
   } = options;
 
   // STEP 1: Search and Filter logic
@@ -153,7 +159,27 @@ export function useConsoleController<T extends { id: string }>(
   );
 
   const { status: connectionStatus } = useConnectionStatus();
-  const { apiStatus } = useApiState();
+  const { apiStatus, pingData } = useApiState();
+
+  /**
+   * BACKING SHEET LINK
+   */
+  const sheetUrl = computed(() => {
+    if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets || !sheetName)
+      return undefined;
+
+    const names = Array.isArray(sheetName) ? sheetName : [sheetName];
+    let gid: number | undefined;
+
+    for (const name of names) {
+      gid = pingData.value.sheets[name];
+      if (gid !== undefined) break;
+    }
+
+    return gid !== undefined
+      ? `${pingData.value.spreadsheetUrl}#gid=${gid}`
+      : pingData.value.spreadsheetUrl;
+  });
 
   /**
    * SYSTEM STATUS RESOLVER
@@ -252,6 +278,10 @@ export function useConsoleController<T extends { id: string }>(
     selectAll(ids);
   }
 
+  function handleSearch(val: string) {
+    searchQuery.value = val;
+  }
+
   /**
    * BULK SELECTION BY SCORE
    * Allows selecting all items above or below a specific score threshold.
@@ -259,11 +289,14 @@ export function useConsoleController<T extends { id: string }>(
   function handleSelectScore(
     threshold: number,
     mode: "ge" | "le",
-    scoreGetter: (item: T) => number,
+    customScoreGetter?: (item: T) => number,
   ) {
+    const getter = customScoreGetter || scoreGetter;
+    if (!getter) return;
+
     const ids = filteredItems.value
       .filter((item: T) => {
-        const s = scoreGetter(item);
+        const s = getter(item);
         return mode === "ge" ? s >= threshold : s <= threshold;
       })
       .map(batchIdMapper);
@@ -284,6 +317,8 @@ export function useConsoleController<T extends { id: string }>(
     statsBadge,
     showSkeletons,
     filteredItems,
+    sheetUrl,
+    refresh: refreshFn,
     updateSort,
     toggleSelect,
     toggleExpand,
@@ -292,6 +327,7 @@ export function useConsoleController<T extends { id: string }>(
     handleBlitz,
     handleSelectAll,
     handleSelectScore,
+    handleSearch,
     setForceSelectionMode,
     processDeepLink,
   };

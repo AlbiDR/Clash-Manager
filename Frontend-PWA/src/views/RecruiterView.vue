@@ -26,11 +26,11 @@ const {
   selectedSet,
   isShowcaseMode,
   handleRefresh,
-  handleSearchUpdate,
+  handleSearch,
   updateSort,
   handleSelectAll,
   clearSelection,
-  onSelectScore,
+  handleSelectScore,
   handleAction,
   handleBlitz,
   dismissBulk,
@@ -58,11 +58,11 @@ const {
     :is-empty="!showSkeletons && filteredItems.length === 0"
     :fab-state="fabState"
     @refresh="handleRefresh"
-    @update:search="handleSearchUpdate"
+    @update:search="handleSearch"
     @update:sort="updateSort"
     @select-all="handleSelectAll"
     @clear-selection="clearSelection"
-    @select-score="onSelectScore"
+    @select-score="handleSelectScore"
     @fab-action="handleAction"
     @fab-blitz="handleBlitz"
     @fab-dismiss="dismissBulk"
