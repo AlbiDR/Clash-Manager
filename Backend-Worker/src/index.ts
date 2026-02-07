@@ -445,10 +445,12 @@ async function processScanBatch(
   concurrency: number = CONFIG.concurrency,
   blacklistSet: Set<PlayerTag> = new Set(),
   minTrophies: number = 4000,
-  prophetCache?: Record<string, any>
+  prophetCache?: Record<string, any>,
+  debug?: any
 ): Promise<ScoredPlayer[]> {
   const candidates: ScoredPlayer[] = [];
   let idx = 0;
+  let traceCaptured = false;
 
   async function worker(): Promise<void> {
     while (true) {
@@ -475,6 +477,17 @@ async function processScanBatch(
           method: "GET",
           headers,
         }, CONFIG.maxRetries, apiKeys);
+
+        // SUPER DIAGNOSTIC: Capture raw response of the first attempt
+        if (debug && !traceCaptured) {
+            traceCaptured = true;
+            debug.firstUrl = url;
+            debug.firstStatus = res.code;
+            debug.firstContent = typeof res.content === "string" 
+                ? res.content.substring(0, 1000) 
+                : JSON.stringify(res.content).substring(0, 1000);
+            debug.keyUsed = (headers["Authorization"] || "None").substring(0, 15) + "...";
+        }
 
         if (
           res.code === 200 &&
@@ -763,47 +776,62 @@ app.post(
           CONFIG.concurrency,
       );
 
-      const candidates = await processScanBatch(
-        tags as TournamentTag[],
-        apiKeys ?? [],
-        concurrency,
-        blacklistSet as Set<PlayerTag>,
-        minTrophies ?? 4000,
-        req.body.prophetCache
-      );
-
-      if (scoring && candidates.length > 0) {
-        const candidateTags = [...new Set(candidates.map((c) => c.tag))];
-        const playerUrls = candidateTags.map(
-          (t) =>
-            `${CONFIG.apiBase}/players/${encodeURIComponent(t.replace("#", ""))}`,
+        const debug: any = {};
+        const candidates = await processScanBatch(
+            tags as TournamentTag[],
+            apiKeys ?? [],
+            concurrency,
+            blacklistSet as Set<PlayerTag>,
+            minTrophies ?? 4000,
+            req.body.prophetCache,
+            debug
         );
 
-        const scoredResults = await processBatch<ScoredPlayer>(
-          playerUrls,
-          apiKeys ?? [],
-          concurrency,
-          scoring,
-          req.body.prophetCache
-        );
+        const metadata = {
+            version: "10.1.3",
+            uptime: process.uptime(),
+            pool: KEYS.getPoolStats(),
+            envKeys: (process.env["API_KEYS"]?.length || 0) > 0
+        };
 
-        res.json({
-          candidates: scoredResults
-            .map((r) => r.content)
-            .filter(
-              (c): c is ScoredPlayer =>
-                typeof c === "object" && c !== null && "tag" in c,
-            ),
-          _debug: {
-            phase1: candidates.length,
-            phase2: scoredResults.length,
-            apiBase: CONFIG.apiBase
-          }
+        if (scoring && candidates.length > 0) {
+            const candidateTags = [...new Set(candidates.map((c) => c.tag))];
+            const playerUrls = candidateTags.map(
+                (t) =>
+                    `${CONFIG.apiBase}/players/${encodeURIComponent(t.replace("#", ""))}`,
+            );
+
+            const scoredResults = await processBatch<ScoredPlayer>(
+                playerUrls,
+                apiKeys ?? [],
+                concurrency,
+                scoring,
+                req.body.prophetCache
+            );
+
+            res.json({
+                candidates: scoredResults
+                    .map((r) => r.content)
+                    .filter(
+                        (c): c is ScoredPlayer =>
+                            typeof c === "object" && c !== null && "tag" in c,
+                    ),
+                _debug: {
+                    phase1: candidates.length,
+                    phase2: scoredResults.length,
+                    apiBase: CONFIG.apiBase,
+                    trace: debug
+                },
+                _metadata: metadata
+            });
+            return;
+        }
+
+        res.json({ 
+            candidates, 
+            _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: debug },
+            _metadata: metadata
         });
-        return;
-      }
-
-      res.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
     } catch (e) {
       console.error("Failed /scan", e);
       res.status(500).json({
