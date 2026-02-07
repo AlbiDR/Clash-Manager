@@ -112,7 +112,7 @@ const Headhunter: IHeadhunter = {
       // REPORT [2-4]: STATE & METRICS
       S.Reporting.logReport(`[2-4] STATE: Local Registry & Metrics`, [
         `NETWORK: ${S.Network.getWorkerSummary()}`,
-        `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement} (Scouting Floor: ${strategy.floor})`,
+        `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement} (Scouting Floor: ${effectiveRequirement})`,
         `POOL:    ${existingPool.size} Active | ${queuePool.size} Queued | ${prunedCount} Removed`,
         `QUOTA:   ${remainingQuota} Remaining`
       ]);
