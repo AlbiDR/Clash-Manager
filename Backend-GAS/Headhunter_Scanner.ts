@@ -106,7 +106,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       }
     }
 
-    // Step 5A: Process Remote Results
+    // Step 5A: Process Remote Results & Verify Yield
     if (usedRemote) {
         candidates.forEach((c: any) => {
             if (c.trophies >= minTrophies || c.trophies === undefined)
@@ -117,6 +117,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
             .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
             .slice(0, playerLimit)
             .map(p => p.tag);
+
+        // SAFETY: Fallback to local if remote yields nothing
+        if (tagsToFetch.length === 0) {
+            console.warn(`[DIAGNOSTIC] Remote Worker returned 0 candidates from ${tourneyTags.length} tournaments. Falling back to local scan.`);
+            const workerError = Registry.Services.Network.getLastWorkerError();
+            if (workerError) console.warn(`[DIAGNOSTIC] Last Worker Error: ${workerError}`);
+            usedRemote = false;
+        }
     }
 
     // Step 5B: Local Discovery (Fallback or Primary)
