@@ -138,12 +138,15 @@ describe('HeadhunterScanner', () => {
             { tag: "#P1", rawScore: 200, potentialScore: 90, trophies: 6000 }
         ]);
 
+        // 3. Shadow Scout Battle Logs (Triggered by low yield < 40)
+        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([ [] ]); // Empty logs for simplicy
+
         const result = HeadhunterScanner.scanTournaments(5000, new Map(), new Set());
         
         expect(result.length).toBe(1);
         expect(result[0].rawScore).toBe(200);
         expect(mocks.Network.scanTournamentsRemote).toHaveBeenCalled();
-        // Should NOT call local details fetch
+        // Should call fetchRoyaleAPI twice: 1 for Discovery, 1 for Shadow Scout
         expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(2); 
     });
 

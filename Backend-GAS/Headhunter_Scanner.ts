@@ -106,7 +106,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       }
     }
 
-    // Step 5A: Process Remote Results & Determine Fallback
+    // Step 5A: Process Remote Results
     if (usedRemote) {
         candidates.forEach((c: any) => {
             if (c.trophies >= minTrophies || c.trophies === undefined)
@@ -117,11 +117,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
             .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
             .slice(0, playerLimit)
             .map(p => p.tag);
-
-        if (tagsToFetch.length === 0) {
-            console.warn(`Discovery: Remote Worker found 0 candidates. Triggering Local Fallback.`);
-            usedRemote = false;
-        }
     }
 
     // Step 5B: Local Discovery (Fallback or Primary)

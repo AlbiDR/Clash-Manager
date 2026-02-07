@@ -719,7 +719,7 @@ var Network: INetwork = {
         apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: { name: string; value: string }) => k.value),
         blacklist: blacklist,
         minTrophies,
-        scoring,
+        scoring: scoring ? { ...scoring, WAR_BASELINE_BONUS: 0 } : null,
         prophetCache: prophetData
     };
 
