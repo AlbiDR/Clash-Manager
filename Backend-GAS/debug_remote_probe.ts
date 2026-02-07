@@ -89,6 +89,21 @@ function probeRemoteWorkerDefinitive() {
             const debug = json._debug || {};
             
             console.log(`Result: Found ${count} candidates. (Phase 1: ${debug.phase1 || 0}, Phase 2: ${debug.phase2 || 0})`);
+            
+            if (json._metadata) {
+                const meta = json._metadata;
+                console.log(`Worker Metadata: v${meta.version} | Uptime: ${Math.round(meta.uptime)}s | Pool: ${meta.pool?.available}/${meta.pool?.total} | EnvKeys: ${meta.envKeys}`);
+            }
+
+            if (debug.trace) {
+                const t = debug.trace;
+                console.log(`--- DEEP TRACE ---`);
+                console.log(`URL: ${t.firstUrl}`);
+                console.log(`Key: ${t.keyUsed}`);
+                console.log(`Code: ${t.firstStatus}`);
+                console.log(`Raw Body (Truncated): ${t.firstContent ? t.firstContent.substring(0, 500) : "EMPTY"}`);
+            }
+
             if (count > 0) {
                 console.log(`Sample Recruit: ${json.candidates[0].tag} (${json.candidates[0].name})`);
             }
