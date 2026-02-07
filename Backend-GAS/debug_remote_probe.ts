@@ -38,10 +38,10 @@ function probeRemoteWorker() {
 
   // TEST PAYLOAD VARIANTS
   const variants = [
-      { name: "Default (with #, num trophies)", tags: realTags, minTrophies: 1, prophet: true },
-      { name: "Stripped Tags (no #)", tags: realTags.map(t => t.replace("#", "")), minTrophies: 1, prophet: true },
-      { name: "String Trophies", tags: realTags, minTrophies: "1", prophet: true },
-      { name: "Empty Cache", tags: realTags, minTrophies: 1, prophet: false }
+      { name: "Default (tags)", payload: { tags: realTags, apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), minTrophies: 1, scoring: W } },
+      { name: "Naming (tournamentTags)", payload: { tournamentTags: realTags, apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), minTrophies: 1, scoring: W } },
+      { name: "Batch Size (Single Tag)", payload: { tags: [realTags[0]], apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), minTrophies: 1, scoring: W } },
+      { name: "Snake Case (api_keys, min_trophies)", payload: { tags: realTags, api_keys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), min_trophies: 1, scoring: W } }
   ];
   
   const W = CONFIG.HEADHUNTER.WEIGHTS;
@@ -52,23 +52,13 @@ function probeRemoteWorker() {
         console.log(`\n--- PROBE: ${v.name} ---`);
         const start = Date.now();
         
-        // Use direct UrlFetchApp to prevent Network.ts from overriding our variant params
-        const payload = {
-            tags: v.tags,
-            apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value),
-            blacklist: [],
-            minTrophies: v.minTrophies,
-            scoring: W,
-            prophetCache: v.prophet ? Registry.Services.Roster.getProphetCache() : {}
-        };
-
         const headers: Record<string, string> = { "Content-Type": "application/json" };
         if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
 
         const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/scan`, {
             method: "post",
             contentType: "application/json",
-            payload: JSON.stringify(payload),
+            payload: JSON.stringify(v.payload),
             muteHttpExceptions: true,
             headers: headers
         });
