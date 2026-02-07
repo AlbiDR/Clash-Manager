@@ -36,37 +36,51 @@ function probeRemoteWorker() {
   
   console.log(`Probe: Testing with ${realTags.length} real tournaments.`);
 
-  // TEST SCORING COMPATIBILITY
-  // Since threshold is NOT the issue (0 yield at 0 trophies), we test the Payload.
-  const W = CONFIG.HEADHUNTER.WEIGHTS;
+  // TEST PAYLOAD VARIANTS
   const variants = [
-      { name: "Default (Current Config)", scoring: W },
-      { name: "Null Scoring (Worker Defaults)", scoring: null }
+      { name: "Default (with #, num trophies)", tags: realTags, minTrophies: 1, prophet: true },
+      { name: "Stripped Tags (no #)", tags: realTags.map(t => t.replace("#", "")), minTrophies: 1, prophet: true },
+      { name: "String Trophies", tags: realTags, minTrophies: "1", prophet: true },
+      { name: "Empty Cache", tags: realTags, minTrophies: 1, prophet: false }
   ];
   
-  const testThreshold = 1; // Test 1 instead of 0 to rule out falsy-check bugs (val || default) on worker
+  const W = CONFIG.HEADHUNTER.WEIGHTS;
   const blacklistSet = new Set<string>();
 
   variants.forEach(v => {
     try {
         console.log(`\n--- PROBE: ${v.name} ---`);
         const start = Date.now();
-        // Manually construct the call to control the 'scoring' arg
-        // We can't use Network.scanTournamentsRemote directly because it pulls from CONFIG
-        // So we must mock the Network call or modify the probe to allow passing scoring.
-        // Actually, Network.scanTournamentsRemote takes 'weights' as the 4th arg!
         
-        const candidates = Registry.Services.Network.scanTournamentsRemote(
-            realTags,
-            testThreshold,
-            blacklistSet,
-            v.scoring // Pass the variant scoring
-        );
+        // Use direct UrlFetchApp to prevent Network.ts from overriding our variant params
+        const payload = {
+            tags: v.tags,
+            apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value),
+            blacklist: [],
+            minTrophies: v.minTrophies,
+            scoring: W,
+            prophetCache: v.prophet ? Registry.Services.Roster.getProphetCache() : {}
+        };
+
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+
+        const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/scan`, {
+            method: "post",
+            contentType: "application/json",
+            payload: JSON.stringify(payload),
+            muteHttpExceptions: true,
+            headers: headers
+        });
+
         const duration = Date.now() - start;
-        console.log(`Result: Found ${candidates.length} candidates in ${duration}ms.`);
-        if (candidates.length > 0) {
-            console.log(`Sample: ${candidates[0].tag} score=${candidates[0].rawScore}`);
-        }
+        const code = res.getResponseCode();
+        const text = res.getContentText();
+        console.log(`[WORKER_RAW] Code: ${code} | Body: ${text.substring(0, 100)}`);
+        
+        const json = JSON.parse(text);
+        const count = (json.candidates || []).length;
+        console.log(`Result: Found ${count} candidates in ${duration}ms.`);
     } catch (e: any) {
         console.error(`PROBE ERROR at ${v.name}: ${e.message}`);
     }
