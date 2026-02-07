@@ -130,12 +130,18 @@ class KeyManager {
 }
 
 // Global Key Singleton
-const KEYS = new KeyManager(
-  (process.env["API_KEYS"] ?? "")
-    .split(",")
-    .map(k => k.trim())
-    .filter(k => k && k !== "REPLACE_ME" && k !== "YOUR_KEYS")
-);
+const rawKeys = (process.env["API_KEYS"] ?? "")
+  .split(",")
+  .map(k => k.trim())
+  .filter(k => k && k !== "REPLACE_ME" && k !== "YOUR_KEYS");
+
+if (rawKeys.length === 0) {
+    console.warn("[Worker] Warning: No API_KEYS found in environment variables.");
+} else {
+    console.log(`[Worker] Initialized internal pool with ${rawKeys.length} keys.`);
+}
+
+const KEYS = new KeyManager(rawKeys);
 
 // ============================================================================
 //  EXPRESS APP SETUP
@@ -457,15 +463,16 @@ async function processScanBatch(
       const i = idx++;
       if (i >= tags.length) return;
 
-      const tag = tags[i];
-      if (!tag) continue;
+    const tag = tags[i];
+    if (!tag) continue;
 
-      const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag.replace("#", ""))}`;
+    const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
+    const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(normalizedTag)}`;
 
-      const headers: Record<string, string> = {
-        "User-Agent": "ClanManagerWorker/1.1",
-        "Accept-Encoding": "gzip",
-      };
+    const headers: Record<string, string> = {
+      "User-Agent": "ClanManagerWorker/1.2",
+      "Accept-Encoding": "gzip",
+    };
 
       if (apiKeys.length > 0) {
         const key = apiKeys[Math.floor(Math.random() * apiKeys.length)];
@@ -697,10 +704,10 @@ app.post(
 
       if (scoring && candidates.length > 0) {
         const candidateTags = [...new Set(candidates.map((c) => c.tag))];
-        const playerUrls = candidateTags.map(
-          (t) =>
-            `${CONFIG.apiBase}/players/${encodeURIComponent(t.replace("#", ""))}`,
-        );
+        const playerUrls = candidateTags.map((t) => {
+            const nt = t.startsWith("#") ? t : `#${t}`;
+            return `${CONFIG.apiBase}/players/${encodeURIComponent(nt)}`;
+        });
 
         const scoredResults = await processBatch<ScoredPlayer>(
           playerUrls,
@@ -788,18 +795,18 @@ app.post(
         );
 
         const metadata = {
-            version: "10.1.3",
+            version: "10.1.4",
             uptime: process.uptime(),
             pool: KEYS.getPoolStats(),
-            envKeys: (process.env["API_KEYS"]?.length || 0) > 0
+            envKeys: rawKeys.length > 0
         };
 
         if (scoring && candidates.length > 0) {
             const candidateTags = [...new Set(candidates.map((c) => c.tag))];
-            const playerUrls = candidateTags.map(
-                (t) =>
-                    `${CONFIG.apiBase}/players/${encodeURIComponent(t.replace("#", ""))}`,
-            );
+            const playerUrls = candidateTags.map((t) => {
+                const nt = t.startsWith("#") ? t : `#${t}`;
+                return `${CONFIG.apiBase}/players/${encodeURIComponent(nt)}`;
+            });
 
             const scoredResults = await processBatch<ScoredPlayer>(
                 playerUrls,
