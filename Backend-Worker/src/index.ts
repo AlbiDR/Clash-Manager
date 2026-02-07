@@ -458,10 +458,10 @@ async function processScanBatch(
       const tag = tags[i];
       if (!tag) continue;
 
-      const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag)}`;
+      const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag.replace("#", ""))}`;
 
       const headers: Record<string, string> = {
-        "User-Agent": "ClanManagerWorker/1.0",
+        "User-Agent": "ClanManagerWorker/1.1",
         "Accept-Encoding": "gzip",
       };
 
@@ -474,7 +474,7 @@ async function processScanBatch(
         const res = await fetchWithRotatedRetries<Tournament>(url, {
           method: "GET",
           headers,
-        });
+        }, CONFIG.maxRetries, apiKeys);
 
         if (
           res.code === 200 &&
@@ -511,7 +511,7 @@ async function processScanBatch(
           });
         }
       } catch (e) {
-        // Silent fail for speed
+        console.warn(`[Worker] Scan failed for tournament ${tag}: ${e instanceof Error ? e.message : "unknown"}`);
       }
     }
   }
@@ -556,7 +556,7 @@ app.get("/capabilities", (_req: Request, res: Response): void => {
   res.json({
     status: "success",
     data: {
-      version: "10.1.0",
+      version: "10.1.1",
       concurrency: CONFIG.concurrency,
       timeoutMs: CONFIG.timeout,
       maxRetries: CONFIG.maxRetries,
@@ -686,7 +686,7 @@ app.post(
         const candidateTags = [...new Set(candidates.map((c) => c.tag))];
         const playerUrls = candidateTags.map(
           (t) =>
-            `${CONFIG.apiBase}/players/${encodeURIComponent(t)}`,
+            `${CONFIG.apiBase}/players/${encodeURIComponent(t.replace("#", ""))}`,
         );
 
         const scoredResults = await processBatch<ScoredPlayer>(
@@ -771,7 +771,7 @@ app.post(
         const candidateTags = [...new Set(candidates.map((c) => c.tag))];
         const playerUrls = candidateTags.map(
           (t) =>
-            `${CONFIG.apiBase}/players/${encodeURIComponent(t)}`,
+            `${CONFIG.apiBase}/players/${encodeURIComponent(t.replace("#", ""))}`,
         );
 
         const scoredResults = await processBatch<ScoredPlayer>(
