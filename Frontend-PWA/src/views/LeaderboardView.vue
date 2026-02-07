@@ -37,7 +37,7 @@ const {
   toggleSelect,
   clearSelection,
   handleSelectAll,
-  onSelectScore,
+  handleSelectScore,
   handleAction,
   handleBlitz,
 } = useLeaderboard();
@@ -66,7 +66,7 @@ const {
     @update:sort="updateSort"
     @select-all="handleSelectAll"
     @clear-selection="clearSelection"
-    @select-score="onSelectScore"
+    @select-score="handleSelectScore"
     @fab-action="handleAction"
     @fab-blitz="handleBlitz"
     @fab-dismiss="clearSelection"
