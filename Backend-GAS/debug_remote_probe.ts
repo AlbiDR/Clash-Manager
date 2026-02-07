@@ -44,7 +44,7 @@ function probeRemoteWorker() {
       { name: "Null Scoring (Worker Defaults)", scoring: null }
   ];
   
-  const testThreshold = 0; // Keep threshold at 0 to ensure we see ANY matches
+  const testThreshold = 1; // Test 1 instead of 0 to rule out falsy-check bugs (val || default) on worker
   const blacklistSet = new Set<string>();
 
   variants.forEach(v => {
