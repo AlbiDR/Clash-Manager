@@ -34,7 +34,7 @@ declare const Registry: IRegistry;
    CONSTANTS & CONFIGURATION
    ========================================================================== */
 const NETWORK_CONFIG = {
-  MAX_FETCH_DAILY_GUARD: 18000, // Safety threshold for daily budget
+  MAX_FETCH_DAILY_GUARD: 19000, // Safety threshold for daily budget
   MAX_FETCH_PER_EXECUTION: 2000, 
   RETRY_MAX: 3,
   CACHE_TTL_LONG: 900,  // 15 mins for profile data
