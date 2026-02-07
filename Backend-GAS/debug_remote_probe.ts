@@ -30,7 +30,7 @@ function probeRemoteWorker() {
   
   if (realTags.length === 0) {
       console.error("Probe failed: Could not fetch real tournaments. Response was empty.");
-      if (discovery && discovery[0]) console.log("Response:", JSON.stringify(discovery[0]));
+      if (responses && responses[0]) console.log("Response:", JSON.stringify(responses[0]));
       return;
   }
   
