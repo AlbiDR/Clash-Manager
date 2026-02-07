@@ -44,6 +44,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       if (res && res.items)
         res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
     });
+    console.info(`Discovery: Found ${uniqueTourneys.size} unique tournaments across ${keywords.length} keywords.`);
 
     // 2. Worker Handshake
     const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
