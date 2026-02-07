@@ -54,16 +54,6 @@ export function useRecruiter() {
   const blacklist = useRecruitBlacklist();
   const { undo, success, error, info } = useToast();
 
-  const sheetUrl = computed(() => {
-    if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets)
-      return undefined;
-    const gid =
-      pingData.value.sheets["Headhunter"] ?? pingData.value.sheets["Recruiter"];
-    return gid !== undefined
-      ? `${pingData.value.spreadsheetUrl}#gid=${gid}`
-      : pingData.value.spreadsheetUrl;
-  });
-
   // 🛡️ PRE-FILTER: Exclude Tombstones
   const recruits = computed(() => {
     return (data.value?.hh || []).filter(
@@ -93,6 +83,9 @@ export function useRecruiter() {
     deepLinkPrefix: "recruit-",
     batchIdMapper: (r: Recruit) => r.id,
     statsLabel: "Recruit",
+    sheetName: ["Headhunter", "Recruiter"],
+    scoreGetter: (r: Recruit) => r.potentialScore || 0,
+    refresh: handleRefresh,
   });
 
   const sortOptions = [
@@ -247,18 +240,8 @@ export function useRecruiter() {
     executeDismiss(ids);
   }
 
-  // Specific Helper for Score Selection
-  function onSelectScore(threshold: number, mode: "ge" | "le") {
-    controller.handleSelectScore(threshold, mode, (r) => r.potentialScore || 0);
-  }
-
-  function handleSearchUpdate(val: string) {
-    controller.searchQuery.value = val;
-  }
-
   return {
     ...controller,
-    sheetUrl,
     isHydrated,
     isShowcaseMode,
     isRefreshing,
@@ -267,7 +250,5 @@ export function useRecruiter() {
     sortOptions,
     handleRefresh,
     dismissBulk,
-    onSelectScore,
-    handleSearchUpdate,
   };
 }
