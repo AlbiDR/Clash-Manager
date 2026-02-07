@@ -704,11 +704,16 @@ app.post(
               (c): c is ScoredPlayer =>
                 typeof c === "object" && c !== null && "tag" in c,
             ),
+          _debug: {
+            phase1: candidates.length,
+            phase2: scoredResults.length,
+            apiBase: CONFIG.apiBase
+          }
         });
         return;
       }
 
-      res.json({ candidates });
+      res.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
     } catch (e) {
       console.error("Failed /public/scan", e);
       res.status(500).json({
@@ -789,11 +794,16 @@ app.post(
               (c): c is ScoredPlayer =>
                 typeof c === "object" && c !== null && "tag" in c,
             ),
+          _debug: {
+            phase1: candidates.length,
+            phase2: scoredResults.length,
+            apiBase: CONFIG.apiBase
+          }
         });
         return;
       }
 
-      res.json({ candidates });
+      res.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
     } catch (e) {
       console.error("Failed /scan", e);
       res.status(500).json({
