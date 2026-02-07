@@ -86,7 +86,9 @@ function probeRemoteWorkerDefinitive() {
         if (code === 200) {
             const json = JSON.parse(text);
             const count = (json.candidates || []).length;
-            console.log(`Result: Found ${count} candidates.`);
+            const debug = json._debug || {};
+            
+            console.log(`Result: Found ${count} candidates. (Phase 1: ${debug.phase1 || 0}, Phase 2: ${debug.phase2 || 0})`);
             if (count > 0) {
                 console.log(`Sample Recruit: ${json.candidates[0].tag} (${json.candidates[0].name})`);
             }
