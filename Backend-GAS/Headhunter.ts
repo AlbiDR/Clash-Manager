@@ -87,10 +87,11 @@ const Headhunter: IHeadhunter = {
         BENCHMARK_MARKET_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_MARKET_WEIGHT
       };
 
-      // CLAMP: Treat Requirements > 9000 as "Closed" and fallback to standard floor
-      const validRequirement = (inGameRequirement > 9000) ? CONFIG.HEADHUNTER.STRATEGY.SCAN_FLOOR_FALLBACK : inGameRequirement;
+      // OVERRIDE: Allow explicit decoupling of Gatekeeping (In-Game) vs Recruiting (Headhunter)
+      const overrideFloor = CONFIG.HEADHUNTER.MIN_TROPHIES;
+      const effectiveRequirement = (overrideFloor > 0) ? overrideFloor : inGameRequirement;
 
-      const strategy = S.Scoring.calculateTrophyFloor(members, validRequirement, mathConfig);
+      const strategy = S.Scoring.calculateTrophyFloor(members, effectiveRequirement, mathConfig);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
       
       const existingPool = HeadhunterStore.loadDatabase(sheet);
