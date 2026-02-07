@@ -36,27 +36,38 @@ function probeRemoteWorker() {
   
   console.log(`Probe: Testing with ${realTags.length} real tournaments.`);
 
-  const testThresholds = [0, 5000, 10000];
+  // TEST SCORING COMPATIBILITY
+  // Since threshold is NOT the issue (0 yield at 0 trophies), we test the Payload.
+  const variants = [
+      { name: "Default (Current Config)", scoring: W },
+      { name: "Null Scoring (Worker Defaults)", scoring: null }
+  ];
+  
+  const testThreshold = 0; // Keep threshold at 0 to ensure we see ANY matches
   const blacklistSet = new Set<string>();
-  const W = CONFIG.HEADHUNTER.WEIGHTS;
 
-  testThresholds.forEach(threshold => {
+  variants.forEach(v => {
     try {
-        console.log(`\n--- PROBE: minTrophies = ${threshold} ---`);
+        console.log(`\n--- PROBE: ${v.name} ---`);
         const start = Date.now();
+        // Manually construct the call to control the 'scoring' arg
+        // We can't use Network.scanTournamentsRemote directly because it pulls from CONFIG
+        // So we must mock the Network call or modify the probe to allow passing scoring.
+        // Actually, Network.scanTournamentsRemote takes 'weights' as the 4th arg!
+        
         const candidates = Registry.Services.Network.scanTournamentsRemote(
             realTags,
-            threshold,
+            testThreshold,
             blacklistSet,
-            W
+            v.scoring // Pass the variant scoring
         );
         const duration = Date.now() - start;
         console.log(`Result: Found ${candidates.length} candidates in ${duration}ms.`);
         if (candidates.length > 0) {
-            console.log(`Sample: ${candidates[0].tag} (${candidates[0].trophies} trophies)`);
+            console.log(`Sample: ${candidates[0].tag} score=${candidates[0].rawScore}`);
         }
     } catch (e: any) {
-        console.error(`PROBE ERROR at ${threshold}: ${e.message}`);
+        console.error(`PROBE ERROR at ${v.name}: ${e.message}`);
     }
   });
   
