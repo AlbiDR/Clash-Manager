@@ -38,6 +38,7 @@ function probeRemoteWorker() {
 
   // TEST SCORING COMPATIBILITY
   // Since threshold is NOT the issue (0 yield at 0 trophies), we test the Payload.
+  const W = CONFIG.HEADHUNTER.WEIGHTS;
   const variants = [
       { name: "Default (Current Config)", scoring: W },
       { name: "Null Scoring (Worker Defaults)", scoring: null }
