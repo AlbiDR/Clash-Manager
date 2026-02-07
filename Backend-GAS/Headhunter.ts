@@ -17,7 +17,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "14.2.3";
+const VER_HEADHUNTER = "14.3.0";
 
 export interface IHeadhunter {
   scout(): void;
@@ -230,7 +230,7 @@ const Headhunter: IHeadhunter = {
             if (perf >= H.PERFORMANCE_BENCHMARK_MIN) {
               const histStr = String(histories[i] ? histories[i][0] : "");
               const hasRecentWar = histStr.includes(currentWk);
-              const estimatedWarWins = CONFIG.HEADHUNTER.WEIGHTS.WAR_BASELINE_BONUS; 
+              const estimatedWarWins = 150; // Calibrated baseline for realistic benchmarking
 
               const raw = S.Scoring.calculateRecruitRawScore(
                 Number(trophies[i] ? trophies[i][0] : 0),
