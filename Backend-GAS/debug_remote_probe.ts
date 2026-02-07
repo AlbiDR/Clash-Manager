@@ -37,15 +37,14 @@ function probeRemoteWorker() {
   console.log(`Probe: Testing with ${realTags.length} real tournaments.`);
 
   // TEST PAYLOAD VARIANTS
+  const W = CONFIG.HEADHUNTER.WEIGHTS;
+  const blacklistSet = new Set<string>();
   const variants = [
       { name: "Default (tags)", payload: { tags: realTags, apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), minTrophies: 1, scoring: W } },
       { name: "Naming (tournamentTags)", payload: { tournamentTags: realTags, apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), minTrophies: 1, scoring: W } },
       { name: "Batch Size (Single Tag)", payload: { tags: [realTags[0]], apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), minTrophies: 1, scoring: W } },
       { name: "Snake Case (api_keys, min_trophies)", payload: { tags: realTags, api_keys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), min_trophies: 1, scoring: W } }
   ];
-  
-  const W = CONFIG.HEADHUNTER.WEIGHTS;
-  const blacklistSet = new Set<string>();
 
   variants.forEach(v => {
     try {
