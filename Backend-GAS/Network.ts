@@ -737,6 +737,9 @@ var Network: INetwork = {
     const code = res.getResponseCode();
     const text = res.getContentText();
 
+    // DIAGNOSTIC PROBE: Log raw worker response for analysis
+    if (text.length < 500) console.log(`[WORKER_RAW] Code: ${code} | Body: ${text}`);
+
     if (code !== 200) throw new Error(`Worker Error ${code}`);
     return JSON.parse(text).candidates || [];
   },
