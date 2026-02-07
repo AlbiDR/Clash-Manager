@@ -87,7 +87,10 @@ const Headhunter: IHeadhunter = {
         BENCHMARK_MARKET_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_MARKET_WEIGHT
       };
 
-      const strategy = S.Scoring.calculateTrophyFloor(members, inGameRequirement, mathConfig);
+      // CLAMP: Treat Requirements > 9000 as "Closed" and fallback to standard floor
+      const validRequirement = (inGameRequirement > 9000) ? CONFIG.HEADHUNTER.STRATEGY.SCAN_FLOOR_FALLBACK : inGameRequirement;
+
+      const strategy = S.Scoring.calculateTrophyFloor(members, validRequirement, mathConfig);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
       
       const existingPool = HeadhunterStore.loadDatabase(sheet);
@@ -108,7 +111,7 @@ const Headhunter: IHeadhunter = {
       // REPORT [2-4]: STATE & METRICS
       S.Reporting.logReport(`[2-4] STATE: Local Registry & Metrics`, [
         `NETWORK: ${S.Network.getWorkerSummary()}`,
-        `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement}`,
+        `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement} (Scouting Floor: ${strategy.floor})`,
         `POOL:    ${existingPool.size} Active | ${queuePool.size} Queued | ${prunedCount} Removed`,
         `QUOTA:   ${remainingQuota} Remaining`
       ]);
@@ -171,10 +174,9 @@ const Headhunter: IHeadhunter = {
 
       // 7. Scanner: Launch
       const H = CONFIG.HEADHUNTER.STRATEGY;
-      const discoveryFloor = inGameRequirement || H.SCAN_FLOOR_FALLBACK; 
       
       const scanned = HeadhunterScanner.scanTournaments(
-        discoveryFloor,
+        strategy.floor,
         combinedRegistry, 
         blacklistResult.ids,
         lowQuotaMode
