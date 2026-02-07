@@ -198,10 +198,19 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
       if (discoveryYield < shadowThreshold) {
         // TOP 5 Seeds instead of 15 to reduce network overhead
-        const seedTags = validCandidates
+        let seedTags = validCandidates
           .sort((a, b) => b.rawScore - a.rawScore)
           .slice(0, 5) 
           .map(c => c.tag);
+        
+        // RECOVERY: If tournament discovery found nothing, seed from existing high-potential leads
+        if (seedTags.length === 0 && existingRecruits.size > 0) {
+          seedTags = Array.from(existingRecruits.values())
+            .sort((a, b) => (b.rawScore || 0) - (a.rawScore || 0))
+            .slice(0, 10)
+            .map(c => c.tag);
+          console.info(`Shadow Scout: Tournament dry. Seeding from ${seedTags.length} existing leads.`);
+        }
         
         if (seedTags.length > 0) {
           const cb = Math.floor(Date.now() / 900000); 
