@@ -86,6 +86,24 @@ function probeRemoteWorker() {
     }
   });
   
+  console.log("\n--- PROBE: API Key Audit ---");
+  try {
+      const keysToAudit = CONFIG.SYSTEM.API_KEYS;
+      console.log(`Auditing ${keysToAudit.length} keys via remote worker...`);
+      const auditResults = Registry.Services.Network.auditKeysRemote(keysToAudit);
+      if (!auditResults) {
+          console.error("Audit failed: Worker returned null or error.");
+      } else {
+          const successCount = auditResults.filter((r: any) => r.success).length;
+          console.log(`Audit Results: ${successCount}/${auditResults.length} keys successful.`);
+          auditResults.forEach((r: any) => {
+              if (!r.success) console.warn(`Key "${r.name}" failed: ${r.error || "Unknown"}`);
+          });
+      }
+  } catch (e: any) {
+      console.error(`Audit Exception: ${e.message}`);
+  }
+  
   console.log("\nProbe Completed.");
 }
 
