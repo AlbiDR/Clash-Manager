@@ -17,7 +17,7 @@ declare function refreshWebPayload(): void;
  *    Orchestrates: Strategy -> Store -> Scanner -> View.
  * ============================================================================
  */
-const VER_HEADHUNTER = "14.3.0";
+const VER_HEADHUNTER = "14.3.1";
 
 export interface IHeadhunter {
   scout(): void;
@@ -209,11 +209,13 @@ const Headhunter: IHeadhunter = {
         const donCol = String.fromCharCode(65 + 1 + L.TOTAL_DON);
         const historyCol = String.fromCharCode(65 + 1 + L.HISTORY);
     
+        const tagCol = String.fromCharCode(65 + 1 + L.TAG);
         const ranges = [
           `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
           `'${sheetName}'!${ trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
           `'${sheetName}'!${donCol}${startRow}:${donCol}${lastRow}`,
-          `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`
+          `'${sheetName}'!${historyCol}${startRow}:${historyCol}${lastRow}`,
+          `'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`
         ];
         
         const response = S.Network.fetchRoyaleAPI(ranges);
@@ -222,20 +224,31 @@ const Headhunter: IHeadhunter = {
           const trophies = response[1]?.values || [];
           const dons = response[2]?.values || [];
           const histories = response[3]?.values || [];
-    
+          const tags = response[4]?.values || [];
+
           const currentWk = S.Time.calculateWarWeekId(new Date());
+
+          // Build correlation map for API stats
+          const liveMemberMap = new Map<string, any>();
+          members.forEach((m: any) => liveMemberMap.set(m.tag, m));
 
           for (let i = 0; i < perfs.length; i++) {
             const perf = Number(perfs[i] ? perfs[i][0] : 0);
             if (perf >= H.PERFORMANCE_BENCHMARK_MIN) {
+              const tag = String(tags[i] ? tags[i][0] : "");
+              const liveStats = liveMemberMap.get(tag);
+              
               const histStr = String(histories[i] ? histories[i][0] : "");
               const hasRecentWar = histStr.includes(currentWk);
-              const estimatedWarWins = 150; // Calibrated baseline for realistic benchmarking
+              
+              // DATA-DRIVEN REFINEMENT: Use actual API warWins if available, fallback to 0. 
+              // Zero tolerance for hardcoded baselines.
+              const actualWarWins = liveStats ? (liveStats.warDayWins || 0) : 0;
 
               const raw = S.Scoring.calculateRecruitRawScore(
                 Number(trophies[i] ? trophies[i][0] : 0),
                 Number(dons[i] ? dons[i][0] : 0),
-                estimatedWarWins, 
+                actualWarWins, 
                 hasRecentWar,
                 CONFIG.HEADHUNTER.WEIGHTS
               );

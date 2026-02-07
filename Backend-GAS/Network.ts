@@ -334,7 +334,7 @@ var Network: INetwork = {
 
     for (let c = 0; c < validUrls.length; c += BATCH_SIZE) {
       const chunk = validUrls.slice(c, c + BATCH_SIZE);
-      const isHighVolume = chunk.length > 5;
+      const isHighVolume = chunk.length > 50;
       
       for (let attempt = 0; attempt < NETWORK_CONFIG.RETRY_MAX; attempt++) {
         if (keyPool.length === 0) break;
