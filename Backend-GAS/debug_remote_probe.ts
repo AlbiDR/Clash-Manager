@@ -1,4 +1,11 @@
 
+import type { AppConfig } from "./Configuration";
+import type { IRegistry } from "./Registry";
+
+declare var UrlFetchApp: any;
+declare const CONFIG: AppConfig;
+declare const Registry: IRegistry;
+
 /**
  * TOURNAMENT SCAN PROBE (FINAL DIAGNOSTIC)
  * 
@@ -11,7 +18,7 @@ function probeRemoteWorkerDefinitive() {
   
   // 1. Fetch Real Tournaments from Configured Keywords
   const keywords = CONFIG.HEADHUNTER.KEYWORDS.slice(0, 5); 
-  const searchUrls = keywords.map(k => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(k)}`);
+  const searchUrls = keywords.map((k: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(k)}`);
   
   console.log(`Fetching tournaments for keywords: ${keywords.join(", ")}`);
   const responses = Registry.Services.Network.fetchRoyaleAPI(searchUrls);
