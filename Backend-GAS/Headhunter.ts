@@ -177,7 +177,7 @@ const Headhunter: IHeadhunter = {
       const H = CONFIG.HEADHUNTER.STRATEGY;
       
       const scanned = HeadhunterScanner.scanTournaments(
-        strategy.floor,
+        effectiveRequirement,
         combinedRegistry, 
         blacklistResult.ids,
         lowQuotaMode
