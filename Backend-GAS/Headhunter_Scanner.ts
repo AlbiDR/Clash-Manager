@@ -9,12 +9,41 @@ import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_T
  * ============================================================================
  * MODULE: HEADHUNTER SCANNER
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Discovery engine for finding new recruits.
- *    Handles Tournament Searching -> Lottery -> Member Scanning -> Profiling.
+ * DESCRIPTION: The "Discovery Engine" of the recruitment pipeline.
+ * Orchestrates the identification and profiling of high-potential players
+ * who are currently clanless.
+ *
+ * ARCHITECTURE:
+ *    - Discovery: Keyword-based tournament search via Royale API.
+ *    - Lottery: Selection of high-capacity tournaments to maximize reach.
+ *    - Profiling: Multi-phase analysis (Basic -> Remote -> Deep Shadow).
+ *    - Intelligence: Integration with Prophet Intel for heritage bonuses.
+ *
+ * ROLE: The Headhunter (Discovery & Profiling).
  * ============================================================================
  */
 
+/**
+ * Interface for the Headhunter Scanner.
+ * Defines the contract for cross-tournament player discovery.
+ */
 export interface IHeadhunterScanner {
+  /**
+   * Scans a pool of tournaments to discover and profile potential recruits.
+   *
+   * @remarks
+   * Implements a "Hybrid Discovery" pattern:
+   * 1. Discovery: Keyword search for active tournaments.
+   * 2. Execution: Delegates to Remote Worker if available to preserve GAS quotas.
+   * 3. Shadow Scout: Recursive tracing of battle logs from top discovery leads.
+   *
+   * @param minTrophies - Minimum trophy threshold for filtering candidates.
+   * @param existingRecruits - Map of already identified recruits to avoid duplicates.
+   * @param blacklistSet - Set of player tags to ignore (dismissed or irrelevant).
+   * @param lowQuotaMode - If true, throttles API calls to conserve UrlFetchApp budget.
+   * @returns Array of profiled and scored Recruit objects.
+   * @warning Consumes significant UrlFetchApp and remote worker quotas.
+   */
   scanTournaments(
     minTrophies: number,
     existingRecruits: Map<string, Recruit>,
@@ -25,6 +54,9 @@ export interface IHeadhunterScanner {
 
 const HeadhunterScanner: IHeadhunterScanner = {
   
+  /**
+   * PRIMARY RECRUITMENT PIPELINE
+   */
   scanTournaments(
     minTrophies: number,
     existingRecruits: Map<string, Recruit>,
@@ -45,7 +77,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
         res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
     });
 
-    // 2. Worker Handshake
+    // 2. WORKER HANDSHAKE
+    // Constraint: If the worker is unreachable, we force "Low Quota Mode".
+    // This throttles the discovery depth to ensure the script completes
+    // within GAS limits and doesn't exhaust the UrlFetchApp quota.
     const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
     const remoteExpandEnabled = Registry.Services.Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
 
@@ -60,10 +95,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
         ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
         : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
 
-    // 3. Lottery Selection
+    // 3. LOTTERY SELECTION
+    // Intent: We prioritize high-capacity tournaments as they statistically
+    // contain a higher concentration of clanless players. We use a 'Lottery'
+    // pattern (slice + shuffle later) to maintain a broad discovery net while
+    // respecting the limited execution time of Google Apps Script.
     const lotteryLimit = scanCfg.TOURNEYS || 300;
     const lotteryPool = Array.from(uniqueTourneys.values())
-      .sort((a, b) => (b.capacity || 0) - (a.capacity || 0)) // Prioritize bigger tourneys
+      .sort((a, b) => (b.capacity || 0) - (a.capacity || 0))
       .slice(
         0,
         Math.min(
@@ -82,7 +121,11 @@ const HeadhunterScanner: IHeadhunterScanner = {
     let usedRemote = false;
     let shadowStatus = "ACTIVE";
 
-    // 4. Execution (Remote vs Local)
+    // 4. EXECUTION STRATEGY
+    // Constraint: Delegation to the Remote Worker is prioritized.
+    // This circumvents the 6-minute execution limit and UrlFetchApp daily
+    // quotas, enabling "Deep Scans" of 100+ tournaments which would
+    // otherwise crash the GAS runtime.
     if (remoteAvailable && remoteExpandEnabled) {
       try {
         candidates = Registry.Services.Network.scanTournamentsRemote(
@@ -139,7 +182,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
     
     if (tagsToFetch.length === 0) return [];
 
-    // 5B. Prophet Intelligence Integration: Pre-Normalization for O(1) Speed
+    // 5B. PROPHET INTELLIGENCE INTEGRATION
+    // Intent: We pre-normalize the Prophet cache for O(1) lookups.
+    // This allows us to inject historical "Heritage" bonuses into fresh
+    // candidates without redundant network calls for their full history.
     const prophetCache = RosterStore?.getProphetCache?.() || new Map();
     const normalizedProphet = new Map<string, any>();
     prophetCache.forEach((v: any, k: string) => {
@@ -170,6 +216,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
         const normTag = c.tag.replace("#", "").trim().toLowerCase();
         const intel = normalizedProphet.get(normTag);
         
+        // HERITAGE BONUS: 25% multiplier for historically active players.
+        // Rationale: High historical participation is a better predictor
+        // of clan longevity than current ladder trophies.
         if (intel && intel.wins > 5) {
              finalScore *= 1.25;
              console.info(`Prophet: Heritage found for ${c.name}: 25% Participation Bonus.`);
@@ -191,10 +240,16 @@ const HeadhunterScanner: IHeadhunterScanner = {
         });
       });
 
-      // 6B. RECURSIVE SEEDING: Dynamic Shadow Threshold
-      // CRITICAL: If remote discovery already yielded massive elite leads, skip expensive Shadow Scout.
+      // 6B. RECURSIVE SEEDING
+      // Intent: We use the top-ranked candidates from the initial scan
+      // as "Seeds" to trace their recent battle logs. This often leads
+      // to discovery of active, clanless opponents (Shadow Scouting).
+
+      // OPTIMIZATION: High-Yield Bypass.
+      // If the primary scan already yielded enough elite leads, we skip
+      // the expensive battlelog parsing to conserve execution time.
       const discoveryYield = validCandidates.length;
-      const shadowThreshold = 40; // AGGRESSIVE: If we have 40+ elite leads, we don't need the extra latency of battlelog parsing.
+      const shadowThreshold = 40;
 
       if (discoveryYield < shadowThreshold) {
         // TOP 5 Seeds instead of 15 to reduce network overhead
