@@ -61,8 +61,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
         ? CONFIG.HEADHUNTER.DEEP_SCAN.REMOTE
         : CONFIG.HEADHUNTER.DEEP_SCAN.LOCAL;
 
-    // 3. Lottery Selection
+    // 3. Configuration & Pool Limits
     const lotteryLimit = scanCfg.TOURNEYS || 300;
+    const playerLimit = Math.min(
+      CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 3000,
+      scanCfg.PLAYERS || 250,
+    );
+
+    // 4. Lottery Selection
     const lotteryPool = Array.from(uniqueTourneys.values())
       .sort((a, b) => (b.capacity || 0) - (a.capacity || 0)) // Prioritize bigger tourneys
       .slice(
@@ -82,8 +88,10 @@ const HeadhunterScanner: IHeadhunterScanner = {
     let candidates: any[] = [];
     let usedRemote = false;
     let shadowStatus = "ACTIVE";
+    const uniqueCandidates = new Map<string, any>();
+    let tagsToFetch: string[] = [];
 
-    // 4. Execution (Remote vs Local)
+    // 5. Execution (Remote vs Local)
     if (remoteAvailable && remoteExpandEnabled) {
       try {
         candidates = Registry.Services.Network.scanTournamentsRemote(
@@ -98,6 +106,25 @@ const HeadhunterScanner: IHeadhunterScanner = {
       }
     }
 
+    // Step 5A: Process Remote Results & Determine Fallback
+    if (usedRemote) {
+        candidates.forEach((c: any) => {
+            if (c.trophies >= minTrophies || c.trophies === undefined)
+                uniqueCandidates.set(c.tag, c);
+        });
+        
+        tagsToFetch = Array.from(uniqueCandidates.values())
+            .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
+            .slice(0, playerLimit)
+            .map(p => p.tag);
+
+        if (tagsToFetch.length === 0) {
+            console.warn(`Discovery: Remote Worker found 0 candidates. Triggering Local Fallback.`);
+            usedRemote = false;
+        }
+    }
+
+    // Step 5B: Local Discovery (Fallback or Primary)
     if (!usedRemote) {
       console.info(`Executing GAS-based local scan (${tourneyTags.length} tournaments)...`);
       const details: TournamentResult[] = Registry.Services.Network.fetchRoyaleAPI(
@@ -111,36 +138,26 @@ const HeadhunterScanner: IHeadhunterScanner = {
           d.membersList.forEach((p) => {
             if (
               (!p.clan || p.clan.tag === "") &&
-              (!blacklistSet || !blacklistSet.has(p.tag))
+              (!blacklistSet || !blacklistSet.has(p.tag)) &&
+              (p.trophies >= minTrophies || p.trophies === undefined)
             ) {
-              candidates.push(p);
+              uniqueCandidates.set(p.tag, p);
             }
           });
         }
       });
+
+      const localPool = Array.from(uniqueCandidates.values())
+        .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
+        .slice(0, playerLimit);
+      
+      Registry.Services.Core.shuffleArray(localPool);
+      tagsToFetch = localPool.map(p => p.tag);
     }
-
-    // 5. Candidate Filtering
-    const uniqueCandidates = new Map<string, any>();
-    candidates.forEach((c: any) => {
-      if (c.trophies >= minTrophies || c.trophies === undefined)
-        uniqueCandidates.set(c.tag, c);
-    });
-
-    const playerLimit = Math.min(
-      CONFIG.HEADHUNTER.DEEP_SCAN.MAX_PLAYERS || 3000,
-      scanCfg.PLAYERS || 250,
-    );
-    const candidatePool = Array.from(uniqueCandidates.values())
-      .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
-      .slice(0, playerLimit);
-
-    Registry.Services.Core.shuffleArray(candidatePool);
-    const tagsToFetch = candidatePool.slice(0, playerLimit).map((p) => p.tag);
     
     if (tagsToFetch.length === 0) return [];
 
-    // 5B. Prophet Intelligence Integration: Pre-Normalization for O(1) Speed
+    // 6. Prophet Intelligence Integration
     const prophetCache = RosterStore?.getProphetCache?.() || new Map();
     const normalizedProphet = new Map<string, any>();
     prophetCache.forEach((v: any, k: string) => {
@@ -149,7 +166,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
     const validCandidates: Recruit[] = [];
 
-    // 6. Deep Profiling
+    // 7. Deep Profiling
     const shadowTags = new Set<string>();
     const processedTags = new Set<string>(tagsToFetch);
 
@@ -158,7 +175,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       candidates.length > 0 &&
       candidates[0].rawScore !== undefined
     ) {
-      // 6A. Process Remote Scored Candidates
+      // 7A. Process Remote Scored Candidates
       const remoteMap = new Map<string, any>();
       candidates.forEach(c => remoteMap.set(c.tag, c));
       
@@ -187,30 +204,27 @@ const HeadhunterScanner: IHeadhunterScanner = {
           invited: false,
           rawScore: finalScore,
           potentialScore: c.potentialScore,
-          lastScan: Date.now(), // Freshly scanned
+          lastScan: Date.now(),
           source: "TOURNAMENT",
         });
       });
 
-      // 6B. RECURSIVE SEEDING: Dynamic Shadow Threshold
-      // CRITICAL: If remote discovery already yielded massive elite leads, skip expensive Shadow Scout.
+      // 7B. RECURSIVE SEEDING: Dynamic Shadow Threshold
       const discoveryYield = validCandidates.length;
-      const shadowThreshold = 40; // AGGRESSIVE: If we have 40+ elite leads, we don't need the extra latency of battlelog parsing.
+      const shadowThreshold = 40; 
 
       if (discoveryYield < shadowThreshold) {
-        // TOP 5 Seeds instead of 15 to reduce network overhead
         let seedTags = validCandidates
           .sort((a, b) => b.rawScore - a.rawScore)
           .slice(0, 5) 
           .map(c => c.tag);
         
-        // RECOVERY: If tournament discovery found nothing, seed from existing high-potential leads
         if (seedTags.length === 0 && existingRecruits.size > 0) {
           seedTags = Array.from(existingRecruits.values())
             .sort((a, b) => (b.rawScore || 0) - (a.rawScore || 0))
             .slice(0, 10)
             .map(c => c.tag);
-          console.info(`Shadow Scout: Tournament dry. Seeding from ${seedTags.length} existing leads.`);
+          console.info(`Shadow Scout: Seeding from ${seedTags.length} existing leads.`);
         }
         
         if (seedTags.length > 0) {
@@ -223,7 +237,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
             const logBatch = seedLogs[sIdx];
             if (!logBatch || !Array.isArray(logBatch) || shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) continue;
             
-            // FLATTENED PROCESSOR: Avoid recursive stack overhead in GAS
             for (const entry of logBatch) {
               if (shadowTags.size >= CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) break;
               if (!entry || !entry.opponent) continue;
@@ -242,7 +255,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
         }
       } else {
         shadowStatus = "SKIPPED (High Yield)";
-        console.info(`Shadow Scout: ${shadowStatus} - ${discoveryYield} elite leads found.`);
       }
     } else {
       // Local scoring required
@@ -284,17 +296,14 @@ const HeadhunterScanner: IHeadhunterScanner = {
           if (logs[idx]) {
             hasWar = logs[idx].some((b: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type));
 
-            // SHADOW SCOUT (LOCAL): Only if under threshold
             if (validCandidates.length < 40 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
               const recruits = BattleLogProcessor.digest(p.tag, AnalysisGoal.RECRUITMENT);
               recruits.forEach((r: any) => {
                  if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
-                   shadowTags.add(r.tag);
-                   processedTags.add(r.tag);
+                    shadowTags.add(r.tag);
+                    processedTags.add(r.tag);
                  }
               });
-            } else if (validCandidates.length >= 40) {
-               shadowStatus = "SKIPPED (Threshold Met)";
             }
           }
           
@@ -314,10 +323,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
           let finalScore = rawScore;
           const normTag = p.tag.replace("#", "").trim().toLowerCase();
           const intel = normalizedProphet.get(normTag);
-          if (intel && intel.wins > 5) {
-             finalScore *= 1.25;
-             console.info(`Prophet: Heritage found for ${p.name}: Participation Bonus Applied.`);
-          }
+          if (intel && intel.wins > 5) finalScore *= 1.25;
 
           validCandidates.push({
             tag: p.tag,
@@ -335,7 +341,7 @@ const HeadhunterScanner: IHeadhunterScanner = {
       }
     }
 
-    // 7. Shadow Profiling Pass
+    // 8. Shadow Profiling Pass
     if (shadowTags.size > 0) {
       const shadowList = Array.from(shadowTags);
       const shadowData: any[] = Registry.Services.Network.fetchRoyaleAPI(
@@ -365,13 +371,13 @@ const HeadhunterScanner: IHeadhunterScanner = {
       });
     }
 
-    // 8. FINAL SCAN SUMMARY [7/9]
+    // 9. FINAL SCAN SUMMARY [7/9]
     const scoutYield = validCandidates.filter(c => c.source === "TOURNAMENT").length;
     const shadowYield = validCandidates.filter(c => c.source === "SHADOW").length;
     const totalYield = validCandidates.length;
 
     const shadowReport = shadowStatus === "ACTIVE" 
-      ? `${shadowYield} battlelogs traced | ${shadowYield} candidates found`
+      ? `${shadowYield} battlelogs traced`
       : shadowStatus;
     
     Registry.Services.Reporting.logReport(`[7/9] DISCOVERY: Tournament & Shadow Scouting`, [
@@ -379,7 +385,6 @@ const HeadhunterScanner: IHeadhunterScanner = {
       `SHADOWS:     ${shadowReport}`,
       `TOTAL:       ${totalYield} candidates identified for profiling`
     ]);
-
 
     return validCandidates;
   }

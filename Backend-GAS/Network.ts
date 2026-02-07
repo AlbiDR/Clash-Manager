@@ -706,13 +706,13 @@ var Network: INetwork = {
     
     const blacklist = Array.isArray(blacklistSet) ? blacklistSet : Array.from(blacklistSet);
     
-    // Strategy 2: Inject Prophet Intelligence for Remote Scoring
-    // We pre-normalize it here securely before sending over the wire
     const prophetData: Record<string, any> = {}; 
-    const prophetCache = Registry.Services.Roster.getProphetCache();
-    prophetCache.forEach((v: any, k: string) => {
-        prophetData[k.replace("#", "").trim().toLowerCase()] = v;
-    });
+    const pCache = Registry.Services.Roster.getProphetCache();
+    if (pCache && typeof pCache.forEach === "function") {
+        pCache.forEach((v: any, k: string) => {
+            prophetData[k.replace("#", "").trim().toLowerCase()] = v;
+        });
+    }
 
     const payload = {
         tags: tourneyTags,
