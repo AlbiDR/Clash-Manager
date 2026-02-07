@@ -79,9 +79,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
         ),
       );
 
-    const tourneyTags = lotteryPool
+    const tourneyTags = [...new Set(lotteryPool
       .slice(0, lotteryLimit)
-      .map((t: TournamentResult) => t.tag);
+      .map((t: TournamentResult) => t.tag))];
     
     if (tourneyTags.length === 0) return [];
 
@@ -120,9 +120,9 @@ const HeadhunterScanner: IHeadhunterScanner = {
 
         // SAFETY: Fallback to local if remote yields nothing
         if (tagsToFetch.length === 0) {
-            console.warn(`[DIAGNOSTIC] Remote Worker returned 0 candidates from ${tourneyTags.length} tournaments. Falling back to local scan.`);
+            console.warn(`Network: Remote Worker yielded 0 candidates from ${tourneyTags.length} tournaments. Falling back to local discovery.`);
             const workerError = Registry.Services.Network.getLastWorkerError();
-            if (workerError) console.warn(`[DIAGNOSTIC] Last Worker Error: ${workerError}`);
+            if (workerError && workerError !== "N/A") console.warn(`Network: Last Worker Error: ${workerError}`);
             usedRemote = false;
         }
     }
@@ -192,8 +192,12 @@ const HeadhunterScanner: IHeadhunterScanner = {
         const intel = normalizedProphet.get(normTag);
         
         if (intel && intel.wins > 5) {
-             finalScore *= 1.25;
-             console.info(`Prophet: Heritage found for ${c.name}: 25% Participation Bonus.`);
+             // Redundant for remote (worker applies it), but safe if worker logic fails.
+             // We only log if we didn't use remote to avoid console spam.
+             if (!usedRemote) {
+                finalScore *= 1.25;
+                console.info(`Prophet: Heritage found for ${c.name}: 25% Participation Bonus.`);
+             }
         }
 
         validCandidates.push({
