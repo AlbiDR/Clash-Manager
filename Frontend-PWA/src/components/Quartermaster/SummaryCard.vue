@@ -29,7 +29,7 @@ const formatNumber = (num: number) => {
       <!-- Row 1: King Level Focus -->
       <div class="metric-item main">
         <div class="metric-meta">
-          <Icon name="crown" size="18" class="king-icon" />
+          <img src="/assets/game/tower_level.webp" class="res-asset" alt="Tower" />
           <span class="label">Target Level</span>
         </div>
         <div class="value-stack">
