@@ -73,7 +73,7 @@ const baseUrl = import.meta.env.BASE_URL;
         ></div>
       </div>
       <div class="efficiency-details">
-        <span>Strategic Efficiency Optimised</span>
+        <span>Strategic Efficiency Optimized</span>
         <Icon name="check" size="14" />
       </div>
     </div>
