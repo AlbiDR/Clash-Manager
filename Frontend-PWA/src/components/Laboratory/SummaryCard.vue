@@ -134,72 +134,77 @@ const baseUrl = import.meta.env.BASE_URL;
 
 @media (max-width: 640px) {
   .metrics-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-    align-items: flex-start;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .metric-item.main {
+    grid-column: 1 / -1;
+    margin-bottom: 8px;
   }
 }
 
 .metric-item {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 
 .metric-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 850;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.5;
+  letter-spacing: 0.08em;
+  opacity: 0.45;
 }
 
 /* King Level Display */
 .king-level-display {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .level-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--sys-color-surface-container-high);
-  padding: 8px 14px;
-  border-radius: 12px;
+  padding: 6px 12px;
+  border-radius: 10px;
   border: 1px solid var(--sys-color-outline-variant);
 }
 
 .level-badge .num {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
   color: var(--sys-color-on-surface);
 }
 
 .level-badge.current {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .level-badge.target {
   background: var(--sys-color-primary-container);
   border-color: var(--sys-color-primary);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.2);
+  box-shadow: 0 4px 10px rgba(var(--sys-color-primary-rgb), 0.15);
 }
 
 .level-badge.target .num {
   color: var(--sys-color-on-primary-container);
-  font-size: 24px;
+  font-size: 21px;
 }
 
 .level-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
 .progression-arrow {
-  opacity: 0.3;
+  opacity: 0.25;
   color: var(--sys-color-on-surface);
 }
 
@@ -213,27 +218,28 @@ const baseUrl = import.meta.env.BASE_URL;
 .resource-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--sys-color-surface-container-highest);
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
   width: fit-content;
-  min-width: 100px;
+  min-width: 90px;
   border: 1px solid transparent;
 }
 
 .resource-group .value {
   font-family: var(--sys-font-family-mono);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--sys-color-on-surface);
 }
 
 .resource-group .res-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
+
 
 .resource-group.gems {
   background: rgba(255, 222, 235, 0.1);
