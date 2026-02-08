@@ -26,7 +26,7 @@ const {
 }>();
 
 const emit = defineEmits<{
-  "toggle-expand": [];
+  toggle: [];
   "toggle-select": [];
 }>();
 
@@ -49,7 +49,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
     :selected="selected"
     :selection-mode="selectionMode"
     :tone-class="toneClass"
-    @toggle="emit('toggle-expand')"
+    @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
     <!-- SLOT: Meta Stack -->
