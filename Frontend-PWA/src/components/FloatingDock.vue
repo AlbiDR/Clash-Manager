@@ -30,6 +30,12 @@ const navItems: NavItem[] = [
     icon: "recruiter",
   },
   {
+    path: "/quartermaster",
+    name: "quartermaster",
+    label: "Quartermaster",
+    icon: "flask",
+  },
+  {
     path: "/settings",
     name: "settings",
     label: "Settings",

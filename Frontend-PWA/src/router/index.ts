@@ -54,6 +54,12 @@ const router = createRouter({
       meta: { title: "Headhunter" },
     },
     {
+      path: "/quartermaster",
+      name: "quartermaster",
+      component: () => import("../views/QuartermasterView.vue"),
+      meta: { title: "Quartermaster" },
+    },
+    {
       path: "/settings",
       name: "settings",
       component: () => import("../views/SettingsView.vue"),
