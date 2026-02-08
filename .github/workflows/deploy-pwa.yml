@@ -72,7 +72,7 @@ jobs:
         # env: VITE_GAS_URL is now global to the job
 
       - name: Upload Pages Artifact
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta' || github.ref == 'refs/heads/Quartermaster')
+        if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')) || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./Frontend-PWA/dist"
@@ -80,7 +80,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta' || github.ref == 'refs/heads/Quartermaster')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
