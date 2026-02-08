@@ -39,8 +39,8 @@ export function useQuartermaster() {
    * Fetches the player profile from the backend using the tracked PlayerTag
    */
   const fetchTrackedPlayer = async () => {
-    // TEMP: Use hardcoded tag for testing, but fallback to global selection logic
-    const tag = clashData.value?.playerTag || "#PP80QG99"
+    // Use global selection logic
+    const tag = clashData.value?.playerTag
     if (!tag) return
 
     isFetching.value = true
