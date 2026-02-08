@@ -67,4 +67,22 @@ describe('Quartermaster Kernel', () => {
     // Should STILL fail to upgrade because Maximize overrides infinite
     expect(result.actions?.length || 0).toBe(0);
   });
+
+  it('should reach target level with infinite resources despite zero inventory', () => {
+    const data: PlayerData = {
+      profile: { ...mockProfile, kingLevel: 14, xpIntoLevel: 0 },
+      inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
+      cards: [createCard("Knight", "Common", 14, 0)] // No cards
+    };
+
+    const settings: OptimizationSettings = {
+      strategy: "Target",
+      infiniteResources: true,
+      targetLevel: 15 // Very small step for test speed
+    };
+
+    const result = QuartermasterKernel.optimize(data, settings);
+    expect(result.actions.length).toBeGreaterThan(0);
+    expect(result.projectedKingLevel).toBeGreaterThanOrEqual(15);
+  });
 });

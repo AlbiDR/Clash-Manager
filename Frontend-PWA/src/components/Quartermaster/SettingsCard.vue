@@ -5,6 +5,7 @@ import Icon from "../Icon.vue";
 
 const props = defineProps<{
   settings: OptimizationSettings;
+  currentLevel: number;
 }>();
 
 const emit = defineEmits<{
@@ -78,7 +79,11 @@ const baseUrl = import.meta.env.BASE_URL;
               v-for="level in 90" 
               :key="level" 
               :value="level"
-              :class="{ milestone: IMPORTANT_KING_LEVELS.includes(level as any) }"
+              :disabled="level <= currentLevel"
+              :class="{ 
+                milestone: IMPORTANT_KING_LEVELS.includes(level as any),
+                past: level <= currentLevel 
+              }"
             >
               Level {{ level }} {{ IMPORTANT_KING_LEVELS.includes(level as any) ? '★' : '' }}
             </option>
@@ -209,6 +214,11 @@ const baseUrl = import.meta.env.BASE_URL;
 .level-select option.milestone {
   font-weight: 900;
   color: var(--sys-color-primary);
+}
+
+.level-select option.past {
+  opacity: 0.5;
+  color: var(--sys-color-on-surface-variant);
 }
 
 .select-icon {
