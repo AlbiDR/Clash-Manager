@@ -254,7 +254,10 @@ onUnmounted(() => {
 }
 .view-content {
   transition: transform 0.2s var(--sys-motion-spring);
+}
+.view-content.is-pulling {
   transform: translateY(calc(var(--ptr-offset, 0px) / 2));
+  will-change: transform;
 }
 .list-container {
   padding-bottom: 32px;

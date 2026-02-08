@@ -114,6 +114,10 @@ onMounted(() => {
   background-color: var(--sys-color-background);
   overflow-x: hidden;
   transition: outline 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 /* 🖼️ SHOWCASE FRAME: 1px clinical boundary for screenshots */
@@ -129,11 +133,14 @@ onMounted(() => {
 
 /* ⚡ TRANSITION: Smooth transform for page container */
 .app-container {
+  width: 100%;
   max-width: var(--sys-layout-max-width);
-  margin: 0 auto;
   padding: 0 16px;
   transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
   will-change: transform;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .connectivity-strip {
