@@ -138,7 +138,6 @@ const handleResourceUpdate = (key: string, value: number) => {
 @media (min-width: 640px) {
   .dashboard-sidebar {
     grid-template-columns: 1fr 1fr;
-    align-items: start;
   }
 }
 
