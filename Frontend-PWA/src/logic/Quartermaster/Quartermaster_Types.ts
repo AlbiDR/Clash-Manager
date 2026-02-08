@@ -19,8 +19,6 @@ export interface Inventory {
   readonly gold: number;
   readonly gems: number;
   readonly wildCards: Readonly<Record<Rarity, number>>;
-  readonly eliteWildCards: number;
-  readonly crystals: number;
 }
 
 export interface PlayerProfile {
@@ -37,8 +35,8 @@ export interface PlayerData {
 }
 
 export interface OptimizationSettings {
-  readonly strategy: "Gold" | "Gems";
-  readonly infiniteGold: boolean;
+  readonly strategy: "Target" | "Maximize";
+  readonly infiniteResources: boolean;
   readonly targetLevel?: number;
 }
 
@@ -81,8 +79,5 @@ export interface UpgradeCandidate {
   readonly gemsUsed: number;
   readonly xpGained: number;
   readonly efficiencyRatio: number;
-  readonly crystalUsed: number;
   readonly materialEfficiency: number;
-  readonly ewcUsed: number;
-  readonly crystalsUsed: number;
 }
