@@ -41,7 +41,7 @@ const toggleInfinite = () => {
             :class="{ active: settings.strategy === 'Gold' }"
             @click="setStrategy('Gold')"
           >
-            <Icon name="donation" size="14" />
+            <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
             <span>Gold</span>
           </button>
           <button 
@@ -49,7 +49,7 @@ const toggleInfinite = () => {
             :class="{ active: settings.strategy === 'Gems' }"
             @click="setStrategy('Gems')"
           >
-            <Icon name="star" size="14" />
+            <img src="/assets/game/currency_gem.webp" class="res-asset" alt="Gems" />
             <span>Gems</span>
           </button>
         </div>
@@ -189,6 +189,12 @@ const toggleInfinite = () => {
 .num-input:focus {
   outline: none;
   border-color: var(--sys-color-primary);
+}
+
+.res-asset {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
 }
 
 .input-unit {

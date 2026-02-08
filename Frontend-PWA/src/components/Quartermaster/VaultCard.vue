@@ -28,7 +28,7 @@ const handleInput = (e: Event, key: string) => {
       <!-- Primary Resources -->
       <div class="resource-item full">
         <div class="res-meta">
-          <Icon name="donation" size="14" class="gold-icon" />
+          <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
           <span class="res-label">Gold</span>
         </div>
         <input 
@@ -41,7 +41,7 @@ const handleInput = (e: Event, key: string) => {
 
       <div class="resource-item full">
         <div class="res-meta">
-          <Icon name="star" size="14" class="gem-icon" />
+          <img src="/assets/game/currency_gem.webp" class="res-asset" alt="Gems" />
           <span class="res-label">Gems</span>
         </div>
         <input 
@@ -53,19 +53,29 @@ const handleInput = (e: Event, key: string) => {
       </div>
 
       <!-- Wild Cards -->
-      <div class="wildcards-row">
-        <div 
-          v-for="(val, rarity) in inventory.wildCards" 
-          :key="rarity"
-          class="wc-item"
-        >
-          <span class="wc-rarity" :class="rarity.toLowerCase()">{{ rarity.charAt(0) }}</span>
-          <input 
-            type="number" 
-            :value="val" 
-            class="wc-input"
-            @input="handleInput($event, `wc_${rarity.toLowerCase()}`)"
+      <div class="wildcards-section">
+        <div class="section-meta">
+          <span class="res-label">Material Reserves</span>
+          <span class="res-hint">Input current Wild Cards inventory</span>
+        </div>
+        <div class="wildcards-row">
+          <div 
+            v-for="(val, rarity) in inventory.wildCards" 
+            :key="rarity"
+            class="wc-item"
           >
+            <img 
+              :src="`/assets/game/wildcard_${rarity.toLowerCase()}.webp`" 
+              class="wc-asset" 
+              :alt="rarity" 
+            />
+            <input 
+              type="number" 
+              :value="val" 
+              class="wc-input"
+              @input="handleInput($event, `wc_${rarity.toLowerCase()}`)"
+            >
+          </div>
         </div>
       </div>
     </div>
@@ -142,43 +152,10 @@ const handleInput = (e: Event, key: string) => {
   box-shadow: 0 0 0 2px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
-.gold-icon { color: #f1c40f; }
-.gem-icon { color: #2ecc71; }
-
-.wildcards-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.wc-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.wc-rarity {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 900;
-  color: white;
-  text-transform: uppercase;
-}
-
-.wc-rarity.common { background: #ced4da; color: #495057; }
-.wc-rarity.rare { background: #f39c12; }
-.wc-rarity.epic { background: #9b59b6; }
-.wc-rarity.legendary { background: #3498db; }
-.wc-rarity.champion { 
-  background: linear-gradient(135deg, #f1c40f, #e67e22);
-  box-shadow: 0 0 10px rgba(241, 196, 15, 0.4);
+.res-asset {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .wildcards-section {
@@ -200,6 +177,27 @@ const handleInput = (e: Event, key: string) => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   opacity: 0.4;
+}
+
+.wildcards-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.wc-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.wc-asset {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
 }
 
 .wc-input {

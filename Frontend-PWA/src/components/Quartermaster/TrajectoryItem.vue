@@ -38,11 +38,11 @@ const formatNumber = (num: number) => {
     <div class="cost-stack">
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <Icon name="donation" size="12" />
+        <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <span class="unit">XP</span>
+        <img src="/assets/game/currency_xp.webp" class="res-asset sm" alt="XP" />
       </div>
     </div>
   </div>
@@ -177,9 +177,14 @@ const formatNumber = (num: number) => {
 .cost-item.gold { color: var(--sys-color-on-surface); }
 .cost-item.xp { color: var(--sys-color-success); font-size: 11px; }
 
-.unit {
-  font-size: 9px;
-  font-weight: 900;
-  opacity: 0.7;
+.res-asset {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.res-asset.sm {
+  width: 10px;
+  height: 10px;
 }
 </style>
