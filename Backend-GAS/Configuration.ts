@@ -471,5 +471,8 @@ if (typeof module !== "undefined" && module.exports) {
  * Ensures CONFIG is available globally in both GAS and Node/Vitest environments.
  */
 (function(scope: any) {
-  Object.assign(scope, { CONFIG, VER_CONFIGURATION });
-})(typeof globalThis !== 'undefined' ? globalThis : (typeof self !== 'undefined' ? (self as any) : (typeof window !== 'undefined' ? (window as any) : (typeof global !== 'undefined' ? global : {}))));
+  if (scope) {
+    scope.CONFIG = CONFIG;
+    scope.VER_CONFIGURATION = VER_CONFIGURATION;
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : {}));
