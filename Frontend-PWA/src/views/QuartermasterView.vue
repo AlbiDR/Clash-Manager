@@ -9,6 +9,7 @@ import Icon from "../components/Icon.vue";
 
 // Dash Components (To be created)
 import VaultCard from "../components/Quartermaster/VaultCard.vue";
+import SettingsCard from "../components/Quartermaster/SettingsCard.vue";
 import SummaryCard from "../components/Quartermaster/SummaryCard.vue";
 import TrajectoryItem from "../components/Quartermaster/TrajectoryItem.vue";
 
@@ -87,38 +88,10 @@ const handleResourceUpdate = (key: string, value: number) => {
           @update="handleResourceUpdate"
         />
         
-        <div class="settings-card glass-panel">
-          <h3 class="panel-header">
-            <Icon name="gear" size="16" />
-            <span>Parameters</span>
-          </h3>
-          <div class="settings-group">
-            <label class="toggle-row">
-              <div class="toggle-info">
-                <span class="label">Priority: Gems</span>
-                <span class="sub">Convert gems to missing materials</span>
-              </div>
-              <input 
-                type="checkbox" 
-                :checked="settings.useGems" 
-                class="toggle-input"
-                @change="setSettings({ useGems: !settings.useGems })"
-              >
-            </label>
-            <label class="toggle-row" v-tooltip="'Theoretical maximum without gold constraint'">
-              <div class="toggle-info">
-                <span class="label">Infinite Logistics</span>
-                <span class="sub">Ignore gold constraints</span>
-              </div>
-              <input 
-                type="checkbox" 
-                :checked="settings.infiniteGold" 
-                class="toggle-input"
-                @change="setSettings({ infiniteGold: !settings.infiniteGold })"
-              >
-            </label>
-          </div>
-        </div>
+        <SettingsCard 
+          :settings="settings"
+          @update="setSettings"
+        />
       </div>
 
       <!-- 2. Result Summary -->
@@ -189,42 +162,6 @@ const handleResourceUpdate = (key: string, value: number) => {
   margin-bottom: 16px;
 }
 
-.settings-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.toggle-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.toggle-info .label {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--sys-color-on-surface);
-}
-
-.toggle-info .sub {
-  font-size: 11px;
-  opacity: 0.6;
-}
-
-.toggle-input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--sys-color-primary);
-}
 
 .section-title {
   display: flex;

@@ -176,6 +176,31 @@ const handleInput = (e: Event, key: string) => {
 .wc-rarity.rare { background: #f39c12; }
 .wc-rarity.epic { background: #9b59b6; }
 .wc-rarity.legendary { background: #3498db; }
+.wc-rarity.champion { 
+  background: linear-gradient(135deg, #f1c40f, #e67e22);
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.4);
+}
+
+.wildcards-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.section-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.res-hint {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.4;
+}
 
 .wc-input {
   background: var(--sys-color-surface-container);

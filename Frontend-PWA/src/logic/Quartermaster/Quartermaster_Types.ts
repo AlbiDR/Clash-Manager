@@ -35,9 +35,9 @@ export interface PlayerData {
 }
 
 export interface OptimizationSettings {
-  readonly useGems: boolean;
+  readonly strategy: "Gold" | "Gems";
   readonly infiniteGold: boolean;
-  readonly targetKingLevel?: number;
+  readonly targetLevel?: number;
 }
 
 export interface UpgradeAction {
