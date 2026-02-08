@@ -472,4 +472,4 @@ if (typeof module !== "undefined" && module.exports) {
  */
 (function(scope: any) {
   Object.assign(scope, { CONFIG, VER_CONFIGURATION });
-})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : (typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : {}))));
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof self !== 'undefined' ? (self as any) : (typeof window !== 'undefined' ? (window as any) : (typeof global !== 'undefined' ? global : {}))));
