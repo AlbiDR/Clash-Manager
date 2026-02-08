@@ -43,39 +43,21 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
       </template>
       <template v-else>
         <!-- TIER 1: Interface & Display -->
-        <div class="settings-tier tier-interface">
-          <AppearanceSettings />
-          <NotificationSettings />
-        </div>
-
-        <div class="tier-divider" />
+        <AppearanceSettings />
+        <NotificationSettings />
 
         <!-- TIER 2: Application Features -->
-        <div class="settings-tier tier-features">
-          <FeatureSettings />
-        </div>
-
-        <div class="tier-divider" />
+        <FeatureSettings />
 
         <!-- TIER 2.5: Display Preferences -->
-        <div class="settings-tier tier-display">
-          <ModeSettings />
-        </div>
-
-        <div class="tier-divider" />
+        <ModeSettings />
 
         <!-- TIER 3: Infrastructure -->
-        <div class="settings-tier tier-infrastructure">
-          <NetworkSettings />
-          <BackendRefresher v-if="modules.backendRefresher" />
-        </div>
-
-        <div class="tier-divider" />
+        <NetworkSettings />
+        <BackendRefresher v-if="modules.backendRefresher" />
 
         <!-- TIER 4: System & Recovery -->
-        <div class="settings-tier tier-system">
-          <RecoverySettings />
-        </div>
+        <RecoverySettings />
       </template>
 
       <div class="footer-info">
@@ -104,20 +86,12 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
 }
 
 .settings-content {
-  padding: 12px 0 120px;
+  padding: 0 0 120px;
   display: flex;
   flex-direction: column;
 }
 
-.settings-tier {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
-.tier-divider {
-  height: 32px;
-}
 
 .footer-info {
   padding: 40px 0;

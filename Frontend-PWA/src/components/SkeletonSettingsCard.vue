@@ -55,7 +55,7 @@ const toggleWidth = computed(() => {
   border-radius: 24px;
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 
   /* CLS Fix: Min height to prevent layout shifts */
   min-height: 180px; /* Roughly the height of a typical settings card */
