@@ -15,44 +15,45 @@ const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
-  <div class="trajectory-item" :style="{ '--i': index }">
-    <div class="card-avatar" :class="upgrade.rarity.toLowerCase()">
-      <span class="rarity-letter">{{ upgrade.rarity.charAt(0) }}</span>
-    </div>
-
+  <div 
+    class="trajectory-item" 
+    :class="upgrade.rarity.toLowerCase()"
+    :style="{ '--i': index }"
+  >
     <div class="upgrade-info">
-      <div class="top-row">
-        <div class="level-badge">
+      <!-- Line 1: Level Progression -->
+      <div class="level-row">
+        <div class="level-pill">
           <span class="prev">{{ upgrade.currentLevel }}</span>
-          <Icon name="chevron_right" size="10" />
+          <Icon name="chevron_right" size="10" class="divider" />
           <span class="next">{{ upgrade.targetLevel }}</span>
         </div>
+        <span class="logic-type">{{ upgrade.upgradeType }}</span>
+      </div>
+
+      <!-- Line 2: Card Name (Prominent) -->
+      <div class="name-row">
         <span class="card-name">{{ upgrade.cardName }}</span>
       </div>
-      <div class="bottom-row">
-        <span class="logic-type">{{ upgrade.upgradeType }} Upgrade</span>
-        <span class="efficiency-ratio">η: {{ upgrade.efficiencyRatio.toFixed(2) }}</span>
+
+      <!-- Line 3: Metadata -->
+      <div class="meta-row">
+        <span class="efficiency-ratio">η {{ upgrade.efficiencyRatio.toFixed(2) }}</span>
       </div>
     </div>
 
     <div class="cost-stack">
       <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
-        <div class="icon-frame">
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset sm" alt="Gems" />
-        </div>
+        <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
       </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <div class="icon-frame">
-          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
-        </div>
+        <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <div class="icon-frame">
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset sm" alt="XP" />
-        </div>
+        <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-icon sm" alt="XP" />
       </div>
     </div>
   </div>
@@ -62,14 +63,15 @@ const baseUrl = import.meta.env.BASE_URL;
 .trajectory-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--sys-color-surface-container);
+  gap: 16px;
+  background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: 16px;
-  padding: 10px 14px;
+  padding: 14px 18px;
   position: relative;
   animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
   animation-delay: calc(var(--i) * 0.05s);
+  border-left: 4px solid transparent;
 }
 
 @keyframes slide-in {
@@ -77,81 +79,69 @@ const baseUrl = import.meta.env.BASE_URL;
   to { opacity: 1; transform: translateX(0); }
 }
 
-
-
-.card-avatar {
-  width: 40px;
-  height: 48px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  flex-shrink: 0;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.card-avatar.common { background: linear-gradient(135deg, #e9ecef, #dee2e6); color: #495057; }
-.card-avatar.rare { background: linear-gradient(135deg, #f1c40f, #f39c12); color: white; }
-.card-avatar.epic { background: linear-gradient(135deg, #a55eea, #8854d0); color: white; }
-.card-avatar.legendary { background: linear-gradient(135deg, #45aaf2, #2d98da); color: white; }
-.card-avatar.champion { background: linear-gradient(135deg, #fed330, #f7b731); color: white; }
-
-.rarity-letter {
-  font-size: 18px;
-  font-weight: 900;
-  opacity: 0.8;
-}
+/* Rarity Highlights */
+.trajectory-item.common { border-left-color: #e9ecef; }
+.trajectory-item.rare { border-left-color: #f1c40f; }
+.trajectory-item.epic { border-left-color: #a55eea; }
+.trajectory-item.legendary { border-left-color: #45aaf2; }
+.trajectory-item.champion { border-left-color: #fed330; }
 
 .upgrade-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
 }
 
-.top-row {
+.level-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.level-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--sys-color-surface-container-high);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: var(--sys-font-family-mono);
+  font-size: 11px;
+  font-weight: 850;
+  border: 1px solid var(--sys-color-outline-variant);
+}
+
+.level-pill .prev { opacity: 0.4; }
+.level-pill .next { color: var(--sys-color-primary); }
+.level-pill .divider { opacity: 0.2; }
+
+.logic-type {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+}
+
+.name-row {
+  display: flex;
 }
 
 .card-name {
-  font-size: 15px;
-  font-weight: 850;
+  font-size: 18px;
+  font-weight: 900;
   color: var(--sys-color-on-surface);
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.level-badge {
+.meta-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: var(--sys-color-surface-container-highest);
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-family: var(--sys-font-family-mono);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.prev { opacity: 0.5; }
-.next { color: var(--sys-color-primary); }
-
-.bottom-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logic-type {
-  font-size: 11px;
-  font-weight: 700;
-  opacity: 0.5;
-  text-transform: uppercase;
 }
 
 .efficiency-ratio {
@@ -159,14 +149,16 @@ const baseUrl = import.meta.env.BASE_URL;
   font-size: 10px;
   font-weight: 900;
   color: var(--sys-color-success);
+  opacity: 0.8;
+  letter-spacing: 0.05em;
 }
 
 .cost-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px; /* Increased gap for better separation */
-  min-width: 90px;
+  gap: 6px;
+  min-width: 100px;
 }
 
 .cost-item {
@@ -174,29 +166,28 @@ const baseUrl = import.meta.env.BASE_URL;
   align-items: center;
   gap: 8px;
   font-family: var(--sys-font-family-mono);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 15px; /* Equalized font size */
+  font-weight: 850;
 }
 
-.icon-frame {
-  width: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
+.cost-item.gem { color: #ffdeeb; }
 .cost-item.gold { color: var(--sys-color-on-surface); }
-.cost-item.xp { color: var(--sys-color-success); font-size: 11px; }
-.cost-item.gem { color: #ffdeeb; font-size: 11px; }
+.cost-item.xp { 
+  color: var(--sys-color-on-surface-variant); 
+  font-size: 11px;
+  opacity: 0.6;
+}
 
-.res-asset {
-  width: 14px;
-  height: 14px;
+.res-icon {
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
-.res-asset.sm {
-  width: 11px;
-  height: 11px;
+.res-icon.sm {
+  width: 12px;
+  height: 12px;
 }
+</style>
+
 </style>
