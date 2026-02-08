@@ -99,7 +99,7 @@ function buildCandidate(
   };
 }
 
-function calculateKingStatus(totalXp: number, startIndex: number = 0): { profile: PlayerProfile, index: number } {
+function calculateKingStatus(totalXp: number, startIndex: number = 0): { profile: Pick<PlayerProfile, "kingLevel" | "xpIntoLevel">, index: number } {
   let currentIndex = startIndex;
   
   while (
@@ -110,6 +110,7 @@ function calculateKingStatus(totalXp: number, startIndex: number = 0): { profile
   }
 
   const current = KING_XP_TABLE[currentIndex];
+  // Calculate remainder correctly
   const xpInto = totalXp - current.cumulative;
 
   return {
