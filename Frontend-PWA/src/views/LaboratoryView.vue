@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useQuartermaster } from "../composables/useQuartermaster";
+import { useLaboratory } from "../composables/useLaboratory";
 import { useClashData } from "../composables/useClashData";
 
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
 import Icon from "../components/Icon.vue";
 
-// Dash Components (To be created)
-import VaultCard from "../components/Quartermaster/VaultCard.vue";
-import SettingsCard from "../components/Quartermaster/SettingsCard.vue";
-import SummaryCard from "../components/Quartermaster/SummaryCard.vue";
-import TrajectoryItem from "../components/Quartermaster/TrajectoryItem.vue";
+// Laboratory Components
+import VaultCard from "../components/Laboratory/VaultCard.vue";
+import SettingsCard from "../components/Laboratory/SettingsCard.vue";
+import SummaryCard from "../components/Laboratory/SummaryCard.vue";
+import TrajectoryItem from "../components/Laboratory/TrajectoryItem.vue";
 
 const {
   observation,
@@ -23,7 +23,7 @@ const {
   updateInventory,
   setSettings,
   refresh,
-} = useQuartermaster();
+} = useLaboratory();
 
 const { data: globalData } = useClashData();
 
@@ -60,7 +60,7 @@ const handleResourceUpdate = (key: string, value: number) => {
 
 <template>
   <ConsoleLayout
-    title="Quartermaster"
+    title="Laboratory"
     :status="{ type: statusType, text: statusText }"
     :loading="isFetching"
     :is-empty="isEmpty"

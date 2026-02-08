@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type OptimizationResult, type PlayerProfile } from "../../logic/Quartermaster/Quartermaster_Types";
+import { type OptimizationResult, type PlayerProfile } from "../../logic/Laboratory/Laboratory_Types";
 import Icon from "../Icon.vue";
 
 const props = defineProps<{

@@ -1,5 +1,5 @@
 
-import type { Rarity } from "./Quartermaster_Types";
+import type { Rarity } from "./Laboratory_Types";
 
 export const CARD_LEVEL_CAP = 16;
 

@@ -1,6 +1,6 @@
 import { ref, computed, type Ref, watch } from 'vue'
-import QuartermasterKernel from '../logic/Quartermaster/Quartermaster_Kernel'
-import QuartermasterAdapter from '../logic/Quartermaster/Quartermaster_Adapter'
+import LaboratoryKernel from '../logic/Laboratory/Laboratory_Kernel'
+import LaboratoryAdapter from '../logic/Laboratory/Laboratory_Adapter'
 import { useClashData } from './useClashData'
 import { getPlayerProfile } from '../api/gasClient'
 import type { 
@@ -8,10 +8,10 @@ import type {
   OptimizationSettings, 
   OptimizationResult, 
   Inventory 
-} from '../logic/Quartermaster/Quartermaster_Types'
+} from '../logic/Laboratory/Laboratory_Types'
 
-const STORAGE_KEY_SETTINGS = "quartermaster_settings";
-const STORAGE_KEY_INVENTORY = "quartermaster_inventory";
+const STORAGE_KEY_SETTINGS = "laboratory_settings";
+const STORAGE_KEY_INVENTORY = "laboratory_inventory";
 
 // Global state to persist data across view changes
 const observation: Ref<PlayerData | null> = ref(null)
@@ -43,20 +43,20 @@ const loadPersistedInventory = (profileData: PlayerData) => {
         }
       };
     } catch (e) {
-      console.warn("[Quartermaster] Failed to parse persisted inventory");
+      console.warn("[Laboratory] Failed to parse persisted inventory");
     }
   }
   return profileData.inventory;
 };
 
-export function useQuartermaster() {
+export function useLaboratory() {
   const { data: clashData } = useClashData()
 
   /**
-   * Ingests raw data (e.g. from RoyaleAPI or Internal Store) and hydrates the Quartermaster.
+   * Ingests raw data (e.g. from RoyaleAPI or Internal Store) and hydrates the Laboratory.
    */
   const ingest = (rawSnapshot: any, rawInventory?: any) => {
-    const data = QuartermasterAdapter.hydrate(rawSnapshot, rawInventory);
+    const data = LaboratoryAdapter.hydrate(rawSnapshot, rawInventory);
     // Apply persistence to the freshly hydrated data
     data.inventory = loadPersistedInventory(data);
     observation.value = data;
@@ -77,7 +77,7 @@ export function useQuartermaster() {
       const profile = await getPlayerProfile(tag)
       ingest(profile)
     } catch (e: any) {
-      console.error("[Quartermaster] Fetch Failed:", e)
+      console.error("[Laboratory] Fetch Failed:", e)
       fetchError.value = e.message || "Failed to fetch player profile"
     } finally {
       isFetching.value = false
@@ -128,7 +128,7 @@ export function useQuartermaster() {
     // Low-priority execution to keep UI responsive
     requestAnimationFrame(() => {
        if (observation.value) {
-         operation.value = QuartermasterKernel.optimize(observation.value, settings.value)
+         operation.value = LaboratoryKernel.optimize(observation.value, settings.value)
        }
        isSimulating.value = false
     })

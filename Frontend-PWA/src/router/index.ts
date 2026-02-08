@@ -54,10 +54,10 @@ const router = createRouter({
       meta: { title: "Headhunter" },
     },
     {
-      path: "/quartermaster",
-      name: "quartermaster",
-      component: () => import("../views/QuartermasterView.vue"),
-      meta: { title: "Quartermaster" },
+      path: "/laboratory",
+      name: "laboratory",
+      component: () => import("../views/LaboratoryView.vue"),
+      meta: { title: "Laboratory" },
     },
     {
       path: "/settings",

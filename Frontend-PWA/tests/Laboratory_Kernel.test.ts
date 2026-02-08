@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import QuartermasterKernel from '../src/logic/Quartermaster/Quartermaster_Kernel';
-import type { PlayerData, OptimizationSettings, Card } from '../src/logic/Quartermaster/Quartermaster_Types';
+import LaboratoryKernel from '../src/logic/Laboratory/Laboratory_Kernel';
+import type { PlayerData, OptimizationSettings, Card } from '../src/logic/Laboratory/Laboratory_Types';
 
-describe('Quartermaster Kernel', () => {
+describe('Laboratory Kernel', () => {
 
   const mockProfile = { name: "Test", tag: "#000", kingLevel: 14, xpIntoLevel: 0 };
   const mockInventory = { gold: 1000000, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } };
@@ -24,7 +24,7 @@ describe('Quartermaster Kernel', () => {
       targetLevel: 50 
     };
 
-    const result = QuartermasterKernel.optimize(data, settings);
+    const result = LaboratoryKernel.optimize(data, settings);
     const upgrade = result.actions?.find(a => a.targetLevel === 15);
     
     expect(upgrade).toBeDefined();
@@ -44,7 +44,7 @@ describe('Quartermaster Kernel', () => {
       infiniteResources: false 
     };
 
-    const result = QuartermasterKernel.optimize(data, settings);
+    const result = LaboratoryKernel.optimize(data, settings);
     // Should NOT upgrade because cost (60k) > gold (50k)
     expect(result.actions?.length || 0).toBe(0);
   });
@@ -63,7 +63,7 @@ describe('Quartermaster Kernel', () => {
       infiniteResources: true // User tried to toggle it ON
     };
 
-    const result = QuartermasterKernel.optimize(data, settings);
+    const result = LaboratoryKernel.optimize(data, settings);
     // Should STILL fail to upgrade because Maximize overrides infinite
     expect(result.actions?.length || 0).toBe(0);
   });
@@ -81,7 +81,7 @@ describe('Quartermaster Kernel', () => {
       targetLevel: 15 // Very small step for test speed
     };
 
-    const result = QuartermasterKernel.optimize(data, settings);
+    const result = LaboratoryKernel.optimize(data, settings);
     expect(result.actions.length).toBeGreaterThan(0);
     expect(result.projectedKingLevel).toBeGreaterThanOrEqual(15);
   });
