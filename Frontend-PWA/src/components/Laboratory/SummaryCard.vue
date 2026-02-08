@@ -30,35 +30,38 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="metrics-grid">
       <!-- Row 1: King Level Focus -->
       <div class="metric-item main">
-        <div class="metric-meta">
-          <img :src="`${baseUrl}assets/game/tower_level.webp`" class="res-asset" alt="Tower" />
-          <span class="label">Target Level</span>
-        </div>
-        <div class="value-stack">
-          <span class="current">{{ profile.kingLevel }}</span>
-          <Icon name="chevron_right" size="14" class="arrow" />
-          <span class="target">{{ result.projectedKingLevel }}</span>
-        </div>
-      </div>
-
-      <div class="metric-item">
-        <span class="label">Experience Required</span>
-        <div class="value-group">
-          <span class="value">+{{ formatNumber(result.totalXpGained) }}</span>
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset" alt="XP" />
-        </div>
-      </div>
-
-      <div class="metric-item">
-        <span class="label">Resources Required</span>
-        <div class="resource-stack">
-          <div class="value-group">
-            <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
-            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+        <label class="metric-label">Target Level</label>
+        <div class="king-level-display">
+          <div class="level-badge current">
+            <span class="num">{{ profile.kingLevel }}</span>
+            <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
           </div>
-          <div v-if="result.totalGemsSpent > 0" class="value-group gems-focus">
+          <Icon name="chevron_right" size="18" class="progression-arrow" />
+          <div class="level-badge target">
+            <span class="num">{{ result.projectedKingLevel }}</span>
+            <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <label class="metric-label">Experience Required</label>
+        <div class="resource-group xp">
+          <span class="value">{{ formatNumber(result.totalXpGained) }}</span>
+          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-icon" alt="XP" />
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <label class="metric-label">Resources Required</label>
+        <div class="resource-stack">
+          <div class="resource-group gold">
+            <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
+            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
+          </div>
+          <div v-if="result.totalGemsSpent > 0" class="resource-group gems">
             <span class="value">{{ formatNumber(result.totalGemsSpent) }}</span>
-            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
+            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
           </div>
         </div>
       </div>
@@ -124,129 +127,151 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
-  gap: 16px;
-  align-items: center;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 20px;
+  align-items: end;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .metrics-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 24px;
+    align-items: flex-start;
   }
 }
 
 .metric-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
 }
 
-.metric-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.king-icon { color: #f39c12; }
-
-.label {
+.metric-label {
   font-size: 11px;
   font-weight: 850;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.6;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
 }
 
-.value-stack {
+/* King Level Display */
+.king-level-display {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.current {
-  font-size: 28px;
-  font-weight: 900;
-  opacity: 0.4;
-}
-
-.arrow {
-  opacity: 0.3;
-}
-
-.target {
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--sys-color-primary);
-  text-shadow: 0 0 20px rgba(var(--sys-color-primary-rgb), 0.3);
-}
-
-.value-group {
+.level-badge {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  background: var(--sys-color-surface-container-high);
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--sys-color-outline-variant);
 }
 
-.value {
-  font-family: var(--sys-font-family-mono);
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.unit {
-  font-size: 12px;
+.level-badge .num {
+  font-size: 20px;
   font-weight: 900;
-  opacity: 0.5;
+  color: var(--sys-color-on-surface);
 }
 
-.res-asset {
-  width: 16px;
-  height: 16px;
+.level-badge.current {
+  opacity: 0.6;
+}
+
+.level-badge.target {
+  background: var(--sys-color-primary-container);
+  border-color: var(--sys-color-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.2);
+}
+
+.level-badge.target .num {
+  color: var(--sys-color-on-primary-container);
+  font-size: 24px;
+}
+
+.level-icon {
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
-.res-asset.small {
-  width: 12px;
-  height: 12px;
+.progression-arrow {
+  opacity: 0.3;
+  color: var(--sys-color-on-surface);
 }
 
+/* Resource Groups */
 .resource-stack {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
-.value-group.gems-focus {
-  color: #ffdeeb;
-  padding: 4px 8px;
-  background: rgba(255, 222, 235, 0.1);
-  border-radius: 8px;
+.resource-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--sys-color-surface-container-highest);
+  padding: 10px 14px;
+  border-radius: 12px;
   width: fit-content;
+  min-width: 100px;
+  border: 1px solid transparent;
 }
 
-.value.small {
-  font-size: 14px;
+.resource-group .value {
+  font-family: var(--sys-font-family-mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--sys-color-on-surface);
+}
+
+.resource-group .res-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.resource-group.gems {
+  background: rgba(255, 222, 235, 0.1);
+  border-color: rgba(255, 105, 180, 0.2);
+}
+
+.resource-group.gems .value {
+  color: #ffdeeb;
+}
+
+.resource-group.xp {
+  background: rgba(var(--sys-color-primary-rgb), 0.05);
+}
+
+.resource-group.gold {
+  background: rgba(255, 215, 0, 0.05);
 }
 
 .efficiency-strip {
   margin-top: 32px;
   background: var(--sys-color-surface-container-highest);
-  padding: 12px;
+  padding: 16px;
   border-radius: 16px;
+  border: 1px solid var(--sys-color-outline-variant);
 }
 
 .track {
-  height: 6px;
+  height: 8px;
   background: rgba(0,0,0,0.1);
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .fill {
   height: 100%;
   background: linear-gradient(90deg, var(--sys-color-primary), var(--sys-color-success));
-  border-radius: 3px;
+  border-radius: 4px;
   transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -256,7 +281,13 @@ const baseUrl = import.meta.env.BASE_URL;
   justify-content: space-between;
   font-size: 11px;
   font-weight: 850;
-  color: var(--sys-color-success);
+  color: var(--sys-color-on-surface-variant);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
+
+.efficiency-details b {
+  color: var(--sys-color-success);
+}
+
 </style>
