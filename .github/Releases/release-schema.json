@@ -1,4 +1,7 @@
 {
+  "create_changelog": "cd \"$HOME/.gemini/antigravity/clash-manager\" && git fetch origin --tags && ST=$(git describe --tags --abbrev=0 origin/Stable) && FN=\"Changelog_$(date +%Y-%m-%d)_from_$ST.txt\" && printf \"PROJECT: Clash Manager\\nRANGE:   $ST -> origin/Stable\\nDATE:    $(date +'%Y-%m-%d %H:%M')\\n==========================================\\n\\n\" > ~/Downloads/\"$FN\" && git log \"$ST\"..origin/Stable --format=\"<c>%h: %s%n%b</c>%n\" >> ~/Downloads/\"$FN\""
+}
+{
   "type": "object",
   "required": [
     "versioning_logic",
