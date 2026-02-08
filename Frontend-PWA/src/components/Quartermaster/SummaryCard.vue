@@ -43,7 +43,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
       <!-- Row 2: Resources -->
       <div class="metric-item">
-        <span class="label">Total Experience</span>
+        <span class="label">Experience Required</span>
         <div class="value-group">
           <span class="value">+{{ formatNumber(result.totalXpGained) }}</span>
           <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset" alt="XP" />
@@ -51,10 +51,15 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
 
       <div class="metric-item">
-        <span class="label">Total Investment</span>
+        <span class="label">Resources Required</span>
         <div class="value-group">
           <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
           <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+        </div>
+        <!-- Gem Secondary Row -->
+        <div v-if="result.totalGemsSpent > 0" class="value-group gem-secondary">
+          <span class="value small">{{ formatNumber(result.totalGemsSpent) }}</span>
+          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
         </div>
       </div>
     </div>
@@ -212,6 +217,17 @@ const baseUrl = import.meta.env.BASE_URL;
   width: 16px;
   height: 16px;
   object-fit: contain;
+}
+
+.gem-secondary {
+  margin-top: 4px;
+  opacity: 0.8;
+  padding-top: 4px;
+  border-top: 1px solid rgba(var(--sys-color-on-surface-rgb, 0, 0, 0), 0.05);
+}
+
+.value.small {
+  font-size: 14px;
 }
 
 .efficiency-strip {
