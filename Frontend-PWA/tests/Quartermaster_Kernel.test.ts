@@ -48,4 +48,23 @@ describe('Quartermaster Kernel', () => {
     // Should NOT upgrade because cost (60k) > gold (50k)
     expect(result.actions?.length || 0).toBe(0);
   });
+
+  it('should enforce infiniteResources=false when strategy is Maximize', () => {
+    // Even if we pass infiniteResources: true, Maximize should ignore it
+    const limitedGold = 50000;
+    const data: PlayerData = {
+      profile: mockProfile,
+      inventory: { ...mockInventory, gold: limitedGold },
+      cards: [createCard("Knight", "Common", 13, 50000)] // L14 cost is 60000
+    };
+
+    const settings: OptimizationSettings = {
+      strategy: "Maximize",
+      infiniteResources: true // User tried to toggle it ON
+    };
+
+    const result = QuartermasterKernel.optimize(data, settings);
+    // Should STILL fail to upgrade because Maximize overrides infinite
+    expect(result.actions?.length || 0).toBe(0);
+  });
 });

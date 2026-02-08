@@ -33,6 +33,8 @@ import type {
   Mutable
 } from './Quartermaster_Types';
 
+const EPSILON = 1e-9;
+
 /**
  * Calculates a single specific upgrade possibility for a given card.
  */
@@ -165,7 +167,8 @@ const QuartermasterKernel = {
       .map((_, i) => i)
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
-    const EPSILON = 1e-9;
+    // Enforce logic: Maximize strategy NEVER uses infinite resources
+    const effectiveInfinite = settings.strategy === "Maximize" ? false : settings.infiniteResources;
 
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;
@@ -176,7 +179,7 @@ const QuartermasterKernel = {
           simCards[index], 
           index, 
           simInventory, 
-          settings
+          { ...settings, infiniteResources: effectiveInfinite }
         );
 
         if (!candidate) continue;
@@ -218,7 +221,9 @@ const QuartermasterKernel = {
       // Budget Management
       // In "Maximize" strategy, we always deduct cost to respect the budget.
       // In "Target" strategy, we only deduct if NOT in infinite mode.
-      if (settings.strategy === "Maximize" || !settings.infiniteResources) {
+      // In "Maximize" strategy, we always deduct cost to respect the budget.
+      // In "Target" strategy, we only deduct if NOT in infinite mode.
+      if (!effectiveInfinite) {
          simInventory.gold -= bestCandidate.goldCost;
          simInventory.gems -= bestCandidate.gemsUsed;
       }
