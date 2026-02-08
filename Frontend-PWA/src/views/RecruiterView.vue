@@ -25,7 +25,7 @@ const {
   expandedIds,
   selectedSet,
   isShowcaseMode,
-  handleRefresh,
+  refresh,
   handleSearch,
   updateSort,
   handleSelectAll,
@@ -57,7 +57,7 @@ const {
     :sync-error="syncError"
     :is-empty="!showSkeletons && filteredItems.length === 0"
     :fab-state="fabState"
-    @refresh="handleRefresh"
+    @refresh="refresh"
     @update:search="handleSearch"
     @update:sort="updateSort"
     @select-all="handleSelectAll"
@@ -69,7 +69,7 @@ const {
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
-      <button class="btn-primary" @click="handleRefresh">
+      <button class="btn-primary" @click="refresh">
         <Icon name="refresh" size="18" />
         <span>Scan Again</span>
       </button>
@@ -83,7 +83,7 @@ const {
         :expanded="expandedIds.has(visibleItems[0].id)"
         :selected="selectedSet.has(visibleItems[0].id)"
         :selection-mode="isSelectionMode"
-        @toggle-expand="toggleExpand(visibleItems[0].id)"
+        @toggle="toggleExpand(visibleItems[0].id)"
         @toggle-select="toggleSelect(visibleItems[0].id)"
       />
       <BaseCardSkeleton
@@ -113,7 +113,7 @@ const {
         :selection-mode="isSelectionMode"
         :style="{ '--i': index }"
         :app-is-refreshing="isRefreshing"
-        @toggle-expand="toggleExpand(recruit.id)"
+        @toggle="toggleExpand(recruit.id)"
         @toggle-select="toggleSelect(recruit.id)"
       />
     </template>
