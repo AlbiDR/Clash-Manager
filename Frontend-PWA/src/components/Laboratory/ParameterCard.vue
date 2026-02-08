@@ -40,16 +40,16 @@ const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
-  <div class="settings-card glass-panel">
+  <div class="parameter-card glass-panel">
     <h3 class="panel-header">
       <Icon name="gear" size="16" />
       <span>Parameters</span>
     </h3>
 
-    <div class="settings-grid">
+    <div class="parameter-grid">
       <!-- Strategy Selector -->
-      <div class="setting-item">
-        <label class="setting-label">Strategy</label>
+      <div class="parameter-item">
+        <label class="parameter-label">Strategy</label>
         <div class="strategy-selector">
           <button 
             class="strategy-btn" 
@@ -71,8 +71,8 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
 
       <!-- Target Level Selector -->
-      <div class="setting-item" :class="{ disabled: settings.strategy === 'Maximize' }">
-        <label class="setting-label">Target King Level</label>
+      <div class="parameter-item" :class="{ disabled: settings.strategy === 'Maximize' }">
+        <label class="parameter-label">Target King Level</label>
         <div class="select-wrapper">
           <select 
             class="level-select" 
@@ -156,25 +156,25 @@ const baseUrl = import.meta.env.BASE_URL;
   margin-bottom: 20px;
 }
 
-.settings-grid {
+.parameter-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.setting-item {
+.parameter-item {
   display: flex;
   flex-direction: column;
   gap: 8px;
   transition: opacity 0.3s;
 }
 
-.setting-item.disabled, .toggle-row.disabled {
+.parameter-item.disabled, .toggle-row.disabled {
   opacity: 0.5;
   pointer-events: none;
 }
 
-.setting-label {
+.parameter-label {
   font-size: 12px;
   font-weight: 700;
   opacity: 0.6;

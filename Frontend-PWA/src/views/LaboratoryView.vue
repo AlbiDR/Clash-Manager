@@ -9,7 +9,7 @@ import Icon from "../components/Icon.vue";
 
 // Laboratory Components
 import VaultCard from "../components/Laboratory/VaultCard.vue";
-import SettingsCard from "../components/Laboratory/SettingsCard.vue";
+import ParameterCard from "../components/Laboratory/ParameterCard.vue";
 import SummaryCard from "../components/Laboratory/SummaryCard.vue";
 import TrajectoryItem from "../components/Laboratory/TrajectoryItem.vue";
 
@@ -88,7 +88,7 @@ const handleResourceUpdate = (key: string, value: number) => {
           @update="handleResourceUpdate"
         />
         
-        <SettingsCard 
+        <ParameterCard 
           :settings="settings"
           :current-level="observation.profile.kingLevel"
           @update="setSettings"
