@@ -172,16 +172,17 @@ const baseUrl = import.meta.env.BASE_URL;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px;
+  padding: 10px 16px;
   border: none;
   background: transparent;
   color: var(--sys-color-on-surface);
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0.6;
+  width: 100%;
 }
 
 .strategy-btn.active {
