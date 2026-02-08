@@ -19,7 +19,7 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="summary-header">
       <div class="player-info">
         <h2 class="player-name">{{ profile.name }}</h2>
-        <span class="player-tag">#{{ profile.tag }}</span>
+        <span class="player-tag">{{ profile.tag.startsWith('#') ? profile.tag : '#' + profile.tag }}</span>
       </div>
       <div class="projection-badge">
         <span class="label">Trajectory</span>
@@ -27,41 +27,49 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
     </div>
 
-    <div class="metrics-grid">
-      <!-- Row 1: King Level Focus -->
-      <div class="metric-item main">
-        <label class="metric-label">Target Level</label>
-        <div class="king-level-display">
-          <div class="level-badge current">
-            <span class="num">{{ profile.kingLevel }}</span>
-            <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
-          </div>
-          <Icon name="chevron_right" size="18" class="progression-arrow" />
-          <div class="level-badge target">
-            <span class="num">{{ result.projectedKingLevel }}</span>
-            <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
-          </div>
+    <!-- 1. Progression Row (Always full width) -->
+    <div class="progression-row">
+      <label class="section-label">Target Progress</label>
+      <div class="king-level-display">
+        <div class="level-badge current">
+          <span class="num">{{ profile.currentKingLevel || profile.kingLevel }}</span>
+          <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
+        </div>
+        <div class="progression-divider">
+          <Icon name="chevron_right" size="18" />
+        </div>
+        <div class="level-badge target">
+          <span class="num">{{ result.projectedKingLevel }}</span>
+          <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
         </div>
       </div>
+    </div>
 
-      <div class="metric-item">
-        <label class="metric-label">Experience Required</label>
-        <div class="resource-group xp">
-          <span class="value">{{ formatNumber(result.totalXpGained) }}</span>
+    <!-- 2. Resources Grid (Unified & Symmetrical) -->
+    <div class="metrics-section">
+      <label class="section-label">Required for Projection</label>
+      <div class="resources-grid" :class="{ 'triple': result.totalGemsSpent > 0 }">
+        <div class="res-slab xp">
           <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-icon" alt="XP" />
-        </div>
-      </div>
-
-      <div class="metric-item">
-        <label class="metric-label">Resources Required</label>
-        <div class="resource-stack">
-          <div class="resource-group gold">
-            <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
-            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
+          <div class="res-meta">
+            <span class="val">{{ formatNumber(result.totalXpGained) }}</span>
+            <span class="label">Experience</span>
           </div>
-          <div v-if="result.totalGemsSpent > 0" class="resource-group gems">
-            <span class="value">{{ formatNumber(result.totalGemsSpent) }}</span>
-            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
+        </div>
+        
+        <div class="res-slab gold">
+          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
+          <div class="res-meta">
+            <span class="val">{{ formatNumber(result.totalGoldSpent) }}</span>
+            <span class="label">Gold</span>
+          </div>
+        </div>
+
+        <div v-if="result.totalGemsSpent > 0" class="res-slab gems">
+          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
+          <div class="res-meta">
+            <span class="val">{{ formatNumber(result.totalGemsSpent) }}</span>
+            <span class="label">Gems</span>
           </div>
         </div>
       </div>
@@ -100,144 +108,169 @@ const baseUrl = import.meta.env.BASE_URL;
   font-size: 13px;
   opacity: 0.5;
   font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .projection-badge {
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
 .projection-badge .label {
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
-  opacity: 0.7;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
 }
 
 .projection-badge .value {
   font-family: var(--sys-font-family-mono);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 850;
 }
 
-.metrics-grid {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 640px) {
-  .metrics-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  
-  .metric-item.main {
-    grid-column: 1 / -1;
-    margin-bottom: 8px;
-  }
-}
-
-.metric-item {
+/* Sections */
+.progression-row, .metrics-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: all 0.3s ease;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-.metric-label {
+.section-label {
   font-size: 10px;
   font-weight: 850;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.45;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+  margin-bottom: 2px;
 }
 
 /* King Level Display */
 .king-level-display {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .level-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--sys-color-surface-container-high);
-  padding: 6px 12px;
-  border-radius: 10px;
+  padding: 8px 16px;
+  border-radius: 14px;
   border: 1px solid var(--sys-color-outline-variant);
+  min-width: 80px;
+  justify-content: center;
 }
 
 .level-badge .num {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
   color: var(--sys-color-on-surface);
 }
 
 .level-badge.current {
   opacity: 0.5;
+  filter: grayscale(0.2);
 }
 
 .level-badge.target {
   background: var(--sys-color-primary-container);
   border-color: var(--sys-color-primary);
-  box-shadow: 0 4px 10px rgba(var(--sys-color-primary-rgb), 0.15);
+  box-shadow: 0 4px 15px rgba(var(--sys-color-primary-rgb), 0.15);
 }
 
 .level-badge.target .num {
   color: var(--sys-color-on-primary-container);
-  font-size: 21px;
 }
 
 .level-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
 }
 
-.progression-arrow {
-  opacity: 0.25;
+.progression-divider {
+  opacity: 0.2;
+  display: flex;
   color: var(--sys-color-on-surface);
 }
 
-/* Resource Groups */
-.resource-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* Resources Grid */
+.resources-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.resource-group {
+.resources-grid.triple {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 640px) {
+  .resources-grid, .resources-grid.triple {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.res-slab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--sys-color-surface-container-highest);
-  padding: 8px 12px;
-  border-radius: 10px;
-  width: fit-content;
-  min-width: 90px;
-  border: 1px solid transparent;
+  gap: 16px;
+  background: var(--sys-color-surface-container-low);
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--sys-color-outline-variant);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.resource-group .value {
+.res-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.res-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.res-meta .val {
   font-family: var(--sys-font-family-mono);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 850;
   color: var(--sys-color-on-surface);
 }
 
-.resource-group .res-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
+.res-meta .label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+}
+
+/* Color Coding for Slabs */
+.res-slab.xp {
+  border-left: 3px solid #00d2ff;
+}
+.res-slab.gold {
+  border-left: 3px solid #ffcc00;
+}
+.res-slab.gems {
+  border-left: 3px solid #00ff88;
+  background: rgba(0, 255, 136, 0.02);
 }
 
 
