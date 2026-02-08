@@ -57,7 +57,7 @@ const baseUrl = import.meta.env.BASE_URL;
       <!-- Wild Cards -->
       <div class="wildcards-section">
         <div class="section-meta">
-          <span class="res-label">wild cards owned</span>
+          <span class="res-label">Wild Cards owned</span>
           <span class="res-hint">Input current Wild Cards inventory</span>
         </div>
         <div class="wildcards-row">

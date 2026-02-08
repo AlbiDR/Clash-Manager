@@ -183,6 +183,7 @@ const baseUrl = import.meta.env.BASE_URL;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0.6;
   width: 100%;
+  white-space: nowrap;
 }
 
 .strategy-btn.active {
