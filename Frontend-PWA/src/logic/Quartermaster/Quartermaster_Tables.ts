@@ -33,7 +33,7 @@ export const CARD_RARITY_START_LEVELS: Readonly<Record<Rarity, number>> = {
 // Using 'number | undefined' forces the optimizer to check if a level exists before using the value
 export const GOLD_COST_TABLE: Readonly<Record<number, number | undefined>> = {
   2: 5, 3: 20, 4: 50, 5: 150, 6: 400, 7: 1000, 8: 2000,
-  9: 4000, 10: 8000, 11: 15000, 12: 25000, 13: 40000, 14: 60000, 15: 90000, 16: 120000
+  9: 4000, 10: 8000, 11: 15000, 12: 25000, 13: 40000, 14: 60000, 15: 0, 16: 0
 };
 
 export const CARD_XP_TABLE: Readonly<Record<number, number | undefined>> = {
@@ -44,20 +44,20 @@ export const CARD_XP_TABLE: Readonly<Record<number, number | undefined>> = {
 export const MATERIAL_REQUIREMENTS: Readonly<Record<Rarity, Readonly<Record<number, number | undefined>>>> = {
   "Common": {
     2: 2, 3: 4, 4: 10, 5: 20, 6: 50, 7: 100, 8: 200, 9: 400, 10: 800,
-    11: 1000, 12: 1500, 13: 2500, 14: 3500, 15: 5500, 16: 7500
+    11: 1000, 12: 1500, 13: 2500, 14: 3500, 15: 50000, 16: 50000
   },
   "Rare": {
     4: 2, 5: 4, 6: 10, 7: 20, 8: 50, 9: 100, 10: 200, 11: 300, 12: 400,
-    13: 550, 14: 750, 15: 1000, 16: 1400
+    13: 550, 14: 750, 15: 50000, 16: 50000
   },
   "Epic": {
-    7: 2, 8: 4, 9: 10, 10: 20, 11: 30, 12: 50, 13: 70, 14: 100, 15: 130, 16: 180
+    7: 2, 8: 4, 9: 10, 10: 20, 11: 30, 12: 50, 13: 70, 14: 100, 15: 50000, 16: 50000
   },
   "Legendary": {
-    10: 2, 11: 4, 12: 6, 13: 9, 14: 12, 15: 14, 16: 20
+    10: 2, 11: 4, 12: 6, 13: 9, 14: 12, 15: 50000, 16: 50000
   },
   "Champion": {
-    12: 2, 13: 5, 14: 8, 15: 11, 16: 15
+    12: 2, 13: 5, 14: 8, 15: 50000, 16: 50000
   }
 };
 
