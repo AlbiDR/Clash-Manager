@@ -13,6 +13,7 @@ import type {
 
 const STORAGE_KEY_SETTINGS = "laboratory_settings";
 const STORAGE_KEY_INVENTORY = "laboratory_inventory";
+const STORAGE_KEY_OBSERVATION = "laboratory_observation";
 
 // Global state to persist data across view changes
 const observation: Ref<PlayerData | null> = ref(null)
@@ -51,6 +52,17 @@ const loadPersistedInventory = (profileData: PlayerData) => {
 };
 
 /**
+ * Persists the entire observation to localStorage for instant hydration.
+ */
+function persistObservation(data: PlayerData | null) {
+  if (data) {
+    localStorage.setItem(STORAGE_KEY_OBSERVATION, JSON.stringify(data));
+  } else {
+    localStorage.removeItem(STORAGE_KEY_OBSERVATION);
+  }
+}
+
+/**
  * Calculates the next logical target King Level based on milestones or next level.
  */
 function calculateDefaultTarget(currentLevel: number): number {
@@ -79,7 +91,27 @@ export function useLaboratory() {
       };
     }
 
+    persistObservation(observation.value)
     analyze() // Auto-analyze on ingestion
+  }
+
+  /**
+   * Initialization: Attempt to hydrate from cache if the tag matches
+   */
+  if (!observation.value) {
+    const cached = localStorage.getItem(STORAGE_KEY_OBSERVATION);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        // Only hydrate if we have a tag and it matches or if no tag is configured yet
+        if (parsed && (!clashData.value?.playerTag || parsed.profile.tag === clashData.value.playerTag)) {
+          observation.value = parsed;
+          analyze();
+        }
+      } catch (e) {
+        console.warn("[Laboratory] Cache hydration failed", e);
+      }
+    }
   }
 
   /**
@@ -132,6 +164,7 @@ export function useLaboratory() {
 
     // Persist changes
     localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(newInventory));
+    persistObservation(observation.value);
     
     analyze() // Re-analyze on inventory change
   }
