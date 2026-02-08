@@ -25,7 +25,7 @@ const DEFAULT_STATE: ModuleState = {
   ghostBenchmarking: !isMobile,
   sortExplanation: true,
   backendRefresher: false,
-  experimentalNotifications: true,
+  experimentalNotifications: false,
   notificationBadgeHighPotential: true,
   notificationThreshold: 75,
   notificationSound: true,
