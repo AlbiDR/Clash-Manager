@@ -176,19 +176,26 @@ function handleFabDismiss() {
   left: 50%;
   transform: translateX(-50%);
   background: var(--sys-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--sys-surface-glass-border);
   padding: 6px;
   border-radius: var(--shape-corner-full);
   display: flex;
   gap: 6px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 500;
   /* Disable double-tap zoom delay */
   touch-action: manipulation;
   /* Optimize transition timing for responsiveness */
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dock-container:hover {
+  bottom: calc(28px + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
 .dock-container.hidden:not(.is-desktop) {
@@ -217,7 +224,9 @@ function handleFabDismiss() {
   position: relative;
   /* Ensure sufficient touch target size */
   height: 56px;
-  padding: 0 24px;
+  flex: 1;
+  min-width: 64px;
+  padding: 0 12px;
   border-radius: var(--shape-corner-full);
   display: flex;
   align-items: center;
@@ -232,7 +241,8 @@ function handleFabDismiss() {
   background: none;
   border: none;
   font-family: inherit;
-  min-width: 64px;
+  /* Prevent text wrapping on narrower viewports */
+  white-space: nowrap;
 }
 
 /* Active state feedback */
@@ -243,6 +253,7 @@ function handleFabDismiss() {
 
 .dock-item.active {
   color: var(--sys-color-on-primary);
+  flex: 1.2; /* Slightly more prominence for active item, still balanced by flex */
 }
 
 /* Maintain scale stability on active selected item */
@@ -374,45 +385,31 @@ function handleFabDismiss() {
   opacity: 0;
 }
 
-@media (max-width: 480px) {
-  .dock-item:not(.active) .dock-label {
+@media (max-width: 600px) {
+  .dock-container {
+    width: calc(100% - 32px);
+    max-width: 460px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .dock-item {
+    flex: 1;
+    min-width: 0; /* Allow shrinking below base */
+    padding: 0;
+    gap: 4px;
+    font-size: 13px;
+  }
+  .dock-item .dock-label {
     display: none;
   }
-  /* Reduce padding on small screens to prevent layout overflow */
-  .dock-item {
-    padding: 0 16px;
-    min-width: 56px;
-  }
   .dock-item.active {
-    padding: 0 24px;
-    min-width: 100px;
+    flex: 2; /* Active item takes more space, but total flex is constant */
   }
-  /* Ensure padding consistency for icon-only items like Settings */
-  .dock-item[aria-label="Settings"] {
-    padding: 0 22px;
-  }
-
-  /* FAB specific mobile adjustments to prevent wrapping */
-  .dock-container.fab-mode {
-    gap: 6px;
-    padding: 6px;
-  }
-
-  .fab-btn {
-    padding: 0 16px;
-    min-height: 56px;
-    gap: 6px;
-    font-size: 14px;
-  }
-
-  .fab-btn.compact {
-    padding: 0;
-    width: 56px;
-    min-width: 56px;
-  }
-
-  .blast-status {
-    min-width: 70px;
+  .dock-item.active .dock-label {
+    display: block;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>
