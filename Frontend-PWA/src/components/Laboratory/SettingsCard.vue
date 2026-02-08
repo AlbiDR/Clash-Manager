@@ -14,11 +14,7 @@ const emit = defineEmits<{
 }>();
 
 const setStrategy = (val: "Target" | "Maximize") => {
-  // If switching to Maximize, disable infinite resources as it makes no sense
   const updates: Partial<OptimizationSettings> = { strategy: val };
-  if (val === "Maximize") {
-    updates.infiniteResources = false;
-  }
   emit("update", { ...props.settings, ...updates });
 };
 
@@ -27,9 +23,8 @@ const handleTargetChange = (e: Event) => {
   emit("update", { targetLevel: val });
 };
 
-const toggleInfinite = () => {
-  if (props.settings.strategy === "Maximize") return; // Locked for Maximize
-  emit("update", { infiniteResources: !props.settings.infiniteResources });
+const toggleGemSpending = () => {
+  emit("update", { allowGemSpending: !props.settings.allowGemSpending });
 };
 
 const filteredLevels = computed(() => {
@@ -102,16 +97,16 @@ const baseUrl = import.meta.env.BASE_URL;
         </div>
       </div>
 
-      <!-- Infinite Resources Toggle -->
-      <label class="toggle-row" :class="{ disabled: settings.strategy === 'Maximize' }">
+      <!-- Gem Spending Toggle -->
+      <label class="toggle-row">
         <div class="toggle-info">
-          <span class="label">Infinite Resources</span>
-          <span class="sub">Unlock theoretical potential</span>
+          <span class="label">Allow Gem Spending</span>
+          <span class="sub">Buy missing cards with gems</span>
         </div>
         <div 
           class="custom-toggle" 
-          :class="{ active: settings.infiniteResources }"
-          @click="toggleInfinite"
+          :class="{ active: settings.allowGemSpending }"
+          @click="toggleGemSpending"
         >
           <div class="toggle-nob"></div>
         </div>

@@ -20,7 +20,7 @@ const observation: Ref<PlayerData | null> = ref(null)
 
 const settings: Ref<OptimizationSettings> = ref({
   strategy: "Target",
-  infiniteResources: false,
+  allowGemSpending: false,
   targetLevel: undefined,
   ...(JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || "{}"))
 })
