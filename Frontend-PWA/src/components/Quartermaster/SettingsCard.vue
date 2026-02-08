@@ -171,6 +171,7 @@ const baseUrl = import.meta.env.BASE_URL;
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
   gap: 8px;
   padding: 10px 16px;
   border: none;
@@ -285,18 +286,5 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .custom-toggle.active .toggle-nob {
   transform: translateX(20px);
-}
-
-.lock-icon {
-  position: absolute;
-  right: -6px;
-  top: 4px; /* Centered relative to the row/toggle */
-  color: var(--sys-color-on-surface-variant);
-  opacity: 0.8;
-  background: var(--sys-color-surface-container);
-  border-radius: 50%;
-  padding: 2px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  pointer-events: none;
 }
 </style>
