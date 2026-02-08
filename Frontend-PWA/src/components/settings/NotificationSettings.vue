@@ -9,6 +9,10 @@ import { useToast } from "../../composables/useToast";
 import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
+const props = defineProps<{
+  initiallyExpanded?: boolean;
+}>();
+
 const { modules, toggle } = useAppSettings();
 const haptics = useHaptics();
 const { requestPermission, sendLocalNotification } = useBadge();
@@ -130,7 +134,7 @@ const sendTest = async () => {
 </script>
 
 <template>
-  <SettingsCard title="Notification Engine" icon="bell">
+  <SettingsCard title="Notification Engine" icon="bell" :initially-expanded="initiallyExpanded">
     <!-- Master Toggle -->
     <div
       class="toggle-row master-toggle"

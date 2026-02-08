@@ -2,6 +2,10 @@
 import { useSettings } from "../../composables/useSettings";
 import SettingsCard from "../SettingsCard.vue";
 
+defineProps<{
+  initiallyExpanded?: boolean;
+}>();
+
 const { modules, toggle, isRefreshing } = useSettings();
 </script>
 
@@ -10,6 +14,7 @@ const { modules, toggle, isRefreshing } = useSettings();
     title="Application Features"
     icon="analytics"
     :loading="isRefreshing"
+    :initially-expanded="initiallyExpanded"
   >
     <div class="features-list">
       <div

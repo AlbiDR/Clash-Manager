@@ -42,22 +42,26 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
-        <!-- TIER 1: Interface & Display -->
-        <AppearanceSettings />
+        <!-- 1. Network & API -->
+        <NetworkSettings />
+
+        <!-- 2. Notifications -->
         <NotificationSettings />
 
-        <!-- TIER 2: Application Features -->
-        <FeatureSettings />
+        <!-- 3. Appearance (Expanded) -->
+        <AppearanceSettings :initially-expanded="true" />
 
-        <!-- TIER 2.5: Display Preferences -->
+        <!-- 4. Display Preferences -->
         <ModeSettings />
 
-        <!-- TIER 3: Infrastructure -->
-        <NetworkSettings />
-        <BackendRefresher v-if="modules.backendRefresher" />
+        <!-- 5. Application Features (Expanded) -->
+        <FeatureSettings :initially-expanded="true" />
 
-        <!-- TIER 4: System & Recovery -->
+        <!-- 6. System & Recovery -->
         <RecoverySettings />
+
+        <!-- Infrastructure Meta (Conditional) -->
+        <BackendRefresher v-if="modules.backendRefresher" />
       </template>
 
       <div class="footer-info">

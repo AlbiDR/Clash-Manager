@@ -4,6 +4,10 @@ import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 import { vTactile } from "../../directives/vTactile";
 
+defineProps<{
+  initiallyExpanded?: boolean;
+}>();
+
 const {
   modules,
   toggle,
@@ -15,7 +19,7 @@ const {
 </script>
 
 <template>
-  <SettingsCard title="System & Recovery" icon="gear">
+  <SettingsCard title="System & Recovery" icon="gear" :initially-expanded="initiallyExpanded">
     <template #header-extra>
       <span class="exp-badge">EXPERIMENTAL</span>
     </template>

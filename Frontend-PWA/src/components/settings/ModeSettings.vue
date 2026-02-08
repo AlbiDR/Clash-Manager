@@ -3,6 +3,10 @@ import { useSettings } from "../../composables/useSettings";
 import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
+defineProps<{
+  initiallyExpanded?: boolean;
+}>();
+
 const {
   isSyntheticMode,
   toggleSyntheticMode,
@@ -19,6 +23,7 @@ const {
     title="Display Preferences"
     icon="visibility"
     :loading="isRefreshing"
+    :initially-expanded="initiallyExpanded"
   >
     <div class="features-list">
       <div

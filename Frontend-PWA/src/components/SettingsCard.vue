@@ -2,14 +2,15 @@
 import { ref } from "vue";
 import Icon from "./Icon.vue";
 
-defineProps<{
+const props = defineProps<{
   title: string;
   icon: string;
   loading?: boolean;
   bodyClass?: string;
+  initiallyExpanded?: boolean;
 }>();
 
-const isCollapsed = ref(true);
+const isCollapsed = ref(!props.initiallyExpanded);
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
