@@ -14,8 +14,8 @@ import type {
 const observation: Ref<PlayerData | null> = ref(null)
 
 const settings: Ref<OptimizationSettings> = ref({
-  strategy: "Gold",
-  infiniteGold: false,
+  strategy: "Target",
+  infiniteResources: false,
   targetLevel: undefined
 })
 
@@ -75,9 +75,7 @@ export function useQuartermaster() {
       wildCards: {
         ...observation.value.inventory.wildCards,
         ...(partialInventory.wildCards || {})
-      },
-      eliteWildCards: partialInventory.eliteWildCards ?? observation.value.inventory.eliteWildCards,
-      crystals: partialInventory.crystals ?? observation.value.inventory.crystals
+      }
     }
 
     observation.value = {

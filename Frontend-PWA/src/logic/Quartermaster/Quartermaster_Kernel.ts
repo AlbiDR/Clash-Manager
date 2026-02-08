@@ -66,24 +66,12 @@ function buildCandidate(
     if (settings.strategy !== "Gems") return null;
     const gemRate = GEM_CONVERSION_RATES[card.rarity];
     gemsUsed = Math.ceil(remainingNeeded * gemRate);
-    remainingNeeded = 0;
+    remainingNeeded = 0; // All remaining needed cards are covered by gems
   }
 
   if (remainingNeeded > 0) return null;
-  
-  // ELITE CURRENCY LOGIC
-  let ewcUsed = 0;
-  let crystalsUsed = 0;
 
-  if (nextLevel === 15) {
-     ewcUsed = cardsRequired; 
-     if (!settings.infiniteGold && ewcUsed > inventory.eliteWildCards) return null;
-  } else if (nextLevel === 16) {
-     crystalsUsed = cardsRequired; 
-     if (!settings.infiniteGold && crystalsUsed > inventory.crystals) return null;
-  }
-
-  if (!settings.infiniteGold && goldCost > inventory.gold) return null;
+  if (!settings.infiniteResources && goldCost > inventory.gold) return null;
   if (gemsUsed > inventory.gems) return null;
 
   const effectiveCost = goldCost + (gemsUsed * GEM_VALUE_IN_GOLD);
@@ -107,10 +95,8 @@ function buildCandidate(
     gemsUsed,
     xpGained: xpGain,
     efficiencyRatio,
-    materialEfficiency,
-    ewcUsed,
-    crystalsUsed
-  } as UpgradeCandidate;
+    materialEfficiency
+  };
 }
 
 function calculateKingStatus(totalXp: number, startIndex: number = 0): { profile: Pick<PlayerProfile, "kingLevel" | "xpIntoLevel">, index: number } {
@@ -228,19 +214,17 @@ const QuartermasterKernel = {
       
       targetCard.level = bestCandidate.toLevel;
       targetCard.count -= bestCandidate.cardsUsed;
-
-      if (!settings.infiniteGold) {
-        simInventory.gold -= bestCandidate.goldCost;
+      
+      // Budget Management
+      // In "Maximize" strategy, we always deduct cost to respect the budget.
+      // In "Target" strategy, we only deduct if NOT in infinite mode.
+      if (settings.strategy === "Maximize" || !settings.infiniteResources) {
+         simInventory.gold -= bestCandidate.goldCost;
+         simInventory.gems -= bestCandidate.gemsUsed;
       }
-      simInventory.gems -= bestCandidate.gemsUsed;
       
       const wildKey = targetCard.rarity as Rarity;
       (simInventory.wildCards as Record<Rarity, number>)[wildKey] -= bestCandidate.wildCardsUsed;
-      
-      if (!settings.infiniteGold) {
-        simInventory.eliteWildCards -= bestCandidate.ewcUsed || 0;
-        simInventory.crystals -= bestCandidate.crystalsUsed || 0;
-      }
 
       totalWildCardsUsed[targetCard.rarity] += bestCandidate.wildCardsUsed;
       totalGoldSpent += bestCandidate.goldCost;
@@ -267,7 +251,7 @@ const QuartermasterKernel = {
         upgradeType
       });
 
-      if (settings.targetLevel) {
+      if (settings.strategy === "Target" && settings.targetLevel) {
         const kingStatus = calculateKingStatus(currentTotalXp, currentKingIndex);
         currentKingIndex = kingStatus.index;
         if (kingStatus.profile.kingLevel >= settings.targetLevel) break;
@@ -277,7 +261,7 @@ const QuartermasterKernel = {
     const finalKingStatus = calculateKingStatus(currentTotalXp, currentKingIndex);
     
     return {
-      upgrades,
+      actions: upgrades,
       totalXpGained,
       projectedKingLevel: finalKingStatus.profile.kingLevel,
       finalProfile: {

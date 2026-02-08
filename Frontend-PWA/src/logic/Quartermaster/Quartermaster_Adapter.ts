@@ -93,9 +93,7 @@ const QuartermasterAdapter = {
     const inventory: Inventory = {
       gold: inventoryData.gold || 0,
       gems: inventoryData.gems || 0,
-      wildCards: inventoryData.wildCards || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 },
-      eliteWildCards: inventoryData.eliteWildCards || 0,
-      crystals: inventoryData.crystals || 0
+      wildCards: inventoryData.wildCards || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 }
     };
 
     return {

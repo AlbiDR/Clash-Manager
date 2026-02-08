@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type OptimizationSettings } from "../../logic/Quartermaster/Quartermaster_Types";
+import { IMPORTANT_KING_LEVELS } from "../../logic/Quartermaster/Quartermaster_Tables";
 import Icon from "../Icon.vue";
 
 const props = defineProps<{
@@ -10,20 +11,26 @@ const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
 
-const setStrategy = (val: "Gold" | "Gems") => {
-  emit("update", { ...props.settings, strategy: val });
+const setStrategy = (val: "Target" | "Maximize") => {
+  // If switching to Maximize, disable infinite resources as it makes no sense
+  const updates: Partial<OptimizationSettings> = { strategy: val };
+  if (val === "Maximize") {
+    updates.infiniteResources = false;
+  }
+  emit("update", { ...props.settings, ...updates });
 };
 
-const baseUrl = import.meta.env.BASE_URL;
-
-const handleTargetInput = (e: Event) => {
-  const val = parseInt((e.target as HTMLInputElement).value) || undefined;
+const handleTargetChange = (e: Event) => {
+  const val = parseInt((e.target as HTMLSelectElement).value);
   emit("update", { targetLevel: val });
 };
 
 const toggleInfinite = () => {
-  emit("update", { infiniteGold: !props.settings.infiniteGold });
+  if (props.settings.strategy === "Maximize") return; // Locked for Maximize
+  emit("update", { infiniteResources: !props.settings.infiniteResources });
 };
+
+const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -36,53 +43,59 @@ const toggleInfinite = () => {
     <div class="settings-grid">
       <!-- Strategy Selector -->
       <div class="setting-item">
-        <label class="setting-label">Priority Strategy</label>
+        <label class="setting-label">Strategy</label>
         <div class="strategy-selector">
           <button 
             class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Gold' }"
-            @click="setStrategy('Gold')"
+            :class="{ active: settings.strategy === 'Target' }"
+            @click="setStrategy('Target')"
           >
-            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
-            <span>Gold</span>
+            <Icon name="target" size="14" />
+            <span>Target Level</span>
           </button>
           <button 
             class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Gems' }"
-            @click="setStrategy('Gems')"
+            :class="{ active: settings.strategy === 'Maximize' }"
+            @click="setStrategy('Maximize')"
           >
-            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
-            <span>Gems</span>
+            <Icon name="trending-up" size="14" />
+            <span>Maximize Value</span>
           </button>
         </div>
       </div>
 
-      <!-- Target Level -->
-      <div class="setting-item">
+      <!-- Target Level Selector -->
+      <div class="setting-item" :class="{ disabled: settings.strategy === 'Maximize' }">
         <label class="setting-label">Target King Level</label>
-        <div class="input-wrapper">
-          <input 
-            type="number" 
-            :value="settings.targetLevel" 
-            placeholder="Auto (Max)"
-            class="num-input"
-            min="1"
-            max="90"
-            @input="handleTargetInput"
+        <div class="select-wrapper">
+          <select 
+            class="level-select" 
+            :value="settings.targetLevel || 90" 
+            :disabled="settings.strategy === 'Maximize'"
+            @change="handleTargetChange"
           >
-          <span class="input-unit">v</span>
+            <option 
+              v-for="level in 90" 
+              :key="level" 
+              :value="level"
+              :class="{ milestone: IMPORTANT_KING_LEVELS.includes(level as any) }"
+            >
+              Level {{ level }} {{ IMPORTANT_KING_LEVELS.includes(level as any) ? '★' : '' }}
+            </option>
+          </select>
+          <Icon name="chevron-down" size="14" class="select-icon" />
         </div>
       </div>
 
-      <!-- Infinite Toggle -->
-      <label class="toggle-row">
+      <!-- Infinite Resources Toggle -->
+      <label class="toggle-row" :class="{ disabled: settings.strategy === 'Maximize' }">
         <div class="toggle-info">
-          <span class="label">Infinite Logistics</span>
-          <span class="sub">Ignore gold constraints</span>
+          <span class="label">Infinite Resources</span>
+          <span class="sub">Unlock theoretical potential</span>
         </div>
         <div 
           class="custom-toggle" 
-          :class="{ active: settings.infiniteGold }"
+          :class="{ active: settings.infiniteResources }"
           @click="toggleInfinite"
         >
           <div class="toggle-nob"></div>
@@ -124,6 +137,12 @@ const toggleInfinite = () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: opacity 0.3s;
+}
+
+.setting-item.disabled, .toggle-row.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .setting-label {
@@ -152,7 +171,7 @@ const toggleInfinite = () => {
   border: none;
   background: transparent;
   color: var(--sys-color-on-surface);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   border-radius: 8px;
   cursor: pointer;
@@ -166,45 +185,36 @@ const toggleInfinite = () => {
   opacity: 1;
 }
 
-.strategy-btn:hover:not(.active) {
-  background: rgba(var(--sys-color-on-surface-rgb), 0.05);
-}
-
-.input-wrapper {
+.select-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.num-input {
+.level-select {
+  appearance: none;
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: 12px;
   padding: 10px 14px;
   font-family: var(--sys-font-family-mono);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--sys-color-on-surface);
   width: 100%;
+  cursor: pointer;
 }
 
-.num-input:focus {
-  outline: none;
-  border-color: var(--sys-color-primary);
+.level-select option.milestone {
+  font-weight: 900;
+  color: var(--sys-color-primary);
 }
 
-.res-asset {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
-
-.input-unit {
+.select-icon {
   position: absolute;
   right: 14px;
-  font-size: 14px;
-  font-weight: 800;
-  opacity: 0.3;
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 .toggle-row {
@@ -215,6 +225,7 @@ const toggleInfinite = () => {
   cursor: pointer;
   padding-top: 8px;
   border-top: 1px solid var(--sys-color-outline-variant);
+  transition: opacity 0.3s;
 }
 
 .toggle-info {
@@ -262,12 +273,5 @@ const toggleInfinite = () => {
 
 .custom-toggle.active .toggle-nob {
   transform: translateX(20px);
-}
-
-/* Hide arrows */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 </style>
