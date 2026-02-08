@@ -10,6 +10,8 @@ defineProps<{
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat().format(num);
 };
+
+const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -38,11 +40,11 @@ const formatNumber = (num: number) => {
     <div class="cost-stack">
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
+        <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <img src="/assets/game/currency_xp.webp" class="res-asset sm" alt="XP" />
+        <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset sm" alt="XP" />
       </div>
     </div>
   </div>

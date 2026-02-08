@@ -15,6 +15,8 @@ const handleInput = (e: Event, key: string) => {
   const val = parseInt((e.target as HTMLInputElement).value) || 0;
   emit("update", key, val);
 };
+
+const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -28,7 +30,7 @@ const handleInput = (e: Event, key: string) => {
       <!-- Primary Resources -->
       <div class="resource-item full">
         <div class="res-meta">
-          <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
+          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
           <span class="res-label">Gold</span>
         </div>
         <input 
@@ -41,7 +43,7 @@ const handleInput = (e: Event, key: string) => {
 
       <div class="resource-item full">
         <div class="res-meta">
-          <img src="/assets/game/currency_gem.webp" class="res-asset" alt="Gems" />
+          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
           <span class="res-label">Gems</span>
         </div>
         <input 
@@ -65,7 +67,7 @@ const handleInput = (e: Event, key: string) => {
             class="wc-item"
           >
             <img 
-              :src="`/assets/game/wildcard_${rarity.toLowerCase()}.webp`" 
+              :src="`${baseUrl}assets/game/wildcard_${rarity.toLowerCase()}.webp`" 
               class="wc-asset" 
               :alt="rarity" 
             />

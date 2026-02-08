@@ -11,8 +11,10 @@ const emit = defineEmits<{
 }>();
 
 const setStrategy = (val: "Gold" | "Gems") => {
-  emit("update", { strategy: val });
+  emit("update", { ...props.settings, strategy: val });
 };
+
+const baseUrl = import.meta.env.BASE_URL;
 
 const handleTargetInput = (e: Event) => {
   const val = parseInt((e.target as HTMLInputElement).value) || undefined;
@@ -41,7 +43,7 @@ const toggleInfinite = () => {
             :class="{ active: settings.strategy === 'Gold' }"
             @click="setStrategy('Gold')"
           >
-            <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
+            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
             <span>Gold</span>
           </button>
           <button 
@@ -49,7 +51,7 @@ const toggleInfinite = () => {
             :class="{ active: settings.strategy === 'Gems' }"
             @click="setStrategy('Gems')"
           >
-            <img src="/assets/game/currency_gem.webp" class="res-asset" alt="Gems" />
+            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
             <span>Gems</span>
           </button>
         </div>
