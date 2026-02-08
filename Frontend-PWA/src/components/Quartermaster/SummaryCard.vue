@@ -22,8 +22,8 @@ const baseUrl = import.meta.env.BASE_URL;
         <span class="player-tag">#{{ profile.tag }}</span>
       </div>
       <div class="projection-badge">
-        <span class="label">Projection</span>
-        <span class="value">v{{ result.actions.length }}</span>
+        <span class="label">Trajectory</span>
+        <span class="value">{{ result.actions.length }} Steps</span>
       </div>
     </div>
 
@@ -61,20 +61,6 @@ const baseUrl = import.meta.env.BASE_URL;
           <span class="value small">{{ formatNumber(result.totalGemsSpent) }}</span>
           <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
         </div>
-      </div>
-    </div>
-
-    <!-- Efficiency Indicator -->
-    <div v-if="result.actions.length > 0" class="efficiency-strip">
-      <div class="track">
-        <div 
-          class="fill" 
-          :style="{ width: `${Math.min(100, (result.totalXpGained / 50000) * 100)}%` }"
-        ></div>
-      </div>
-      <div class="efficiency-details">
-        <span>Strategic Efficiency Optimized</span>
-        <Icon name="check" size="14" />
       </div>
     </div>
   </div>

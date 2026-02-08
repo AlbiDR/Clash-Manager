@@ -24,12 +24,12 @@ const baseUrl = import.meta.env.BASE_URL;
 
     <div class="upgrade-info">
       <div class="top-row">
-        <span class="card-name">{{ upgrade.cardName }}</span>
         <div class="level-badge">
           <span class="prev">{{ upgrade.currentLevel }}</span>
           <Icon name="chevron_right" size="10" />
           <span class="next">{{ upgrade.targetLevel }}</span>
         </div>
+        <span class="card-name">{{ upgrade.cardName }}</span>
       </div>
       <div class="bottom-row">
         <span class="logic-type">{{ upgrade.upgradeType }} Upgrade</span>
@@ -40,11 +40,15 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="cost-stack">
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+        <div class="icon-frame">
+          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+        </div>
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset sm" alt="XP" />
+        <div class="icon-frame">
+          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset sm" alt="XP" />
+        </div>
       </div>
     </div>
   </div>
@@ -163,17 +167,24 @@ const baseUrl = import.meta.env.BASE_URL;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
-  min-width: 80px;
+  gap: 4px; /* Increased gap for better separation */
+  min-width: 90px;
 }
 
 .cost-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
   font-weight: 800;
+}
+
+.icon-frame {
+  width: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .cost-item.gold { color: var(--sys-color-on-surface); }
@@ -186,7 +197,7 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .res-asset.sm {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
 }
 </style>

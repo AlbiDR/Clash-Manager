@@ -118,6 +118,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  scrollbar-gutter: stable;
 }
 
 /* 🖼️ SHOWCASE FRAME: 1px clinical boundary for screenshots */
@@ -194,12 +195,12 @@ onMounted(() => {
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(4px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-4px);
 }
 
 /* ⚡ FUTURE: CSS View Transitions API support elsewhere */
