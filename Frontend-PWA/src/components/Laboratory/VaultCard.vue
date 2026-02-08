@@ -27,31 +27,33 @@ const baseUrl = import.meta.env.BASE_URL;
     </h3>
 
     <div class="resource-grid">
-      <!-- Primary Resources -->
-      <div class="resource-item full">
-        <div class="res-meta">
-          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
-          <span class="res-label">Gold</span>
+      <div class="resource-row">
+        <!-- Primary Resources -->
+        <div class="resource-item">
+          <div class="res-meta">
+            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+            <span class="res-label">Gold</span>
+          </div>
+          <input 
+            type="number" 
+            :value="inventory.gold" 
+            class="res-input"
+            @input="handleInput($event, 'gold')"
+          >
         </div>
-        <input 
-          type="number" 
-          :value="inventory.gold" 
-          class="res-input"
-          @input="handleInput($event, 'gold')"
-        >
-      </div>
 
-      <div class="resource-item full">
-        <div class="res-meta">
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
-          <span class="res-label">Gems</span>
+        <div class="resource-item">
+          <div class="res-meta">
+            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
+            <span class="res-label">Gems</span>
+          </div>
+          <input 
+            type="number" 
+            :value="inventory.gems" 
+            class="res-input"
+            @input="handleInput($event, 'gems')"
+          >
         </div>
-        <input 
-          type="number" 
-          :value="inventory.gems" 
-          class="res-input"
-          @input="handleInput($event, 'gems')"
-        >
       </div>
 
       <!-- Wild Cards -->
