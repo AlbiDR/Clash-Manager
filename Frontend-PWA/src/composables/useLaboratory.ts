@@ -1,6 +1,7 @@
 import { ref, computed, type Ref, watch } from 'vue'
 import LaboratoryKernel from '../logic/Laboratory/Laboratory_Kernel'
 import LaboratoryAdapter from '../logic/Laboratory/Laboratory_Adapter'
+import { IMPORTANT_KING_LEVELS } from '../logic/Laboratory/Laboratory_Tables'
 import { useClashData } from './useClashData'
 import { getPlayerProfile } from '../api/gasClient'
 import type { 
@@ -49,6 +50,14 @@ const loadPersistedInventory = (profileData: PlayerData) => {
   return profileData.inventory;
 };
 
+/**
+ * Calculates the next logical target King Level based on milestones or next level.
+ */
+function calculateDefaultTarget(currentLevel: number): number {
+  const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
+  return nextMilestone || (currentLevel + 1);
+}
+
 export function useLaboratory() {
   const { data: clashData } = useClashData()
 
@@ -60,6 +69,16 @@ export function useLaboratory() {
     // Apply persistence to the freshly hydrated data
     data.inventory = loadPersistedInventory(data);
     observation.value = data;
+
+    // Apply default target level if unconfigured or reached
+    const currentLevel = data.profile.kingLevel;
+    if (!settings.value.targetLevel || settings.value.targetLevel <= currentLevel) {
+      settings.value = {
+        ...settings.value,
+        targetLevel: calculateDefaultTarget(currentLevel)
+      };
+    }
+
     analyze() // Auto-analyze on ingestion
   }
 
