@@ -5,6 +5,7 @@ import { useClashData } from "./composables/useClashData";
 import { useHeadhunter } from "./composables/useHeadhunter";
 import { useHaptics } from "./composables/useHaptics";
 import { useConnectionStatus } from "./composables/useConnectionStatus";
+import { useUiCoordinator } from "./composables/useUiCoordinator";
 import FloatingDock from "./components/FloatingDock.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ErrorBoundary from "./components/ErrorBoundary.vue";
@@ -12,6 +13,7 @@ import { useShowcaseMode } from "./composables/useShowcaseMode";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
 const { syncStatus, refresh, loadLocal } = useClashData();
+const { setFabVisible } = useUiCoordinator();
 // Initialize Headhunter (starts watchers for notifications/badge)
 useHeadhunter();
 
@@ -20,6 +22,11 @@ loadLocal(); // Non-blocking: main.ts also calls this, but we ensure hydration h
 const haptics = useHaptics();
 const route = useRoute();
 const currentRoute = computed(() => route);
+
+// Reset UI state (FAB/Dock) on ogni navigation
+watch(() => route.path, () => {
+  setFabVisible(false);
+});
 
 const {
   status: connectionState,
