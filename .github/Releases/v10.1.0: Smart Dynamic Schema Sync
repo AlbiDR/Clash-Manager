@@ -1,0 +1,73 @@
+# Smart Dynamic Schema Sync
+
+---
+<br>
+
+## Key Improvements
+### 1. Runtime Column Discovery (Backend)
+
+The backend no longer relies on hardcoded column indices, making the system significantly more robust.
+
+* **Dynamic Resolver:** Added `resolveSchemaIndices` to **Utilities.gs.js**. This function scans the sheet's header row and matches them against canonical labels (e.g., "Performance Score", "War Rate").
+* **Boot Sequence:** `bootDynamicSchema` is now called at the start of every update. It patches the `CONFIG.SCHEMA` object with the live indices from the sheet.
+* **Result:** You can now move columns around in the Google Sheet (e.g., moving "Trophies" to the end), and the script will automatically locate them and continue functioning perfectly.
+
+### 2. Schema-Aware Payload (API)
+
+The API response now includes a definitive schema array to guide the frontend.
+
+* **Metadata:** The backend informs the frontend exactly which field corresponds to which column in the return matrix (e.g., `schema: ["id", "n", "t", "s", ...]`).
+* **Sync:** If the backend changes the column order in the matrix, the frontend adapts instantly without requiring a code update.
+
+### 3. Intelligent Mapping (Frontend)
+
+The PWA's **gasClient.ts** has been refactored to be "Schema-Aware."
+
+* **Dynamic Mapping:** Instead of using hardcoded indices like `r[0]` or `r[1]`, the client now finds the index of each key (such as `id` or `name`) within the returned schema array.
+* **Legacy Protection:** Includes fallback logic to handle older backend versions or "Buffered" sheet structures.
+
+---
+<br>
+
+## Files Modified
+### Backend (GAS)
+
+* **Configuration.gs.js:** Centralized canonical header labels.
+* **Utilities.gs.js:** Added `resolveSchemaIndices` and `bootDynamicSchema`.
+* **Controller_Webapp.gs.js:** Integrated the boot sequence and schema-aware matrix extraction.
+* **Leaderboard.gs.js:** Updated to generate rows and headers dynamically based on resolved indices.
+* **Recruiter.gs.js:** Implemented the same dynamic rendering logic as the Leaderboard.
+
+### Frontend (PWA)
+
+* **gasClient.ts:** Refactored `inflatePayload` to utilize dynamic schema mapping.
+
+---
+<br>
+
+## Bug Fix: Performance Score Display
+**Issue:** The `MemberCard` was improperly displaying the **Raw Score** (e.g., 52,052) instead of the **Performance Score** (e.g., 100%).
+
+### Root Cause Analysis
+
+1. **Metadata Stripping:** The PWA used **Valibot** to validate the API response. However, the validation schema omitted the schema metadata. Valibot's default behavior stripped these unknown keys, causing the frontend to lose column mapping and fall back to outdated indices.
+2. **Mapping Shift:** With the implementation of "Smart Sync," the matrix structure returned by the backend shifted. The frontend was pointing to Index 3 for the score, while the new 1:1 alignment moved the Performance Score to Index 13.
+
+### The Fix
+
+1. **1:1 Matrix Alignment (Backend):** Updated **Controller_Webapp.gs.js** to return a complete 16-column matrix that matches Google Sheet indices exactly.
+* **Index 12:** Raw Score (52,052)
+* **Index 13:** Performance Score (100)
+* **Failsafe:** Added a backend hard cap to ensure the performance score never exceeds 100.
+2. **Metadata Preservation (Frontend):** Modified **gasClient.ts** to include `schema` and `playerTag` in the validation schema, ensuring "Smart Sync" metadata is preserved for lookups.
+3. **Updated Mapping (Frontend):** Updated default fallbacks in **gasClient.ts**:
+* `member.s` (displayed score) now maps to **Index 13**.
+* `member.r` (raw score) now maps to **Index 12**.
+
+---
+<br>
+
+**Full Changelog**: https://github.com/AlbiDR/Clash-Manager/compare/v10.0.0...v10.1.0
+
+---
+---
