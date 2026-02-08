@@ -105,7 +105,6 @@ const baseUrl = import.meta.env.BASE_URL;
         >
           <div class="toggle-nob"></div>
         </div>
-        <Icon v-if="settings.strategy === 'Maximize'" name="lock" size="12" class="lock-icon" />
       </label>
     </div>
   </div>
