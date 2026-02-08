@@ -256,8 +256,12 @@ function doPost(
       case "getwarlog":
       case "refresh":
         // Delegation to handleRequest logic (which was based on doGet)
-        // We pass the parameter to simulate what doGet would see
-        return handleRequest({ parameter: { action: action } } as any, "POST");
+        // Merge URL parameters with the JSON payload to ensure all fields (like 'tag') are passed.
+        const syntheticE = {
+          ...e,
+          parameter: { ...e.parameter, ...payload, action: action }
+        };
+        return handleRequest(syntheticE as any, "POST");
 
       case "":
         return respond(null, "NO_ACTION", 'Missing "action" in POST body or URL');
