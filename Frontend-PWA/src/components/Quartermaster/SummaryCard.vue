@@ -23,7 +23,7 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
       <div class="projection-badge">
         <span class="label">Projection</span>
-        <span class="value">v{{ result.upgrades.length }}</span>
+        <span class="value">v{{ result.actions.length }}</span>
       </div>
     </div>
 
@@ -60,7 +60,7 @@ const baseUrl = import.meta.env.BASE_URL;
     </div>
 
     <!-- Efficiency Indicator -->
-    <div v-if="result.upgrades.length > 0" class="efficiency-strip">
+    <div v-if="result.actions.length > 0" class="efficiency-strip">
       <div class="track">
         <div 
           class="fill" 

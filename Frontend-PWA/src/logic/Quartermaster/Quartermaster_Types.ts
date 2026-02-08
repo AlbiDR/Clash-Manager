@@ -56,7 +56,7 @@ export interface UpgradeAction {
 }
 
 export interface OptimizationResult {
-  readonly upgrades: ReadonlyArray<UpgradeAction>;
+  readonly actions: ReadonlyArray<UpgradeAction>;
   readonly totalXpGained: number;
   readonly projectedKingLevel: number; // Added for UI convenience
   readonly finalProfile: PlayerProfile;

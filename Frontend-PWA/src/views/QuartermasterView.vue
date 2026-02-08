@@ -102,14 +102,14 @@ const handleResourceUpdate = (key: string, value: number) => {
       />
 
       <!-- 3. Trajectory (Upgrade List) -->
-      <div v-if="operation && operation.upgrades.length > 0" class="trajectory-section">
+      <div v-if="operation && operation.actions.length > 0" class="trajectory-section">
         <h3 class="section-title">
           <Icon name="trend_up" size="18" />
           <span>Recommended Trajectory</span>
         </h3>
         <div class="trajectory-list">
           <TrajectoryItem 
-            v-for="(upgrade, index) in operation.upgrades" 
+            v-for="(upgrade, index) in operation.actions" 
             :key="upgrade.cardName"
             :upgrade="upgrade"
             :index="index"
