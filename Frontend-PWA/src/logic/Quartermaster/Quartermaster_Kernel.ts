@@ -63,7 +63,7 @@ function buildCandidate(
 
   let gemsUsed = 0;
   if (remainingNeeded > 0) {
-    if (!settings.useGems) return null;
+    if (settings.strategy !== "Gems") return null;
     const gemRate = GEM_CONVERSION_RATES[card.rarity];
     gemsUsed = Math.ceil(remainingNeeded * gemRate);
     remainingNeeded = 0;
@@ -247,10 +247,10 @@ const QuartermasterKernel = {
         upgradeType
       });
 
-      if (settings.targetKingLevel) {
+      if (settings.targetLevel) {
         const kingStatus = calculateKingStatus(currentTotalXp, currentKingIndex);
         currentKingIndex = kingStatus.index;
-        if (kingStatus.profile.kingLevel >= settings.targetKingLevel) break;
+        if (kingStatus.profile.kingLevel >= settings.targetLevel) break;
       }
     }
 

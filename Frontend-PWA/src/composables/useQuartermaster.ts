@@ -14,9 +14,9 @@ import type {
 const observation: Ref<PlayerData | null> = ref(null)
 
 const settings: Ref<OptimizationSettings> = ref({
-  useGems: false,
+  strategy: "Gold",
   infiniteGold: false,
-  targetKingLevel: undefined
+  targetLevel: undefined
 })
 
 const operation: Ref<OptimizationResult | null> = ref(null)
