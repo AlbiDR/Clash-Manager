@@ -307,7 +307,6 @@ const Headhunter: IHeadhunter = {
   }
 };
 
-// @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
   module.exports = Headhunter;
 }

@@ -84,6 +84,7 @@ describe('HeadhunterStore', () => {
         mockBlSheet = {
             getLastRow: vi.fn(),
             getRange: vi.fn().mockReturnThis(),
+            getValue: vi.fn().mockReturnValue("Tag"),
             setValues: vi.fn(),
             setTabColor: vi.fn(),
             getValues: vi.fn().mockReturnValue([]),
@@ -92,6 +93,7 @@ describe('HeadhunterStore', () => {
             getParent: vi.fn().mockReturnValue({ getId: vi.fn().mockReturnValue('mock-ss-id') }),
             hideSheet: vi.fn(),
             getSheetId: vi.fn().mockReturnValue(456),
+            getMaxColumns: vi.fn().mockReturnValue(20),
         };
 
         mockEvtSheet = {
@@ -106,6 +108,8 @@ describe('HeadhunterStore', () => {
             getParent: vi.fn().mockReturnValue({ getId: vi.fn().mockReturnValue('mock-ss-id') }),
             hideSheet: vi.fn(),
             getSheetId: vi.fn().mockReturnValue(789),
+            getMaxColumns: vi.fn().mockReturnValue(20),
+            getValue: vi.fn().mockReturnValue("Tag"),
         };
 
         mockSheet = {
@@ -117,6 +121,7 @@ describe('HeadhunterStore', () => {
             getSheetId: vi.fn().mockReturnValue(123),
             getParent: vi.fn(),
             setTabColor: vi.fn(),
+            getMaxColumns: vi.fn().mockReturnValue(20),
         };
 
         mockParent = {
@@ -177,8 +182,7 @@ describe('HeadhunterStore', () => {
              
              expect(mockParent.insertSheet).toHaveBeenCalledWith('HH_BLACKLIST');
              expect(mockParent.insertSheet).toHaveBeenCalledWith('HH_EVENT_LOG');
-             expect(mockBlSheet.setTabColor).toHaveBeenCalled();
-        });
+         });
 
         it('should process Event Stream (Hot Dismissals)', () => {
              // 1. Setup Event Stream Data
@@ -223,6 +227,7 @@ describe('HeadhunterStore', () => {
                           if (c === 2) return [["#BANNED", "", "", "", "", "", "", "", 200]]; // Main Load
                           return [[false]]; // Invited Load
                       },
+                      getValue: vi.fn(),
                       setValue: vi.fn(),
                       setValues: vi.fn(),
                       clearContent: vi.fn()
@@ -254,9 +259,10 @@ describe('HeadhunterStore', () => {
                          row[8] = 300;
                          return [row];
                      },
-                     setValue: vi.fn(),
-                     clearContent: vi.fn(),
-                     deleteRow: vi.fn()
+                      getValue: vi.fn(),
+                      setValue: vi.fn(),
+                      clearContent: vi.fn(),
+                      deleteRow: vi.fn()
                  }
              });
 

@@ -462,7 +462,6 @@ export var CONFIG: AppConfig = {
   },
 };
 
-// @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { CONFIG, VER_CONFIGURATION };
 }
@@ -473,4 +472,4 @@ if (typeof module !== "undefined" && module.exports) {
  */
 (function(scope: any) {
   Object.assign(scope, { CONFIG, VER_CONFIGURATION });
-})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : (typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : {}))));

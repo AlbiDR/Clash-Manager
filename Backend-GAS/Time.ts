@@ -50,7 +50,7 @@ var Time: ITime = {
    * Used for sheet-stored values to prevent ambiguous auto-formatting.
    */
   formatDate(date: Date | null | undefined): string {
-    if (!date || isNaN(date.getTime()) || date.getTime() === 0) return "-";
+    if (!date || isNaN(date.getTime()) || date.getTime() === 0) return "";
     // @ts-ignore
     return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
   },
@@ -59,7 +59,7 @@ var Time: ITime = {
    * Formats a date using the system's human-readable pattern (dd/MM/yyyy HH:mm).
    */
   formatDatetime(date: Date | null | undefined): string {
-    if (!date || isNaN(date.getTime()) || date.getTime() === 0) return "-";
+    if (!date || isNaN(date.getTime()) || date.getTime() === 0) return "";
     // @ts-ignore
     return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
   },

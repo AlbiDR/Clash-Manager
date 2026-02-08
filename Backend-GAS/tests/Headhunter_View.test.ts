@@ -8,11 +8,12 @@ vi.mock('../Configuration', () => {
   const mockConfig = {
     HEADHUNTER: { TARGET: 5 }, // Small target for testing
     SCHEMA: {
-      HH: { TAG: 0, INVITED: 1, NAME: 2, TROPHIES: 3, DONATIONS: 4, CARDS: 5, WAR_WINS: 6, FOUND_DATE: 7, RAW_SCORE: 8, POTENTIAL_SCORE: 9 },
-      HH_HEADERS: { TAG: 'Tag' }
+      HH: { TAG: 0, INVITED: 1, NAME: 2, TROPHIES: 3, DONATIONS: 4, CARDS: 5, WAR_WINS: 6, FOUND_DATE: 7, RAW_SCORE: 8, POTENTIAL_SCORE: 9, LAST_SCAN: 10 },
+      HH_HEADERS: { TAG: 'Tag', INVITED: 'Invited', NAME: 'Name', TROPHIES: 'Trophies', DONATIONS: 'Donations', CARDS: 'Cards Won', WAR_WINS: 'War Wins', FOUND_DATE: 'Found Date', RAW_SCORE: 'Potential Raw Score', POTENTIAL_SCORE: 'Potential Score', LAST_SCAN: 'Last Scan' }
     },
     LAYOUT: { DATA_START_ROW: 3 },
-    SYSTEM: { TIMEZONE: 'UTC', DATE_FORMAT_VALUE: 'yyyy-MM-dd', DATE_FORMAT_DATETIME: 'yyyy-MM-dd HH:mm', MAX_BACKUPS: 5 }
+    SYSTEM: { TIMEZONE: 'UTC', DATE_FORMAT_VALUE: 'yyyy-MM-dd', DATE_FORMAT_DATETIME: 'yyyy-MM-dd HH:mm', MAX_BACKUPS: 5 },
+    THEME: { TABLE: { HEADER_BG: '#f8f9fa' } }
   };
   // @ts-ignore
   global.CONFIG = mockConfig;
@@ -23,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   View: {
     applyStandardLayout: vi.fn(),
     setStatusMessage: vi.fn(),
+    hexToRgbColor: vi.fn(() => ({ red: 0, green: 0, blue: 0 })),
     render: vi.fn(),
     enforceGlobalTabHygiene: vi.fn(),
     backupSheet: vi.fn()
@@ -83,7 +85,7 @@ describe('HeadhunterView', () => {
         HeadhunterView.render(mockSheet, recruits, 0);
 
         // Verify Layout
-        expect(mocks.View.applyStandardLayout).toHaveBeenCalledWith(mockSheet, 5, 10, expect.any(Array));
+        expect(mocks.View.applyStandardLayout).toHaveBeenCalledWith(mockSheet, 5, 11, expect.any(Array));
 
         // Verify Data Update
         expect(global.Sheets.Spreadsheets.Values.update).toHaveBeenCalled();

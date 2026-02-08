@@ -173,6 +173,11 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
       case "getmembers":
         return respond(getMembers());
 
+      case "getplayerprofile":
+        const tag = String(e?.parameter?.tag || "").trim();
+        if (!tag) return respond(null, "MISSING_TAG", "Parameter 'tag' is required.");
+        return respond(getPlayerProfile(tag));
+
       case "getwarlog":
         return respond(getWarLog());
 
@@ -247,17 +252,22 @@ function doPost(
       case "getwebappdata":
       case "getrecruits":
       case "getmembers":
+      case "getplayerprofile":
       case "getwarlog":
       case "refresh":
         // Delegation to handleRequest logic (which was based on doGet)
-        // We pass the parameter to simulate what doGet would see
-        return handleRequest({ parameter: { action: action } } as any, "POST");
+        // Merge URL parameters with the JSON payload to ensure all fields (like 'tag') are passed.
+        const syntheticE = {
+          ...e,
+          parameter: { ...e.parameter, ...payload, action: action }
+        };
+        return handleRequest(syntheticE as any, "POST");
 
       case "":
         return respond(null, "NO_ACTION", 'Missing "action" in POST body or URL');
 
       default:
-        return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: dismissrecruits, triggerupdate, ping.`);
+        return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: dismissrecruits, triggerupdate, ping, getwebappdata, getplayerprofile.`);
     }
   } catch (err: any) {
     console.error(`API: doPost ERROR: ${err.stack}`);
@@ -341,6 +351,19 @@ function getMembers(): any[] {
     donations: m.donations,
     donationsReceived: m.donationsReceived,
   }));
+}
+
+function getPlayerProfile(tag: string): any {
+  const cleanTag = encodeURIComponent(tag.startsWith("#") ? tag : `#${tag}`);
+  const data = Registry.Services.Network.fetchRoyaleAPI([
+    `${CONFIG.SYSTEM.API_BASE}/players/${cleanTag}`,
+  ]);
+
+  if (!data || !data[0]) {
+    throw new Error(`Player ${tag} not found`);
+  }
+
+  return data[0];
 }
 
 function getWarLog(): WarLogEntry[] {
