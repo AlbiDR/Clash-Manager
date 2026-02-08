@@ -38,6 +38,12 @@ const baseUrl = import.meta.env.BASE_URL;
     </div>
 
     <div class="cost-stack">
+      <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
+        <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
+        <div class="icon-frame">
+          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset sm" alt="Gems" />
+        </div>
+      </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
         <div class="icon-frame">
@@ -189,6 +195,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .cost-item.gold { color: var(--sys-color-on-surface); }
 .cost-item.xp { color: var(--sys-color-success); font-size: 11px; }
+.cost-item.gem { color: #ffdeeb; font-size: 11px; }
 
 .res-asset {
   width: 14px;

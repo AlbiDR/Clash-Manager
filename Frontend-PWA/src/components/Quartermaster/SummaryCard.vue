@@ -56,10 +56,9 @@ const baseUrl = import.meta.env.BASE_URL;
           <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
           <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
         </div>
-        <!-- Gem Secondary Row -->
-        <div v-if="result.totalGemsSpent > 0" class="value-group gem-secondary">
+        <div v-if="result.totalGemsSpent > 0" class="value-group gem-row">
           <span class="value small">{{ formatNumber(result.totalGemsSpent) }}</span>
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
+          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset small" alt="Gems" />
         </div>
       </div>
     </div>
@@ -205,11 +204,15 @@ const baseUrl = import.meta.env.BASE_URL;
   object-fit: contain;
 }
 
-.gem-secondary {
-  margin-top: 4px;
-  opacity: 0.8;
-  padding-top: 4px;
-  border-top: 1px solid rgba(var(--sys-color-on-surface-rgb, 0, 0, 0), 0.05);
+.res-asset.small {
+  width: 12px;
+  height: 12px;
+}
+
+.gem-row {
+  margin-top: 2px;
+  opacity: 0.9;
+  color: #ffdeeb; /* Subtle pink hint for gems */
 }
 
 .value.small {
