@@ -37,6 +37,7 @@ export interface PlayerData {
 export interface OptimizationSettings {
   readonly strategy: "Target" | "Maximize";
   readonly allowGemSpending: boolean;
+  readonly infiniteResources: boolean;
   readonly targetLevel?: number;
 }
 

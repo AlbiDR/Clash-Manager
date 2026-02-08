@@ -97,6 +97,25 @@ const baseUrl = import.meta.env.BASE_URL;
         </div>
       </div>
 
+      <!-- Infinite Resources Toggle -->
+      <label 
+        class="toggle-row" 
+        :class="{ disabled: settings.strategy === 'Maximize' }"
+        :title="settings.strategy === 'Maximize' ? 'Simulation only available for Target strategy' : ''"
+      >
+        <div class="toggle-info">
+          <span class="label">Infinite Resources</span>
+          <span class="sub">Simulation mode (ignores costs)</span>
+        </div>
+        <div 
+          class="custom-toggle" 
+          :class="{ active: settings.infiniteResources && settings.strategy === 'Target' }"
+          @click="settings.strategy === 'Target' && emit('update', { infiniteResources: !settings.infiniteResources })"
+        >
+          <div class="toggle-nob"></div>
+        </div>
+      </label>
+
       <!-- Gem Spending Toggle -->
       <label class="toggle-row">
         <div class="toggle-info">
