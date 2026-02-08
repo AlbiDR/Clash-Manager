@@ -86,10 +86,23 @@ function buildCandidate(
   }
 
   // Gold check (only in non-infinite mode)
-  if (!settings.infiniteResources && goldCost > inventory.gold) return null;
+  if (!settings.infiniteResources && goldCost > inventory.gold) {
+    if (settings.allowGemSpending) {
+      const goldDeficit = goldCost - Math.max(0, inventory.gold);
+      const gemsForGold = Math.ceil(goldDeficit / GEM_VALUE_IN_GOLD);
+      gemsUsed += gemsForGold;
+      
+      // Re-verify total gem budget
+      if (gemsUsed > inventory.gems) return null;
+    } else {
+      return null;
+    }
+  }
 
   // Convert gems to gold value for normalized efficiency comparison
-  // In infinite mode, gemsUsed is always 0.
+  // We apply a "soft penalty" to gem spending to prioritize natural resources.
+  // Gems are converted to gold value, and we add an extra toll for gems 
+  // to ensure they are used as a fallback.
   const effectiveCost = goldCost + (gemsUsed * GEM_VALUE_IN_GOLD);
 
   const override = EFFICIENCY_OVERRIDES[nextLevel];
