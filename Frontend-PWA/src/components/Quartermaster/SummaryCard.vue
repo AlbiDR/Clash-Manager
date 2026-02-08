@@ -44,7 +44,7 @@ const formatNumber = (num: number) => {
         <span class="label">Total Experience</span>
         <div class="value-group">
           <span class="value">+{{ formatNumber(result.totalXpGained) }}</span>
-          <span class="unit">XP</span>
+          <img src="/assets/game/currency_xp.webp" class="res-asset" alt="XP" />
         </div>
       </div>
 
@@ -52,7 +52,7 @@ const formatNumber = (num: number) => {
         <span class="label">Total Investment</span>
         <div class="value-group">
           <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
-          <Icon name="donation" size="14" class="gold-icon" />
+          <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
         </div>
       </div>
     </div>
@@ -206,7 +206,11 @@ const formatNumber = (num: number) => {
   opacity: 0.5;
 }
 
-.gold-icon { color: #f1c40f; }
+.res-asset {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
 
 .efficiency-strip {
   margin-top: 32px;
