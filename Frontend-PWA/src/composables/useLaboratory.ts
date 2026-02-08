@@ -138,8 +138,12 @@ export function useLaboratory() {
 
   // Watch for playerTag changes to re-fetch
   watch(() => clashData.value?.playerTag, (newTag) => {
-    if (newTag && !observation.value) {
-      fetchTrackedPlayer()
+    if (newTag) {
+      if (!observation.value) {
+        fetchTrackedPlayer()
+      } else {
+        analyze() // Auto-calculate if we already have an observation
+      }
     }
   }, { immediate: true })
 
