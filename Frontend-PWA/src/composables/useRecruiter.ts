@@ -7,6 +7,7 @@ import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { useConsoleController } from "./useConsoleController";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
+import { SORT_DESCRIPTIONS } from "../utils/sortOptions";
 import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
 import type { Recruit } from "../types";
 
@@ -92,27 +93,27 @@ export function useRecruiter() {
     {
       label: "Potential",
       value: "score",
-      desc: `**Suppositional quality score** based on account progression and historical reliability.\n\n**Algorithm:**\nCompares the candidate's account stats against your current Clan baseline (Hybrid Benchmark).\n\n**Signal:**\n"Potential" indicates how well this recruit is expected to perform if they were to join the clan today. Values are strictly capped at 100%.`,
+      desc: SORT_DESCRIPTIONS.potential,
     },
     {
       label: "Trophies",
       value: "trophies",
-      desc: `**Current ladder ranking** pull via Supercell API.\n\n**Insight:**\nReflects mechanical skill and King Tower progression.`,
+      desc: SORT_DESCRIPTIONS.trophies,
     },
     {
       label: "Donations",
       value: "donations",
-      desc: `**Lifetime card donations** from previous Clan history.\n\n**Logic:**\nMeasures long-term generosity.`,
+      desc: SORT_DESCRIPTIONS.donations_lifetime,
     },
     {
       label: "Recency",
       value: "time_found",
-      desc: `**Timestamp of discovery** during recent tournament scans.`,
+      desc: SORT_DESCRIPTIONS.recency,
     },
     {
       label: "Name",
       value: "name",
-      desc: `**Alphabetical ordering** by display name.`,
+      desc: SORT_DESCRIPTIONS.name,
     },
   ];
 
@@ -242,13 +243,9 @@ export function useRecruiter() {
 
   return {
     ...controller,
-    isHydrated,
     isShowcaseMode,
-    isRefreshing,
     isTurboScanning,
-    syncError,
     sortOptions,
-    handleRefresh,
     dismissBulk,
   };
 }
