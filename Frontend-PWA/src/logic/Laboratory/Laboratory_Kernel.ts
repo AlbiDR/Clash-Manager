@@ -62,19 +62,31 @@ function buildCandidate(
   const wildAvailable = inventory.wildCards[card.rarity] || 0;
   const wildUsed = Math.min(remainingNeeded, Math.max(0, wildAvailable));
   
-  // If infinite, we assume we can satisfy any material requirement.
-  // Otherwise, we are blocked if remainingNeeded > wildUsed.
-  if (!settings.infiniteResources && remainingNeeded > wildUsed) {
-    return null;
+  let gemsUsed = 0;
+  let finalWildUsed = wildUsed;
+
+  // Logic: 
+  // 1. Try to use cards
+  // 2. Try to use Wild Cards
+  // 3. If still needed, check gems (unless infinite resources)
+  if (remainingNeeded > wildUsed) {
+    if (settings.infiniteResources) {
+      finalWildUsed = remainingNeeded;
+    } else {
+      const deficit = remainingNeeded - wildUsed;
+      const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+      gemsUsed = Math.ceil(deficit * rate);
+      
+      // Check gem budget
+      if (gemsUsed > inventory.gems) return null;
+    }
   }
 
-  // Calculate "Total Wild Used" - if infinite, it can exceed current stock
-  const finalWildUsed = settings.infiniteResources ? remainingNeeded : wildUsed;
-  
   // Gold check
   if (!settings.infiniteResources && goldCost > inventory.gold) return null;
 
-  const effectiveCost = goldCost; // Gems not currently modeled in UI budget
+  // Convert gems to gold value for normalized efficiency comparison
+  const effectiveCost = goldCost + (gemsUsed * GEM_VALUE_IN_GOLD);
 
   const override = EFFICIENCY_OVERRIDES[nextLevel];
   const efficiencyRatio = override !== undefined 
@@ -92,7 +104,7 @@ function buildCandidate(
     cardsRequired,
     cardsUsed,
     wildCardsUsed: finalWildUsed,
-    gemsUsed: 0,
+    gemsUsed,
     xpGained: xpGain,
     efficiencyRatio,
     materialEfficiency

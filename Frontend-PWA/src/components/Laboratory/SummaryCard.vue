@@ -56,9 +56,9 @@ const baseUrl = import.meta.env.BASE_URL;
             <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
             <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
           </div>
-          <div v-if="result.totalGemsSpent > 0" class="value-group mini">
-            <span class="value small">{{ formatNumber(result.totalGemsSpent) }}</span>
-            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset small" alt="Gems" />
+          <div v-if="result.totalGemsSpent > 0" class="value-group gems-focus">
+            <span class="value">{{ formatNumber(result.totalGemsSpent) }}</span>
+            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
           </div>
         </div>
       </div>
@@ -216,11 +216,12 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 2px;
 }
 
-.value-group.mini {
-  margin-top: 0;
-  opacity: 0.8;
+.value-group.gems-focus {
   color: #ffdeeb;
-  transform: translateY(-2px);
+  padding: 4px 8px;
+  background: rgba(255, 222, 235, 0.1);
+  border-radius: 8px;
+  width: fit-content;
 }
 
 .value.small {

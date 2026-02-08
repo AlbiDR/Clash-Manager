@@ -31,6 +31,15 @@ const toggleInfinite = () => {
   emit("update", { infiniteResources: !props.settings.infiniteResources });
 };
 
+const filteredLevels = computed(() => {
+  return Array.from({ length: 90 }, (_, i) => i + 1).filter(level => {
+    // Current and future levels are always shown
+    if (level > props.currentLevel) return true;
+    // Past levels only shown if they are milestones
+    return IMPORTANT_KING_LEVELS.includes(level as any);
+  });
+});
+
 const baseUrl = import.meta.env.BASE_URL;
 </script>
 
@@ -76,11 +85,10 @@ const baseUrl = import.meta.env.BASE_URL;
             @change="handleTargetChange"
           >
             <option 
-              v-for="level in 90" 
+              v-for="level in filteredLevels" 
               :key="level" 
               :value="level"
               :disabled="level <= currentLevel"
-              v-show="level > currentLevel || IMPORTANT_KING_LEVELS.includes(level as any)"
               :class="{ 
                 milestone: IMPORTANT_KING_LEVELS.includes(level as any),
                 past: level <= currentLevel 
