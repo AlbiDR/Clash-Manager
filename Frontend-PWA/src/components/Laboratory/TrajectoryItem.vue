@@ -16,8 +16,6 @@ const baseUrl = import.meta.env.BASE_URL;
 
 <template>
   <div class="trajectory-item" :style="{ '--i': index }">
-    <div class="step-count">{{ index + 1 }}</div>
-    
     <div class="card-avatar" :class="upgrade.rarity.toLowerCase()">
       <span class="rarity-letter">{{ upgrade.rarity.charAt(0) }}</span>
     </div>
@@ -79,13 +77,7 @@ const baseUrl = import.meta.env.BASE_URL;
   to { opacity: 1; transform: translateX(0); }
 }
 
-.step-count {
-  font-family: var(--sys-font-family-mono);
-  font-size: 11px;
-  font-weight: 900;
-  opacity: 0.3;
-  width: 14px;
-}
+
 
 .card-avatar {
   width: 40px;

@@ -80,6 +80,7 @@ const baseUrl = import.meta.env.BASE_URL;
               :key="level" 
               :value="level"
               :disabled="level <= currentLevel"
+              v-show="level > currentLevel || IMPORTANT_KING_LEVELS.includes(level as any)"
               :class="{ 
                 milestone: IMPORTANT_KING_LEVELS.includes(level as any),
                 past: level <= currentLevel 

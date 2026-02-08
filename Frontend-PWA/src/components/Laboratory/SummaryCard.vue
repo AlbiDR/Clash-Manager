@@ -41,7 +41,6 @@ const baseUrl = import.meta.env.BASE_URL;
         </div>
       </div>
 
-      <!-- Row 2: Resources -->
       <div class="metric-item">
         <span class="label">Experience Required</span>
         <div class="value-group">
@@ -52,13 +51,15 @@ const baseUrl = import.meta.env.BASE_URL;
 
       <div class="metric-item">
         <span class="label">Resources Required</span>
-        <div class="value-group">
-          <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
-          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
-        </div>
-        <div v-if="result.totalGemsSpent > 0" class="value-group gem-row">
-          <span class="value small">{{ formatNumber(result.totalGemsSpent) }}</span>
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset small" alt="Gems" />
+        <div class="resource-stack">
+          <div class="value-group">
+            <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
+            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+          </div>
+          <div v-if="result.totalGemsSpent > 0" class="value-group mini">
+            <span class="value small">{{ formatNumber(result.totalGemsSpent) }}</span>
+            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset small" alt="Gems" />
+          </div>
         </div>
       </div>
     </div>
@@ -209,10 +210,17 @@ const baseUrl = import.meta.env.BASE_URL;
   height: 12px;
 }
 
-.gem-row {
-  margin-top: 2px;
-  opacity: 0.9;
-  color: #ffdeeb; /* Subtle pink hint for gems */
+.resource-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.value-group.mini {
+  margin-top: 0;
+  opacity: 0.8;
+  color: #ffdeeb;
+  transform: translateY(-2px);
 }
 
 .value.small {
