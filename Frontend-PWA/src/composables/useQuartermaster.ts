@@ -10,19 +10,44 @@ import type {
   Inventory 
 } from '../logic/Quartermaster/Quartermaster_Types'
 
+const STORAGE_KEY_SETTINGS = "quartermaster_settings";
+const STORAGE_KEY_INVENTORY = "quartermaster_inventory";
+
 // Global state to persist data across view changes
 const observation: Ref<PlayerData | null> = ref(null)
 
 const settings: Ref<OptimizationSettings> = ref({
   strategy: "Target",
   infiniteResources: false,
-  targetLevel: undefined
+  targetLevel: undefined,
+  ...(JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || "{}"))
 })
 
 const operation: Ref<OptimizationResult | null> = ref(null)
 const isSimulating = ref(false)
 const isFetching = ref(false)
 const fetchError = ref<string | null>(null)
+
+// Load inventory persistence
+const loadPersistedInventory = (profileData: PlayerData) => {
+  const stored = localStorage.getItem(STORAGE_KEY_INVENTORY);
+  if (stored) {
+    try {
+      const persisted = JSON.parse(stored);
+      return {
+        ...profileData.inventory,
+        ...persisted,
+        wildCards: {
+          ...profileData.inventory.wildCards,
+          ...(persisted.wildCards || {})
+        }
+      };
+    } catch (e) {
+      console.warn("[Quartermaster] Failed to parse persisted inventory");
+    }
+  }
+  return profileData.inventory;
+};
 
 export function useQuartermaster() {
   const { data: clashData } = useClashData()
@@ -31,7 +56,10 @@ export function useQuartermaster() {
    * Ingests raw data (e.g. from RoyaleAPI or Internal Store) and hydrates the Quartermaster.
    */
   const ingest = (rawSnapshot: any, rawInventory?: any) => {
-    observation.value = QuartermasterAdapter.hydrate(rawSnapshot, rawInventory)
+    const data = QuartermasterAdapter.hydrate(rawSnapshot, rawInventory);
+    // Apply persistence to the freshly hydrated data
+    data.inventory = loadPersistedInventory(data);
+    observation.value = data;
     analyze() // Auto-analyze on ingestion
   }
 
@@ -82,6 +110,10 @@ export function useQuartermaster() {
       ...observation.value,
       inventory: newInventory
     }
+
+    // Persist changes
+    localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(newInventory));
+    
     analyze() // Re-analyze on inventory change
   }
 
@@ -104,6 +136,7 @@ export function useQuartermaster() {
 
   const setSettings = (newSettings: Partial<OptimizationSettings>) => {
     settings.value = { ...settings.value, ...newSettings }
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings.value));
     analyze() // Re-analyze on settings change
   }
 

@@ -9,6 +9,11 @@ const router = useRouter();
 const { dockVisible, fabState } = useUiCoordinator();
 const haptics = useHaptics();
 
+const isDesktop = ref(window.innerWidth > 1024);
+const onResize = () => { isDesktop.value = window.innerWidth > 1024; };
+onMounted(() => window.addEventListener("resize", onResize));
+onUnmounted(() => window.removeEventListener("resize", onResize));
+
 interface NavItem {
   path: string;
   name: string;
@@ -72,6 +77,7 @@ function handleFabDismiss() {
     :class="{
       'fab-mode': !dockVisible,
       hidden: !dockVisible && !fabState.selectionCount && !fabState.isBlasting,
+      'is-desktop': isDesktop
     }"
   >
     <!-- Navigation Dock Mode -->
@@ -184,10 +190,18 @@ function handleFabDismiss() {
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.dock-container.hidden {
+.dock-container.hidden:not(.is-desktop) {
   transform: translate(-50%, 150%);
   opacity: 0;
   pointer-events: none;
+}
+
+/* On Desktop, we prevent the dock from fully disappearing to maintain layout stability */
+.dock-container.hidden.is-desktop {
+  opacity: 0.2;
+  pointer-events: none;
+  filter: grayscale(1) blur(2px);
+  transform: translate(-50%, 0) scale(0.95);
 }
 
 /* FAB Mode Styling */
