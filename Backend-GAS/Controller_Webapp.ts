@@ -51,17 +51,31 @@ declare const Registry: IRegistry;
 /**
  * CONTROLLER INTERFACES
  */
+
+/**
+ * EXTRACTION MAPPING
+ * Defines the contract for transforming a spreadsheet column into a typed JSON key.
+ */
 export interface ExtractionMapping {
   key: string;
   col: number;
   type: "tag" | "str" | "num" | "rate" | "date" | "bool_check";
 }
 
+/**
+ * SHEET DATA RESULT
+ * A standardized container for raw matrix data and its associated schema.
+ */
 export interface SheetDataResult {
   schema: string[];
   rows: any[][];
 }
 
+/**
+ * APPLICATION PAYLOAD
+ * The global response envelope for the PWA. Implements a "Matrix" format
+ * to minimize JSON overhead by separating the schema from the data rows.
+ */
 export interface AppPayload {
   success: boolean;
   data: {
@@ -80,6 +94,14 @@ export interface AppPayload {
 
 /**
  * DATA RETRIEVAL (Called by API_Public.ts)
+ *
+ * @remarks
+ * Primary gateway for the PWA frontend. Implements a multi-tier caching
+ * strategy using CacheService (L2) to ensure rapid response times and
+ * minimize execution overhead.
+ *
+ * @param forceRefresh - If true, bypasses L2 cache and regenerates the payload.
+ * @returns JSON string containing the AppPayload.
  */
 function getWebAppData(forceRefresh: boolean): string {
   try {
@@ -106,10 +128,17 @@ function getWebAppData(forceRefresh: boolean): string {
 }
 
 /**
- * WRITE OPERATIONS
- */
-/**
- * WRITE OPERATIONS
+ * DISMISSAL ENGINE (Event-Sourced)
+ *
+ * @remarks
+ * Implements the "Event-Sourced Dismissal" pattern. Instead of modifying
+ * the main database sheets directly (which is slow and error-prone during
+ * concurrent access), dismissals are logged as events in the `EVT` sheet.
+ * The payload generator then uses this event stream to filter the UI.
+ *
+ * @param ids - Array of player tags to dismiss.
+ * @returns Result object with success status and metrics.
+ * @warning Consumes SpreadsheetApp and Advanced Sheets Service quotas.
  */
 function markRecruitsAsInvitedBulk(ids: string[]): {
   success: boolean;
@@ -167,7 +196,15 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
 }
 
 /**
- * REVERSAL: Remove tags from the Event Stream.
+ * DISMISSAL REVERSAL
+ *
+ * @remarks
+ * Removes specific tags from the `EVT` hot stream, effectively "undismissing"
+ * them and making them visible again in the PWA.
+ *
+ * @param ids - Array of player tags to restore.
+ * @returns Result object with the number of successfully removed records.
+ * @warning Consumes SpreadsheetApp quotas for row deletion.
  */
 function undismissRecruitsBulk(ids: string[]): {
   success: boolean;
@@ -188,7 +225,9 @@ function undismissRecruitsBulk(ids: string[]): {
       const rawEVT = evtSheet.getDataRange().getValues();
       const tagsToUndo = new Set(ids.map(id => (id.startsWith("#") ? id : "#" + id).toUpperCase()));
       
-      // Work backwards to delete rows to avoid index shifts
+      // Work backwards to delete rows to avoid index shifts.
+      // Deleting from the top would change the absolute index of all
+      // subsequent rows, causing us to delete the wrong data.
       let removedCount = 0;
       for (let i = rawEVT.length - 1; i >= 1; i--) {
         const tag = String(rawEVT[i][0]).toUpperCase().trim();
@@ -216,6 +255,12 @@ function undismissRecruitsBulk(ids: string[]): {
 
 /**
  * CACHE MANAGEMENT
+ *
+ * @remarks
+ * Synchronously triggers the payload generation pipeline and updates the
+ * global cache. Used after write operations to ensure UI consistency.
+ *
+ * @returns Freshly generated JSON payload.
  */
 function refreshWebPayload(): string {
   return Registry.Services.Core.executeSafely("PAYLOAD_GEN", () => {
@@ -224,10 +269,20 @@ function refreshWebPayload(): string {
 }
 
 /**
- * INTERNAL GENERATOR
- */
-/**
- * INTERNAL GENERATOR
+ * PAYLOAD GENERATOR
+ *
+ * @remarks
+ * The architectural heart of the API. This function orchestrates the
+ * full extraction, filtering, and compression pipeline:
+ * 1. Boot dynamic schemas.
+ * 2. Extract raw data from Roster and Headhunter sheets.
+ * 3. Blend the Permanent Blacklist with the Hot Event Stream.
+ * 4. Filter out dismissed/blacklisted recruits.
+ * 5. Compress into 'Matrix' format.
+ * 6. Persist to CacheService (L2).
+ *
+ * @returns Minified JSON string of the AppPayload.
+ * @warning Consumes heavy SpreadsheetApp and Advanced Sheets Service quotas.
  */
 function _generatePayloadInternal(): string {
   try {
@@ -244,6 +299,10 @@ function _generatePayloadInternal(): string {
 
     // A. Read Permanent Blacklist
     try {
+      // ADVANCED SERVICE: Sheets.Spreadsheets.Values.get
+      // Rationale: This is faster for large metadata reads than the standard
+      // SpreadsheetApp.getRange().getValues() because it returns a raw JSON
+      // object and bypasses the heavy SpreadsheetApp wrapper.
       // @ts-ignore
       const blResponse = Sheets.Spreadsheets.Values.get(ssId, `'${CONFIG.SHEETS.BL}'!A:B`);
       const rawBL = blResponse.values || [];
@@ -259,6 +318,7 @@ function _generatePayloadInternal(): string {
 
     // B. Read Hot Event Stream (Dismissals not yet reconciled to main sheets)
     try {
+      // ADVANCED SERVICE: Sheets.Spreadsheets.Values.get
       // @ts-ignore
       const evtResponse = Sheets.Spreadsheets.Values.get(ssId, `'${CONFIG.SHEETS.EVT}'!A:A`);
       const rawEVT = evtResponse.values || [];
@@ -320,7 +380,17 @@ function _generatePayloadInternal(): string {
 
 /**
  * DATA EXTRACTION (STRICT MODE)
- * PERFORMANCE: Uses single getValues() call to minimize RPC overhead.
+ *
+ * @remarks
+ * A high-performance extractor that prioritizes speed and low quota usage.
+ * It uses a single `getValues()` call to fetch all data rows in one RPC,
+ * then performs all mapping and type conversion in memory.
+ *
+ * @param ss - Active Spreadsheet instance.
+ * @param sheetName - Target sheet to extract.
+ * @param type - 'lb' (Leaderboard) or 'hh' (Headhunter) to determine schema.
+ * @returns Parsed SheetDataResult.
+ * @warning Consumes SpreadsheetApp quota for data range retrieval.
  */
 function extractSheetDataStrict(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
@@ -420,7 +490,10 @@ function extractSheetDataStrict(
           case "num":
             return sanitizeNum(val, "");
           case "rate":
-            // Performance Optimization: Manual percentage formatting
+            // Performance Optimization: Manual percentage formatting.
+            // Using getDisplayValues() on the sheet is significantly slower (10x+)
+            // than getValues() + manual JS parsing because it forces the
+            // spreadsheet engine to calculate formatting for every cell.
             if (val === null || val === undefined || val === "") return "0%";
             if (typeof val === "number") {
                 if (val <= 1.0) return `${Math.round(val * 100)}%`;
@@ -458,7 +531,15 @@ function extractSheetDataStrict(
 }
 
 /**
- * Robust number parsing helper.
+ * NUMERIC SANITIZER
+ *
+ * @remarks
+ * Cleans raw spreadsheet values (which may contain strings like "1,000" or "10%")
+ * into standard JavaScript numbers for the PWA.
+ *
+ * @param v - Raw value from spreadsheet.
+ * @param displayV - (Deprecated) Original display value.
+ * @returns Cleaned numeric value.
  */
 function sanitizeNum(v: any, displayV: string): number {
   if (v === null || v === undefined) return 0;
