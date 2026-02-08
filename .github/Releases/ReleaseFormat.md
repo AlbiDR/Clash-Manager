@@ -1,0 +1,111 @@
+{
+  "type": "object",
+  "required": [
+    "versioning_logic",
+    "release_summary",
+    "key_improvements",
+    "deep_dive",
+    "files_modified",
+    "final_markdown_output"
+  ],
+  "properties": {
+    "versioning_logic": {
+      "type": "object",
+      "required": ["previous_version", "new_version", "impact_level", "reasoning"],
+      "properties": {
+        "previous_version": { "type": "string" },
+        "new_version": { "type": "string" },
+        "impact_level": { "type": "string", "enum": ["Major", "Minor", "Patch"] },
+        "reasoning": { "type": "string" }
+      }
+    },
+    "release_summary": {
+      "type": "string",
+      "description": "The 'Hero' paragraph. A high-level narrative introduction to the release."
+    },
+    "key_improvements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "context", "summary", "details"],
+        "properties": {
+          "title": { "type": "string" },
+          "context": { "type": "string" },
+          "summary": { "type": "string" },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["bold_label", "description"],
+              "properties": {
+                "bold_label": { "type": "string" },
+                "description": { "type": "string" },
+                "sub_points": { 
+                  "type": "array", 
+                  "items": { "type": "string" },
+                  "description": "Optional nested bullets for Proposition 2."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "deep_dive": {
+      "type": "object",
+      "required": ["title", "type", "problem_statement", "root_cause_analysis", "solution_implementation"],
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["Bug Fix", "Architecture Spotlight", "Strategic Pivot"] },
+        "problem_statement": { "type": "string" },
+        "root_cause_analysis": { "type": "array", "items": { "type": "string" } },
+        "solution_implementation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["step", "outcome"],
+            "properties": {
+              "step": { "type": "string" },
+              "outcome": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "files_modified": {
+      "type": "object",
+      "required": ["sections", "omission_strategy"],
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["component_name", "file_list"],
+            "properties": {
+              "component_name": { "type": "string" },
+              "file_list": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["filename", "change_summary"],
+                  "properties": {
+                    "filename": { "type": "string" },
+                    "change_summary": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "omission_strategy": {
+          "type": "string",
+          "description": "Safekeeping field: Stores the specific formatting string to be used for future large-scale omissions (e.g., '* - [Count] additional files omitted for brevity.')."
+        }
+      }
+    },
+    "final_markdown_output": {
+      "type": "string",
+      "description": "Must use the exact separator: '\\n---\\n<br>\\n' before all H2 headers. Start with # {new_version}: {Title} followed immediately by the release_summary."
+    }
+  }
+}
