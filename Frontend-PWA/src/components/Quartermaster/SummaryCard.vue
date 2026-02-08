@@ -10,6 +10,8 @@ const props = defineProps<{
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat().format(num);
 };
+
+const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -29,7 +31,7 @@ const formatNumber = (num: number) => {
       <!-- Row 1: King Level Focus -->
       <div class="metric-item main">
         <div class="metric-meta">
-          <img src="/assets/game/tower_level.webp" class="res-asset" alt="Tower" />
+          <img :src="`${baseUrl}assets/game/tower_level.webp`" class="res-asset" alt="Tower" />
           <span class="label">Target Level</span>
         </div>
         <div class="value-stack">
@@ -44,7 +46,7 @@ const formatNumber = (num: number) => {
         <span class="label">Total Experience</span>
         <div class="value-group">
           <span class="value">+{{ formatNumber(result.totalXpGained) }}</span>
-          <img src="/assets/game/currency_xp.webp" class="res-asset" alt="XP" />
+          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-asset" alt="XP" />
         </div>
       </div>
 
@@ -52,7 +54,7 @@ const formatNumber = (num: number) => {
         <span class="label">Total Investment</span>
         <div class="value-group">
           <span class="value">{{ formatNumber(result.totalGoldSpent) }}</span>
-          <img src="/assets/game/currency_gold.webp" class="res-asset" alt="Gold" />
+          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
         </div>
       </div>
     </div>
