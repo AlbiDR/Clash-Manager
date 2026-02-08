@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type OptimizationSettings } from "../../logic/Quartermaster/Quartermaster_Types";
-import { IMPORTANT_KING_LEVELS } from "../../logic/Quartermaster/Quartermaster_Tables";
+import { type OptimizationSettings } from "../../logic/Laboratory/Laboratory_Types";
+import { IMPORTANT_KING_LEVELS } from "../../logic/Laboratory/Laboratory_Tables";
 import Icon from "../Icon.vue";
 
 const props = defineProps<{

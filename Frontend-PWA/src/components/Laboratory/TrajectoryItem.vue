@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type UpgradeAction } from "../../logic/Quartermaster/Quartermaster_Types";
+import { type UpgradeAction } from "../../logic/Laboratory/Laboratory_Types";
 import Icon from "../Icon.vue";
 
 defineProps<{

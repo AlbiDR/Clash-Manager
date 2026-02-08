@@ -1,6 +1,6 @@
 
-import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS } from "./Quartermaster_Tables";
-import type { Inventory, PlayerData, PlayerProfile, Card, Rarity } from "./Quartermaster_Types";
+import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS } from "./Laboratory_Tables";
+import type { Inventory, PlayerData, PlayerProfile, Card, Rarity } from "./Laboratory_Types";
 
 const normalizeLevel = (level: number, rarity: Rarity): number => {
   // Logic from Python adapter: Raw API levels are relative (1-based).
@@ -24,7 +24,7 @@ const normalizeRarity = (raw: string): Rarity => {
   return normalized;
 }
 
-const QuartermasterAdapter = {
+const LaboratoryAdapter = {
   /**
    * Hydrates raw API data into a strongly typed PlayerData object.
    * Supports both RoyaleAPI flat format and Internal nested format.
@@ -104,4 +104,4 @@ const QuartermasterAdapter = {
   }
 };
 
-export default QuartermasterAdapter;
+export default LaboratoryAdapter;

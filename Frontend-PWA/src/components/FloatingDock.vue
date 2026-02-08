@@ -36,9 +36,9 @@ const navItems: NavItem[] = [
     icon: "recruiter",
   },
   {
-    path: "/quartermaster",
-    name: "quartermaster",
-    label: "Quartermaster",
+    path: "/laboratory",
+    name: "laboratory",
+    label: "Laboratory",
     icon: "flask",
   },
   {

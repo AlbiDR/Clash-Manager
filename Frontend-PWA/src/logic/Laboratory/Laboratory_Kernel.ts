@@ -1,7 +1,7 @@
 
 /**
  * ============================================================================
- * ⚡ MODULE: QUARTERMASTER KERNEL
+ * ⚡ MODULE: LABORATORY KERNEL
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Pure logic engine for determining the optimal upgrade path.
  *    Replicates `Level16Optimizer.generate_plan` using a greedy algorithm.
@@ -18,7 +18,7 @@ import {
   KING_XP_TABLE,
   CARD_LEVEL_CAP,
   GEM_VALUE_IN_GOLD
-} from './Quartermaster_Tables';
+} from './Laboratory_Tables';
 
 import type {
   Card,
@@ -31,7 +31,7 @@ import type {
   PlayerProfile,
   Rarity,
   Mutable
-} from './Quartermaster_Types';
+} from './Laboratory_Types';
 
 const EPSILON = 1e-9;
 
@@ -122,7 +122,7 @@ function calculateKingStatus(totalXp: number, startIndex: number = 0): { profile
   };
 }
 
-const QuartermasterKernel = {
+const LaboratoryKernel = {
   
   /**
    * 🚀 CORE ENGINE: Generates the optimization plan.
@@ -281,4 +281,4 @@ const QuartermasterKernel = {
   }
 };
 
-export default QuartermasterKernel;
+export default LaboratoryKernel;
