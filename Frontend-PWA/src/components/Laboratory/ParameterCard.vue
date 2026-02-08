@@ -140,7 +140,7 @@ const baseUrl = import.meta.env.BASE_URL;
   backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-l);
-  padding: 16px;
+  padding: 20px;
   box-shadow: var(--sys-elevation-2);
 }
 
@@ -153,24 +153,25 @@ const baseUrl = import.meta.env.BASE_URL;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   opacity: 0.7;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .parameter-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 28px;
 }
 
 .parameter-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  transition: opacity 0.3s;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 
-.parameter-item.disabled, .toggle-row.disabled {
-  opacity: 0.5;
+.parameter-item.disabled {
+  opacity: 0.4;
+  filter: grayscale(0.5);
   pointer-events: none;
 }
 
@@ -185,29 +186,28 @@ const baseUrl = import.meta.env.BASE_URL;
 .strategy-selector {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 4px;
   background: var(--sys-color-surface-container-high);
   padding: 4px;
-  border-radius: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--sys-color-outline-variant);
 }
 
 .strategy-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border: none;
   background: transparent;
   color: var(--sys-color-on-surface);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 750;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.6;
-  width: 100%;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.5;
   white-space: nowrap;
 }
 
@@ -215,6 +215,7 @@ const baseUrl = import.meta.env.BASE_URL;
   background: var(--sys-color-surface);
   box-shadow: var(--sys-elevation-1);
   opacity: 1;
+  color: var(--sys-color-primary);
 }
 
 .select-wrapper {
@@ -228,13 +229,19 @@ const baseUrl = import.meta.env.BASE_URL;
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   font-family: var(--sys-font-family-mono);
   font-size: 14px;
   font-weight: 700;
   color: var(--sys-color-on-surface);
   width: 100%;
   cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.level-select:focus {
+  outline: none;
+  border-color: var(--sys-color-primary);
 }
 
 .level-select option.milestone {
@@ -244,52 +251,59 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .level-select option.past {
   opacity: 0.5;
-  color: var(--sys-color-on-surface-variant);
 }
 
 .select-icon {
   position: absolute;
   right: 14px;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
-  padding-top: 8px;
+  padding: 12px 0;
   border-top: 1px solid var(--sys-color-outline-variant);
   transition: opacity 0.3s;
+}
+
+.toggle-row.disabled {
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .toggle-info {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .toggle-info .label {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 750;
   color: var(--sys-color-on-surface);
 }
 
 .toggle-info .sub {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   opacity: 0.5;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .custom-toggle {
   width: 44px;
   height: 24px;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 12px;
+  border-radius: 20px;
   position: relative;
-  transition: background 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
 }
 
 .custom-toggle.active {
@@ -305,10 +319,11 @@ const baseUrl = import.meta.env.BASE_URL;
   top: 3px;
   left: 3px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .custom-toggle.active .toggle-nob {
   transform: translateX(20px);
 }
+
 </style>
