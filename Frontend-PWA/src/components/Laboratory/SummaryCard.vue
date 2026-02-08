@@ -129,7 +129,7 @@ const baseUrl = import.meta.env.BASE_URL;
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr;
   gap: 20px;
-  align-items: end;
+  align-items: start;
 }
 
 @media (max-width: 640px) {
