@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { type OptimizationSettings } from "../../logic/Laboratory/Laboratory_Types";
 import { IMPORTANT_KING_LEVELS } from "../../logic/Laboratory/Laboratory_Tables";
 import Icon from "../Icon.vue";
