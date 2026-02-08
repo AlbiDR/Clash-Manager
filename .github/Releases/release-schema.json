@@ -1,7 +1,5 @@
 {
-  "create_changelog": "cd \"$HOME/.gemini/antigravity/clash-manager\" && git fetch origin --tags && ST=$(git describe --tags --abbrev=0 origin/Stable) && FN=\"Changelog_$(date +%Y-%m-%d)_from_$ST.txt\" && printf \"PROJECT: Clash Manager\\nRANGE:   $ST -> origin/Stable\\nDATE:    $(date +'%Y-%m-%d %H:%M')\\n==========================================\\n\\n\" > ~/Downloads/\"$FN\" && git log \"$ST\"..origin/Stable --format=\"<c>%h: %s%n%b</c>%n\" >> ~/Downloads/\"$FN\""
-}
-{
+  "create_changelog": "cd \"$HOME/.gemini/antigravity/clash-manager\" && git fetch origin --tags && ST=$(git describe --tags --abbrev=0 origin/Stable) && FN=\"Changelog_$(date +%Y-%m-%d)_from_$ST.txt\" && printf \"PROJECT: Clash Manager\\nRANGE:   $ST -> origin/Stable\\nDATE:    $(date +'%Y-%m-%d %H:%M')\\n===\\n\\n\" > ~/Downloads/\"$FN\" && git log \"$ST\"..origin/Stable --format=\"<c>%h: %s%n%b</c>%n\" >> ~/Downloads/\"$FN\"",
   "type": "object",
   "required": [
     "versioning_logic",
@@ -14,7 +12,12 @@
   "properties": {
     "versioning_logic": {
       "type": "object",
-      "required": ["previous_version", "new_version", "impact_level", "reasoning"],
+      "required": [
+        "previous_version",
+        "new_version",
+        "impact_level",
+        "reasoning"
+      ],
       "properties": {
         "previous_version": { "type": "string" },
         "new_version": { "type": "string" },
@@ -43,8 +46,8 @@
               "properties": {
                 "bold_label": { "type": "string" },
                 "description": { "type": "string" },
-                "sub_points": { 
-                  "type": "array", 
+                "sub_points": {
+                  "type": "array",
                   "items": { "type": "string" },
                   "description": "Optional nested bullets for Proposition 2."
                 }
@@ -102,7 +105,7 @@
         },
         "omission_strategy": {
           "type": "string",
-          "description": "Safekeeping field: Stores the specific formatting string to be used for future large-scale omissions (e.g., '* - [Count] additional files omitted for brevity.')."
+          "description": "Safekeeping field: Stores the specific formatting string to be used for future large-scale omissions."
         }
       }
     },
@@ -112,6 +115,3 @@
     }
   }
 }
-
----
----
