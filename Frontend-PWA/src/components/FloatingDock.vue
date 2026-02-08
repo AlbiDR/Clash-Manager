@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 import { useHaptics } from "../composables/useHaptics";
