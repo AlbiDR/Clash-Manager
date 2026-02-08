@@ -70,6 +70,18 @@ function buildCandidate(
   }
 
   if (remainingNeeded > 0) return null;
+  
+  // ELITE CURRENCY LOGIC
+  let ewcUsed = 0;
+  let crystalsUsed = 0;
+
+  if (nextLevel === 15) {
+     ewcUsed = cardsRequired; 
+     if (!settings.infiniteGold && ewcUsed > inventory.eliteWildCards) return null;
+  } else if (nextLevel === 16) {
+     crystalsUsed = cardsRequired; 
+     if (!settings.infiniteGold && crystalsUsed > inventory.crystals) return null;
+  }
 
   if (!settings.infiniteGold && goldCost > inventory.gold) return null;
   if (gemsUsed > inventory.gems) return null;
@@ -95,8 +107,10 @@ function buildCandidate(
     gemsUsed,
     xpGained: xpGain,
     efficiencyRatio,
-    materialEfficiency
-  };
+    materialEfficiency,
+    ewcUsed,
+    crystalsUsed
+  } as UpgradeCandidate;
 }
 
 function calculateKingStatus(totalXp: number, startIndex: number = 0): { profile: Pick<PlayerProfile, "kingLevel" | "xpIntoLevel">, index: number } {
@@ -222,6 +236,11 @@ const QuartermasterKernel = {
       
       const wildKey = targetCard.rarity as Rarity;
       (simInventory.wildCards as Record<Rarity, number>)[wildKey] -= bestCandidate.wildCardsUsed;
+      
+      if (!settings.infiniteGold) {
+        simInventory.eliteWildCards -= bestCandidate.ewcUsed || 0;
+        simInventory.crystals -= bestCandidate.crystalsUsed || 0;
+      }
 
       totalWildCardsUsed[targetCard.rarity] += bestCandidate.wildCardsUsed;
       totalGoldSpent += bestCandidate.goldCost;

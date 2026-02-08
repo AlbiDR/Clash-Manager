@@ -75,7 +75,9 @@ export function useQuartermaster() {
       wildCards: {
         ...observation.value.inventory.wildCards,
         ...(partialInventory.wildCards || {})
-      }
+      },
+      eliteWildCards: partialInventory.eliteWildCards ?? observation.value.inventory.eliteWildCards,
+      crystals: partialInventory.crystals ?? observation.value.inventory.crystals
     }
 
     observation.value = {

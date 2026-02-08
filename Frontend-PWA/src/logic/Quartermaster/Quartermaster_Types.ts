@@ -19,6 +19,8 @@ export interface Inventory {
   readonly gold: number;
   readonly gems: number;
   readonly wildCards: Readonly<Record<Rarity, number>>;
+  readonly eliteWildCards: number;
+  readonly crystals: number;
 }
 
 export interface PlayerProfile {
@@ -79,5 +81,8 @@ export interface UpgradeCandidate {
   readonly gemsUsed: number;
   readonly xpGained: number;
   readonly efficiencyRatio: number;
+  readonly crystalUsed: number;
   readonly materialEfficiency: number;
+  readonly ewcUsed: number;
+  readonly crystalsUsed: number;
 }

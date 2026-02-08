@@ -54,6 +54,35 @@ const baseUrl = import.meta.env.BASE_URL;
         >
       </div>
 
+      <!-- Elite Resources -->
+      <div class="resource-row">
+        <div class="resource-item">
+          <div class="res-meta">
+            <img :src="`${baseUrl}assets/game/currency_ewc.webp`" class="res-asset" alt="EWC" />
+            <span class="res-label">Elite Wild Cards</span>
+          </div>
+          <input 
+            type="number" 
+            :value="inventory.eliteWildCards" 
+            class="res-input"
+            @input="handleInput($event, 'eliteWildCards')"
+          >
+        </div>
+
+        <div class="resource-item">
+          <div class="res-meta">
+            <img :src="`${baseUrl}assets/game/currency_crystal.webp`" class="res-asset" alt="Crystals" />
+            <span class="res-label">Crystals</span>
+          </div>
+          <input 
+            type="number" 
+            :value="inventory.crystals" 
+            class="res-input"
+            @input="handleInput($event, 'crystals')"
+          >
+        </div>
+      </div>
+
       <!-- Wild Cards -->
       <div class="wildcards-section">
         <div class="section-meta">
@@ -128,6 +157,12 @@ const baseUrl = import.meta.env.BASE_URL;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.resource-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .res-label {
