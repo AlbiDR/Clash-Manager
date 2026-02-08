@@ -65,7 +65,7 @@ const toggleInfinite = () => {
             placeholder="Auto (Max)"
             class="num-input"
             min="1"
-            max="16"
+            max="90"
             @input="handleTargetInput"
           >
           <span class="input-unit">v</span>
