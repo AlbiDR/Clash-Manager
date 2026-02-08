@@ -66,10 +66,12 @@ function buildCandidate(
   let finalWildUsed = wildUsed;
 
   // Logic: 
-  // 1. Try to use cards
-  // 2. Try to use Wild Cards
-  // 3. If still needed, check gems (if allowed)
-  if (remainingNeeded > wildUsed) {
+  // 1. If infinite, we bypass material checks and never use gems.
+  // 2. If real, we try cards -> wild cards -> gems (if allowed).
+  if (settings.infiniteResources) {
+    finalWildUsed = remainingNeeded;
+    gemsUsed = 0;
+  } else if (remainingNeeded > wildUsed) {
     if (settings.allowGemSpending) {
       const deficit = remainingNeeded - wildUsed;
       const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
@@ -83,10 +85,11 @@ function buildCandidate(
     }
   }
 
-  // Gold check
-  if (goldCost > inventory.gold) return null;
+  // Gold check (only in non-infinite mode)
+  if (!settings.infiniteResources && goldCost > inventory.gold) return null;
 
   // Convert gems to gold value for normalized efficiency comparison
+  // In infinite mode, gemsUsed is always 0.
   const effectiveCost = goldCost + (gemsUsed * GEM_VALUE_IN_GOLD);
 
   const override = EFFICIENCY_OVERRIDES[nextLevel];
@@ -178,6 +181,9 @@ const LaboratoryKernel = {
       .map((_, i) => i)
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
+    // Enforce logic: Infinite simulation ONLY allowed for Target strategy
+    const effectiveInfinite = settings.strategy === "Target" && settings.infiniteResources;
+
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;
       const nextActiveIndices: number[] = [];
@@ -187,7 +193,7 @@ const LaboratoryKernel = {
           simCards[index], 
           index, 
           simInventory, 
-          settings
+          { ...settings, infiniteResources: effectiveInfinite }
         );
 
         if (!candidate) continue;
@@ -227,9 +233,11 @@ const LaboratoryKernel = {
       targetCard.count -= bestCandidate.cardsUsed;
       
       // Budget Management
-      // Always deduct cost to respect the budget.
-      simInventory.gold -= bestCandidate.goldCost;
-      simInventory.gems -= bestCandidate.gemsUsed;
+      // Only deduct cost if NOT in infinite mode.
+      if (!effectiveInfinite) {
+        simInventory.gold -= bestCandidate.goldCost;
+        simInventory.gems -= bestCandidate.gemsUsed;
+      }
 
       
       const wildKey = targetCard.rarity as Rarity;
