@@ -188,8 +188,8 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .wildcards-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
 }
@@ -199,6 +199,8 @@ const baseUrl = import.meta.env.BASE_URL;
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  flex: 1;
+  min-width: 50px;
 }
 
 .wc-asset {

@@ -90,6 +90,7 @@ const handleResourceUpdate = (key: string, value: number) => {
         
         <SettingsCard 
           :settings="settings"
+          :current-level="observation.profile.kingLevel"
           @update="setSettings"
         />
       </div>
