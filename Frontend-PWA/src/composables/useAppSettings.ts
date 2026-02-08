@@ -22,7 +22,7 @@ const isMobile =
 
 const DEFAULT_STATE: ModuleState = {
   blitzMode: false,
-  ghostBenchmarking: !isMobile,
+  ghostBenchmarking: false,
   sortExplanation: true,
   backendRefresher: false,
   experimentalNotifications: false,

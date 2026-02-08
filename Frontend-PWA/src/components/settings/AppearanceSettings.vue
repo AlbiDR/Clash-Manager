@@ -3,11 +3,15 @@ import { useSettings } from "../../composables/useSettings";
 import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
+defineProps<{
+  initiallyExpanded?: boolean;
+}>();
+
 const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 </script>
 
 <template>
-  <SettingsCard title="Appearance & Utility" icon="gear">
+  <SettingsCard title="Appearance & Utility" icon="gear" :initially-expanded="initiallyExpanded">
     <div class="theme-switch">
       <button
         class="theme-btn"

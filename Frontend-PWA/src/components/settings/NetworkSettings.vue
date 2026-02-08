@@ -4,6 +4,10 @@ import { useApiState } from "../../composables/useApiState";
 import SettingsCard from "../SettingsCard.vue";
 import Icon from "../Icon.vue";
 
+const props = defineProps<{
+  initiallyExpanded?: boolean;
+}>();
+
 const { apiUrl, apiStatus, pingData } = useApiState();
 const newApiUrl = ref("");
 const isEditing = ref(false);
@@ -35,7 +39,7 @@ function resetApiUrl() {
 </script>
 
 <template>
-  <SettingsCard title="Network & API" icon="plug" :loading="isChecking">
+  <SettingsCard title="Network & API" icon="plug" :loading="isChecking" :initially-expanded="initiallyExpanded">
     <template #header-extra>
       <div class="status-indicator" :class="apiStatus"></div>
     </template>
