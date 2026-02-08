@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import Icon from "./Icon.vue";
 
 defineProps<{
@@ -7,20 +8,37 @@ defineProps<{
   loading?: boolean;
   bodyClass?: string;
 }>();
+
+const isCollapsed = ref(true);
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+};
 </script>
 
 <template>
-  <div class="settings-card" :aria-busy="loading ? 'true' : 'false'">
-    <div class="card-header">
+  <div
+    class="settings-card"
+    :class="{ collapsed: isCollapsed }"
+    :aria-busy="loading ? 'true' : 'false'"
+  >
+    <div class="card-header" @click="toggleCollapse">
       <div class="header-main">
         <Icon :name="icon" size="20" class="header-icon" />
         <h3>{{ title }}</h3>
       </div>
-      <slot name="header-extra" />
+      <div class="header-actions">
+        <slot name="header-extra" />
+        <button class="expand-btn" :class="{ rotated: !isCollapsed }">
+          <Icon name="chevron_down" size="18" />
+        </button>
+      </div>
     </div>
-    <div class="card-body" :class="bodyClass">
-      <slot />
-    </div>
+    <Transition name="collapse">
+      <div v-if="!isCollapsed" class="card-body" :class="bodyClass">
+        <slot />
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -30,7 +48,7 @@ defineProps<{
   border-radius: 24px;
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-header {
@@ -39,6 +57,11 @@ defineProps<{
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings-card:not(.collapsed) .card-header {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -59,7 +82,49 @@ defineProps<{
   color: var(--sys-color-primary);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: var(--sys-color-outline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.5;
+}
+
+.expand-btn.rotated {
+  transform: rotate(180deg);
+  opacity: 1;
+  color: var(--sys-color-primary);
+}
+
 .card-body {
   padding: 20px;
+}
+
+/* Collapse Transition */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
 }
 </style>
