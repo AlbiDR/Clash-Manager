@@ -127,7 +127,7 @@ const HeadhunterView: IHeadhunterView = {
                 textFormat: { bold: true }, 
                 wrapStrategy: "WRAP", 
                 horizontalAlignment: "CENTER", 
-                backgroundColor: Registry.Services.View.hexToRgbColor(CONFIG.THEME.TABLE.HEADER_BG) 
+                backgroundColor: Registry.Services.View.hexToRgbColor(CONFIG.THEME?.TABLE?.HEADER_BG || "#f8f9fa") 
               }
             }))
           }],
