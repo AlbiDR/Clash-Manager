@@ -68,22 +68,23 @@ function buildCandidate(
   // Logic: 
   // 1. Try to use cards
   // 2. Try to use Wild Cards
-  // 3. If still needed, check gems (unless infinite resources)
+  // 3. If still needed, check gems (if allowed)
   if (remainingNeeded > wildUsed) {
-    if (settings.infiniteResources) {
-      finalWildUsed = remainingNeeded;
-    } else {
+    if (settings.allowGemSpending) {
       const deficit = remainingNeeded - wildUsed;
       const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
       gemsUsed = Math.ceil(deficit * rate);
       
       // Check gem budget
       if (gemsUsed > inventory.gems) return null;
+    } else {
+      // Cannot satisfy material requirement
+      return null;
     }
   }
 
   // Gold check
-  if (!settings.infiniteResources && goldCost > inventory.gold) return null;
+  if (goldCost > inventory.gold) return null;
 
   // Convert gems to gold value for normalized efficiency comparison
   const effectiveCost = goldCost + (gemsUsed * GEM_VALUE_IN_GOLD);
@@ -177,9 +178,6 @@ const LaboratoryKernel = {
       .map((_, i) => i)
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
-    // Enforce logic: Maximize strategy NEVER uses infinite resources
-    const effectiveInfinite = settings.strategy === "Maximize" ? false : settings.infiniteResources;
-
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;
       const nextActiveIndices: number[] = [];
@@ -189,7 +187,7 @@ const LaboratoryKernel = {
           simCards[index], 
           index, 
           simInventory, 
-          { ...settings, infiniteResources: effectiveInfinite }
+          settings
         );
 
         if (!candidate) continue;
@@ -229,14 +227,10 @@ const LaboratoryKernel = {
       targetCard.count -= bestCandidate.cardsUsed;
       
       // Budget Management
-      // In "Maximize" strategy, we always deduct cost to respect the budget.
-      // In "Target" strategy, we only deduct if NOT in infinite mode.
-      // In "Maximize" strategy, we always deduct cost to respect the budget.
-      // In "Target" strategy, we only deduct if NOT in infinite mode.
-      if (!effectiveInfinite) {
-         simInventory.gold -= bestCandidate.goldCost;
-         simInventory.gems -= bestCandidate.gemsUsed;
-      }
+      // Always deduct cost to respect the budget.
+      simInventory.gold -= bestCandidate.goldCost;
+      simInventory.gems -= bestCandidate.gemsUsed;
+
       
       const wildKey = targetCard.rarity as Rarity;
       (simInventory.wildCards as Record<Rarity, number>)[wildKey] -= bestCandidate.wildCardsUsed;
