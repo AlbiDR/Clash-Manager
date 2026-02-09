@@ -74,16 +74,25 @@ function calculateDefaultTarget(currentLevel: number): number {
 export function useLaboratory() {
   const { data: clashData } = useClashData()
 
-  /**
-   * Ingests raw data (e.g. from RoyaleAPI or Internal Store) and hydrates the Laboratory.
-   */
-  const ingest = (rawSnapshot: any, rawInventory?: any) => {
+  // --- CORE METHODS (Hoisted) ---
+
+  function analyze() {
+    if (!observation.value) return
+    isSimulating.value = true
+    
+    requestAnimationFrame(() => {
+       if (observation.value) {
+         operation.value = LaboratoryKernel.optimize(observation.value, settings.value)
+       }
+       isSimulating.value = false
+    })
+  }
+
+  function ingest(rawSnapshot: any, rawInventory?: any) {
     const data = LaboratoryAdapter.hydrate(rawSnapshot, rawInventory);
-    // Apply persistence to the freshly hydrated data
     data.inventory = loadPersistedInventory(data);
     observation.value = data;
 
-    // Apply default target level if unconfigured or reached
     const currentLevel = data.profile.kingLevel;
     if (!settings.value.targetLevel || settings.value.targetLevel <= currentLevel) {
       settings.value = {
@@ -93,33 +102,10 @@ export function useLaboratory() {
     }
 
     persistObservation(observation.value)
-    analyze() // Auto-analyze on ingestion
+    analyze()
   }
 
-  /**
-   * Initialization: Attempt to hydrate from cache if the tag matches
-   */
-  if (!observation.value) {
-    const cached = localStorage.getItem(STORAGE_KEY_OBSERVATION);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        // Only hydrate if we have a tag and it matches or if no tag is configured yet
-        if (parsed && (!clashData.value?.playerTag || parsed.profile.tag === clashData.value.playerTag)) {
-          observation.value = parsed;
-          analyze();
-        }
-      } catch (e) {
-        console.warn("[Laboratory] Cache hydration failed", e);
-      }
-    }
-  }
-
-  /**
-   * Fetches the player profile from the backend using the tracked PlayerTag
-   */
-  const fetchTrackedPlayer = async () => {
-    // Use global selection logic
+  async function fetchTrackedPlayer() {
     const tag = clashData.value?.playerTag
     if (!tag) return
 
@@ -136,21 +122,7 @@ export function useLaboratory() {
     }
   }
 
-  // Watch for playerTag changes to re-fetch
-  watch(() => clashData.value?.playerTag, (newTag) => {
-    if (newTag) {
-      if (!observation.value) {
-        fetchTrackedPlayer()
-      } else {
-        analyze() // Auto-calculate if we already have an observation
-      }
-    }
-  }, { immediate: true })
-
-  /**
-   * Updates specific inventory items (e.g. from UI inputs).
-   */
-  const updateInventory = (partialInventory: Partial<Inventory>) => {
+  function updateInventory(partialInventory: Partial<Inventory>) {
     if (!observation.value) return
     
     const newInventory = {
@@ -167,35 +139,43 @@ export function useLaboratory() {
       inventory: newInventory
     }
 
-    // Persist changes
     localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(newInventory));
     persistObservation(observation.value);
-    
-    analyze() // Re-analyze on inventory change
+    analyze()
   }
 
-  /**
-   * Runs the optimization kernel based on current observation and settings.
-   */
-  const analyze = () => {
-    if (!observation.value) return
-
-    isSimulating.value = true
-    
-    // Low-priority execution to keep UI responsive
-    requestAnimationFrame(() => {
-       if (observation.value) {
-         operation.value = LaboratoryKernel.optimize(observation.value, settings.value)
-       }
-       isSimulating.value = false
-    })
-  }
-
-  const setSettings = (newSettings: Partial<OptimizationSettings>) => {
+  function setSettings(newSettings: Partial<OptimizationSettings>) {
     settings.value = { ...settings.value, ...newSettings }
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings.value));
-    analyze() // Re-analyze on settings change
+    analyze()
   }
+
+  // --- INITIALIZATION & WATCHERS ---
+
+  if (!observation.value) {
+    const cached = localStorage.getItem(STORAGE_KEY_OBSERVATION);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && (!clashData.value?.playerTag || parsed.profile.tag === clashData.value.playerTag)) {
+          observation.value = parsed;
+          analyze();
+        }
+      } catch (e) {
+        console.warn("[Laboratory] Cache hydration failed", e);
+      }
+    }
+  }
+
+  watch(() => clashData.value?.playerTag, (newTag) => {
+    if (newTag) {
+      if (!observation.value) {
+        fetchTrackedPlayer()
+      } else {
+        analyze()
+      }
+    }
+  }, { immediate: true })
 
   return {
     observation: computed(() => observation.value),
