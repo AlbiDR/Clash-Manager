@@ -59,29 +59,35 @@ function buildCandidate(
   const cardsUsed = Math.min(card.count, cardsRequired);
   let remainingNeeded = cardsRequired - cardsUsed;
 
-  const wildAvailable = inventory.wildCards[card.rarity] || 0;
-  const wildUsed = Math.min(remainingNeeded, Math.max(0, wildAvailable));
-  
-  let gemsUsed = 0;
-  let finalWildUsed = wildUsed;
-
   // Logic: 
-  // 1. If infinite, we bypass material checks and never use gems.
+  // 1. If infinite, we bypass material checks but keep track for summary consistency.
   // 2. If real, we try cards -> wild cards -> gems (if allowed).
+  const wildAvailable = inventory.wildCards[card.rarity] || 0;
+  let gemsUsed = 0;
+  let finalWildUsed = 0;
+
   if (settings.infiniteResources) {
+    // In infinite mode, we conceptually use what we need, 
+    // but for the summary we prioritize the "owned" count first.
     finalWildUsed = remainingNeeded;
     gemsUsed = 0;
-  } else if (remainingNeeded > wildUsed) {
-    if (settings.allowGemSpending) {
-      const deficit = remainingNeeded - wildUsed;
-      const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
-      gemsUsed = Math.ceil(deficit * rate);
-      
-      // Check gem budget
-      if (gemsUsed > inventory.gems) return null;
-    } else {
-      // Cannot satisfy material requirement
-      return null;
+  } else {
+    // Real resources mode
+    const wildToUse = Math.min(remainingNeeded, Math.max(0, wildAvailable));
+    finalWildUsed = wildToUse;
+    remainingNeeded -= wildToUse;
+
+    if (remainingNeeded > 0) {
+      if (settings.allowGemSpending) {
+        const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+        gemsUsed = Math.ceil(remainingNeeded * rate);
+        
+        // Check gem budget
+        if (gemsUsed > inventory.gems) return null;
+      } else {
+        // Cannot satisfy material requirement
+        return null;
+      }
     }
   }
 
@@ -100,15 +106,21 @@ function buildCandidate(
   }
 
   // Convert gems to gold value for normalized efficiency comparison
-  // We apply a "soft penalty" to gem spending to prioritize natural resources.
-  // Gems are converted to gold value, and we add an extra toll for gems 
-  // to ensure they are used as a fallback.
   const effectiveCost = goldCost + (gemsUsed * GEM_VALUE_IN_GOLD);
 
   const override = EFFICIENCY_OVERRIDES[nextLevel];
-  const efficiencyRatio = override !== undefined 
+  let efficiencyRatio = override !== undefined 
     ? override 
     : effectiveCost / xpGain;
+
+  // PRIORITY LOGIC:
+  // We apply a "soft discount" (priority bonus) to the efficiency ratio 
+  // if gems are NOT required. This ensures that the greedy algorithm 
+  // prioritizes "free" upgrades (using owned cards/wildcards) 
+  // over spending gems, even if the raw efficiency is slightly worse.
+  if (gemsUsed === 0) {
+    efficiencyRatio *= 0.8; // 20% priority bonus for non-gem upgrades
+  }
 
   const materialEfficiency = cardsRequired > 0 ? xpGain / cardsRequired : 0;
 
