@@ -49,8 +49,8 @@ describe('Laboratory Kernel', () => {
     expect(result.actions?.length || 0).toBe(0);
   });
 
-  it('should enforce infiniteResources=false when strategy is Maximize', () => {
-    // Even if we pass infiniteResources: true, Maximize should ignore it
+  it('should allow infiniteResources when strategy is Maximize', () => {
+    // We now allow infiniteResources for Maximize strategy (Theoretical completion cost)
     const limitedGold = 50000;
     const data: PlayerData = {
       profile: mockProfile,
@@ -60,12 +60,12 @@ describe('Laboratory Kernel', () => {
 
     const settings: OptimizationSettings = {
       strategy: "Maximize",
-      infiniteResources: true // User tried to toggle it ON
+      infiniteResources: true
     };
 
     const result = LaboratoryKernel.optimize(data, settings);
-    // Should STILL fail to upgrade because Maximize overrides infinite
-    expect(result.actions?.length || 0).toBe(0);
+    // Should now perform upgrades ignoring the 50k gold limit
+    expect(result.actions?.length || 0).toBeGreaterThan(0);
   });
 
   it('should reach target level with infinite resources despite zero inventory', () => {
