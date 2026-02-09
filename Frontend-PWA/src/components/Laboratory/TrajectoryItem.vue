@@ -86,26 +86,26 @@ const baseUrl = import.meta.env.BASE_URL;
 
 /* Rarity Highlights - Enhanced Visual Hierarchy */
 .trajectory-item.common { 
-  border-left-color: #acb3bc; 
+  border-left-color: #A5B1C2; 
   background: var(--sys-color-surface-container-low);
 }
 .trajectory-item.rare { 
-  border-left-color: #d68910; /* Less saturated orange-brown */
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(214, 137, 16, 0.03) 100%);
+  border-left-color: #D35400; 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(211, 84, 0, 0.05) 100%);
 }
 .trajectory-item.epic { 
-  border-left-color: #9b59b6; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(155, 89, 182, 0.08) 100%);
+  border-left-color: #8E44AD; 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(142, 68, 173, 0.08) 100%);
 }
 .trajectory-item.legendary { 
-  border-left-color: #00d2ff;
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 255, 0.12) 100%);
-  box-shadow: 0 4px 20px -8px rgba(0, 210, 255, 0.3);
+  border-left-color: #00D2D3;
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 211, 0.12) 100%);
+  box-shadow: 0 4px 20px -8px rgba(0, 210, 211, 0.3);
 }
 .trajectory-item.champion { 
-  border-left-color: #ff9f00; /* More vibrant, slightly more orange-gold */
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(255, 159, 0, 0.18) 100%);
-  box-shadow: 0 4px 28px -8px rgba(255, 159, 0, 0.5);
+  border-left-color: #F1C40F; 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(241, 196, 15, 0.18) 100%);
+  box-shadow: 0 4px 28px -8px rgba(241, 196, 15, 0.5);
 }
 
 .trajectory-item:hover {
