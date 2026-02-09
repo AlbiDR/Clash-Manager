@@ -37,15 +37,19 @@ const baseUrl = import.meta.env.BASE_URL;
         <span class="card-name">{{ upgrade.cardName }}</span>
       </div>
 
-      <!-- Line 3: Metadata -->
-      <div class="meta-row">
-        <div class="metric-chip gold" title="Experience per Gold unit">
-          <span class="label">XP/g</span>
-          <span class="val">{{ upgrade.xpPerGold.toFixed(3) }}</span>
+      <!-- Line 3: Efficiency Metrics (Inverted Ratios) -->
+      <div class="efficiency-row">
+        <div class="efficiency-slab gold">
+          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="eff-icon" alt="Gold" />
+          <div class="eff-divider">/</div>
+          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="eff-icon" alt="XP" />
+          <span class="eff-val">{{ (upgrade.goldCost / upgrade.xpGained).toFixed(2) }}</span>
         </div>
-        <div v-if="upgrade.gemsUsed > 0" class="metric-chip gem" title="Experience per Gem unit">
-          <span class="label">XP/💎</span>
-          <span class="val">{{ upgrade.xpPerGem.toFixed(2) }}</span>
+        <div v-if="upgrade.gemsUsed > 0" class="efficiency-slab gems">
+          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="eff-icon" alt="Gems" />
+          <div class="eff-divider">/</div>
+          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="eff-icon" alt="XP" />
+          <span class="eff-val">{{ (upgrade.gemsUsed / upgrade.xpGained).toFixed(3) }}</span>
         </div>
       </div>
     </div>
@@ -186,47 +190,53 @@ const baseUrl = import.meta.env.BASE_URL;
   text-overflow: ellipsis;
 }
 
-.meta-row {
+.efficiency-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-top: 8px;
 }
 
-.metric-chip {
+.efficiency-slab {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  background: rgba(var(--sys-color-on-surface-rgb), 0.05);
-  border-radius: 6px;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--sys-color-surface-container);
+  border-radius: 8px;
+  border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.efficiency-slab.gold {
+  border-left: 2px solid #ffcc00;
+  background: rgba(255, 204, 0, 0.03);
+}
+
+.efficiency-slab.gems {
+  border-left: 2px solid #00ff88;
+  background: rgba(0, 255, 136, 0.03);
+}
+
+.eff-icon {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.eff-divider {
+  opacity: 0.3;
   font-size: 10px;
   font-weight: 700;
-  border: 1px solid rgba(var(--sys-color-on-surface-rgb), 0.1);
-  letter-spacing: 0.05em;
 }
 
-.metric-chip .label {
-  opacity: 0.5;
-  font-weight: 900;
-  text-transform: uppercase;
-  font-size: 8px;
-}
-
-.metric-chip .val {
+.eff-val {
   color: var(--sys-color-on-surface);
+  margin-left: 2px;
 }
-
-.metric-chip.gold {
-  border-color: rgba(255, 204, 0, 0.2);
-}
-.metric-chip.gold .label { color: #ffcc00; }
-
-.metric-chip.gem {
-  border-color: rgba(0, 255, 136, 0.2);
-}
-.metric-chip.gem .label { color: #00ff88; }
 
 .cost-stack {
   display: flex;

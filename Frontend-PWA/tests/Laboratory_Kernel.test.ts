@@ -61,7 +61,8 @@ describe('Laboratory Kernel', () => {
 
     const settings: OptimizationSettings = {
       strategy: "Maximize",
-      infiniteResources: true
+      infiniteResources: true,
+      allowGemSpending: true // Required for infinite mode to work with zero inventory
     };
 
     const result = LaboratoryKernel.optimize(data, settings);
@@ -79,7 +80,7 @@ describe('Laboratory Kernel', () => {
     const settings: OptimizationSettings = {
       strategy: "Target",
       targetLevel: 15, // Very small step for test speed
-      allowGemSpending: false,
+      allowGemSpending: true, // Required for infinite mode to work with zero inventory
       infiniteResources: false // Will be overridden internally for Target
     };
 
