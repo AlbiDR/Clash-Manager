@@ -56,8 +56,7 @@ describe('useLaboratory', () => {
     expect(settings.value.allowGemSpending).toBe(true);
   });
 
-  // This test is expected to fail because of a TDZ bug in useLaboratory.ts (calling analyze() before it's defined)
-  it.fails('should hydrate from cache if tag matches', async () => {
+  it('should hydrate from cache if tag matches', async () => {
     const cachedData = {
       profile: { name: 'Cached User', tag: '#TAG123', kingLevel: 10, xpIntoLevel: 0 },
       inventory: { gold: 100, gems: 10, wildCards: {} },
