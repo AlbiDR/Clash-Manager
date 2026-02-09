@@ -84,11 +84,17 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 /* Rarity Highlights */
-.trajectory-item.common { border-left-color: #e9ecef; }
-.trajectory-item.rare { border-left-color: #f1c40f; }
+.trajectory-item.common { border-left-color: #b0bec5; }
+.trajectory-item.rare { border-left-color: #f39c12; }
 .trajectory-item.epic { border-left-color: #a55eea; }
-.trajectory-item.legendary { border-left-color: #45aaf2; }
-.trajectory-item.champion { border-left-color: #fed330; }
+.trajectory-item.legendary { 
+  border-left-color: #00d2ff;
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 255, 0.05) 100%);
+}
+.trajectory-item.champion { 
+  border-left-color: #ffbf00;
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(255, 191, 0, 0.05) 100%);
+}
 
 .upgrade-info {
   flex: 1;
