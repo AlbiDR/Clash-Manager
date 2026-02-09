@@ -24,6 +24,7 @@ import type {
   WebAppData,
   PingResponse,
   DismissResponse,
+  DismissalRequest,
   Recruit,
   LeaderboardMember,
 } from "../types";
@@ -489,9 +490,12 @@ export async function getPlayerProfile(tag: string): Promise<any> {
 }
 
 export async function dismissRecruits(
-  ids: string[],
+  items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
-  return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { ids });
+  return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { 
+    // We send payload as objects: { id, score }
+    items 
+  });
 }
 
 export async function undismissRecruits(

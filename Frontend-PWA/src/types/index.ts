@@ -95,6 +95,12 @@ export interface MomentumInfo {
   raw: number;
 }
 
+// Dismissal tuple
+export interface DismissalRequest {
+  id: string;
+  score: number;
+}
+
 // Dismiss response
 export interface DismissResponse {
   success: boolean;
