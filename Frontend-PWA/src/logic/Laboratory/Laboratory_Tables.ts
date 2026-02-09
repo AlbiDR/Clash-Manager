@@ -25,7 +25,7 @@ export const CARD_RARITY_OVERRIDE: Readonly<Record<string, Rarity>> = {
   "Mega Knight": "Legendary", "Miner": "Legendary", "Night Witch": "Legendary",
   "Phoenix": "Legendary", "Princess": "Legendary", "Ram Rider": "Legendary",
   "Royal Ghost": "Legendary", "Sparky": "Legendary", "The Log": "Legendary",
-  "Log": "Legendary", "Mother Witch": "Legendary", "Spirit Empress": "Legendary",
+  "Mother Witch": "Legendary", "Spirit Empress": "Legendary",
   "Goblin Machine": "Legendary",
   
   // Epics
@@ -38,6 +38,7 @@ export const CARD_RARITY_OVERRIDE: Readonly<Record<string, Rarity>> = {
   "P.E.K.K.A": "Epic", "Poison": "Epic", "Prince": "Epic", "Rage": "Epic",
   "Skeleton Army": "Epic", "Tornado": "Epic", "Wall Breakers": "Epic",
   "Witch": "Epic", "X-Bow": "Epic", "Rune Giant": "Epic", "Vines": "Epic",
+  "Void": "Epic", "Goblin Curse": "Epic",
   
   // Rares
   "Battle Healer": "Rare", "Battle Ram": "Rare", "Bomb Tower": "Rare",
@@ -48,7 +49,7 @@ export const CARD_RARITY_OVERRIDE: Readonly<Record<string, Rarity>> = {
   "Mega Minion": "Rare", "Mini P.E.K.K.A": "Rare", "Musketeer": "Rare",
   "Rocket": "Rare", "Royal Hogs": "Rare", "Three Musketeers": "Rare",
   "Tombstone": "Rare", "Valkyrie": "Rare", "Wizard": "Rare", "Zappies": "Rare",
-  "Goblin Demolisher": "Rare",
+  "Goblin Demolisher": "Rare", "Suspicious Bush": "Rare",
   
   // Commons
   "Archers": "Common", "Arrows": "Common", "Barbarians": "Common",
