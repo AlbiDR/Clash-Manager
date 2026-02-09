@@ -264,9 +264,11 @@ const baseUrl = import.meta.env.BASE_URL;
 /* Color Coding for Slabs */
 .res-slab.xp {
   border-left: 3px solid #00d2ff;
+  background: rgba(0, 210, 255, 0.02);
 }
 .res-slab.gold {
   border-left: 3px solid #ffcc00;
+  background: rgba(255, 204, 0, 0.02);
 }
 .res-slab.gems {
   border-left: 3px solid #00ff88;
