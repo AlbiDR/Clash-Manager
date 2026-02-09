@@ -117,15 +117,19 @@ const baseUrl = import.meta.env.BASE_URL;
       </label>
 
       <!-- Gem Spending Toggle -->
-      <label class="toggle-row">
+      <label 
+        class="toggle-row"
+        :class="{ disabled: settings.infiniteResources }"
+        :title="settings.infiniteResources ? 'Gems are shown as theoretical requirements in Infinite mode' : ''"
+      >
         <div class="toggle-info">
           <span class="label">Allow Gem Spending</span>
           <span class="sub">Buy missing cards with gems</span>
         </div>
         <div 
           class="custom-toggle" 
-          :class="{ active: settings.allowGemSpending }"
-          @click="toggleGemSpending"
+          :class="{ active: settings.allowGemSpending || settings.infiniteResources }"
+          @click="!settings.infiniteResources && toggleGemSpending()"
         >
           <div class="toggle-nob"></div>
         </div>

@@ -70,7 +70,20 @@ function buildCandidate(
     // In infinite mode, we conceptually use what we need, 
     // but for the summary we prioritize the "owned" count first.
     finalWildUsed = remainingNeeded;
-    gemsUsed = 0;
+    
+    // Theoretical Gem calculation for card/material deficit
+    const deficit = Math.max(0, remainingNeeded - wildAvailable);
+    if (deficit > 0) {
+      const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+      gemsUsed += Math.ceil(deficit * rate);
+    }
+
+    // Theoretical Gem calculation for gold deficit
+    if (goldCost > inventory.gold) {
+      const goldDeficit = goldCost - Math.max(0, inventory.gold);
+      const gemsForGold = Math.ceil(goldDeficit / GEM_VALUE_IN_GOLD);
+      gemsUsed += gemsForGold;
+    }
   } else {
     // Real resources mode
     const wildToUse = Math.min(remainingNeeded, Math.max(0, wildAvailable));
@@ -89,19 +102,19 @@ function buildCandidate(
         return null;
       }
     }
-  }
 
-  // Gold check (only in non-infinite mode)
-  if (!settings.infiniteResources && goldCost > inventory.gold) {
-    if (settings.allowGemSpending) {
-      const goldDeficit = goldCost - Math.max(0, inventory.gold);
-      const gemsForGold = Math.ceil(goldDeficit / GEM_VALUE_IN_GOLD);
-      gemsUsed += gemsForGold;
-      
-      // Re-verify total gem budget
-      if (gemsUsed > inventory.gems) return null;
-    } else {
-      return null;
+    // Gold check (only in non-infinite mode)
+    if (goldCost > inventory.gold) {
+      if (settings.allowGemSpending) {
+        const goldDeficit = goldCost - Math.max(0, inventory.gold);
+        const gemsForGold = Math.ceil(goldDeficit / GEM_VALUE_IN_GOLD);
+        gemsUsed += gemsForGold;
+        
+        // Re-verify total gem budget
+        if (gemsUsed > inventory.gems) return null;
+      } else {
+        return null;
+      }
     }
   }
 
