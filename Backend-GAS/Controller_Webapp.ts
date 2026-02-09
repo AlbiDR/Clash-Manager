@@ -146,13 +146,13 @@ function getWebAppData(forceRefresh: boolean): string {
  * @returns Result object with success status and metrics.
  * @warning Consumes SpreadsheetApp and Advanced Sheets Service quotas.
  */
-function markRecruitsAsInvitedBulk(ids: string[]): {
+function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>): {
   success: boolean;
   count: number;
   dbWrite?: number;
   payloadSize?: number;
 } {
-  if (!ids || !Array.isArray(ids) || ids.length === 0)
+  if (!items || !Array.isArray(items) || items.length === 0)
     return { success: true, count: 0 };
 
   return Registry.Services.Core.executeSafely("WRITE_HH_EVT", () => {
@@ -164,16 +164,25 @@ function markRecruitsAsInvitedBulk(ids: string[]): {
       let evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
       if (!evtSheet) {
         evtSheet = ss.insertSheet(CONFIG.SHEETS.EVT);
-        evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+        evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", "Raw Score"]]);
         evtSheet.setTabColor("#ff5722"); // Visual marker for "Hot" data
+      } else {
+        // Robust header verification (Ensures headers persist even if cleared)
+        if (evtSheet.getLastRow() === 0 || evtSheet.getRange(1,1).getValue() !== "Tag") {
+           evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", "Raw Score"]]);
+        }
       }
 
       // ATOMIC APPEND (Advanced API)
       const now = Date.now();
-      const values = ids.map((id) => [
-        (id.startsWith("#") ? id : "#" + id).toUpperCase(),
-        now
-      ]);
+      const values = items.map((item) => {
+        const id = item.id;
+        return [
+          (id.startsWith("#") ? id : "#" + id).toUpperCase(),
+          now,
+          Number(item.score) || 0
+        ];
+      });
 
       if (values.length > 0) {
         // @ts-ignore
