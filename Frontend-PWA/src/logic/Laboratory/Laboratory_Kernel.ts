@@ -127,12 +127,14 @@ function buildCandidate(
     : effectiveCost / xpGain;
 
   // PRIORITY LOGIC:
-  // We apply a "soft discount" (priority bonus) to the efficiency ratio 
-  // if gems are NOT required. This ensures that the greedy algorithm 
-  // prioritizes "free" upgrades (using owned cards/wildcards) 
-  // over spending gems, even if the raw efficiency is slightly worse.
-  if (gemsUsed === 0) {
-    efficiencyRatio *= 0.8; // 20% priority bonus for non-gem upgrades
+  // We apply a "Gem Penalty" (efficiency penalty) if gems are required.
+  // This ensures that the greedy algorithm prioritizes "free" upgrades 
+  // (using owned cards/wildcards) over spending gems, even if the 
+  // gem-based upgrade has a better raw efficiency.
+  if (gemsUsed > 0) {
+    efficiencyRatio *= 10.0; // 10x penalty for gem spending
+  } else {
+    efficiencyRatio *= 0.5; // 50% "Owned Material" bonus to prioritize natural growth
   }
 
   const materialEfficiency = cardsRequired > 0 ? xpGain / cardsRequired : 0;
@@ -219,8 +221,8 @@ const LaboratoryKernel = {
       .map((_, i) => i)
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
-    // Enforce logic: Infinite simulation ONLY allowed for Target strategy
-    const effectiveInfinite = settings.strategy === "Target" && settings.infiniteResources;
+    // Enforce logic: Infinite simulation allowed for both strategies now
+    const effectiveInfinite = settings.infiniteResources;
 
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;

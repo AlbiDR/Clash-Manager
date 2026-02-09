@@ -111,7 +111,7 @@ const handleResourceUpdate = (key: string, value: number) => {
         <div class="trajectory-list">
           <TrajectoryItem 
             v-for="(upgrade, index) in operation.actions" 
-            :key="upgrade.cardName"
+            :key="`${upgrade.cardName}-${index}`"
             :upgrade="upgrade"
             :index="index"
           />

@@ -47,6 +47,10 @@ const baseUrl = import.meta.env.BASE_URL;
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
         <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
       </div>
+      <div v-else-if="upgrade.wildCardsUsed > 0" class="cost-item wild">
+        <span class="val">{{ formatNumber(upgrade.wildCardsUsed) }}</span>
+        <img :src="`${baseUrl}assets/game/wildcard_${upgrade.rarity.toLowerCase()}.webp`" class="res-icon" alt="WildCards" />
+      </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
         <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
@@ -170,7 +174,7 @@ const baseUrl = import.meta.env.BASE_URL;
   font-weight: 850;
 }
 
-.cost-item.gem { color: #ffdeeb; }
+.cost-item.wild { color: var(--sys-color-primary); }
 .cost-item.gold { color: var(--sys-color-on-surface); }
 .cost-item.xp { 
   color: var(--sys-color-on-surface-variant); 
