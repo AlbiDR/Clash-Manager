@@ -137,13 +137,4 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
   opacity: 0.2;
 }
 
-.flex {
-  display: flex;
-}
-.align-center {
-  align-items: center;
-}
-.gap-8 {
-  gap: 8px;
-}
 </style>
