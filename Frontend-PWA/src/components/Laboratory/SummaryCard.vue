@@ -23,7 +23,7 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
       <div class="projection-badge">
         <span class="label">Trajectory</span>
-        <span class="value">{{ result.actions.length }} Steps</span>
+        <span class="value">{{ result.actions.length }} {{ result.actions.length === 1 ? 'Upgrade' : 'Upgrades' }}</span>
       </div>
     </div>
 
