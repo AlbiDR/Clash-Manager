@@ -50,7 +50,7 @@ declare const Registry: IRegistry;
 
 // External module functions
 declare function getWebAppData(forceRefresh: boolean): string;
-declare function markRecruitsAsInvitedBulk(ids: string[]): {
+declare function markRecruitsAsInvitedBulk(items: Array<{ id: string, score: number }>): {
   success: boolean;
   count: number;
 };
@@ -223,15 +223,20 @@ function doPost(
 
     switch (action) {
       case "dismissrecruits":
-        const ids = payload.ids;
-        if (!ids || !Array.isArray(ids)) {
+        const dismissItems = payload.items || payload.ids; // Support both for transition
+        if (!dismissItems || !Array.isArray(dismissItems)) {
           return respond(
             null,
             "INVALID_PARAMS",
-            'dismissRecruits requires "ids" array',
+            'dismissRecruits requires "items" or "ids" array',
           );
         }
-        return respond(markRecruitsAsInvitedBulk(ids));
+        // Normalize: if it's an array of strings (legacy), map to objects with 0 score
+        const normalizedItems = dismissItems.map(item => {
+          if (typeof item === 'string') return { id: item, score: 0 };
+          return item;
+        });
+        return respond(markRecruitsAsInvitedBulk(normalizedItems));
 
       case "undismissrecruits":
         const undoIds = payload.ids;
