@@ -1,5 +1,5 @@
 
-import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS } from "./Laboratory_Tables";
+import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, CARD_RARITY_OVERRIDE } from "./Laboratory_Tables";
 import type { Inventory, PlayerData, PlayerProfile, Card, Rarity } from "./Laboratory_Types";
 
 const normalizeLevel = (level: number, rarity: Rarity): number => {
@@ -71,7 +71,12 @@ const LaboratoryAdapter = {
     const cards: Card[] = cardsData.map((c: any) => {
       // Robust Rarity Normalization (Handles internal files with bad casing)
       const rawRarity = c.rarity || "Common";
-      const rarity = normalizeRarity(rawRarity);
+      let rarity = normalizeRarity(rawRarity);
+      
+      // ABSOLUTE SOURCE OF TRUTH OVERRIDE
+      if (CARD_RARITY_OVERRIDE[c.name]) {
+        rarity = CARD_RARITY_OVERRIDE[c.name];
+      }
       
       let finalLevel = c.level;
 
