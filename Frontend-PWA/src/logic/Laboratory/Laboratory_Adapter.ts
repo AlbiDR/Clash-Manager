@@ -38,6 +38,8 @@ const LaboratoryAdapter = {
     let cardsData: any[] = [];
 
     // CASE A: Internal Format (e.g. from saved JSON files like sample_player.json)
+    if (rawSnapshot.profile && rawSnapshot.cards) {
+       profile = {
          name: rawSnapshot.profile.name || "Unknown",
          tag: rawSnapshot.profile.tag || "0",
          kingLevel: rawSnapshot.profile.king_level || rawSnapshot.profile.kingLevel,
