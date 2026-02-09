@@ -97,39 +97,16 @@ const baseUrl = import.meta.env.BASE_URL;
         </div>
       </div>
 
-      <!-- Infinite Resources Toggle -->
-      <label 
-        class="toggle-row" 
-        :class="{ disabled: settings.strategy === 'Target' }"
-        :title="settings.strategy === 'Target' ? 'Target strategy always shows the optimal path to reach your goal' : 'Enable to see theoretical completion cost'"
-      >
-        <div class="toggle-info">
-          <span class="label">Infinite Resources</span>
-          <span class="sub">{{ settings.strategy === 'Target' ? 'Always enabled for goal-oriented path' : 'Theoretical completion cost' }}</span>
-        </div>
-        <div 
-          class="custom-toggle" 
-          :class="{ active: settings.strategy === 'Target' || settings.infiniteResources }"
-          @click="settings.strategy === 'Maximize' && emit('update', { infiniteResources: !settings.infiniteResources })"
-        >
-          <div class="toggle-nob"></div>
-        </div>
-      </label>
-
       <!-- Gem Spending Toggle -->
-      <label 
-        class="toggle-row"
-        :class="{ disabled: settings.infiniteResources }"
-        :title="settings.infiniteResources ? 'Gems are shown as theoretical requirements in Infinite mode' : ''"
-      >
+      <label class="toggle-row">
         <div class="toggle-info">
           <span class="label">Allow Gem Spending</span>
           <span class="sub">Buy missing cards with gems</span>
         </div>
         <div 
           class="custom-toggle" 
-          :class="{ active: settings.allowGemSpending || settings.infiniteResources }"
-          @click="!settings.infiniteResources && toggleGemSpending()"
+          :class="{ active: settings.allowGemSpending }"
+          @click="toggleGemSpending()"
         >
           <div class="toggle-nob"></div>
         </div>
