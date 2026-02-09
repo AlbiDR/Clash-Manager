@@ -35,8 +35,7 @@ vi.mock('../../logic/Laboratory/Laboratory_Kernel', () => ({
   }
 }));
 
-// IMPORTANT: We need to stub isInternalFormat for LaboratoryAdapter which is used by useLaboratory
-vi.stubGlobal('isInternalFormat', false);
+// Mocks
 
 describe('useLaboratory', () => {
   beforeEach(async () => {
