@@ -1,6 +1,6 @@
 import { watch } from "vue";
 import { dismissRecruits, NetworkError } from "../api/gasClient";
-import type { WebAppData } from "../types";
+import type { WebAppData, DismissalRequest, Recruit } from "../types";
 import { useClashData } from "./useClashData";
 import { useBadge } from "./useBadge";
 import { useAppSettings } from "./useAppSettings";
@@ -172,8 +172,10 @@ watch(
 );
 
 export function useHeadhunter() {
-  async function dismissRecruitsAction(ids: string[]) {
+  async function dismissRecruitsAction(items: DismissalRequest[]) {
     if (!clashData.value) return;
+
+    const ids = items.map(i => i.id);
 
     // Optimistically update local state
     const oldData = clashData.value; // Keep reference for rollback
@@ -182,7 +184,7 @@ export function useHeadhunter() {
     if (isSyntheticMode.value) return;
 
     try {
-      await dismissRecruits(ids);
+      await dismissRecruits(items);
       // 📡 Broadcast dismissal to other tabs on success
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
     } catch (e) {

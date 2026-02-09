@@ -166,7 +166,7 @@ describe("useHeadhunter", () => {
     await nextTick();
     mockUpdateLocalData.mockClear();
 
-    await dismissRecruitsAction(["R1"]);
+    await dismissRecruitsAction([{ id: "R1", score: 40000 }]);
 
     // Check optimistic update
     expect(mockUpdateLocalData).toHaveBeenCalledWith(expect.objectContaining({
@@ -174,7 +174,7 @@ describe("useHeadhunter", () => {
     }));
 
     // Check network call
-    expect(dismissRecruits).toHaveBeenCalledWith(["R1"]);
+    expect(dismissRecruits).toHaveBeenCalledWith([{ id: "R1", score: 40000 }]);
 
     // Check broadcast
     expect(mockPost).toHaveBeenCalledWith({ type: "RECRUIT_DISMISSAL", ids: ["R1"] });
@@ -191,7 +191,7 @@ describe("useHeadhunter", () => {
     await nextTick();
     mockUpdateLocalData.mockClear();
 
-    await expect(dismissRecruitsAction(["R1"])).rejects.toThrow("Server Error");
+    await expect(dismissRecruitsAction([{ id: "R1", score: 40000 }])).rejects.toThrow("Server Error");
 
     // Should have updated twice: once for optimistic, once for rollback
     expect(mockUpdateLocalData).toHaveBeenCalledTimes(2);
@@ -209,7 +209,7 @@ describe("useHeadhunter", () => {
     await nextTick();
     mockUpdateLocalData.mockClear();
 
-    await dismissRecruitsAction(["R1"]);
+    await dismissRecruitsAction([{ id: "R1", score: 40000 }]);
 
     // Should only update once (optimistic)
     expect(mockUpdateLocalData).toHaveBeenCalledTimes(1);
@@ -227,7 +227,7 @@ describe("useHeadhunter", () => {
     mockClashData.value = sampleData;
     await nextTick();
 
-    await dismissRecruitsAction(["R1"]);
+    await dismissRecruitsAction([{ id: "R1", score: 40000 }]);
 
     expect(mockUpdateLocalData).toHaveBeenCalled();
     expect(dismissRecruits).not.toHaveBeenCalled();

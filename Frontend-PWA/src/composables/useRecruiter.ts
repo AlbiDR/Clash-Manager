@@ -201,6 +201,13 @@ export function useRecruiter() {
   function executeDismiss(ids: string[]) {
     // PRESERVATION: Capture state for potential undo operations.
     const recruitsToRestore = (data.value?.hh || []).filter(r => ids.includes(r.id));
+    
+    // HARDENING: Map IDs to score-aware request tuples
+    const items = recruitsToRestore.map(r => ({
+      id: r.id,
+      score: r.potentialRawScore || 0
+    }));
+
     const { undismissRecruitsAction } = useHeadhunter();
 
     // ⚡ ZERO LATENCY: Visual hide (Tombstone injection)
@@ -209,7 +216,7 @@ export function useRecruiter() {
     let backendCalled = false;
 
     backendCalled = true;
-    dismissRecruitsAction(ids).catch(() => {
+    dismissRecruitsAction(items).catch(() => {
       error("Failed to sync changes");
       // ERROR RECOVERY: Remove tombstones to restore visibility.
       blacklist.restore(ids);
