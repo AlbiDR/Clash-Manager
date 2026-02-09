@@ -90,8 +90,8 @@ const baseUrl = import.meta.env.BASE_URL;
   background: var(--sys-color-surface-container-low);
 }
 .trajectory-item.rare { 
-  border-left-color: #e67e22; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(230, 126, 34, 0.05) 100%);
+  border-left-color: #d68910; /* Less saturated orange-brown */
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(214, 137, 16, 0.03) 100%);
 }
 .trajectory-item.epic { 
   border-left-color: #9b59b6; 
@@ -103,9 +103,9 @@ const baseUrl = import.meta.env.BASE_URL;
   box-shadow: 0 4px 20px -8px rgba(0, 210, 255, 0.3);
 }
 .trajectory-item.champion { 
-  border-left-color: #ffca28; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(255, 202, 40, 0.15) 100%);
-  box-shadow: 0 4px 24px -10px rgba(255, 202, 40, 0.4);
+  border-left-color: #ff9f00; /* More vibrant, slightly more orange-gold */
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(255, 159, 0, 0.18) 100%);
+  box-shadow: 0 4px 28px -8px rgba(255, 159, 0, 0.5);
 }
 
 .trajectory-item:hover {
