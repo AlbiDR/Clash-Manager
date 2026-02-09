@@ -35,9 +35,6 @@ describe('Laboratory Adapter', () => {
   };
 
   beforeEach(() => {
-    // BUG WORKAROUND: Laboratory_Adapter.ts uses an undefined variable 'isInternalFormat'.
-    // We stub it here to allow tests to proceed and verify the remaining logic.
-    vi.stubGlobal('isInternalFormat', false);
   });
 
   it('should hydrate RoyaleAPI format correctly (Case B)', () => {
@@ -72,9 +69,6 @@ describe('Laboratory Adapter', () => {
   });
 
   it('should handle internal format correctly (Case A)', () => {
-    // When testing Case A, we pretend isInternalFormat is true
-    vi.stubGlobal('isInternalFormat', true);
-
     const data = LaboratoryAdapter.hydrate(mockInternalSnapshot);
     expect(data.profile.name).toBe("AlbiDR");
     expect(data.inventory.gold).toBe(100000);
