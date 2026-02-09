@@ -188,8 +188,7 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .strategy-selector {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 4px;
   background: var(--sys-color-surface-container-high);
   padding: 4px;
@@ -198,11 +197,12 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .strategy-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 4px;
   border: none;
   background: transparent;
   color: var(--sys-color-on-surface);
@@ -216,7 +216,7 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .strategy-btn.active {
-  background: var(--sys-color-surface);
+  background: var(--sys-color-surface-container-highest);
   box-shadow: var(--sys-elevation-1);
   opacity: 1;
   color: var(--sys-color-primary);
