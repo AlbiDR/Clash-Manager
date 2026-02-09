@@ -29,6 +29,7 @@ const baseUrl = import.meta.env.BASE_URL;
           <span class="next">{{ upgrade.targetLevel }}</span>
         </div>
         <span class="logic-type">{{ upgrade.upgradeType }}</span>
+        <span v-if="upgrade.isTowerTroop" class="tower-badge">Tower</span>
       </div>
 
       <!-- Line 2: Card Name (Prominent) -->
@@ -150,6 +151,18 @@ const baseUrl = import.meta.env.BASE_URL;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   opacity: 0.4;
+}
+
+.tower-badge {
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-primary);
+  padding: 1px 4px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
 .name-row {

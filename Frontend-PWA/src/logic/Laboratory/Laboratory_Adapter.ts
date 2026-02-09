@@ -62,7 +62,7 @@ const LaboratoryAdapter = {
         kingLevel: rawSnapshot.expLevel || 1,
         xpIntoLevel: rawSnapshot.expPoints || 0
       };
-      cardsData = rawSnapshot.cards || [];
+      cardsData = [...(rawSnapshot.cards || []), ...(rawSnapshot.towerTroops || [])];
     }
 
     // Default inventory if missing
@@ -77,6 +77,8 @@ const LaboratoryAdapter = {
       if (CARD_RARITY_OVERRIDE[c.name]) {
         rarity = CARD_RARITY_OVERRIDE[c.name];
       }
+
+      const isTowerTroop = c.isTowerTroop || (rawSnapshot.towerTroops?.some((tt: any) => tt.name === c.name));
       
       let finalLevel = c.level;
 
@@ -91,7 +93,8 @@ const LaboratoryAdapter = {
         name: c.name,
         rarity: rarity,
         level: finalLevel,
-        count: c.count || 0
+        count: c.count || 0,
+        isTowerTroop: !!isTowerTroop
       };
     });
 
