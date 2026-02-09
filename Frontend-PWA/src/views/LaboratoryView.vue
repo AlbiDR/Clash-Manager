@@ -47,11 +47,12 @@ const handleResourceUpdate = (key: string, value: number) => {
   if (key === 'gold') updateInventory({ gold: value });
   else if (key === 'gems') updateInventory({ gems: value });
   else if (key.startsWith('wc_')) {
-    const rarity = key.split('_')[1];
+    const rawRarity = key.split('_')[1];
+    const capitalized = (rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1)) as Rarity;
     updateInventory({ 
       wildCards: { 
-        [rarity.charAt(0).toUpperCase() + rarity.slice(1)]: value 
-      } as any 
+        [capitalized]: value 
+      } as Partial<Record<Rarity, number>>
     });
   }
 };
