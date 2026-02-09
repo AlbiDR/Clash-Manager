@@ -13,6 +13,7 @@ export interface Card {
   readonly rarity: Rarity;
   readonly level: number;
   readonly count: number;
+  readonly isTowerTroop?: boolean;
 }
 
 export interface Inventory {
@@ -54,6 +55,7 @@ export interface UpgradeAction {
   readonly efficiencyRatio: number; // Cost per 1 XP
   readonly materialEfficiency: number; // XP per Card
   readonly upgradeType: "Direct" | "Wild" | "Gem"; // Added for UI
+  readonly isTowerTroop?: boolean;
 }
 
 export interface OptimizationResult {

@@ -13,6 +13,9 @@ export const IMPORTANT_KING_LEVELS = [
 
 // Comprehensive Card Rarity Override (Source of Truth)
 export const CARD_RARITY_OVERRIDE: Readonly<Record<string, Rarity>> = {
+  // Tower Troops
+  "Dagger Duchess": "Legendary", "Royale Chef": "Legendary", "Cannoneer": "Epic", "Tower Princess": "Common",
+
   // Champions
   "Archer Queen": "Champion", "Golden Knight": "Champion", "Little Prince": "Champion",
   "Mighty Miner": "Champion", "Monk": "Champion", "Skeleton King": "Champion",
@@ -62,6 +65,15 @@ export const CARD_RARITY_OVERRIDE: Readonly<Record<string, Rarity>> = {
   "Skeleton Barrel": "Common", "Skeletons": "Common", "Spear Goblins": "Common",
   "Tesla": "Common", "Zap": "Common", "Berserker": "Common"
 };
+
+/**
+ * Tower Troops are a special category of cards that:
+ * 1. Are fetched from a separate 'towerTroops' field in the API.
+ * 2. CANNOT use wildcards for upgrades.
+ */
+export const TOWER_TROOPS_SET = new Set([
+  "Dagger Duchess", "Royale Chef", "Cannoneer", "Tower Princess"
+]);
 
 // Updated with high-precision values from Python source (constants.py)
 export const GEM_CONVERSION_RATES: Readonly<Record<Rarity, number>> = {

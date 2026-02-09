@@ -59,10 +59,10 @@ function buildCandidate(
   const cardsUsed = Math.min(card.count, cardsRequired);
   let remainingNeeded = cardsRequired - cardsUsed;
 
-  // Logic: 
   // 1. If infinite, we bypass material checks but keep track for summary consistency.
   // 2. If real, we try cards -> wild cards -> gems (if allowed).
-  const wildAvailable = inventory.wildCards[card.rarity] || 0;
+  // 3. Tower Troops CANNOT use wildcards.
+  const wildAvailable = (card.isTowerTroop) ? 0 : (inventory.wildCards[card.rarity] || 0);
   let gemsUsed = 0;
   let finalWildUsed = 0;
 
@@ -151,7 +151,8 @@ function buildCandidate(
     gemsUsed,
     xpGained: xpGain,
     efficiencyRatio,
-    materialEfficiency
+    materialEfficiency,
+    isTowerTroop: card.isTowerTroop
   };
 }
 
@@ -305,7 +306,8 @@ const LaboratoryKernel = {
         xpGained: bestCandidate.xpGained,
         efficiencyRatio: bestCandidate.efficiencyRatio,
         materialEfficiency: bestCandidate.materialEfficiency,
-        upgradeType
+        upgradeType,
+        isTowerTroop: bestCandidate.isTowerTroop
       });
 
       if (settings.strategy === "Target" && settings.targetLevel) {
