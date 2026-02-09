@@ -189,5 +189,3 @@ const baseUrl = import.meta.env.BASE_URL;
   height: 12px;
 }
 </style>
-
-</style>
