@@ -11,7 +11,57 @@ export const IMPORTANT_KING_LEVELS = [
   2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75
 ] as const;
 
-// Readonly Record prevents accidental modification of game rules at runtime
+// Comprehensive Card Rarity Override (Source of Truth)
+export const CARD_RARITY_OVERRIDE: Readonly<Record<string, Rarity>> = {
+  // Champions
+  "Archer Queen": "Champion", "Golden Knight": "Champion", "Little Prince": "Champion",
+  "Mighty Miner": "Champion", "Monk": "Champion", "Skeleton King": "Champion",
+  "Boss Bandit": "Champion", "Goblinstein": "Champion",
+  
+  // Legendaries
+  "Bandit": "Legendary", "Electro Wizard": "Legendary", "Fisherman": "Legendary",
+  "Graveyard": "Legendary", "Ice Wizard": "Legendary", "Inferno Dragon": "Legendary",
+  "Lava Hound": "Legendary", "Lumberjack": "Legendary", "Magic Archer": "Legendary",
+  "Mega Knight": "Legendary", "Miner": "Legendary", "Night Witch": "Legendary",
+  "Phoenix": "Legendary", "Princess": "Legendary", "Ram Rider": "Legendary",
+  "Royal Ghost": "Legendary", "Sparky": "Legendary", "The Log": "Legendary",
+  "Log": "Legendary", "Mother Witch": "Legendary", "Spirit Empress": "Legendary",
+  "Goblin Machine": "Legendary",
+  
+  // Epics
+  "Baby Dragon": "Epic", "Balloon": "Epic", "Barbarian Barrel": "Epic",
+  "Bowler": "Epic", "Cannon Cart": "Epic", "Clone": "Epic", "Dark Prince": "Epic",
+  "Electro Dragon": "Epic", "Electro Giant": "Epic", "Executioner": "Epic",
+  "Freeze": "Epic", "Giant Skeleton": "Epic", "Goblin Barrel": "Epic",
+  "Goblin Drill": "Epic", "Goblin Giant": "Epic", "Golem": "Epic",
+  "Guards": "Epic", "Hunter": "Epic", "Lightning": "Epic", "Mirror": "Epic",
+  "P.E.K.K.A": "Epic", "Poison": "Epic", "Prince": "Epic", "Rage": "Epic",
+  "Skeleton Army": "Epic", "Tornado": "Epic", "Wall Breakers": "Epic",
+  "Witch": "Epic", "X-Bow": "Epic", "Rune Giant": "Epic", "Vines": "Epic",
+  
+  // Rares
+  "Battle Healer": "Rare", "Battle Ram": "Rare", "Bomb Tower": "Rare",
+  "Dart Goblin": "Rare", "Earthquake": "Rare", "Elixir Collector": "Rare",
+  "Elixir Golem": "Rare", "Fireball": "Rare", "Flying Machine": "Rare",
+  "Furnace": "Rare", "Giant": "Rare", "Goblin Hut": "Rare", "Heal Spirit": "Rare",
+  "Hog Rider": "Rare", "Ice Golem": "Rare", "Inferno Tower": "Rare",
+  "Mega Minion": "Rare", "Mini P.E.K.K.A": "Rare", "Musketeer": "Rare",
+  "Rocket": "Rare", "Royal Hogs": "Rare", "Three Musketeers": "Rare",
+  "Tombstone": "Rare", "Valkyrie": "Rare", "Wizard": "Rare", "Zappies": "Rare",
+  "Goblin Demolisher": "Rare",
+  
+  // Commons
+  "Archers": "Common", "Arrows": "Common", "Barbarians": "Common",
+  "Bats": "Common", "Bomber": "Common", "Cannon": "Common", "Electro Spirit": "Common",
+  "Elite Barbarians": "Common", "Fire Spirit": "Common", "Firecracker": "Common",
+  "Giant Snowball": "Common", "Goblin Gang": "Common", "Goblins": "Common",
+  "Ice Spirit": "Common", "Knight": "Common", "Minion Horde": "Common",
+  "Minions": "Common", "Mortar": "Common", "Rascals": "Common",
+  "Royal Delivery": "Common", "Royal Giant": "Common", "Royal Recruits": "Common",
+  "Skeleton Barrel": "Common", "Skeletons": "Common", "Spear Goblins": "Common",
+  "Tesla": "Common", "Zap": "Common", "Berserker": "Common"
+};
+
 // Updated with high-precision values from Python source (constants.py)
 export const GEM_CONVERSION_RATES: Readonly<Record<Rarity, number>> = {
   "Common": 0.36,

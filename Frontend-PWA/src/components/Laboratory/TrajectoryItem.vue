@@ -83,17 +83,34 @@ const baseUrl = import.meta.env.BASE_URL;
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Rarity Highlights */
-.trajectory-item.common { border-left-color: #b0bec5; }
-.trajectory-item.rare { border-left-color: #f39c12; }
-.trajectory-item.epic { border-left-color: #a55eea; }
+/* Rarity Highlights - Enhanced Visual Hierarchy */
+.trajectory-item.common { 
+  border-left-color: #acb3bc; 
+  background: var(--sys-color-surface-container-low);
+}
+.trajectory-item.rare { 
+  border-left-color: #e67e22; 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(230, 126, 34, 0.05) 100%);
+}
+.trajectory-item.epic { 
+  border-left-color: #9b59b6; 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(155, 89, 182, 0.08) 100%);
+}
 .trajectory-item.legendary { 
   border-left-color: #00d2ff;
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 255, 0.05) 100%);
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 255, 0.12) 100%);
+  box-shadow: 0 4px 20px -8px rgba(0, 210, 255, 0.3);
 }
 .trajectory-item.champion { 
-  border-left-color: #ffbf00;
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(255, 191, 0, 0.05) 100%);
+  border-left-color: #ffca28; 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(255, 202, 40, 0.15) 100%);
+  box-shadow: 0 4px 24px -10px rgba(255, 202, 40, 0.4);
+}
+
+.trajectory-item:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  background: var(--sys-color-surface-container);
 }
 
 .upgrade-info {
