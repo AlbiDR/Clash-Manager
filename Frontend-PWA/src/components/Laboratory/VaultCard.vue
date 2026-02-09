@@ -67,6 +67,7 @@ const baseUrl = import.meta.env.BASE_URL;
             v-for="(val, rarity) in inventory.wildCards" 
             :key="rarity"
             class="wc-item"
+            :class="rarity.toLowerCase()"
           >
             <img 
               :src="`${baseUrl}assets/game/wildcard_${rarity.toLowerCase()}.webp`" 
@@ -223,7 +224,21 @@ const baseUrl = import.meta.env.BASE_URL;
   color: var(--sys-color-on-surface);
   width: 100%;
   text-align: center;
+  transition: all 0.2s ease;
 }
+
+/* Rarity-specific border colors */
+.wc-item.common .wc-input { border-color: rgba(165, 177, 194, 0.4); }
+.wc-item.rare .wc-input { border-color: rgba(211, 84, 0, 0.4); }
+.wc-item.epic .wc-input { border-color: rgba(142, 68, 173, 0.4); }
+.wc-item.legendary .wc-input { border-color: rgba(0, 210, 211, 0.4); }
+.wc-item.champion .wc-input { border-color: rgba(241, 196, 15, 0.5); }
+
+.wc-item.common .wc-input:focus { border-color: #A5B1C2; box-shadow: 0 0 0 2px rgba(165, 177, 194, 0.2); }
+.wc-item.rare .wc-input:focus { border-color: #D35400; box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.2); }
+.wc-item.epic .wc-input:focus { border-color: #8E44AD; box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2); }
+.wc-item.legendary .wc-input:focus { border-color: #00D2D3; box-shadow: 0 0 0 2px rgba(0, 210, 211, 0.2); }
+.wc-item.champion .wc-input:focus { border-color: #F1C40F; box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.3); }
 
 /* Hide arrows in number inputs */
 input::-webkit-outer-spin-button,
