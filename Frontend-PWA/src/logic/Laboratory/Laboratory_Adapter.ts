@@ -36,12 +36,8 @@ const LaboratoryAdapter = {
     
     let profile: PlayerProfile;
     let cardsData: any[] = [];
-    let isInternalFormat = false;
 
     // CASE A: Internal Format (e.g. from saved JSON files like sample_player.json)
-    if (rawSnapshot.profile && rawSnapshot.cards) {
-       isInternalFormat = true;
-       profile = {
          name: rawSnapshot.profile.name || "Unknown",
          tag: rawSnapshot.profile.tag || "0",
          kingLevel: rawSnapshot.profile.king_level || rawSnapshot.profile.kingLevel,
@@ -78,7 +74,7 @@ const LaboratoryAdapter = {
         rarity = CARD_RARITY_OVERRIDE[c.name];
       }
 
-      const isTowerTroop = c.isTowerTroop || (rawSnapshot.towerTroops?.some((tt: any) => tt.name === c.name));
+      const isTowerTroop = c.isTowerTroop || (rawSnapshot.towerTroops?.some((tt: { name: string }) => tt.name === c.name));
       
       let finalLevel = c.level;
 

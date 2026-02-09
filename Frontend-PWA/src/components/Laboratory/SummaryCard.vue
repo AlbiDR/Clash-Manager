@@ -276,23 +276,6 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 
-.resource-group.gems {
-  background: rgba(255, 222, 235, 0.1);
-  border-color: rgba(255, 105, 180, 0.2);
-}
-
-.resource-group.gems .value {
-  color: #ffdeeb;
-}
-
-.resource-group.xp {
-  background: rgba(var(--sys-color-primary-rgb), 0.05);
-}
-
-.resource-group.gold {
-  background: rgba(255, 215, 0, 0.05);
-}
-
 .efficiency-strip {
   margin-top: 32px;
   background: var(--sys-color-surface-container-highest);

@@ -83,4 +83,5 @@ export interface UpgradeCandidate {
   readonly xpGained: number;
   readonly efficiencyRatio: number;
   readonly materialEfficiency: number;
+  readonly isTowerTroop?: boolean;
 }
