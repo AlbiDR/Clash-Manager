@@ -39,7 +39,14 @@ const baseUrl = import.meta.env.BASE_URL;
 
       <!-- Line 3: Metadata -->
       <div class="meta-row">
-        <span class="efficiency-ratio">η {{ upgrade.efficiencyRatio.toFixed(2) }}</span>
+        <div class="metric-chip gold" title="Experience per Gold unit">
+          <span class="label">XP/g</span>
+          <span class="val">{{ upgrade.xpPerGold.toFixed(3) }}</span>
+        </div>
+        <div v-if="upgrade.gemsUsed > 0" class="metric-chip gem" title="Experience per Gem unit">
+          <span class="label">XP/💎</span>
+          <span class="val">{{ upgrade.xpPerGem.toFixed(2) }}</span>
+        </div>
       </div>
     </div>
 
@@ -182,16 +189,44 @@ const baseUrl = import.meta.env.BASE_URL;
 .meta-row {
   display: flex;
   align-items: center;
+  gap: 12px;
+  margin-top: 8px;
 }
 
-.efficiency-ratio {
+.metric-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(var(--sys-color-on-surface-rgb), 0.05);
+  border-radius: 6px;
   font-family: var(--sys-font-family-mono);
   font-size: 10px;
-  font-weight: 900;
-  color: var(--sys-color-success);
-  opacity: 0.8;
+  font-weight: 700;
+  border: 1px solid rgba(var(--sys-color-on-surface-rgb), 0.1);
   letter-spacing: 0.05em;
 }
+
+.metric-chip .label {
+  opacity: 0.5;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 8px;
+}
+
+.metric-chip .val {
+  color: var(--sys-color-on-surface);
+}
+
+.metric-chip.gold {
+  border-color: rgba(255, 204, 0, 0.2);
+}
+.metric-chip.gold .label { color: #ffcc00; }
+
+.metric-chip.gem {
+  border-color: rgba(0, 255, 136, 0.2);
+}
+.metric-chip.gem .label { color: #00ff88; }
 
 .cost-stack {
   display: flex;

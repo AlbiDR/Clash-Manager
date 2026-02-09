@@ -138,6 +138,8 @@ function buildCandidate(
   }
 
   const materialEfficiency = cardsRequired > 0 ? xpGain / cardsRequired : 0;
+  const xpPerGold = goldCost > 0 ? xpGain / goldCost : 0;
+  const xpPerGem = gemsUsed > 0 ? xpGain / gemsUsed : 0;
 
   return {
     index,
@@ -152,6 +154,8 @@ function buildCandidate(
     xpGained: xpGain,
     efficiencyRatio,
     materialEfficiency,
+    xpPerGold,
+    xpPerGem,
     isTowerTroop: card.isTowerTroop
   };
 }
@@ -306,6 +310,8 @@ const LaboratoryKernel = {
         xpGained: bestCandidate.xpGained,
         efficiencyRatio: bestCandidate.efficiencyRatio,
         materialEfficiency: bestCandidate.materialEfficiency,
+        xpPerGold: bestCandidate.xpPerGold,
+        xpPerGem: bestCandidate.xpPerGem,
         upgradeType,
         isTowerTroop: bestCandidate.isTowerTroop
       });

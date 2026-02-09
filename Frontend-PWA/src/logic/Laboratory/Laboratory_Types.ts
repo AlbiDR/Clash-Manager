@@ -52,8 +52,10 @@ export interface UpgradeAction {
   readonly wildCardsUsed: number;
   readonly gemsUsed: number;
   readonly xpGained: number;
-  readonly efficiencyRatio: number; // Cost per 1 XP
+  readonly efficiencyRatio: number; // Internal normalized cost per 1 XP
   readonly materialEfficiency: number; // XP per Card
+  readonly xpPerGold: number; // XP per 1 Gold
+  readonly xpPerGem: number; // XP per 1 Gem
   readonly upgradeType: "Direct" | "Wild" | "Gem"; // Added for UI
   readonly isTowerTroop?: boolean;
 }
@@ -83,5 +85,7 @@ export interface UpgradeCandidate {
   readonly xpGained: number;
   readonly efficiencyRatio: number;
   readonly materialEfficiency: number;
+  readonly xpPerGold: number;
+  readonly xpPerGem: number;
   readonly isTowerTroop?: boolean;
 }
