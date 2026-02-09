@@ -33,29 +33,23 @@ const LaboratoryAdapter = {
     rawSnapshot: any,
     rawInventory?: any
   ): PlayerData {
+    // Determine data source format once
+    const isInternal = !!(rawSnapshot.profile && rawSnapshot.cards);
     
     let profile: PlayerProfile;
     let cardsData: any[] = [];
-    let isInternalFormat = false;
+    let inventoryData: any;
 
-    // CASE A: Internal Format (e.g. from saved JSON files like sample_player.json)
-    if (rawSnapshot.profile && rawSnapshot.cards) {
-       isInternalFormat = true;
+    if (isInternal) {
        profile = {
          name: rawSnapshot.profile.name || "Unknown",
          tag: rawSnapshot.profile.tag || "0",
          kingLevel: rawSnapshot.profile.king_level || rawSnapshot.profile.kingLevel,
          xpIntoLevel: rawSnapshot.profile.xp_into_level || rawSnapshot.profile.xpIntoLevel || 0
        };
-       cardsData = rawSnapshot.cards;
-       
-       // If inventory is inside the snapshot (saved file), use it
-       if (!rawInventory && rawSnapshot.inventory) {
-         rawInventory = rawSnapshot.inventory;
-       }
-    } 
-    // CASE B: RoyaleAPI Format (flat structure)
-    else {
+       cardsData = rawSnapshot.cards || [];
+       inventoryData = rawInventory || rawSnapshot.inventory || {};
+    } else {
       profile = {
         name: rawSnapshot.name || "Unknown",
         tag: rawSnapshot.tag || "0",
@@ -63,31 +57,23 @@ const LaboratoryAdapter = {
         xpIntoLevel: rawSnapshot.expPoints || 0
       };
       cardsData = [...(rawSnapshot.cards || []), ...(rawSnapshot.towerTroops || [])];
+      inventoryData = rawInventory || {};
     }
 
-    // Default inventory if missing
-    const inventoryData = rawInventory || {};
-
     const cards: Card[] = cardsData.map((c: any) => {
-      // Robust Rarity Normalization (Handles internal files with bad casing)
       const rawRarity = c.rarity || "Common";
       let rarity = normalizeRarity(rawRarity);
       
-      // ABSOLUTE SOURCE OF TRUTH OVERRIDE
+      // Source of truth override
       if (CARD_RARITY_OVERRIDE[c.name]) {
         rarity = CARD_RARITY_OVERRIDE[c.name];
       }
 
       const isTowerTroop = c.isTowerTroop || (rawSnapshot.towerTroops?.some((tt: { name: string }) => tt.name === c.name));
       
-      let finalLevel = c.level;
-
-      if (!isInternalFormat) {
-         finalLevel = normalizeLevel(c.level, rarity);
-      } else {
-         // Even for internal, ensure cap
-         finalLevel = Math.max(1, Math.min(c.level, CARD_LEVEL_CAP));
-      }
+      // Determine level based on format
+      const level = isInternal ? c.level : normalizeLevel(c.level, rarity);
+      const finalLevel = Math.max(1, Math.min(level, CARD_LEVEL_CAP));
 
       return {
         name: c.name,
@@ -104,11 +90,7 @@ const LaboratoryAdapter = {
       wildCards: inventoryData.wildCards || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 }
     };
 
-    return {
-      profile,
-      inventory,
-      cards
-    };
+    return { profile, inventory, cards };
   }
 };
 
