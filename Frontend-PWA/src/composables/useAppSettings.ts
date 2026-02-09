@@ -58,6 +58,28 @@ function mergeStorage(stored: any): ModuleState {
   return result;
 }
 
+/**
+ * COMPOSABLE: useAppSettings
+ *
+ * @remarks
+ * Manages the global application settings and feature flags. This composable
+ * acts as a bridge between the reactive UI state and persistent storage layers.
+ *
+ * It employs a "Redundant Persistence" strategy, ensuring that settings are
+ * available both to the main UI thread (via LocalStorage) and the background
+ * Service Worker (via IndexedDB).
+ *
+ * @returns
+ * - `modules`: Reactive object containing all feature flags and settings.
+ * - `toggle`: Function to switch boolean settings by key.
+ * - `init`: Initialization routine that hydrates state from storage.
+ *
+ * @sideeffects
+ * - READS from `LocalStorage` on `init()`.
+ * - WRITES to `LocalStorage` on every change to the `modules` object (deep watch).
+ * - WRITES to `IndexedDB` (`idb`) to synchronize notification settings with the Service Worker.
+ * - LISTENS to the global `storage` event to synchronize settings across multiple open tabs.
+ */
 export function useAppSettings() {
   function init() {
     if (isInitialized.value) return;

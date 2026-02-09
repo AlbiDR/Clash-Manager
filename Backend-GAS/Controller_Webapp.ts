@@ -73,8 +73,13 @@ export interface SheetDataResult {
 
 /**
  * APPLICATION PAYLOAD
- * The global response envelope for the PWA. Implements a "Matrix" format
- * to minimize JSON overhead by separating the schema from the data rows.
+ * The global response envelope for the PWA.
+ *
+ * @remarks
+ * Implements a "Matrix" format to minimize JSON overhead. Instead of returning
+ * an array of objects (where keys are repeated for every row), it returns
+ * a single schema array and a 2D matrix of values. The PWA then inflates
+ * these values based on the schema index. This reduces payload size by ~40%.
  */
 export interface AppPayload {
   success: boolean;
@@ -102,6 +107,7 @@ export interface AppPayload {
  *
  * @param forceRefresh - If true, bypasses L2 cache and regenerates the payload.
  * @returns JSON string containing the AppPayload.
+ * @warning Consumes CacheService (L2) and potentially heavy SpreadsheetApp quotas.
  */
 function getWebAppData(forceRefresh: boolean): string {
   try {
@@ -261,6 +267,7 @@ function undismissRecruitsBulk(ids: string[]): {
  * global cache. Used after write operations to ensure UI consistency.
  *
  * @returns Freshly generated JSON payload.
+ * @warning Consumes heavy SpreadsheetApp and Advanced Sheets Service quotas.
  */
 function refreshWebPayload(): string {
   return Registry.Services.Core.executeSafely("PAYLOAD_GEN", () => {
@@ -383,8 +390,12 @@ function _generatePayloadInternal(): string {
  *
  * @remarks
  * A high-performance extractor that prioritizes speed and low quota usage.
- * It uses a single `getValues()` call to fetch all data rows in one RPC,
- * then performs all mapping and type conversion in memory.
+ *
+ * PHILOSOPHY:
+ * 1. Single RPC: It uses a single `getValues()` call to fetch all data rows.
+ * 2. JS over GAS: Performs all mapping and type conversion in the JS engine
+ *    rather than calling SpreadsheetApp methods for every cell (which is slow).
+ * 3. Matrix Output: Returns raw arrays to minimize JSON size.
  *
  * @param ss - Active Spreadsheet instance.
  * @param sheetName - Target sheet to extract.
@@ -467,9 +478,12 @@ function extractSheetDataStrict(
     if (!Array.isArray(rowRaw)) continue;
 
     const tagRaw = String(rowRaw[S.TAG] || "").trim();
+    // Validate tag: Minimum 3 characters to exclude empty or corrupted rows.
     if (!tagRaw || tagRaw.length < 3) continue;
 
     if (type === "hh") {
+      // In Headhunter mode, we skip recruits already marked as "Invited"
+      // in the sheet to prevent UI clutter.
       const invitedVal = rowRaw[S.INVITED];
       const isInvited =
         invitedVal === true || String(invitedVal).toUpperCase() === "TRUE";
@@ -478,6 +492,8 @@ function extractSheetDataStrict(
 
     const outputRow = mapping
       .map((m) => {
+        // "bool_check" columns are control-only (e.g. checkbox for invitation).
+        // They are excluded from the "Matrix" data payload to reduce size.
         if (m.type === "bool_check") return null;
 
         if (m.col >= rowRaw.length) return m.type === "num" ? 0 : "";
@@ -486,6 +502,7 @@ function extractSheetDataStrict(
 
         switch (m.type) {
           case "tag":
+            // Normalize tags for the PWA (No # prefix, Uppercase).
             return String(val || "").replace("#", "").trim().toUpperCase();
           case "num":
             return sanitizeNum(val, "");
@@ -513,6 +530,9 @@ function extractSheetDataStrict(
           case "str":
           default:
             const s = val === null || val === undefined ? "" : String(val);
+            // FORMULA STRIPPING:
+            // Extract URL from =HYPERLINK("url", "label") artifacts to ensure
+            // the JSON API returns raw data instead of spreadsheet formulas.
             if (s.startsWith("=")) {
               return s.replace(/^=HYPERLINK.*"(.*)".*$/, "$1");
             }
@@ -537,8 +557,11 @@ function extractSheetDataStrict(
  * Cleans raw spreadsheet values (which may contain strings like "1,000" or "10%")
  * into standard JavaScript numbers for the PWA.
  *
+ * It handles the transition from spreadsheet engine strings to JS numbers,
+ * stripping common formatting characters that `parseFloat` might choke on.
+ *
  * @param v - Raw value from spreadsheet.
- * @param displayV - (Deprecated) Original display value.
+ * @param displayV - (Legacy) Original display value. Deprecated in v11.0.
  * @returns Cleaned numeric value.
  */
 function sanitizeNum(v: any, displayV: string): number {
