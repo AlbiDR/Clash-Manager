@@ -226,8 +226,10 @@ const LaboratoryKernel = {
       .map((_, i) => i)
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
-    // Enforce logic: Infinite simulation allowed for both strategies now
-    const effectiveInfinite = settings.infiniteResources;
+    // STRATEGY DIVERGENCE:
+    // - Target: Always uses infinite resources to show the path to reach the goal
+    // - Maximize: Respects infiniteResources setting (false = budget-constrained, true = theoretical max)
+    const effectiveInfinite = settings.strategy === "Target" ? true : settings.infiniteResources;
 
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;

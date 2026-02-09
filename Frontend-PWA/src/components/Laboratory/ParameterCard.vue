@@ -100,17 +100,17 @@ const baseUrl = import.meta.env.BASE_URL;
       <!-- Infinite Resources Toggle -->
       <label 
         class="toggle-row" 
-        :class="{ disabled: settings.strategy === 'Maximize' }"
-        :title="settings.strategy === 'Maximize' ? 'Simulation only available for Target strategy' : ''"
+        :class="{ disabled: settings.strategy === 'Target' }"
+        :title="settings.strategy === 'Target' ? 'Target strategy always shows the optimal path to reach your goal' : 'Enable to see theoretical completion cost'"
       >
         <div class="toggle-info">
           <span class="label">Infinite Resources</span>
-          <span class="sub">Simulation mode (ignores costs)</span>
+          <span class="sub">{{ settings.strategy === 'Target' ? 'Always enabled for goal-oriented path' : 'Theoretical completion cost' }}</span>
         </div>
         <div 
           class="custom-toggle" 
-          :class="{ active: settings.infiniteResources && settings.strategy === 'Target' }"
-          @click="settings.strategy === 'Target' && emit('update', { infiniteResources: !settings.infiniteResources })"
+          :class="{ active: settings.strategy === 'Target' || settings.infiniteResources }"
+          @click="settings.strategy === 'Maximize' && emit('update', { infiniteResources: !settings.infiniteResources })"
         >
           <div class="toggle-nob"></div>
         </div>
