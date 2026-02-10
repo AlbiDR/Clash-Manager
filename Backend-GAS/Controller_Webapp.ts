@@ -199,7 +199,7 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
 
       return {
         success: true,
-        count: ids.length,
+        count: items.length,
         dbWrite: values.length,
         payloadSize: payloadStr.length,
       };
