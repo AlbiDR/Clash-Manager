@@ -1,112 +1,120 @@
-# Surgical Migration Plan: "Clean Stack" Restructure
+# Surgical Migration Plan (Protocol 63)
 
-This document serves as the high-precision tactical manifest for the `Clash-Manager` frontend restructure. It is a temporary extension of the [Frontend Architecture Bible](./Frontend_Architecture.md) and will be deprecated once the migration is validated.
-
----
-
-## 1. Infrastructure & Systemic Adaptations (The "Repair" Plan)
-
-To ensure zero errors, the following static anchor points MUST be updated simultaneously with the file moves.
-
-### [A] Entry Points & Shell Repair
-- **`index.html`** & **`public/404.html`**:
-  - *Current*: `<script type="module" src="./src/main.ts"></script>`
-  - *New*: `<script type="module" src="./src/app/main.ts"></script>`
-  - *Fonts*: Standardize fonts preloading to use absolute root-relative paths `/fonts/...` to ensure `style.css` movement doesn't break references.
-
-### [B] Vite Build Pipeline (`vite.config.ts`)
-- **Manual Chunks**: Update substring detectors to match the new aliased structure:
-  - `id.includes("@core")` -> `core-api`
-  - `id.includes("@features")` -> `business-logic`
-  - `id.includes("@shared")` -> `ui-shared`
-- **View-Specific Exclusion**: Update `VIEW_SPECIFIC_COMPONENTS` to reference `@features` instead of `/src/components/`.
-- **PWA Settings**: 
-  - `srcDir: "src/app"`
-  - `filename: "sw.ts"`
-
-### [C] TypeScript Configuration (`tsconfig.app.json`)
-- **Paths Manifest**: Verify aliases strictly match:
-  - `@/*`: `["src/*"]`
-  - `@core/*`: `["src/core/*"]`
-  - `@shared/*`: `["src/shared/*"]`
-  - `@features/*`: `["src/features/*"]`
-  - `@app/*`: `["src/app/*"]`
+This is the high-precision tactical manifest for the `Clash-Manager` restructure.
+**Status**: Tactical Draft 63.
+**Objective**: 100% build-stability during the transition.
 
 ---
 
-## 2. Storage Convergence Protocol (CRITICAL FIX)
-
-The `sw.ts` and main `App` currently use different database names. This MUST be unified during Phase 1.
-
-- **Storage Service (`@core/services/StorageService.ts`)**:
-  - `DB_NAME`: `clash_manager_v11`
-  - `STORE_NAME`: `keyval`
-- **Required Action**: Migrate all `idb.open(...)` and `openDB()` calls to use this single source of truth to ensure notification badge parity and background sync reliability.
+## Phase 0: Pre-Flight Verification
+Before touching a single file, absolute environment stability must be verified.
+- [ ] **Clean Git**: `git status` must be empty.
+- [ ] **Technical baseline**: `pnpm build` and `pnpm test` must be passing.
+- [ ] **Branch**: Ensure on `Restructure`.
 
 ---
 
-## 3. Migration Roadmap (Clinical Sequence)
+## Phase 1: Infrastructure Anchorage
+*Goal: Prepare the destination and the resolution logic.*
 
-### Phase 1: Storage & Infrastructure (Anchorage)
-- [ ] Refactor `idb.ts` -> `@core/services/StorageService.ts`. Unify DB constants.
-- [ ] Update `vite.config.ts` and `tsconfig.app.json` with the Layer 1-4 registry.
-- [ ] Create directory skeleton for `@core`, `@shared`, `@features`, `@app`.
+### [1.1] Directory Skeleton
+```bash
+mkdir -p src/core/{api,services,theme,types,utils}
+mkdir -p src/shared/{components,composables,directives}
+mkdir -p src/features/{laboratory,headhunter,roster,settings}/{components,composables,logic,types,views}
+mkdir -p src/app/{router,layouts,store}
+```
 
-### Phase 2: Fundamental Extraction
-- [ ] **Core**: Move `api/`, `utils/`, `types/`, `style.css`, `icons.ts` -> `@core/`.
-- [ ] **Shared**: Move `directives/`, generic components (Icon, Skeleton), generic composables -> `@shared/`.
-- [ ] **Barrels**: Create `index.ts` registries for Layer 1 and 2.
+### [1.2] Storage Convergence (Critical)
+- **Target**: `src/utils/idb.ts` -> `src/core/services/StorageService.ts`
+- **Action**: Change `DB_NAME` to `clash_manager_v11` and `STORE_NAME` to `keyval` across both App and `sw.ts`.
 
-### Phase 3: Domain Isolation (Feature Splitting)
-- [ ] **Laboratory**: Move `Laboratory_Kernel.ts`, `Laboratory_Adapter.ts`, `Laboratory_Tables.ts`, `LaboratoryView.vue`, `useLaboratory.ts` -> `@features/laboratory/`.
-- [ ] **Headhunter**: Move `RecruiterView.vue`, `RecruitCard.vue`, `useHeadhunter.ts` -> `@features/headhunter/`.
-- [ ] **Roster**: Move `LeaderboardView.vue`, `MemberCard.vue`, `WarHistoryChart.vue` -> `@features/roster/`.
-- [ ] **Settings**: Move `SettingsView.vue`, `components/settings/*` -> `@features/settings/`.
-
-### Phase 4: App Orchestration (The Glue)
-- [ ] **App**: Move `router/`, `App.vue`, `main.ts`, `sw.ts` -> `@app/`.
-- [ ] **Repair**: Update script tags in `index.html` and `404.html`.
-- [ ] **Verify**: Verify `registerType: 'autoUpdate'` remains functional.
-
-### Phase 5: Pruning & Global Repair
-- [ ] **Refactor**: Bulk replacement of all `@/` to layer-specific aliases.
-- [ ] **Verification**: Run `pnpm build` and `pnpm test`.
+### [1.3] Registry Setup
+- [ ] Initialize `src/core/index.ts` and `src/shared/index.ts` (Empty barrels).
+- [ ] Update `vite.config.ts` and `tsconfig.app.json` with the Layer 1-4 aliases.
 
 ---
 
-## 4. File Mapping Manifest (High Precision)
+## Phase 2: Layer 1 Extraction (The Kernel)
+*Risk: High. Core logic moves.*
 
-### Layer 1: Core
-| Source | Target (Alias) |
-| :--- | :--- |
-| `src/api/gasClient.ts` | `@core/api/GasClient.ts` |
-| `src/utils/idb.ts` | `@core/services/StorageService.ts` |
-| `src/utils/warMath.ts` | `@core/utils/warMath.ts` |
-| `src/types/index.ts` | `@core/types/index.ts` |
-| `src/style.css` | `@core/theme/style.css` |
-| `src/icons.ts` | `@core/theme/icons.ts` |
+| Source File | Destination | Validation |
+| :--- | :--- | :--- |
+| `src/api/gasClient.ts` | `src/core/api/GasClient.ts` | Type-check post move |
+| `src/utils/idb.ts` | `src/core/services/StorageService.ts` | SW Import Fix |
+| `src/utils/warMath.ts` | `src/core/utils/warMath.ts` | Backend Parity Test |
+| `src/icons.ts` | `src/core/theme/icons.ts` | UI Icon Render |
+| `src/style.css` | `src/core/theme/style.css` | Main CSS Reference |
 
-### Layer 2: Shared
-| Source | Target (Alias) |
-| :--- | :--- |
-| `src/components/Icon.vue` | `@shared/ui/Icon.vue` |
-| `src/composables/useHaptics.ts` | `@shared/composables/useHaptics.ts` |
-| `src/directives/vTactile.ts` | `@shared/directives/vTactile.ts` |
-| `src/components/SkeletonCard.vue`| `@shared/ui/SkeletonCard.vue` |
+**Action**: Move `src/api/__tests__/*` to `src/core/api/__tests__/`.
 
-### Layer 3: Features (Domain Blocks)
-| Domain | Files to Move |
-| :--- | :--- |
-| **Laboratory** | `src/logic/Laboratory/*`, `src/views/LaboratoryView.vue`, `src/composables/useLaboratory.ts` |
-| **Headhunter** | `src/views/RecruiterView.vue`, `src/components/RecruitCard.vue`, `src/composables/useHeadhunter.ts` |
-| **Roster** | `src/views/LeaderboardView.vue`, `src/components/MemberCard.vue`, `src/components/WarHistoryChart.vue` |
-| **Settings** | `src/views/SettingsView.vue`, `src/components/settings/*` |
+---
 
-### Layer 4: App (Infrastructure)
-| Source | Target (Alias) |
-| :--- | :--- |
-| `src/router/index.ts` | `@app/router/index.ts` |
-| `src/main.ts` | `@app/main.ts` |
-| `src/App.vue` | `@app/App.vue` |
-| `src/sw.ts` | `@app/sw.ts` |
-| `src/components/FloatingDock.vue` | `@app/layouts/FloatingDock.vue` |
+## Phase 3: Layer 2 Extraction (Shared Molecules)
+*Risk: Moderate. Mostly UI and simple composables.*
+
+### [3.1] Shared UI Components
+```bash
+git mv src/components/Icon.vue src/shared/components/
+git mv src/components/SkeletonCard.vue src/shared/components/
+git mv src/components/BaseCard.vue src/shared/components/
+git mv src/components/Badge.vue src/shared/components/
+git mv src/components/ErrorState.vue src/shared/components/
+```
+
+### [3.2] Shared Composables & Directives
+```bash
+git mv src/composables/useHaptics.ts src/shared/composables/
+git mv src/composables/useWakeLock.ts src/shared/composables/
+git mv src/directives/vTactile.ts src/shared/directives/
+git mv src/directives/vTooltip.ts src/shared/directives/
+```
+
+---
+
+## Phase 4: Layer 3 Isolation (Feature Enclosure)
+*Risk: Moderate. Fractalizing the app logic.*
+
+### [4.1] Laboratory Domain
+- **Logic**: `src/logic/Laboratory/*` -> `src/features/laboratory/logic/`
+- **Composable**: `src/composables/useLaboratory.ts` -> `src/features/laboratory/composables/`
+- **View**: `src/views/LaboratoryView.vue` -> `src/features/laboratory/views/`
+- **Components**: `src/components/SummaryCard.vue` -> `src/features/laboratory/components/`
+
+### [4.2] Headhunter Domain
+- **Composable**: `src/composables/useHeadhunter.ts` -> `src/features/headhunter/composables/`
+- **View**: `src/views/RecruiterView.vue` -> `src/features/headhunter/views/`
+- **Components**: `src/components/RecruitCard.vue` -> `src/features/headhunter/components/`
+
+### [4.3] Roster Domain
+- **View**: `src/views/LeaderboardView.vue` -> `src/features/roster/views/`
+- **Components**: `src/components/MemberCard.vue`, `src/components/WarHistoryChart.vue` -> `src/features/roster/components/`
+
+---
+
+## Phase 5: Layer 4 Convergence (App Glue)
+*Risk: Critical. Entry point and Shell reconstruction.*
+
+- **Layouts**: `src/components/ConsoleLayout.vue`, `FloatingDock.vue` -> `src/app/layouts/`
+- **Entry**: `src/main.ts`, `src/App.vue`, `src/sw.ts` -> `src/app/`
+- **Infrastructure Repair**: 
+  - Update `index.html` script source.
+  - Update `public/404.html` script source.
+  - Repair `sw.ts` precache glob to ensure it still finds chunks in `dist`.
+
+---
+
+## Phase 6: Global Refactor & Alignment
+*Goal: Zero orphaned aliases.*
+
+1. **Bulk Regex**: Replace all `import ... from "@/..."` with layer-specific aliases (`@core/`, `@shared/`, etc.) based on the new manifest.
+2. **Barrel Completion**: Export all public interfaces from each feature's `index.ts`.
+3. **Dead Code Hunt**: Remove empty folders and unused imports.
+
+---
+
+## Command Checkpoints (The QA Rubrik)
+After every Phase, run the following "Stability Cycle":
+1. `pnpm type-check` (Must have 0 errors)
+2. `pnpm build` (Must complete)
+3. `pnpm test` (Logic must hold)
