@@ -1,7 +1,6 @@
+import { useBenchmarking } from "@core";
 import { describe, it, expect, vi } from "vitest";
 import { ref } from "vue";
-import { useBenchmarking } from "@core";
-
 // Mock useClashData
 vi.mock("../useClashData", () => ({
   useClashData: vi.fn(() => ({

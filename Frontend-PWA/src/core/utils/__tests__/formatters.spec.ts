@@ -8,7 +8,7 @@ import {
   cleanTag,
   formatHeaderDescription,
   calculateMomentum,
-} from "../formatters";
+} from "@core/utils/formatters";
 
 describe("formatters", () => {
   beforeEach(() => {

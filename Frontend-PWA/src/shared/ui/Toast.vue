@@ -1,7 +1,6 @@
+import { Icon } from "@shared";
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import Icon from "./Icon.vue";
-
 const props = defineProps<{
   id: string;
   type: "success" | "error" | "info" | "undo";

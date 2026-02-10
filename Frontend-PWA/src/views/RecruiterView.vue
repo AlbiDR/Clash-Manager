@@ -1,9 +1,8 @@
+import { BaseCardSkeleton, Icon } from "@shared";
 <script setup lang="ts">
 import { useRecruiter } from "../composables/useRecruiter";
 
 import RecruitCard from "../components/RecruitCard.vue";
-import { BaseCardSkeleton } from "@shared";
-import { Icon } from "@shared";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
 const {

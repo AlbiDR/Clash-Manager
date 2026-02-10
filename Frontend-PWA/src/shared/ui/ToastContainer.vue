@@ -1,9 +1,7 @@
+import { Toast, useUiCoordinator } from "@shared";
+import { useToast } from "@core";
 <script setup lang="ts">
-import { useToast } from "../composables/useToast";
-import { useUiCoordinator } from "@shared";
 import { computed } from "vue";
-import Toast from "./Toast.vue";
-
 const { toasts, remove, triggerAction } = useToast();
 const { toastOffset } = useUiCoordinator();
 

@@ -1,14 +1,14 @@
 /**
- * 📊 USE BENCHMARKING
+* 📊 USE BENCHMARKING
  * Statistical engine for comparing player performance against clan averages.
  *
  * Optimized to perform single-pass calculations for all metrics to ensure
  * maximum performance on large datasets.
  */
-import { computed } from "vue";
-import { useClashData } from "@core";
-import { useAppSettings } from "@core";
+import { useAppSettings } from "./useAppSettings";
+import { useClashData } from "./useClashData";
 
+import { computed } from "vue";
 export interface BenchmarkData {
   label: string;
   tier: "ELITE" | "TOP TIER" | "GROWING" | "UNDER";

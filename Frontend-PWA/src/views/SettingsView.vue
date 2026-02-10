@@ -1,3 +1,4 @@
+import { vTactile } from "@shared";
 <script setup lang="ts">
 import { computed } from "vue";
 import { useSettings } from "../composables/useSettings";
@@ -11,8 +12,6 @@ import FeatureSettings from "../components/settings/FeatureSettings.vue";
 import ModeSettings from "../components/settings/ModeSettings.vue";
 import RecoverySettings from "../components/settings/RecoverySettings.vue";
 import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
-import { vTactile } from "@shared";
-
 const {
   apiStatusObject,
   isRefreshing,

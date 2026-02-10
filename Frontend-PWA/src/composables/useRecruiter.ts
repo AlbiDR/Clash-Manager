@@ -1,14 +1,8 @@
+import { isWorkerConfigured, scanRecruitsDirect, useApiState, useClashData, useConsoleController, useShowcaseMode, useSyntheticMode, useToast } from "@core";
 import { computed, watch, ref } from "vue";
-import { useClashData } from "@core";
 import { useHeadhunter } from "./useHeadhunter";
-import { useApiState } from "@core";
-import { useToast } from "./useToast";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
-import { useConsoleController } from "@core";
-import { useShowcaseMode } from "./useShowcaseMode";
-import { useSyntheticMode } from "./useSyntheticMode";
-import { SORT_DESCRIPTIONS } from "../utils/sortOptions";
-import { scanRecruitsDirect, isWorkerConfigured } from "@core";
+import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
 import type { Recruit } from "@core/types";
 
 /**

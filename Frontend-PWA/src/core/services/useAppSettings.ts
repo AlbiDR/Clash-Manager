@@ -1,6 +1,5 @@
+import { idb } from "./StorageService";
 import { ref, watch, reactive, toRaw } from "vue";
-import { idb } from "@core/services/StorageService";
-
 const MODULES_KEY = "cm_modules_v2";
 
 export interface ModuleState {

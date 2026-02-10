@@ -1,19 +1,13 @@
+import { BaseCard, CardActions, Icon, MomentumPill, StatisticItem } from "@shared";
+import { useAppSettings, useBenchmarking } from "@core";
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from "vue";
 import type { LeaderboardMember } from "@core/types";
-import { Icon } from "@shared";
-import { BaseCard } from "@shared";
-import { useBenchmarking } from "@core";
-import { useAppSettings } from "@core";
 import {
   getScoreTone,
   formatRole,
   formatTimeAgo,
-} from "../utils/formatters";
-import { StatisticItem } from "@shared";
-import { CardActions } from "@shared";
-import { MomentumPill } from "@shared";
-
+} from "@core/utils/formatters";
 const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
 );

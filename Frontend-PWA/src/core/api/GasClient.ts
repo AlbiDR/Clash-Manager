@@ -1,5 +1,5 @@
 /**
- * ============================================================================
+* ============================================================================
  * MODULE: GAS API CLIENT (THE BRIDGE)
  * ----------------------------------------------------------------------------
  * DESCRIPTION: The primary communication layer between the PWA and the
@@ -18,6 +18,8 @@
  *  - Implements exponential backoff and request deduplication.
  * ============================================================================
  */
+import { idb } from "@core";
+
 
 import type {
   ApiResponse,
@@ -29,8 +31,6 @@ import type {
   LeaderboardMember,
 } from "@core/types";
 import * as v from "valibot";
-import { idb } from "@core";
-
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<any>>();
 

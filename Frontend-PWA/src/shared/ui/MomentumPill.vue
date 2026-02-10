@@ -1,9 +1,8 @@
+import { Icon } from "@shared";
+import { useAppSettings, useBenchmarking } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";
-import Icon from "./Icon.vue";
-import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "@core";
-import { calculateMomentum } from "../utils/formatters";
+import { calculateMomentum } from "@core/utils/formatters";
 
 /**
  * MomentumPill Component

@@ -1,10 +1,7 @@
+import { useApiState, useClashData, useConsoleController, useShowcaseMode } from "@core";
 import { computed } from "vue";
-import { useClashData } from "@core";
-import { useApiState } from "@core";
-import { useConsoleController } from "@core";
-import { useShowcaseMode } from "./useShowcaseMode";
-import { parseTimeAgoValue } from "../utils/formatters";
-import { SORT_DESCRIPTIONS } from "../utils/sortOptions";
+import { parseTimeAgoValue } from "@core/utils/formatters";
+import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
 import type { LeaderboardMember } from "@core/types";
 
 /**

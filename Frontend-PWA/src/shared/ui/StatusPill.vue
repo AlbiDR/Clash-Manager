@@ -1,6 +1,5 @@
-<script setup lang="ts">
 import { useHaptics } from "@shared";
-
+<script setup lang="ts">
 const props = defineProps<{
   type: "updated" | "error" | "loading" | "ready";
   text: string;

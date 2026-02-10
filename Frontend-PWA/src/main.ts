@@ -1,23 +1,16 @@
 /**
- * CLASH MANAGER PWA
+* CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
+import { useTheme, useWakeLock, vTactile, vTooltip } from "@shared";
+import { idb, useApiState, useAppSettings, useClashData, useStoragePersistence } from "@core";
+
 import { createApp, watch } from "vue";
 import "@/core/theme/style.css";
 import App from "./App.vue";
 import router from "./router";
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
-import { vTooltip } from "@shared";
-import { vTactile } from "@shared";
-import { useAppSettings } from "@core";
-import { useClashData } from "@core";
-import { useApiState } from "@core";
-import { useTheme } from "@shared";
-import { useWakeLock } from "@shared";
-import { useStoragePersistence } from "@core";
-import { idb } from "@core/services/StorageService";
-
 function showFatalError(error: unknown) {
   console.error("FATAL ERROR:", error);
   // If the app hasn't mounted, we should probably show something on screen

@@ -1,0 +1,27 @@
+
+> clash-manager-pwa@10.0.0 build /Users/ADR/.gemini/antigravity/clash-manager/Frontend-PWA
+> pnpm run type-check && vite build
+
+
+> clash-manager-pwa@10.0.0 type-check /Users/ADR/.gemini/antigravity/clash-manager/Frontend-PWA
+> vue-tsc --noEmit
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 176 modules transformed.
+✗ Build failed in 385ms
+error during build:
+[vite-plugin-pwa:build] [plugin vite-plugin-pwa:build] src/composables/useHeadhunter.ts: There was an error during the build:
+  Could not resolve "../api/gasClient" from "src/composables/useHeadhunter.ts"
+Additionally, handling the error in the 'buildEnd' hook caused the following error:
+  Could not resolve "../api/gasClient" from "src/composables/useHeadhunter.ts"
+file: /Users/ADR/.gemini/antigravity/clash-manager/Frontend-PWA/src/composables/useHeadhunter.ts
+    at getRollupError (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/rollup@4.56.0/node_modules/rollup/dist/es/shared/parseAst.js:400:41)
+    at file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/rollup@4.56.0/node_modules/rollup/dist/es/shared/node-entry.js:23423:39
+    at async catchUnfinishedHookActions (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/rollup@4.56.0/node_modules/rollup/dist/es/shared/node-entry.js:22881:16)
+    at async rollupInternal (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/rollup@4.56.0/node_modules/rollup/dist/es/shared/node-entry.js:23406:5)
+    at async buildEnvironment (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/vite@7.3.1_@types+node@24.10.9_jiti@2.6.1_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0/node_modules/vite/dist/node/chunks/config.js:33541:12)
+    at async Object.build (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/vite@7.3.1_@types+node@24.10.9_jiti@2.6.1_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0/node_modules/vite/dist/node/chunks/config.js:33900:19)
+    at async Object.buildApp (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/vite@7.3.1_@types+node@24.10.9_jiti@2.6.1_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0/node_modules/vite/dist/node/chunks/config.js:33897:153)
+    at async CAC.<anonymous> (file:///Users/ADR/.gemini/antigravity/clash-manager/node_modules/.pnpm/vite@7.3.1_@types+node@24.10.9_jiti@2.6.1_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0/node_modules/vite/dist/node/cli.js:629:3)
+ ELIFECYCLE  Command failed with exit code 1.

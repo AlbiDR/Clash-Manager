@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateLinearTrend, Point } from "../bezier";
+import { generateLinearTrend, Point } from "@core/utils/bezier";
 
 describe("bezier", () => {
   describe("generateLinearTrend", () => {

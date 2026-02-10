@@ -1,6 +1,5 @@
+import { Icon } from "@shared";
 <script setup lang="ts">
-import Icon from "./Icon.vue";
-
 const props = defineProps<{
   icon?: string;
   message: string;

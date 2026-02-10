@@ -1,8 +1,7 @@
+import { Icon } from "@shared";
 <script setup lang="ts">
 import { useSettings } from "../../composables/useSettings";
 import SettingsCard from "../SettingsCard.vue";
-import { Icon } from "@shared";
-
 defineProps<{
   initiallyExpanded?: boolean;
 }>();

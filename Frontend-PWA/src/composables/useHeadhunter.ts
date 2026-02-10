@@ -1,12 +1,6 @@
+import { NetworkError, dismissRecruits, useAppSettings, useBadge, useBroadcastChannel, useClashData, useSyntheticMode } from "@core";
 import { watch } from "vue";
-import { dismissRecruits, NetworkError } from "@core";
 import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
-import { useClashData } from "@core";
-import { useBadge } from "@core";
-import { useAppSettings } from "@core";
-import { useBroadcastChannel } from "./useBroadcastChannel";
-import { useSyntheticMode } from "./useSyntheticMode";
-
 // Singleton Composables
 const { setBadge, sendLocalNotification } = useBadge();
 const { modules } = useAppSettings();
@@ -215,7 +209,7 @@ export function useHeadhunter() {
 
       try {
         await (async () => {
-          const { undismissRecruits } = await import("../api/gasClient");
+          const { undismissRecruits } = await import("@core");
           return undismissRecruits(ids);
         })();
         broadcast({ type: "RECRUIT_RESTORATION", ids }); // Optional: add to switch in broadcast listener if needed

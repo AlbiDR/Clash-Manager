@@ -1,15 +1,10 @@
+import { ErrorBoundary, ToastContainer, useConnectionStatus, useHaptics, useUiCoordinator } from "@shared";
+import { useClashData, useShowcaseMode } from "@core";
 <script setup lang="ts">
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
-import { useClashData } from "@core";
 import { useHeadhunter } from "./composables/useHeadhunter";
-import { useHaptics } from "@shared";
-import { useConnectionStatus } from "@shared";
-import { useUiCoordinator } from "@shared";
 import FloatingDock from "./components/FloatingDock.vue";
-import { ToastContainer } from "@shared";
-import { ErrorBoundary } from "@shared";
-import { useShowcaseMode } from "./composables/useShowcaseMode";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
 const { syncStatus, refresh, loadLocal } = useClashData();

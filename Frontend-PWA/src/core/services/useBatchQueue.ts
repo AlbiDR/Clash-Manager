@@ -1,7 +1,8 @@
-import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
+import { useAppSettings } from "./useAppSettings";
+import { useExternalLink } from "./useExternalLink";
 import { useToast } from "./useToast";
-import { useAppSettings } from "@core";
-import { useExternalLink, buildDeepLink } from "./useExternalLink";
+import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
+import { buildDeepLink } from "./useExternalLink";
 
 interface BatchQueueOptions {
   throttleMs?: number;

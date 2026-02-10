@@ -1,7 +1,7 @@
+import { Icon } from "@shared";
 <script setup lang="ts">
 import { watch } from "vue";
-import { Icon } from "@shared";
-import { formatHeaderDescription } from "../utils/formatters";
+import { formatHeaderDescription } from "@core/utils/formatters";
 
 const props = defineProps<{
   show: boolean;

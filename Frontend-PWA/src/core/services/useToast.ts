@@ -1,6 +1,5 @@
-import { ref } from "vue";
 import { useHaptics } from "@shared";
-
+import { ref } from "vue";
 export interface ToastOptions {
   id: string;
   type: "success" | "error" | "info" | "undo";

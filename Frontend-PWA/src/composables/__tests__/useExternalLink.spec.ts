@@ -1,6 +1,5 @@
+import { useExternalLink } from "@core";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useExternalLink } from "../useExternalLink";
-
 // Mock the toast composable
 const mockError = vi.fn();
 vi.mock("../useToast", () => ({

@@ -1,12 +1,9 @@
+import { BaseCardSkeleton, Icon } from "@shared";
+import { useClashData } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";
 import { useLaboratory } from "../composables/useLaboratory";
-import { useClashData } from "@core";
-
 import ConsoleLayout from "../components/ConsoleLayout.vue";
-import { BaseCardSkeleton } from "@shared";
-import { Icon } from "@shared";
-
 // Laboratory Components
 import VaultCard from "../components/Laboratory/VaultCard.vue";
 import ParameterCard from "../components/Laboratory/ParameterCard.vue";

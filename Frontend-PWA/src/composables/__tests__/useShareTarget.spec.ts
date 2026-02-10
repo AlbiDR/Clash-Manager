@@ -1,9 +1,9 @@
 /**
- * @vitest-environment jsdom
+* @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useShareTarget } from "../useShareTarget";
+import { useShareTarget } from "@core";
 
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Mocks
 const mockPush = vi.fn();
 const mockReplaceState = vi.fn();

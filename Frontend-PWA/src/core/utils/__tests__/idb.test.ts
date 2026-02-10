@@ -1,3 +1,4 @@
+import { idb } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mocking indexedDB before idb is imported
@@ -17,8 +18,6 @@ const mockIDB = {
 vi.stubGlobal("indexedDB", mockIDB);
 
 // Import idb
-import { idb } from "@core/services/StorageService";
-
 describe("idb utility", () => {
   beforeEach(async () => {
     // Reset internal state if possible, or just clear the store if it's using memory

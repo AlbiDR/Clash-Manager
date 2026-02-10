@@ -1,8 +1,6 @@
+import { Icon, useHaptics } from "@shared";
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import Icon from "./Icon.vue";
-import { useHaptics } from "@shared";
-
 const props = defineProps<{
   count: number;
   totalCount: number;

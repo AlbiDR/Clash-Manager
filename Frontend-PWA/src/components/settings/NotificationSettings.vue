@@ -1,14 +1,8 @@
+import { Icon, useHaptics } from "@shared";
+import { isWorkerConfigured, subscribeToPush, useAppSettings, useBadge, useClashData, useToast } from "@core";
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
-import { useAppSettings } from "@core";
-import { useHaptics } from "@shared";
-import { useBadge } from "@core";
-import { useClashData } from "@core";
-import { subscribeToPush, isWorkerConfigured } from "@core";
-import { useToast } from "../../composables/useToast";
 import SettingsCard from "../SettingsCard.vue";
-import { Icon } from "@shared";
-
 const props = defineProps<{
   initiallyExpanded?: boolean;
 }>();

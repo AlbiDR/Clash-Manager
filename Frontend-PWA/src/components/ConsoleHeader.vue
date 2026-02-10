@@ -1,12 +1,8 @@
+import { Icon, StatusPill, useHaptics, useHeaderScroll } from "@shared";
+import { useAppSettings } from "@core";
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { Icon } from "@shared";
-import { StatusPill } from "@shared";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
-import { useAppSettings } from "@core";
-import { useHeaderScroll } from "../composables/useHeaderScroll";
-import { useHaptics } from "@shared";
-
 const props = defineProps<{
   title: string;
   status?: { type: "updated" | "error" | "loading" | "ready"; text: string };

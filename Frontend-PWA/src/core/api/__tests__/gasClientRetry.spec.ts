@@ -1,8 +1,5 @@
+import { fetchRemote } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  fetchRemote,
-} from "@core";
-
 // Mock fetch global
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);

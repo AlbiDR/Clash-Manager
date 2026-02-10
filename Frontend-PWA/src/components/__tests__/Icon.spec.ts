@@ -1,10 +1,10 @@
 /**
- * @vitest-environment jsdom
+* @vitest-environment jsdom
  */
-import { describe, it, expect } from "vitest";
-import { mount } from "@vue/test-utils";
 import { Icon } from "@shared";
 
+import { describe, it, expect } from "vitest";
+import { mount } from "@vue/test-utils";
 describe("Icon.vue", () => {
   it("renders correctly with given name and size", () => {
     const wrapper = mount(Icon, {

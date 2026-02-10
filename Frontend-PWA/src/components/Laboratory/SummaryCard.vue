@@ -1,7 +1,6 @@
+import { Icon } from "@shared";
 <script setup lang="ts">
 import { type OptimizationResult, type PlayerProfile } from "../../logic/Laboratory/Laboratory_Types";
-import { Icon } from "@shared";
-
 const props = defineProps<{
   result: OptimizationResult;
   profile: PlayerProfile;
