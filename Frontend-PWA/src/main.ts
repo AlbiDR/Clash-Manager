@@ -3,7 +3,7 @@
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
 import { createApp, watch } from "vue";
-import "./style.css";
+import "@/core/theme/style.css";
 import App from "./App.vue";
 import router from "./router";
 // REMOVED: Synchronous import of autoAnimatePlugin
