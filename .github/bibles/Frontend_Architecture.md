@@ -2,8 +2,6 @@
 
 This document serves as the **Single Source of Truth** for the `Clash-Manager` architecture. It strictly defines the structural, nomenclatural, and behavioral standards required to maintain a 100/100 Lighthouse-grade codebase.
 
-> **Rationale**: This rigorous structure is not about bureaucracy; it is about **Scalable Precision**. By strictly defining where every atom belongs, we eliminate cognitive load during development. A developer should never have to ask "Where do I put this?"—the architecture provides the only possible answer.
-
 ---
 
 ## 1. The Four Layers of "Antigravity"
@@ -13,10 +11,9 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
 ### Layer 1: Core (@core)
 **Definition**: The "Kernel". Code that is biologically necessary for the application to boot, but **agnostic** to the business domain.
 - **Rule**: Pure TypeScript only. No Vue components (mostly). No business logic.
-- **Why**: Changes here are rare but devastating. Keeping this small and pure ensures stability.
 - **Contents**:
   - `api/`: abstract HTTP clients (`GasClient`).
-  - `theme/`: Design tokens, CSS variables, typography.
+  - `theme/`: Design tokens, CSS variables, typography, and `style.css`.
   - `types/`: Brand types (`Flavor<T>`) and global interfaces.
   - `utils/`: Mathematical and string manipulation primitives.
   - `services/`: Wrappers for foundational 3rd-party libs (e.g., Validation, Storage).
@@ -24,7 +21,6 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
 ### Layer 2: Shared (@shared)
 **Definition**: The "Building Blocks". Reusable molecules that have no specific business allegiance.
 - **Rule**: Must be generic enough to drop into any other project.
-- **Why**: Prevents "DRY Violations" by centralizing common UI/Logic patterns.
 - **Contents**:
   - `ui/`: Dumb components (`Icon`, `Button`, `Card`, `Skeleton`). Zero state.
   - `composables/`: Device/Browser logic (`useHaptics`, `useWakeLock`, `useStorage`).
@@ -33,10 +29,9 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
 ### Layer 3: Features (@features)
 **Definition**: The "Business". Self-contained silos of domain logic.
 - **Rule**: A Feature **NEVER** imports from another Feature. Communication happens via URL parameters or Global State (Store).
-- **Why**: Encapsulates complexity. You can delete the `headhunter` folder, and the rest of the app compiles perfectly.
 - **Structure (Fractal)**:
   - `my-feature/`
-    - `components/`: Domain-specific UI components.
+    - `components/`: Domain-specific UI components (e.g., `RecruitCard.vue`).
     - `composables/`: Feature-local state (Stores) and lifecycle logic.
     - `logic/`: Pure Business Logic / Algorithms / Parsers.
     - `types/`: Feature-local TypeScript definitions.
@@ -46,12 +41,12 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
 ### Layer 4: App (@app)
 **Definition**: The "Glue". Context-aware orchestration.
 - **Rule**: The only layer allowed to import from `@features`.
-- **Why**: Someone needs to know the big picture. This layer maps URLs to Features.
 - **Contents**:
   - `router/`: Definitions of routes.
   - `layouts/`: `ConsoleLayout.vue` (The shell).
   - `store/`: Orchestration state that spans multiple features.
   - `main.ts`: The boot sequence.
+  - `sw.ts`: PWA Service Worker.
 
 ---
 
@@ -74,295 +69,166 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
 
 To prevent "Graph Spaghetti" and ensure clear boundaries, every significant module defines a **Public API** via an `index.ts` file.
 
-- **Role**: The `index.ts` determines what is private (internal details) and what is public (usable by the App).
 - **Standard**:
   ```typescript
   // features/laboratory/index.ts
-  
-  // [Checkmark] EXPORT only the Public API
   export { default as LaboratoryView } from './views/LaboratoryView.vue';
-  export { default as LaboratoryKernel } from './logic/Laboratory_Kernel';
+  export { useLaboratory } from './composables/useLaboratory';
   export * from './types';
-  
-  // [Stop] DO NOT EXPORT internal sub-components or private logic
   ```
 - **Consumer Rule**: Always import from the Registry alias.
   ```typescript
-  // [Checkmark] Correct
-  import { LaboratoryView } from '@features/laboratory';
-  
-  // [Stop] Wrong (Breaks Encapsulation)
-  import LaboratoryView from '@features/laboratory/views/LaboratoryView.vue';
+  import { LaboratoryView } from '@features/laboratory'; // Correct
   ```
 
 ---
 
 ## 4. State Management & Data Flow
 
-### Composable as Store
-- Feature state should live in a **singleton composable** within the feature's `composables/` folder.
-- **Unidirectional Flow**: Views pass data down to components via props; components communicate up via emits.
-- **Logic Isolation**: Data fetching and heavy parsing should live in `logic/`, called by the `composable` to update the state.
-
-### Dependency Wrapping
-- **Rule**: foundational 3rd-party libraries (Validation, Storage, API clients) MUST be wrapped in `@core/services`.
-- **Benefit**: If we switch from `valibot` to `zod`, we change one file in `@core`, not fifty files in `@features`.
+- **Composable as Store**: Feature state lives in a singleton composable within the feature's `composables/` folder.
+- **Unidirectional Flow**: Views pass data down; components emit up.
+- **Dependency Wrapping**: Foundational 3rd-party libraries MUST be wrapped in `@core/services`.
 
 ---
 
 ## 5. Testing & Quality Assurance
 
-### Co-Location
-- Tests must live in a `__tests__` directory sibling to the file they are testing.
-- Legacy `Frontend-PWA/tests/` folder is **strictly forbidden**.
-
-### Error Resilience
-- **Mandatory Boundary**: All Feature Views must be wrapped in a shared `<ErrorBoundary>` component.
-- **Async Pattern**: Every async component must provide a `<template #fallback>` with a corresponding Skeleton component from `@shared/ui`.
+- **Co-Location**: Tests must live in a `__tests__` directory sibling to the file they are testing.
+- **File Suffix**: Use `.spec.ts` or `.test.ts` consistently.
+- **Error Resilience**: All Feature Views must be wrapped in a shared `<ErrorBoundary>` component.
 
 ---
 
 ## 6. Accessibility & Responsiveness
 
-- **Semantic HTML**: Mandatory use of `<nav>`, `<main>`, `<article>`, and `<section>`. No "Div Soup."
-- **ARIA**: Interactive elements without native labels must have `aria-label`.
-- **Contrast**: Maintain AA/AAA standard colors at all times.
+- **Semantic HTML**: Mandatory use of `<nav>`, `<main>`, `<article>`, and `<section>`.
+- **ARIA**: Interactive elements must have `aria-label` if no text is present.
 - **Touch Targets**: Minimum 44x44px for all mobile interactive elements.
 
 ---
 
 ## 7. Documentation & Comments
 
-- **Rationale over Implementation**: Comments should explain *why* something is done (the business reason), not *how* (the code should be self-documenting).
-- **JSDoc**: All `@core` utilities and `@features` logic must have JSDoc for complex functions.
-- **Strict No-Emoji Rule**: Emojis are forbidden in all documentation, commit messages, and code comments to maintain technical purity.
+- **Rationale over Implementation**: Explain *why*, not *how*.
+- **Strict No-Emoji Rule**: Emojis are forbidden in all documentation, commit messages, and code comments.
 
 ---
 
 ## 8. The "OCD Verification" Checklist
+
 Before completing any task, every developer (and AI) must verify:
 1. [ ] **Location**: Does this file live in the correct layer?
 2. [ ] **Registry**: Is it exported via the module's `index.ts`?
 3. [ ] **Naming**: Does it follow the strict naming table?
 4. [ ] **Wrappers**: Are we using `@core` services instead of direct 3rd party imports?
-5. [ ] **Tests**: Is there a corresponding `.spec.ts` in a `__tests__` folder?
+5. [ ] **Tests**: Is there a corresponding test in a sibling `__tests__` folder?
 6. [ ] **Types**: Are all public interfaces explicitly typed? No any.
-7. [ ] **A11y**: Are touch targets and ARIA labels correct?
-8. [ ] **Visual Purity**: No emojis present in the code or documentation.
+7. [ ] **Visual Purity**: No emojis present in the code or documentation.
 
 ---
 
 ## 9. Infrastructure & Dependent Adaptations
 
-The restructure extends beyond the `src/` folder. The following external configurations must be adapted to the new architecture.
+The restructure extends beyond the `src/` folder. The following external configurations must be adapted.
 
 ### [A] Entry Points & Shell
 - **`index.html`** & **`public/404.html`**:
-  - *Must Change*: `<script type="module" src="./src/main.ts"></script>` -> `./src/app/main.ts`
-  - *Note*: `404.html` is critical for deep-linking in SPA mode on GitHub Pages.
+  - *Action*: Update `<script type="module" src="./src/main.ts"></script>` -> `./src/app/main.ts`
 - **`sw.ts`**:
-  - *Move To*: `src/app/sw.ts`.
-  - *Public Ref*: Any external reference to the service worker registration must remain alias-aware.
+  - *Action*: Move to `src/app/sw.ts`.
+  - *Action*: Convert internal paths (e.g. `import ... from './utils/idb'`) to `@core/services/StorageService`.
 
-### [B] Vite Build Optimization
+### [B] Vite Build Pipeline
 - **`vite.config.ts`**:
-  - **Manual Chunks**: Update substring detectors:
-    - `manualChunks` logic: `/src/api/` -> `/src/core/api/`
-    - `manualChunks` logic: `/src/components/` (Shared) -> `/src/shared/ui/`
-    - `manualChunks` logic: `/src/composables/` (Shared) -> `/src/shared/composables/`
-  - **View Exclusion**: `VIEW_SPECIFIC_COMPONENTS` array must be updated to target `@features/` paths.
-  - **PWA Settings**: `srcDir` must become `"src/app"` and `filename` becomes `"sw.ts"`.
+  - **Manual Chunks**: Update substring detectors to match new Layer 1-4 paths.
+  - **View Exclusion**: Update `VIEW_SPECIFIC_COMPONENTS` to point to `@features/` components.
+  - **PWA Configuration**: Set `srcDir: "src/app"` and `filename: "sw.ts"`.
 
-### [C] CI/CD & Static Analysis
+### [C] CI/CD & Validation
 - **`.github/scripts/validate_project.ts`**:
-  - Review `PATHS` object to match new directory locations (e.g., `Configuration.ts`).
-  - Ensure scoring parity checks are not broken by the logic migration.
-- **`.github/workflows/deploy-pwa.yml`**:
-  - `cache-dependency-path`: Ensure it stays pointed to `Frontend-PWA/pnpm-lock.yaml`.
+  - *Action*: Update `PATHS` object. `backendConfig` -> `Backend-GAS/Configuration.ts`.
+  - *Action*: Update logic parity paths if they target `src/utils`.
 
-### [D] IDE & Developer Tooling
+### [D] TypeScript Configuration
 - **`tsconfig.app.json`**:
-  - Ensure `include` covers `["src/**/*.ts", "src/**/*.vue"]`.
-  - Path synchronization: All aliases must be strictly mapped to the project ROOT.
-- **Search & Replace**: Use regex to repair relative imports during migration (e.g., `import ... from '@/components/` -> `@shared/ui/`).
+  - *Action*: Verify `include` captures `src/` and `sw.ts` in its new home.
+  - *Action*: Ensure `paths` aliases perfectly match the mapping manifest.
 
----
-
-## 12. Cross-Domain Dependents
-
-While the restructure targets `Frontend-PWA`, the following cross-repo dependencies must be monitored:
-
-### [A] Shared Logic (Manual Duplication)
-- **Scoring Parity**: The `Scoring_Kernel.ts` in `Backend-GAS` must maintain 1:1 algorithmic parity with the logic currently in `src/utils/warMath.ts` (soon `@core/utils/warMath.ts`). 
-- **Validation**: `validate_project.ts` enforces this parity. Moving these files must not break the validator's `grep` patterns.
-
-### [B] GitHub Branch Synchronization
-- **`sync-branches.yml`**: The regex `pwa_changed` detector specifically looks for `^Frontend-PWA/`. This is **Safe** and requires no change, as all moved files remain within the `Frontend-PWA` root.
-
-### [C] Documentation Links
-- **README.md** (Root): Verify all technical specification links (e.g., `[Read Technical Specifications](Frontend-PWA/README.md)`) remain valid.
-- **Backend READMEs**: Any links pointing to the frontend architecture Bible must be updated to the new `.github/bibles/` location.
-
-### [E] Global Styles & Assets
-- **`style.css`**: Verify all `@import` or `url()` references to fonts/icons remain valid.
-- **`index.ts` (Barrels)**: Every new structure requires its `index.ts` registry to be the ONLY way other layers interact with it.
+### [E] Design System
+- **`style.css`**: Move to `@core/theme/style.css`.
+  - *Action*: Verify `@font-face` URL paths (ensure they remain root-relative `/fonts/`).
 
 ---
 
 ## 10. Migration Roadmap
 
-### Phase 0: Stability Anchorage
-Before moving a single byte, ensure the foundation is locked.
-- [ ] **Test Lock**: Run `pnpm test` and ensure 100% pass rate.
-- [ ] **Type Check**: Run `vue-tsc --noEmit` and ensure 0 errors.
-- [ ] **Sync**: Ensure branch `Restructure` is fully synced with any upstream logic patches.
-
-### Phase 1: Infrastructure (Completed) [Checkmark]
+### Phase 1: Infrastructure & Anchorage (Completed)
 - [x] Create directory skeleton.
-- [x] Configure `@core`, `@shared`, `@features`, `@app` aliases in `tsconfig` and `vite.config`.
+- [x] Configure `@core`, `@shared`, `@features`, `@app` aliases.
 
-### Phase 2: Core Extraction (Low Risk)
-Objective: Decouple foundational tools from the view layer.
-- [ ] **Utils Partition**:
-    - `src/utils/` -> `@core/utils/`
-    - `src/api/` -> `@core/api/`
-    - `src/types/` -> `@core/types/`
-- [ ] **Test Co-Location**:
-    - Move `src/api/__tests__/*.spec.ts` to `@core/api/__tests__/`
-- [ ] **Registry**: Create `@core/index.ts` exporting all stable core utils.
+### Phase 2: Core & Shared Extraction
+- [ ] **Core**: Move `api/`, `utils/`, `types/`, `icons.ts`, `style.css` -> `@core/`.
+- [ ] **Shared**: Move generic components and composables -> `@shared/`.
+- [ ] **Directives**: Move `directives/` -> `@shared/directives/`.
+- [ ] **Barrels**: Create `index.ts` for Layer 1 and 2.
 
-### Phase 3: Atomic Shared UI & Logic (Medium Risk)
-Objective: Separate "Dumb" UI from Business logic.
-- [ ] **UI Extraction**:
-    - All generic components in `src/components/` (Icon, Button, etc.) -> `@shared/ui/`
-- [ ] **Logic Extraction**:
-    - All generic composables in `src/composables/` (useHaptics, useTheme, etc.) -> `@shared/composables/`
-- [ ] **Directives**:
-    - `src/directives/` -> `@shared/directives/`
-- [ ] **Registry**: Create `@shared/index.ts` for all shared UI atoms.
+### Phase 3: Feature Domain Isolation
+- [ ] **Laboratory**: Gather logic, components, views, and tests -> `@features/laboratory/`.
+- [ ] **Headhunter**: Gather views, useHeadhunter, RecruitCard -> `@features/headhunter/`.
+- [ ] **Roster**: Gather LeaderboardView, MemberCard, WarHistoryChart -> `@features/roster/`.
+- [ ] **Settings**: Gather SettingsView, all settings sub-components -> `@features/settings/`.
 
-### Phase 4: Feature Encapsulation (High Risk)
-Objective: Full domain isolation. Perform one feature at a time.
-- [ ] **Feature: Laboratory**
-    - Gather `src/logic/Laboratory/` and `src/components/Laboratory/` -> `@features/laboratory/`
-    - Migrate `tests/Laboratory_*.test.ts` -> `@features/laboratory/logic/__tests__/*.spec.ts`
-- [ ] **Feature: Headhunter**
-    - Gather `RecruiterView`, `useHeadhunter`, `useRecruiter`, `useRecruitBlacklist`, `RecruitCard` -> `@features/headhunter/`
-- [ ] **Feature: Roster**
-    - Gather `LeaderboardView`, `useClashData`, `useLeaderboard`, `MemberCard`, `WarHistoryChart` -> `@features/roster/`
-- [ ] **Feature: Settings**
-    - Gather `SettingsView`, `useSettings`, `useAppSettings`, `SettingsCard`, `SkeletonSettingsCard` -> `@features/settings/`
+### Phase 4: App Glue & Routing
+- [ ] **App**: Move router, layouts, `App.vue`, `main.ts`, `sw.ts` -> `@app/`.
+- [ ] **Repair**: Update `index.html` and `public/404.html` script tags.
+- [ ] **Sync**: Repair `vite.config.ts` and `tsconfig.app.json`.
 
-### Phase 5: Routing & App-Level Glue
-Objective: Finalize the new entry point.
-- [ ] **The Move**:
-    - `src/router/`, `src/App.vue`, `src/main.ts`, `src/sw.ts` -> `@app/`
-- [ ] **Layouts**:
-    - `ConsoleLayout`, `ConsoleHeader`, `FloatingDock`, `HeaderInfoOverlay` -> `@app/layouts/`
-- [ ] **Infrastructure Repair**:
-    - Update `index.html` script source.
-    - Update `vite.config.ts` manual chunks and PWA paths.
-- [ ] **Path Repair**: Batch update all `@/` imports to their specific layer aliases (`@core/`, `@features/`, etc.).
-
-### Phase 6: Pruning & Final Verification
-- [ ] Delete orphaned `src/` subdirectories once manifest is fully satisfied.
-- [ ] Verify `pnpm build` creates a valid production bundle.
-- [ ] Run `pnpm test` to ensure 100% logic coverage remains intact.
+### Phase 5: Global Reference Repair
+- [ ] **Refactor**: Run automated search/replace for all `@/` to layer-specific aliases.
+- [ ] **Verification**: Run `pnpm build` and `pnpm test`.
 
 ---
 
-## 11. File Mapping Manifest
+## 11. Cross-Domain Dependents
 
-### Layer 1: Core extraction
-| Source File | Target @core Alias |
+- **`sync-branches.yml`**: Uses `^Frontend-PWA/` regex, which is **Safe**.
+- **README Links**: Verify root and sub-README links remain valid after Bible move.
+- **Scoring Parity**: Ensure `validate_project.ts` still finds the warmath logic in its new `@core` home.
+
+---
+
+## 12. File Mapping Manifest
+
+### Layer 1: Core
+| Source | Target |
 | :--- | :--- |
-| `src/api/gasClient.ts` | `@core/api/GasClient.ts` |
-| `src/api/__tests__/*` | `@core/api/__tests__/*` |
-| `src/utils/formatters.ts` | `@core/utils/formatters.ts` |
-| `src/utils/warMath.ts` | `@core/utils/warMath.ts` |
-| `src/utils/bezier.ts` | `@core/utils/bezier.ts` |
-| `src/utils/idb.ts` | `@core/services/StorageService.ts` |
-| `src/utils/mockData.ts` | `@core/utils/mockData.ts` |
-| `src/types/index.ts` | `@core/types/index.ts` |
+| `src/api/` | `@core/api/` |
+| `src/utils/` | `@core/utils/` |
+| `src/types/` | `@core/types/` |
 | `src/icons.ts` | `@core/theme/icons.ts` |
 | `src/style.css` | `@core/theme/style.css` |
-| `src/composables/useApiState.ts` | `@core/api/useApiState.ts` |
-| `src/composables/useBatchQueue.ts` | `@core/api/useBatchQueue.ts` |
-| `src/composables/useBenchmarking.ts` | `@core/utils/useBenchmarking.ts` |
+| `src/utils/idb.ts` | `@core/services/StorageService.ts` |
 
-### Layer 2: Shared UI & Logic
-| Source File | Target @shared Alias |
+### Layer 2: Shared
+| Source | Target |
 | :--- | :--- |
-| `src/components/Icon.vue` | `@shared/ui/Icon.vue` |
-| `src/components/StatusPill.vue` | `@shared/ui/StatusPill.vue` |
-| `src/components/BaseCard.vue` | `@shared/ui/BaseCard.vue` |
-| `src/components/BaseCardSkeleton.vue` | `@shared/ui/BaseCardSkeleton.vue` |
-| `src/components/ErrorBoundary.vue` | `@shared/ui/ErrorBoundary.vue` |
-| `src/components/EmptyState.vue` | `@shared/ui/EmptyState.vue` |
-| `src/components/ErrorState.vue` | `@shared/ui/ErrorState.vue` |
-| `src/components/Toast.vue` | `@shared/ui/Toast.vue` |
-| `src/components/ToastContainer.vue` | `@shared/ui/ToastContainer.vue` |
-| `src/components/StatisticItem.vue` | `@shared/ui/StatisticItem.vue` |
-| `src/components/MomentumPill.vue` | `@shared/ui/MomentumPill.vue` |
-| `src/components/SelectionBar.vue` | `@shared/ui/SelectionBar.vue` |
-| `src/components/CardActions.vue` | `@shared/ui/CardActions.vue` |
-| `src/composables/useHaptics.ts` | `@shared/composables/useHaptics.ts` |
-| `src/composables/useTheme.ts` | `@shared/composables/useTheme.ts` |
-| `src/composables/useToast.ts` | `@shared/composables/useToast.ts` |
-| `src/composables/useBackHandler.ts` | `@shared/composables/useBackHandler.ts` |
-| `src/composables/useBadge.ts` | `@shared/composables/useBadge.ts` |
-| `src/composables/useConnectionStatus.ts` | `@shared/composables/useConnectionStatus.ts` |
-| `src/composables/useNetworkInfo.ts` | `@shared/composables/useNetworkInfo.ts` |
-| `src/composables/useWakeLock.ts` | `@shared/composables/useWakeLock.ts` |
-| `src/composables/useProgressiveList.ts` | `@shared/composables/useProgressiveList.ts` |
-| `src/composables/useShare.ts` | `@shared/composables/useShare.ts` |
-| `src/composables/useShareTarget.ts` | `@shared/composables/useShareTarget.ts` |
-| `src/composables/useShowcaseMode.ts` | `@shared/composables/useShowcaseMode.ts` |
-| `src/composables/useSyntheticMode.ts` | `@shared/composables/useSyntheticMode.ts` |
-| `src/composables/useStoragePersistence.ts` | `@shared/composables/useStoragePersistence.ts` |
-| `src/composables/useBroadcastChannel.ts` | `@shared/composables/useBroadcastChannel.ts` |
-| `src/composables/useLongPress.ts` | `@shared/composables/useLongPress.ts` |
-| `src/composables/useListFilter.ts` | `@shared/composables/useListFilter.ts` |
-| `src/directives/vTactile.ts` | `@shared/directives/vTactile.ts` |
-| `src/directives/vTooltip.ts` | `@shared/directives/vTooltip.ts` |
+| Generic `src/components/` | `@shared/ui/` |
+| Generic `src/composables/` | `@shared/composables/` |
+| `src/directives/` | `@shared/directives/` |
+| `src/components/__tests__/` (shared) | Sibling `__tests__` in `@shared/ui/` |
 
-### Layer 3: Feature Domains
-| Source | Feature Target |
+### Layer 3: Features
+| Domain | Mapping |
 | :--- | :--- |
-| `src/logic/Laboratory/` | `@features/laboratory/logic/` |
-| `src/components/Laboratory/` | `@features/laboratory/components/` |
-| `src/views/LaboratoryView.vue` | `@features/laboratory/views/LaboratoryView.vue` |
-| `src/composables/useLaboratory.ts` | `@features/laboratory/composables/useLaboratory.ts` |
-| `tests/Laboratory_*.test.ts` | `@features/laboratory/logic/__tests__/*.spec.ts` |
-| `src/views/RecruiterView.vue` | `@features/headhunter/views/RecruiterView.vue` |
-| `src/composables/useHeadhunter.ts` | `@features/headhunter/composables/useHeadhunter.ts` |
-| `src/composables/useRecruiter.ts` | `@features/headhunter/composables/useRecruiter.ts` |
-| `src/composables/useRecruitBlacklist.ts` | `@features/headhunter/composables/useRecruitBlacklist.ts` |
-| `src/components/RecruitCard.vue` | `@features/headhunter/components/RecruitCard.vue` |
-| `src/views/LeaderboardView.vue` | `@features/roster/views/RosterView.vue` |
-| `src/composables/useClashData.ts` | `@features/roster/composables/useClashData.ts` |
-| `src/composables/useLeaderboard.ts` | `@features/roster/composables/useLeaderboard.ts` |
-| `src/components/MemberCard.vue` | `@features/roster/components/MemberCard.vue` |
-| `src/components/WarHistoryChart.vue` | `@features/roster/components/WarHistoryChart.vue` |
-| `src/views/SettingsView.vue` | `@features/settings/views/SettingsView.vue` |
-| `src/composables/useSettings.ts` | `@features/settings/composables/useSettings.ts` |
-| `src/composables/useAppSettings.ts` | `@features/settings/composables/useAppSettings.ts` |
-| `src/components/SettingsCard.vue` | `@features/settings/components/SettingsCard.vue` |
-| `src/components/SkeletonSettingsCard.vue` | `@features/settings/components/SkeletonSettingsCard.vue` |
-| `src/components/settings/` | `@features/settings/components/` |
+| **Laboratory** | `src/logic/Laboratory/` + components -> `@features/laboratory/` |
+| **Headhunter** | `RecruiterView` + `RecruitCard` + relevant composables -> `@features/headhunter/` |
+| **Roster** | `LeaderboardView` + `MemberCard` + `WarHistoryChart` -> `@features/roster/` |
+| **Settings** | `SettingsView` + `src/components/settings/` -> `@features/settings/` |
 
-### Layer 4: App Glue
-| Source File | Target @app Alias |
+### Layer 4: App
+| Source | Target |
 | :--- | :--- |
-| `src/router/index.ts` | `@app/router/index.ts` |
-| `src/App.vue` | `@app/App.vue` |
-| `src/main.ts` | `@app/main.ts` |
+| `src/router/` | `@app/router/` |
+| `src/App.vue`, `src/main.ts` | `@app/` |
 | `src/sw.ts` | `@app/sw.ts` |
-| `src/components/ConsoleLayout.vue` | `@app/layouts/ConsoleLayout.vue` |
-| `src/components/ConsoleHeader.vue` | `@app/layouts/ConsoleHeader.vue` |
-| `src/components/FloatingDock.vue` | `@app/layouts/FloatingDock.vue` |
-| `src/components/HeaderInfoOverlay.vue" | `@app/layouts/HeaderInfoOverlay.vue` |
-| `src/composables/useConsoleController.ts` | `@app/composables/useConsoleController.ts` |
-| `src/composables/useUiCoordinator.ts` | `@app/composables/useUiCoordinator.ts` |
-| `src/composables/useHeaderScroll.ts` | `@app/composables/useHeaderScroll.ts` |
-| `src/composables/useCardMechanics.ts` | `@app/composables/useCardMechanics.ts` |
+| Shell Layout Components | `@app/layouts/` |
