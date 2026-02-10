@@ -161,3 +161,13 @@ export const idb = {
     }
   },
 };
+
+const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
+
+export async function loadCache(): Promise<any | null> {
+  return idb.get<any>(CACHE_KEY_MAIN);
+}
+
+export async function saveCache(data: any): Promise<void> {
+  return idb.set(CACHE_KEY_MAIN, data);
+}

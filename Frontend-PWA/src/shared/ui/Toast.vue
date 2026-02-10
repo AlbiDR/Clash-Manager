@@ -1,4 +1,4 @@
-import { Icon } from "@shared";
+import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 const props = defineProps<{

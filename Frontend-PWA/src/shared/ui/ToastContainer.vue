@@ -1,4 +1,4 @@
-import { Toast, useUiCoordinator } from "@shared";
+import { Toast, useUiCoordinator , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
 import { useToast } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";
