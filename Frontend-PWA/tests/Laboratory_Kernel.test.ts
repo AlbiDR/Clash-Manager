@@ -50,9 +50,8 @@ describe('Laboratory Kernel', () => {
     expect(result.actions?.length || 0).toBe(0);
   });
 
-  it('would block infiniteResources for Maximize strategy due to strict rules', () => {
-    // Maximize strategy is strictly resource constrained now.
-    // Even if we pass infiniteResources: true, the kernel ignores it.
+  it('should allow infiniteResources in Efficiency strategy', () => {
+    // Efficiency strategy now supports infinite resources if explicitly requested.
     const data: PlayerData = {
       profile: mockProfile,
       inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
@@ -67,9 +66,8 @@ describe('Laboratory Kernel', () => {
 
     const result = LaboratoryKernel.optimize(data, settings);
     
-    // Expect 0 upgrades because we have 0 gold/gems/cards in mock data
-    // and Maximize is now forced finite.
-    expect(result.actions.length).toBe(0); 
+    // Expect upgrades because we enabled infinite resources
+    expect(result.actions.length).toBeGreaterThan(0); 
   });
 
   it('should reach target level with infinite resources despite zero inventory', () => {
