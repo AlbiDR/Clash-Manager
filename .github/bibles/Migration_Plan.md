@@ -1,80 +1,88 @@
-# Surgical Migration Plan: "Clean Stack" Restructure
-**Protocol**: Difficulty-Weighted Gradient
+# Surgical Migration Plan (Protocol 90)
+
+This is the high-precision tactical manifest for the `Clash-Manager` restructure.
 **Status**: Tactical Draft 90 (Ultra-Precision Hardened)
+**Objective**: 100% build-stability and zero cross-domain communication failure.
 
 ---
 
-## [LEVEL 0] The Skeleton Initialization (Easiest)
-*(Completed)*
+## Phase 0: Pre-Flight & Anchor Audit
+*Goal: Ensure the bridge between GAS and Frontend remains intact.*
+
+- [x] **Git Cleanliness**: Stash all local changes.
+- [x] **Technical baseline**: `pnpm build` and `pnpm test` must be passing.
+- [ ] **Handshake Verification**: Run `.github/scripts/validate_project.ts` to ensure current state is 100% green.
+- [ ] **GAS Dependency Check**: Verify `Backend-GAS/Configuration.ts` points to the root `/Clash-Manager/`. **Status**: Verified.
+- [ ] **CI/CD Path Check**: Verify `.github/workflows/deploy-pwa.yml` uses `working-directory: Frontend-PWA`. **Status**: Verified.
 
 ---
 
-## [LEVEL 1-4] Extraction Phases
-*(See Bible for basic mappings. Focus here on high-resistance sectors.)*
+## Phase 1: Infrastructure Anchorage
+*Goal: Prepare the destination and the resolution logic.*
 
----
-
-## [LEVEL 5] The Storage Unification & Legacy Bridge (CRITICAL DATA RISK)
-*Goal: Fix the "Split-Brain" DB issue without losing user settings.*
-
-### [5.1] The StorageService Implementation
-- **Target**: `src/core/services/StorageService.ts`
-- **Hardcore Detail**: The service must include the following **Legacy Migration Guard** during its `init` phase:
-```typescript
-/**
- * LEGACY MIGRATION GUARD (Phase 1)
- * Detects 'keyval-store' (SW) and 'clash_manager_db' (App).
- * Migrates all entries to 'clash_manager_v11'.
- */
-async function migrateLegacyData() {
-  const oldDbs = ['keyval-store', 'clash_manager_db'];
-  const newDbName = 'clash_manager_v11';
-  
-  for (const oldDb of oldDbs) {
-     // 1. Check if old DB exists and copy keys
-     // 2. Clear old DB only after successful migration
-     // This ensures VITE_GAS_URL is never lost.
-  }
-}
+### [1.1] Directory Skeleton
+```bash
+# Execute from Frontend-PWA root
+mkdir -p src/core/{api,services,theme,types,utils}
+mkdir -p src/shared/{ui,composables,directives}
+mkdir -p src/features/{laboratory,headhunter,roster,settings}/{components,composables,logic,types,views}
+mkdir -p src/app/{router,layouts}
 ```
 
----
-
-## [LEVEL 6] The Final Shell Metamorphosis (HARDEST / CRITICAL FAIL POINT)
-*Goal: Relocate the entry terminal and boot sequence.*
-
-### [6.1] The Entry Pivot
-- **Files**: `git mv src/main.ts src/app/main.ts`
-- **Files**: `git mv src/App.vue src/app/App.vue`
-- **Hardcore Detail**: The `index.html` and `public/404.html` must be updated in the SAME commit as the file move to prevent a broken site state on deploy.
-```html
-<!-- index.html / 404.html -->
-<script type="module" src="/src/app/main.ts"></script>
-```
-
-### [6.2] The Service Worker Calibration
-- **Move**: `git mv src/sw.ts src/app/sw.ts`
-- **Vite Configuration (`vite.config.ts`)**:
-  - Update `VitePWA` plugin:
-    ```typescript
-    VitePWA({
-      srcDir: 'src/app', // Pivotal change
-      filename: 'sw.ts',
-      // ...
-    })
-    ```
-- **Internal Paths**: Inside `sw.ts`, all imports from `utils/idb` must be updated to `@core/services/StorageService`.
-
-### [6.3] Deployment "Shadow" Verification
-- **Test**: Run `pnpm build`.
-- **Verify**: Inspect `dist/index.html`. It MUST point to a hashed JS file.
-- **Verify**: Inspect `dist/sw.js`. It MUST contain the precache manifest.
-- **Handshake**: Verify the background sync `offline-queue-sync` still registers correctly in the browser console.
+### [1.2] Storage Convergence (CRITICAL FOR BACKEND SYNC)
+- **Target**: `src/utils/idb.ts` -> `src/core/services/StorageService.ts`
+- **Action**: Unify DB constants to prevent "Split-Brain" storage between App and Service Worker.
+- **Verification**: `sw.ts` and `StorageService.ts` must both reference `DB: clash_manager_v11` and `STORE: keyval`.
+- **Legacy Migration**: Implement bridge logic (Phase 5.1 detail) to migrate old `keyval-store` data.
 
 ---
 
-## Stability Verification Rubrik (The QA Gate)
-1. **The Build Check**: `pnpm build` (Must pass).
-2. **The Logic Check**: `pnpm test` (Must be 100% green).
-3. **The Data Check**: **MANDATORY** - Verify `VITE_GAS_URL` in LocalStorage/IDB didn't vanish.
-4. **The SW Check**: Browser `Application` tab must show `sw.js` active from the new location.
+## Phase 2-4: Extraction Gradation
+*(Moving from Easiest to Hardest as per Protocol 85)*
+
+1. **Level 1**: Styles and Icons -> `@core/theme/`
+2. **Level 2**: Shared UI and Directives -> `@shared/`
+3. **Level 3**: Global Types and Math Utils -> `@core/`
+4. **Level 4**: Feature Domain Splitting -> `@features/`
+
+---
+
+## Phase 5: The "Hardest" Failpoints (Terminal Moves)
+
+### [5.1] Entry Terminal Metamorphosis
+- **Action**: `git mv src/main.ts src/app/main.ts`, `git mv src/App.vue src/app/App.vue`
+- **Repair**:
+  - `index.html`: Update `<script type="module" src="/src/app/main.ts"></script>`
+  - `404.html`: Update `<script type="module" src="/src/app/main.ts"></script>`
+- **Validation**: `pnpm build` must pass immediately after this move.
+
+### [5.2] Service Worker Calibration
+- **Action**: `git mv src/sw.ts src/app/sw.ts`
+- **Vite Config**: Update `VitePWA` -> `srcDir: "src/app"`, `filename: "sw.ts"`.
+- **Validation**: Inspect `dist/sw.js` to ensure the precache hash is valid and non-empty.
+
+---
+
+## Phase 6: Manual Intervention Checklist (USER ACTIONS)
+*The following items require manual handling or monitoring outside of automated scripts.*
+
+1. **[MANUAL] GitHub Secrets Refresh**:
+   - If the PWA's `VITE_GAS_URL` or `VITE_WORKER_URL` are changed in the process, they must be updated in the GitHub Repo Secrets (`Settings > Secrets and variables > Actions`).
+2. **[MANUAL] GAS Deployment (Conditional)**:
+   - If the `validate_project.ts` check detects a scoring logic mismatch after moving `warMath.ts`, you MUST **re-deploy the Google Apps Script** to ensure parity between the backend and the new frontend location.
+3. **[MANUAL] Browser Cache Persistence**:
+   - Because the Service Worker location is moving, some users' browsers might hold onto the old `sw.js` for one session. Users should be advised to **"Pull to Refresh"** once or **"Force Reload"** (Cmd+Shift+R) if they see the old UI layout.
+4. **[MANUAL] Local .env Sync**:
+   - Developers must manually update their local `.env` if they utilize absolute file paths for local testing (rare, but possible).
+
+---
+
+## Dry Run Risk Re-evaluation (The "Protocol 90" Rubrik)
+
+| Failure Point | Probable Cause | Severity | Mitigation |
+| :--- | :--- | :--- | :--- |
+| **PWA Precaching Leak** | `sw.ts` can't find chunks in `dist` due to `srcDir` change. | **CRITICAL** | Vite-PWA `srcDir` must match the new `src/app` home. |
+| **Path Shell-Shock** | Relative imports in `sw.ts` to `utils/idb` break. | **HIGH** | Refactor `sw.ts` to use absolute alias `@core/services/StorageService`. |
+| **Case-Sensitivity Error**| `import ... from "./logic/Laboratory"` (works on Mac, fails on Linux). | **MEDIUM** | Strict adherence to the Bible's `kebab-case` directory naming. |
+| **Split-Brain Storage** | Migration bridge fails to copy `VITE_GAS_URL` from old DB. | **CRITICAL** | Phase 1.2 "Legacy Bridge" must be the first logic piece written. |
+| **GAS Validation Fail** | CI/CD script doesn't find `Configuration.ts` or `warMath.ts`. | **MEDIUM** | Update `validate_project.ts` and `validate_scoring.ts` paths in Phase 1. |
