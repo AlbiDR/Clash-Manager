@@ -79,13 +79,12 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
 
       <!-- Target Level Selector -->
-      <div class="parameter-item" :class="{ disabled: settings.strategy === 'Efficiency' }">
+      <div class="parameter-item" v-if="settings.strategy === 'Projection'">
         <label class="parameter-label">Target King Level</label>
         <div class="select-wrapper">
           <select 
             class="level-select" 
             :value="settings.targetLevel || 90" 
-            :disabled="settings.strategy === 'Efficiency'"
             @change="handleTargetChange"
           >
             <option 
