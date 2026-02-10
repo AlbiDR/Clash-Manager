@@ -1,14 +1,14 @@
 import { computed } from "vue";
-import { useAppSettings } from "./useAppSettings";
-import { useTheme } from "./useTheme";
-import { useHaptics } from "./useHaptics";
-import { useWakeLock } from "./useWakeLock";
+import { useAppSettings } from "@core";
+import { useTheme } from "@shared";
+import { useHaptics } from "@shared";
+import { useWakeLock } from "@shared";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useShowcaseMode } from "./useShowcaseMode";
-import { useClashData } from "./useClashData";
-import { useConnectionStatus } from "./useConnectionStatus";
-import { idb } from "../utils/idb";
+import { useClashData } from "@core";
+import { useConnectionStatus } from "@shared";
+import { idb } from "@core/services/StorageService";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 import { useToast } from "./useToast";
 

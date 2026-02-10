@@ -1,15 +1,15 @@
 import { computed, watch, ref } from "vue";
-import { useClashData } from "./useClashData";
+import { useClashData } from "@core";
 import { useHeadhunter } from "./useHeadhunter";
-import { useApiState } from "./useApiState";
+import { useApiState } from "@core";
 import { useToast } from "./useToast";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
-import { useConsoleController } from "./useConsoleController";
+import { useConsoleController } from "@core";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { SORT_DESCRIPTIONS } from "../utils/sortOptions";
-import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
-import type { Recruit } from "../types";
+import { scanRecruitsDirect, isWorkerConfigured } from "@core";
+import type { Recruit } from "@core/types";
 
 /**
  * COMPOSABLE: useRecruiter

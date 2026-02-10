@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import Icon from "./Icon.vue";
+import { Icon } from "@shared";
 
 const props = defineProps<{
   title: string;

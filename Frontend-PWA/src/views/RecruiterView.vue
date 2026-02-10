@@ -2,8 +2,8 @@
 import { useRecruiter } from "../composables/useRecruiter";
 
 import RecruitCard from "../components/RecruitCard.vue";
-import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
-import Icon from "../components/Icon.vue";
+import { BaseCardSkeleton } from "@shared";
+import { Icon } from "@shared";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
 const {

@@ -1,6 +1,6 @@
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useToast } from "./useToast";
-import { useAppSettings } from "./useAppSettings";
+import { useAppSettings } from "@core";
 import { useExternalLink, buildDeepLink } from "./useExternalLink";
 
 interface BatchQueueOptions {

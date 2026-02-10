@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { inflatePayload } from "../gasClient";
+import { inflatePayload } from "@core";
 
 describe("gasClient Data Inflation", () => {
   it("correctly inflates Leaderboard matrix", async () => {

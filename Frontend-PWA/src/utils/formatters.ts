@@ -1,4 +1,4 @@
-import type { MomentumInfo } from "../types";
+import type { MomentumInfo } from "@core/types";
 
 /**
  * Centralized formatting utilities for consistency across the application.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch } from "vue";
-import Icon from "./Icon.vue";
+import { Icon } from "@shared";
 import { formatHeaderDescription } from "../utils/formatters";
 
 const props = defineProps<{

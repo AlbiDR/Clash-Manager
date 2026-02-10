@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useAppSettings } from "../useAppSettings";
+import { useAppSettings } from "@core";
 
 describe("useAppSettings", () => {
   it("exports modules as a reactive object (not a Ref)", () => {

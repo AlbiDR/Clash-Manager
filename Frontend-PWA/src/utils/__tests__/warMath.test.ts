@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseHistoryString, calculatePrediction, WAR_CONSTANTS } from "../warMath";
+import { parseHistoryString, calculatePrediction, WAR_CONSTANTS } from "@core";
 
 describe("warMath", () => {
   describe("parseHistoryString", () => {

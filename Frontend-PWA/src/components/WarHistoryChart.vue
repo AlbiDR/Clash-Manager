@@ -5,7 +5,7 @@ import {
   calculatePrediction,
   parseHistoryString,
   WAR_CONSTANTS,
-} from "../utils/warMath";
+} from "@core";
 
 const props = defineProps<{
   history?: string;

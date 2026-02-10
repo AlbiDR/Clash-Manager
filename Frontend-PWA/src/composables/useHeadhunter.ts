@@ -1,9 +1,9 @@
 import { watch } from "vue";
-import { dismissRecruits, NetworkError } from "../api/gasClient";
-import type { WebAppData, DismissalRequest, Recruit } from "../types";
-import { useClashData } from "./useClashData";
-import { useBadge } from "./useBadge";
-import { useAppSettings } from "./useAppSettings";
+import { dismissRecruits, NetworkError } from "@core";
+import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
+import { useClashData } from "@core";
+import { useBadge } from "@core";
+import { useAppSettings } from "@core";
 import { useBroadcastChannel } from "./useBroadcastChannel";
 import { useSyntheticMode } from "./useSyntheticMode";
 

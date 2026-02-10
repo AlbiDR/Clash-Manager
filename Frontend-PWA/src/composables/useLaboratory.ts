@@ -2,8 +2,8 @@ import { ref, computed, type Ref, watch } from 'vue'
 import LaboratoryKernel from '../logic/Laboratory/Laboratory_Kernel'
 import LaboratoryAdapter from '../logic/Laboratory/Laboratory_Adapter'
 import { IMPORTANT_KING_LEVELS } from '../logic/Laboratory/Laboratory_Tables'
-import { useClashData } from './useClashData'
-import { getPlayerProfile } from '../api/gasClient'
+import { useClashData } from "@core"
+import { getPlayerProfile } from "@core"
 import type { 
   PlayerData, 
   OptimizationSettings, 

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import CardActions from "../CardActions.vue";
+import { CardActions } from "@shared";
 
 const { mockOpenExternal, mockOpenInGame } = vi.hoisted(() => ({
   mockOpenExternal: vi.fn(),

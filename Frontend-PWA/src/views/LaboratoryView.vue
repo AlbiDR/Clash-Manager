@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useLaboratory } from "../composables/useLaboratory";
-import { useClashData } from "../composables/useClashData";
+import { useClashData } from "@core";
 
 import ConsoleLayout from "../components/ConsoleLayout.vue";
-import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
-import Icon from "../components/Icon.vue";
+import { BaseCardSkeleton } from "@shared";
+import { Icon } from "@shared";
 
 // Laboratory Components
 import VaultCard from "../components/Laboratory/VaultCard.vue";

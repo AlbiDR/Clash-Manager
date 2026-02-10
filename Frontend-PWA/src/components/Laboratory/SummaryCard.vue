@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type OptimizationResult, type PlayerProfile } from "../../logic/Laboratory/Laboratory_Types";
-import Icon from "../Icon.vue";
+import { Icon } from "@shared";
 
 const props = defineProps<{
   result: OptimizationResult;

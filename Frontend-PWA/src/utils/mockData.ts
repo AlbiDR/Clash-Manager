@@ -1,4 +1,4 @@
-import type { WebAppData, LeaderboardMember, Recruit } from "../types";
+import type { WebAppData, LeaderboardMember, Recruit } from "@core/types";
 
 /**
  * Generates a realistic war history string for 52 weeks.

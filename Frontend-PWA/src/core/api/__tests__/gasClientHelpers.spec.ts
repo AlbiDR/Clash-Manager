@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createSchemaMap, mapLbRow, mapHhRow } from "../gasClient";
+import { createSchemaMap, mapLbRow, mapHhRow } from "@core";
 
 describe("gasClient Helpers", () => {
   describe("createSchemaMap", () => {

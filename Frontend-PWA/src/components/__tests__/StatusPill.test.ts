@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
-import StatusPill from "../StatusPill.vue";
+import { StatusPill } from "@shared";
 
 const { tapMock } = vi.hoisted(() => ({
   tapMock: vi.fn(),

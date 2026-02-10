@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Inventory } from "../../logic/Laboratory/Laboratory_Types";
-import Icon from "../Icon.vue";
+import { Icon } from "@shared";
 
 defineProps<{
   inventory: Inventory;

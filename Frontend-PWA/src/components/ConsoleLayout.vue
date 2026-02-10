@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, nextTick } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
-import SelectionBar from "./SelectionBar.vue";
-import EmptyState from "./EmptyState.vue";
-import ErrorState from "./ErrorState.vue";
+import { SelectionBar } from "@shared";
+import { EmptyState } from "@shared";
+import { ErrorState } from "@shared";
 
-import Icon from "./Icon.vue";
-import { useUiCoordinator } from "../composables/useUiCoordinator";
-import { useHaptics } from "../composables/useHaptics";
+import { Icon } from "@shared";
+import { useUiCoordinator } from "@shared";
+import { useHaptics } from "@shared";
 import { useShowcaseMode } from "../composables/useShowcaseMode";
 
 const props = defineProps<{

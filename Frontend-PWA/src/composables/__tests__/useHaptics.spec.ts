@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useHaptics } from "../useHaptics";
+import { useHaptics } from "@shared";
 import { nextTick } from "vue";
 
 describe("useHaptics", () => {
