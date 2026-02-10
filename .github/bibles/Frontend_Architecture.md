@@ -156,27 +156,52 @@ Before completing any task, every developer (and AI) must verify:
 
 The restructure extends beyond the `src/` folder. The following external configurations must be adapted to the new architecture.
 
-### [A] Entry Points
-- **`index.html`**: The module script tag must be updated.
-  - *From*: `<script type="module" src="./src/main.ts"></script>`
-  - *To*:   `<script type="module" src="./src/app/main.ts"></script>`
+### [A] Entry Points & Shell
+- **`index.html`** & **`public/404.html`**:
+  - *Must Change*: `<script type="module" src="./src/main.ts"></script>` -> `./src/app/main.ts`
+  - *Note*: `404.html` is critical for deep-linking in SPA mode on GitHub Pages.
+- **`sw.ts`**:
+  - *Move To*: `src/app/sw.ts`.
+  - *Public Ref*: Any external reference to the service worker registration must remain alias-aware.
 
 ### [B] Vite Build Optimization
-- **`vite.config.ts`**: Update `manualChunks` and `VIEW_SPECIFIC_COMPONENTS` to reflect new paths.
-  - `/src/api/` -> `/src/core/api/`
-  - `/src/components/` (shared) -> `/src/shared/ui/`
-  - `/src/composables/` (shared) -> `/src/shared/composables/`
-  - Feature-specific lookups must now target `/src/features/`.
+- **`vite.config.ts`**:
+  - **Manual Chunks**: Update substring detectors:
+    - `manualChunks` logic: `/src/api/` -> `/src/core/api/`
+    - `manualChunks` logic: `/src/components/` (Shared) -> `/src/shared/ui/`
+    - `manualChunks` logic: `/src/composables/` (Shared) -> `/src/shared/composables/`
+  - **View Exclusion**: `VIEW_SPECIFIC_COMPONENTS` array must be updated to target `@features/` paths.
+  - **PWA Settings**: `srcDir` must become `"src/app"` and `filename` becomes `"sw.ts"`.
 
-### [C] PWA & Service Worker
-- **`vite.config.ts` (VitePWA Plugin)**:
-  - Move `sw.ts` to `src/app/sw.ts`.
-  - Set `srcDir: "src/app"` and `filename: "sw.ts"`.
+### [C] CI/CD & Static Analysis
+- **`.github/scripts/validate_project.ts`**:
+  - Review `PATHS` object to match new directory locations (e.g., `Configuration.ts`).
+  - Ensure scoring parity checks are not broken by the logic migration.
+- **`.github/workflows/deploy-pwa.yml`**:
+  - `cache-dependency-path`: Ensure it stays pointed to `Frontend-PWA/pnpm-lock.yaml`.
 
-### [D] TypeScript Configuration
+### [D] IDE & Developer Tooling
 - **`tsconfig.app.json`**:
-  - Broaden `include` scope to ensure all layers are type-checked.
-  - Ensure `paths` aliases perfectly match the mapping manifest.
+  - Ensure `include` covers `["src/**/*.ts", "src/**/*.vue"]`.
+  - Path synchronization: All aliases must be strictly mapped to the project ROOT.
+- **Search & Replace**: Use regex to repair relative imports during migration (e.g., `import ... from '@/components/` -> `@shared/ui/`).
+
+---
+
+## 12. Cross-Domain Dependents
+
+While the restructure targets `Frontend-PWA`, the following cross-repo dependencies must be monitored:
+
+### [A] Shared Logic (Manual Duplication)
+- **Scoring Parity**: The `Scoring_Kernel.ts` in `Backend-GAS` must maintain 1:1 algorithmic parity with the logic currently in `src/utils/warMath.ts` (soon `@core/utils/warMath.ts`). 
+- **Validation**: `validate_project.ts` enforces this parity. Moving these files must not break the validator's `grep` patterns.
+
+### [B] GitHub Branch Synchronization
+- **`sync-branches.yml`**: The regex `pwa_changed` detector specifically looks for `^Frontend-PWA/`. This is **Safe** and requires no change, as all moved files remain within the `Frontend-PWA` root.
+
+### [C] Documentation Links
+- **README.md** (Root): Verify all technical specification links (e.g., `[Read Technical Specifications](Frontend-PWA/README.md)`) remain valid.
+- **Backend READMEs**: Any links pointing to the frontend architecture Bible must be updated to the new `.github/bibles/` location.
 
 ### [E] Global Styles & Assets
 - **`style.css`**: Verify all `@import` or `url()` references to fonts/icons remain valid.
