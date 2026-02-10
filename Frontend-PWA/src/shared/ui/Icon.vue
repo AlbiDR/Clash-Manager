@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ICONS } from "../icons";
+import { ICONS } from "@/core/theme/icons";
 
 const props = defineProps<{
   name: string;
