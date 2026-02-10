@@ -73,19 +73,13 @@ function buildCandidate(
     
     // Theoretical Gem calculation for card/material deficit
     const deficit = Math.max(0, remainingNeeded - wildAvailable);
-    if (deficit > 0) {
-      // Respect allowGemSpending even in infinite mode (unless Target strategy, which MUST find a path)
-      if (!settings.allowGemSpending && settings.strategy !== "Target") return null;
-      
+    if (deficit > 0 && settings.allowGemSpending) {
       const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
       gemsUsed += Math.ceil(deficit * rate);
     }
 
     // Theoretical Gem calculation for gold deficit
-    if (goldCost > inventory.gold) {
-      // Respect allowGemSpending even in infinite mode (unless Target strategy, which MUST find a path)
-      if (!settings.allowGemSpending && settings.strategy !== "Target") return null;
-      
+    if (goldCost > inventory.gold && settings.allowGemSpending) {
       const goldDeficit = goldCost - Math.max(0, inventory.gold);
       const gemsForGold = Math.ceil(goldDeficit / GEM_VALUE_IN_GOLD);
       gemsUsed += gemsForGold;
@@ -233,9 +227,9 @@ const LaboratoryKernel = {
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
     // STRATEGY DIVERGENCE:
-    // - Target: Always uses infinite resources to show the path to reach the goal
-    // - Maximize: Respects infiniteResources setting (false = budget-constrained, true = theoretical max)
-    const effectiveInfinite = settings.strategy === "Target" ? true : settings.infiniteResources;
+    // - Target: ALWAYS Infinite (Goal Oriented Simulation)
+    // - Maximize: ALWAYS Finite (Resource Constrained Optimization)
+    const effectiveInfinite = settings.strategy === "Target";
 
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;
