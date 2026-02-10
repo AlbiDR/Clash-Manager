@@ -129,10 +129,18 @@ function buildCandidate(
   // PRIORITY LOGIC:
   // We apply a "Gem Penalty" (efficiency penalty) if gems are required.
   // This ensures that the greedy algorithm prioritizes "free" upgrades 
-  // (using owned cards/wildcards) over spending gems, even if the 
-  // gem-based upgrade has a better raw efficiency.
+  // (using owned cards/wildcards) over spending gems.
   if (gemsUsed > 0) {
-    efficiencyRatio *= 10.0; // 10x penalty for gem spending
+    if (settings.infiniteResources) {
+      // PROJECTION STABILIZATION:
+      // In infinite simulation, we don't want the path to change drastically 
+      // just because we switched to "pay" mode. We remove the massive penalty
+      // so the optimizer still picks the best "XP per Gold" upgrades, 
+      // just calculating their Gem cost as a side effect.
+      efficiencyRatio *= 1.05; // Slight bias against pure gem spending, but not 10x
+    } else {
+      efficiencyRatio *= 10.0; // 10x penalty for real resource constraints (Resource Efficiency)
+    }
   } else {
     efficiencyRatio *= 0.5; // 50% "Owned Material" bonus to prioritize natural growth
   }
