@@ -236,8 +236,8 @@ const LaboratoryKernel = {
 
     // STRATEGY DIVERGENCE:
     // - Projection: ALWAYS Infinite (Goal Oriented Simulation)
-    // - Efficiency: ALWAYS Finite (Resource Constrained Optimization)
-    const effectiveInfinite = settings.strategy === "Projection";
+    // - Efficiency: Defaults to Finite, but can be forced Infinite for simulation
+    const effectiveInfinite = settings.strategy === "Projection" || settings.infiniteResources;
 
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;

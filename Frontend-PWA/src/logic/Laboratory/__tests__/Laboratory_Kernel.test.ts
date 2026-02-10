@@ -29,13 +29,13 @@ describe('LaboratoryKernel', () => {
   };
 
   const defaultSettings: OptimizationSettings = {
-    strategy: 'Maximize',
+    strategy: 'Efficiency',
     allowGemSpending: false,
     infiniteResources: false
   };
 
   describe('optimize', () => {
-    it('should generate an optimization plan in Maximize mode', () => {
+    it('should generate an optimization plan in Efficiency mode', () => {
       const result = LaboratoryKernel.optimize(mockPlayerData, defaultSettings);
 
       expect(result.actions.length).toBeGreaterThan(0);
@@ -47,10 +47,10 @@ describe('LaboratoryKernel', () => {
       expect(result.finalGold).toBe(mockPlayerData.inventory.gold - result.totalGoldSpent);
     });
 
-    it('should respect target level in Target strategy', () => {
+    it('should respect target level in Projection strategy', () => {
       const settings: OptimizationSettings = {
         ...defaultSettings,
-        strategy: 'Target',
+        strategy: 'Projection',
         targetLevel: 11
       };
 
