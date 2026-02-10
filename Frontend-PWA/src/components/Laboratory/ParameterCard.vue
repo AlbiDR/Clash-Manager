@@ -68,6 +68,16 @@ const baseUrl = import.meta.env.BASE_URL;
             <span>Maximize Value</span>
           </button>
         </div>
+        <div class="strategy-desc">
+          <template v-if="settings.strategy === 'Target'">
+            <strong>Goal: Reach Target Level (Simulation)</strong>
+            <p>Finds the theoretical optimal path. Assumes infinite resources to show full trajectory. Toggle <em>Allow Gem Spending</em> to switch between Gem-based cost (P2W) and 'Grind' cost (F2P).</p>
+          </template>
+          <template v-else>
+            <strong>Goal: Maximize Value (Resource Limit)</strong>
+            <p>Finds the most efficient upgrades using ONLY your currently owned Gold and Cards. Strictly limited by your inventory.</p>
+          </template>
+        </div>
       </div>
 
       <!-- Target Level Selector -->
@@ -197,6 +207,31 @@ const baseUrl = import.meta.env.BASE_URL;
   box-shadow: var(--sys-elevation-1);
   opacity: 1;
   color: var(--sys-color-primary);
+}
+
+.strategy-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--sys-color-on-surface-variant);
+  background: var(--sys-color-surface-container);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-left: 3px solid var(--sys-color-primary);
+  margin-top: 6px;
+  gap: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.strategy-desc strong {
+  color: var(--sys-color-primary);
+  opacity: 0.9;
+  font-weight: 750;
+}
+
+.strategy-desc p {
+  opacity: 0.8;
+  margin: 0;
 }
 
 .select-wrapper {
