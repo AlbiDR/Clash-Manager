@@ -1,5 +1,5 @@
 /**
- * 🚀 CLASH MANAGER PWA
+ * CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
 import { createApp, watch } from "vue";
@@ -82,11 +82,11 @@ async function bootstrap() {
     const app = createApp(App);
     app.use(router);
 
-    // ⚡ PERFORMANCE: Register directives before mount
+    // PERFORMANCE: Register directives before mount
     app.directive("tooltip", vTooltip);
     app.directive("tactile", vTactile);
 
-    // ⚡ PRE-MOUNT: Register critical plugins
+    // PRE-MOUNT: Register critical plugins
     try {
       const { autoAnimatePlugin } = await import("@formkit/auto-animate/vue");
       app.use(autoAnimatePlugin);
@@ -105,10 +105,10 @@ async function bootstrap() {
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
-    // ⚡ INSTANT BOOT: Load local cache immediately for LCP
+    // INSTANT BOOT: Load local cache immediately for LCP
     await clashData.loadLocal();
     
-    // 🛡️ CONCURRENCY FIX: Start API Handshake FIRST.
+    // CONCURRENCY FIX: Start API Handshake FIRST.
     // Do NOT start background sync (heavy data fetch) until handshake clears.
     // This prevents GAS 'Too Many Requests' errors on cold boot.
     apiState.init();
@@ -133,10 +133,10 @@ async function bootstrap() {
     setTimeout(async () => {
       wakeLock.init();
       
-      // 💾 PERSISTENCE: Request durable storage
+      // PERSISTENCE: Request durable storage
       storagePersistence.requestPersistence();
 
-      // 🛡️ SYNC SETTINGS: Ensure SW has access to latest threshold
+      // SYNC SETTINGS: Ensure SW has access to latest threshold
       if (modules.notificationThreshold) {
         await idb.set(
           "cm_notification_threshold",
@@ -144,7 +144,7 @@ async function bootstrap() {
         );
       }
 
-      // ⚡ NATIVE: Register Periodic Sync for WebAPK
+      // NATIVE: Register Periodic Sync for WebAPK
       if (
         "serviceWorker" in navigator &&
         "periodicSync" in (navigator as any).serviceWorker

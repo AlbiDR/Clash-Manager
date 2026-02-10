@@ -1,9 +1,9 @@
 
 /**
  * ============================================================================
- * ⚡ MODULE: LABORATORY KERNEL
+ * MODULE: LABORATORY KERNEL
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Pure logic engine for determining the optimal upgrade path.
+ * DESCRIPTION: Pure logic engine for determining the optimal upgrade path.
  *    Replicates `Level16Optimizer.generate_plan` using a greedy algorithm.
  *    Optimized with active-list pruning and binary search solvers.
  * ============================================================================

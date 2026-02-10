@@ -55,7 +55,7 @@ watch(isOnline, (online, wasOnline) => {
   }
 });
 
-// 🔄 SMART UPDATE: Automated PWA registration and update logic
+// SMART UPDATE: Automated PWA registration and update logic
 const { updateServiceWorker } = useRegisterSW({
   onRegistered(r: any) {
     // Check for updates every hour
@@ -75,7 +75,7 @@ const { updateServiceWorker } = useRegisterSW({
 });
 
 onMounted(() => {
-  // 🛡️ VERSION GUARD: Force cache busting if version mismatch detected
+  // VERSION GUARD: Force cache busting if version mismatch detected
   const currentVersion = __APP_VERSION__;
   const storedVersion = localStorage.getItem("app_version");
 
@@ -121,7 +121,7 @@ onMounted(() => {
   scrollbar-gutter: stable;
 }
 
-/* 🖼️ SHOWCASE FRAME: 1px clinical boundary for screenshots */
+/* SHOWCASE FRAME: 1px clinical boundary for screenshots */
 .app-shell.showcase-frame {
   --sys-safe-frame-offset: 1px;
   outline: 1px solid #000000;
@@ -132,7 +132,7 @@ onMounted(() => {
   outline: 1px solid #ffffff;
 }
 
-/* ⚡ TRANSITION: Smooth transform for page container */
+/* TRANSITION: Smooth transform for page container */
 .app-container {
   width: 100%;
   max-width: var(--sys-layout-max-width);
@@ -185,7 +185,7 @@ onMounted(() => {
   }
 }
 
-/* 🎭 View Transitions Fallback (Fade + Slightly Slide) */
+/* View Transitions Fallback (Fade + Slightly Slide) */
 .page-enter-active,
 .page-leave-active {
   transition:
@@ -203,5 +203,5 @@ onMounted(() => {
   transform: translateY(-4px);
 }
 
-/* ⚡ FUTURE: CSS View Transitions API support elsewhere */
+/* FUTURE: CSS View Transitions API support elsewhere */
 </style>
