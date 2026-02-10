@@ -1,4 +1,4 @@
-# 🧠 Backend Architecture: The "Logical Core" Protocol
+# Backend Architecture: The "Logical Core" Protocol
 
 This document serves as the **Single Source of Truth** for the `Clash-Manager` backend architecture (Google Apps Script / TypeScript).
 
