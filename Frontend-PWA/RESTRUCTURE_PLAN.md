@@ -1,77 +1,127 @@
-# Architecture Restructure Plan
+# 🏗️ Clinical Architecture: The "Clean Stack" Protocol
 
-This document outlines the migration plan to a Feature-First Architecture.
+This document serves as the **Single Source of Truth** for the `Clash-Manager` architecture. It strictly defines the structural, nomenclatural, and behavioral standards required to maintain a 100/100 Lighthouse-grade codebase.
 
-## Directory Structure
+---
 
-### `src/core`
-**Purpose**: The "Kernel". Pure, app-agnostic foundations.
-- `api/`: Base API clients (e.g., `GasClient`).
-- `theme/`: Global styles, CSS variables, tokens.
-- `types/`: Global TypeScript definitions.
-- `utils/`: Generic helpers (math, formatting, dates).
+## 1. The Four Layers of "Antigravity"
 
-### `src/shared`
-**Purpose**: "The Building Blocks". Reused across features.
-- `ui/`: Atomic Components (Icon, Button, Card, Toast).
-- `composables/`: Generic logic (useHaptics, useWakeLock, useStorage).
+We employ a **Strict Unitary Architecture**. Code must live exactly where it belongs.
 
-### `src/features`
-**Purpose**: "The Business". Domain-specific silos.
+### 🔴 Layer 1: Core (`@core`)
+**Definition**: The "Kernel". Code that is biologically necessary for the application to boot, but **agnostic** to the business domain.
+- **Rule**: Pure TypeScript only. No Vue components (mostly). No business logic.
+- **Contents**:
+  - `api/`: abstract HTTP clients (`GasClient`).
+  - `theme/`: Design tokens, CSS variables, typography.
+  - `types/`: Brand types (`Flavor<T>`) and global interfaces.
+  - `utils/`: Mathematical and string manipulation primitives.
 
-#### `laboratory`
-- `components/`: UI specific to the Laboratory (UpgradeCard).
-- `logic/`: Pure business logic (Optimizer Kernel).
-- `composables/`: State management (useLaboratory).
-- `views/`: Route components (LaboratoryView).
+### 🟡 Layer 2: Shared (`@shared`)
+**Definition**: The "Building Blocks". Reusable molecules that have no specific business allegiance.
+- **Rule**: Must be generic enough to drop into *any* other project.
+- **Contents**:
+  - `ui/`: Dumb components (`Icon`, `Button`, `Card`, `Skeleton`). **Zero state.**
+  - `composables/`: Device/Browser logic (`useHaptics`, `useWakeLock`, `useStorage`).
 
-#### `headhunter`
-- `components/`: UI specific to Headhunter.
-- `composables/`: State management (useHeadhunter).
-- `views/`: Route components (RecruiterView).
+### 🟢 Layer 3: Features (`@features`)
+**Definition**: The "Business". Self-contained silos of domain logic.
+- **Rule**: A Feature **NEVER** imports from another Feature. Communication happens via URL parameters or Global State (Store).
+- **Structure (Fractal)**:
+  - `my-feature/`
+    - `components/`: Domain-specific UI (`UpgradeCard.vue`).
+    - `composables/`: Domain-specific State (`useLaboratory.ts`).
+    - `logic/`: Pure Business Logic / Algorithms (`Optimizer.ts`).
+    - `types/`: Feature-local types.
+    - `views/`: The Entry Point (Route) for this feature.
+    - `index.ts`: **The Public API**. (See "Barrel Protocol" below).
 
-#### `roster`
-- `components/`: UI specific to Roster management.
-- `composables/`: State management (useClashData? - TBD).
-- `views/`: (e.g., HomeView).
+### 🔵 Layer 4: App (`@app`)
+**Definition**: The "Glue". Context-aware orchestration.
+- **Rule**: The only layer allowed to import from `@features`.
+- **Contents**:
+  - `router/`: Definitions of routes.
+  - `layouts/`: `ConsoleLayout.vue` (The shell).
+  - `main.ts`: The boot sequence.
 
-#### `settings`
-- `components/`: Settings UI.
-- `composables/`: useSettings.
+---
 
-### `src/app`
-**Purpose**: "The Glue". App-level orchestration.
-- `router/`: Route definitions.
-- `layouts/`: Global layouts (ConsoleLayout).
-- `App.vue`: Root component.
-- `main.ts`: Entry point.
+## 2. Naming Conventions (Strict Case)
 
-## Migration Checklist
+| Type | Convention | Example |
+| :--- | :--- | :--- |
+| **Directories** | `kebab-case` | `features/headhunter`, `shared/ui` |
+| **Components** | `PascalCase` | `UpgradeCard.vue`, `Icon.vue` |
+| **Composables** | `camelCase` (prefixed `use`) | `useLaboratory.ts` |
+| **Classes/Singletons** | `PascalCase` | `GasClient.ts`, `Optimizer.ts` |
+| **Utilities/Funcs** | `camelCase` | `formatCurrency.ts`, `calculateXp.ts` |
+| **Types/Interfaces** | `PascalCase` | `PlayerData`, `OptimizationResult` |
+| **Tests** | `*.spec.ts` or `*.test.ts` | `useLaboratory.spec.ts` |
+
+---
+
+## 3. The "Barrel Protocol" (Public API)
+
+To prevent "Graph Spaghetti," every module must define a clear boundary.
+
+- **Rule**: Features must export their public interface via an `index.ts`.
+- **Consumer Rule**: Imports from a feature should (ideally) target the feature root, not deep files, UNLESS it causes circular dependency or tree-shaking bloat.
+- **Standard**:
+  ```typescript
+  // ✅ Correct
+  import { LaboratoryView } from '@features/laboratory';
+  
+  // ⚠️ Avoid (Deep Linking) unless necessary for optimization
+  import LaboratoryView from '@features/laboratory/views/LaboratoryView.vue';
+  ```
+
+---
+
+## 4. Testing "Co-Location" Strategy
+
+Tests shall no longer live in a distant `tests/` folder. They must live **alongside** the unit they test, ensuring high visibility and atomic refactoring.
+
+- **Pattern**: `__tests__` directory inside the unit's parent.
+- **Example**:
+  ```text
+  src/features/laboratory/logic/
+  ├── Optimizer.ts
+  └── __tests__/
+      └── Optimizer.spec.ts
+  ```
+
+---
+
+## 5. Asset Management
+
+- **Global Assets**: `public/` (Favicons, manifest, truly static global files).
+- **Feature Assets**: If a feature has specific SVGs or static JSONs, they belong in `src/features/xxx/assets/`.
+
+---
+
+## 6. Migration Checklist (Enhanced)
 
 ### Phase 1: Infrastructure (Done)
-- [x] Create directory structure.
-- [x] Configure aliases in `tsconfig.app.json`.
-- [x] Configure aliases in `vite.config.ts`.
+- [x] Create directory skeleton.
+- [x] Configure aliases in `tsconfig` & `vite`.
 
-### Phase 2: Core & Shared (Next)
-- [ ] Move `src/utils` -> `src/core/utils`.
-- [ ] Move `src/types` -> `src/core/types`.
-- [ ] Move `src/api` -> `src/core/api`.
-- [ ] Move atomic UI components (Icon, StatusPill) -> `src/shared/ui`.
-- [ ] Move generic composables (useHaptics, useStorage) -> `src/shared/composables`.
+### Phase 2: The Core Extraction (Safe)
+- [ ] Move `utils` -> `@core/utils`. (Verify imports)
+- [ ] Move `types` -> `@core/types`.
+- [ ] Move `api` -> `@core/api`.
 
-### Phase 3: Features
-- [ ] Move Laboratory logic/components -> `src/features/laboratory`.
-- [ ] Move Headhunter logic/components -> `src/features/headhunter`.
-- [ ] Move Settings logic/components -> `src/features/settings`.
+### Phase 3: The Component Atomic Split (Tedious)
+- [ ] Identify "Atoms" in `components/`.
+- [ ] Move Atoms -> `@shared/ui`.
+- [ ] Move `composables/use*` (generic) -> `@shared/composables`.
+- [ ] Update imports in the remaining monolithic `components/`.
 
-### Phase 4: App Glue
-- [ ] Move `router/` -> `src/app/router`.
-- [ ] Move `App.vue`, `main.ts` -> `src/app`.
-- [ ] Update all imports.
-- [ ] Fix tests.
+### Phase 4: Feature Encapsulation (High Risk)
+- [ ] **Laboratory**: Gather `logic/Laboratory`, `components/Laboratory`, `useLaboratory` -> `@features/laboratory`.
+- [ ] **Headhunter**: Gather `useHeadhunter`, `RecruiterView`, related components -> `@features/headhunter`.
+- [ ] **Settings**: Gather `SettingsView`, `useSettings` -> `@features/settings`.
 
-## Rules of Engagement
-1. **No Circular Dependencies**: Core cannot import Features. Features cannot import other Features (use shared state or events if needed).
-2. **Strict Encapsulation**: If a component is only used in one feature, it stays in that feature.
-3. **DRY via Shared**: If a component is needed by two features, move it to `src/shared/ui`.
+### Phase 5: Routing & Cleanup
+- [ ] Reconfigure router to point to new Feature Views.
+- [ ] Delete legacy folders.
+- [ ] Run **full** test suite and fix all 400+ likely broken imports.
