@@ -151,23 +151,61 @@ Before completing any task, every developer (and AI) must verify:
 
 ## 9. Migration Roadmap
 
-### Phase 1: Infrastructure (Completed) ✅
-### Phase 2: Core Extraction (Next)
-- Move Generic Utils -> `@core/utils`.
-- Move Types -> `@core/types`.
-- Move API -> `@core/api`.
-- Create `@core/services` for Valibot and IDB.
+### 🏁 Phase 0: Stability Anchorage
+Before moving a single byte, ensure the foundation is locked.
+- [ ] **Test Lock**: Run `pnpm test` and ensure 100% pass rate.
+- [ ] **Type Check**: Run `vue-tsc --noEmit` and ensure 0 errors.
+- [ ] **Sync**: Ensure branch `Restructure` is fully synced with any upstream logic patches.
 
-### Phase 3: Shared UI & Composables
-- Extract Atoms to `@shared/ui`.
-- Extract Generic logic to `@shared/composables`.
+### 🧱 Phase 1: Infrastructure (Completed) ✅
+- [x] Create directory skeleton.
+- [x] Configure `@core`, `@shared`, `@features`, `@app` aliases in `tsconfig` and `vite.config`.
 
-### Phase 4: Feature Encapsulation
-- Migrate Laboratory -> `@features/laboratory`.
-- Migrate Headhunter -> `@features/headhunter`.
-- Migrate Settings -> `@features/settings`.
+### 🔴 Phase 2: Core Extraction (Low Risk)
+Objective: Decouple foundational tools from the view layer.
+- [ ] **Utils Partition**:
+    - `src/utils/formatters.ts` -> `@core/utils/formatters.ts`
+    - `src/utils/warMath.test.ts` -> `@core/utils/__tests__/warMath.spec.ts`
+- [ ] **Global Types**:
+    - `src/types/` -> `@core/types/`
+- [ ] **Base Services**:
+    - `src/api/gasClient.ts` -> `@core/api/GasClient.ts`
+    - Create `@core/services/StorageService.ts` (Wrap IDB/LocalStorage).
+    - Create `@core/services/ValidationService.ts` (Wrap Valibot).
+- [ ] **Registry**: Create `@core/index.ts` exporting all stable core utils.
 
-### Phase 5: Final Orchestration
-- Move Router/App to `@app`.
-- Apply Registry Protocol globally.
-- Clean up legacy paths and rogue tests.
+### 🟡 Phase 3: Atomic Shared UI (Medium Risk)
+Objective: Separate "Dumb" UI from "Smart" Business logic.
+- [ ] **UI Extraction**:
+    - `src/components/Icon.vue` -> `@shared/ui/Icon.vue`
+    - `src/components/StatusPill.vue` -> `@shared/ui/StatusPill.vue`
+    - `src/components/BaseCardSkeleton.vue` -> `@shared/ui/BaseCardSkeleton.vue`
+- [ ] **Logic Extraction**:
+    - `src/composables/useHaptics.ts` -> `@shared/composables/useHaptics.ts`
+    - `src/composables/useTheme.ts` -> `@shared/composables/useTheme.ts`
+- [ ] **Registry**: Create `@shared/index.ts` for all shared UI atoms.
+
+### 🟢 Phase 4: Feature Encapsulation (High Risk)
+Objective: Move towards full domain isolation. Perform one feature at a time.
+- [ ] **Feature: Laboratory**
+    - Gather `src/logic/Laboratory/` -> `@features/laboratory/logic/`
+    - Gather `src/components/Laboratory/` (and recursive) -> `@features/laboratory/components/`
+    - Gather `src/composables/useLaboratory.ts` -> `@features/laboratory/composables/`
+    - Gather `src/views/LaboratoryView.vue` -> `@features/laboratory/views/`
+- [ ] **Feature: Headhunter** (Same pattern)
+- [ ] **Stability Check**: After each feature move, run the feature-specific tests.
+
+### 🔵 Phase 5: Routing & App-Level Glue
+Objective: Finalize the new entry point.
+- [ ] **The Move**:
+    - `src/router/` -> `@app/router/`
+    - `src/App.vue` -> `@app/App.vue`
+    - `src/main.ts` -> `@app/main.ts`
+- [ ] **Path Repair**: Batch update all `@/` imports to their specific layer aliases (`@core/`, `@features/`, etc.).
+- [ ] **Registry Enforcement**: Check all feature-to-feature imports and replace deep links with Registry imports.
+
+### 🧹 Phase 6: Pruning & Documentation
+- [ ] Delete orphaned `src/components`, `src/composables`, and `src/logic` folders.
+- [ ] Delete rogue `Frontend-PWA/tests/` folder.
+- [ ] Update README with the new architecture diagram.
+- [ ] Final Build Verification (`pnpm build`).
