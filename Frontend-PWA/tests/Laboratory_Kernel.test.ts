@@ -50,24 +50,26 @@ describe('Laboratory Kernel', () => {
     expect(result.actions?.length || 0).toBe(0);
   });
 
-  it('should allow infiniteResources when strategy is Maximize', () => {
-    // We now allow infiniteResources for Maximize strategy (Theoretical completion cost)
-    const limitedGold = 50000;
+  it('would block infiniteResources for Maximize strategy due to strict rules', () => {
+    // Maximize strategy is strictly resource constrained now.
+    // Even if we pass infiniteResources: true, the kernel ignores it.
     const data: PlayerData = {
       profile: mockProfile,
-      inventory: { ...mockInventory, gold: limitedGold },
-      cards: [createCard("Knight", "Common", 13, 50000)] // L14 cost is 60000
+      inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
+      cards: [createCard("Knight", "Common", 13, 0)] // No cards
     };
 
     const settings: OptimizationSettings = {
       strategy: "Maximize",
       infiniteResources: true,
-      allowGemSpending: true // Required for infinite mode to work with zero inventory
+      allowGemSpending: true 
     };
 
     const result = LaboratoryKernel.optimize(data, settings);
-    // Should now perform upgrades ignoring the 50k gold limit
-    expect(result.actions?.length || 0).toBeGreaterThan(0);
+    
+    // Expect 0 upgrades because we have 0 gold/gems/cards in mock data
+    // and Maximize is now forced finite.
+    expect(result.actions.length).toBe(0); 
   });
 
   it('should reach target level with infinite resources despite zero inventory', () => {
@@ -80,12 +82,13 @@ describe('Laboratory Kernel', () => {
     const settings: OptimizationSettings = {
       strategy: "Target",
       targetLevel: 15, // Very small step for test speed
-      allowGemSpending: true, // Required for infinite mode to work with zero inventory
+      allowGemSpending: false, // F2P Path
       infiniteResources: false // Will be overridden internally for Target
     };
 
     const result = LaboratoryKernel.optimize(data, settings);
     expect(result.actions.length).toBeGreaterThan(0);
     expect(result.projectedKingLevel).toBeGreaterThanOrEqual(15);
+    expect(result.totalGemsSpent).toBe(0); // F2P should cost 0 gems in simulation
   });
 });
