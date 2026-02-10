@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useApiState, resetApiState } from "../useApiState";
-import * as gasClient from "../../api/gasClient";
+import { useApiState, resetApiState } from "@core";
+import * as gasClient from "@core";
 
 // Mock gasClient
 vi.mock("../../api/gasClient", () => ({

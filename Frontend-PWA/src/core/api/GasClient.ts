@@ -27,9 +27,9 @@ import type {
   DismissalRequest,
   Recruit,
   LeaderboardMember,
-} from "../types";
+} from "@core/types";
 import * as v from "valibot";
-import { idb } from "../utils/idb";
+import { idb } from "@core";
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<any>>();

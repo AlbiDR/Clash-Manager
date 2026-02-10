@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useHaptics } from "../composables/useHaptics";
+import { useHaptics } from "@shared";
 
 const props = defineProps<{
   type: "updated" | "error" | "loading" | "ready";

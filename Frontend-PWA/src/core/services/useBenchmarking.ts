@@ -6,8 +6,8 @@
  * maximum performance on large datasets.
  */
 import { computed } from "vue";
-import { useClashData } from "./useClashData";
-import { useAppSettings } from "./useAppSettings";
+import { useClashData } from "@core";
+import { useAppSettings } from "@core";
 
 export interface BenchmarkData {
   label: string;

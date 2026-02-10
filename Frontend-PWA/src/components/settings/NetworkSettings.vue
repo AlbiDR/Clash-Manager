@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import { useApiState } from "../../composables/useApiState";
+import { useApiState } from "@core";
 import SettingsCard from "../SettingsCard.vue";
-import Icon from "../Icon.vue";
+import { Icon } from "@shared";
 
 const props = defineProps<{
   initiallyExpanded?: boolean;

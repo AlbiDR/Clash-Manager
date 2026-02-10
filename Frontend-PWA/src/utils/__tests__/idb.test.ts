@@ -17,7 +17,7 @@ const mockIDB = {
 vi.stubGlobal("indexedDB", mockIDB);
 
 // Import idb
-import { idb } from "../idb";
+import { idb } from "@core/services/StorageService";
 
 describe("idb utility", () => {
   beforeEach(async () => {

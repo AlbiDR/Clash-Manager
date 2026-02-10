@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import Icon from "./Icon.vue";
-import StatusPill from "./StatusPill.vue";
+import { Icon } from "@shared";
+import { StatusPill } from "@shared";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
-import { useAppSettings } from "../composables/useAppSettings";
+import { useAppSettings } from "@core";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
-import { useHaptics } from "../composables/useHaptics";
+import { useHaptics } from "@shared";
 
 const props = defineProps<{
   title: string;

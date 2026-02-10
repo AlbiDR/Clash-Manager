@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import Icon from "../Icon.vue";
+import { Icon } from "@shared";
 
 describe("Icon.vue", () => {
   it("renders correctly with given name and size", () => {

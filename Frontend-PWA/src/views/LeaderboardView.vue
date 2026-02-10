@@ -2,7 +2,7 @@
 import { useLeaderboard } from "../composables/useLeaderboard";
 
 import MemberCard from "../components/MemberCard.vue";
-import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
+import { BaseCardSkeleton } from "@shared";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 
 const {

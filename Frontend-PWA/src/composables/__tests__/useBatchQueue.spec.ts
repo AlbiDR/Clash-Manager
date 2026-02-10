@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useBatchQueue } from "../useBatchQueue";
+import { useBatchQueue } from "@core";
 
 const mockOpenInGame = vi.fn();
 const mockInfo = vi.fn();

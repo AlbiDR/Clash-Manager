@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   fetchRemote,
-} from "../gasClient";
+} from "@core";
 
 // Mock fetch global
 const fetchMock = vi.fn();

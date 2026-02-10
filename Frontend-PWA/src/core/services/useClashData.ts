@@ -1,13 +1,13 @@
 import { ref, shallowRef, readonly, watch } from "vue";
-import { fetchRemote, loadCache, saveCache } from "../api/gasClient";
-import type { WebAppData } from "../types";
+import { fetchRemote, loadCache, saveCache } from "@core";
+import type { WebAppData } from "@core/types";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { generateMockData } from "../utils/mockData";
 import { useBroadcastChannel } from "./useBroadcastChannel";
-import { useWakeLock } from "./useWakeLock";
-import { useConnectionStatus } from "./useConnectionStatus";
+import { useWakeLock } from "@shared";
+import { useConnectionStatus } from "@shared";
 
 // Global State
 const clashData = shallowRef<WebAppData | null>(null);

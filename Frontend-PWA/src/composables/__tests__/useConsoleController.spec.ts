@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, computed } from "vue";
-import { useConsoleController } from "../useConsoleController";
+import { useConsoleController } from "@core";
 
 // Mock dependencies
 vi.mock("../useBatchQueue", () => ({

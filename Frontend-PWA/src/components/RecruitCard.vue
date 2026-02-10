@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Recruit } from "../types";
-import Icon from "./Icon.vue";
-import BaseCard from "./BaseCard.vue";
-import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "../composables/useAppSettings";
+import type { Recruit } from "@core/types";
+import { Icon } from "@shared";
+import { BaseCard } from "@shared";
+import { useBenchmarking } from "@core";
+import { useAppSettings } from "@core";
 import { getScoreTone, formatTimeAgo } from "../utils/formatters";
-import StatisticItem from "./StatisticItem.vue";
-import CardActions from "./CardActions.vue";
+import { StatisticItem } from "@shared";
+import { CardActions } from "@shared";
 
 const {
   id,

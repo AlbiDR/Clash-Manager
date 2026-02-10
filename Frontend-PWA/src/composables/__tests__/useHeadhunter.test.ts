@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref, reactive, nextTick } from "vue";
-import type { WebAppData, Recruit } from "../../types";
-import { NetworkError } from "../../api/gasClient";
+import type { WebAppData, Recruit } from "@core/types";
+import { NetworkError } from "@core";
 
 // --- Mocks ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as useHapticsModule from '../useHaptics';
+import * as useHapticsModule from "@shared";
 
 vi.mock('../useHaptics', () => ({
   useHaptics: vi.fn()

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, onUnmounted, computed } from "vue";
-import { triggerBackendUpdate } from "../../api/gasClient";
-import Icon from "../Icon.vue";
-import { useClashData } from "../../composables/useClashData";
+import { triggerBackendUpdate } from "@core";
+import { Icon } from "@shared";
+import { useClashData } from "@core";
 
 // Types
 type TargetKey = "members" | "leaderboard" | "headhunters";

@@ -11,7 +11,7 @@ import FeatureSettings from "../components/settings/FeatureSettings.vue";
 import ModeSettings from "../components/settings/ModeSettings.vue";
 import RecoverySettings from "../components/settings/RecoverySettings.vue";
 import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
-import { vTactile } from "../directives/vTactile";
+import { vTactile } from "@shared";
 
 const {
   apiStatusObject,

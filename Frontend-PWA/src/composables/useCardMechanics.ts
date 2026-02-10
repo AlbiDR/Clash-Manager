@@ -1,4 +1,4 @@
-import { useHaptics } from "./useHaptics";
+import { useHaptics } from "@shared";
 
 interface CardCallbacks {
   onSelect: () => void;

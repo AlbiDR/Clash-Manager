@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { useHaptics } from "./useHaptics";
+import { useHaptics } from "@shared";
 
 export interface ToastOptions {
   id: string;

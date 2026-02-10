@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useUiCoordinator } from "../composables/useUiCoordinator";
-import { useHaptics } from "../composables/useHaptics";
-import Icon from "./Icon.vue";
+import { useUiCoordinator } from "@shared";
+import { useHaptics } from "@shared";
+import { Icon } from "@shared";
 
 const route = useRoute();
 const router = useRouter();

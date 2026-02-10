@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useToast } from "../composables/useToast";
-import { useUiCoordinator } from "../composables/useUiCoordinator";
+import { useUiCoordinator } from "@shared";
 import { computed } from "vue";
 import Toast from "./Toast.vue";
 

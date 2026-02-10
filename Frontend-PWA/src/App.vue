@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
-import { useClashData } from "./composables/useClashData";
+import { useClashData } from "@core";
 import { useHeadhunter } from "./composables/useHeadhunter";
-import { useHaptics } from "./composables/useHaptics";
-import { useConnectionStatus } from "./composables/useConnectionStatus";
-import { useUiCoordinator } from "./composables/useUiCoordinator";
+import { useHaptics } from "@shared";
+import { useConnectionStatus } from "@shared";
+import { useUiCoordinator } from "@shared";
 import FloatingDock from "./components/FloatingDock.vue";
-import ToastContainer from "./components/ToastContainer.vue";
-import ErrorBoundary from "./components/ErrorBoundary.vue";
+import { ToastContainer } from "@shared";
+import { ErrorBoundary } from "@shared";
 import { useShowcaseMode } from "./composables/useShowcaseMode";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 

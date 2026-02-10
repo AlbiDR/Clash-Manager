@@ -8,15 +8,15 @@ import App from "./App.vue";
 import router from "./router";
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
-import { vTooltip } from "./directives/vTooltip";
-import { vTactile } from "./directives/vTactile";
-import { useAppSettings } from "./composables/useAppSettings";
-import { useClashData } from "./composables/useClashData";
-import { useApiState } from "./composables/useApiState";
-import { useTheme } from "./composables/useTheme";
-import { useWakeLock } from "./composables/useWakeLock";
-import { useStoragePersistence } from "./composables/useStoragePersistence";
-import { idb } from "./utils/idb";
+import { vTooltip } from "@shared";
+import { vTactile } from "@shared";
+import { useAppSettings } from "@core";
+import { useClashData } from "@core";
+import { useApiState } from "@core";
+import { useTheme } from "@shared";
+import { useWakeLock } from "@shared";
+import { useStoragePersistence } from "@core";
+import { idb } from "@core/services/StorageService";
 
 function showFatalError(error: unknown) {
   console.error("FATAL ERROR:", error);
