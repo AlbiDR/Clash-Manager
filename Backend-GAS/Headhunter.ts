@@ -11,19 +11,52 @@ declare var Sheets: any;
 declare function refreshWebPayload(): void;
 
 /**
+ * ============================================================================
  * MODULE: HEADHUNTER (Core Orchestrator)
  * ----------------------------------------------------------------------------
  * DESCRIPTION: The Director of the Recruitment Pipeline.
- *    Orchestrates: Strategy -> Store -> Scanner -> View.
+ * Orchestrates the full lifecycle of recruitment: from strategy calculation
+ * and blacklist management to remote discovery and visual rendering.
+ *
+ * ARCHITECTURE:
+ *    - Pipeline Orchestration: Strategy -> Store -> Scanner -> View.
+ *    - Hybrid Validation: Blends local registry state with live API checks.
+ *    - Event logging: Uses the EVT sheet to record membership changes.
+ *
+ * ROLE: The Director (Orchestration & Workflow).
  * ============================================================================
  */
-const VER_HEADHUNTER = "14.3.3";
+const VER_HEADHUNTER = "14.3.4";
 
+/**
+ * Interface for the Headhunter Core.
+ * Orchestrates the multi-phase recruitment scanning process.
+ */
 export interface IHeadhunter {
+  /**
+   * Executes the recruitment scouting pipeline.
+   *
+   * @remarks
+   * Implements an 8-step orchestration loop:
+   * 1. Boot schema and logs.
+   * 2. Hydrate clan metrics and quotas.
+   * 3. Hydrate local recruit pool and blacklist.
+   * 4. Prune the registry of blacklisted items.
+   * 5. Validate top candidates against live API.
+   * 6. Execute the Discovery Scanner (Tournaments/Shadows).
+   * 7. Analyze performance and manage reserves.
+   * 8. Render the final pool to the Spreadsheet.
+   *
+   * @warning Consumes significant UrlFetchApp quotas during validation and scanning.
+   */
   scout(): void;
 }
 
 const Headhunter: IHeadhunter = {
+  /**
+   * RECRUITMENT PIPELINE ENTRY POINT
+   * Orchestrates the full discovery and profiling loop.
+   */
   scout(): void {
     const startTime = Date.now();
     const S = Registry.Services;
@@ -40,9 +73,9 @@ const Headhunter: IHeadhunter = {
 
     let sheet = safeSheet(CONFIG.SHEETS.HH);
     
-    // 1. INITIALIZE [1/9]
+    // 1. INITIALIZE [1/8]
     const schemaResults = S.Schema.bootDynamicSchema();
-    S.Reporting.logReport(`[1/9] INITIALIZE: HEADHUNTER PIPELINE v${VER_HEADHUNTER}`, [
+    S.Reporting.logReport(`[1/8] INITIALIZE: HEADHUNTER PIPELINE v${VER_HEADHUNTER}`, [
       `CONFIG: Clan ${CONFIG.SYSTEM.CLAN_TAG || "ERR"} | Mode: RAPID_GLOBAL_SCOUT | Target: ${CONFIG.HEADHUNTER.TARGET}`,
       `STATUS: Sheets Synced (${schemaResults})`
     ]);
@@ -118,21 +151,23 @@ const Headhunter: IHeadhunter = {
       ]);
 
       // 5. MEMBERSHIP VALIDATION (Smart Lazy Loader)
+      // Intent: We must verify if candidates have joined other clans since our last scan.
       const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
       const logDismissal = (tag: string, score: number) => {
         evtSheet.appendRow([tag, Date.now(), score]);
       };
 
-      // OPTIMIZATION: Sort FIRST, then only validate the Top 100 Candidates.
-      // This prevents wasting quota on the tail end of the queue (500+ items).
+      // Constraint: We limit validation to the Top 100 candidates to stay within the
+      // 6-minute GAS execution limit and conserve UrlFetchApp daily quotas.
       const sortedRegistry = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
       const validationHead = sortedRegistry.slice(0, 100); 
       
       let joinedCount = 0;
       
-      // DELTA-VALIDATION: Filter out candidates scanned recently (< 6 hours)
-      // Active recruits (existingPool) are ALWAYS validated to ensure the UI is 100% fresh.
-      // The 6-hour threshold applies ONLY to the bench/queue reservoir.
+      // DELTA-VALIDATION: Filter out candidates scanned recently (< 6 hours).
+      // Rationale: Data freshness is balanced against API call frequency.
+      // Active recruits (existingPool) are ALWAYS validated to ensure UI accuracy.
+      // The 6-hour threshold applies ONLY to the bench reservoir to minimize redundant calls.
       const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
       const candidatesToValidate = validationHead.filter(r => {
         const isActiveRecruit = existingPool.has(r.tag);
@@ -141,7 +176,7 @@ const Headhunter: IHeadhunter = {
       });
 
       if (candidatesToValidate.length > 0) {
-        // Network Layer handles the batching (upto 100 is safe for one call)
+        // Network Layer handles batching (up to 100 is safe for a single RPC call).
         const profiles = S.Network.fetchRoyaleAPI(
           candidatesToValidate.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
         );
@@ -159,21 +194,18 @@ const Headhunter: IHeadhunter = {
           }
         });
         
-        S.Reporting.logReport(`[5/9] VALIDATION: Live Membership Verification`, [
+        S.Reporting.logReport(`[5/8] VALIDATION: Live Membership Verification`, [
           `VERIFY: ${candidatesToValidate.length} candidates checked`,
           `EXEMPT: ${validationHead.length - candidatesToValidate.length} verified recently (skipped)`,
           `JOINED: ${joinedCount} candidates discovered in other clans and removed`
         ]);
       } else {
-        S.Reporting.logReport(`[5/9] VALIDATION: Live Membership Verification`, [
+        S.Reporting.logReport(`[5/8] VALIDATION: Live Membership Verification`, [
           `STATUS: All candidates recently verified. Skipping remote check.`
         ]);
       }
 
-      // [UPDATE] We can add joinedCount to the previous report or next one. 
-      // The user draft has it in 'METRICS: Recruitment Health'.
-
-      // 7. Scanner: Launch
+      // 6. Scanner: Launch
       const H = CONFIG.HEADHUNTER.STRATEGY;
       
       const scanned = HeadhunterScanner.scanTournaments(
@@ -196,7 +228,7 @@ const Headhunter: IHeadhunter = {
         combinedRegistry.set(c.tag, c);
       });
 
-      // 8. ANALYSIS & ARCHIVE [8/9]
+      // 7. ANALYSIS & ARCHIVE [7/8]
       const lbSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
       const clanEliteData: Array<{ rawScore: number; perfScore: number }> = [];
       
@@ -277,17 +309,17 @@ const Headhunter: IHeadhunter = {
       const scoutCount = scanned.filter(s => s.source === "TOURNAMENT").length;
       const shadowCount = scanned.filter(s => s.source === "SHADOW").length;
 
-      S.Reporting.logReport(`[8/9] ANALYSIS: Performance & Reserve Management`, [
+      S.Reporting.logReport(`[7/8] ANALYSIS: Performance & Reserve Management`, [
         `DISCOVERY: ${scoutCount} from tournaments | ${shadowCount} from shadows`,
         `RESERVE:   ${queueRes.count} benched | ${queueRes.pruned} overflowed`,
         `STORAGE:   '${CONFIG.SHEETS.HH}' sheet backed up`
       ]);
 
-      // 9. RENDER: Visual Sync [9/9]
+      // 8. RENDER: Visual Sync [8/8]
       const hygieneSummary = S.View.enforceGlobalTabHygiene(ss);
       HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
 
-      S.Reporting.logReport(`[9/9] RENDER: Visual Sync`, [
+      S.Reporting.logReport(`[8/8] RENDER: Visual Sync`, [
         `HYGIENE: ${hygieneSummary}`,
         `DISPLAY: ${finalPool.length} candidates updated in sheet`
       ], 150);
