@@ -74,8 +74,8 @@ function buildCandidate(
     // Theoretical Gem calculation for card/material deficit
     const deficit = Math.max(0, remainingNeeded - wildAvailable);
     if (deficit > 0) {
-      // Respect allowGemSpending even in infinite mode
-      if (!settings.allowGemSpending) return null;
+      // Respect allowGemSpending even in infinite mode (unless Target strategy, which MUST find a path)
+      if (!settings.allowGemSpending && settings.strategy !== "Target") return null;
       
       const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
       gemsUsed += Math.ceil(deficit * rate);
@@ -83,8 +83,8 @@ function buildCandidate(
 
     // Theoretical Gem calculation for gold deficit
     if (goldCost > inventory.gold) {
-      // Respect allowGemSpending even in infinite mode
-      if (!settings.allowGemSpending) return null;
+      // Respect allowGemSpending even in infinite mode (unless Target strategy, which MUST find a path)
+      if (!settings.allowGemSpending && settings.strategy !== "Target") return null;
       
       const goldDeficit = goldCost - Math.max(0, inventory.gold);
       const gemsForGold = Math.ceil(goldDeficit / GEM_VALUE_IN_GOLD);
