@@ -19,8 +19,7 @@ const props = defineProps<{
   performanceRawScore: number | undefined;
 }>();
 
-const { getBenchmark } = useBenchmarking();
-const { modules } = useAppSettings();
+const { getSafeBenchmark } = useBenchmarking();
 
 const trendInfo = computed(() => {
   const dt = Number(props.dt) || 0;
@@ -29,13 +28,7 @@ const trendInfo = computed(() => {
 });
 
 const tooltipVal = computed(() => {
-  if (
-    !trendInfo.value ||
-    !modules.ghostBenchmarking
-  ) {
-    return null;
-  }
-  return getBenchmark("lb", "momentum", trendInfo.value.raw);
+  return getSafeBenchmark("lb", "momentum", trendInfo.value?.raw);
 });
 </script>
 
