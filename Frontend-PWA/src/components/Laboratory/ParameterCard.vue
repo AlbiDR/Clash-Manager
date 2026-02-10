@@ -13,7 +13,7 @@ const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
 
-const setStrategy = (val: "Target" | "Maximize") => {
+const setStrategy = (val: "Projection" | "Efficiency") => {
   const updates: Partial<OptimizationSettings> = { strategy: val };
   emit("update", { ...props.settings, ...updates });
 };
@@ -49,45 +49,45 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="parameter-grid">
       <!-- Strategy Selector -->
       <div class="parameter-item">
-        <label class="parameter-label">Strategy</label>
+        <label class="parameter-label">Optimization Strategy</label>
         <div class="strategy-selector">
           <button 
             class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Target' }"
-            @click="setStrategy('Target')"
+            :class="{ active: settings.strategy === 'Projection' }"
+            @click="setStrategy('Projection')"
           >
             <Icon name="target" size="14" />
-            <span>Target Level</span>
+            <span>Level Projection</span>
           </button>
           <button 
             class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Maximize' }"
-            @click="setStrategy('Maximize')"
+            :class="{ active: settings.strategy === 'Efficiency' }"
+            @click="setStrategy('Efficiency')"
           >
             <Icon name="trending-up" size="14" />
-            <span>Maximize Value</span>
+            <span>Resource Efficiency</span>
           </button>
         </div>
         <div class="strategy-desc">
-          <template v-if="settings.strategy === 'Target'">
-            <strong>Goal: Reach Target Level (Simulation)</strong>
+          <template v-if="settings.strategy === 'Projection'">
+            <strong>Goal: Level Projection (Simulation)</strong>
             <p>Best for long-term planning. Simulates the optimal path to reach a specific King Level goal, assuming you can acquire all necessary resources. Toggle <em>Allow Gem Spending</em> to view gem costs vs. free-to-play requirements.</p>
           </template>
           <template v-else>
-            <strong>Goal: Maximize Value (Resource Limit)</strong>
+            <strong>Goal: Resource Efficiency (Limit)</strong>
             <p>Best for immediate progress. Calculates the most efficient way to gain XP using only your currently owned Gold and Cards. Strictly limited by your inventory.</p>
           </template>
         </div>
       </div>
 
       <!-- Target Level Selector -->
-      <div class="parameter-item" :class="{ disabled: settings.strategy === 'Maximize' }">
+      <div class="parameter-item" :class="{ disabled: settings.strategy === 'Efficiency' }">
         <label class="parameter-label">Target King Level</label>
         <div class="select-wrapper">
           <select 
             class="level-select" 
             :value="settings.targetLevel || 90" 
-            :disabled="settings.strategy === 'Maximize'"
+            :disabled="settings.strategy === 'Efficiency'"
             @change="handleTargetChange"
           >
             <option 
