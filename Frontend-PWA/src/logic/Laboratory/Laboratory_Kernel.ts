@@ -227,9 +227,9 @@ const LaboratoryKernel = {
       .filter(i => simCards[i].level < CARD_LEVEL_CAP);
 
     // STRATEGY DIVERGENCE:
-    // - Target: ALWAYS Infinite (Goal Oriented Simulation)
-    // - Maximize: ALWAYS Finite (Resource Constrained Optimization)
-    const effectiveInfinite = settings.strategy === "Target";
+    // - Projection: ALWAYS Infinite (Goal Oriented Simulation)
+    // - Efficiency: ALWAYS Finite (Resource Constrained Optimization)
+    const effectiveInfinite = settings.strategy === "Projection";
 
     while (activeIndices.length > 0) {
       let bestCandidate: UpgradeCandidate | null = null;
@@ -318,7 +318,7 @@ const LaboratoryKernel = {
         isTowerTroop: bestCandidate.isTowerTroop
       });
 
-      if (settings.strategy === "Target" && settings.targetLevel) {
+      if (settings.strategy === "Projection" && settings.targetLevel) {
         const kingStatus = calculateKingStatus(currentTotalXp, currentKingIndex);
         currentKingIndex = kingStatus.index;
         if (kingStatus.profile.kingLevel >= settings.targetLevel) break;

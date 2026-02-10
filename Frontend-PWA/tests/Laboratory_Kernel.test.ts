@@ -19,7 +19,7 @@ describe('Laboratory Kernel', () => {
     };
     
     const settings: OptimizationSettings = { 
-      strategy: "Target", 
+      strategy: "Projection", 
       targetLevel: 50,
       allowGemSpending: false,
       infiniteResources: false // Will be overridden internally for Target
@@ -41,7 +41,7 @@ describe('Laboratory Kernel', () => {
     };
 
     const settings: OptimizationSettings = {
-      strategy: "Maximize",
+      strategy: "Efficiency",
       infiniteResources: false 
     };
 
@@ -60,7 +60,7 @@ describe('Laboratory Kernel', () => {
     };
 
     const settings: OptimizationSettings = {
-      strategy: "Maximize",
+      strategy: "Efficiency",
       infiniteResources: true,
       allowGemSpending: true 
     };
@@ -80,7 +80,7 @@ describe('Laboratory Kernel', () => {
     };
 
     const settings: OptimizationSettings = {
-      strategy: "Target",
+      strategy: "Projection",
       targetLevel: 15, // Very small step for test speed
       allowGemSpending: false, // F2P Path
       infiniteResources: false // Will be overridden internally for Target

@@ -47,13 +47,22 @@ describe('useLaboratory', () => {
   });
 
   it('should initialize settings from localStorage', async () => {
-    localStorageMock.setItem('laboratory_settings', JSON.stringify({ strategy: 'Maximize', allowGemSpending: true }));
+    localStorageMock.setItem('laboratory_settings', JSON.stringify({ strategy: 'Efficiency', allowGemSpending: true }));
 
     const { useLaboratory } = await import('../useLaboratory');
     const { settings } = useLaboratory();
 
-    expect(settings.value.strategy).toBe('Maximize');
+    expect(settings.value.strategy).toBe('Efficiency');
     expect(settings.value.allowGemSpending).toBe(true);
+  });
+
+  it('should migrate legacy strategy names from localStorage', async () => {
+    localStorageMock.setItem('laboratory_settings', JSON.stringify({ strategy: 'Target' }));
+
+    const { useLaboratory } = await import('../useLaboratory');
+    const { settings } = useLaboratory();
+
+    expect(settings.value.strategy).toBe('Projection');
   });
 
   it('should hydrate from cache if tag matches', async () => {
@@ -119,8 +128,8 @@ describe('useLaboratory', () => {
 
     ingest({ name: 'User', tag: '#TAG123', expLevel: 14, expPoints: 0, cards: [] });
 
-    setSettings({ strategy: 'Maximize' });
-    expect(settings.value.strategy).toBe('Maximize');
+    setSettings({ strategy: 'Efficiency' });
+    expect(settings.value.strategy).toBe('Efficiency');
   });
 
   // This test hits the TDZ bug because it calls analyze() via the watcher

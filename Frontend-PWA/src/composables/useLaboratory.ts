@@ -18,12 +18,17 @@ const STORAGE_KEY_OBSERVATION = "laboratory_observation";
 // Global state to persist data across view changes
 const observation: Ref<PlayerData | null> = ref(null)
 
+const storedSettings = JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || "{}");
+// Migration for legacy strategy names
+if (storedSettings.strategy === "Target") storedSettings.strategy = "Projection";
+if (storedSettings.strategy === "Maximize") storedSettings.strategy = "Efficiency";
+
 const settings: Ref<OptimizationSettings> = ref({
-  strategy: "Target",
+  strategy: "Projection",
   allowGemSpending: false,
   infiniteResources: false,
   targetLevel: undefined,
-  ...(JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || "{}"))
+  ...storedSettings
 })
 
 const operation: Ref<OptimizationResult | null> = ref(null)
