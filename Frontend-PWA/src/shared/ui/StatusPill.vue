@@ -1,4 +1,4 @@
-import { useHaptics } from "@shared";
+import { useHaptics , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
 <script setup lang="ts">
 const props = defineProps<{
   type: "updated" | "error" | "loading" | "ready";

@@ -1,4 +1,4 @@
-import { Icon } from "@shared";
+import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
 import { useExternalLink } from "@core";
 <script setup lang="ts">
 /**
