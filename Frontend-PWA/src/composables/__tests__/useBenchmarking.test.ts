@@ -127,6 +127,19 @@ describe("useBenchmarking", () => {
     });
   });
 
+  describe("getSafeBenchmark", () => {
+    const { getSafeBenchmark } = useBenchmarking();
+
+    it("returns null if ghostBenchmarking is disabled", () => {
+      // DEFAULT_STATE for ghostBenchmarking is false
+      expect(getSafeBenchmark("lb", "trophies", 9000)).toBeNull();
+    });
+
+    it("returns null if value is undefined", () => {
+      expect(getSafeBenchmark("lb", "trophies", undefined)).toBeNull();
+    });
+  });
+
   describe("Edge Cases", () => {
     it("returns null if context/stats not found", () => {
       // This is hard to test with the current mock without re-mocking

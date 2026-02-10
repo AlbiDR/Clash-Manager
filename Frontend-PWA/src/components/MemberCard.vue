@@ -40,7 +40,7 @@ const emit = defineEmits<{
   "toggle-select": [];
 }>();
 
-const { getBenchmark } = useBenchmarking();
+const { getSafeBenchmark } = useBenchmarking();
 const { modules } = useAppSettings();
 
 // Formatters
@@ -64,11 +64,7 @@ const scoreTone = (score: number) => getScoreTone(score);
     <template #identity-meta>
       <div
         class="badge tenure hit-target"
-        v-tooltip="
-          modules.ghostBenchmarking
-            ? getBenchmark('lb', 'tenure', member.d.days)
-            : null
-        "
+        v-tooltip="getSafeBenchmark('lb', 'tenure', member.d.days)"
       >
         {{ member.d.days }}d
       </div>
@@ -82,11 +78,7 @@ const scoreTone = (score: number) => getScoreTone(score);
       <span class="player-name">{{ member.n }}</span>
       <div
         class="trophy-meta hit-target"
-        v-tooltip="
-          modules.ghostBenchmarking
-            ? getBenchmark('lb', 'trophies', member.t)
-            : null
-        "
+        v-tooltip="getSafeBenchmark('lb', 'trophies', member.t)"
       >
         <Icon name="trophy" size="12" />
         <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
@@ -97,11 +89,7 @@ const scoreTone = (score: number) => getScoreTone(score);
     <template #score-section>
       <span
         class="stat-score"
-        v-tooltip="
-          modules.ghostBenchmarking
-            ? getBenchmark('lb', 'score', member.performanceScore)
-            : null
-        "
+        v-tooltip="getSafeBenchmark('lb', 'score', member.performanceScore)"
         >{{ Math.round(member.performanceScore || 0) }}</span
       >
       <MomentumPill
