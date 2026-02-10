@@ -56,7 +56,6 @@ const baseUrl = import.meta.env.BASE_URL;
             :class="{ active: settings.strategy === 'Projection' }"
             @click="setStrategy('Projection')"
           >
-            <Icon name="target" size="14" />
             <span>Level Projection</span>
           </button>
           <button 
@@ -64,7 +63,6 @@ const baseUrl = import.meta.env.BASE_URL;
             :class="{ active: settings.strategy === 'Efficiency' }"
             @click="setStrategy('Efficiency')"
           >
-            <Icon name="trending-up" size="14" />
             <span>Resource Efficiency</span>
           </button>
         </div>
@@ -188,13 +186,13 @@ const baseUrl = import.meta.env.BASE_URL;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 4px;
+  gap: 0;
+  padding: 10px 0;
   border: none;
   background: transparent;
   color: var(--sys-color-on-surface);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 800;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
