@@ -71,11 +71,11 @@ const baseUrl = import.meta.env.BASE_URL;
         <div class="strategy-desc">
           <template v-if="settings.strategy === 'Target'">
             <strong>Goal: Reach Target Level (Simulation)</strong>
-            <p>Finds the theoretical optimal path. Assumes infinite resources to show full trajectory. Toggle <em>Allow Gem Spending</em> to switch between Gem-based cost (P2W) and 'Grind' cost (F2P).</p>
+            <p>Best for long-term planning. Simulates the optimal path to reach a specific King Level goal, assuming you can acquire all necessary resources. Toggle <em>Allow Gem Spending</em> to view gem costs vs. free-to-play requirements.</p>
           </template>
           <template v-else>
             <strong>Goal: Maximize Value (Resource Limit)</strong>
-            <p>Finds the most efficient upgrades using ONLY your currently owned Gold and Cards. Strictly limited by your inventory.</p>
+            <p>Best for immediate progress. Calculates the most efficient way to gain XP using only your currently owned Gold and Cards. Strictly limited by your inventory.</p>
           </template>
         </div>
       </div>
