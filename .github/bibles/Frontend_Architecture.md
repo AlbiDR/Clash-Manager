@@ -167,64 +167,56 @@ Before moving a single byte, ensure the foundation is locked.
 ### Phase 2: Core Extraction (Low Risk)
 Objective: Decouple foundational tools from the view layer.
 - [ ] **Utils Partition**:
-    - `src/utils/formatters.ts` -> `@core/utils/formatters.ts`
-    - `src/utils/warMath.test.ts` -> `@core/utils/__tests__/warMath.spec.ts`
-- [ ] **Global Types**:
+    - `src/utils/` -> `@core/utils/`
+    - `src/api/` -> `@core/api/`
     - `src/types/` -> `@core/types/`
-- [ ] **Base Services**:
-    - `src/api/gasClient.ts` -> `@core/api/GasClient.ts`
-    - Create `@core/services/StorageService.ts` (Wrap IDB/LocalStorage).
-    - Create `@core/services/ValidationService.ts` (Wrap Valibot).
+- [ ] **Test Co-Location**:
+    - Move `src/api/__tests__/*.spec.ts` to `@core/api/__tests__/`
 - [ ] **Registry**: Create `@core/index.ts` exporting all stable core utils.
 
-### Phase 3: Atomic Shared UI (Medium Risk)
-Objective: Separate "Dumb" UI from "Smart" Business logic.
+### Phase 3: Atomic Shared UI & Logic (Medium Risk)
+Objective: Separate "Dumb" UI from Business logic.
 - [ ] **UI Extraction**:
-    - `src/components/Icon.vue` -> `@shared/ui/Icon.vue`
-    - `src/components/StatusPill.vue` -> `@shared/ui/StatusPill.vue`
-    - `src/components/BaseCardSkeleton.vue` -> `@shared/ui/BaseCardSkeleton.vue`
+    - All generic components in `src/components/` (Icon, Button, etc.) -> `@shared/ui/`
 - [ ] **Logic Extraction**:
-    - `src/composables/useHaptics.ts` -> `@shared/composables/useHaptics.ts`
-    - `src/composables/useTheme.ts` -> `@shared/composables/useTheme.ts`
+    - All generic composables in `src/composables/` (useHaptics, useTheme, etc.) -> `@shared/composables/`
 - [ ] **Directives**:
     - `src/directives/` -> `@shared/directives/`
 - [ ] **Registry**: Create `@shared/index.ts` for all shared UI atoms.
 
 ### Phase 4: Feature Encapsulation (High Risk)
-Objective: Move towards full domain isolation. Perform one feature at a time.
+Objective: Full domain isolation. Perform one feature at a time.
 - [ ] **Feature: Laboratory**
-    - Gather `src/logic/Laboratory/` -> `@features/laboratory/logic/`
-    - Gather `src/components/Laboratory/` (and recursive) -> `@features/laboratory/components/`
-    - Gather `src/composables/useLaboratory.ts` -> `@features/laboratory/composables/`
-    - Gather `src/views/LaboratoryView.vue` -> `@features/laboratory/views/`
-- [ ] **Feature: Headhunter** (Same pattern)
-- [ ] **Stability Check**: After each feature move, run the feature-specific tests.
+    - Gather `src/logic/Laboratory/` and `src/components/Laboratory/` -> `@features/laboratory/`
+    - Migrate `tests/Laboratory_*.test.ts` -> `@features/laboratory/logic/__tests__/*.spec.ts`
+- [ ] **Feature: Headhunter**
+    - Gather `RecruiterView`, `useHeadhunter`, `useRecruit*`, `RecruitCard` -> `@features/headhunter/`
+- [ ] **Feature: Roster**
+    - Gather `LeaderboardView`, `useClashData`, `useLeaderboard`, `MemberCard`, `WarHistoryChart` -> `@features/roster/`
+- [ ] **Feature: Settings**
+    - Gather `SettingsView`, `useSettings`, `useAppSettings`, `SettingsCard` -> `@features/settings/`
 
 ### Phase 5: Routing & App-Level Glue
 Objective: Finalize the new entry point.
 - [ ] **The Move**:
-    - `src/router/` -> `@app/router/`
-    - `src/App.vue` -> `@app/App.vue`
-    - `src/main.ts` -> `@app/main.ts`
-- [ ] **Path Repair**: Batch update all `@/` imports to their specific layer aliases (`@core/`, `@features/`, etc.).
-- [ ] **Registry Enforcement**: Check all feature-to-feature imports and replace deep links with Registry imports.
+    - `src/router/`, `src/App.vue`, `src/main.ts`, `src/sw.ts` -> `@app/`
+- [ ] **Layouts**:
+    - `ConsoleLayout`, `ConsoleHeader`, `FloatingDock`, `HeaderInfoOverlay` -> `@app/layouts/`
+- [ ] **Path Repair**: Batch update all `@/` imports to their specific layer aliases.
 
-### Phase 6: Pruning & Documentation
-- [ ] Delete orphaned `src/components`, `src/composables`, and `src/logic` folders.
-- [ ] Delete rogue `Frontend-PWA/tests/` folder.
-- [ ] Update README with the new architecture diagram.
+### Phase 6: Pruning & Final Verification
+- [ ] Delete orphaned `src/` subdirectories once manifest is fully satisfied.
 - [ ] Final Build Verification (`pnpm build`).
 
 ---
 
 ## 10. File Mapping Manifest
 
-This manifest documents the exact migration path for the current source files.
-
 ### Layer 1: Core extraction
 | Source File | Target @core Alias |
 | :--- | :--- |
 | `src/api/gasClient.ts` | `@core/api/GasClient.ts` |
+| `src/api/__tests__/*` | `@core/api/__tests__/*` |
 | `src/utils/formatters.ts` | `@core/utils/formatters.ts` |
 | `src/utils/warMath.ts` | `@core/utils/warMath.ts` |
 | `src/utils/bezier.ts` | `@core/utils/bezier.ts` |
@@ -233,6 +225,9 @@ This manifest documents the exact migration path for the current source files.
 | `src/types/index.ts` | `@core/types/index.ts` |
 | `src/icons.ts` | `@core/theme/icons.ts` |
 | `src/style.css` | `@core/theme/style.css` |
+| `src/composables/useApiState.ts` | `@core/api/useApiState.ts` |
+| `src/composables/useBatchQueue.ts` | `@core/api/useBatchQueue.ts` |
+| `src/composables/useBenchmarking.ts` | `@core/utils/useBenchmarking.ts` |
 
 ### Layer 2: Shared UI & Logic
 | Source File | Target @shared Alias |
@@ -249,9 +244,10 @@ This manifest documents the exact migration path for the current source files.
 | `src/components/StatisticItem.vue` | `@shared/ui/StatisticItem.vue` |
 | `src/components/MomentumPill.vue` | `@shared/ui/MomentumPill.vue` |
 | `src/components/SelectionBar.vue` | `@shared/ui/SelectionBar.vue` |
+| `src/components/CardActions.vue` | `@shared/ui/CardActions.vue` |
 | `src/composables/useHaptics.ts` | `@shared/composables/useHaptics.ts` |
 | `src/composables/useTheme.ts` | `@shared/composables/useTheme.ts` |
-| `src/composables/useToast.ts` | `@shared/composables/useToast.ts` |
+| `src/composables/useToast.ts" | `@shared/composables/useToast.ts` |
 | `src/composables/useBackHandler.ts` | `@shared/composables/useBackHandler.ts` |
 | `src/composables/useBadge.ts` | `@shared/composables/useBadge.ts` |
 | `src/composables/useConnectionStatus.ts` | `@shared/composables/useConnectionStatus.ts` |
@@ -263,9 +259,9 @@ This manifest documents the exact migration path for the current source files.
 | `src/composables/useShowcaseMode.ts` | `@shared/composables/useShowcaseMode.ts` |
 | `src/composables/useSyntheticMode.ts` | `@shared/composables/useSyntheticMode.ts` |
 | `src/composables/useStoragePersistence.ts` | `@shared/composables/useStoragePersistence.ts` |
-| `src/composables/useUiCoordinator.ts` | `@app/composables/useUiCoordinator.ts` |
-| `src/composables/useApiState.ts` | `@core/api/useApiState.ts` |
-| `src/composables/useBatchQueue.ts` | `@core/api/useBatchQueue.ts` |
+| `src/composables/useBroadcastChannel.ts` | `@shared/composables/useBroadcastChannel.ts` |
+| `src/composables/useLongPress.ts` | `@shared/composables/useLongPress.ts` |
+| `src/composables/useListFilter.ts` | `@shared/composables/useListFilter.ts` |
 | `src/directives/vTactile.ts` | `@shared/directives/vTactile.ts` |
 | `src/directives/vTooltip.ts` | `@shared/directives/vTooltip.ts` |
 
@@ -273,8 +269,10 @@ This manifest documents the exact migration path for the current source files.
 | Source | Feature Target |
 | :--- | :--- |
 | `src/logic/Laboratory/` | `@features/laboratory/logic/` |
+| `src/components/Laboratory/` | `@features/laboratory/components/` |
 | `src/views/LaboratoryView.vue` | `@features/laboratory/views/LaboratoryView.vue` |
 | `src/composables/useLaboratory.ts` | `@features/laboratory/composables/useLaboratory.ts` |
+| `tests/Laboratory_*.test.ts` | `@features/laboratory/logic/__tests__/*.spec.ts` |
 | `src/views/RecruiterView.vue` | `@features/headhunter/views/RecruiterView.vue` |
 | `src/composables/useHeadhunter.ts` | `@features/headhunter/composables/useHeadhunter.ts` |
 | `src/composables/useRecruiter.ts` | `@features/headhunter/composables/useRecruiter.ts` |
@@ -290,6 +288,7 @@ This manifest documents the exact migration path for the current source files.
 | `src/composables/useAppSettings.ts` | `@features/settings/composables/useAppSettings.ts` |
 | `src/components/SettingsCard.vue` | `@features/settings/components/SettingsCard.vue` |
 | `src/components/SkeletonSettingsCard.vue` | `@features/settings/components/SkeletonSettingsCard.vue` |
+| `src/components/settings/` | `@features/settings/components/` |
 
 ### Layer 4: App Glue
 | Source File | Target @app Alias |
@@ -297,10 +296,13 @@ This manifest documents the exact migration path for the current source files.
 | `src/router/index.ts` | `@app/router/index.ts` |
 | `src/App.vue` | `@app/App.vue` |
 | `src/main.ts` | `@app/main.ts` |
+| `src/sw.ts` | `@app/sw.ts` |
 | `src/components/ConsoleLayout.vue` | `@app/layouts/ConsoleLayout.vue` |
 | `src/components/ConsoleHeader.vue` | `@app/layouts/ConsoleHeader.vue` |
 | `src/components/FloatingDock.vue` | `@app/layouts/FloatingDock.vue` |
 | `src/components/HeaderInfoOverlay.vue` | `@app/layouts/HeaderInfoOverlay.vue` |
-| `src/sw.ts` | `@app/sw.ts` |
 | `src/composables/useConsoleController.ts` | `@app/composables/useConsoleController.ts` |
 | `src/composables/useUiCoordinator.ts` | `@app/composables/useUiCoordinator.ts` |
+| `src/composables/useHeaderScroll.ts` | `@app/composables/useHeaderScroll.ts` |
+| `src/composables/useCardMechanics.ts` | `@app/composables/useCardMechanics.ts` |
+| `src/composables/useLongPress.ts` | `@shared/composables/useLongPress.ts` |
