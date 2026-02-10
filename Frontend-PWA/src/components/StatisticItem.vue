@@ -12,24 +12,17 @@ const props = defineProps<{
   benchmarkRawValue?: number;
 }>();
 
-const { modules } = useAppSettings();
-const { getBenchmark } = useBenchmarking();
+const { getSafeBenchmark } = useBenchmarking();
 
 const tooltipVal = computed(() => {
-  if (
-    !props.loading &&
-    modules.ghostBenchmarking &&
-    props.benchmarkType &&
-    props.benchmarkMetric &&
-    props.benchmarkRawValue !== undefined
-  ) {
-    return getBenchmark(
-      props.benchmarkType,
-      props.benchmarkMetric,
-      props.benchmarkRawValue,
-    );
+  if (props.loading || !props.benchmarkType || !props.benchmarkMetric) {
+    return null;
   }
-  return null;
+  return getSafeBenchmark(
+    props.benchmarkType,
+    props.benchmarkMetric,
+    props.benchmarkRawValue,
+  );
 });
 </script>
 

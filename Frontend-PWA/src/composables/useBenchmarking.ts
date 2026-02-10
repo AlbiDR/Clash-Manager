@@ -1,9 +1,13 @@
 /**
  * 📊 USE BENCHMARKING
  * Statistical engine for comparing player performance against clan averages.
+ *
+ * Optimized to perform single-pass calculations for all metrics to ensure
+ * maximum performance on large datasets.
  */
 import { computed } from "vue";
 import { useClashData } from "./useClashData";
+import { useAppSettings } from "./useAppSettings";
 
 export interface BenchmarkData {
   label: string;
@@ -16,83 +20,89 @@ export interface BenchmarkData {
   isBetter: boolean;
 }
 
+type StatsMap = Record<string, { avg: number; max: number; min: number }>;
+
 export function useBenchmarking() {
   const { data } = useClashData();
+  const { modules } = useAppSettings();
 
-  const getAvg = (arr: number[]) =>
-    arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-  const getMax = (arr: number[]) => (arr.length ? Math.max(...arr) : 0);
-  const getMin = (arr: number[]) => (arr.length ? Math.min(...arr) : 0);
+  /**
+   * ⚡ SINGLE-PASS STATS CALCULATOR
+   * Reduces loop complexity from O(N*M) passes to O(N) by aggregating all
+   * metrics in one traversal.
+   */
+  const calculateStats = <T>(
+    items: T[],
+    extractors: Record<string, (item: T) => number>,
+  ): StatsMap | null => {
+    if (!items.length) return null;
+
+    const keys = Object.keys(extractors);
+    const accumulators: Record<
+      string,
+      { sum: number; max: number; min: number }
+    > = {};
+
+    // Initialize
+    for (let i = 0; i < keys.length; i++) {
+      accumulators[keys[i]] = { sum: 0, max: -Infinity, min: Infinity };
+    }
+
+    // Single Pass
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      for (let j = 0; j < keys.length; j++) {
+        const key = keys[j];
+        const val = extractors[key](item);
+        const acc = accumulators[key];
+
+        acc.sum += val;
+        if (val > acc.max) acc.max = val;
+        if (val < acc.min) acc.min = val;
+      }
+    }
+
+    const stats: StatsMap = {};
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const acc = accumulators[key];
+      stats[key] = {
+        avg: acc.sum / items.length,
+        max: acc.max === -Infinity ? 0 : acc.max,
+        min: acc.min === Infinity ? 0 : acc.min,
+      };
+    }
+
+    return stats;
+  };
 
   const lbStats = computed(() => {
     const lb = data.value?.lb || [];
-    if (!lb.length) return null;
-    return {
-      trophies: {
-        avg: getAvg(lb.map((m) => m.t)),
-        max: getMax(lb.map((m) => m.t)),
-        min: getMin(lb.map((m) => m.t)),
-      },
-      warRate: {
-        avg: getAvg(lb.map((m) => parseFloat(m.d.rate || "0"))),
-        max: getMax(lb.map((m) => parseFloat(m.d.rate || "0"))),
-        min: getMin(lb.map((m) => parseFloat(m.d.rate || "0"))),
-      },
-      donations: {
-        avg: getAvg(lb.map((m) => m.d.avg)),
-        max: getMax(lb.map((m) => m.d.avg)),
-        min: getMin(lb.map((m) => m.d.avg)),
-      },
-      score: {
-        avg: getAvg(lb.map((m) => m.performanceScore)),
-        max: getMax(lb.map((m) => m.performanceScore)),
-        min: getMin(lb.map((m) => m.performanceScore)),
-      },
-      tenure: {
-        avg: getAvg(lb.map((m) => m.d.days)),
-        max: getMax(lb.map((m) => m.d.days)),
-        min: getMin(lb.map((m) => m.d.days)),
-      },
-      momentum: {
-        avg: getAvg(lb.map((m) => m.dt || 0)),
-        max: getMax(lb.map((m) => m.dt || 0)),
-        min: getMin(lb.map((m) => m.dt || 0)),
-      },
-    };
+    return calculateStats(lb as any[], {
+      trophies: (m) => m.t || 0,
+      warRate: (m) => parseFloat(m.d?.rate || "0"),
+      donations: (m) => m.d?.avg || 0,
+      score: (m) => m.performanceScore || 0,
+      tenure: (m) => m.d?.days || 0,
+      momentum: (m) => m.dt || 0,
+    });
   });
 
   const hhStats = computed(() => {
     const hh = data.value?.hh || [];
-    if (!hh.length) return null;
-    return {
-      trophies: {
-        avg: getAvg(hh.map((m) => m.t)),
-        max: getMax(hh.map((m) => m.t)),
-        min: getMin(hh.map((m) => m.t)),
-      },
-      donations: {
-        avg: getAvg(hh.map((m) => m.d.don)),
-        max: getMax(hh.map((m) => m.d.don)),
-        min: getMin(hh.map((m) => m.d.don)),
-      },
-      warWins: {
-        avg: getAvg(hh.map((m) => m.d.war)),
-        max: getMax(hh.map((m) => m.d.war)),
-        min: getMin(hh.map((m) => m.d.war)),
-      },
-      cardsWon: {
-        avg: getAvg(hh.map((m) => m.d.cards || 0)),
-        max: getMax(hh.map((m) => m.d.cards || 0)),
-        min: getMin(hh.map((m) => m.d.cards || 0)),
-      },
-      score: {
-        avg: getAvg(hh.map((m) => m.potentialScore)),
-        max: getMax(hh.map((m) => m.potentialScore)),
-        min: getMin(hh.map((m) => m.potentialScore)),
-      },
-    };
+    return calculateStats(hh as any[], {
+      trophies: (m) => m.t || 0,
+      donations: (m) => m.d?.don || 0,
+      warWins: (m) => m.d?.war || 0,
+      cardsWon: (m) => m.d?.cards || 0,
+      score: (m) => m.potentialScore || 0,
+    });
   });
 
+  /**
+   * CORE: getBenchmark
+   * Computes comparative data for a specific metric.
+   */
   function getBenchmark(
     context: "lb" | "hh",
     metric: string,
@@ -101,9 +111,7 @@ export function useBenchmarking() {
     const stats = context === "lb" ? lbStats.value : hhStats.value;
     if (!stats) return null;
 
-    const m = (
-      stats as Record<string, { avg: number; max: number; min: number }>
-    )[metric];
+    const m = stats[metric];
     if (!m) return null;
 
     const diff = value - m.avg;
@@ -142,5 +150,19 @@ export function useBenchmarking() {
     };
   }
 
-  return { getBenchmark };
+  /**
+   * HELPER: getSafeBenchmark
+   * Combines App Settings (ghostBenchmarking toggle) and value validation
+   * to provide a clean, one-liner for template tooltips.
+   */
+  function getSafeBenchmark(
+    context: "lb" | "hh",
+    metric: string,
+    value: number | undefined,
+  ): BenchmarkData | null {
+    if (!modules.ghostBenchmarking || value === undefined) return null;
+    return getBenchmark(context, metric, value);
+  }
+
+  return { getBenchmark, getSafeBenchmark };
 }

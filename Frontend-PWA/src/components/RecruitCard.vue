@@ -30,13 +30,8 @@ const emit = defineEmits<{
   "toggle-select": [];
 }>();
 
-const { getBenchmark } = useBenchmarking();
+const { getSafeBenchmark } = useBenchmarking();
 const { modules } = useAppSettings();
-
-function getTooltip(metric: string, value: number | undefined) {
-  if (!modules.ghostBenchmarking || value === undefined) return null;
-  return getBenchmark("hh", metric, value);
-}
 
 const toneClass = computed(() => getScoreTone(recruit.potentialScore));
 const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
@@ -63,7 +58,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
       <span class="player-name">{{ recruit.n }}</span>
       <div
         class="trophy-meta hit-target"
-        v-tooltip="getTooltip('trophies', recruit.t)"
+        v-tooltip="getSafeBenchmark('hh', 'trophies', recruit.t)"
       >
         <Icon name="trophy" size="12" />
         <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
@@ -74,7 +69,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
     <template #score-section>
       <span
         class="stat-score"
-        v-tooltip="getTooltip('score', recruit.potentialScore)"
+        v-tooltip="getSafeBenchmark('hh', 'score', recruit.potentialScore)"
         >{{ Math.round(recruit.potentialScore || 0) }}</span
       >
     </template>
