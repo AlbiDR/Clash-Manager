@@ -1,0 +1,67 @@
+
+# v12.1.1: The Laboratory Update
+Following the architectural "Clean Stack" reset of v12.0.0, this release marks a massive expansion of the project's scope. Clash Manager is moving beyond pure Clan Administration to offering individual **Player Optimization**.
+
+This update officially launches **The Laboratory**, a high-fidelity simulation engine designed to calculate the most efficient path for card leveling. By analyzing "XP per Gold" and "XP per Gem" ratios, the Laboratory offers a tactical dashboard for maximizing account progression, marking the transition from a beta prototype to a production tool.
+
+---
+<br>
+
+## Key Improvements
+### 1. New Module: The Laboratory
+Clash Manager now includes a dedicated workspace for resource management and upgrade planning.
+*   **Laboratory:** A new interface tracking Gold, Gems, and Wildcards. It includes smart toggles like "Allow Gem Spending" to simulate Pay-to-Win scenarios versus Free-to-Play grinding.
+
+
+### 2. Dual Strategy Simulation Engine
+The Laboratory implements two distinct algorithmic strategies to handle the "Infinite vs. Finite" resource problem:
+*   **Projection Strategy (Target Level):** Simulates an **infinite** resource pool to forecast the exact path to a specific King Level (e.g., Level 16). It calculates theoretical gem costs if resources are missing, applying a 1.05x bias to ensure optimal pathfinding.
+*   **Efficiency Strategy (Maximize Value):** Strictly respects the **finite** current inventory. It prioritizes upgrades that offer the best XP-to-Cost ratio without ever exceeding the user's actual budget.
+
+### 3. UI/UX Refinement
+To match the precision of the new math engine, the *Lab*'s UI has received a final design pass focusing on data density and visual hierarchy.
+*   **Absolute Symmetry:** The **Summary Card** and **Strategy Selectors** have been redesigned for mathematical horizontal alignment.
+*   **High-Contrast Rarity:** Integrated a polished color palette for card rarities (Common, Rare, Epic, Legendary, Champion, Elite) across the Vault and Trajectory lists for instant visual parsing.
+*   **Floating Dock:** The navigation dock now features increased backdrop blur, stable scrollbar gutters, and logic to ensure visibility during view transitions.
+
+---
+<br>
+
+## Deep Dive
+### Architecture Spotlight: The Infinite vs. Finite Convergence
+**Problem Statement:** During the internal beta of the Laboratory, the simulation engine struggled to reconcile users who wanted to see "How far can I get *right now*?" (Finite) versus "What do I need to reach Level 16?" (Infinite). Mixing these states caused the "Allow Gem Spending" toggle to produce erratic paths (e.g., stopping at 70% progress despite having gems enabled).
+
+**Root Cause Analysis:**
+1.  **Strategy Pollution:** The "Target Level" strategy was checking current inventory limits, causing it to abort simulations prematurely.
+2.  **Gem Penalty:** A hardcoded 10x cost penalty for gem spending was preventing the algorithm from suggesting gem usage even when explicitly allowed.
+3.  **State Mutation:** The adapter responsible for hydrating user data was allowing mutable state to leak between the two strategies.
+
+**Solution Implementation:**
+1.  **Strict Divergence:** "Projection" now *always* assumes infinite resources (calculating deficits as cost), while "Efficiency" *always* respects current inventory caps.
+2.  **Cost Bias Adjustment:** Reduced the gem spending penalty from 10x to 1.05x. This makes gem usage "expensive" but "viable" in the pathfinding graph, ensuring the target level is always reached in simulation.
+3.  **Hoisted State:** Refactored the data adapter to use hoisted functions, eliminating Temporal Dead Zone (TDZ) anomalies and ensuring clean state hydration.
+
+---
+<br>
+
+## Files Modified
+### Laboratory (Logic & UI)
+*   **useLaboratory.ts**: *New File*. Handles strategy switching, simulation logic, and local storage migration.
+*   **ParameterCard.vue**: *New File*. Implements strategy descriptions, toggles, and simulation parameters.
+*   **SummaryCard.vue**: *New File*. Displays the calculated XP gain, Gold cost, and projected level.
+*   **TrajectoryItem.vue**: *New File*. Visual component for individual upgrade steps with rarity highlights.
+
+### Core Infrastructure
+*   **router/index.ts**: Added `/laboratory` routes and navigation guards.
+*   **FloatingDock.vue**: Enhanced with backdrop blur and layout stability fixes.
+*   **useHeadhunter.ts**: Added defensive test coverage for the existing recruitment engine.
+
+*   - [20+] additional style and test files omitted for brevity.
+
+---
+<br>
+
+**Full Changelog**: https://github.com/AlbiDR/Clash-Manager/compare/v12.0.0...v12.1.1
+
+---
+---
