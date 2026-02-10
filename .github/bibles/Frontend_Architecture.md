@@ -121,7 +121,23 @@ To prevent "Graph Spaghetti" and ensure clear boundaries, every significant modu
 
 ---
 
-## 6. The "OCD Verification" Checklist
+## 6. Accessibility & Responsiveness
+
+- **Semantic HTML**: Mandatory use of `<nav>`, `<main>`, `<article>`, and `<section>`. No "Div Soup."
+- **ARIA**: Interactive elements without native labels must have `aria-label`.
+- **Contrast**: Maintain AA/AAA standard colors at all times.
+- **Touch Targets**: Minimum 44x44px for all mobile interactive elements.
+
+---
+
+## 7. Documentation & Comments
+
+- **Rationale over Implementation**: Comments should explain *why* something is done (the business reason), not *how* (the code should be self-documenting).
+- **JSDoc**: All `@core` utilities and `@features` logic must have JSDoc for complex functions.
+
+---
+
+## 8. The "OCD Verification" Checklist
 Before completing any task, every developer (and AI) must verify:
 1. [ ] **Location**: Does this file live in the correct layer?
 2. [ ] **Registry**: Is it exported via the module's `index.ts`?
@@ -129,10 +145,11 @@ Before completing any task, every developer (and AI) must verify:
 4. [ ] **Wrappers**: Are we using `@core` services instead of direct 3rd party imports?
 5. [ ] **Tests**: Is there a corresponding `.spec.ts` in a `__tests__` folder?
 6. [ ] **Types**: Are all public interfaces explicitly typed? No `any`.
+7. [ ] **A11y**: Are touch targets and ARIA labels correct?
 
 ---
 
-## 7. Migration Roadmap
+## 9. Migration Roadmap
 
 ### Phase 1: Infrastructure (Completed) ✅
 ### Phase 2: Core Extraction (Next)
