@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { useAppSettings } from "@core";
-
+import { describe, it, expect, beforeEach } from "vitest";
 describe("useAppSettings", () => {
   it("exports modules as a reactive object (not a Ref)", () => {
     const { modules } = useAppSettings();

@@ -1,16 +1,13 @@
-import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
+import { useConnectionStatus, useListFilter, useProgressiveList, useUiCoordinator } from "@shared";
+import { useApiState } from "../api/useApiState";
 import { useBatchQueue } from "./useBatchQueue";
-import { useDeepLinkHandler } from "./useDeepLinkHandler";
-import { useListFilter } from "./useListFilter";
-import { useUiCoordinator } from "@shared";
-import { useProgressiveList } from "./useProgressiveList";
-import { useConnectionStatus } from "@shared";
-import { useApiState } from "@core"; 
-import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
+import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
-import { formatTimeAgo } from "../utils/formatters";
-import { generateMockData } from "../utils/mockData";
+import { useSyntheticMode } from "./useSyntheticMode";
+import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
+import { formatTimeAgo } from "@core/utils/formatters";
+import { generateMockData } from "@core/utils/mockData";
 
 /**
  * CONFIGURATION: ConsoleLogicOptions

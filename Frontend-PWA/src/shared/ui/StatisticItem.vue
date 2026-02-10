@@ -1,8 +1,6 @@
+import { useAppSettings, useBenchmarking } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";
-import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "@core";
-
 const props = defineProps<{
   label: string;
   value: string | number;

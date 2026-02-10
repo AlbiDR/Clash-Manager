@@ -1,8 +1,6 @@
+import { Icon, useCardMechanics } from "@shared";
 <script setup lang="ts">
 import { computed } from "vue";
-import Icon from "./Icon.vue";
-import { useCardMechanics } from "../composables/useCardMechanics";
-
 const props = defineProps<{
   id: string;
   expanded: boolean;

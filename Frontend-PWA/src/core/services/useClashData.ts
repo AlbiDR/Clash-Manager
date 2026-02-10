@@ -1,14 +1,13 @@
-import { ref, shallowRef, readonly, watch } from "vue";
-import { fetchRemote, loadCache, saveCache } from "@core";
-import type { WebAppData } from "@core/types";
-import { useSyntheticMode } from "./useSyntheticMode";
+import { useConnectionStatus, useWakeLock } from "@shared";
+import { fetchRemote } from "../api/GasClient";
+import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
-import { useShowcaseMode } from "./useShowcaseMode";
-import { generateMockData } from "../utils/mockData";
 import { useBroadcastChannel } from "./useBroadcastChannel";
-import { useWakeLock } from "@shared";
-import { useConnectionStatus } from "@shared";
-
+import { useShowcaseMode } from "./useShowcaseMode";
+import { useSyntheticMode } from "./useSyntheticMode";
+import { ref, shallowRef, readonly, watch } from "vue";
+import type { WebAppData } from "@core/types";
+import { generateMockData } from "@core/utils/mockData";
 // Global State
 const clashData = shallowRef<WebAppData | null>(null);
 // Initialize as hydrated=false to force Skeletons on first paint

@@ -1,5 +1,5 @@
+import { getApiUrl, isConfigured, ping } from "./GasClient";
 import { ref, readonly } from "vue";
-import { isConfigured, ping, getApiUrl } from "@core";
 import type { PingResponse } from "@core/types";
 
 export type ApiStatus =

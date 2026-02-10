@@ -1,6 +1,5 @@
-import { useRouter } from "vue-router";
 import { useToast } from "./useToast";
-
+import { useRouter } from "vue-router";
 export function useShareTarget() {
   const router = useRouter();
   const { success } = useToast();

@@ -1,11 +1,11 @@
 /**
- * 🛠️ USE SHOWCASE MODE
+* 🛠️ USE SHOWCASE MODE
  * Global toggle for combining Synthetic and Blueprint modes.
  */
-import { ref, watch } from "vue";
-import { useSyntheticMode } from "./useSyntheticMode";
 import { useBlueprintMode } from "./useBlueprintMode";
+import { useSyntheticMode } from "./useSyntheticMode";
 
+import { ref, watch } from "vue";
 const SHOWCASE_KEY = "clash_manager_showcase_mode";
 
 // Global singleton state

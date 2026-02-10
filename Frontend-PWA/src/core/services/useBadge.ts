@@ -1,7 +1,6 @@
-import { ref, onMounted, onUnmounted } from "vue";
-import { useAppSettings } from "@core";
+import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
-
+import { ref, onMounted, onUnmounted } from "vue";
 // 🛡️ Global persistent state to track debounce across multiple useBadge() instances
 const lastUpdate = ref(0);
 

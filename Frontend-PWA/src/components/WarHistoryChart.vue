@@ -1,12 +1,7 @@
+import { WAR_CONSTANTS, calculatePrediction, parseHistoryString } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";
-import { generateLinearTrend, type Point } from "../utils/bezier";
-import {
-  calculatePrediction,
-  parseHistoryString,
-  WAR_CONSTANTS,
-} from "@core";
-
+import { generateLinearTrend, type Point } from "@core/utils/bezier";
 const props = defineProps<{
   history?: string;
   loading?: boolean; // New prop to indicate loading state

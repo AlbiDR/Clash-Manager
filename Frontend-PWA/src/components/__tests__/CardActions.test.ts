@@ -1,10 +1,10 @@
 /**
- * @vitest-environment jsdom
+* @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
 import { CardActions } from "@shared";
 
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { mount } from "@vue/test-utils";
 const { mockOpenExternal, mockOpenInGame } = vi.hoisted(() => ({
   mockOpenExternal: vi.fn(),
   mockOpenInGame: vi.fn(),

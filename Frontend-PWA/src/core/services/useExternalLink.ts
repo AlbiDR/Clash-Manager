@@ -1,5 +1,5 @@
 import { useToast } from "./useToast";
-import { cleanTag } from "../utils/formatters";
+import { cleanTag } from "@core/utils/formatters";
 
 /**
  * 🔗 USE EXTERNAL LINK

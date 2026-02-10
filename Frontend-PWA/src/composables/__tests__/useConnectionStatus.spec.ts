@@ -1,10 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  useConnectionStatus,
-  resetConnectionState,
-} from "@shared";
+import { resetConnectionState, useConnectionStatus, useNetworkInfo } from "@shared";
 import { useApiState } from "@core";
-import { useNetworkInfo } from "@shared";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
 
 // Mock dependencies

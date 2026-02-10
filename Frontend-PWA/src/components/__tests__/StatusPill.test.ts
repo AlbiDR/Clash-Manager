@@ -1,10 +1,10 @@
 /**
- * @vitest-environment jsdom
+* @vitest-environment jsdom
  */
-import { describe, it, expect, vi } from "vitest";
-import { mount } from "@vue/test-utils";
 import { StatusPill } from "@shared";
 
+import { describe, it, expect, vi } from "vitest";
+import { mount } from "@vue/test-utils";
 const { tapMock } = vi.hoisted(() => ({
   tapMock: vi.fn(),
 }));

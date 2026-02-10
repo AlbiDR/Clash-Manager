@@ -1,10 +1,7 @@
+import { Icon, useHaptics, useUiCoordinator } from "@shared";
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useUiCoordinator } from "@shared";
-import { useHaptics } from "@shared";
-import { Icon } from "@shared";
-
 const route = useRoute();
 const router = useRouter();
 const { dockVisible, fabState } = useUiCoordinator();

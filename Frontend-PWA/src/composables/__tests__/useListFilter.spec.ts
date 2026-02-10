@@ -1,7 +1,6 @@
+import { useListFilter } from "@shared";
 import { describe, it, expect } from "vitest";
 import { ref } from "vue";
-import { useListFilter } from "../useListFilter";
-
 describe("useListFilter", () => {
   const mockItems = [
     { id: "p1", n: "Albi", score: 100 },

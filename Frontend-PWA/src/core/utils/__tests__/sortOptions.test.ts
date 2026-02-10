@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SORT_DESCRIPTIONS } from '../sortOptions';
+import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
 
 describe('sortOptions', () => {
   it('should have descriptions for all expected sort keys', () => {

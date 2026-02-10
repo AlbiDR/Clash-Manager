@@ -1,15 +1,8 @@
+import { EmptyState, ErrorState, Icon, SelectionBar, useHaptics, useUiCoordinator } from "@shared";
+import { useShowcaseMode } from "@core";
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, nextTick } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
-import { SelectionBar } from "@shared";
-import { EmptyState } from "@shared";
-import { ErrorState } from "@shared";
-
-import { Icon } from "@shared";
-import { useUiCoordinator } from "@shared";
-import { useHaptics } from "@shared";
-import { useShowcaseMode } from "../composables/useShowcaseMode";
-
 const props = defineProps<{
   title: string;
   status: { type: "updated" | "error" | "loading" | "ready"; text: string };

@@ -1,12 +1,11 @@
+import { Icon } from "@shared";
+import { useExternalLink } from "@core";
 <script setup lang="ts">
 /**
  * 🛠️ CARD ACTIONS
  * Atomic component for player-specific action buttons (RoyaleAPI, Open Game).
  * Deduplicated from MemberCard and RecruitCard.
  */
-import { useExternalLink } from "../composables/useExternalLink";
-import Icon from "./Icon.vue";
-
 const props = defineProps<{
   /** Player Tag */
   id: string;

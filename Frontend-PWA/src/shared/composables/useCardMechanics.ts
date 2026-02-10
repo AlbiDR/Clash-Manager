@@ -1,5 +1,4 @@
 import { useHaptics } from "@shared";
-
 interface CardCallbacks {
   onSelect: () => void;
   onExpand: () => void;

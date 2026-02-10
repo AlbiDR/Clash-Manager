@@ -1,7 +1,6 @@
+import { Icon } from "@shared";
 <script setup lang="ts">
 import { type Inventory } from "../../logic/Laboratory/Laboratory_Types";
-import { Icon } from "@shared";
-
 defineProps<{
   inventory: Inventory;
   isSimulating: boolean;
