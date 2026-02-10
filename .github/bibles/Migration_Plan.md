@@ -1,99 +1,96 @@
-# Surgical Migration Plan (Protocol 63)
-
-This is the high-precision tactical manifest for the `Clash-Manager` restructure.
-**Status**: Tactical Draft 63.
-**Objective**: 100% build-stability and zero cross-domain communication failure.
+# Surgical Migration Plan: "Clean Stack" Restructure
+**Protocol**: Difficulty-Weighted Gradient (Easiest -> Hardest)
+**Status**: Tactical Draft 85 (Includes Legacy Storage Bridge)
 
 ---
 
-## Phase 0: Pre-Flight & Anchor Audit
-*Goal: Ensure the bridge between GAS and Frontend remains intact.*
+## [LEVEL 0] The Skeleton Initialization (Easiest)
+*Goal: Create the destination without affecting the source.*
 
-- [x] **Git Cleanliness**: Stash all local changes.
-- [ ] **Handshake Verification**: Run `.github/scripts/validate_project.ts` to ensure current state is 100% green.
-- [ ] **GAS Dependency Check**: Verify `Backend-GAS/Configuration.ts` points to the root `/Clash-Manager/`. **Status**: Verified (Not moving).
-- [ ] **CI/CD Path Check**: Verify `.github/workflows/deploy-pwa.yml` uses `working-directory: Frontend-PWA`. **Status**: Verified (Not moving).
-
----
-
-## Phase 1: Infrastructure Anchorage
-*Goal: Prepare the destination and the resolution logic.*
-
-### [1.1] Directory Skeleton
-```bash
-# Execute from Frontend-PWA root
-mkdir -p src/core/{api,services,theme,types,utils}
-mkdir -p src/shared/{ui,composables,directives}
-mkdir -p src/features/{laboratory,headhunter,roster,settings}/{components,composables,logic,types,views}
-mkdir -p src/app/{router,layouts,store}
-```
-
-### [1.2] Storage Convergence (CRITICAL FOR BACKEND SYNC)
-- **Target**: `src/utils/idb.ts` -> `src/core/services/StorageService.ts`
-- **Action**: Unify DB constants to prevent "Split-Brain" storage between App and Service Worker.
-- **Verification**: `sw.ts` and `StorageService.ts` must both reference `DB: clash_manager_v11` and `STORE: keyval`.
-
-### [1.3] Registry Setup
-- [ ] Initialize `index.ts` barrels for every new folder.
-- [ ] Update `vite.config.ts` and `tsconfig.app.json` with Layer 1-4 aliases.
+- [ ] **Phase 0.1: Skeleton Creation**
+  ```bash
+  mkdir -p src/core/{api,services,theme,types,utils}
+  mkdir -p src/shared/{ui,composables,directives}
+  mkdir -p src/features/{laboratory,headhunter,roster,settings}/{components,composables,logic,types,views}
+  mkdir -p src/app/{router,layouts}
+  ```
+- [ ] **Phase 0.2: Infrastructure Registry**
+  - Update `vite.config.ts` and `tsconfig.app.json` with the Layer 1-4 aliases.
+  - Create empty `index.ts` barrels in each main layer.
 
 ---
 
-## Phase 2: Layer 1 Extraction (The Kernel)
-*Risk: High. Core logic moves.*
+## [LEVEL 1] Visual Tokens & Style Migration (Low Risk)
+*Goal: Move the design system foundations.*
 
-| Source File | Destination | Action |
-| :--- | :--- | :--- |
-| `src/api/gasClient.ts` | `src/core/api/GasClient.ts` | Update internal `import type` |
-| `src/utils/idb.ts` | `src/core/services/StorageService.ts`| Internal logic cleanup |
-| `src/utils/warMath.ts` | `src/core/utils/warMath.ts` | Export calculation logic |
-| `src/icons.ts` | `src/core/theme/icons.ts` | Export `ICONS` object |
-| `src/style.css` | `src/core/theme/style.css` | Update font preloads in index.html |
-
----
-
-## Phase 3: Layer 2 Extraction (Shared Molecules)
-*Risk: Moderate. UI and simple browser logic.*
-
-- **UI**: Move `src/components/Icon.vue`, `Badge.vue`, `BaseCard.vue` -> `src/shared/ui/`.
-- **Logic**: Move `src/composables/useHaptics.ts`, `useWakeLock.ts` -> `src/shared/composables/`.
-- **Directives**: Move `src/directives/*.ts` -> `src/shared/directives/`.
+- [ ] **Phase 1.1: Styles & Fonts**
+  - Move `src/style.css` -> `src/core/theme/style.css`.
+  - **Repair**: Update font paths to root-relative `/fonts/` to ensure zero breakages.
+- [ ] **Phase 1.2: Icon Registry**
+  - Move `src/icons.ts` -> `src/core/theme/icons.ts`.
+  - Update imports in `Icon.vue` (Temporary path).
 
 ---
 
-## Phase 4: Layer 3 Isolation (Feature Enclosure)
-*Risk: Moderate. Business logic compartmentalization.*
+## [LEVEL 2] Generic Atoms & Shared Logic (Moderate Risk)
+*Goal: Move the domain-blind building blocks.*
 
-### [4.1] Laboratory Domain
-- Move `src/logic/Laboratory/*`, `LaboratoryView.vue`, `useLaboratory.ts` -> `src/features/laboratory/`.
-- **Validation**: Ensure `Laboratory_Kernel` remains agnostic of the view.
-
-### [4.2] Headhunter Domain
-- Move `src/views/RecruiterView.vue`, `src/components/RecruitCard.vue`, `useHeadhunter.ts` -> `src/features/headhunter/`.
-- **Validation**: Test recruitment dismissal animation.
-
----
-
-## Phase 5: Layer 4 Convergence (App Glue)
-*Risk: Critical. Entry point and Shell reconstruction.*
-
-- **Layouts**: Move `ConsoleLayout.vue`, `FloatingDock.vue` -> `src/app/layouts/`.
-- **Shell**: Move `router/`, `App.vue`, `main.ts`, `sw.ts` -> `src/app/`.
-- **Repair (Surgical)**:
-  - `index.html`: Update `<script src="./src/app/main.ts">`
-  - `404.html`: Update `<script src="./src/app/main.ts">`
-  - `vite.config.ts`: Update `VitePWA` configs (`srcDir: "src/app"`, `filename: "sw.ts"`)
+- [ ] **Phase 2.1: Shared UI Components**
+  - Move `Icon.vue`, `Badge.vue`, `BaseCard.vue`, `SkeletonCard.vue` -> `src/shared/ui/`.
+- [ ] **Phase 2.2: Global Directives**
+  - Move `vTactile.ts`, `vTooltip.ts` -> `src/shared/directives/`.
+- [ ] **Phase 2.3: Utility Composables**
+  - Move `useHaptics.ts`, `useWakeLock.ts` -> `src/shared/composables/`.
 
 ---
 
-## Phase 6: Global Alignment & Verification
-*Goal: Zero orphaned aliases and a passing build.*
+## [LEVEL 3] The Logic Kernel (High Logic Impact)
+*Goal: Move the engine that drives the data.*
 
-1. **Path Alignment**: Bulk replace `@/` with `@core/`, `@features/`, etc.
-2. **Registry Completion**: Ensure every feature `index.ts` is fully populated.
-3. **The Stability Rubrik**:
-   - [ ] `pnpm type-check`
-   - [ ] `pnpm build`
-   - [ ] `pnpm test`
-   - [ ] **Handshake Test**: Open local dev server, verify GAS data flows into the Roster.
-4. **Pruning**: Delete old empty directories.
+- [ ] **Phase 3.1: Global Types & Utils**
+  - Move `src/types/` -> `src/core/types/`.
+  - Move `src/utils/warMath.ts` -> `src/core/utils/warMath.ts`.
+- [ ] **Phase 3.2: API Transport**
+  - Move `src/api/gasClient.ts` -> `src/core/api/GasClient.ts`.
+  - Update `.github/scripts/validate_project.ts` paths immediately.
+
+---
+
+## [LEVEL 4] Feature Silo Decoupling (High Architectural Impact)
+*Goal: Fractalize the application into domain islands.*
+
+- [ ] **Phase 4.1: Domain Extraction**
+  - Gather views and local logic for `Laboratory`, `Headhunter`, `Roster`, and `Settings`.
+  - Enforce "No Cross-Feature Import" rule.
+- [ ] **Phase 4.2: Registry Enforcement**
+  - Populate feature `index.ts` files with Public APIs.
+
+---
+
+## [LEVEL 5] The Storage Unification & Legacy Bridge (Critical Data Risk)
+*Goal: Fix the "Split-Brain" DB issue without losing user settings.*
+
+- [ ] **Phase 5.1: Storage Convergence**
+  - Move `src/utils/idb.ts` -> `src/core/services/StorageService.ts`.
+  - Implement a **Legacy Migration Guard** to copy keys from old DB names (`clash_manager_db`, `keyval-store`) to the new unified `clash_manager_v11`.
+
+---
+
+## [LEVEL 6] The Final Shell Metamorphosis (Hardest / Critical Fail Point)
+*Goal: Relocate the entry terminal and boot sequence.*
+
+- [ ] **Phase 6.1: Layout & Router**
+  - Move `ConsoleLayout.vue`, `FloatingDock.vue` -> `src/app/layouts/`.
+  - Move `router/` -> `src/app/router/`.
+- [ ] **Phase 6.2: Terminal Move**
+  - Move `main.ts`, `App.vue`, `sw.ts` -> `src/app/`.
+- [ ] **Phase 6.3: Infrastructure Repair**
+  - Update script tags in `index.html` and `404.html`.
+  - Re-calibrate Vite PWA plugin paths.
+
+---
+
+## Stability Verification Rubrik (The QA Gate)
+1. **The Build Check**: `pnpm build` must pass.
+2. **The Logic Check**: `pnpm test` must be 100% green.
+3. **The Data Check**: Verify `VITE_GAS_URL` persists post-update.
