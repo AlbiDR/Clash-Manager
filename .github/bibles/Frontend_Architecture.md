@@ -152,7 +152,39 @@ Before completing any task, every developer (and AI) must verify:
 
 ---
 
-## 9. Migration Roadmap
+## 9. Infrastructure & Dependent Adaptations
+
+The restructure extends beyond the `src/` folder. The following external configurations must be adapted to the new architecture.
+
+### [A] Entry Points
+- **`index.html`**: The module script tag must be updated.
+  - *From*: `<script type="module" src="./src/main.ts"></script>`
+  - *To*:   `<script type="module" src="./src/app/main.ts"></script>`
+
+### [B] Vite Build Optimization
+- **`vite.config.ts`**: Update `manualChunks` and `VIEW_SPECIFIC_COMPONENTS` to reflect new paths.
+  - `/src/api/` -> `/src/core/api/`
+  - `/src/components/` (shared) -> `/src/shared/ui/`
+  - `/src/composables/` (shared) -> `/src/shared/composables/`
+  - Feature-specific lookups must now target `/src/features/`.
+
+### [C] PWA & Service Worker
+- **`vite.config.ts` (VitePWA Plugin)**:
+  - Move `sw.ts` to `src/app/sw.ts`.
+  - Set `srcDir: "src/app"` and `filename: "sw.ts"`.
+
+### [D] TypeScript Configuration
+- **`tsconfig.app.json`**:
+  - Broaden `include` scope to ensure all layers are type-checked.
+  - Ensure `paths` aliases perfectly match the mapping manifest.
+
+### [E] Global Styles & Assets
+- **`style.css`**: Verify all `@import` or `url()` references to fonts/icons remain valid.
+- **`index.ts` (Barrels)**: Every new structure requires its `index.ts` registry to be the ONLY way other layers interact with it.
+
+---
+
+## 10. Migration Roadmap
 
 ### Phase 0: Stability Anchorage
 Before moving a single byte, ensure the foundation is locked.
@@ -190,11 +222,11 @@ Objective: Full domain isolation. Perform one feature at a time.
     - Gather `src/logic/Laboratory/` and `src/components/Laboratory/` -> `@features/laboratory/`
     - Migrate `tests/Laboratory_*.test.ts` -> `@features/laboratory/logic/__tests__/*.spec.ts`
 - [ ] **Feature: Headhunter**
-    - Gather `RecruiterView`, `useHeadhunter`, `useRecruit*`, `RecruitCard` -> `@features/headhunter/`
+    - Gather `RecruiterView`, `useHeadhunter`, `useRecruiter`, `useRecruitBlacklist`, `RecruitCard` -> `@features/headhunter/`
 - [ ] **Feature: Roster**
     - Gather `LeaderboardView`, `useClashData`, `useLeaderboard`, `MemberCard`, `WarHistoryChart` -> `@features/roster/`
 - [ ] **Feature: Settings**
-    - Gather `SettingsView`, `useSettings`, `useAppSettings`, `SettingsCard` -> `@features/settings/`
+    - Gather `SettingsView`, `useSettings`, `useAppSettings`, `SettingsCard`, `SkeletonSettingsCard` -> `@features/settings/`
 
 ### Phase 5: Routing & App-Level Glue
 Objective: Finalize the new entry point.
@@ -202,15 +234,19 @@ Objective: Finalize the new entry point.
     - `src/router/`, `src/App.vue`, `src/main.ts`, `src/sw.ts` -> `@app/`
 - [ ] **Layouts**:
     - `ConsoleLayout`, `ConsoleHeader`, `FloatingDock`, `HeaderInfoOverlay` -> `@app/layouts/`
-- [ ] **Path Repair**: Batch update all `@/` imports to their specific layer aliases.
+- [ ] **Infrastructure Repair**:
+    - Update `index.html` script source.
+    - Update `vite.config.ts` manual chunks and PWA paths.
+- [ ] **Path Repair**: Batch update all `@/` imports to their specific layer aliases (`@core/`, `@features/`, etc.).
 
 ### Phase 6: Pruning & Final Verification
 - [ ] Delete orphaned `src/` subdirectories once manifest is fully satisfied.
-- [ ] Final Build Verification (`pnpm build`).
+- [ ] Verify `pnpm build` creates a valid production bundle.
+- [ ] Run `pnpm test` to ensure 100% logic coverage remains intact.
 
 ---
 
-## 10. File Mapping Manifest
+## 11. File Mapping Manifest
 
 ### Layer 1: Core extraction
 | Source File | Target @core Alias |
@@ -247,7 +283,7 @@ Objective: Finalize the new entry point.
 | `src/components/CardActions.vue` | `@shared/ui/CardActions.vue` |
 | `src/composables/useHaptics.ts` | `@shared/composables/useHaptics.ts` |
 | `src/composables/useTheme.ts` | `@shared/composables/useTheme.ts` |
-| `src/composables/useToast.ts" | `@shared/composables/useToast.ts` |
+| `src/composables/useToast.ts` | `@shared/composables/useToast.ts` |
 | `src/composables/useBackHandler.ts` | `@shared/composables/useBackHandler.ts` |
 | `src/composables/useBadge.ts` | `@shared/composables/useBadge.ts` |
 | `src/composables/useConnectionStatus.ts` | `@shared/composables/useConnectionStatus.ts` |
@@ -300,9 +336,8 @@ Objective: Finalize the new entry point.
 | `src/components/ConsoleLayout.vue` | `@app/layouts/ConsoleLayout.vue` |
 | `src/components/ConsoleHeader.vue` | `@app/layouts/ConsoleHeader.vue` |
 | `src/components/FloatingDock.vue` | `@app/layouts/FloatingDock.vue` |
-| `src/components/HeaderInfoOverlay.vue` | `@app/layouts/HeaderInfoOverlay.vue` |
+| `src/components/HeaderInfoOverlay.vue" | `@app/layouts/HeaderInfoOverlay.vue` |
 | `src/composables/useConsoleController.ts` | `@app/composables/useConsoleController.ts` |
 | `src/composables/useUiCoordinator.ts` | `@app/composables/useUiCoordinator.ts` |
 | `src/composables/useHeaderScroll.ts` | `@app/composables/useHeaderScroll.ts` |
 | `src/composables/useCardMechanics.ts` | `@app/composables/useCardMechanics.ts` |
-| `src/composables/useLongPress.ts` | `@shared/composables/useLongPress.ts` |
