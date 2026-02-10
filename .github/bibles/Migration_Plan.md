@@ -1,96 +1,80 @@
 # Surgical Migration Plan: "Clean Stack" Restructure
-**Protocol**: Difficulty-Weighted Gradient (Easiest -> Hardest)
-**Status**: Tactical Draft 85 (Includes Legacy Storage Bridge)
+**Protocol**: Difficulty-Weighted Gradient
+**Status**: Tactical Draft 90 (Ultra-Precision Hardened)
 
 ---
 
 ## [LEVEL 0] The Skeleton Initialization (Easiest)
-*Goal: Create the destination without affecting the source.*
-
-- [ ] **Phase 0.1: Skeleton Creation**
-  ```bash
-  mkdir -p src/core/{api,services,theme,types,utils}
-  mkdir -p src/shared/{ui,composables,directives}
-  mkdir -p src/features/{laboratory,headhunter,roster,settings}/{components,composables,logic,types,views}
-  mkdir -p src/app/{router,layouts}
-  ```
-- [ ] **Phase 0.2: Infrastructure Registry**
-  - Update `vite.config.ts` and `tsconfig.app.json` with the Layer 1-4 aliases.
-  - Create empty `index.ts` barrels in each main layer.
+*(Completed)*
 
 ---
 
-## [LEVEL 1] Visual Tokens & Style Migration (Low Risk)
-*Goal: Move the design system foundations.*
-
-- [ ] **Phase 1.1: Styles & Fonts**
-  - Move `src/style.css` -> `src/core/theme/style.css`.
-  - **Repair**: Update font paths to root-relative `/fonts/` to ensure zero breakages.
-- [ ] **Phase 1.2: Icon Registry**
-  - Move `src/icons.ts` -> `src/core/theme/icons.ts`.
-  - Update imports in `Icon.vue` (Temporary path).
+## [LEVEL 1-4] Extraction Phases
+*(See Bible for basic mappings. Focus here on high-resistance sectors.)*
 
 ---
 
-## [LEVEL 2] Generic Atoms & Shared Logic (Moderate Risk)
-*Goal: Move the domain-blind building blocks.*
-
-- [ ] **Phase 2.1: Shared UI Components**
-  - Move `Icon.vue`, `Badge.vue`, `BaseCard.vue`, `SkeletonCard.vue` -> `src/shared/ui/`.
-- [ ] **Phase 2.2: Global Directives**
-  - Move `vTactile.ts`, `vTooltip.ts` -> `src/shared/directives/`.
-- [ ] **Phase 2.3: Utility Composables**
-  - Move `useHaptics.ts`, `useWakeLock.ts` -> `src/shared/composables/`.
-
----
-
-## [LEVEL 3] The Logic Kernel (High Logic Impact)
-*Goal: Move the engine that drives the data.*
-
-- [ ] **Phase 3.1: Global Types & Utils**
-  - Move `src/types/` -> `src/core/types/`.
-  - Move `src/utils/warMath.ts` -> `src/core/utils/warMath.ts`.
-- [ ] **Phase 3.2: API Transport**
-  - Move `src/api/gasClient.ts` -> `src/core/api/GasClient.ts`.
-  - Update `.github/scripts/validate_project.ts` paths immediately.
-
----
-
-## [LEVEL 4] Feature Silo Decoupling (High Architectural Impact)
-*Goal: Fractalize the application into domain islands.*
-
-- [ ] **Phase 4.1: Domain Extraction**
-  - Gather views and local logic for `Laboratory`, `Headhunter`, `Roster`, and `Settings`.
-  - Enforce "No Cross-Feature Import" rule.
-- [ ] **Phase 4.2: Registry Enforcement**
-  - Populate feature `index.ts` files with Public APIs.
-
----
-
-## [LEVEL 5] The Storage Unification & Legacy Bridge (Critical Data Risk)
+## [LEVEL 5] The Storage Unification & Legacy Bridge (CRITICAL DATA RISK)
 *Goal: Fix the "Split-Brain" DB issue without losing user settings.*
 
-- [ ] **Phase 5.1: Storage Convergence**
-  - Move `src/utils/idb.ts` -> `src/core/services/StorageService.ts`.
-  - Implement a **Legacy Migration Guard** to copy keys from old DB names (`clash_manager_db`, `keyval-store`) to the new unified `clash_manager_v11`.
+### [5.1] The StorageService Implementation
+- **Target**: `src/core/services/StorageService.ts`
+- **Hardcore Detail**: The service must include the following **Legacy Migration Guard** during its `init` phase:
+```typescript
+/**
+ * LEGACY MIGRATION GUARD (Phase 1)
+ * Detects 'keyval-store' (SW) and 'clash_manager_db' (App).
+ * Migrates all entries to 'clash_manager_v11'.
+ */
+async function migrateLegacyData() {
+  const oldDbs = ['keyval-store', 'clash_manager_db'];
+  const newDbName = 'clash_manager_v11';
+  
+  for (const oldDb of oldDbs) {
+     // 1. Check if old DB exists and copy keys
+     // 2. Clear old DB only after successful migration
+     // This ensures VITE_GAS_URL is never lost.
+  }
+}
+```
 
 ---
 
-## [LEVEL 6] The Final Shell Metamorphosis (Hardest / Critical Fail Point)
+## [LEVEL 6] The Final Shell Metamorphosis (HARDEST / CRITICAL FAIL POINT)
 *Goal: Relocate the entry terminal and boot sequence.*
 
-- [ ] **Phase 6.1: Layout & Router**
-  - Move `ConsoleLayout.vue`, `FloatingDock.vue` -> `src/app/layouts/`.
-  - Move `router/` -> `src/app/router/`.
-- [ ] **Phase 6.2: Terminal Move**
-  - Move `main.ts`, `App.vue`, `sw.ts` -> `src/app/`.
-- [ ] **Phase 6.3: Infrastructure Repair**
-  - Update script tags in `index.html` and `404.html`.
-  - Re-calibrate Vite PWA plugin paths.
+### [6.1] The Entry Pivot
+- **Files**: `git mv src/main.ts src/app/main.ts`
+- **Files**: `git mv src/App.vue src/app/App.vue`
+- **Hardcore Detail**: The `index.html` and `public/404.html` must be updated in the SAME commit as the file move to prevent a broken site state on deploy.
+```html
+<!-- index.html / 404.html -->
+<script type="module" src="/src/app/main.ts"></script>
+```
+
+### [6.2] The Service Worker Calibration
+- **Move**: `git mv src/sw.ts src/app/sw.ts`
+- **Vite Configuration (`vite.config.ts`)**:
+  - Update `VitePWA` plugin:
+    ```typescript
+    VitePWA({
+      srcDir: 'src/app', // Pivotal change
+      filename: 'sw.ts',
+      // ...
+    })
+    ```
+- **Internal Paths**: Inside `sw.ts`, all imports from `utils/idb` must be updated to `@core/services/StorageService`.
+
+### [6.3] Deployment "Shadow" Verification
+- **Test**: Run `pnpm build`.
+- **Verify**: Inspect `dist/index.html`. It MUST point to a hashed JS file.
+- **Verify**: Inspect `dist/sw.js`. It MUST contain the precache manifest.
+- **Handshake**: Verify the background sync `offline-queue-sync` still registers correctly in the browser console.
 
 ---
 
 ## Stability Verification Rubrik (The QA Gate)
-1. **The Build Check**: `pnpm build` must pass.
-2. **The Logic Check**: `pnpm test` must be 100% green.
-3. **The Data Check**: Verify `VITE_GAS_URL` persists post-update.
+1. **The Build Check**: `pnpm build` (Must pass).
+2. **The Logic Check**: `pnpm test` (Must be 100% green).
+3. **The Data Check**: **MANDATORY** - Verify `VITE_GAS_URL` in LocalStorage/IDB didn't vanish.
+4. **The SW Check**: Browser `Application` tab must show `sw.js` active from the new location.
