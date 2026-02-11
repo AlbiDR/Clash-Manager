@@ -2,9 +2,9 @@
 import { useRecruiter } from "../composables/useRecruiter";
 
 import RecruitCard from "../components/RecruitCard.vue";
-import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
 import Icon from "../components/Icon.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
+import ConsoleList from "../components/ConsoleList.vue";
 
 const {
   status,
@@ -75,48 +75,34 @@ const {
       </button>
     </template>
     <!-- Default Slot: The List -->
-    <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
-    <template v-if="isShowcaseMode">
-      <RecruitCard
-        v-if="visibleItems.length > 0"
-        :recruit="visibleItems[0]"
-        :expanded="expandedIds.has(visibleItems[0].id)"
-        :selected="selectedSet.has(visibleItems[0].id)"
-        :selection-mode="isSelectionMode"
-        @toggle="toggleExpand(visibleItems[0].id)"
-        @toggle-select="toggleSelect(visibleItems[0].id)"
-      />
-      <BaseCardSkeleton
-        v-for="i in 7"
-        :key="'ex-' + i"
-        :index="i + 1"
-        :style="{ '--i': i + 1 }"
-      />
-    </template>
-    <template v-else>
-      <RecruitCard
-        v-for="(recruit, index) in visibleItems"
-        :key="recruit.id"
-        v-memo="[
-          recruit.potentialScore,
-          recruit.t,
-          recruit.d.ago,
-          expandedIds.has(recruit.id),
-          selectedSet.has(recruit.id),
-          isSelectionMode,
-          expandedIds.has(recruit.id) && isRefreshing,
-        ]"
-        :id="`recruit-${recruit.id}`"
-        :recruit="recruit"
-        :expanded="expandedIds.has(recruit.id)"
-        :selected="selectedSet.has(recruit.id)"
-        :selection-mode="isSelectionMode"
-        :style="{ '--i': index }"
-        :app-is-refreshing="isRefreshing"
-        @toggle="toggleExpand(recruit.id)"
-        @toggle-select="toggleSelect(recruit.id)"
-      />
-    </template>
+    <ConsoleList
+      :items="visibleItems"
+      :is-showcase-mode="isShowcaseMode"
+    >
+      <template #item="{ item, index }">
+        <RecruitCard
+          :key="item.id"
+          v-memo="[
+            item.potentialScore,
+            item.t,
+            item.d.ago,
+            expandedIds.has(item.id),
+            selectedSet.has(item.id),
+            isSelectionMode,
+            expandedIds.has(item.id) && isRefreshing,
+          ]"
+          :id="`recruit-${item.id}`"
+          :recruit="item"
+          :expanded="expandedIds.has(item.id)"
+          :selected="selectedSet.has(item.id)"
+          :selection-mode="isSelectionMode"
+          :style="{ '--i': index }"
+          :app-is-refreshing="isRefreshing"
+          @toggle="toggleExpand(item.id)"
+          @toggle-select="toggleSelect(item.id)"
+        />
+      </template>
+    </ConsoleList>
   </ConsoleLayout>
 </template>
 
