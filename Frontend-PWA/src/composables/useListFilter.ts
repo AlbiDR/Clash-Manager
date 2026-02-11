@@ -50,7 +50,16 @@ export function useListFilter<T>(
     // 2. Sorting
     const comparator = sortStrategies[sortBy.value];
     if (comparator) {
-      result.sort(comparator);
+      result.sort((a, b) => {
+        const res = comparator(a, b);
+        if (res !== 0) return res;
+        // 🛡️ Tie-breaker: Ensure stable sorting by Name, then ID
+        const nameA = (a as any).n || "";
+        const nameB = (b as any).n || "";
+        const nameRes = nameA.localeCompare(nameB);
+        if (nameRes !== 0) return nameRes;
+        return ((a as any).id || "").localeCompare((b as any).id || "");
+      });
     }
 
     return result;

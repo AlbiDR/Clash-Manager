@@ -80,6 +80,7 @@ const {
         <MemberCard
           :key="item.id"
           v-memo="[
+            item.id,
             item.performanceScore,
             item.dt,
             expandedIds.has(item.id),

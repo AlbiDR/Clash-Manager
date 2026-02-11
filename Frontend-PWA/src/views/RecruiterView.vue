@@ -83,6 +83,7 @@ const {
         <RecruitCard
           :key="item.id"
           v-memo="[
+            item.id,
             item.potentialScore,
             item.t,
             item.d.ago,
