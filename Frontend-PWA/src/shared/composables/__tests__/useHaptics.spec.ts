@@ -1,4 +1,4 @@
-import { useHaptics , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useHaptics } from "./useHaptics";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { nextTick } from "vue";
 

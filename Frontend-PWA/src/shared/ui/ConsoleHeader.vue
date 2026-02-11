@@ -1,8 +1,11 @@
-import { Icon, StatusPill, useHaptics, useHeaderScroll , ConsoleLayout, ConsoleHeader, FloatingDock } from "@shared";
+import Icon from "./Icon.vue";
+import StatusPill from "./StatusPill.vue";
+import { useHaptics } from "../composables/useHaptics";
+import { useHeaderScroll } from "../composables/useHeaderScroll";
 import { useAppSettings } from "@core";
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { HeaderInfoOverlay } from "@shared";
+import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
 const props = defineProps<{
   title: string;
   status?: { type: "updated" | "error" | "loading" | "ready"; text: string };

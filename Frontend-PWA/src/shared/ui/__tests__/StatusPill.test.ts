@@ -1,7 +1,7 @@
 /**
 * @vitest-environment jsdom
  */
-import { StatusPill , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import StatusPill from "../StatusPill.vue";
 
 import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";

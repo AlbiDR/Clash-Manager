@@ -1,4 +1,5 @@
-import { Icon, useCardMechanics , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import Icon from "./Icon.vue";
+import { useCardMechanics } from "../composables/useCardMechanics";
 <script setup lang="ts">
 import { computed } from "vue";
 const props = defineProps<{

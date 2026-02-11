@@ -4,14 +4,18 @@ import { ref, nextTick } from 'vue';
 // --- Mocks ---
 
 const mockClashData = ref({ playerTag: '#TAG123' });
-vi.mock('../useClashData', () => ({
-  useClashData: () => ({
-    data: mockClashData
-  })
-}));
+vi.mock("@core", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    useClashData: () => ({
+      data: mockClashData
+    })
+  };
+});
 
 const mockGetPlayerProfile = vi.fn();
-vi.mock('../../api/gasClient', () => ({
+vi.mock("@core/api/GasClient", () => ({
   getPlayerProfile: (tag: string) => mockGetPlayerProfile(tag)
 }));
 
@@ -29,7 +33,7 @@ const localStorageMock = {
 vi.stubGlobal('localStorage', localStorageMock);
 
 // Mock LaboratoryKernel and LaboratoryAdapter
-vi.mock('../../logic/Laboratory/Laboratory_Kernel', () => ({
+vi.mock('../../logic/Laboratory_Kernel', () => ({
   default: {
     optimize: vi.fn(() => ({ actions: [], totalXpGained: 0 }))
   }

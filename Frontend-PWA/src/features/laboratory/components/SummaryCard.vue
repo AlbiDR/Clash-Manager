@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon  } from "@shared";
 <script setup lang="ts">
 import { type OptimizationResult, type PlayerProfile } from "../logic/Laboratory_Types";
 const props = defineProps<{

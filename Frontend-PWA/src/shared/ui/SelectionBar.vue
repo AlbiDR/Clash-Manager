@@ -1,4 +1,5 @@
-import { Icon, useHaptics , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import Icon from "./Icon.vue";
+import { useHaptics } from "../composables/useHaptics";
 <script setup lang="ts">
 import { ref, computed } from "vue";
 const props = defineProps<{

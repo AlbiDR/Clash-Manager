@@ -1,4 +1,4 @@
-import { useConnectionStatus, useHaptics, useTheme, useWakeLock , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useConnectionStatus, useHaptics, useTheme, useWakeLock  } from "@shared";
 import { idb, useAppSettings, useBlueprintMode, useClashData, useShowcaseMode, useSyntheticMode, useToast } from "@core";
 import { computed } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";

@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon  } from "@shared";
 <script setup lang="ts">
 import { useSettings } from "../composables/useSettings";
 import SettingsCard from "./SettingsCard.vue";

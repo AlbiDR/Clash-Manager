@@ -1,4 +1,4 @@
-import { useConnectionStatus, useWakeLock , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useConnectionStatus, useWakeLock  } from "@shared";
 import { fetchRemote } from "../api/GasClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";

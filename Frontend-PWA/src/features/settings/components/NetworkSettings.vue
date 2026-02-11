@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon  } from "@shared";
 import { useApiState } from "@core";
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";

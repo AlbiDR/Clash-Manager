@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon  } from "@shared";
 <script setup lang="ts">
 import { computed } from "vue";
 import { type OptimizationSettings } from "../logic/Laboratory_Types";

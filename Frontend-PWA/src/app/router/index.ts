@@ -39,17 +39,17 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      redirect: "/leaderboard",
+      redirect: "/roster",
     },
     {
-      path: "/leaderboard",
-      name: "leaderboard",
+      path: "/roster",
+      name: "roster",
       component: RosterView, // Eager load for better LCP
       meta: { title: "Roster" },
     },
     {
-      path: "/recruiter",
-      name: "recruiter",
+      path: "/headhunter",
+      name: "headhunter",
       component: () => import("@features/headhunter/views/HeadhunterView.vue"),
       meta: { title: "Headhunter" },
     },

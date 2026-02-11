@@ -1,6 +1,6 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
-import { useExternalLink } from "@core";
 <script setup lang="ts">
+import Icon from "./Icon.vue";
+import { useExternalLink } from "@core";
 /**
  * 🛠️ CARD ACTIONS
  * Atomic component for player-specific action buttons (RoyaleAPI, Open Game).

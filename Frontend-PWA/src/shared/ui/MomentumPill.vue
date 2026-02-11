@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import Icon from "./Icon.vue";
 import { useAppSettings, useBenchmarking } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";

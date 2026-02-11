@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon  } from "@shared";
 import { triggerBackendUpdate, useClashData } from "@core";
 <script setup lang="ts">
 import { ref, reactive, onUnmounted, computed } from "vue";

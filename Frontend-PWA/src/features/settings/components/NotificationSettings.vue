@@ -1,4 +1,4 @@
-import { Icon, useHaptics , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon, useHaptics  } from "@shared";
 import { isWorkerConfigured, subscribeToPush, useAppSettings, useBadge, useClashData, useToast } from "@core";
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";

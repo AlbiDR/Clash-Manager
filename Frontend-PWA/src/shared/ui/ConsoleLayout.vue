@@ -1,8 +1,15 @@
-import { EmptyState, ErrorState, Icon, SelectionBar, useHaptics, useUiCoordinator , ConsoleLayout, HeaderInfoOverlay } from "@shared";
+import EmptyState from "./EmptyState.vue";
+import ErrorState from "./ErrorState.vue";
+import Icon from "./Icon.vue";
+import SelectionBar from "./SelectionBar.vue";
+import { useHaptics } from "../composables/useHaptics";
+import { useUiCoordinator } from "../composables/useUiCoordinator";
+import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
 import { useShowcaseMode } from "@core";
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, nextTick } from "vue";
-import { ConsoleHeader , FloatingDock } from "@shared";
+import ConsoleHeader from "./ConsoleHeader.vue";
+import FloatingDock from "./FloatingDock.vue";
 const props = defineProps<{
   title: string;
   status: { type: "updated" | "error" | "loading" | "ready"; text: string };

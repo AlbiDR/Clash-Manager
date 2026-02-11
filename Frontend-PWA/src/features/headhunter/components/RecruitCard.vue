@@ -1,4 +1,4 @@
-import { BaseCard, CardActions, Icon, StatisticItem , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { BaseCard, CardActions, Icon, StatisticItem  } from "@shared";
 import { useAppSettings, useBenchmarking } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";

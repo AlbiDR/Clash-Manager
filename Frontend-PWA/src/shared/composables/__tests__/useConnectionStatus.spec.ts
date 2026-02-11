@@ -1,12 +1,17 @@
-import { resetConnectionState, useConnectionStatus, useNetworkInfo , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { resetConnectionState, useConnectionStatus } from "../useConnectionStatus";
+import { useNetworkInfo } from "../useNetworkInfo";
 import { useApiState } from "@core";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
 
 // Mock dependencies
-vi.mock("../useApiState", () => ({
-  useApiState: vi.fn(),
-}));
+vi.mock("@core", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    useApiState: vi.fn(),
+  };
+});
 
 vi.mock("../useNetworkInfo", () => ({
   useNetworkInfo: vi.fn(),

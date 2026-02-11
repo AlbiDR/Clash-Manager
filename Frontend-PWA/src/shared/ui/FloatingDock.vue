@@ -1,4 +1,6 @@
-import { Icon, useHaptics, useUiCoordinator , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import Icon from "./Icon.vue";
+import { useHaptics } from "../composables/useHaptics";
+import { useUiCoordinator } from "../composables/useUiCoordinator";
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -21,16 +23,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    path: "/leaderboard",
-    name: "leaderboard",
+    path: "/roster",
+    name: "roster",
     label: "Roster",
-    icon: "leaderboard",
+    icon: "roster",
   },
   {
-    path: "/recruiter",
-    name: "recruiter",
+    path: "/headhunter",
+    name: "headhunter",
     label: "Headhunter",
-    icon: "recruiter",
+    icon: "headhunter",
   },
   {
     path: "/laboratory",

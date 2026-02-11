@@ -1,4 +1,4 @@
-import { BaseCardSkeleton, Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { BaseCardSkeleton, Icon  } from "@shared";
 <script setup lang="ts">
 import { useRecruiter } from "../composables/useRecruiter";
 

@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import Icon from "./Icon.vue";
 <script setup lang="ts">
 import { watch } from "vue";
 import { formatHeaderDescription } from "@core/utils/formatters";
