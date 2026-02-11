@@ -1,118 +1,143 @@
 import { useConsoleController } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref, computed } from "vue";
-// Mock dependencies
-vi.mock("../useBatchQueue", () => ({
-  useBatchQueue: vi.fn(() => ({
-    selectedIds: ref([]),
-    fabState: ref({ visible: false }),
-    isSelectionMode: ref(false),
-    toggleSelect: vi.fn(),
-    selectAll: vi.fn(),
-    clearSelection: vi.fn(),
-    handleAction: vi.fn(),
-    handleBlitz: vi.fn(),
-    setForceSelectionMode: vi.fn(),
-  })),
+
+const { sharedState } = vi.hoisted(() => ({
+  sharedState: {
+    mockBlueprintMode: { value: false },
+    mockShowcaseMode: { value: false },
+    mockPingData: { 
+      value: {
+        spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
+        sheets: { Leaderboard: 456, Headhunter: 789 },
+      }
+    }
+  }
 }));
 
-vi.mock("../useDeepLinkHandler", () => ({
-  useDeepLinkHandler: vi.fn(() => ({
-    expandedIds: ref(new Set()),
-    toggleExpand: vi.fn(),
-    processDeepLink: vi.fn(),
-  })),
-}));
-
-vi.mock("../useListFilter", () => ({
-  useListFilter: vi.fn((data) => ({
-    searchQuery: ref(""),
-    sortBy: ref("score"),
-    filteredItems: computed(() => data.value),
-    updateSort: vi.fn(),
-  })),
-}));
-
-vi.mock("@shared", () => ({
-  useUiCoordinator: vi.fn(() => ({
-    setFabVisible: vi.fn(),
-  })),
-}));
-
-vi.mock("../useProgressiveList", () => ({
-  useProgressiveList: vi.fn((data) => ({
-    visibleItems: computed(() => data.value),
-  })),
-}));
-
-vi.mock("@shared", () => ({
-  useConnectionStatus: vi.fn(() => ({
-    status: ref("online"),
-  })),
-}));
-
-const mockPingData = ref({
-  spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-  sheets: { Leaderboard: 456, Headhunter: 789 },
+// Mock leaf dependencies first
+vi.mock("../useBatchQueue", async () => {
+    const { ref } = await import("vue");
+    return {
+        useBatchQueue: vi.fn(() => ({
+            selectedIds: ref([]),
+            fabState: ref({ visible: false }),
+            isSelectionMode: ref(false),
+            toggleSelect: vi.fn(),
+            selectAll: vi.fn(),
+            clearSelection: vi.fn(),
+            handleAction: vi.fn(),
+            handleBlitz: vi.fn(),
+            setForceSelectionMode: vi.fn(),
+        })),
+    };
 });
-vi.mock("../useApiState", () => ({
-  useApiState: vi.fn(() => ({
-    pingData: mockPingData,
-    apiStatus: ref("online"),
-  })),
-}));
 
-const mockBlueprintMode = ref(false);
-vi.mock("../useBlueprintMode", () => ({
-  useBlueprintMode: vi.fn(() => ({
-    isBlueprintMode: mockBlueprintMode,
-  })),
-}));
+vi.mock("../useDeepLinkHandler", async () => {
+    const { ref } = await import("vue");
+    return {
+        useDeepLinkHandler: vi.fn(() => ({
+            expandedIds: ref(new Set()),
+            toggleExpand: vi.fn(),
+            processDeepLink: vi.fn(),
+        })),
+    };
+});
 
-const mockShowcaseMode = ref(false);
-vi.mock("../useShowcaseMode", () => ({
-  useShowcaseMode: vi.fn(() => ({
-    isShowcaseMode: mockShowcaseMode,
-  })),
-}));
+// Mock useApiState at its actual path
+vi.mock("../../api/useApiState", async () => {
+  const { ref } = await import("vue");
+  return {
+    useApiState: vi.fn(() => ({
+      pingData: ref(sharedState.mockPingData.value),
+      apiStatus: ref("online"),
+    })),
+  };
+});
+
+vi.mock("../useBlueprintMode", async () => {
+  const { ref } = await import("vue");
+  return {
+    useBlueprintMode: vi.fn(() => ({
+      isBlueprintMode: ref(sharedState.mockBlueprintMode.value),
+    })),
+  };
+});
+
+vi.mock("../useShowcaseMode", async () => {
+  const { ref } = await import("vue");
+  return {
+    useShowcaseMode: vi.fn(() => ({
+      isShowcaseMode: ref(sharedState.mockShowcaseMode.value),
+    })),
+  };
+});
+
+vi.mock("../useSyntheticMode", async () => {
+  const { ref } = await import("vue");
+  return {
+    useSyntheticMode: vi.fn(() => ({
+      isSyntheticMode: ref(false),
+    })),
+  };
+});
+
+vi.mock("@shared", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  const { ref } = await import("vue");
+  return {
+    ...actual,
+    useUiCoordinator: vi.fn(() => ({
+      setFabVisible: vi.fn(),
+    })),
+    useConnectionStatus: vi.fn(() => ({
+      status: ref("online"),
+    })),
+  };
+});
 
 describe("useConsoleController", () => {
-  const defaultOptions = {
-    data: ref([{ id: "1", n: "Test" }]),
-    isHydrated: ref(true),
-    isRefreshing: ref(false),
-    syncError: ref(null),
-    lastSyncTime: ref(Date.now()),
-    filterFn: (item: any) => [item.n],
-    sortStrategies: {},
-    defaultSort: "score",
-    deepLinkPrefix: "test-",
-    batchIdMapper: (item: any) => item.id,
-    statsLabel: "Test",
-  };
+  // Use a factory function to get fresh default options
+  const createOptions = () => {
+      const { ref } = require("vue");
+      return {
+        data: ref([{ id: "1", n: "Test" }]),
+        isHydrated: ref(true),
+        isRefreshing: ref(false),
+        syncError: ref(null),
+        lastSyncTime: ref(Date.now()),
+        filterFn: (item: any) => [item.n],
+        sortStrategies: {},
+        defaultSort: "score",
+        deepLinkPrefix: "test-",
+        batchIdMapper: (item: any) => item.id,
+        statsLabel: "Test",
+        sheetName: "Leaderboard"
+      };
+  }
 
   beforeEach(() => {
-    mockBlueprintMode.value = false;
-    mockShowcaseMode.value = false;
+    sharedState.mockBlueprintMode.value = false;
+    sharedState.mockShowcaseMode.value = false;
     vi.clearAllMocks();
   });
 
   it("shows skeletons when Blueprint Mode is active", () => {
-    mockBlueprintMode.value = true;
-    const { showSkeletons } = useConsoleController(defaultOptions);
+    sharedState.mockBlueprintMode.value = true;
+    const { showSkeletons } = useConsoleController(createOptions());
     expect(showSkeletons.value).toBe(true);
   });
 
   it("does NOT show skeletons when Showcase Mode is active, even if Blueprint Mode is also active", () => {
-    mockBlueprintMode.value = true;
-    mockShowcaseMode.value = true;
-    const { showSkeletons } = useConsoleController(defaultOptions);
+    sharedState.mockBlueprintMode.value = true;
+    sharedState.mockShowcaseMode.value = true;
+    const { showSkeletons } = useConsoleController(createOptions());
     expect(showSkeletons.value).toBe(false);
   });
 
   it("shows skeletons during initial hydration if refreshing and no data", () => {
+    const { ref } = require("vue");
     const options = {
-      ...defaultOptions,
+      ...createOptions(),
       isHydrated: ref(false),
       isRefreshing: ref(true),
       data: ref([]),
@@ -122,8 +147,9 @@ describe("useConsoleController", () => {
   });
 
   it("hides skeletons once hydrated even if refreshing", () => {
+    const { ref } = require("vue");
     const options = {
-      ...defaultOptions,
+      ...createOptions(),
       isHydrated: ref(true),
       isRefreshing: ref(true),
       data: ref([{ id: "1", n: "Test" }]),
@@ -134,7 +160,7 @@ describe("useConsoleController", () => {
 
   it("calculates sheetUrl correctly with string input", () => {
     const options = {
-      ...defaultOptions,
+      ...createOptions(),
       sheetName: "Leaderboard",
     };
     const { sheetUrl } = useConsoleController(options);
@@ -143,7 +169,7 @@ describe("useConsoleController", () => {
 
   it("calculates sheetUrl correctly with array input (first match)", () => {
     const options = {
-      ...defaultOptions,
+      ...createOptions(),
       sheetName: ["NonExistent", "Headhunter"],
     };
     const { sheetUrl } = useConsoleController(options);
@@ -151,15 +177,16 @@ describe("useConsoleController", () => {
   });
 
   it("updates searchQuery via handleSearch", () => {
-    const { handleSearch, searchQuery } = useConsoleController(defaultOptions);
+    const { handleSearch, searchQuery } = useConsoleController(createOptions());
     handleSearch("New Query");
     expect(searchQuery.value).toBe("New Query");
   });
 
   it("uses default scoreGetter in handleSelectScore if not provided", () => {
+    const { ref } = require("vue");
     const scoreGetter = vi.fn((item: any) => item.score);
     const options = {
-      ...defaultOptions,
+      ...createOptions(),
       scoreGetter,
       data: ref([{ id: "1", n: "Test", score: 100 }]),
     };

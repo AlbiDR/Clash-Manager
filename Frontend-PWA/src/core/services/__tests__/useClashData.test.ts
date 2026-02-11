@@ -9,6 +9,9 @@ const mockGenerateMockData = vi.hoisted(() => vi.fn());
 
 vi.mock("../../api/GasClient", () => ({
   fetchRemote: mockFetchRemote,
+}));
+
+vi.mock("../StorageService", () => ({
   loadCache: mockLoadCache,
   saveCache: mockSaveCache,
 }));
@@ -43,21 +46,24 @@ vi.mock("../useBroadcastChannel", () => ({
 
 const mockWakeLockRequest = vi.hoisted(() => vi.fn());
 const mockWakeLockRelease = vi.hoisted(() => vi.fn());
-vi.mock("@shared", () => ({
-  useWakeLock: () => ({
-    request: mockWakeLockRequest,
-    release: mockWakeLockRelease,
-  }),
-}));
 
 const mockSetSyncing = vi.hoisted(() => vi.fn());
 const mockSetSuccess = vi.hoisted(() => vi.fn());
-vi.mock("@shared", () => ({
-  useConnectionStatus: () => ({
-    setSyncing: mockSetSyncing,
-    setSuccess: mockSetSuccess,
-  }),
-}));
+
+vi.mock("@shared", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    useWakeLock: () => ({
+      request: mockWakeLockRequest,
+      release: mockWakeLockRelease,
+    }),
+    useConnectionStatus: () => ({
+      setSyncing: mockSetSyncing,
+      setSuccess: mockSetSuccess,
+    }),
+  };
+});
 
 describe("useClashData", () => {
   let useClashData: any;

@@ -95,10 +95,17 @@ export function useLeaderboard() {
     },
   ];
 
+  const sheetUrl = computed(() => {
+    const url = pingData.value?.spreadsheetUrl;
+    const gid = pingData.value?.sheets?.Leaderboard;
+    return url && gid ? `${url}#gid=${gid}` : url;
+  });
+
   return {
     ...controller,
     data,
     isShowcaseMode,
     sortOptions,
+    sheetUrl,
   };
 }

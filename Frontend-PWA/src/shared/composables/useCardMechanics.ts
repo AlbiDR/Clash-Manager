@@ -1,4 +1,4 @@
-import { useHaptics , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useHaptics } from "./useHaptics";
 interface CardCallbacks {
   onSelect: () => void;
   onExpand: () => void;

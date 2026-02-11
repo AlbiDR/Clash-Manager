@@ -1,4 +1,4 @@
-import { BaseCardSkeleton, Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { BaseCardSkeleton, Icon  } from "@shared";
 import { useClashData } from "@core";
 <script setup lang="ts">
 import { computed } from "vue";

@@ -1,7 +1,7 @@
 /**
 * @vitest-environment jsdom
  */
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import Icon from "./Icon.vue";
 
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";

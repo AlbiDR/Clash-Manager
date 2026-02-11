@@ -1,4 +1,4 @@
-import { Icon , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { Icon  } from "@shared";
 <script setup lang="ts">
 import { type UpgradeAction } from "../logic/Laboratory_Types";
 defineProps<{

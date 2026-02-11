@@ -1,7 +1,7 @@
 /**
 * @vitest-environment jsdom
  */
-import { CardActions , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import CardActions from "../CardActions.vue";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
@@ -10,12 +10,16 @@ const { mockOpenExternal, mockOpenInGame } = vi.hoisted(() => ({
   mockOpenInGame: vi.fn(),
 }));
 
-vi.mock("../../composables/useExternalLink", () => ({
-  useExternalLink: () => ({
-    openExternal: mockOpenExternal,
-    openInGame: mockOpenInGame,
-  }),
-}));
+vi.mock("@core", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    useExternalLink: () => ({
+      openExternal: mockOpenExternal,
+      openInGame: mockOpenInGame,
+    }),
+  };
+});
 
 describe("CardActions", () => {
   beforeEach(() => {

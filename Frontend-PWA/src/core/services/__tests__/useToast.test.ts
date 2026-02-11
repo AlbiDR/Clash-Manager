@@ -1,25 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as useHapticsModule from "@shared";
+import { ref } from 'vue';
 
-vi.mock('../useHaptics', () => ({
-  useHaptics: vi.fn()
+const mockHaptics = {
+  success: vi.fn(),
+  error: vi.fn(),
+  tap: vi.fn()
+};
+
+vi.mock("@shared", () => ({
+  useHaptics: () => mockHaptics
 }));
 
 describe('useToast', () => {
   let useToast: any;
-  let mockHaptics: any;
 
   beforeEach(async () => {
     vi.useFakeTimers();
     vi.resetModules();
-
-    mockHaptics = {
-      success: vi.fn(),
-      error: vi.fn(),
-      tap: vi.fn()
-    };
-
-    vi.mocked(useHapticsModule.useHaptics).mockReturnValue(mockHaptics);
+    vi.clearAllMocks();
 
     if (typeof crypto === 'undefined') {
       (global as any).crypto = { randomUUID: () => Math.random().toString(36) };
@@ -33,7 +31,6 @@ describe('useToast', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
   });
 
   it('should add a toast with success type and trigger haptics', () => {
@@ -103,6 +100,7 @@ describe('useToast', () => {
 
   it('should support multiple concurrent toasts', () => {
     const { success, error, toasts } = useToast();
+    toasts.value = []; // Reset for this specific test if needed
 
     success('One');
     error('Two');

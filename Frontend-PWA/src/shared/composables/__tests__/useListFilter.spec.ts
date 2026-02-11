@@ -1,4 +1,4 @@
-import { useListFilter , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useListFilter } from "./useListFilter";
 import { describe, it, expect } from "vitest";
 import { ref } from "vue";
 describe("useListFilter", () => {

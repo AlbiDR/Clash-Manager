@@ -1,4 +1,4 @@
-import { BaseCardSkeleton , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { BaseCardSkeleton  } from "@shared";
 <script setup lang="ts">
 import { useLeaderboard } from "../composables/useLeaderboard";
 

@@ -1,4 +1,4 @@
-import { useNetworkInfo , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useNetworkInfo } from "./useNetworkInfo";
 import { useApiState } from "@core";
 import { ref, computed, readonly, watch } from "vue";
 export type ConnectionStatus =

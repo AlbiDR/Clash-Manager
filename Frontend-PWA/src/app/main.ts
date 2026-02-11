@@ -2,7 +2,7 @@
 * CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
-import { useTheme, useWakeLock, vTactile, vTooltip , ConsoleLayout, ConsoleHeader, FloatingDock, HeaderInfoOverlay } from "@shared";
+import { useTheme, useWakeLock, vTactile, vTooltip  } from "@shared";
 import { idb, useApiState, useAppSettings, useClashData, useStoragePersistence } from "@core";
 
 import { createApp, watch } from "vue";

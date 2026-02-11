@@ -4,57 +4,43 @@ import { ref, reactive, nextTick } from "vue";
 import type { WebAppData, Recruit } from "@core/types";
 // --- Mocks ---
 
+// --- Mocks ---
 const mockSetBadge = vi.fn();
 const mockSendLocalNotification = vi.fn();
-vi.mock("../useBadge", () => ({
-  useBadge: () => ({
-    setBadge: mockSetBadge,
-    sendLocalNotification: mockSendLocalNotification,
-  }),
-}));
-
 const mockModules = reactive({
   experimentalNotifications: true,
   notificationBadgeHighPotential: true,
   notificationThreshold: 75,
 });
-vi.mock("../useAppSettings", () => ({
-  useAppSettings: () => ({
-    modules: mockModules,
-  }),
-}));
-
 const mockClashData = ref<WebAppData | null>(null);
 const mockUpdateLocalData = vi.fn((newData) => {
   mockClashData.value = newData;
 });
-vi.mock("../useClashData", () => ({
-  useClashData: () => ({
-    data: mockClashData,
-    updateLocalData: mockUpdateLocalData,
-  }),
-}));
-
 const mockPost = vi.fn();
-vi.mock("../useBroadcastChannel", () => ({
-  useBroadcastChannel: (callback: (msg: any) => void) => {
-    // Expose callback for manual triggering in tests
-    (globalThis as any).broadcastCallback = callback;
-    return { post: mockPost };
-  },
-}));
-
 const mockIsSyntheticMode = ref(false);
-vi.mock("../useSyntheticMode", () => ({
-  useSyntheticMode: () => ({
-    isSyntheticMode: mockIsSyntheticMode,
-  }),
-}));
 
-vi.mock("../../api/GasClient", async (importOriginal) => {
+vi.mock("@core", async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,
+    useBadge: () => ({
+      setBadge: mockSetBadge,
+      sendLocalNotification: mockSendLocalNotification,
+    }),
+    useAppSettings: () => ({
+      modules: mockModules,
+    }),
+    useClashData: () => ({
+      data: mockClashData,
+      updateLocalData: mockUpdateLocalData,
+    }),
+    useBroadcastChannel: (callback: (msg: any) => void) => {
+      (globalThis as any).broadcastCallback = callback;
+      return { post: mockPost };
+    },
+    useSyntheticMode: () => ({
+      isSyntheticMode: mockIsSyntheticMode,
+    }),
     dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
     undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
   };
