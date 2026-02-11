@@ -2,8 +2,8 @@
 import { useLeaderboard } from "../composables/useLeaderboard";
 
 import MemberCard from "../components/MemberCard.vue";
-import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
+import ConsoleList from "../components/ConsoleList.vue";
 
 const {
   // Data & Status
@@ -72,50 +72,34 @@ const {
     @fab-dismiss="clearSelection"
   >
     <!-- Default Slot: The List -->
-    <!-- Exhibition Row (Only 1 card + skeletons if specialized) -->
-    <template v-if="isShowcaseMode">
-      <MemberCard
-        v-if="visibleItems.length > 0"
-        :member="visibleItems[0]"
-        :expanded="expandedIds.has(visibleItems[0].id)"
-        :selected="selectedSet.has(visibleItems[0].id)"
-        :selection-mode="isSelectionMode"
-        :is-tagged="data?.playerTag === visibleItems[0].id"
-        :app-is-refreshing="isRefreshing"
-        @toggle="toggleExpand(visibleItems[0].id)"
-        @toggle-select="toggleSelect(visibleItems[0].id)"
-      />
-      <BaseCardSkeleton
-        v-for="i in 7"
-        :key="'ex-' + i"
-        :index="i + 1"
-        :style="{ '--i': i + 1 }"
-      />
-    </template>
-    <template v-else>
-      <MemberCard
-        v-for="(member, index) in visibleItems"
-        :key="member.id"
-        v-memo="[
-          member.performanceScore,
-          member.dt,
-          expandedIds.has(member.id),
-          selectedSet.has(member.id),
-          isSelectionMode,
-          expandedIds.has(member.id) && isRefreshing,
-          data?.playerTag === member.id,
-        ]"
-        :id="`member-${member.id}`"
-        :member="member"
-        :expanded="expandedIds.has(member.id)"
-        :selected="selectedSet.has(member.id)"
-        :selection-mode="isSelectionMode"
-        :is-tagged="data?.playerTag === member.id"
-        :style="{ '--i': index }"
-        :app-is-refreshing="isRefreshing"
-        @toggle="toggleExpand(member.id)"
-        @toggle-select="toggleSelect(member.id)"
-      />
-    </template>
+    <ConsoleList
+      :items="visibleItems"
+      :is-showcase-mode="isShowcaseMode"
+    >
+      <template #item="{ item, index }">
+        <MemberCard
+          :key="item.id"
+          v-memo="[
+            item.performanceScore,
+            item.dt,
+            expandedIds.has(item.id),
+            selectedSet.has(item.id),
+            isSelectionMode,
+            expandedIds.has(item.id) && isRefreshing,
+            data?.playerTag === item.id,
+          ]"
+          :id="`member-${item.id}`"
+          :member="item"
+          :expanded="expandedIds.has(item.id)"
+          :selected="selectedSet.has(item.id)"
+          :selection-mode="isSelectionMode"
+          :is-tagged="data?.playerTag === item.id"
+          :style="{ '--i': index }"
+          :app-is-refreshing="isRefreshing"
+          @toggle="toggleExpand(item.id)"
+          @toggle-select="toggleSelect(item.id)"
+        />
+      </template>
+    </ConsoleList>
   </ConsoleLayout>
 </template>
