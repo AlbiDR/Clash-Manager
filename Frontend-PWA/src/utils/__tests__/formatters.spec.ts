@@ -301,11 +301,11 @@ describe("formatters", () => {
       expect(output).toContain('Some regular text');
     });
 
-    it("should handle section titles with trailing spaces (Current Limitation)", () => {
+    it("should handle section titles with trailing spaces (FIXED)", () => {
       const input = "Section Title:  ";
       const output = formatHeaderDescription(input);
-      // CRACK: Current regex ^(...|...:)$ fails if there are trailing spaces.
-      expect(output).toBe('Section Title:  ');
+      // FIXED: Regex now handles trailing spaces and wraps the title correctly.
+      expect(output).toBe('<div class="desc-section-title">Section Title:</div>');
     });
   });
 
