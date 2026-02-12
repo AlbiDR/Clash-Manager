@@ -135,6 +135,49 @@ describe('LaboratoryKernel', () => {
 
       // Current behavior due to bug: it returns 1 action because it uses the 1000 wildcards.
       expect(result.actions).toHaveLength(1);
+
+      // CRACK: Verify that isTowerTroop flag is currently LOST in actions
+      // because simCards mapping drops the property.
+      expect(result.actions[0].isTowerTroop).toBeUndefined();
+    });
+
+    it('should NOT allow wildcard consumption for Tower Troops (Desired Behavior)', () => {
+      // This test is to document the crack where Tower Troops erroneously
+      // use wildcards because the flag is lost during mapping.
+      const playerWithTowerTroop = {
+        ...mockPlayerData,
+        inventory: { ...mockPlayerData.inventory, wildCards: { Common: 1000, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
+        cards: [
+          { name: 'Tower Princess', rarity: 'Common', level: 10, count: 0, isTowerTroop: true }
+        ]
+      };
+
+      const result = LaboratoryKernel.optimize(playerWithTowerTroop, defaultSettings);
+
+      // DESIRED: length should be 0 because Tower Troops cannot use wildcards.
+      // ACTUAL (CRACK): length is 1 because isTowerTroop is lost in simCards mapping.
+      expect(result.actions).not.toHaveLength(0);
+    });
+
+    it('should preserve isTowerTroop flag throughout simulation', () => {
+      const playerWithMixedCards = {
+        ...mockPlayerData,
+        cards: [
+          { name: 'Knight', rarity: 'Common', level: 10, count: 1000, isTowerTroop: false },
+          { name: 'Tower Princess', rarity: 'Common', level: 10, count: 1000, isTowerTroop: true }
+        ]
+      };
+
+      const result = LaboratoryKernel.optimize(playerWithMixedCards, defaultSettings);
+
+      const knightAction = result.actions.find(a => a.cardName === 'Knight');
+      const tpAction = result.actions.find(a => a.cardName === 'Tower Princess');
+
+      // CRACK: Both are undefined because simCards mapping drops the property.
+      expect(knightAction?.isTowerTroop).toBeUndefined();
+      if (tpAction) {
+        expect(tpAction.isTowerTroop).toBeUndefined();
+      }
     });
   });
 });
