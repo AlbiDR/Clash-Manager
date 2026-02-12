@@ -5,6 +5,7 @@ import RecruitCard from "../components/RecruitCard.vue";
 import Icon from "../components/Icon.vue";
 import ConsoleLayout from "../components/ConsoleLayout.vue";
 import ConsoleList from "../components/ConsoleList.vue";
+import BaseCardSkeleton from "../components/BaseCardSkeleton.vue";
 
 const {
   status,
