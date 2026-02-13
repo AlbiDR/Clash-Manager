@@ -223,25 +223,18 @@ function doPost(
 
     switch (action) {
       case "dismissrecruits":
-        // 🛡️ DUAL-MODE SUPPORT: Handle both new 'items' (objects) and legacy 'ids' (strings)
-        const rawItems = payload.items || [];
-        const rawIds = payload.ids || [];
+        // 🛡️ DUAL-MODE SUPPORT: Handle both mapping formats and ensure score capture
+        const rawItems = Array.isArray(payload.items) ? payload.items : [];
+        const rawIds = Array.isArray(payload.ids) ? payload.ids : [];
         
-        const sourceData = Array.isArray(rawItems) && rawItems.length > 0 ? rawItems : rawIds;
-        
-        if (!sourceData || !Array.isArray(sourceData) || sourceData.length === 0) {
-          console.error(`[API] dismissRecruits missing payload. Keys: ${Object.keys(payload).join(', ')}`);
-          return respond(
-            null,
-            "INVALID_PARAMS",
-            `dismissRecruits requires "items" or "ids" array. Found: ${typeof sourceData}`,
-          );
-        }
-
-        // Normalize: transform mixing strings and objects into standard {id, score} sets
-        const normalizedItems = sourceData.map(item => {
+        // Normalize: Zip entries and prioritize score-aware objects
+        const normalizedItems = (rawItems.length > 0 ? rawItems : rawIds).map(item => {
           if (typeof item === 'string') return { id: item, score: 0 };
-          if (item && typeof item === 'object' && item.id) return { id: item.id, score: item.score || 0 };
+          if (item && typeof item === 'object') {
+             // Fallback chain for score keys to ensure "Raw Score" is captured
+             const score = item.score ?? item.potentialRawScore ?? item.rawScore ?? 0;
+             return { id: item.id, score: Number(score) || 0 };
+          }
           return null;
         }).filter(item => item !== null);
 

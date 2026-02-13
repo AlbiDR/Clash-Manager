@@ -205,7 +205,8 @@ export function useRecruiter() {
     // HARDENING: Map IDs to score-aware request tuples
     const items = recruitsToRestore.map(r => ({
       id: r.id,
-      score: r.potentialRawScore || 0
+      score: r.potentialRawScore || 0,
+      potentialRawScore: r.potentialRawScore || 0 // Explicit secondary key for redundancy
     }));
 
     const { undismissRecruitsAction } = useHeadhunter();
