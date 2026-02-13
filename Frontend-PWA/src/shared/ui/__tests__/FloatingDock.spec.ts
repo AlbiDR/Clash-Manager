@@ -11,7 +11,7 @@ vi.mock("vue-router", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("../../composables/useHaptics", () => ({
+vi.mock("../../../core/services/useHaptics", () => ({
   useHaptics: () => ({ tap: vi.fn() }),
 }));
 

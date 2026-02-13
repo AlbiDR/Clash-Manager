@@ -5,13 +5,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
 
 // Mock dependencies
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useApiState: vi.fn(),
-  };
-});
+vi.mock("../../api/useApiState", () => ({
+  useApiState: vi.fn(),
+}));
 
 vi.mock("../useNetworkInfo", () => ({
   useNetworkInfo: vi.fn(),

@@ -1,4 +1,5 @@
-import { useConnectionStatus, useWakeLock  } from "@shared";
+import { useConnectionStatus } from "./useConnectionStatus";
+import { useWakeLock } from "./useWakeLock";
 import { fetchRemote } from "../api/GasClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";

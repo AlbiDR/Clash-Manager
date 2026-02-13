@@ -1,5 +1,5 @@
-import { useConnectionStatus, useHaptics, useTheme, useWakeLock  } from "@shared";
-import { idb, useAppSettings, useBlueprintMode, useClashData, useShowcaseMode, useSyntheticMode, useToast } from "@core";
+import { useTheme } from "@shared";
+import { idb, useAppSettings, useBlueprintMode, useClashData, useShowcaseMode, useSyntheticMode, useToast, useConnectionStatus, useHaptics, useWakeLock } from "@core";
 import { computed } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 /**

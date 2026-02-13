@@ -83,6 +83,14 @@ vi.mock("@core", async (importOriginal) => {
       error: vi.fn(),
       info: vi.fn(),
     })),
+    useConnectionStatus: vi.fn(() => ({
+      status: ref("online"),
+    })),
+    useHaptics: vi.fn(() => ({
+      tap: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
     scanRecruitsDirect: vi.fn().mockResolvedValue([]),
     isWorkerConfigured: vi.fn().mockReturnValue(false),
   };
@@ -97,6 +105,11 @@ vi.mock("@shared", async (importOriginal) => {
     })),
     useConnectionStatus: vi.fn(() => ({
       status: ref("online"),
+    })),
+    useHaptics: vi.fn(() => ({
+      tap: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
     })),
   };
 });

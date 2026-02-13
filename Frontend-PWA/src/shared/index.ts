@@ -23,12 +23,8 @@ export { vTactile } from "./directives/vTactile";
 export { vTooltip } from "./directives/vTooltip";
 
 // Composables (Shared Atoms)
-export { useHaptics } from "./composables/useHaptics";
-export { useWakeLock } from "./composables/useWakeLock";
-export { useConnectionStatus } from "./composables/useConnectionStatus";
 export { useUiCoordinator } from "./composables/useUiCoordinator";
 export { useTheme } from "./composables/useTheme";
-export { useNetworkInfo } from "./composables/useNetworkInfo";
 export { useLongPress } from "./composables/useLongPress";
 export { useListFilter } from "./composables/useListFilter";
 export { useHeaderScroll } from "./composables/useHeaderScroll";

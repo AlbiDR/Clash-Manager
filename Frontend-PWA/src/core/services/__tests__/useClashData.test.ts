@@ -50,18 +50,24 @@ const mockWakeLockRelease = vi.hoisted(() => vi.fn());
 const mockSetSyncing = vi.hoisted(() => vi.fn());
 const mockSetSuccess = vi.hoisted(() => vi.fn());
 
+vi.mock("../useWakeLock", () => ({
+  useWakeLock: () => ({
+    request: mockWakeLockRequest,
+    release: mockWakeLockRelease,
+  }),
+}));
+
+vi.mock("../useConnectionStatus", () => ({
+  useConnectionStatus: () => ({
+    setSyncing: mockSetSyncing,
+    setSuccess: mockSetSuccess,
+  }),
+}));
+
 vi.mock("@shared", async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,
-    useWakeLock: () => ({
-      request: mockWakeLockRequest,
-      release: mockWakeLockRelease,
-    }),
-    useConnectionStatus: () => ({
-      setSyncing: mockSetSyncing,
-      setSuccess: mockSetSuccess,
-    }),
   };
 });
 

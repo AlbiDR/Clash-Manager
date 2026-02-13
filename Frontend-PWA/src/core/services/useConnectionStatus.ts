@@ -1,5 +1,5 @@
 import { useNetworkInfo } from "./useNetworkInfo";
-import { useApiState } from "@core";
+import { useApiState } from "../api/useApiState";
 import { ref, computed, readonly, watch } from "vue";
 export type ConnectionStatus =
   | "online"

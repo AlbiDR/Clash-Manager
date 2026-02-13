@@ -1,5 +1,5 @@
-import { ErrorBoundary, ToastContainer, useConnectionStatus, useHaptics, useUiCoordinator , ConsoleLayout, ConsoleHeader } from "@shared";
-import { useClashData, useShowcaseMode } from "@core";
+import { ErrorBoundary, ToastContainer, useUiCoordinator, ConsoleLayout, ConsoleHeader } from "@shared";
+import { useClashData, useShowcaseMode, useConnectionStatus, useHaptics } from "@core";
 <script setup lang="ts">
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
