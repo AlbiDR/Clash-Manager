@@ -33,7 +33,14 @@ export function useLeaderboard() {
     string,
     (a: LeaderboardMember, b: LeaderboardMember) => number
   > = {
-    score: (a, b) => (b.performanceScore || 0) - (a.performanceScore || 0),
+    score: (a, b) => {
+      // PRIMARY: Normalized Performance Score (0-100)
+      const diff = (b.performanceScore || 0) - (a.performanceScore || 0);
+      if (diff !== 0) return diff;
+      
+      // SECONDARY: Raw Performance Score (Unlimited) - High Precision Tie-Breaker
+      return (b.performanceRawScore || 0) - (a.performanceRawScore || 0);
+    },
     trend: (a, b) => (b.dt || 0) - (a.dt || 0),
     trophies: (a, b) => (b.t || 0) - (a.t || 0),
     name: (a, b) => a.n.localeCompare(b.n),

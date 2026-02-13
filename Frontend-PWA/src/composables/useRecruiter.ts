@@ -65,7 +65,14 @@ export function useRecruiter() {
   const getTs = (str?: string) => (str ? new Date(str).getTime() : 0);
 
   const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
-    score: (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
+    score: (a, b) => {
+      // PRIMARY: Normalized Potential Score (0-100)
+      const diff = (b.potentialScore || 0) - (a.potentialScore || 0);
+      if (diff !== 0) return diff;
+      
+      // SECONDARY: Raw Potential Score (Unlimited) - High Precision Tie-Breaker
+      return (b.potentialRawScore || 0) - (a.potentialRawScore || 0);
+    },
     trophies: (a, b) => (b.t || 0) - (a.t || 0),
     name: (a, b) => a.n.localeCompare(b.n),
     time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
