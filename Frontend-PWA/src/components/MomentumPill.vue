@@ -2,7 +2,6 @@
 import { computed } from "vue";
 import Icon from "./Icon.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "../composables/useAppSettings";
 import { calculateMomentum } from "../utils/formatters";
 
 /**

@@ -3,8 +3,8 @@ import { useClashData } from "./useClashData";
 import { useApiState } from "./useApiState";
 import { useConsoleController } from "./useConsoleController";
 import { useShowcaseMode } from "./useShowcaseMode";
-import { parseTimeAgoValue } from "../utils/formatters";
-import { SORT_DESCRIPTIONS } from "../utils/sortOptions";
+import { LEADERBOARD_SORT_OPTIONS } from "../utils/sortOptions";
+import { LEADERBOARD_SORT_STRATEGIES } from "../utils/sortStrategies";
 import type { LeaderboardMember } from "../types";
 
 /**
@@ -29,20 +29,6 @@ export function useLeaderboard() {
 
   const members = computed(() => data.value?.lb || []);
 
-  const sortStrategies: Record<
-    string,
-    (a: LeaderboardMember, b: LeaderboardMember) => number
-  > = {
-    score: (a, b) => (b.performanceScore || 0) - (a.performanceScore || 0),
-    trend: (a, b) => (b.dt || 0) - (a.dt || 0),
-    trophies: (a, b) => (b.t || 0) - (a.t || 0),
-    name: (a, b) => a.n.localeCompare(b.n),
-    donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
-    tenure: (a, b) => (b.d.days || 0) - (a.d.days || 0),
-    last_seen: (a, b) =>
-      parseTimeAgoValue(a.d.seen) - parseTimeAgoValue(b.d.seen),
-  };
-
   const controller = useConsoleController({
     data: members,
     isHydrated,
@@ -50,7 +36,7 @@ export function useLeaderboard() {
     syncError,
     lastSyncTime,
     filterFn: (m: LeaderboardMember) => [m.n, m.id],
-    sortStrategies,
+    sortStrategies: LEADERBOARD_SORT_STRATEGIES,
     defaultSort: "score",
     deepLinkPrefix: "member-",
     batchIdMapper: (m: LeaderboardMember) => m.id,
@@ -60,48 +46,10 @@ export function useLeaderboard() {
     refresh,
   });
 
-  const sortOptions = [
-    {
-      label: "Performance",
-      value: "score",
-      desc: SORT_DESCRIPTIONS.performance,
-    },
-    {
-      label: "Momentum",
-      value: "trend",
-      desc: SORT_DESCRIPTIONS.momentum,
-    },
-    {
-      label: "Trophies",
-      value: "trophies",
-      desc: SORT_DESCRIPTIONS.trophies,
-    },
-    {
-      label: "Donations",
-      value: "donations_day",
-      desc: SORT_DESCRIPTIONS.donations_day,
-    },
-    {
-      label: "Tenure",
-      value: "tenure",
-      desc: SORT_DESCRIPTIONS.tenure,
-    },
-    {
-      label: "Name",
-      value: "name",
-      desc: SORT_DESCRIPTIONS.name,
-    },
-    {
-      label: "Last Seen",
-      value: "last_seen",
-      desc: SORT_DESCRIPTIONS.last_seen,
-    },
-  ];
-
   return {
     ...controller,
     data,
     isShowcaseMode,
-    sortOptions,
+    sortOptions: LEADERBOARD_SORT_OPTIONS,
   };
 }

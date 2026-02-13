@@ -4,7 +4,6 @@ import type { LeaderboardMember } from "../types";
 import Icon from "./Icon.vue";
 import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "../composables/useAppSettings";
 import {
   getScoreTone,
   formatRole,
@@ -41,7 +40,6 @@ const emit = defineEmits<{
 }>();
 
 const { getSafeBenchmark } = useBenchmarking();
-const { modules } = useAppSettings();
 
 // Formatters
 const roleInfo = (role: string) => formatRole(role);

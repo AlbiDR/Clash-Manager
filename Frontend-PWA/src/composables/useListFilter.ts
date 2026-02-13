@@ -9,11 +9,6 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * strings, achieving O(N) lookup performance during active filtering by
  * decoupling normalization from the filter predicate.
  *
- * CRACK: This composable currently lacks a deterministic tie-breaker in its
- * sorting logic. When primary sort values are equal, the order depends on the
- * underlying array's original stability, which can cause flickering in
- * virtualized lists or components using `v-memo`.
- *
  * @param items - Reactive reference to the source array.
  * @param searchFields - Function to extract searchable strings from an item.
  * @param sortStrategies - Dictionary of comparator functions.

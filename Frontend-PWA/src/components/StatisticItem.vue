@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "../composables/useAppSettings";
 
 const props = defineProps<{
   label: string;
