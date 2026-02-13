@@ -51,6 +51,7 @@ export interface IStore {
   cache: {
     getLarge(key: string): string | null;
     putLarge(key: string, value: string, expirationSec?: number): void;
+    remove(key: string): void;
   };
   props: {
     _service?: any; // Exposed for testing/mocking
@@ -277,6 +278,24 @@ var Store: IStore = {
         expirationSec
       );
       cache.remove(key); // Clear base
+    },
+
+    remove(key: string) {
+      const cache = CacheService.getScriptCache();
+      cache.remove(key);
+      
+      const meta = cache.get(`${key}_meta`);
+      if (meta) {
+        try {
+          const { count } = JSON.parse(meta);
+          const keys = Array.from({ length: count }, (_, i) => `${key}_${i}`);
+          cache.removeAll(keys);
+          cache.remove(`${key}_meta`);
+        } catch (e: any) {
+          // If meta is corrupt, we still try a best-effort delete of the meta key itself
+          cache.remove(`${key}_meta`);
+        }
+      }
     }
   },
 
