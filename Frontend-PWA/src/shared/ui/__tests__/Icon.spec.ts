@@ -1,7 +1,7 @@
 /**
 * @vitest-environment jsdom
  */
-import Icon from "./Icon.vue";
+import Icon from "../Icon.vue";
 
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
