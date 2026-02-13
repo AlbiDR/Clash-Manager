@@ -231,8 +231,9 @@ function doPost(
         const normalizedItems = (rawItems.length > 0 ? rawItems : rawIds).map(item => {
           if (typeof item === 'string') return { id: item, score: 0 };
           if (item && typeof item === 'object') {
-             // Fallback chain for score keys to ensure "Raw Score" is captured
-             const score = item.score ?? item.potentialRawScore ?? item.rawScore ?? 0;
+             // 🛡️ AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
+             // Using || instead of ?? to ensure we don't settle for '0' if a better metric is available
+             const score = item.potentialRawScore || item.score || item.rawScore || 0;
              return { id: item.id, score: Number(score) || 0 };
           }
           return null;
