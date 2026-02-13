@@ -105,7 +105,7 @@ function handleFabDismiss() {
       <!-- Dismiss Button (Always Visible) -->
       <button
         class="fab-btn danger"
-        :class="{ compact: fabState.isBlasting }"
+        :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 }"
         @click="handleFabDismiss"
         @pointerdown="onInteractionStart"
         :aria-label="fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
@@ -392,6 +392,12 @@ function handleFabDismiss() {
     padding: 4px;
     gap: 4px;
   }
+  /* Ensure FAB mode shrink-wraps on mobile to avoid empty space */
+  .dock-container.fab-mode {
+    width: auto;
+    max-width: calc(100% - 32px);
+    justify-content: center;
+  }
   .dock-item {
     flex: 1;
     min-width: 0; /* Allow shrinking below base */
@@ -410,6 +416,12 @@ function handleFabDismiss() {
     max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /* Refine FAB buttons for mobile density */
+  .fab-btn:not(.compact) {
+    padding: 0 16px;
+    gap: 8px;
+    font-size: 14px;
   }
 }
 </style>
