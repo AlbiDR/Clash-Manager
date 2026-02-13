@@ -115,53 +115,15 @@ const { post: broadcast } = useBroadcastChannel((msg) => {
 });
 
 // Watcher to react to data changes (for badge and notifications)
-// We need to keep track of old data for notification comparison
 let previousData: WebAppData | null = null;
 
 watch(
   clashData,
-  (newData, oldData) => {
-    // Note: oldData in deep watch or object replacement might be tricky.
-    // If clashData is shallowRef and replaced entirely, oldData is correct.
-    // If mutated, it might be same as newData.
-    // useClashData uses shallowRef and always replaces the object or sets properties on a new object logic.
-
+  (newData) => {
     if (newData) {
       updateHeadhunterBadge(newData);
 
-      // Only process changes if we have both old (tracked manually or via watch) and new
-      // But initial load (previousData is null) shouldn't verify notifications probably?
-      // Or maybe strictly if it's an update.
-      // The original code passed (clanData.value, remoteData) explicitly in the fetchRemote success block.
-      // Here we are reacting to the state change.
-      // If we want to strictly mimic "incoming remote data", we might need to rely on the fact that
-      // updateLocalData or loadNetwork triggers this.
-      // Let's rely on the watch, but be careful about re-triggering on local dismissal.
-      // Local dismissal updates `clashData`. We don't want "New recruit found" if we just removed one.
-      // Dismissal removes items, so `newEliteRecruits` will be empty (filter returns nothing new).
-      // So logic holds up.
-
-      // We need to be careful about not notifying on initial load from localStorage
-      // if we consider that "new".
-      // Original code called processRecruitChanges ONLY in `refresh()` (network sync) logic.
-      // It did NOT call it in `loadLocal()`.
-      // So we should probably NOT put this in a global watcher if we want exact parity.
-      // However, making it reactive is cleaner.
-      // Let's refine: The original code ONLY processed changes on `fetchRemote` success.
-      // The watcher here triggers on ANY change (local or remote).
-      // If we load from local, it triggers.
-      // If we dismiss locally, it triggers.
-      // If we dismiss, `newEliteRecruits` is empty. Safe.
-      // If we load from local, it looks like "new data" compared to null.
-      // All existing recruits will be "new".
-      // We should prevent notifications on initial hydration.
-
-      // But... how do we know if it's initial hydration?
-      // Maybe we simply don't check `previousData` being null?
       if (previousData && newData.timestamp !== previousData.timestamp) {
-        // Check if timestamp changed to ensure it's actually an update and not just a reference change?
-        // Dismissal DOES NOT change timestamp.
-        // Fetch remote DOES change timestamp.
         processRecruitChanges(previousData, newData);
       }
 
@@ -178,35 +140,46 @@ export function useHeadhunter() {
     const ids = items.map(i => i.id);
 
     // Optimistically update local state
-    const oldData = clashData.value; // Keep reference for rollback
+    const oldData = clashData.value;
     applyLocalDismissal(ids);
 
     if (isSyntheticMode.value) return;
 
     try {
       await dismissRecruits(items);
-      // 📡 Broadcast dismissal to other tabs on success
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
     } catch (e: any) {
-      // 🛡️ SWIFT RECOVERY:
-      // We detect transient infrastructure failures (Network, Timeout, Mutex-Lock)
-      // to prevent jarring UI rollbacks. Permanent rejections still trigger rollback.
-      const msg = e.message || "";
+      // 🛡️ ULTRA-RESILIENT RECOVERY:
+      // We treat almost any infrastructure failure as transient.
+      const name = e.name || "Error";
+      const msg = (e.message || "").toString();
+      
       const isTransient = 
-        e.name === "NetworkError" || 
-        e.name === "AbortError" ||
+        name === "NetworkError" || 
+        name === "AbortError" ||
+        name === "TypeError" || 
         msg.includes("Lock timeout") ||
         msg.includes("System is busy") ||
+        msg.includes("HTML Response") ||
+        msg.includes("Malformed JSON") ||
+        msg.includes("Empty Response") ||
         msg.includes("HTTP 500") ||
+        msg.includes("HTTP 502") ||
+        msg.includes("HTTP 503") ||
         msg.includes("HTTP 504") ||
+        msg.includes("HTTP 408") ||
         msg.includes("HTTP 429");
       
       if (isTransient) {
-        console.warn(`[Sync] Transient failure detected (${e.name || "Error"}). Queued for background recovery: ${msg}`);
-        return; // Resolve successfully to avoid the 'Failed to sync' banner
+        console.warn(`[Sync] Transient failure suppressed. Enqueued for background retry: ${name}: ${msg}`);
+        return;
       }
 
-      // Revert ONLY on logic/server failure (permanent rejection)
+      // CRITICAL FAILURE: Rollback and notify
+      const { useToast } = await import("./useToast");
+      const { error } = useToast();
+      error(`Sync Failed: ${msg}`);
+      
       updateLocalData(oldData);
       updateHeadhunterBadge(oldData);
       throw e;
@@ -216,7 +189,6 @@ export function useHeadhunter() {
   return {
     dismissRecruitsAction,
     undismissRecruitsAction: async (ids: string[], originalRecruits?: Recruit[]) => {
-      // 1. Optimistic Restore
       if (originalRecruits && originalRecruits.length > 0) {
         applyLocalRestoration(originalRecruits);
       }
@@ -228,9 +200,8 @@ export function useHeadhunter() {
           const { undismissRecruits } = await import("../api/gasClient");
           return undismissRecruits(ids);
         })();
-        broadcast({ type: "RECRUIT_RESTORATION", ids }); // Optional: add to switch in broadcast listener if needed
+        broadcast({ type: "RECRUIT_RESTORATION", ids });
       } catch (e) {
-        // Rollback on failure if needed, but undo is already a "revert"
         console.error("Undo Sync Failed:", e);
       }
     }

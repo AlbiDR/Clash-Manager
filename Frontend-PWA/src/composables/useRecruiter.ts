@@ -217,8 +217,9 @@ export function useRecruiter() {
 
     backendCalled = true;
     dismissRecruitsAction(items).catch(() => {
-      error("Failed to sync changes");
-      // ERROR RECOVERY: Remove tombstones to restore visibility.
+      // RECOVERY: The dismissRecruitsAction already handles rollback and 
+      // error notification for non-transient errors. We just restore 
+      // visibility if the action totally fails beyond transient retry.
       blacklist.restore(ids);
     });
 
