@@ -198,16 +198,17 @@ export function useRecruiter() {
    * 2. BACKGROUND SYNC: Dispatch the dismissal to the GAS backend.
    * 3. RECOVERY: Roll back local state only if the server explicitly rejects the change.
    */
-  function executeDismiss(ids: string[]) {
-    // PRESERVATION: Capture state for potential undo operations.
-    const recruitsToRestore = (data.value?.hh || []).filter(r => ids.includes(r.id));
+  function executeDismiss(recruitsToRemove: Recruit[]) {
+    const ids = recruitsToRemove.map(r => r.id);
     
-    // HARDENING: Map IDs to score-aware request tuples
-    const items = recruitsToRestore.map(r => ({
+    // 🎯 DIRECT SCORE CAPTURE: Extract score at the point of dismissal
+    const items = recruitsToRemove.map(r => ({
       id: r.id,
       score: r.potentialRawScore || 0,
-      potentialRawScore: r.potentialRawScore || 0 // Explicit secondary key for redundancy
+      potentialRawScore: r.potentialRawScore || 0
     }));
+
+    console.log('[Dismissal] Captured scores:', items.map(i => `${i.id}: ${i.score}`));
 
     const { undismissRecruitsAction } = useHeadhunter();
 
@@ -231,8 +232,8 @@ export function useRecruiter() {
       
       // If we have the original recruit data, restore it to the local state
       // to avoid waiting for a refresh or showing filtered out items.
-      if (recruitsToRestore.length > 0) {
-        undismissRecruitsAction(ids, recruitsToRestore);
+      if (recruitsToRemove.length > 0) {
+        undismissRecruitsAction(ids, recruitsToRemove);
       } else if (backendCalled) {
         // Fallback if we don't have local data
         info("Restoring from server...");
@@ -246,8 +247,12 @@ export function useRecruiter() {
   function dismissBulk() {
     if (controller.selectedIds.value.length === 0) return;
     const ids = [...controller.selectedIds.value];
+    
+    // 🎯 CAPTURE FULL RECRUITS: Get the complete objects before any state changes
+    const recruitsToRemove = recruits.value.filter(r => ids.includes(r.id));
+    
     controller.clearSelection();
-    executeDismiss(ids);
+    executeDismiss(recruitsToRemove);
   }
 
   return {
