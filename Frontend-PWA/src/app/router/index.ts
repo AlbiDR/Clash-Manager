@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import RosterView from "@features/roster/views/RosterView.vue";
+import { RosterView } from "@features/roster";
 
 const SCROLL_KEY = "cm_scroll_positions";
 
@@ -50,19 +50,19 @@ const router = createRouter({
     {
       path: "/headhunter",
       name: "headhunter",
-      component: () => import("@features/headhunter/views/HeadhunterView.vue"),
+      component: () => import("@features/headhunter").then((m) => m.HeadhunterView),
       meta: { title: "Headhunter" },
     },
     {
       path: "/laboratory",
       name: "laboratory",
-      component: () => import("@features/laboratory/views/LaboratoryView.vue"),
+      component: () => import("@features/laboratory").then((m) => m.LaboratoryView),
       meta: { title: "Laboratory" },
     },
     {
       path: "/settings",
       name: "settings",
-      component: () => import("@features/settings/views/SettingsView.vue"),
+      component: () => import("@features/settings").then((m) => m.SettingsView),
       meta: { title: "Settings" },
     },
   ],
