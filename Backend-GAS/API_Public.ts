@@ -223,28 +223,36 @@ function doPost(
 
     switch (action) {
       case "dismissrecruits":
-        const dismissItems = payload.items || payload.ids; // Support both for transition
-        if (!dismissItems || !Array.isArray(dismissItems)) {
-          return respond(
-            null,
-            "INVALID_PARAMS",
-            'dismissRecruits requires "items" or "ids" array',
-          );
-        }
-        // Normalize: if it's an array of strings (legacy), map to objects with 0 score
-        const normalizedItems = dismissItems.map(item => {
+        // 🛡️ DUAL-MODE SUPPORT: Handle both mapping formats and ensure score capture
+        const rawItems = Array.isArray(payload.items) ? payload.items : [];
+        const rawIds = Array.isArray(payload.ids) ? payload.ids : [];
+        
+        // Normalize: Zip entries and prioritize score-aware objects
+        const normalizedItems = (rawItems.length > 0 ? rawItems : rawIds).map(item => {
           if (typeof item === 'string') return { id: item, score: 0 };
-          return item;
-        });
-        return respond(markRecruitsAsInvitedBulk(normalizedItems));
+          if (item && typeof item === 'object') {
+             // 🛡️ AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
+             // Using || instead of ?? to ensure we don't settle for '0' if a better metric is available
+             const score = item.potentialRawScore || item.score || item.rawScore || 0;
+             return { id: item.id, score: Number(score) || 0 };
+          }
+          return null;
+        }).filter(item => item !== null);
+
+        if (normalizedItems.length === 0) {
+           return respond(null, "INVALID_PARAMS", "Processed 0 valid items from payload.");
+        }
+
+        return respond(markRecruitsAsInvitedBulk(normalizedItems as Array<{id: string, score: number}>));
 
       case "undismissrecruits":
         const undoIds = payload.ids;
         if (!undoIds || !Array.isArray(undoIds)) {
+          console.error(`[API] undismissRecruits missing ids. Payload keys: ${Object.keys(payload).join(', ')}`);
           return respond(
             null,
             "INVALID_PARAMS",
-            'undismissRecruits requires "ids" array',
+            `undismissRecruits requires "ids" array. Received: ${typeof undoIds}`,
           );
         }
         return respond(undismissRecruitsBulk(undoIds));

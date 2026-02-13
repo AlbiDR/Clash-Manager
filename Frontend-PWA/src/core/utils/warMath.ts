@@ -27,6 +27,8 @@ export function parseHistoryString(
 ): HistoryEntry[] {
   if (!historyStr || historyStr === "-") return [];
 
+  const weekRegex = /^(\d{2})W(\d{2})$/;
+
   return historyStr
     .split(/[|,]/)
     .map((x) => x.trim())
@@ -34,13 +36,13 @@ export function parseHistoryString(
     .map((entry) => {
       const [valStr, weekStr] = entry.split(" ");
       const fame = parseInt(valStr || "0", 10) || 0;
-
-      const weekMatch = (weekStr || "").match(/^(\d{2})W(\d{2})$/);
+      const wStr = weekStr || "";
+      const weekMatch = wStr.match(weekRegex);
       const readableWeek = weekMatch
         ? `Week ${parseInt(weekMatch[2], 10)}`
-        : weekStr || "?";
+        : wStr || "?";
 
-      return { fame, weekId: weekStr || "", readableWeek };
+      return { fame, weekId: wStr, readableWeek };
     });
 }
 

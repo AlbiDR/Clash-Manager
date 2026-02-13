@@ -168,19 +168,58 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         evtSheet.setTabColor("#ff5722"); // Visual marker for "Hot" data
       } else {
         // Robust header verification (Ensures headers persist even if cleared)
-        if (evtSheet.getLastRow() === 0 || evtSheet.getRange(1,1).getValue() !== "Tag") {
+        // Ensure sheet is wide enough for 3 columns to prevent 400 errors
+        if (evtSheet.getMaxColumns() < 3) {
+           evtSheet.insertColumnsAfter(evtSheet.getMaxColumns(), 3 - evtSheet.getMaxColumns());
+        }
+        if (evtSheet.getLastRow() === 0 || evtSheet.getRange(1, 1).getValue() !== "Tag" || evtSheet.getLastColumn() < 3) {
            evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", "Raw Score"]]);
         }
+      }
+
+      // 2. FETCH SOURCE OF TRUTH (Headhunter Sheet)
+      // Reliable Injection: We read the current Headhunter sheet to get the
+      // authoritative Raw Score, bypassing any potential client-side data loss.
+      const scoreMap = new Map<string, number>();
+      try {
+        // Fetch Columns B (Tag) through J (Raw Score) - robust range calculation
+        // Data starts at Row 3 (CONFIG.LAYOUT.DATA_START_ROW)
+        const hhDataRange = `'${CONFIG.SHEETS.HH}'!B${CONFIG.LAYOUT.DATA_START_ROW}:J`;
+        // @ts-ignore
+        const hhResponse = Sheets.Spreadsheets.Values.get(ssId, hhDataRange);
+        const rows = hhResponse.values || [];
+        
+        // Column Index relative to range start (B=0):
+        // Tag is at 0 (Col B)
+        // Raw Score is at 8 (Col J)
+        rows.forEach((row: any[]) => {
+          if (!row || row.length < 9) return;
+          const tag = String(row[0] || "").toUpperCase().trim();
+          const rawScore = Number(row[8]); // Column J
+          if (tag && !isNaN(rawScore)) {
+             scoreMap.set(tag, rawScore);
+          }
+        });
+        console.log(`[API] Hydrated ${scoreMap.size} scores from Headhunter sheet for verification.`);
+      } catch (readErr) {
+        console.warn(`[API] Failed to read Headhunter source scores: ${readErr}`);
       }
 
       // ATOMIC APPEND (Advanced API)
       const now = Date.now();
       const values = items.map((item) => {
-        const id = item.id;
+        let id = (item.id.startsWith("#") ? item.id : "#" + item.id).toUpperCase();
+        
+        // INJECTION: Prefer the Authoritative Score from Sheet, fallback to Client payload
+        let score = scoreMap.get(id);
+        if (score === undefined) {
+           score = Number(item.score) || 0;
+        }
+
         return [
-          (id.startsWith("#") ? id : "#" + id).toUpperCase(),
+          id,
           now,
-          Number(item.score) || 0
+          score
         ];
       });
 
@@ -193,15 +232,23 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         });
       }
 
-      // 3. FLUSH & TRIGGER PAYLOAD REFRESH
+      // 3. ATOMIC FLUSH & CACHE INVALIDATION
+      // Rationale: We invalidate the cache instead of re-generating the heavy
+      // payload synchronously. This reduces write latency from ~10s to <1s.
+      // The payload will be re-generated on the next read request.
       SpreadsheetApp.flush();
-      const payloadStr = _generatePayloadInternal();
+      Registry.Services.Store.cache.remove(CONFIG.SYSTEM.JSON_STORE_KEY);
 
       return {
         success: true,
         count: items.length,
         dbWrite: values.length,
-        payloadSize: payloadStr.length,
+        payloadSize: 0,
+        metadata: { 
+          processedAt: now,
+          writtenScores: values.map(v => v[2]),
+          columnsWritten: values[0] ? values[0].length : 0
+        }
       };
     } catch (e: any) {
       console.error(`[API] Event-Sourced Dismiss Fail: ${e.message}`);
@@ -254,7 +301,7 @@ function undismissRecruitsBulk(ids: string[]): {
 
       if (removedCount > 0) {
         SpreadsheetApp.flush();
-        _generatePayloadInternal();
+        Registry.Services.Store.cache.remove(CONFIG.SYSTEM.JSON_STORE_KEY);
       }
 
       return {

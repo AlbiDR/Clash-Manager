@@ -145,7 +145,6 @@ const scoreTone = (score: number) => getScoreTone(score);
   font-size: 9px;
 }
 
-
 /* Expanded Content Layout */
 .lb-grid {
   grid-template-columns: repeat(2, 1fr);

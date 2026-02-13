@@ -163,7 +163,7 @@ export function formatHeaderDescription(text: string): string {
     text
       // Section headers (Key: Value or Title:)
       .replace(
-        /^(\*\*.*?\*\*|.*?:)$/gm,
+        /^(\*\*.*?\*\*|.*?:)\s*$/gm,
         '<div class="desc-section-title">$1</div>',
       )
       // Bold text (**text**)
