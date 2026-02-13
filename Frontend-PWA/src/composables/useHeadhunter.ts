@@ -189,13 +189,21 @@ export function useHeadhunter() {
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
     } catch (e: any) {
       // 🛡️ SWIFT RECOVERY:
-      // If the error is a NetworkError or Timeout (AbortError), we DON'T rollback. 
-      // The gasClient has already enqueued the request for background sync.
-      const isTransient = e instanceof NetworkError || e.name === "AbortError";
+      // We detect transient infrastructure failures (Network, Timeout, Mutex-Lock)
+      // to prevent jarring UI rollbacks. Permanent rejections still trigger rollback.
+      const msg = e.message || "";
+      const isTransient = 
+        e.name === "NetworkError" || 
+        e.name === "AbortError" ||
+        msg.includes("Lock timeout") ||
+        msg.includes("System is busy") ||
+        msg.includes("HTTP 500") ||
+        msg.includes("HTTP 504") ||
+        msg.includes("HTTP 429");
       
       if (isTransient) {
-        console.warn("Dismissal delayed due to connectivity. Queued for background sync.");
-        return;
+        console.warn(`[Sync] Transient failure detected (${e.name || "Error"}). Queued for background recovery: ${msg}`);
+        return; // Resolve successfully to avoid the 'Failed to sync' banner
       }
 
       // Revert ONLY on logic/server failure (permanent rejection)

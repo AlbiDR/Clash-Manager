@@ -42,6 +42,8 @@ export class NetworkError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "NetworkError";
+    // Ensure the name is preserved through serialization/transpilation
+    Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
 
