@@ -1,4 +1,5 @@
-import { useConnectionStatus, useListFilter, useProgressiveList, useUiCoordinator  } from "@shared";
+import { useListFilter, useProgressiveList, useUiCoordinator  } from "@shared";
+import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
 import { useBatchQueue } from "./useBatchQueue";
 import { useBlueprintMode } from "./useBlueprintMode";

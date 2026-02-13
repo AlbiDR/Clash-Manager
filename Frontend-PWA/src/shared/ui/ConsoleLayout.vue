@@ -2,7 +2,7 @@ import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import Icon from "./Icon.vue";
 import SelectionBar from "./SelectionBar.vue";
-import { useHaptics } from "../composables/useHaptics";
+import { useHaptics } from "@core";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
 import { useShowcaseMode } from "@core";

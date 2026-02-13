@@ -22,3 +22,9 @@ export * from "./services/useExternalLink";
 
 // Math & Utils
 export * from "./utils/warMath";
+
+// Infrastructure Services (Promoted from Shared)
+export * from "./services/useHaptics";
+export * from "./services/useNetworkInfo";
+export * from "./services/useWakeLock";
+export * from "./services/useConnectionStatus";

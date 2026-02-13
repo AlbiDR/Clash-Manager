@@ -1,6 +1,6 @@
 import Icon from "./Icon.vue";
 import StatusPill from "./StatusPill.vue";
-import { useHaptics } from "../composables/useHaptics";
+import { useHaptics } from "@core";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import { useAppSettings } from "@core";
 <script setup lang="ts">

@@ -1,5 +1,5 @@
-import { Icon, useHaptics  } from "@shared";
-import { isWorkerConfigured, subscribeToPush, useAppSettings, useBadge, useClashData, useToast } from "@core";
+import { Icon } from "@shared";
+import { isWorkerConfigured, subscribeToPush, useAppSettings, useBadge, useClashData, useToast, useHaptics } from "@core";
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
 import SettingsCard from "./SettingsCard.vue";

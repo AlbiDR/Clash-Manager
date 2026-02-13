@@ -89,6 +89,15 @@ vi.mock("@shared", async (importOriginal) => {
     useUiCoordinator: vi.fn(() => ({
       setFabVisible: vi.fn(),
     })),
+    useUiCoordinator: vi.fn(() => ({
+      setFabVisible: vi.fn(),
+    })),
+  };
+});
+
+vi.mock("../useConnectionStatus", () => {
+  const { ref } = require("vue");
+  return {
     useConnectionStatus: vi.fn(() => ({
       status: ref("online"),
     })),

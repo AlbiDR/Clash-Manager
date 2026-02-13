@@ -7,7 +7,7 @@ const mockHaptics = {
   tap: vi.fn()
 };
 
-vi.mock("@shared", () => ({
+vi.mock("../useHaptics", () => ({
   useHaptics: () => mockHaptics
 }));
 

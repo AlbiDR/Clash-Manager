@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
-import { useHaptics } from "../composables/useHaptics";
+import { useHaptics } from "@core";
 import { useUiCoordinator } from "../composables/useUiCoordinator";
 
 const route = useRoute();
