@@ -84,8 +84,7 @@ describe("useListFilter", () => {
   });
 
   it("should handle deterministic sorting on ties (n then id)", () => {
-    // Current Implementation Crack: useListFilter.ts does NOT actually implement
-    // the fallback tie-breaker logic described in memory.
+    // FIXED: useListFilter.ts now implements deterministic tie-breaker logic.
     const tieItems = [
       { id: "p2", n: "Zoro", score: 100 },
       { id: "p1", n: "Albi", score: 100 },
@@ -96,7 +95,7 @@ describe("useListFilter", () => {
       items,
       searchFields,
       sortStrategies,
-      "score"
+      "score",
     );
 
     // If stable and using fallback (n then id):
@@ -104,11 +103,8 @@ describe("useListFilter", () => {
     // 2. n (Albi vs Zoro) -> Albi first
     // 3. n tie (Albi vs Albi) -> id (p1 vs p3) -> p1 first
     // Expected: [p1, p3, p2]
-
-    // However, since fallback is missing, it will stay in original order if sort is stable.
-    // We document the current "crack" here.
-    expect(filteredItems.value[0].id).toBe("p2");
-    expect(filteredItems.value[1].id).toBe("p1");
-    expect(filteredItems.value[2].id).toBe("p3");
+    expect(filteredItems.value[0].id).toBe("p1");
+    expect(filteredItems.value[1].id).toBe("p3");
+    expect(filteredItems.value[2].id).toBe("p2");
   });
 });
