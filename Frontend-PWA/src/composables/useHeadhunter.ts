@@ -187,12 +187,14 @@ export function useHeadhunter() {
       await dismissRecruits(items);
       // 📡 Broadcast dismissal to other tabs on success
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
-    } catch (e) {
+    } catch (e: any) {
       // 🛡️ SWIFT RECOVERY:
-      // If the error is a NetworkError, we DON'T rollback. 
+      // If the error is a NetworkError or Timeout (AbortError), we DON'T rollback. 
       // The gasClient has already enqueued the request for background sync.
-      if (e instanceof NetworkError) {
-        console.warn("Dismissal delayed due to network. Queued for background sync.");
+      const isTransient = e instanceof NetworkError || e.name === "AbortError";
+      
+      if (isTransient) {
+        console.warn("Dismissal delayed due to connectivity. Queued for background sync.");
         return;
       }
 
