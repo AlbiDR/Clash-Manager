@@ -328,9 +328,9 @@ async function processOfflineQueue(): Promise<void> {
   }
 }
 
-const DB_NAME = "clash_manager_db";
-const STORE_NAME = "key_val_store";
-const DB_VERSION = 2;
+const DB_NAME = "clash_manager_v11";
+const STORE_NAME = "keyval";
+const DB_VERSION = 1;
 
 function setValue(db: IDBDatabase, key: string, value: unknown): Promise<void> {
   return new Promise((resolve, reject) => {

@@ -1,7 +1,10 @@
-const DB_NAME = "clash_manager_db";
-const STORE_NAME = "key_val_store";
-// Fix 27: Version Bump
-const DB_VERSION = 2;
+const DB_NAME = "clash_manager_v11";
+const STORE_NAME = "keyval";
+const DB_VERSION = 1;
+
+const LEGACY_DB_NAME = "clash_manager_db";
+const LEGACY_STORE_NAME = "key_val_store";
+
 
 // 🛡️ MEMORY FALLBACK
 // Used when IndexedDB is unavailable (Private Browsing, Tests, etc)
@@ -49,7 +52,19 @@ function openDB(): Promise<IDBDatabase> {
       }
     };
 
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = async () => {
+      const db = request.result;
+      
+      // LEGACY MIGRATION BRIDGE (Phase 1.2 / 5.1 Protocol)
+      try {
+        await migrateLegacyData(db);
+      } catch (err) {
+        console.warn("[Storage] Migration failed, continuing with fresh state", err);
+      }
+      
+      resolve(db);
+    };
+    
     request.onerror = (e) => {
       dbPromise = null;
       reject(request.error || e);
@@ -58,6 +73,67 @@ function openDB(): Promise<IDBDatabase> {
 
   return dbPromise;
 }
+
+/**
+ * Tactical Bridge: Migrates data from clash_manager_db (v2) to clash_manager_v11.
+ */
+async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
+  return new Promise((resolve) => {
+    const checkRequest = indexedDB.open(LEGACY_DB_NAME);
+    
+    checkRequest.onsuccess = () => {
+      const oldDb = checkRequest.result;
+      
+      // If the old store doesn't exist, nothing to migrate
+      if (!oldDb.objectStoreNames.contains(LEGACY_STORE_NAME)) {
+        oldDb.close();
+        return resolve();
+      }
+
+      const tx = oldDb.transaction(LEGACY_STORE_NAME, "readonly");
+      const store = tx.objectStore(LEGACY_STORE_NAME);
+      const getAllKeys = store.getAllKeys();
+      const getAllValues = store.getAll();
+
+      tx.oncomplete = async () => {
+        const keys = getAllKeys.result;
+        const values = getAllValues.result;
+        
+        if (keys.length > 0) {
+          console.info(`[Storage] Migrating ${keys.length} items from legacy database...`);
+          const newTx = newDb.transaction(STORE_NAME, "readwrite");
+          const newStore = newTx.objectStore(STORE_NAME);
+          
+          for (let i = 0; i < keys.length; i++) {
+            newStore.put(values[i], keys[i]);
+          }
+          
+          newTx.oncomplete = () => {
+            oldDb.close();
+            // We keep the old DB for one session to be safe, then let the system handle cleanup
+            console.info("[Storage] Migration successful.");
+            resolve();
+          };
+          newTx.onerror = () => {
+            oldDb.close();
+            resolve();
+          };
+        } else {
+          oldDb.close();
+          resolve();
+        }
+      };
+      
+      tx.onerror = () => {
+        oldDb.close();
+        resolve();
+      };
+    };
+    
+    checkRequest.onerror = () => resolve();
+  });
+}
+
 
 export const idb = {
   async get<T>(key: string): Promise<T | null> {
