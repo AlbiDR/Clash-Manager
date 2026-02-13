@@ -428,7 +428,16 @@ async function _executeGasRequest<T>(
       envelope.error?.message || envelope.message || "Operation failed on server";
     throw new Error(errorMessage);
   } catch (e: any) {
-    if (e.name === "AbortError") throw e;
+    // ABORT HANDLING
+    // We only throw immediately if the request was cancelled by the UI (replaced).
+    // If it's a timeout, we treat it as a background-syncable event.
+    if (e.name === "AbortError") {
+      if (e.message !== "replaced") {
+        console.warn(`[API] Request timed out. Enqueuing for background sync: ${action}`);
+        await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
+      }
+      throw e; 
+    }
     
     // Offline Queue logic
     if (action !== 'ping' && action !== 'getwebappdata') {
