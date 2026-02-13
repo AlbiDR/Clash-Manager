@@ -177,14 +177,49 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         }
       }
 
+      // 2. FETCH SOURCE OF TRUTH (Headhunter Sheet)
+      // Reliable Injection: We read the current Headhunter sheet to get the
+      // authoritative Raw Score, bypassing any potential client-side data loss.
+      const scoreMap = new Map<string, number>();
+      try {
+        // Fetch Columns B (Tag) through J (Raw Score) - robust range calculation
+        // Data starts at Row 3 (CONFIG.LAYOUT.DATA_START_ROW)
+        const hhDataRange = `'${CONFIG.SHEETS.HH}'!B${CONFIG.LAYOUT.DATA_START_ROW}:J`;
+        // @ts-ignore
+        const hhResponse = Sheets.Spreadsheets.Values.get(ssId, hhDataRange);
+        const rows = hhResponse.values || [];
+        
+        // Column Index relative to range start (B=0):
+        // Tag is at 0 (Col B)
+        // Raw Score is at 8 (Col J)
+        rows.forEach((row: any[]) => {
+          if (!row || row.length < 9) return;
+          const tag = String(row[0] || "").toUpperCase().trim();
+          const rawScore = Number(row[8]); // Column J
+          if (tag && !isNaN(rawScore)) {
+             scoreMap.set(tag, rawScore);
+          }
+        });
+        console.log(`[API] Hydrated ${scoreMap.size} scores from Headhunter sheet for verification.`);
+      } catch (readErr) {
+        console.warn(`[API] Failed to read Headhunter source scores: ${readErr}`);
+      }
+
       // ATOMIC APPEND (Advanced API)
       const now = Date.now();
       const values = items.map((item) => {
-        const id = item.id;
+        let id = (item.id.startsWith("#") ? item.id : "#" + item.id).toUpperCase();
+        
+        // INJECTION: Prefer the Authoritative Score from Sheet, fallback to Client payload
+        let score = scoreMap.get(id);
+        if (score === undefined) {
+           score = Number(item.score) || 0;
+        }
+
         return [
-          (id.startsWith("#") ? id : "#" + id).toUpperCase(),
+          id,
           now,
-          Number(item.score) || 0
+          score
         ];
       });
 
