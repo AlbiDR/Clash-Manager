@@ -168,7 +168,11 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         evtSheet.setTabColor("#ff5722"); // Visual marker for "Hot" data
       } else {
         // Robust header verification (Ensures headers persist even if cleared)
-        if (evtSheet.getLastRow() === 0 || evtSheet.getRange(1,1).getValue() !== "Tag") {
+        // Ensure sheet is wide enough for 3 columns to prevent 400 errors
+        if (evtSheet.getMaxColumns() < 3) {
+           evtSheet.insertColumnsAfter(evtSheet.getMaxColumns(), 3 - evtSheet.getMaxColumns());
+        }
+        if (evtSheet.getLastRow() === 0 || evtSheet.getRange(1, 1).getValue() !== "Tag" || evtSheet.getLastColumn() < 3) {
            evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", "Raw Score"]]);
         }
       }
