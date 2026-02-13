@@ -223,22 +223,33 @@ function doPost(
 
     switch (action) {
       case "dismissrecruits":
-        // SUPPORT: items (new) or ids (legacy)
-        const dismissItems = payload.items || payload.ids;
-        if (!dismissItems || !Array.isArray(dismissItems)) {
-          console.error(`[API] dismissRecruits missing items. Payload keys: ${Object.keys(payload).join(', ')}`);
+        // 🛡️ DUAL-MODE SUPPORT: Handle both new 'items' (objects) and legacy 'ids' (strings)
+        const rawItems = payload.items || [];
+        const rawIds = payload.ids || [];
+        
+        const sourceData = Array.isArray(rawItems) && rawItems.length > 0 ? rawItems : rawIds;
+        
+        if (!sourceData || !Array.isArray(sourceData) || sourceData.length === 0) {
+          console.error(`[API] dismissRecruits missing payload. Keys: ${Object.keys(payload).join(', ')}`);
           return respond(
             null,
             "INVALID_PARAMS",
-            `dismissRecruits requires "items" array. Received: ${typeof dismissItems}`,
+            `dismissRecruits requires "items" or "ids" array. Found: ${typeof sourceData}`,
           );
         }
-        // Normalize: if it's an array of strings (legacy), map to objects with 0 score
-        const normalizedItems = dismissItems.map(item => {
+
+        // Normalize: transform mixing strings and objects into standard {id, score} sets
+        const normalizedItems = sourceData.map(item => {
           if (typeof item === 'string') return { id: item, score: 0 };
-          return item;
-        });
-        return respond(markRecruitsAsInvitedBulk(normalizedItems));
+          if (item && typeof item === 'object' && item.id) return { id: item.id, score: item.score || 0 };
+          return null;
+        }).filter(item => item !== null);
+
+        if (normalizedItems.length === 0) {
+           return respond(null, "INVALID_PARAMS", "Processed 0 valid items from payload.");
+        }
+
+        return respond(markRecruitsAsInvitedBulk(normalizedItems as Array<{id: string, score: number}>));
 
       case "undismissrecruits":
         const undoIds = payload.ids;
