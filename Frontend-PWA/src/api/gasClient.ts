@@ -382,11 +382,12 @@ async function _executeGasRequest<T>(
     signal: options?.signal,
   };
 
-  //  MANDATORY: GAS requires 'action' in the URL for proper routing and redirects.
-  // Cache busting is also essential to prevent the browser from skipping the redirect.
+  // MANDATORY: Cache busting is essential to prevent the browser from skipping 
+  // the redirect to the temporary script execution URL. 
+  // We omit 'action' from the URL for POST requests to ensure the body 
+  // is preserved during potential 302 redirects.
   const separator = url.includes("?") ? "&" : "?";
-  const cacheBuster = `_cb=${Date.now()}`;
-  const requestUrl = `${url}${separator}action=${action}&${cacheBuster}`;
+  const requestUrl = `${url}${separator}_cb=${Date.now()}`;
 
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);

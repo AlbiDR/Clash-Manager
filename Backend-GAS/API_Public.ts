@@ -223,12 +223,14 @@ function doPost(
 
     switch (action) {
       case "dismissrecruits":
-        const dismissItems = payload.items || payload.ids; // Support both for transition
+        // SUPPORT: items (new) or ids (legacy)
+        const dismissItems = payload.items || payload.ids;
         if (!dismissItems || !Array.isArray(dismissItems)) {
+          console.error(`[API] dismissRecruits missing items. Payload keys: ${Object.keys(payload).join(', ')}`);
           return respond(
             null,
             "INVALID_PARAMS",
-            'dismissRecruits requires "items" or "ids" array',
+            `dismissRecruits requires "items" array. Received: ${typeof dismissItems}`,
           );
         }
         // Normalize: if it's an array of strings (legacy), map to objects with 0 score
@@ -241,10 +243,11 @@ function doPost(
       case "undismissrecruits":
         const undoIds = payload.ids;
         if (!undoIds || !Array.isArray(undoIds)) {
+          console.error(`[API] undismissRecruits missing ids. Payload keys: ${Object.keys(payload).join(', ')}`);
           return respond(
             null,
             "INVALID_PARAMS",
-            'undismissRecruits requires "ids" array',
+            `undismissRecruits requires "ids" array. Received: ${typeof undoIds}`,
           );
         }
         return respond(undismissRecruitsBulk(undoIds));
