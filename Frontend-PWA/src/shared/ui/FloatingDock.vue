@@ -1,13 +1,15 @@
-import Icon from "./Icon.vue";
-import { useHaptics } from "../composables/useHaptics";
-import { useUiCoordinator } from "../composables/useUiCoordinator";
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import Icon from "./Icon.vue";
+import { useHaptics } from "../composables/useHaptics";
+import { useUiCoordinator } from "../composables/useUiCoordinator";
+
 const route = useRoute();
 const router = useRouter();
 const { dockVisible, fabState } = useUiCoordinator();
 const haptics = useHaptics();
+
 
 const isDesktop = ref(window.innerWidth > 1024);
 const onResize = () => { isDesktop.value = window.innerWidth > 1024; };

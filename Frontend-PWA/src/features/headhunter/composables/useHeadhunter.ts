@@ -1,4 +1,4 @@
-import { NetworkError, dismissRecruits, useAppSettings, useBadge, useBroadcastChannel, useClashData, useSyntheticMode } from "@core";
+import { NetworkError, dismissRecruits, undismissRecruits, useAppSettings, useBadge, useBroadcastChannel, useClashData, useSyntheticMode, useToast } from "@core";
 import { watch } from "vue";
 import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
 // Singleton Composables
@@ -170,7 +170,6 @@ export function useHeadhunter() {
       }
 
       // CRITICAL FAILURE: Rollback and notify
-      const { useToast } = await import("./useToast");
       const { error } = useToast();
       error(`Sync Failed: ${msg}`);
       
@@ -190,10 +189,7 @@ export function useHeadhunter() {
       if (isSyntheticMode.value) return;
 
       try {
-        await (async () => {
-          const { undismissRecruits } = await import("@core");
-          return undismissRecruits(ids);
-        })();
+        await undismissRecruits(ids);
         broadcast({ type: "RECRUIT_RESTORATION", ids });
       } catch (e) {
         console.error("Undo Sync Failed:", e);
