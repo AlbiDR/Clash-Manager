@@ -209,6 +209,7 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         count: items.length,
         dbWrite: values.length,
         payloadSize: 0,
+        metadata: { writtenScores: values.map(v => v[2]) }
       };
     } catch (e: any) {
       console.error(`[API] Event-Sourced Dismiss Fail: ${e.message}`);
