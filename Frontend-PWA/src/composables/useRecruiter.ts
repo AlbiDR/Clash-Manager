@@ -7,7 +7,8 @@ import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { useConsoleController } from "./useConsoleController";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
-import { SORT_DESCRIPTIONS } from "../utils/sortOptions";
+import { RECRUITER_SORT_OPTIONS } from "../utils/sortOptions";
+import { RECRUITER_SORT_STRATEGIES } from "../utils/sortStrategies";
 import { scanRecruitsDirect, isWorkerConfigured } from "../api/gasClient";
 import type { Recruit } from "../types";
 
@@ -62,16 +63,6 @@ export function useRecruiter() {
     );
   });
 
-  const getTs = (str?: string) => (str ? new Date(str).getTime() : 0);
-
-  const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
-    score: (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
-    trophies: (a, b) => (b.t || 0) - (a.t || 0),
-    name: (a, b) => a.n.localeCompare(b.n),
-    time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
-    donations: (a, b) => (b.d.don || 0) - (a.d.don || 0),
-  };
-
   const controller = useConsoleController({
     data: recruits,
     isHydrated,
@@ -79,7 +70,7 @@ export function useRecruiter() {
     syncError,
     lastSyncTime,
     filterFn: (r: Recruit) => [r.n, r.id],
-    sortStrategies,
+    sortStrategies: RECRUITER_SORT_STRATEGIES,
     defaultSort: "score",
     deepLinkPrefix: "recruit-",
     batchIdMapper: (r: Recruit) => r.id,
@@ -88,34 +79,6 @@ export function useRecruiter() {
     scoreGetter: (r: Recruit) => r.potentialScore || 0,
     refresh: handleRefresh,
   });
-
-  const sortOptions = [
-    {
-      label: "Potential",
-      value: "score",
-      desc: SORT_DESCRIPTIONS.potential,
-    },
-    {
-      label: "Trophies",
-      value: "trophies",
-      desc: SORT_DESCRIPTIONS.trophies,
-    },
-    {
-      label: "Donations",
-      value: "donations",
-      desc: SORT_DESCRIPTIONS.donations_lifetime,
-    },
-    {
-      label: "Recency",
-      value: "time_found",
-      desc: SORT_DESCRIPTIONS.recency,
-    },
-    {
-      label: "Name",
-      value: "name",
-      desc: SORT_DESCRIPTIONS.name,
-    },
-  ];
 
   // 🧹 CLEANUP: Extra Recruit Logic managed here
   watch(
@@ -252,7 +215,7 @@ export function useRecruiter() {
     ...controller,
     isShowcaseMode,
     isTurboScanning,
-    sortOptions,
+    sortOptions: RECRUITER_SORT_OPTIONS,
     dismissBulk,
   };
 }

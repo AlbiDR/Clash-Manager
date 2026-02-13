@@ -4,7 +4,6 @@ import type { Recruit } from "../types";
 import Icon from "./Icon.vue";
 import BaseCard from "./BaseCard.vue";
 import { useBenchmarking } from "../composables/useBenchmarking";
-import { useAppSettings } from "../composables/useAppSettings";
 import { getScoreTone, formatTimeAgo } from "../utils/formatters";
 import StatisticItem from "./StatisticItem.vue";
 import CardActions from "./CardActions.vue";
@@ -31,7 +30,6 @@ const emit = defineEmits<{
 }>();
 
 const { getSafeBenchmark } = useBenchmarking();
-const { modules } = useAppSettings();
 
 const toneClass = computed(() => getScoreTone(recruit.potentialScore));
 const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));

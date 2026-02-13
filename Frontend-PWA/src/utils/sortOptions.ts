@@ -29,3 +29,75 @@ export const SORT_DESCRIPTIONS = {
 
   recency: `**Timestamp of discovery** during recent tournament scans.`,
 } as const;
+
+/**
+ * LEADERBOARD SORT OPTIONS
+ */
+export const LEADERBOARD_SORT_OPTIONS = [
+  {
+    label: "Performance",
+    value: "score",
+    desc: SORT_DESCRIPTIONS.performance,
+  },
+  {
+    label: "Momentum",
+    value: "trend",
+    desc: SORT_DESCRIPTIONS.momentum,
+  },
+  {
+    label: "Trophies",
+    value: "trophies",
+    desc: SORT_DESCRIPTIONS.trophies,
+  },
+  {
+    label: "Donations",
+    value: "donations_day",
+    desc: SORT_DESCRIPTIONS.donations_day,
+  },
+  {
+    label: "Tenure",
+    value: "tenure",
+    desc: SORT_DESCRIPTIONS.tenure,
+  },
+  {
+    label: "Name",
+    value: "name",
+    desc: SORT_DESCRIPTIONS.name,
+  },
+  {
+    label: "Last Seen",
+    value: "last_seen",
+    desc: SORT_DESCRIPTIONS.last_seen,
+  },
+];
+
+/**
+ * RECRUITER SORT OPTIONS
+ */
+export const RECRUITER_SORT_OPTIONS = [
+  {
+    label: "Potential",
+    value: "score",
+    desc: SORT_DESCRIPTIONS.potential,
+  },
+  {
+    label: "Trophies",
+    value: "trophies",
+    desc: SORT_DESCRIPTIONS.trophies,
+  },
+  {
+    label: "Donations",
+    value: "donations",
+    desc: SORT_DESCRIPTIONS.donations_lifetime,
+  },
+  {
+    label: "Recency",
+    value: "time_found",
+    desc: SORT_DESCRIPTIONS.recency,
+  },
+  {
+    label: "Name",
+    value: "name",
+    desc: SORT_DESCRIPTIONS.name,
+  },
+];
