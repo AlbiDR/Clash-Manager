@@ -42,6 +42,8 @@ export class NetworkError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "NetworkError";
+    // Ensure the name is preserved through serialization/transpilation
+    Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
 
@@ -383,8 +385,7 @@ async function _executeGasRequest<T>(
   //  MANDATORY: GAS requires 'action' in the URL for proper routing and redirects.
   // Cache busting is also essential to prevent the browser from skipping the redirect.
   const separator = url.includes("?") ? "&" : "?";
-  const cacheBuster = `_cb=${Date.now()}`;
-  const requestUrl = `${url}${separator}action=${action}&${cacheBuster}`;
+  const requestUrl = `${url}${separator}action=${action}&_cb=${Date.now()}`;
 
   try {
     const response = await fetchWithRetry(requestUrl, fetchOptions);
@@ -428,7 +429,16 @@ async function _executeGasRequest<T>(
       envelope.error?.message || envelope.message || "Operation failed on server";
     throw new Error(errorMessage);
   } catch (e: any) {
-    if (e.name === "AbortError") throw e;
+    // ABORT HANDLING
+    // We only throw immediately if the request was cancelled by the UI (replaced).
+    // If it's a timeout, we treat it as a background-syncable event.
+    if (e.name === "AbortError") {
+      if (e.message !== "replaced") {
+        console.warn(`[API] Request timed out. Enqueuing for background sync: ${action}`);
+        await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
+      }
+      throw e; 
+    }
     
     // Offline Queue logic
     if (action !== 'ping' && action !== 'getwebappdata') {
@@ -493,8 +503,11 @@ export async function dismissRecruits(
   items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
   return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { 
-    // We send payload as objects: { id, score }
-    items 
+    // COMPATIBILITY: We send both the new 'items' list (score-aware)
+    // and the legacy 'ids' list (tags only) to ensure we don't break
+    // if the backend is on a versioned deployment that hasn't updated yet.
+    items,
+    ids: items.map(i => i.id)
   });
 }
 

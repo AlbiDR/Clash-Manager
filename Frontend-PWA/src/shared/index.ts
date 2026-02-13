@@ -14,6 +14,7 @@ export { default as ToastContainer } from "./ui/ToastContainer.vue";
 export { default as SelectionBar } from "./ui/SelectionBar.vue";
 export { default as ConsoleHeader } from "./ui/ConsoleHeader.vue";
 export { default as ConsoleLayout } from "./ui/ConsoleLayout.vue";
+export { default as ConsoleList } from "./ui/ConsoleList.vue";
 export { default as FloatingDock } from "./ui/FloatingDock.vue";
 export { default as HeaderInfoOverlay } from "./ui/HeaderInfoOverlay.vue";
 

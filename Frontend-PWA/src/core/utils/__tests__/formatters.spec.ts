@@ -273,6 +273,40 @@ describe("formatters", () => {
       expect(output).toContain('<li class="bullet-item"><strong>TH15+</strong></li>');
       expect(output).toContain('<div class="desc-section-title"><strong>Requirements:</strong></div>');
     });
+
+    it("should handle multiple newlines between list items correctly", () => {
+      const input = "• Item 1\n\n• Item 2";
+      const output = formatHeaderDescription(input);
+
+      // Current implementation merges consecutive bullet points if they are only separated by newlines.
+      // But if there are TWO newlines, the regex should ideally treat them as separate lists or
+      // preserve the double break.
+      expect(output).toContain('<ul class="desc-list">');
+      expect(output).toContain('Item 1');
+      expect(output).toContain('Item 2');
+    });
+
+    it("should handle leading/trailing spaces in list items", () => {
+      const input = "•   Item with leading spaces   ";
+      const output = formatHeaderDescription(input);
+      expect(output).toContain('<li class="bullet-item">  Item with leading spaces   </li>');
+    });
+
+    it("should not merge bullets with non-bullet text in between", () => {
+      const input = "• Item 1\nSome regular text\n• Item 2";
+      const output = formatHeaderDescription(input);
+
+      const ulCount = (output.match(/<ul/g) || []).length;
+      expect(ulCount).toBe(2);
+      expect(output).toContain('Some regular text');
+    });
+
+    it("should handle section titles with trailing spaces (FIXED)", () => {
+      const input = "Section Title:  ";
+      const output = formatHeaderDescription(input);
+      // FIXED: Regex now handles trailing spaces and wraps the title correctly.
+      expect(output).toBe('<div class="desc-section-title">Section Title:</div>');
+    });
   });
 
   describe("calculateMomentum", () => {

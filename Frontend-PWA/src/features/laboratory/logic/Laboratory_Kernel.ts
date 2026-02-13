@@ -205,7 +205,8 @@ const LaboratoryKernel = {
       name: c.name,
       rarity: c.rarity,
       level: c.level,
-      count: c.count
+      count: c.count,
+      isTowerTroop: c.isTowerTroop
     }));
 
     const simInventory: Mutable<Inventory> = {
