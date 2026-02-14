@@ -105,3 +105,15 @@ To ensure 100/100 performance and SEO, the `index.html` shell must remain a hard
 1. **Title Mirroring**: The hardcoded `<h1 class="view-title">` must match the Feature label of the default route exactly (e.g., "Roster").
 2. **Critical CSS**: Inline CSS is reserved for Layout Primitives and CSS Variables. No component-level styling is permitted.
 3. **No Flashes**: Any structural changes to the primary Feature UI must be mirrored in the shell to prevent LCP layout shifts.
+
+---
+
+## 6. Substrate Integrity & Refactoring Safety
+
+Refactoring Layer 0 (@static) is a high-precision operation. Any structural shift must account for the following risks to maintain Lighthouse parity:
+
+1. **Hydration Parity**: The `index.html` DOM structure must be a precise replica of the initial Vue render. Mismatches trigger a full client-side re-hydration, causing an LCP flicker and performance penalty.
+2. **Manifest Connectivity**: If assets (icons/screenshots) are siloed, the `manifest.json` and the PWA plugin configuration in Layer 5 must be updated synchronously. Failure results in PWA installability loss.
+3. **Reference Integrity**: Any move of static media requires a comprehensive audit of all `src/` references (templates, CSS variables, and logic) to prevent broken asset links.
+4. **Signal-to-Noise Ratio**: Maintenance of Layer 0 requires proactive pruning. Carrying unused placeholders or developmental scripts is considered technical debt.
+
