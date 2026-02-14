@@ -13,11 +13,10 @@ import { useStoragePersistence } from "../core/services/useStoragePersistence";
 import { useWakeLock } from "../core/services/useWakeLock";
 
 import { createApp, watch } from "vue";
-import "@/core/theme/base.css";
-import "@/core/theme/tokens.css";
-import "@/core/theme/animations.css";
-import "@/core/theme/skeletons.css";
-import "@/core/theme/components.css";
+import { baseStyles } from "../core/theme/base";
+import { animationStyles } from "../core/theme/animations";
+import { skeletonStyles } from "../core/theme/skeletons";
+import { componentStyles } from "../core/theme/components";
 import App from "./App.vue";
 import router from "./router";
 // REMOVED: Synchronous import of autoAnimatePlugin
@@ -100,7 +99,13 @@ async function bootstrap() {
       app.directive("auto-animate", {});
     }
 
-    // 3. Mount App
+    // 3. Inject Global Styles (Atomic Purity)
+    const styleTag = document.createElement("style");
+    styleTag.id = "cm-global-styles";
+    styleTag.textContent = baseStyles + animationStyles + skeletonStyles + componentStyles;
+    document.head.appendChild(styleTag);
+
+    // 4. Mount App
     app.mount("#app");
 
     // 4. Initialize Systems (Immediate)

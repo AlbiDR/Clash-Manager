@@ -1,5 +1,10 @@
+/**
+ * CLASH MANAGER - Base Reset & Gestures
+ * Ported to TypeScript for Technical Purity.
+ */
+export const baseStyles = `
 /* =========================================
-   MINIMAL RESET (Replacing Tailwind Preflight)
+   MINIMAL RESET
    ========================================= */
 *, ::before, ::after {
   box-sizing: border-box;
@@ -21,34 +26,20 @@ body {
   line-height: inherit;
 }
 
-hr {
-  height: 0;
-  color: inherit;
-  border-top-width: 1px;
-}
+hr { height: 0; color: inherit; border-top-width: 1px; }
 
-h1, h2, h3, h4, h5, h6 {
-  font-size: inherit;
-  font-weight: inherit;
-}
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
 
-a {
-  color: inherit;
-  text-decoration: inherit;
-}
+a { color: inherit; text-decoration: inherit; }
 
-b, strong {
-  font-weight: bolder;
-}
+b, strong { font-weight: bolder; }
 
 code, kbd, samp, pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 1em;
 }
 
-small {
-  font-size: 80%;
-}
+small { font-size: 80%; }
 
 sub, sup {
   font-size: 75%;
@@ -57,19 +48,10 @@ sub, sup {
   vertical-align: baseline;
 }
 
-sub {
-  bottom: -0.25em;
-}
+sub { bottom: -0.25em; }
+sup { top: -0.5em; }
 
-sup {
-  top: -0.5em;
-}
-
-table {
-  text-indent: 0;
-  border-color: inherit;
-  border-collapse: collapse;
-}
+table { text-indent: 0; border-color: inherit; border-collapse: collapse; }
 
 button, input, optgroup, select, textarea {
   font-family: inherit;
@@ -80,9 +62,7 @@ button, input, optgroup, select, textarea {
   padding: 0;
 }
 
-button, select {
-  text-transform: none;
-}
+button, select { text-transform: none; }
 
 button, [type='button'], [type='reset'], [type='submit'] {
   -webkit-appearance: button;
@@ -90,71 +70,37 @@ button, [type='button'], [type='reset'], [type='submit'] {
   background-image: none;
 }
 
-:-moz-focusring {
-  outline: auto;
-}
+:-moz-focusring { outline: auto; }
+:-moz-ui-invalid { box-shadow: none; }
+progress { vertical-align: baseline; }
 
-:-moz-ui-invalid {
-  box-shadow: none;
-}
+::-webkit-inner-spin-button, ::-webkit-outer-spin-button { height: auto; }
 
-progress {
-  vertical-align: baseline;
-}
+[type='search'] { -webkit-appearance: textfield; outline-offset: -2px; }
 
-::-webkit-inner-spin-button, ::-webkit-outer-spin-button {
-  height: auto;
-}
+::-webkit-search-decoration { -webkit-appearance: none; }
 
-[type='search'] {
-  -webkit-appearance: textfield;
-  outline-offset: -2px;
-}
+::-webkit-file-upload-button { -webkit-appearance: button; font: inherit; }
 
-::-webkit-search-decoration {
-  -webkit-appearance: none;
-}
+summary { display: list-item; }
 
-::-webkit-file-upload-button {
-  -webkit-appearance: button;
-  font: inherit;
-}
+blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, p, pre { margin: 0; }
 
-summary {
-  display: list-item;
-}
+fieldset { margin: 0; padding: 0; }
 
-blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, p, pre {
-  margin: 0;
-}
+legend { padding: 0; }
 
-fieldset {
-  margin: 0;
-  padding: 0;
-}
-
-legend {
-  padding: 0;
-}
-
-ol, ul, menu {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+ol, ul, menu { list-style: none; margin: 0; padding: 0; }
 
 img, svg, video, canvas, audio, iframe, embed, object {
   display: block;
   vertical-align: middle;
 }
 
-img, video {
-  max-width: 100%;
-  height: auto;
-}
+img, video { max-width: 100%; height: auto; }
 
 /* =========================================
-   LOCAL FONTS (LCP Optimized)
+   LOCAL FONTS
    ========================================= */
 @font-face {
   font-family: "Inter";
@@ -173,54 +119,36 @@ img, video {
 }
 
 /* =========================================
-   NATIVE APP GESTURES (Maximum Native Feel)
+   NATIVE APP GESTURES
    ========================================= */
-
-/* Android Performance Optimization */
 body {
-  /* Disable overscroll for better Android performance */
   overscroll-behavior-y: contain;
   overscroll-behavior-x: none;
-  /* Optimize touch event handling */
   touch-action: pan-y;
 }
 
-/* Prevent text selection globally (more app-like) */
 * {
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
 }
 
-/* Allow selection for inputs/content areas */
-input,
-textarea,
-[contenteditable],
-.selectable {
+input, textarea, [contenteditable], .selectable {
   -webkit-user-select: text;
   -moz-user-select: text;
   user-select: text;
 }
 
-/* Prevent iOS context menus */
-* {
-  -webkit-touch-callout: none;
-}
+* { -webkit-touch-callout: none; }
 
-/* Prevent tap highlight (more native feel) */
 * {
   -webkit-tap-highlight-color: transparent;
-  /* Improve touch responsiveness */
   touch-action: manipulation;
 }
 
-/* Scrolling optimizations (native feel) */
-.view-container,
-.scrollable-area,
-.list-container {
+.view-container, .scrollable-area, .list-container {
   -webkit-overflow-scrolling: touch;
-  /* Re-enable overscroll for scrollable containers */
   overscroll-behavior-y: auto;
-  /* Optimize scroll performance */
   will-change: scroll-position;
 }
+`;
