@@ -13,7 +13,11 @@ import { useStoragePersistence } from "../core/services/useStoragePersistence";
 import { useWakeLock } from "../core/services/useWakeLock";
 
 import { createApp, watch } from "vue";
-import "@/core/theme/style.css";
+import "@/core/theme/base.css";
+import "@/core/theme/tokens.css";
+import "@/core/theme/animations.css";
+import "@/core/theme/skeletons.css";
+import "@/core/theme/components.css";
 import App from "./App.vue";
 import router from "./router";
 // REMOVED: Synchronous import of autoAnimatePlugin
