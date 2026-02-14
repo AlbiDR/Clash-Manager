@@ -59,21 +59,15 @@ The application has migrated away from utility frameworks to a custom, highly-op
 ---
 <br />
 
-## Project Structure
-
-The codebase follows a functional "Domain-Driven" organization within `src/composables` while keeping UI components atomic.
+The codebase is organized using a layered, feature-driven architecture to ensure scalability and maintainable "Clean Stack" principles.
 
 ```text
 src/
-├── api/             # gasClient.ts (The HEADLESS Bridge)
-├── components/      # Atomic UI elements (Buttons, Cards, Inputs)
-├── composables/     # The "Brain" - All business logic lives here
-│   ├── useClashData.ts    # Main data hydration
-│   ├── useHeadhunter.ts   # Recruitment logic
-│   └── useTheme.ts        # Design system controller
-├── views/           # Page-level orchestration (Router targets)
-├── style.css        # The Sovereign Design System (Global Variables)
-└── sw.ts            # Service Worker logic (Offline caching)
+├── app/             # Application shell (Router, App.vue, Main entry)
+├── core/            # Business Logic Layer (API clients, Storage, Global services)
+├── features/        # Domain-Specific Silos (Laboratory, Roster, Headhunter, Settings)
+├── shared/          # Atomic UI Layer (Common components, directives, haptics)
+└── env.d.ts         # Environment definitions
 ```
 
 ---

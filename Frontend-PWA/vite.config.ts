@@ -16,7 +16,7 @@ const VIEW_SPECIFIC_COMPONENTS = [
   "RecruitCardSkeleton.vue",
   "SettingsCard.vue",
   "SkeletonSettingsCard.vue",
-  "/src/components/settings/",
+  "/src/features/",
 ];
 
 export default defineConfig({
@@ -26,6 +26,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@core": fileURLToPath(new URL("./src/core", import.meta.url)),
+      "@shared": fileURLToPath(new URL("./src/shared", import.meta.url)),
+      "@features": fileURLToPath(new URL("./src/features", import.meta.url)),
+      "@app": fileURLToPath(new URL("./src/app", import.meta.url)),
     },
   },
   // GitHub Pages deployment requires the repo name in the base path
@@ -53,19 +57,17 @@ export default defineConfig({
             }
             return "vendor-stable";
           }
-          if (id.includes("/src/api/") || id.includes("/src/types/")) {
-            return "core-api";
+          if (id.includes("/src/core/")) {
+            return "core-logic";
           }
-          if (id.includes("/src/components/")) {
-            // PERFORMANCE: Exclude view-specific components from monolithic UI bundle.
+          if (id.includes("/src/shared/")) {
             if (VIEW_SPECIFIC_COMPONENTS.some((comp) => id.includes(comp))) {
               return;
             }
-
-            return "ui-components";
+            return "shared-ui";
           }
-          if (id.includes("/src/composables/")) {
-            return "business-logic";
+          if (id.includes("/src/features/")) {
+            return; // Features should be lazy chunks by default
           }
         },
       },
@@ -77,7 +79,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: "auto",
       strategies: "injectManifest",
-      srcDir: "src",
+      srcDir: "src/app",
       filename: "sw.ts",
       manifest: false, // Already exists in public/manifest.json
       injectManifest: {
