@@ -1,25 +1,19 @@
 /**
-* @vitest-environment jsdom
+ * @vitest-environment jsdom
  */
 import CardActions from "../CardActions.vue";
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-const { mockOpenExternal, mockOpenInGame } = vi.hoisted(() => ({
-  mockOpenExternal: vi.fn(),
-  mockOpenInGame: vi.fn(),
-}));
 
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useExternalLink: () => ({
-      openExternal: mockOpenExternal,
-      openInGame: mockOpenInGame,
-    }),
-  };
-});
+const mockOpenExternal = vi.fn();
+const mockOpenInGame = vi.fn();
+
+vi.mock("@core/services/useExternalLink", () => ({
+  useExternalLink: () => ({
+    openExternal: mockOpenExternal,
+    openInGame: mockOpenInGame,
+  }),
+}));
 
 describe("CardActions", () => {
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { useLeaderboard } from "../useLeaderboard";
 import { ref } from "vue";
 
@@ -10,40 +10,55 @@ const mockData = ref({
   ]
 });
 
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useClashData: vi.fn(() => ({
-      data: mockData,
-      isHydrated: ref(true),
-      isRefreshing: ref(false),
-      syncError: ref(null),
-      lastSyncTime: ref(1700000000000),
-      refresh: vi.fn(),
-    })),
-    useApiState: vi.fn(() => ({
-      pingData: ref({
-        spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-        sheets: { Leaderboard: 456 },
-      }),
-      apiStatus: ref("online"),
-    })),
-    useShowcaseMode: vi.fn(() => ({
-      isShowcaseMode: ref(false),
-    })),
-  };
-});
+vi.mock("@core/api/useApiState", () => ({
+  useApiState: () => ({
+    pingData: ref({
+      spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
+      sheets: { Leaderboard: 456 },
+    }),
+    apiStatus: ref("online"),
+  }),
+}));
 
-vi.mock("@shared", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useUiCoordinator: vi.fn(() => ({
-      setFabVisible: vi.fn(),
-    })),
-  };
-});
+vi.mock("@core/services/useClashData", () => ({
+  useClashData: () => ({
+    data: mockData,
+    isHydrated: ref(true),
+    isRefreshing: ref(false),
+    syncError: ref(null),
+    lastSyncTime: ref(1700000000000),
+    refresh: vi.fn(),
+  }),
+}));
+
+vi.mock("@core/services/useShowcaseMode", () => ({
+  useShowcaseMode: () => ({
+    isShowcaseMode: ref(false),
+  }),
+}));
+
+vi.mock("@core/services/useConsoleController", () => ({
+  useConsoleController: (config: any) => {
+    const searchQuery = ref("");
+    return {
+      searchQuery,
+      handleSearch: (val: string) => { searchQuery.value = val; },
+      status: ref({ type: "ready", text: "Ready" }),
+      handleSelectScore: vi.fn(),
+      handleReset: vi.fn(),
+      sortKey: ref(config.defaultSort),
+      sortDirection: ref("desc"),
+      handleSort: vi.fn(),
+      filteredData: mockData.value.lb,
+      isSelectionMode: ref(false),
+      selectedCount: ref(0),
+      selectedIds: ref([]),
+      toggleSelection: vi.fn(),
+      clearSelection: vi.fn(),
+      selectAll: vi.fn(),
+    };
+  },
+}));
 
 // Mock vue-router for useDeepLinkHandler
 vi.mock("vue-router", () => ({
