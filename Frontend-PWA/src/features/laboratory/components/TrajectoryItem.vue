@@ -39,15 +39,15 @@ const baseUrl = import.meta.env.BASE_URL;
       <!-- Line 3: Efficiency Metrics (Inverted Ratios) -->
       <div class="efficiency-row">
         <div class="efficiency-slab gold">
-          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="eff-icon" alt="Gold" />
+          <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="eff-icon" alt="Gold" />
           <div class="eff-divider">/</div>
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="eff-icon" alt="XP" />
+          <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="eff-icon" alt="XP" />
           <span class="eff-val">{{ (upgrade.goldCost / upgrade.xpGained).toFixed(2) }}</span>
         </div>
         <div v-if="upgrade.gemsUsed > 0" class="efficiency-slab gems">
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="eff-icon" alt="Gems" />
+          <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="eff-icon" alt="Gems" />
           <div class="eff-divider">/</div>
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="eff-icon" alt="XP" />
+          <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="eff-icon" alt="XP" />
           <span class="eff-val">{{ (upgrade.gemsUsed / upgrade.xpGained).toFixed(3) }}</span>
         </div>
       </div>
@@ -56,19 +56,19 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="cost-stack">
       <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
-        <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
+        <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="res-icon" alt="Gems" />
       </div>
       <div v-else-if="upgrade.wildCardsUsed > 0" class="cost-item wild">
         <span class="val">{{ formatNumber(upgrade.wildCardsUsed) }}</span>
-        <img :src="`${baseUrl}assets/game/wildcard_${upgrade.rarity.toLowerCase()}.webp`" class="res-icon" alt="WildCards" />
+        <img :src="`${baseUrl}assets/game/wildcard-${upgrade.rarity.toLowerCase()}.webp`" class="res-icon" alt="WildCards" />
       </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
+        <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="res-icon" alt="Gold" />
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-icon sm" alt="XP" />
+        <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="res-icon sm" alt="XP" />
       </div>
     </div>
   </div>

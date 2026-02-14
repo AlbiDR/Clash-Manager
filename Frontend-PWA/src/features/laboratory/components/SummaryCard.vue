@@ -32,14 +32,14 @@ const baseUrl = import.meta.env.BASE_URL;
       <div class="king-level-display">
         <div class="level-badge current">
           <span class="num">{{ profile.currentKingLevel || profile.kingLevel }}</span>
-          <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
+          <img :src="`${baseUrl}assets/game/tower-level.webp`" class="level-icon" alt="Tower" />
         </div>
         <div class="progression-divider">
           <Icon name="chevron_right" size="18" />
         </div>
         <div class="level-badge target">
           <span class="num">{{ result.projectedKingLevel }}</span>
-          <img :src="`${baseUrl}assets/game/tower_level.webp`" class="level-icon" alt="Tower" />
+          <img :src="`${baseUrl}assets/game/tower-level.webp`" class="level-icon" alt="Tower" />
         </div>
       </div>
     </div>
@@ -49,7 +49,7 @@ const baseUrl = import.meta.env.BASE_URL;
       <label class="section-label">Required for Projection</label>
       <div class="resources-grid" :class="{ 'triple': result.totalGemsSpent > 0 }">
         <div class="res-slab xp">
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="res-icon" alt="XP" />
+          <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="res-icon" alt="XP" />
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalXpGained) }}</span>
             <span class="label">Experience</span>
@@ -57,7 +57,7 @@ const baseUrl = import.meta.env.BASE_URL;
         </div>
         
         <div class="res-slab gold">
-          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-icon" alt="Gold" />
+          <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="res-icon" alt="Gold" />
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGoldSpent) }}</span>
             <span class="label">Gold</span>
@@ -65,7 +65,7 @@ const baseUrl = import.meta.env.BASE_URL;
         </div>
 
         <div v-if="result.totalGemsSpent > 0" class="res-slab gems">
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-icon" alt="Gems" />
+          <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="res-icon" alt="Gems" />
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGemsSpent) }}</span>
             <span class="label">Gems</span>

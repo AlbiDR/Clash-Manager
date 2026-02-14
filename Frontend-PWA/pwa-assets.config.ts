@@ -28,7 +28,7 @@ export default defineConfig({
       padding: 0,
     },
   } satisfies Preset,
-  images: ["public/logo.svg"] as const,
+  images: ["public/assets/branding/logo.svg"] as const,
   // Standard naming to match the manifest
   manifestIconName: "pwa",
   maskableIconName: "pwa-maskable",

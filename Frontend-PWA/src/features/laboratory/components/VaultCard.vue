@@ -30,7 +30,7 @@ const baseUrl = import.meta.env.BASE_URL;
         <!-- Primary Resources -->
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="res-asset" alt="Gold" />
+            <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="res-asset" alt="Gold" />
             <span class="res-label">Gold</span>
           </div>
           <input 
@@ -43,7 +43,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="res-asset" alt="Gems" />
+            <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="res-asset" alt="Gems" />
             <span class="res-label">Gems</span>
           </div>
           <input 
@@ -69,7 +69,7 @@ const baseUrl = import.meta.env.BASE_URL;
             :class="rarity.toLowerCase()"
           >
             <img 
-              :src="`${baseUrl}assets/game/wildcard_${rarity.toLowerCase()}.webp`" 
+              :src="`${baseUrl}assets/game/wildcard-${rarity.toLowerCase()}.webp`" 
               class="wc-asset" 
               :alt="rarity" 
             />
