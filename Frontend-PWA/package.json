@@ -23,23 +23,23 @@
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
     "valibot": "^1.2.0",
-    "vue": "^3.5.24",
-    "vue-router": "^4.6.3",
+    "vue": "^3.5.27",
+    "vue-router": "^4.6.4",
     "workbox-precaching": "^7.4.0",
     "workbox-window": "^7.4.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.9",
     "@vite-pwa/assets-generator": "^1.0.2",
-    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.3",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "jsdom": "^24.1.0",
     "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4",
+    "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^1.6.0",
-    "vue-tsc": "^3.1.4"
+    "vitest": "^1.6.1",
+    "vue-tsc": "^3.2.3"
   }
 }

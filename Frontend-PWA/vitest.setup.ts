@@ -2,9 +2,6 @@ import { config } from "@vue/test-utils";
 import { vi } from "vitest";
 
 // Global mocks or config
-config.global.mocks = {
-  $t: (msg: string) => msg,
-};
 
 // 1. Fix JSDOM Navigation Error
 // JSDOM does not implement navigation. We mock it to prevent "Error: Not implemented: navigation"
