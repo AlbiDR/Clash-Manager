@@ -11,6 +11,15 @@ export function getScoreTone(score: number | undefined): string {
   return "tone-low";
 }
 
+const TIME_UNITS = [
+  { s: 31536000, t: "y", l: "y ago" },
+  { s: 2592000, t: "mo", l: "mo ago" },
+  { s: 604800, t: "w", l: "w ago" },
+  { s: 86400, t: "d", l: "d ago" },
+  { s: 3600, t: "h", l: "h ago" },
+  { s: 60, t: "m", l: "m ago" },
+];
+
 const formatTime = (
   dateStr: string | null | undefined,
   shortMode: boolean,
@@ -26,16 +35,7 @@ const formatTime = (
 
   if (seconds < 0) return shortMode ? "New" : "Just now";
 
-  const units = [
-    { s: 31536000, t: "y", l: "y ago" },
-    { s: 2592000, t: "mo", l: "mo ago" },
-    { s: 604800, t: "w", l: "w ago" },
-    { s: 86400, t: "d", l: "d ago" },
-    { s: 3600, t: "h", l: "h ago" },
-    { s: 60, t: "m", l: "m ago" },
-  ];
-
-  for (const unit of units) {
+  for (const unit of TIME_UNITS) {
     if (seconds >= unit.s) {
       const value = Math.floor(seconds / unit.s);
       return shortMode ? `${value}${unit.t}` : `${value}${unit.l}`;
@@ -52,6 +52,7 @@ export const formatTimeAgoShort = (
 ): string => formatTime(dateStr, true);
 
 const TIME_AGO_REGEX = /^(\d+)(mo|[ymdhw]) ago$/;
+const CUSTOM_DATE_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/;
 const TIME_AGO_MULTIPLIERS: Record<string, number> = {
   m: 1,
   h: 60,
@@ -71,7 +72,7 @@ export function parseTimeAgoValue(val: string | null | undefined): number {
 
   // 1. Try parsing custom format: dd/MM/yyyy HH.mm.ss (Project Standard)
   // Example: "02/02/2026 18.46.52"
-  const customMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/);
+  const customMatch = val.match(CUSTOM_DATE_REGEX);
   if (customMatch) {
     const day = parseInt(customMatch[1], 10);
     const month = parseInt(customMatch[2], 10) - 1; // JS months are 0-indexed

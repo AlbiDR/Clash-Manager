@@ -27,13 +27,8 @@ export function useExternalLink() {
     const id = cleanTag(tag);
     if (!id) return;
 
-    console.log("[openInGame] Starting with tag:", tag, "cleaned:", id);
-
     const userAgent = navigator.userAgent;
-    console.log("[openInGame] UserAgent:", userAgent);
-
     const isAndroid = /android/i.test(userAgent);
-    console.log("[openInGame] Environment - Android:", isAndroid);
 
     // STRATEGY: On Android, use Intent URL directly for maximum reliability
     if (isAndroid) {
@@ -42,8 +37,6 @@ export function useExternalLink() {
         `scheme=clashroyale;` +
         `package=com.supercell.clashroyale;` +
         `end`;
-
-      console.log("[openInGame] Android mode - using direct intent");
 
       try {
         // Create a temporary anchor for the intent
@@ -63,7 +56,6 @@ export function useExternalLink() {
           }
         }, 100);
 
-        console.log("[openInGame] Intent triggered successfully");
       } catch (err) {
         console.error("[openInGame] Intent click failed:", err);
         // Last resort: direct location change
@@ -76,7 +68,6 @@ export function useExternalLink() {
     const directUrl = `clashroyale://playerInfo?id=${id}`;
 
     // Final fallback: Try direct window.location (works on iOS)
-    console.log("[openInGame] Fallback: using window.location.href");
     try {
       window.location.href = directUrl;
     } catch (err) {

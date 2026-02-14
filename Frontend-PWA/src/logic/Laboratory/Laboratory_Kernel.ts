@@ -231,30 +231,38 @@ const LaboratoryKernel = {
     let totalGemsSpent = 0;
     let totalXpGained = 0;
 
-    let activeIndices: number[] = simCards
-      .map((_, i) => i)
-      .filter(i => simCards[i].level < CARD_LEVEL_CAP);
-
     // STRATEGY DIVERGENCE:
     // - Projection: ALWAYS Infinite (Goal Oriented Simulation)
     // - Efficiency: Defaults to Finite, but can be forced Infinite for simulation
     const effectiveInfinite = settings.strategy === "Projection" || settings.infiniteResources;
+    const candidateSettings = { ...settings, infiniteResources: effectiveInfinite };
 
-    while (activeIndices.length > 0) {
+    const candidates = new Array<UpgradeCandidate | null>(simCards.length).fill(null);
+    const dirtyIndices = new Set<number>(simCards.keys());
+
+    while (true) {
+      // 1. RE-EVALUATE DIRTY CANDIDATES
+      // Instead of O(N) every step, we only update cards affected by the last action.
+      for (const index of dirtyIndices) {
+        if (simCards[index].level < CARD_LEVEL_CAP) {
+          candidates[index] = buildCandidate(
+            simCards[index],
+            index,
+            simInventory,
+            candidateSettings
+          );
+        } else {
+          candidates[index] = null;
+        }
+      }
+      dirtyIndices.clear();
+
+      // 2. FIND BEST CANDIDATE (O(N))
       let bestCandidate: UpgradeCandidate | null = null;
-      const nextActiveIndices: number[] = [];
 
-      for (const index of activeIndices) {
-        const candidate = buildCandidate(
-          simCards[index], 
-          index, 
-          simInventory, 
-          { ...settings, infiniteResources: effectiveInfinite }
-        );
-
+      for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
         if (!candidate) continue;
-
-        nextActiveIndices.push(index);
 
         if (!bestCandidate) {
           bestCandidate = candidate;
@@ -279,25 +287,42 @@ const LaboratoryKernel = {
         }
       }
 
-      activeIndices = nextActiveIndices;
-
       if (!bestCandidate) break;
 
-      const targetCard = simCards[bestCandidate.index];
+      const bestIndex = bestCandidate.index;
+      const targetCard = simCards[bestIndex];
       
       targetCard.level = bestCandidate.toLevel;
       targetCard.count -= bestCandidate.cardsUsed;
       
-      // Budget Management
+      // 3. BUDGET MANAGEMENT
       // Only deduct cost if NOT in infinite mode.
       if (!effectiveInfinite) {
         simInventory.gold -= bestCandidate.goldCost;
         simInventory.gems -= bestCandidate.gemsUsed;
       }
-
       
       const wildKey = targetCard.rarity as Rarity;
       (simInventory.wildCards as Record<Rarity, number>)[wildKey] -= bestCandidate.wildCardsUsed;
+
+      // 4. MARK DIRTY INDICES FOR NEXT ITERATION
+      dirtyIndices.add(bestIndex);
+
+      // If wildcards were used, all cards of that rarity might have changed their gem requirement
+      if (bestCandidate.wildCardsUsed > 0) {
+        for (let i = 0; i < simCards.length; i++) {
+          if (i !== bestIndex && simCards[i].rarity === targetCard.rarity) {
+            dirtyIndices.add(i);
+          }
+        }
+      }
+
+      // If gold/gems were spent in finite mode, all cards might have changed affordability
+      if (!effectiveInfinite && (bestCandidate.goldCost > 0 || bestCandidate.gemsUsed > 0)) {
+        for (let i = 0; i < simCards.length; i++) {
+          if (i !== bestIndex) dirtyIndices.add(i);
+        }
+      }
 
       totalWildCardsUsed[targetCard.rarity] += bestCandidate.wildCardsUsed;
       totalGoldSpent += bestCandidate.goldCost;
