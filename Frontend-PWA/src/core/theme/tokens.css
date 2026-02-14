@@ -1,54 +1,12 @@
 /* ============================================================================
    CLASH MANAGER - Neo-Material Design System (Consolidated v6.7)
    DESIGN TOKENS & SYSTEM THEME
+   REDUCED SUBSTRATE: Static properties that do not change between themes.
+   Dynamic tokens are now handled by tokens.ts (TypeScript Source of Truth).
    ============================================================================ */
 
 :root {
-  /* Default Light Theme */
-  --sys-color-primary: #0061a4;
-  --sys-color-primary-rgb: 0, 97, 164;
-  --sys-color-on-primary: #ffffff;
-  --sys-color-primary-container: #d1e4ff;
-  --sys-color-on-primary-container: #001d36;
-
-  --sys-color-secondary: #535f70;
-  --sys-color-secondary-container: #d7e3f7;
-  --sys-color-on-secondary-container: #101c2b;
-
-  --sys-color-error: #ba1a1a;
-  --sys-color-on-error: #ffffff;
-  --sys-color-error-container: #ffdad6;
-  --sys-color-on-error-container: #410002;
-
-  /* Adjusted for WCAG AA Contrast (4.5:1 on #b9f6ca) */
-  --sys-color-success: #145218;
-  --sys-color-on-success: #ffffff;
-  --sys-color-success-container: #b9f6ca;
-  --sys-color-on-success-container: #002105;
-
-  --sys-color-background: #fdfcff;
-  --sys-color-surface: #fdfcff;
-  --sys-color-on-surface: #1a1c1e;
-
-  --sys-color-surface-container: #f3edf7;
-  --sys-color-surface-container-high: #ece6f0;
-  --sys-color-surface-container-highest: #e6e0e9;
-
-  --sys-color-inverse-surface: #313033;
-  --sys-color-inverse-on-surface: #f4f2f7;
-  --sys-color-inverse-primary: #a8c7fa;
-
-  /* ACCESSIBILITY: Darkened from #73777f to #5f6368 for 4.5:1 contrast on white */
-  --sys-color-outline: #5f6368;
-  --sys-color-outline-variant: #c4c7c5;
-
-  --sys-surface-glass: rgba(255, 255, 255, 0.9);
-  /* FIXED: Darker border for light theme visibility */
-  --sys-surface-glass-border: rgba(0, 0, 0, 0.08);
-  --sys-surface-glass-blur: blur(24px) saturate(180%);
-
   --sys-motion-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
-
   --sys-layout-max-width: 720px;
   --sys-font-family-body: "Inter", system-ui, sans-serif;
   --sys-font-family-mono: "JetBrains Mono", monospace;
@@ -58,86 +16,10 @@
   
   /* SAFE FRAME: Offset for fixed/sticky items (default 0) */
   --sys-safe-frame-offset: 0px;
-  /* REFINED ELEVATION: Multi-layered shadows for organic depth */
-  --sys-elevation-2: 
-    0 4px 12px -2px rgba(0, 0, 0, 0.08),
-    0 2px 6px -1px rgba(0, 0, 0, 0.04);
-  
-  --sys-elevation-3: 
-    0 12px 32px -4px rgba(0, 0, 0, 0.1),
-    0 8px 16px -4px rgba(0, 0, 0, 0.08),
-    0 4px 8px -2px rgba(0, 0, 0, 0.04);
-
-  /* SHARED SKELETON VARS (Synced with index.html) */
-  --sh-bg: #fdfcff;
-  --sh-surf: #f3edf7;
-  --sh-text: #1a1c1e;
-  --sh-sk: #e6e0e9;
-  --sh-sk-secondary: #dcdada; /* Slightly lighter tone for differentiation */
-}
-
-/* Dark Theme Overrides - Applied via JS class */
-:root.dark {
-  --sys-color-primary: #a8c7fa;
-  --sys-color-primary-rgb: 168, 199, 250;
-  --sys-color-on-primary: #00315b;
-  --sys-color-primary-container: #004781;
-  --sys-color-on-primary-container: #d1e4ff;
-  --sys-color-on-primary-container-rgb: 209, 228, 255;
-
-  --sys-color-secondary: #bbc7db;
-  --sys-color-on-secondary: #253140;
-  --sys-color-secondary-container: #3b4858;
-  --sys-color-on-secondary-container: #d7e3f7;
-
-  --sys-color-error: #ffb4ab;
-  --sys-color-on-error: #690005;
-  --sys-color-error-container: #93000a;
-  --sys-color-on-error-container: #ffdad6;
-
-  --sys-color-success: #6dd58c;
-  --sys-color-on-success: #00390a;
-  --sys-color-success-container: #005313;
-  --sys-color-on-success-container: #b9f6ca;
-
-  --sys-color-surface: #0b0e14;
-  --sys-color-background: #0b0e14;
-  --sys-color-on-surface: #e1e2e8;
-  --sys-color-surface-container: #1b1f27;
-  --sys-color-surface-container-high: #242932;
-  --sys-color-surface-container-highest: #2f343e;
-
-  /* ELEVATION INVERSION: Deep black shadows + subtle rim light for dark surfaces */
-  --sys-elevation-2: 
-    0 8px 16px -4px rgba(0, 0, 0, 0.5),
-    0 4px 8px -4px rgba(0, 0, 0, 0.4);
-
-  --sys-elevation-3: 
-    0 20px 40px -8px rgba(0, 0, 0, 0.7),
-    0 12px 24px -8px rgba(0, 0, 0, 0.6),
-    0 0 1px 0 rgba(255, 255, 255, 0.08); /* Subtle surface definition */
-
-  --sys-color-inverse-surface: #e6e1e5;
-  --sys-color-inverse-on-surface: #313033;
-  --sys-color-inverse-primary: #0061a4;
-
-  --sys-surface-glass: rgba(20, 24, 32, 0.94);
-  /* Dark Mode retains white border for contrast */
-  --sys-surface-glass-border: rgba(255, 255, 255, 0.12);
-  --sys-color-outline: #9aa0a6;
-  --sys-color-outline-variant: #44474f;
-
-  --sh-bg: #0b0e14;
-  --sh-surf: #1b1f27;
-  --sh-text: #e1e2e8;
-  --sh-sk: #2f343e;
-  --sh-sk-secondary: #3b4858; /* Darker secondary tone */
 }
 
 body {
-  background-color: var(--sys-color-background);
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-body);
+  margin: 0;
   -webkit-font-smoothing: antialiased;
   padding-bottom: calc(120px + env(safe-area-inset-bottom));
   overflow-x: hidden;

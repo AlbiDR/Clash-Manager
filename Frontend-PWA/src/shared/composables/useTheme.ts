@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { darkTokens, generateCssVariables, lightTokens } from "../../core/theme/tokens";
 
 export type Theme = "light" | "dark" | "auto";
 
@@ -22,6 +23,13 @@ export function useTheme() {
     const root = document.documentElement;
     const isDark =
       theme.value === "auto" ? mediaQuery.matches : theme.value === "dark";
+    const targetTokens = isDark ? darkTokens : lightTokens;
+    const variables = generateCssVariables(targetTokens);
+    
+    // Inject tokens as style properties on root
+    Object.entries(variables).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
 
     if (isDark) {
       root.classList.add("dark");
