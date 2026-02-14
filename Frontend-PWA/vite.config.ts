@@ -4,6 +4,7 @@ import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
 import packageJson from "./package.json";
+import { getAppShellStyles, getAppShellHtml } from "./src/core/theme/AppShell";
 
 // View-specific components excluded from monolithic UI bundle.
 // This allows them to be bundled with their respective lazy-loaded views,
@@ -93,6 +94,14 @@ export default defineConfig({
         type: "module",
       },
     }),
+    {
+      name: "app-shell-injection",
+      transformIndexHtml(html) {
+        return html
+          .replace("<!-- APP_SHELL_CSS -->", getAppShellStyles())
+          .replace("<!-- APP_SHELL_HTML -->", getAppShellHtml());
+      },
+    },
     ...(process.env.ANALYZE
       ? [
           visualizer({
