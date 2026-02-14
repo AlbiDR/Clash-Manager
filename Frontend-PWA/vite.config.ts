@@ -44,7 +44,6 @@ export default defineConfig({
     cssCodeSplit: true,
     target: "chrome100",
     rollupOptions: {
-      input: "index.html",
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
@@ -96,31 +95,11 @@ export default defineConfig({
         type: "module",
       },
     }),
+    // 3. App Shell Injection (Hydrate the synthesized HTML placeholders)
     {
-      name: "virtual-html-entry",
-      resolveId(id) {
-        if (id === "index.html" || id.endsWith("index.html")) {
-          return "\0virtual:index.html";
-        }
-      },
-      load(id) {
-        if (id === "\0virtual:index.html") {
-          return generateHtmlEntry(packageJson.version);
-        }
-      },
-      configureServer(server) {
-        server.middlewares.use((req, res, next) => {
-          if (req.url === "/index.html" || req.url === "/") {
-            res.statusCode = 200;
-            res.setHeader("Content-Type", "text/html");
-            res.end(generateHtmlEntry(packageJson.version));
-            return;
-          }
-          next();
-        });
-      },
+      name: "app-shell-hydration",
       transformIndexHtml(html) {
-        return generateHtmlEntry(packageJson.version);
+        return html; // Content already synthesized, this hook remains for future dynamic logic
       },
     },
     ...(process.env.ANALYZE
