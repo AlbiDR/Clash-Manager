@@ -15,7 +15,8 @@ import {
   asXP, 
   addXP,
   addGold,
-  addGems
+  addGems,
+  GEM_TO_GOLD_FACTOR
 } from './Economy';
 import { 
   CARD_LEVEL_CAP, 
@@ -55,15 +56,24 @@ function buildCandidate(
   let finalWildUsed = 0;
 
   if (settings.infiniteResources) {
-    // In infinite mode, we calculate gems needed for deficits but don't block
+    // In infinite mode, we conceptually use what we need.
     finalWildUsed = remainingNeeded;
+    
+    // Theoretical Gem calculation for material deficit
     const deficit = Math.max(0, remainingNeeded - wildAvailable);
     if (deficit > 0 && settings.allowGemSpending) {
       const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
-      gemsUsed = asGems(Math.ceil(deficit * rate));
+      gemsUsed = addGems(gemsUsed, asGems(Math.ceil(deficit * rate)));
+    }
+
+    // Theoretical Gem calculation for gold deficit
+    if (goldCost > inventory.gold && settings.allowGemSpending) {
+      const goldDeficit = subGold(goldCost, inventory.gold);
+      const gemsForGold = asGems(Math.ceil(Number(goldDeficit) / 20)); // GEM_TO_GOLD_FACTOR = 20
+      gemsUsed = addGems(gemsUsed, gemsForGold);
     }
   } else {
-    // Real resources mode
+    // 2. Real resources mode
     const wildToUse = Math.min(remainingNeeded, Math.max(0, wildAvailable));
     finalWildUsed = wildToUse;
     remainingNeeded -= wildToUse;
@@ -71,21 +81,31 @@ function buildCandidate(
     if (remainingNeeded > 0) {
       if (settings.allowGemSpending) {
         const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
-        gemsUsed = asGems(Math.ceil(remainingNeeded * rate));
-        if (gemsUsed > inventory.gems) return null;
+        gemsUsed = addGems(gemsUsed, asGems(Math.ceil(remainingNeeded * rate)));
       } else {
         return null;
       }
     }
 
-    if (goldCost > inventory.gold && !settings.infiniteResources) {
-      return null; // For simplicity in this logic, we assume we need the gold first or gems for gold 
-      // (Simplified: real mode requires gold on hand unless we add gems-for-gold logic here)
+    // Gold Deficit Gems (Real mode)
+    if (goldCost > inventory.gold) {
+      if (settings.allowGemSpending) {
+        const goldDeficit = subGold(goldCost, inventory.gold);
+        const gemsForGold = asGems(Math.ceil(Number(goldDeficit) / GEM_TO_GOLD_FACTOR)); // GEM_TO_GOLD_FACTOR = 20
+        gemsUsed = addGems(gemsUsed, gemsForGold);
+      } else {
+        return null;
+      }
     }
+
+    // Check final budget
+    if (Number(gemsUsed) > Number(inventory.gems)) return null;
   }
 
-  // Efficiency calculation
-  let efficiencyRatio = Number(goldCost) / Number(xpGain);
+  // Efficiency calculation (uses Effective Cost = Gold + Gem-Equiv-Gold)
+  const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR);
+  let efficiencyRatio = effectiveCost / Number(xpGain);
+  
   const override = EFFICIENCY_OVERRIDES[nextLevel];
   if (override !== undefined) efficiencyRatio = override;
 
