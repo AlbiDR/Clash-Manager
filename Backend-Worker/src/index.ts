@@ -5,6 +5,18 @@
  * High-performance Express server for bulk API operations
  * Migrated from JavaScript with full type safety and modern TS features
  * ============================================================================
+ *
+ * @remarks
+ * The Worker serves as the secondary processing tier of the Clash Manager
+ * ecosystem. It is a stateless, high-concurrency engine designed to offload
+ * heavy network operations and data transformation tasks that would otherwise
+ * exceed Google Apps Script's execution quotas and concurrent fetch limits.
+ *
+ * KEY FEATURES:
+ * - Smart Key Rotation: Manages a pool of API keys with health-tracking.
+ * - Exponential Backoff: Implements resilient retry logic with jitter.
+ * - Deep Delegation: Executes scoring logic (via ScoringKernel) server-side
+ *   to minimize payload size and client-side processing.
  */
 
 import express, {
@@ -49,13 +61,16 @@ const CONFIG: ServerConfig = {
   timeout: parseInt(process.env["WORKER_TIMEOUT_SEC"] ?? "45", 10) * 1000,
   maxRetries: parseInt(process.env["WORKER_RETRIES"] ?? "2", 10),
   port: parseInt(process.env["PORT"] ?? "8080", 10),
-  apiBase: process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1", // ⚡ DEFAULT TO PROXY
+  apiBase: process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1", // DEFAULT TO PROXY
 } as const;
 
 // ============================================================================
 //  KEY MANAGEMENT ENGINE (High Performance)
 // ============================================================================
 
+/**
+ * Internal state tracking for an individual API key.
+ */
 interface KeyState {
   value: string;
   isHealthy: boolean;
@@ -63,6 +78,13 @@ interface KeyState {
   failureCount: number;
 }
 
+/**
+ * KEY MANAGER
+ *
+ * @remarks
+ * Orchestrates a pool of API keys to ensure high availability and prevent
+ * cascading failures during heavy scanning operations.
+ */
 class KeyManager {
   private keys: KeyState[] = [];
 
@@ -75,6 +97,13 @@ class KeyManager {
     }));
   }
 
+  /**
+   * Retrieves a healthy key from the pool using a random distribution.
+   *
+   * @remarks
+   * Employs a random selection among currently available keys to prevent
+   * hitting rate limits on a single key when others are idle.
+   */
   public getHealthyKey(): string | null {
     const now = Date.now();
     const healthy = this.keys.filter(k => k.isHealthy || now > k.cooldownUntil);
@@ -83,25 +112,37 @@ class KeyManager {
     const key = healthy[Math.floor(Math.random() * healthy.length)];
     if (!key) return null;
     
-    key.isHealthy = true; // Mark as healthy if it passed the cooldown check
+    // Intent: Mark as healthy if it passed the cooldown check. This allows
+    // keys to automatically recover after their designated penalty period.
+    key.isHealthy = true;
     return key.value;
   }
 
+  /**
+   * Updates key health based on upstream response codes.
+   *
+   * @remarks
+   * Implements different penalty tiers:
+   * - 429 (Too Many Requests): Sidelined for 60s.
+   * - 403 (Forbidden): Sidelined for 1 hour (assumed banned or invalid).
+   * - Other: Increments failure count; sidelined for 30s after 5 failures.
+   */
   public reportFailure(keyVal: string, code: number): void {
     const key = this.keys.find(k => k.value === keyVal);
     if (!key) return;
 
     if (code === 429) {
-      // ⚠️ THROTTLED: Sidelined for 60s
+      // THROTTLED: Immediate cooldown to prevent further rate limiting.
       key.isHealthy = false;
       key.cooldownUntil = Date.now() + 60000;
       console.warn(`[KeyManager] Key throttled (429). Sidelined for 60s.`);
     } else if (code === 403) {
-      // ⛔ BANNED/INVALID: Sidelined for 1 hour
+      // BANNED/INVALID: Long-term penalty to avoid spamming rejected keys.
       key.isHealthy = false;
       key.cooldownUntil = Date.now() + 3600000;
       console.error(`[KeyManager] Key rejected (403). Sidelined for 1 hour.`);
     } else {
+      // Intent: Gradual degradation for intermittent network errors.
       key.failureCount++;
       if (key.failureCount >= 5) {
           key.isHealthy = false;
@@ -111,6 +152,9 @@ class KeyManager {
     }
   }
 
+  /**
+   * Resets the failure state of a key upon a successful request.
+   */
   public reportSuccess(keyVal: string): void {
     const key = this.keys.find(k => k.value === keyVal);
     if (key) {
@@ -119,6 +163,9 @@ class KeyManager {
     }
   }
 
+  /**
+   * Returns diagnostic metrics for the current key pool.
+   */
   public getPoolStats() {
     const now = Date.now();
     return {
@@ -168,7 +215,11 @@ app.use(express.json({ limit: "50mb" }));
 // ============================================================================
 
 /**
- * Fetch with timeout protection
+ * Fetch with timeout protection.
+ *
+ * @remarks
+ * Race condition wrapper that ensures a request is terminated if the
+ * upstream provider hangs, preventing worker thread exhaustion.
  */
 async function timeoutFetch(
   url: string,
@@ -184,7 +235,12 @@ async function timeoutFetch(
 }
 
 /**
- * Fetch with automatic retries, exponential backoff with jitter, and SMART KEY ROTATION
+ * Fetch with automatic retries, exponential backoff with jitter, and SMART KEY ROTATION.
+ *
+ * @remarks
+ * The core resilient fetch engine. It handles authentication header injection,
+ * key rotation on failure, and exponential backoff to ensure maximum delivery
+ * probability even under heavy load.
  */
 async function fetchWithRotatedRetries<T = unknown>(
   url: string,
@@ -195,7 +251,8 @@ async function fetchWithRotatedRetries<T = unknown>(
   let attempt = 0;
   let lastErr: Error | null = null;
 
-  // Use temporary KeyManager for overrides if provided, otherwise fallback to global KEYS
+  // Intent: Use temporary KeyManager for overrides if provided (e.g. from PWA client),
+  // otherwise fallback to global system keys.
   const manager = (overrideKeys && overrideKeys.length > 0) 
     ? new KeyManager(overrideKeys)
     : KEYS;
@@ -228,7 +285,7 @@ async function fetchWithRotatedRetries<T = unknown>(
         }
       }
 
-      // Handle Failures
+      // Intent: Handle specific failure codes to decide if we should retry or abort.
       manager.reportFailure(currentKey, code);
       
       if (code === 404) return { code, content: text as unknown as T };
@@ -242,6 +299,7 @@ async function fetchWithRotatedRetries<T = unknown>(
       attempt++;
       
       if (attempt <= retries) {
+        // Intent: Exponential backoff with jitter to prevent "Thundering Herd" effect.
         const backoff = Math.min(10000, (500 * Math.pow(2, attempt)) + (Math.random() * 1000));
         console.warn(`[Worker] Rotate-Retry ${attempt}/${retries} for ${url.slice(-20)}. Backoff: ${Math.round(backoff)}ms. Reason: ${lastErr.message}`);
         await new Promise((resolve) => setTimeout(resolve, backoff));
@@ -256,8 +314,14 @@ async function fetchWithRotatedRetries<T = unknown>(
 }
 
 /**
- * Calculate War Week ID (ISO Week Number format: YYWnn)
- * Matches GAS implementation for consistency
+ * Calculate War Week ID (ISO Week Number format: YYWnn).
+ *
+ * @remarks
+ * Strictly synchronized with the GAS implementation to ensure that data
+ * processed on the worker (e.g. war history) can be seamlessly merged
+ * with the primary Google Sheets database.
+ *
+ * Formula: Adjusts to Thursday (War Start Day) to determine the ISO week.
  */
 function calculateWarWeekId(dateStr: string): WarWeekId {
   if (!dateStr) return "Unknown" as WarWeekId;
@@ -298,7 +362,12 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
 }
 
 /**
- * Generic batch processor with worker pool pattern
+ * Generic batch processor with worker pool pattern.
+ *
+ * @remarks
+ * Orchestrates parallel processing of URLs. It implements "Deep Delegation"
+ * by executing complex player scoring logic (using ScoringKernel) within
+ * the worker thread, reducing the burden on the GAS backend and the PWA.
  */
 async function processBatch<T = unknown>(
   urls: string[],
@@ -372,7 +441,9 @@ async function processBatch<T = unknown>(
               scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
             );
 
-            // STRATEGY 2: Apply Prophet Bonus remotely
+            // STRATEGY 2: Apply Prophet Bonus remotely.
+            // Intent: Reward players identified as high-potential by the DeepNet
+            // analytics engine (Prophet).
             if (prophetCache) {
                  const normTag = profile.tag.replace("#", "").trim().toLowerCase();
                  const intel = prophetCache[normTag];
@@ -443,7 +514,12 @@ async function processBatch<T = unknown>(
 }
 
 /**
- * Tournament scan batch processor
+ * Tournament scan batch processor.
+ *
+ * @remarks
+ * Optimized for high-volume recruitment scanning. Filters out players who
+ * are already in a clan, blacklisted, or below the trophy threshold during
+ * the initial tournament member list pass.
  */
 async function processScanBatch(
   tags: TournamentTag[],
@@ -485,7 +561,8 @@ async function processScanBatch(
           headers,
         }, CONFIG.maxRetries, apiKeys);
 
-        // SUPER DIAGNOSTIC: Capture raw response of the first attempt
+        // SUPER DIAGNOSTIC: Capture raw response of the first attempt.
+        // Helpful for debugging upstream proxy rejections in production.
         if (debug && !traceCaptured) {
             traceCaptured = true;
             debug.firstUrl = url;
@@ -503,19 +580,17 @@ async function processScanBatch(
           "membersList" in res.content
         ) {
           res.content.membersList.forEach((p) => {
+            // Intent: Filter early to minimize subsequent profile fetch overhead.
             if (p.trophies < minTrophies) return;
             if (p.clan?.tag) return;
             if (blacklistSet.has(p.tag)) return;
 
-            // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
+            // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side.
             if (prophetCache) {
                 const normTag = p.tag.replace("#", "").trim().toLowerCase();
                 const intel = prophetCache[normTag];
-                // Lightweight scoring estimation (detailed scoring happens in profile fetch phase)
-                // But we can flag "Heritage" candidates early here if needed.
                 if (intel) {
-                   // Bonus logic could go here, but strictly we need profile stats for true score.
-                   // For now, we just pass them through.
+                   // Bonus logic could go here; currently deferred to profile phase.
                 }
             }
 
@@ -551,7 +626,11 @@ async function processScanBatch(
 // ============================================================================
 
 /**
- * 🛠️ REQUEST VALIDATION MIDDLEWARE
+ * REQUEST VALIDATION MIDDLEWARE.
+ *
+ * @remarks
+ * Ensures mandatory body fields are present before passing control to
+ * the route handlers, preventing runtime crashes due to undefined properties.
  */
 function validateFields(fields: string[]): RequestHandler {
   return (req, res, next) => {
@@ -585,7 +664,12 @@ app.get("/capabilities", (_req: Request, res: Response): void => {
 });
 
 /**
- * 🩺 DIAGNOSTIC HEALTH HANDSHAKE
+ * DIAGNOSTIC HEALTH HANDSHAKE.
+ *
+ * @remarks
+ * Performs a two-tier health check:
+ * 1. Local Pool: Reports key availability and memory usage.
+ * 2. Upstream: Tests the healthiest key against a cheap RoyaleAPI endpoint.
  */
 app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     // 1. Local Pool Diagnostics
@@ -616,6 +700,10 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     });
 });
 
+/**
+ * KEY AUDIT ENDPOINT.
+ * Validates provided API keys against upstream status.
+ */
 app.post(
   "/audit",
   validateFields(["apiKeys"]),
@@ -667,6 +755,10 @@ app.post(
   },
 );
 
+/**
+ * PUBLIC SCAN ENDPOINT.
+ * Entry point for unauthenticated tournament scanning.
+ */
 app.post(
   "/public/scan",
   validateFields(["tags"]),
@@ -746,6 +838,10 @@ app.post(
 // Push subscription storage (in-memory)
 const subscriptions = new Set<string>();
 
+/**
+ * PUSH SUBSCRIPTION ENDPOINT.
+ * Stores WebPush subscription tokens for notification delivery.
+ */
 app.post(
   "/public/subscribe",
   (req: Request<object, object, SubscriptionRequest>, res: Response): void => {
@@ -761,6 +857,10 @@ app.post(
   },
 );
 
+/**
+ * SCAN ENDPOINT.
+ * Primary recruitment discovery route.
+ */
 app.post(
   "/scan",
   validateFields(["tags"]),
@@ -848,6 +948,10 @@ app.post(
   },
 );
 
+/**
+ * CLAN FULL SNAPSHOT.
+ * Aggregates members, race, and history into a single response.
+ */
 app.post(
   "/clan/full",
   validateFields(["tag"]),
@@ -887,7 +991,7 @@ app.post(
         return;
       }
 
-      // Pre-process war history
+      // Intent: Pre-process war history on the worker to reduce GAS processing time.
       const warHistory: WarHistory = {};
 
       if (logData?.items) {
@@ -922,6 +1026,10 @@ app.post(
   },
 );
 
+/**
+ * CLAN API PROXY.
+ * Fetches and transforms specific clan data slices.
+ */
 app.post(
   "/clan/api",
   validateFields(["tag", "type"]),
@@ -1035,6 +1143,10 @@ app.post(
   },
 );
 
+/**
+ * BULK FETCH ENDPOINT.
+ * Proxy route for parallelized network requests.
+ */
 app.post(
   "/fetch",
   async (
