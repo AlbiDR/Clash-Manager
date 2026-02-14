@@ -86,10 +86,10 @@ const HeadhunterStore: IHeadhunterStore = {
 
     const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT) || ss.insertSheet(CONFIG.SHEETS.EVT);
     if (evtSheet.getLastRow() === 0) {
-      evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+      evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
     }
-    if (evtSheet.getRange(1,1).getValue() !== "Tag") {
-       evtSheet.getRange(1, 1, 1, 2).setValues([["Tag", "Timestamp"]]);
+    if (evtSheet.getRange(1, 1).getValue() !== "Tag" || evtSheet.getLastColumn() < 3) {
+       evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
     }
 
     const now = Date.now();

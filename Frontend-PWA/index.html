@@ -58,14 +58,14 @@
     <!-- ⚡ OPTIMIZATION: Critical Resource Preloading -->
     <link
       rel="preload"
-      href="fonts/Inter-Variable.woff2"
+      href="/fonts/Inter-Variable.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
     <link
       rel="preload"
-      href="fonts/JetBrainsMono-Bold.woff2"
+      href="/fonts/JetBrainsMono-Bold.woff2"
       as="font"
       type="font/woff2"
       crossorigin
@@ -75,7 +75,7 @@
       /* ⚡ CRITICAL INLINE CSS: App Shell Variables & Layout */
       @font-face {
         font-family: "Inter";
-        src: url("fonts/Inter-Variable.woff2") format("woff2-variations");
+        src: url("/fonts/Inter-Variable.woff2") format("woff2-variations");
         font-weight: 100 900;
         font-display: swap;
         font-style: normal;
@@ -525,6 +525,6 @@
         "operatingSystem": "Android, iOS, Windows, macOS"
       }
     </script>
-    <script type="module" src="./src/main.ts"></script>
+    <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>

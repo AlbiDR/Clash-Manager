@@ -6,7 +6,7 @@
   "background_color": "#0b0e14",
   "display": "standalone",
   "scope": "./",
-  "start_url": "./#/leaderboard",
+  "start_url": "./#/roster",
   "id": "clash-manager",
   "orientation": "portrait",
   "categories": ["productivity", "games", "utilities"],
@@ -14,7 +14,7 @@
   "dir": "ltr",
   "handle_links": "preferred",
   "share_target": {
-    "action": "./#/recruiter",
+    "action": "./#/headhunter",
     "method": "GET",
     "params": {
       "title": "title",
@@ -100,7 +100,7 @@
       "name": "Roster",
       "short_name": "Roster",
       "description": "View clan performance roster",
-      "url": "./#/leaderboard",
+      "url": "./#/roster",
       "icons": [
         { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
       ]
@@ -109,7 +109,7 @@
       "name": "Headhunter",
       "short_name": "Headhunter",
       "description": "Research potential recruits",
-      "url": "./#/recruiter",
+      "url": "./#/headhunter",
       "icons": [
         { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
       ]
