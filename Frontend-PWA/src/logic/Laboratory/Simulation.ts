@@ -1,0 +1,209 @@
+import type { 
+  Card, 
+  Inventory, 
+  OptimizationSettings, 
+  SimulationState, 
+  UpgradeAction, 
+  UpgradeCandidate,
+  Rarity
+} from './Types';
+import { 
+  subGold, 
+  subGems, 
+  asGold, 
+  asGems, 
+  asXP, 
+  addXP,
+  addGold,
+  addGems
+} from './Economy';
+import { 
+  CARD_LEVEL_CAP, 
+  GOLD_COST_TABLE, 
+  CARD_XP_TABLE, 
+  MATERIAL_REQUIREMENTS, 
+  GEM_CONVERSION_RATES, 
+  EFFICIENCY_OVERRIDES, 
+  KING_XP_TABLE 
+} from './Registry';
+
+const EPSILON = 1e-9;
+
+/**
+ * Pure function to calculate a candidate for a single card upgrade.
+ */
+function buildCandidate(
+  card: Card,
+  index: number,
+  inventory: Inventory,
+  settings: OptimizationSettings
+): UpgradeCandidate | null {
+  const nextLevel = card.level + 1;
+  if (nextLevel > CARD_LEVEL_CAP) return null;
+
+  const cardsRequired = MATERIAL_REQUIREMENTS[card.rarity][nextLevel];
+  const goldCost = GOLD_COST_TABLE[nextLevel];
+  const xpGain = CARD_XP_TABLE[nextLevel];
+
+  if (cardsRequired === undefined || goldCost === undefined) return null;
+
+  const cardsUsed = Math.min(card.count, cardsRequired);
+  let remainingNeeded = cardsRequired - cardsUsed;
+
+  const wildAvailable = card.isTowerTroop ? 0 : (inventory.wildCards[card.rarity] || 0);
+  let gemsUsed = asGems(0);
+  let finalWildUsed = 0;
+
+  if (settings.infiniteResources) {
+    // In infinite mode, we calculate gems needed for deficits but don't block
+    finalWildUsed = remainingNeeded;
+    const deficit = Math.max(0, remainingNeeded - wildAvailable);
+    if (deficit > 0 && settings.allowGemSpending) {
+      const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+      gemsUsed = asGems(Math.ceil(deficit * rate));
+    }
+  } else {
+    // Real resources mode
+    const wildToUse = Math.min(remainingNeeded, Math.max(0, wildAvailable));
+    finalWildUsed = wildToUse;
+    remainingNeeded -= wildToUse;
+
+    if (remainingNeeded > 0) {
+      if (settings.allowGemSpending) {
+        const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+        gemsUsed = asGems(Math.ceil(remainingNeeded * rate));
+        if (gemsUsed > inventory.gems) return null;
+      } else {
+        return null;
+      }
+    }
+
+    if (goldCost > inventory.gold && !settings.infiniteResources) {
+      return null; // For simplicity in this logic, we assume we need the gold first or gems for gold 
+      // (Simplified: real mode requires gold on hand unless we add gems-for-gold logic here)
+    }
+  }
+
+  // Efficiency calculation
+  let efficiencyRatio = Number(goldCost) / Number(xpGain);
+  const override = EFFICIENCY_OVERRIDES[nextLevel];
+  if (override !== undefined) efficiencyRatio = override;
+
+  // Penalties/Bonuses
+  if (Number(gemsUsed) > 0) {
+    efficiencyRatio *= settings.infiniteResources ? 1.05 : 10.0;
+  } else {
+    efficiencyRatio *= 0.5;
+  }
+
+  return {
+    index,
+    card: { ...card },
+    fromLevel: card.level,
+    toLevel: nextLevel,
+    goldCost,
+    cardsRequired,
+    cardsUsed,
+    wildCardsUsed: finalWildUsed,
+    gemsUsed,
+    xpGained: xpGain,
+    efficiencyRatio
+  };
+}
+
+/**
+ * Pure function to apply an upgrade and return the NOVO state.
+ */
+function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): SimulationState {
+  const newRoster = [...state.roster];
+  const targetCard = { ...newRoster[candidate.index] };
+  
+  targetCard.level = candidate.toLevel;
+  targetCard.count -= candidate.cardsUsed;
+  newRoster[candidate.index] = targetCard;
+
+  const newWildCards = { ...state.inventory.wildCards };
+  newWildCards[targetCard.rarity] -= candidate.wildCardsUsed;
+
+  const newInventory: Inventory = {
+    gold: subGold(state.inventory.gold, candidate.goldCost),
+    gems: subGems(state.inventory.gems, candidate.gemsUsed),
+    wildCards: newWildCards
+  };
+
+  const action: UpgradeAction = {
+    cardName: targetCard.name,
+    rarity: targetCard.rarity,
+    currentLevel: candidate.fromLevel,
+    targetLevel: candidate.toLevel,
+    goldCost: candidate.goldCost,
+    cardCost: candidate.cardsUsed,
+    wildCardsUsed: candidate.wildCardsUsed,
+    gemsUsed: candidate.gemsUsed,
+    xpGained: candidate.xpGained,
+    efficiencyRatio: candidate.efficiencyRatio,
+    upgradeType: candidate.gemsUsed > 0 ? "Gem" : (candidate.wildCardsUsed > 0 ? "Wild" : "Direct"),
+    isTowerTroop: targetCard.isTowerTroop
+  };
+
+  const newTotalWildCardsUsed = { ...state.totalWildCardsUsed };
+  newTotalWildCardsUsed[targetCard.rarity] += candidate.wildCardsUsed;
+
+  return {
+    roster: newRoster,
+    inventory: newInventory,
+    totalXp: addXP(state.totalXp, candidate.xpGained),
+    totalGoldSpent: addGold(state.totalGoldSpent, candidate.goldCost),
+    totalGemsSpent: addGems(state.totalGemsSpent, candidate.gemsUsed),
+    totalWildCardsUsed: newTotalWildCardsUsed,
+    history: [...state.history, action]
+  };
+}
+
+/**
+ * Non-blocking Generator Engine for Progression Simulation.
+ */
+export function* calculateProgressionPath(
+  initialState: SimulationState,
+  settings: OptimizationSettings
+): Generator<SimulationState, SimulationState, void> {
+  let currentState = initialState;
+  
+  while (true) {
+    let bestCandidate: UpgradeCandidate | null = null;
+
+    for (let i = 0; i < currentState.roster.length; i++) {
+      const candidate = buildCandidate(currentState.roster[i], i, currentState.inventory, settings);
+      if (!candidate) continue;
+
+      if (!bestCandidate || candidate.efficiencyRatio < bestCandidate.efficiencyRatio - EPSILON) {
+        bestCandidate = candidate;
+      }
+    }
+
+    if (!bestCandidate) break;
+
+    // Check target level for Projection strategy
+    if (settings.strategy === "Level Projection" && settings.targetLevel) {
+      const kingLevel = calculateKingLevel(currentState.totalXp);
+      if (kingLevel >= settings.targetLevel) break;
+    }
+
+    currentState = applyUpgrade(currentState, bestCandidate);
+    yield currentState;
+  }
+
+  return currentState;
+}
+
+function calculateKingLevel(totalXp: number): number {
+  let level = 1;
+  for (const row of KING_XP_TABLE) {
+    if (totalXp >= Number(row.cumulative)) {
+      level = row.level;
+    } else {
+      break;
+    }
+  }
+  return level;
+}
