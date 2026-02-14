@@ -1,8 +1,6 @@
-import { NetworkError } from "@core";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ref, reactive, nextTick } from "vue";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { reactive, ref, nextTick } from "vue";
 import type { WebAppData, Recruit } from "@core/types";
-// --- Mocks ---
 
 // --- Mocks ---
 const mockSetBadge = vi.fn();
@@ -19,48 +17,66 @@ const mockUpdateLocalData = vi.fn((newData) => {
 const mockPost = vi.fn();
 const mockIsSyntheticMode = ref(false);
 
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useBadge: () => ({
-      setBadge: mockSetBadge,
-      sendLocalNotification: mockSendLocalNotification,
-    }),
-    useAppSettings: () => ({
-      modules: mockModules,
-    }),
-    useClashData: () => ({
-      data: mockClashData,
-      updateLocalData: mockUpdateLocalData,
-    }),
-    useBroadcastChannel: (callback: (msg: any) => void) => {
-      (globalThis as any).broadcastCallback = callback;
-      return { post: mockPost };
-    },
-    useSyntheticMode: () => ({
-      isSyntheticMode: mockIsSyntheticMode,
-    }),
-    dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
-    undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
-  };
-});
+// Mock Specific Modules
+vi.mock("@core/services/useBadge", () => ({
+  useBadge: () => ({
+    setBadge: mockSetBadge,
+    sendLocalNotification: mockSendLocalNotification,
+  }),
+}));
+
+vi.mock("@core/services/useAppSettings", () => ({
+  useAppSettings: () => ({
+    modules: mockModules,
+  }),
+}));
+
+vi.mock("@core/services/useClashData", () => ({
+  useClashData: () => ({
+    data: mockClashData,
+    updateLocalData: mockUpdateLocalData,
+  }),
+}));
+
+vi.mock("@core/services/useBroadcastChannel", () => ({
+  useBroadcastChannel: (callback: (msg: any) => void) => {
+    (globalThis as any).broadcastCallback = callback;
+    return { post: mockPost };
+  },
+}));
+
+vi.mock("@core/services/useSyntheticMode", () => ({
+  useSyntheticMode: () => ({
+    isSyntheticMode: mockIsSyntheticMode,
+  }),
+}));
+
+vi.mock("@core/services/useToast", () => ({
+  useToast: () => ({
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
+// Mock API specifically
+vi.mock("@core/api/GasClient", () => ({
+  dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
+  undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
+  NetworkError: class extends Error {
+    constructor(m: string) {
+      super(m);
+      this.name = "NetworkError";
+    }
+  },
+}));
 
 // --- Test Implementation ---
-
 describe("useHeadhunter", () => {
   beforeEach(async () => {
-    vi.resetModules();
-    mockSetBadge.mockClear();
-    mockSendLocalNotification.mockClear();
-    mockUpdateLocalData.mockClear();
-    mockPost.mockClear();
+    vi.clearAllMocks();
     mockIsSyntheticMode.value = false;
     mockClashData.value = null;
-
-    const { dismissRecruits, undismissRecruits } = await import("@core");
-    vi.mocked(dismissRecruits).mockClear();
-    vi.mocked(undismissRecruits).mockClear();
 
     // Reset modules
     mockModules.experimentalNotifications = true;
@@ -69,9 +85,6 @@ describe("useHeadhunter", () => {
 
     // Reset manually tracked broadcast callback
     delete (globalThis as any).broadcastCallback;
-
-    // Import the module to trigger module-level logic (watchers)
-    await import("../useHeadhunter");
   });
 
   const sampleRecruit1: Recruit = {
@@ -99,6 +112,9 @@ describe("useHeadhunter", () => {
   };
 
   it("should update badge when data is loaded", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter(); // Initialize watcher
+    
     mockClashData.value = sampleData;
     await nextTick();
 
@@ -107,6 +123,9 @@ describe("useHeadhunter", () => {
   });
 
   it("should update badge with total count if setting is disabled", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+
     mockModules.notificationBadgeHighPotential = false;
     mockClashData.value = sampleData;
     await nextTick();
@@ -115,6 +134,9 @@ describe("useHeadhunter", () => {
   });
 
   it("should send notification when an elite recruit is found in new data", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+
     // Initial state
     mockClashData.value = { ...sampleData, hh: [sampleRecruit2], timestamp: 1000 };
     await nextTick();
@@ -132,6 +154,9 @@ describe("useHeadhunter", () => {
   });
 
   it("should NOT send notification if experimentalNotifications is disabled", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+
     mockModules.experimentalNotifications = false;
     mockClashData.value = { ...sampleData, hh: [sampleRecruit2], timestamp: 1000 };
     await nextTick();
@@ -145,7 +170,7 @@ describe("useHeadhunter", () => {
   it("should dismiss recruits optimistically", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core");
+    const { dismissRecruits } = await import("@core/api/GasClient");
 
     mockClashData.value = sampleData;
     await nextTick();
@@ -168,7 +193,7 @@ describe("useHeadhunter", () => {
   it("should rollback on logic failure during dismissal", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core");
+    const { dismissRecruits } = await import("@core/api/GasClient");
 
     vi.mocked(dismissRecruits).mockRejectedValueOnce(new Error("Server Error"));
 
@@ -186,7 +211,7 @@ describe("useHeadhunter", () => {
   it("should NOT rollback on NetworkError (background sync expected)", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core");
+    const { dismissRecruits, NetworkError } = await import("@core/api/GasClient");
 
     vi.mocked(dismissRecruits).mockRejectedValueOnce(new NetworkError("Timeout"));
 
@@ -206,7 +231,7 @@ describe("useHeadhunter", () => {
   it("should bypass network calls in synthetic mode", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core");
+    const { dismissRecruits } = await import("@core/api/GasClient");
 
     mockIsSyntheticMode.value = true;
     mockClashData.value = sampleData;
@@ -220,6 +245,9 @@ describe("useHeadhunter", () => {
   });
 
   it("should handle dismissal from another tab", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+
     mockClashData.value = sampleData;
     await nextTick();
     mockUpdateLocalData.mockClear();
@@ -237,7 +265,7 @@ describe("useHeadhunter", () => {
   it("should restore recruits during undo action", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { undismissRecruitsAction } = useHeadhunter();
-    const { undismissRecruits } = await import("@core");
+    const { undismissRecruits } = await import("@core/api/GasClient");
 
     // Start with only R2
     mockClashData.value = { ...sampleData, hh: [sampleRecruit2] };
