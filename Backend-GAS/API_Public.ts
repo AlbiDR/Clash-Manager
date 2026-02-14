@@ -232,9 +232,13 @@ function doPost(
           if (typeof item === 'string') return { id: item, score: 0 };
           if (item && typeof item === 'object') {
              // 🛡️ AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
-             // Using || instead of ?? to ensure we don't settle for '0' if a better metric is available
-             const score = item.potentialRawScore || item.score || item.rawScore || 0;
-             return { id: item.id, score: Number(score) || 0 };
+             // Using OR chain to find the first non-undefined, non-null value
+             const rawVal = item.potentialRawScore !== undefined ? item.potentialRawScore : 
+                            (item.score !== undefined ? item.score : (item.rawScore || 0));
+             
+             // Convert to Number safely, stripping potential string artifacts if any
+             const score = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal).replace(/,/g, '')) || 0;
+             return { id: item.id, score: isNaN(score) ? 0 : score };
           }
           return null;
         }).filter(item => item !== null);
