@@ -1,6 +1,6 @@
-import Icon from "./Icon.vue";
-import { useHaptics } from "@core";
 <script setup lang="ts">
+import Icon from "./Icon.vue";
+import { useHaptics } from "@core/services/useHaptics";
 import { ref, computed } from "vue";
 const props = defineProps<{
   count: number;

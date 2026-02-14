@@ -1,4 +1,4 @@
-import { useHaptics } from "@core";
+import { useHaptics } from "@core/services/useHaptics";
 interface CardCallbacks {
   onSelect: () => void;
   onExpand: () => void;

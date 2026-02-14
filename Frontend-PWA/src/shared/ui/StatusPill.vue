@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useHaptics } from "@core";
+import { useHaptics } from "@core/services/useHaptics";
 const props = defineProps<{
   type: "updated" | "error" | "loading" | "ready";
   text: string;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useExternalLink } from "@core";
+import { useExternalLink } from "@core/services/useExternalLink";
 /**
  * 🛠️ CARD ACTIONS
  * Atomic component for player-specific action buttons (RoyaleAPI, Open Game).

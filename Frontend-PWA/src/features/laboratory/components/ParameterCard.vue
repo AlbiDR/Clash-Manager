@@ -1,5 +1,5 @@
-import { Icon  } from "@shared";
 <script setup lang="ts">
+import Icon from "../../../shared/ui/Icon.vue";
 import { computed } from "vue";
 import { type OptimizationSettings } from "../logic/Laboratory_Types";
 import { IMPORTANT_KING_LEVELS } from "../logic/Laboratory_Tables";

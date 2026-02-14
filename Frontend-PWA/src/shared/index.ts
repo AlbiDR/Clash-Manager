@@ -23,10 +23,10 @@ export { vTactile } from "./directives/vTactile";
 export { vTooltip } from "./directives/vTooltip";
 
 // Composables (Shared Atoms)
-export { useUiCoordinator } from "./composables/useUiCoordinator";
+
 export { useTheme } from "./composables/useTheme";
 export { useLongPress } from "./composables/useLongPress";
-export { useListFilter } from "./composables/useListFilter";
+
 export { useHeaderScroll } from "./composables/useHeaderScroll";
-export { useProgressiveList } from "./composables/useProgressiveList";
+
 export { useCardMechanics } from "./composables/useCardMechanics";

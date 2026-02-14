@@ -8,7 +8,7 @@ import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { ref, shallowRef, readonly, watch } from "vue";
 import type { WebAppData } from "@core/types";
-import { generateMockData } from "@core/utils/mockData";
+import { generateMockData } from "../utils/mockData";
 // Global State
 const clashData = shallowRef<WebAppData | null>(null);
 // Initialize as hydrated=false to force Skeletons on first paint

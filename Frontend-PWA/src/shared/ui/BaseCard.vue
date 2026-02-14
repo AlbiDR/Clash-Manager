@@ -1,6 +1,6 @@
+<script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useCardMechanics } from "../composables/useCardMechanics";
-<script setup lang="ts">
 import { computed } from "vue";
 const props = defineProps<{
   id: string;

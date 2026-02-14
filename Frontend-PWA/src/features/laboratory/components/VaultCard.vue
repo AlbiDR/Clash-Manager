@@ -1,5 +1,5 @@
-import { Icon  } from "@shared";
 <script setup lang="ts">
+import Icon from "../../../shared/ui/Icon.vue";
 import { type Inventory } from "../logic/Laboratory_Types";
 defineProps<{
   inventory: Inventory;

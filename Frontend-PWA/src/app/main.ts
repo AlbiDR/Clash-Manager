@@ -2,8 +2,15 @@
 * CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
-import { useTheme, vTactile, vTooltip } from "@shared";
-import { idb, useApiState, useAppSettings, useClashData, useStoragePersistence, useWakeLock } from "@core";
+import { useTheme } from "../shared/composables/useTheme";
+import { vTactile } from "../shared/directives/vTactile";
+import { vTooltip } from "../shared/directives/vTooltip";
+import { idb } from "../core/services/StorageService";
+import { useApiState } from "../core/api/useApiState";
+import { useAppSettings } from "../core/services/useAppSettings";
+import { useClashData } from "../core/services/useClashData";
+import { useStoragePersistence } from "../core/services/useStoragePersistence";
+import { useWakeLock } from "../core/services/useWakeLock";
 
 import { createApp, watch } from "vue";
 import "@/core/theme/style.css";

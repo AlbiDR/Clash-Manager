@@ -1,12 +1,12 @@
+<script setup lang="ts">
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import Icon from "./Icon.vue";
 import SelectionBar from "./SelectionBar.vue";
-import { useHaptics } from "@core";
-import { useUiCoordinator } from "../composables/useUiCoordinator";
+import { useHaptics } from "../../core/services/useHaptics";
+import { useUiCoordinator } from "../../core/services/useUiCoordinator";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
-import { useShowcaseMode } from "@core";
-<script setup lang="ts">
+import { useShowcaseMode } from "../../core/services/useShowcaseMode";
 import { ref, watch, onUnmounted, computed, nextTick } from "vue";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import FloatingDock from "./FloatingDock.vue";

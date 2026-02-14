@@ -15,7 +15,8 @@
  * ============================================================================
  */
 
-import { getPlayerProfile, useClashData } from "@core";
+import { getPlayerProfile } from "@core/api/GasClient";
+import { useClashData } from "@core/services/useClashData";
 import { ref, computed, type Ref, watch } from 'vue'
 import LaboratoryKernel from '../logic/Laboratory_Kernel'
 import LaboratoryAdapter from '../logic/Laboratory_Adapter'

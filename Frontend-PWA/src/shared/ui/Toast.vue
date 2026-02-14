@@ -1,5 +1,5 @@
-import Icon from "./Icon.vue";
 <script setup lang="ts">
+import Icon from "./Icon.vue";
 import { ref, onMounted, onUnmounted } from "vue";
 const props = defineProps<{
   id: string;
