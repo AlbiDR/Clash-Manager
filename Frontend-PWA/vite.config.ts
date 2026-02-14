@@ -5,6 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
 import packageJson from "./package.json";
 import { getAppShellStyles, getAppShellHtml } from "./src/core/theme/AppShell";
+import { generateHtmlEntry } from "./src/core/theme/HtmlEntry";
 
 // View-specific components excluded from monolithic UI bundle.
 // This allows them to be bundled with their respective lazy-loaded views,
@@ -43,6 +44,7 @@ export default defineConfig({
     cssCodeSplit: true,
     target: "chrome100",
     rollupOptions: {
+      input: "index.html",
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
@@ -95,11 +97,30 @@ export default defineConfig({
       },
     }),
     {
-      name: "app-shell-injection",
+      name: "virtual-html-entry",
+      resolveId(id) {
+        if (id === "index.html" || id.endsWith("index.html")) {
+          return "\0virtual:index.html";
+        }
+      },
+      load(id) {
+        if (id === "\0virtual:index.html") {
+          return generateHtmlEntry(packageJson.version);
+        }
+      },
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === "/index.html" || req.url === "/") {
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "text/html");
+            res.end(generateHtmlEntry(packageJson.version));
+            return;
+          }
+          next();
+        });
+      },
       transformIndexHtml(html) {
-        return html
-          .replace("<!-- APP_SHELL_CSS -->", getAppShellStyles())
-          .replace("<!-- APP_SHELL_HTML -->", getAppShellHtml());
+        return generateHtmlEntry(packageJson.version);
       },
     },
     ...(process.env.ANALYZE
