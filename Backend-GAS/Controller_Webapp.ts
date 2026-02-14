@@ -164,7 +164,7 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
       let evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
       if (!evtSheet) {
         evtSheet = ss.insertSheet(CONFIG.SHEETS.EVT);
-        evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", "Raw Score"]]);
+        evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
         evtSheet.setTabColor("#ff5722"); // Visual marker for "Hot" data
       } else {
         // Robust header verification (Ensures headers persist even if cleared)
@@ -173,7 +173,7 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
            evtSheet.insertColumnsAfter(evtSheet.getMaxColumns(), 3 - evtSheet.getMaxColumns());
         }
         if (evtSheet.getLastRow() === 0 || evtSheet.getRange(1, 1).getValue() !== "Tag" || evtSheet.getLastColumn() < 3) {
-           evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", "Raw Score"]]);
+           evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
         }
       }
 
@@ -193,16 +193,17 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         // Tag is at 0 (Col B)
         // Raw Score is at 8 (Col J)
         rows.forEach((row: any[]) => {
-          if (!row || row.length < 9) return;
+          if (!row || row.length < 1) return;
           const tag = String(row[0] || "").toUpperCase().trim();
-          const rawScore = Number(row[8]); // Column J
-          if (tag && !isNaN(rawScore)) {
+          // Use sanitizeNum to handle potentially formatted spreadsheet strings (e.g. "50,000")
+          const rawScore = (row.length > 8) ? sanitizeNum(row[8], "") : 0;
+          if (tag) {
              scoreMap.set(tag, rawScore);
           }
         });
-        console.log(`[API] Hydrated ${scoreMap.size} scores from Headhunter sheet for verification.`);
+        console.log(`[API] Hydrated ${scoreMap.size} authoritative scores from Headhunter sheet.`);
       } catch (readErr) {
-        console.warn(`[API] Failed to read Headhunter source scores: ${readErr}`);
+        console.warn(`[API] Failed to read Headhunter source scores (fallback to client): ${readErr}`);
       }
 
       // ATOMIC APPEND (Advanced API)
@@ -246,7 +247,7 @@ function markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>):
         payloadSize: 0,
         metadata: { 
           processedAt: now,
-          writtenScores: values.map(v => v[2]),
+          writtenScores: values.map(v => `${v[0]}: ${v[2]}`),
           columnsWritten: values[0] ? values[0].length : 0
         }
       };
