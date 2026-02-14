@@ -27,29 +27,29 @@
   },
   "icons": [
     {
-      "src": "pwa-64.png",
+      "src": "assets/icons/pwa-64.png",
       "sizes": "64x64",
       "type": "image/png"
     },
     {
-      "src": "pwa-192.png",
+      "src": "assets/icons/pwa-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "pwa-512.png",
+      "src": "assets/icons/pwa-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "pwa-maskable.png",
+      "src": "assets/icons/pwa-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "pwa-icon-monochrome.svg",
+      "src": "assets/icons/pwa-icon-monochrome.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "monochrome"
@@ -57,28 +57,28 @@
   ],
   "screenshots": [
     {
-      "src": "headhunter-light.webp",
+      "src": "assets/branding/headhunter-light.webp",
       "sizes": "1080x1920",
       "type": "image/webp",
       "form_factor": "narrow",
       "label": "Clash Manager Headhunter (Light)"
     },
     {
-      "src": "headhunter-dark.webp",
+      "src": "assets/branding/headhunter-dark.webp",
       "sizes": "1080x1920",
       "type": "image/webp",
       "form_factor": "narrow",
       "label": "Clash Manager Headhunter (Dark)"
     },
     {
-      "src": "roster-light.webp",
+      "src": "assets/branding/roster-light.webp",
       "sizes": "1920x1080",
       "type": "image/webp",
       "form_factor": "wide",
       "label": "Clash Manager Roster (Light)"
     },
     {
-      "src": "roster-dark.webp",
+      "src": "assets/branding/roster-dark.webp",
       "sizes": "1920x1080",
       "type": "image/webp",
       "form_factor": "wide",
@@ -102,7 +102,7 @@
       "description": "View clan performance roster",
       "url": "./#/roster",
       "icons": [
-        { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
       ]
     },
     {
@@ -111,7 +111,7 @@
       "description": "Research potential recruits",
       "url": "./#/headhunter",
       "icons": [
-        { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
       ]
     },
     {
@@ -120,7 +120,7 @@
       "description": "Configure dashboard preferences",
       "url": "./#/settings",
       "icons": [
-        { "src": "pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
       ]
     }
   ]
