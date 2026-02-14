@@ -117,3 +117,62 @@ Refactoring Layer 0 (@static) is a high-precision operation. Any structural shif
 3. **Reference Integrity**: Any move of static media requires a comprehensive audit of all `src/` references (templates, CSS variables, and logic) to prevent broken asset links.
 4. **Signal-to-Noise Ratio**: Maintenance of Layer 0 requires proactive pruning. Carrying unused placeholders or developmental scripts is considered technical debt.
 
+---
+
+## 7. The Data Flow & State Protocol
+
+To maintain clinical isolation and predictability, state must be managed via a strict hierarchy.
+
+1. **Hierarchy of Truth**:
+   - **Local State**: Use `ref()` for primitive values and `reactive()` for complex state within a single component.
+   - **Feature State**: Shared logic within a Feature must be encapsulated in a Singleton Composable. This state is private to the Feature silo.
+   - **Global State**: Minimalist infrastructure state (e.g., Theme, Storage status) resides in Layer 1 `services/`.
+2. **The Validation Boundary**:
+   - **Rule**: No data enters the "Clean Stack" from external sources (API, LocalStorage, or User Input) without passing through a **Valibot Schema**.
+   - Transformation logic must be executed at the Layer 1 `api/` or `services/` level before reaching the Feature layer.
+3. **Unidirectional Execution**:
+   - Features emit events to communicating upward; they never mutate props directly.
+
+---
+
+## 8. Visual Purity & Icon Aesthetics (The "No Library" Rule)
+
+Visual elements must be mathematically precise and technically pure to ensure a premium User Experience.
+
+1. **Zero Library Dependency**:
+   - Strictly forbidden: FontAwesome, Lucide, Material Icons, or any external icon library.
+   - Strictly forbidden: Emojis in any part of the UI or documentation.
+2. **Custom SVG Protocol**:
+   - All visual markers are custom-crafted SVG paths stored as constants in `@core/theme/icons.ts`.
+   - Icons must use the `vector-effect="non-scaling-stroke"` attribute to maintain consistency across different scales.
+3. **Rendering Pipeline**:
+   - All icons must be rendered via the `@shared/ui/Icon.vue` primitive to ensure unified access to the CSS variable system.
+
+---
+
+## 9. The "Zero Leak" Service Registry
+
+Infrastructure logic is centralized to prevent "Spaghetti Dependencies" and ensure predictable initialization.
+
+1. **Service Lifecycle**:
+   - Infrastructure singletons (Logger, Storage, API Clients) live in Layer 1 `services/`.
+   - Services must be context-agnostic and should not import from Layers 2, 3, or 4.
+2. **The Mocking Strategy**:
+   - Testing logic (Vitest) must use deep imports for services to prevent side effects from Barrel imports (e.g., `import { storage } from '@core/services/StorageService'`).
+
+---
+
+## 10. Performance & Resource Lifecycle
+
+To maintain 100/100 Lighthouse scores, hardware and browser interactions follow a brokered protocol.
+
+1. **Hardware Brokering**:
+   - Interaction with browser APIs (WakeLock, Haptics, Notifications) must be handled by Layer 2 `@shared/composables`.
+2. **Resource Strategy**:
+   - **Lazy Loading**: Layer 3 Features are the primary unit of code-splitting. 
+   - **Bundle Integrity**: Layer 1 and Layer 2 logic must be tree-shakable. No "Heavy Utils" are permitted in the initial bundle.
+3. **Accessibility (A11y)**:
+   - Every interactive element must have a unique ID for automated testing and a descriptive ARIA label.
+   - Touch targets must adhere to a 48x48px minimum standard.
+
+
