@@ -4,16 +4,17 @@
   "license": "GPL-3.0-only",
   "description": "Backend GAS logic",
   "scripts": {
-    "build": "./deploy.sh",
-    "deploy": "./deploy.sh",
+    "build": "tsx scripts/deploy.ts",
+    "deploy": "tsx scripts/deploy.ts",
     "test": "vitest run"
   },
   "devDependencies": {
     "@google/clasp": "^3.1.0",
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "^25.0.9",
+    "@vitest/coverage-v8": "^1.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.0.0",
-    "vitest": "^1.2.0",
-    "@vitest/coverage-v8": "^1.2.0"
+    "vitest": "^1.2.0"
   }
 }
