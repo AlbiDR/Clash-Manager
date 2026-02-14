@@ -58,21 +58,28 @@ const fetchError = ref<string | null>(null)
  * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
  */
 function mapStateToResult(state: SimulationState, originalProfile: any): OptimizationResult {
-  // Simple heuristic for king level from cumulative XP
   let kingLevel = 1;
+  let xpIntoLevel = 0;
+  
   for (const row of KING_XP_TABLE) {
-    if (state.totalXp >= Number(row.cumulative)) kingLevel = row.level;
-    else break;
+    if (state.totalXp >= Number(row.cumulative)) {
+      kingLevel = row.level;
+      xpIntoLevel = Number(state.totalXp) - Number(row.cumulative);
+    } else {
+      break;
+    }
   }
+
+  const initialTotalXp = Number(ProfileHydrator.createInitialState(observation.value!).totalXp);
 
   return {
     actions: state.history as any[],
-    totalXpGained: Number(state.totalXp) - Number(ProfileHydrator.createInitialState(observation.value!).totalXp),
+    totalXpGained: Number(state.totalXp) - initialTotalXp,
     projectedKingLevel: kingLevel,
     finalProfile: {
       ...originalProfile,
       kingLevel,
-      xpIntoLevel: 0 // Simplified for results
+      xpIntoLevel
     },
     finalGold: Number(state.inventory.gold),
     finalGems: Number(state.inventory.gems),
