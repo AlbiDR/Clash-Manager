@@ -104,7 +104,7 @@ describe('HeadhunterStore', () => {
             getDataRange: vi.fn().mockReturnThis(),
             getValues: vi.fn().mockReturnValue([]), // Header only
             clearContent: vi.fn(),
-            getLastColumn: vi.fn().mockReturnValue(2),
+            getLastColumn: vi.fn().mockReturnValue(3),
             getParent: vi.fn().mockReturnValue({ getId: vi.fn().mockReturnValue('mock-ss-id') }),
             hideSheet: vi.fn(),
             getSheetId: vi.fn().mockReturnValue(789),
@@ -189,8 +189,8 @@ describe('HeadhunterStore', () => {
              // Header + 1 Event
              mockEvtSheet.getLastRow.mockReturnValue(2);
              mockEvtSheet.getDataRange().getValues.mockReturnValue([
-                 ["Tag", "Timestamp"],
-                 ["#BANNED", 123456789]
+                 ["Tag", "Timestamp", "Score"],
+                 ["#BANNED", 123456789, 200]
              ]);
 
              // 2. Setup Main Sheet Data (to find score of banned player)
