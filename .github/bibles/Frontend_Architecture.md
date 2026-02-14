@@ -4,13 +4,22 @@ This document serves as the **Single Source of Truth** for the `Clash-Manager` a
 
 ---
 
-## 1. The Four Layers of "Antigravity"
+## 1. The Six Layers of "Antigravity"
 
-We employ a **Strict Unitary Architecture**. Code must live exactly where it belongs.
+We employ a **Strict Unitary Architecture**. Code, configuration, and assets must live exactly where they belong.
+
+### Layer 0: Substrate (@static) [Foundation]
+**Definition**: The pre-hydration shell and public environment.
+- **Rule**: Minimum footprint. Assets must be optimized (WebP/SVG/WOFF2). Zero legacy artifacts or placeholders permitted.
+- **Contents**:
+  - `index.html`: The critical path shell (SEO & LCP stability).
+  - `assets/`: Domain-specific media silos (e.g., `game/`).
+  - `fonts/`: Variable font primitives.
+  - `manifest.json`: OS-level PWA integration logic.
 
 ### Layer 1: Core (@core) [Kernel]
 **Definition**: Agnostic infrastructure. Pure logic required to boot and transport data.
-- **Rule**: Pure TypeScript only. Agnostic to the specific feature views.
+- **Rule**: Pure TypeScript only. Agnostic to specific feature views.
 - **Contents**:
   - `api/`: Abstract transport clients.
   - `theme/`: Global styling tokens, shared icons, and base CSS.
@@ -30,10 +39,7 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
 **Definition**: Self-contained business silos. Fractal structure.
 - **Rule**: A Feature **NEVER** imports from another Feature. 
 - **Structure**:
-  - `laboratory/`: Simulation and resource optimization.
-  - `headhunter/`: Recruitment discovery and scanning.
-  - `roster/`: Performance tracking and leaderboard.
-  - `settings/`: System configuration.
+  - `laboratory/`, `headhunter/`, `roster/`, `settings/`.
 
 ### Layer 4: App (@app) [Glue]
 **Definition**: Context-aware orchestration.
@@ -44,38 +50,37 @@ We employ a **Strict Unitary Architecture**. Code must live exactly where it bel
   - `sw.ts`: PWA Service Worker logic.
   - `main.ts/App.vue`: Boot sequence.
 
+### Layer 5: Control (@root) [Environment]
+**Definition**: Project orchestration and type governance.
+- **Rule**: Dependency minimalism. Strict pruning of ephemeral dev-tools and legacy configurations.
+- **Contents**:
+  - `vite.config.ts`: Alias map and build-time orchestration.
+  - `package.json`: Dependency manifests and version truth.
+  - `tsconfig.json`: Strict-mode TypeScript configuration.
+
 ---
 
 ## 2. The "OCD Verification" Checklist
 
-Before completing any task, every developer (and AI) must verify:
+Before completing any task, verify:
 1. [ ] **Location**: Does this file live in the correct layer?
 2. [ ] **Registry**: Is it exported via the module's `index.ts` (Barrel Protocol)?
 3. [ ] **Naming**: Does it follow the strict naming table?
 4. [ ] **Deduplication**: Have you eliminated redundant code paths?
 5. [ ] **Tests**: Is there a corresponding test in a sibling `__tests__` folder?
-6. [ ] **Types**: Are all public interfaces explicitly typed? No any.
+6. [ ] **Types**: Are all public interfaces explicitly typed? No `any`.
 7. [ ] **A11y**: Are touch targets and ARIA labels correct?
 8. [ ] **Visual Purity**: Absolutely zero emojis present in the code or documentation.
+9. [ ] **Synchronization**: Does the `index.html` shell title match the initial Feature registry state?
+10. [ ] **Pruning**: Have all unused assets/legacy files been purged from the environment?
 
 ---
 
 ## 3. The Registry Strategy (Barrel Protocol)
 
-To prevent "Graph Spaghetti" and ensure clear boundaries, every significant module defines a **Public API** via an `index.ts` file.
-
-- **Standard**:
-  ```typescript
-  // features/laboratory/index.ts
-  export { default as LaboratoryView } from './views/LaboratoryView.vue';
-  export { useLaboratory } from './composables/useLaboratory';
-  export * from './types';
-  ```
-- **Consumer Rule**: Always import from the Registry alias.
-  ```typescript
-  import { LaboratoryView } from '@features/laboratory'; // Correct
-  ```
-- **Internal Rule**: Internal files within a feature can use relative imports, but external consumers must use the alias.
+To prevent "Graph Spaghetti," every significant module defines a **Public API** via an `index.ts` file.
+- **Consumer Rule**: Always import from the Registry alias (`@features/laboratory`).
+- **Internal Rule**: Internal files can use relative imports; external consumers must use the alias.
 
 ---
 
@@ -87,7 +92,16 @@ To prevent "Graph Spaghetti" and ensure clear boundaries, every significant modu
 | **Components** | `PascalCase` | `UpgradeCard.vue`, `Icon.vue` |
 | **Composables** | `camelCase` (prefixed `use`) | `useLaboratory.ts` |
 | **Classes/Singletons** | `PascalCase` | `GasClient.ts`, `StorageService.ts` |
-| **Utilities/Funcs** | `camelCase` | `formatCurrency.ts`, `calculateXp.ts` |
 | **Types/Interfaces** | `PascalCase` | `PlayerData`, `OptimizationResult` |
+| **Assets/Media** | `kebab-case` | `currency-gold.webp`, `pwa-maskable.png` |
+| **Config/Static** | `kebab-case.ext` | `vite.config.ts`, `manifest.json` |
 | **Tests** | `*.spec.ts` | `useLaboratory.spec.ts` |
-| **Registry** | `index.ts` | (The entry point for any structured module) |
+
+---
+
+## 5. The Shell Synchronization Protocol
+
+To ensure 100/100 performance and SEO, the `index.html` shell must remain a hardcoded reflection of the application's default landing state.
+1. **Title Mirroring**: The hardcoded `<h1 class="view-title">` must match the Feature label of the default route exactly (e.g., "Roster").
+2. **Critical CSS**: Inline CSS is reserved for Layout Primitives and CSS Variables. No component-level styling is permitted.
+3. **No Flashes**: Any structural changes to the primary Feature UI must be mirrored in the shell to prevent LCP layout shifts.

@@ -30,6 +30,8 @@ export default defineConfig({
       "@shared": fileURLToPath(new URL("./src/shared", import.meta.url)),
       "@features": fileURLToPath(new URL("./src/features", import.meta.url)),
       "@app": fileURLToPath(new URL("./src/app", import.meta.url)),
+      "@static": fileURLToPath(new URL("./public", import.meta.url)),
+      "@root": fileURLToPath(new URL(".", import.meta.url)),
     },
   },
   // GitHub Pages deployment requires the repo name in the base path
