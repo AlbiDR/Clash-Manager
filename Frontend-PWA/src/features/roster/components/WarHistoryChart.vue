@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { WAR_CONSTANTS, calculatePrediction, parseHistoryString } from "@core";
+import { WAR_CONSTANTS, calculatePrediction, parseHistoryString } from "@core/utils/warMath";
 import { computed } from "vue";
 import { generateLinearTrend, type Point } from "@core/utils/bezier";
 const props = defineProps<{

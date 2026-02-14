@@ -1,6 +1,8 @@
-import { BaseCardSkeleton, Icon  } from "@shared";
-import { useClashData } from "@core";
 <script setup lang="ts">
+import BaseCardSkeleton from "../../../shared/ui/BaseCardSkeleton.vue";
+import Icon from "../../../shared/ui/Icon.vue";
+import ConsoleLayout from "../../../shared/ui/ConsoleLayout.vue";
+import { useClashData } from "@core/services/useClashData";
 import { computed } from "vue";
 import { useLaboratory } from "../composables/useLaboratory";
 

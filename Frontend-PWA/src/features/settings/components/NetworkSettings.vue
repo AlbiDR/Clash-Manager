@@ -1,6 +1,6 @@
-import { Icon  } from "@shared";
-import { useApiState } from "@core";
 <script setup lang="ts">
+import Icon from "../../../shared/ui/Icon.vue";
+import { useApiState } from "@core/api/useApiState";
 import { ref, computed, watch } from "vue";
 import SettingsCard from "./SettingsCard.vue";
 const props = defineProps<{

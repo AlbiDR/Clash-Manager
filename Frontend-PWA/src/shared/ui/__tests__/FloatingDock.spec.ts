@@ -4,28 +4,26 @@
 import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import FloatingDock from "../FloatingDock.vue";
-import * as uiCoord from "../../composables/useUiCoordinator";
+import * as core from "@core";
+import { ref } from "vue";
 
 vi.mock("vue-router", () => ({
   useRoute: () => ({ path: "/" }),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("../../../core/services/useHaptics", () => ({
-  useHaptics: () => ({ tap: vi.fn() }),
-}));
-
-vi.mock("../../composables/useUiCoordinator", async (importOriginal) => {
-  const actual = await importOriginal<typeof uiCoord>();
+vi.mock("@core", async (importOriginal) => {
+  const actual = await importOriginal<typeof core>();
   return {
     ...actual,
+    useHaptics: () => ({ tap: vi.fn() }),
     useUiCoordinator: vi.fn(),
   };
 });
 
 describe("FloatingDock.vue", () => {
   it("renders navigation items when dock is visible", () => {
-    vi.mocked(uiCoord.useUiCoordinator).mockReturnValue({
+    vi.mocked(core.useUiCoordinator).mockReturnValue({
       dockVisible: true,
       fabState: { selectionCount: 0, isBlasting: false },
     } as any);
@@ -41,7 +39,7 @@ describe("FloatingDock.vue", () => {
       label: "Action",
     };
     
-    vi.mocked(uiCoord.useUiCoordinator).mockReturnValue({
+    vi.mocked(core.useUiCoordinator).mockReturnValue({
       dockVisible: false,
       fabState: mockFabState,
     } as any);
@@ -59,7 +57,7 @@ describe("FloatingDock.vue", () => {
       label: "Action",
     };
     
-    vi.mocked(uiCoord.useUiCoordinator).mockReturnValue({
+    vi.mocked(core.useUiCoordinator).mockReturnValue({
       dockVisible: false,
       fabState: mockFabState,
     } as any);

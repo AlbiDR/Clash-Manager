@@ -1,5 +1,9 @@
-import { vTactile, ConsoleLayout, HeaderInfoOverlay, ConsoleHeader, FloatingDock } from "@shared";
 <script setup lang="ts">
+import { vTactile } from "../../../shared/directives/vTactile";
+import ConsoleLayout from "../../../shared/ui/ConsoleLayout.vue";
+import HeaderInfoOverlay from "../../../shared/ui/HeaderInfoOverlay.vue";
+import ConsoleHeader from "../../../shared/ui/ConsoleHeader.vue";
+import FloatingDock from "../../../shared/ui/FloatingDock.vue";
 import { computed } from "vue";
 import { useSettings } from "../composables/useSettings";
 import NetworkSettings from "../components/NetworkSettings.vue";

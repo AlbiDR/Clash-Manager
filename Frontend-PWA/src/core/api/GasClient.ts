@@ -18,7 +18,7 @@
  *  - Implements exponential backoff and request deduplication.
  * ============================================================================
  */
-import { idb } from "@core";
+import { idb } from "../services/StorageService";
 
 
 import type {

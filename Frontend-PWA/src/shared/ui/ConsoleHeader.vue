@@ -1,9 +1,9 @@
+<script setup lang="ts">
 import Icon from "./Icon.vue";
 import StatusPill from "./StatusPill.vue";
-import { useHaptics } from "@core";
+import { useHaptics } from "@core/services/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
-import { useAppSettings } from "@core";
-<script setup lang="ts">
+import { useAppSettings } from "@core/services/useAppSettings";
 import { ref, computed } from "vue";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
 const props = defineProps<{

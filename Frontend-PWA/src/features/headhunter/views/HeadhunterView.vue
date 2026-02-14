@@ -1,5 +1,8 @@
-import { BaseCardSkeleton, Icon, ConsoleLayout, ConsoleList } from "@shared";
 <script setup lang="ts">
+import BaseCardSkeleton from "../../../shared/ui/BaseCardSkeleton.vue";
+import Icon from "../../../shared/ui/Icon.vue";
+import ConsoleLayout from "../../../shared/ui/ConsoleLayout.vue";
+import ConsoleList from "../../../shared/ui/ConsoleList.vue";
 import { useRecruiter } from "../composables/useRecruiter";
 
 import RecruitCard from "../components/RecruitCard.vue";

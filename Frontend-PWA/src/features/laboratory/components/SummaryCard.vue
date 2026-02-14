@@ -1,5 +1,5 @@
-import { Icon  } from "@shared";
 <script setup lang="ts">
+import Icon from "../../../shared/ui/Icon.vue";
 import { type OptimizationResult, type PlayerProfile } from "../logic/Laboratory_Types";
 const props = defineProps<{
   result: OptimizationResult;

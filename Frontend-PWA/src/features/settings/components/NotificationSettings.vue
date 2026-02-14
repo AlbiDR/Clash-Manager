@@ -1,6 +1,11 @@
-import { Icon } from "@shared";
-import { isWorkerConfigured, subscribeToPush, useAppSettings, useBadge, useClashData, useToast, useHaptics } from "@core";
 <script setup lang="ts">
+import Icon from "../../../shared/ui/Icon.vue";
+import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
+import { useBadge } from "@core/services/useBadge";
+import { useAppSettings } from "@core/services/useAppSettings";
+import { useClashData } from "@core/services/useClashData";
+import { useToast } from "@core/services/useToast";
+import { useHaptics } from "@core/services/useHaptics";
 import { computed, ref, onMounted } from "vue";
 import SettingsCard from "./SettingsCard.vue";
 const props = defineProps<{

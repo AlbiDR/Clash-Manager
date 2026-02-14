@@ -1,4 +1,7 @@
-import { useApiState, useClashData, useConsoleController, useShowcaseMode } from "@core";
+import { useApiState } from "@core/api/useApiState";
+import { useClashData } from "@core/services/useClashData";
+import { useConsoleController } from "@core/services/useConsoleController";
+import { useShowcaseMode } from "@core/services/useShowcaseMode";
 import { computed } from "vue";
 import { parseTimeAgoValue } from "@core/utils/formatters";
 import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
