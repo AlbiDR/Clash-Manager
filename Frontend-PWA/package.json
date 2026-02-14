@@ -12,8 +12,9 @@
   "homepage": "https://albidr.github.io/Clash-Manager/",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "pnpm run type-check && vite build",
+    "dev": "pnpm run synthesize && vite",
+    "build": "pnpm run synthesize && pnpm run type-check && vite build",
+    "synthesize": "tsx scripts/synthesize_entry.ts",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

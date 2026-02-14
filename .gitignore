@@ -52,3 +52,6 @@ stats.html
 
 # Testing
 coverage
+
+# Generated Assets
+Frontend-PWA/index.html
