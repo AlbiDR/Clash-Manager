@@ -116,6 +116,4 @@ jobs:
 
       - name: Compile and Push
         working-directory: Backend-GAS
-        run: |
-          chmod +x deploy.sh
-          ./deploy.sh
+        run: pnpm run deploy
