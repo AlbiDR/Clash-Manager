@@ -28,7 +28,11 @@ import {
   KING_XP_TABLE 
 } from './Registry';
 import { PriorityQueue } from './PriorityQueue';
-import { ScoringStrategy, FormulaicStrategy } from './ScoringStrategy';
+import { 
+  ScoringStrategy, 
+  ProjectionStrategy, 
+  InventoryStrategy 
+} from './ScoringStrategy';
 
 const EPSILON = 1e-9;
 
@@ -177,9 +181,16 @@ function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): Simu
 export function* calculateProgressionPath(
   initialState: SimulationState,
   settings: OptimizationSettings,
-  strategy: ScoringStrategy = new FormulaicStrategy()
+  providedStrategy?: ScoringStrategy
 ): Generator<SimulationState, SimulationState, void> {
   let currentState = initialState;
+  
+  // Strategy Selection: Fallback to Projection if not provided
+  const strategy = providedStrategy || (
+    settings.strategy === "Level Projection" 
+      ? new ProjectionStrategy() 
+      : new InventoryStrategy()
+  );
   
   // Initialize Priority Queue
   const pq = new PriorityQueue<UpgradeCandidate>((a, b) => a.efficiencyRatio - b.efficiencyRatio);

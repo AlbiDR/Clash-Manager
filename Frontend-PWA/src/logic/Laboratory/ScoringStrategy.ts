@@ -17,44 +17,60 @@ export interface ScoringStrategy {
 }
 
 /**
- * Strategy 1: Formulaic Efficiency (Divergent from Magic Numbers)
- * Uses a mathematical decay curve instead of hardcoded overrides.
+ * Strategy: Level Projection (Infinite/Idealistic)
+ * Prioritizes high-impact level milestones (15, 16) aggressively.
+ * Assumes a long-term goal where resources will eventually be acquired.
  */
-export class FormulaicStrategy implements ScoringStrategy {
+export class ProjectionStrategy implements ScoringStrategy {
   calculateScore(candidate: UpgradeCandidate, settings: OptimizationSettings): number {
     const { toLevel, goldCost, gemsUsed, xpGained } = candidate;
     
-    // Effective cost using the standardized factor
-    const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR);
+    // Effective cost (Theoretical Gems are cheap in projection mode)
+    const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR * 0.1);
     
-    // Base Ratio (Lower is better)
+    // Base Ratio
     let score = effectiveCost / (Number(xpGained) || 1);
 
-    // Apply Growth Curve instead of hardcoded overrides
-    // This model prioritizes high levels (15, 16) increasingly
+    // Heavier Growth Curve for Projection
+    // We want to force the simulator toward the "mountaintop" (Level 15/16)
     if (toLevel >= 15) {
-      // Curve: Reduces score (increases priority) for high-impact levels. 
-      // f(15) ~ 0.35, f(16) ~ 0.18
-      const incentive = 1 + (Math.pow(Math.max(0, toLevel - 13), 1.8));
+      const incentive = 1 + (Math.pow(Math.max(0, toLevel - 13), 2.5)); // More aggressive than 1.8
       score /= incentive;
     }
 
-    // Gem Penalty (Native Heuristic)
-    if (Number(gemsUsed) > 0) {
-      score *= settings.infiniteResources ? 1.05 : 10.0;
-    } else {
-      score *= 0.5; // Material efficiency bonus
-    }
+    // Small penalty for gems, mostly just prefers direct upgrades if possible
+    if (Number(gemsUsed) > 0) score *= 1.1;
 
     return score;
   }
 }
 
 /**
- * Strategy 2: Lookahead Efficiency (Algorithmic Superiority)
+ * Strategy: Resource Efficiency (Finite/Realistic)
+ * Strictly optimizes for XP ROI (Experience per Gold).
+ * Heavily penalizes gem spending and resource-heavy transitions.
+ */
+export class InventoryStrategy implements ScoringStrategy {
+  calculateScore(candidate: UpgradeCandidate, settings: OptimizationSettings): number {
+    const { goldCost, gemsUsed, xpGained } = candidate;
+
+    // Gems are extremely "expensive" in inventory mode
+    const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR * 50);
+
+    // Strict ROI
+    let score = effectiveCost / (Number(xpGained) || 1);
+
+    // In inventory mode, we don't care about milestones as much 
+    // as we care about the next most efficient XP packet.
+    return score;
+  }
+}
+
+/**
+ * Utility: Lookahead Wrapper (Legacy Compatibility)
  * Evaluates the NEXT potential step to avoid greedy traps.
  */
-export class LookaheadStrategy extends FormulaicStrategy {
+export class LookaheadStrategy extends ProjectionStrategy {
   constructor(private lookaheadWeight: number = 0.4) {
     super();
   }
