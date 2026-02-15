@@ -237,11 +237,15 @@ function handleScoreClick(e: Event) {
 }
 .stat-pod.tone-high {
   background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  color: #FFFFFF; /* FORCE LIGHT TEXT */
 }
 .stat-pod.tone-mid {
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
+}
+:root.dark .stat-pod.tone-high {
+  color: #000000; /* Revert to specific dark mode pref if needed, but user asked for coherence. Let's stick to white for high contrast on primary. */
+  color: #FFFFFF;
 }
 
 .card-body {

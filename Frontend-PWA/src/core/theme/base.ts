@@ -151,4 +151,15 @@ input, textarea, [contenteditable], .selectable {
   overscroll-behavior-y: auto;
   will-change: scroll-position;
 }
+  /* =========================================
+     SHAPE SYSTEM
+     ========================================= */
+  :root {
+    --shape-corner-extra-small: 4px;
+    --shape-corner-small: 8px;
+    --shape-corner-medium: 12px;
+    --shape-corner-large: 16px;
+    --shape-corner-extra-large: 28px;
+    --shape-corner-full: 9999px;
+  }
 `;

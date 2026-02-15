@@ -19,6 +19,7 @@ import { skeletonStyles } from "../core/theme/skeletons";
 import { componentStyles } from "../core/theme/components";
 import App from "./App.vue";
 import router from "./router";
+import Icon from "../shared/ui/Icon.vue";
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 function showFatalError(error: unknown) {
@@ -84,6 +85,7 @@ async function bootstrap() {
     // 2. Create App
     const app = createApp(App);
     app.use(router);
+    app.component("Icon", Icon);
 
     // PERFORMANCE: Register directives before mount
     app.directive("tooltip", vTooltip);
