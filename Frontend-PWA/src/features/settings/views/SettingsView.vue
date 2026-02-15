@@ -44,40 +44,13 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
         <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
       </template>
       <template v-else>
-        <!-- TIER 1: Interface & Display -->
-        <div class="settings-tier tier-interface">
-          <AppearanceSettings :initially-expanded="true" />
-          <NotificationSettings />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 2: Application Features -->
-        <div class="settings-tier tier-features">
-          <FeatureSettings :initially-expanded="true" />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 2.5: Display Preferences -->
-        <div class="settings-tier tier-display">
-          <ModeSettings />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 3: Infrastructure -->
-        <div class="settings-tier tier-infrastructure">
-          <NetworkSettings />
-          <BackendRefresher v-if="modules.backendRefresher" />
-        </div>
-
-        <div class="tier-divider" />
-
-        <!-- TIER 4: System & Recovery -->
-        <div class="settings-tier tier-system">
-          <RecoverySettings />
-        </div>
+        <AppearanceSettings :initially-expanded="true" />
+        <NotificationSettings />
+        <FeatureSettings :initially-expanded="true" />
+        <ModeSettings />
+        <NetworkSettings />
+        <BackendRefresher v-if="modules.backendRefresher" />
+        <RecoverySettings />
       </template>
 
       <div class="footer-info">
@@ -104,13 +77,10 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
 }
 
 .settings-content {
-  padding: 0 0 120px;
+  padding: 0 16px 120px; /* Standard horizontal inner padding */
   display: flex;
   flex-direction: column;
-}
-
-.tier-divider {
-  height: 32px;
+  gap: 12px; /* Uniform card spacing */
 }
 
 .footer-info {
