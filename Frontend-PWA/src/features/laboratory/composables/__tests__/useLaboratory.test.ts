@@ -30,11 +30,11 @@ const localStorageMock = {
 };
 vi.stubGlobal('localStorage', localStorageMock);
 
-// Mock LaboratoryKernel and LaboratoryAdapter
-vi.mock('../../logic/Laboratory_Kernel', () => ({
-  default: {
-    optimize: vi.fn(() => ({ actions: [], totalXpGained: 0 }))
-  }
+// --- Logic Mocks ---
+vi.mock('@/logic/Laboratory/Simulation', () => ({
+  calculateProgressionPath: vi.fn(function* () {
+    yield { history: [], totalXp: 0, inventory: { gold: 0, gems: 0, wildCards: {} } };
+  })
 }));
 
 describe('useLaboratory', () => {

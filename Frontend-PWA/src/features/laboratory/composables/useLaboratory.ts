@@ -5,7 +5,7 @@ import { ref, computed, type Ref, watch } from 'vue'
 // Progression Engine 2.0 Primitives
 import { calculateProgressionPath } from '@/logic/Laboratory/Simulation';
 import ProfileHydrator from '@/logic/Laboratory/ProfileHydrator';
-import { KING_XP_TABLE } from '@/logic/Laboratory/Registry';
+import { KING_XP_TABLE, IMPORTANT_KING_LEVELS } from '@/logic/Laboratory/Registry';
 import { asGold, asGems, asXP } from '@/logic/Laboratory/Economy';
 
 import type { 
@@ -13,21 +13,10 @@ import type {
   OptimizationSettings, 
   SimulationState,
   Inventory,
-  Rarity
+  Rarity,
+  OptimizationResult
 } from '@/logic/Laboratory/Types';
 
-// Legacy compatibility type for the UI
-export interface OptimizationResult {
-  readonly actions: any[];
-  readonly totalXpGained: number;
-  readonly projectedKingLevel: number;
-  readonly finalProfile: any;
-  readonly finalGold: number;
-  readonly finalGems: number;
-  readonly totalGoldSpent: number;
-  readonly totalGemsSpent: number;
-  readonly totalWildCardsUsed: Record<Rarity, number>;
-}
 
 const STORAGE_KEY_SETTINGS = "laboratory_settings";
 const STORAGE_KEY_INVENTORY = "laboratory_inventory";
@@ -120,7 +109,7 @@ function persistObservation(data: PlayerData | null) {
 }
 
 function calculateDefaultTarget(currentLevel: number): number {
-  const nextMilestone = [2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75].find(m => m > currentLevel);
+  const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
   return nextMilestone || (currentLevel + 1);
 }
 

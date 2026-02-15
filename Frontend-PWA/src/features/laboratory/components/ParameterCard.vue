@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Icon from "../../../shared/ui/Icon.vue";
 import { computed } from "vue";
-import { type OptimizationSettings } from "../logic/Laboratory_Types";
-import { IMPORTANT_KING_LEVELS } from "../logic/Laboratory_Tables";
+import { type OptimizationSettings } from "@/logic/Laboratory/Types";
+import { IMPORTANT_KING_LEVELS } from "@/logic/Laboratory/Registry";
 const props = defineProps<{
   settings: OptimizationSettings;
   currentLevel: number;
@@ -12,7 +12,7 @@ const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
 
-const setStrategy = (val: "Projection" | "Efficiency") => {
+const setStrategy = (val: "Level Projection" | "Resource Efficiency") => {
   const updates: Partial<OptimizationSettings> = { strategy: val };
   emit("update", { ...props.settings, ...updates });
 };
@@ -52,21 +52,21 @@ const baseUrl = import.meta.env.BASE_URL;
         <div class="strategy-selector">
           <button 
             class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Projection' }"
-            @click="setStrategy('Projection')"
+            :class="{ active: settings.strategy === 'Level Projection' }"
+            @click="setStrategy('Level Projection')"
           >
             <span>Level Projection</span>
           </button>
           <button 
             class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Efficiency' }"
-            @click="setStrategy('Efficiency')"
+            :class="{ active: settings.strategy === 'Resource Efficiency' }"
+            @click="setStrategy('Resource Efficiency')"
           >
             <span>Resource Efficiency</span>
           </button>
         </div>
         <div class="strategy-desc">
-          <template v-if="settings.strategy === 'Projection'">
+          <template v-if="settings.strategy === 'Level Projection'">
             <strong>Goal: Level Projection (Simulation)</strong>
             <p>Best for long-term planning. Simulates the optimal path to reach a specific King Level goal, assuming you can acquire all necessary resources. Toggle <em>Allow Gem Spending</em> to view gem costs vs. free-to-play requirements.</p>
           </template>
@@ -78,7 +78,7 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
 
       <!-- Target Level Selector -->
-      <div class="parameter-item" v-if="settings.strategy === 'Projection'">
+      <div class="parameter-item" v-if="settings.strategy === 'Level Projection'">
         <label class="parameter-label">Target King Level</label>
         <div class="select-wrapper">
           <select 

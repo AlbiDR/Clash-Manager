@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "../../../shared/ui/Icon.vue";
-import { type UpgradeAction } from "../logic/Laboratory_Types";
+import { type UpgradeAction } from "@/logic/Laboratory/Types";
 defineProps<{
   upgrade: UpgradeAction;
   index: number;
