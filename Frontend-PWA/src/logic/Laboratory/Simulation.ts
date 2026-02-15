@@ -27,6 +27,8 @@ import {
   EFFICIENCY_OVERRIDES, 
   KING_XP_TABLE 
 } from './Registry';
+import { PriorityQueue } from './PriorityQueue';
+import { ScoringStrategy, FormulaicStrategy } from './ScoringStrategy';
 
 const EPSILON = 1e-9;
 
@@ -102,20 +104,7 @@ function buildCandidate(
     if (Number(gemsUsed) > Number(inventory.gems)) return null;
   }
 
-  // Efficiency calculation (uses Effective Cost = Gold + Gem-Equiv-Gold)
-  const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR);
-  let efficiencyRatio = effectiveCost / Number(xpGain);
-  
-  const override = EFFICIENCY_OVERRIDES[nextLevel];
-  if (override !== undefined) efficiencyRatio = override;
-
-  // Penalties/Bonuses
-  if (Number(gemsUsed) > 0) {
-    efficiencyRatio *= settings.infiniteResources ? 1.05 : 10.0;
-  } else {
-    efficiencyRatio *= 0.5;
-  }
-
+  // No default efficiency calculation here - delegated to Strategy
   return {
     index,
     card: { ...card },
@@ -127,7 +116,7 @@ function buildCandidate(
     wildCardsUsed: finalWildUsed,
     gemsUsed,
     xpGained: xpGain,
-    efficiencyRatio
+    efficiencyRatio: 0 // Placeholder, strategy will populate
   };
 }
 
@@ -162,6 +151,7 @@ function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): Simu
     gemsUsed: candidate.gemsUsed,
     xpGained: candidate.xpGained,
     efficiencyRatio: candidate.efficiencyRatio,
+    priorityScore: candidate.efficiencyRatio,
     upgradeType: candidate.gemsUsed > 0 ? "Gem" : (candidate.wildCardsUsed > 0 ? "Wild" : "Direct"),
     isTowerTroop: targetCard.isTowerTroop
   };
@@ -182,26 +172,29 @@ function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): Simu
 
 /**
  * Non-blocking Generator Engine for Progression Simulation.
+ * Uses a Priority Queue for O(log N) selection and Strategy Injection for scoring.
  */
 export function* calculateProgressionPath(
   initialState: SimulationState,
-  settings: OptimizationSettings
+  settings: OptimizationSettings,
+  strategy: ScoringStrategy = new FormulaicStrategy()
 ): Generator<SimulationState, SimulationState, void> {
   let currentState = initialState;
   
-  while (true) {
-    let bestCandidate: UpgradeCandidate | null = null;
+  // Initialize Priority Queue
+  const pq = new PriorityQueue<UpgradeCandidate>((a, b) => a.efficiencyRatio - b.efficiencyRatio);
 
-    for (let i = 0; i < currentState.roster.length; i++) {
-      const candidate = buildCandidate(currentState.roster[i], i, currentState.inventory, settings);
-      if (!candidate) continue;
-
-      if (!bestCandidate || candidate.efficiencyRatio < bestCandidate.efficiencyRatio - EPSILON) {
-        bestCandidate = candidate;
-      }
+  // Initial population of the queue
+  for (let i = 0; i < currentState.roster.length; i++) {
+    const candidate = buildCandidate(currentState.roster[i], i, currentState.inventory, settings);
+    if (candidate) {
+      candidate.efficiencyRatio = calculateAdvancedScore(candidate, currentState, settings, strategy);
+      pq.push(candidate);
     }
+  }
 
-    if (!bestCandidate) break;
+  while (pq.size() > 0) {
+    const bestCandidate = pq.pop()!;
 
     // Check target level for Projection strategy
     if (settings.strategy === "Level Projection" && settings.targetLevel) {
@@ -209,11 +202,72 @@ export function* calculateProgressionPath(
       if (kingLevel >= settings.targetLevel) break;
     }
 
-    currentState = applyUpgrade(currentState, bestCandidate);
+    // Apply the upgrade
+    const nextState = applyUpgrade(currentState, bestCandidate);
+    currentState = nextState;
+
+    // Yield the new state
     yield currentState;
+
+    // Refresh ONLY the candidate that was upgraded
+    const nextCandidate = buildCandidate(
+      currentState.roster[bestCandidate.index], 
+      bestCandidate.index, 
+      currentState.inventory, 
+      settings
+    );
+
+    if (nextCandidate) {
+      nextCandidate.efficiencyRatio = calculateAdvancedScore(nextCandidate, currentState, settings, strategy);
+      pq.push(nextCandidate);
+    }
+
+    // Since inventory changed, other candidates might now be invalid (affordability)
+    // In a high-performance engine, we'd prune the PQ lazily during pop.
+    // For now, let's peek and prune invalid if they are at the top.
+    while (pq.size() > 0) {
+      const top = pq.peek()!;
+      // Simple validation: can we still afford the gold/gems?
+      // Note: buildCandidate already checks this. We re-verify here.
+      const stillValid = buildCandidate(currentState.roster[top.index], top.index, currentState.inventory, settings);
+      if (!stillValid) {
+        pq.pop();
+      } else {
+        break;
+      }
+    }
   }
 
   return currentState;
+}
+
+/**
+ * Calculates score with Multi-Step Lookahead.
+ * Score = CurrentStepScore + (NextStepScore * 0.4)
+ */
+function calculateAdvancedScore(
+  candidate: UpgradeCandidate, 
+  state: SimulationState, 
+  settings: OptimizationSettings,
+  strategy: ScoringStrategy
+): number {
+  const currentScore = strategy.calculateScore(candidate, settings);
+  
+  // Multi-Step Lookahead Logic
+  // We simulate what happens if we upgrade this specific card to its NEXT level.
+  const virtualCard = { ...candidate.card, level: candidate.toLevel };
+  const virtualInventory = { ...state.inventory }; // Simple shadow inventory
+  virtualInventory.gold = subGold(virtualInventory.gold, candidate.goldCost);
+  virtualInventory.gems = subGems(virtualInventory.gems, candidate.gemsUsed);
+
+  const nextPotential = buildCandidate(virtualCard, candidate.index, virtualInventory, settings);
+  if (nextPotential) {
+    const nextScore = strategy.calculateScore(nextPotential, settings);
+    // Weighted lookahead avoids greedy traps (e.g. taking a cheap level now that prevents a massive value level later)
+    return currentScore + (nextScore * 0.4);
+  }
+
+  return currentScore;
 }
 
 function calculateKingLevel(totalXp: number): number {

@@ -36,21 +36,11 @@ const baseUrl = import.meta.env.BASE_URL;
         <span class="card-name">{{ upgrade.cardName }}</span>
       </div>
 
-      <!-- Line 3: Efficiency Metrics (Inverted Ratios) -->
-      <div class="efficiency-row">
-        <div class="efficiency-slab gold">
-          <img :src="`${baseUrl}assets/game/currency_gold.webp`" class="eff-icon" alt="Gold" />
-          <div class="eff-divider">/</div>
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="eff-icon" alt="XP" />
-          <span class="eff-val">{{ (upgrade.goldCost / upgrade.xpGained).toFixed(2) }}</span>
+        <div class="efficiency-slab priority">
+          <Icon name="psychology" size="12" class="eff-icon" />
+          <span class="eff-label">PRIORITY</span>
+          <span class="eff-val">{{ upgrade.priorityScore.toFixed(2) }}</span>
         </div>
-        <div v-if="upgrade.gemsUsed > 0" class="efficiency-slab gems">
-          <img :src="`${baseUrl}assets/game/currency_gem.webp`" class="eff-icon" alt="Gems" />
-          <div class="eff-divider">/</div>
-          <img :src="`${baseUrl}assets/game/currency_xp.webp`" class="eff-icon" alt="XP" />
-          <span class="eff-val">{{ (upgrade.gemsUsed / upgrade.xpGained).toFixed(3) }}</span>
-        </div>
-      </div>
     </div>
 
     <div class="cost-stack">
@@ -214,9 +204,17 @@ const baseUrl = import.meta.env.BASE_URL;
   background: rgba(255, 204, 0, 0.03);
 }
 
-.efficiency-slab.gems {
-  border-left: 2px solid #00ff88;
-  background: rgba(0, 255, 136, 0.03);
+.efficiency-slab.priority {
+  border-left: 2px solid var(--sys-color-primary);
+  background: rgba(var(--sys-color-primary-rgb), 0.05);
+  gap: 4px;
+}
+
+.eff-label {
+  font-size: 8px;
+  font-weight: 900;
+  opacity: 0.5;
+  letter-spacing: 0.05em;
 }
 
 .eff-icon {

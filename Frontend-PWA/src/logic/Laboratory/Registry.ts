@@ -134,7 +134,3 @@ export const KING_XP_TABLE = [
   { level: 90, cumulative: asXP(27438770) }
 ];
 
-export const EFFICIENCY_OVERRIDES: Readonly<Record<number, number>> = {
-  16: 0.60,
-  15: 1.80,
-};
