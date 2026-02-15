@@ -71,4 +71,21 @@ describe("useTheme", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
+  it("updates meta theme-color when theme changes", () => {
+    // Create meta tag if it doesn't exist
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      document.head.appendChild(meta);
+    }
+
+    const { setTheme } = useTheme();
+
+    setTheme("dark");
+    expect(meta.getAttribute("content")).toBe("#0b0e14");
+
+    setTheme("light");
+    expect(meta.getAttribute("content")).toBe("#fdfcff");
+  });
 });

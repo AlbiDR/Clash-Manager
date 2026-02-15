@@ -2,6 +2,7 @@
   "name": "Clash Manager",
   "short_name": "Clash Manager",
   "description": "Professional recruitment and performance analytics dashboard for Clash Royale clan leaders.",
+  "theme_color": "#0b0e14",
   "background_color": "#0b0e14",
   "display": "standalone",
   "scope": "./",
