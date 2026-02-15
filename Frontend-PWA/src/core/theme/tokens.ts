@@ -67,6 +67,7 @@ export const lightTokens: ThemeTokens = {
     onPrimary: '#ffffff',
     primaryContainer: '#d1e4ff',
     onPrimaryContainer: '#001d36',
+    onPrimaryContainerRgb: '0, 29, 54',
 
     secondary: '#535f70',
     secondaryContainer: '#d7e3f7',
@@ -96,6 +97,7 @@ export const lightTokens: ThemeTokens = {
 
     outline: '#5f6368',
     outlineVariant: '#c4c7c5',
+    onSurfaceVariant: '#44474f',
 
     glass: 'rgba(255, 255, 255, 0.9)',
     glassBorder: 'rgba(0, 0, 0, 0.08)',
@@ -152,6 +154,7 @@ export const darkTokens: ThemeTokens = {
 
     outline: '#9aa0a6',
     outlineVariant: '#44474f',
+    onSurfaceVariant: '#c4c7c5',
 
     glass: 'rgba(20, 24, 32, 0.94)',
     glassBorder: 'rgba(255, 255, 255, 0.12)',
