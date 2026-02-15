@@ -3,6 +3,14 @@ import { asGold, asXP, type Gold, type XP } from './Economy';
 
 export const CARD_LEVEL_CAP = 16;
 
+export const CARD_RARITY_START_LEVELS: Readonly<Record<Rarity, number>> = {
+  "Common": 1,
+  "Rare": 3,
+  "Epic": 6,
+  "Legendary": 9,
+  "Champion": 11
+};
+
 export const GOLD_COST_TABLE: Readonly<Record<number, Gold>> = {
   2: asGold(5), 3: asGold(20), 4: asGold(50), 5: asGold(150), 6: asGold(400), 7: asGold(1000), 8: asGold(2000),
   9: asGold(4000), 10: asGold(8000), 11: asGold(15000), 12: asGold(25000), 13: asGold(40000), 14: asGold(60000), 15: asGold(90000), 16: asGold(120000)
@@ -132,5 +140,9 @@ export const KING_XP_TABLE = [
   { level: 88, cumulative: asXP(23338770) },
   { level: 89, cumulative: asXP(25338770) },
   { level: 90, cumulative: asXP(27438770) }
+];
+
+export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
+  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75
 ];
 

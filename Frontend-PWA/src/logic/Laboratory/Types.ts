@@ -1,4 +1,4 @@
-import type { Gold, Gems, XP } from './Economy';
+import type { Gold, Gems, XP, Rarity } from './Economy';
 
 export type Rarity = "Common" | "Rare" | "Epic" | "Legendary" | "Champion";
 
@@ -78,4 +78,17 @@ export interface UpgradeCandidate {
   readonly gemsUsed: Gems;
   readonly xpGained: XP;
   readonly efficiencyRatio: number;
+}
+
+// Legacy compatibility type for the UI
+export interface OptimizationResult {
+  readonly actions: ReadonlyArray<UpgradeAction>;
+  readonly totalXpGained: number;
+  readonly projectedKingLevel: number;
+  readonly finalProfile: any; // Dynamic profile data
+  readonly finalGold: number;
+  readonly finalGems: number;
+  readonly totalGoldSpent: number;
+  readonly totalGemsSpent: number;
+  readonly totalWildCardsUsed: Readonly<Record<Rarity, number>>;
 }
