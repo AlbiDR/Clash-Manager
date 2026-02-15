@@ -191,13 +191,17 @@ const baseUrl = import.meta.env.BASE_URL;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 2px 8px; /* Matched to .level-pill */
   background: var(--sys-color-surface-container);
-  border-radius: 8px;
+  border-radius: 6px; /* Matched to .level-pill */
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
+  font-size: 11px;
+  font-weight: 800;
   width: fit-content;
-  align-self: flex-start;
+  display: inline-flex; /* More compact than display: flex */
+  align-items: center;
+  gap: 4px; /* Tightening space between icon/value/label */
 }
 
 .efficiency-slab.gold {
@@ -208,8 +212,6 @@ const baseUrl = import.meta.env.BASE_URL;
 .efficiency-slab.efficiency {
   border-left: 2px solid var(--sys-color-primary);
   background: rgba(var(--sys-color-primary-rgb), 0.05);
-  gap: 6px;
-  padding: 4px 8px; /* Removed extra leading space */
 }
 
 .eff-label {
