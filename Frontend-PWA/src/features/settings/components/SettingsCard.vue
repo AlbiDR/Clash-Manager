@@ -48,22 +48,19 @@ const toggleCollapse = () => {
   border-radius: 24px;
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
-  margin-bottom: 8px;
+  margin: 0; /* Standardized to 0, handled by parent gap */
   transition:
     transform 0.2s var(--sys-motion-spring),
     background-color 0.2s ease,
     border-color 0.2s ease,
-    box-shadow 0.25s ease,
-    margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, box-shadow, margin;
+    box-shadow 0.25s ease;
+  will-change: transform, box-shadow;
 }
 
 .settings-card:not(.collapsed) {
   background: var(--sys-color-surface-container-high);
   box-shadow: var(--sys-elevation-3);
-  margin-top: 16px;
-  margin-bottom: 16px;
-  transform: scale(1.02);
+  transform: scale(1.02); /* Retain the 'pop' without the height jump */
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
