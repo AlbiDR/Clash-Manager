@@ -42,7 +42,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
     :expanded="expanded"
     :selected="selected"
     :selection-mode="selectionMode"
-    :tone-class="toneClass"
+    :score="recruit.potentialScore"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
