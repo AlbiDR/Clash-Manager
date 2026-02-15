@@ -7,8 +7,8 @@ import type {
   Rarity,
   CardName
 } from './Types';
-import { asGold, asGems, asXP } from './Economy';
-import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS } from './Registry';
+import { asGold, asGems, asXP, addXP } from './Economy';
+import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
 
 const normalizeLevel = (level: number, rarity: Rarity): number => {
   const offset = (CARD_RARITY_START_LEVELS[rarity] || 1) - 1;
