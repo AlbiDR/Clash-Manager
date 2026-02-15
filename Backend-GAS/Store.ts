@@ -47,20 +47,63 @@ const CONSTANTS = {
 /* ==========================================================================
    INTERFACES
    ========================================================================== */
+/**
+ * @remarks
+ * The Store service provides a unified abstraction over Google Apps Script's
+ * primary persistence mechanisms:
+ *
+ * 1. PropertiesService (props): Best for structured settings and metadata.
+ *    Persistent, shared across script executions, but limited to 9KB per key.
+ * 2. CacheService (cache): Best for ephemeral, high-volume data (e.g. API responses).
+ *    Fast and high-capacity, but volatile with a maximum TTL of 6 hours.
+ *
+ * The Store automatically handles platform constraints via intelligent
+ * chunking and transparent GZIP compression.
+ */
 export interface IStore {
   cache: {
+    /**
+     * @warning Consumes CacheService quota.
+     */
     getLarge(key: string): string | null;
+    /**
+     * @warning Consumes CacheService quota.
+     */
     putLarge(key: string, value: string, expirationSec?: number): void;
+    /**
+     * @warning Consumes CacheService quota.
+     */
     remove(key: string): void;
   };
   props: {
     _service?: any; // Exposed for testing/mocking
+    /**
+     * @warning Consumes PropertiesService quota.
+     */
     delete(key: string): void;
+    /**
+     * @warning Consumes PropertiesService quota.
+     */
     get(key: string, defaultVal?: string | null): string | null;
+    /**
+     * @warning Consumes PropertiesService quota.
+     */
     getChunked<T>(baseKey: string, defaultVal?: T): T;
+    /**
+     * @warning Consumes PropertiesService quota.
+     */
     getJSON<T>(key: string, defaultVal?: T): T;
+    /**
+     * @warning Consumes PropertiesService quota.
+     */
     set(key: string, val: string | number | boolean): void;
+    /**
+     * @warning Consumes PropertiesService quota and LockService quota.
+     */
     setChunked(baseKey: string, val: any): boolean;
+    /**
+     * @warning Consumes PropertiesService quota.
+     */
     setJSON(key: string, val: any): boolean;
   };
   compress(data: any): string;
@@ -73,14 +116,27 @@ export interface IStore {
    ========================================================================== */
 const StoreInternal = {
   /**
-   * Safe RegExp escaping
+   * Escapes strings for use in Regular Expressions.
+   *
+   * @remarks
+   * Essential for chunking operations where the baseKey contains special
+   * characters (e.g. parentheses or brackets in player tags or complex keys).
    */
   escapeRegex(string: string): string {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   },
 
   /**
-   * Generic Chunk Reader
+   * Reassembles data that was split across multiple storage slots.
+   *
+   * @remarks
+   * This implements a "Fallback & Scan" strategy:
+   * 1. Attempt a direct read (legacy or small data).
+   * 2. If direct read fails, scan all available keys for indexed chunks
+   *    matching the baseKey pattern.
+   *
+   * This approach ensures backward compatibility with unchunked data while
+   * allowing the system to scale beyond platform limits.
    */
   readChunks(
     baseKey: string,
@@ -110,12 +166,23 @@ const StoreInternal = {
     if (chunks.length === 0) return null;
 
     // 3. Reassemble
+    // Intent: Sorting ensures chunks are rejoined in the correct sequence.
     chunks.sort((a, b) => a.index - b.index);
     return chunks.map((c: { val: string }) => c.val).join("");
   },
 
   /**
-   * Generic Chunk Writer
+   * Splits large data into multiple storage slots.
+   *
+   * @remarks
+   * Implements a "Write & Prune" strategy:
+   * 1. Deterministically calculates the number of chunks required.
+   * 2. Overwrites or creates the necessary chunk slots.
+   * 3. Prunes "orphan" chunks—leftovers from previous larger writes that
+   *    are no longer part of the current data set.
+   *
+   * This prevents storage bloat and "Ghost Data" bugs where partial old
+   * data is appended to new data during reassembly.
    */
   writeChunks(
     baseKey: string,
@@ -134,6 +201,8 @@ const StoreInternal = {
     }
 
     // 2. Prune orphans
+    // Intent: Identify and remove any indices (e.g. chunk_5) that existed in
+    // the previous write but are beyond the new totalChunks limit.
     const safeKey = this.escapeRegex(baseKey);
     const chunkPattern = new RegExp(`^${safeKey}_(\\d+)$`);
     const allKeys = scanner();
@@ -147,11 +216,19 @@ const StoreInternal = {
     });
 
     // 3. Clear base key
+    // Intent: We clear the base key to signify that this item is now
+    // exclusively managed in chunked mode.
     deleter(baseKey);
   },
 
   /**
-   * GZIP Compression
+   * Transparent GZIP Compression.
+   *
+   * @remarks
+   * Uses a threshold (2KB) to balance CPU overhead with storage savings.
+   * Compressing tiny objects often results in larger base64 strings due to
+   * GZIP header overhead; the threshold ensures we only compress when
+   * significant gains are expected.
    */
   compress(data: any): string {
     try {
@@ -174,10 +251,11 @@ const StoreInternal = {
   },
 
   /**
-   * GZIP Decompression
+   * Transparent GZIP Decompression.
    */
   decompress(str: string): any {
     try {
+      // Intent: If the string lacks our custom prefix, we assume it's raw JSON.
       if (!str || !str.startsWith(CONSTANTS.COMPRESSION.PREFIX)) return JSON.parse(str);
       // @ts-ignore
       if (typeof Utilities === "undefined") return JSON.parse(str);
@@ -195,7 +273,12 @@ const StoreInternal = {
   },
 
   /**
-   * Atomic Locking Wrapper
+   * High-Level Concurrency Guard.
+   *
+   * @remarks
+   * Wraps operations in a Google LockService script lock. This is critical
+   * for "Read-Modify-Write" cycles (like chunking) where concurrent executions
+   * could otherwise result in partial writes or race conditions.
    */
   withLock<T>(key: string, task: () => T, timeoutMs = 10000): T {
     // @ts-ignore
