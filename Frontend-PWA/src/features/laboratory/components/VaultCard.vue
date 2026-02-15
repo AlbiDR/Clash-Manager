@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "../../../shared/ui/Icon.vue";
-import { type Inventory } from "../logic/Laboratory_Types";
+import { type Inventory } from "@/logic/Laboratory/Types";
 defineProps<{
   inventory: Inventory;
   isSimulating: boolean;

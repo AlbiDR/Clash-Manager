@@ -30,11 +30,11 @@ const localStorageMock = {
 };
 vi.stubGlobal('localStorage', localStorageMock);
 
-// Mock LaboratoryKernel and LaboratoryAdapter
-vi.mock('../../logic/Laboratory_Kernel', () => ({
-  default: {
-    optimize: vi.fn(() => ({ actions: [], totalXpGained: 0 }))
-  }
+// --- Logic Mocks ---
+vi.mock('@/logic/Laboratory/Simulation', () => ({
+  calculateProgressionPath: vi.fn(function* () {
+    yield { history: [], totalXp: 0, inventory: { gold: 0, gems: 0, wildCards: {} } };
+  })
 }));
 
 describe('useLaboratory', () => {
@@ -47,12 +47,12 @@ describe('useLaboratory', () => {
   });
 
   it('should initialize settings from localStorage', async () => {
-    localStorageMock.setItem('laboratory_settings', JSON.stringify({ strategy: 'Efficiency', allowGemSpending: true }));
+    localStorageMock.setItem('laboratory_settings', JSON.stringify({ strategy: 'Resource Efficiency', allowGemSpending: true }));
 
     const { useLaboratory } = await import('../useLaboratory');
     const { settings } = useLaboratory();
 
-    expect(settings.value.strategy).toBe('Efficiency');
+    expect(settings.value.strategy).toBe('Resource Efficiency');
     expect(settings.value.allowGemSpending).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe('useLaboratory', () => {
     const { useLaboratory } = await import('../useLaboratory');
     const { settings } = useLaboratory();
 
-    expect(settings.value.strategy).toBe('Projection');
+    expect(settings.value.strategy).toBe('Level Projection');
   });
 
   it('should hydrate from cache if tag matches', async () => {
@@ -127,7 +127,7 @@ describe('useLaboratory', () => {
 
     ingest({ name: 'User', tag: '#TAG123', expLevel: 14, expPoints: 0, cards: [] });
 
-    setSettings({ strategy: 'Efficiency' });
-    expect(settings.value.strategy).toBe('Efficiency');
+    setSettings({ strategy: 'Resource Efficiency' });
+    expect(settings.value.strategy).toBe('Resource Efficiency');
   });
 });

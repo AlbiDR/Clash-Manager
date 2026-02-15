@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "../../../shared/ui/Icon.vue";
-import { type UpgradeAction } from "../logic/Laboratory_Types";
+import { type UpgradeAction } from "@/logic/Laboratory/Types";
 defineProps<{
   upgrade: UpgradeAction;
   index: number;
@@ -20,7 +20,12 @@ const baseUrl = import.meta.env.BASE_URL;
     :style="{ '--i': index }"
   >
     <div class="upgrade-info">
-      <!-- Line 1: Level Progression -->
+      <!-- Line 1: Card Name -->
+      <div class="name-row">
+        <span class="card-name">{{ upgrade.cardName }}</span>
+      </div>
+
+      <!-- Line 2: Level Progression -->
       <div class="level-row">
         <div class="level-pill">
           <span class="prev">{{ upgrade.currentLevel }}</span>
@@ -31,25 +36,11 @@ const baseUrl = import.meta.env.BASE_URL;
         <span v-if="upgrade.isTowerTroop" class="tower-badge">Tower</span>
       </div>
 
-      <!-- Line 2: Card Name (Prominent) -->
-      <div class="name-row">
-        <span class="card-name">{{ upgrade.cardName }}</span>
-      </div>
-
-      <!-- Line 3: Efficiency Metrics (Inverted Ratios) -->
-      <div class="efficiency-row">
-        <div class="efficiency-slab gold">
-          <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="eff-icon" alt="Gold" />
-          <div class="eff-divider">/</div>
-          <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="eff-icon" alt="XP" />
-          <span class="eff-val">{{ (upgrade.goldCost / upgrade.xpGained).toFixed(2) }}</span>
-        </div>
-        <div v-if="upgrade.gemsUsed > 0" class="efficiency-slab gems">
-          <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="eff-icon" alt="Gems" />
-          <div class="eff-divider">/</div>
-          <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="eff-icon" alt="XP" />
-          <span class="eff-val">{{ (upgrade.gemsUsed / upgrade.xpGained).toFixed(3) }}</span>
-        </div>
+      <!-- Line 3: Efficiency Index -->
+      <div class="efficiency-slab efficiency">
+        <Icon name="psychology" size="12" class="eff-icon" />
+        <span class="eff-val">{{ upgrade.efficiencyIndex.toFixed(2) }}</span>
+        <span class="eff-label">EFFICIENCY</span>
       </div>
     </div>
 
@@ -128,6 +119,7 @@ const baseUrl = import.meta.env.BASE_URL;
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: flex-start; /* Ensure all children are left-aligned and don't stretch */
   gap: 6px;
   min-width: 0;
 }
@@ -197,16 +189,17 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .efficiency-slab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 2px 6px; /* Reduced padding for tighter fit */
   background: var(--sys-color-surface-container);
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
   font-weight: 800;
+  width: fit-content;
 }
 
 .efficiency-slab.gold {
@@ -214,9 +207,17 @@ const baseUrl = import.meta.env.BASE_URL;
   background: rgba(255, 204, 0, 0.03);
 }
 
-.efficiency-slab.gems {
-  border-left: 2px solid #00ff88;
-  background: rgba(0, 255, 136, 0.03);
+.efficiency-slab.efficiency {
+  border-left: 2px solid var(--sys-color-primary);
+  background: rgba(var(--sys-color-primary-rgb), 0.05);
+}
+
+.eff-label {
+  font-size: 8px;
+  font-weight: 900;
+  opacity: 0.5;
+  letter-spacing: 0.05em;
+  text-align: left;
 }
 
 .eff-icon {
@@ -234,7 +235,6 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .eff-val {
   color: var(--sys-color-on-surface);
-  margin-left: 2px;
 }
 
 .cost-stack {
@@ -246,12 +246,14 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .cost-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 20px; /* Fixed width for the icon slot */
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-family: var(--sys-font-family-mono);
-  font-size: 15px; /* Equalized font size */
+  font-size: 15px;
   font-weight: 850;
+  text-align: right;
 }
 
 .cost-item.wild { color: var(--sys-color-primary); }
@@ -266,6 +268,7 @@ const baseUrl = import.meta.env.BASE_URL;
   width: 16px;
   height: 16px;
   object-fit: contain;
+  justify-self: center; /* Center horizontally within the 20px grid column */
 }
 
 .res-icon.sm {
