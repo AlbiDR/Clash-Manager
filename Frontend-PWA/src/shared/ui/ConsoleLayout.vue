@@ -260,7 +260,7 @@ onUnmounted(() => {
   will-change: transform;
 }
 .list-container {
-  padding-bottom: 32px;
+  padding-bottom: 120px;
   position: relative;
 }
 .gpu-contain {
