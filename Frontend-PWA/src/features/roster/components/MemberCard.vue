@@ -9,7 +9,6 @@ import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed, defineAsyncComponent } from "vue";
 import type { LeaderboardMember } from "@core/types";
 import {
-  getScoreTone,
   formatRole,
   formatTimeAgo,
 } from "@core/utils/formatters";
@@ -44,7 +43,6 @@ const { modules } = useAppSettings();
 
 // Formatters
 const roleInfo = (role: string) => formatRole(role);
-const scoreTone = (score: number) => getScoreTone(score);
 </script>
 
 <template>

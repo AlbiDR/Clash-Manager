@@ -7,7 +7,7 @@ import { useAppSettings } from "@core/services/useAppSettings";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed } from "vue";
 import type { Recruit } from "@core/types";
-import { getScoreTone, formatTimeAgo } from "@core/utils/formatters";
+import { formatTimeAgo } from "@core/utils/formatters";
 const {
   id,
   recruit,
@@ -32,7 +32,6 @@ const emit = defineEmits<{
 const { getSafeBenchmark } = useBenchmarking();
 const { modules } = useAppSettings();
 
-const toneClass = computed(() => getScoreTone(recruit.potentialScore));
 const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 </script>
 
