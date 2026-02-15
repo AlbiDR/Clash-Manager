@@ -47,6 +47,7 @@ export interface UpgradeAction {
   readonly gemsUsed: Gems;
   readonly xpGained: XP;
   readonly efficiencyRatio: number;
+  readonly priorityScore: number;
   readonly upgradeType: "Direct" | "Wild" | "Gem";
   readonly isTowerTroop: boolean;
 }
