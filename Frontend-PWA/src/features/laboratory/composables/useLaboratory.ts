@@ -126,8 +126,17 @@ export function useLaboratory() {
     if (!observation.value) return
     isSimulating.value = true
     
+    const s = settings.value;
+    const forceInfinite = s.strategy === "Level Projection";
+    
+    // Create actual settings for the engine
+    const engineSettings: OptimizationSettings = {
+      ...s,
+      infiniteResources: forceInfinite
+    };
+
     const initialState = ProfileHydrator.createInitialState(observation.value);
-    currentSimulation = calculateProgressionPath(initialState, settings.value);
+    currentSimulation = calculateProgressionPath(initialState, engineSettings);
 
     const processBatch = () => {
       if (!currentSimulation) return;
@@ -226,7 +235,14 @@ export function useLaboratory() {
   }
 
   function setSettings(newSettings: Partial<OptimizationSettings>) {
-    settings.value = { ...settings.value, ...newSettings }
+    const nextSettings = { ...settings.value, ...newSettings };
+    
+    // Auto-toggle infiniteResources based on strategy
+    if (newSettings.strategy) {
+      nextSettings.infiniteResources = (newSettings.strategy === "Level Projection");
+    }
+
+    settings.value = nextSettings;
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings.value));
     analyze()
   }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PriorityQueue } from '../PriorityQueue';
-import { FormulaicStrategy } from '../ScoringStrategy';
+import { ProjectionStrategy } from '../ScoringStrategy';
 import type { UpgradeCandidate, OptimizationSettings } from '../Types';
 import { asGems, asGold, asXP } from '../Economy';
 
@@ -41,7 +41,7 @@ describe('Laboratory Engine Components', () => {
   });
 
   describe('FormulaicStrategy', () => {
-    const strategy = new FormulaicStrategy();
+    const strategy = new ProjectionStrategy();
     const mockSettings: OptimizationSettings = {
       allowGemSpending: false,
       infiniteResources: false,
