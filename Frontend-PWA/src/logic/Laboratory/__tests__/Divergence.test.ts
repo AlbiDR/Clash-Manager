@@ -67,7 +67,7 @@ describe('Strategic Divergence', () => {
       wildCardsUsed: 5000,
       gemsUsed: asGems(0),
       xpGained: asXP(50000),
-      efficiencyRatio: 0
+      efficiencyIndex: 0
     };
 
     const proj = new ProjectionStrategy();

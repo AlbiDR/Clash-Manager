@@ -36,10 +36,10 @@ const baseUrl = import.meta.env.BASE_URL;
         <span class="card-name">{{ upgrade.cardName }}</span>
       </div>
 
-        <div class="efficiency-slab priority">
+        <div class="efficiency-slab efficiency">
           <Icon name="psychology" size="12" class="eff-icon" />
-          <span class="eff-label">PRIORITY</span>
-          <span class="eff-val">{{ upgrade.priorityScore.toFixed(2) }}</span>
+          <span class="eff-label">EFFICIENCY</span>
+          <span class="eff-val">{{ upgrade.efficiencyIndex.toFixed(2) }}</span>
         </div>
     </div>
 
@@ -195,8 +195,8 @@ const baseUrl = import.meta.env.BASE_URL;
   border-radius: 8px;
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
-  font-size: 11px;
-  font-weight: 800;
+  width: fit-content;
+  align-self: flex-start;
 }
 
 .efficiency-slab.gold {
@@ -204,7 +204,7 @@ const baseUrl = import.meta.env.BASE_URL;
   background: rgba(255, 204, 0, 0.03);
 }
 
-.efficiency-slab.priority {
+.efficiency-slab.efficiency {
   border-left: 2px solid var(--sys-color-primary);
   background: rgba(var(--sys-color-primary-rgb), 0.05);
   gap: 4px;
