@@ -4,6 +4,24 @@ import type { MomentumInfo } from "@core/types";
  * Centralized formatting utilities for consistency across the application.
  */
 
+// --- STATIC ASSETS (Hoisted for Performance) ---
+const TIME_UNITS = [
+  { s: 31536000, t: "y", l: "y ago" },
+  { s: 2592000, t: "mo", l: "mo ago" },
+  { s: 604800, t: "w", l: "w ago" },
+  { s: 86400, t: "d", l: "d ago" },
+  { s: 3600, t: "h", l: "h ago" },
+  { s: 60, t: "m", l: "m ago" },
+] as const;
+
+const RE_CUSTOM_DATE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/;
+const RE_TAG_HASH = /^#/;
+const RE_DESC_SECTION = /^(\*\*.*?\*\*|.*?:)\s*$/gm;
+const RE_DESC_BOLD = /\*\*(.*?)\*\*/g;
+const RE_DESC_BULLET = /^• (.+)$/gm;
+const RE_DESC_LIST = /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li class="bullet-item">))?)+/g;
+const RE_NEWLINE = /\n/g;
+
 export function getScoreTone(score: number | undefined): string {
   const s = score || 0;
   if (s >= 80) return "tone-high";
@@ -26,16 +44,7 @@ const formatTime = (
 
   if (seconds < 0) return shortMode ? "New" : "Just now";
 
-  const units = [
-    { s: 31536000, t: "y", l: "y ago" },
-    { s: 2592000, t: "mo", l: "mo ago" },
-    { s: 604800, t: "w", l: "w ago" },
-    { s: 86400, t: "d", l: "d ago" },
-    { s: 3600, t: "h", l: "h ago" },
-    { s: 60, t: "m", l: "m ago" },
-  ];
-
-  for (const unit of units) {
+  for (const unit of TIME_UNITS) {
     if (seconds >= unit.s) {
       const value = Math.floor(seconds / unit.s);
       return shortMode ? `${value}${unit.t}` : `${value}${unit.l}`;
@@ -71,7 +80,7 @@ export function parseTimeAgoValue(val: string | null | undefined): number {
 
   // 1. Try parsing custom format: dd/MM/yyyy HH.mm.ss (Project Standard)
   // Example: "02/02/2026 18.46.52"
-  const customMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/);
+  const customMatch = val.match(RE_CUSTOM_DATE);
   if (customMatch) {
     const day = parseInt(customMatch[1], 10);
     const month = parseInt(customMatch[2], 10) - 1; // JS months are 0-indexed
@@ -150,7 +159,7 @@ export function formatRole(roleStr: string): { label: string; class: string } {
  */
 export function cleanTag(tag: string | undefined): string {
   if (!tag) return "";
-  return tag.replace(/^#/, "").toUpperCase().trim();
+  return tag.replace(RE_TAG_HASH, "").toUpperCase().trim();
 }
 /**
  * 🧹 DESCRIPTION FORMATTER
@@ -162,25 +171,19 @@ export function formatHeaderDescription(text: string): string {
   return (
     text
       // Section headers (Key: Value or Title:)
-      .replace(
-        /^(\*\*.*?\*\*|.*?:)\s*$/gm,
-        '<div class="desc-section-title">$1</div>',
-      )
+      .replace(RE_DESC_SECTION, '<div class="desc-section-title">$1</div>')
       // Bold text (**text**)
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(RE_DESC_BOLD, "<strong>$1</strong>")
       // Bullet points (• item)
-      .replace(/^• (.+)$/gm, '<li class="bullet-item">$1</li>')
+      .replace(RE_DESC_BULLET, '<li class="bullet-item">$1</li>')
       // Wrap lists in ul (BEFORE converting newlines to <br>)
       // ⚡ FIX: Use non-greedy matching and group only consecutive li elements.
       // We use a lookahead (?=<li) to ensure we only eat newlines BETWEEN items,
       // preserving the trailing newline after the last item for proper spacing.
-      .replace(
-        /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li class="bullet-item">))?)+/g,
-        (match) => {
-          return `<ul class="desc-list">${match.trim().replace(/\n/g, "")}</ul>`;
-        },
-      )
+      .replace(RE_DESC_LIST, (match) => {
+        return `<ul class="desc-list">${match.trim().replace(RE_NEWLINE, "")}</ul>`;
+      })
       // Actual Line breaks
-      .replace(/\n/g, "<br>")
+      .replace(RE_NEWLINE, "<br>")
   );
 }
