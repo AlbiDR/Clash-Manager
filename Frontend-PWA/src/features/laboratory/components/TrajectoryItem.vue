@@ -20,7 +20,12 @@ const baseUrl = import.meta.env.BASE_URL;
     :style="{ '--i': index }"
   >
     <div class="upgrade-info">
-      <!-- Line 1: Level Progression -->
+      <!-- Line 1: Card Name -->
+      <div class="name-row">
+        <span class="card-name">{{ upgrade.cardName }}</span>
+      </div>
+
+      <!-- Line 2: Level Progression -->
       <div class="level-row">
         <div class="level-pill">
           <span class="prev">{{ upgrade.currentLevel }}</span>
@@ -31,16 +36,12 @@ const baseUrl = import.meta.env.BASE_URL;
         <span v-if="upgrade.isTowerTroop" class="tower-badge">Tower</span>
       </div>
 
-      <!-- Line 2: Card Name (Prominent) -->
-      <div class="name-row">
-        <span class="card-name">{{ upgrade.cardName }}</span>
+      <!-- Line 3: Efficiency Index -->
+      <div class="efficiency-slab efficiency">
+        <Icon name="psychology" size="12" class="eff-icon" />
+        <span class="eff-val">{{ upgrade.efficiencyIndex.toFixed(2) }}</span>
+        <span class="eff-label">EFFICIENCY</span>
       </div>
-
-        <div class="efficiency-slab efficiency">
-          <Icon name="psychology" size="12" class="eff-icon" />
-          <span class="eff-label">EFFICIENCY</span>
-          <span class="eff-val">{{ upgrade.efficiencyIndex.toFixed(2) }}</span>
-        </div>
     </div>
 
     <div class="cost-stack">
@@ -207,7 +208,8 @@ const baseUrl = import.meta.env.BASE_URL;
 .efficiency-slab.efficiency {
   border-left: 2px solid var(--sys-color-primary);
   background: rgba(var(--sys-color-primary-rgb), 0.05);
-  gap: 4px;
+  gap: 6px;
+  padding: 4px 8px; /* Removed extra leading space */
 }
 
 .eff-label {
@@ -244,12 +246,14 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .cost-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 20px; /* Fixed width for the icon slot */
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-family: var(--sys-font-family-mono);
-  font-size: 15px; /* Equalized font size */
+  font-size: 15px;
   font-weight: 850;
+  text-align: right;
 }
 
 .cost-item.wild { color: var(--sys-color-primary); }
@@ -264,6 +268,7 @@ const baseUrl = import.meta.env.BASE_URL;
   width: 16px;
   height: 16px;
   object-fit: contain;
+  justify-self: center; /* Center horizontally within the 20px grid column */
 }
 
 .res-icon.sm {
