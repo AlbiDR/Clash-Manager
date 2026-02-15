@@ -8,7 +8,9 @@ const props = defineProps<{
   selected: boolean;
   selectionMode?: boolean;
   isTagged?: boolean;
-  // Optional tonal class for the score pod (e.g. 'tone-high', 'tone-mid')
+  // Optional score for dynamic pod coloring (0-100)
+  score?: number;
+  // Optional tonal class as fallback
   toneClass?: string;
   // For accessibility
   headerLabel?: string;
@@ -59,7 +61,11 @@ function handleScoreClick(e: Event) {
       <div class="header-actions">
         <!-- Score Section -->
         <div class="score-section" @click.stop="handleScoreClick">
-          <div class="stat-pod hit-target" :class="toneClass">
+          <div
+            class="stat-pod hit-target"
+            :class="toneClass"
+            :style="score !== undefined ? { '--score-pct': `${score}%` } : {}"
+          >
             <slot name="score-section"></slot>
           </div>
         </div>
@@ -222,29 +228,48 @@ function handleScoreClick(e: Event) {
   position: relative;
   width: 48px;
   height: 48px;
-  background: var(--sys-color-surface-container-highest);
+  /* 🪄 SEMANTIC CONTAINER SCALING:
+     Using primary-container ensures mathematical contrast 
+     coherence across themes:
+     - Dark Mode: Surface -> Deep Blue (Light text remains legible)
+     - Light Mode: Surface -> Pale Blue (Dark text remains legible) */
+  background: color-mix(
+    in srgb,
+    var(--sys-color-primary-container) var(--score-pct, 0%),
+    var(--sys-color-surface-container-highest)
+  );
+  background-image: radial-gradient(
+    circle at 20% 20%,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 60%
+  );
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 900;
-  font-family: var(--sys-font-family-mono);
-  transition: transform 0.2s;
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.3s ease;
+  contain: layout;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 .stat-pod:hover {
-  transform: scale(1.05);
+  transform: scale(1.1);
+  z-index: 10;
 }
-.stat-pod.tone-high {
-  background: var(--sys-color-primary);
-  color: #000000;
+
+/* 🎨 UNIFORM COHERENCE (Semantic Contrast) */
+.stat-pod :deep(.stat-score) {
+  color: var(--sys-color-on-surface) !important;
+  opacity: 0.95;
+  /* Clean elevation without sticker-effect */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
-.stat-pod.tone-mid {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-}
-:root.dark .stat-pod.tone-high {
-  color: #FFFFFF;
+
+/* Selected state override remains consistent */
+.card.selected :deep(.stat-pod) {
+  background: rgba(var(--sys-color-on-primary-container-rgb), 0.15) !important;
+  border-color: transparent !important;
 }
 
 .card-body {
@@ -321,9 +346,19 @@ function handleScoreClick(e: Event) {
 }
 
 :deep(.stat-score) {
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 19px;
+  font-weight: 950;
   font-family: var(--sys-font-family-mono);
+  letter-spacing: -0.05em;
+  z-index: 1;
+}
+
+:deep(.stat-accessory) {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  pointer-events: none;
 }
 
 :deep(.btn-action) {

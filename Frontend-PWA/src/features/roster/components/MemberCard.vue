@@ -54,7 +54,7 @@ const scoreTone = (score: number) => getScoreTone(score);
     :selected="selected"
     :selection-mode="selectionMode"
     :is-tagged="isTagged"
-    :tone-class="scoreTone(member.performanceScore)"
+    :score="member.performanceScore"
     :aria-label="`${member.n}, score ${Math.round(member.performanceScore)}, ${roleInfo(member.d.role).label}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
@@ -91,10 +91,12 @@ const scoreTone = (score: number) => getScoreTone(score);
         v-tooltip="getSafeBenchmark('lb', 'score', member.performanceScore)"
         >{{ Math.round(member.performanceScore || 0) }}</span
       >
-      <MomentumPill
-        :dt="member.dt"
-        :performance-raw-score="member.performanceRawScore"
-      />
+      <div class="stat-accessory">
+        <MomentumPill
+          :dt="member.dt"
+          :performance-raw-score="member.performanceRawScore"
+        />
+      </div>
     </template>
 
     <!-- Expanded Content -->
