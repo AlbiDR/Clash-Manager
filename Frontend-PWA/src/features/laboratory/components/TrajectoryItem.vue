@@ -119,6 +119,7 @@ const baseUrl = import.meta.env.BASE_URL;
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: flex-start; /* Ensure all children are left-aligned and don't stretch */
   gap: 6px;
   min-width: 0;
 }
@@ -188,20 +189,17 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .efficiency-slab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 8px; /* Matched to .level-pill */
+  gap: 5px;
+  padding: 2px 6px; /* Reduced padding for tighter fit */
   background: var(--sys-color-surface-container);
-  border-radius: 6px; /* Matched to .level-pill */
+  border-radius: 6px;
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
   font-weight: 800;
   width: fit-content;
-  display: inline-flex; /* More compact than display: flex */
-  align-items: center;
-  gap: 4px; /* Tightening space between icon/value/label */
 }
 
 .efficiency-slab.gold {
@@ -219,6 +217,7 @@ const baseUrl = import.meta.env.BASE_URL;
   font-weight: 900;
   opacity: 0.5;
   letter-spacing: 0.05em;
+  text-align: left;
 }
 
 .eff-icon {
@@ -236,7 +235,6 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .eff-val {
   color: var(--sys-color-on-surface);
-  margin-left: 2px;
 }
 
 .cost-stack {
