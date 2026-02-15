@@ -150,3 +150,7 @@ export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
   2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75
 ];
 
+export const EFFICIENCY_OVERRIDES: Readonly<Record<string, number>> = {
+  // Add specific card overrides here if necessary
+};
+

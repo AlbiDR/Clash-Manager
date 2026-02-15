@@ -30,8 +30,10 @@ import {
   LOOKAHEAD_PRECISION
 } from './Registry';
 import { PriorityQueue } from './PriorityQueue';
+import type { 
+  ScoringStrategy 
+} from './ScoringStrategy';
 import { 
-  ScoringStrategy, 
   ProjectionStrategy, 
   InventoryStrategy 
 } from './ScoringStrategy';
