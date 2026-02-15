@@ -234,7 +234,10 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .eff-val {
-  color: var(--sys-color-on-surface);
+  color: #000000;
+}
+:root.dark .eff-val {
+  color: #FFFFFF;
 }
 
 .cost-stack {
