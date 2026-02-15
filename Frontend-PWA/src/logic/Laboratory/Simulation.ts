@@ -25,7 +25,9 @@ import {
   MATERIAL_REQUIREMENTS, 
   GEM_CONVERSION_RATES, 
   EFFICIENCY_OVERRIDES, 
-  KING_XP_TABLE 
+  KING_XP_TABLE,
+  LOOKAHEAD_WEIGHT,
+  LOOKAHEAD_PRECISION
 } from './Registry';
 import { PriorityQueue } from './PriorityQueue';
 import { 
@@ -120,7 +122,7 @@ function buildCandidate(
     wildCardsUsed: finalWildUsed,
     gemsUsed,
     xpGained: xpGain,
-    efficiencyRatio: 0 // Placeholder, strategy will populate
+    efficiencyIndex: 0 // Placeholder, strategy will populate
   };
 }
 
@@ -154,8 +156,7 @@ function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): Simu
     wildCardsUsed: candidate.wildCardsUsed,
     gemsUsed: candidate.gemsUsed,
     xpGained: candidate.xpGained,
-    efficiencyRatio: candidate.efficiencyRatio,
-    priorityScore: candidate.efficiencyRatio,
+    efficiencyIndex: candidate.efficiencyIndex,
     upgradeType: candidate.gemsUsed > 0 ? "Gem" : (candidate.wildCardsUsed > 0 ? "Wild" : "Direct"),
     isTowerTroop: targetCard.isTowerTroop
   };
@@ -193,13 +194,13 @@ export function* calculateProgressionPath(
   );
   
   // Initialize Priority Queue
-  const pq = new PriorityQueue<UpgradeCandidate>((a, b) => a.efficiencyRatio - b.efficiencyRatio);
+  const pq = new PriorityQueue<UpgradeCandidate>((a, b) => a.efficiencyIndex - b.efficiencyIndex);
 
   // Initial population of the queue
   for (let i = 0; i < currentState.roster.length; i++) {
     const candidate = buildCandidate(currentState.roster[i], i, currentState.inventory, settings);
     if (candidate) {
-      candidate.efficiencyRatio = calculateAdvancedScore(candidate, currentState, settings, strategy);
+      candidate.efficiencyIndex = calculateAdvancedScore(candidate, currentState, settings, strategy);
       pq.push(candidate);
     }
   }
@@ -229,7 +230,7 @@ export function* calculateProgressionPath(
     );
 
     if (nextCandidate) {
-      nextCandidate.efficiencyRatio = calculateAdvancedScore(nextCandidate, currentState, settings, strategy);
+      nextCandidate.efficiencyIndex = calculateAdvancedScore(nextCandidate, currentState, settings, strategy);
       pq.push(nextCandidate);
     }
 
@@ -253,29 +254,49 @@ export function* calculateProgressionPath(
 }
 
 /**
- * Calculates score with Multi-Step Lookahead.
- * Score = CurrentStepScore + (NextStepScore * 0.4)
+ * Calculates score with Recursive Chain Lookahead.
+ * Evaluates the "character arc" of a card to avoid greedy traps.
+ * Score = Sum(StepScore[i] * 0.4^i)
  */
 function calculateAdvancedScore(
   candidate: UpgradeCandidate, 
   state: SimulationState, 
   settings: OptimizationSettings,
-  strategy: ScoringStrategy
+  strategy: ScoringStrategy,
+  depth: number = 0
 ): number {
   const currentScore = strategy.calculateScore(candidate, settings);
   
-  // Multi-Step Lookahead Logic
+  // Principled Convergence: Stop if the future weight is statistically insignificant
+  const currentWeightFactor = Math.pow(LOOKAHEAD_WEIGHT, depth);
+  if (currentWeightFactor < LOOKAHEAD_PRECISION) {
+    return currentScore;
+  }
+
+  // Domain Boundary: Stop if we've reached the theoretical game limit
+  if (candidate.toLevel >= CARD_LEVEL_CAP) {
+    return currentScore;
+  }
+
   // We simulate what happens if we upgrade this specific card to its NEXT level.
   const virtualCard = { ...candidate.card, level: candidate.toLevel };
-  const virtualInventory = { ...state.inventory }; // Simple shadow inventory
+  const virtualInventory = { ...state.inventory };
+  
   virtualInventory.gold = subGold(virtualInventory.gold, candidate.goldCost);
   virtualInventory.gems = subGems(virtualInventory.gems, candidate.gemsUsed);
 
   const nextPotential = buildCandidate(virtualCard, candidate.index, virtualInventory, settings);
+  
   if (nextPotential) {
-    const nextScore = strategy.calculateScore(nextPotential, settings);
-    // Weighted lookahead avoids greedy traps (e.g. taking a cheap level now that prevents a massive value level later)
-    return currentScore + (nextScore * 0.4);
+    const nextScore = calculateAdvancedScore(
+      nextPotential, 
+      state, 
+      settings,
+      strategy,
+      depth + 1
+    );
+    // Weighted chain avoids local optima.
+    return currentScore + (nextScore * LOOKAHEAD_WEIGHT);
   }
 
   return currentScore;

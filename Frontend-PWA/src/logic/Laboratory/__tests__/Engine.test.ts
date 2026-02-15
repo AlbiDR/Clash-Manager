@@ -60,7 +60,7 @@ describe('Laboratory Engine Components', () => {
         wildCardsUsed: 0,
         gemsUsed: asGems(0),
         xpGained: asXP(100),
-        efficiencyRatio: 0
+        efficiencyIndex: 0
       };
 
       const highLevelCandidate: UpgradeCandidate = {
@@ -88,7 +88,7 @@ describe('Laboratory Engine Components', () => {
         wildCardsUsed: 0,
         gemsUsed: asGems(0),
         xpGained: asXP(0), // Division by zero risk
-        efficiencyRatio: 0
+        efficiencyIndex: 0
       };
 
       const score = strategy.calculateScore(edgeCase, mockSettings);

@@ -11,6 +11,10 @@ export const CARD_RARITY_START_LEVELS: Readonly<Record<Rarity, number>> = {
   "Champion": 11
 };
 
+// --- Logic Calibration (Engine 2.3) ---
+export const LOOKAHEAD_WEIGHT = 0.4;
+export const LOOKAHEAD_PRECISION = 0.01;
+
 export const GOLD_COST_TABLE: Readonly<Record<number, Gold>> = {
   2: asGold(5), 3: asGold(20), 4: asGold(50), 5: asGold(150), 6: asGold(400), 7: asGold(1000), 8: asGold(2000),
   9: asGold(4000), 10: asGold(8000), 11: asGold(15000), 12: asGold(25000), 13: asGold(40000), 14: asGold(60000), 15: asGold(90000), 16: asGold(120000)

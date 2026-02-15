@@ -46,8 +46,7 @@ export interface UpgradeAction {
   readonly wildCardsUsed: number;
   readonly gemsUsed: Gems;
   readonly xpGained: XP;
-  readonly efficiencyRatio: number;
-  readonly priorityScore: number;
+  readonly efficiencyIndex: number;
   readonly upgradeType: "Direct" | "Wild" | "Gem";
   readonly isTowerTroop: boolean;
 }
@@ -77,7 +76,7 @@ export interface UpgradeCandidate {
   readonly wildCardsUsed: number;
   readonly gemsUsed: Gems;
   readonly xpGained: XP;
-  readonly efficiencyRatio: number;
+  readonly efficiencyIndex: number;
 }
 
 // Legacy compatibility type for the UI
