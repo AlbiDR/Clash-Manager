@@ -37,6 +37,12 @@ export function useTheme() {
       root.classList.remove("dark");
     }
 
+    // Update PWA theme color meta tag to match the background color
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", isDark ? "#0b0e14" : "#fdfcff");
+    }
+
     // Update manifest screenshots
     updateManifest();
   }

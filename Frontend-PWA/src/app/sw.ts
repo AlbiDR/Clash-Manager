@@ -122,7 +122,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
             type: "badge",
             count: countAboveThreshold,
             shortcutId: "recruit_shortcut_id",
-            url: "/#/recruiter",
+            url: "/#/headhunter",
           },
         } as any);
       } else {
@@ -202,7 +202,7 @@ async function handlePushBadge(payload: PushPayload): Promise<void> {
           type: "badge",
           count: badgeCount,
           shortcutId: "recruit_shortcut_id",
-          url: "/#/recruiter",
+          url: "/#/headhunter",
         },
       } as any,
     );
@@ -272,7 +272,7 @@ async function handleBackgroundSync(): Promise<void> {
               type: "badge",
               count,
               shortcutId: "recruit_shortcut_id",
-              url: "/#/recruiter",
+              url: "/#/headhunter",
               timestamp: Date.now(),
             },
           } as any);
@@ -375,7 +375,7 @@ self.addEventListener("notificationclick", (event: NotificationEvent) => {
         if ("focus" in client) return client.focus();
       }
       if (clients.openWindow)
-        return clients.openWindow("/Clash-Manager/#/recruiter");
+        return clients.openWindow("/Clash-Manager/#/headhunter");
     }),
   );
 });
