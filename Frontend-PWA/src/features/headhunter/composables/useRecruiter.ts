@@ -9,6 +9,7 @@ import { computed, watch, ref } from "vue";
 import { useHeadhunter } from "./useHeadhunter";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
+import { RecruiterSort } from "@core/utils/sortStrategies";
 import type { Recruit } from "@core/types";
 
 /**
@@ -62,23 +63,6 @@ export function useRecruiter() {
     );
   });
 
-  const getTs = (str?: string) => (str ? new Date(str).getTime() : 0);
-
-  const sortStrategies: Record<string, (a: Recruit, b: Recruit) => number> = {
-    score: (a, b) => {
-      // PRIMARY: Normalized Potential Score (0-100)
-      const diff = (b.potentialScore || 0) - (a.potentialScore || 0);
-      if (diff !== 0) return diff;
-      
-      // SECONDARY: Raw Potential Score (Unlimited) - High Precision Tie-Breaker
-      return (b.potentialRawScore || 0) - (a.potentialRawScore || 0);
-    },
-    trophies: (a, b) => (b.t || 0) - (a.t || 0),
-    name: (a, b) => a.n.localeCompare(b.n),
-    time_found: (a, b) => getTs(b.d.ago) - getTs(a.d.ago),
-    donations: (a, b) => (b.d.don || 0) - (a.d.don || 0),
-  };
-
   const controller = useConsoleController({
     data: recruits,
     isHydrated,
@@ -86,7 +70,7 @@ export function useRecruiter() {
     syncError,
     lastSyncTime,
     filterFn: (r: Recruit) => [r.n, r.id],
-    sortStrategies,
+    sortStrategies: RecruiterSort,
     defaultSort: "score",
     deepLinkPrefix: "recruit-",
     batchIdMapper: (r: Recruit) => r.id,

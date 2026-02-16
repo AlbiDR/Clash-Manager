@@ -1,5 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
+import Time from '../../../Backend-GAS/Time';
 
 // We need to mock the environment before importing index.ts
 process.env["API_KEYS"] = "key1,key2,key3";
@@ -33,5 +34,15 @@ describe('Worker Smart Engine logic', () => {
         const backoff = Math.min(10000, (500 * Math.pow(2, attempt)) + 500); // simplified jitter
         expect(backoff).toBeGreaterThanOrEqual(1000);
         expect(backoff).toBeLessThanOrEqual(10000);
+    });
+
+    it('should calculate correct War Week ID (Centralized Logic)', () => {
+        // Monday Jan 1st 2024 at 09:00 UTC (BEFORE RESET) -> should be previous week
+        const d1 = new Date(Date.UTC(2024, 0, 1, 9, 0, 0));
+        expect(Time.calculateWarWeekId(d1)).toBe('23W52');
+
+        // Monday Jan 1st 2024 at 11:00 UTC (AFTER RESET) -> should be Week 1
+        const d2 = new Date(Date.UTC(2024, 0, 1, 11, 0, 0));
+        expect(Time.calculateWarWeekId(d2)).toBe('24W01');
     });
 });

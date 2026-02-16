@@ -294,33 +294,50 @@ const ScoringKernel: IScoringKernel = {
    * 3. War Participation Rate (Reliability)
    * 4. Total Donations (Contribution)
    * 5. Days Tracked (Newer players win ties)
+   *
+   * Performance: Optimized to minimize redundant Number() conversions during O(N log N) sorts.
    */
   compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number {
-    const dPerf = Number(b[idx.PERF_SCORE]) - Number(a[idx.PERF_SCORE]);
+    // 1. Performance Score (Primary Momentum)
+    const bPerf = Number(b[idx.PERF_SCORE]) || 0;
+    const aPerf = Number(a[idx.PERF_SCORE]) || 0;
+    const dPerf = bPerf - aPerf;
     if (dPerf !== 0) return dPerf;
 
-    const dRaw = Number(b[idx.RAW_SCORE]) - Number(a[idx.RAW_SCORE]);
+    // 2. Raw Score (Lifetime Achievement)
+    const bRaw = Number(b[idx.RAW_SCORE]) || 0;
+    const aRaw = Number(a[idx.RAW_SCORE]) || 0;
+    const dRaw = bRaw - aRaw;
     if (dRaw !== 0) return dRaw;
 
-    const getWar = (r: any[]) => Number(r[idx.WAR_RATE]) || 0;
-    const dWar = getWar(b) - getWar(a);
+    // 3. War Participation Rate (Reliability)
+    const bWar = Number(b[idx.WAR_RATE]) || 0;
+    const aWar = Number(a[idx.WAR_RATE]) || 0;
+    const dWar = bWar - aWar;
     if (dWar !== 0) return dWar;
 
-    const dDon = Number(b[idx.TOTAL_DON]) - Number(a[idx.TOTAL_DON]);
+    // 4. Total Donations (Contribution)
+    const bDon = Number(b[idx.TOTAL_DON]) || 0;
+    const aDon = Number(a[idx.TOTAL_DON]) || 0;
+    const dDon = bDon - aDon;
     if (dDon !== 0) return dDon;
 
-    const dDays = Number(a[idx.DAYS]) - Number(b[idx.DAYS]);
+    // 5. Days Tracked (Ascending: Newer players win ties to encourage growth)
+    const bDays = Number(b[idx.DAYS]) || 0;
+    const aDays = Number(a[idx.DAYS]) || 0;
+    const dDays = aDays - bDays; // Ascending
     if (dDays !== 0) return dDays;
 
-    return Number(b[idx.TROPHIES]) - Number(a[idx.TROPHIES]);
+    // 6. Trophies (Final Tie-breaker)
+    const bTrophies = Number(b[idx.TROPHIES]) || 0;
+    const aTrophies = Number(a[idx.TROPHIES]) || 0;
+    return bTrophies - aTrophies;
   }
 };
 
 // Global exports for Google Apps Script and Node.js environments
 // @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = ScoringKernel;
-}
+try { if (typeof module !== "undefined" && module.exports) { module.exports = ScoringKernel; } } catch (e) {}
 
 (function(scope: any) {
   Object.assign(scope, { ScoringKernel, VER_SCORING_KERNEL });
