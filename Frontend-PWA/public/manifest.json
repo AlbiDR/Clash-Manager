@@ -86,13 +86,7 @@
       "label": "Clash Manager Roster (Dark)"
     }
   ],
-  "related_applications": [
-    {
-      "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.supercell.clashroyale",
-      "id": "com.supercell.clashroyale"
-    }
-  ],
+
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
   },
