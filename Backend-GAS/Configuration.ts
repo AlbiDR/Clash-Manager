@@ -222,8 +222,8 @@ export var CONFIG: AppConfig = {
         const numB = parseInt(b.replace("CRK", ""), 10);
         return numA - numB;
       })
-      .map((key: string) => ({ name: key, value: _PROPS[key] }))
-      .filter((k: { name: string; value: string }) => k.value && k.value.trim().length > 0),
+      .map((key: string) => ({ name: key, value: _PROPS[key]! }))
+      .filter((k) => k.value && k.value.trim().length > 0),
 
     TIMEZONE: "Europe/Rome",
     API_BASE: "https://proxy.royaleapi.dev/v1",
