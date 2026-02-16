@@ -13,7 +13,7 @@ import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
-const VER_API_PUBLIC = "11.0.1";
+const VER_API_PUBLIC = "13.1.0";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
