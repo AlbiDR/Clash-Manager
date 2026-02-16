@@ -3,8 +3,8 @@ import { useClashData } from "@core/services/useClashData";
 import { useConsoleController } from "@core/services/useConsoleController";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 import { computed } from "vue";
-import { parseTimeAgoValue } from "@core/utils/formatters";
 import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
+import { LeaderboardSort } from "@core/utils/sortStrategies";
 import type { LeaderboardMember } from "@core/types";
 
 /**
@@ -29,27 +29,6 @@ export function useLeaderboard() {
 
   const members = computed(() => data.value?.lb || []);
 
-  const sortStrategies: Record<
-    string,
-    (a: LeaderboardMember, b: LeaderboardMember) => number
-  > = {
-    score: (a, b) => {
-      // PRIMARY: Normalized Performance Score (0-100)
-      const diff = (b.performanceScore || 0) - (a.performanceScore || 0);
-      if (diff !== 0) return diff;
-      
-      // SECONDARY: Raw Performance Score (Unlimited) - High Precision Tie-Breaker
-      return (b.performanceRawScore || 0) - (a.performanceRawScore || 0);
-    },
-    trend: (a, b) => (b.dt || 0) - (a.dt || 0),
-    trophies: (a, b) => (b.t || 0) - (a.t || 0),
-    name: (a, b) => a.n.localeCompare(b.n),
-    donations_day: (a, b) => (b.d.avg || 0) - (a.d.avg || 0),
-    tenure: (a, b) => (b.d.days || 0) - (a.d.days || 0),
-    last_seen: (a, b) =>
-      parseTimeAgoValue(a.d.seen) - parseTimeAgoValue(b.d.seen),
-  };
-
   const controller = useConsoleController({
     data: members,
     isHydrated,
@@ -57,7 +36,7 @@ export function useLeaderboard() {
     syncError,
     lastSyncTime,
     filterFn: (m: LeaderboardMember) => [m.n, m.id],
-    sortStrategies,
+    sortStrategies: LeaderboardSort,
     defaultSort: "score",
     deepLinkPrefix: "member-",
     batchIdMapper: (m: LeaderboardMember) => m.id,
