@@ -21,8 +21,8 @@ Clash Manager is a production-grade, distributed architecture designed to automa
       <strong>Light Mode</strong>
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #ffffff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="public/assets/branding/roster-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/headhunter-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="Frontend-PWA/public/assets/branding/roster-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="Frontend-PWA/public/assets/branding/headhunter-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
     </div>
   </details>
 
@@ -31,8 +31,8 @@ Clash Manager is a production-grade, distributed architecture designed to automa
       <strong>Dark Mode</strong>
     </summary>
     <div style="display: flex; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="public/assets/branding/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/headhunter-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="Frontend-PWA/public/assets/branding/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="Frontend-PWA/public/assets/branding/headhunter-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
     </div>
   </details>
 </div>
