@@ -115,6 +115,7 @@ onMounted(() => {
 .app-shell {
   min-height: 100vh;
   background-color: var(--sys-color-background);
+  color: var(--sys-color-on-surface);
   overflow-x: hidden;
   transition: outline 0.3s ease;
   display: flex;
