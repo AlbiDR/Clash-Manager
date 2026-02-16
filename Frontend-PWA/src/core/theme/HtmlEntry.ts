@@ -28,7 +28,7 @@ export function generateHtmlEntry(version: string): string {
     
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/branding/favicon.ico" sizes="any" />
-    <link rel="icon" href="assets/icons/pwa-64.png" type="image/png" />
+    <link rel="icon" href="assets/icons/icon-64.png" type="image/png" />
     <link rel="apple-touch-icon" href="assets/icons/pwa-apple.png" />
     
     <title>Clash Manager</title>
