@@ -187,7 +187,9 @@ export const VER_CONFIGURATION = "10.0.18";
 // Fetch all script properties once at initialization
 let _PROPS: Record<string, string> = {};
 try {
-  _PROPS = PropertiesService.getScriptProperties().getProperties();
+  if (typeof PropertiesService !== "undefined") {
+    _PROPS = PropertiesService.getScriptProperties().getProperties();
+  }
 } catch (e: any) {
   console.warn(
     "Could not fetch Script Properties (likely missing permissions). Defaulting to empty config.",
@@ -462,9 +464,7 @@ export var CONFIG: AppConfig = {
   },
 };
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { CONFIG, VER_CONFIGURATION };
-}
+try { if (typeof module !== "undefined" && module.exports) { module.exports = { CONFIG, VER_CONFIGURATION }; } } catch (e) {}
 
 /**
  * GLOBAL BRIDGE

@@ -48,29 +48,47 @@ var Time: ITime = {
   /**
    * Formats a date using the system's precise dot-separated pattern (dd/MM/yyyy HH.mm.ss).
    * Used for sheet-stored values to prevent ambiguous auto-formatting.
+   *
+   * @remarks
+   * GAS-Only: Falls back to ISO string in Node.js environments.
    */
   formatDate(date: Date | null | undefined): string {
     if (!date || isNaN(date.getTime()) || date.getTime() === 0) return "";
-    // @ts-ignore
-    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+    if (typeof Utilities !== "undefined") {
+      // @ts-ignore
+      return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_VALUE);
+    }
+    return date.toISOString().replace("T", " ").split(".")[0] || "";
   },
 
   /**
    * Formats a date using the system's human-readable pattern (dd/MM/yyyy HH:mm).
+   *
+   * @remarks
+   * GAS-Only: Falls back to ISO string in Node.js environments.
    */
   formatDatetime(date: Date | null | undefined): string {
     if (!date || isNaN(date.getTime()) || date.getTime() === 0) return "";
-    // @ts-ignore
-    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
+    if (typeof Utilities !== "undefined") {
+      // @ts-ignore
+      return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATETIME);
+    }
+    return date.toISOString().replace("T", " ").split(".")[0]?.slice(0, 16) || "";
   },
 
   /**
    * Formats a date to a simple dd/MM/yyyy string.
+   *
+   * @remarks
+   * GAS-Only: Falls back to YYYY-MM-DD in Node.js environments.
    */
   formatShortDate(date: Date | null | undefined): string {
     if (!date || isNaN(date.getTime())) return "";
-    // @ts-ignore
-    return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE);
+    if (typeof Utilities !== "undefined") {
+      // @ts-ignore
+      return Utilities.formatDate(date, CONFIG.SYSTEM.TIMEZONE, CONFIG.SYSTEM.DATE_FORMAT_DATE);
+    }
+    return date.toISOString().split("T")[0] || "";
   },
 
   /**
@@ -333,9 +351,7 @@ var Time: ITime = {
 };
 
 // @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Time;
-}
+try { if (typeof module !== "undefined" && module.exports) { module.exports = Time; } } catch (e) {}
 
 (function(scope: any) {
   Object.assign(scope, { Time });

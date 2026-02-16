@@ -15,6 +15,7 @@ import express, {
 } from "express";
 import fetch from "node-fetch";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
+import Time from "../../Backend-GAS/Time";
 import type {
   ServerConfig,
   FetchResult,
@@ -257,44 +258,14 @@ async function fetchWithRotatedRetries<T = unknown>(
 
 /**
  * Calculate War Week ID (ISO Week Number format: YYWnn)
- * Matches GAS implementation for consistency
+ *
+ * @remarks
+ * Uses centralized Time module from GAS to ensure 10:00 UTC Monday reset consistency.
  */
 function calculateWarWeekId(dateStr: string): WarWeekId {
   if (!dateStr) return "Unknown" as WarWeekId;
-
-  let date: Date;
-
-  // Parse Clash Royale ISO format (yyyyMMddTHHmmss)
-  if (/^\d{8}T\d{6}/.test(dateStr)) {
-    const y = parseInt(dateStr.substring(0, 4), 10);
-    const m = parseInt(dateStr.substring(4, 6), 10) - 1;
-    const d = parseInt(dateStr.substring(6, 8), 10);
-    const h = parseInt(dateStr.substring(9, 11), 10);
-    const min = parseInt(dateStr.substring(11, 13), 10);
-    const s = parseInt(dateStr.substring(13, 15), 10);
-    date = new Date(Date.UTC(y, m, d, h, min, s));
-  } else {
-    date = new Date(dateStr);
-  }
-
-  // Adjust to Thursday (War Start Day)
-  const d = new Date(date.getTime());
-  d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
-
-  const year = d.getUTCFullYear();
-  const week1 = new Date(Date.UTC(year, 0, 4));
-  const weekNum =
-    1 +
-    Math.round(
-      ((d.getTime() - week1.getTime()) / 86400000 -
-        3 +
-        ((week1.getUTCDay() + 6) % 7)) /
-        7,
-    );
-  const yearShort = year.toString().slice(-2);
-
-  return `${yearShort}W${weekNum.toString().padStart(2, "0")}` as WarWeekId;
+  const date = Time.parseRoyaleApiDate(dateStr);
+  return Time.calculateWarWeekId(date) as WarWeekId;
 }
 
 /**
