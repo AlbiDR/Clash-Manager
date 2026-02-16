@@ -7,6 +7,8 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3 appl
 ---
 <br />
 
+## Screenshots
+
 <div align="left">
   <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #f6f8fa;">
     <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
