@@ -151,8 +151,13 @@ export function useTheme() {
 
       // 5. Construct new manifest
       const baseUrl = import.meta.env.BASE_URL;
+      const themeColors = isDark
+        ? { theme_color: "#0b0e14", background_color: "#0b0e14" }
+        : { theme_color: "#fdfcff", background_color: "#fdfcff" };
+
       const newManifest = {
         ...baseManifestCache,
+        ...themeColors,
         screenshots: manualScreenshots.map(s => ({
           ...s,
           src: `${baseUrl}assets/branding/${s.src}`

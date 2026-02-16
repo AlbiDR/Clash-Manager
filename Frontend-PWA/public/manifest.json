@@ -9,7 +9,7 @@
   "scope": "/Clash-Manager/",
   "start_url": "/Clash-Manager/#/roster",
   "id": "clash-manager",
-  "orientation": "portrait",
+  "orientation": "any",
   "categories": ["productivity", "games", "utilities"],
   "lang": "en",
   "dir": "ltr",
@@ -30,12 +30,14 @@
     {
       "src": "assets/icons/pwa-64.png",
       "sizes": "64x64",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "assets/icons/pwa-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "assets/icons/pwa-512.png",
@@ -97,7 +99,8 @@
       "description": "View clan performance roster",
       "url": "/Clash-Manager/#/roster",
       "icons": [
-        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "assets/icons/pwa-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
       ]
     },
     {
@@ -106,7 +109,8 @@
       "description": "Research potential recruits",
       "url": "/Clash-Manager/#/headhunter",
       "icons": [
-        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "assets/icons/pwa-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
       ]
     },
     {
@@ -115,7 +119,8 @@
       "description": "Configure dashboard preferences",
       "url": "/Clash-Manager/#/settings",
       "icons": [
-        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "assets/icons/pwa-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
       ]
     }
   ]
