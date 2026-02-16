@@ -182,7 +182,7 @@ export interface AppConfig {
 }
 
 // Global Version Constant for this file
-export const VER_CONFIGURATION = "10.0.18";
+export const VER_CONFIGURATION = "13.1.0";
 
 // Fetch all script properties once at initialization
 let _PROPS: Record<string, string> = {};
@@ -199,17 +199,17 @@ try {
 export var CONFIG: AppConfig = {
   SYSTEM: {
     MANIFEST: {
-      CONFIGURATION: "10.0.7",
-      UTILITIES: "10.0.6",
-      ORCHESTRATOR: "11.0.7",
-      DATABASE: "13.0.0",
-      ROSTER: "1.0.0",
-      SCORING: "13.0.0",
-      SCORING_KERNEL: "1.0.0",
-      HEADHUNTER: "12.2.0", // BUMP: Enforced 10/11 col structure
-      CONTROLLER_WEBAPP: "1.0.0",
-      REGISTRY: "1.0.0",
-      API_PUBLIC: "1.0.0"
+      CONFIGURATION: "13.1.0",
+      UTILITIES: "13.1.0",
+      ORCHESTRATOR: "13.1.0",
+      DATABASE: "13.1.0",
+      ROSTER: "13.1.0",
+      SCORING: "13.1.0",
+      SCORING_KERNEL: "13.1.0",
+      HEADHUNTER: "13.1.0", 
+      CONTROLLER_WEBAPP: "13.1.0",
+      REGISTRY: "13.1.0",
+      API_PUBLIC: "13.1.0"
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",
