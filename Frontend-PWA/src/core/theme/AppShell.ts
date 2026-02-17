@@ -36,6 +36,7 @@ export function getAppShellStyles(): string {
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      min-height: 100dvh;
     }
 
     #app-shell {
