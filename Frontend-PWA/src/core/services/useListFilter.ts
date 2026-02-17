@@ -9,11 +9,6 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * strings, achieving O(N) lookup performance during active filtering by
  * decoupling normalization from the filter predicate.
  *
- * CRACK: This composable currently lacks a deterministic tie-breaker in its
- * sorting logic. When primary sort values are equal, the order depends on the
- * underlying array's original stability, which can cause flickering in
- * virtualized lists or components using `v-memo`.
- *
  * @param items - Reactive reference to the source array.
  * @param searchFields - Function to extract searchable strings from an item.
  * @param sortStrategies - Dictionary of comparator functions.
@@ -37,35 +32,25 @@ export function useListFilter<T>(
   const searchQuery = ref("");
   const sortBy = ref(defaultSort);
 
-  // PERFORMANCE: Pre-calculate normalized search strings to avoid O(N * F) work on every keystroke.
-  // We use a WeakMap to cache search strings for objects without forcing an 'id' constraint.
-  const searchCache = computed(() => {
-    const map = new WeakMap<object, string[]>();
-    const list = items.value || [];
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i];
-      if (typeof item === "object" && item !== null) {
-        map.set(
-          item,
-          searchFields(item).map((f) => f.toLowerCase()),
-        );
-      }
-    }
-    return map;
-  });
+  // PERFORMANCE: Cache normalized search strings to avoid O(N * F) work on every keystroke.
+  // We use a persistent WeakMap to enable O(1) amortized normalization per item.
+  const searchCache = new WeakMap<object, string[]>();
 
   const filteredItems = computed(() => {
     let result: T[];
 
     // 1. Search Filter (Optimized O(N) lookup)
-    // Intent: Use the pre-calculated cache to avoid redundant string normalization
+    // Intent: Use a persistent cache to avoid redundant string normalization
     // during the filter pass, ensuring 60FPS even with large lists.
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      const cache = searchCache.value;
       result = (items.value || []).filter((item) => {
         if (typeof item === "object" && item !== null) {
-          const normalizedFields = cache.get(item);
+          let normalizedFields = searchCache.get(item);
+          if (!normalizedFields) {
+            normalizedFields = searchFields(item).map((f) => f.toLowerCase());
+            searchCache.set(item, normalizedFields);
+          }
           return normalizedFields?.some((f) => f.includes(query));
         }
         // Fallback for primitives or non-object types
