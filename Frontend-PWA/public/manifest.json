@@ -56,6 +56,12 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "monochrome"
+    },
+    {
+      "src": "assets/branding/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "screenshots": [

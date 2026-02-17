@@ -1,4 +1,4 @@
-Import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
+import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
 import type { Preset } from "@vite-pwa/assets-generator/config";
 
 export default defineConfig({
@@ -29,9 +29,14 @@ export default defineConfig({
       resizeOptions: { background: "#ffffff" },
       padding: 0.1,
     },
+    monochrome: {
+      sizes: [512] as const,
+      padding: 0.16, // Correct adaptive icon padding
+    },
   } satisfies Preset,
   images: ["public/assets/branding/logo.svg"] as const,
   manifestIconName: "pwa",
   maskableIconName: "pwa-maskable",
   appleIconName: "pwa-apple",
+  monochromeIconName: "pwa-icon-monochrome",
 });
