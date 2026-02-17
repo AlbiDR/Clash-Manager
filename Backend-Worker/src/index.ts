@@ -5,6 +5,12 @@
  * High-performance Express server for bulk API operations
  * Migrated from JavaScript with full type safety and modern TS features
  * ============================================================================
+ *
+ * @remarks
+ * The Backend-Worker serves as the high-performance, stateless processing tier
+ * of the distributed architecture. Its primary role is to offload resource-intensive
+ * network operations (scanning and batch fetching) from the Google Apps Script
+ * environment, thereby bypassing GAS execution limits and UrlFetchApp quotas.
  */
 
 import express, {
@@ -64,9 +70,20 @@ interface KeyState {
   failureCount: number;
 }
 
+/**
+ * KEY MANAGEMENT ENGINE
+ *
+ * @remarks
+ * Orchestrates a pool of Royale API keys to ensure maximum throughput and
+ * resiliency against rate-limiting (429) and authorization failures (403).
+ * Implements a rotation strategy with intelligent cooldown penalties.
+ */
 class KeyManager {
   private keys: KeyState[] = [];
 
+  /**
+   * Initializes the manager with a raw list of API tokens.
+   */
   constructor(rawKeys: string[] = []) {
     this.keys = rawKeys.filter(Boolean).map(k => ({
       value: k,
@@ -76,6 +93,11 @@ class KeyManager {
     }));
   }
 
+  /**
+   * Selects a random healthy key from the pool.
+   *
+   * @returns A valid API key string or null if all keys are in cooldown.
+   */
   public getHealthyKey(): string | null {
     const now = Date.now();
     const healthy = this.keys.filter(k => k.isHealthy || now > k.cooldownUntil);
@@ -88,30 +110,48 @@ class KeyManager {
     return key.value;
   }
 
+  /**
+   * Logs a failure for a specific key and applies the appropriate cooldown penalty.
+   *
+   * @param keyVal - The API token that failed.
+   * @param code - The HTTP status code returned by the upstream API.
+   */
   public reportFailure(keyVal: string, code: number): void {
     const key = this.keys.find(k => k.value === keyVal);
     if (!key) return;
 
     if (code === 429) {
-      // ⚠️ THROTTLED: Sidelined for 60s
+      // THROTTLED: Sidelined for 60s
+      // Rationale: A 429 indicates we've hit the per-key rate limit.
+      // A 60s cooldown allows the upstream bucket to reset safely.
       key.isHealthy = false;
       key.cooldownUntil = Date.now() + 60000;
       console.warn(`[KeyManager] Key throttled (429). Sidelined for 60s.`);
     } else if (code === 403) {
-      // ⛔ BANNED/INVALID: Sidelined for 1 hour
+      // BANNED/INVALID: Sidelined for 1 hour
+      // Rationale: A 403 usually means the key's IP restriction or
+      // validity has changed. A long cooldown prevents "banging" on
+      // a broken key, which could lead to a permanent developer ban.
       key.isHealthy = false;
       key.cooldownUntil = Date.now() + 3600000;
       console.error(`[KeyManager] Key rejected (403). Sidelined for 1 hour.`);
     } else {
       key.failureCount++;
       if (key.failureCount >= 5) {
+          // Jitter Penalty: 30s
+          // Rationale: For generic failures (5xx, timeouts), we apply
+          // a short penalty after multiple consecutive errors to
+          // dampen the impact of transient upstream instability.
           key.isHealthy = false;
-          key.cooldownUntil = Date.now() + 30000; // 30s jitter penalty
+          key.cooldownUntil = Date.now() + 30000;
           key.failureCount = 0;
       }
     }
   }
 
+  /**
+   * Resets the failure state for a key upon a successful request.
+   */
   public reportSuccess(keyVal: string): void {
     const key = this.keys.find(k => k.value === keyVal);
     if (key) {
@@ -120,6 +160,9 @@ class KeyManager {
     }
   }
 
+  /**
+   * Returns current metrics for the key pool.
+   */
   public getPoolStats() {
     const now = Date.now();
     return {
@@ -343,10 +386,17 @@ async function processBatch<T = unknown>(
               scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
             );
 
-            // STRATEGY 2: Apply Prophet Bonus remotely
+            // STRATEGY 2: Deep Delegation - Prophet Bonus
+            // Rationale: By offloading the "Prophet Bonus" (Heritage logic)
+            // to the worker, we ensure that recruitment lists returned
+            // to the GAS backend are already prioritized based on
+            // historical elite performance, saving GAS compute cycles.
             if (prophetCache) {
                  const normTag = profile.tag.replace("#", "").trim().toLowerCase();
                  const intel = prophetCache[normTag];
+                 // Threshold: 5 Wins.
+                 // We only apply the 25% multiplier to players with
+                 // proven historical war success to minimize false positives.
                  if (intel && intel.wins > 5) {
                     rawScore *= 1.25;
                  }
@@ -556,7 +606,13 @@ app.get("/capabilities", (_req: Request, res: Response): void => {
 });
 
 /**
- * 🩺 DIAGNOSTIC HEALTH HANDSHAKE
+ * DIAGNOSTIC HEALTH HANDSHAKE
+ *
+ * @remarks
+ * Performs a multi-tier health check:
+ * 1. Internal Pool: Reports key availability and throttling status.
+ * 2. Upstream: Executes a test call to the Royale API using the healthiest key.
+ * 3. System: Reports memory usage (RSS).
  */
 app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     // 1. Local Pool Diagnostics
@@ -587,6 +643,13 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     });
 });
 
+/**
+ * KEY AUDIT ENDPOINT
+ *
+ * @remarks
+ * Validates an array of API keys provided in the request body.
+ * Updates the global KeyManager pool with the results of the audit.
+ */
 app.post(
   "/audit",
   validateFields(["apiKeys"]),
@@ -638,6 +701,16 @@ app.post(
   },
 );
 
+/**
+ * PUBLIC SCAN ENDPOINT
+ *
+ * @remarks
+ * Entry point for unauthenticated recruitment scans.
+ * Supports two phases:
+ * 1. Discovery: Scans tournaments for active, clanless players.
+ * 2. Scoring: If 'scoring' is provided, fetches full profiles and
+ *    calculates potential scores server-side.
+ */
 app.post(
   "/public/scan",
   validateFields(["tags"]),
@@ -732,6 +805,14 @@ app.post(
   },
 );
 
+/**
+ * INTERNAL SCAN ENDPOINT
+ *
+ * @remarks
+ * High-precision recruitment scan with advanced debugging and
+ * Prophet Cache integration. Used by the GAS backend for
+ * administrative headhunting.
+ */
 app.post(
   "/scan",
   validateFields(["tags"]),
@@ -819,6 +900,17 @@ app.post(
   },
 );
 
+/**
+ * CLAN SNAPSHOT ENDPOINT
+ *
+ * @remarks
+ * Aggregates a multi-resource snapshot of a clan in a single response:
+ * 1. Members List
+ * 2. Current River Race Status
+ * 3. 52-Week War History (Reconciled)
+ *
+ * This minimizes the number of round-trips from GAS to the Worker.
+ */
 app.post(
   "/clan/full",
   validateFields(["tag"]),
