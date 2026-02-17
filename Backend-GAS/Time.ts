@@ -18,7 +18,6 @@
  */
 
 import { CONFIG } from "./Configuration";
-import type { AppConfig } from "./Configuration";
 
 declare var Utilities: any;
 declare var module: any;
@@ -156,9 +155,9 @@ var Time: ITime = {
     // Matches "30/01/2026" using dots, colons, or spaces
     const matchNoTime = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})$/);
     if (matchNoTime) {
-        const day = parseInt(matchNoTime[1], 10);
-        const month = parseInt(matchNoTime[2], 10) - 1;
-        const year = parseInt(matchNoTime[3], 10);
+        const day = parseInt(matchNoTime[1]!, 10);
+        const month = parseInt(matchNoTime[2]!, 10) - 1;
+        const year = parseInt(matchNoTime[3]!, 10);
         
         // Validation:
         if (month < 0 || month > 11 || day < 1 || day > 31) return new Date(0); 
@@ -171,12 +170,12 @@ var Time: ITime = {
     // Matches "30/01/2026 13:42" or "30 01 2026 13 42 56" using dots, colons, or spaces
     const match = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})\s+(\d{1,2})[:.\s](\d{2})(?:[:.\s](\d{2}))?$/);
     if (match) {
-        const day = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1;
-        const year = parseInt(match[3], 10);
-        const hour = parseInt(match[4], 10);
-        const min = parseInt(match[5], 10);
-        const sec = match[6] ? parseInt(match[6], 10) : 0;
+        const day = parseInt(match[1]!, 10);
+        const month = parseInt(match[2]!, 10) - 1;
+        const year = parseInt(match[3]!, 10);
+        const hour = parseInt(match[4]!, 10);
+        const min = parseInt(match[5]!, 10);
+        const sec = match[6] ? parseInt(match[6]!, 10) : 0;
         
         // Validation: Ensure digits make sense before creating date
         if (month < 0 || month > 11 || day < 1 || day > 31) return new Date(0); // Sentinel

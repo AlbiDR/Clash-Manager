@@ -37,6 +37,17 @@ export function useTheme() {
       root.classList.remove("dark");
     }
 
+    // 3. Update theme-color meta tags (NUCLEAR OPTION: Single Source of Truth)
+    // Remove all existing theme-color tags to prevent browser confusion or OS overrides.
+    const existingTags = document.querySelectorAll('meta[name="theme-color"]');
+    existingTags.forEach((tag) => tag.remove());
+
+    // Create a fresh, authoritative meta tag
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = isDark ? "#0b0e14" : "#fdfcff";
+    document.head.appendChild(meta);
+
     // Update manifest screenshots
     updateManifest();
   }
@@ -121,12 +132,43 @@ export function useTheme() {
         // use href of existing link to ensure base path is handled correctly
         const fetchUrl = link.getAttribute("href") || "manifest.json";
         baseManifestCache = await fetch(fetchUrl).then((res) => res.json());
+
+        // FIX: Resolve all relative icon paths to absolute to work with Blob URL
+        const baseUrl = import.meta.env.BASE_URL;
+        const resolvePath = (p: string) => (p.startsWith("/") || p.startsWith("http") ? p : `${baseUrl}${p}`);
+        
+        if (baseManifestCache.icons) {
+          baseManifestCache.icons = baseManifestCache.icons.map((icon: any) => ({
+            ...icon,
+            src: resolvePath(icon.src)
+          }));
+        }
+        if (baseManifestCache.shortcuts) {
+          baseManifestCache.shortcuts = baseManifestCache.shortcuts.map((shortcut: any) => ({
+            ...shortcut,
+            icons: shortcut.icons?.map((icon: any) => ({
+              ...icon,
+              src: resolvePath(icon.src)
+            }))
+          }));
+        }
       }
 
       // 5. Construct new manifest
+      const baseUrl = import.meta.env.BASE_URL;
+      const themeColors = isDark
+        ? { theme_color: "#0b0e14", background_color: "#0b0e14" }
+        : { theme_color: "#fdfcff", background_color: "#fdfcff" };
+
       const newManifest = {
         ...baseManifestCache,
-        screenshots: manualScreenshots,
+        ...themeColors,
+        display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        screenshots: manualScreenshots.map(s => ({
+          ...s,
+          src: `${baseUrl}assets/branding/${s.src}`
+        })),
       };
 
       // 6. Create Blob URI

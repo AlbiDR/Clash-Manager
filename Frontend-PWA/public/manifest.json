@@ -2,17 +2,20 @@
   "name": "Clash Manager",
   "short_name": "Clash Manager",
   "description": "Professional recruitment and performance analytics dashboard for Clash Royale clan leaders.",
+  "theme_color": "#0b0e14",
+  "background_color": "#0b0e14",
   "display": "standalone",
-  "scope": "./",
-  "start_url": "./#/roster",
+  "display_override": ["standalone", "minimal-ui"],
+  "scope": "/Clash-Manager/",
+  "start_url": "/Clash-Manager/#/roster",
   "id": "clash-manager",
-  "orientation": "portrait",
+  "orientation": "any",
   "categories": ["productivity", "games", "utilities"],
   "lang": "en",
   "dir": "ltr",
   "handle_links": "preferred",
   "share_target": {
-    "action": "./#/headhunter",
+    "action": "/Clash-Manager/#/headhunter",
     "method": "GET",
     "params": {
       "title": "title",
@@ -25,17 +28,19 @@
   },
   "icons": [
     {
-      "src": "assets/icons/pwa-64.png",
+      "src": "assets/icons/icon-64.png",
       "sizes": "64x64",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "assets/icons/pwa-192.png",
+      "src": "assets/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "assets/icons/pwa-512.png",
+      "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
@@ -83,13 +88,7 @@
       "label": "Clash Manager Roster (Dark)"
     }
   ],
-  "related_applications": [
-    {
-      "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.supercell.clashroyale",
-      "id": "com.supercell.clashroyale"
-    }
-  ],
+
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
   },
@@ -98,27 +97,30 @@
       "name": "Roster",
       "short_name": "Roster",
       "description": "View clan performance roster",
-      "url": "./#/roster",
+      "url": "/Clash-Manager/#/roster",
       "icons": [
-        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "assets/icons/pwa-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
       ]
     },
     {
       "name": "Headhunter",
       "short_name": "Headhunter",
       "description": "Research potential recruits",
-      "url": "./#/headhunter",
+      "url": "/Clash-Manager/#/headhunter",
       "icons": [
-        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "assets/icons/pwa-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
       ]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "description": "Configure dashboard preferences",
-      "url": "./#/settings",
+      "url": "/Clash-Manager/#/settings",
       "icons": [
-        { "src": "assets/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" }
+        { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "assets/icons/pwa-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
       ]
     }
   ]

@@ -9,7 +9,6 @@ export default defineConfig({
       sizes: [64, 192, 512] as const,
       favicons: [[64, "favicon.ico"]] as const,
       resizeOptions: {
-        background: "#0b0e14",
         fit: "contain" as const,
       },
       padding: 0,

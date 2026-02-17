@@ -12,8 +12,11 @@ export function generateHtmlEntry(version: string): string {
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://script.google.com https://script.googleusercontent.com https://lh3.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://sheets.googleapis.com;" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
+    <!-- Theme Colors (Bi-Modal) -->
+    <meta name="theme-color" content="#fdfcff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Clash Manager" />
@@ -26,7 +29,7 @@ export function generateHtmlEntry(version: string): string {
     
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/branding/favicon.ico" sizes="any" />
-    <link rel="icon" href="assets/icons/pwa-64.png" type="image/png" />
+    <link rel="icon" href="assets/icons/icon-64.png" type="image/png" />
     <link rel="apple-touch-icon" href="assets/icons/pwa-apple.png" />
     
     <title>Clash Manager</title>
