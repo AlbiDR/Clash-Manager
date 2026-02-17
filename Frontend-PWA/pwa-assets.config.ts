@@ -1,4 +1,4 @@
-import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
+Import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
 import type { Preset } from "@vite-pwa/assets-generator/config";
 
 export default defineConfig({
