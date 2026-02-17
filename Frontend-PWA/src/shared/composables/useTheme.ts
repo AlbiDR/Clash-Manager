@@ -37,11 +37,19 @@ export function useTheme() {
       root.classList.remove("dark");
     }
 
-    // Update PWA theme color meta tag to match the background color
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", isDark ? "#0b0e14" : "#fdfcff");
-    }
+    // 3. Update theme-color meta tags (handle multiple/media queries)
+      const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
+      if (metaThemeColors.length > 0) {
+        metaThemeColors.forEach((tag) => {
+          tag.setAttribute("content", isDark ? "#0b0e14" : "#fdfcff");
+          tag.removeAttribute("media"); // Force override regardless of OS preference
+        });
+      } else {
+        const meta = document.createElement("meta");
+        meta.name = "theme-color";
+        meta.content = isDark ? "#0b0e14" : "#fdfcff";
+        document.head.appendChild(meta);
+      }
 
     // Update manifest screenshots
     updateManifest();
