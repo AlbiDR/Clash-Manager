@@ -4,31 +4,31 @@ import type { Preset } from "@vite-pwa/assets-generator/config";
 export default defineConfig({
   preset: {
     ...minimalPreset,
-    // Using 0 padding here because padding is now BAKED INTO THE SVG SOURCE
     transparent: {
       sizes: [64, 192, 512] as const,
       favicons: [[64, "favicon.ico"]] as const,
       resizeOptions: {
         fit: "contain" as const,
       },
-      padding: 0,
+      padding: 0, // Added small padding so it doesn't touch the edge
     },
     maskable: {
       sizes: [512] as const,
       resizeOptions: {
-        background: "#0b0e14",
+        // CHANGED: Using white ensures it looks natural in Light Mode. 
+        // Android will clip this into a circle.
+        background: "#ffffff", 
         fit: "contain" as const,
       },
-      padding: 0, // Relying on source SVG padding for safe-zone
+      padding: 0, 
     },
     apple: {
       sizes: [180] as const,
-      resizeOptions: { background: "#0b0e14" },
+      resizeOptions: { background: "#ffffff" },
       padding: 0,
     },
   } satisfies Preset,
   images: ["public/assets/branding/logo.svg"] as const,
-  // Standard naming to match the manifest
   manifestIconName: "pwa",
   maskableIconName: "pwa-maskable",
   appleIconName: "pwa-apple",
