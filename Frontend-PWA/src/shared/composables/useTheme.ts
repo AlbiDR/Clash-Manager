@@ -158,8 +158,8 @@ export function useTheme() {
       const newManifest = {
         ...baseManifestCache,
         ...themeColors,
-        display: "fullscreen",
-        display_override: ["window-controls-overlay", "fullscreen", "standalone"],
+        display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
         screenshots: manualScreenshots.map(s => ({
           ...s,
           src: `${baseUrl}assets/branding/${s.src}`

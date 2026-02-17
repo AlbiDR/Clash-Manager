@@ -26,6 +26,7 @@ body {
   line-height: inherit;
   color: var(--sys-color-on-surface);
   background: var(--sys-color-background);
+  min-height: 100dvh;
 }
 
 hr { height: 0; color: inherit; border-top-width: 1px; }
