@@ -37,19 +37,16 @@ export function useTheme() {
       root.classList.remove("dark");
     }
 
-    // 3. Update theme-color meta tags (handle multiple/media queries)
-      const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
-      if (metaThemeColors.length > 0) {
-        metaThemeColors.forEach((tag) => {
-          tag.setAttribute("content", isDark ? "#0b0e14" : "#fdfcff");
-          tag.removeAttribute("media"); // Force override regardless of OS preference
-        });
-      } else {
-        const meta = document.createElement("meta");
-        meta.name = "theme-color";
-        meta.content = isDark ? "#0b0e14" : "#fdfcff";
-        document.head.appendChild(meta);
-      }
+    // 3. Update theme-color meta tags (NUCLEAR OPTION: Single Source of Truth)
+    // Remove all existing theme-color tags to prevent browser confusion or OS overrides.
+    const existingTags = document.querySelectorAll('meta[name="theme-color"]');
+    existingTags.forEach((tag) => tag.remove());
+
+    // Create a fresh, authoritative meta tag
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = isDark ? "#0b0e14" : "#fdfcff";
+    document.head.appendChild(meta);
 
     // Update manifest screenshots
     updateManifest();
