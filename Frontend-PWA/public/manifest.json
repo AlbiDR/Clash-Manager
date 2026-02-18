@@ -9,7 +9,7 @@
   "scope": "/Clash-Manager/",
   "start_url": "/Clash-Manager/#/roster",
   "id": "clash-manager",
-  "orientation": "any",
+  "orientation": "natural",
   "categories": ["productivity", "games", "utilities"],
   "lang": "en",
   "dir": "ltr",
