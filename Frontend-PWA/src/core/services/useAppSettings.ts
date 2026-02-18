@@ -35,6 +35,9 @@ const DEFAULT_STATE: ModuleState = {
 const modules = reactive<ModuleState>({ ...DEFAULT_STATE });
 const isInitialized = ref(false);
 
+// ⚡ PERFORMANCE: Singleton persistence watch.
+let watchInitialized = false;
+
 /**
  * Robustly merge stored data with default schema to handle upgrades/regressions.
  */
@@ -80,6 +83,30 @@ function mergeStorage(stored: any): ModuleState {
  * - LISTENS to the global `storage` event to synchronize settings across multiple open tabs.
  */
 export function useAppSettings() {
+  // ⚡ LAZY INIT: Initialize singleton persistence watch once.
+  if (!watchInitialized) {
+    watch(
+      modules,
+      (newVal) => {
+        try {
+          localStorage.setItem(MODULES_KEY, JSON.stringify(toRaw(newVal)));
+
+          // 🛡️ SYNC: Selective sync to IndexedDB for Service Worker
+          idb
+            .set("cm_notifications_enabled", newVal.experimentalNotifications)
+            .catch(() => {});
+          idb
+            .set("cm_notification_threshold", newVal.notificationThreshold)
+            .catch(() => {});
+        } catch (e) {
+          console.error("[Modules] Failed to persist", e);
+        }
+      },
+      { deep: true },
+    );
+    watchInitialized = true;
+  }
+
   function init() {
     if (isInitialized.value) return;
 
@@ -116,27 +143,6 @@ export function useAppSettings() {
       .set("cm_notification_threshold", modules.notificationThreshold)
       .catch(() => {});
   }
-
-  // ⚡ PERFORMANCE: Single deep watch for persistence instead of ad-hoc saves
-  watch(
-    modules,
-    (newVal) => {
-      try {
-        localStorage.setItem(MODULES_KEY, JSON.stringify(toRaw(newVal)));
-
-        // 🛡️ SYNC: Selective sync to IndexedDB for Service Worker
-        idb
-          .set("cm_notifications_enabled", newVal.experimentalNotifications)
-          .catch(() => {});
-        idb
-          .set("cm_notification_threshold", newVal.notificationThreshold)
-          .catch(() => {});
-      } catch (e) {
-        console.error("[Modules] Failed to persist", e);
-      }
-    },
-    { deep: true },
-  );
 
   /**
    * Toggle a boolean feature flag safely.
