@@ -15,9 +15,8 @@ export default defineConfig({
     maskable: {
       sizes: [512] as const,
       resizeOptions: {
-        // CHANGED: Using white ensures it looks natural in Light Mode. 
-        // Android will clip this into a circle.
-        background: "#ffffff", 
+        // USING DARK BACKGROUND: Matches splash screen and app theme for seamless loading.
+        background: "#0b0e14", 
         fit: "contain" as const,
       },
       // IMPORTANT: Android crops maskable icons. 
