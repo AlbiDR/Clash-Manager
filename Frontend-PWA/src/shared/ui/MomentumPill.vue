@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useAppSettings } from "@core/services/useAppSettings";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed } from "vue";
 import { calculateMomentum } from "@core/utils/formatters";

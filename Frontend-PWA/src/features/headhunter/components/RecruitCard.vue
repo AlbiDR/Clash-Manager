@@ -3,7 +3,6 @@ import BaseCard from "../../../shared/ui/BaseCard.vue";
 import CardActions from "../../../shared/ui/CardActions.vue";
 import Icon from "../../../shared/ui/Icon.vue";
 import StatisticItem from "../../../shared/ui/StatisticItem.vue";
-import { useAppSettings } from "@core/services/useAppSettings";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed } from "vue";
 import type { Recruit } from "@core/types";
@@ -30,7 +29,6 @@ const emit = defineEmits<{
 }>();
 
 const { getSafeBenchmark } = useBenchmarking();
-const { modules } = useAppSettings();
 
 const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 </script>

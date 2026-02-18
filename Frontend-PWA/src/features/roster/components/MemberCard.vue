@@ -4,7 +4,6 @@ import CardActions from "../../../shared/ui/CardActions.vue";
 import Icon from "../../../shared/ui/Icon.vue";
 import MomentumPill from "../../../shared/ui/MomentumPill.vue";
 import StatisticItem from "../../../shared/ui/StatisticItem.vue";
-import { useAppSettings } from "@core/services/useAppSettings";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed, defineAsyncComponent } from "vue";
 import type { LeaderboardMember } from "@core/types";
@@ -39,7 +38,6 @@ const emit = defineEmits<{
 }>();
 
 const { getSafeBenchmark } = useBenchmarking();
-const { modules } = useAppSettings();
 
 // Formatters
 const roleInfo = (role: string) => formatRole(role);
