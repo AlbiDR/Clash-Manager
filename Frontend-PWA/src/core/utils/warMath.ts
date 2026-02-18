@@ -1,9 +1,43 @@
+/**
+ * ============================================================================
+ * MODULE: WAR MATHEMATICS (Prediction Engine)
+ * ----------------------------------------------------------------------------
+ * DESCRIPTION: Provides mathematical utilities for analyzing historical war
+ * performance and projecting future outcomes.
+ *
+ * ARCHITECTURE:
+ *    - Recency Bias: Uses weighted averages where newer weeks carry more
+ *      influence than older weeks (Exponential Decay approximation).
+ *    - Form Modifiers: Applies conditional bonuses (Streaks) to account for
+ *      psychological or tactical momentum not captured by raw averages.
+ *
+ * ROLE: Part of the "Persistent Clan Database" strategy, transforming raw
+ * archived snapshots into actionable performance forecasts.
+ * ============================================================================
+ */
+
+/**
+ * Core constants for war scoring and validation.
+ */
 export const WAR_CONSTANTS = {
+  /** Maximum fame achievable in a single war week. */
   MAX_FAME: 3200,
+  /** Minimum fame required to be considered a 'win' for streak calculations. */
   WIN_THRESHOLD: 2000,
+  /** Fixed bonus added to predictions for members on a 3-week winning streak. */
   STREAK_BONUS: 160,
 };
 
+/**
+ * Weighting distributions for historical lookbacks.
+ *
+ * @remarks
+ * The weights follow a 'Recency Bias' principle. For any given lookback
+ * window (1-5 weeks), the most recent week (index 0) is assigned the
+ * highest significance. This ensures the prediction adapts quickly to
+ * sudden changes in player activity while still maintaining a stable
+ * historical baseline.
+ */
 const PREDICTION_WEIGHTS: Record<number, number[]> = {
   1: [1.0],
   2: [0.7, 0.3],
@@ -12,6 +46,9 @@ const PREDICTION_WEIGHTS: Record<number, number[]> = {
   5: [0.4, 0.25, 0.15, 0.12, 0.08],
 };
 
+/**
+ * Normalized representation of a historical war entry.
+ */
 export interface HistoryEntry {
   fame: number;
   weekId: string;
@@ -19,18 +56,29 @@ export interface HistoryEntry {
 }
 
 /**
- * Parses the raw history string from GAS into structured data.
- * @param historyStr Format: "3000 24W01 | 2500 24W02" (Newest -> Oldest)
+ * Transforms the serialized history string into an array of HistoryEntry objects.
+ *
+ * @param historyStr - A string containing space-separated Fame and Week ID,
+ * delimited by pipes or commas (e.g., "3000 24W01 | 2500 24W02").
+ *
+ * @returns An array of HistoryEntry objects, preserved in the original sort order (Newest -> Oldest).
+ *
+ * @remarks
+ * The parser is resilient to different delimiter styles (pipe or comma) used
+ * by various versions of the GAS backend. It utilizes a strict regex for
+ * week ID validation (YY'W'WW format).
  */
 export function parseHistoryString(
   historyStr: string | undefined,
 ): HistoryEntry[] {
+  // Return empty if no data or placeholder '-' found
   if (!historyStr || historyStr === "-") return [];
 
+  // Regex intent: Match 2 digits (Year), a literal 'W', and 2 digits (Week number)
   const weekRegex = /^(\d{2})W(\d{2})$/;
 
   return historyStr
-    .split(/[|,]/)
+    .split(/[|,]/) // Split by pipe or comma
     .map((x) => x.trim())
     .filter(Boolean)
     .map((entry) => {
@@ -38,6 +86,8 @@ export function parseHistoryString(
       const fame = parseInt(valStr || "0", 10) || 0;
       const wStr = weekStr || "";
       const weekMatch = wStr.match(weekRegex);
+
+      // Transform "24W01" into "Week 1" for UI readability
       const readableWeek = weekMatch
         ? `Week ${parseInt(weekMatch[2], 10)}`
         : wStr || "?";
@@ -47,14 +97,26 @@ export function parseHistoryString(
 }
 
 /**
- * Calculates the projected next fame score based on weighted history and streaks.
- * @param fameHistory Array of fame scores sorted from Newest to Oldest.
+ * Calculates a projected fame score for the upcoming war week.
+ *
+ * @param fameHistory - Array of raw fame scores, ordered from Newest to Oldest.
+ *
+ * @returns A predicted fame score, clamped between 0 and MAX_FAME.
+ *
+ * @remarks
+ * The algorithm balances 'Stability' and 'Momentum' through a two-phase calculation:
+ * 1. **Baseline Projection**: A weighted average using the PREDICTION_WEIGHTS
+ *    table (max 5-week lookback). Newer data has exponentially higher impact.
+ * 2. **Form Modifier (Streak Bonus)**: If a member has exceeded the WIN_THRESHOLD
+ *    for 3 consecutive weeks, they receive a fixed bonus to represent their
+ *    high-momentum 'hot' form.
  */
 export function calculatePrediction(fameHistory: number[]): number {
   const n = fameHistory.length;
   if (n === 0) return 0;
 
-  // 1. Dynamic Weighting
+  // PHASE 1: Baseline Calculation (Weighted History)
+  // We limit lookback to 5 weeks to prevent legacy data from skewing current form.
   const lookbackCount = Math.min(n, 5);
   const ratios = PREDICTION_WEIGHTS[lookbackCount] || [1.0];
 
@@ -67,8 +129,8 @@ export function calculatePrediction(fameHistory: number[]): number {
     }
   }
 
-  // 2. Streak Bonus (Form Modifier)
-  // Must have 3+ weeks of data and all 3 most recent must be wins
+  // PHASE 2: Form Modifier (Streak Bonus)
+  // Logic: 3 consecutive weeks above threshold earns a performance multiplier (additive).
   if (n >= 3) {
     if (
       fameHistory[0] > WAR_CONSTANTS.WIN_THRESHOLD &&
@@ -79,6 +141,7 @@ export function calculatePrediction(fameHistory: number[]): number {
     }
   }
 
-  // 3. Clamp Result
+  // FINAL: Result Normalization
+  // Ensure the prediction never exceeds the physical game limits.
   return Math.max(0, Math.min(WAR_CONSTANTS.MAX_FAME, projection));
 }
