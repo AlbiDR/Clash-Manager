@@ -20,8 +20,8 @@ export default defineConfig({
         fit: "contain" as const,
       },
       // IMPORTANT: Android crops maskable icons. 
-      // 0.15 (15%) padding ensures your logo stays inside the "Safe Zone" circle.
-      padding: 0.15, 
+      // 0.18 (18%) padding ensures your logo stays inside the "Safe Zone" circle.
+      padding: 0.18, 
     },
     apple: {
       sizes: [180] as const,
@@ -30,7 +30,7 @@ export default defineConfig({
     },
     monochrome: {
       sizes: [512] as const,
-      padding: 0.16, // Correct adaptive icon padding
+      padding: 0.18, // Consistent with maskable
     },
   } satisfies Preset,
   images: ["public/assets/branding/logo.svg"] as const,
