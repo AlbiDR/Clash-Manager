@@ -1,8 +1,7 @@
 <svg width="512" height="512" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
-    <desc>Maskable icon for Clash Manager PWA. Engineered with a dark background (#0b0e14) to match the app's theme, ensuring a seamless, circle-free splash screen on modern Android.</desc>
-    <!-- Background matches manifest's background_color for seamless splash transition -->
+    <desc>Maskable icon for Clash Manager PWA. Engineered with 18% padding (64% scale) and dark background (#0b0e14) for a premium, spacious appearance with seamless splash transitions.</desc>
     <rect width="512" height="512" fill="#0b0e14" />
-    <g transform="translate(51.2, 51.2) scale(0.8)">
+    <g transform="translate(92.16, 92.16) scale(0.64)">
         <g transform="matrix(1.669227,0,0,1.669227,-171,-171)">
             <g transform="matrix(1,0,0,1,0,6)">
                 <path d="M185,246C170.272,259.268 161.851,278.186 161.851,298.009C161.851,336.41 193.45,368.009 231.851,368.009C232.234,368.009 232.617,368.006 233,368C266,368 294,344 301,312C308,311 314,309 320,306C315.984,351.163 277.687,386.206 232.346,386.206C184.07,386.206 144.346,346.482 144.346,298.206C144.346,265.323 162.777,235.076 192,220L209,213C208.917,219.06 209.589,225.106 211,231C206,232 200,235 195,238L185,246Z" fill="#24c8db" stroke="#24c8db" stroke-width="10.4"/>
