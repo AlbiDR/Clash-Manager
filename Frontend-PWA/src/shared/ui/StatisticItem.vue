@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useAppSettings } from "@core/services/useAppSettings";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed } from "vue";
 const props = defineProps<{
