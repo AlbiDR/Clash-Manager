@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="512" height="512" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
-    <desc>Maskable icon for Clash Manager PWA. Mathematically aligned to the 10% Safe Zone (W3C standard) with an explicit white background for premium home-screen integration.</desc>
-    <!-- Explicit background to prevent UA composition issues -->
-    <rect width="512" height="512" fill="#ffffff" />
-    <!-- Scale original geometry to exactly 80% to fit within the 40% radius safe circle -->
+    <desc>Maskable icon for Clash Manager PWA. Engineered with a dark background (#0b0e14) to match the app's theme, ensuring a seamless, circle-free splash screen on modern Android.</desc>
+    <!-- Background matches manifest's background_color for seamless splash transition -->
+    <rect width="512" height="512" fill="#0b0e14" />
     <g transform="translate(51.2, 51.2) scale(0.8)">
         <g transform="matrix(1.669227,0,0,1.669227,-171,-171)">
             <g transform="matrix(1,0,0,1,0,6)">
