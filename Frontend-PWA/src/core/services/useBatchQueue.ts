@@ -10,9 +10,18 @@ interface BatchQueueOptions {
 }
 
 /**
- * ⚡ USE BATCH QUEUE
- * Manages sequential or automated deep-linking to the host application.
- * Memory safety: Ensures iframe and timer cleanup on unmount.
+ * USE BATCH QUEUE
+ *
+ * @remarks
+ * Orchestrates the "Recruitment Pipeline" for the Headhunter feature.
+ * It manages a multi-tier deep-linking strategy:
+ * 1. **Sequential Mode**: Users manually trigger the next link in the queue.
+ * 2. **Blitz Mode**: An automated sequence that "blasts" through the selection with configurable delays.
+ *
+ * The composable handles throttle management to prevent browser/OS link blocking and
+ * implements specialized delays for environment compatibility (e.g., split-screen multitasking).
+ *
+ * @param options - Configuration for throttling and link schemes.
  */
 export function useBatchQueue(options: BatchQueueOptions = {}) {
   const { throttleMs = 850 } = options;
@@ -38,6 +47,11 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   );
   const isProcessing = computed(() => queue.value.length > 0);
 
+  /**
+   * Environment Trust Verification.
+   * Ensures the composable is running in a standard browser/PWA context.
+   * Required for automated "Blitz" actions to prevent abuse in headless environments.
+   */
   const isTrusted = computed(() => {
     if (typeof navigator === "undefined") return false;
     // Always trust browser environment for standard PWA usage
@@ -139,7 +153,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   /**
-   * 💉 DEEP LINK IGNITION
+   *  DEEP LINK IGNITION
    */
   let iframe: HTMLIFrameElement | null = null;
 
@@ -151,6 +165,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }
   }
 
+  /**
+   * Recursive engine for the Blitz mode.
+   * Manages the timing and execution of sequential deep-link triggers.
+   */
   function advanceBlitz() {
     if (!isBlasting.value) return;
 
@@ -164,8 +182,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     if (id) {
       openInGame(id);
 
-      // Increased delay for split screen mode compatibility
-      // In split screen, both apps remain active and need more processing time
+      // COMPATIBILITY: Increased delay for split-screen multitasking.
+      // On mobile devices, when Clash Royale is opened in split-screen or
+      // picture-in-picture, the OS requires more time to cycle the intent
+      // without dropping the background PWA state. 4000ms is the observed safety floor.
       const delay = Math.max(throttleMs, 4000);
       if (currentIndex.value < selectedIds.value.length - 1) {
         blitzTimer = setTimeout(() => {
@@ -189,6 +209,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }
   }
 
+  /**
+   * Entry point for the automated Blitz sequence.
+   * Verifies environmental trust before initiating.
+   */
   function handleBlitz() {
     if (isBlasting.value || selectedIds.value.length === 0) return;
     if (!isTrusted.value) {
@@ -228,12 +252,14 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       queue.value = [...selectedIds.value];
     }
 
-    // ⚡ ACTION IGNITION
+    // ACTION IGNITION: Sequential Open
     const id = queue.value[0];
     if (id) {
       openInGame(id);
     }
 
+    // Delay the queue shift to allow the UI to react to the 'open' intent
+    // and prevent accidental double-triggers.
     setTimeout(() => {
       if (queue.value.length > 0) {
         queue.value.shift();
@@ -247,7 +273,12 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   if (getCurrentInstance()) {
     onUnmounted(() => {
       stopBlitz();
-      // Cleanup Memory (Bug #8)
+
+      // MEMORY SAFETY: Legacy Iframe Cleanup (Bug #8)
+      // Earlier versions of the deep-link engine utilized a hidden iframe
+      // to trigger custom schemes. While now handled by useExternalLink via
+      // direct intents or window.location, this cleanup ensures no DOM
+      // fragments persist if the strategy is toggled or polyfilled.
       if (iframe && iframe.parentNode) {
         iframe.parentNode.removeChild(iframe);
         iframe = null;
@@ -256,16 +287,27 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   return {
+    /** Reactive array of selected recruit tags. */
     selectedIds,
+    /** Sequential queue of tags remaining to be opened. */
     queue,
+    /** Indicates if a manual batch queue is currently being processed. */
     isProcessing,
+    /** Indicates if the UI should be in selection mode. */
     isSelectionMode,
+    /** Computed state for the Floating Action Button (FAB). */
     fabState,
+    /** Toggles the selection status of a recruit. */
     toggleSelect,
+    /** Selects all recruits in the provided list. */
     selectAll,
+    /** Clears all selections and stops any active Blitz operation. */
     clearSelection,
+    /** Handles the primary FAB action (Sequential Open). */
     handleAction,
+    /** Initiates the automated Blitz sequence. */
     handleBlitz,
+    /** Manually overrides the selection mode state. */
     setForceSelectionMode: (val: boolean) => {
       forceSelectionMode.value = val;
     },
