@@ -8,7 +8,7 @@ import { useToast } from "@core/services/useToast";
 import { computed, watch, ref } from "vue";
 import { useHeadhunter } from "./useHeadhunter";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
-import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
+import { RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { RecruiterSort } from "@core/utils/sortStrategies";
 import type { Recruit } from "@core/types";
 
@@ -80,33 +80,7 @@ export function useRecruiter() {
     refresh: handleRefresh,
   });
 
-  const sortOptions = [
-    {
-      label: "Potential",
-      value: "score",
-      desc: SORT_DESCRIPTIONS.potential,
-    },
-    {
-      label: "Trophies",
-      value: "trophies",
-      desc: SORT_DESCRIPTIONS.trophies,
-    },
-    {
-      label: "Donations",
-      value: "donations",
-      desc: SORT_DESCRIPTIONS.donations_lifetime,
-    },
-    {
-      label: "Recency",
-      value: "time_found",
-      desc: SORT_DESCRIPTIONS.recency,
-    },
-    {
-      label: "Name",
-      value: "name",
-      desc: SORT_DESCRIPTIONS.name,
-    },
-  ];
+  const sortOptions = RECRUITER_SORT_OPTIONS;
 
   // 🧹 CLEANUP: Extra Recruit Logic managed here
   watch(

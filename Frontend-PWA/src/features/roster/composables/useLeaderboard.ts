@@ -3,7 +3,7 @@ import { useClashData } from "@core/services/useClashData";
 import { useConsoleController } from "@core/services/useConsoleController";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 import { computed } from "vue";
-import { SORT_DESCRIPTIONS } from "@core/utils/sortOptions";
+import { LEADERBOARD_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { LeaderboardSort } from "@core/utils/sortStrategies";
 import type { LeaderboardMember } from "@core/types";
 
@@ -46,43 +46,7 @@ export function useLeaderboard() {
     refresh,
   });
 
-  const sortOptions = [
-    {
-      label: "Performance",
-      value: "score",
-      desc: SORT_DESCRIPTIONS.performance,
-    },
-    {
-      label: "Momentum",
-      value: "trend",
-      desc: SORT_DESCRIPTIONS.momentum,
-    },
-    {
-      label: "Trophies",
-      value: "trophies",
-      desc: SORT_DESCRIPTIONS.trophies,
-    },
-    {
-      label: "Donations",
-      value: "donations_day",
-      desc: SORT_DESCRIPTIONS.donations_day,
-    },
-    {
-      label: "Tenure",
-      value: "tenure",
-      desc: SORT_DESCRIPTIONS.tenure,
-    },
-    {
-      label: "Name",
-      value: "name",
-      desc: SORT_DESCRIPTIONS.name,
-    },
-    {
-      label: "Last Seen",
-      value: "last_seen",
-      desc: SORT_DESCRIPTIONS.last_seen,
-    },
-  ];
+  const sortOptions = LEADERBOARD_SORT_OPTIONS;
 
   const sheetUrl = computed(() => {
     const url = pingData.value?.spreadsheetUrl;
