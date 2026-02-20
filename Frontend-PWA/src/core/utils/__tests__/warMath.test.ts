@@ -48,6 +48,23 @@ describe("warMath", () => {
       const result = parseHistoryString(input);
       expect(result[0].readableWeek).toBe("XYZ");
     });
+
+    it("supports comma as a delimiter", () => {
+      const input = "3000 24W01, 2500 24W02";
+      const result = parseHistoryString(input);
+      expect(result).toHaveLength(2);
+      expect(result[0].fame).toBe(3000);
+      expect(result[1].fame).toBe(2500);
+    });
+
+    it("supports mixed delimiters (pipe and comma)", () => {
+      const input = "3000 24W01 | 2500 24W02, 2000 24W03";
+      const result = parseHistoryString(input);
+      expect(result).toHaveLength(3);
+      expect(result[0].fame).toBe(3000);
+      expect(result[1].fame).toBe(2500);
+      expect(result[2].fame).toBe(2000);
+    });
   });
 
   describe("calculatePrediction", () => {
@@ -87,6 +104,28 @@ describe("warMath", () => {
       const expected = (2500 * 0.6) + (1500 * 0.3) + (2500 * 0.1);
       // 1500 + 450 + 250 = 2200
       expect(calculatePrediction([2500, 1500, 2500])).toBe(2200);
+    });
+
+    it("does not add streak bonus if exactly at WIN_THRESHOLD", () => {
+      const threshold = WAR_CONSTANTS.WIN_THRESHOLD; // 2000
+      // [2000, 2500, 2500] -> no bonus because code uses > threshold
+      const expected = (2000 * 0.6) + (2500 * 0.3) + (2500 * 0.1);
+      // 1200 + 750 + 250 = 2200
+      expect(calculatePrediction([2000, 2500, 2500])).toBe(2200);
+    });
+
+    it("only uses the last 5 weeks for lookback even if history is longer", () => {
+      // Weights for 5: [0.4, 0.25, 0.15, 0.12, 0.08]
+      const history = [1000, 1000, 1000, 1000, 1000, 5000, 5000];
+      // It should only use the first 5 1000s.
+      expect(calculatePrediction(history)).toBe(1000);
+    });
+
+    it("handles sparse arrays safely", () => {
+      // 3 weeks weights: [0.6, 0.3, 0.1]
+      const history = [1000, undefined as any, 1000];
+      // 0.6 * 1000 + 0 * 0.3 + 0.1 * 1000 = 600 + 100 = 700
+      expect(calculatePrediction(history)).toBe(700);
     });
 
     it("clamps result to MAX_FAME", () => {
