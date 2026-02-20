@@ -101,6 +101,14 @@ export function useConsoleController<T extends { id: string }>(
     refresh: refreshFn,
   } = options;
 
+  // ⚡ SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
+  const { isShowcaseMode: isShowcase } = useShowcaseMode();
+  const { isSyntheticMode } = useSyntheticMode();
+  const { isBlueprintMode } = useBlueprintMode();
+  const { status: connectionStatus } = useConnectionStatus();
+  const { apiStatus, pingData } = useApiState();
+  const { setFabVisible } = useUiCoordinator();
+
   // STEP 1: Search and Filter logic
   const { searchQuery, sortBy, filteredItems, updateSort } = useListFilter(
     data,
@@ -118,7 +126,7 @@ export function useConsoleController<T extends { id: string }>(
   const visibleItems = computed(() => {
     // CONSTRAINT: In Showcase mode, we only show a single card
     // to keep the visual demo clean and focused.
-    if (useShowcaseMode().isShowcaseMode.value) {
+    if (isShowcase.value) {
       return filteredItems.value.length > 0 ? filteredItems.value.slice(0, 1) : [];
     }
     return allVisibleItems.value;
@@ -142,7 +150,6 @@ export function useConsoleController<T extends { id: string }>(
     useDeepLinkHandler(deepLinkPrefix);
 
   // COORDINATION: Sync FAB visibility with global UI state
-  const { setFabVisible } = useUiCoordinator();
   watch(
     () => fabState.value.visible,
     (visible) => setFabVisible(!!visible),
@@ -157,9 +164,6 @@ export function useConsoleController<T extends { id: string }>(
     },
     { immediate: true },
   );
-
-  const { status: connectionStatus } = useConnectionStatus();
-  const { apiStatus, pingData } = useApiState();
 
   /**
    * BACKING SHEET LINK
@@ -245,10 +249,6 @@ export function useConsoleController<T extends { id: string }>(
       value: count.toString(),
     };
   });
-
-  const { isSyntheticMode } = useSyntheticMode();
-  const { isBlueprintMode } = useBlueprintMode();
-  const { isShowcaseMode: isShowcase } = useShowcaseMode();
 
   /**
    * SKELETON VISIBILITY
