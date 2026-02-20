@@ -24,7 +24,7 @@ const { isSyntheticMode } = useSyntheticMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { isShowcaseMode } = useShowcaseMode();
 
-// ⚡ PERFORMANCE: Singleton state for global synchronization.
+// PERFORMANCE: Singleton state for global synchronization.
 let watchesInitialized = false;
 let broadcast: ((msg: any) => void) | null = null;
 
@@ -45,21 +45,33 @@ function updateLocalData(newData: WebAppData) {
  * pattern to ensure near-instant initial paint (LCP) by hydrating from local storage
  * before attempting a background network refresh.
  *
+ * UX Anchor: Employs a mandatory 800ms delay for certain transitions to prevent
+ * UI flicker and ensure a consistent loading experience for the user.
+ *
  * @returns
+ * **Reactive State:**
  * - `data`: Readonly reactive reference to the inflated WebAppData.
  * - `isHydrated`: Indicates if the initial local storage load has completed.
  * - `isRefreshing`: Indicates if a background network sync is currently in progress.
  * - `syncStatus`: Unified status enum ('idle', 'syncing', 'success', 'error').
  * - `syncError`: Error message if the last sync attempt failed.
  * - `lastSyncTime`: Epoch timestamp of the last successful data acquisition.
- * - `loadLocal`: Function to hydrate state from IndexedDB.
+ *
+ * **Actions & Methods:**
+ * - `loadLocal`: Hydrates state from IndexedDB.
  * - `startBackgroundSync`: Triggered when specialized modes change or on initial load.
  * - `refresh`: Force a network fetch from the GAS backend.
  * - `updateLocalData`: Direct state/storage override for optimistic updates.
+ *
+ * @sideeffects
+ * - Persistence: Writes to IndexedDB via `saveCache` during synchronization.
+ * - Synchronization: Signals other tabs via `BroadcastChannel` on successful sync.
+ * - Keep-Alive: Manages a `WakeLock` during active synchronization to prevent sleep.
  */
 export function useClashData() {
-  // ⚡ LAZY INIT: Initialize singleton watches and cross-tab broadcast once.
+  // LAZY INIT: Initialize singleton watches and cross-tab broadcast once.
   // This prevents redundant watch cycles and evaluation issues in test environments.
+  // Pattern: Lazy Singleton Initialization ensures side-effects only run once per session.
   if (!watchesInitialized) {
     const { setSyncing: updateGlobalSyncStatus } = useConnectionStatus();
     watch(isRefreshing, (refreshing) => {
@@ -150,6 +162,8 @@ export function useClashData() {
     refreshAbortController = new AbortController();
     const signal = refreshAbortController.signal;
 
+    // SAFETY BUFFER: Generous 40s timeout exceeds the Google Apps Script 30s limit.
+    // This ensures the UI doesn't hang indefinitely if the backend is under heavy load.
     const timeoutId = setTimeout(() => {
       if (refreshAbortController) {
         refreshAbortController.abort("timeout");
@@ -168,6 +182,7 @@ export function useClashData() {
         isBlueprintMode.value ||
         isShowcaseMode.value
       ) {
+        // UX ANCHOR: Ensure a minimum loading duration for visual consistency.
         await new Promise((resolve) => setTimeout(resolve, 800));
         startBackgroundSync();
         syncStatus.value = "success";
@@ -178,6 +193,7 @@ export function useClashData() {
 
       const remoteData = await fetchRemote({ signal, force: true });
 
+      // UX ANCHOR: Prevent UI flicker on high-speed connections.
       const elapsed = Date.now() - startTime;
       if (elapsed < 800) {
         await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
@@ -204,6 +220,7 @@ export function useClashData() {
         return;
       }
 
+      // UX ANCHOR: Consistent error state timing.
       const elapsed = Date.now() - startTime;
       if (elapsed < 800) {
         await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
