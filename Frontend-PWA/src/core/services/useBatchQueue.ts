@@ -59,13 +59,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   });
 
   const fabState = computed(() => {
-    console.log("[useBatchQueue] fabState recompute:", {
-      isSelectionMode: isSelectionMode.value,
-      selectedCount: selectedIds.value.length,
-      selectedIds: selectedIds.value,
-      forceSelectionMode: forceSelectionMode.value,
-    });
-
     if (!isSelectionMode.value) {
       return {
         visible: false,
@@ -115,27 +108,15 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   });
 
   function toggleSelect(id: string) {
-    // console.log('[useBatchQueue] toggleSelect called:', { id });
-
     if (isProcessing.value || isBlasting.value) {
-      console.log(
-        "[useBatchQueue] toggleSelect blocked - processing or blasting",
-      );
       return;
     }
 
     const index = selectedIds.value.indexOf(id);
     if (index !== -1) {
       selectedIds.value.splice(index, 1);
-      console.log(
-        "[useBatchQueue] Deselected:",
-        id,
-        "Remaining:",
-        selectedIds.value,
-      );
     } else {
       selectedIds.value.push(id);
-      console.log("[useBatchQueue] Selected:", id, "Total:", selectedIds.value);
     }
   }
 
