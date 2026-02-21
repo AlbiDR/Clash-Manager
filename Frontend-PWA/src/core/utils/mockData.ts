@@ -23,12 +23,15 @@ function generateWarHistory(): string {
   return weeks.join(" | ");
 }
 
+export const DEFAULT_MOCK_MEMBER_COUNT = 50;
+export const DEFAULT_MOCK_RECRUIT_COUNT = 20;
+
 export function generateMockData(options?: {
   memberCount?: number;
   recruitCount?: number;
 }): WebAppData {
-  const memberCount = options?.memberCount ?? 50;
-  const recruitCount = options?.recruitCount ?? 20;
+  const memberCount = options?.memberCount ?? DEFAULT_MOCK_MEMBER_COUNT;
+  const recruitCount = options?.recruitCount ?? DEFAULT_MOCK_RECRUIT_COUNT;
   const lb: LeaderboardMember[] = [];
   const names = [
     "Arthur",
