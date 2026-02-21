@@ -1,18 +1,51 @@
 import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
-import { ref, onMounted, onUnmounted } from "vue";
-// 🛡️ Global persistent state to track debounce across multiple useBadge() instances
+import { ref } from "vue";
+
+/**
+ * Global persistent state to track debounce across multiple useBadge() instances.
+ * This is kept outside the composable to ensure shared state across component mounts.
+ */
 const lastUpdate = ref(0);
 
-// 🤖 ANDROID DETECTION: Android doesn't support navigator.setAppBadge() directly
-// Badges on Android only appear via active notifications
+/**
+ * ANDROID DETECTION: Android doesn't support navigator.setAppBadge() directly.
+ * Badges on Android only appear via active notifications.
+ */
 const isAndroid =
   typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
 
+/**
+ * COMPOSABLE: useBadge
+ *
+ * @remarks
+ * Orchestrates cross-platform application badge management.
+ *
+ * This service implements a dual-path strategy:
+ * 1. Standard Path: Uses the W3C Badge API (setAppBadge) for supported platforms (iOS, Windows).
+ * 2. Android Path: Implements a workaround using persistent notifications via the Service Worker,
+ *    as Android does not natively support the Badge API outside of notification contexts.
+ *
+ * It ensures consistency across multiple tabs via the Broadcast Channel and implements
+ * defensive performance measures (debouncing) and reliability patterns (retries).
+ *
+ * @returns
+ * - `isSupported`: Reactive boolean indicating if any form of badging is supported.
+ * - `setBadge`: Function to update the badge count.
+ * - `clearBadge`: Function to remove the badge.
+ * - `sendLocalNotification`: Function to trigger a browser notification.
+ * - `requestPermission`: Function to prompt the user for notification permissions.
+ *
+ * @sideeffects
+ * - WRITES to the standard `Badge API` (setAppBadge/clearAppBadge).
+ * - COMMUNICATES with the `Service Worker` via `postMessage` for notification-based badges.
+ * - BROADCASTS updates to other tabs via `BroadcastChannel`.
+ * - READS and REACTS to global `useAppSettings` (Quiet Mode, Sound, Threshold).
+ */
 export function useBadge() {
   const { modules } = useAppSettings();
 
-  // 📡 Broadcast Channel Integration
+  // Broadcast Channel Integration
   const { post: broadcast } = useBroadcastChannel((msg) => {
     if (msg.type === "BADGE_UPDATE") {
       // Don't recurse - just set internal state or notify SW if needed
@@ -28,15 +61,20 @@ export function useBadge() {
   // Android has setAppBadge but it doesn't work - only notifications create badges
   const isSupported = hasServiceWorker || (!isAndroid && hasStandardBadge);
 
-  // Extended Navigator Interface for Badge API
+  /**
+   * Extended Navigator Interface for Badge API.
+   */
   interface NavigatorWithBadge extends Navigator {
     setAppBadge(count: number): Promise<void>;
     clearAppBadge(): Promise<void>;
   }
 
   /**
-   * 🤖 ANDROID: Set badge via persistent notification
-   * Android doesn't support direct Badge API - only notifications create app icon badges
+   * ANDROID: Set badge via persistent notification.
+   * Android does not support the direct Badge API; badges are only generated
+   * when an active notification is present in the system tray.
+   *
+   * @param count - The numeric value to display in the badge.
    */
   async function setBadgeViaNotification(count: number) {
     if (!hasServiceWorker || !navigator.serviceWorker.controller) return;
@@ -49,7 +87,11 @@ export function useBadge() {
   }
 
   /**
-   * 🖥️ NON-ANDROID: Use standard Badge API
+   * NON-ANDROID: Use standard Badge API.
+   * Communicates with both the DOM and the Service Worker to ensure
+   * the badge state is synchronized even if the tab is closed.
+   *
+   * @param count - The numeric value to display in the badge.
    */
   async function setDirectBadge(count: number) {
     if (hasStandardBadge) {
@@ -67,33 +109,44 @@ export function useBadge() {
     }
   }
 
+  /**
+   * Main entry point for updating the application badge.
+   *
+   * @remarks
+   * Implements a 1500ms debounce to prevent API flooding and excessive
+   * Service Worker wake-ups. Includes a retry mechanism for transient failures.
+   *
+   * @param count - The target badge count.
+   */
   async function setBadge(count: number) {
     if (!isSupported) return;
 
-    // 🛡️ Logic: Quiet Mode integration from useAppSettings
+    // Logic: Quiet Mode integration from useAppSettings.
     if (modules.notificationQuietMode && count > 0) {
-      // Suppress badges in quiet mode on Android (since they require notifications)
+      // Suppress badges in quiet mode on Android (since they require notifications).
       if (isAndroid) return;
     }
 
-    // ⚡ PERFORMANCE: Debounce updates to prevent API flooding (Bug #13)
+    // PERFORMANCE: Debounce updates to prevent API flooding (Bug #13).
+    // Rationale: Rapid changes in recruit counts could lead to race conditions in the SW.
     const now = Date.now();
     if (now - lastUpdate.value < 1500) return;
     lastUpdate.value = now;
 
     const safeCount = Math.max(0, Math.floor(count));
 
-    // 🔄 Retry Mechanism (Bug #7 via Batch 1 refinement)
+    // Retry Mechanism (Bug #7 via Batch 1 refinement).
+    // Rationale: Some browsers temporarily block Badge API calls if flooded or during tab transitions.
     let attempts = 0;
     const MAX_RETRIES = 2;
 
     const trySet = async () => {
       try {
-        // 🤖 ANDROID: Use notification-based badges
+        // ANDROID: Use notification-based badges.
         if (isAndroid) {
           await setBadgeViaNotification(safeCount);
         } else {
-          // 🖥️ OTHER PLATFORMS: Use direct Badge API
+          // OTHER PLATFORMS: Use direct Badge API.
           await setDirectBadge(safeCount);
         }
       } catch (e) {
@@ -108,14 +161,24 @@ export function useBadge() {
 
     await trySet();
 
-    // 📡 Broadcast to other tabs so they know the badge count changed
+    // Broadcast to other tabs so they know the badge count changed for UI synchronization.
     broadcast({ type: "BADGE_UPDATE", count: safeCount });
   }
 
+  /**
+   * Resets the application badge to 0.
+   */
   async function clearBadge() {
     await setBadge(0);
   }
 
+  /**
+   * Triggers a local OS notification.
+   *
+   * @param title - The main heading of the notification.
+   * @param body - Secondary descriptive text.
+   * @param channelId - Optional identifier for grouping (e.g., 'hh-channel').
+   */
   async function sendLocalNotification(
     title: string,
     body?: string,
@@ -123,10 +186,10 @@ export function useBadge() {
   ) {
     if (Notification.permission !== "granted") return;
 
-    // Suppression in Quiet Mode
+    // Suppression in Quiet Mode.
     if (modules.notificationQuietMode) return;
 
-    // Service Worker Layer
+    // Service Worker Layer.
     if (hasServiceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: "SHOW_NOTIFICATION",
@@ -144,6 +207,11 @@ export function useBadge() {
     }
   }
 
+  /**
+   * Requests permission to display notifications.
+   *
+   * @returns A promise resolving to the PermissionStatus.
+   */
   async function requestPermission() {
     if (typeof Notification !== "undefined") {
       return await Notification.requestPermission();
@@ -151,7 +219,7 @@ export function useBadge() {
     return "denied";
   }
 
-  // 🛡️ Logic: Auto-clear removed to support persistent notifications (#Request-Persistence)
+  // Logic: Auto-clear removed to support persistent notifications (#Request-Persistence).
   // Badges will now only clear when data changes (recruits dismissed) or explicitly cleared.
 
   return {
