@@ -10,7 +10,7 @@ import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
 import { formatTimeAgo } from "@core/utils/formatters";
-import { generateMockData } from "@core/utils/mockData";
+import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 
 /**
  * CONFIGURATION: ConsoleLogicOptions
@@ -229,15 +229,13 @@ export function useConsoleController<T extends { id: string }>(
    * Displays the count of active items, adjusted for special UI modes.
    */
   const statsBadge = computed(() => {
-    const { isBlueprintMode } = useBlueprintMode();
-    const { isShowcaseMode } = useShowcaseMode();
-
     let count = 0;
-    if (isShowcaseMode.value) {
+    if (isShowcase.value) {
       count = 1;
     } else if (isBlueprintMode.value) {
-      const mockData = generateMockData();
-      count = statsLabel === "Member" ? mockData.lb.length : mockData.hh.length;
+      // PERFORMANCE: Avoid calling generateMockData() just to get length.
+      // Use static counts that match mockData defaults.
+      count = statsLabel === "Member" ? DEFAULT_MOCK_MEMBER_COUNT : DEFAULT_MOCK_RECRUIT_COUNT;
     } else {
       count = data.value ? data.value.length : 0;
     }
