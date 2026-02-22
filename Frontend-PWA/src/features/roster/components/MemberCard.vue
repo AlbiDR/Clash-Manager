@@ -87,12 +87,10 @@ const roleInfo = (role: string) => formatRole(role);
         v-tooltip="getSafeBenchmark('lb', 'score', member.performanceScore)"
         >{{ Math.round(member.performanceScore || 0) }}</span
       >
-      <div class="stat-accessory">
-        <MomentumPill
-          :dt="member.dt"
-          :performance-raw-score="member.performanceRawScore"
-        />
-      </div>
+      <MomentumPill
+        :dt="member.dt"
+        :performance-raw-score="member.performanceRawScore"
+      />
     </template>
 
     <!-- Expanded Content -->
