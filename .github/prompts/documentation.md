@@ -40,7 +40,7 @@
     *   **Backend key references:** Structural Layers (Section 2), Atomicity and Validation principles (Section 1).
     *   **Worker key references:** Caching Topologies (Section II), Lifecycle Strictures (Section III), Offline State Recovery (Section IV), PWA Substrate Integration (Section V). When documenting anything in `sw.ts` or Worker-adjacent logic, caching strategy, or PWA lifecycle — these are the authoritative rules.
 * **[!] Meta-Logic: Team Awareness**
-*   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Verify**, **Optimize**, **Harden**, and **Document**).
+*   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Harden**, **Verify**, and **Optimize**).
 *   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project's collective strategy and to avoid overlapping with another agent's role.
 *   **[Boundary]:** These files are **Administrative Context**, not Project Code.
     *   **NEVER** include them in your "Target Scope."
