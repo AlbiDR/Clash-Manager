@@ -353,13 +353,7 @@ function handleScoreClick(e: Event) {
   z-index: 1;
 }
 
-:deep(.stat-accessory) {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  z-index: 2;
-  pointer-events: none;
-}
+
 
 :deep(.btn-action) {
   flex: 1;
