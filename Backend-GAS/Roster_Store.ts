@@ -47,10 +47,10 @@ const RosterStore = {
         const tag = String(row[0]).trim();
         const histStr = histData[i][0];
         if (tag && typeof histStr === "string" && histStr.length > 0) {
-          const cleanKey = (tag.startsWith("#") ? tag : "#" + tag).trim().toUpperCase();
-          const archivedMap = Registry.Services.Core.parseWarHistory(histStr);
-          if (archivedMap.size > 0) historyMap.set(cleanKey, archivedMap);
-        }
+            const cleanKey = (tag.startsWith("#") ? tag : "#" + tag).trim().toUpperCase();
+            const archivedMap = Registry.Services.Core.parseWarHistory(histStr);
+            if (archivedMap.size > 0) historyMap.set(cleanKey, archivedMap);
+          }
       });
     }
     return historyMap;
