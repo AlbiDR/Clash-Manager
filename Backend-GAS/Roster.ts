@@ -96,8 +96,9 @@ const Roster: IRoster = {
       // the remote history and the live participants list, we retain the
       // most complete fame value (preventing data loss from API lag).
       const addWarEntry = (tag: string, weekId: string, fame: number) => {
-        if (!warHistoryMap.has(tag)) warHistoryMap.set(tag, new Map());
-        const userMap = warHistoryMap.get(tag)!;
+        const cleanTag = (tag.startsWith("#") ? tag : "#" + tag).trim().toUpperCase();
+        if (!warHistoryMap.has(cleanTag)) warHistoryMap.set(cleanTag, new Map());
+        const userMap = warHistoryMap.get(cleanTag)!;
         userMap.set(weekId, Math.max(userMap.get(weekId) || 0, fame));
       };
 
@@ -120,7 +121,8 @@ const Roster: IRoster = {
       const activeMembers = members.items as ClanMemberResult[];
 
       activeMembers.forEach(m => {
-        const pWarHistory = warHistoryMap.get(m.tag) || new Map<string, number>();
+        const cleanMemberTag = (m.tag.startsWith("#") ? m.tag : "#" + m.tag).trim().toUpperCase();
+        const pWarHistory = warHistoryMap.get(cleanMemberTag) || new Map<string, number>();
         const currentFame = pWarHistory.get(currentWeekId) || 0;
         const lastSeen = Registry.Services.Time.parseRoyaleApiDate(m.lastSeen);
         const dbRecord = marketIntelligence.get(m.tag);
@@ -242,6 +244,9 @@ const Roster: IRoster = {
       );
       RosterView.restoreVisuals(sheet, finalRows.length, HEADERS_ARRAY);
       
+      // ROTATE BACKUPS
+      Registry.Services.View.backupSheet(ss, CONFIG.SHEETS.ROSTER);
+
       // PERSISTENCE
       Registry.Services.Reporting.logStep(6, 6, "Synchronizing Prophet & Web Payloads...");
       RosterStore.saveProphetCache(rawResults, recruitCache);
