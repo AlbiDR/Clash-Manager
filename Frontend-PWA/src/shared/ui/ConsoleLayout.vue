@@ -7,7 +7,8 @@ import { useHaptics } from "../../core/services/useHaptics";
 import { useUiCoordinator } from "../../core/services/useUiCoordinator";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
 import { useShowcaseMode } from "../../core/services/useShowcaseMode";
-import { ref, watch, onUnmounted, computed, nextTick } from "vue";
+import { ref, watch, onUnmounted, computed, nextTick, toRef } from "vue";
+import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import FloatingDock from "./FloatingDock.vue";
 const props = defineProps<{
@@ -53,69 +54,11 @@ const { setFabVisible, updateFabState } = useUiCoordinator();
 const haptics = useHaptics();
 const { isShowcaseMode } = useShowcaseMode();
 
-// --- Pull to Refresh Logic ---
-const touchStartY = ref(0);
-const touchStartX = ref(0);
-const pullOffset = ref(0);
-const threshold = 120;
-const isPulling = ref(false);
-
-const ptrStyle = computed(() => ({
-  "--ptr-offset": `${Math.min(pullOffset.value, threshold)}px`,
-  "--ptr-opacity": Math.min(pullOffset.value / 60, 1),
-  "--ptr-rotate": `${pullOffset.value * 2}deg`,
-}));
-
-let hapticFeedbackTriggered = false;
-
-function onTouchStart(e: TouchEvent) {
-  if (window.scrollY > 0 || props.isRefreshing) return;
-  touchStartY.value = e.touches[0].clientY;
-  touchStartX.value = e.touches[0].clientX;
-  isPulling.value = true;
-  hapticFeedbackTriggered = false;
-}
-
-function onTouchMove(e: TouchEvent) {
-  if (!isPulling.value) return;
-  const currentY = e.touches[0].clientY;
-  const currentX = e.touches[0].clientX; // Get current X position
-
-  const rawDiff = Math.max(0, currentY - touchStartY.value); // Only allow pulling down
-  const xDiff = Math.abs(currentX - touchStartX.value);
-
-  // 🛡️ PTR PROTECTION: Ignore if moving sideways more than down (prevents stutter on diagonal scroll)
-  if (xDiff > rawDiff * 0.5) {
-    pullOffset.value = 0; // Reset pullOffset if predominantly horizontal
-    isPulling.value = false; // Stop pulling
-    return;
-  }
-
-  // Apply resistance (clamped logarithmic-like curve)
-  // ⚡ ANDROID OPTIMIZATION: More sensitive curve (0.85 -> 0.9) to allow easier pull
-  pullOffset.value = Math.pow(rawDiff, 0.9) * 2;
-
-  // Haptic feedback when crossing threshold
-  if (pullOffset.value >= threshold && !hapticFeedbackTriggered) {
-    haptics.heavy();
-    hapticFeedbackTriggered = true;
-  } else if (pullOffset.value < threshold && hapticFeedbackTriggered) {
-    hapticFeedbackTriggered = false;
-  }
-}
-
-function onTouchEnd() {
-  if (!isPulling.value) return;
-
-  if (pullOffset.value >= threshold) {
-    emit("refresh");
-    haptics.success();
-  }
-
-  isPulling.value = false;
-  pullOffset.value = 0;
-}
-// -----------------------------
+const { isPulling, ptrStyle, onTouchStart, onTouchMove, onTouchEnd } =
+  usePullToRefresh({
+    isRefreshing: toRef(props, "isRefreshing"),
+    onRefresh: () => emit("refresh"),
+  });
 
 // 🚀 FAB SYNCHRONIZATION
 // We watch the entire fabState object to ensure strict ordering of updates.
