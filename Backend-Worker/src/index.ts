@@ -1002,7 +1002,8 @@ app.post(
         logData.items.forEach((log) => {
           const weekId = calculateWarWeekId(log.createdDate);
           const standings = log.standings ?? [];
-          const myClan = standings.find((s) => s.clan.tag === tag);
+          const normalizedTag = tag.startsWith("#") ? tag : "#" + tag;
+          const myClan = standings.find((s) => s.clan.tag === normalizedTag);
 
           if (myClan?.clan.participants) {
             myClan.clan.participants.forEach((p) => {
@@ -1108,8 +1109,9 @@ app.post(
           let opponents: any[] = [];
 
           if (r.standings) {
-            myStanding = r.standings.find((s: any) => s.clan.tag === tag);
-            opponents = r.standings.filter((s: any) => s.clan.tag !== tag);
+            const normalizedTag = tag.startsWith("#") ? tag : "#" + tag;
+            myStanding = r.standings.find((s: any) => s.clan.tag === normalizedTag);
+            opponents = r.standings.filter((s: any) => s.clan.tag !== normalizedTag);
           }
 
           const myFame = myStanding ? myStanding.clan.fame : 0;
