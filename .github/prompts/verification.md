@@ -69,7 +69,7 @@
 * **[d]** **Partial Coverage:** Identify any existing `*.spec.ts` missing sad paths (API 500, null input, empty array, boundary values). The first one found is the target.
 * **[!] Coverage Log:** Append the path of every file tested to `.github/logs/verification-coverage.log` (create the file if it does not exist). On each run, consult this log when evaluating items `[c]` and `[d]` to avoid re-targeting recently covered files when uncovered ones remain.
 
-### [B] Step 2: Shadow Mode (The Trap)
+### [B] Step 2: Internal Analysis (The Trap)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
 
 * **[1]** Formulate "Trap" (e.g., "I will test `<utility>` for `<edge case A>` and `<edge case B>`").
