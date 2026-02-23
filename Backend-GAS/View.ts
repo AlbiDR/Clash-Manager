@@ -396,8 +396,6 @@ var View: IView = {
     const prefixes = ["Copy of ", "Copia di "];
     const coreSheets = [CONFIG.SHEETS.DB, CONFIG.SHEETS.ROSTER, CONFIG.SHEETS.HH];
     
-    if (name.includes("Ledearboard")) return true;
-
     return prefixes.some(prefix => {
         if (!name.startsWith(prefix)) return false;
         const originalName = name.substring(prefix.length);
