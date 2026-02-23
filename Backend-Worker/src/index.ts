@@ -205,6 +205,51 @@ app.use((req: Request, res: Response, next: NextFunction): void => {
   next();
 });
 
+/**
+ * 🔐 AUTHENTICATION MIDDLEWARE
+ *
+ * @remarks
+ * Validates the REMOTE_WORKER_SECRET for all privileged endpoints.
+ * Public routes are explicitly exempted to allow health checks and public scans.
+ * Registered before body-parsing to prevent unauthenticated DoS via large payloads.
+ */
+const authMiddleware: RequestHandler = (req, res, next) => {
+  const publicRoutes = [
+    "/",
+    "/health",
+    "/capabilities",
+    "/public/scan",
+    "/public/subscribe",
+  ];
+
+  // Normalize path to handle trailing slashes consistently
+  const path = req.path.replace(/\/$/, "") || "/";
+
+  if (publicRoutes.includes(path)) {
+    return next();
+  }
+
+  const secret = process.env["REMOTE_WORKER_SECRET"];
+  const authHeader = req.headers.authorization;
+
+  if (!secret) {
+    // THREAT: Exposed privileged endpoints if secret is missing.
+    console.error("[Auth] REMOTE_WORKER_SECRET not set in environment");
+    res.status(500).json({ error: "Internal server configuration error" });
+    return;
+  }
+
+  if (authHeader !== `Bearer ${secret}`) {
+    // THREAT: Unauthenticated access to Royale API keys and clan data.
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  next();
+};
+
+app.use(authMiddleware);
+
 app.use(express.json({ limit: "50mb" }));
 
 // ============================================================================
