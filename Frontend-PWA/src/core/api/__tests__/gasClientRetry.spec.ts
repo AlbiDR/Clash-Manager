@@ -21,6 +21,9 @@ vi.mock("valibot", () => ({
   string: () => ({}),
   optional: () => ({}),
   union: () => ({}),
+  nullable: () => ({}),
+  any: () => ({}),
+  parse: (schema, data) => data,
   safeParse: () => ({
     success: true,
     output: { lb: [], hh: [], timestamp: 123 },
