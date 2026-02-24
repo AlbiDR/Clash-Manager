@@ -5,6 +5,7 @@
  * DESCRIPTION: The isolated mathematical heart of the application.
  * ROLE: Pure Functions only. No side effects. No external dependencies.
  * STATUS: CORE ARCHITECTURE.
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
@@ -17,7 +18,8 @@ declare var module: any;
  * The Scoring Kernel version tracks breaking changes in the mathematical
  * formulas. V1.0.0 represents the initial stabilized pure-math extraction.
  */
-const VER_SCORING_KERNEL = "1.0.0"; 
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_SCORING_KERNEL = "13.1.0";
 
 /**
  * Interface for the Scoring Kernel.

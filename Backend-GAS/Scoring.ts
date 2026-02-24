@@ -5,7 +5,7 @@
  * ----------------------------------------------------------------------------
  * DESCRIPTION: The Diplomat. Manages configuration and implementation choices,
  *    but delegates pure math to the Kernel.
- *  VERSION: 13.0.0
+ *  VERSION: 13.1.0
  * ============================================================================
  */
 
@@ -15,7 +15,8 @@ import Registry from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
-const VER_SCORING = "13.0.0";
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_SCORING = "13.1.0";
 
 declare const module: any;
 
