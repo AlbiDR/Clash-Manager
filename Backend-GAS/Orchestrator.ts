@@ -5,7 +5,7 @@
  * WORKFLOW:
  *    - Creates a custom UI menu (onOpen) for manual control.
  *    - Exposes GRANULAR TASKS for Project Settings Triggers.
- * VERSION: 11.0.0
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
@@ -14,7 +14,8 @@ import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
-const VER_ORCHESTRATOR = "11.0.7";
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_ORCHESTRATOR = "13.1.0";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;

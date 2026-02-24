@@ -3,7 +3,7 @@
  * MODULE: CONTROLLER_WEBAPP - TypeScript Edition
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * VERSION: 11.0.0
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
@@ -12,7 +12,8 @@ import type { IRegistry } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
-const VER_CONTROLLER_WEBAPP = "11.0.0";
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_CONTROLLER_WEBAPP = "13.1.0";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;

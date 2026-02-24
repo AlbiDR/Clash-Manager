@@ -22,6 +22,7 @@ declare var Sheets: any;
  *    - Visual Rendering: Direct manipulation of Google Sheets for the UI.
  *
  * ROLE: The Commander (Orchestrator).
+ * VERSION: 13.1.0
  * ============================================================================
  */
 const Roster: IRoster = {
@@ -285,7 +286,8 @@ function updateLeaderboard() {
   Roster.update();
 }
 
-const VER_ROSTER = "1.0.0";
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_ROSTER = "13.1.0";
 
 // @ts-ignore
 if (typeof module !== "undefined" && module.exports) {
