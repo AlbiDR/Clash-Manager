@@ -228,7 +228,8 @@ export var CONFIG: AppConfig = {
     TIMEZONE: "Europe/Rome",
     API_BASE: "https://proxy.royaleapi.dev/v1",
     REMOTE_WORKER_URL: _PROPS["RemoteWorkerUrl"] || "https://clash-manager-worker.onrender.com",
-    REMOTE_WORKER_SECRET: _PROPS["RemoteWorkerSecret"] || "",
+    REMOTE_WORKER_SECRET:
+      _PROPS["REMOTE_WORKER_SECRET"] || _PROPS["RemoteWorkerSecret"] || "",
     // UPDATE: Prioritize Script Property for PWA URL, fallback to default
     WEB_APP_URL:
       _PROPS["WebAppUrl"] || "https://albidr.github.io/Clash-Manager/",
