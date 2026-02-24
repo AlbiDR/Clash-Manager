@@ -44,6 +44,7 @@ clasp.json
 .gemini
 .cursor
 .jules
+.mcp
 
 # PWA / Vite Generated
 public/sw.js
