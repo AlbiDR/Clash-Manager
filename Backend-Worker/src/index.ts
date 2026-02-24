@@ -970,7 +970,8 @@ app.post(
         return;
       }
 
-      const cleanTag = encodeURIComponent(tag);
+      const rawTag = decodeURIComponent(tag);
+      const cleanTag = encodeURIComponent(rawTag);
       const urls = [
         `${CONFIG.apiBase}/clans/${cleanTag}/members`,
         `${CONFIG.apiBase}/clans/${cleanTag}/currentriverrace`,
@@ -1002,7 +1003,8 @@ app.post(
         logData.items.forEach((log) => {
           const weekId = calculateWarWeekId(log.createdDate);
           const standings = log.standings ?? [];
-          const myClan = standings.find((s) => s.clan.tag === tag);
+          const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
+          const myClan = standings.find((s) => s.clan.tag === normalizedTag);
 
           if (myClan?.clan.participants) {
             myClan.clan.participants.forEach((p) => {
@@ -1108,8 +1110,10 @@ app.post(
           let opponents: any[] = [];
 
           if (r.standings) {
-            myStanding = r.standings.find((s: any) => s.clan.tag === tag);
-            opponents = r.standings.filter((s: any) => s.clan.tag !== tag);
+            const rawTag = decodeURIComponent(req.body.tag);
+            const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
+            myStanding = r.standings.find((s: any) => s.clan.tag === normalizedTag);
+            opponents = r.standings.filter((s: any) => s.clan.tag !== normalizedTag);
           }
 
           const myFame = myStanding ? myStanding.clan.fame : 0;

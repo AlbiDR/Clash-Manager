@@ -466,7 +466,7 @@ var Network: INetwork = {
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchClanDataSmart(cleanTag) {
-    const cacheKey = `clan_full_${cleanTag.replace(/%/g, '_')}`;
+    const cacheKey = `clan_full_v2_${cleanTag.replace(/%/g, '_')}`;
     const scriptCache = CacheService.getScriptCache();
     
     // 15-MINUTE PERSISTENT CACHE (Quota Saver)
