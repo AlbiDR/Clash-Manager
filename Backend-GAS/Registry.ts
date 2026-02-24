@@ -6,7 +6,7 @@
  * CAPABILITIES:
  *    1. Service Aggregation: Access all pure singletons from one object.
  *    2. Action Mapping: Maps legacy global functions to structured, queryable keys.
- * VERSION: 1.0.0
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
@@ -36,7 +36,8 @@ import type { IRoster } from "./Roster_Types";
 
 // Global Version Constant
 // @ts-ignore
-const VER_REGISTRY = "1.0.0";
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_REGISTRY = "13.1.0";
 
 declare var module: any;
 
