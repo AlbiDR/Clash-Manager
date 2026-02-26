@@ -98,3 +98,13 @@
 * **[b]** Bottleneck/Risk Identified (or "None — priority list exhausted" with a summary of what was inspected)
 * **[c]** The Fix & Logic (Paste **Internal Analysis** proof)
 * **[d]** Verification (Confirm **Vitest** passes, or confirm no changes were made)
+
+### [E] Step 5: Nightly Autonomy Protocol
+**[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
+
+* **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. Do not ask for clarification. If Bible Coherence or Naming Law checks block a change, document the reason in the PR description and push — do not halt execution.
+* **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow.
+* **[3] Push even on a "no bottleneck found" run.** A `chore(optimize): no bottleneck found` PR is a valid, expected output. It signals a structurally healthy codebase, not a failure.
+* **[4] Never block on tests.** Run `pnpm test` as a diagnostic step. If it cannot execute (missing deps, environment issue), note it in the PR description and push regardless. Test authorship is **Verify**'s responsibility.
+* **[5] One PR per run.** Do not batch multiple optimizations into a single PR. Each run is exactly one atomic commit, one PR.
+

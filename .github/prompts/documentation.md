@@ -105,3 +105,13 @@
 * **[c]** Context & Reasoning (Paste **Internal Analysis** proof)
 * **[d]** Changes (list of updates made, or "None — queue exhausted with no actionable gap found")
 * **[e]** **Coverage Log:** Confirm `.github/logs/documentation-coverage.log` was updated with the targeted file path, or with a "No Gap Found" entry and timestamp if the queue was exhausted.
+
+### [E] Step 5: Nightly Autonomy Protocol
+**[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
+
+* **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. Do not ask for clarification. If ambiguity blocks a change, record it in the PR description and move to the next queue item.
+* **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow.
+* **[3] Push even on a "no gap found" run.** A `chore(docs): no gap found` PR with an empty diff is a valid, expected output. It signals a healthy queue, not a failure.
+* **[4] Never block on tests.** If `pnpm test` cannot run (missing deps, environment issue), note it in the PR description and push regardless. Test validation is **Verify**'s responsibility — do not absorb it.
+* **[5] One PR per run.** Do not batch multiple documentation targets into a single PR. Each run is exactly one atomic commit, one PR.
+
