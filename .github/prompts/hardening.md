@@ -103,3 +103,13 @@
 * **[d]** Fix Applied (what changed and the inline comment added)
 * **[e]** Ambiguities Flagged (decisions deferred to developer)
 * **[f]** Verification (confirm `pnpm test` passes, or confirm no changes were made)
+
+### [E] Step 5: Nightly Autonomy Protocol
+**[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
+
+* **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. Do not ask for clarification. If a fix requires a decision only the developer can make, document the ambiguity in the PR description and push — do not halt execution.
+* **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow.
+* **[3] Push even on a "no threat found" run.** A `chore(harden): no threat found` PR is a valid, expected output. It signals a clean threat surface, not a failure.
+* **[4] Never block on tests.** Run `pnpm test` as a diagnostic step. If it cannot execute (missing deps, environment issue), note it in the PR description and push regardless. Test authorship is **Verify**'s responsibility.
+* **[5] One PR per run.** Do not batch multiple hardening fixes into a single PR. Each run is exactly one atomic commit, one PR.
+
