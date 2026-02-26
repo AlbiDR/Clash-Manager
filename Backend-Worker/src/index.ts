@@ -833,7 +833,7 @@ app.post(
 );
 
 // Push subscription storage (in-memory)
-const subscriptions = new Set<string>();
+const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: Push subscriptions are lost on restart and must be migrated to a database.
 
 app.post(
   "/public/subscribe",

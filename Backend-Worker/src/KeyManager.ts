@@ -15,7 +15,7 @@ export interface KeyState {
 }
 
 export class KeyManager {
-  private keys: KeyState[] = [];
+  private keys: KeyState[] = []; // EPHEMERAL: intentionally resets on restart
 
   /**
    * Initializes the manager with a raw list of API tokens.
