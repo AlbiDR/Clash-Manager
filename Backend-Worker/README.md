@@ -11,7 +11,8 @@ The **Muscle**. A high-performance, strictly typed Express.js server designed to
 
 - **Runtime**: Node.js (Express) with TypeScript.
 - **Architecture**: Stateless, high-concurrency worker pool.
-- **Security**: Bearer token authentication (optional), IAM-restricted invocation, and Smart Key Rotation.
+- **Security**: Strict Bearer token validation with path-based exemptions.
+- **Intelligence**: Integrated "Deep Delegation" scoring and Prophet Cache logic.
 - **Resilience**: Automatic retries with exponential backoff and jitter.
 
 ---
@@ -29,6 +30,7 @@ The worker behavior is controlled via environment variables:
 | `PORT` | `8080` | Server listening port |
 | `API_BASE` | `https://proxy.royaleapi.dev/v1` | Upstream API endpoint |
 | `API_KEYS` | - | Comma-separated list of fallback Clash Royale API keys |
+| `REMOTE_WORKER_SECRET` | - | Mandatory token for Bearer authentication |
 
 ---
 <br />
@@ -36,6 +38,22 @@ The worker behavior is controlled via environment variables:
 ## API Reference
 
 ### System Diagnostics
+
+#### `GET /capabilities`
+Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "version": "10.1.1",
+    "concurrency": 20,
+    "timeoutMs": 45000,
+    "maxRetries": 2
+  }
+}
+```
 
 #### `GET /health`
 Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
@@ -69,7 +87,7 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ### Intelligence & Scanning
 
 #### `POST /scan` / `POST /public/scan`
-Scans tournament brackets to discover new recruits. Configurable with blacklists and minimum trophy requirements.
+Scans tournament brackets to discover new recruits. Configurable with blacklists and minimum trophy requirements. `POST /scan` requires authentication, while `/public/scan` is open.
 
 **Payload:**
 ```json
@@ -77,7 +95,19 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
   "tags": ["#TOURNEY1", "#TOURNEY2"],
   "blacklist": ["#PLAYER1"],
   "minTrophies": 5000,
-  "scoring": null // Optional: Include weights to auto-score found players
+  "scoring": null, // Optional: Include weights to auto-score found players
+  "prophetCache": { "PLAYERTAG": { "wins": 10 } } // Optional: Strategic Intel
+}
+```
+
+#### `POST /public/subscribe`
+Registers a Web Push subscription endpoint for background notifications.
+
+**Payload:**
+```json
+{
+  "endpoint": "https://fcm.googleapis.com/...",
+  "keys": { "p256dh": "...", "auth": "..." }
 }
 ```
 
@@ -116,6 +146,27 @@ Validates a list of API keys against the upstream provider to check for validity
   "apiKeys": ["sk_key1", "sk_key2"]
 }
 ```
+
+---
+<br />
+
+## Architecture: Deep Delegation (Strategy 2)
+
+The worker implements a **Deep Delegation** strategy to optimize the entire Clash Manager ecosystem.
+
+1. **Scoring Offload**: By calculating complex player scores server-side (using the `Scoring_Kernel`), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
+2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"—historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
+
+---
+<br />
+
+## Security Architecture
+
+The worker enforces a strict security perimeter via `authMiddleware`:
+
+- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/*`) are exempt from token validation.
+- **DOS Protection**: Authentication is validated *before* large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
 ---
 <br />

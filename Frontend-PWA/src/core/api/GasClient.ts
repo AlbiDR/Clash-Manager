@@ -75,6 +75,73 @@ const WebAppDataSchema = v.object({
   playerTag: v.optional(v.string()),
 });
 
+/**
+ * 🛡️ VALIDATION BOUNDARY: Base schemas for domain models
+ * Enforces strict typing for data entering the Clean Stack.
+ */
+const MemberSchema = v.object({
+  id: v.string(),
+  n: v.string(),
+  t: v.number(),
+  performanceScore: v.number(),
+  performanceRawScore: v.number(),
+  dt: v.optional(v.number()),
+  d: v.object({
+    role: v.string(),
+    days: v.number(),
+    avg: v.number(),
+    seen: v.optional(v.nullable(v.string())),
+    rate: v.optional(v.nullable(v.string())),
+    wfame: v.optional(v.number()),
+    hist: v.string(),
+  }),
+});
+
+const RecruitSchema = v.object({
+  id: v.string(),
+  n: v.string(),
+  t: v.number(),
+  potentialScore: v.number(),
+  potentialRawScore: v.number(),
+  d: v.object({
+    don: v.number(),
+    war: v.number(),
+    ago: v.string(),
+    cards: v.optional(v.number()),
+  }),
+  lastScan: v.optional(v.number()),
+});
+
+const BaseWebAppDataSchema = v.object({
+  lb: v.array(MemberSchema),
+  hh: v.array(RecruitSchema),
+  playerTag: v.optional(v.string()),
+  timestamp: v.union([v.number(), v.string()]),
+});
+
+const ProfileSchema = v.union([
+  // Internal Format
+  v.object({
+    profile: v.object({
+      name: v.string(),
+      tag: v.string(),
+      kingLevel: v.number(),
+      xpIntoLevel: v.number(),
+    }),
+    cards: v.array(v.any()),
+    inventory: v.optional(v.any()),
+  }),
+  // RoyaleAPI Format
+  v.object({
+    name: v.string(),
+    tag: v.string(),
+    expLevel: v.number(),
+    expPoints: v.number(),
+    cards: v.array(v.any()),
+    towerTroops: v.optional(v.array(v.any())),
+  }),
+]);
+
 interface GenericEnvelope<T> {
   success?: boolean;
   status?: string;
@@ -220,7 +287,7 @@ export function mapHhRow(row: unknown[], m: Record<string, number>): Recruit | n
  * @throws Error if the payload is malformed or invalid.
  */
 export async function inflatePayload(data: unknown): Promise<WebAppData> {
-  let parsedData: any;
+  let parsedData: unknown;
   if (typeof data === "string") {
     try {
       parsedData = JSON.parse(data);
@@ -235,12 +302,18 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     throw new Error("Invalid payload: data is null or not an object");
   }
 
-  if (parsedData.format !== "matrix") {
-    return parsedData as WebAppData;
+  //  VALIDATION BOUNDARY: Enforce strict schema validation for all incoming data
+  if ((parsedData as any).format !== "matrix") {
+    //  THREAT: Unvalidated object payload could crash the Clean Stack.
+    const validated = v.parse(BaseWebAppDataSchema, parsedData);
+    return {
+      ...validated,
+      timestamp: Number(validated.timestamp) || Date.now(),
+    };
   }
 
-  const check = v.safeParse(WebAppDataSchema, parsedData);
-  const source = check.success ? check.output : (parsedData as any);
+  // Matrix format requires transformation after validation
+  const source = v.parse(WebAppDataSchema, parsedData);
 
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
@@ -496,7 +569,8 @@ export async function ping(options?: GasRequestOptions): Promise<PingResponse> {
 }
 
 export async function getPlayerProfile(tag: string): Promise<any> {
-  return gasRequest<any>("getPlayerProfile", { tag });
+  const profile = await gasRequest<unknown>("getPlayerProfile", { tag });
+  return v.parse(ProfileSchema, profile);
 }
 
 export async function dismissRecruits(
