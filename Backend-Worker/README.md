@@ -1,6 +1,6 @@
 # Clash Manager — Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.1.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
@@ -41,6 +41,8 @@ The worker behavior is controlled via environment variables:
 
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
+
+> **Note**: The worker utilizes independent versioning across subsystems (v10.1.1 for discovery / v10.1.4 for scanning).
 
 **Response:**
 ```json
@@ -165,7 +167,7 @@ The worker implements a **Deep Delegation** strategy to optimize the entire Clas
 The worker enforces a strict security perimeter via `authMiddleware`:
 
 - **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
-- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/*`) are exempt from token validation.
+- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated *before* large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
 ---
