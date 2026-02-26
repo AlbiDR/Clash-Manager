@@ -3,10 +3,10 @@ import path from "path";
 
 /**
  * ============================================================================
- * 🤖 SCRIPT: MERGE JULES PRS (TypeScript Edition)
+ * 🤖 SCRIPT: MERGE NIGHTLY PRS (TypeScript Edition)
  * ----------------------------------------------------------------------------
  * 📝 DESCRIPTION: Automates the merging of PRs from google-labs-jules.
- * 🏷️ VERSION: 3.0.1
+ * 🏷️ VERSION: 3.1.0
  * ============================================================================
  */
 
@@ -16,10 +16,10 @@ import path from "path";
 const CONFIG = {
   targetOwner: process.env.GITHUB_REPOSITORY?.split("/")[0] || "",
   targetRepo: process.env.GITHUB_REPOSITORY?.split("/")[1] || "",
-  targetBranch: "Jules",
-  allowedAuthors: ["google-labs-jules", "AlbiDR"], 
+  targetBranch: "Nightly",
+  allowedAuthors: ["google-labs-jules", "AlbiDR"],
   token: process.env.GITHUB_TOKEN || "",
-  changelogPath: path.join(".jules", "CHANGELOG.md"),
+  changelogPath: path.join(".nightly", "CHANGELOG.md"),
 };
 
 interface GitHubPR {
@@ -112,7 +112,7 @@ async function markReadyForReview(nodeId: string): Promise<void> {
 }
 
 // ============================================================================
-// AUTOMATION LOGIC: Jules PR Merge Engine
+// AUTOMATION LOGIC: Nightly PR Merge Engine
 // ============================================================================
 async function run() {
   try {
@@ -141,14 +141,14 @@ async function run() {
 
     console.log(`Found ${prs.length} total open PRs.`);
 
-    // 2. Filter for Jules PRs
+    // 2. Filter for Nightly PRs
     const targetPrs = prs.filter((pr) => {
       const login = pr.user.login.toLowerCase();
       // Check if the author is in our allowed list (or is a bot version of them)
-      const isAllowedAuthor = CONFIG.allowedAuthors.some(allowed => 
+      const isAllowedAuthor = CONFIG.allowedAuthors.some(allowed =>
         login === allowed.toLowerCase() || login === `${allowed.toLowerCase()}[bot]`
       );
-      
+
       const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
 
       // Debugging Output (so you know why it skips next time)
@@ -160,7 +160,7 @@ async function run() {
     });
 
     if (targetPrs.length === 0) {
-      console.log("✅ No matching Jules PRs found.");
+      console.log("✅ No matching Nightly PRs found.");
       return;
     }
 
@@ -168,7 +168,7 @@ async function run() {
       `Processing ${targetPrs.length} PR(s) targeting ${CONFIG.targetBranch}...`,
     );
 
-    // Ensure .jules directory exists
+    // Ensure .nightly directory exists
     const dir = path.dirname(CONFIG.changelogPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
@@ -264,7 +264,7 @@ ${pr.body ? "### Description\n" + pr.body : ""}
     if (changelogUpdates) {
       let content = fs.existsSync(CONFIG.changelogPath)
         ? fs.readFileSync(CONFIG.changelogPath, "utf-8")
-        : "# Changelog\n\nAutomated changelog of Jules merges.\n\n";
+        : "# Changelog\n\nAutomated changelog of Nightly merges.\n\n";
 
       if (content.includes("\n\n")) {
         const split = content.indexOf("\n\n") + 2;
