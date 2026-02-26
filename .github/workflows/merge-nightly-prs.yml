@@ -1,4 +1,4 @@
-name: Sync Jules PRs
+name: Sync Nightly PRs
 
 on:
   schedule:
@@ -8,14 +8,14 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
-      - Jules
+      - Nightly
 
 permissions:
   contents: write
   pull-requests: write
 
 # ============================================================================
-# AUTOMATION ENGINE: Jules PR Synchronization
+# AUTOMATION ENGINE: Nightly PR Synchronization
 # ============================================================================
 jobs:
   merge-prs:
@@ -39,17 +39,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure Jules Branch Exists and Checkout
+      - name: Ensure Nightly Branch Exists and Checkout
         run: |
           git fetch origin
-          if git show-ref --verify --quiet refs/remotes/origin/Jules; then
-            echo "Branch 'Jules' exists. Checking out..."
-            git checkout Jules
-            git pull origin Jules
+          if git show-ref --verify --quiet refs/remotes/origin/Nightly; then
+            echo "Branch 'Nightly' exists. Checking out..."
+            git checkout Nightly
+            git pull origin Nightly
           else
-            echo "Branch 'Jules' does not exist. Creating from current HEAD."
-            git checkout -b Jules
-            git push origin Jules
+            echo "Branch 'Nightly' does not exist. Creating from current HEAD."
+            git checkout -b Nightly
+            git push origin Nightly
           fi
 
       - name: Setup Node.js
@@ -63,20 +63,20 @@ jobs:
       - name: Run Merge Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx tsx .github/scripts/merge-jules-prs.ts
+        run: npx tsx .github/scripts/merge-nightly-prs.ts
 
       # ----------------------------------------------------------------------
       # STEP 3: Persistence & Documentation
       # ----------------------------------------------------------------------
       - name: Commit and Push Changelog
         run: |
-          if [[ `git status --porcelain .jules/CHANGELOG.md` ]]; then
+          if [[ `git status --porcelain .nightly/CHANGELOG.md` ]]; then
             git config --global user.name 'github-actions[bot]'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add .jules/CHANGELOG.md
+            git add .nightly/CHANGELOG.md
             git commit -m "docs: update changelog [skip ci]"
-            git pull origin Jules --rebase
-            git push origin Jules
+            git pull origin Nightly --rebase
+            git push origin Nightly
           else
             echo "No changelog updates."
           fi

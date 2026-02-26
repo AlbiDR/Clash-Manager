@@ -15,10 +15,10 @@ jobs:
     name: "Initial Difference Detection"
     runs-on: ubuntu-latest
     outputs:
-      jules_beta_diff: ${{ steps.check.outputs.jules_beta_diff }}
+      nightly_beta_diff: ${{ steps.check.outputs.nightly_beta_diff }}
       beta_stable_diff: ${{ steps.check.outputs.beta_stable_diff }}
       stable_beta_diff: ${{ steps.check.outputs.stable_beta_diff }}
-      beta_jules_diff: ${{ steps.check.outputs.beta_jules_diff }}
+      beta_nightly_diff: ${{ steps.check.outputs.beta_nightly_diff }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,11 +30,11 @@ jobs:
         run: |
           git fetch origin
 
-          # Jules -> Beta
-          if git merge-base --is-ancestor origin/Jules origin/Beta; then
-            echo "jules_beta_diff=false" >> $GITHUB_OUTPUT
+          # Nightly -> Beta
+          if git merge-base --is-ancestor origin/Nightly origin/Beta; then
+            echo "nightly_beta_diff=false" >> $GITHUB_OUTPUT
           else
-            echo "jules_beta_diff=true" >> $GITHUB_OUTPUT
+            echo "nightly_beta_diff=true" >> $GITHUB_OUTPUT
           fi
 
           # Beta -> Stable
@@ -51,20 +51,20 @@ jobs:
             echo "stable_beta_diff=true" >> $GITHUB_OUTPUT
           fi
 
-          # Beta -> Jules
-          if git merge-base --is-ancestor origin/Beta origin/Jules; then
-            echo "beta_jules_diff=false" >> $GITHUB_OUTPUT
+          # Beta -> Nightly
+          if git merge-base --is-ancestor origin/Beta origin/Nightly; then
+            echo "beta_nightly_diff=false" >> $GITHUB_OUTPUT
           else
-            echo "beta_jules_diff=true" >> $GITHUB_OUTPUT
+            echo "beta_nightly_diff=true" >> $GITHUB_OUTPUT
           fi
 
   # ============================================================================
-  # JOB 1: (Upstream) Jules → Beta
+  # JOB 1: (Upstream) Nightly → Beta
   # ============================================================================
-  jules-to-beta:
-    name: "(Upstream) Jules → Beta"
+  nightly-to-beta:
+    name: "(Upstream) Nightly → Beta"
     needs: check-sync
-    if: needs.check-sync.outputs.jules_beta_diff == 'true'
+    if: needs.check-sync.outputs.nightly_beta_diff == 'true'
     runs-on: ubuntu-latest
     outputs:
       merged: ${{ steps.merge.outputs.merged }}
@@ -82,12 +82,12 @@ jobs:
       - name: Fetch all branches
         run: git fetch origin
 
-      - name: Merge Jules into Beta
+      - name: Merge Nightly into Beta
         id: merge
         run: |
           git checkout Beta
           git pull origin Beta
-          git merge origin/Jules --no-edit
+          git merge origin/Nightly --no-edit
           git push origin Beta
           echo "merged=true" >> $GITHUB_OUTPUT
 
@@ -96,11 +96,11 @@ jobs:
   # ============================================================================
   beta-to-stable:
     name: "(Upstream) Beta → Stable"
-    needs: [check-sync, jules-to-beta]
+    needs: [check-sync, nightly-to-beta]
     if: |
       always() &&
-      (needs.check-sync.outputs.beta_stable_diff == 'true' || needs.jules-to-beta.outputs.merged == 'true') &&
-      (needs.jules-to-beta.result == 'success' || needs.jules-to-beta.result == 'skipped')
+      (needs.check-sync.outputs.beta_stable_diff == 'true' || needs.nightly-to-beta.outputs.merged == 'true') &&
+      (needs.nightly-to-beta.result == 'success' || needs.nightly-to-beta.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       merged: ${{ steps.merge.outputs.merged }}
@@ -210,14 +210,14 @@ jobs:
           fi
 
   # ============================================================================
-  # JOB 4: (Downstream) Beta → Jules
+  # JOB 4: (Downstream) Beta → Nightly
   # ============================================================================
-  beta-to-jules:
-    name: "(Downstream) Beta → Jules"
+  beta-to-nightly:
+    name: "(Downstream) Beta → Nightly"
     needs: [check-sync, stable-to-beta]
     if: |
       always() &&
-      (needs.check-sync.outputs.beta_jules_diff == 'true' || needs.stable-to-beta.outputs.merged == 'true') &&
+      (needs.check-sync.outputs.beta_nightly_diff == 'true' || needs.stable-to-beta.outputs.merged == 'true') &&
       (needs.stable-to-beta.result == 'success' || needs.stable-to-beta.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
@@ -234,12 +234,12 @@ jobs:
       - name: Fetch all branches
         run: git fetch origin
 
-      - name: Merge Beta into Jules
+      - name: Merge Beta into Nightly
         run: |
-          git checkout Jules
-          git pull origin Jules
+          git checkout Nightly
+          git pull origin Nightly
           git merge origin/Beta --no-edit
-          git push origin Jules
+          git push origin Nightly
 
   # ============================================================================
   # JOB 5: (Deploy) PWA - Conditional
