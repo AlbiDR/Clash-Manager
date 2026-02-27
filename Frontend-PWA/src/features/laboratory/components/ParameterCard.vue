@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import Icon from "../../../shared/ui/Icon.vue";
 import { computed } from "vue";
-import { type OptimizationSettings } from "@/logic/Laboratory/Types";
-import { IMPORTANT_KING_LEVELS } from "@/logic/Laboratory/Registry";
+import { type OptimizationSettings, IMPORTANT_KING_LEVELS } from "../logic";
 const props = defineProps<{
   settings: OptimizationSettings;
   currentLevel: number;
