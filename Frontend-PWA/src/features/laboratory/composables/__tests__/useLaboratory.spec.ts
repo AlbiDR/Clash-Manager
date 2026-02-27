@@ -31,11 +31,15 @@ const localStorageMock = {
 vi.stubGlobal('localStorage', localStorageMock);
 
 // --- Logic Mocks ---
-vi.mock('@/logic/Laboratory/Simulation', () => ({
-  calculateProgressionPath: vi.fn(function* () {
-    yield { history: [], totalXp: 0, inventory: { gold: 0, gems: 0, wildCards: {} } };
-  })
-}));
+vi.mock('../../logic', async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    calculateProgressionPath: vi.fn(function* () {
+      yield { history: [], totalXp: 0, inventory: { gold: 0, gems: 0, wildCards: {} } };
+    })
+  };
+});
 
 describe('useLaboratory', () => {
   beforeEach(async () => {
