@@ -3,19 +3,21 @@ import { useClashData } from "@core/services/useClashData";
 import { ref, computed, type Ref, watch } from 'vue'
 
 // Progression Engine 2.0 Primitives
-import { calculateProgressionPath } from '@/logic/Laboratory/Simulation';
-import ProfileHydrator from '@/logic/Laboratory/ProfileHydrator';
-import { KING_XP_TABLE, IMPORTANT_KING_LEVELS } from '@/logic/Laboratory/Registry';
-import { asGold, asGems, asXP } from '@/logic/Laboratory/Economy';
-
-import type { 
-  PlayerData, 
-  OptimizationSettings, 
-  SimulationState,
-  Inventory,
-  Rarity,
-  OptimizationResult
-} from '@/logic/Laboratory/Types';
+import {
+  calculateProgressionPath,
+  ProfileHydrator,
+  KING_XP_TABLE,
+  IMPORTANT_KING_LEVELS,
+  asGold,
+  asGems,
+  asXP,
+  type PlayerData,
+  type OptimizationSettings,
+  type SimulationState,
+  type Inventory,
+  type Rarity,
+  type OptimizationResult
+} from '../logic';
 
 /**
  * @remarks
