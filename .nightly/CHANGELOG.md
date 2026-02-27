@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-02-27] PR #161: Refactor: Laboratory Logic Co-location & Barrel Protocol
+**Commit**: `1da3ae77143424cc7e196f40600f6880bde73128`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/161)
+
+### Description
+Relocated domain-specific logic and unit tests from global @logic to @features/laboratory. Implemented the Barrel Protocol for internal logic isolation and standardized test naming conventions to *.spec.ts. All 44 tests passed successfully.
+
+---
+*PR created automatically by Jules for task [4180320252906770466](https://jules.google.com/task/4180320252906770466) started by @AlbiDR*
+
+---
+
 ## [2026-02-27] PR #160: test(settings): add comprehensive tests for useSettings composable
 **Commit**: `bd04f0df7c908d0ee903c42a89e183b87c3c5b4f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/160)
