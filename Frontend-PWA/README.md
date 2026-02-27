@@ -1,8 +1,8 @@
 # Clash Manager — Client Core (PWA)
 
-[![Client](https://img.shields.io/badge/Client-v10.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
-The **Operational Command Center**. A high-performance, offline-first Vue 3 application that serves as the primary interface for clan management.
+The **Operational Command Center**. A high-performance, offline-first Vue 3.5 application that serves as the primary interface for clan management.
 
 ---
 <br />
@@ -50,12 +50,12 @@ The application has migrated away from utility frameworks to a custom, highly-op
 
 | Layer | Technology | Description |
 | :--- | :--- | :--- |
-| **Core** | **Vue 3** | Composition API (`<script setup>`) for maximum type inference |
+| **Core** | **Vue 3.5** | Composition API (`<script setup>`) for maximum type inference |
 | **Language** | **TypeScript** | Strict mode enabled for 100% type safety |
 | **State** | **Composables** | Decentralized, atomic state management (No Pinia/Vuex overhead) |
 | **Network** | **GasClient** | Specialized bridge for communicating with Google Apps Script |
 | **Schema** | **Valibot** | Runtime payload validation to ensure data integrity |
-| **PWA** | **Vite PWA** | Service Worker registration, asset caching, and offline support |
+| **PWA** | **Vite 7** | Modern build orchestration with Vite PWA for offline support |
 | **Testing** | **Vitest** | Unit and component testing with JSDOM environment |
 
 ---
@@ -65,10 +65,10 @@ The codebase is organized using a layered, feature-driven architecture to ensure
 
 ```text
 src/
-├── app/             # Application shell (Router, App.vue, Main entry)
-├── core/            # Business Logic Layer (API clients, Storage, Global services)
-├── features/        # Domain-Specific Silos (Laboratory, Roster, Headhunter, Settings)
-├── shared/          # Atomic UI Layer (Common components, directives, haptics)
+├── app/             # Layer 4: App (@app) [Glue] - Orchestration & Shell
+├── core/            # Layer 1: Core (@core) [Kernel] - Agnostic Infrastructure
+├── features/        # Layer 3: Features (@features) [Business] - Domain Silos
+├── shared/          # Layer 2: Shared (@shared) [Molecules] - Domain-blind UI
 └── env.d.ts         # Environment definitions
 ```
 
