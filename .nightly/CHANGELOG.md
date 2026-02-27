@@ -1,6 +1,32 @@
 # Changelog
 
 
+## [2026-02-27] PR #160: test(settings): add comprehensive tests for useSettings composable
+**Commit**: `bd04f0df7c908d0ee903c42a89e183b87c3c5b4f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/160)
+
+### Description
+This PR introduces a comprehensive test suite for the `useSettings` composable, achieving defensive coverage for the central orchestrator of the Settings feature.
+
+### Trap & Strategy
+The test suite targets `useSettings.ts` to ensure that system-level actions (PWA updates, cache purging, and factory resets) behave deterministically across various environment states.
+
+### Key Coverage Areas:
+- **Reactive Integrity:** Verified that `footerBadgeText` and `apiStatusObject` respond correctly to mode shifts and connection statuses.
+- **Asynchronous Resilience:** Mocked the `navigator.serviceWorker` and `caches` APIs to verify `forceUpdate` and `clearCache` logic, including "sad paths" where the service worker is missing or updates fail.
+- **State Containment:** Verified that `factoryReset` correctly purges `localStorage`, `sessionStorage`, and `IndexedDB` while handling potential IDB failures gracefully.
+- **Architectural Compliance:** Followed Section 9 of the Frontend Bible by using deep imports for service singletons (e.g., `idb`) to prevent barrel-induced side effects.
+
+### Verification Results:
+- **Pass Rate:** 24/24 tests passing.
+- **Coverage Log:** Updated `.github/logs/verification-coverage.log`.
+- **Environment:** All global stubs are properly cleaned up in `afterEach` to prevent test leakage.
+
+---
+*PR created automatically by Jules for task [13124464715966359586](https://jules.google.com/task/13124464715966359586) started by @AlbiDR*
+
+---
+
 ## [2026-02-27] PR #159: chore(prune): unify key management and fix redundant rotation logic
 **Commit**: `c6720faa11614f6ba1713128fde053d3d31c903d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/159)
