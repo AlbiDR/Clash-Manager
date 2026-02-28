@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-02-28] PR #166: docs(shared): reconcile vTactile with Clerk archetype and remove emojis
+**Commit**: `7fda74f830a55ed1882b0c2b3dacc7d9cb9a357c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/166)
+
+### Description
+Reconciled `vTactile.ts` with the Clerk archetype by removing emojis, adding architectural context, and documenting interaction protocols. Verified with unit tests.
+
+---
+*PR created automatically by Jules for task [14103503660589552244](https://jules.google.com/task/14103503660589552244) started by @AlbiDR*
+
+---
+
 ## [2026-02-28] PR #165: refactor(laboratory): centralize glass-panel primitives and prune dead styles
 **Commit**: `facd9c496df6769830f0ad1e6ab48449ea7212e1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/165)
