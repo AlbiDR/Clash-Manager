@@ -1,4 +1,4 @@
-import type { Directive, DirectiveBinding } from "vue";
+import type { Directive } from "vue";
 
 interface TactileBinding {
   onTap: () => void;
@@ -23,8 +23,21 @@ interface TactileState {
 const stateMap = new WeakMap<HTMLElement, TactileState>();
 
 /**
- * 🖱️ V-TACTILE DIRECTIVE
+ * V-TACTILE DIRECTIVE
  * Provides high-performance tap and long-press haptic interaction.
+ *
+ * @remarks
+ * This directive is a Layer 2 (@shared) molecule. It provides a standardized
+ * interaction model for the entire application, ensuring that haptic feedback
+ * and touch interactions remain consistent across features. It implements the
+ * 'Tactile Interaction' protocol as defined in the Frontend Bible.
+ *
+ * Key Interaction Thresholds:
+ * - Tap: Instant trigger on pointerup if move threshold not exceeded.
+ * - Long Press: 500ms continuous hold.
+ * - Haptic (Tap): 12ms vibration.
+ * - Haptic (Long Press): 60ms vibration.
+ * - Movement Tolerance: 10px (DPI-aware).
  */
 export const vTactile: Directive<HTMLElement, TactileBinding> = {
   mounted(el, binding) {
@@ -39,7 +52,9 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
           if (e.button !== 0) return;
 
           const target = e.target as HTMLElement;
-          // 🛡️ Logic: Ignore interactions on actionable children
+          // ARCHITECTURAL PROTECTION: Ignore interactions on actionable children.
+          // This prevents nested interaction conflicts when a tactile container
+          // contains standard buttons or links (Bug #14).
           if (
             target.closest(".btn-action") ||
             target.closest("a") ||
@@ -68,7 +83,9 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
         pointermove: (e: PointerEvent) => {
           if (!state.isActive) return;
 
-          // ⚡ OPTIMIZATION: High-DPI aware threshold (Bug #16)
+          // PERFORMANCE: High-DPI aware threshold (Bug #16).
+          // Multiplied by devicePixelRatio to ensure the 'wiggle' tolerance
+          // feels consistent across low-end and high-end mobile displays.
           const moveThreshold = 10 * (window.devicePixelRatio || 1);
           const dx = Math.abs(e.clientX - state.startX);
           const dy = Math.abs(e.clientY - state.startY);
@@ -129,4 +146,3 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
     }
   },
 };
-
