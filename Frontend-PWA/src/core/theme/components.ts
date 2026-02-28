@@ -94,4 +94,29 @@ a { text-decoration: underline; color: inherit; }
 .role-coleader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2); }
 .role-elder { background: var(--sys-color-secondary-container); color: var(--sys-color-on-secondary-container); }
 .role-member { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); border: 1px solid var(--sys-color-outline-variant); }
+
+/* =========================================
+   GLASS UI PRIMITIVES
+   ========================================= */
+.glass-panel {
+  background: var(--sys-surface-glass);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  border: 1px solid var(--sys-surface-glass-border);
+  border-radius: var(--shape-corner-l);
+  padding: 20px;
+  box-shadow: var(--sys-elevation-2);
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  margin-bottom: 20px;
+}
 `;

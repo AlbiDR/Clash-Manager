@@ -141,26 +141,6 @@ const handleResourceUpdate = (key: string, value: number) => {
   }
 }
 
-.glass-panel {
-  background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  border: 1px solid var(--sys-surface-glass-border);
-  border-radius: var(--shape-corner-l);
-  padding: 16px;
-  box-shadow: var(--sys-elevation-2);
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-  margin-bottom: 16px;
-}
 
 
 .section-title {
