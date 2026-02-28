@@ -77,17 +77,6 @@ const baseUrl = import.meta.env.BASE_URL;
 </template>
 
 <style scoped>
-.glass-panel {
-  background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  border: 1px solid var(--sys-surface-glass-border);
-  border-radius: var(--shape-corner-l);
-  padding: 24px;
-  box-shadow: var(--sys-elevation-3);
-  position: relative;
-  overflow: hidden;
-}
-
 .summary-header {
   display: flex;
   justify-content: space-between;
