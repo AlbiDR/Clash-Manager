@@ -47,6 +47,9 @@ importers:
       node-fetch:
         specifier: ^2.6.9
         version: 2.7.0
+      valibot:
+        specifier: ^1.2.0
+        version: 1.2.0(typescript@5.9.3)
     devDependencies:
       '@types/express':
         specifier: ^4.17.21

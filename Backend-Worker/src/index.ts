@@ -20,9 +20,19 @@ import express, {
   RequestHandler,
 } from "express";
 import fetch from "node-fetch";
+import * as v from "valibot";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import Time from "../../Backend-GAS/Time";
 import { KeyManager, type KeyState } from "./KeyManager.js";
+import {
+  AuditRequestSchema,
+  PublicScanRequestSchema,
+  ScanRequestSchema,
+  ClanFullRequestSchema,
+  ClanApiRequestSchema,
+  FetchRequestSchema,
+  SubscriptionRequestSchema,
+} from "./schemas.js";
 import type {
   ServerConfig,
   FetchResult,
@@ -498,19 +508,6 @@ async function processScanBatch(
 //  MIDDLEWARE
 // ============================================================================
 
-/**
- * 🛠️ REQUEST VALIDATION MIDDLEWARE
- */
-function validateFields(fields: string[]): RequestHandler {
-  return (req, res, next) => {
-    const missing = fields.filter(f => !req.body[f]);
-    if (missing.length > 0) {
-      res.status(400).json({ status: "error", error: "ERR_MISSING_FIELDS", details: missing });
-      return;
-    }
-    next();
-  };
-}
 
 // ============================================================================
 //  ROUTES
@@ -579,17 +576,20 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
  */
 app.post(
   "/audit",
-  validateFields(["apiKeys"]),
   async (
     req: Request<object, object, AuditRequest>,
     res: Response,
   ): Promise<void> => {
+    // THREAT: Malformed input causing downstream runtime failures.
+    // Rationale: Strict validation at the entry point ensures only valid data reaches the KeyManager.
+    const result = v.safeParse(AuditRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      return;
+    }
+
     try {
       const { apiKeys } = req.body;
-      if (!Array.isArray(apiKeys)) {
-        res.status(400).json({ error: "apiKeys must be array" });
-        return;
-      }
 
       const auditUrl = `${CONFIG.apiBase}/cards`;
       const tasks = apiKeys.map(async (key): Promise<ApiKeyAuditResult> => {
@@ -640,11 +640,17 @@ app.post(
  */
 app.post(
   "/public/scan",
-  validateFields(["tags"]),
   async (
     req: Request<object, object, PublicScanRequest>,
     res: Response,
   ): Promise<void> => {
+    // THREAT: Malformed scan tags or options causing inefficient upstream scanning or worker crashes.
+    const result = v.safeParse(PublicScanRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      return;
+    }
+
     try {
       const { tags, blacklist, minTrophies, scoring } = req.body;
 
@@ -720,12 +726,14 @@ const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: Push subscript
 app.post(
   "/public/subscribe",
   (req: Request<object, object, SubscriptionRequest>, res: Response): void => {
-    const sub = req.body;
-    if (!sub?.endpoint) {
-      res.status(400).json({ error: "Invalid subscription" });
+    // THREAT: Silent corruption of the subscription set if malformed data is accepted.
+    const result = v.safeParse(SubscriptionRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
+    const sub = req.body;
     subscriptions.add(JSON.stringify(sub));
     console.log(` New Push Subscription. Total: ${subscriptions.size}`);
     res.json({ success: true, count: subscriptions.size });
@@ -742,11 +750,17 @@ app.post(
  */
 app.post(
   "/scan",
-  validateFields(["tags"]),
   async (
     req: Request<object, object, ScanRequest>,
     res: Response,
   ): Promise<void> => {
+    // THREAT: Unauthorized data access if malformed tags bypass filters.
+    const result = v.safeParse(ScanRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      return;
+    }
+
     try {
       const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
 
@@ -840,17 +854,19 @@ app.post(
  */
 app.post(
   "/clan/full",
-  validateFields(["tag"]),
   async (
     req: Request<object, object, ClanFullRequest>,
     res: Response,
   ): Promise<void> => {
+    // THREAT: Malformed clan tag causing upstream API errors or incorrect data snapshots.
+    const result = v.safeParse(ClanFullRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      return;
+    }
+
     try {
       const { tag, apiKeys } = req.body;
-      if (!tag) {
-        res.status(400).json({ error: "tag required" });
-        return;
-      }
 
       const rawTag = decodeURIComponent(tag);
       const cleanTag = encodeURIComponent(rawTag);
@@ -916,21 +932,19 @@ app.post(
 
 app.post(
   "/clan/api",
-  validateFields(["tag", "type"]),
   async (
     req: Request<object, object, ClanApiRequest>,
     res: Response,
   ): Promise<void> => {
+    // THREAT: Invalid request types or tags leading to unhandled upstream responses.
+    const result = v.safeParse(ClanApiRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      return;
+    }
+
     try {
       const { tag, type } = req.body;
-      if (!tag) {
-        res.status(400).json({ error: "tag required" });
-        return;
-      }
-      if (!type) {
-        res.status(400).json({ error: "type required" });
-        return;
-      }
 
       const cleanTag = encodeURIComponent(tag);
       let url = "";
@@ -1035,12 +1049,15 @@ app.post(
     req: Request<object, object, FetchRequest>,
     res: Response,
   ): Promise<void> => {
+    // THREAT: Arbitrary URL fetching or malformed scoring weights leading to resource exhaustion.
+    const result = v.safeParse(FetchRequestSchema, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      return;
+    }
+
     try {
       const { urls, apiKeys, scoring } = req.body;
-      if (!Array.isArray(urls)) {
-        res.status(400).json({ error: "urls must be array" });
-        return;
-      }
 
       const concurrency = Number(
         process.env["WORKER_CONCURRENCY"] ??
