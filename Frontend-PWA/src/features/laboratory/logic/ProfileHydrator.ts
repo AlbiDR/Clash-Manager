@@ -7,6 +7,8 @@ import type {
   Rarity,
   CardName
 } from './Types';
+import * as v from "valibot";
+import { ProfileInputSchema } from "./Schemas";
 import { asGold, asGems, asXP, addXP } from './Economy';
 import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
 
@@ -31,31 +33,51 @@ const normalizeRarity = (raw: string): Rarity => {
 const ProfileHydrator = {
   /**
    * Transforms raw API data into strongly typed domain models.
+   *
+   * @remarks
+   * 🛡️ VALIDATION BOUNDARY: Implements Target B [1] hardening.
+   * This function enforces strict schema validation for all incoming data
+   * from both internal cache and external API. Downstream logic is
+   * guaranteed to operate on validated structural input.
    */
   hydrate(raw: any): PlayerData {
-    const isInternal = !!(raw.profile && raw.cards);
+    const result = v.safeParse(ProfileInputSchema, raw);
+
+    if (!result.success) {
+      // THREAT: Corrupted or malicious data crashing the simulation engine.
+      console.warn("[ProfileHydrator] Validation failed, returning safe default", result.issues);
+      return {
+        profile: { name: "Unknown", tag: "0", kingLevel: 1, xpIntoLevel: asXP(0) },
+        inventory: { gold: asGold(0), gems: asGems(0), wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
+        cards: []
+      };
+    }
+
+    const data = result.output;
+    const isInternal = "profile" in data;
     
     let profile: PlayerProfile;
     let cardsData: any[] = [];
     let inventoryData: any;
 
     if (isInternal) {
+      const p = data.profile;
       profile = {
-        name: raw.profile.name || "Unknown",
-        tag: raw.profile.tag || "0",
-        kingLevel: raw.profile.kingLevel || 1,
-        xpIntoLevel: asXP(raw.profile.xpIntoLevel || 0)
+        name: p.name || "Unknown",
+        tag: p.tag || "0",
+        kingLevel: p.kingLevel || 1,
+        xpIntoLevel: asXP(p.xpIntoLevel || 0)
       };
-      cardsData = raw.cards || [];
-      inventoryData = raw.inventory || {};
+      cardsData = data.cards || [];
+      inventoryData = data.inventory || {};
     } else {
       profile = {
-        name: raw.name || "Unknown",
-        tag: raw.tag || "0",
-        kingLevel: raw.expLevel || 1,
-        xpIntoLevel: asXP(raw.expPoints || 0)
+        name: data.name || "Unknown",
+        tag: data.tag || "0",
+        kingLevel: data.expLevel || 1,
+        xpIntoLevel: asXP(data.expPoints || 0)
       };
-      cardsData = [...(raw.cards || []), ...(raw.towerTroops || [])];
+      cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
       inventoryData = {}; // Flat RoyaleAPI doesn't have inventory
     }
 
@@ -68,7 +90,8 @@ const ProfileHydrator = {
         rarity: rarity,
         level: Math.max(1, Math.min(level, CARD_LEVEL_CAP)),
         count: c.count || 0,
-        isTowerTroop: !!c.isTowerTroop || (raw.towerTroops?.some((tt: any) => tt.name === c.name))
+        // BUGFIX: Ensure boolean coercion is explicit to avoid 'undefined' leaks in domain models.
+        isTowerTroop: Boolean(c.isTowerTroop) || ( !isInternal && data.towerTroops?.some((tt: any) => tt.name === c.name) ) || false
       };
     });
 
