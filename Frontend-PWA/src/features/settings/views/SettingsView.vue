@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { vTactile } from "../../../shared/directives/vTactile";
-import ConsoleLayout from "../../../shared/ui/ConsoleLayout.vue";
-import HeaderInfoOverlay from "../../../shared/ui/HeaderInfoOverlay.vue";
-import ConsoleHeader from "../../../shared/ui/ConsoleHeader.vue";
-import FloatingDock from "../../../shared/ui/FloatingDock.vue";
+import {
+  vTactile,
+  ConsoleHeader
+} from "@shared";
 import { computed } from "vue";
 import { useSettings } from "../composables/useSettings";
+
+// Settings Components
 import NetworkSettings from "../components/NetworkSettings.vue";
 import BackendRefresher from "../components/BackendRefresher.vue";
 import NotificationSettings from "../components/NotificationSettings.vue";
@@ -13,6 +14,7 @@ import AppearanceSettings from "../components/AppearanceSettings.vue";
 import FeatureSettings from "../components/FeatureSettings.vue";
 import ModeSettings from "../components/ModeSettings.vue";
 import RecoverySettings from "../components/RecoverySettings.vue";
+import SkeletonSettingsCard from "../components/SkeletonSettingsCard.vue";
 
 
 const {

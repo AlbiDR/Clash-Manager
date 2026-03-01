@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import BaseCardSkeleton from "../../../shared/ui/BaseCardSkeleton.vue";
-import ConsoleLayout from "../../../shared/ui/ConsoleLayout.vue";
-import ConsoleList from "../../../shared/ui/ConsoleList.vue";
+import {
+  BaseCardSkeleton,
+  ConsoleLayout,
+  ConsoleList
+} from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
 
 import MemberCard from "../components/MemberCard.vue";
