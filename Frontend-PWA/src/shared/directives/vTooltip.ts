@@ -8,14 +8,17 @@ let hideTimer: number | null = null;
 let pressTimer: any = null;
 
 /**
- * 🛠️ Internal UI: Create or retrieve the singleton tooltip element
+ * Internal UI: Create or retrieve the singleton tooltip element.
+ *
+ * @internal
+ * Side Effect: Appends a div to document.body and initializes Popover API if supported.
  */
 function createTooltip() {
   if (tooltipEl) return tooltipEl;
   const el = document.createElement("div");
   el.className = "rich-tooltip";
   
-  // ⚡ OPTIMIZATION: Use Popover API if available (Optimization #54)
+  // OPTIMIZATION: Use Popover API if available (Optimization #54)
   if ("showPopover" in el) {
     (el as any).popover = "manual";
   }
@@ -25,6 +28,11 @@ function createTooltip() {
   return el;
 }
 
+/**
+ * Renders the tooltip content based on the provided data.
+ *
+ * @param data - Either a simple string or a complex BenchmarkData object.
+ */
 function renderContent(data: BenchmarkData | string) {
   if (!tooltipEl) return;
   if (typeof data === "string") {
@@ -58,6 +66,11 @@ function renderContent(data: BenchmarkData | string) {
     </div>`;
 }
 
+/**
+ * Positions the tooltip relative to the target element.
+ *
+ * @param el - The target element to anchor the tooltip to.
+ */
 function positionTooltip(el: HTMLElement) {
   if (!tooltipEl) return;
   const rect = el.getBoundingClientRect();
@@ -91,6 +104,9 @@ function positionTooltip(el: HTMLElement) {
   tooltipEl.style.transform = `translateX(-50%) translateY(${translateY}) scale(1)`;
 }
 
+/**
+ * Hides the tooltip globally.
+ */
 function globalHide() {
   if (tooltipEl) {
     tooltipEl.classList.remove("visible");
@@ -107,7 +123,7 @@ interface TooltipHTMLElement extends HTMLElement {
   _tooltipValue?: BenchmarkData | string;
 }
 
-// ⚡ SPEED WIZARD: Unified Delegated Listeners
+// SPEED WIZARD: Unified Delegated Listeners
 if (typeof window !== "undefined") {
   const handleShow = (el: TooltipHTMLElement) => {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
@@ -153,6 +169,35 @@ if (typeof window !== "undefined") {
   window.addEventListener("scroll", globalHide, { passive: true });
 }
 
+/**
+ * V-TOOLTIP DIRECTIVE
+ * Provides an interactive rich tooltip for strings or BenchmarkData.
+ *
+ * @remarks
+ * This directive is a Layer 2 (@shared) molecule. It provides a context-blind
+ * information overlay that remains consistent across all business features.
+ * To maintain performance and prevent DOM bloat, it utilizes a singleton pattern
+ * with event delegation on document.body.
+ *
+ * Architectural Constraints:
+ * - Must not import from @features or @app.
+ * - Relies on the Popover API for top-layer rendering (Optimization #54).
+ * - Implements delegated listeners to avoid attaching thousands of mouse events.
+ *
+ * Interaction Thresholds:
+ * - Touch (Long Press): 400ms hold required to trigger.
+ * - Haptic Duration: 40ms vibration on activation.
+ * - Hide Delay: 100ms debounced exit to prevent flickering.
+ *
+ * Side Effects:
+ * - Creates and appends a '.rich-tooltip' div to document.body on first use.
+ * - Attaches global listeners to document.body and window for event delegation and scroll-to-hide.
+ * - Triggers hardware haptics via navigator.vibrate.
+ *
+ * Reactive State:
+ * - The directive's value (BenchmarkData | string) is stored as an expando
+ *   '_tooltipValue' on the DOM element for retrieval by the delegated handler.
+ */
 export const vTooltip: Directive<TooltipHTMLElement, BenchmarkData | string> = {
   mounted(el, binding) {
     el._tooltipValue = binding.value;
@@ -173,4 +218,3 @@ export const vTooltip: Directive<TooltipHTMLElement, BenchmarkData | string> = {
     delete el._tooltipValue;
   }
 };
-
