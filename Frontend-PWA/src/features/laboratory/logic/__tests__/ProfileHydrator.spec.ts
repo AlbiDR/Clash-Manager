@@ -36,8 +36,7 @@ describe('ProfileHydrator', () => {
         rarity: "Common",
         level: 14,
         count: 5000,
-        // [CRACK] Returns undefined instead of false due to (false || undefined) evaluation
-        isTowerTroop: undefined
+        isTowerTroop: false
       });
 
       expect(result.inventory.gold).toBe(asGold(50000));
