@@ -23,7 +23,7 @@ import fetch from "node-fetch";
 import * as v from "valibot";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import Time from "../../Backend-GAS/Time";
-import { KeyManager, type KeyState } from "./KeyManager.js";
+import { KeyManager } from "./KeyManager.js";
 import {
   AuditRequestSchema,
   PublicScanRequestSchema,
