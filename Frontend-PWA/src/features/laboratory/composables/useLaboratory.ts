@@ -360,6 +360,19 @@ export function useLaboratory() {
     updateInventory,
     analyze,
     setSettings,
+    handleVaultUpdate(key: string, value: number) {
+      if (key === 'gold') updateInventory({ gold: value });
+      else if (key === 'gems') updateInventory({ gems: value });
+      else if (key.startsWith('wc_')) {
+        const rawRarity = key.split('_')[1];
+        const capitalized = (rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1)) as Rarity;
+        updateInventory({
+          wildCards: {
+            [capitalized]: value
+          } as Partial<Record<Rarity, number>>
+        });
+      }
+    },
     refresh: fetchTrackedPlayer
   }
 }

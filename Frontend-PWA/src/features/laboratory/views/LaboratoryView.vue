@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import BaseCardSkeleton from "../../../shared/ui/BaseCardSkeleton.vue";
-import Icon from "../../../shared/ui/Icon.vue";
-import ConsoleLayout from "../../../shared/ui/ConsoleLayout.vue";
-import { useClashData } from "@core/services/useClashData";
+import {
+  BaseCardSkeleton,
+  Icon,
+  ConsoleLayout
+} from "@shared";
+import { useClashData } from "@core";
 import { computed } from "vue";
 import { useLaboratory } from "../composables/useLaboratory";
 
@@ -19,8 +21,8 @@ const {
   isFetching,
   isSimulating,
   fetchError,
-  updateInventory,
   setSettings,
+  handleVaultUpdate,
   refresh,
 } = useLaboratory();
 
@@ -41,20 +43,6 @@ const statusType = computed(() => {
 });
 
 const isEmpty = computed(() => !observation.value && !isFetching.value);
-
-const handleResourceUpdate = (key: string, value: number) => {
-  if (key === 'gold') updateInventory({ gold: value });
-  else if (key === 'gems') updateInventory({ gems: value });
-  else if (key.startsWith('wc_')) {
-    const rawRarity = key.split('_')[1];
-    const capitalized = (rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1)) as Rarity;
-    updateInventory({ 
-      wildCards: { 
-        [capitalized]: value 
-      } as Partial<Record<Rarity, number>>
-    });
-  }
-};
 
 </script>
 
@@ -85,7 +73,7 @@ const handleResourceUpdate = (key: string, value: number) => {
         <VaultCard 
           :inventory="observation.inventory"
           :is-simulating="isSimulating"
-          @update="handleResourceUpdate"
+          @update="handleVaultUpdate"
         />
         
         <ParameterCard 
