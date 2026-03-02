@@ -1,6 +1,32 @@
 # Changelog
 
 
+## [2026-03-02] PR #172: test(shared): add useHeaderScroll unit tests
+**Commit**: `3a8f813d66624139c54413d0fd471cff74546305`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/172)
+
+### Description
+This PR adds comprehensive unit tests for the `useHeaderScroll` composable in the Shared Layer. It ensures that the `isScrolled` reactive state correctly reflects the window's scroll position relative to a given threshold and that the scroll event listener is properly managed throughout the component's lifecycle.
+
+**Queue Position:** 1.c (Zero Coverage) - `useHeaderScroll.ts` was found to have no corresponding test file.
+
+**Scenarios Added:**
+- Initial state validation for both 0 and scrolled start positions.
+- Reactive state transitions when crossing the threshold (up and down).
+- Support for custom thresholds.
+- Boundary condition validation.
+- Lifecycle integrity (event listener attachment and removal).
+
+**Verification:**
+- Ran `pnpm vitest run src/shared/composables/__tests__/useHeaderScroll.spec.ts` (Passed).
+- Ran the full test suite `pnpm run test run` (All 443 tests passed).
+- Updated `.github/logs/verification-coverage.log`.
+
+---
+*PR created automatically by Jules for task [10118618656361377985](https://jules.google.com/task/10118618656361377985) started by @AlbiDR*
+
+---
+
 ## [2026-03-02] PR #171: fix(integrity): resolve version manifest drift for Core module
 **Commit**: `530a26de7e98845eeb89d0c578a4cc49303a9b42`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/171)
