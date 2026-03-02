@@ -56,6 +56,7 @@ declare const Registry: IRegistry;
 // Module Version Constants for Health Check
 declare const VER_CONFIGURATION: string;
 declare const VER_REGISTRY: string;
+declare var VER_UTILITIES: string;
 declare var VER_DATABASE: string;
 declare var VER_ROSTER: string;
 declare var VER_SCORING: string;
@@ -559,6 +560,11 @@ function checkSystemHealth(): void {
       name: "Registry",
       current: typeof VER_REGISTRY !== "undefined" ? VER_REGISTRY : "MISSING",
       expected: manifest.REGISTRY || "1.0.0",
+    },
+    {
+      name: "Utilities",
+      current: typeof VER_UTILITIES !== "undefined" ? VER_UTILITIES : "MISSING",
+      expected: manifest.UTILITIES,
     },
     {
       name: "Orchestrator",

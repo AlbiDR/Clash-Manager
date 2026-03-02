@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import {
   vTactile,
-  ConsoleHeader
+  ConsoleLayout
 } from "@shared";
-import { computed } from "vue";
 import { useSettings } from "../composables/useSettings";
 
 // Settings Components
@@ -27,33 +26,26 @@ const {
   modules,
   haptics,
 } = useSettings();
-
-const showInitialSkeletons = computed(() => !isHydrated.value);
 </script>
 
 <template>
-  <div class="view-container">
-    <ConsoleHeader
-      title="Settings"
-      :status="apiStatusObject"
-      :loading="isRefreshing"
-      sheet-url="https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH"
-      @refresh="refresh()"
-    />
-
-    <div class="settings-content gpu-contain">
-      <template v-if="showInitialSkeletons">
-        <SkeletonSettingsCard v-for="i in 6" :key="i" :index="i" />
-      </template>
-      <template v-else>
-        <AppearanceSettings :initially-expanded="true" />
-        <NotificationSettings />
-        <FeatureSettings :initially-expanded="true" />
-        <ModeSettings />
-        <NetworkSettings />
-        <BackendRefresher v-if="modules.backendRefresher" />
-        <RecoverySettings />
-      </template>
+  <ConsoleLayout
+    title="Settings"
+    :status="apiStatusObject"
+    :loading="!isHydrated"
+    :is-refreshing="isRefreshing"
+    sheet-url="https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH"
+    :skeleton-component="SkeletonSettingsCard"
+    @refresh="refresh()"
+  >
+    <div class="settings-content">
+      <AppearanceSettings :initially-expanded="true" />
+      <NotificationSettings />
+      <FeatureSettings :initially-expanded="true" />
+      <ModeSettings />
+      <NetworkSettings />
+      <BackendRefresher v-if="modules.backendRefresher" />
+      <RecoverySettings />
 
       <div class="footer-info">
         <div
@@ -70,16 +62,12 @@ const showInitialSkeletons = computed(() => !isHydrated.value);
         <div class="copy">Copyright © 2026 AlbiDR</div>
       </div>
     </div>
-  </div>
+  </ConsoleLayout>
 </template>
 
 <style scoped>
-.view-container {
-  min-height: 100vh;
-}
-
 .settings-content {
-  padding: 0 16px 120px; /* Standard horizontal inner padding */
+  padding: 0 16px; /* Standard horizontal inner padding */
   display: flex;
   flex-direction: column;
   gap: 12px; /* Uniform card spacing */
