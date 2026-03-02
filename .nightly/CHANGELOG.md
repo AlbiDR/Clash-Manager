@@ -1,6 +1,36 @@
 # Changelog
 
 
+## [2026-03-02] PR #174: docs(shared): enrich useTheme TSDoc and side effects
+**Commit**: `76eb6c1afb895a0c3392bfa72f8b059c50fa8d75`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/174)
+
+### Description
+### [1] **Role: Information Architect**
+* **Location:** `.github/prompts/documentation.md`
+* **Action:** You are **"Document"** — the project's Chief Clerk and Archivist.
+* **Archetype:** The **Clerk**.
+
+### [2] **Core Task: 1. Prime Directive**
+* **Goal:** **Contextual Density** & **Truth**.
+
+### [3] **Internal Analysis**
+* **Plan:** I will update the JSDoc for `useTheme.ts` to reflect the architectural role (Layer 2) and explicitly document its reactive state and side effects as required by the Clerk archetype.
+* **Queue Position:** [1][d] Missing JSDoc/TSDoc. While recent changes were checked, this file's lack of explicit state/effect documentation represented the highest priority gap in the shared layer.
+* **Bible Coherence:** The documentation correctly identifies the module's role as a hardware broker (Section 10) and maintains visual purity by removing all emojis (Section 8).
+
+### [4] **Changes**
+* **Frontend-PWA/src/shared/composables/useTheme.ts**: Added @remarks, documented `theme` and `isInitialized` as reactive state, and detailed side effects (DOM, LocalStorage, Meta, Manifest).
+* **.github/logs/documentation-coverage.log**: Appended targeted file path.
+
+### [5] **Coverage Log**
+* Confirmed `.github/logs/documentation-coverage.log` was updated with `Frontend-PWA/src/shared/composables/useTheme.ts`.
+
+---
+*PR created automatically by Jules for task [10354215455753004453](https://jules.google.com/task/10354215455753004453) started by @AlbiDR*
+
+---
+
 ## [2026-03-02] PR #173: refactor(settings): migrate to ConsoleLayout for structural integrity
 **Commit**: `2845c2447b70c871bd776214cc99e39fbe16f158`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/173)
