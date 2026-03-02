@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [2026-03-02] PR #171: fix(integrity): resolve version manifest drift for Core module
+**Commit**: `530a26de7e98845eeb89d0c578a4cc49303a9b42`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/171)
+
+### Description
+This PR resolves a version manifest drift issue where the `Core.ts` module (referenced as `UTILITIES` in the manifest) was missing its version constant and was not being checked during system health diagnostics. This change ensures that the core execution engine's version is verified against the authoritative manifest, preventing false-positive health reports.
+
+Additionally, several versioning inconsistencies (modules ahead of manifest or lacking manifest entries) have been identified and flagged for developer review.
+
+---
+*PR created automatically by Jules for task [17824247038708791464](https://jules.google.com/task/17824247038708791464) started by @AlbiDR*
+
+---
+
 ## [2026-03-01] PR #170: docs(shared): reconcile vTooltip with Clerk archetype and remove emojis
 **Commit**: `01ba903fb810b250bc3861d68e58414c669f3a43`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/170)
