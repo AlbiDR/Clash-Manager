@@ -13,9 +13,13 @@
  *    - Pure Service: Zero business logic dependencies.
  *    - Global Singleton 'Core'.
  * 
- *  VERSION: 1.0.0
+ *  VERSION: 13.1.0
  * ============================================================================
  */
+
+// Global Version Constant
+// HARDEN: Unified versioning prevents false-negative health check failures.
+const VER_UTILITIES = "13.1.0";
 
 declare var LockService: any;
 declare var SpreadsheetApp: any;
@@ -188,7 +192,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { Core });
+  Object.assign(scope, { Core, VER_UTILITIES });
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 export default Core;
