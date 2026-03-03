@@ -1,3 +1,4 @@
 Frontend-PWA/src/shared/directives/vTactile.ts
 Frontend-PWA/src/shared/directives/vTooltip.ts
 Frontend-PWA/src/shared/composables/useHeaderScroll.ts
+Frontend-PWA/src/core/api/GasClient.ts
