@@ -30,6 +30,30 @@ export const componentStyles = `
   letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-family: "Inter", system-ui, sans-serif;
 }
+
+/* =========================================
+   GLOBAL BUTTON PRIMITIVES
+   ========================================= */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: var(--shape-corner-full);
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+}
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
 .header-wrapper.is-scrolled .view-title { font-size: 18px; }
 
 /* =========================================

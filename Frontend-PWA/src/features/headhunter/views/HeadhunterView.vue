@@ -113,20 +113,6 @@ const {
 
 <style scoped>
 .btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 99px;
-  font-weight: 700;
-  cursor: pointer;
   margin-top: 16px;
-  transition: transform 0.2s;
-}
-.btn-primary:active {
-  transform: scale(0.95);
 }
 </style>
