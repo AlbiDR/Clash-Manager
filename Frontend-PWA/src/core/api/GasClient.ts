@@ -119,6 +119,20 @@ const BaseWebAppDataSchema = v.object({
   timestamp: v.union([v.number(), v.string()]),
 });
 
+const WorkerCandidateSchema = v.object({
+  tag: v.string(),
+  name: v.string(),
+  trophies: v.number(),
+  rawScore: v.number(),
+  donations: v.number(),
+  war: v.number(),
+  cards: v.number(),
+});
+
+const WorkerScanResponseSchema = v.object({
+  candidates: v.array(WorkerCandidateSchema),
+});
+
 const ProfileSchema = v.union([
   // Internal Format
   v.object({
@@ -616,24 +630,32 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
 
     if (!res.ok) throw new Error(`Worker status ${res.status}`);
     const json = await res.json();
+
+    // 🛡️ VALIDATION BOUNDARY: Implements Target B [1] hardening.
+    // Enforces strict schema validation for data returned from the remote worker
+    // to prevent unvalidated external payloads from polluting the recruitment logic.
+    const result = v.safeParse(WorkerScanResponseSchema, json);
     
-    if (json.candidates && Array.isArray(json.candidates)) {
-      return json.candidates.map((c: any) => ({
-        id: c.tag.replace("#", ""),
-        n: c.name,
-        t: c.trophies,
-        potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)),
-        potentialRawScore: c.rawScore,
-        d: {
-          don: c.donations,
-          war: c.war,
-          cards: c.cards,
-          ago: new Date().toISOString()
-        },
-        lastScan: 0
-      }));
+    if (!result.success) {
+      // THREAT: Malformed or malicious worker response causing downstream UI crashes or logic errors.
+      console.warn("[GasClient] Worker scan validation failed", result.issues);
+      return null;
     }
-    return null;
+
+    return result.output.candidates.map((c) => ({
+      id: c.tag.replace("#", ""),
+      n: c.name,
+      t: c.trophies,
+      potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)),
+      potentialRawScore: c.rawScore,
+      d: {
+        don: c.donations,
+        war: c.war,
+        cards: c.cards,
+        ago: new Date().toISOString()
+      },
+      lastScan: 0
+    }));
   } catch (e) {
     return null;
   }
