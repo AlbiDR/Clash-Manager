@@ -161,17 +161,4 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   font-size: 16px;
   opacity: 0.7;
 }
-
-.btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border-radius: var(--shape-corner-full);
-  font-weight: 850;
-  text-decoration: none;
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
-}
 </style>
