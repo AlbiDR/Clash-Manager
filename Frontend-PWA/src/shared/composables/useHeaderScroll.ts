@@ -1,8 +1,22 @@
 import { ref, onMounted, onUnmounted } from "vue";
 
 /**
- * 🛰️ HEADER SCROLL ENGINE
- * Manages sticky header transitions and scroll-depth awareness.
+ * COMPOSABLE: useHeaderScroll
+ *
+ * @remarks
+ * Architectural role: Layer 2 (@shared) hardware broker for display APIs.
+ * This composable standardizes scroll-depth awareness across the application,
+ * primarily used to trigger visual transitions in sticky headers or navigation elements.
+ * By using a passive listener, it ensures zero impact on scroll performance.
+ *
+ * @param threshold - The scroll-depth (in pixels) required to trigger the 'scrolled' state. Defaults to 20.
+ *
+ * @returns
+ * - Reactive State: `isScrolled` (Ref<boolean>) indicating if window.scrollY > threshold.
+ *
+ * @sideeffects
+ * - Registers a passive 'scroll' event listener on the global `window` object.
+ * - Manages lifecycle by automatically removing listeners during the `onUnmounted` hook.
  */
 export function useHeaderScroll(threshold = 20) {
   const isScrolled = ref(false);
