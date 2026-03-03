@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-03] PR #177: refactor(ui): centralize btn-primary primitive and resolve DRY violation
+**Commit**: `a8773f7df785cc7f21fe7aa01c61b3563dc84b31`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/177)
+
+### Description
+Centralized `.btn-primary` styles into `@core/theme/components.ts` and removed duplicate CSS from `LaboratoryView.vue` and `HeadhunterView.vue`. This resolves a DRY violation and ensures visual consistency across features. Verified with tests and Playwright screenshots.
+
+---
+*PR created automatically by Jules for task [4971869702446816870](https://jules.google.com/task/4971869702446816870) started by @AlbiDR*
+
+---
+
 ## [2026-03-03] PR #176: test(core): improve GasClient worker coverage and sync naming
 **Commit**: `0fe6fc44d7d9bb8d6e91c6a228352473219abf9e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/176)
