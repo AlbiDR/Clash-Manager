@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-03] PR #178: Document useHeaderScroll Composable
+**Commit**: `8f39a09d9f502c63a547ed4a703b79fd147e25b1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/178)
+
+### Description
+Applied the Clerk archetype documentation to the useHeaderScroll composable in the Frontend-PWA. This includes defining its architectural role as a Layer 2 hardware broker, documenting reactive state and side effects, and removing emojis to comply with Visual Purity protocols. Verified with unit tests and updated the documentation coverage log.
+
+---
+*PR created automatically by Jules for task [5334321526452659171](https://jules.google.com/task/5334321526452659171) started by @AlbiDR*
+
+---
+
 ## [2026-03-03] PR #177: refactor(ui): centralize btn-primary primitive and resolve DRY violation
 **Commit**: `a8773f7df785cc7f21fe7aa01c61b3563dc84b31`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/177)
