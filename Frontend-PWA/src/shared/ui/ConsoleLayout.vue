@@ -3,10 +3,12 @@ import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import Icon from "./Icon.vue";
 import SelectionBar from "./SelectionBar.vue";
-import { useHaptics } from "../../core/services/useHaptics";
-import { useUiCoordinator } from "../../core/services/useUiCoordinator";
+import {
+  useHaptics,
+  useUiCoordinator,
+  useShowcaseMode
+} from "@core";
 import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
-import { useShowcaseMode } from "../../core/services/useShowcaseMode";
 import { ref, watch, onUnmounted, computed, nextTick, toRef } from "vue";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
