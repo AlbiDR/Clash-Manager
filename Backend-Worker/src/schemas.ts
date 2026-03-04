@@ -38,13 +38,23 @@ export const AuditRequestSchema = v.object({
   apiKeys: v.array(v.string())
 });
 
+/**
+ * 🛡️ VALIDATION BOUNDARY: Prophet Intelligence
+ * Ensures structural integrity for incoming heritage data.
+ */
+export const ProphetIntelSchema = v.object({
+  wins: v.optional(v.number(), 0),
+  active: v.optional(v.boolean(), true),
+  lastFetch: v.optional(v.number(), 0)
+});
+
 export const PublicScanRequestSchema = v.object({
   tags: v.array(TagSchema),
   apiKeys: v.optional(v.array(v.string())),
   blacklist: v.optional(v.array(TagSchema)),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(v.string(), v.any()))
+  prophetCache: v.optional(v.record(v.string(), ProphetIntelSchema))
 });
 
 export const ScanRequestSchema = v.object({
@@ -53,7 +63,7 @@ export const ScanRequestSchema = v.object({
   blacklist: v.optional(v.array(TagSchema)),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(v.string(), v.any()))
+  prophetCache: v.optional(v.record(v.string(), ProphetIntelSchema))
 });
 
 export const ClanFullRequestSchema = v.object({
