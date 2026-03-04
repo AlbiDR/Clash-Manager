@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Toast from "./Toast.vue";
-import { useUiCoordinator } from "../../core/services/useUiCoordinator";
-import { useToast } from "../../core/services/useToast";
+import { useUiCoordinator, useToast } from "@core";
 import { computed } from "vue";
 const { toasts, remove, triggerAction } = useToast();
 const { toastOffset } = useUiCoordinator();
