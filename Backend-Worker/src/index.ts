@@ -589,7 +589,7 @@ app.post(
     }
 
     try {
-      const { apiKeys } = req.body;
+      const { apiKeys } = result.output;
 
       const auditUrl = `${CONFIG.apiBase}/cards`;
       const tasks = apiKeys.map(async (key): Promise<ApiKeyAuditResult> => {
@@ -652,16 +652,11 @@ app.post(
     }
 
     try {
-      const { tags, blacklist, minTrophies, scoring } = req.body;
+      const { tags, blacklist, minTrophies, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
 
       const apiKeys =
-        req.body.apiKeys ??
+        reqApiKeys ??
         (process.env["API_KEYS"] ? process.env["API_KEYS"].split(",") : []);
-
-      if (!Array.isArray(tags)) {
-        res.status(400).json({ error: "tags must be array" });
-        return;
-      }
 
       const blacklistSet = new Set(blacklist ?? []);
       const concurrency = Number(
@@ -676,7 +671,7 @@ app.post(
         concurrency,
         blacklistSet as Set<PlayerTag>,
         minTrophies ?? 4000,
-        req.body.prophetCache
+        prophetCache
       );
 
       if (scoring && candidates.length > 0) {
@@ -691,7 +686,7 @@ app.post(
           apiKeys,
           concurrency,
           scoring,
-          req.body.prophetCache
+          prophetCache
         );
 
         res.json({
@@ -733,7 +728,7 @@ app.post(
       return;
     }
 
-    const sub = req.body;
+    const sub = result.output;
     subscriptions.add(JSON.stringify(sub));
     console.log(` New Push Subscription. Total: ${subscriptions.size}`);
     res.json({ success: true, count: subscriptions.size });
@@ -762,12 +757,7 @@ app.post(
     }
 
     try {
-      const { tags, apiKeys, blacklist, minTrophies, scoring } = req.body;
-
-      if (!Array.isArray(tags)) {
-        res.status(400).json({ error: "tags must be array" });
-        return;
-      }
+      const { tags, apiKeys, blacklist, minTrophies, scoring, prophetCache } = result.output;
 
       const blacklistSet = new Set(blacklist ?? []);
       const concurrency = Number(
@@ -783,7 +773,7 @@ app.post(
             concurrency,
             blacklistSet as Set<PlayerTag>,
             minTrophies ?? 4000,
-            req.body.prophetCache,
+            prophetCache,
             debug
         );
 
@@ -806,7 +796,7 @@ app.post(
                 apiKeys ?? [],
                 concurrency,
                 scoring,
-                req.body.prophetCache
+                prophetCache
             );
 
             res.json({
@@ -866,7 +856,7 @@ app.post(
     }
 
     try {
-      const { tag, apiKeys } = req.body;
+      const { tag, apiKeys } = result.output;
 
       const rawTag = decodeURIComponent(tag);
       const cleanTag = encodeURIComponent(rawTag);
@@ -944,7 +934,7 @@ app.post(
     }
 
     try {
-      const { tag, type } = req.body;
+      const { tag, type } = result.output;
 
       const cleanTag = encodeURIComponent(tag);
       let url = "";
@@ -1006,7 +996,7 @@ app.post(
           let opponents: any[] = [];
 
           if (r.standings) {
-            const rawTag = decodeURIComponent(req.body.tag);
+            const rawTag = decodeURIComponent(tag);
             const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
             myStanding = r.standings.find((s: any) => s.clan.tag === normalizedTag);
             opponents = r.standings.filter((s: any) => s.clan.tag !== normalizedTag);
@@ -1057,7 +1047,7 @@ app.post(
     }
 
     try {
-      const { urls, apiKeys, scoring } = req.body;
+      const { urls, apiKeys, scoring } = result.output;
 
       const concurrency = Number(
         process.env["WORKER_CONCURRENCY"] ??
