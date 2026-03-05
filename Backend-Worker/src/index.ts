@@ -32,6 +32,8 @@ import {
   ClanApiRequestSchema,
   FetchRequestSchema,
   SubscriptionRequestSchema,
+  RoyaleClanMembersResponseSchema,
+  RoyaleWarLogResponseSchema,
 } from "./schemas.js";
 import type {
   ServerConfig,
@@ -962,17 +964,20 @@ app.post(
 
       let transformed: unknown[] = [];
 
-      if (
-        type === "members" &&
-        typeof content === "object" &&
-        content !== null &&
-        "items" in content
-      ) {
+      if (type === "members") {
+        // THREAT: Malformed upstream member list causing downstream runtime crashes.
+        // Target B [1]: Enforce strict validation boundary for Royale API data.
+        const validation = v.safeParse(RoyaleClanMembersResponseSchema, content);
+        if (!validation.success) {
+          res.status(502).json({ error: "Invalid upstream data format", details: validation.issues });
+          return;
+        }
+
         const formatRole = (role: string): string =>
           ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ??
           "Member";
 
-        transformed = (content.items as any[]).map((m) => ({
+        transformed = validation.output.items.map((m) => ({
           tag: m.tag,
           name: m.name,
           role: formatRole(m.role),
@@ -980,27 +985,26 @@ app.post(
           donations: m.donations,
           donationsReceived: m.donationsReceived,
         }));
-      } else if (
-        type === "warlog" &&
-        typeof content === "object" &&
-        content !== null &&
-        "items" in content
-      ) {
+      } else if (type === "warlog") {
+        // THREAT: Corrupt war log data polluting clan historical records.
+        // Target B [1]: Enforce strict validation boundary for Royale API data.
+        const validation = v.safeParse(RoyaleWarLogResponseSchema, content);
+        if (!validation.success) {
+          res.status(502).json({ error: "Invalid upstream data format", details: validation.issues });
+          return;
+        }
+
         const parseCRDateISO = (t: string): string => {
           if (!t) return new Date().toISOString().split("T")[0] ?? "";
           return `${t.substring(0, 4)}-${t.substring(4, 6)}-${t.substring(6, 8)}`;
         };
 
-        transformed = (content.items as any[]).map((r) => {
-          let myStanding = null;
-          let opponents: any[] = [];
+        transformed = validation.output.items.map((r) => {
+          const rawTag = decodeURIComponent(tag);
+          const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
 
-          if (r.standings) {
-            const rawTag = decodeURIComponent(tag);
-            const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
-            myStanding = r.standings.find((s: any) => s.clan.tag === normalizedTag);
-            opponents = r.standings.filter((s: any) => s.clan.tag !== normalizedTag);
-          }
+          const myStanding = r.standings.find((s) => s.clan.tag === normalizedTag);
+          const opponents = r.standings.filter((s) => s.clan.tag !== normalizedTag);
 
           const myFame = myStanding ? myStanding.clan.fame : 0;
           const myRank = myStanding ? myStanding.rank : null;
