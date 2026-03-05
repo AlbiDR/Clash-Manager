@@ -90,3 +90,38 @@ export const SubscriptionRequestSchema = v.object({
     auth: v.string()
   }))
 });
+
+/**
+ * 🛡️ VALIDATION BOUNDARY: Royale API Response Schemas
+ * Used to validate upstream data before it enters the processing pipeline.
+ */
+export const RoyaleClanMemberSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  role: v.string(),
+  expLevel: v.number(),
+  donations: v.number(),
+  donationsReceived: v.number(),
+});
+
+export const RoyaleClanMembersResponseSchema = v.object({
+  items: v.array(RoyaleClanMemberSchema),
+});
+
+export const RoyaleWarLogStandingSchema = v.object({
+  rank: v.number(),
+  clan: v.object({
+    tag: TagSchema,
+    name: v.string(),
+    fame: v.number(),
+  }),
+});
+
+export const RoyaleWarLogItemSchema = v.object({
+  createdDate: v.string(),
+  standings: v.array(RoyaleWarLogStandingSchema),
+});
+
+export const RoyaleWarLogResponseSchema = v.object({
+  items: v.array(RoyaleWarLogItemSchema),
+});
