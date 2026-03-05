@@ -17,7 +17,7 @@ import {
   addGold,
   addGems,
   GEM_TO_GOLD_FACTOR
-} from './Economy';
+} from '@core/utils/economy';
 import { 
   CARD_LEVEL_CAP, 
   GOLD_COST_TABLE, 
@@ -29,7 +29,7 @@ import {
   LOOKAHEAD_WEIGHT,
   LOOKAHEAD_PRECISION
 } from './Registry';
-import { PriorityQueue } from './PriorityQueue';
+import { PriorityQueue } from '@core/utils/PriorityQueue';
 import type { 
   ScoringStrategy 
 } from './ScoringStrategy';

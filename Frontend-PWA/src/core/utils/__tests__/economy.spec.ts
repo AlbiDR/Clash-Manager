@@ -6,7 +6,7 @@ import {
   convertGemsToGold, calculateGemCostForGold,
   addXP,
   GEM_TO_GOLD_FACTOR
-} from '../Economy';
+} from '../economy';
 
 describe('Economy Module', () => {
   describe('Type Casting (Branding)', () => {

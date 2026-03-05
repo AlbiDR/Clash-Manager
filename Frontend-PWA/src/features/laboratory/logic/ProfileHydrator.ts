@@ -9,7 +9,7 @@ import type {
 } from './Types';
 import * as v from "valibot";
 import { ProfileInputSchema } from "./Schemas";
-import { asGold, asGems, asXP, addXP } from './Economy';
+import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
 import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
 
 const normalizeLevel = (level: number, rarity: Rarity): number => {

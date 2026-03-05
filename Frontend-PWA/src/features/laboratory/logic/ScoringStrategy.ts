@@ -1,5 +1,5 @@
 import type { Card, OptimizationSettings, UpgradeCandidate } from './Types';
-import { GEM_TO_GOLD_FACTOR } from './Economy';
+import { GEM_TO_GOLD_FACTOR } from '@core/utils/economy';
 
 /**
  * ==========================================================

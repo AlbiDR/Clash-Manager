@@ -22,6 +22,8 @@ export * from "./services/useExternalLink";
 
 // Math & Utils
 export * from "./utils/warMath";
+export * from "./utils/PriorityQueue";
+export * from "./utils/economy";
 
 // Infrastructure Services (Promoted from Shared)
 export * from "./services/useHaptics";
