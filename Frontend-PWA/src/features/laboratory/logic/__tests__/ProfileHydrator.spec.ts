@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import ProfileHydrator from '../ProfileHydrator';
-import { asGold, asGems, asXP } from '../Economy';
+import { asGold, asGems, asXP } from '@core/utils/economy';
 
 describe('ProfileHydrator', () => {
   describe('hydrate', () => {

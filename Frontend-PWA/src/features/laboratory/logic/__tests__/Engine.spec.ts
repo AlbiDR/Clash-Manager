@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ProjectionStrategy } from '../ScoringStrategy';
 import type { UpgradeCandidate, OptimizationSettings } from '../Types';
-import { asGems, asGold, asXP } from '../Economy';
+import { asGems, asGold, asXP } from '@core/utils/economy';
 
 describe('Laboratory Engine Components', () => {
   describe('FormulaicStrategy', () => {

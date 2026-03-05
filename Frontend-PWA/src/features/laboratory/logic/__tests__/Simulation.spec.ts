@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateProgressionPath } from '../Simulation';
-import { asGold, asGems, asXP } from '../Economy';
+import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { SimulationState, OptimizationSettings, Card } from '../Types';
 
 describe('Laboratory Simulation Engine', () => {

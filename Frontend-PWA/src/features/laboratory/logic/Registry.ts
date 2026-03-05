@@ -1,5 +1,5 @@
 import type { Rarity } from './Types';
-import { asGold, asXP, type Gold, type XP } from './Economy';
+import { asGold, asXP, type Gold, type XP } from '@core/utils/economy';
 
 export const CARD_LEVEL_CAP = 16;
 

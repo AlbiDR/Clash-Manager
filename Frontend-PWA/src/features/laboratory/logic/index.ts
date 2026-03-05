@@ -1,5 +1,5 @@
-export * from './Economy';
-export * from './PriorityQueue';
+export * from '@core/utils/economy';
+export * from '@core/utils/PriorityQueue';
 export { default as ProfileHydrator } from './ProfileHydrator';
 export * from './Registry';
 export * from './ScoringStrategy';
