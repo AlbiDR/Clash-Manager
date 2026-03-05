@@ -1,5 +1,10 @@
 import { getPlayerProfile } from "@core/api/GasClient";
 import { useClashData } from "@core/services/useClashData";
+import {
+  asGold,
+  asGems,
+  asXP
+} from "@core";
 import { ref, computed, type Ref, watch } from 'vue'
 
 // Progression Engine 2.0 Primitives
@@ -8,9 +13,6 @@ import {
   ProfileHydrator,
   KING_XP_TABLE,
   IMPORTANT_KING_LEVELS,
-  asGold,
-  asGems,
-  asXP,
   type PlayerData,
   type OptimizationSettings,
   type SimulationState,

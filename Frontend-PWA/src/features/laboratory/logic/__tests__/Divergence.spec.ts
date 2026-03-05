@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateProgressionPath } from '../Simulation';
 import { ProjectionStrategy, InventoryStrategy } from '../ScoringStrategy';
-import { asGold, asGems, asXP } from '../Economy';
+import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { SimulationState, OptimizationSettings, Card } from '../Types';
 
 describe('Strategic Divergence', () => {

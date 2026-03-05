@@ -1,4 +1,4 @@
-import type { Gold, Gems, XP, Rarity } from './Economy';
+import type { Gold, Gems, XP, Rarity } from '@core/utils/economy';
 
 export type Rarity = "Common" | "Rare" | "Epic" | "Legendary" | "Champion";
 
