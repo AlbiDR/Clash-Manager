@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import BaseCard from "../../../shared/ui/BaseCard.vue";
-import CardActions from "../../../shared/ui/CardActions.vue";
-import Icon from "../../../shared/ui/Icon.vue";
-import MomentumPill from "../../../shared/ui/MomentumPill.vue";
-import StatisticItem from "../../../shared/ui/StatisticItem.vue";
+import {
+  BaseCard,
+  CardActions,
+  Icon,
+  MomentumPill,
+  StatisticItem
+} from "@shared";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed, defineAsyncComponent } from "vue";
 import type { LeaderboardMember } from "@core/types";

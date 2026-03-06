@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Icon from "../../../shared/ui/Icon.vue";
+import { Icon } from "@shared";
 import { computed } from "vue";
 import { type OptimizationSettings, IMPORTANT_KING_LEVELS } from "../logic";
 const props = defineProps<{
