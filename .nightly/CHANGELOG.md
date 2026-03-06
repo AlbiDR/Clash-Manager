@@ -1,6 +1,31 @@
 # Changelog
 
 
+## [2026-03-06] PR #189: refactor(features): synchronize barrel imports for structural integrity
+**Commit**: `0f5489bf0cdedde9f1a566b404fb642301d292af`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/189)
+
+### Description
+This PR addresses structural rot by enforcing the Barrel Protocol across the features layer. Brittle deep relative imports have been replaced with the standardized `@shared` alias.
+
+**Bottleneck/Risk Identified:**
+- Structural Rot (DRY/Layer Violation): Feature components were reaching deep into the `shared` layer via relative paths, creating fragile dependency links and violating the abstraction provided by the barrel system.
+- Malformed SFC: `SettingsCard.vue` had an import outside the `<script setup>` tag.
+
+**The Fix & Logic:**
+- Migrated 14 files to use named imports from `@shared`.
+- Appended refactored paths to `optimization-coverage.log` for tracking.
+- Validated that all public components, directives, and composables are correctly exported via the `@shared` registry.
+
+**Verification:**
+- Ran `pnpm --filter clash-manager-pwa test run`.
+- **Result:** 60 test files passed, 464 tests passed. No regressions in feature logic or shared utilities.
+
+---
+*PR created automatically by Jules for task [14497124342081289793](https://jules.google.com/task/14497124342081289793) started by @AlbiDR*
+
+---
+
 ## [2026-03-06] PR #188: test(shared): extend useTheme coverage and sync naming
 **Commit**: `e0fa204df84c7a11504f1ed02099faf69a3a81a3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/188)
