@@ -34,6 +34,7 @@ import {
   SubscriptionRequestSchema,
   RoyaleClanMembersResponseSchema,
   RoyaleWarLogResponseSchema,
+  RoyaleCurrentRiverRaceSchema,
 } from "./schemas.js";
 import type {
   ServerConfig,
@@ -872,18 +873,52 @@ app.post(
         ClanMembers | CurrentRiverRace | RiverRaceLog
       >(urls, apiKeys, 3, null);
 
-      const membersData =
+      let membersData =
         results[0]?.code === 200 ? (results[0].content as ClanMembers) : null;
-      const raceData =
+      let raceData =
         results[1]?.code === 200
           ? (results[1].content as CurrentRiverRace)
           : null;
-      const logData =
+      let logData =
         results[2]?.code === 200 ? (results[2].content as RiverRaceLog) : null;
 
-      if (!membersData) {
+      if (membersData) {
+        // THREAT: Malformed member list causing downstream UI crashes.
+        // Target B [1]: Enforce strict validation boundary for Royale API data.
+        const validation = v.safeParse(RoyaleClanMembersResponseSchema, membersData);
+        if (!validation.success) {
+          console.error("[Worker] Members validation failed for /clan/full", validation.issues);
+          res.status(502).json({ error: "Invalid members data format", details: validation.issues });
+          return;
+        }
+        membersData = validation.output as unknown as ClanMembers;
+      } else {
         res.status(500).json({ error: "Failed to fetch members" });
         return;
+      }
+
+      if (raceData) {
+        // THREAT: Corrupt race status data polluting clan snapshots.
+        // Target B [1]: Enforce strict validation boundary for Royale API data.
+        const validation = v.safeParse(RoyaleCurrentRiverRaceSchema, raceData);
+        if (!validation.success) {
+          console.warn("[Worker] Race validation failed for /clan/full", validation.issues);
+          raceData = null; // Graceful degradation for secondary resource
+        } else {
+          raceData = validation.output as unknown as CurrentRiverRace;
+        }
+      }
+
+      if (logData) {
+        // THREAT: Corrupt war log data polluting clan historical records.
+        // Target B [1]: Enforce strict validation boundary for Royale API data.
+        const validation = v.safeParse(RoyaleWarLogResponseSchema, logData);
+        if (!validation.success) {
+          console.warn("[Worker] War Log validation failed for /clan/full", validation.issues);
+          logData = null; // Graceful degradation for secondary resource
+        } else {
+          logData = validation.output as unknown as RiverRaceLog;
+        }
       }
 
       // Pre-process war history
