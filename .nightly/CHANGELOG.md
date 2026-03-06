@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-06] PR #187: fix(validation): enforce boundary for clan snapshots
+**Commit**: `7d914eed67f4ea51e39c70ea47358cf8d8803047`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/187)
+
+### Description
+This PR hardens the Backend Worker's `/clan/full` endpoint by enforcing a strict validation boundary for all upstream data from the Clash Royale API. It also documents version manifest drift in the Backend-GAS environment.
+
+---
+*PR created automatically by Jules for task [12532814593558473788](https://jules.google.com/task/12532814593558473788) started by @AlbiDR*
+
+---
+
 ## [2026-03-05] PR #186: docs(laboratory): document progression engine and isolation boundaries
 **Commit**: `d2fc2159539cf251fea632534c07f73f89243a41`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/186)
