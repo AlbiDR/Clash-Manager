@@ -1,4 +1,4 @@
-import { useTheme } from "../../../shared/composables/useTheme";
+import { useTheme } from "@shared";
 import { idb } from "@core/services/StorageService";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBlueprintMode } from "@core/services/useBlueprintMode";

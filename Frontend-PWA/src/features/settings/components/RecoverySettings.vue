@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import Icon from "../../../shared/ui/Icon.vue";
-import { vTactile } from "../../../shared/directives/vTactile";
+import { Icon, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import SettingsCard from "./SettingsCard.vue";
 defineProps<{
