@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Icon from "../../../shared/ui/Icon.vue";
+import { Icon } from "@shared";
 import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
 import { useBadge } from "@core/services/useBadge";
 import { useAppSettings } from "@core/services/useAppSettings";

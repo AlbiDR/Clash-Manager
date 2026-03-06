@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import BaseCard from "../../../shared/ui/BaseCard.vue";
-import CardActions from "../../../shared/ui/CardActions.vue";
-import Icon from "../../../shared/ui/Icon.vue";
-import StatisticItem from "../../../shared/ui/StatisticItem.vue";
+import {
+  BaseCard,
+  CardActions,
+  Icon,
+  StatisticItem
+} from "@shared";
 import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed } from "vue";
 import type { Recruit } from "@core/types";
