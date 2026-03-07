@@ -87,6 +87,21 @@ describe('ProfileHydrator', () => {
       expect(result.cards).toEqual([]);
     });
 
+    it('should return safe default when validation fails (Target B [1])', () => {
+      const malformed = {
+        name: 123, // Should be string
+        cards: "not an array" // Should be array
+      };
+
+      const result = ProfileHydrator.hydrate(malformed);
+
+      expect(result.profile.name).toBe("Unknown");
+      expect(result.profile.tag).toBe("0");
+      expect(result.profile.kingLevel).toBe(1);
+      expect(result.cards).toEqual([]);
+      expect(result.inventory.gold).toBe(asGold(0));
+    });
+
     it('should normalize rarity strings correctly', () => {
       const raw = {
         cards: [
