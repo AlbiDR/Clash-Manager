@@ -61,12 +61,12 @@ export interface ScoringKernelContract {
   /**
    * Calculates the raw recruitment score for a candidate.
    */
-  calcRecruitRaw(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number;
+  computeRecruitScore(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number;
 
   /**
    * Calculates the base roster score for an internal member.
    */
-  calcRosterRaw(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number;
+  computeRosterRawScore(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number;
 
   /**
    * Applies exponential decay to a score based on inactivity duration.
@@ -76,22 +76,22 @@ export interface ScoringKernelContract {
   /**
    * Calculates the "Heritage" bonus for newly recruited members.
    */
-  calcHeritage(recruitRaw: number, tenureDays: number, threshold: number, divisor: number): number;
+  applyTenureBonus(recruitRaw: number, tenureDays: number, threshold: number, divisor: number): number;
 
   /**
    * Normalizes a raw score against a benchmark to produce a potential percentage.
    */
-  calcPotential(raw: number, benchmark: number): number;
+  computePotentialPercentage(raw: number, benchmark: number): number;
 
   /**
    * Calculates a hybrid benchmark by blending clan performance with market standards.
    */
-  calcHybridBenchmark(clanAvg: number, marketAvg: number, config: HeadhunterMathConfig): number;
+  computeHybridBenchmark(clanAvg: number, marketAvg: number, config: HeadhunterMathConfig): number;
 
   /**
    * Determines the optimal trophy floor strategy based on clan composition.
    */
-  calcTrophyFloor(members: { trophies: number }[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
+  evaluateTrophyStrategy(members: { trophies: number }[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" };
 
   /**
    * Standard comparator for sorting roster rows by performance and reliability.
@@ -126,7 +126,7 @@ const ScoringKernel: ScoringKernelContract = {
     penalties: PenaltiesConfig
   ): { raw: number; perf: number } {
     
-    const raw = this.calcRosterRaw(
+    const raw = this.computeRosterRawScore(
       currentFame, 
       avgWarFame, 
       dailyDonations, 
@@ -163,7 +163,7 @@ const ScoringKernel: ScoringKernelContract = {
    * This prevents active players with low win counts from being penalized
    * too heavily compared to inactive players with high historical wins.
    */
-  calcRecruitRaw(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number {
+  computeRecruitScore(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number {
     const warBonus = recentWar ? (w.WAR_BASELINE_BONUS || 500) : 0;
     const totalWar = (wins || 0) + warBonus;
     return Math.round(
@@ -176,7 +176,7 @@ const ScoringKernel: ScoringKernelContract = {
   /**
    * Calculates the base roster score.
    */
-  calcRosterRaw(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number {
+  computeRosterRawScore(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number {
     return (
       fame * w.FAME +
       avgFame * w.AVG_FAME +
@@ -209,7 +209,7 @@ const ScoringKernel: ScoringKernelContract = {
    * This ensures newly joined members maintain high visibility until their
    * internal stats stabilize.
    */
-  calcHeritage(recruitRaw: number, tenureDays: number, threshold: number, divisor: number): number {
+  applyTenureBonus(recruitRaw: number, tenureDays: number, threshold: number, divisor: number): number {
     if (threshold <= 0) return 0;
     const timeRatio = Math.min(1, Math.max(0, (threshold - tenureDays) / threshold));
     const factor = timeRatio * timeRatio;
@@ -219,7 +219,7 @@ const ScoringKernel: ScoringKernelContract = {
   /**
    * Calculates the Potential Score relative to a benchmark.
    */
-  calcPotential(raw: number, benchmark: number): number {
+  computePotentialPercentage(raw: number, benchmark: number): number {
     if (benchmark <= 0) return 0;
     const s = Math.round((raw / benchmark) * 100);
     return Math.min(100, s);
@@ -233,7 +233,7 @@ const ScoringKernel: ScoringKernelContract = {
    * internal clan performance. This prevents the "Echo Chamber" effect
    * where a weak clan's standards drop too low to find elite recruits.
    */
-  calcHybridBenchmark(clanAvg: number, marketAvg: number, config: HeadhunterMathConfig): number {
+  computeHybridBenchmark(clanAvg: number, marketAvg: number, config: HeadhunterMathConfig): number {
     let b = 1;
     if (clanAvg > 0 && marketAvg > 0) {
       b = clanAvg * config.BENCHMARK_CLAN_WEIGHT + marketAvg * config.BENCHMARK_MARKET_WEIGHT;
@@ -253,7 +253,7 @@ const ScoringKernel: ScoringKernelContract = {
    * Above this, the median is used to filter out bottom-tier performers.
    * Below this, the bottom percentile average is used to support rebuilding efforts.
    */
-  calcTrophyFloor(members: { trophies: number }[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
+  evaluateTrophyStrategy(members: { trophies: number }[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: "ELITE" | "REBUILD" | "BASE" } {
     const ELITE_THRESHOLD = config.ELITE_THRESHOLD;
     
     let floor = inGameReq;

@@ -41,7 +41,7 @@ const Roster: RosterContract = {
    * Consumes significant UrlFetchApp and CacheService quotas during API ingestion
    * and state persistence.
    */
-  update(): void {
+  synchronizeLeaderboard(): void {
     const startTime = Date.now();
     console.info("ROSTER: Starting Leaderboard Refresh Pipeline");
 
@@ -288,7 +288,7 @@ const Roster: RosterContract = {
  * GLOBAL BRIDGE (Legacy Support)
  */
 function updateLeaderboard() {
-  Roster.update();
+  Roster.synchronizeLeaderboard();
 }
 
 // HARDEN: Unified versioning prevents false-negative health check failures.

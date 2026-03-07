@@ -49,15 +49,11 @@ export interface HeadhunterContract {
    *
    * @warning Consumes significant UrlFetchApp quotas during validation and scanning.
    */
-  scout(): void;
+  executeRecruitScout(): void;
 }
 
 const Headhunter: HeadhunterContract = {
-  /**
-   * RECRUITMENT PIPELINE ENTRY POINT
-   * Orchestrates the full discovery and profiling loop.
-   */
-  scout(): void {
+  executeRecruitScout(): void {
     const startTime = Date.now();
     const S = Registry.Services;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -352,7 +348,7 @@ if (typeof module !== "undefined" && module.exports) {
  * Preserves compatibility with existing GAS Triggers.
  */
 function scoutRecruits() {
-  Headhunter.scout();
+  Headhunter.executeRecruitScout();
 }
 
 export default Headhunter;

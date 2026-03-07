@@ -20,8 +20,8 @@ declare var module: any;
 const VER_DATABASE = "13.1.0";
 
 export interface DatabaseContract {
-    update(): void;
-    deduplicate(): { pruned: number };
+    synchronizeClanSnapshot(): void;
+    purgeDuplicateSnapshots(): { pruned: number };
 }
 
 const Database: DatabaseContract = {
@@ -29,7 +29,7 @@ const Database: DatabaseContract = {
      * MAIN ENTRY: Update Clan Database
      * Fetches latest clan data and persists snapshots.
      */
-    update(): void {
+    synchronizeClanSnapshot(): void {
         const startTime = Date.now();
         console.info("DATABASE: Starting ETL Pipeline Initialization");
         
@@ -162,7 +162,7 @@ const Database: DatabaseContract = {
     /**
      * DEDUPLICATION: Removes redundant entries for the same Tag + Day.
      */
-    deduplicate(): { pruned: number } {
+    purgeDuplicateSnapshots(): { pruned: number } {
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
         if (!sheet) return { pruned: 0 };
@@ -175,7 +175,7 @@ const Database: DatabaseContract = {
  * Preserves compatibility with existing GAS Triggers.
  */
 function updateClanDatabase() {
-    Database.update();
+    Database.synchronizeClanSnapshot();
 }
 
 // @ts-ignore
