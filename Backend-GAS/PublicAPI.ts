@@ -10,6 +10,14 @@
 
 import type { AppConfig } from "./Configuration";
 import type { RegistryContract } from "./Registry";
+import * as v from "valibot";
+import {
+  DismissRecruitsPayloadSchema,
+  UndismissRecruitsPayloadSchema,
+  TriggerUpdatePayloadSchema,
+  PlayerProfilePayloadSchema,
+  LoggerPayloadSchema
+} from "./Validation";
 
 // Global Version Constant
 // @ts-ignore
@@ -60,6 +68,7 @@ declare const VER_DATABASE: string;
 declare const VER_HEADHUNTER: string;
 declare const VER_SCORING: string;
 declare const VER_ORCHESTRATOR: string;
+declare const VER_VALIDATION: string;
 
 /**
  * API INTERFACES
@@ -172,12 +181,14 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
       case "refresh":
         return respondRaw(Registry.Services.WebappController.getWebAppData(true));
 
-      case "log":
-        const level = (e?.parameter?.level || "INFO").toUpperCase();
-        const msg = e?.parameter?.message || "No message provided";
-        const ctx = e?.parameter?.context || "";
-        Logger.log(`[FE_${level}] ${msg} ${ctx}`);
+      case "log": {
+        const result = v.safeParse(LoggerPayloadSchema, { ...e?.parameter, action });
+        if (!result.success) return respond(null, "VALIDATION_ERROR", "Invalid log payload.");
+        const { level = "INFO", message = "No message provided", context = "" } = result.output;
+        
+        Logger.log(`[FE_${level.toUpperCase()}] ${message} ${context}`);
         return respond({ logged: true });
+      }
 
       default:
         return respond(null, "INVALID_ACTION", `Unknown action: "${action}". Valid actions: ping, getwebappdata, refresh, log.`);
@@ -198,59 +209,62 @@ function doPost(
     const actionParam = (e?.parameter?.action || "").toLowerCase().trim();
     
     const body = e?.postData?.contents;
-    let payload: ApiRequestPayload = {};
+    let rawPayload: any = {};
     if (body) {
       try {
-        payload = JSON.parse(body);
+        rawPayload = JSON.parse(body);
       } catch (parseErr: any) {
         return respond(null, "PARSE_ERROR", `Invalid JSON: ${parseErr.message}`);
       }
     }
 
-    const action = (actionParam || payload.action || "").toLowerCase().trim();
+    const action = (actionParam || rawPayload.action || "").toLowerCase().trim();
 
     switch (action) {
-      case "dismissrecruits":
+      case "dismissrecruits": {
+        const valRes = v.safeParse(DismissRecruitsPayloadSchema, rawPayload);
+        if (!valRes.success) return respond(null, "VALIDATION_ERROR", `Invalid payload structure.`);
+        const payload = valRes.output;
+
         // 🛡️ DUAL-MODE SUPPORT: Handle both mapping formats and ensure score capture
-        const rawItems = Array.isArray(payload.items) ? payload.items : [];
-        const rawIds = Array.isArray(payload.ids) ? payload.ids : [];
+        const rawItems = payload.items || [];
+        const rawIds = payload.ids || [];
         
         // Normalize: Zip entries and prioritize score-aware objects
         const normalizedItems = (rawItems.length > 0 ? rawItems : rawIds).map(item => {
           if (typeof item === 'string') return { id: item, score: 0 };
           if (item && typeof item === 'object') {
              // 🛡️ AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
-             // Using OR chain to find the first non-undefined, non-null value
              const rawVal = item.potentialRawScore !== undefined ? item.potentialRawScore : 
                             (item.score !== undefined ? item.score : (item.rawScore || 0));
              
-             // Convert to Number safely, stripping potential string artifacts if any
+             // Convert to Number safely
              const score = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal).replace(/,/g, '')) || 0;
              return { id: item.id, score: isNaN(score) ? 0 : score };
           }
           return null;
-        }).filter(item => item !== null);
+        }).filter((item): item is {id: string, score: number} => item !== null);
 
         if (normalizedItems.length === 0) {
            return respond(null, "INVALID_PARAMS", "Processed 0 valid items from payload.");
         }
 
-        return respond(Registry.Services.WebappController.markRecruitsAsInvitedBulk(normalizedItems as Array<{id: string, score: number}>));
+        return respond(Registry.Services.WebappController.markRecruitsAsInvitedBulk(normalizedItems));
+      }
 
-      case "undismissrecruits":
-        const undoIds = payload.ids;
-        if (!undoIds || !Array.isArray(undoIds)) {
-          console.error(`[API] undismissRecruits missing ids. Payload keys: ${Object.keys(payload).join(', ')}`);
-          return respond(
-            null,
-            "INVALID_PARAMS",
-            `undismissRecruits requires "ids" array. Received: ${typeof undoIds}`,
-          );
+      case "undismissrecruits": {
+        const valRes = v.safeParse(UndismissRecruitsPayloadSchema, rawPayload);
+        if (!valRes.success) {
+          return respond(null, "VALIDATION_ERROR", `undismissRecruits requires "ids" string array.`);
         }
-        return respond(Registry.Services.WebappController.undismissRecruitsBulk(undoIds));
+        return respond(Registry.Services.WebappController.undismissRecruitsBulk(valRes.output.ids));
+      }
 
-      case "triggerupdate":
-        return respond(triggerAsyncUpdate(payload.target));
+      case "triggerupdate": {
+        const valRes = v.safeParse(TriggerUpdatePayloadSchema, rawPayload);
+        if (!valRes.success) return respond(null, "VALIDATION_ERROR", `triggerUpdate requires a "target" string.`);
+        return respond(triggerAsyncUpdate(valRes.output.target));
+      }
 
       case "ping":
       case "getleaderboard":
@@ -261,10 +275,9 @@ function doPost(
       case "getwarlog":
       case "refresh":
         // Delegation to handleRequest logic (which was based on doGet)
-        // Merge URL parameters with the JSON payload to ensure all fields (like 'tag') are passed.
         const syntheticE = {
           ...e,
-          parameter: { ...e.parameter, ...payload, action: action }
+          parameter: { ...e.parameter, ...rawPayload, action: action }
         };
         return handleRequest(syntheticE as any, "POST");
 
@@ -318,6 +331,7 @@ function getModuleVersions(): Record<string, string> {
     "SCORING",
     "SCORING_KERNEL",
     "ORCHESTRATOR",
+    "VALIDATION",
   ];
 
   const versions: Record<string, string> = {};

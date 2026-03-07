@@ -13,8 +13,12 @@
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "^25.0.9",
     "@vitest/coverage-v8": "^1.2.0",
+    "esbuild": "^0.27.3",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0",
     "vitest": "^1.2.0"
+  },
+  "dependencies": {
+    "valibot": "^1.2.0"
   }
 }

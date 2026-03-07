@@ -2,7 +2,7 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import RosterStore from './RosterStore';
-import { BattleLogProcessor, AnalysisGoal } from './BattleLog';
+import BattleLog, { AnalysisGoal } from './BattleLog';
 import type { Recruit, TournamentResult, TournamentMember } from './HeadhunterTypes';
 
 /**
@@ -360,7 +360,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
             hasWar = logs[idx].some((b: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type));
 
             if (validCandidates.length < 40 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
-              const recruits = BattleLogProcessor.digest(p.tag, AnalysisGoal.RECRUITMENT);
+              const recruits = BattleLog.digest(p.tag, AnalysisGoal.RECRUITMENT);
               recruits.forEach((r: any) => {
                  if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
                     shadowTags.add(r.tag);

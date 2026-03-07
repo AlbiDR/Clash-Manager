@@ -33,7 +33,12 @@ export enum AnalysisGoal {
  * BATTLELOG CONTRACT
  */
 export interface BattleLogContract {
-  digest(subjectTag: string, goal: AnalysisGoal): any[];
+  digest(subjectTag: string, goal?: AnalysisGoal): any[];
+  fetch(subjectTag: string): any;
+  analyzeBracket(logs: any[]): any;
+  extractTrophies(player: any): number | null;
+  process(logs: any[], goal: AnalysisGoal, ctx: any): any[];
+  transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any;
 }
 
 /**

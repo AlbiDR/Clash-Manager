@@ -83,6 +83,26 @@ async function main() {
     }
   });
 
+  // 3.5 Bundle Valibot for Google Apps Script
+  log('Bundling Valibot for GAS compatibility...');
+  const valibotEntryPath = join(ROOT_DIR, 'valibot-entry.js');
+  writeFileSync(valibotEntryPath, "export * from 'valibot';");
+  try {
+    const esbuild = require('esbuild');
+    esbuild.buildSync({
+      entryPoints: [valibotEntryPath],
+      bundle: true,
+      outfile: join(DIST_DIR, 'Valibot.gs'),
+      format: 'iife',
+      globalName: 'v',
+    });
+    log('Valibot successfully bundled.');
+  } catch (err) {
+    error(`Failed to bundle Valibot: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    if (existsSync(valibotEntryPath)) rmSync(valibotEntryPath);
+  }
+
   // 4. Copy appsscript.json configuration
   log('Transferring appsscript.json...');
   const appsScriptJsonPath = join(ROOT_DIR, 'appsscript.json');

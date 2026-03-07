@@ -36,8 +36,6 @@ import type { ScoringContract } from "./Scoring"; // Renamed
 import type { HeadhunterContract } from "./Headhunter";
 import type { DatabaseContract } from "./Database";
 import type { RosterContract } from "./RosterTypes";
-import type { BattleLogContract } from "./BattleLog";
-import type { WebappControllerContract } from "./WebappController";
 
 // Global Version Constant
 // @ts-ignore
