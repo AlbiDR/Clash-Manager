@@ -108,6 +108,43 @@ export const RoyaleClanMembersResponseSchema = v.object({
   items: v.array(RoyaleClanMemberSchema),
 });
 
+export const RoyalePlayerSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  trophies: v.number(),
+  totalDonations: v.number(),
+  warDayWins: v.number(),
+  challengeCardsWon: v.number(),
+  expLevel: v.optional(v.number()),
+  clan: v.optional(v.object({
+    tag: TagSchema,
+    name: v.string(),
+  })),
+});
+
+export const RoyaleBattleLogItemSchema = v.object({
+  type: v.string(),
+  battleTime: v.string(),
+});
+
+export const RoyaleBattleLogResponseSchema = v.array(RoyaleBattleLogItemSchema);
+
+export const RoyaleTournamentMemberSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  trophies: v.number(),
+  clan: v.optional(v.object({
+    tag: TagSchema,
+    name: v.string(),
+  })),
+});
+
+export const RoyaleTournamentResponseSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  membersList: v.array(RoyaleTournamentMemberSchema),
+});
+
 export const RoyaleRiverRaceParticipantSchema = v.object({
   tag: TagSchema,
   name: v.string(),
