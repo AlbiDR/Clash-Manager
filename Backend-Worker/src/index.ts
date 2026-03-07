@@ -361,7 +361,7 @@ async function processBatch<T = unknown>(
             results[i] = {
               code: 200,
               content: {
-                tag: profile.tag,
+                tag: profile.tag as PlayerTag,
                 name: profile.name,
                 trophies: profile.trophies,
                 donations: profile.totalDonations,
@@ -491,7 +491,7 @@ async function processScanBatch(
               }
 
               candidates.push({
-                tag: p.tag,
+                tag: p.tag as PlayerTag,
                 name: p.name,
                 trophies: p.trophies,
                 donations: 0,
