@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-07] PR #193: refactor(pwa): resolve structural rot in app entry points
+**Commit**: `b5abe1dbcb013108076ee9e165b747d7b6663daf`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/193)
+
+### Description
+This PR resolves structural rot in the primary application entry points of the Frontend PWA. By migrating deep relative imports to standardized registry aliases (`@core`, `@shared`, `@features`) and implementing the Barrel Protocol for Feature modules, we ensure strict adherence to the project's layered architecture and improve maintainability. All 465 unit tests passed following the refactor.
+
+---
+*PR created automatically by Jules for task [809616500345260821](https://jules.google.com/task/809616500345260821) started by @AlbiDR*
+
+---
+
 ## [2026-03-07] PR #192: test(laboratory): add validation boundary coverage for ProfileHydrator
 **Commit**: `fd5f2491c6d818758c8e28689e9d7001c935eece`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/192)
