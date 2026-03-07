@@ -1,5 +1,7 @@
-
 packages:
-  - 'Backend-GAS'
-  - 'Backend-Worker'
-  - 'Frontend-PWA'
+  - Backend-GAS
+  - Backend-Worker
+  - Frontend-PWA
+
+onlyBuiltDependencies:
+  - esbuild
