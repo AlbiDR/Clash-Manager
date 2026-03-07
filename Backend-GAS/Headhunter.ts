@@ -1,10 +1,10 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import HeadhunterStore from './HeadhunterStore';
-import HeadhunterScanner from './HeadhunterScanner';
-import HeadhunterView from './HeadhunterView';
-import type { Recruit } from './HeadhunterTypes';
+import HeadhunterStore from './Headhunter_Store';
+import HeadhunterScanner from './Headhunter_Scanner';
+import HeadhunterView from './Headhunter_View';
+import type { Recruit } from './Headhunter_Types';
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any;

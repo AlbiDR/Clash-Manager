@@ -1,9 +1,9 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import { ClanMemberSnapshot, DatabaseUpdateResult } from './DatabaseTypes';
-import DatabaseView from './DatabaseView';
-import DatabaseStore from './DatabaseStore';
-import type { WarSnapshot } from './WarIntelligence';
+import { ClanMemberSnapshot, DatabaseUpdateResult } from './Database_Types';
+import DatabaseView from './Database_View';
+import DatabaseStore from './Database_Store';
+import type { WarSnapshot } from './War_Intelligence';
 
 declare var SpreadsheetApp: any;
 declare function getWarSnapshot(): WarSnapshot;

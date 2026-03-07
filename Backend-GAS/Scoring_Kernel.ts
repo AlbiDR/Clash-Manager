@@ -9,7 +9,7 @@
  * ============================================================================
  */
 
-import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex, HeadhunterMathConfig } from "./SharedTypes";
+import type { RosterWeights, ScoringWeights, PenaltiesConfig, RosterSchemaIndex, HeadhunterMathConfig } from "./Shared_Types";
 
 declare var module: any;
 

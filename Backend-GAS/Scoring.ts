@@ -10,7 +10,7 @@
  */
 
 import { CONFIG } from "./Configuration";
-import type { RecruitingWeights, ScoringWeights, RosterSchemaIndex, HeadhunterMathConfig } from "./SharedTypes"; // Fixed Import
+import type { RecruitingWeights, ScoringWeights, RosterSchemaIndex, HeadhunterMathConfig } from "./Shared_Types"; // Fixed Import
 import Registry from "./Registry";
 
 // Global Version Constant

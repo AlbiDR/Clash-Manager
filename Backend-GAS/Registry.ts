@@ -20,10 +20,10 @@ import Scoring from "./Scoring"; // Renamed
 import Headhunter from "./Headhunter";
 import Database from "./Database";
 import Roster from "./Roster";
-import ScoringKernel, { ScoringKernelContract } from './ScoringKernel'; // Renamed
+import ScoringKernel, { ScoringKernelContract } from './Scoring_Kernel'; // Renamed
 import Reporting, { ReportingContract } from './Reporting';
-import WebappController, { WebappControllerContract } from './WebappController';
-import BattleLog, { BattleLogContract } from './BattleLog';
+import WebappController, { WebappControllerContract } from './Webapp_Controller';
+import BattleLog, { BattleLogContract } from './Battle_Log';
 import Orchestrator, { OrchestratorContract } from './Orchestrator';
 
 import type { StoreContract } from "./Store";
@@ -35,7 +35,7 @@ import type { TimeContract } from "./Time";
 import type { ScoringContract } from "./Scoring"; // Renamed
 import type { HeadhunterContract } from "./Headhunter";
 import type { DatabaseContract } from "./Database";
-import type { RosterContract } from "./RosterTypes";
+import type { RosterContract } from "./Roster_Types";
 
 // Global Version Constant
 // @ts-ignore

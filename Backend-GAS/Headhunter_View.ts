@@ -1,7 +1,7 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import type { Recruit } from './HeadhunterTypes';
+import type { Recruit } from './Headhunter_Types';
 
 /**
  * ============================================================================

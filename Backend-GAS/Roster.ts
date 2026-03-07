@@ -1,8 +1,8 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import { PlayerResult, ClanMemberResult, RosterContract } from './RosterTypes';
-import RosterStore from './RosterStore';
-import RosterView from './RosterView';
+import { PlayerResult, ClanMemberResult, RosterContract } from './Roster_Types';
+import RosterStore from './Roster_Store';
+import RosterView from './Roster_View';
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any;
