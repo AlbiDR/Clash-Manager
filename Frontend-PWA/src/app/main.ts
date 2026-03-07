@@ -2,24 +2,28 @@
 * CLASH MANAGER PWA
  * Lead Full-Stack Architect & UI/UX Engineer Implementation
  */
-import { useTheme } from "../shared/composables/useTheme";
-import { vTactile } from "../shared/directives/vTactile";
-import { vTooltip } from "../shared/directives/vTooltip";
-import { idb } from "../core/services/StorageService";
-import { useApiState } from "../core/api/useApiState";
-import { useAppSettings } from "../core/services/useAppSettings";
-import { useClashData } from "../core/services/useClashData";
-import { useStoragePersistence } from "../core/services/useStoragePersistence";
-import { useWakeLock } from "../core/services/useWakeLock";
+import {
+  useTheme,
+  vTactile,
+  vTooltip,
+  Icon,
+} from "@shared";
+import {
+  idb,
+  useApiState,
+  useAppSettings,
+  useClashData,
+  useStoragePersistence,
+  useWakeLock,
+} from "@core";
 
 import { createApp, watch } from "vue";
-import { baseStyles } from "../core/theme/base";
-import { animationStyles } from "../core/theme/animations";
-import { skeletonStyles } from "../core/theme/skeletons";
-import { componentStyles } from "../core/theme/components";
+import { baseStyles } from "@core/theme/base";
+import { animationStyles } from "@core/theme/animations";
+import { skeletonStyles } from "@core/theme/skeletons";
+import { componentStyles } from "@core/theme/components";
 import App from "./App.vue";
 import router from "./router";
-import Icon from "../shared/ui/Icon.vue";
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 function showFatalError(error: unknown) {
