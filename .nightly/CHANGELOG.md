@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [2026-03-07] PR #191: fix(validation): enforce strict validation for Royale API data
+**Commit**: `fe611f6eb0cec0ecabcbc6660161d2c378cde5d3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/191)
+
+### Description
+This hardening fix secures the external data boundary in the Backend-Worker by implementing strict Valibot validation for all Clash Royale API responses (profiles, battle logs, and tournament discovery). This prevents malformed upstream data from causing runtime failures in the scoring and recruitment pipelines (Target B [1]).
+
+Additionally, the audit identified version manifest drift in Backend-GAS where several modules (Headhunter, Database_Store) are ahead of the 13.1.0 manifest, and several other utility modules lack manifest entries entirely. These have been flagged for developer review.
+
+---
+*PR created automatically by Jules for task [4038679910348595802](https://jules.google.com/task/4038679910348595802) started by @AlbiDR*
+
+---
+
 ## [2026-03-06] PR #190: docs(core): document PriorityQueue utility
 **Commit**: `cdc2fa612a01c8a505ec2d8695d66d8fb2fa661e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/190)
