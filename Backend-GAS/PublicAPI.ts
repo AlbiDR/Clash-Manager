@@ -9,7 +9,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IRegistry } from "./Registry";
+import type { RegistryContract } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -46,22 +46,10 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Registry: IRegistry;
+declare const Registry: RegistryContract;
 
-// External module functions
-declare function getWebAppData(forceRefresh: boolean): string;
-declare function markRecruitsAsInvitedBulk(items: Array<{ id: string, score: number }>): {
-  success: boolean;
-  count: number;
-};
-declare function undismissRecruitsBulk(ids: string[]): {
-  success: boolean;
-  count: number;
-};
-declare function updateClanDatabase(): void;
-declare function updateLeaderboard(): void;
-declare function scoutRecruits(): void;
-declare function refreshWebPayload(): void;
+// Redundant declarations removed - routed via Registry.Services.WebappController
+
 
 // Module Version Constants
 declare const VER_CONFIGURATION: string;
@@ -157,10 +145,10 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
 
       case "getleaderboard":
       case "getwebappdata":
-        return respondRaw(getWebAppData(false));
+        return respondRaw(Registry.Services.WebappController.getWebAppData(false));
 
       case "getrecruits":
-        const recruitData = getWebAppData(false);
+        const recruitData = Registry.Services.WebappController.getWebAppData(false);
         const parsed = JSON.parse(recruitData);
         if (parsed.status === "success" && parsed.data) {
           return respond({
@@ -171,18 +159,18 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         return respond(null, "NO_DATA", "Recruit data not available");
 
       case "getmembers":
-        return respond(getMembers());
+        return respond(Registry.Services.WebappController.getMembers());
 
       case "getplayerprofile":
         const tag = String(e?.parameter?.tag || "").trim();
         if (!tag) return respond(null, "MISSING_TAG", "Parameter 'tag' is required.");
-        return respond(getPlayerProfile(tag));
+        return respond(Registry.Services.WebappController.getPlayerProfile(tag));
 
       case "getwarlog":
-        return respond(getWarLog());
+        return respond(Registry.Services.WebappController.getWarLog());
 
       case "refresh":
-        return respondRaw(getWebAppData(true));
+        return respondRaw(Registry.Services.WebappController.getWebAppData(true));
 
       case "log":
         const level = (e?.parameter?.level || "INFO").toUpperCase();
@@ -247,7 +235,7 @@ function doPost(
            return respond(null, "INVALID_PARAMS", "Processed 0 valid items from payload.");
         }
 
-        return respond(markRecruitsAsInvitedBulk(normalizedItems as Array<{id: string, score: number}>));
+        return respond(Registry.Services.WebappController.markRecruitsAsInvitedBulk(normalizedItems as Array<{id: string, score: number}>));
 
       case "undismissrecruits":
         const undoIds = payload.ids;
@@ -259,7 +247,7 @@ function doPost(
             `undismissRecruits requires "ids" array. Received: ${typeof undoIds}`,
           );
         }
-        return respond(undismissRecruitsBulk(undoIds));
+        return respond(Registry.Services.WebappController.undismissRecruitsBulk(undoIds));
 
       case "triggerupdate":
         return respond(triggerAsyncUpdate(payload.target));
@@ -339,111 +327,6 @@ function getModuleVersions(): Record<string, string> {
     versions[m] = typeof ver !== "undefined" ? ver : "N/A";
   });
   return versions;
-}
-
-/**
- * DATA FETCHERS
- */
-function getMembers(): any[] {
-  const remoteData = Registry.Services.Network.fetchPublicJson("members");
-  if (remoteData) return remoteData as any[];
-
-  console.info("API: getMembers: Using local GAS fallback (remote unavailable).");
-  const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  // OPTIMIZATION: Use same endpoint as Headhunter to hit shared cache
-  const data = Registry.Services.Network.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
-  ]);
-
-  if (!data || !data[0] || !data[0].memberList) {
-    console.warn("API: getMembers: No data returned from Clash Royale API.");
-    return [];
-  }
-
-  return data[0].memberList.map((m: any) => ({
-    tag: m.tag,
-    name: m.name,
-    role: formatRole(m.role),
-    kingLevel: m.expLevel,
-    donations: m.donations,
-    donationsReceived: m.donationsReceived,
-  }));
-}
-
-function getPlayerProfile(tag: string): any {
-  const cleanTag = encodeURIComponent(tag.startsWith("#") ? tag : `#${tag}`);
-  const data = Registry.Services.Network.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/players/${cleanTag}`,
-  ]);
-
-  if (!data || !data[0]) {
-    throw new Error(`Player ${tag} not found`);
-  }
-
-  return data[0];
-}
-
-function getWarLog(): WarLogEntry[] {
-  const remoteData = Registry.Services.Network.fetchPublicJson("warlog");
-  if (remoteData) return remoteData as WarLogEntry[];
-
-  console.info("API: getWarLog: Using local GAS fallback (remote unavailable).");
-  const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-  const data = Registry.Services.Network.fetchRoyaleAPI([
-    `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
-  ]);
-
-  if (!data || !data[0] || !data[0].items) {
-    console.warn("API: getWarLog: No data returned from Clash Royale API.");
-    return [];
-  }
-
-  return data[0].items.map((r: any) => {
-    let myStanding: any = null;
-    let opponents: any[] = [];
-
-    if (r.standings) {
-      myStanding = r.standings.find(
-        (s: any) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
-      );
-      opponents = r.standings.filter(
-        (s: any) => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG,
-      );
-    }
-
-    const myFame = myStanding ? myStanding.clan.fame : 0;
-    const myRank = myStanding ? myStanding.rank : null;
-    const bestRival = opponents.sort((a, b) => b.clan.fame - a.clan.fame)[0];
-
-    let result: "win" | "lose" | "n/a" = "lose";
-    if (myRank === 1) result = "win";
-    if (myRank === null) result = "n/a";
-
-    return {
-      result,
-      endTime: parseCRDateISO(r.createdDate),
-      opponent: bestRival ? bestRival.clan.name : "No Opponent",
-      teamSize: 50,
-      score: myFame,
-      opponentScore: bestRival ? bestRival.clan.fame : 0,
-    };
-  });
-}
-
-const formatRole = (role: string): string =>
-  (({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" }) as any)[
-    role
-  ] || "Member";
-
-function parseCRDateISO(t: string): string {
-  if (!t) return new Date().toISOString().split("T")[0];
-  const d = new Date(
-    t.replace(
-      /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
-      "$1-$2-$3T$4:$5:$6Z",
-    ),
-  );
-  return Registry.Services.Time.formatDate(d);
 }
 
 /**

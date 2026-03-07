@@ -24,7 +24,7 @@ declare var LockService: any;
 
 declare const CONFIG: AppConfig;
 
-export interface IView {
+export interface ViewContract {
   applyStandardLayout(
     sheet: any,
     contentRows: number,
@@ -49,7 +49,7 @@ export interface IView {
   interact(sheet: any, startMsg: string, taskFn: () => void): void;
 }
 
-var View: IView = {
+var View: ViewContract = {
   /**
    * STANDARD VISUAL GENERATOR
    * Produces the signature "Clean Technical" request stack for batch updates.

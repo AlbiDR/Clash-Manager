@@ -13,13 +13,13 @@
  * ============================================================================
  */
 
-export interface IReporting {
+export interface ReportingContract {
   logStep(step: number, total: number, message: string): void;
   logReport(title: string, lines: string[], width?: number): void;
   logBanner(message: string): void;
 }
 
-var Reporting: IReporting = {
+var Reporting: ReportingContract = {
   
   /**
    * Logs a standardized pipeline step: [X/Y] Message

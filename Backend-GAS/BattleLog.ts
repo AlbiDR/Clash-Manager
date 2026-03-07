@@ -30,15 +30,21 @@ export enum AnalysisGoal {
 }
 
 /**
- * BATTLELOG_PROCESSOR: A modular engine designed to be injected into different modules.
+ * BATTLELOG CONTRACT
  */
-export class BattleLogProcessor {
-  
+export interface BattleLogContract {
+  digest(subjectTag: string, goal: AnalysisGoal): any[];
+}
+
+/**
+ * BATTLELOG: A modular engine for log-based intelligence.
+ */
+const BattleLog: BattleLogContract = {
   /**
    * Main entry point. 
    * Orchestrates fetching, statistical analysis, and purpose-driven extraction.
    */
-  public static digest(subjectTag: string, goal: AnalysisGoal = AnalysisGoal.RECRUITMENT): any[] {
+  digest(subjectTag: string, goal: AnalysisGoal = AnalysisGoal.RECRUITMENT): any[] {
     const rawData = this.fetch(subjectTag);
     if (!rawData || !rawData.logs.length) return [];
 
@@ -50,34 +56,33 @@ export class BattleLogProcessor {
     };
 
     return this.process(rawData.logs, goal, context);
-  }
+  },
 
   /**
    * Acquisition: Fetches raw profile and log data.
    */
-  private static fetch(tag: string): { profile: any, logs: any[] } | null {
+  fetch(tag: string): { profile: any, logs: any[] } | null {
     const S = Registry.Services;
     const pUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
     const lUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
     const [profile, logs] = S.Network.fetchRoyaleAPI([pUrl, lUrl]);
     
     return (profile && logs) ? { profile, logs } : null;
-  }
+  },
 
   /**
    * Helper: Extracts trophy count from either 'trophies' or 'startingTrophies'.
-   * Handles API inconsistencies across different game modes.
    */
-  private static extractTrophies(opponent: any): number | null {
+  extractTrophies(opponent: any): number | null {
     if (typeof opponent.trophies === 'number') return opponent.trophies;
     if (typeof opponent.startingTrophies === 'number') return opponent.startingTrophies;
     return null;
-  }
+  },
 
   /**
    * Statistical Utility: Calculates the bracket average and deviation.
    */
-  private static analyzeBracket(logs: any[]): { mean: number, floor: number } {
+  analyzeBracket(logs: any[]): { mean: number, floor: number } {
     const trophies: number[] = [];
     logs.forEach(b => (b.opponent || []).forEach((o: any) => {
        const tr = this.extractTrophies(o);
@@ -90,52 +95,39 @@ export class BattleLogProcessor {
     const variance = trophies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / trophies.length;
     const stdDev = Math.sqrt(variance);
 
-    // Dynamic quality floor
     return { mean, floor: Math.round(mean - stdDev) };
-  }
+  },
 
   /**
    * Processing: Loops through logs and extracts data based on the goal.
    */
-  private static process(logs: any[], goal: AnalysisGoal, ctx: any): any[] {
+  process(logs: any[], goal: AnalysisGoal, ctx: any): any[] {
     const results: any[] = [];
 
     logs.forEach(battle => {
-      // PRUNING STEP 1: Purpose-specific mode filtering
       if (goal === AnalysisGoal.WAR_INTELLIGENCE && !battle.type.toLowerCase().includes("race")) return;
 
       (battle.opponent || []).forEach((opp: any) => {
-        
-        // PRUNING STEP 2: Goal-specific filtering
         switch (goal) {
           case AnalysisGoal.RECRUITMENT:
-            if (opp.clan && opp.clan.tag) return; // Must be clanless
-            
+            if (opp.clan && opp.clan.tag) return;
             const tr = this.extractTrophies(opp);
-            if (tr === null) return; // STRICT QUALITY: Must have data
-            if (tr < Math.max(ctx.floor, ctx.clanRequirement)) return; // Must meet quality bar
+            if (tr === null) return;
+            if (tr < Math.max(ctx.floor, ctx.clanRequirement)) return;
             break;
-            
-          case AnalysisGoal.ACTIVITY_AUDIT:
-             // [DRAFT] Future Logic: Filter by last 24h only?
-             break;
         }
-
-        // PRUNING STEP 3: Universal filters
         if (!opp.tag) return;
-
-        // EXTRACTION: Capture data defined by the goal
         results.push(this.transform(battle, opp, goal, ctx));
       });
     });
 
     return results;
-  }
+  },
 
   /**
    * Transformation: Maps raw API data to a clean, purpose-driven object.
    */
-  private static transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any {
+  transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any {
     const base = {
       tag: opponent.tag,
       name: opponent.name || "Unknown",
@@ -151,23 +143,17 @@ export class BattleLogProcessor {
           trophies: tr,
           rel: Math.round(tr - ctx.mean)
         };
-
       case AnalysisGoal.WAR_INTELLIGENCE:
         return {
           ...base,
           medals: battle.challengeId || 0,
           deck: (battle.team[0]?.cards || []).map((c: any) => c.name)
         };
-
-      case AnalysisGoal.ACTIVITY_AUDIT:
-        // [PLACEHOLDER] Return time delta analysis
-        return {
-          ...base,
-          minutesAgo: Math.floor((Date.now() - new Date(battle.battleTime).getTime()) / 60000)
-        };
-        
       default:
         return base;
     }
   }
-}
+};
+
+export default BattleLog;
+

@@ -1,10 +1,10 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import HeadhunterStore from './Headhunter_Store';
-import HeadhunterScanner from './Headhunter_Scanner';
-import HeadhunterView from './Headhunter_View';
-import type { Recruit } from './Headhunter_Types';
+import HeadhunterStore from './HeadhunterStore';
+import HeadhunterScanner from './HeadhunterScanner';
+import HeadhunterView from './HeadhunterView';
+import type { Recruit } from './HeadhunterTypes';
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any;
@@ -32,7 +32,7 @@ const VER_HEADHUNTER = "14.3.4";
  * Interface for the Headhunter Core.
  * Orchestrates the multi-phase recruitment scanning process.
  */
-export interface IHeadhunter {
+export interface HeadhunterContract {
   /**
    * Executes the recruitment scouting pipeline.
    *
@@ -52,7 +52,7 @@ export interface IHeadhunter {
   scout(): void;
 }
 
-const Headhunter: IHeadhunter = {
+const Headhunter: HeadhunterContract = {
   /**
    * RECRUITMENT PIPELINE ENTRY POINT
    * Orchestrates the full discovery and profiling loop.

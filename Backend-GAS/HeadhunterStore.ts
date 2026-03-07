@@ -1,7 +1,7 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Types';
+import type { Recruit, BlacklistResult, BlacklistEntry } from './HeadhunterTypes';
 
 /**
  * ============================================================================
@@ -12,7 +12,7 @@ import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Type
  * ============================================================================
  */
 
-export interface IHeadhunterStore {
+export interface HeadhunterStoreContract {
   /**
    * Loads the current recruit pool from the Headhunter sheet.
    */
@@ -35,7 +35,7 @@ export interface IHeadhunterStore {
   saveQueue(ss: any, recruits: Recruit[]): { count: number; pruned: number };
 }
 
-const HeadhunterStore: IHeadhunterStore = {
+const HeadhunterStore: HeadhunterStoreContract = {
   
   loadDatabase(sheet: any): Map<string, Recruit> {
     if (!sheet || sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return new Map();

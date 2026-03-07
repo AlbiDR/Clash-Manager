@@ -25,7 +25,7 @@ const VER_SCORING_KERNEL = "13.1.0";
  * Interface for the Scoring Kernel.
  * Defines the mathematical contract for roster and recruitment scoring.
  */
-export interface IScoringKernel { 
+export interface ScoringKernelContract { 
   /**
    * Orchestrates the calculation of raw and performance scores for a member.
    *
@@ -104,7 +104,7 @@ export interface IScoringKernel {
   calculateWarRate(totalCredits: number, daysSeen: number): number;
 }
 
-const ScoringKernel: IScoringKernel = {
+const ScoringKernel: ScoringKernelContract = {
 
   /**
    * @remarks

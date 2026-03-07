@@ -36,7 +36,7 @@ const CORE_CONFIG = {
 /* ==========================================================================
    INTERFACES
    ========================================================================== */
-export interface ICore {
+export interface CoreContract {
   /**
    * Executes a callback within a script-wide mutex lock.
    * Prevents race conditions when multiple triggers fire simultaneously.
@@ -88,7 +88,7 @@ export interface ICore {
 /* ==========================================================================
    IMPLEMENTATION
    ========================================================================== */
-var Core: ICore = {
+var Core: CoreContract = {
   /**
    * EXECUTE SAFELY (Mutex Lock)
    * Wraps any operation in a script-wide lock to prevent race conditions.

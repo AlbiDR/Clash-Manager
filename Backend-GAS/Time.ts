@@ -29,7 +29,7 @@ export interface WarPhaseResult {
   phase: string;
 }
 
-export interface ITime {
+export interface TimeContract {
   formatDate(date: Date | null | undefined): string;
   formatDatetime(date: Date | null | undefined): string;
   formatShortDate(date: Date | null | undefined): string;
@@ -42,7 +42,7 @@ export interface ITime {
   isWeekend(date: Date): boolean;
 }
 
-var Time: ITime = {
+var Time: TimeContract = {
   
   /**
    * Formats a date using the system's precise dot-separated pattern (dd/MM/yyyy HH.mm.ss).

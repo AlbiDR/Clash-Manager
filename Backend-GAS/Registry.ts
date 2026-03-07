@@ -20,19 +20,24 @@ import Scoring from "./Scoring"; // Renamed
 import Headhunter from "./Headhunter";
 import Database from "./Database";
 import Roster from "./Roster";
-import ScoringKernel, { IScoringKernel } from './Scoring_Kernel'; // Renamed
-import Reporting, { IReporting } from './Service_Reporting';
+import ScoringKernel, { ScoringKernelContract } from './ScoringKernel'; // Renamed
+import Reporting, { ReportingContract } from './Reporting';
+import WebappController, { WebappControllerContract } from './WebappController';
+import BattleLog, { BattleLogContract } from './BattleLog';
+import Orchestrator, { OrchestratorContract } from './Orchestrator';
 
-import type { IStore } from "./Store";
-import type { INetwork } from "./Network";
-import type { ICore } from "./Core";
-import type { IView } from "./View";
-import type { ISchema } from "./Schema";
-import type { ITime } from "./Time";
-import type { IScoring } from "./Scoring"; // Renamed
-import type { IHeadhunter } from "./Headhunter";
-import type { IDatabase } from "./Database";
-import type { IRoster } from "./Roster_Types";
+import type { StoreContract } from "./Store";
+import type { NetworkContract } from "./Network";
+import type { CoreContract } from "./Core";
+import type { ViewContract } from "./View";
+import type { SchemaContract } from "./Schema";
+import type { TimeContract } from "./Time";
+import type { ScoringContract } from "./Scoring"; // Renamed
+import type { HeadhunterContract } from "./Headhunter";
+import type { DatabaseContract } from "./Database";
+import type { RosterContract } from "./RosterTypes";
+import type { BattleLogContract } from "./BattleLog";
+import type { WebappControllerContract } from "./WebappController";
 
 // Global Version Constant
 // @ts-ignore
@@ -50,25 +55,28 @@ declare function createTriggers(): void;
 declare function taskWarmUpWorker(): void;
 declare function dispatchMaster(): void;
 
-export interface IRegistry {
+export interface RegistryContract {
   Services: {
-    readonly Store: IStore;
-    readonly Network: INetwork;
-    readonly Core: ICore;
-    readonly View: IView;
-    readonly Schema: ISchema;
-    readonly Time: ITime;
-    readonly Scoring: IScoring; // Renamed
-    readonly Headhunter: IHeadhunter;
-    readonly Database: IDatabase;
-    readonly Roster: IRoster;
-    readonly ScoringKernel: IScoringKernel; // Renamed
-    readonly Reporting: IReporting;
+    readonly Store: StoreContract;
+    readonly Network: NetworkContract;
+    readonly Core: CoreContract;
+    readonly View: ViewContract;
+    readonly Schema: SchemaContract;
+    readonly Time: TimeContract;
+    readonly Scoring: ScoringContract; // Renamed
+    readonly Headhunter: HeadhunterContract;
+    readonly Database: DatabaseContract;
+    readonly Roster: RosterContract;
+    readonly ScoringKernel: ScoringKernelContract; // Renamed
+    readonly Reporting: ReportingContract;
+    readonly WebappController: WebappControllerContract;
+    readonly BattleLog: BattleLogContract;
+    readonly Orchestrator: OrchestratorContract;
   };
   Actions: Record<string, () => void>;
 }
 
-var Registry: IRegistry = {
+var Registry: RegistryContract = {
   /**
    * INFRASTRUCTURE (Singletons)
    * Direct access to the "Clean Stack" services.
@@ -85,7 +93,10 @@ var Registry: IRegistry = {
     get Database() { return Database; },
     get Roster() { return Roster; },
     get ScoringKernel() { return ScoringKernel; }, // Renamed
-    get Reporting() { return Reporting; }
+    get Reporting() { return Reporting; },
+    get WebappController() { return WebappController; },
+    get BattleLog() { return BattleLog; },
+    get Orchestrator() { return Orchestrator; }
   },
 
   /**
@@ -98,16 +109,16 @@ var Registry: IRegistry = {
     "sync:database": () => Database.update(),
     "sync:roster": () => Roster.update(),
     "sync:leaderboard": () => Roster.update(),
-    "sync:webapp": () => refreshWebPayload(),
+    "sync:webapp": () => WebappController.refreshWebPayload(),
 
     // RECRUITMENT
     "headhunter:scout": () => Headhunter.scout(),
 
     // SYSTEM
-    "system:health": () => checkSystemHealth(),
+    "system:health": () => Orchestrator.checkSystemHealth(),
     "system:warmup": () => taskWarmUpWorker(),
-    "system:triggers": () => createTriggers(),
-    "system:master": () => dispatchMaster(),
+    "system:triggers": () => Orchestrator.createTriggers(),
+    "system:master": () => Orchestrator.dispatchMaster(),
   }
 };
 

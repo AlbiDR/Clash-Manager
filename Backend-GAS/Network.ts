@@ -18,7 +18,7 @@
 // @ts-ignore
 const VER_NETWORK = "1.0.1";
 import type { AppConfig } from "./Configuration";
-import type { IRegistry } from "./Registry";
+import type { RegistryContract } from "./Registry";
 import type { ScoringWeights } from "./SharedTypes";
 
 declare var UrlFetchApp: any;
@@ -28,7 +28,7 @@ declare var PropertiesService: any;
 declare var module: any;
 
 declare const CONFIG: AppConfig;
-declare const Registry: IRegistry;
+declare const Registry: RegistryContract;
 
 /* ==========================================================================
    CONSTANTS & CONFIGURATION
@@ -57,7 +57,7 @@ let _LAST_WORKER_ERROR = "N/A";
  * Interface for the Network Service.
  * Orchestrates API calls with built-in quota management and remote delegation.
  */
-export interface INetwork {
+export interface NetworkContract {
   /**
    * Executes a batch of Royale API requests with smart caching and rotation.
    *
@@ -243,7 +243,7 @@ const NetworkInternal = {
 /* ==========================================================================
    PUBLIC API
    ========================================================================== */
-var Network: INetwork = {
+var Network: NetworkContract = {
   
   /**
    * NETWORK FETCH ENGINE

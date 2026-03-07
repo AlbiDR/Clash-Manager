@@ -60,7 +60,7 @@ const CONSTANTS = {
  * The Store automatically handles platform constraints via intelligent
  * chunking and transparent GZIP compression.
  */
-export interface IStore {
+export interface StoreContract {
   cache: {
     /**
      * @warning Consumes CacheService quota.
@@ -300,7 +300,7 @@ const StoreInternal = {
 /* ==========================================================================
    PUBLIC API
    ========================================================================== */
-var Store: IStore = {
+var Store: StoreContract = {
   
   // ------------------------------------------------------------------------
   // UTILITIES
