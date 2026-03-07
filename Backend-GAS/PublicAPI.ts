@@ -170,7 +170,7 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         return respond(Registry.Services.WebappController.getPlayerProfile(tag));
 
       case "getwarlog":
-        return respond(Registry.Services.WebappController.getWarLog());
+        return respond(Registry.Services.WebappController.retrieveWarLogEntries());
 
       case "refresh":
         return respondRaw(Registry.Services.WebappController.getWebAppData(true));
@@ -243,7 +243,7 @@ function doPost(
            return respond(null, "INVALID_PARAMS", "Processed 0 valid items from payload.");
         }
 
-        return respond(Registry.Services.WebappController.markRecruitsAsInvitedBulk(normalizedItems));
+        return respond(Registry.Services.WebappController.updateRecruitInvitationStatus(normalizedItems));
       }
 
       case "undismissrecruits": {
@@ -251,7 +251,7 @@ function doPost(
         if (!valRes.success) {
           return respond(null, "VALIDATION_ERROR", `undismissRecruits requires "ids" string array.`);
         }
-        return respond(Registry.Services.WebappController.undismissRecruitsBulk(valRes.output.ids));
+        return respond(Registry.Services.WebappController.revertRecruitDismissal(valRes.output.ids));
       }
 
       case "triggerupdate": {

@@ -33,12 +33,12 @@ export enum AnalysisGoal {
  * BATTLELOG CONTRACT
  */
 export interface BattleLogContract {
-  digest(subjectTag: string, goal?: AnalysisGoal): any[];
-  fetch(subjectTag: string): any;
-  analyzeBracket(logs: any[]): any;
-  extractTrophies(player: any): number | null;
-  process(logs: any[], goal: AnalysisGoal, ctx: any): any[];
-  transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any;
+  processPlayerHistory(subjectTag: string, goal?: AnalysisGoal): any[];
+  pullBattleLogData(subjectTag: string): any;
+  calculateBracketMetrics(logs: any[]): any;
+  extractPlayerTrophies(player: any): number | null;
+  filterAndTransformLogs(logs: any[], goal: AnalysisGoal, ctx: any): any[];
+  formatBattleLogEntry(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any;
 }
 
 /**
@@ -49,24 +49,24 @@ const BattleLog: BattleLogContract = {
    * Main entry point. 
    * Orchestrates fetching, statistical analysis, and purpose-driven extraction.
    */
-  digest(subjectTag: string, goal: AnalysisGoal = AnalysisGoal.RECRUITMENT): any[] {
-    const rawData = this.fetch(subjectTag);
+  processPlayerHistory(subjectTag: string, goal: AnalysisGoal = AnalysisGoal.RECRUITMENT): any[] {
+    const rawData = this.pullBattleLogData(subjectTag);
     if (!rawData || !rawData.logs.length) return [];
 
-    const stats = this.analyzeBracket(rawData.logs);
+    const stats = this.calculateBracketMetrics(rawData.logs);
     const context = {
       ...stats,
       playerTrophies: rawData.profile.trophies || 0,
       clanRequirement: rawData.profile.clan?.requiredTrophies || 0
     };
 
-    return this.process(rawData.logs, goal, context);
+    return this.filterAndTransformLogs(rawData.logs, goal, context);
   },
 
   /**
    * Acquisition: Fetches raw profile and log data.
    */
-  fetch(tag: string): { profile: any, logs: any[] } | null {
+  pullBattleLogData(tag: string): { profile: any, logs: any[] } | null {
     const S = Registry.Services;
     const pUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`;
     const lUrl = `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${Math.floor(Date.now() / 900000)}`;
@@ -78,7 +78,7 @@ const BattleLog: BattleLogContract = {
   /**
    * Helper: Extracts trophy count from either 'trophies' or 'startingTrophies'.
    */
-  extractTrophies(opponent: any): number | null {
+  extractPlayerTrophies(opponent: any): number | null {
     if (typeof opponent.trophies === 'number') return opponent.trophies;
     if (typeof opponent.startingTrophies === 'number') return opponent.startingTrophies;
     return null;
@@ -87,10 +87,10 @@ const BattleLog: BattleLogContract = {
   /**
    * Statistical Utility: Calculates the bracket average and deviation.
    */
-  analyzeBracket(logs: any[]): { mean: number, floor: number } {
+  calculateBracketMetrics(logs: any[]): { mean: number, floor: number } {
     const trophies: number[] = [];
     logs.forEach(b => (b.opponent || []).forEach((o: any) => {
-       const tr = this.extractTrophies(o);
+       const tr = this.extractPlayerTrophies(o);
        if (tr !== null) trophies.push(tr);
     }));
 
@@ -106,7 +106,7 @@ const BattleLog: BattleLogContract = {
   /**
    * Processing: Loops through logs and extracts data based on the goal.
    */
-  process(logs: any[], goal: AnalysisGoal, ctx: any): any[] {
+  filterAndTransformLogs(logs: any[], goal: AnalysisGoal, ctx: any): any[] {
     const results: any[] = [];
 
     logs.forEach(battle => {
@@ -116,13 +116,13 @@ const BattleLog: BattleLogContract = {
         switch (goal) {
           case AnalysisGoal.RECRUITMENT:
             if (opp.clan && opp.clan.tag) return;
-            const tr = this.extractTrophies(opp);
+            const tr = this.extractPlayerTrophies(opp);
             if (tr === null) return;
             if (tr < Math.max(ctx.floor, ctx.clanRequirement)) return;
             break;
         }
         if (!opp.tag) return;
-        results.push(this.transform(battle, opp, goal, ctx));
+        results.push(this.formatBattleLogEntry(battle, opp, goal, ctx));
       });
     });
 
@@ -132,7 +132,7 @@ const BattleLog: BattleLogContract = {
   /**
    * Transformation: Maps raw API data to a clean, purpose-driven object.
    */
-  transform(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any {
+  formatBattleLogEntry(battle: any, opponent: any, goal: AnalysisGoal, ctx: any): any {
     const base = {
       tag: opponent.tag,
       name: opponent.name || "Unknown",
@@ -142,7 +142,7 @@ const BattleLog: BattleLogContract = {
 
     switch (goal) {
       case AnalysisGoal.RECRUITMENT:
-        const tr = this.extractTrophies(opponent) || 0;
+        const tr = this.extractPlayerTrophies(opponent) || 0;
         return {
           ...base,
           trophies: tr,

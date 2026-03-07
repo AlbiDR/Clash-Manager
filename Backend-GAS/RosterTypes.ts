@@ -48,7 +48,7 @@ export interface RaceParticipant {
 }
 
 export interface RosterContract {
-  update(): void;
+  synchronizeLeaderboard(): void;
   getProphetCache(): Map<string, any>;
 }
 

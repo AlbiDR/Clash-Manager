@@ -93,7 +93,7 @@ const Scoring: ScoringContract = {
     const prophetThreshold = sys ? sys.PROPHET_TENURE_THRESHOLD : 10;
 
     // 2. Kernel: Calculate Roster Raw
-    const rawScore = Registry.Services.ScoringKernel.calcRosterRaw(
+    const rawScore = Registry.Services.ScoringKernel.computeRosterRawScore(
         currentFame, avgWarFame, dailyDonations, trophies, warRate, W
     );
 
@@ -103,11 +103,11 @@ const Scoring: ScoringContract = {
 
     // 4. Kernel: Calculate Heritage (Blessing)
     const recruitWeights = CONFIG.HEADHUNTER.WEIGHTS;
-    const recruitRaw = Registry.Services.ScoringKernel.calcRecruitRaw(
+    const recruitRaw = Registry.Services.ScoringKernel.computeRecruitScore(
         trophies, 0, cachedWins, isActiveMember, recruitWeights
     );
     
-    const heritageBonus = Registry.Services.ScoringKernel.calcHeritage(
+    const heritageBonus = Registry.Services.ScoringKernel.applyTenureBonus(
         recruitRaw, daysTracked, prophetThreshold, P.HERITAGE_DIVISOR
     );
 
@@ -130,7 +130,7 @@ const Scoring: ScoringContract = {
     weights: RecruitingWeights | null,
   ): number {
     const W = weights || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 };
-    return Registry.Services.ScoringKernel.calcRecruitRaw(trophies, totalDonations, warDayWins, hasRecentWar, W);
+    return Registry.Services.ScoringKernel.computeRecruitScore(trophies, totalDonations, warDayWins, hasRecentWar, W);
   },
 
   calculateHybridBenchmark: function (
@@ -153,15 +153,15 @@ const Scoring: ScoringContract = {
         : 0;
 
     // 3. Delegate Blending to Kernel
-    return Registry.Services.ScoringKernel.calcHybridBenchmark(avgClanRef, topPoolAvg, config);
+    return Registry.Services.ScoringKernel.computeHybridBenchmark(avgClanRef, topPoolAvg, config);
   },
 
   calculatePotentialScore: function (raw: number, benchmark: number): number {
-    return Registry.Services.ScoringKernel.calcPotential(raw, benchmark);
+    return Registry.Services.ScoringKernel.computePotentialPercentage(raw, benchmark);
   },
 
   calculateTrophyFloor: function (members: any[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: string } {
-    return Registry.Services.ScoringKernel.calcTrophyFloor(members, inGameReq, config);
+    return Registry.Services.ScoringKernel.evaluateTrophyStrategy(members, inGameReq, config);
   },
 
   resolveWarFame: function (p: any): number {

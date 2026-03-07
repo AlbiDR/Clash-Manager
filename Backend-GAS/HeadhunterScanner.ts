@@ -360,7 +360,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
             hasWar = logs[idx].some((b: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type));
 
             if (validCandidates.length < 40 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
-              const recruits = BattleLog.digest(p.tag, AnalysisGoal.RECRUITMENT);
+              const recruits = BattleLog.processPlayerHistory(p.tag, AnalysisGoal.RECRUITMENT);
               recruits.forEach((r: any) => {
                  if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
                     shadowTags.add(r.tag);

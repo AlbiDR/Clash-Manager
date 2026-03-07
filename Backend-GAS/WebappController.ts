@@ -103,20 +103,20 @@ export interface AppPayload {
  */
 export interface WebappControllerContract {
   getWebAppData(forceRefresh: boolean): string;
-  markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>): {
+  updateRecruitInvitationStatus(items: Array<{ id: string; score: number }>): {
     success: boolean;
     count: number;
     dbWrite?: number;
     payloadSize?: number;
   };
-  undismissRecruitsBulk(ids: string[]): {
+  revertRecruitDismissal(ids: string[]): {
     success: boolean;
     count: number;
   };
-  refreshWebPayload(): string;
+  persistWebAppDataPayload(): string;
   getMembers(): any[];
   getPlayerProfile(tag: string): any;
-  getWarLog(): any[];
+  retrieveWarLogEntries(): any[];
   _generatePayloadInternal(): string;
 }
 
@@ -131,7 +131,7 @@ const WebappController: WebappControllerContract = {
         payloadStr = Registry.Services.Store.cache.getLarge(CONFIG.SYSTEM.JSON_STORE_KEY);
       }
       if (payloadStr) return payloadStr;
-      return this.refreshWebPayload();
+      return this.persistWebAppDataPayload();
     } catch (e: any) {
       console.error(`[API] getWebAppData CRITICAL FAILURE: ${e.stack}`);
       return JSON.stringify({
@@ -145,7 +145,7 @@ const WebappController: WebappControllerContract = {
     }
   },
 
-  markRecruitsAsInvitedBulk(items: Array<{ id: string; score: number }>): any {
+  updateRecruitInvitationStatus(items: Array<{ id: string; score: number }>): any {
     if (!items || !Array.isArray(items) || items.length === 0)
       return { success: true, count: 0 };
 
@@ -197,7 +197,7 @@ const WebappController: WebappControllerContract = {
     });
   },
 
-  undismissRecruitsBulk(ids: string[]): any {
+  revertRecruitDismissal(ids: string[]): any {
     if (!ids || !Array.isArray(ids) || ids.length === 0)
       return { success: true, count: 0 };
 
@@ -234,7 +234,7 @@ const WebappController: WebappControllerContract = {
     });
   },
 
-  refreshWebPayload(): string {
+  persistWebAppDataPayload(): string {
     return Registry.Services.Core.executeSafely("PAYLOAD_GEN", () => {
       return this._generatePayloadInternal();
     });
@@ -278,7 +278,7 @@ const WebappController: WebappControllerContract = {
     return data[0];
   },
 
-  getWarLog(): any[] {
+  retrieveWarLogEntries(): any[] {
     const remoteData = Registry.Services.Network.fetchPublicJson("warlog");
     if (remoteData) return remoteData as any[];
 
@@ -381,7 +381,7 @@ const WebappController: WebappControllerContract = {
 
       return payloadStr;
     } catch (e: any) {
-      console.error(`[API] refreshWebPayload FAILED: ${e.stack}`);
+      console.error(`[API] persistWebAppDataPayload FAILED: ${e.stack}`);
       return JSON.stringify({ success: false, data: null, error: { code: "PAYLOAD_REFRESH_FAILED", message: e.message } });
     }
   }
@@ -604,12 +604,12 @@ function parseCRDateISO(t: string): string {
 (function(scope: any) {
   Object.assign(scope, {
     getWebAppData: WebappController.getWebAppData.bind(WebappController),
-    markRecruitsAsInvitedBulk: WebappController.markRecruitsAsInvitedBulk.bind(WebappController),
-    undismissRecruitsBulk: WebappController.undismissRecruitsBulk.bind(WebappController),
-    refreshWebPayload: WebappController.refreshWebPayload.bind(WebappController),
+    markRecruitsAsInvitedBulk: WebappController.updateRecruitInvitationStatus.bind(WebappController),
+    undismissRecruitsBulk: WebappController.revertRecruitDismissal.bind(WebappController),
+    refreshWebPayload: WebappController.persistWebAppDataPayload.bind(WebappController),
     getMembers: WebappController.getMembers.bind(WebappController),
     getPlayerProfile: WebappController.getPlayerProfile.bind(WebappController),
-    getWarLog: WebappController.getWarLog.bind(WebappController),
+    getWarLog: WebappController.retrieveWarLogEntries.bind(WebappController),
     VER_CONTROLLER_WEBAPP,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

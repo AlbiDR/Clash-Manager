@@ -90,29 +90,29 @@ export interface ApiKeyVerificationResult {
 }
 
 export interface OrchestratorContract {
-  createTriggers(): void;
-  clearAllTriggers(): void;
-  dispatchMaster(): void;
-  checkSystemHealth(): void;
+  registerLifecycleTriggers(): void;
+  removeManagedTriggers(): void;
+  executeMasterProtocol(): void;
+  verifySystemIntegrity(): void;
 }
 
 /**
  * ORCHESTRATOR: Manages the automation lifecycle and system health.
  */
 const Orchestrator: OrchestratorContract = {
-  createTriggers(): void {
+  registerLifecycleTriggers(): void {
     createTriggersInternal();
   },
 
-  clearAllTriggers(): void {
+  removeManagedTriggers(): void {
     clearAllTriggersInternal();
   },
 
-  dispatchMaster(): void {
+  executeMasterProtocol(): void {
     dispatchMasterInternal();
   },
 
-  checkSystemHealth(): void {
+  verifySystemIntegrity(): void {
     checkSystemHealthInternal();
   }
 };
@@ -753,19 +753,19 @@ function verifyApiKeysInternal(
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 function createTriggers(): void {
-  Orchestrator.createTriggers();
+  Orchestrator.registerLifecycleTriggers();
 }
 
 function clearAllTriggers(): void {
-  Orchestrator.clearAllTriggers();
+  Orchestrator.removeManagedTriggers();
 }
 
 function dispatchMaster(): void {
-  Orchestrator.dispatchMaster();
+  Orchestrator.executeMasterProtocol();
 }
 
 function checkSystemHealth(): void {
-  Orchestrator.checkSystemHealth();
+  Orchestrator.verifySystemIntegrity();
 }
 
 function clearAllTriggersInternal(): void {

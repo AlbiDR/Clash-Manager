@@ -104,19 +104,19 @@ var Registry: RegistryContract = {
    */
   Actions: {
     // DATA SYNC
-    "sync:database": () => Database.update(),
-    "sync:roster": () => Roster.update(),
-    "sync:leaderboard": () => Roster.update(),
-    "sync:webapp": () => WebappController.refreshWebPayload(),
+    "database:synchronize": () => Database.synchronizeClanSnapshot(),
+    "roster:synchronize": () => Roster.synchronizeLeaderboard(),
+    "leaderboard:synchronize": () => Roster.synchronizeLeaderboard(),
+    "webapp:synchronize": () => WebappController.persistWebAppDataPayload(),
 
     // RECRUITMENT
-    "headhunter:scout": () => Headhunter.scout(),
+    "headhunter:scout": () => Headhunter.executeRecruitScout(),
 
     // SYSTEM
-    "system:health": () => Orchestrator.checkSystemHealth(),
+    "system:verify": () => Orchestrator.verifySystemIntegrity(),
     "system:warmup": () => taskWarmUpWorker(),
-    "system:triggers": () => Orchestrator.createTriggers(),
-    "system:master": () => Orchestrator.dispatchMaster(),
+    "system:triggers:register": () => Orchestrator.registerLifecycleTriggers(),
+    "system:master:execute": () => Orchestrator.executeMasterProtocol(),
   }
 };
 
