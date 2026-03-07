@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import HeadhunterStore from '../Headhunter_Store';
+import HeadhunterStore from '../HeadhunterStore';
 import { CONFIG } from '../Configuration';
 
 // Mock Configuration

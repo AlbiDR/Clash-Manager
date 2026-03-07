@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import HeadhunterScanner from '../Headhunter_Scanner';
+import HeadhunterScanner from '../HeadhunterScanner';
 import { CONFIG } from '../Configuration';
 
 // Mock Configuration
@@ -33,7 +33,7 @@ const mocks = vi.hoisted(() => ({
         scanTournamentsRemote: vi.fn(),
     },
     Store: {
-        props: { get: vi.fn(), getJSON: vi.fn().mockReturnValue({}), setJSON: vi.fn() }
+        props: { get: vi.fn(), getJSON: vi.fn().mockReturnValue({}), setJSON: vi.fn(), getChunked: vi.fn().mockReturnValue({}) }
     },
     Reporting: { logReport: vi.fn() },
     Core: {
@@ -59,7 +59,7 @@ vi.mock('../Registry', () => ({
     }
 }));
 
-vi.mock('../Roster_Store', () => {
+vi.mock('../RosterStore', () => {
     return {
         default: {
             getProphetCache: vi.fn().mockReturnValue(new Map())
