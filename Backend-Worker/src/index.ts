@@ -35,6 +35,9 @@ import {
   RoyaleClanMembersResponseSchema,
   RoyaleWarLogResponseSchema,
   RoyaleCurrentRiverRaceSchema,
+  RoyalePlayerSchema,
+  RoyaleBattleLogResponseSchema,
+  RoyaleTournamentResponseSchema,
 } from "./schemas.js";
 import type {
   ServerConfig,
@@ -292,13 +295,16 @@ async function processBatch<T = unknown>(
             headers,
           }, CONFIG.maxRetries, batchManager);
 
-          if (
-            profileResult.code === 200 &&
-            typeof profileResult.content === "object" &&
-            profileResult.content !== null &&
-            "tag" in profileResult.content
-          ) {
-            const profile = profileResult.content;
+          if (profileResult.code === 200 && typeof profileResult.content === "object" && profileResult.content !== null) {
+            // THREAT: Malformed player profile causing downstream scoring errors.
+            // Target B [1]: Enforce strict validation boundary for Royale API data.
+            const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
+            if (!profileValidation.success) {
+              results[i] = { code: 502, content: "Invalid player profile format" };
+              continue;
+            }
+            const profile = profileValidation.output;
+
             const logUrl = `${url}/battlelog`;
             const logsResult = await fetchWithRotatedRetries<BattleLogEntry[]>(
               logUrl,
@@ -312,11 +318,16 @@ async function processBatch<T = unknown>(
 
             let hasWar = false;
             if (logsResult.code === 200 && Array.isArray(logsResult.content)) {
-              hasWar = logsResult.content.some((b) =>
-                ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
-                  b.type,
-                ),
-              );
+              // THREAT: Malformed battle logs causing incorrect war activity detection.
+              // Target B [1]: Enforce strict validation boundary for Royale API data.
+              const logsValidation = v.safeParse(RoyaleBattleLogResponseSchema, logsResult.content);
+              if (logsValidation.success) {
+                hasWar = logsValidation.output.some((b) =>
+                  ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
+                    b.type,
+                  ),
+                );
+              }
             }
 
             // Use shared scoring system (Kernel)
@@ -457,39 +468,39 @@ async function processScanBatch(
             debug.keyUsed = (headers["Authorization"] || "None").substring(0, 15) + "...";
         }
 
-        if (
-          res.code === 200 &&
-          typeof res.content === "object" &&
-          res.content !== null &&
-          "membersList" in res.content
-        ) {
-          res.content.membersList.forEach((p) => {
-            if (p.trophies < minTrophies) return;
-            if (p.clan?.tag) return;
-            if (blacklistSet.has(p.tag)) return;
+        if (res.code === 200 && typeof res.content === "object" && res.content !== null) {
+          // THREAT: Malformed tournament data causing incorrect candidate discovery.
+          // Target B [1]: Enforce strict validation boundary for Royale API data.
+          const validation = v.safeParse(RoyaleTournamentResponseSchema, res.content);
+          if (validation.success) {
+            validation.output.membersList.forEach((p) => {
+              if (p.trophies < minTrophies) return;
+              if (p.clan?.tag) return;
+              if (blacklistSet.has(p.tag as PlayerTag)) return;
 
-            // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
-            if (prophetCache) {
+              // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
+              if (prophetCache) {
                 const normTag = p.tag.replace("#", "").trim().toLowerCase();
                 const intel = prophetCache[normTag];
                 // Lightweight scoring estimation (detailed scoring happens in profile fetch phase)
                 // But we can flag "Heritage" candidates early here if needed.
                 if (intel) {
-                   // Bonus logic could go here, but strictly we need profile stats for true score.
-                   // For now, we just pass them through.
+                  // Bonus logic could go here, but strictly we need profile stats for true score.
+                  // For now, we just pass them through.
                 }
-            }
+              }
 
-            candidates.push({
-              tag: p.tag,
-              name: p.name,
-              trophies: p.trophies,
-              donations: 0,
-              cards: 0,
-              war: 0,
-              rawScore: 0,
+              candidates.push({
+                tag: p.tag,
+                name: p.name,
+                trophies: p.trophies,
+                donations: 0,
+                cards: 0,
+                war: 0,
+                rawScore: 0,
+              });
             });
-          });
+          }
         }
       } catch (e) {
         console.warn(`[Worker] Scan failed for tournament ${tag}: ${e instanceof Error ? e.message : "unknown"}`);
