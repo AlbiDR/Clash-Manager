@@ -10,7 +10,7 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IRegistry } from "./Registry";
+import type { RegistryContract } from "./Registry";
 
 // Global Version Constant
 // @ts-ignore
@@ -47,7 +47,7 @@ declare namespace GoogleAppsScript {
 
 // Global Declarations for GAS Environment
 declare const CONFIG: AppConfig;
-declare const Registry: IRegistry;
+declare const Registry: RegistryContract;
 
 // External module functions
 // External module functions (Legacy)
@@ -89,11 +89,35 @@ export interface ApiKeyVerificationResult {
   error?: string;
 }
 
-export interface IOrchestrator {
+export interface OrchestratorContract {
   createTriggers(): void;
   clearAllTriggers(): void;
   dispatchMaster(): void;
+  checkSystemHealth(): void;
 }
+
+/**
+ * ORCHESTRATOR: Manages the automation lifecycle and system health.
+ */
+const Orchestrator: OrchestratorContract = {
+  createTriggers(): void {
+    createTriggersInternal();
+  },
+
+  clearAllTriggers(): void {
+    clearAllTriggersInternal();
+  },
+
+  dispatchMaster(): void {
+    dispatchMasterInternal();
+  },
+
+  checkSystemHealth(): void {
+    checkSystemHealthInternal();
+  }
+};
+
+export default Orchestrator;
 
 export interface ModuleStatus {
   name: string;
@@ -252,7 +276,7 @@ function taskWarmUpWorker(): void {
  * TRIGGER MANAGEMENT
  * Sets up the automated lifecycle of the project.
  */
-function createTriggers(): void {
+function createTriggersInternal(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   console.info("Triggers: Verifying and repairing trigger suite...");
 
@@ -317,7 +341,7 @@ function createTriggers(): void {
  * MASTER DISPATCHER
  * Sequential execution of the entire stack.
  */
-function dispatchMaster(): void {
+function dispatchMasterInternal(): void {
   const startTime = Date.now();
   const version = VER_ORCHESTRATOR;
 
@@ -518,7 +542,7 @@ function triggerScoutRecruits(): void {
 /**
  * DIAGNOSTICS & ORCHESTRATION
  */
-function checkSystemHealth(): void {
+function checkSystemHealthInternal(): void {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.toast("Running system diagnostics...", "Health Check", 5);
 
@@ -722,12 +746,29 @@ function verifyApiKeysInternal(
     triggerVerifyApiKeys,
     createTriggers,
     dispatchMaster,
+    clearAllTriggers,
     taskWarmUpWorker,
     VER_ORCHESTRATOR,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
+function createTriggers(): void {
+  Orchestrator.createTriggers();
+}
+
 function clearAllTriggers(): void {
+  Orchestrator.clearAllTriggers();
+}
+
+function dispatchMaster(): void {
+  Orchestrator.dispatchMaster();
+}
+
+function checkSystemHealth(): void {
+  Orchestrator.checkSystemHealth();
+}
+
+function clearAllTriggersInternal(): void {
   const triggers = ScriptApp.getProjectTriggers();
   let deletedCount = 0;
 

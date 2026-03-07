@@ -21,7 +21,7 @@ declare var module: any;
 
 declare const CONFIG: AppConfig;
 
-export interface ISchema {
+export interface SchemaContract {
   bootDynamicSchema(): void;
   resolveSchemaIndices(
     sheet: any,
@@ -35,7 +35,7 @@ const SchemaInternal = {
   _cache: new Map<string, Record<string, number>>()
 };
 
-var Schema: ISchema = {
+var Schema: SchemaContract = {
   
   resolveSchemaIndices: function (
     sheet: any,

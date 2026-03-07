@@ -47,7 +47,7 @@ export interface RaceParticipant {
   repairPoints: number;
 }
 
-export interface IRoster {
+export interface RosterContract {
   update(): void;
   getProphetCache(): Map<string, any>;
 }

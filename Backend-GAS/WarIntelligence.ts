@@ -17,11 +17,11 @@
  */
 
 import type { AppConfig } from "./Configuration";
-import type { IRegistry } from "./Registry";
+import type { RegistryContract } from "./Registry";
 
 declare const CacheService: any;
 declare const CONFIG: AppConfig;
-declare const Registry: IRegistry;
+declare const Registry: RegistryContract;
 declare const Logger: any;
 
 /**

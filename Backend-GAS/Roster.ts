@@ -1,8 +1,8 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import { PlayerResult, ClanMemberResult, IRoster } from './Roster_Types';
-import RosterStore from './Roster_Store';
-import RosterView from './Roster_View';
+import { PlayerResult, ClanMemberResult, RosterContract } from './RosterTypes';
+import RosterStore from './RosterStore';
+import RosterView from './RosterView';
 
 declare var SpreadsheetApp: any;
 declare var Sheets: any;
@@ -25,7 +25,7 @@ declare var Sheets: any;
  * VERSION: 13.1.0
  * ============================================================================
  */
-const Roster: IRoster = {
+const Roster: RosterContract = {
   /**
    * MAIN ENTRY: Update Roster
    *

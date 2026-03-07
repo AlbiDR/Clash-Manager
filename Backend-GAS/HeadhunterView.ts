@@ -1,7 +1,7 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import type { Recruit } from './Headhunter_Types';
+import type { Recruit } from './HeadhunterTypes';
 
 /**
  * ============================================================================
@@ -15,11 +15,11 @@ import type { Recruit } from './Headhunter_Types';
 declare var Sheets: any;
 declare var Utilities: any;
 
-export interface IHeadhunterView {
+export interface HeadhunterViewContract {
   render(sheet: any, list: Recruit[], baseline: number): void;
 }
 
-const HeadhunterView: IHeadhunterView = {
+const HeadhunterView: HeadhunterViewContract = {
   render(sheet: any, list: Recruit[], baseline: number): void {
     if (!sheet) return;
 

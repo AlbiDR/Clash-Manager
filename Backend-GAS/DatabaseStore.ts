@@ -1,7 +1,7 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import { ClanMemberSnapshot, DatabaseUpdateResult } from './Database_Types';
-import DatabaseView from './Database_View';
+import { ClanMemberSnapshot, DatabaseUpdateResult } from './DatabaseTypes';
+import DatabaseView from './DatabaseView';
 
 declare var Sheets: any;
 declare var Utilities: any;

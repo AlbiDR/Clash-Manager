@@ -20,7 +20,7 @@ const VER_SCORING = "13.1.0";
 
 declare const module: any;
 
-export interface IScoring {
+export interface ScoringContract {
   computeScores(
     currentFame: number,
     avgWarFame: number,
@@ -65,7 +65,7 @@ export interface IScoring {
   comparator(a: any[], b: any[]): number;
 }
 
-const Scoring: IScoring = {
+const Scoring: ScoringContract = {
 
   calculateWarRate: function (
     totalCredits: number,

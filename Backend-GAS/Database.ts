@@ -1,9 +1,9 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import { ClanMemberSnapshot, DatabaseUpdateResult } from './Database_Types';
-import DatabaseView from './Database_View';
-import DatabaseStore from './Database_Store';
-import type { WarSnapshot } from './Service_WarIntelligence';
+import { ClanMemberSnapshot, DatabaseUpdateResult } from './DatabaseTypes';
+import DatabaseView from './DatabaseView';
+import DatabaseStore from './DatabaseStore';
+import type { WarSnapshot } from './WarIntelligence';
 
 declare var SpreadsheetApp: any;
 declare function getWarSnapshot(): WarSnapshot;
@@ -19,12 +19,12 @@ declare var module: any;
  */
 const VER_DATABASE = "13.1.0";
 
-export interface IDatabase {
+export interface DatabaseContract {
     update(): void;
     deduplicate(): { pruned: number };
 }
 
-const Database: IDatabase = {
+const Database: DatabaseContract = {
     /**
      * MAIN ENTRY: Update Clan Database
      * Fetches latest clan data and persists snapshots.

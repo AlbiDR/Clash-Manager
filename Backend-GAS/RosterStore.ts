@@ -1,6 +1,6 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import { ClanMemberResult, WarLogItem, RaceParticipant, PlayerResult } from './Roster_Types';
+import { ClanMemberResult, WarLogItem, RaceParticipant, PlayerResult } from './RosterTypes';
 
 declare var SpreadsheetApp: any;
 

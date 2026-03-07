@@ -1,9 +1,9 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import RosterStore from './Roster_Store';
-import { BattleLogProcessor, AnalysisGoal } from './Service_BattleLog';
-import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_Types';
+import RosterStore from './RosterStore';
+import { BattleLogProcessor, AnalysisGoal } from './BattleLog';
+import type { Recruit, TournamentResult, TournamentMember } from './HeadhunterTypes';
 
 /**
  * ============================================================================
@@ -27,7 +27,7 @@ import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_T
  * Interface for the Headhunter Scanner.
  * Defines the contract for cross-tournament player discovery.
  */
-export interface IHeadhunterScanner {
+export interface HeadhunterScannerContract {
   /**
    * Scans a pool of tournaments to discover and profile potential recruits.
    *
@@ -52,7 +52,7 @@ export interface IHeadhunterScanner {
   ): Recruit[];
 }
 
-const HeadhunterScanner: IHeadhunterScanner = {
+const HeadhunterScanner: HeadhunterScannerContract = {
   
   /**
    * PRIMARY RECRUITMENT PIPELINE
