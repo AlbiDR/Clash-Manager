@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import ErrorBoundary from "../shared/ui/ErrorBoundary.vue";
-import ToastContainer from "../shared/ui/ToastContainer.vue";
-import ConsoleLayout from "../shared/ui/ConsoleLayout.vue";
-import ConsoleHeader from "../shared/ui/ConsoleHeader.vue";
-import { useClashData } from "../core/services/useClashData";
-import { useShowcaseMode } from "../core/services/useShowcaseMode";
-import { useConnectionStatus } from "../core/services/useConnectionStatus";
-import { useHaptics } from "../core/services/useHaptics";
-import { useUiCoordinator } from "../core/services/useUiCoordinator";
+import {
+  ErrorBoundary,
+  ToastContainer,
+  FloatingDock,
+  ConsoleLayout,
+  ConsoleHeader,
+  HeaderInfoOverlay,
+} from "@shared";
+import {
+  useClashData,
+  useShowcaseMode,
+  useConnectionStatus,
+  useHaptics,
+  useUiCoordinator,
+} from "@core";
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
-import { useHeadhunter } from "@features/headhunter/composables/useHeadhunter";
-import FloatingDock from "../shared/ui/FloatingDock.vue";
-import HeaderInfoOverlay from "../shared/ui/HeaderInfoOverlay.vue";
+import { useHeadhunter } from "@features/headhunter";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
 const { syncStatus, refresh, loadLocal } = useClashData();
