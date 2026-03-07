@@ -1,9 +1,9 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import RosterStore from './RosterStore';
-import BattleLog, { AnalysisGoal } from './BattleLog';
-import type { Recruit, TournamentResult, TournamentMember } from './HeadhunterTypes';
+import RosterStore from './Roster_Store';
+import BattleLog, { AnalysisGoal } from './Battle_Log';
+import type { Recruit, TournamentResult, TournamentMember } from './Headhunter_Types';
 
 /**
  * ============================================================================

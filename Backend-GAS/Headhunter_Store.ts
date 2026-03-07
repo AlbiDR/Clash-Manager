@@ -1,7 +1,7 @@
 
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import type { Recruit, BlacklistResult, BlacklistEntry } from './HeadhunterTypes';
+import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Types';
 
 /**
  * ============================================================================

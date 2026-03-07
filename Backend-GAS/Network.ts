@@ -19,7 +19,7 @@
 const VER_NETWORK = "1.0.1";
 import type { AppConfig } from "./Configuration";
 import type { RegistryContract } from "./Registry";
-import type { ScoringWeights } from "./SharedTypes";
+import type { ScoringWeights } from "./Shared_Types";
 
 declare var UrlFetchApp: any;
 declare var CacheService: any;
