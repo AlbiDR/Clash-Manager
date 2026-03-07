@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [2026-03-07] PR #192: test(laboratory): add validation boundary coverage for ProfileHydrator
+**Commit**: `fd5f2491c6d818758c8e28689e9d7001c935eece`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/192)
+
+### Description
+This PR adds a defensive test case to `ProfileHydrator.spec.ts` to ensure that the validation boundary in the Laboratory feature correctly handles malformed external data. By verifying that the safe default fallback is triggered on schema failure, we prevent corrupted data from propagating into the simulation engine, adhering to the Target B [1] hardening protocol.
+
+**Changes:**
+- Added "Sad Path" test case to `Frontend-PWA/src/features/laboratory/logic/__tests__/ProfileHydrator.spec.ts`.
+- Updated `.github/logs/verification-coverage.log` to record coverage of `ProfileHydrator.ts`.
+
+---
+*PR created automatically by Jules for task [10278434107816948099](https://jules.google.com/task/10278434107816948099) started by @AlbiDR*
+
+---
+
 ## [2026-03-07] PR #191: fix(validation): enforce strict validation for Royale API data
 **Commit**: `fe611f6eb0cec0ecabcbc6660161d2c378cde5d3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/191)
