@@ -1,20 +1,20 @@
 /**
-* ============================================================================
- * MODULE: GAS API CLIENT (THE BRIDGE)
+ * ============================================================================
+ * MODULE: API CLIENT (THE BRIDGE)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: The primary communication layer between the PWA and the
- * Google Apps Script (GAS) backend.
+ * DESCRIPTION: The primary communication layer between the PWA, the Google
+ * Apps Script (GAS) backend, and the high-performance Worker subsystem.
  *
  * ARCHITECTURE:
- *  - POST-Only Protocol: All commands are routed through a single 'exec'
- *    endpoint to handle GAS deployment constraints.
- *  - Matrix Transport: Data is transmitted as optimized arrays of arrays to
- *    minimize JSON overhead (omitting repeated keys).
+ *  - Hybrid Transport: Combines a POST-only GAS protocol for persistent
+ *    storage with direct JSON/REST communication for Worker-side operations.
+ *  - Matrix Inflation: GAS payloads are transmitted as optimized arrays
+ *    of arrays to minimize JSON overhead before being re-hydrated.
  *  - Offline Resiliency: Integrated with IndexedDB and a background sync
  *    queue for unreliable network environments.
  *
  * PERFORMANCE:
- *  - Uses 'text/plain' to bypass CORS preflight (OPTIONS) overhead.
+ *  - Uses 'text/plain' for GAS to bypass CORS preflight (OPTIONS) overhead.
  *  - Implements exponential backoff and request deduplication.
  * ============================================================================
  */
@@ -614,6 +614,18 @@ export async function triggerBackendUpdate(
   );
 }
 
+/**
+ * Triggers a direct recruitment scan via the remote Worker API.
+ *
+ * @remarks
+ * This function bypasses the GAS backend to leverage the Worker's direct
+ * connection to the Royale API. It implements a strict validation boundary
+ * (Target B [1]) using Valibot to ensure external payloads do not pollute
+ * internal recruitment logic.
+ *
+ * @returns An array of Recruit objects on success, or null if the scan
+ * fails or validation fails.
+ */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const workerUrl = getWorkerUrl();
   if (!workerUrl) return null;
@@ -661,6 +673,12 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   }
 }
 
+/**
+ * Registers a PushSubscription with the remote Worker.
+ *
+ * @param subscription - The standard browser PushSubscription object.
+ * @returns Boolean indicating if the subscription was successfully registered.
+ */
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
   const workerUrl = getWorkerUrl();
   if (!workerUrl) return false;
@@ -677,14 +695,29 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
   }
 }
 
+/**
+ * Checks if the GAS API URL is configured in the current environment.
+ *
+ * @returns True if a valid GAS URL is present in LocalStorage or Env.
+ */
 export function isConfigured(): boolean {
   return Boolean(getGasUrl());
 }
 
+/**
+ * Returns the currently active GAS API endpoint.
+ *
+ * @returns The resolved URL string, or a placeholder if unconfigured.
+ */
 export function getApiUrl(): string {
   return getGasUrl() || "(not configured)";
 }
 
+/**
+ * Checks if the Worker API URL is configured in the current environment.
+ *
+ * @returns True if a valid Worker URL is present.
+ */
 export function isWorkerConfigured(): boolean {
   return Boolean(getWorkerUrl());
 }
