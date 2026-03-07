@@ -117,6 +117,7 @@ export interface WebappControllerContract {
   getMembers(): any[];
   getPlayerProfile(tag: string): any;
   getWarLog(): any[];
+  _generatePayloadInternal(): string;
 }
 
 /**
