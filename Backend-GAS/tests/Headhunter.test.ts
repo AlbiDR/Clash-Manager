@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Headhunter from '../Headhunter';
-import HeadhunterStore from '../Headhunter_Store';
-import HeadhunterView from '../Headhunter_View';
+import HeadhunterStore from '../HeadhunterStore';
+import HeadhunterView from '../HeadhunterView';
 import { CONFIG } from '../Configuration';
 
 // Mock Config
@@ -65,9 +65,9 @@ const mocks = vi.hoisted(() => ({
     }
 }));
 
-vi.mock('../Headhunter_Store', () => ({ default: mocks.Store }));
-vi.mock('../Headhunter_Scanner', () => ({ default: mocks.Scanner }));
-vi.mock('../Headhunter_View', () => ({ default: mocks.View }));
+vi.mock('../HeadhunterStore', () => ({ default: mocks.Store }));
+vi.mock('../HeadhunterScanner', () => ({ default: mocks.Scanner }));
+vi.mock('../HeadhunterView', () => ({ default: mocks.View }));
 vi.mock('../Registry', () => ({ default: mocks.Registry }));
 
 // Mock Globals
@@ -132,8 +132,8 @@ describe('Headhunter Orchestrator', () => {
         mocks.Registry.Services.View.enforceGlobalTabHygiene.mockReturnValue("Clean");
     });
 
-    it('should run full scout pipeline successfully', () => {
-        Headhunter.scout();
+    it('should run full executeRecruitScout pipeline successfully', () => {
+        Headhunter.executeRecruitScout();
 
         // 1. Initialization
         expect(mocks.Registry.Services.Schema.bootDynamicSchema).toHaveBeenCalled();
@@ -158,7 +158,7 @@ describe('Headhunter Orchestrator', () => {
 
     it('should abort if quota is low', () => {
         mocks.Registry.Services.Network.getRemainingQuota.mockReturnValue(100);
-        Headhunter.scout();
+        Headhunter.executeRecruitScout();
         expect(mocks.Scanner.scanTournaments).not.toHaveBeenCalled();
     });
 });

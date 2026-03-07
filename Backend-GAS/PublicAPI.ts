@@ -410,11 +410,11 @@ function dispatchAsyncUpdate(): void {
       }
 
       if (target === "members") {
-        Registry.Actions["sync:database"]();
-        Registry.Actions["sync:webapp"]();
+        Registry.Actions["database:synchronize"]();
+        Registry.Actions["webapp:synchronize"]();
       } else if (target === "leaderboard" || target === "roster") {
-        Registry.Actions["sync:roster"]();
-        Registry.Actions["sync:webapp"]();
+        Registry.Actions["roster:synchronize"]();
+        Registry.Actions["webapp:synchronize"]();
       } else if (target === "headhunter") {
         Registry.Actions["headhunter:scout"]();
       }

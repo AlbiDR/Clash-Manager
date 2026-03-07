@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import DatabaseStore from '../Database_Store';
+import DatabaseStore from '../DatabaseStore';
 import Registry from '../Registry';
 
 // Mock Configuration

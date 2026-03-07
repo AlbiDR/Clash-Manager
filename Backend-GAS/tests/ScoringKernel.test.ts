@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import ScoringKernel from '../Scoring_Kernel';
+import ScoringKernel from '../ScoringKernel';
 
 describe('ScoringKernel Strategy', () => {
   const IN_GAME_REQ = 6000;
@@ -12,7 +12,7 @@ describe('ScoringKernel Strategy', () => {
   };
 
   it('should return in-game requirement if no members', () => {
-    const result = ScoringKernel.calcTrophyFloor([], IN_GAME_REQ, MATH_CONFIG);
+    const result = ScoringKernel.evaluateTrophyStrategy([], IN_GAME_REQ, MATH_CONFIG);
     expect(result.floor).toBe(IN_GAME_REQ);
     expect(result.mode).toBe('BASE');
   });
@@ -20,7 +20,7 @@ describe('ScoringKernel Strategy', () => {
   describe('Elite Mode (>41 members)', () => {
     it('should use Median when it is higher than In-Game Req', () => {
       const members = Array(42).fill(0).map((_, i) => ({ trophies: 10000 + i })); 
-      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ, MATH_CONFIG);
+      const result = ScoringKernel.evaluateTrophyStrategy(members, IN_GAME_REQ, MATH_CONFIG);
       expect(result.mode).toBe('ELITE');
       expect(result.floor).toBeGreaterThan(IN_GAME_REQ);
       expect(result.method).toContain('Elite Mode (Median');
@@ -28,7 +28,7 @@ describe('ScoringKernel Strategy', () => {
 
     it('should use In-Game Req when Median is lower', () => {
       const members = Array(42).fill({ trophies: 5000 });
-      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ, MATH_CONFIG);
+      const result = ScoringKernel.evaluateTrophyStrategy(members, IN_GAME_REQ, MATH_CONFIG);
       expect(result.mode).toBe('ELITE');
       expect(result.floor).toBe(IN_GAME_REQ);
       expect(result.method).toContain('At In-Game Cap');
@@ -42,7 +42,7 @@ describe('ScoringKernel Strategy', () => {
         ...Array(36).fill({ trophies: 8000 })
       ];
 
-      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ, MATH_CONFIG);
+      const result = ScoringKernel.evaluateTrophyStrategy(members, IN_GAME_REQ, MATH_CONFIG);
       expect(result.mode).toBe('REBUILD');
       expect(result.floor).toBe(7000);
       expect(result.method).toContain('Bot 10% Avg');
@@ -54,7 +54,7 @@ describe('ScoringKernel Strategy', () => {
         ...Array(36).fill({ trophies: 8000 })
       ];
 
-      const result = ScoringKernel.calcTrophyFloor(members, IN_GAME_REQ, MATH_CONFIG);
+      const result = ScoringKernel.evaluateTrophyStrategy(members, IN_GAME_REQ, MATH_CONFIG);
       expect(result.mode).toBe('REBUILD');
       expect(result.floor).toBe(IN_GAME_REQ);
       expect(result.method).toContain('At In-Game Cap');

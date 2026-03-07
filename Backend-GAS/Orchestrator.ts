@@ -159,7 +159,7 @@ function taskUpdateDatabase(): void {
 
   try {
     Registry.Services.Core.executeSafely("SYNC_DB", () => {
-      Registry.Actions["sync:database"]();
+      Registry.Actions["database:synchronize"]();
       Registry.Services.View.enforceGlobalTabHygiene();
       console.info("Task: Clan Database Sync: Success.");
     });
@@ -185,8 +185,8 @@ function taskUpdateRoster(): void {
 
   try {
     Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
-      Registry.Actions["sync:roster"]();
-      Registry.Actions["sync:webapp"]();
+      Registry.Actions["roster:synchronize"]();
+      Registry.Actions["webapp:synchronize"]();
       Registry.Services.View.enforceGlobalTabHygiene();
       console.info("Task: Roster Update: Success.");
     });
@@ -472,11 +472,11 @@ function handleMobileEdit(e: GoogleAppsScript.Events.SheetsOnEdit): void {
   try {
     Registry.Services.Core.executeSafely(lockKey, () => {
       if (sheetName === CONFIG.SHEETS.ROSTER) {
-        Registry.Actions["sync:roster"]();
-        Registry.Actions["sync:webapp"]();
+        Registry.Actions["roster:synchronize"]();
+        Registry.Actions["webapp:synchronize"]();
       } else if (sheetName === CONFIG.SHEETS.DB) {
-        Registry.Actions["sync:database"]();
-        Registry.Actions["sync:webapp"]();
+        Registry.Actions["database:synchronize"]();
+        Registry.Actions["webapp:synchronize"]();
       } else if (sheetName === CONFIG.SHEETS.HH) {
         Registry.Actions["headhunter:scout"]();
       }
@@ -500,8 +500,8 @@ function triggerUpdateDatabase(): void {
   ss.toast("Connecting to Royale API...", "Database Update", 5);
   Registry.Services.Core.executeSafely("SYNC_DB", () => {
     try {
-      Registry.Actions["sync:database"]();
-      Registry.Actions["sync:webapp"]();
+      Registry.Actions["database:synchronize"]();
+      Registry.Actions["webapp:synchronize"]();
       Registry.Services.View.enforceGlobalTabHygiene();
       ss.toast("Database synchronized successfully.", "Success", 3);
     } catch (e: any) {
@@ -515,8 +515,8 @@ function triggerUpdateRoster(): void {
   ss.toast("Calculating performance scores...", "Roster Update", 5);
   Registry.Services.Core.executeSafely("SYNC_ROSTER", () => {
     try {
-      Registry.Actions["sync:roster"]();
-      Registry.Actions["sync:webapp"]();
+      Registry.Actions["roster:synchronize"]();
+      Registry.Actions["webapp:synchronize"]();
       Registry.Services.View.enforceGlobalTabHygiene();
       ss.toast("Roster synchronized successfully.", "Success", 3);
     } catch (e: any) {
