@@ -10,11 +10,11 @@ exports[`ErrorState.vue > matches snapshot for visual consistency 1`] = `
           <stop offset="100%" style="stop-color:#ff8e8e;stop-opacity:1;" data-v-37e03845=""></stop>
         </linearGradient>
       </defs>
-      <path fill="url(#warning-grad)" d="M12 2L1 21h22L12 2zm0 3.45L20.53 19H3.47L12 5.45zM11 16h2v2h-2v-2zm0-6h2v4h-2v-4z" data-v-37e03845=""></path>
+      <path fill="url(#warning-grad)" d="M12 2L1 21h22L12 2zm0 3.45L20.53 19H3.47L12 5.45zM11 16h2v2h-2v-2zm0-6h2v4h-2v-4z" vector-effect="non-scaling-stroke" data-v-37e03845=""></path>
     </svg>
   </div>
   <p data-v-37e03845="" class="error-message">System Anomaly Detected</p><button data-v-37e03845="" class="btn-error"><svg data-v-37e03845="" viewBox="0 0 24 24" width="18" height="18" class="svg-refresh">
-      <path data-v-37e03845="" fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></path>
+      <path data-v-37e03845="" fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" vector-effect="non-scaling-stroke"></path>
     </svg><span data-v-37e03845="">Re-Synchronize</span></button>
 </div>"
 `;

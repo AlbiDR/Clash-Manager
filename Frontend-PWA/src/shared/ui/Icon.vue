@@ -22,7 +22,7 @@ const sizePx = computed(() => {
     viewBox="0 0 24 24"
     :style="{ width: sizePx, height: sizePx }"
   >
-    <path :d="ICONS[name] || ''" fill="currentColor" />
+    <path :d="ICONS[name] || ''" fill="currentColor" vector-effect="non-scaling-stroke" />
   </svg>
 </template>
 

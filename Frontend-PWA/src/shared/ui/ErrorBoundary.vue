@@ -55,6 +55,7 @@ function reset() {
           <path
             fill="currentColor"
             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z"
+            vector-effect="non-scaling-stroke"
           />
         </svg>
       </div>
@@ -78,12 +79,14 @@ function reset() {
             <path
               fill="currentColor"
               d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"
+              vector-effect="non-scaling-stroke"
             />
           </svg>
           <svg v-else viewBox="0 0 24 24" width="18" height="18">
             <path
               fill="currentColor"
               d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z"
+              vector-effect="non-scaling-stroke"
             />
           </svg>
         </button>
