@@ -80,12 +80,6 @@ export interface ApiResponseEnvelope<T = any> {
   timestamp: string;
 }
 
-export interface ApiRequestPayload {
-  action?: string;
-  ids?: string[];
-  target?: string;
-  [key: string]: any;
-}
 
 export interface WarLogEntry {
   result: "win" | "lose" | "n/a";
