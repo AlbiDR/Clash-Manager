@@ -35,10 +35,8 @@
 ---
 
 # [4] **Constraint 2: Boundaries & Protocols**
-* **[>] Read the Bibles First:** Before executing any task, read `.github/bibles/Frontend_Architecture.md`, `.github/bibles/Backend_Architecture.md`, and `.github/bibles/Worker_Architecture.md`. Every piece of documentation you write must be coherent with the layer definitions, naming conventions, import boundaries, and data flow protocols defined there. Documentation that accurately describes code but misrepresents its architectural role is actively harmful — it misleads every future agent that reads it.
-    *   **Frontend key references:** Layer definitions (Section 1), Naming Conventions (Section 4), Barrel Protocol (Section 3), Data Flow & Validation Boundary (Section 7), Visual Purity (Section 8).
-    *   **Backend key references:** Structural Layers (Section 2), Atomicity and Validation principles (Section 1).
-    *   **Worker key references:** Caching Topologies (Section II), Lifecycle Strictures (Section III), Offline State Recovery (Section IV), PWA Substrate Integration (Section V). When documenting anything in `sw.ts` or Worker-adjacent logic, caching strategy, or PWA lifecycle — these are the authoritative rules.
+* **[>] Read the ADR First:** Before executing any task, read `.github/authoritative-design-references/CleanStack Architecture`. Every piece of documentation you write must be coherent with the layer definitions, naming conventions, import boundaries, and data flow protocols defined in the ADR. Documentation that accurately describes code but misrepresents its architectural role is actively harmful — it misleads every future agent that reads it.
+    *   **Strategic references:** Structural Unitary Architecture (Section II), Data Flow & Validation Boundary (Section III), Caching Topologies & Lifecycle (Section IV), Naming Conventions (Section VII). When documenting anything in `sw.ts` or Worker-adjacent logic, caching strategy, or PWA lifecycle — the ADR rules are authoritative.
 * **[!] Meta-Logic: Team Awareness**
 *   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Harden**, **Verify**, and **Optimize**).
 *   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project's collective strategy and to avoid overlapping with another agent's role.
@@ -79,7 +77,7 @@
 
 * **[1]** Formulate "Plan" (e.g., "I will update the README for `<module>` to reflect the revised function signature introduced by **Optimize** this cycle").
 * **[2]** Safety Check (**Agent Clarity**): "If I were a new AI agent joining this project, would this documentation tell me what I need to know to work safely in this area?"
-* **[3]** Safety Check (**Bible Coherence**): "Is the architectural context I am describing — layer ownership, import boundaries, naming, data flow — consistent with the Frontend, Backend, and Worker Architecture bibles? If a file belongs to `@features`, am I correctly describing its isolation constraints? If it handles external data, am I correctly referencing the Valibot validation boundary? If it touches the Service Worker, caching strategy, or PWA lifecycle, am I using the correct topology and lifecycle vocabulary from the Worker bible?"
+* **[3] Safety Check (ADR Coherence):** "Is the architectural context I am describing — layer ownership, import boundaries, naming, data flow — consistent with the CleanStack Architecture ADR? If a file belongs to `@features`, am I correctly describing its isolation constraints? If it handles external data, am I correctly referencing the Valibot validation boundary? If it touches the Service Worker, caching strategy, or PWA lifecycle, am I using the correct topology and lifecycle vocabulary from the ADR?"
 
 ### [C] Step 3: Execute (Context Injection)
 **[>] Action:** Apply updates to the single selected file.
@@ -87,7 +85,8 @@
 * **[1]** README (existing — stale or shallow): Reconcile first. Identify every statement, snippet, or signature that contradicts the current code and correct or remove it before adding anything new. Only after the existing content is accurate should missing depth (purpose, constraints, relationship to adjacent modules) be added.
 * **[2]** README (new — creation only, last resort): Cover purpose, inputs/outputs, key constraints, and relationship to adjacent modules.
 * **[3]** Architectural Precision: When describing any file's role, use the correct layer vocabulary from the Frontend Bible (`@core`, `@shared`, `@features`, `@app`). Explicitly state what a module **can** import from and what is **forbidden** (e.g., a Feature may not import from another Feature). When documenting a composable that receives external data, reference the Valibot validation boundary requirement. When documenting a service, note that it must remain context-agnostic and must not import from Layers 2, 3, or 4.
-* **[4]** Naming: All file references, import paths, and type names in documentation must conform to the Naming Conventions table in Section 4 of the Frontend Bible. Do not invent or paraphrase convention names.
+* **[4] Naming:** All file references, import paths, and type names in documentation must conform to the Naming Conventions contract in Section VII of the ADR. Do not invent or paraphrase convention names.
+
 * **[5]** Public contracts: Use `@remarks` for deep architectural context.
 * **[6]** Private logic: Use `//` for decision logging inside logic blocks.
 * **[7]** Extension Check: If `.gs`, disable **TS** syntax.
