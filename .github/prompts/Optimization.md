@@ -59,6 +59,7 @@ You are the **Third Mover** in the 4-stage Nightly cycle:
 * **[A] Refactor First:** Fix structure **before** optimizing speed if **DRY/Modularization** (monolithic components) is violated.
 * **[B] Logic over Magic:** Document **why** it is faster/better.
 * **[C] Legibility > Micro-Gains:** A 1% speedup that makes code unreadable is a failure.
+* **[D] OCD Clean Naming:** Naming quality is not just for files. Internal loop variables and local state must be domain-descriptive. Replace `val`, `row`, and `item` with `playerScore`, `memberSnapshot`, and `recruitObject`.
 
 ---
 

@@ -34,6 +34,10 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 * **[1] Validation Boundary:** Per the CleanStack Architecture.md ADR (Section III), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
 * **[2] Validation Boundary (pattern):** Entry points for external API data into feature composables are the highest-risk locations. When a composable accepts a raw payload typed as `any`, define a Valibot schema for the expected shape and run `v.safeParse()` at the top of the function. This is the class of risk to scan for — not a standing order against any single file.
 * **[3] Dead Logic (pattern):** Code that executes but has no effect misleads future agents. A common instance: manual setup of a value (e.g., a request header) that is immediately overwritten by a called function's internal logic. When found, remove the dead block and add a short inline comment on the called function noting what it manages internally. This is the class of risk to scan for — not a standing order against any single file.
+* **[4] OCD Clean Stack (Forbidden Pathogens):** To reach maximal architecture purity, the following patterns are strictly forbidden:
+    *   **The `any` Plague**: Never accept or process data typed as `any` at a boundary. If the type is unknown, use `unknown` and `v.safeParse()`.
+    *   **Manual Validation**: Traditional `isNaN()`, `typeof === 'string'`, or `length > 0` checks are structural weaknesses. Replace them with Valibot schemas for "Defense in Depth".
+    *   **Anemic Variables**: In Layer 2 (Stores) and Layer 3 (Features), variables like `r`, `i`, `val`, `row`, or `item` are forbidden. Use domain-descriptive names (`memberSnapshot`, `rawFameScore`, `recruitPayload`).
 
 ### [C] Exclusions
 * **[X] No Feature Work:** Do not implement new functionality. Every change must close a specific, named runtime risk.
