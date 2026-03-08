@@ -21,13 +21,13 @@ function handleRefresh() {
 <template>
   <button
     class="status-pill hit-target"
-    :class="[type, { 'is-refreshing': type === 'loading' }]"
+    :class="[props.type, { 'is-refreshing': props.type === 'loading' }]"
     @click="handleRefresh"
-    aria-label="Refresh Data"
+    :aria-label="'Refresh Data'"
   >
-    <div v-if="type === 'loading'" class="spinner"></div>
+    <div v-if="props.type === 'loading'" class="spinner"></div>
     <div v-else class="status-dot"></div>
-    <span class="status-text">{{ text }}</span>
+    <span class="status-text">{{ props.text }}</span>
   </button>
 </template>
 
