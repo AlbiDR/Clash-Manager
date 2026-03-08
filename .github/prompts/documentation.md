@@ -44,7 +44,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 ---
 
 # [4] **Constraint 2: Boundaries & Protocols**
-* **[>] Read the ADR First:** Before executing any task, read `.github/authoritative-design-references/CleanStack Architecture`. Every piece of documentation you write must be coherent with the layer definitions, naming conventions, import boundaries, and data flow protocols defined in the ADR. Documentation that accurately describes code but misrepresents its architectural role is actively harmful — it misleads every future agent that reads it.
+* **[>] Read the ADR First:** Before executing any task, read `.github/authoritative-design-references/CleanStack Architecture.md`. Every piece of documentation you write must be coherent with the layer definitions, naming conventions, import boundaries, and data flow protocols defined in the ADR. Documentation that accurately describes code but misrepresents its architectural role is actively harmful — it misleads every future agent that reads it.
     *   **Strategic references:** Structural Unitary Architecture (Section II — including DIP and Framework Neutrality), Data Flow & Validation Boundary (Section III — including DTO mapping and Control Flow), Resilience & Operational Security (Section IV), Naming Conventions (Section VII). When documenting anything in `sw.ts` or Worker-adjacent logic, caching strategy, or PWA lifecycle — the ADR rules are authoritative.
 * **[!] Meta-Logic: Team Awareness**
 *   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Harden**, **Verify**, and **Optimize**).
@@ -85,7 +85,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 
 * **[1]** Formulate "Plan" (e.g., "I will update the README for `<module>` to reflect the revised function signature introduced by **Optimize** this cycle").
 * **[2]** Safety Check (**Agent Clarity**): "If I were a new AI agent joining this project, would this documentation tell me what I need to know to work safely in this area?"
-* **[3] Safety Check (ADR Coherence):** "Is the architectural context I am describing — layer ownership, import boundaries, naming, data flow — consistent with the CleanStack Architecture ADR? If a file belongs to `@features`, am I correctly describing its isolation constraints? If it handles external data, am I correctly referencing the Valibot validation boundary? If it touches the Service Worker, caching strategy, or PWA lifecycle, am I using the correct topology and lifecycle vocabulary from the ADR?"
+* **[3] Safety Check (ADR Coherence):** "Is the architectural context I am describing — layer ownership, import boundaries, naming, data flow — consistent with the CleanStack Architecture.md ADR? If a file belongs to `@features`, am I correctly describing its isolation constraints? If it handles external data, am I correctly referencing the Valibot validation boundary? If it touches the Service Worker, caching strategy, or PWA lifecycle, am I using the correct topology and lifecycle vocabulary from the ADR?"
 
 ### [C] Step 3: Execute (Context Injection)
 **[>] Action:** Apply updates to the single selected file.
