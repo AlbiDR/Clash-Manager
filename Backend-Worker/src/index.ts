@@ -473,8 +473,9 @@ async function processScanBatch(
           // Target B [1]: Enforce strict validation boundary for Royale API data.
           const validation = v.safeParse(RoyaleTournamentResponseSchema, res.content);
           if (validation.success) {
-            validation.output.membersList.forEach((p) => {
-              if (p.score < minTrophies) return;   // score = in-tournament trophies
+            validation.output.membersList?.forEach((p) => {
+              const score = p.score || 0;
+              if (score < minTrophies) return;   // score = in-tournament trophies
               if (p.clan?.tag) return;              // filter out clan members
               if (blacklistSet.has(p.tag as PlayerTag)) return;
 
@@ -489,8 +490,8 @@ async function processScanBatch(
 
               candidates.push({
                 tag: p.tag as PlayerTag,
-                name: p.name,
-                trophies: p.score,  // map score → trophies for downstream compatibility
+                name: p.name || "Unknown",
+                trophies: score,  // map score → trophies for downstream compatibility
                 donations: 0,
                 cards: 0,
                 war: 0,
