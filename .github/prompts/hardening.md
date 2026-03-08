@@ -41,7 +41,7 @@
     *   **NEVER** include them in your "Target Scope."
     *   **NEVER** modify, test, document, or report on any file within this directory.
 * **[>] Read the ADR First:** Before executing, read `.github/authoritative-design-references/CleanStack Architecture`. Every fix must be coherent with the layering rules, naming conventions, and validation protocols defined in the ADR.
-    *   **Strategic references:** Structural Unitary Architecture (Section II), Data Flow & Validation Boundary (Section III), Resilience & Operational Security (Section IV). These sections are the primary reference for all hardening work.
+    *   **Strategic references:** Structural Unitary Architecture (Section II — Framework Neutrality), Data Flow & Validation Boundary (Section III — DTO Mapping and Control Flow), Resilience & Operational Security (Section IV), Governance (Section VI — ISP). These sections are the primary reference for all hardening work.
 * **[>] Naming Law:** Any new files (e.g., middleware, schema definitions) must be 100% coherent with the parent folder and the Naming Conventions contract in the ADR (Section VII). Example: Inside `@core/api/`, create `validateSnapshot.ts`, NOT `securityHelper.ts`.
 * **[!] Flag, Don't Guess:** If a fix requires a decision only the developer can make (e.g., which version is authoritative when a module is *ahead* of the manifest), do not modify any file. Document the conflict in the PR description and stop.
 * **[!] Test-Driven Stability:** Every fix must ensure the existing test suite passes. Run `pnpm test` before submitting. If a fix causes a test to fail, report it in the PR description — do not suppress or delete the failing test.

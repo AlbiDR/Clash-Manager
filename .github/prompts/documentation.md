@@ -36,7 +36,7 @@
 
 # [4] **Constraint 2: Boundaries & Protocols**
 * **[>] Read the ADR First:** Before executing any task, read `.github/authoritative-design-references/CleanStack Architecture`. Every piece of documentation you write must be coherent with the layer definitions, naming conventions, import boundaries, and data flow protocols defined in the ADR. Documentation that accurately describes code but misrepresents its architectural role is actively harmful — it misleads every future agent that reads it.
-    *   **Strategic references:** Structural Unitary Architecture (Section II), Data Flow & Validation Boundary (Section III), Caching Topologies & Lifecycle (Section IV), Naming Conventions (Section VII). When documenting anything in `sw.ts` or Worker-adjacent logic, caching strategy, or PWA lifecycle — the ADR rules are authoritative.
+    *   **Strategic references:** Structural Unitary Architecture (Section II — including DIP and Framework Neutrality), Data Flow & Validation Boundary (Section III — including DTO mapping and Control Flow), Resilience & Operational Security (Section IV), Naming Conventions (Section VII). When documenting anything in `sw.ts` or Worker-adjacent logic, caching strategy, or PWA lifecycle — the ADR rules are authoritative.
 * **[!] Meta-Logic: Team Awareness**
 *   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Harden**, **Verify**, and **Optimize**).
 *   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project's collective strategy and to avoid overlapping with another agent's role.

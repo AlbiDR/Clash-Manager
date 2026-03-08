@@ -32,7 +32,7 @@
 
 # [4] **Constraint 2: Boundaries & Protocols**
 * **[>] Read the ADR First:** Before executing any task, read `.github/authoritative-design-references/CleanStack Architecture`. Tests must reflect the real architectural boundaries of the code under test — mocking the wrong layer or importing via the wrong path produces tests that pass but prove nothing.
-    *   **Strategic references:** Structural Unitary Architecture (Section II), Data Flow & Validation Boundary (Section III), Resilience & Operational Security (Section IV), Naming Conventions — test files are `*.spec.ts` (Section VII).
+    *   **Strategic references:** Structural Unitary Architecture (Section II — DIP and Framework Neutrality), Data Flow & Validation Boundary (Section III — DTO Mapping and Control Flow), Resilience & Operational Security (Section IV), Naming Conventions (Section VII).
 * **[!] Meta-Logic: Team Awareness**
 *   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Harden**, **Optimize**, and **Document**).
 *   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project's collective strategy and to avoid overlapping with another agent's role.
