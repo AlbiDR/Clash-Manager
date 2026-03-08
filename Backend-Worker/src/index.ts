@@ -331,12 +331,12 @@ async function processBatch<T = unknown>(
             }
 
             // Use shared scoring system (Kernel)
-            let rawScore = ScoringKernel.calcRecruitRaw(
+            let rawScore = ScoringKernel.computeRecruitScore(
               profile.trophies ?? 0,
               profile.totalDonations ?? 0,
               profile.warDayWins ?? 0,
               hasWar,
-              scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0 },
+              scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
             );
 
             // STRATEGY 2: Deep Delegation - Prophet Bonus
@@ -1000,7 +1000,7 @@ app.post(
       // THREAT: Ignoring provided apiKeys in /clan/api leads to quota exhaustion on the global pool.
       // Target B [3]: Use the validated keys from the request body via a batch-scoped KeyManager.
       // Fall back to global KeyManager if apiKeys is empty.
-      const batchManager = (apiKeys && apiKeys.length > 0) ? new KeyManager(apiKeys) : undefined;
+      const batchManager = (apiKeys && apiKeys.length > 0) ? new KeyService(apiKeys) : undefined;
 
       const { code, content } = await fetchWithRotatedRetries(url, {
         method: "GET",

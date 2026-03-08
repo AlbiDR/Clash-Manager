@@ -124,8 +124,8 @@ function toggleExpand() {
         }"
         @click="
           isActive
-            ? $emit('clear')
-            : $emit('select-score', filterValue, filterMode)
+            ? emit('clear')
+            : emit('select-score', filterValue, filterMode)
         "
       >
         <Transition name="text-morph" mode="out-in">
