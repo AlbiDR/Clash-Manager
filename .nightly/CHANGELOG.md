@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-08] PR #198: docs(core): document economy utility primitives
+**Commit**: `48cfae75ecc30c045f670fa0083fa5b98a28e209`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/198)
+
+### Description
+I have documented the recently promoted `economy.ts` utility in `Frontend-PWA/src/core/utils/` following the "Clerk" archetype and the project's architectural standards. This includes adding TSDoc for all exported branded types, casting functions, arithmetic wrappers, and currency conversion logic. I also updated the documentation coverage log and verified that all unit tests pass.
+
+---
+*PR created automatically by Jules for task [13022360957001754621](https://jules.google.com/task/13022360957001754621) started by @AlbiDR*
+
+---
+
 ## [2026-03-08] PR #197: refactor(theme): centralize shared card primitive styles
 **Commit**: `073da250b55746609847271af40620850a649296`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/197)
