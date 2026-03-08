@@ -132,10 +132,16 @@ export const RoyaleBattleLogResponseSchema = v.array(RoyaleBattleLogItemSchema);
 export const RoyaleTournamentMemberSchema = v.object({
   tag: TagSchema,
   name: v.string(),
-  trophies: v.number(),
+  // NOTE: Tournament members use `score` (their in-tournament score), NOT
+  // `trophies` (global ladder trophies). Using the wrong field causes every
+  // member to fail validation and silently yield 0 candidates per batch.
+  score: v.number(),
+  rank: v.optional(v.number()),
+  // NOTE: Clan in tournament context only provides `tag` + `badgeId`.
+  // `name` is NOT returned by the API in this context.
   clan: v.optional(v.object({
     tag: TagSchema,
-    name: v.string(),
+    badgeId: v.optional(v.number()),
   })),
 });
 

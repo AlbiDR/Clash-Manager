@@ -474,26 +474,23 @@ async function processScanBatch(
           const validation = v.safeParse(RoyaleTournamentResponseSchema, res.content);
           if (validation.success) {
             validation.output.membersList.forEach((p) => {
-              if (p.trophies < minTrophies) return;
-              if (p.clan?.tag) return;
+              if (p.score < minTrophies) return;   // score = in-tournament trophies
+              if (p.clan?.tag) return;              // filter out clan members
               if (blacklistSet.has(p.tag as PlayerTag)) return;
 
               // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
               if (prophetCache) {
                 const normTag = p.tag.replace("#", "").trim().toLowerCase();
                 const intel = prophetCache[normTag];
-                // Lightweight scoring estimation (detailed scoring happens in profile fetch phase)
-                // But we can flag "Heritage" candidates early here if needed.
                 if (intel) {
                   // Bonus logic could go here, but strictly we need profile stats for true score.
-                  // For now, we just pass them through.
                 }
               }
 
               candidates.push({
                 tag: p.tag as PlayerTag,
                 name: p.name,
-                trophies: p.trophies,
+                trophies: p.score,  // map score → trophies for downstream compatibility
                 donations: 0,
                 cards: 0,
                 war: 0,

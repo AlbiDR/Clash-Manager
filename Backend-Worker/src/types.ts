@@ -43,17 +43,19 @@ export interface BattleLogEntry {
 export interface TournamentMember {
   tag: PlayerTag;
   name: string;
-  trophies: number;
+  // NOTE: Tournament members report their in-tournament score, NOT global trophies.
+  score: number;
+  rank?: number;
   clan?: {
     tag: ClanTag;
-    name: string;
+    badgeId?: number;
   };
 }
 
 export interface Tournament {
   tag: TournamentTag;
   name: string;
-  membersList: TournamentMember[];
+  membersList?: TournamentMember[];
   status?: string;
 }
 
