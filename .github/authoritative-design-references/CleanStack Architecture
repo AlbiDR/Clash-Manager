@@ -21,22 +21,47 @@ Core philosophies that prioritize technical purity and the elimination of noise.
 
 ## II. Structural Unitary Architecture
 
-Rules for organization and dependency management to ensure modularity.
+This project employs a **Strict Unitary Architecture** across six discrete layers. Logic, configuration, and assets must reside exactly where they belong to ensure atomicity and predictable execution.
 
-- **Registry Strategy:** Every module must expose a controlled Public API — the mechanism differs by runtime, but the contract is identical: consumers never reach past the registry into internal implementation.
-  - **Frontend (Barrel Protocol):** Public API is declared via `index.ts`. Deep imports are forbidden; all consumers interface through the Barrel alias (e.g., `@features/roster`). Exception: test files must use deep imports for services to prevent singleton initialization side effects from Barrel resolution.
-  - **Backend (Registry Object):** Because GAS flattens all `.gs` files into a single global scope, `index.ts` Barrels are not available. `Registry.ts` is the authoritative implementation — it is not a workaround, it is the correct pattern for the runtime. It serves two purposes the Barrel cannot: (1) **Global Namespace Firewall** — instead of polluting the global scope with bare function names that collide, all access is namespaced through the Registry object (e.g., `Registry.Services.Roster.initialize()` instead of a bare `initialize()`); (2) **Dependency Injection Point** — no feature talks to another feature directly; all cross-feature coordination is brokered through `Registry.ts`, meaning any implementation (e.g., `Network`) can be swapped by changing a single line in the Registry without touching a single feature file.
-- **Fractal Feature Isolation:** Features are self-contained silos. A Feature **NEVER** imports from another Feature (Strict Unitary Isolation).
-- **Absolute Deduplication (Pure DRY):** Logic that performs identical conceptual tasks must be centralized (Layer 1 Core) to be shared between GAS and Worker contexts.
-- **Framework Agnosticism:** Core logic must be isolated from the framework (Vue/GAS). Algorithmic engines should be headless and platform-blind.
-- **Dependency Inversion Principle (DIP):** Always depend upon abstractions (Interfaces/Types), never upon concrete implementations.
-- **Interface Segregation Principle (ISP):** Clients should not be forced to depend on interfaces they do not use.
-- **Law of Demeter (LoD):** Minimal knowledge of the structure of others. Talk only to immediate "friends" to prevent tight coupling.
-- **Zero Leak Service Registry:** Infrastructure singletons (Logger, Storage, API Clients) must be context-agnostic and must not import from Layers 2, 3, or 4. Services are consumed by higher layers; they never consume them.
+### Layer 0: Substrate (`@static` / `@substrate`) [Foundation]
+**Definition**: The shell, configuration, environment, and public assets.
+- **Rule**: Minimum footprint. Data-centric. Zero processing logic.
+- **Frontend Contents**: `index.html`, `manifest.json`, optimized assets (`assets/game/`, `fonts/`).
+- **Backend Contents**: `Configuration.ts`, `appsscript.json`.
+
+### Layer 1: Core (`@core` / `@kernel`) [Kernel]
+**Definition**: Agnostic infrastructure and horizontal logic engines.
+- **Rule**: Pure logic. Zero dependencies on higher layers.
+- **Frontend Contents**: `api/` clients, `theme/` tokens, `services/` singletons, `utils/` engines.
+- **Backend Contents**: `Scoring_Kernel.ts`, `Network.ts`, `Time.ts`.
+
+### Layer 2: Shared (`@shared` / `@drivers`) [Molecules]
+**Definition**: Domain-blind UI building blocks and persistence drivers.
+- **Rule**: Stateless UI or brokered access to external state.
+- **Frontend Contents**: `ui/` elements, `composables/` (WakeLock, Haptics), `directives/` (Tactile).
+- **Backend Contents**: `Store.ts` (ScriptProperties), `View.ts` (Sheet rendering), `Database.ts` (ETL).
+
+### Layer 3: Features (`@features` / `@modules`) [Business]
+**Definition**: Self-contained business silos. Fractal structure.
+- **Rule**: Strictly decoupled. A Feature **NEVER** imports from another Feature (isolation boundary).
+- **Structure**: `roster/`, `laboratory/`, `headhunter/`, `scoring/`, `settings/`.
+
+### Layer 4: App (`@app` / `@orchestrator`) [Glue]
+**Definition**: Context-aware orchestration and navigation.
+- **Rule**: Orchestrates flow between Layers 1-3. Only App imports from Features.
+- **Frontend Contents**: `router/`, `layouts/`, `sw.ts` (Service Worker), `App.vue`.
+- **Backend Contents**: `Orchestrator.ts` (Automations), `Registry.ts` (Dependency Injection point).
+
+### Layer 5: Control (`@root` / `@root`) [Environment]
+**Definition**: Public entry points, project orchestration, and type governance.
+- **Rule**: Minimalist dependency surface. Manages the Public API interface.
+- **Frontend Contents**: `vite.config.ts`, `package.json`, `tsconfig.json`.
+- **Backend Contents**: `API_Public.ts` (`doGet`/`doPost`), `Controller_Webapp.ts`.
 
 ---
 
 ## III. Data Flow & Transactional Integrity
+Integrity
 
 Protocols for data safety, state management, and reliable communication.
 
@@ -109,6 +134,15 @@ To maintain 100/100 Lighthouse scores, all performance-sensitive interactions fo
 - **Bundle Integrity:** Layer 1 and Layer 2 logic must be fully tree-shakable. No heavy utilities are permitted in the initial bundle.
 - **Accessibility (A11y):** Every interactive element must carry a unique ID for automated testing and a descriptive ARIA label. Touch targets must adhere to a minimum of **48×48px**.
 - **Resource Cleanup:** Functions must clean up their execution artifacts. No transient state, open handles, or temporary writes should survive a function's lifecycle.
+
+### Shell Synchronization & Substrate Integrity
+
+To maintain 100/100 Lighthouse performance and SEO, the Layer 0 substrate must remain a precise reflection of the application's default state.
+
+1. **Title Mirroring:** The hardcoded `<h1 class="view-title">` in `index.html` must match the Feature label of the default route exactly (e.g., "Roster").
+2. **Hydration Parity:** The `index.html` DOM structure must be a replica of the initial Vue render. Mismatches trigger a full client-side re-hydration penalty.
+3. **Manifest Connectivity:** Asset moves (icons/screenshots) require synchronous updates to `manifest.json` and Layer 5 PWA plugin configurations to prevent installability loss.
+4. **Critical CSS:** Inline styles in the shell are reserved for Layout Primitives and CSS Variables only; no component-level inline styling is permitted.
 
 ---
 

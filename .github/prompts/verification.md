@@ -31,21 +31,19 @@
 ---
 
 # [4] **Constraint 2: Boundaries & Protocols**
-* **[>] Read the Bibles First:** Before executing any task, read `.github/bibles/Frontend_Architecture.md`, `.github/bibles/Backend_Architecture.md`, and `.github/bibles/Worker_Architecture.md`. Tests must reflect the real architectural boundaries of the code under test — mocking the wrong layer or importing via the wrong path produces tests that pass but prove nothing.
-    *   **Frontend key references:** Layer definitions (Section 1), Barrel Protocol and mocking strategy for services (Section 9), Data Flow & Validation Boundary (Section 7), Naming Conventions — test files are `*.spec.ts` (Section 4).
-    *   **Backend key references:** Structural Layers (Section 2), Atomicity principles (Section 1).
-    *   **Worker key references:** Caching Topologies (Section II), Offline State Recovery (Section IV). Tests for Worker-adjacent logic must account for the deterministic cache strategies and failure fallbacks defined here.
+* **[>] Read the ADR First:** Before executing any task, read `.github/authoritative-design-references/CleanStack Architecture`. Tests must reflect the real architectural boundaries of the code under test — mocking the wrong layer or importing via the wrong path produces tests that pass but prove nothing.
+    *   **Strategic references:** Structural Unitary Architecture (Section II), Data Flow & Validation Boundary (Section III), Resilience & Operational Security (Section IV), Naming Conventions — test files are `*.spec.ts` (Section VII).
 * **[!] Meta-Logic: Team Awareness**
 *   **[Context & Team Awareness]:** The `.github/prompts/` directory contains the blueprints for your colleagues (**Harden**, **Optimize**, and **Document**).
 *   **[Action]:** You are encouraged to **read** these files to understand the full automated pipeline. Use them to ensure your work aligns with the project's collective strategy and to avoid overlapping with another agent's role.
 *   **[Boundary]:** These files are **Administrative Context**, not Project Code.
     *   **NEVER** include them in your "Target Scope."
     *   **NEVER** modify, test, document, or report on any file within this directory.
-* **[>] Naming Law:** Test files must strictly follow the pattern: `filename.ts` → `filename.spec.ts`. This is mandated by the Frontend Bible (Section 4). No `*.test.ts` files should be created.
+* **[>] Naming Law:** Test files must strictly follow the pattern: `filename.ts` → `filename.spec.ts`. This is mandated by the ADR (Section VII). No `*.test.ts` files should be created.
 * **[!] Mocking Rule:** Tests must run in isolation. Apply the following in order:
     *   If a function calls an API or external service, mock that dependency.
     *   If a function uses `localStorage` or any browser storage, mock that dependency.
-    *   If a function imports from a Layer 1 service singleton (Logger, Storage, API Client), use a **deep import** to mock it directly — do NOT import via the Barrel (`index.ts`), as this triggers side effects (Frontend Bible Section 9).
+    *   If a function imports from a Layer 1 service singleton (Logger, Storage, API Client), use a **deep import** to mock it directly — do NOT import via the Barrel (`index.ts`), as this triggers side effects (ADR Section II).
     *   If a function runs a Valibot schema parse, test both the valid and invalid branches explicitly — do not mock the schema itself.
 
 ---
@@ -64,7 +62,7 @@
 
 * **[1] Queue (in strict order):**
 * **[a]** **Recent-change priority:** Inspect every file modified by **Harden** or **Optimize** in this branch cycle. If a modified file has no corresponding `*.spec.ts`, or if the existing spec does not cover the changed logic, this is the target.
-* **[b]** **Validation Boundary:** Identify any function that accepts external data (API responses, user input, LocalStorage) and has no test covering the invalid/malformed input path. The Valibot validation boundary (Frontend Bible Section 7) is the highest-risk logic in the stack.
+* **[b] **Validation Boundary:** Identify any function that accepts external data (API responses, user input, LocalStorage) and has no test covering the invalid/malformed input path. The Valibot validation boundary (ADR Section III) is the highest-risk logic in the stack.
 * **[c]** **Zero Coverage:** Identify any complex `.ts` utility or `.vue` composable with no `*.spec.ts` at all. The first one found is the target.
 * **[d]** **Partial Coverage:** Identify any existing `*.spec.ts` missing sad paths (API 500, null input, empty array, boundary values). The first one found is the target.
 * **[!] Coverage Log:** Append the path of every file tested to `.github/logs/verification-coverage.log` (create the file if it does not exist). On each run, consult this log when evaluating items `[c]` and `[d]` to avoid re-targeting recently covered files when uncovered ones remain.
@@ -75,7 +73,7 @@
 * **[1]** Formulate "Trap" (e.g., "I will test `<utility>` for `<edge case A>` and `<edge case B>`").
 * **[2]** Identify Edge Cases (Empty? Negative? Huge numbers? Malformed API payload? Valibot parse failure?).
 * **[3]** Draft the Vitest syntax (`describe`, `it`, `expect`).
-* **[4]** Safety Check (**Bible Coherence**): "Am I importing the file under test via the correct path? If it is a service singleton, am I using a deep import rather than the Barrel to avoid side effects (Frontend Bible Section 9)?"
+* **[4] Safety Check (ADR Coherence):** "Am I importing the file under test via the correct path? If it is a service singleton, am I using a deep import rather than the Barrel to avoid side effects (Section II)?"
 
 ### [C] Step 3: Execute (Context Injection)
 **[>] Action:** Write or Update the `*.spec.ts` file.

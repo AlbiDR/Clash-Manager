@@ -22,7 +22,7 @@
 * **[3] Version Manifest Integrity (GAS):** `checkSystemHealth()` in `Orchestrator.ts` compares each module's `VER_` constant against `CONFIG.SYSTEM.MANIFEST`. Read every `VER_` constant in `Backend-GAS/` and compare against the manifest in `Configuration.ts`. For each mismatch: if the module version is **lower** than the manifest, update the module's constant to match. If the module version is **higher** than the manifest (e.g., `VER_HEADHUNTER`), do **not** modify either file — flag the conflict explicitly in the PR description and await developer instruction. If a module has a `VER_` constant with no corresponding manifest entry (e.g., `VER_NETWORK`), flag it in the PR description only — do not add it to the manifest.
 
 ### [B] Target B: Data Integrity Risks (Frontend-PWA / Backend-Worker)
-* **[1] Validation Boundary:** Per the Frontend Architecture Bible (Section 7.2), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
+* **[1] Validation Boundary:** Per the CleanStack Architecture ADR (Section III), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
 * **[2] Validation Boundary (pattern):** Entry points for external API data into feature composables are the highest-risk locations. When a composable accepts a raw payload typed as `any`, define a Valibot schema for the expected shape and run `v.safeParse()` at the top of the function. This is the class of risk to scan for — not a standing order against any single file.
 * **[3] Dead Logic (pattern):** Code that executes but has no effect misleads future agents. A common instance: manual setup of a value (e.g., a request header) that is immediately overwritten by a called function's internal logic. When found, remove the dead block and add a short inline comment on the called function noting what it manages internally. This is the class of risk to scan for — not a standing order against any single file.
 
@@ -40,11 +40,9 @@
 *   **[Boundary]:** These files are **Administrative Context**, not Project Code.
     *   **NEVER** include them in your "Target Scope."
     *   **NEVER** modify, test, document, or report on any file within this directory.
-* **[>] Read the Bibles First:** Before executing, read `.github/bibles/Frontend_Architecture.md`, `.github/bibles/Backend_Architecture.md`, and `.github/bibles/Worker_Architecture.md`. Every fix must be coherent with the layering rules, naming conventions, and validation protocols defined there.
-    *   **Frontend key references:** Validation Boundary (Section 7.2), Layer import rules (Section 1), Naming Conventions (Section 4).
-    *   **Backend key references:** GAS Service restrictions (Section 1), Structural Layers (Section 2).
-    *   **Worker key references:** Auth boundary and middleware registration order (Section I), State Lifecycle and restart durability (Section II & III), Offline State Recovery and deferred queue integrity (Section IV). These sections are the primary reference for all Target A hardening work.
-* **[>] Naming Law:** Any new files (e.g., middleware, schema definitions) must be 100% coherent with the parent folder and the Naming Conventions table in the Frontend Bible (Section 4). Example: Inside `@core/api/`, create `validateSnapshot.ts`, NOT `securityHelper.ts`.
+* **[>] Read the ADR First:** Before executing, read `.github/authoritative-design-references/CleanStack Architecture`. Every fix must be coherent with the layering rules, naming conventions, and validation protocols defined in the ADR.
+    *   **Strategic references:** Structural Unitary Architecture (Section II), Data Flow & Validation Boundary (Section III), Resilience & Operational Security (Section IV). These sections are the primary reference for all hardening work.
+* **[>] Naming Law:** Any new files (e.g., middleware, schema definitions) must be 100% coherent with the parent folder and the Naming Conventions contract in the ADR (Section VII). Example: Inside `@core/api/`, create `validateSnapshot.ts`, NOT `securityHelper.ts`.
 * **[!] Flag, Don't Guess:** If a fix requires a decision only the developer can make (e.g., which version is authoritative when a module is *ahead* of the manifest), do not modify any file. Document the conflict in the PR description and stop.
 * **[!] Test-Driven Stability:** Every fix must ensure the existing test suite passes. Run `pnpm test` before submitting. If a fix causes a test to fail, report it in the PR description — do not suppress or delete the failing test.
 
@@ -75,7 +73,7 @@
 
 * **[1]** Formulate the **Threat Statement**: "If X happens, then Y fails because Z."
 * **[2]** Identify the **Blast Radius**: What breaks or leaks downstream if this goes unfixed?
-* **[3]** Confirm the **Fix Scope**: Can this be fixed without touching GAS services, without adding new features, and without contradicting the Bibles?
+* **[3] Confirm the Fix Scope:** Can this be fixed without touching GAS services, without adding new features, and without contradicting the ADR?
 * **[4]** Safety Check: Will this fix cause any existing `*.spec.ts` to fail? If yes, note it in the PR — do not delete the test.
 
 ### [C] Step 3: Execute (Hardening)
