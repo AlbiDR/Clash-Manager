@@ -24,6 +24,7 @@ Core philosophies that prioritize technical purity and the elimination of noise.
 This project employs a **Strict Unitary Architecture** across six discrete layers. Logic, configuration, and assets must reside exactly where they belong to ensure atomicity and predictable execution.
 
 - **Dependency Inversion Principle (DIP):** Higher layers must depend on abstractions (interfaces or types) of lower layers, not concrete implementations. This ensures that infrastructure shifts in Layer 1 do not oscillate into business logic in Layer 3.
+- **Framework as a Detail:** The selected technology stack (Vue, Vite, Apps Script) is a replaceable implementation detail. Business logic in Layer 3 must never depend on framework-specific APIs. If the framework were swapped, Layer 3 logic should remain untouched.
 
 ### Layer 0: Substrate (`@static` / `@substrate`) [Foundation]
 **Definition**: The shell, configuration, environment, and public assets.
@@ -68,6 +69,7 @@ Integrity
 Protocols for data safety, state management, and reliable communication.
 
 - **Validation Boundary (Schema-Gatekeeper):** Mandatory Valibot schema checks for all inbound data at the Layer 1 `api/` or `services/` level. If data doesn't pass the schema, it is rejected before reaching business logic. No data enters from external sources (API, LocalStorage, or User Input) without passing this gate.
+- **Dependency Flow vs. Control Flow:** While dependencies point strictly **Inward** to the kernel, the **Flow of Control** may move **Outward**. Layer 3 (Features) may trigger Layer 2 (Drivers) only through abstract interfaces defined in Layer 1. Direct calls to concrete lower-layer implementations from business logic are forbidden.
 - **Domain Model Transformation (DTO Mapping):** Data crossing the Validation Boundary must be transformed into 'Persistence-Ignorant' domain objects. The raw structure of external payloads (API responses, sheet rows) must be mapped to a clean Domain Model at Layer 1. Business logic in Layer 3 (Features) never interacts with raw external data shapes.
 - **Command-Query Separation (CQS):** A function either modifies state (Command) or returns data (Query), never both.
 - **TOON (Token Oriented Object Notation):** Optimization for Determinism and Idempotency. All state transitions must be reproducible and predictable.
