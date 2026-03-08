@@ -81,7 +81,7 @@ const CONFIG: ServerConfig = {
 const rawKeys = (process.env["API_KEYS"] ?? "")
   .split(",")
   .map(k => k.trim())
-  .filter(k => k && k !== "REPLACE_ME" && k !== "YOUR_KEYS");
+  .filter(k => k && k !== "REPLACE_ME" && k !== "YOUR_KEYS"); // EPHEMERAL: intentionally resets on restart
 
 if (rawKeys.length === 0) {
     console.warn("[Worker] Warning: No API_KEYS found in environment variables.");
@@ -668,9 +668,10 @@ app.post(
     try {
       const { tags, blacklist, minTrophies, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
 
-      const apiKeys =
-        reqApiKeys ??
-        (process.env["API_KEYS"] ? process.env["API_KEYS"].split(",") : []);
+      // THREAT: Manually parsing env keys bypasses the global KeyManager's health state.
+      // Target B [3]: Remove dead/misleading code. Fall back to empty array so processScanBatch
+      // correctly utilizes the global KeyManager singleton health metrics.
+      const apiKeys = reqApiKeys ?? [];
 
       const blacklistSet = new Set(blacklist ?? []);
       const concurrency = Number(
@@ -982,7 +983,7 @@ app.post(
     }
 
     try {
-      const { tag, type } = result.output;
+      const { tag, type, apiKeys } = result.output;
 
       const cleanTag = encodeURIComponent(tag);
       let url = "";
@@ -996,12 +997,17 @@ app.post(
         return;
       }
 
+      // THREAT: Ignoring provided apiKeys in /clan/api leads to quota exhaustion on the global pool.
+      // Target B [3]: Use the validated keys from the request body via a batch-scoped KeyManager.
+      // Fall back to global KeyManager if apiKeys is empty.
+      const batchManager = (apiKeys && apiKeys.length > 0) ? new KeyManager(apiKeys) : undefined;
+
       const { code, content } = await fetchWithRotatedRetries(url, {
         method: "GET",
         headers: {
           "User-Agent": "ClanManagerWorker/1.0",
         },
-      });
+      }, CONFIG.maxRetries, batchManager);
 
       if (code !== 200) {
         res.status(code).json({ error: "upstream error", details: content });
