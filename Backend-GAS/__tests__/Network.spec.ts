@@ -42,7 +42,11 @@ const mockConfig = {
 const mockRegistry = {
   Services: {
     Store: mockStore,
-    Core: { executeSafely: vi.fn((name, fn) => fn()) }
+    Core: { executeSafely: vi.fn((name, fn) => fn()) },
+    Time: {
+      calculateWarWeekId: vi.fn(() => "24W09"),
+      parseRoyaleApiDate: vi.fn((d) => new Date(d))
+    }
   }
 };
 
@@ -90,6 +94,45 @@ describe('Network Module', () => {
         });
         const healthy = Network.remoteWorkerHealthy();
         expect(healthy).toBe(true);
+    });
+  });
+
+  describe('fetchClanDataSmart Local Fallback', () => {
+    it('should extract history from log when in local mode', () => {
+        mockConfig.SYSTEM.CLAN_TAG = "#MYCLAN";
+        mockConfig.SYSTEM.REMOTE_WORKER_URL = ""; // Disable remote
+        
+        const mockMembers = { items: [] };
+        const mockRace = { clan: { tag: "#MYCLAN" } };
+        const mockLog = {
+            items: [
+                {
+                    createdDate: "20240301T100000.000Z",
+                    standings: [
+                        {
+                            clan: {
+                                tag: "#MYCLAN",
+                                participants: [
+                                    { tag: "#P1", fame: 1000 }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        mockUrlFetch.fetchAll.mockReturnValueOnce([
+            { getResponseCode: () => 200, getContentText: () => JSON.stringify(mockMembers) },
+            { getResponseCode: () => 200, getContentText: () => JSON.stringify(mockRace) },
+            { getResponseCode: () => 200, getContentText: () => JSON.stringify(mockLog) }
+        ]);
+
+        const result = Network.fetchClanDataSmart("%23MYCLAN");
+        
+        expect(result.history).not.toBeNull();
+        expect(result.history["#P1"]).toBeDefined();
+        expect(result.history["#P1"]["24W09"]).toBe(1000);
     });
   });
 });
