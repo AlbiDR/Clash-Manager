@@ -68,13 +68,13 @@ export const ScanRequestSchema = v.object({
 
 export const ClanFullRequestSchema = v.object({
   tag: TagSchema,
-  apiKeys: v.array(v.string())
+  apiKeys: v.optional(v.array(v.string()))
 });
 
 export const ClanApiRequestSchema = v.object({
   tag: TagSchema,
   type: v.picklist(["members", "warlog"]),
-  apiKeys: v.array(v.string())
+  apiKeys: v.optional(v.array(v.string()))
 });
 
 export const FetchRequestSchema = v.object({
