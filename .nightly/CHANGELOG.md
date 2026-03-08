@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-08] PR #196: test(shared): add ConsoleLayout coverage & sync naming law
+**Commit**: `a5b6018cb15a01d5c8d3afbe9bb592f6baeffd18`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/196)
+
+### Description
+Improved defensive coverage by adding a comprehensive test suite for `ConsoleLayout.vue`. Additionally, synchronized three existing test files (`CardActions`, `ErrorState`, `StatusPill`) and their snapshots to comply with the project's strict `*.spec.ts` naming law. All tests pass with 100% success rate in the targeted directory.
+
+---
+*PR created automatically by Jules for task [12986091655123607462](https://jules.google.com/task/12986091655123607462) started by @AlbiDR*
+
+---
+
 ## [2026-03-08] PR #195: fix(reliability): harden worker key management and state lifecycle
 **Commit**: `a2c4abe8f4182e992bd0abb06dadaabb18a1d6d4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/195)
