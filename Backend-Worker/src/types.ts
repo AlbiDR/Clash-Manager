@@ -139,10 +139,10 @@ export interface ScoringWeights {
 export interface ScoredPlayer {
   tag: PlayerTag;
   name: string;
-  trophies: number;
-  donations: number;
-  cards: number;
-  war: number;
+  trophies?: number;
+  donations?: number;
+  cards?: number;
+  war?: number;
   rawScore: number;
 }
 
