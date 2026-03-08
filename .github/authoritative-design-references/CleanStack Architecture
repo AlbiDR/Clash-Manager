@@ -23,6 +23,8 @@ Core philosophies that prioritize technical purity and the elimination of noise.
 
 This project employs a **Strict Unitary Architecture** across six discrete layers. Logic, configuration, and assets must reside exactly where they belong to ensure atomicity and predictable execution.
 
+- **Dependency Inversion Principle (DIP):** Higher layers must depend on abstractions (interfaces or types) of lower layers, not concrete implementations. This ensures that infrastructure shifts in Layer 1 do not oscillate into business logic in Layer 3.
+
 ### Layer 0: Substrate (`@static` / `@substrate`) [Foundation]
 **Definition**: The shell, configuration, environment, and public assets.
 - **Rule**: Minimum footprint. Data-centric. Zero processing logic.
@@ -66,6 +68,7 @@ Integrity
 Protocols for data safety, state management, and reliable communication.
 
 - **Validation Boundary (Schema-Gatekeeper):** Mandatory Valibot schema checks for all inbound data at the Layer 1 `api/` or `services/` level. If data doesn't pass the schema, it is rejected before reaching business logic. No data enters from external sources (API, LocalStorage, or User Input) without passing this gate.
+- **Domain Model Transformation (DTO Mapping):** Data crossing the Validation Boundary must be transformed into 'Persistence-Ignorant' domain objects. The raw structure of external payloads (API responses, sheet rows) must be mapped to a clean Domain Model at Layer 1. Business logic in Layer 3 (Features) never interacts with raw external data shapes.
 - **Command-Query Separation (CQS):** A function either modifies state (Command) or returns data (Query), never both.
 - **TOON (Token Oriented Object Notation):** Optimization for Determinism and Idempotency. All state transitions must be reproducible and predictable.
 - **Persistence Ignorance:** Domain logic must remain decoupled from the storage mechanism (Sheets, Redis, or IndexedDB) to allow for "pluggable" persistence.
@@ -151,6 +154,7 @@ To maintain 100/100 Lighthouse performance and SEO, the Layer 0 substrate must r
 Metadata standards for long-term project health and maintainability.
 
 - **Open/Closed Principle (OCP):** Entities should be open for extension but closed for modification to prevent regressions.
+- **Interface Segregation Principle (ISP):** No module shall be forced to depend on methods it does not utilize. Prefer smaller, specialized interfaces over monolithic ones to minimize the blast radius of interface changes and simplify testing.
 - **Conventional Commits (ConCom):** Strict machine-readable commit specification to automate the generation of human-readable documentation.
 - **Semantic Versioning (SemVer):** Clear communication of breaking changes vs. features via the MAJOR.MINOR.PATCH schema.
 - **Keep a Changelog (KaC):** A curated, chronologically ordered history of notable shifts to maintain development transparency.
