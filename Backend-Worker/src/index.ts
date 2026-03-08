@@ -424,7 +424,6 @@ async function processScanBatch(
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,
   blacklistSet: Set<PlayerTag> = new Set(),
-  minTrophies: number = 4000,
   prophetCache?: Record<string, any>,
   debug?: any
 ): Promise<ScoredPlayer[]> {
@@ -474,8 +473,6 @@ async function processScanBatch(
           const validation = v.safeParse(RoyaleTournamentResponseSchema, res.content);
           if (validation.success) {
             validation.output.membersList?.forEach((p) => {
-              const score = p.score || 0;
-              if (score < minTrophies) return;   // score = in-tournament trophies
               if (p.clan?.tag) return;              // filter out clan members
               if (blacklistSet.has(p.tag as PlayerTag)) return;
 
@@ -491,10 +488,8 @@ async function processScanBatch(
               candidates.push({
                 tag: p.tag as PlayerTag,
                 name: p.name || "Unknown",
-                trophies: score,  // map score → trophies for downstream compatibility
-                donations: 0,
-                cards: 0,
-                war: 0,
+                // NOTE: We omit 'trophies' since tournament score is not global rank.
+                // This prevents the incorrect filtering that caused zero-yields.
                 rawScore: 0,
               });
             });
@@ -671,7 +666,7 @@ app.post(
     }
 
     try {
-      const { tags, blacklist, minTrophies, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
+      const { tags, blacklist, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
 
       // THREAT: Manually parsing env keys bypasses the global KeyManager's health state.
       // Target B [3]: Remove dead/misleading code. Fall back to empty array so processScanBatch
@@ -690,7 +685,6 @@ app.post(
         apiKeys,
         concurrency,
         blacklistSet as Set<PlayerTag>,
-        minTrophies ?? 4000,
         prophetCache
       );
 
@@ -777,7 +771,7 @@ app.post(
     }
 
     try {
-      const { tags, apiKeys, blacklist, minTrophies, scoring, prophetCache } = result.output;
+      const { tags, apiKeys, blacklist, scoring, prophetCache } = result.output;
 
       const blacklistSet = new Set(blacklist ?? []);
       const concurrency = Number(
@@ -792,7 +786,6 @@ app.post(
             apiKeys ?? [],
             concurrency,
             blacklistSet as Set<PlayerTag>,
-            minTrophies ?? 4000,
             prophetCache,
             debug
         );
