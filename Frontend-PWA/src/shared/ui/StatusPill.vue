@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useHaptics } from "@core/services/useHaptics";
+import { useHaptics } from "../../core/services/useHaptics";
+
 const props = defineProps<{
   type: "updated" | "error" | "loading" | "ready";
   text: string;
@@ -21,13 +22,13 @@ function handleRefresh() {
 <template>
   <button
     class="status-pill hit-target"
-    :class="[props.type, { 'is-refreshing': props.type === 'loading' }]"
+    :class="[type, { 'is-refreshing': type === 'loading' }]"
     @click="handleRefresh"
-    :aria-label="'Refresh Data'"
+    aria-label="Refresh Data"
   >
-    <div v-if="props.type === 'loading'" class="spinner"></div>
+    <div v-if="type === 'loading'" class="spinner"></div>
     <div v-else class="status-dot"></div>
-    <span class="status-text">{{ props.text }}</span>
+    <span class="status-text">{{ text }}</span>
   </button>
 </template>
 
