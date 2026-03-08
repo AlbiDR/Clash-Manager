@@ -1,5 +1,5 @@
 /**
- * 📊 USE BENCHMARKING
+ * [LOGIC] USE BENCHMARKING
  * Statistical engine for comparing player performance against clan averages.
  *
  * Optimized to perform single-pass calculations for all metrics to ensure
@@ -23,7 +23,7 @@ export interface BenchmarkData {
 
 type StatsMap = Record<string, { avg: number; max: number; min: number }>;
 
-// ⚡ PERFORMANCE: Singleton state for benchmarking engine.
+// [PERF] PERFORMANCE: Singleton state for benchmarking engine.
 // Moving state and logic to module level prevents O(N) re-creation of computed properties
 // and extractors when useBenchmarking is called in large lists (e.g., MemberCard).
 let lbStats: ComputedRef<StatsMap | null> | null = null;
@@ -31,7 +31,7 @@ let hhStats: ComputedRef<StatsMap | null> | null = null;
 let sharedModules: ModuleState | null = null;
 
 /**
- * ⚡ SINGLE-PASS STATS CALCULATOR
+ * [PERF] SINGLE-PASS STATS CALCULATOR
  * Reduces loop complexity from O(N*M) passes to O(N) by aggregating all
  * metrics in one traversal.
  */
@@ -154,7 +154,7 @@ function getSafeBenchmark(
  * all component instances.
  */
 export function useBenchmarking() {
-  // ⚡ LAZY INIT: Only initialize the singleton when first requested.
+  // [PERF] LAZY INIT: Only initialize the singleton when first requested.
   // This avoids evaluation issues during testing and ensures state is ready.
   if (!lbStats) {
     const { data } = useClashData();

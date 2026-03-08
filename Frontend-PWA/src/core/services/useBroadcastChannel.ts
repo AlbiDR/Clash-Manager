@@ -1,7 +1,7 @@
 import { onUnmounted } from "vue";
 
 /**
- * 📡 BROADCAST CHANNEL API
+ * [SYNC] BROADCAST CHANNEL API
  * Enables cross-tab communication to keep state synchronized.
  */
 

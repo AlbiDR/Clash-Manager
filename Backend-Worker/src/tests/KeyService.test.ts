@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { KeyManager } from '../KeyManager.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { KeyService } from '../KeyService.js';
 
-describe('KeyManager', () => {
+describe('KeyService', () => {
   const mockKeys = ['key1', 'key2', 'key3'];
-  let manager: KeyManager;
+  let manager: KeyService;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    manager = new KeyManager(mockKeys);
+    manager = new KeyService(mockKeys);
   });
 
   it('should return a healthy key from the pool', () => {
@@ -18,7 +18,8 @@ describe('KeyManager', () => {
   it('should rotate keys', () => {
     const usedKeys = new Set();
     for (let i = 0; i < 10; i++) {
-      usedKeys.add(manager.getHealthyKey());
+        const key = manager.getHealthyKey();
+        if (key) usedKeys.add(key);
     }
     // With 3 keys, after 10 tries we should have seen all of them (probabilistically very likely)
     expect(usedKeys.size).toBe(3);

@@ -1,5 +1,5 @@
 /**
- * 🏆 ROSTER TYPES
+ * [TYPES] ROSTER TYPES
  */
 
 export interface PlayerResult {

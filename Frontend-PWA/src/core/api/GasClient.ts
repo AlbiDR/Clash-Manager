@@ -76,7 +76,7 @@ const WebAppDataSchema = v.object({
 });
 
 /**
- * 🛡️ VALIDATION BOUNDARY: Base schemas for domain models
+ * [GUARD] VALIDATION BOUNDARY: Base schemas for domain models
  * Enforces strict typing for data entering the Clean Stack.
  */
 const MemberSchema = v.object({
@@ -643,7 +643,7 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
     if (!res.ok) throw new Error(`Worker status ${res.status}`);
     const json = await res.json();
 
-    // 🛡️ VALIDATION BOUNDARY: Implements Target B [1] hardening.
+    // [GUARD] VALIDATION BOUNDARY: Implements Target B [1] hardening.
     // Enforces strict schema validation for data returned from the remote worker
     // to prevent unvalidated external payloads from polluting the recruitment logic.
     const result = v.safeParse(WorkerScanResponseSchema, json);

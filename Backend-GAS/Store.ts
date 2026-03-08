@@ -178,7 +178,7 @@ const StoreInternal = {
    * Implements a "Write & Prune" strategy:
    * 1. Deterministically calculates the number of chunks required.
    * 2. Overwrites or creates the necessary chunk slots.
-   * 3. Prunes "orphan" chunks—leftovers from previous larger writes that
+   * 3. Prunes "orphan" chunks -- leftovers from previous larger writes that
    *    are no longer part of the current data set.
    *
    * This prevents storage bloat and "Ghost Data" bugs where partial old

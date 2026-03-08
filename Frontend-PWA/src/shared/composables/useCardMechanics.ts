@@ -9,7 +9,7 @@ interface CardProps {
 }
 
 /**
- * 🃏 USE CARD MECHANICS
+ * [LOGIC] USE CARD MECHANICS
  * Standardized interaction handlers for List Items (Members/Recruits).
  */
 export function useCardMechanics(props: CardProps, callbacks: CardCallbacks) {

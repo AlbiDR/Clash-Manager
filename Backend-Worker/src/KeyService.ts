@@ -14,11 +14,11 @@ export interface KeyState {
   failureCount: number;
 }
 
-export class KeyManager {
+export class KeyService {
   private keys: KeyState[] = []; // EPHEMERAL: intentionally resets on restart
 
   /**
-   * Initializes the manager with a raw list of API tokens.
+   * Initializes the service with a raw list of API tokens.
    */
   constructor(rawKeys: string[] = []) {
     this.keys = rawKeys
@@ -66,7 +66,7 @@ export class KeyManager {
       // A 60s cooldown allows the upstream bucket to reset safely.
       key.isHealthy = false;
       key.cooldownUntil = Date.now() + 60000;
-      console.warn(`[KeyManager] Key throttled (429). Sidelined for 60s.`);
+      console.warn(`[KeyService] Key throttled (429). Sidelined for 60s.`);
     } else if (code === 403) {
       // BANNED/INVALID: Sidelined for 1 hour
       // Rationale: A 403 usually means the key's IP restriction or
@@ -74,7 +74,7 @@ export class KeyManager {
       // a broken key, which could lead to a permanent developer ban.
       key.isHealthy = false;
       key.cooldownUntil = Date.now() + 3600000;
-      console.error(`[KeyManager] Key rejected (403). Sidelined for 1 hour.`);
+      console.error(`[KeyService] Key rejected (403). Sidelined for 1 hour.`);
     } else {
       key.failureCount++;
       if (key.failureCount >= 5) {

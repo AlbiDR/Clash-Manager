@@ -220,7 +220,7 @@ function doPost(
         if (!valRes.success) return respond(null, "VALIDATION_ERROR", `Invalid payload structure.`);
         const payload = valRes.output;
 
-        // 🛡️ DUAL-MODE SUPPORT: Handle both mapping formats and ensure score capture
+        // [GUARD] DUAL-MODE SUPPORT: Handle both mapping formats and ensure score capture
         const rawItems = payload.items || [];
         const rawIds = payload.ids || [];
         
@@ -228,7 +228,7 @@ function doPost(
         const normalizedItems = (rawItems.length > 0 ? rawItems : rawIds).map(item => {
           if (typeof item === 'string') return { id: item, score: 0 };
           if (item && typeof item === 'object') {
-             // 🛡️ AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
+             // [GUARD] AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
              const rawVal = item.potentialRawScore !== undefined ? item.potentialRawScore : 
                             (item.score !== undefined ? item.score : (item.rawScore || 0));
              

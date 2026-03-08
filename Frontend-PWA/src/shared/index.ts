@@ -1,4 +1,4 @@
-// UI Components
+// [UI] UI Components
 export { default as Icon } from "./ui/Icon.vue";
 export { default as BaseCard } from "./ui/BaseCard.vue";
 export { default as BaseCardSkeleton } from "./ui/BaseCardSkeleton.vue";

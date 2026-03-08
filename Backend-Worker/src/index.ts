@@ -23,7 +23,7 @@ import fetch from "node-fetch";
 import * as v from "valibot";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import Time from "../../Backend-GAS/Time";
-import { KeyManager } from "./KeyManager.js";
+import { KeyService } from "./KeyService.js";
 import {
   AuditRequestSchema,
   PublicScanRequestSchema,
@@ -73,7 +73,7 @@ const CONFIG: ServerConfig = {
   timeout: parseInt(process.env["WORKER_TIMEOUT_SEC"] ?? "45", 10) * 1000,
   maxRetries: parseInt(process.env["WORKER_RETRIES"] ?? "2", 10),
   port: parseInt(process.env["PORT"] ?? "8080", 10),
-  apiBase: process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1", // ⚡ DEFAULT TO PROXY
+  apiBase: process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1", // [SYNC] DEFAULT TO PROXY
 } as const;
 
 
@@ -89,7 +89,7 @@ if (rawKeys.length === 0) {
     console.log(`[Worker] Initialized internal pool with ${rawKeys.length} keys.`);
 }
 
-const KEYS = new KeyManager(rawKeys); // EPHEMERAL: intentionally resets on restart
+const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on restart
 
 // ============================================================================
 //  EXPRESS APP SETUP
@@ -110,7 +110,7 @@ app.use((req: Request, res: Response, next: NextFunction): void => {
 });
 
 /**
- * 🔐 AUTHENTICATION MIDDLEWARE
+ * [AUTH] AUTHENTICATION MIDDLEWARE
  *
  * @remarks
  * Validates the REMOTE_WORKER_SECRET for all privileged endpoints.
@@ -183,13 +183,13 @@ async function fetchWithRotatedRetries<T = unknown>(
   url: string,
   baseOpts: Record<string, any>,
   retries: number = CONFIG.maxRetries,
-  keyManager?: KeyManager,
+  keyService?: KeyService,
 ): Promise<FetchResult<T>> {
   let attempt = 0;
   let lastErr: Error | null = null;
 
-  // Use provided KeyManager (for batches) or fallback to global singleton
-  const manager = keyManager ?? KEYS;
+  // Use provided KeyService (for batches) or fallback to global singleton
+  const manager = keyService ?? KEYS;
 
   while (attempt <= retries) {
     const currentKey = manager.getHealthyKey();
@@ -271,8 +271,8 @@ async function processBatch<T = unknown>(
   const results: FetchResult<T>[] = new Array(urls.length);
   let idx = 0;
 
-  // Shared KeyManager for the entire batch to preserve health state across requests
-  const batchManager = apiKeys.length > 0 ? new KeyManager(apiKeys) : undefined;
+  // Shared KeyService for the entire batch to preserve health state across requests
+  const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : undefined;
 
   async function worker(): Promise<void> {
     while (true) {
@@ -297,7 +297,7 @@ async function processBatch<T = unknown>(
 
           if (profileResult.code === 200 && typeof profileResult.content === "object" && profileResult.content !== null) {
             // THREAT: Malformed player profile causing downstream scoring errors.
-            // Target B [1]: Enforce strict validation boundary for Royale API data.
+            // Target B [1]: Enforce [VALIDATION] boundary for Royale API data.
             const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
             if (!profileValidation.success) {
               results[i] = { code: 502, content: "Invalid player profile format" };
@@ -319,7 +319,7 @@ async function processBatch<T = unknown>(
             let hasWar = false;
             if (logsResult.code === 200 && Array.isArray(logsResult.content)) {
               // THREAT: Malformed battle logs causing incorrect war activity detection.
-              // Target B [1]: Enforce strict validation boundary for Royale API data.
+              // Target B [1]: Enforce [VALIDATION] boundary for Royale API data.
               const logsValidation = v.safeParse(RoyaleBattleLogResponseSchema, logsResult.content);
               if (logsValidation.success) {
                 hasWar = logsValidation.output.some((b) =>
@@ -432,8 +432,8 @@ async function processScanBatch(
   let idx = 0;
   let traceCaptured = false;
 
-  // Shared KeyManager for the entire batch to preserve health state across requests
-  const batchManager = apiKeys.length > 0 ? new KeyManager(apiKeys) : undefined;
+  // Shared KeyService for the entire batch to preserve health state across requests
+  const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : undefined;
 
   async function worker(): Promise<void> {
     while (true) {
@@ -586,7 +586,7 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
  *
  * @remarks
  * Validates an array of API keys provided in the request body.
- * Updates the global KeyManager pool with the results of the audit.
+ * Updates the global KeyService pool with the results of the audit.
  */
 app.post(
   "/audit",
@@ -595,7 +595,7 @@ app.post(
     res: Response,
   ): Promise<void> => {
     // THREAT: Malformed input causing downstream runtime failures.
-    // Rationale: Strict validation at the entry point ensures only valid data reaches the KeyManager.
+    // Rationale: Strict validation at the entry point ensures only valid data reaches the KeyService.
     const result = v.safeParse(AuditRequestSchema, req.body);
     if (!result.success) {
       res.status(400).json({ error: "Invalid request body", details: result.issues });

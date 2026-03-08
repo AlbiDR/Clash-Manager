@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useHaptics } from "@core/services/useHaptics";
+import { useHaptics } from "../../core/services/useHaptics";
 import { ref, computed } from "vue";
 const props = defineProps<{
   count: number;
@@ -26,13 +26,13 @@ const valuePicker = ref<HTMLElement | null>(null);
 const filterMode = ref<"ge" | "le">("ge");
 const filterValue = ref(75);
 
-// Pre-calculated options for the "clinical-OCD" horizontal picker
+// Pre-calculated options for selection
 const thresholds = [15, 30, 45, 60, 75, 90, 100];
 
 function toggleMode() {
   filterMode.value = filterMode.value === "ge" ? "le" : "ge";
   haptics.tap();
-  // ⚡ AUTO-APPLY: Immediately trigger selection when mode is toggled
+  // [PERF] AUTO-APPLY: Immediately trigger selection when mode is toggled
   emit("select-score", filterValue.value, filterMode.value);
 }
 
@@ -40,7 +40,7 @@ function selectValue(val: number) {
   if (filterValue.value === val) return;
   filterValue.value = val;
   haptics.medium();
-  // ⚡ AUTO-APPLY: Immediately trigger selection when a threshold is clicked
+  // [PERF] AUTO-APPLY: Immediately trigger selection when a threshold is clicked
   emit("select-score", filterValue.value, filterMode.value);
 }
 
@@ -64,8 +64,8 @@ function toggleExpand() {
 <template>
   <div
     class="selection-bar animate-pop"
-    :class="{ 'is-active': isActive, 'is-loading': loading }"
-    :aria-busy="loading ? 'true' : 'false'"
+    :class="{ 'is-active': isActive, 'is-loading': props.loading }"
+    :aria-busy="props.loading ? 'true' : 'false'"
   >
     <!-- Left Cluster: Strategy & Selection Tools -->
     <div class="sel-group strategy">
@@ -110,7 +110,7 @@ function toggleExpand() {
       <!-- Count Bubble (Active Only) -->
       <Transition name="status-pop">
         <div v-if="isActive" class="count-pill">
-          {{ count }}/{{ totalCount }}
+          {{ props.count }}/{{ props.totalCount }}
         </div>
       </Transition>
 
@@ -136,7 +136,7 @@ function toggleExpand() {
     </div>
 
     <!-- Skeleton Overlays -->
-    <div v-if="loading" class="loading-overlay">
+    <div v-if="props.loading" class="loading-overlay">
       <div class="sk-line skeleton-anim"></div>
     </div>
   </div>
@@ -234,7 +234,7 @@ function toggleExpand() {
   transform: scale(0.92);
 }
 
-/* 🧪 DYNAMIC SCORE PILL GROUP */
+/* DYNAMIC SCORE PILL GROUP */
 .score-pill-group {
   display: flex;
   align-items: center;

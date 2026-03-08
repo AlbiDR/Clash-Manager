@@ -1,7 +1,7 @@
 import { ref } from "vue";
 
 /**
- * 👆 USE LONG PRESS
+ * [UX] USE LONG PRESS
  * Provides a standardized long-press gesture with built-in haptic feedback.
  */
 export function useLongPress(callback: () => void, duration = 400) {

@@ -6,13 +6,12 @@ import SelectionBar from "./SelectionBar.vue";
 import {
   useHaptics,
   useUiCoordinator,
-  useShowcaseMode
-} from "@core";
-import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
-import { ref, watch, onUnmounted, computed, nextTick, toRef } from "vue";
+  useShowcaseMode,
+} from "../../core";
+import { ref, watch, onUnmounted, nextTick, toRef } from "vue";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
-import FloatingDock from "./FloatingDock.vue";
+
 const props = defineProps<{
   title: string;
   status: { type: "updated" | "error" | "loading" | "ready"; text: string };
@@ -62,7 +61,7 @@ const { isPulling, ptrStyle, onTouchStart, onTouchMove, onTouchEnd } =
     onRefresh: () => emit("refresh"),
   });
 
-// 🚀 FAB SYNCHRONIZATION
+// [SYNC] FAB SYNCHRONIZATION
 // We watch the entire fabState object to ensure strict ordering of updates.
 // CRITICAL: We MUST update the content (label, etc.) BEFORE toggling visibility
 // to prevent the "Open" -> "Open 1/N" text jump (twitch).
@@ -85,7 +84,7 @@ watch(
 
       // 2. Toggle Visibility Second (UI)
       // This ensures the FAB is fully hydrated with correct text before appearing.
-      // ⚡ FORCE UPDATE: Use nextTick to ensure the reactive state (step 1)
+      // [PERF] FORCE UPDATE: Use nextTick to ensure the reactive state (step 1)
       // has fully propagated through the system before we flip the visibility switch.
       nextTick(() => {
         setFabVisible(!!state.visible);
@@ -211,7 +210,7 @@ onUnmounted(() => {
 .gpu-contain {
   transform: translateZ(0);
   will-change: transform;
-  /* ⚡ PERFORMANCE: Removed 'paint' to allow shadows to bleed, kept layout */
+  /* [PERF] PERFORMANCE: Removed 'paint' to allow shadows to bleed, kept layout */
   contain: layout;
 }
 .ptr-indicator {

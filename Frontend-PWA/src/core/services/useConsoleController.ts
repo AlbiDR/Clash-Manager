@@ -101,7 +101,7 @@ export function useConsoleController<T extends { id: string }>(
     refresh: refreshFn,
   } = options;
 
-  // ⚡ SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
+  // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const { isShowcaseMode: isShowcase } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode } = useBlueprintMode();

@@ -31,11 +31,11 @@ const DEFAULT_STATE: ModuleState = {
   notificationQuietMode: false,
 };
 
-// ⚡ PERFORMANCE: Use reactive object for direct property access instead of .value
+// [PERF] PERFORMANCE: Use reactive object for direct property access instead of .value
 const modules = reactive<ModuleState>({ ...DEFAULT_STATE });
 const isInitialized = ref(false);
 
-// ⚡ PERFORMANCE: Singleton persistence watch.
+// [PERF] PERFORMANCE: Singleton persistence watch.
 let watchInitialized = false;
 
 /**
@@ -83,7 +83,7 @@ function mergeStorage(stored: any): ModuleState {
  * - LISTENS to the global `storage` event to synchronize settings across multiple open tabs.
  */
 export function useAppSettings() {
-  // ⚡ LAZY INIT: Initialize singleton persistence watch once.
+  // [PERF] LAZY INIT: Initialize singleton persistence watch once.
   if (!watchInitialized) {
     watch(
       modules,
@@ -91,7 +91,7 @@ export function useAppSettings() {
         try {
           localStorage.setItem(MODULES_KEY, JSON.stringify(toRaw(newVal)));
 
-          // 🛡️ SYNC: Selective sync to IndexedDB for Service Worker
+          // [SYNC] SYNC: Selective sync to IndexedDB for Service Worker
           idb
             .set("cm_notifications_enabled", newVal.experimentalNotifications)
             .catch(() => {});
@@ -134,7 +134,7 @@ export function useAppSettings() {
 
     isInitialized.value = true;
 
-    // 🛡️ SYNC: Ensure SW has access to notification settings via IDB
+    // [SYNC] SYNC: Ensure SW has access to notification settings via IDB
     // We do this once on init and then via the watch
     idb
       .set("cm_notifications_enabled", modules.experimentalNotifications)

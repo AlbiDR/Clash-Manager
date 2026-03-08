@@ -102,7 +102,7 @@ const DatabaseStore = {
       }
     }
 
-    // 🛑 CIRCUIT BREAKER
+    // [GUARD] CIRCUIT BREAKER
     // Ensure we don't wipe the clan due to API or logic anomalies.
     // Threshold is 10 players or > clan size.
     if (tagsToPurge.size > CONFIG.SYSTEM.DB_PRUNE_THRESHOLD) {
