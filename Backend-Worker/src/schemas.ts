@@ -129,30 +129,28 @@ export const RoyaleBattleLogItemSchema = v.object({
 
 export const RoyaleBattleLogResponseSchema = v.array(RoyaleBattleLogItemSchema);
 
-export const RoyaleTournamentMemberSchema = v.object({
+export const RoyaleTournamentMemberSchema = v.looseObject({
   tag: TagSchema,
-  name: v.string(),
+  name: v.fallback(v.nullish(v.string()), "Unknown"),
   // NOTE: Tournament members use `score` (their in-tournament score), NOT
   // `trophies` (global ladder trophies). Using the wrong field causes every
   // member to fail validation and silently yield 0 candidates per batch.
-  score: v.number(),
-  rank: v.optional(v.number()),
-  // NOTE: Clan in tournament context only provides `tag` + `badgeId`.
-  // `name` is NOT returned by the API in this context.
-  clan: v.optional(v.object({
+  score: v.fallback(v.nullish(v.number()), 0),
+  rank: v.nullish(v.number()),
+  // NOTE: Clanless members may return `null` instead of omitting the key.
+  // `nullish` permits both `undefined` and `null`.
+  clan: v.nullish(v.looseObject({
     tag: TagSchema,
-    badgeId: v.optional(v.number()),
+    badgeId: v.nullish(v.number()),
   })),
 });
 
-export const RoyaleTournamentResponseSchema = v.object({
+export const RoyaleTournamentResponseSchema = v.looseObject({
   tag: TagSchema,
-  name: v.string(),
+  name: v.fallback(v.nullish(v.string()), "Unnamed Tournament"),
   // NOTE: The Royale API omits `membersList` entirely when a tournament has
-  // no participants (e.g. finished/empty tournaments). Making it optional with
-  // a default prevents Valibot from rejecting the whole object and silently
-  // yielding 0 candidates across an entire batch.
-  membersList: v.optional(v.array(RoyaleTournamentMemberSchema), []),
+  // no participants, or may return null. Use nullish with a fallback.
+  membersList: v.fallback(v.nullish(v.array(RoyaleTournamentMemberSchema)), []),
 });
 
 export const RoyaleRiverRaceParticipantSchema = v.object({

@@ -497,6 +497,13 @@ async function processScanBatch(
                 rawScore: 0,
               });
             });
+          } else {
+            const rawContent = res.content as any;
+            console.warn(`[WORKER SCAN FAIL] Schema rejected tournament response for tag: ${rawContent?.tag || "Unknown"}`);
+            console.warn(JSON.stringify(validation.issues, null, 2));
+            if (rawContent?.membersList && Array.isArray(rawContent.membersList) && rawContent.membersList.length > 0) {
+              console.warn(`[SAMPLE REJECTED MEMBER]`, JSON.stringify(rawContent.membersList[0], null, 2));
+            }
           }
         }
       } catch (e) {
