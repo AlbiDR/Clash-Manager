@@ -13,7 +13,7 @@ import * as v from "valibot";
 /**
  * Common regex for Clash Royale tags (Player, Clan, Tournament)
  */
-const TAG_REGEX = /^[#]?[0-9A-Z]{3,12}$/;
+const TAG_REGEX = /^[#]?[0-9A-Za-z]{3,12}$/;
 
 /**
  * [VALIDATION] Branded Types Validators
@@ -142,7 +142,11 @@ export const RoyaleTournamentMemberSchema = v.object({
 export const RoyaleTournamentResponseSchema = v.object({
   tag: TagSchema,
   name: v.string(),
-  membersList: v.array(RoyaleTournamentMemberSchema),
+  // NOTE: The Royale API omits `membersList` entirely when a tournament has
+  // no participants (e.g. finished/empty tournaments). Making it optional with
+  // a default prevents Valibot from rejecting the whole object and silently
+  // yielding 0 candidates across an entire batch.
+  membersList: v.optional(v.array(RoyaleTournamentMemberSchema), []),
 });
 
 export const RoyaleRiverRaceParticipantSchema = v.object({
