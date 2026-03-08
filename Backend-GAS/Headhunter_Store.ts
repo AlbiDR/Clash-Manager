@@ -2,6 +2,8 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Types';
+import * as v from 'valibot';
+import { RecruitSchema } from './Validation';
 
 /**
  * ============================================================================
@@ -53,7 +55,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
     rows.forEach((r: any) => {
       const tag = String(r[H.TAG]);
       if (tag) {
-        recruitMap.set(tag, {
+        const payload = {
           tag,
           invited: false,
           name: String(r[H.NAME]),
@@ -65,7 +67,10 @@ const HeadhunterStore: HeadhunterStoreContract = {
           rawScore: Number(r[H.RAW_SCORE]),
           potentialScore: Number(r[H.POTENTIAL_SCORE]),
           lastScan: r[H.LAST_SCAN] ? new Date(r[H.LAST_SCAN]).getTime() : 0,
-        });
+        };
+
+        const result = v.safeParse(RecruitSchema, payload);
+        if (result.success) recruitMap.set(tag, result.output as Recruit);
       }
     });
     return recruitMap;
@@ -263,14 +268,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
 
     data.forEach((r: any) => {
       const tag = String(r[INDEX_TAG]).trim().toUpperCase();
-      // Safety: Check if row has enough columns, else undefined
       const foundDate = Registry.Services.Time.parseFlexibleDate(r[7]);
       
-      // Expiry check
       if (now - foundDate.getTime() > expiryMs) return;
 
       if (tag) {
-        map.set(tag, {
+        const payload = {
           tag,
           name: String(r[1]),
           trophies: Number(r[2]),
@@ -281,9 +284,11 @@ const HeadhunterStore: HeadhunterStoreContract = {
           foundDate: foundDate,
           invited: false,
           source: r[8] || "TOURNAMENT",
-          // Safety: Access index only if it exists in this row
           lastScan: (r.length > INDEX_LAST_SCAN && r[INDEX_LAST_SCAN]) ? new Date(r[INDEX_LAST_SCAN]).getTime() : 0 
-        });
+        };
+
+        const result = v.safeParse(RecruitSchema, payload);
+        if (result.success) map.set(tag, result.output as Recruit);
       }
     });
 

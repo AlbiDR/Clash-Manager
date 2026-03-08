@@ -2,6 +2,8 @@ import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import { ClanMemberSnapshot, DatabaseUpdateResult } from './Database_Types';
 import DatabaseView from './Database_View';
+import * as v from 'valibot';
+import { ClanMemberSnapshotSchema } from './Validation';
 
 declare var Sheets: any;
 declare var Utilities: any;
@@ -199,8 +201,12 @@ const DatabaseStore = {
 
     // 3. Process API Data
     activeMembers.forEach((m) => {
-      const normalizedTag = m.tag.toUpperCase().trim();
-      const rawFame = warFameMap.get(m.tag) || 0;
+      const result = v.safeParse(ClanMemberSnapshotSchema, m);
+      if (!result.success) return;
+
+      const data = result.output;
+      const normalizedTag = data.tag.toUpperCase().trim();
+      const rawFame = warFameMap.get(data.tag) || 0;
       
       const warFame = isWarDay 
           ? Registry.Services.Scoring.toStrictValue(rawFame) 
@@ -212,13 +218,13 @@ const DatabaseStore = {
 
       const rowData = [
         Registry.Services.Time.formatDate(today),
-        m.tag,
-        m.name,
-        m.role,
-        Registry.Services.Scoring.toStrictValue(m.trophies),
-        Registry.Services.Scoring.toStrictValue(m.donations),
-        Registry.Services.Scoring.toStrictValue(m.donationsReceived),
-        Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(m.lastSeen)),
+        data.tag,
+        data.name,
+        data.role,
+        Registry.Services.Scoring.toStrictValue(data.trophies),
+        Registry.Services.Scoring.toStrictValue(data.donations),
+        Registry.Services.Scoring.toStrictValue(data.donationsReceived),
+        Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(data.lastSeen)),
         warFame,
         battleCredit,
       ];

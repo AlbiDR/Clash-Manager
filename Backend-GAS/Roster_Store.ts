@@ -1,6 +1,8 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import { ClanMemberResult, WarLogItem, RaceParticipant, PlayerResult } from './Roster_Types';
+import * as v from 'valibot';
+import { ClanMemberSnapshotSchema } from './Validation';
 
 declare var SpreadsheetApp: any;
 
@@ -20,6 +22,7 @@ const RosterStore = {
         if (row.length > L.RAW_SCORE) {
           const rawTag = String(row[L.TAG]).trim();
           const score = row[L.RAW_SCORE];
+          
           if (rawTag) {
             const cleanKey = rawTag.replace("#", "").trim().toLowerCase();
             const scoreVal = Number(score);
@@ -101,26 +104,38 @@ const RosterStore = {
       const S_DB = CONFIG.SCHEMA.DB;
 
       dbValues.forEach((row: any) => {
-        const tag = String(row[S_DB.TAG]);
-        const dateVal = row[S_DB.DATE];
-        const date = Registry.Services.Time.parseFlexibleDate(dateVal);
-        const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
+        const payload = {
+          tag: String(row[S_DB.TAG]),
+          name: String(row[S_DB.NAME]),
+          role: String(row[S_DB.ROLE]),
+          trophies: Number(row[S_DB.TROPHIES]),
+          donations: Number(row[S_DB.DONATIONS]),
+          donationsReceived: Number(row[S_DB.DONATIONS_RECEIVED]),
+          lastSeen: String(row[S_DB.LAST_SEEN])
+        };
+
+        const result = v.safeParse(ClanMemberSnapshotSchema, payload);
+        if (!result.success) return;
+
+        const data = result.output;
+        const date = Registry.Services.Time.parseFlexibleDate(data.lastSeen);
+        const donGiven = data.donations;
         const rawWarFame = row[S_DB.WAR_FAME];
         const weekId = Registry.Services.Time.calculateWarWeekId(date);
 
-        if (!intelligence.has(tag)) {
-          intelligence.set(tag, {
+        if (!intelligence.has(data.tag)) {
+          intelligence.set(data.tag, {
             firstSeen: date,
             weeklyMax: new Map(),
             battleWeeks: new Set(),
             totalBattleCredits: 0,
             discoveredBattleDays: new Set(),
             dailyBattleCredits: new Map(),
-            fameHistory: new Map() // NEW: Historical Fame Tracking
+            fameHistory: new Map()
           });
         }
 
-        const h = intelligence.get(tag)!;
+        const h = intelligence.get(data.tag)!;
         if (date < h.firstSeen) h.firstSeen = date;
         const currentMax = h.weeklyMax.get(weekId) || 0;
         if (donGiven > currentMax) h.weeklyMax.set(weekId, donGiven);
@@ -130,7 +145,6 @@ const RosterStore = {
           h.battleWeeks.add(weekId);
           h.discoveredBattleDays.add(Registry.Services.Time.formatShortDate(date));
           
-          // NEW: Collect max fame per week from DB
           const currentFameMax = h.fameHistory.get(weekId) || 0;
           if (fameVal > currentFameMax) h.fameHistory.set(weekId, fameVal);
         }

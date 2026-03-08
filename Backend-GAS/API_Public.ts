@@ -164,10 +164,11 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
       case "getmembers":
         return respond(Registry.Services.WebappController.getMembers());
 
-      case "getplayerprofile":
-        const tag = String(e?.parameter?.tag || "").trim();
-        if (!tag) return respond(null, "MISSING_TAG", "Parameter 'tag' is required.");
-        return respond(Registry.Services.WebappController.getPlayerProfile(tag));
+      case "getplayerprofile": {
+        const result = v.safeParse(PlayerProfilePayloadSchema, { ...e?.parameter, action });
+        if (!result.success) return respond(null, "VALIDATION_ERROR", "Invalid tag provided.");
+        return respond(Registry.Services.WebappController.getPlayerProfile(result.output.tag));
+      }
 
       case "getwarlog":
         return respond(Registry.Services.WebappController.retrieveWarLogEntries());

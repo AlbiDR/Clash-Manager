@@ -60,6 +60,51 @@ export const GenericPayloadSchema = v.objectWithRest(
   v.any()
 );
 
+/**
+ * INTERNAL SCHEMAS (L2 Hardening)
+ */
+
+export const ClanMemberSnapshotSchema = v.object({
+  tag: v.string(),
+  name: v.string(),
+  role: v.string(),
+  trophies: v.number(),
+  donations: v.number(),
+  donationsReceived: v.number(),
+  lastSeen: v.string()
+});
+
+export const RecruitSchema = v.object({
+  tag: v.string(),
+  name: v.string(),
+  trophies: v.number(),
+  donations: v.number(),
+  cards: v.number(),
+  war: v.number(),
+  foundDate: v.any(), // Date or ISO string
+  invited: v.boolean(),
+  rawScore: v.number(),
+  potentialScore: v.optional(v.number()),
+  lastScan: v.optional(v.number()),
+  source: v.optional(v.union([v.literal("TOURNAMENT"), v.literal("SHADOW")]))
+});
+
+export const PlayerResultSchema = v.object({
+  tag: v.string(),
+  name: v.string(),
+  role: v.string(),
+  trophies: v.number(),
+  daysTracked: v.number(),
+  avgDailyDonations: v.number(),
+  totalDonations: v.number(),
+  lastSeen: v.any(),
+  warRateVal: v.number(),
+  avgWarFame: v.number(),
+  historyString: v.string(),
+  scores: v.object({ raw: v.number(), perf: v.number() }),
+  cleanKey: v.string()
+});
+
 (function(scope: any) {
   Object.assign(scope, { VER_VALIDATION });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
