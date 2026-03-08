@@ -115,7 +115,8 @@ const RosterStore = {
             battleWeeks: new Set(),
             totalBattleCredits: 0,
             discoveredBattleDays: new Set(),
-            dailyBattleCredits: new Map()
+            dailyBattleCredits: new Map(),
+            fameHistory: new Map() // NEW: Historical Fame Tracking
           });
         }
 
@@ -128,6 +129,10 @@ const RosterStore = {
         if (!isNaN(fameVal)) {
           h.battleWeeks.add(weekId);
           h.discoveredBattleDays.add(Registry.Services.Time.formatShortDate(date));
+          
+          // NEW: Collect max fame per week from DB
+          const currentFameMax = h.fameHistory.get(weekId) || 0;
+          if (fameVal > currentFameMax) h.fameHistory.set(weekId, fameVal);
         }
 
         const rawBattleCredits = row[S_DB.BATTLE_CREDITS];
