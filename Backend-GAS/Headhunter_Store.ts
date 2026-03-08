@@ -52,21 +52,21 @@ const HeadhunterStore: HeadhunterStoreContract = {
       .getValues();
 
     const recruitMap = new Map<string, Recruit>();
-    rows.forEach((r: any) => {
-      const tag = String(r[H.TAG]);
+    rows.forEach((recruitRow: any) => {
+      const tag = String(recruitRow[H.TAG]);
       if (tag) {
         const payload = {
           tag,
           invited: false,
-          name: String(r[H.NAME]),
-          trophies: Number(r[H.TROPHIES]),
-          donations: Number(r[H.DONATIONS]),
-          cards: Number(r[H.CARDS]),
-          war: Number(r[H.WAR_WINS]),
-          foundDate: Registry.Services.Time.parseFlexibleDate(r[H.FOUND_DATE]),
-          rawScore: Number(r[H.RAW_SCORE]),
-          potentialScore: Number(r[H.POTENTIAL_SCORE]),
-          lastScan: r[H.LAST_SCAN] ? new Date(r[H.LAST_SCAN]).getTime() : 0,
+          name: String(recruitRow[H.NAME]),
+          trophies: Number(recruitRow[H.TROPHIES]),
+          donations: Number(recruitRow[H.DONATIONS]),
+          cards: Number(recruitRow[H.CARDS]),
+          war: Number(recruitRow[H.WAR_WINS]),
+          foundDate: Registry.Services.Time.parseFlexibleDate(recruitRow[H.FOUND_DATE]),
+          rawScore: Number(recruitRow[H.RAW_SCORE]),
+          potentialScore: Number(recruitRow[H.POTENTIAL_SCORE]),
+          lastScan: recruitRow[H.LAST_SCAN] ? new Date(recruitRow[H.LAST_SCAN]).getTime() : 0,
         };
 
         const result = v.safeParse(RecruitSchema, payload);
@@ -104,11 +104,11 @@ const HeadhunterStore: HeadhunterStoreContract = {
     // A. Load existing Blacklist (Skip Header row 1)
     if (blSheet.getLastRow() > 1) {
       const rawData = blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).getValues();
-      rawData.forEach((row: any) => {
-        const tag = String(row[0]).trim().toUpperCase();
+      rawData.forEach((blacklistRow: any) => {
+        const tag = String(blacklistRow[0]).trim().toUpperCase();
         if (!tag) return;
-        const expiry = Number(row[1]) || 0;
-        const score = Number(row[2]) || 0;
+        const expiry = Number(blacklistRow[1]) || 0;
+        const score = Number(blacklistRow[2]) || 0;
 
         if (expiry > now) {
           if (entryMap.has(tag)) {
@@ -133,12 +133,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
       // SCHEMA.HH.TAG is 0. So it gets columns B to ...
       
       const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
-      rawMain.forEach((r: any, i: number) => {
-        const tag = String(r[H.TAG]).trim().toUpperCase();
+      rawMain.forEach((mainSheetRow: any, i: number) => {
+        const tag = String(mainSheetRow[H.TAG]).trim().toUpperCase();
         if (tag) {
           mainDataMap.set(tag, { 
             row: startRow + i, 
-            score: Number(r[H.RAW_SCORE]) || 0 
+            score: Number(mainSheetRow[H.RAW_SCORE]) || 0 
           });
         }
       });
@@ -184,12 +184,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
       // FIX: Deduplicate read. Use the H.INVITED index within the already-loaded rawMain.
       const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
 
-      rawMain.forEach((r: any, i: number) => {
-        const tag = String(r[H.TAG]).trim().toUpperCase();
+      rawMain.forEach((mainSheetRow: any, i: number) => {
+        const tag = String(mainSheetRow[H.TAG]).trim().toUpperCase();
         if (!tag) return;
 
-        const isInvited = r[H.INVITED] === true || String(r[H.INVITED]).toUpperCase() === "TRUE";
-        const score = Number(r[H.RAW_SCORE]) || 0;
+        const isInvited = mainSheetRow[H.INVITED] === true || String(mainSheetRow[H.INVITED]).toUpperCase() === "TRUE";
+        const score = Number(mainSheetRow[H.RAW_SCORE]) || 0;
         const rowNum = startRow + i;
 
         if (isInvited) {
@@ -213,7 +213,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
       blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).clearContent();
     }
     if (validEntries.length > 0) {
-      const output = validEntries.map((e) => [e.t, e.e, e.s]);
+      const output = validEntries.map((blacklistEntry) => [blacklistEntry.t, blacklistEntry.e, blacklistEntry.s]);
       blSheet.getRange(2, 1, output.length, 3).setValues(output);
     }
 
@@ -245,8 +245,8 @@ const HeadhunterStore: HeadhunterStoreContract = {
     }
 
     return {
-      ids: new Set(validEntries.map((e) => e.t)),
-      entries: validEntries.map((e) => ({ rawScore: e.s })),
+      ids: new Set(validEntries.map((blacklistEntry) => blacklistEntry.t)),
+      entries: validEntries.map((blacklistEntry) => ({ rawScore: blacklistEntry.s })),
     };
   },
 
@@ -266,25 +266,25 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const INDEX_TAG = 0;
     const INDEX_LAST_SCAN = 9; // Expected index for Column J
 
-    data.forEach((r: any) => {
-      const tag = String(r[INDEX_TAG]).trim().toUpperCase();
-      const foundDate = Registry.Services.Time.parseFlexibleDate(r[7]);
+    data.forEach((queueRow: any) => {
+      const tag = String(queueRow[INDEX_TAG]).trim().toUpperCase();
+      const foundDate = Registry.Services.Time.parseFlexibleDate(queueRow[7]);
       
       if (now - foundDate.getTime() > expiryMs) return;
 
       if (tag) {
         const payload = {
           tag,
-          name: String(r[1]),
-          trophies: Number(r[2]),
-          donations: Number(r[3]),
-          cards: Number(r[4]),
-          war: Number(r[5]),
-          rawScore: Number(r[6]),
+          name: String(queueRow[1]),
+          trophies: Number(queueRow[2]),
+          donations: Number(queueRow[3]),
+          cards: Number(queueRow[4]),
+          war: Number(queueRow[5]),
+          rawScore: Number(queueRow[6]),
           foundDate: foundDate,
           invited: false,
-          source: r[8] || "TOURNAMENT",
-          lastScan: (r.length > INDEX_LAST_SCAN && r[INDEX_LAST_SCAN]) ? new Date(r[INDEX_LAST_SCAN]).getTime() : 0 
+          source: queueRow[8] || "TOURNAMENT",
+          lastScan: (queueRow.length > INDEX_LAST_SCAN && queueRow[INDEX_LAST_SCAN]) ? new Date(queueRow[INDEX_LAST_SCAN]).getTime() : 0 
         };
 
         const result = v.safeParse(RecruitSchema, payload);
@@ -323,18 +323,18 @@ const HeadhunterStore: HeadhunterStoreContract = {
     // This allows us to overwrite old data and set new data in ONE ATOMIC CALL.
     const values = new Array(maxQueue).fill(0).map(() => new Array(10).fill(""));
     
-    toSave.forEach((r, i) => {
+    toSave.forEach((recruitObject, i) => {
       values[i] = [
-        r.tag,
-        r.name,
-        r.trophies,
-        r.donations,
-        r.cards,
-        r.war,
-        r.rawScore,
-        Registry.Services.Time.formatDate(r.foundDate),
-        r.source || "TOURNAMENT",
-        r.lastScan ? Registry.Services.Time.formatDatetime(new Date(r.lastScan)) : ""
+        recruitObject.tag,
+        recruitObject.name,
+        recruitObject.trophies,
+        recruitObject.donations,
+        recruitObject.cards,
+        recruitObject.war,
+        recruitObject.rawScore,
+        Registry.Services.Time.formatDate(recruitObject.foundDate),
+        recruitObject.source || "TOURNAMENT",
+        recruitObject.lastScan ? Registry.Services.Time.formatDatetime(new Date(recruitObject.lastScan)) : ""
       ];
     });
 
