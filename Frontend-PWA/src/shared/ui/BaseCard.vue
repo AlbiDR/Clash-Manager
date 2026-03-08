@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useCardMechanics } from "../composables/useCardMechanics";
-import { computed } from "vue";
+
 const props = defineProps<{
   id: string;
   expanded: boolean;
@@ -33,9 +33,9 @@ const {
   onSelect: () => emit("toggle-select"),
 });
 
-function handleScoreClick(e: Event) {
+function handleScoreClick(e: MouseEvent | TouchEvent) {
   internalScoreClick(e);
-  emit("score-click", e);
+  emit("score-click", e as Event);
 }
 </script>
 
@@ -103,7 +103,7 @@ function handleScoreClick(e: Event) {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
-  /* ⚡ OPTIMIZED: Removed 'all', strictly animates composited properties + colors */
+  /* [PERF] OPTIMIZED: Removed 'all', strictly animates composited properties + colors */
   transition:
     transform 0.2s var(--sys-motion-spring),
     background-color 0.2s ease,
@@ -113,7 +113,7 @@ function handleScoreClick(e: Event) {
   box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   will-change: transform, box-shadow, margin;
 
-  /* ⚡ PERFORMANCE: Removed 'paint' containment to allow shadow/scale bleed */
+  /* [PERF] PERFORMANCE: Removed 'paint' containment to allow shadow/scale bleed */
   contain: layout style;
   content-visibility: auto;
 }
@@ -228,7 +228,7 @@ function handleScoreClick(e: Event) {
   position: relative;
   width: 48px;
   height: 48px;
-  /* 🪄 SEMANTIC CONTAINER SCALING:
+  /* [LOGIC] SEMANTIC CONTAINER SCALING:
      Using primary-container ensures mathematical contrast 
      coherence across themes:
      - Dark Mode: Surface -> Deep Blue (Light text remains legible)
@@ -258,7 +258,7 @@ function handleScoreClick(e: Event) {
   z-index: 10;
 }
 
-/* 🎨 UNIFORM COHERENCE (Semantic Contrast) */
+/* [UI] UNIFORM COHERENCE (Semantic Contrast) */
 .stat-pod :deep(.stat-score) {
   color: var(--sys-color-on-surface) !important;
   opacity: 0.95;
@@ -300,7 +300,7 @@ function handleScoreClick(e: Event) {
   inset: -4px;
 }
 
-/* ⚡ SHARED CARD STYLES (Deduplicated) */
+/* [PERF] SHARED CARD STYLES (Deduplicated) */
 :deep(.player-name) {
   font-size: 16px;
   font-weight: 850;

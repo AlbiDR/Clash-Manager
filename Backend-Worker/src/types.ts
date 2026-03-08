@@ -1,13 +1,13 @@
 /**
  * ============================================================================
- * 📘 TYPE DEFINITIONS: Backend Worker
+ * [TYPES] TYPE DEFINITIONS: Backend Worker
  * ----------------------------------------------------------------------------
  * Comprehensive TypeScript interfaces and types for the Clash Manager Worker
  * ============================================================================
  */
 
 // ============================================================================
-// 🏷️ BRANDED TYPES (Compile-time safety for string validation)
+// [VALIDATION] BRANDED TYPES (Compile-time safety for string validation)
 // ============================================================================
 
 export type PlayerTag = string & { readonly __brand: "PlayerTag" };
@@ -16,7 +16,7 @@ export type TournamentTag = string & { readonly __brand: "TournamentTag" };
 export type WarWeekId = string & { readonly __brand: "WarWeekId" };
 
 // ============================================================================
-// 🌐 CLASH ROYALE API TYPES
+// [API] CLASH ROYALE API TYPES
 // ============================================================================
 
 export interface ClashRoyalePlayer {
@@ -110,7 +110,7 @@ export interface RiverRaceLog {
 }
 
 // ============================================================================
-// 📦 FETCH & RESPONSE TYPES
+// [SYNC] FETCH & RESPONSE TYPES
 // ============================================================================
 
 export interface FetchResult<T = unknown> {
@@ -125,7 +125,7 @@ export interface ApiResponse<T> {
 }
 
 // ============================================================================
-// 🎯 SCORING & RECRUITMENT TYPES
+// [LOGIC] SCORING & RECRUITMENT TYPES
 // ============================================================================
 
 export interface ScoringWeights {
@@ -153,7 +153,7 @@ export interface ClanContext {
 }
 
 // ============================================================================
-// 📨 REQUEST BODY TYPES
+// [SYNC] REQUEST BODY TYPES
 // ============================================================================
 
 export interface FetchRequest {
@@ -204,7 +204,7 @@ export interface SubscriptionRequest {
 }
 
 // ============================================================================
-// ⚙️ SERVER CONFIGURATION
+// [CONFIG] SERVER CONFIGURATION
 // ============================================================================
 
 export interface ServerConfig {
@@ -212,7 +212,7 @@ export interface ServerConfig {
   readonly timeout: number;
   readonly maxRetries: number;
   readonly port: number;
-  readonly apiBase: string; // ⚡ NEW: API Base URL
+  readonly apiBase: string; // [SYNC] NEW: API Base URL
   readonly secret?: string;
 }
 
@@ -223,7 +223,7 @@ export interface ApiKeyAuditResult {
 }
 
 // ============================================================================
-// 🛠️ UTILITY TYPES
+// [UTIL] UTILITY TYPES
 // ============================================================================
 
 export type Mutable<T> = {

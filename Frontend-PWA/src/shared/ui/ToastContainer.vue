@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Toast from "./Toast.vue";
-import { useUiCoordinator, useToast } from "@core";
+import { useUiCoordinator, useToast } from "../../core";
 import { computed } from "vue";
 const { toasts, remove, triggerAction } = useToast();
 const { toastOffset } = useUiCoordinator();
@@ -45,7 +45,7 @@ const containerStyle = computed(() => ({
   z-index: 1000;
   pointer-events: none; /* Let clicks pass through around toasts */
 
-  /* ⚡ PERF: Animate transform only */
+  /* [PERF] PERF: Animate transform only */
   transition: transform 0.4s var(--sys-motion-spring);
   will-change: transform;
 }

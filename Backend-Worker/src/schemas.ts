@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * 🛡️ VALIDATION SCHEMAS: Backend Worker
+ * [VALIDATION] SCHEMAS: Backend Worker
  * ----------------------------------------------------------------------------
  * Valibot schemas for enforcing runtime integrity at the Layer 1 boundary.
  * Rationale: Every external boundary is a potential entry point for hostile
@@ -16,7 +16,7 @@ import * as v from "valibot";
 const TAG_REGEX = /^[#]?[0-9A-Z]{3,12}$/;
 
 /**
- * 🏷️ Branded Types Validators
+ * [VALIDATION] Branded Types Validators
  */
 export const TagSchema = v.pipe(
   v.string(),
@@ -31,7 +31,7 @@ export const ScoringWeightsSchema = v.object({
 });
 
 /**
- * 📨 REQUEST SCHEMAS
+ * [SYNC] REQUEST SCHEMAS
  */
 
 export const AuditRequestSchema = v.object({
@@ -39,7 +39,7 @@ export const AuditRequestSchema = v.object({
 });
 
 /**
- * 🛡️ VALIDATION BOUNDARY: Prophet Intelligence
+ * [GUARD] VALIDATION BOUNDARY: Prophet Intelligence
  * Ensures structural integrity for incoming heritage data.
  */
 export const ProphetIntelSchema = v.object({
@@ -92,7 +92,7 @@ export const SubscriptionRequestSchema = v.object({
 });
 
 /**
- * 🛡️ VALIDATION BOUNDARY: Royale API Response Schemas
+ * [GUARD] VALIDATION BOUNDARY: Royale API Response Schemas
  * Used to validate upstream data before it enters the processing pipeline.
  */
 export const RoyaleClanMemberSchema = v.object({

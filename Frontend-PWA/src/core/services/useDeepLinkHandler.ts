@@ -2,7 +2,7 @@ import { ref, nextTick } from "vue";
 import { useRoute } from "vue-router";
 
 /**
- * 🔗 USE DEEP LINK HANDLER
+ * [UTIL] USE DEEP LINK HANDLER
  * Manages item expansion and auto-scroll based on URL query parameters.
  */
 export function useDeepLinkHandler(domIdPrefix: string) {

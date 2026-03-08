@@ -32,7 +32,7 @@ if (!listenersAttached && typeof window !== "undefined") {
 }
 
 /**
- * 🌐 USE CONNECTION STATUS
+ * [NW] USE CONNECTION STATUS
  * Unifies physical network status (navigator.onLine) and logical API status.
  * Provides a single source of truth for all connectivity-related UI.
  */

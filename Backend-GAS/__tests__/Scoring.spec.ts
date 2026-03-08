@@ -4,7 +4,7 @@ import Scoring from '../Scoring';
 
 describe('Scoring Heritage Protocol', () => {
   it('should apply Heritage Floor (Potential/5) to Performance Score', () => {
-    // ⚔️ Scenario: A "Perfect Recruit" fresh joiner
+    // [LOGIC] Scenario: A "Perfect Recruit" fresh joiner
     // Trophies: 9000
     // WarDayWins: 100
     // Internal Stats: 0 Fame, 0 Donations
@@ -77,7 +77,7 @@ describe('Scoring Heritage Protocol', () => {
     expect(result.perf).toBe(900);
   });
   it('should apply Recent War Activity bonus (500 points potential)', () => {
-    // ⚔️ Scenario: A recruit who has fought recently according to Prophet log
+    // [LOGIC] Scenario: A recruit who has fought recently according to Prophet log
     // Trophies: 9000 (900 raw)
     // Wins: 0 (0 potential)
     // Recent War: True (500 bonus * 20 weight = 10,000 potential)

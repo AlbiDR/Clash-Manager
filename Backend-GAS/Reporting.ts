@@ -40,7 +40,7 @@ var Reporting: ReportingContract = {
     output += lines.map(l => {
       const trimmed = l.trim();
       // Use significant whitespace (empty line) as a divider
-      if (trimmed === "─" || trimmed === "-" || trimmed === "=") {
+      if (trimmed === "-" || trimmed === "-" || trimmed === "=") {
         return "";
       }
       return `  ${l}`; 
