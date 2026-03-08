@@ -353,8 +353,6 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
   z-index: 1;
 }
 
-
-
 :deep(.btn-action) {
   flex: 1;
   height: 44px;
