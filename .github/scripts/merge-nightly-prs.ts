@@ -19,7 +19,7 @@ const CONFIG = {
   targetBranch: "Nightly",
   allowedAuthors: ["google-labs-jules", "AlbiDR"],
   token: process.env.GITHUB_TOKEN || "",
-  changelogPath: path.join(".nightly", "CHANGELOG.md"),
+  changelogPath: path.join(".github", "nightly", "CHANGELOG.md"),
 };
 
 interface GitHubPR {
