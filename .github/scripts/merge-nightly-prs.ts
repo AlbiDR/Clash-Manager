@@ -178,8 +178,8 @@ async function run() {
       console.log(`🚀 Processing PR #${pr.number}: ${pr.title}`);
 
       try {
-        // Fetch full details to check for draft status
-        const details: GitHubPR = await githubApi(
+        // Fetch full details to check for draft status and mergeability
+        let details: GitHubPR & { mergeable?: boolean | null, mergeable_state?: string } = await githubApi(
           `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`,
         );
 
@@ -189,11 +189,26 @@ async function run() {
           );
           try {
             await markReadyForReview(pr.node_id);
+            // Refresh details after undrafting
+            details = await githubApi(`/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`);
           } catch (e: any) {
             console.warn(
               `⚠️ Draft conversion failed for PR #${pr.number}: ${e.message}`,
             );
           }
+        }
+
+        // Poll for mergeability resolution (GitHub calculates this asynchronously)
+        let pollCount = 0;
+        while (details.mergeable === null && pollCount < 5) {
+          console.log(`⏳ Waiting for GitHub to calculate mergeability for PR #${pr.number}...`);
+          await new Promise((r) => setTimeout(r, 4000));
+          details = await githubApi(`/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`);
+          pollCount++;
+        }
+
+        if (details.mergeable === false) {
+          throw new Error(`PR has hard merge conflicts (State: ${details.mergeable_state || 'unknown'}). Cannot auto-merge.`);
         }
 
         // 3. Merge Logic with Exponential Backoff
