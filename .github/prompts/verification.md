@@ -108,7 +108,7 @@ You are the **Second Mover** in the 4-stage Nightly cycle:
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
 
 * **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. Do not ask for clarification. If a test cannot be written without modifying application code (which is forbidden), document the constraint in the PR description and push — do not halt execution.
-* **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow.
+* **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow. **CRITICAL: You MUST explicitly parameterize the PR creation tool/API to set the `base` (or target) branch to `Nightly`. If you don't explicitly declare it, it will default to `Stable` and break the automated merge pipeline.**
 * **[3] Push even on a "no blindspot found" run.** A `chore(verify): no blindspot found` PR is a valid, expected output. It signals full coverage, not a failure.
 * **[4] Always run `pnpm test` before pushing.** Unlike your peers, test execution is your core responsibility. If the suite fails due to a pre-existing bug (not introduced by your spec), report it in the PR description and push — do not block the pipeline waiting for the bug to be fixed.
 * **[5] One PR per run.** Do not batch multiple test files into a single PR. Each run is exactly one atomic commit targeting one coverage gap, one PR.
