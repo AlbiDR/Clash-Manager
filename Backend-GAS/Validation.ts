@@ -55,11 +55,26 @@ export const LoggerPayloadSchema = v.object({
   context: v.optional(v.string())
 });
 
+/**
+ * [GUARD] GENERIC PAYLOAD: Catch-all for unclassified actions.
+ * THREAT: The "any Plague" (Target B [4]).
+ * Rationale: Replacing v.any() with v.unknown() ensures that unvalidated
+ * data cannot be accessed without explicit type narrowing or parsing.
+ */
 export const GenericPayloadSchema = v.objectWithRest(
   { action: v.optional(v.string()) },
-  v.any()
+  v.unknown()
 );
 
 (function(scope: any) {
-  Object.assign(scope, { VER_VALIDATION });
+  Object.assign(scope, {
+    VER_VALIDATION,
+    BaseActionSchema,
+    DismissRecruitsPayloadSchema,
+    UndismissRecruitsPayloadSchema,
+    TriggerUpdatePayloadSchema,
+    PlayerProfilePayloadSchema,
+    LoggerPayloadSchema,
+    GenericPayloadSchema,
+  });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
