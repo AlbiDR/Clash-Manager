@@ -109,8 +109,8 @@ const RosterStore = {
           name: String(dbSnapshotRow[S_DB.NAME]),
           role: String(dbSnapshotRow[S_DB.ROLE]),
           trophies: Number(dbSnapshotRow[S_DB.TROPHIES]),
-          donations: Number(dbSnapshotRow[S_DB.DONATIONS]),
-          donationsReceived: Number(dbSnapshotRow[S_DB.DONATIONS_RECEIVED]),
+          donations: Number(dbSnapshotRow[S_DB.DON_GIVEN]),
+          donationsReceived: Number(dbSnapshotRow[S_DB.DON_REC]),
           lastSeen: String(dbSnapshotRow[S_DB.LAST_SEEN])
         };
 
@@ -136,7 +136,10 @@ const RosterStore = {
         }
 
         const memberHistory = intelligence.get(data.tag)!;
-        if (date < memberHistory.firstSeen) memberHistory.firstSeen = date;
+        const snapshotDate = Registry.Services.Time.parseFlexibleDate(dbSnapshotRow[S_DB.DATE]);
+        if (snapshotDate && snapshotDate.getTime() > 0 && snapshotDate < memberHistory.firstSeen) {
+          memberHistory.firstSeen = snapshotDate;
+        }
         const currentMax = memberHistory.weeklyMax.get(weekId) || 0;
         if (donGiven > currentMax) memberHistory.weeklyMax.set(weekId, donGiven);
 
