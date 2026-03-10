@@ -111,7 +111,7 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 * **[b]** **Reasoning:** Threat Statement ("If X, then Y, because Z") and Blast Radius.
 * **[c]** **Changes:** Fix applied and inline comments added.
 * **[d]** **Verification:** Confirm `pnpm test` passes or confirm no changes.
-* **[e]** **Log:** Reference to updated `.github/nightly/logs/hardening-coverage.log` (if applicable).
+* **[e]** **Log:** Reference to updated `.github/nightly-logs/hardening-coverage.log` (if applicable).
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**

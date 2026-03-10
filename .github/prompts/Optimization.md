@@ -75,7 +75,7 @@ You are the **Third Mover** in the 4-stage Nightly cycle:
 * **[b]** Type Safety (`.js` to `.ts` migration).
 * **[c]** Lean Pruning (Dead code paths/unused files).
 * **[d]** Performance (Re-renders, Loop complexity, Bundle Bloat).
-* **[!] Coverage Log:** Append the path of every file refactored to `.github/nightly/logs/optimization-coverage.log` (create the file if it does not exist). On each run, consult this log **only when evaluating items `[b]`, `[c]`, and `[d]`** to avoid re-targeting recently optimized files when untouched ones remain. Do **not** apply the log to item `[a]` (Structural Rot) — a DRY violation introduced today by another agent must always be evaluated regardless of prior history.
+* **[!] Coverage Log:** Append the path of every file refactored to `.github/nightly-logs/optimization-coverage.log` (create the file if it does not exist). On each run, consult this log **only when evaluating items `[b]`, `[c]`, and `[d]`** to avoid re-targeting recently optimized files when untouched ones remain. Do **not** apply the log to item `[a]` (Structural Rot) — a DRY violation introduced today by another agent must always be evaluated regardless of prior history.
 
 ### [B] Step 2: Internal Analysis (Hypothesis & Proof)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
@@ -106,7 +106,7 @@ You are the **Third Mover** in the 4-stage Nightly cycle:
 * **[b]** **Reasoning:** Bottleneck identified and refactoring hypothesis.
 * **[c]** **Changes:** Implementation logic and layer compliance.
 * **[d]** **Verification:** Confirm `pnpm test` passes or confirm no changes.
-* **[e]** **Log:** Updated `.github/nightly/logs/optimization-coverage.log`.
+* **[e]** **Log:** Updated `.github/nightly-logs/optimization-coverage.log`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
