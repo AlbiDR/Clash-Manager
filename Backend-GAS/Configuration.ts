@@ -209,7 +209,8 @@ export var CONFIG: AppConfig = {
       HEADHUNTER: "13.1.0", 
       CONTROLLER_WEBAPP: "13.1.0",
       REGISTRY: "13.1.0",
-      API_PUBLIC: "13.1.0"
+      API_PUBLIC: "13.1.0",
+      HEADHUNTER: "14.3.4"
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",

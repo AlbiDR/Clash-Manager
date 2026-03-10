@@ -30,9 +30,9 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 ### [A] Target A: Runtime & Security Risks (Backend-Worker / Backend-GAS)
 * **[1] Auth Boundary (Worker):** Every endpoint that proxies Clash Royale API keys or returns internal clan data is a privileged resource. Verify that `REMOTE_WORKER_SECRET` from the environment is validated on all non-public routes. The check must happen in a middleware function registered **before** any route handler — not inside the handler itself. If the header is absent or mismatched, the endpoint returns `401` immediately and halts. Public routes (`/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are intentionally exempt.
 * **[2] State Lifecycle (Worker):** Any module-level variable that accumulates state (e.g., a `Set`, `Map`, or array initialized at load time) must be evaluated for restart durability. Render restarts the Worker on every deploy and after inactivity. If accumulated state is user-facing or functional, flag it with an inline comment: either `// EPHEMERAL: intentionally resets on restart` or `// PERSISTENCE REQUIRED: see [issue description]`. Do not silently leave stateful features that appear functional but are not durable.
-* **[3] Version Manifest Sync (GAS):** `checkSystemHealth()` in `Orchestrator.ts` compares each module's `VER_` constant against `CONFIG.SYSTEM.MANIFEST`. This is a **Bidirectional Sync** where the implementation is the authoritative source of truth. Read every `VER_` constant in `Backend-GAS/` and compare against the manifest in `Configuration.ts`.
+* **[3] Self-Healing Protocol: Version Manifest Sync (GAS):** `checkSystemHealth()` in `Orchestrator.ts` compares each module's `VER_` constant against `CONFIG.SYSTEM.MANIFEST`. This protocol establishes the **codebase as the authoritative source of truth**. Read every `VER_` constant in `Backend-GAS/` and reconcile against `Configuration.ts`.
     *   **Rule A (Behind):** If the module version is **lower** than the manifest, update the module's `VER_` constant to match the manifest.
-    *   **Rule B (Ahead):** If the module version is **higher** than the manifest (e.g., `VER_HEADHUNTER` is `1.4.2` but manifest is `1.4.1`), update the manifest entry in `Configuration.ts` to match the module.
+    *   **Rule B (Ahead):** If the module version is **higher** than the manifest (e.g., `VER_HEADHUNTER` is `14.3.4` but manifest is `13.1.0`), update the manifest entry in `Configuration.ts` to match the module. This is a **required autonomous fix**.
     *   **Rule C (Missing):** If a module has a `VER_` constant with no corresponding manifest entry, automatically append the new entry to the `MANIFEST` object in `Configuration.ts`.
 
 ### [B] Target B: Data Integrity Risks (Frontend-PWA / Backend-Worker)
@@ -61,7 +61,7 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 * **[>] Read the ADR First:** Before executing, read `.github/authoritative-design-references/CleanStack Architecture.md`. Every fix must be coherent with the layering rules, naming conventions, and validation protocols defined in the ADR.
     *   **Strategic references:** Structural Unitary Architecture (Section II — Framework Neutrality), Data Flow & Validation Boundary (Section III — DTO Mapping and Control Flow), Resilience & Operational Security (Section IV), Governance (Section VI — ISP). These sections are the primary reference for all hardening work.
 * **[>] Naming Law:** Any new files (e.g., middleware, schema definitions) must be 100% coherent with the parent folder and the Naming Conventions contract in the ADR (Section VII). Example: Inside `@core/api/`, create `validateSnapshot.ts`, NOT `securityHelper.ts`.
-* **[!] Flag, Don't Guess:** If a fix requires a decision only the developer can make (e.g., which version is authoritative when a module is *ahead* of the manifest), do not modify any file. Document the conflict in the PR description and stop.
+* **[!] Flag, Don't Guess:** If a fix requires a technical decision beyond the "Clean Stack" standards (excluding versioning drift which follows the [Self-Healing Protocol]), do not modify any file. Document the conflict in the PR description and stop.
 * **[!] Test-Driven Stability:** Every fix must ensure the existing test suite passes. Run `pnpm test` before submitting. If a fix causes a test to fail, report it in the PR description — do not suppress or delete the failing test.
 
 ---
@@ -99,7 +99,7 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 
 * **[1]** Add an inline comment on every modified block explaining the **threat it closes**, not just what the code does.
 * **[2]** If adding middleware, register it on the `app` object **before** all route definitions it protects.
-* **[3]** If flagging an ambiguity (e.g., a version mismatch where the module is ahead of the manifest), do not modify any file. Document only in the PR description.
+* **[3]** If reconciling version drift where a module is ahead, update the manifest in `Configuration.ts` as a **Self-Healing Action**. Do not flag this as an ambiguity.
 * **[4]** Verify via `pnpm test` (existing tests must pass).
 
 ### [D] Step 4: Present (Conventional Commits)
@@ -115,6 +115,7 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 * **[c]** **Changes:** Fix applied and inline comments added.
 * **[d]** **Verification:** Confirm `pnpm test` passes or confirm no changes.
 * **[e]** **Log:** Reference to updated `.github/nightly-logs/hardening-coverage.log` (if applicable).
+* **[f]** **PR History:** Append a one-liner entry to `.github/nightly-logs/PR_HISTORY.md` in the format: `## [Date] PR #X: fix(harden): [summary]`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**

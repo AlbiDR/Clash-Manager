@@ -105,6 +105,7 @@ You are the **Second Mover** in the 4-stage Nightly cycle:
 * **[c]** **Changes:** Targeted file and test strategy.
 * **[d]** **Verification:** Confirm `pnpm test` passes or confirm no changes.
 * **[e]** **Log:** Updated `.github/nightly-logs/verification-coverage.log`.
+* **[f]** **PR History:** Append a one-liner entry to `.github/nightly-logs/PR_HISTORY.md` in the format: `## [Date] PR #X: test(verify): [summary]`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
