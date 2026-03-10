@@ -95,7 +95,7 @@ const baseUrl = import.meta.env.BASE_URL;
                 past: level <= currentLevel 
               }"
             >
-              Level {{ level }} {{ IMPORTANT_KING_LEVELS.includes(level as any) ? '•' : '' }}
+              Level {{ String(level).padStart(2, '0') }} {{ IMPORTANT_KING_LEVELS.includes(level as any) ? '•' : '' }}
             </option>
           </select>
           <Icon name="chevron-down" size="14" class="select-icon" />
