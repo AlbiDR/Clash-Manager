@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import {
-  BaseCardSkeleton,
   Icon,
-  ConsoleLayout
+  ConsoleLayout,
+  AppFooter
 } from "@shared";
-import { useClashData } from "@core";
-import { ref, computed } from "vue";
+import { useClashDataStore, useBlueprintMode } from "@core";
+import { computed, ref } from "vue";
+import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
 
 // Laboratory Components
@@ -13,6 +14,7 @@ import VaultCard from "../components/VaultCard.vue";
 import ParameterCard from "../components/ParameterCard.vue";
 import SummaryCard from "../components/SummaryCard.vue";
 import TrajectoryItem from "../components/TrajectoryItem.vue";
+import LaboratorySkeleton from "../components/LaboratorySkeleton.vue";
 
 const {
   observation,
@@ -26,7 +28,27 @@ const {
   refresh,
 } = useLaboratory();
 
-const { data: globalData } = useClashData();
+const { isBlueprintMode } = useBlueprintMode();
+
+const showSkeletons = computed(() => isFetching.value || isBlueprintMode.value);
+const displayLimit = ref(20);
+
+const displayedActions = computed(() => {
+  if (!operation.value) return [];
+  return operation.value.actions.slice(0, displayLimit.value);
+});
+
+const hasMoreActions = computed(() => {
+  return (operation.value?.actions.length || 0) > displayLimit.value;
+});
+
+const expandTrajectory = () => {
+  displayLimit.value = 999;
+};
+const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
+
+const clashDataStore = useClashDataStore();
+const { data: globalData } = storeToRefs(clashDataStore);
 
 const statusText = computed(() => {
   if (isFetching.value) return "Scanning Vault...";
@@ -44,15 +66,6 @@ const statusType = computed(() => {
 
 const isEmpty = computed(() => !observation.value && !isFetching.value);
 
-// UI Performance: Display Limit for Trajectory List
-const displayLimit = ref(20);
-const displayedActions = computed(() => {
-  if (!operation.value) return [];
-  return operation.value.actions.slice(0, displayLimit.value);
-});
-const hasMoreActions = computed(() => {
-  return (operation.value?.actions.length || 0) > displayLimit.value;
-});
 
 </script>
 
@@ -60,12 +73,13 @@ const hasMoreActions = computed(() => {
   <ConsoleLayout
     title="Laboratory"
     :status="{ type: statusType, text: statusText }"
-    :loading="isFetching"
+    :loading="showSkeletons"
     :is-empty="isEmpty"
     :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
     :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
     empty-icon="flask"
-    :skeleton-component="BaseCardSkeleton"
+    :skeleton-component="LaboratorySkeleton"
+    :skeleton-count="1"
     :sync-error="fetchError || undefined"
     @refresh="refresh"
   >
@@ -114,18 +128,24 @@ const hasMoreActions = computed(() => {
             :index="index"
           />
         </div>
-        
-        <!-- Lazy Loading Expansion -->
+
+        <!-- Expansion Control -->
         <button 
           v-if="hasMoreActions" 
-          class="btn-expand"
-          @click="displayLimit = 999"
+          class="btn-ghost expand-btn"
+          @click="expandTrajectory"
         >
-          <Icon name="chevron_down" size="16" />
-          <span>Show More ({{ operation.actions.length - 20 }} items)</span>
+          <Icon name="expand_more" size="18" />
+          <span>Show More ({{ operation.actions.length - displayLimit }} remaining)</span>
         </button>
       </div>
     </div>
+
+    <!-- Brand Alignment Footer -->
+    <AppFooter 
+      :version="appVersion" 
+      :badge="isBlueprintMode ? 'BLUEPRINT' : undefined" 
+    />
   </ConsoleLayout>
 </template>
 
@@ -165,27 +185,19 @@ const hasMoreActions = computed(() => {
   gap: 8px;
 }
 
-.btn-expand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
+.expand-btn {
   margin-top: 12px;
-  background: var(--sys-color-surface-container-high);
+  width: 100%;
+  justify-content: center;
+  color: var(--sys-color-primary);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: var(--sys-color-surface-container-low);
   border: 1px dashed var(--sys-color-outline-variant);
-  border-radius: 12px;
-  color: var(--sys-color-on-surface-variant);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.btn-expand:hover {
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-primary);
-  border-color: var(--sys-color-primary);
+.expand-btn:hover {
+  background: var(--sys-color-surface-container);
+  border-style: solid;
 }
 </style>

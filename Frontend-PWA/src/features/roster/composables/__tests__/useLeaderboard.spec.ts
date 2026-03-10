@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useLeaderboard } from "../useLeaderboard";
 import { ref } from "vue";
+import { setActivePinia, createPinia } from 'pinia';
 
 // Mock dependencies
 const mockData = ref({
@@ -20,8 +21,8 @@ vi.mock("@core/api/useApiState", () => ({
   }),
 }));
 
-vi.mock("@core/services/useClashData", () => ({
-  useClashData: () => ({
+vi.mock("@core/services/useClashDataStore", () => ({
+  useClashDataStore: () => ({
     data: mockData,
     isHydrated: ref(true),
     isRefreshing: ref(false),
@@ -68,6 +69,10 @@ vi.mock("vue-router", () => ({
 }));
 
 describe("useLeaderboard", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   it("calculates sheetUrl correctly with GID", () => {
     const { sheetUrl } = useLeaderboard();
     expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=456");

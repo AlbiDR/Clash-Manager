@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {
   vTactile,
-  ConsoleLayout
+  ConsoleLayout,
+  AppFooter
 } from "@shared";
 import { useSettings } from "../composables/useSettings";
 
@@ -24,7 +25,6 @@ const {
   appVersion,
   footerBadgeText,
   modules,
-  haptics,
 } = useSettings();
 </script>
 
@@ -47,20 +47,10 @@ const {
       <BackendRefresher v-if="modules.backendRefresher" />
       <RecoverySettings />
 
-      <div class="footer-info">
-        <div
-          class="brand"
-          @click="
-            haptics.heavy();
-            window.location.reload();
-          "
-          v-tactile
-        >
-          CLASH MANAGER V{{ appVersion }}
-          <span v-if="footerBadgeText" class="demo-tag">{{ footerBadgeText }}</span>
-        </div>
-        <div class="copy">Copyright © 2026 AlbiDR</div>
-      </div>
+      <AppFooter 
+        :version="appVersion" 
+        :badge="footerBadgeText" 
+      />
     </div>
   </ConsoleLayout>
 </template>
@@ -73,43 +63,4 @@ const {
   gap: 12px; /* Uniform card spacing */
 }
 
-.footer-info {
-  padding: 40px 0;
-  text-align: center;
-  user-select: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.brand {
-  font-size: 12px;
-  font-weight: 950;
-  opacity: 0.3;
-  letter-spacing: 0.1em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.brand:active {
-  opacity: 0.6;
-}
-
-.demo-tag {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  font-size: 8px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0;
-  opacity: 1;
-}
-
-.copy {
-  font-size: 10px;
-  opacity: 0.2;
-}
 </style>

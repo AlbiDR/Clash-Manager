@@ -30,11 +30,14 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 ### [A] Target A: Runtime & Security Risks (Backend-Worker / Backend-GAS)
 * **[1] Auth Boundary (Worker):** Every endpoint that proxies Clash Royale API keys or returns internal clan data is a privileged resource. Verify that `REMOTE_WORKER_SECRET` from the environment is validated on all non-public routes. The check must happen in a middleware function registered **before** any route handler — not inside the handler itself. If the header is absent or mismatched, the endpoint returns `401` immediately and halts. Public routes (`/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are intentionally exempt.
 * **[2] State Lifecycle (Worker):** Any module-level variable that accumulates state (e.g., a `Set`, `Map`, or array initialized at load time) must be evaluated for restart durability. Render restarts the Worker on every deploy and after inactivity. If accumulated state is user-facing or functional, flag it with an inline comment: either `// EPHEMERAL: intentionally resets on restart` or `// PERSISTENCE REQUIRED: see [issue description]`. Do not silently leave stateful features that appear functional but are not durable.
-* **[3] Version Manifest Integrity (GAS):** `checkSystemHealth()` in `Orchestrator.ts` compares each module's `VER_` constant against `CONFIG.SYSTEM.MANIFEST`. Read every `VER_` constant in `Backend-GAS/` and compare against the manifest in `Configuration.ts`. For each mismatch: if the module version is **lower** than the manifest, update the module's constant to match. If the module version is **higher** than the manifest (e.g., `VER_HEADHUNTER`), do **not** modify either file — flag the conflict explicitly in the PR description and await developer instruction. If a module has a `VER_` constant with no corresponding manifest entry (e.g., `VER_NETWORK`), flag it in the PR description only — do not add it to the manifest.
+* **[3] Self-Healing Protocol: Version Manifest Sync (GAS):** `checkSystemHealth()` in `Orchestrator.ts` compares each module's `VER_` constant against `CONFIG.SYSTEM.MANIFEST`. This protocol establishes the **codebase as the authoritative source of truth**. Read every `VER_` constant in `Backend-GAS/` and reconcile against `Configuration.ts`.
+    *   **Rule A (Behind):** If the module version is **lower** than the manifest, update the module's `VER_` constant to match the manifest.
+    *   **Rule B (Ahead):** If the module version is **higher** than the manifest (e.g., `VER_HEADHUNTER` is `14.3.4` but manifest is `13.1.0`), update the manifest entry in `Configuration.ts` to match the module. This is a **required autonomous fix**.
+    *   **Rule C (Missing):** If a module has a `VER_` constant with no corresponding manifest entry, automatically append the new entry to the `MANIFEST` object in `Configuration.ts`.
 
 ### [B] Target B: Data Integrity Risks (Frontend-PWA / Backend-Worker)
-* **[1] Validation Boundary:** Per the CleanStack Architecture.md ADR (Section III), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
-* **[2] Validation Boundary (pattern):** Entry points for external API data into feature composables are the highest-risk locations. When a composable accepts a raw payload typed as `any`, define a Valibot schema for the expected shape and run `v.safeParse()` at the top of the function. This is the class of risk to scan for — not a standing order against any single file.
+* **[1] Validation Boundary:** Per the CleanStack Architecture.md ADR (Section III), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify Pinia Actions or functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
+* **[2] Validation Boundary (pattern):** Entry points for external API data into Pinia Stores or feature composables are the highest-risk locations. When an action or composable accepts a raw payload typed as `any`, define a Valibot schema for the expected shape and run `v.safeParse()` at the top of the function. This is the class of risk to scan for — not a standing order against any single file.
 * **[3] Dead Logic (pattern):** Code that executes but has no effect misleads future agents. A common instance: manual setup of a value (e.g., a request header) that is immediately overwritten by a called function's internal logic. When found, remove the dead block and add a short inline comment on the called function noting what it manages internally. This is the class of risk to scan for — not a standing order against any single file.
 * **[4] OCD Clean Stack (Forbidden Pathogens):** To reach maximal architecture purity, the following patterns are strictly forbidden:
     *   **The `any` Plague**: Never accept or process data typed as `any` at a boundary. If the type is unknown, use `unknown` and `v.safeParse()`.
@@ -58,7 +61,7 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 * **[>] Read the ADR First:** Before executing, read `.github/authoritative-design-references/CleanStack Architecture.md`. Every fix must be coherent with the layering rules, naming conventions, and validation protocols defined in the ADR.
     *   **Strategic references:** Structural Unitary Architecture (Section II — Framework Neutrality), Data Flow & Validation Boundary (Section III — DTO Mapping and Control Flow), Resilience & Operational Security (Section IV), Governance (Section VI — ISP). These sections are the primary reference for all hardening work.
 * **[>] Naming Law:** Any new files (e.g., middleware, schema definitions) must be 100% coherent with the parent folder and the Naming Conventions contract in the ADR (Section VII). Example: Inside `@core/api/`, create `validateSnapshot.ts`, NOT `securityHelper.ts`.
-* **[!] Flag, Don't Guess:** If a fix requires a decision only the developer can make (e.g., which version is authoritative when a module is *ahead* of the manifest), do not modify any file. Document the conflict in the PR description and stop.
+* **[!] Flag, Don't Guess:** If a fix requires a technical decision beyond the "Clean Stack" standards (excluding versioning drift which follows the [Self-Healing Protocol]), do not modify any file. Document the conflict in the PR description and stop.
 * **[!] Test-Driven Stability:** Every fix must ensure the existing test suite passes. Run `pnpm test` before submitting. If a fix causes a test to fail, report it in the PR description — do not suppress or delete the failing test.
 
 ---
@@ -96,7 +99,7 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 
 * **[1]** Add an inline comment on every modified block explaining the **threat it closes**, not just what the code does.
 * **[2]** If adding middleware, register it on the `app` object **before** all route definitions it protects.
-* **[3]** If flagging an ambiguity (e.g., a version mismatch where the module is ahead of the manifest), do not modify any file. Document only in the PR description.
+* **[3]** If reconciling version drift where a module is ahead, update the manifest in `Configuration.ts` as a **Self-Healing Action**. Do not flag this as an ambiguity.
 * **[4]** Verify via `pnpm test` (existing tests must pass).
 
 ### [D] Step 4: Present (Conventional Commits)
@@ -111,7 +114,8 @@ You are the **First Mover** in the 4-stage Nightly cycle:
 * **[b]** **Reasoning:** Threat Statement ("If X, then Y, because Z") and Blast Radius.
 * **[c]** **Changes:** Fix applied and inline comments added.
 * **[d]** **Verification:** Confirm `pnpm test` passes or confirm no changes.
-* **[e]** **Log:** Reference to updated `.github/nightly/logs/hardening-coverage.log` (if applicable).
+* **[e]** **Log:** Reference to updated `.github/nightly-logs/hardening-coverage.log` (if applicable).
+* **[f]** **PR History:** Append a one-liner entry to `.github/nightly-logs/PR_HISTORY.md` in the format: `## [Date] PR #X: fix(harden): [summary]`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**

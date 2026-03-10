@@ -109,10 +109,14 @@ const RosterStore = {
           name: String(dbSnapshotRow[S_DB.NAME]),
           role: String(dbSnapshotRow[S_DB.ROLE]),
           trophies: Number(dbSnapshotRow[S_DB.TROPHIES]),
-          donations: Number(dbSnapshotRow[S_DB.DONATIONS]),
-          donationsReceived: Number(dbSnapshotRow[S_DB.DONATIONS_RECEIVED]),
+          donations: Number(dbSnapshotRow[S_DB.DON_GIVEN]),
+          donationsReceived: Number(dbSnapshotRow[S_DB.DON_REC]),
           lastSeen: String(dbSnapshotRow[S_DB.LAST_SEEN])
         };
+
+        // Normalize Tag for consistent lookup
+        const normalizedTag = payload.tag.trim().toUpperCase();
+        payload.tag = normalizedTag;
 
         const result = v.safeParse(ClanMemberSnapshotSchema, payload);
         if (!result.success) return;
@@ -123,9 +127,14 @@ const RosterStore = {
         const rawWarFame = dbSnapshotRow[S_DB.WAR_FAME];
         const weekId = Registry.Services.Time.calculateWarWeekId(date);
 
+        const snapshotDate = Registry.Services.Time.parseFlexibleDate(dbSnapshotRow[S_DB.DATE]);
+        // DERIVATION: The earliest signal for a player is the MIN of their Last Seen (game activity) 
+        // and the Snapshot Date (system recording).
+        const rowEarliest = (date && date.getTime() > 0 && date < snapshotDate) ? date : snapshotDate;
+
         if (!intelligence.has(data.tag)) {
           intelligence.set(data.tag, {
-            firstSeen: date,
+            firstSeen: rowEarliest,
             weeklyMax: new Map(),
             battleWeeks: new Set(),
             totalBattleCredits: 0,
@@ -136,7 +145,9 @@ const RosterStore = {
         }
 
         const memberHistory = intelligence.get(data.tag)!;
-        if (date < memberHistory.firstSeen) memberHistory.firstSeen = date;
+        if (rowEarliest && rowEarliest.getTime() > 0 && rowEarliest < memberHistory.firstSeen) {
+          memberHistory.firstSeen = rowEarliest;
+        }
         const currentMax = memberHistory.weeklyMax.get(weekId) || 0;
         if (donGiven > currentMax) memberHistory.weeklyMax.set(weekId, donGiven);
 

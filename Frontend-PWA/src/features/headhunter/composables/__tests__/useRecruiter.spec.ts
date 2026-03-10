@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useRecruiter } from "../useRecruiter";
 import { ref } from "vue";
+import { setActivePinia, createPinia } from 'pinia';
 
 // Define the core mock state globally so it can be used across multiple mocks
 const { mockPingData, mockClashData, mockIsShowcaseMode, mockIsSyntheticMode } = vi.hoisted(() => {
@@ -29,8 +30,8 @@ vi.mock("@core/api/useApiState", () => ({
   })),
 }));
 
-vi.mock("@core/services/useClashData", () => ({
-  useClashData: vi.fn(() => ({
+vi.mock("@core/services/useClashDataStore", () => ({
+  useClashDataStore: vi.fn(() => ({
     data: mockClashData,
     isHydrated: ref(true),
     isRefreshing: ref(false),
@@ -62,7 +63,7 @@ vi.mock("@core", async (importOriginal) => {
       pingData: mockPingData,
       apiStatus: ref("online"),
     })),
-    useClashData: vi.fn(() => ({
+    useClashDataStore: vi.fn(() => ({
       data: mockClashData,
       isHydrated: ref(true),
       isRefreshing: ref(false),
@@ -138,6 +139,10 @@ vi.mock("vue-router", () => ({
 }));
 
 describe("useRecruiter", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   it("calculates sheetUrl correctly with Headhunter GID", () => {
     const { sheetUrl } = useRecruiter();
     expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=789");

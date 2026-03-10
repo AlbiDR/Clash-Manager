@@ -64,10 +64,7 @@ const {
         </div>
       </div>
 
-      <div class="mode-connector">
-        <div class="connector-line"></div>
-        <Icon name="expand" size="14" class="connector-icon" />
-      </div>
+
 
       <!-- Master Showcase Group -->
       <div class="mode-master-container" :class="{ active: isShowcaseMode }">
@@ -182,30 +179,7 @@ const {
   opacity: 0.5;
 }
 
-.mode-connector {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 8px;
-  position: relative;
-  margin: -4px 0;
-}
-.connector-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 28px;
-  width: 1.5px;
-  background: var(--sys-color-outline-variant);
-  opacity: 0.1;
-}
-.connector-icon {
-  color: var(--sys-color-outline-variant);
-  opacity: 0.3;
-  background: var(--sys-color-surface-container);
-  z-index: 1;
-  padding: 2px;
-}
+
 
 .mode-master-container {
   padding: 8px 12px;

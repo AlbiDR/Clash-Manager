@@ -2,7 +2,8 @@ import { NetworkError, dismissRecruits, undismissRecruits } from "@core/api/GasC
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBadge } from "@core/services/useBadge";
 import { useBroadcastChannel } from "@core/services/useBroadcastChannel";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
 import { watch } from "vue";
@@ -15,7 +16,9 @@ export function useHeadhunter() {
   // Scoped Singleton Initializations
   const { setBadge, sendLocalNotification } = useBadge();
   const { modules } = useAppSettings();
-  const { data: clashData, updateLocalData } = useClashData();
+  const clashDataStore = useClashDataStore();
+  const { data: clashData } = storeToRefs(clashDataStore);
+  const { updateLocalData } = clashDataStore;
   const { isSyntheticMode } = useSyntheticMode();
   const { error: toastError } = useToast();
 

@@ -41,6 +41,7 @@ const props = defineProps<{
     blitzEnabled: boolean;
   };
   skeletonComponent: any;
+  skeletonCount?: number;
   totalCount?: number;
 }>();
 
@@ -172,7 +173,7 @@ onUnmounted(() => {
       <div v-else-if="loading" class="list-container gpu-contain">
         <component
           :is="skeletonComponent"
-          v-for="i in 8"
+          v-for="i in (skeletonCount || 8)"
           :key="i"
           :index="i"
           :style="{ '--i': i }"
