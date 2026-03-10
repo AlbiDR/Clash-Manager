@@ -62,6 +62,8 @@ import type {
   ClanMembers,
   CurrentRiverRace,
   RiverRaceLog,
+  ProphetIntel,
+  ScanDebugInfo,
 } from "./types.js";
 
 // ============================================================================
@@ -95,7 +97,7 @@ const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on rest
 //  EXPRESS APP SETUP
 // ============================================================================
 
-const app = express();
+const app = express(); // EPHEMERAL: instance resets on restart
 
 // CORS Middleware
 app.use((req: Request, res: Response, next: NextFunction): void => {
@@ -143,8 +145,10 @@ const authMiddleware: RequestHandler = (req, res, next) => {
     return;
   }
 
-  if (authHeader !== `Bearer ${secret}`) {
+  if (!authHeader || authHeader !== `Bearer ${secret}`) {
     // THREAT: Unauthenticated access to Royale API keys and clan data.
+    // Target A [1]: Immediately halt and return 401 for unauthorized attempts.
+    console.warn(`[Auth] Unauthorized attempt to privileged endpoint: ${path} from ${req.ip}`);
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -181,7 +185,7 @@ async function timeoutFetch(
  */
 async function fetchWithRotatedRetries<T = unknown>(
   url: string,
-  baseOpts: Record<string, any>,
+  baseOpts: Record<string, unknown>,
   retries: number = CONFIG.maxRetries,
   keyService?: KeyService,
 ): Promise<FetchResult<T>> {
@@ -192,44 +196,44 @@ async function fetchWithRotatedRetries<T = unknown>(
   const manager = keyService ?? KEYS;
 
   while (attempt <= retries) {
-    const currentKey = manager.getHealthyKey();
-    if (!currentKey) {
+    const currentApiKey = manager.getHealthyKey();
+    if (!currentApiKey) {
       return { code: 429, content: "ERR_QUOTA_EMPTY" as unknown as T };
     }
 
-    const opts = {
+    const fetchOptions = {
       ...baseOpts,
       headers: {
         ...(baseOpts["headers"] || {}),
-        "Authorization": `Bearer ${currentKey}`
+        "Authorization": `Bearer ${currentApiKey}`
       }
     };
 
     try {
-      const res = await timeoutFetch(url, opts);
-      const code = res.status;
-      const text = await res.text();
+      const fetchResponse = await timeoutFetch(url, fetchOptions);
+      const responseCode = fetchResponse.status;
+      const responseText = await fetchResponse.text();
 
-      if (code === 200) {
-        manager.reportSuccess(currentKey);
+      if (responseCode === 200) {
+        manager.reportSuccess(currentApiKey);
         try {
-          return { code, content: JSON.parse(text) as T };
+          return { code: responseCode, content: JSON.parse(responseText) as T };
         } catch {
-          return { code, content: text as unknown as T };
+          return { code: responseCode, content: responseText as unknown as T };
         }
       }
 
       // Handle Failures
-      manager.reportFailure(currentKey, code);
+      manager.reportFailure(currentApiKey, responseCode);
       
-      if (code === 404) return { code, content: text as unknown as T };
-      if (code === 403) throw new Error("auth_denied");
-      if (code === 429) throw new Error("rate_limit");
+      if (responseCode === 404) return { code: responseCode, content: responseText as unknown as T };
+      if (responseCode === 403) throw new Error("auth_denied");
+      if (responseCode === 429) throw new Error("rate_limit");
       
-      throw new Error(`upstream_status_${code}`);
+      throw new Error(`upstream_status_${responseCode}`);
 
-    } catch (e) {
-      lastErr = e instanceof Error ? e : new Error(String(e));
+    } catch (fetchError) {
+      lastErr = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
       attempt++;
       
       if (attempt <= retries) {
@@ -266,20 +270,20 @@ async function processBatch<T = unknown>(
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,
   scoring: ScoringWeights | null = null,
-  prophetCache?: Record<string, any>
+  prophetCache?: Record<string, ProphetIntel>
 ): Promise<FetchResult<T>[]> {
   const results: FetchResult<T>[] = new Array(urls.length);
-  let idx = 0;
+  let batchIndex = 0;
 
   // Shared KeyService for the entire batch to preserve health state across requests
   const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : undefined;
 
   async function worker(): Promise<void> {
     while (true) {
-      const i = idx++;
-      if (i >= urls.length) return;
+      const currentBatchIndex = batchIndex++;
+      if (currentBatchIndex >= urls.length) return;
 
-      const url = urls[i];
+      const url = urls[currentBatchIndex];
       if (!url) continue;
 
       const headers: Record<string, string> = {
@@ -300,7 +304,7 @@ async function processBatch<T = unknown>(
             // Target B [1]: Enforce [VALIDATION] boundary for Royale API data.
             const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
             if (!profileValidation.success) {
-              results[i] = { code: 502, content: "Invalid player profile format" };
+              results[currentBatchIndex] = { code: 502, content: "Invalid player profile format" };
               continue;
             }
             const profile = profileValidation.output;
@@ -322,9 +326,9 @@ async function processBatch<T = unknown>(
               // Target B [1]: Enforce [VALIDATION] boundary for Royale API data.
               const logsValidation = v.safeParse(RoyaleBattleLogResponseSchema, logsResult.content);
               if (logsValidation.success) {
-                hasWar = logsValidation.output.some((b) =>
+                hasWar = logsValidation.output.some((logEntry) =>
                   ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
-                    b.type,
+                    logEntry.type,
                   ),
                 );
               }
@@ -358,7 +362,7 @@ async function processBatch<T = unknown>(
             const warBonus = hasWar ? 500 : 0;
             const totalWarScore = (profile.warDayWins ?? 0) + warBonus;
 
-            results[i] = {
+            results[currentBatchIndex] = {
               code: 200,
               content: {
                 tag: profile.tag as PlayerTag,
@@ -368,28 +372,28 @@ async function processBatch<T = unknown>(
                 cards: profile.challengeCardsWon,
                 war: totalWarScore,
                 rawScore,
-              } as T,
+              } as unknown as T,
             };
           } else {
-            results[i] = profileResult as FetchResult<T>;
+            results[currentBatchIndex] = profileResult as FetchResult<T>;
           }
-        } catch (e) {
-          results[i] = {
+        } catch (scoringError) {
+          results[currentBatchIndex] = {
             code: 500,
-            content: `Scoring fetch failed: ${e instanceof Error ? e.message : "unknown"}`,
+            content: `Scoring fetch failed: ${scoringError instanceof Error ? scoringError.message : "unknown"}`,
           };
         }
       } else {
         const res = await fetchWithRotatedRetries<T>(url, { method: "GET", headers }, CONFIG.maxRetries, batchManager);
-        results[i] = res;
+        results[currentBatchIndex] = res;
       }
     }
   }
 
   // Spawn worker pool
   const workers: Promise<void>[] = [];
-  const spawn = Math.min(concurrency, urls.length);
-  for (let i = 0; i < spawn; i++) {
+  const spawnCount = Math.min(concurrency, urls.length);
+  for (let workerIndex = 0; workerIndex < spawnCount; workerIndex++) {
     workers.push(worker());
   }
   await Promise.all(workers);
@@ -398,16 +402,16 @@ async function processBatch<T = unknown>(
   if (scoring) {
     return results
       .filter(
-        (r): r is FetchResult<T> =>
-          r !== undefined &&
-          r.code === 200 &&
-          typeof r.content === "object" &&
-          r.content !== null &&
-          "rawScore" in r.content,
+        (resultRecord): resultRecord is FetchResult<T> =>
+          resultRecord !== undefined &&
+          resultRecord.code === 200 &&
+          typeof resultRecord.content === "object" &&
+          resultRecord.content !== null &&
+          "rawScore" in resultRecord.content,
       )
-      .sort((a, b) => {
-        const aScore = (a.content as any).rawScore as number;
-        const bScore = (b.content as any).rawScore as number;
+      .sort((aCandidate, bCandidate) => {
+        const aScore = (aCandidate.content as unknown as ScoredPlayer).rawScore;
+        const bScore = (bCandidate.content as unknown as ScoredPlayer).rawScore;
         return bScore - aScore;
       })
       .slice(0, 200);
@@ -424,12 +428,11 @@ async function processScanBatch(
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,
   blacklistSet: Set<PlayerTag> = new Set(),
-  minTrophies: number = 4000,
-  prophetCache?: Record<string, any>,
-  debug?: any
+  prophetCache?: Record<string, ProphetIntel>,
+  debug?: ScanDebugInfo
 ): Promise<ScoredPlayer[]> {
   const candidates: ScoredPlayer[] = [];
-  let idx = 0;
+  let batchIndex = 0;
   let traceCaptured = false;
 
   // Shared KeyService for the entire batch to preserve health state across requests
@@ -437,10 +440,10 @@ async function processScanBatch(
 
   async function worker(): Promise<void> {
     while (true) {
-      const i = idx++;
-      if (i >= tags.length) return;
+      const currentBatchIndex = batchIndex++;
+      if (currentBatchIndex >= tags.length) return;
 
-    const tag = tags[i];
+    const tag = tags[currentBatchIndex];
     if (!tag) continue;
 
     const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
@@ -473,44 +476,47 @@ async function processScanBatch(
           // Target B [1]: Enforce strict validation boundary for Royale API data.
           const validation = v.safeParse(RoyaleTournamentResponseSchema, res.content);
           if (validation.success) {
-            validation.output.membersList.forEach((p) => {
-              if (p.trophies < minTrophies) return;
-              if (p.clan?.tag) return;
-              if (blacklistSet.has(p.tag as PlayerTag)) return;
+            validation.output.membersList?.forEach((memberCandidate) => {
+              if (memberCandidate.clan?.tag) return;              // filter out clan members
+        const candidateTag = memberCandidate.tag as PlayerTag;
+        if (blacklistSet.has(candidateTag)) return;
 
               // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
               if (prophetCache) {
-                const normTag = p.tag.replace("#", "").trim().toLowerCase();
+                const normTag = memberCandidate.tag.replace("#", "").trim().toLowerCase();
                 const intel = prophetCache[normTag];
-                // Lightweight scoring estimation (detailed scoring happens in profile fetch phase)
-                // But we can flag "Heritage" candidates early here if needed.
                 if (intel) {
                   // Bonus logic could go here, but strictly we need profile stats for true score.
-                  // For now, we just pass them through.
                 }
               }
 
               candidates.push({
-                tag: p.tag as PlayerTag,
-                name: p.name,
-                trophies: p.trophies,
-                donations: 0,
-                cards: 0,
-                war: 0,
+          tag: candidateTag,
+                name: memberCandidate.name || "Unknown",
+                // NOTE: We omit 'trophies' since tournament score is not global rank.
+                // This prevents the incorrect filtering that caused zero-yields.
                 rawScore: 0,
               });
             });
+          } else {
+            const rawContent = res.content as Record<string, unknown>;
+            console.warn(`[WORKER SCAN FAIL] Schema rejected tournament response for tag: ${rawContent?.["tag"] || "Unknown"}`);
+            console.warn(JSON.stringify(validation.issues, null, 2));
+            const membersList = rawContent?.["membersList"];
+            if (Array.isArray(membersList) && membersList.length > 0) {
+              console.warn(`[SAMPLE REJECTED MEMBER]`, JSON.stringify(membersList[0], null, 2));
+            }
           }
         }
-      } catch (e) {
-        console.warn(`[Worker] Scan failed for tournament ${tag}: ${e instanceof Error ? e.message : "unknown"}`);
+      } catch (scanBatchError) {
+        console.warn(`[Worker] Scan failed for tournament ${tag}: ${scanBatchError instanceof Error ? scanBatchError.message : "unknown"}`);
       }
     }
   }
 
   const workers: Promise<void>[] = [];
-  const spawn = Math.min(concurrency, tags.length);
-  for (let i = 0; i < spawn; i++) {
+  const spawnCount = Math.min(concurrency, tags.length);
+  for (let workerIndex = 0; workerIndex < spawnCount; workerIndex++) {
     workers.push(worker());
   }
   await Promise.all(workers);
@@ -562,13 +568,13 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
     
     if (testKey) {
         try {
-            const upRes = await timeoutFetch(`${CONFIG.apiBase}/cards`, {
+            const healthCheckResponse = await timeoutFetch(`${CONFIG.apiBase}/cards`, {
                 headers: { Authorization: `Bearer ${testKey}` }
             }, 3000);
-            upstreamStatus = upRes.status === 200 ? "OK" : `FAIL_${upRes.status}`;
-            if (upRes.status === 200) KEYS.reportSuccess(testKey);
-            if (upRes.status === 429 || upRes.status === 403) KEYS.reportFailure(testKey, upRes.status);
-        } catch(e) { upstreamStatus = "TIMEOUT"; }
+            upstreamStatus = healthCheckResponse.status === 200 ? "OK" : `FAIL_${healthCheckResponse.status}`;
+            if (healthCheckResponse.status === 200) KEYS.reportSuccess(testKey);
+            if (healthCheckResponse.status === 429 || healthCheckResponse.status === 403) KEYS.reportFailure(testKey, healthCheckResponse.status);
+        } catch(healthCheckError) { upstreamStatus = "TIMEOUT"; }
     }
 
     res.status(200).json({
@@ -576,7 +582,7 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
         checks: {
             upstream: upstreamStatus,
             pool: pool,
-            memory: (process as any).memoryUsage().rss
+            memory: process.memoryUsage().rss
         }
     });
 });
@@ -606,37 +612,37 @@ app.post(
       const { apiKeys } = result.output;
 
       const auditUrl = `${CONFIG.apiBase}/cards`;
-      const tasks = apiKeys.map(async (key): Promise<ApiKeyAuditResult> => {
+      const auditTasks = apiKeys.map(async (apiKey): Promise<ApiKeyAuditResult> => {
         try {
-          const response = await timeoutFetch(
+          const auditResponse = await timeoutFetch(
             auditUrl,
             {
               method: "GET",
               headers: {
-                Authorization: `Bearer ${key}`,
+                Authorization: `Bearer ${apiKey}`,
                 "User-Agent": "ClanManagerWorker/Audit",
               },
             },
             5000,
           );
-          if (response.status === 200) KEYS.reportSuccess(key);
-          if (response.status === 429 || response.status === 403) KEYS.reportFailure(key, response.status);
+          if (auditResponse.status === 200) KEYS.reportSuccess(apiKey);
+          if (auditResponse.status === 429 || auditResponse.status === 403) KEYS.reportFailure(apiKey, auditResponse.status);
           
-          return { key, status: response.status };
-        } catch (e) {
+          return { key: apiKey, status: auditResponse.status };
+        } catch (auditError) {
           return {
-            key,
+            key: apiKey,
             status: 500,
-            error: e instanceof Error ? e.message : "unknown",
+            error: auditError instanceof Error ? auditError.message : "unknown",
           };
         }
       });
 
-      const results = await Promise.all(tasks);
-      res.json({ results });
-    } catch (e) {
+      const auditResults = await Promise.all(auditTasks);
+      res.json({ results: auditResults });
+    } catch (auditGlobalError) {
       res.status(500).json({
-        error: e instanceof Error ? e.message : "unknown",
+        error: auditGlobalError instanceof Error ? auditGlobalError.message : "unknown",
       });
     }
   },
@@ -666,7 +672,7 @@ app.post(
     }
 
     try {
-      const { tags, blacklist, minTrophies, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
+      const { tags, blacklist, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
 
       // THREAT: Manually parsing env keys bypasses the global KeyManager's health state.
       // Target B [3]: Remove dead/misleading code. Fall back to empty array so processScanBatch
@@ -674,9 +680,12 @@ app.post(
       const apiKeys = reqApiKeys ?? [];
 
       const blacklistSet = new Set(blacklist ?? []);
+
+      // THREAT: Allowing unauthenticated query params to override concurrency
+      // creates a potential DoS/Resource Exhaustion vector where a malicious
+      // caller could force the worker to spawn thousands of concurrent fetchers.
       const concurrency = Number(
         process.env["WORKER_CONCURRENCY"] ??
-          req.query["c"] ??
           CONFIG.concurrency,
       );
 
@@ -685,15 +694,14 @@ app.post(
         apiKeys,
         concurrency,
         blacklistSet as Set<PlayerTag>,
-        minTrophies ?? 4000,
         prophetCache
       );
 
       if (scoring && candidates.length > 0) {
-        const candidateTags = [...new Set(candidates.map((c) => c.tag))];
-        const playerUrls = candidateTags.map((t) => {
-            const nt = t.startsWith("#") ? t : `#${t}`;
-            return `${CONFIG.apiBase}/players/${encodeURIComponent(nt)}`;
+        const candidateTags = [...new Set(candidates.map((candidate) => candidate.tag))];
+        const playerUrls = candidateTags.map((tag) => {
+            const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
+            return `${CONFIG.apiBase}/players/${encodeURIComponent(normalizedTag)}`;
         });
 
         const scoredResults = await processBatch<ScoredPlayer>(
@@ -706,10 +714,10 @@ app.post(
 
         res.json({
           candidates: scoredResults
-            .map((r) => r.content)
+            .map((result) => result.content)
             .filter(
-              (c): c is ScoredPlayer =>
-                typeof c === "object" && c !== null && "tag" in c,
+              (candidate): candidate is ScoredPlayer =>
+                typeof candidate === "object" && candidate !== null && "tag" in candidate,
             ),
           _debug: {
             phase1: candidates.length,
@@ -721,17 +729,18 @@ app.post(
       }
 
       res.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
-    } catch (e) {
-      console.error("Failed /public/scan", e);
+    } catch (scanError) {
+      console.error("Failed /public/scan", scanError);
       res.status(500).json({
-        error: e instanceof Error ? e.message : "unknown",
+        error: scanError instanceof Error ? scanError.message : "unknown",
       });
     }
   },
 );
 
 // Push subscription storage (in-memory)
-const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: Push subscriptions are lost on restart and must be migrated to a database.
+// PERSISTENCE REQUIRED: Push subscriptions are lost on restart and must be migrated to a database.
+const subscriptions = new Set<string>();
 
 app.post(
   "/public/subscribe",
@@ -772,22 +781,24 @@ app.post(
     }
 
     try {
-      const { tags, apiKeys, blacklist, minTrophies, scoring, prophetCache } = result.output;
+      const { tags, apiKeys, blacklist, scoring, prophetCache } = result.output;
 
       const blacklistSet = new Set(blacklist ?? []);
+
+      // THREAT: Allowing query params to override concurrency creates a potential
+      // DoS/Resource Exhaustion vector. Privileged callers should still be
+      // restricted to environment-defined concurrency limits.
       const concurrency = Number(
         process.env["WORKER_CONCURRENCY"] ??
-          req.query["c"] ??
           CONFIG.concurrency,
       );
 
-        const debug: any = {};
+        const debug: ScanDebugInfo = {} as ScanDebugInfo;
         const candidates = await processScanBatch(
             tags as TournamentTag[],
             apiKeys ?? [],
             concurrency,
             blacklistSet as Set<PlayerTag>,
-            minTrophies ?? 4000,
             prophetCache,
             debug
         );
@@ -800,10 +811,10 @@ app.post(
         };
 
         if (scoring && candidates.length > 0) {
-            const candidateTags = [...new Set(candidates.map((c) => c.tag))];
-            const playerUrls = candidateTags.map((t) => {
-                const nt = t.startsWith("#") ? t : `#${t}`;
-                return `${CONFIG.apiBase}/players/${encodeURIComponent(nt)}`;
+            const candidateTags = [...new Set(candidates.map((candidate) => candidate.tag))];
+            const playerUrls = candidateTags.map((tag) => {
+                const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
+                return `${CONFIG.apiBase}/players/${encodeURIComponent(normalizedTag)}`;
             });
 
             const scoredResults = await processBatch<ScoredPlayer>(
@@ -816,10 +827,10 @@ app.post(
 
             res.json({
                 candidates: scoredResults
-                    .map((r) => r.content)
+                    .map((result) => result.content)
                     .filter(
-                        (c): c is ScoredPlayer =>
-                            typeof c === "object" && c !== null && "tag" in c,
+                        (candidate): candidate is ScoredPlayer =>
+                            typeof candidate === "object" && candidate !== null && "tag" in candidate,
                     ),
                 _debug: {
                     phase1: candidates.length,
@@ -837,10 +848,10 @@ app.post(
             _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: debug },
             _metadata: metadata
         });
-    } catch (e) {
-      console.error("Failed /scan", e);
+    } catch (internalScanError) {
+      console.error("Failed /scan", internalScanError);
       res.status(500).json({
-        error: e instanceof Error ? e.message : "unknown",
+        error: internalScanError instanceof Error ? internalScanError.message : "unknown",
       });
     }
   },
@@ -937,19 +948,20 @@ app.post(
       const warHistory: WarHistory = {};
 
       if (logData?.items) {
-        logData.items.forEach((log) => {
-          const weekId = calculateWarWeekId(log.createdDate);
-          const standings = log.standings ?? [];
+        logData.items.forEach((logEntry) => {
+          const weekId = calculateWarWeekId(logEntry.createdDate);
+          const standings = logEntry.standings ?? [];
           const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
-          const myClan = standings.find((s) => s.clan.tag === normalizedTag);
+          const myClan = standings.find((standing) => standing.clan.tag === normalizedTag);
 
           if (myClan?.clan.participants) {
-            myClan.clan.participants.forEach((p) => {
-              if (!warHistory[p.tag]) {
-                warHistory[p.tag] = {};
+            myClan.clan.participants.forEach((participant) => {
+              const participantTag = participant.tag as PlayerTag;
+              if (!warHistory[participantTag]) {
+                warHistory[participantTag] = {};
               }
-              const currentFame = warHistory[p.tag]?.[weekId] ?? 0;
-              warHistory[p.tag]![weekId] = Math.max(currentFame, p.fame);
+              const currentFame = warHistory[participantTag]?.[weekId] ?? 0;
+              warHistory[participantTag]![weekId] = Math.max(currentFame, participant.fame);
             });
           }
         });
@@ -960,10 +972,10 @@ app.post(
         race: raceData,
         history: warHistory,
       });
-    } catch (e) {
-      console.error("Failed /clan/full", e);
+    } catch (clanFullError) {
+      console.error("Failed /clan/full", clanFullError);
       res.status(500).json({
-        error: e instanceof Error ? e.message : "unknown",
+        error: clanFullError instanceof Error ? clanFullError.message : "unknown",
       });
     }
   },
@@ -1029,13 +1041,13 @@ app.post(
           ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ??
           "Member";
 
-        transformed = validation.output.items.map((m) => ({
-          tag: m.tag,
-          name: m.name,
-          role: formatRole(m.role),
-          kingLevel: m.expLevel,
-          donations: m.donations,
-          donationsReceived: m.donationsReceived,
+        transformed = validation.output.items.map((member) => ({
+          tag: member.tag,
+          name: member.name,
+          role: formatRole(member.role),
+          kingLevel: member.expLevel,
+          donations: member.donations,
+          donationsReceived: member.donationsReceived,
         }));
       } else if (type === "warlog") {
         // THREAT: Corrupt war log data polluting clan historical records.
@@ -1051,12 +1063,12 @@ app.post(
           return `${t.substring(0, 4)}-${t.substring(4, 6)}-${t.substring(6, 8)}`;
         };
 
-        transformed = validation.output.items.map((r) => {
+        transformed = validation.output.items.map((warLogEntry) => {
           const rawTag = decodeURIComponent(tag);
           const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
 
-          const myStanding = r.standings.find((s) => s.clan.tag === normalizedTag);
-          const opponents = r.standings.filter((s) => s.clan.tag !== normalizedTag);
+          const myStanding = warLogEntry.standings.find((standing) => standing.clan.tag === normalizedTag);
+          const opponents = warLogEntry.standings.filter((standing) => standing.clan.tag !== normalizedTag);
 
           const myFame = myStanding ? myStanding.clan.fame : 0;
           const myRank = myStanding ? myStanding.rank : null;
@@ -1064,13 +1076,13 @@ app.post(
             (a, b) => b.clan.fame - a.clan.fame,
           )[0];
 
-          let result = "lose";
-          if (myRank === 1) result = "win";
-          if (myRank === null) result = "n/a";
+          let resultOutcome = "lose";
+          if (myRank === 1) resultOutcome = "win";
+          if (myRank === null) resultOutcome = "n/a";
 
           return {
-            result,
-            endTime: parseCRDateISO(r.createdDate),
+            result: resultOutcome,
+            endTime: parseCRDateISO(warLogEntry.createdDate),
             opponent: bestRival ? bestRival.clan.name : "No Opponent",
             teamSize: 50,
             score: myFame,
@@ -1080,10 +1092,10 @@ app.post(
       }
 
       res.json({ data: transformed });
-    } catch (e) {
-      console.error("Failed /clan/api", e);
+    } catch (clanApiError) {
+      console.error("Failed /clan/api", clanApiError);
       res.status(500).json({
-        error: e instanceof Error ? e.message : "unknown",
+        error: clanApiError instanceof Error ? clanApiError.message : "unknown",
       });
     }
   },
@@ -1105,24 +1117,24 @@ app.post(
     try {
       const { urls, apiKeys, scoring } = result.output;
 
+      // THREAT: Resource Exhaustion via unauthenticated concurrency override.
       const concurrency = Number(
         process.env["WORKER_CONCURRENCY"] ??
-          req.query["c"] ??
           CONFIG.concurrency,
       );
 
-      const results = await processBatch(
+      const batchResults = await processBatch(
         urls,
         apiKeys ?? [],
         concurrency,
         scoring ?? null,
       );
 
-      res.json({ results });
-    } catch (e) {
-      console.error("Failed /fetch", e);
+      res.json({ results: batchResults });
+    } catch (fetchError) {
+      console.error("Failed /fetch", fetchError);
       res.status(500).json({
-        error: e instanceof Error ? e.message : "unknown",
+        error: fetchError instanceof Error ? fetchError.message : "unknown",
       });
     }
   },

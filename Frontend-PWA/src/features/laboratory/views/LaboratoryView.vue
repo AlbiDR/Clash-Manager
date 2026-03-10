@@ -52,18 +52,18 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
     :status="{ type: statusType, text: statusText }"
     :loading="isFetching"
     :is-empty="isEmpty"
+    :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
+    :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
+    empty-icon="flask"
     :skeleton-component="BaseCardSkeleton"
     :sync-error="fetchError || undefined"
     @refresh="refresh"
   >
     <template #empty-action>
-      <div v-if="!globalData?.playerTag" class="setup-hint">
-        <p>No <b>PlayerTag</b> configured in Project Properties.</p>
-        <router-link to="/settings" class="btn-primary">
-          <Icon name="settings" size="18" />
-          <span>Configure Settings</span>
-        </router-link>
-      </div>
+      <router-link v-if="!globalData?.playerTag" to="/settings" class="btn-primary">
+        <Icon name="settings" size="18" />
+        <span>Configure Settings</span>
+      </router-link>
     </template>
 
     <!-- Simulation Dashboard -->
@@ -145,20 +145,5 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.setup-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.setup-hint p {
-  font-size: 16px;
-  opacity: 0.7;
 }
 </style>

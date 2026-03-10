@@ -81,7 +81,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // 2. WORKER HANDSHAKE
     // Constraint: If the worker is unreachable, we force "Low Quota Mode".
     // This throttles the discovery depth to ensure the script completes
-    // within GAS limits and doesn't exhaust the UrlFetchApp quota.
+    // within GAS limits and doesn't exhaust the UrlFetchApp budget.
     const remoteAvailable = Registry.Services.Network.remoteWorkerHealthy(true);
     const remoteExpandEnabled = Registry.Services.Store.props.get("HH_REMOTE_EXPAND", "1") === "1";
 
@@ -200,8 +200,6 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       Registry.Services.Core.shuffleArray(localPool);
       tagsToFetch = localPool.map(p => p.tag);
     }
-    
-    if (tagsToFetch.length === 0) return [];
 
     // 6. PROPHET INTELLIGENCE INTEGRATION
     // Intent: We pre-normalize the Prophet cache for O(1) lookups.

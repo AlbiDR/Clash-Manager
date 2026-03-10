@@ -2,6 +2,8 @@ import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import { ClanMemberSnapshot, DatabaseUpdateResult } from './Database_Types';
 import DatabaseView from './Database_View';
+import * as v from 'valibot';
+import { ClanMemberSnapshotSchema } from './Validation';
 
 declare var Sheets: any;
 declare var Utilities: any;
@@ -177,30 +179,34 @@ const DatabaseStore = {
         const scanValues = dataRes.valueRanges?.[1].values || [];
 
         // Find max sort number
-        sortValues.forEach((valArr: any[]) => {
-          const n = parseInt(valArr[0]);
+        sortValues.forEach((sortRow: any[]) => {
+          const n = parseInt(sortRow[0]);
           if (!isNaN(n) && n > maxSortNumber) maxSortNumber = n;
         });
 
         // Identify which rows are actually "Today" and map them by Tag
         // Reverse scan to find the LATEST entry for each tag
         for (let i = scanValues.length - 1; i >= 0; i--) {
-          const row = scanValues[i];
-          const d = Registry.Services.Time.parseFlexibleDate(row[S_DB.DATE]);
+          const scanRow = scanValues[i];
+          const d = Registry.Services.Time.parseFlexibleDate(scanRow[S_DB.DATE]);
           if (d && Registry.Services.Time.formatDate(d).split(" ")[0] === todayStr.split(" ")[0]) {
-            const tag = String(row[S_DB.TAG]).toUpperCase().trim();
+            const tag = String(scanRow[S_DB.TAG]).toUpperCase().trim();
             if (!existingMap.has(tag)) {
                existingMap.set(tag, readStart + i);
-               todayValues.push(row);
+               todayValues.push(scanRow);
             }
           }
         }
     }
 
     // 3. Process API Data
-    activeMembers.forEach((m) => {
-      const normalizedTag = m.tag.toUpperCase().trim();
-      const rawFame = warFameMap.get(m.tag) || 0;
+    activeMembers.forEach((activeMember) => {
+      const result = v.safeParse(ClanMemberSnapshotSchema, activeMember);
+      if (!result.success) return;
+
+      const data = result.output;
+      const normalizedTag = data.tag.toUpperCase().trim();
+      const rawFame = warFameMap.get(data.tag) || 0;
       
       const warFame = isWarDay 
           ? Registry.Services.Scoring.toStrictValue(rawFame) 
@@ -212,13 +218,13 @@ const DatabaseStore = {
 
       const rowData = [
         Registry.Services.Time.formatDate(today),
-        m.tag,
-        m.name,
-        m.role,
-        Registry.Services.Scoring.toStrictValue(m.trophies),
-        Registry.Services.Scoring.toStrictValue(m.donations),
-        Registry.Services.Scoring.toStrictValue(m.donationsReceived),
-        Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(m.lastSeen)),
+        data.tag,
+        data.name,
+        data.role,
+        Registry.Services.Scoring.toStrictValue(data.trophies),
+        Registry.Services.Scoring.toStrictValue(data.donations),
+        Registry.Services.Scoring.toStrictValue(data.donationsReceived),
+        Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(data.lastSeen)),
         warFame,
         battleCredit,
       ];

@@ -174,7 +174,7 @@ function handleRequest(e: GoogleAppsScript.Events.DoGet | GoogleAppsScript.Event
         // THREAT: Unvalidated external parameters (Target B [1]).
         // Rationale: Enforce [VALIDATION] boundary for player tags. Manual String/trim
         // checks are replaced with PlayerProfilePayloadSchema to ensure data integrity.
-        const valRes = v.safeParse(PlayerProfilePayloadSchema, e?.parameter);
+        const valRes = v.safeParse(PlayerProfilePayloadSchema, { ...e?.parameter, action });
         if (!valRes.success) {
            return respond(null, "VALIDATION_ERROR", "Parameter 'tag' is required and must be valid.");
         }
