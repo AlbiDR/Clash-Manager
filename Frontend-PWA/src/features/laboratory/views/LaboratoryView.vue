@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {
+  vTactile,
   Icon,
   ConsoleLayout
 } from "@shared";
-import { useClashDataStore } from "@core";
+import { useClashDataStore, useBlueprintMode, useHaptics } from "@core";
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
@@ -26,6 +27,12 @@ const {
   handleVaultUpdate,
   refresh,
 } = useLaboratory();
+
+const { isBlueprintMode } = useBlueprintMode();
+const haptics = useHaptics();
+
+const showSkeletons = computed(() => isFetching.value || isBlueprintMode.value);
+const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
 const clashDataStore = useClashDataStore();
 const { data: globalData } = storeToRefs(clashDataStore);
@@ -52,7 +59,7 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   <ConsoleLayout
     title="Laboratory"
     :status="{ type: statusType, text: statusText }"
-    :loading="isFetching"
+    :loading="showSkeletons"
     :is-empty="isEmpty"
     :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
     :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
@@ -109,6 +116,22 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
         </div>
       </div>
     </div>
+
+    <!-- Brand Alignment Footer -->
+    <div class="footer-info">
+      <div
+        class="brand"
+        @click="
+          haptics.heavy();
+          window.location.reload();
+        "
+        v-tactile
+      >
+        CLASH MANAGER V{{ appVersion }}
+        <span v-if="isBlueprintMode" class="demo-tag">BLUEPRINT</span>
+      </div>
+      <div class="copy">Copyright © 2026 AlbiDR</div>
+    </div>
   </ConsoleLayout>
 </template>
 
@@ -146,5 +169,45 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.footer-info {
+  padding: 40px 0;
+  text-align: center;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.brand {
+  font-size: 12px;
+  font-weight: 950;
+  opacity: 0.3;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.brand:active {
+  opacity: 0.6;
+}
+
+.demo-tag {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0;
+  opacity: 1;
+}
+
+.copy {
+  font-size: 10px;
+  opacity: 0.2;
 }
 </style>
