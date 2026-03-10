@@ -54,16 +54,15 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
     :is-empty="isEmpty"
     :skeleton-component="BaseCardSkeleton"
     :sync-error="fetchError || undefined"
+    :empty-message="!globalData?.playerTag ? 'Target Required' : 'No Data'"
+    :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Check your internet connection or try again.'"
     @refresh="refresh"
   >
-    <template #empty-action>
-      <div v-if="!globalData?.playerTag" class="setup-hint">
-        <p>No <b>PlayerTag</b> configured in Project Properties.</p>
-        <router-link to="/settings" class="btn-primary">
-          <Icon name="settings" size="18" />
-          <span>Configure Settings</span>
-        </router-link>
-      </div>
+    <template #empty-action v-if="!globalData?.playerTag">
+      <router-link to="/settings" class="btn-primary">
+        <Icon name="settings" size="18" />
+        <span>Configure Settings</span>
+      </router-link>
     </template>
 
     <!-- Simulation Dashboard -->
@@ -129,8 +128,6 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   }
 }
 
-
-
 .section-title {
   display: flex;
   align-items: center;
@@ -145,20 +142,5 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.setup-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.setup-hint p {
-  font-size: 16px;
-  opacity: 0.7;
 }
 </style>
