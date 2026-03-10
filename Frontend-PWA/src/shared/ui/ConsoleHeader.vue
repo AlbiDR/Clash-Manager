@@ -209,19 +209,19 @@ function openOverlay() {
 
 .bloom-effect {
   position: absolute;
-  top: -50px;
-  left: -20px;
-  width: 150px;
-  height: 150px;
-  background: var(--sys-color-primary);
-  filter: blur(80px);
-  opacity: 0.08;
+  top: -100px;
+  left: -50px;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, var(--sys-color-primary) 0%, transparent 70%);
+  opacity: 0.1;
   pointer-events: none;
   transition: opacity 0.4s;
+  z-index: 0;
 }
 
 .is-scrolled .bloom-effect {
-  opacity: 0.15;
+  opacity: 0.18;
 }
 
 .header-row {
