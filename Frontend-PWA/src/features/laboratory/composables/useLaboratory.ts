@@ -57,6 +57,10 @@ const isSimulating = ref(false)
 const isFetching = ref(false)
 const fetchError = ref<string | null>(null)
 
+// Performance Control Block
+let currentSimulationId = 0;
+let lastAnalyzedTag: string | null = null;
+
 /**
  * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
  *
@@ -180,12 +184,18 @@ export function useLaboratory() {
    */
   function analyze() {
     if (!observation.value) return
+    
+    // Prevent redundant analysis if same target already processed
+    const currentTag = observation.value.profile.tag;
+    if (isSimulating.value && lastAnalyzedTag === currentTag) return;
+    lastAnalyzedTag = currentTag;
+
+    const simId = ++currentSimulationId;
     isSimulating.value = true
     
     const s = settings.value;
     const forceInfinite = s.strategy === "Level Projection";
     
-    // Create actual settings for the engine
     const engineSettings: OptimizationSettings = {
       ...s,
       infiniteResources: forceInfinite
@@ -195,33 +205,37 @@ export function useLaboratory() {
     currentSimulation = calculateProgressionPath(initialState, engineSettings);
 
     const processBatch = () => {
-      if (!currentSimulation) return;
+      // Cancellation check: if a newer simulation has started, abort this one.
+      if (simId !== currentSimulationId || !currentSimulation) return;
 
       let lastState: SimulationState | null = null;
       let startTime = performance.now();
+      const BATCH_TIME_MS = 10;
       
-      // Intent: Process for 10ms per frame to avoid blocking the main thread.
-      // This allows the browser to remain responsive during heavy calculations.
-      while (performance.now() - startTime < 10) {
+      while (performance.now() - startTime < BATCH_TIME_MS) {
         const { value, done } = currentSimulation.next();
         if (done) {
-          if (value) operation.value = mapStateToResult(value, observation.value?.profile);
-          currentSimulation = null;
-          isSimulating.value = false;
+          if (value && simId === currentSimulationId) {
+            operation.value = mapStateToResult(value, observation.value?.profile);
+          }
+          if (simId === currentSimulationId) {
+            currentSimulation = null;
+            isSimulating.value = false;
+          }
           return;
         }
         lastState = value;
       }
 
-      // Update intermediate state for progress feeling
-      if (lastState) {
+      // Update intermediate state for progress feeling - throttled to ~30fps
+      if (lastState && simId === currentSimulationId) {
         operation.value = mapStateToResult(lastState, observation.value?.profile);
       }
 
       if (window.requestIdleCallback) {
         window.requestIdleCallback(processBatch);
       } else {
-        setTimeout(processBatch, 0);
+        setTimeout(processBatch, 16); 
       }
     };
 
@@ -332,7 +346,7 @@ export function useLaboratory() {
         if (parsed && (!clashData.value?.playerTag || parsed.profile.tag === clashData.value.playerTag)) {
           // Re-hydrate to ensure branded types and new structure
           observation.value = ProfileHydrator.hydrate(parsed);
-          analyze();
+          // Analysis is triggered by the immediate watch below
         }
       } catch (e) {
         console.warn("[Laboratory] Cache hydration failed", e);
@@ -342,7 +356,7 @@ export function useLaboratory() {
 
   watch(() => clashData.value?.playerTag, (newTag) => {
     if (newTag) {
-      if (!observation.value) {
+      if (!observation.value || observation.value.profile.tag !== newTag) {
         fetchTrackedPlayer()
       } else {
         analyze()
