@@ -85,8 +85,8 @@ Protocols for data safety, state management, and reliable communication.
 State must be managed via a strict three-tier hierarchy to maintain clinical isolation:
 
 1. **Local State:** Use `ref()` for primitive values and `reactive()` for complex state scoped to a single component.
-2. **Feature State:** Shared logic within a Feature must be encapsulated in a Singleton Composable. This state is private to the Feature silo and invisible to other Features.
-3. **Global State:** Minimalist infrastructure state only (e.g., Theme, Storage status) resides in Layer 1 `services/`.
+2. **Feature State:** Shared state and logic within a Feature must be encapsulated in a Pinia Store. This state is private to the Feature silo and invisible to other Features.
+3. **Global State:** Minimalist infrastructure state only (e.g., Theme, Storage status) resides in Layer 1 `services/` or a strictly scoped Pinia Store.
 
 - **Unidirectional Execution:** Features emit events upward to communicating layers; they never mutate props directly. Data flows down; events flow up.
 

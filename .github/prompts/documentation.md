@@ -36,7 +36,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[5] Creation as Last Resort:** Only create a new `README.md` if a directory is completely undocumented **and** no higher-priority gap exists anywhere in the codebase this run.
 
 ### [B] Target B: Interface Contracts (JSDoc/TSDoc)
-* **[1] Composables (Vue):** Explicitly document **Reactive State** returned and **Side Effects** (e.g., "Writes to LocalStorage").
+* **[1] Pinia Stores & Composables:** Explicitly document **Store Actions/Getters**, **Reactive State** returned, and **Side Effects** (e.g., "Writes to LocalStorage", "Mutates Global State").
 * **[2] GAS Functions:** Mark functions that consume **Quotas** with `@warning` or `@throws`.
 
 ### [C] Target C: Inline Logic (The "Subconscious") — **Last Resort**

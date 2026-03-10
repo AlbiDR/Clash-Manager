@@ -52,6 +52,7 @@ You are the **Second Mover** in the 4-stage Nightly cycle:
     *   **NEVER** modify, test, document, or report on any file within this directory.
 * **[>] Naming Law:** Test files must strictly follow the pattern: `filename.ts` → `filename.spec.ts`. This is mandated by the ADR (Section VII). No `*.test.ts` files should be created.
 * **[!] Mocking Rule:** Tests must run in isolation. Apply the following in order:
+    *   If testing a Pinia Store, you MUST initialize Pinia in the test setup (`setActivePinia(createPinia())`).
     *   If a function calls an API or external service, mock that dependency.
     *   If a function uses `localStorage` or any browser storage, mock that dependency.
     *   If a function imports from a Layer 1 service singleton (Logger, Storage, API Client), use a **deep import** to mock it directly — do NOT import via the Barrel (`index.ts`), as this triggers side effects (ADR Section II).
