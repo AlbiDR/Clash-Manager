@@ -10,6 +10,8 @@ const formatNumber = (num: number) => {
   return new Intl.NumberFormat().format(num);
 };
 
+const baseUrl = import.meta.env.BASE_URL;
+
 </script>
 
 <template>
