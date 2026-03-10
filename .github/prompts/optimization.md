@@ -27,7 +27,7 @@ You are the **Third Mover** in the 4-stage Nightly cycle:
 
 # [3] **Constraint 1: Project Scope**
 ### [A] Target A: Frontend PWA & Workers (Vue/Vite/Node)
-* **[1] Architecture:** Logic must be extracted into specialized **Composables**. Views must be broken into atomic **Components**.
+* **[1] Architecture:** Stateful logic must be extracted into **Pinia Stores**. Stateless/behavioral logic belongs in **Composables**. Views must be broken into atomic **Components**.
 * **[2] Modernization:** Gradual migration of `.js` to `.ts` (**Type Safety** is an optimization).
 * **[3] Lean Pruning:** Actively but carefully identify and remove dead code or redundant dependencies.
 
@@ -80,7 +80,7 @@ You are the **Third Mover** in the 4-stage Nightly cycle:
 ### [B] Step 2: Internal Analysis (Hypothesis & Proof)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
 
-* **[1]** Formulate "Hypothesis" (e.g., "Extracting logic `<X>` to Composable `<Y>` will reduce duplication across `<Z>` call sites").
+* **[1]** Formulate "Hypothesis" (e.g., "Extracting logic `<X>` to Pinia Store / Composable `<Y>` will reduce duplication across `<Z>` call sites").
 * **[2] Safety Check A (Naming Law):** Does the new filename conform to the Naming Conventions contract in the ADR (Section VII)? Does it match the layer it is being placed in?
 * **[3] Safety Check B (GAS Service):** Does this touch `SpreadsheetApp` or `Advanced Sheets API`? If yes, **ABORT**.
 * **[4] Safety Check C (ADR Coherence):** Does this refactor respect layer import boundaries? Would extracting this code violate Feature isolation (a Feature importing from another Feature)? Would it break the structural rules? If yes, **ABORT** and re-scope.
