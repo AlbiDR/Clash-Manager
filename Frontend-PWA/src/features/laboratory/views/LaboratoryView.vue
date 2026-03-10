@@ -4,8 +4,9 @@ import {
   Icon,
   ConsoleLayout
 } from "@shared";
-import { useClashData } from "@core";
+import { useClashDataStore } from "@core";
 import { computed } from "vue";
+import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
 
 // Laboratory Components
@@ -26,7 +27,8 @@ const {
   refresh,
 } = useLaboratory();
 
-const { data: globalData } = useClashData();
+const clashDataStore = useClashDataStore();
+const { data: globalData } = storeToRefs(clashDataStore);
 
 const statusText = computed(() => {
   if (isFetching.value) return "Scanning Vault...";

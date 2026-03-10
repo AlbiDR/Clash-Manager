@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref, nextTick } from 'vue';
+import { setActivePinia, createPinia } from 'pinia';
 
 // --- Mocks ---
 
 const mockClashData = ref({ playerTag: '#TAG123' });
-vi.mock("@core/services/useClashData", () => ({
-  useClashData: () => ({
+vi.mock("@core/services/useClashDataStore", () => ({
+  useClashDataStore: () => ({
     data: mockClashData
   })
 }));
@@ -43,6 +44,7 @@ vi.mock('../../logic', async (importOriginal) => {
 
 describe('useLaboratory', () => {
   beforeEach(async () => {
+    setActivePinia(createPinia());
     vi.resetModules();
     localStorageMock.clear();
     vi.clearAllMocks();

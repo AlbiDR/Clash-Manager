@@ -12,17 +12,19 @@ import {
   idb,
   useApiState,
   useAppSettings,
-  useClashData,
+  useClashDataStore,
   useStoragePersistence,
   useWakeLock,
 } from "@core";
 
 import { createApp, watch } from "vue";
+import { createPinia } from "pinia";
 import { baseStyles } from "@core/theme/base";
 import { animationStyles } from "@core/theme/animations";
 import { skeletonStyles } from "@core/theme/skeletons";
 import { componentStyles } from "@core/theme/components";
 import App from "./App.vue";
+
 import router from "./router";
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
@@ -88,6 +90,9 @@ async function bootstrap() {
 
     // 2. Create App
     const app = createApp(App);
+    const pinia = createPinia();
+    
+    app.use(pinia);
     app.use(router);
     app.component("Icon", Icon);
 
@@ -115,13 +120,13 @@ async function bootstrap() {
     app.mount("#app");
 
     // 4. Initialize Systems (Immediate)
-    const clashData = useClashData();
+    const clashDataStore = useClashDataStore();
     const apiState = useApiState();
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
     // INSTANT BOOT: Load local cache immediately for LCP
-    await clashData.loadLocal();
+    await clashDataStore.loadLocal();
     
     // CONCURRENCY FIX: Start API Handshake FIRST.
     // Do NOT start background sync (heavy data fetch) until handshake clears.
@@ -134,7 +139,7 @@ async function bootstrap() {
       (status) => {
         if (status === "online") {
           // Server is awake and reachable, safe to sync data
-          clashData.startBackgroundSync();
+          clashDataStore.startBackgroundSync();
           unwatch(); // Run once per session
         } else if (status === "offline") {
           // If handshake fails completely, stop watching (Manual retry required)

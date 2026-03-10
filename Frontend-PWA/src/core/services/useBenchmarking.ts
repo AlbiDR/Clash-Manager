@@ -6,7 +6,8 @@
  * maximum performance on large datasets.
  */
 import { useAppSettings, type ModuleState } from "./useAppSettings";
-import { useClashData } from "./useClashData";
+import { useClashDataStore } from "./useClashDataStore";
+import { storeToRefs } from "pinia";
 
 import { computed, type ComputedRef } from "vue";
 
@@ -157,7 +158,8 @@ export function useBenchmarking() {
   // [PERF] LAZY INIT: Only initialize the singleton when first requested.
   // This avoids evaluation issues during testing and ensures state is ready.
   if (!lbStats) {
-    const { data } = useClashData();
+    const clashDataStore = useClashDataStore();
+    const { data } = storeToRefs(clashDataStore);
     const { modules } = useAppSettings();
     sharedModules = modules;
 

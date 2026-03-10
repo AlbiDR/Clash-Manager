@@ -1,9 +1,10 @@
 import { useBenchmarking } from "@core";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
+import { setActivePinia, createPinia } from 'pinia';
 // Mock useClashData
-vi.mock("../useClashData", () => ({
-  useClashData: vi.fn(() => ({
+vi.mock("../useClashDataStore", () => ({
+  useClashDataStore: vi.fn(() => ({
     data: ref({
       lb: [
         {
@@ -59,6 +60,10 @@ vi.mock("../useClashData", () => ({
 }));
 
 describe("useBenchmarking", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   const { getBenchmark } = useBenchmarking();
 
   describe("lb context (Leaderboard)", () => {
