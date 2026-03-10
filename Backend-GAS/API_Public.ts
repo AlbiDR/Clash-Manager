@@ -16,7 +16,8 @@ import {
   UndismissRecruitsPayloadSchema,
   TriggerUpdatePayloadSchema,
   PlayerProfilePayloadSchema,
-  LoggerPayloadSchema
+  LoggerPayloadSchema,
+  BaseActionSchema
 } from "./Validation";
 
 // Global Version Constant
@@ -69,8 +70,6 @@ declare const VER_HEADHUNTER: string;
 declare const VER_SCORING: string;
 declare const VER_ORCHESTRATOR: string;
 declare const VER_VALIDATION: string;
-declare const BaseActionSchema: any;
-declare const PlayerProfilePayloadSchema: any;
 
 /**
  * API INTERFACES

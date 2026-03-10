@@ -1,5 +1,6 @@
 import { useApiState } from "@core/api/useApiState";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 import { computed } from "vue";
@@ -24,8 +25,9 @@ import type { LeaderboardMember } from "@core/types";
 export function useLeaderboard() {
   const { pingData } = useApiState();
   const { isShowcaseMode } = useShowcaseMode();
-  const { data, isHydrated, isRefreshing, syncError, lastSyncTime, refresh } =
-    useClashData();
+  const clashDataStore = useClashDataStore();
+  const { data, isHydrated, isRefreshing, syncError, lastSyncTime } = storeToRefs(clashDataStore);
+  const { refresh } = clashDataStore;
 
   const members = computed(() => data.value?.lb || []);
 

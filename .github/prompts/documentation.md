@@ -36,7 +36,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[5] Creation as Last Resort:** Only create a new `README.md` if a directory is completely undocumented **and** no higher-priority gap exists anywhere in the codebase this run.
 
 ### [B] Target B: Interface Contracts (JSDoc/TSDoc)
-* **[1] Composables (Vue):** Explicitly document **Reactive State** returned and **Side Effects** (e.g., "Writes to LocalStorage").
+* **[1] Pinia Stores & Composables:** Explicitly document **Store Actions/Getters**, **Reactive State** returned, and **Side Effects** (e.g., "Writes to LocalStorage", "Mutates Global State").
 * **[2] GAS Functions:** Mark functions that consume **Quotas** with `@warning` or `@throws`.
 
 ### [C] Target C: Inline Logic (The "Subconscious") — **Last Resort**
@@ -81,7 +81,8 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[c]** **README Creation:** Identify any directory with a public interface or multiple modules that has no `README.md` at all.
 * **[d]** **Missing JSDoc/TSDoc:** ONLY if all READMEs in the changed scope are verified accurate — identify an exported function or composable with no documentation block.
 * **[e]** **Inline logic gap:** ONLY if all above are satisfied — identify a complex logic block with no inline explanation.
-* **[!] Coverage Log:** Append the path of every file or README updated to `.github/nightly/logs/documentation-coverage.log`. Do **not** apply the log to README checks `[a]` or `[b]` — any code change in a directory mandates a fresh README re-evaluation.
+* **[f]** **Missing Licensing Header:** Identify any `.ts`, `.vue`, or `.gs` file that lacks the standard licensing headers. This is the **Final Fallback** before a "No Gap Found" result.
+* **[!] Coverage Log:** Append the path of every file or README updated to `.github/nightly-logs/documentation-coverage.log`. Do **not** apply the log to README checks `[a]` or `[b]` — any code change in a directory mandates a fresh README re-evaluation.
 
 ### [B] Step 2: Internal Analysis (Reasoning Phase)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
@@ -93,6 +94,13 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 ### [C] Step 3: Execute (Context Injection)
 **[>] Action:** Apply updates to the single selected file.
 
+* **[0] Mandatory Licensing Enforcer:** Regardless of the triggering queue item, if the selected target is a `.ts`, `.vue`, or `.gs` file, you **MUST** verify it contains the standard license header. If missing, prepend it to the absolute top of the file before applying any other changes:
+    ```javascript
+    // SPDX-License-Identifier: GPL-3.0-only
+    // Copyright (C) 2026 AlbiDR
+    ```
+    Ensure exactly one blank line exists between the copyright and the next line of code or comment. This is a non-negotiable prerequisite for any file modification.
+
 * **[1]** README (existing — stale or shallow): Reconcile first. Identify every statement, snippet, or signature that contradicts the current code and correct or remove it before adding anything new. Only after the existing content is accurate should missing depth (purpose, constraints, relationship to adjacent modules) be added.
 * **[2]** README (new — creation only, last resort): Cover purpose, inputs/outputs, key constraints, and relationship to adjacent modules.
 * **[3]** Architectural Precision: When describing any file's role, use the correct layer vocabulary from the Frontend Bible (`@core`, `@shared`, `@features`, `@app`). Explicitly state what a module **can** import from and what is **forbidden** (e.g., a Feature may not import from another Feature). When documenting a composable that receives external data, reference the Valibot validation boundary requirement. When documenting a service, note that it must remain context-agnostic and must not import from Layers 2, 3, or 4.
@@ -101,6 +109,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[5]** Public contracts: Use `@remarks` for deep architectural context.
 * **[6]** Private logic: Use `//` for decision logging inside logic blocks.
 * **[7]** Extension Check: If `.gs`, disable **TS** syntax.
+* **[8] Licensing Sweeper:** If specifically triggered by queue item `[f]`, apply the header described in `[0]` to the target file.
 
 ### [D] Step 4: Present (Conventional Commits)
 **[i] Output:** Create a Pull Request.
@@ -114,7 +123,8 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[b]** **Reasoning:** Which step in the priority queue triggered this target, and why higher-priority items were ruled out. Include safety checks performed.
 * **[c]** **Changes:** List of files modified/created.
 * **[d]** **Verification:** Confirm ADR coherence and stylistic alignment.
-* **[e]** **Log:** Updated `.github/nightly/logs/documentation-coverage.log`.
+* **[e]** **Log:** Updated `.github/nightly-logs/documentation-coverage.log`.
+* **[f]** **PR History:** Append a one-liner entry to `.github/nightly-logs/PR_HISTORY.md` in the format: `## [Date] PR #X: docs(docs): [summary]`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**

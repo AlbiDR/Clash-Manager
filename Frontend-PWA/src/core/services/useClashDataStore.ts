@@ -7,68 +7,69 @@ import { useBroadcastChannel } from "./useBroadcastChannel";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { ref, shallowRef, readonly, watch } from "vue";
+import { defineStore } from "pinia";
 import type { WebAppData } from "@core/types";
 import { generateMockData } from "../utils/mockData";
-
-// Global State
-const clashData = shallowRef<WebAppData | null>(null);
-const isHydrated = ref(false);
-const isRefreshing = ref(false);
-const lastSyncTime = ref<number | null>(null);
-const syncStatus = ref<"idle" | "syncing" | "success" | "error">("idle");
-const syncError = ref<string | null>(null);
-
-// Singleton Composables (Module Level)
-// These are safe as they only return refs/methods without side effects on call
-const { isSyntheticMode } = useSyntheticMode();
-const { isBlueprintMode } = useBlueprintMode();
-const { isShowcaseMode } = useShowcaseMode();
 
 // PERFORMANCE: Singleton state for global synchronization.
 let watchesInitialized = false;
 let broadcast: ((msg: any) => void) | null = null;
 
-/**
- * LOCAL UPDATE HELPER
- * Allows other logic (like optimistic updates) to modify the state directly.
- */
-function updateLocalData(newData: WebAppData) {
-  clashData.value = newData;
-  saveCache(newData).catch((e) => console.warn("[Data] Failed to persist optimistic update:", e));
-}
+export const useClashDataStore = defineStore("clashData", () => {
+  // Global State
+  const clashData = shallowRef<WebAppData | null>(null);
+  const isHydrated = ref(false);
+  const isRefreshing = ref(false);
+  const lastSyncTime = ref<number | null>(null);
+  const syncStatus = ref<"idle" | "syncing" | "success" | "error">("idle");
+  const syncError = ref<string | null>(null);
 
-/**
- * COMPOSABLE: useClashData
- *
- * @remarks
- * The central data hub of the application. Implements a Stale-While-Revalidate (SWR)
- * pattern to ensure near-instant initial paint (LCP) by hydrating from local storage
- * before attempting a background network refresh.
- *
- * UX Anchor: Employs a mandatory 800ms delay for certain transitions to prevent
- * UI flicker and ensure a consistent loading experience for the user.
- *
- * @returns
- * **Reactive State:**
- * - `data`: Readonly reactive reference to the inflated WebAppData.
- * - `isHydrated`: Indicates if the initial local storage load has completed.
- * - `isRefreshing`: Indicates if a background network sync is currently in progress.
- * - `syncStatus`: Unified status enum ('idle', 'syncing', 'success', 'error').
- * - `syncError`: Error message if the last sync attempt failed.
- * - `lastSyncTime`: Epoch timestamp of the last successful data acquisition.
- *
- * **Actions & Methods:**
- * - `loadLocal`: Hydrates state from IndexedDB.
- * - `startBackgroundSync`: Triggered when specialized modes change or on initial load.
- * - `refresh`: Force a network fetch from the GAS backend.
- * - `updateLocalData`: Direct state/storage override for optimistic updates.
- *
- * @sideeffects
- * - Persistence: Writes to IndexedDB via `saveCache` during synchronization.
- * - Synchronization: Signals other tabs via `BroadcastChannel` on successful sync.
- * - Keep-Alive: Manages a `WakeLock` during active synchronization to prevent sleep.
- */
-export function useClashData() {
+  // Singleton Composables (Module Level)
+  // These are safe as they only return refs/methods without side effects on call
+  const { isSyntheticMode } = useSyntheticMode();
+  const { isBlueprintMode } = useBlueprintMode();
+  const { isShowcaseMode } = useShowcaseMode();
+
+  /**
+   * LOCAL UPDATE HELPER
+   * Allows other logic (like optimistic updates) to modify the state directly.
+   */
+  function updateLocalData(newData: WebAppData) {
+    clashData.value = newData;
+    saveCache(newData).catch((e) => console.warn("[Data] Failed to persist optimistic update:", e));
+  }
+
+  /**
+   * STORE: useClashDataStore
+   *
+   * @remarks
+   * The central data hub of the application. Implements a Stale-While-Revalidate (SWR)
+   * pattern to ensure near-instant initial paint (LCP) by hydrating from local storage
+   * before attempting a background network refresh.
+   *
+   * UX Anchor: Employs a mandatory 800ms delay for certain transitions to prevent
+   * UI flicker and ensure a consistent loading experience for the user.
+   *
+   * @returns
+   * **Reactive State:**
+   * - `data`: Readonly reactive reference to the inflated WebAppData.
+   * - `isHydrated`: Indicates if the initial local storage load has completed.
+   * - `isRefreshing`: Indicates if a background network sync is currently in progress.
+   * - `syncStatus`: Unified status enum ('idle', 'syncing', 'success', 'error').
+   * - `syncError`: Error message if the last sync attempt failed.
+   * - `lastSyncTime`: Epoch timestamp of the last successful data acquisition.
+   *
+   * **Actions & Methods:**
+   * - `loadLocal`: Hydrates state from IndexedDB.
+   * - `startBackgroundSync`: Triggered when specialized modes change or on initial load.
+   * - `refresh`: Force a network fetch from the GAS backend.
+   * - `updateLocalData`: Direct state/storage override for optimistic updates.
+   *
+   * @sideeffects
+   * - Persistence: Writes to IndexedDB via `saveCache` during synchronization.
+   * - Synchronization: Signals other tabs via `BroadcastChannel` on successful sync.
+   * - Keep-Alive: Manages a `WakeLock` during active synchronization to prevent sleep.
+   */
   // LAZY INIT: Initialize singleton watches and cross-tab broadcast once.
   // This prevents redundant watch cycles and evaluation issues in test environments.
   // Pattern: Lazy Singleton Initialization ensures side-effects only run once per session.
@@ -266,4 +267,4 @@ export function useClashData() {
     refresh,
     updateLocalData,
   };
-}
+});

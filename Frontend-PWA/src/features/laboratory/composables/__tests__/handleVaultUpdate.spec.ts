@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useLaboratory } from '../useLaboratory';
 import { ref } from 'vue';
+import { setActivePinia, createPinia } from 'pinia';
 
 // Mock dependencies
 vi.mock('@core/services/useClashData', () => ({
@@ -33,6 +34,7 @@ vi.mock('../../logic', async (importOriginal) => {
 
 describe('useLaboratory handleVaultUpdate', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     localStorage.clear();
     vi.clearAllMocks();
   });

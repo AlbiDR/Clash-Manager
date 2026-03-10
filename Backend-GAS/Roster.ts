@@ -139,14 +139,14 @@ const Roster: RosterContract = {
         const pWarHistory = warHistoryMap.get(cleanMemberTag) || new Map<string, number>();
         const currentFame = pWarHistory.get(currentWeekId) || 0;
         const lastSeen = Registry.Services.Time.parseRoyaleApiDate(m.lastSeen);
-        const dbRecord = marketIntelligence.get(m.tag);
+        const dbRecord = marketIntelligence.get(cleanMemberTag);
 
         let daysTracked = 0;
         let totalDonations = 0;
 
         if (dbRecord) {
           const diffTime = Math.abs(now.getTime() - dbRecord.firstSeen.getTime());
-          daysTracked = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          daysTracked = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
           const liveMax = Math.max(dbRecord.weeklyMax.get(currentWeekId) || 0, m.donations || 0);
           dbRecord.weeklyMax.set(currentWeekId, liveMax);
           dbRecord.weeklyMax.forEach((val: number) => totalDonations += val);

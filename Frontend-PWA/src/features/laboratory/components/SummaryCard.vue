@@ -11,6 +11,7 @@ const formatNumber = (num: number) => {
 };
 
 const baseUrl = import.meta.env.BASE_URL;
+
 </script>
 
 <template>
@@ -100,10 +101,9 @@ const baseUrl = import.meta.env.BASE_URL;
 }
 
 .projection-badge {
-  background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   padding: 8px 14px;
-  border-radius: 12px;
+  border-radius: var(--shape-corner-medium);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -154,7 +154,7 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 8px;
   background: var(--sys-color-surface-container-high);
   padding: 8px 16px;
-  border-radius: 14px;
+  border-radius: var(--shape-corner-large);
   border: 1px solid var(--sys-color-outline-variant);
   min-width: 80px;
   justify-content: center;
@@ -217,7 +217,7 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 16px;
   background: var(--sys-color-surface-container-low);
   padding: 14px 18px;
-  border-radius: 16px;
+  border-radius: var(--shape-corner-large);
   border: 1px solid var(--sys-color-outline-variant);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -268,7 +268,7 @@ const baseUrl = import.meta.env.BASE_URL;
   margin-top: 32px;
   background: var(--sys-color-surface-container-highest);
   padding: 16px;
-  border-radius: 16px;
+  border-radius: var(--shape-corner-large);
   border: 1px solid var(--sys-color-outline-variant);
 }
 

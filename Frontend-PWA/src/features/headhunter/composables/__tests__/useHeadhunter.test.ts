@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { reactive, ref, nextTick } from "vue";
+import { setActivePinia, createPinia } from 'pinia';
 import type { WebAppData, Recruit } from "@core/types";
 
 // --- Mocks ---
@@ -31,8 +32,8 @@ vi.mock("@core/services/useAppSettings", () => ({
   }),
 }));
 
-vi.mock("@core/services/useClashData", () => ({
-  useClashData: () => ({
+vi.mock("@core/services/useClashDataStore", () => ({
+  useClashDataStore: () => ({
     data: mockClashData,
     updateLocalData: mockUpdateLocalData,
   }),
@@ -74,6 +75,7 @@ vi.mock("@core/api/GasClient", () => ({
 // --- Test Implementation ---
 describe("useHeadhunter", () => {
   beforeEach(async () => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockIsSyntheticMode.value = false;
     mockClashData.value = null;

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Icon } from "@shared";
 import { triggerBackendUpdate } from "@core/api/GasClient";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import { ref, reactive, onUnmounted, computed } from "vue";
 // Types
 type TargetKey = "members" | "leaderboard" | "headhunters";
@@ -47,7 +48,8 @@ const targets = reactive<Record<TargetKey, RefreshTarget>>({
   },
 });
 
-const { isRefreshing } = useClashData(); // Get global refreshing state
+const clashDataStore = useClashDataStore();
+const { isRefreshing } = storeToRefs(clashDataStore); // Get global refreshing state
 
 // Logic
 const startCooldown = (key: TargetKey) => {

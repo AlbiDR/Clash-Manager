@@ -1,5 +1,6 @@
 import { getPlayerProfile } from "@core/api/GasClient";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import {
   asGold,
   asGems,
@@ -171,7 +172,8 @@ function calculateDefaultTarget(currentLevel: number): number {
  * - Fetches data from the GAS backend when `playerTag` changes.
  */
 export function useLaboratory() {
-  const { data: clashData } = useClashData()
+  const clashDataStore = useClashDataStore();
+  const { data: clashData } = storeToRefs(clashDataStore);
 
   let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
 
@@ -235,7 +237,7 @@ export function useLaboratory() {
       if (window.requestIdleCallback) {
         window.requestIdleCallback(processBatch);
       } else {
-        setTimeout(processBatch, 16); 
+        setTimeout(processBatch, 16); // 16ms approx 60fps, but logic uses 10ms budget
       }
     };
 
@@ -343,10 +345,12 @@ export function useLaboratory() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (parsed && (!clashData.value?.playerTag || parsed.profile.tag === clashData.value.playerTag)) {
+        const currentGlobalTag = clashData.value?.playerTag;
+        if (parsed && (!currentGlobalTag || parsed.profile.tag === currentGlobalTag)) {
           // Re-hydrate to ensure branded types and new structure
           observation.value = ProfileHydrator.hydrate(parsed);
-          // Analysis is triggered by the immediate watch below
+          // Only trigger analysis if tags match or no tag filter applied
+          analyze();
         }
       } catch (e) {
         console.warn("[Laboratory] Cache hydration failed", e);
@@ -354,15 +358,15 @@ export function useLaboratory() {
     }
   }
 
-  watch(() => clashData.value?.playerTag, (newTag) => {
-    if (newTag) {
+  watch(() => clashData.value?.playerTag, (newTag, oldTag) => {
+    if (newTag && newTag !== oldTag) {
       if (!observation.value || observation.value.profile.tag !== newTag) {
         fetchTrackedPlayer()
       } else {
         analyze()
       }
     }
-  }, { immediate: true })
+  }, { immediate: false }) // Initial run handled by hydration block above
 
   return {
     observation: computed(() => observation.value),

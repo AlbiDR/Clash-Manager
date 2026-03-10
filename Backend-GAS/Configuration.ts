@@ -206,7 +206,7 @@ export var CONFIG: AppConfig = {
       ROSTER: "13.1.0",
       SCORING: "13.1.0",
       SCORING_KERNEL: "13.1.0",
-      HEADHUNTER: "13.1.0", 
+      HEADHUNTER: "14.3.4", 
       CONTROLLER_WEBAPP: "13.1.0",
       REGISTRY: "13.1.0",
       API_PUBLIC: "13.1.0"
