@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 # CleanStack Architecture — Authoritative Design Reference (ADR)
 
 This document is the **Single Source of Truth** for the architectural principles, structural rules, and behavioral standards governing the entire `Clash-Manager` stack (Frontend, Backend/GAS, Worker). All secondary architecture documents are subordinate to this ADR.
