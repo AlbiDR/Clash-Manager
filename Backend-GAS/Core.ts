@@ -150,10 +150,24 @@ var Core: CoreContract = {
   parseWarHistory(histStr: string | null | undefined): Map<string, number> {
     if (!histStr || histStr === "-" || typeof histStr !== "string")
       return new Map<string, number>();
+    
     const historyMap = new Map<string, number>();
-    histStr.split(" | ").forEach((entry) => {
-      const parts = entry.trim().split(" ");
-      if (parts.length === 2) historyMap.set(parts[1], Number(parts[0]));
+    // Resilience: Support both " | " (standard) and "," (GAS auto-format)
+    const entries = histStr.split(/[|,]/);
+    
+    entries.forEach((entry) => {
+      const cleanEntry = entry.trim();
+      if (!cleanEntry) return;
+      
+      const parts = cleanEntry.split(/\s+/);
+      // Valid entry format: "fame weekId" (e.g., "1200 24W12")
+      if (parts.length >= 2) {
+        const fame = Number(parts[0]);
+        const weekId = parts[1]!;
+        if (!isNaN(fame) && weekId) {
+          historyMap.set(weekId, fame);
+        }
+      }
     });
     return historyMap;
   },

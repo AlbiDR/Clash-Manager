@@ -237,6 +237,32 @@ const NetworkInternal = {
    */
   hashKey(str: string): string {
     return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, str)).slice(0, 50);
+  },
+
+  /**
+   * INTERNAL: Extracts War History from River Race Log response.
+   * Mirrors the logic from the Backend Worker to ensure consistency.
+   */
+  _parseWarHistoryFromLog(log: any): Record<string, Record<string, number>> {
+    const history: Record<string, Record<string, number>> = {};
+    if (!log || !log.items) return history;
+
+    const clanTag = (CONFIG.SYSTEM.CLAN_TAG.startsWith("#") ? CONFIG.SYSTEM.CLAN_TAG : "#" + CONFIG.SYSTEM.CLAN_TAG).toUpperCase();
+
+    log.items.forEach((item: any) => {
+      const weekId = Registry.Services.Time.calculateWarWeekId(Registry.Services.Time.parseRoyaleApiDate(item.createdDate));
+      const myClan = item.standings?.find((s: any) => s.clan.tag.toUpperCase() === clanTag);
+      
+      if (myClan?.clan?.participants) {
+        myClan.clan.participants.forEach((p: any) => {
+          if (!history[p.tag]) history[p.tag] = {};
+          const currentFame = history[p.tag]![weekId] || 0;
+          history[p.tag]![weekId] = Math.max(currentFame, p.fame || 0);
+        });
+      }
+    });
+
+    return history;
   }
 };
 
@@ -520,7 +546,9 @@ var Network: NetworkContract = {
     ];
 
     const [members, race, log] = this.fetchRoyaleAPI(urls);
-    return { members, race, history: null, log: log || null };
+    const history = (log && !Array.isArray(log)) ? NetworkInternal._parseWarHistoryFromLog(log) : null;
+    
+    return { members, race, history, log: log || null };
   },
 
   /**

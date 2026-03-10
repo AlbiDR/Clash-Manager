@@ -9,6 +9,11 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - Nightly
+      - Nightly
+
+concurrency:
+  group: merge-nightly
+  cancel-in-progress: false
 
 permissions:
   contents: write

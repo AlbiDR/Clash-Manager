@@ -116,6 +116,19 @@ const Roster: RosterContract = {
         });
       }
 
+      // 3B. DATABASE HISTORY RECONCILIATION
+      // Intent: Fetching long-term memory for players that exceeds the 52-week API window.
+      marketIntelligence.forEach((intel, tag) => {
+        if (intel.fameHistory) {
+          intel.fameHistory.forEach((fame: number, weekId: string) => {
+            // Rationale: Database is used as the ultimate archive.
+            // addWarEntry uses Math.max to ensure we keep the highest reported fame
+            // for a given week, even if it comes from an old DB snapshot.
+            addWarEntry(tag, weekId, fame);
+          });
+        }
+      });
+
       // 4. PERFORMANCE SCORING KERNEL
       Registry.Services.Reporting.logStep(3, 6, "Executing Cumulative Scoring Engine...");
       const rawResults: PlayerResult[] = [];

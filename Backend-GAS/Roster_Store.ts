@@ -1,6 +1,8 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import { ClanMemberResult, WarLogItem, RaceParticipant, PlayerResult } from './Roster_Types';
+import * as v from 'valibot';
+import { ClanMemberSnapshotSchema } from './Validation';
 
 declare var SpreadsheetApp: any;
 
@@ -16,10 +18,11 @@ const RosterStore = {
 
     if (lastRow >= startRow && maxCols > L.RAW_SCORE) {
       const oldData = sheet.getRange(startRow, 1, lastRow - startRow + 1, maxCols).getValues();
-      oldData.forEach((row: any) => {
-        if (row.length > L.RAW_SCORE) {
-          const rawTag = String(row[L.TAG]).trim();
-          const score = row[L.RAW_SCORE];
+      oldData.forEach((scoreDataRow: any) => {
+        if (scoreDataRow.length > L.RAW_SCORE) {
+          const rawTag = String(scoreDataRow[L.TAG]).trim();
+          const score = scoreDataRow[L.RAW_SCORE];
+          
           if (rawTag) {
             const cleanKey = rawTag.replace("#", "").trim().toLowerCase();
             const scoreVal = Number(score);
@@ -43,9 +46,9 @@ const RosterStore = {
       const tagData = sheet.getRange(startRow, 1 + L.TAG, lastRow - startRow + 1, 1).getValues();
       const histData = sheet.getRange(startRow, 1 + L.HISTORY, lastRow - startRow + 1, 1).getValues();
 
-      tagData.forEach((row: any, i: number) => {
-        const tag = String(row[0]).trim();
-        const histStr = histData[i][0];
+      tagData.forEach((tagRow: any, tagIndex: number) => {
+        const tag = String(tagRow[0]).trim();
+        const histStr = histData[tagIndex][0];
         if (tag && typeof histStr === "string" && histStr.length > 0) {
             const cleanKey = (tag.startsWith("#") ? tag : "#" + tag).trim().toUpperCase();
             const archivedMap = Registry.Services.Core.parseWarHistory(histStr);
@@ -77,9 +80,9 @@ const RosterStore = {
   saveProphetCache(results: PlayerResult[], cache: Map<string, any>): void {
     const CACHE_KEY = "PROPHET_CACHE_V1";
     const finalExport: any = {};
-    results.forEach(r => {
-      if (r.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && cache.has(r.tag)) {
-        finalExport[r.tag] = cache.get(r.tag);
+    results.forEach(playerResult => {
+      if (playerResult.daysTracked < CONFIG.SYSTEM.PROPHET_TENURE_THRESHOLD && cache.has(playerResult.tag)) {
+        finalExport[playerResult.tag] = cache.get(playerResult.tag);
       }
     });
     Registry.Services.Store.props.setChunked(CACHE_KEY, finalExport);
@@ -100,52 +103,68 @@ const RosterStore = {
       ).getValues();
       const S_DB = CONFIG.SCHEMA.DB;
 
-      dbValues.forEach((row: any) => {
-        const tag = String(row[S_DB.TAG]);
-        const dateVal = row[S_DB.DATE];
-        const date = Registry.Services.Time.parseFlexibleDate(dateVal);
-        const donGiven = Number(row[S_DB.DON_GIVEN]) || 0;
-        const rawWarFame = row[S_DB.WAR_FAME];
+      dbValues.forEach((dbSnapshotRow: any) => {
+        const payload = {
+          tag: String(dbSnapshotRow[S_DB.TAG]),
+          name: String(dbSnapshotRow[S_DB.NAME]),
+          role: String(dbSnapshotRow[S_DB.ROLE]),
+          trophies: Number(dbSnapshotRow[S_DB.TROPHIES]),
+          donations: Number(dbSnapshotRow[S_DB.DONATIONS]),
+          donationsReceived: Number(dbSnapshotRow[S_DB.DONATIONS_RECEIVED]),
+          lastSeen: String(dbSnapshotRow[S_DB.LAST_SEEN])
+        };
+
+        const result = v.safeParse(ClanMemberSnapshotSchema, payload);
+        if (!result.success) return;
+
+        const data = result.output;
+        const date = Registry.Services.Time.parseFlexibleDate(data.lastSeen);
+        const donGiven = data.donations;
+        const rawWarFame = dbSnapshotRow[S_DB.WAR_FAME];
         const weekId = Registry.Services.Time.calculateWarWeekId(date);
 
-        if (!intelligence.has(tag)) {
-          intelligence.set(tag, {
+        if (!intelligence.has(data.tag)) {
+          intelligence.set(data.tag, {
             firstSeen: date,
             weeklyMax: new Map(),
             battleWeeks: new Set(),
             totalBattleCredits: 0,
             discoveredBattleDays: new Set(),
-            dailyBattleCredits: new Map()
+            dailyBattleCredits: new Map(),
+            fameHistory: new Map()
           });
         }
 
-        const h = intelligence.get(tag)!;
-        if (date < h.firstSeen) h.firstSeen = date;
-        const currentMax = h.weeklyMax.get(weekId) || 0;
-        if (donGiven > currentMax) h.weeklyMax.set(weekId, donGiven);
+        const memberHistory = intelligence.get(data.tag)!;
+        if (date < memberHistory.firstSeen) memberHistory.firstSeen = date;
+        const currentMax = memberHistory.weeklyMax.get(weekId) || 0;
+        if (donGiven > currentMax) memberHistory.weeklyMax.set(weekId, donGiven);
 
         const fameVal = Number(rawWarFame);
         if (!isNaN(fameVal)) {
-          h.battleWeeks.add(weekId);
-          h.discoveredBattleDays.add(Registry.Services.Time.formatShortDate(date));
+          memberHistory.battleWeeks.add(weekId);
+          memberHistory.discoveredBattleDays.add(Registry.Services.Time.formatShortDate(date));
+          
+          const currentFameMax = memberHistory.fameHistory.get(weekId) || 0;
+          if (fameVal > currentFameMax) memberHistory.fameHistory.set(weekId, fameVal);
         }
 
-        const rawBattleCredits = row[S_DB.BATTLE_CREDITS];
+        const rawBattleCredits = dbSnapshotRow[S_DB.BATTLE_CREDITS];
         let creditVal = Number(rawBattleCredits);
         if (isNaN(creditVal) || rawBattleCredits === "") creditVal = (fameVal > 0) ? 1 : 0;
 
         if (creditVal > 0) {
           const dateKey = Registry.Services.Time.formatShortDate(date);
-          const currentDayMax = h.dailyBattleCredits.get(dateKey) || 0;
-          if (creditVal > currentDayMax) h.dailyBattleCredits.set(dateKey, creditVal);
+          const currentDayMax = memberHistory.dailyBattleCredits.get(dateKey) || 0;
+          if (creditVal > currentDayMax) memberHistory.dailyBattleCredits.set(dateKey, creditVal);
         }
       });
 
       // Summation
-      intelligence.forEach(h => {
+      intelligence.forEach(memberHistory => {
         let sum = 0;
-        h.dailyBattleCredits.forEach((val: number) => sum += val);
-        h.totalBattleCredits = sum;
+        memberHistory.dailyBattleCredits.forEach((dailyCreditValue: number) => sum += dailyCreditValue);
+        memberHistory.totalBattleCredits = sum;
       });
     }
     return intelligence;
