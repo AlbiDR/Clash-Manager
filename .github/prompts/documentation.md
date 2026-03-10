@@ -81,6 +81,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[c]** **README Creation:** Identify any directory with a public interface or multiple modules that has no `README.md` at all.
 * **[d]** **Missing JSDoc/TSDoc:** ONLY if all READMEs in the changed scope are verified accurate — identify an exported function or composable with no documentation block.
 * **[e]** **Inline logic gap:** ONLY if all above are satisfied — identify a complex logic block with no inline explanation.
+* **[f]** **Missing Licensing Header:** Identify any `.ts`, `.vue`, or `.gs` file that lacks the standard licensing headers. This is the **Final Fallback** before a "No Gap Found" result.
 * **[!] Coverage Log:** Append the path of every file or README updated to `.github/nightly-logs/documentation-coverage.log`. Do **not** apply the log to README checks `[a]` or `[b]` — any code change in a directory mandates a fresh README re-evaluation.
 
 ### [B] Step 2: Internal Analysis (Reasoning Phase)
@@ -101,6 +102,12 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[5]** Public contracts: Use `@remarks` for deep architectural context.
 * **[6]** Private logic: Use `//` for decision logging inside logic blocks.
 * **[7]** Extension Check: If `.gs`, disable **TS** syntax.
+* **[8] Licensing Header (Fallback):** If triggered by queue item `[f]`, prepend the standard license header to the top of the file:
+    ```javascript
+    // SPDX-License-Identifier: GPL-3.0-only
+    // Copyright (C) 2026 AlbiDR
+    ```
+    Ensure exactly one blank line exists between the copyright and the next line of code or comment.
 
 ### [D] Step 4: Present (Conventional Commits)
 **[i] Output:** Create a Pull Request.
