@@ -1,5 +1,6 @@
 import { getPlayerProfile } from "@core/api/GasClient";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import {
   asGold,
   asGems,
@@ -167,7 +168,8 @@ function calculateDefaultTarget(currentLevel: number): number {
  * - Fetches data from the GAS backend when `playerTag` changes.
  */
 export function useLaboratory() {
-  const { data: clashData } = useClashData()
+  const clashDataStore = useClashDataStore();
+  const { data: clashData } = storeToRefs(clashDataStore);
 
   let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
 

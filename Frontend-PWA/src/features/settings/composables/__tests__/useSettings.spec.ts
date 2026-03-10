@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
+import { setActivePinia, createPinia } from 'pinia';
 
 const {
   mockStatus,
@@ -46,7 +47,7 @@ import { idb } from "../../../../core/services/StorageService";
 import { useTheme } from "../../../../shared/composables/useTheme";
 import { useAppSettings } from "../../../../core/services/useAppSettings";
 import { useBlueprintMode } from "../../../../core/services/useBlueprintMode";
-import { useClashData } from "../../../../core/services/useClashData";
+import { useClashDataStore } from "../../../../core/services/useClashDataStore";
 import { useShowcaseMode } from "../../../../core/services/useShowcaseMode";
 import { useSyntheticMode } from "../../../../core/services/useSyntheticMode";
 import { useToast } from "../../../../core/services/useToast";
@@ -85,8 +86,8 @@ vi.mock("../../../../core/services/useBlueprintMode", () => ({
   })),
 }));
 
-vi.mock("../../../../core/services/useClashData", () => ({
-  useClashData: vi.fn(() => ({
+vi.mock("../../../../core/services/useClashDataStore", () => ({
+  useClashDataStore: vi.fn(() => ({
     isHydrated: ref(true),
     isRefreshing: ref(false),
     refresh: vi.fn(),
@@ -137,6 +138,7 @@ vi.mock("virtual:pwa-register/vue", () => ({
 
 describe("useSettings", () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.stubGlobal("location", { reload: mockReload });
     vi.stubGlobal("confirm", mockConfirm);
     vi.stubGlobal("localStorage", { clear: vi.fn() });

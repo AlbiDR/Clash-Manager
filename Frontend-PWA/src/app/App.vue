@@ -8,18 +8,21 @@ import {
   HeaderInfoOverlay,
 } from "@shared";
 import {
-  useClashData,
+  useClashDataStore,
   useShowcaseMode,
   useConnectionStatus,
   useHaptics,
   useUiCoordinator,
 } from "@core";
+import { storeToRefs } from "pinia";
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useHeadhunter } from "@features/headhunter";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
-const { syncStatus, refresh, loadLocal } = useClashData();
+const clashDataStore = useClashDataStore();
+const { syncStatus } = storeToRefs(clashDataStore);
+const { refresh, loadLocal } = clashDataStore;
 const { setFabVisible } = useUiCoordinator();
 // Initialize Headhunter (starts watchers for notifications/badge)
 useHeadhunter();

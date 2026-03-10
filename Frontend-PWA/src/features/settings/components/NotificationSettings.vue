@@ -3,7 +3,8 @@ import { Icon } from "@shared";
 import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
 import { useBadge } from "@core/services/useBadge";
 import { useAppSettings } from "@core/services/useAppSettings";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import { useToast } from "@core/services/useToast";
 import { useHaptics } from "@core/services/useHaptics";
 import { computed, ref, onMounted } from "vue";
@@ -15,7 +16,9 @@ const props = defineProps<{
 const { modules, toggle } = useAppSettings();
 const haptics = useHaptics();
 const { requestPermission, sendLocalNotification } = useBadge();
-const { startBackgroundSync, lastSyncTime: lastSync } = useClashData();
+const clashDataStore = useClashDataStore();
+const { lastSyncTime: lastSync } = storeToRefs(clashDataStore);
+const { startBackgroundSync } = clashDataStore;
 const toast = useToast();
 
 const permissionState = ref<NotificationPermission | "unsupported">("default");

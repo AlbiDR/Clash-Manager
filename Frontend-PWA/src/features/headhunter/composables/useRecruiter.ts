@@ -1,6 +1,7 @@
 import { isWorkerConfigured, scanRecruitsDirect } from "@core/api/GasClient";
 import { useApiState } from "@core/api/useApiState";
-import { useClashData } from "@core/services/useClashData";
+import { useClashDataStore } from "@core";
+import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 import { useSyntheticMode } from "@core/services/useSyntheticMode";
@@ -43,15 +44,15 @@ export function useRecruiter() {
   const { pingData } = useApiState();
   const { isShowcaseMode } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
+  const clashDataStore = useClashDataStore();
   const {
     data,
     isHydrated,
     isRefreshing,
     syncError,
     lastSyncTime,
-    refresh: refreshGas,
-    updateLocalData,
-  } = useClashData();
+  } = storeToRefs(clashDataStore);
+  const { refresh: refreshGas, updateLocalData } = clashDataStore;
   const { dismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
   const { undo, success, error, info } = useToast();
