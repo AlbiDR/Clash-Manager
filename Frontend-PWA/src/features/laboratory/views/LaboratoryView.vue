@@ -52,14 +52,17 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
     :status="{ type: statusType, text: statusText }"
     :loading="isFetching"
     :is-empty="isEmpty"
+    :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
+    :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
+    empty-icon="flask"
     :skeleton-component="BaseCardSkeleton"
     :sync-error="fetchError || undefined"
     :empty-message="!globalData?.playerTag ? 'Target Required' : 'No Data'"
     :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Check your internet connection or try again.'"
     @refresh="refresh"
   >
-    <template #empty-action v-if="!globalData?.playerTag">
-      <router-link to="/settings" class="btn-primary">
+    <template #empty-action>
+      <router-link v-if="!globalData?.playerTag" to="/settings" class="btn-primary">
         <Icon name="settings" size="18" />
         <span>Configure Settings</span>
       </router-link>
