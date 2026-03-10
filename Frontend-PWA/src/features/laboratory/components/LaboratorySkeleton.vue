@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
 
 /**
  * LABORATORY SKELETON
@@ -139,7 +138,7 @@ import { computed } from "vue";
 
 .glass-panel {
   background: var(--sys-color-surface);
-  border-radius: 20px;
+  border-radius: var(--shape-corner-l);
   border: 1px solid rgba(128, 128, 128, 0.05);
   padding: 18px;
   display: flex;
@@ -248,7 +247,7 @@ import { computed } from "vue";
   gap: 16px;
   background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: 16px;
+  border-radius: var(--shape-corner-large);
   padding: 14px 18px;
 }
 
