@@ -7,7 +7,7 @@ import {
   useHaptics,
   useUiCoordinator,
   useShowcaseMode,
-} from "../../core";
+} from "@core";
 import { ref, watch, onUnmounted, nextTick, toRef } from "vue";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
@@ -26,6 +26,12 @@ const props = defineProps<{
   isRefreshing?: boolean;
   syncError?: string;
   isEmpty?: boolean;
+  /** Primary message displayed when the view has no data. */
+  emptyMessage?: string;
+  /** Supporting hint or action description for the empty state. */
+  emptyHint?: string;
+  /** Custom Icon name for the empty state (default: 'telescope'). */
+  emptyIcon?: string;
   fabState?: {
     visible: boolean;
     label: string;
@@ -175,7 +181,12 @@ onUnmounted(() => {
       </div>
 
       <!-- Empty State -->
-      <EmptyState v-else-if="isEmpty" icon="telescope" message="No items found">
+      <EmptyState
+        v-else-if="isEmpty"
+        :icon="emptyIcon || 'telescope'"
+        :message="emptyMessage || 'No items found'"
+        :hint="emptyHint"
+      >
         <template #action>
           <slot name="empty-action"></slot>
         </template>
