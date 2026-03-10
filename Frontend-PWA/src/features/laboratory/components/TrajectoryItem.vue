@@ -72,7 +72,7 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 16px;
   background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: 16px;
+  border-radius: var(--shape-corner-large);
   padding: 14px 18px;
   position: relative;
   animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
