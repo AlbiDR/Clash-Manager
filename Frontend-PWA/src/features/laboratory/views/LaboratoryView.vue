@@ -57,8 +57,6 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
     empty-icon="flask"
     :skeleton-component="BaseCardSkeleton"
     :sync-error="fetchError || undefined"
-    :empty-message="!globalData?.playerTag ? 'Target Required' : 'No Data'"
-    :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Check your internet connection or try again.'"
     @refresh="refresh"
   >
     <template #empty-action>
