@@ -5,7 +5,7 @@ import {
   ConsoleLayout
 } from "@shared";
 import { useClashData } from "@core";
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useLaboratory } from "../composables/useLaboratory";
 
 // Laboratory Components
@@ -43,6 +43,16 @@ const statusType = computed(() => {
 });
 
 const isEmpty = computed(() => !observation.value && !isFetching.value);
+
+// UI Performance: Display Limit for Trajectory List
+const displayLimit = ref(20);
+const displayedActions = computed(() => {
+  if (!operation.value) return [];
+  return operation.value.actions.slice(0, displayLimit.value);
+});
+const hasMoreActions = computed(() => {
+  return (operation.value?.actions.length || 0) > displayLimit.value;
+});
 
 </script>
 
@@ -98,12 +108,22 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
         </h3>
         <div class="trajectory-list">
           <TrajectoryItem 
-            v-for="(upgrade, index) in operation.actions" 
+            v-for="(upgrade, index) in displayedActions" 
             :key="`${upgrade.cardName}-${index}`"
             :upgrade="upgrade"
             :index="index"
           />
         </div>
+        
+        <!-- Lazy Loading Expansion -->
+        <button 
+          v-if="hasMoreActions" 
+          class="btn-expand"
+          @click="displayLimit = 999"
+        >
+          <Icon name="chevron_down" size="16" />
+          <span>Show More ({{ operation.actions.length - 20 }} items)</span>
+        </button>
       </div>
     </div>
   </ConsoleLayout>
@@ -143,5 +163,29 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.btn-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: var(--sys-color-surface-container-high);
+  border: 1px dashed var(--sys-color-outline-variant);
+  border-radius: 12px;
+  color: var(--sys-color-on-surface-variant);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-expand:hover {
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-primary);
+  border-color: var(--sys-color-primary);
 }
 </style>

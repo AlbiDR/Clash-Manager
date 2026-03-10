@@ -76,7 +76,7 @@ const baseUrl = import.meta.env.BASE_URL;
   padding: 14px 18px;
   position: relative;
   animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
-  animation-delay: calc(var(--i) * 0.05s);
+  animation-delay: calc(min(var(--i), 10) * 0.05s);
   border-left: 4px solid transparent;
 }
 
