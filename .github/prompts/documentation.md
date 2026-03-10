@@ -124,6 +124,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[c]** **Changes:** List of files modified/created.
 * **[d]** **Verification:** Confirm ADR coherence and stylistic alignment.
 * **[e]** **Log:** Updated `.github/nightly-logs/documentation-coverage.log`.
+* **[f]** **PR History:** Append a one-liner entry to `.github/nightly-logs/PR_HISTORY.md` in the format: `## [Date] PR #X: docs(docs): [summary]`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
