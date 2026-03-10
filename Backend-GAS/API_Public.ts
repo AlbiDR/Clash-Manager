@@ -69,6 +69,8 @@ declare const VER_HEADHUNTER: string;
 declare const VER_SCORING: string;
 declare const VER_ORCHESTRATOR: string;
 declare const VER_VALIDATION: string;
+declare const BaseActionSchema: any;
+declare const PlayerProfilePayloadSchema: any;
 
 /**
  * API INTERFACES
@@ -99,9 +101,13 @@ function doGet(
   return handleRequest(e, "GET");
 }
 
-function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content.TextOutput {
+function handleRequest(e: GoogleAppsScript.Events.DoGet | GoogleAppsScript.Events.DoPost, method: "GET" | "POST"): GoogleAppsScript.Content.TextOutput {
   try {
-    const action = String(e?.parameter?.action || "").toLowerCase().trim();
+    // THREAT: Manual validation (Target B [4]).
+    // Rationale: Using BaseActionSchema ensures the action is always safely extracted
+    // and validated against a schema before processing.
+    const actionResult = v.safeParse(BaseActionSchema, e?.parameter || {});
+    const action = (actionResult.success ? actionResult.output.action || "" : "").toLowerCase().trim();
 
     if (!action) {
       return respond(null, "MISSING_ACTION", "Request parameter 'action' is required.");
@@ -165,9 +171,14 @@ function handleRequest(e: any, method: "GET" | "POST"): GoogleAppsScript.Content
         return respond(Registry.Services.WebappController.getMembers());
 
       case "getplayerprofile": {
-        const result = v.safeParse(PlayerProfilePayloadSchema, { ...e?.parameter, action });
-        if (!result.success) return respond(null, "VALIDATION_ERROR", "Invalid tag provided.");
-        return respond(Registry.Services.WebappController.getPlayerProfile(result.output.tag));
+        // THREAT: Unvalidated external parameters (Target B [1]).
+        // Rationale: Enforce [VALIDATION] boundary for player tags. Manual String/trim
+        // checks are replaced with PlayerProfilePayloadSchema to ensure data integrity.
+        const valRes = v.safeParse(PlayerProfilePayloadSchema, { ...e?.parameter, action });
+        if (!valRes.success) {
+           return respond(null, "VALIDATION_ERROR", "Parameter 'tag' is required and must be valid.");
+        }
+        return respond(Registry.Services.WebappController.getPlayerProfile(valRes.output.tag));
       }
 
       case "getwarlog":
@@ -201,10 +212,8 @@ function doPost(
   e: GoogleAppsScript.Events.DoPost,
 ): GoogleAppsScript.Content.TextOutput {
   try {
-    const actionParam = (e?.parameter?.action || "").toLowerCase().trim();
-    
     const body = e?.postData?.contents;
-    let rawPayload: any = {};
+    let rawPayload: Record<string, unknown> = {};
     if (body) {
       try {
         rawPayload = JSON.parse(body);
@@ -213,7 +222,11 @@ function doPost(
       }
     }
 
-    const action = (actionParam || rawPayload.action || "").toLowerCase().trim();
+    // THREAT: Manual validation and "any Plague" (Target B [4]).
+    // Rationale: Extracting action via schema ensures consistency between URL params
+    // and POST body while eliminating unvalidated 'any' lookups.
+    const actionResult = v.safeParse(BaseActionSchema, { ...e?.parameter, ...rawPayload });
+    const action = (actionResult.success ? actionResult.output.action || "" : "").toLowerCase().trim();
 
     switch (action) {
       case "dismissrecruits": {

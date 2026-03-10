@@ -30,7 +30,6 @@ const props = defineProps<{
   emptyMessage?: string;
   /** Supporting hint or action description for the empty state. */
   emptyHint?: string;
-  /** Custom Icon name for the empty state (default: 'telescope'). */
   emptyIcon?: string;
   fabState?: {
     visible: boolean;
