@@ -3,9 +3,11 @@ import {
   BaseCardSkeleton,
   Icon,
   ConsoleLayout,
-  ConsoleList
+  ConsoleList,
+  AppFooter
 } from "@shared";
 import { useRecruiter } from "../composables/useRecruiter";
+import { useBlueprintMode } from "@core";
 
 import RecruitCard from "../components/RecruitCard.vue";
 
@@ -41,6 +43,9 @@ const {
   toggleExpand,
   toggleSelect,
 } = useRecruiter();
+
+const { isBlueprintMode } = useBlueprintMode();
+const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 </script>
 
 <template>
@@ -108,6 +113,11 @@ const {
         />
       </template>
     </ConsoleList>
+
+    <AppFooter 
+      :version="appVersion" 
+      :badge="isBlueprintMode ? 'BLUEPRINT' : undefined" 
+    />
   </ConsoleLayout>
 </template>
 
