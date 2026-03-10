@@ -94,6 +94,13 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 ### [C] Step 3: Execute (Context Injection)
 **[>] Action:** Apply updates to the single selected file.
 
+* **[0] Mandatory Licensing Enforcer:** Regardless of the triggering queue item, if the selected target is a `.ts`, `.vue`, or `.gs` file, you **MUST** verify it contains the standard license header. If missing, prepend it to the absolute top of the file before applying any other changes:
+    ```javascript
+    // SPDX-License-Identifier: GPL-3.0-only
+    // Copyright (C) 2026 AlbiDR
+    ```
+    Ensure exactly one blank line exists between the copyright and the next line of code or comment. This is a non-negotiable prerequisite for any file modification.
+
 * **[1]** README (existing — stale or shallow): Reconcile first. Identify every statement, snippet, or signature that contradicts the current code and correct or remove it before adding anything new. Only after the existing content is accurate should missing depth (purpose, constraints, relationship to adjacent modules) be added.
 * **[2]** README (new — creation only, last resort): Cover purpose, inputs/outputs, key constraints, and relationship to adjacent modules.
 * **[3]** Architectural Precision: When describing any file's role, use the correct layer vocabulary from the Frontend Bible (`@core`, `@shared`, `@features`, `@app`). Explicitly state what a module **can** import from and what is **forbidden** (e.g., a Feature may not import from another Feature). When documenting a composable that receives external data, reference the Valibot validation boundary requirement. When documenting a service, note that it must remain context-agnostic and must not import from Layers 2, 3, or 4.
@@ -102,12 +109,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[5]** Public contracts: Use `@remarks` for deep architectural context.
 * **[6]** Private logic: Use `//` for decision logging inside logic blocks.
 * **[7]** Extension Check: If `.gs`, disable **TS** syntax.
-* **[8] Licensing Header (Fallback):** If triggered by queue item `[f]`, prepend the standard license header to the top of the file:
-    ```javascript
-    // SPDX-License-Identifier: GPL-3.0-only
-    // Copyright (C) 2026 AlbiDR
-    ```
-    Ensure exactly one blank line exists between the copyright and the next line of code or comment.
+* **[8] Licensing Sweeper:** If specifically triggered by queue item `[f]`, apply the header described in `[0]` to the target file.
 
 ### [D] Step 4: Present (Conventional Commits)
 **[i] Output:** Create a Pull Request.
