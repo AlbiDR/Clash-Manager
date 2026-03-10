@@ -163,6 +163,7 @@ Metadata standards for long-term project health and maintainability.
 - **Conventional Commits (ConCom):** Strict machine-readable commit specification to automate the generation of human-readable documentation.
 - **Semantic Versioning (SemVer):** Clear communication of breaking changes vs. features via the MAJOR.MINOR.PATCH schema.
 - **Keep a Changelog (KaC):** A curated, chronologically ordered history of notable shifts to maintain development transparency.
+- **Licensing Consistency:** All source files (`.ts`, `.vue`, `.gs`, `.go`, `.py`, `.md`) must carry the project's authoritative licensing header at line 1: `// SPDX-License-Identifier: GPL-3.0-only` followed by `// Copyright (C) 2026 AlbiDR`. This ensures legal clarity and project identity across all environments.
 
 ---
 
@@ -325,3 +326,4 @@ Test type is determined by the layer under test. Mixing strategies across layers
 - [ ] **Isolation:** Does business logic live in its designated layer, never in the root/control layer?
 - [ ] **Zero-Trust:** Are all inbound Bearer tokens validated at the Layer 5 control surface, regardless of origin?
 - [ ] **Cleanup:** Does the function purge its execution artifacts upon completion?
+- [ ] **Licensing:** Does the file carry the mandatory SPDX and Copyright headers at line 1?
