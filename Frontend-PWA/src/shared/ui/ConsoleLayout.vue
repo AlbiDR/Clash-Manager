@@ -26,6 +26,9 @@ const props = defineProps<{
   isRefreshing?: boolean;
   syncError?: string;
   isEmpty?: boolean;
+  emptyMessage?: string;
+  emptyHint?: string;
+  emptyIcon?: string;
   fabState?: {
     visible: boolean;
     label: string;
@@ -175,7 +178,12 @@ onUnmounted(() => {
       </div>
 
       <!-- Empty State -->
-      <EmptyState v-else-if="isEmpty" icon="telescope" message="No items found">
+      <EmptyState
+        v-else-if="isEmpty"
+        :icon="emptyIcon || 'telescope'"
+        :message="emptyMessage || 'No items found'"
+        :hint="emptyHint"
+      >
         <template #action>
           <slot name="empty-action"></slot>
         </template>

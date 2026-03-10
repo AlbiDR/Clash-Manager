@@ -164,24 +164,37 @@ export interface FetchRequest {
   scoring?: ScoringWeights | null;
 }
 
+/**
+ * PROPHET INTELLIGENCE
+ *
+ * @remarks
+ * Structural definition for incoming heritage data (Strategy 2: Deep Delegation).
+ * Ensures that historical war performance and tenure metadata is strictly typed.
+ */
+export interface ProphetIntel {
+  wins: number;
+  active: boolean;
+  lastFetch: number;
+}
+
 export interface ScanRequest {
   tags: TournamentTag[];
   apiKeys?: string[];
   blacklist?: PlayerTag[];
   minTrophies?: number;
   scoring?: ScoringWeights | null;
-  prophetCache?: Record<string, any>; // Strategy 2: Deep Delegation
+  prophetCache?: Record<string, ProphetIntel>; // Strategy 2: Deep Delegation
 }
 
 export interface ClanFullRequest {
   tag: ClanTag;
-  apiKeys: string[];
+  apiKeys?: string[]; // THREAT: Optional keys allow fallback to global pool.
 }
 
 export interface ClanApiRequest {
   tag: ClanTag;
   type: "members" | "warlog";
-  apiKeys: string[];
+  apiKeys?: string[]; // THREAT: Optional keys allow fallback to global pool.
 }
 
 export interface AuditRequest {
@@ -194,7 +207,7 @@ export interface PublicScanRequest {
   blacklist?: PlayerTag[];
   minTrophies?: number;
   scoring?: ScoringWeights | null;
-  prophetCache?: Record<string, any>; // Strategy 2: Deep Delegation
+  prophetCache?: Record<string, ProphetIntel>; // Strategy 2: Deep Delegation
 }
 
 export interface SubscriptionRequest {
@@ -216,6 +229,13 @@ export interface ServerConfig {
   readonly port: number;
   readonly apiBase: string; // [SYNC] NEW: API Base URL
   readonly secret?: string;
+}
+
+export interface ScanDebugInfo {
+  firstUrl: string;
+  firstStatus: number;
+  firstContent: string;
+  keyUsed: string;
 }
 
 export interface ApiKeyAuditResult {
