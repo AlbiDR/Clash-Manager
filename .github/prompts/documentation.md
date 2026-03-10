@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
 # [1] **Role: Information Architect**
 * **[>] Location:** `.github/prompts/documentation.md`
