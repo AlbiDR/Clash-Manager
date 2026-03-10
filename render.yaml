@@ -14,4 +14,6 @@ services:
         value: 10000
       - key: API_KEYS
         value: "REPLACE_ME"
+      - key: NODE_VERSION
+        value: "22"
     rootDir: Backend-Worker

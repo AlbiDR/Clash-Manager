@@ -499,7 +499,7 @@ async function processScanBatch(
               });
             });
           } else {
-            const rawContent = res.content as Record<string, unknown>;
+            const rawContent = res.content as unknown as Record<string, unknown>;
             console.warn(`[WORKER SCAN FAIL] Schema rejected tournament response for tag: ${rawContent?.["tag"] || "Unknown"}`);
             console.warn(JSON.stringify(validation.issues, null, 2));
             const membersList = rawContent?.["membersList"];
