@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  BaseCardSkeleton,
   Icon,
   ConsoleLayout
 } from "@shared";
@@ -14,6 +13,7 @@ import VaultCard from "../components/VaultCard.vue";
 import ParameterCard from "../components/ParameterCard.vue";
 import SummaryCard from "../components/SummaryCard.vue";
 import TrajectoryItem from "../components/TrajectoryItem.vue";
+import LaboratorySkeleton from "../components/LaboratorySkeleton.vue";
 
 const {
   observation,
@@ -57,7 +57,8 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
     :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
     :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
     empty-icon="flask"
-    :skeleton-component="BaseCardSkeleton"
+    :skeleton-component="LaboratorySkeleton"
+    :skeleton-count="1"
     :sync-error="fetchError || undefined"
     @refresh="refresh"
   >
