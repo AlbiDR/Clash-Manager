@@ -81,7 +81,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[c]** **README Creation:** Identify any directory with a public interface or multiple modules that has no `README.md` at all.
 * **[d]** **Missing JSDoc/TSDoc:** ONLY if all READMEs in the changed scope are verified accurate — identify an exported function or composable with no documentation block.
 * **[e]** **Inline logic gap:** ONLY if all above are satisfied — identify a complex logic block with no inline explanation.
-* **[!] Coverage Log:** Append the path of every file or README updated to `.github/nightly/logs/documentation-coverage.log`. Do **not** apply the log to README checks `[a]` or `[b]` — any code change in a directory mandates a fresh README re-evaluation.
+* **[!] Coverage Log:** Append the path of every file or README updated to `.github/nightly-logs/documentation-coverage.log`. Do **not** apply the log to README checks `[a]` or `[b]` — any code change in a directory mandates a fresh README re-evaluation.
 
 ### [B] Step 2: Internal Analysis (Reasoning Phase)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
@@ -114,7 +114,7 @@ You are the **Final Mover** in the 4-stage Nightly cycle:
 * **[b]** **Reasoning:** Which step in the priority queue triggered this target, and why higher-priority items were ruled out. Include safety checks performed.
 * **[c]** **Changes:** List of files modified/created.
 * **[d]** **Verification:** Confirm ADR coherence and stylistic alignment.
-* **[e]** **Log:** Updated `.github/nightly/logs/documentation-coverage.log`.
+* **[e]** **Log:** Updated `.github/nightly-logs/documentation-coverage.log`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**

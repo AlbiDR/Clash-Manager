@@ -76,7 +76,7 @@ You are the **Second Mover** in the 4-stage Nightly cycle:
 * **[b] **Validation Boundary:** Identify any function that accepts external data (API responses, user input, LocalStorage) and has no test covering the invalid/malformed input path. The Valibot validation boundary (ADR Section III) is the highest-risk logic in the stack.
 * **[c]** **Zero Coverage:** Identify any complex `.ts` utility or `.vue` composable with no `*.spec.ts` at all. The first one found is the target.
 * **[d]** **Partial Coverage:** Identify any existing `*.spec.ts` missing sad paths (API 500, null input, empty array, boundary values). The first one found is the target.
-* **[!] Coverage Log:** Append the path of every file tested to `.github/nightly/logs/verification-coverage.log` (create the file if it does not exist). On each run, consult this log when evaluating items `[c]` and `[d]` to avoid re-targeting recently covered files when uncovered ones remain.
+* **[!] Coverage Log:** Append the path of every file tested to `.github/nightly-logs/verification-coverage.log` (create the file if it does not exist). On each run, consult this log when evaluating items `[c]` and `[d]` to avoid re-targeting recently covered files when uncovered ones remain.
 
 ### [B] Step 2: Internal Analysis (The Trap)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
@@ -104,7 +104,7 @@ You are the **Second Mover** in the 4-stage Nightly cycle:
 * **[b]** **Reasoning:** Coverage Gap identified and Scenarios Added.
 * **[c]** **Changes:** Targeted file and test strategy.
 * **[d]** **Verification:** Confirm `pnpm test` passes or confirm no changes.
-* **[e]** **Log:** Updated `.github/nightly/logs/verification-coverage.log`.
+* **[e]** **Log:** Updated `.github/nightly-logs/verification-coverage.log`.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
