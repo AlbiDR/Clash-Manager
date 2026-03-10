@@ -5,7 +5,7 @@ import {
   AppFooter
 } from "@shared";
 import { useClashDataStore, useBlueprintMode } from "@core";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
 
@@ -31,6 +31,20 @@ const {
 const { isBlueprintMode } = useBlueprintMode();
 
 const showSkeletons = computed(() => isFetching.value || isBlueprintMode.value);
+const displayLimit = ref(20);
+
+const displayedActions = computed(() => {
+  if (!operation.value) return [];
+  return operation.value.actions.slice(0, displayLimit.value);
+});
+
+const hasMoreActions = computed(() => {
+  return (operation.value?.actions.length || 0) > displayLimit.value;
+});
+
+const expandTrajectory = () => {
+  displayLimit.value = 999;
+};
 const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
 const clashDataStore = useClashDataStore();
@@ -107,12 +121,22 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
         </h3>
         <div class="trajectory-list">
           <TrajectoryItem 
-            v-for="(upgrade, index) in operation.actions" 
+            v-for="(upgrade, index) in displayedActions" 
             :key="`${upgrade.cardName}-${index}`"
             :upgrade="upgrade"
             :index="index"
           />
         </div>
+
+        <!-- Expansion Control -->
+        <button 
+          v-if="hasMoreActions" 
+          class="btn-ghost expand-btn"
+          @click="expandTrajectory"
+        >
+          <Icon name="expand_more" size="18" />
+          <span>Show More ({{ operation.actions.length - displayLimit }} remaining)</span>
+        </button>
       </div>
     </div>
 
@@ -158,6 +182,22 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.expand-btn {
+  margin-top: 12px;
+  width: 100%;
+  justify-content: center;
+  color: var(--sys-color-primary);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: var(--sys-color-surface-container-low);
+  border: 1px dashed var(--sys-color-outline-variant);
+}
+
+.expand-btn:hover {
+  background: var(--sys-color-surface-container);
+  border-style: solid;
 }
 
 </style>
