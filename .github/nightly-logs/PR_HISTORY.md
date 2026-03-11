@@ -1052,7 +1052,7 @@ Changes:
 ---
 Automated changelog of Nightly merges.
 
-## [2026-03-11] PR #199: fix(harden): reconcile gas version manifest and bridge global constants
-## [2026-03-11] PR #200: refactor(opt): resolve structural rot in BaseCard.vue
-
-## [2026-03-11] PR #X: docs(docs): synchronize worker readme with implementation drift
+## [2026-03-11] PR #207: fix(harden): reconcile gas version manifest and bridge global constants
+## [2026-03-11] PR #208: test(verify): add unit tests for ErrorBoundary.vue
+## [2026-03-11] PR #209: refactor(opt): resolve structural rot in BaseCard.vue
+## [2026-03-11] PR #210: docs(docs): synchronize worker readme with implementation drift
