@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import HeadhunterScanner from '../HeadhunterScanner';
+import HeadhunterScanner from '../Headhunter_Scanner';
 import { CONFIG } from '../Configuration';
 
 // Mock Configuration
@@ -59,7 +59,7 @@ vi.mock('../Registry', () => ({
     }
 }));
 
-vi.mock('../RosterStore', () => {
+vi.mock('../Roster_Store', () => {
     return {
         default: {
             getProphetCache: vi.fn().mockReturnValue(new Map())
@@ -169,7 +169,7 @@ describe('HeadhunterScanner', () => {
         
         expect(result).toEqual([]);
         expect(mocks.Network.scanTournamentsRemote).toHaveBeenCalled();
-        // Should call local fetch
-        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(2);
+        // Should call local fetch (1 for Discovery, 1 for Details)
+        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(3);
     });
 });

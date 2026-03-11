@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import ScoringKernel from '../ScoringKernel';
+import ScoringKernel from '../Scoring_Kernel';
 
 describe('ScoringKernel Strategy', () => {
   const IN_GAME_REQ = 6000;
