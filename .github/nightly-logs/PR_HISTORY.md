@@ -1052,3 +1052,4 @@ Changes:
 ---
 Automated changelog of Nightly merges.
 
+## [2026-03-11] PR #X: test(verify): add coverage for ErrorBoundary.vue
