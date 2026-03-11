@@ -169,7 +169,7 @@ describe('HeadhunterScanner', () => {
         
         expect(result).toEqual([]);
         expect(mocks.Network.scanTournamentsRemote).toHaveBeenCalled();
-        // Should call local fetch
-        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(2);
+        // Should call local fetch (1 for Discovery, 1 for Details)
+        expect(mocks.Network.fetchRoyaleAPI).toHaveBeenCalledTimes(3);
     });
 });

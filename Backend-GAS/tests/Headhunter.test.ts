@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Headhunter from '../Headhunter';
-import HeadhunterStore from '../HeadhunterStore';
-import HeadhunterView from '../HeadhunterView';
+import HeadhunterStore from '../Headhunter_Store';
+import HeadhunterView from '../Headhunter_View';
 import { CONFIG } from '../Configuration';
 
 // Mock Config
@@ -65,9 +65,9 @@ const mocks = vi.hoisted(() => ({
     }
 }));
 
-vi.mock('../HeadhunterStore', () => ({ default: mocks.Store }));
-vi.mock('../HeadhunterScanner', () => ({ default: mocks.Scanner }));
-vi.mock('../HeadhunterView', () => ({ default: mocks.View }));
+vi.mock('../Headhunter_Store', () => ({ default: mocks.Store }));
+vi.mock('../Headhunter_Scanner', () => ({ default: mocks.Scanner }));
+vi.mock('../Headhunter_View', () => ({ default: mocks.View }));
 vi.mock('../Registry', () => ({ default: mocks.Registry }));
 
 // Mock Globals

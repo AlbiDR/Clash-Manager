@@ -1052,3 +1052,4 @@ Changes:
 ---
 Automated changelog of Nightly merges.
 
+## [2026-03-11] PR #199: fix(harden): reconcile gas version manifest and bridge global constants

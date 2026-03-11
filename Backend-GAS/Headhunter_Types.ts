@@ -66,5 +66,5 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { HeadhunterTypes: { VER_HH_TYPES } });
+  Object.assign(scope, { HeadhunterTypes: { VER_HH_TYPES }, VER_HH_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : this);
