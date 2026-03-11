@@ -375,4 +375,11 @@ const DatabaseStore = {
   }
 };
 
+/**
+ * GLOBAL BRIDGE
+ */
+(function(scope: any) {
+  Object.assign(scope, { DatabaseStore, VER_DATABASE_STORE });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
+
 export default DatabaseStore;

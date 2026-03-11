@@ -29,6 +29,6 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { DatabaseTypes: { VER_DATABASE_TYPES } });
+  Object.assign(scope, { DatabaseTypes: { VER_DATABASE_TYPES }, VER_DATABASE_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 

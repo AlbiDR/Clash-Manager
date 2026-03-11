@@ -56,6 +56,16 @@ export interface AppConfig {
       CONTROLLER_WEBAPP: string;
       REGISTRY: string;
       API_PUBLIC: string;
+      SHARED_TYPES: string;
+      DATABASE_TYPES: string;
+      NETWORK: string;
+      SCHEMA: string;
+      ROSTER_TYPES: string;
+      HH_TYPES: string;
+      VIEW: string;
+      VALIDATION: string;
+      REPORTING: string;
+      DATABASE_STORE: string;
     };
     CLAN_TAG: string;
     PLAYER_TAG: string;
@@ -209,7 +219,17 @@ export var CONFIG: AppConfig = {
       HEADHUNTER: "14.3.4", 
       CONTROLLER_WEBAPP: "13.1.0",
       REGISTRY: "13.1.0",
-      API_PUBLIC: "13.1.0"
+      API_PUBLIC: "13.1.0",
+      SHARED_TYPES: "1.0.0",
+      DATABASE_TYPES: "1.0.0",
+      NETWORK: "1.0.1",
+      SCHEMA: "1.0.0",
+      ROSTER_TYPES: "1.0.0",
+      HH_TYPES: "1.0.1",
+      VIEW: "1.0.1",
+      VALIDATION: "1.0.0",
+      REPORTING: "1.2.0",
+      DATABASE_STORE: "13.1.1"
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",
