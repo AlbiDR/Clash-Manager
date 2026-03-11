@@ -5,11 +5,17 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@core": ["src/core"],
       "@core/*": ["src/core/*"],
+      "@shared": ["src/shared"],
       "@shared/*": ["src/shared/*"],
+      "@features": ["src/features"],
       "@features/*": ["src/features/*"],
+      "@app": ["src/app"],
       "@app/*": ["src/app/*"],
+      "@static": ["public"],
       "@static/*": ["public/*"],
+      "@root": ["./"],
       "@root/*": ["./*"]
     },
     /* Linting */
