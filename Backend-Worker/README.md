@@ -89,14 +89,14 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ### Intelligence & Scanning
 
 #### `POST /scan` / `POST /public/scan`
-Scans tournament brackets to discover new recruits. Configurable with blacklists and minimum trophy requirements. `POST /scan` requires authentication, while `/public/scan` is open.
+Scans tournament brackets to discover new recruits. Configurable with blacklists. `POST /scan` requires authentication, while `/public/scan` is open.
 
 **Payload:**
 ```json
 {
   "tags": ["#TOURNEY1", "#TOURNEY2"],
+  "apiKeys": ["sk_..."], // Optional: Overrides server keys
   "blacklist": ["#PLAYER1"],
-  "minTrophies": 5000,
   "scoring": null, // Optional: Include weights to auto-score found players
   "prophetCache": { "PLAYERTAG": { "wins": 10 } } // Optional: Strategic Intel
 }
@@ -133,7 +133,8 @@ Fetches a specific slice of clan data (`members` or `warlog`) and transforms it 
 ```json
 {
   "tag": "#CLAN_TAG",
-  "type": "members" // or "warlog"
+  "type": "members", // or "warlog"
+  "apiKeys": [] // Optional: Overrides server keys
 }
 ```
 
@@ -156,7 +157,7 @@ Validates a list of API keys against the upstream provider to check for validity
 
 The worker implements a **Deep Delegation** strategy to optimize the entire Clash Manager ecosystem.
 
-1. **Scoring Offload**: By calculating complex player scores server-side (using the `Scoring_Kernel`), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
+1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
 2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"—historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
 
 ---
@@ -168,7 +169,7 @@ The worker enforces a strict security perimeter via `authMiddleware`:
 
 - **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
 - **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
-- **DOS Protection**: Authentication is validated *before* large payloads are parsed, mitigating potential Denial-of-Service attacks.
+- **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
 ---
 <br />
@@ -188,6 +189,7 @@ Ensure the following variables are set in the Render Dashboard:
 - `WORKER_TIMEOUT_SEC`: `45`
 - `API_BASE`: `https://proxy.royaleapi.dev/v1`
 - `API_KEYS`: (Comma-separated list)
+- `REMOTE_WORKER_SECRET`: (Mandatory Bearer token)
 
 ---
 <br />
@@ -196,4 +198,4 @@ Ensure the following variables are set in the Render Dashboard:
 
 **GNU GPL v3**.
 Copyright (c) 2026 AlbiDR.
-This project is free software and available under the [GPL v3 License](../LICENSE).
+This project is free software and available under the **GPL v3 License** (../LICENSE).
