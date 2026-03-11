@@ -182,4 +182,11 @@ const RosterStore = {
   }
 };
 
+/**
+ * GLOBAL BRIDGE
+ */
+(function(scope: any) {
+  Object.assign(scope, { RosterStore });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
+
 export default RosterStore;

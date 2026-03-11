@@ -60,5 +60,5 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { RosterTypes: { VER_ROSTER_TYPES } });
+  Object.assign(scope, { RosterTypes: { VER_ROSTER_TYPES }, VER_ROSTER_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

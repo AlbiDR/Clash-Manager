@@ -55,6 +55,6 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { SharedTypes: { VER_SHARED_TYPES } });
+  Object.assign(scope, { SharedTypes: { VER_SHARED_TYPES }, VER_SHARED_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 

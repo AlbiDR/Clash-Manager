@@ -5,7 +5,7 @@ import Store from '../Store';
 
 // Mock GAS services
 const mockProperties = new Map<string, string>();
-const mockCache = new Map<string, string>();
+const mockCacheMap = new Map<string, string>();
 
 const mockPropertiesService = {
   getScriptProperties: vi.fn().mockReturnValue({
@@ -14,6 +14,20 @@ const mockPropertiesService = {
     getProperties: vi.fn(() => Object.fromEntries(mockProperties)),
     deleteProperty: vi.fn((key) => mockProperties.delete(key)),
   }),
+};
+
+const mockCache = {
+  get: vi.fn((key) => mockCacheMap.get(key) || null),
+  put: vi.fn((key, val) => mockCacheMap.set(key, String(val))),
+  remove: vi.fn((key) => mockCacheMap.delete(key)),
+  getAll: vi.fn((keys) => {
+    const res: Record<string, string> = {};
+    keys.forEach((k: string) => {
+      if (mockCacheMap.has(k)) res[k] = mockCacheMap.get(k)!;
+    });
+    return res;
+  }),
+  removeAll: vi.fn((keys) => keys.forEach((k: string) => mockCacheMap.delete(k))),
 };
 
 const mockCacheService = {
@@ -47,7 +61,7 @@ vi.stubGlobal('Utilities', mockUtilities);
 describe('Store Module', () => {
   beforeEach(() => {
     mockProperties.clear();
-    mockCache.clear();
+    mockCacheMap.clear();
     vi.clearAllMocks();
   });
 
@@ -142,18 +156,18 @@ describe('Store Module', () => {
   describe('Store.cache', () => {
     it('should cache small items normally', () => {
       Store.cache.putLarge('cacheKey', 'smallValue');
-      expect(mockCache.get('cacheKey')).toBe('smallValue');
-      expect(mockCache.has('cacheKey_meta')).toBe(false);
+      expect(mockCacheMap.get('cacheKey')).toBe('smallValue');
+      expect(mockCacheMap.has('cacheKey_meta')).toBe(false);
     });
 
     it('should chunk large items', () => {
       const largeVal = 'x'.repeat(100000); // Larger than 90k chunk size
       Store.cache.putLarge('largeKey', largeVal);
 
-      expect(mockCache.has('largeKey')).toBe(false); // Base key removed
-      expect(mockCache.has('largeKey_meta')).toBe(true);
-      expect(mockCache.has('largeKey_0')).toBe(true);
-      expect(mockCache.has('largeKey_1')).toBe(true);
+      expect(mockCacheMap.has('largeKey')).toBe(false); // Base key removed
+      expect(mockCacheMap.has('largeKey_meta')).toBe(true);
+      expect(mockCacheMap.has('largeKey_0')).toBe(true);
+      expect(mockCacheMap.has('largeKey_1')).toBe(true);
       
       const retrieved = Store.cache.getLarge('largeKey');
       expect(retrieved).toBe(largeVal);

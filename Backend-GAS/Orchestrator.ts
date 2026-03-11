@@ -64,6 +64,16 @@ declare var VER_SCORING_KERNEL: string;
 declare var VER_HEADHUNTER: string;
 declare var VER_API_PUBLIC: string;
 declare const VER_CONTROLLER_WEBAPP: string;
+declare var VER_SHARED_TYPES: string;
+declare var VER_DATABASE_TYPES: string;
+declare var VER_NETWORK: string;
+declare var VER_SCHEMA: string;
+declare var VER_ROSTER_TYPES: string;
+declare var VER_HH_TYPES: string;
+declare var VER_VIEW: string;
+declare var VER_VALIDATION: string;
+declare var VER_REPORTING: string;
+declare var VER_DATABASE_STORE: string;
 
 /**
  * MANAGED AUTOMATION KEYS
@@ -629,6 +639,56 @@ function checkSystemHealthInternal(): void {
       name: "Webapp Controller",
       current: typeof VER_CONTROLLER_WEBAPP !== "undefined" ? VER_CONTROLLER_WEBAPP : "MISSING",
       expected: manifest.CONTROLLER_WEBAPP,
+    },
+    {
+      name: "Shared Types",
+      current: typeof VER_SHARED_TYPES !== "undefined" ? VER_SHARED_TYPES : "MISSING",
+      expected: manifest.SHARED_TYPES,
+    },
+    {
+      name: "Database Types",
+      current: typeof VER_DATABASE_TYPES !== "undefined" ? VER_DATABASE_TYPES : "MISSING",
+      expected: manifest.DATABASE_TYPES,
+    },
+    {
+      name: "Network",
+      current: typeof VER_NETWORK !== "undefined" ? VER_NETWORK : "MISSING",
+      expected: manifest.NETWORK,
+    },
+    {
+      name: "Schema",
+      current: typeof VER_SCHEMA !== "undefined" ? VER_SCHEMA : "MISSING",
+      expected: manifest.SCHEMA,
+    },
+    {
+      name: "Roster Types",
+      current: typeof VER_ROSTER_TYPES !== "undefined" ? VER_ROSTER_TYPES : "MISSING",
+      expected: manifest.ROSTER_TYPES,
+    },
+    {
+      name: "Headhunter Types",
+      current: typeof VER_HH_TYPES !== "undefined" ? VER_HH_TYPES : "MISSING",
+      expected: manifest.HH_TYPES,
+    },
+    {
+      name: "View",
+      current: typeof VER_VIEW !== "undefined" ? VER_VIEW : "MISSING",
+      expected: manifest.VIEW,
+    },
+    {
+      name: "Validation",
+      current: typeof VER_VALIDATION !== "undefined" ? VER_VALIDATION : "MISSING",
+      expected: manifest.VALIDATION,
+    },
+    {
+      name: "Reporting",
+      current: typeof VER_REPORTING !== "undefined" ? VER_REPORTING : "MISSING",
+      expected: manifest.REPORTING,
+    },
+    {
+      name: "Database Store",
+      current: typeof VER_DATABASE_STORE !== "undefined" ? VER_DATABASE_STORE : "MISSING",
+      expected: manifest.DATABASE_STORE,
     }
   ];
 
