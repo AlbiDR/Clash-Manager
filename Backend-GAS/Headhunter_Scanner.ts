@@ -64,13 +64,13 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     lowQuotaMode: boolean = false
   ): Recruit[] {
     const W = CONFIG.HEADHUNTER.WEIGHTS;
-    const keywords = CONFIG.HEADHUNTER.KEYWORDS; 
+    const keywords = CONFIG.HEADHUNTER.KEYWORDS || [];
     const searchUrls = keywords.map(
       (k: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
     );
 
     // 1. Discovery: Find Tournaments
-    const searchResults: any[] = Registry.Services.Network.fetchRoyaleAPI(searchUrls);
+    const searchResults: any[] = Registry.Services.Network.fetchRoyaleAPI(searchUrls) || [];
     const uniqueTourneys = new Map<string, TournamentResult>();
     searchResults.forEach((res: TournamentResult) => {
       if (res && res.items)
@@ -322,7 +322,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       const playersData: any[] = Registry.Services.Network.fetchRoyaleAPI(
         tagsToFetch.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
         remoteAvailable ? W : null,
-      );
+      ) || [];
 
       const logUrls: string[] = [];
       const candidatesToProfile: any[] = [];

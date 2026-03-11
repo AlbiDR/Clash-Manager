@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import HeadhunterView from '../HeadhunterView';
+import HeadhunterView from '../Headhunter_View';
 import { CONFIG } from '../Configuration';
 
 // Mock Config
