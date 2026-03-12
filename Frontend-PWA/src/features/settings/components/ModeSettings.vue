@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, SettingRow } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import SettingsCard from "./SettingsCard.vue";
 defineProps<{
@@ -25,68 +25,42 @@ const {
     :initially-expanded="initiallyExpanded"
   >
     <div class="features-list">
-      <div
-        class="toggle-row mini"
-        :class="{
-          disabled: isShowcaseMode,
-          'active-row': isSyntheticMode && !isShowcaseMode,
-        }"
-        @click="!isShowcaseMode && toggleSyntheticMode()"
-      >
-        <div class="row-info">
-          <div class="row-label">Synthetic Engine</div>
-          <div class="row-desc">
-            Populate the interface with high-fidelity mock data
-          </div>
-        </div>
-        <div class="switch" :class="{ active: isSyntheticMode }">
-          <div class="handle"></div>
-        </div>
-      </div>
+      <SettingRow
+        label="Synthetic Engine"
+        description="Populate the interface with high-fidelity mock data"
+        :active="isSyntheticMode"
+        :disabled="isShowcaseMode"
+        mini
+        @click="toggleSyntheticMode"
+      />
 
       <!-- Blueprint Mode -->
-      <div
-        class="toggle-row mini"
-        :class="{
-          disabled: isShowcaseMode,
-          'active-row': isBlueprintMode && !isShowcaseMode,
-        }"
-        @click="!isShowcaseMode && toggleBlueprintMode()"
-      >
-        <div class="row-info">
-          <div class="row-label">Structural Blueprint</div>
-          <div class="row-desc">
-            Strip UI to geometric skeletons to audit layout stability
-          </div>
-        </div>
-        <div class="switch" :class="{ active: isBlueprintMode }">
-          <div class="handle"></div>
-        </div>
-      </div>
-
-
+      <SettingRow
+        label="Structural Blueprint"
+        description="Strip UI to geometric skeletons to audit layout stability"
+        :active="isBlueprintMode"
+        :disabled="isShowcaseMode"
+        mini
+        @click="toggleBlueprintMode"
+      />
 
       <!-- Master Showcase Group -->
       <div class="mode-master-container" :class="{ active: isShowcaseMode }">
-        <div
-          class="toggle-row"
-          :class="{ 'active-row': isShowcaseMode }"
-          @click="toggleShowcaseMode()"
+        <SettingRow
+          :active="isShowcaseMode"
+          @click="toggleShowcaseMode"
         >
-          <div class="row-info">
-            <div class="row-label flex align-center gap-8">
+          <template #label>
+            <div class="flex align-center gap-8">
               Master Showcase
               <span v-if="isShowcaseMode" class="hybrid-badge">HYBRID</span>
             </div>
-            <div class="row-desc">
-              A curated fusion environment leveraging both synthetic data and
-              structural skeletons
-            </div>
-          </div>
-          <div class="switch" :class="{ active: isShowcaseMode }">
-            <div class="handle"></div>
-          </div>
-        </div>
+          </template>
+          <template #description>
+            A curated fusion environment leveraging both synthetic data and
+            structural skeletons
+          </template>
+        </SettingRow>
       </div>
     </div>
   </SettingsCard>
@@ -97,86 +71,6 @@ const {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-}
-.row-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-.row-label {
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--sys-color-outline);
-  opacity: 0.5;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.row-desc {
-  font-size: 13px;
-  opacity: 0.5;
-  color: var(--sys-color-outline);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.toggle-row.active-row .row-label {
-  color: var(--sys-color-on-surface);
-  opacity: 1;
-}
-.toggle-row.active-row .row-desc {
-  color: var(--sys-color-on-surface);
-  opacity: 0.8;
-}
-
-.switch {
-  width: 44px;
-  height: 24px;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 12px;
-  position: relative;
-  transition: 0.3s;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
-}
-.switch.active {
-  background: var(--sys-color-primary);
-}
-.switch .handle {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 17px;
-  height: 17px;
-  background: white;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-.switch.active .handle {
-  left: calc(100% - 19px);
-}
-
-.toggle-row.mini {
-  padding-left: 8px;
-  opacity: 1;
-  margin-bottom: -4px;
-}
-.toggle-row.mini .row-label {
-  font-size: 14px;
-  font-weight: 700;
-}
-.toggle-row.mini .row-desc {
-  font-size: 12px;
-}
-.toggle-row.mini .switch {
-  transform: scale(0.85);
-}
-.toggle-row.mini.disabled {
-  pointer-events: none;
-  opacity: 0.5;
 }
 
 

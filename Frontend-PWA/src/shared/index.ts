@@ -12,6 +12,7 @@ export { default as CardActions } from "./ui/CardActions.vue";
 export { default as Toast } from "./ui/Toast.vue";
 export { default as ToastContainer } from "./ui/ToastContainer.vue";
 export { default as SelectionBar } from "./ui/SelectionBar.vue";
+export { default as SettingRow } from "./ui/SettingRow.vue";
 export { default as ConsoleHeader } from "./ui/ConsoleHeader.vue";
 export { default as ConsoleLayout } from "./ui/ConsoleLayout.vue";
 export { default as ConsoleList } from "./ui/ConsoleList.vue";
