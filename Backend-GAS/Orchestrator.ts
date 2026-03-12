@@ -74,6 +74,9 @@ declare var VER_VIEW: string;
 declare var VER_VALIDATION: string;
 declare var VER_REPORTING: string;
 declare var VER_DATABASE_STORE: string;
+declare var VER_BATTLE_LOG: string;
+declare var VER_STORE: string;
+declare var VER_TIME: string;
 
 /**
  * MANAGED AUTOMATION KEYS
@@ -689,6 +692,21 @@ function checkSystemHealthInternal(): void {
       name: "Database Store",
       current: typeof VER_DATABASE_STORE !== "undefined" ? VER_DATABASE_STORE : "MISSING",
       expected: manifest.DATABASE_STORE,
+    },
+    {
+      name: "Battle Log",
+      current: typeof VER_BATTLE_LOG !== "undefined" ? VER_BATTLE_LOG : "MISSING",
+      expected: manifest.BATTLE_LOG,
+    },
+    {
+      name: "Store",
+      current: typeof VER_STORE !== "undefined" ? VER_STORE : "MISSING",
+      expected: manifest.STORE,
+    },
+    {
+      name: "Time",
+      current: typeof VER_TIME !== "undefined" ? VER_TIME : "MISSING",
+      expected: manifest.TIME,
     }
   ];
 
