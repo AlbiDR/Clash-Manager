@@ -14,6 +14,11 @@ import { CONFIG } from './Configuration';
 import Registry from './Registry';
 
 /**
+ * GLOBAL VERSION
+ */
+export const VER_BATTLE_LOG = "1.0.0";
+
+/**
  * Defines the goal of the log analysis.
  */
 export enum AnalysisGoal {
@@ -162,3 +167,9 @@ const BattleLog: BattleLogContract = {
 
 export default BattleLog;
 
+/**
+ * GLOBAL BRIDGE
+ */
+(function(scope: any) {
+  Object.assign(scope, { BattleLog, VER_BATTLE_LOG });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
