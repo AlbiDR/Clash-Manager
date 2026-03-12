@@ -29,6 +29,11 @@ declare var module: any;
 /* ==========================================================================
    CONSTANTS & CONFIGURATION
    ========================================================================== */
+/**
+ * GLOBAL VERSION
+ */
+export const VER_STORE = "2.0.0";
+
 const CONSTANTS = {
   CACHE: {
     CHUNK_SIZE: 90000, // 100KB - 10KB buffer
@@ -487,7 +492,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(scope: any) {
-  Object.assign(scope, { Store });
+  Object.assign(scope, { Store, VER_STORE });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Store;

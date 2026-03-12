@@ -66,6 +66,9 @@ export interface AppConfig {
       VALIDATION: string;
       REPORTING: string;
       DATABASE_STORE: string;
+      BATTLE_LOG: string;
+      STORE: string;
+      TIME: string;
     };
     CLAN_TAG: string;
     PLAYER_TAG: string;
@@ -229,7 +232,10 @@ export var CONFIG: AppConfig = {
       VIEW: "1.0.1",
       VALIDATION: "1.0.0",
       REPORTING: "1.2.0",
-      DATABASE_STORE: "13.1.1"
+      DATABASE_STORE: "13.1.1",
+      BATTLE_LOG: "1.0.0",
+      STORE: "2.0.0",
+      TIME: "1.0.0"
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",

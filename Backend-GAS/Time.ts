@@ -19,6 +19,11 @@
 
 import { CONFIG } from "./Configuration";
 
+/**
+ * GLOBAL VERSION
+ */
+export const VER_TIME = "1.0.0";
+
 declare var Utilities: any;
 declare var module: any;
 
@@ -353,7 +358,7 @@ var Time: TimeContract = {
 try { if (typeof module !== "undefined" && module.exports) { module.exports = Time; } } catch (e) {}
 
 (function(scope: any) {
-  Object.assign(scope, { Time });
+  Object.assign(scope, { Time, VER_TIME });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
 
 export default Time;
