@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, SettingRow } from "@shared";
 import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
 import { useBadge } from "@core/services/useBadge";
 import { useAppSettings } from "@core/services/useAppSettings";
@@ -138,24 +138,12 @@ const sendTest = async () => {
 <template>
   <SettingsCard title="Notification Engine" icon="bell" :initially-expanded="initiallyExpanded">
     <!-- Master Toggle -->
-    <div
-      class="toggle-row master-toggle"
-      :class="{ 'active-row': modules.experimentalNotifications }"
+    <SettingRow
+      label="Background Synchronization"
+      description="Allow the application to refresh and alert in the background"
+      :active="modules.experimentalNotifications"
       @click="toggle('experimentalNotifications')"
-    >
-      <div class="row-info">
-        <div class="row-label">Background Synchronization</div>
-        <div class="row-desc">
-          Allow the application to refresh and alert in the background
-        </div>
-      </div>
-      <div
-        class="switch"
-        :class="{ active: modules.experimentalNotifications }"
-      >
-        <div class="handle"></div>
-      </div>
-    </div>
+    />
 
     <div class="card-divider-s" style="margin: 16px 0" />
 
@@ -202,50 +190,29 @@ const sendTest = async () => {
     <!-- Toggles Section -->
     <div class="toggles-grid" v-if="permissionState === 'granted'">
       <!-- Improvement #5: Quiet Mode -->
-      <div
-        class="toggle-row"
-        :class="{ 'active-row': modules.notificationQuietMode }"
+      <SettingRow
+        label="Quiet Mode"
+        description="Update badge without sound or popups"
+        :active="modules.notificationQuietMode"
         @click="toggle('notificationQuietMode')"
-      >
-        <div class="row-info">
-          <div class="row-label">Quiet Mode</div>
-          <div class="row-desc">Update badge without sound or popups</div>
-        </div>
-        <div class="switch" :class="{ active: modules.notificationQuietMode }">
-          <div class="handle"></div>
-        </div>
-      </div>
+      />
 
       <!-- Improvement #11: Sound Control -->
-      <div
-        class="toggle-row"
-        :class="{ 'active-row': modules.notificationSound }"
+      <SettingRow
+        label="Sound"
+        description="Play system sound on sync"
+        :active="modules.notificationSound"
         @click="toggle('notificationSound')"
-      >
-        <div class="row-info">
-          <div class="row-label">Sound</div>
-          <div class="row-desc">Play system sound on sync</div>
-        </div>
-        <div class="switch" :class="{ active: modules.notificationSound }">
-          <div class="handle"></div>
-        </div>
-      </div>
+      />
 
       <!-- FEATURE 1: Cloud Push -->
-      <div
-        class="toggle-row"
-        :class="{ 'active-row': isPushSubscribed }"
-        @click="subscribePush"
+      <SettingRow
         v-if="hasWorker"
-      >
-        <div class="row-info">
-          <div class="row-label">Cloud Push</div>
-          <div class="row-desc">Receive alerts instantly via Worker</div>
-        </div>
-        <div class="switch" :class="{ active: isPushSubscribed }">
-          <div class="handle"></div>
-        </div>
-      </div>
+        label="Cloud Push"
+        description="Receive alerts instantly via Worker"
+        :active="isPushSubscribed"
+        @click="subscribePush"
+      />
     </div>
 
     <!-- Actions Row -->
@@ -320,39 +287,6 @@ const sendTest = async () => {
   border-top: 1px solid rgba(128, 128, 128, 0.1);
 }
 
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-}
-
-.switch {
-  width: 44px;
-  height: 24px;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 12px;
-  position: relative;
-  transition: 0.3s;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
-}
-.switch.active {
-  background: var(--sys-color-primary);
-  border-color: var(--sys-color-primary);
-}
-.switch .handle {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 17px;
-  height: 17px;
-  background: white;
-  border-radius: 50%;
-  transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-}
-.switch.active .handle {
-  left: calc(100% - 19px);
-}
 
 /* Actions Row */
 .actions-row {
@@ -391,30 +325,6 @@ const sendTest = async () => {
   gap: 4px;
 }
 
-.row-label {
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--sys-color-outline);
-  opacity: 0.5;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.row-desc {
-  font-size: 13px;
-  opacity: 0.5;
-  color: var(--sys-color-outline);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.toggle-row.active-row .row-label {
-  color: var(--sys-color-on-surface);
-  opacity: 1;
-}
-
-.toggle-row.active-row .row-desc {
-  color: var(--sys-color-on-surface);
-  opacity: 0.8;
-}
 
 /* Elegant threshold selector matching Console Header pill style */
 .threshold-selector {
