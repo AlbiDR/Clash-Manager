@@ -29,7 +29,14 @@ describe('ErrorBoundary.vue', () => {
     });
 
     // Mock sessionStorage.clear
-    vi.spyOn(Storage.prototype, 'clear');
+    vi.stubGlobal('sessionStorage', {
+      clear: vi.fn(),
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      length: 0,
+      key: vi.fn()
+    });
   });
 
   it('renders slot content when no error occurs', () => {
