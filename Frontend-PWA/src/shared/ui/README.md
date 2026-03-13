@@ -15,7 +15,7 @@ The `@shared/ui` layer provides the fundamental building blocks for all feature 
 ## Core Components
 
 ### Layout Orchestration
-- **ConsoleLayout.vue**: The primary structural shell for feature views. Handles Pull-to-Refresh logic, FAB synchronization via `useUiCoordinator`, and manages sub-states (Loading, Empty, Error).
+- **ConsoleLayout.vue**: The primary structural shell for feature views. Handles Pull-to-Refresh logic, FAB synchronization via `useUiCoordinator`, and manages sub-states (Loading, Empty, Error). Supports declarative empty-state customization through `emptyMessage`, `emptyHint`, and `emptyIcon` props.
 - **ConsoleHeader.vue**: A sophisticated header component with integrated search debouncing (300ms), sort selection, and status indicators.
 - **ConsoleList.vue**: A performance-optimized list renderer that supports "Showcase Mode" (hybrid single-item + skeleton layout) and time-sliced progressive rendering.
 - **FloatingDock.vue**: The global orchestration point for the Floating Action Button (FAB). It synchronizes with the `useUiCoordinator` to provide contextual actions across different views.
@@ -30,7 +30,7 @@ The `@shared/ui` layer provides the fundamental building blocks for all feature 
 - **BaseCardSkeleton.vue**: A high-fidelity loading primitive that mirrors the `BaseCard` layout to minimize layout shift during data hydration.
 
 ### UI Primitives
-- **BaseCard.vue**: The atomic unit for data display. Implements shared styles for glassmorphism and consistent spacing.
+- **BaseCard.vue**: The atomic unit for data display. Leverages centralized shared primitives (`.player-name`, `.trophy-meta`, `.badge`, `.stat-score`, etc.) from `@core/theme/components.ts` to ensure visual consistency and minimize CSS duplication.
 - **Icon.vue**: The hardware broker for the custom SVG icon system. Ensures visual purity and consistent stroke scaling.
 - **StatusPill.vue**: A compact indicator for lifecycle states (e.g., "Updated", "Ready", "Syncing").
 - **MomentumPill.vue**: A specialized indicator for performance trends, utilizing HSL color shifts to represent positive or negative momentum.
