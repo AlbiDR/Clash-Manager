@@ -1,5 +1,5 @@
-import { useHaptics } from "../useHaptics";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { useHaptics, resetHapticsState } from "../useHaptics";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { nextTick } from "vue";
 
 describe("useHaptics", () => {
@@ -8,6 +8,7 @@ describe("useHaptics", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetHapticsState();
 
     batteryMock = {
       level: 1,
