@@ -87,7 +87,7 @@ export const RecruitSchema = v.object({
   donations: v.number(),
   cards: v.number(),
   war: v.number(),
-  foundDate: v.any(), // Date or ISO string
+  foundDate: v.unknown(), // Date or ISO string
   invited: v.boolean(),
   rawScore: v.number(),
   potentialScore: v.optional(v.number()),
@@ -103,7 +103,7 @@ export const PlayerResultSchema = v.object({
   daysTracked: v.number(),
   avgDailyDonations: v.number(),
   totalDonations: v.number(),
-  lastSeen: v.any(),
+  lastSeen: v.unknown(),
   warRateVal: v.number(),
   avgWarFame: v.number(),
   historyString: v.string(),
