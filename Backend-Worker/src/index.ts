@@ -82,8 +82,8 @@ const CONFIG: ServerConfig = {
 // Global Key Singleton
 const rawKeys = (process.env["API_KEYS"] ?? "")
   .split(",")
-  .map(k => k.trim())
-  .filter(k => k && k !== "REPLACE_ME" && k !== "YOUR_KEYS"); // EPHEMERAL: intentionally resets on restart
+  .map(rawKey => rawKey.trim())
+  .filter(rawKey => rawKey && rawKey !== "REPLACE_ME" && rawKey !== "YOUR_KEYS"); // EPHEMERAL: intentionally resets on restart
 
 if (rawKeys.length === 0) {
     console.warn("[Worker] Warning: No API_KEYS found in environment variables.");
@@ -100,12 +100,12 @@ const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on rest
 const app = express(); // EPHEMERAL: instance resets on restart
 
 // CORS Middleware
-app.use((req: Request, res: Response, next: NextFunction): void => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") {
-    res.sendStatus(200);
+app.use((request: Request, response: Response, next: NextFunction): void => {
+  response.header("Access-Control-Allow-Origin", "*");
+  response.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (request.method === "OPTIONS") {
+    response.sendStatus(200);
     return;
   }
   next();
@@ -119,7 +119,7 @@ app.use((req: Request, res: Response, next: NextFunction): void => {
  * Public routes are explicitly exempted to allow health checks and public scans.
  * Registered before body-parsing to prevent unauthenticated DoS via large payloads.
  */
-const authMiddleware: RequestHandler = (req, res, next) => {
+const authMiddleware: RequestHandler = (request, response, next) => {
   const publicRoutes = [
     "/",
     "/health",
@@ -129,27 +129,27 @@ const authMiddleware: RequestHandler = (req, res, next) => {
   ];
 
   // Normalize path to handle trailing slashes consistently
-  const path = req.path.replace(/\/$/, "") || "/";
+  const path = request.path.replace(/\/$/, "") || "/";
 
   if (publicRoutes.includes(path)) {
     return next();
   }
 
   const secret = process.env["REMOTE_WORKER_SECRET"];
-  const authHeader = req.headers.authorization;
+  const authHeader = request.headers.authorization;
 
   if (!secret) {
     // THREAT: Exposed privileged endpoints if secret is missing.
     console.error("[Auth] REMOTE_WORKER_SECRET not set in environment");
-    res.status(500).json({ error: "Internal server configuration error" });
+    response.status(500).json({ error: "Internal server configuration error" });
     return;
   }
 
   if (!authHeader || authHeader !== `Bearer ${secret}`) {
     // THREAT: Unauthenticated access to Royale API keys and clan data.
     // Target A [1]: Immediately halt and return 401 for unauthorized attempts.
-    console.warn(`[Auth] Unauthorized attempt to privileged endpoint: ${path} from ${req.ip}`);
-    res.status(401).json({ error: "Unauthorized" });
+    console.warn(`[Auth] Unauthorized attempt to privileged endpoint: ${path} from ${request.ip}`);
+    response.status(401).json({ error: "Unauthorized" });
     return;
   }
 
@@ -384,8 +384,8 @@ async function processBatch<T = unknown>(
           };
         }
       } else {
-        const res = await fetchWithRotatedRetries<T>(url, { method: "GET", headers }, CONFIG.maxRetries, batchManager);
-        results[currentBatchIndex] = res;
+        const fetchResponse = await fetchWithRotatedRetries<T>(url, { method: "GET", headers }, CONFIG.maxRetries, batchManager);
+        results[currentBatchIndex] = fetchResponse;
       }
     }
   }
@@ -455,7 +455,7 @@ async function processScanBatch(
     };
 
       try {
-        const res = await fetchWithRotatedRetries<Tournament>(url, {
+        const fetchResponse = await fetchWithRotatedRetries<Tournament>(url, {
           method: "GET",
           headers,
         }, CONFIG.maxRetries, batchManager);
@@ -464,17 +464,17 @@ async function processScanBatch(
         if (debug && !traceCaptured) {
             traceCaptured = true;
             debug.firstUrl = url;
-            debug.firstStatus = res.code;
-            debug.firstContent = typeof res.content === "string" 
-                ? res.content.substring(0, 1000) 
-                : JSON.stringify(res.content).substring(0, 1000);
+            debug.firstStatus = fetchResponse.code;
+            debug.firstContent = typeof fetchResponse.content === "string"
+                ? fetchResponse.content.substring(0, 1000)
+                : JSON.stringify(fetchResponse.content).substring(0, 1000);
             debug.keyUsed = (headers["Authorization"] || "None").substring(0, 15) + "...";
         }
 
-        if (res.code === 200 && typeof res.content === "object" && res.content !== null) {
+        if (fetchResponse.code === 200 && typeof fetchResponse.content === "object" && fetchResponse.content !== null) {
           // THREAT: Malformed tournament data causing incorrect candidate discovery.
           // Target B [1]: Enforce strict validation boundary for Royale API data.
-          const validation = v.safeParse(RoyaleTournamentResponseSchema, res.content);
+          const validation = v.safeParse(RoyaleTournamentResponseSchema, fetchResponse.content);
           if (validation.success) {
             validation.output.membersList?.forEach((memberCandidate) => {
               if (memberCandidate.clan?.tag) return;              // filter out clan members
@@ -499,7 +499,7 @@ async function processScanBatch(
               });
             });
           } else {
-            const rawContent = res.content as unknown as Record<string, unknown>;
+            const rawContent = fetchResponse.content as unknown as Record<string, unknown>;
             console.warn(`[WORKER SCAN FAIL] Schema rejected tournament response for tag: ${rawContent?.["tag"] || "Unknown"}`);
             console.warn(JSON.stringify(validation.issues, null, 2));
             const membersList = rawContent?.["membersList"];
@@ -533,12 +533,12 @@ async function processScanBatch(
 //  ROUTES
 // ============================================================================
 
-app.get("/", (_req: Request, res: Response): void => {
-  res.send("Clash Manager Worker is running");
+app.get("/", (_request: Request, response: Response): void => {
+  response.send("Clash Manager Worker is running");
 });
 
-app.get("/capabilities", (_req: Request, res: Response): void => {
-  res.json({
+app.get("/capabilities", (_request: Request, response: Response): void => {
+  response.json({
     status: "success",
     data: {
       version: "10.1.1",
@@ -558,7 +558,7 @@ app.get("/capabilities", (_req: Request, res: Response): void => {
  * 2. Upstream: Executes a test call to the Royale API using the healthiest key.
  * 3. System: Reports memory usage (RSS).
  */
-app.get("/health", async (_req: Request, res: Response): Promise<void> => {
+app.get("/health", async (_request: Request, response: Response): Promise<void> => {
     // 1. Local Pool Diagnostics
     const pool = KEYS.getPoolStats();
     
@@ -577,7 +577,7 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
         } catch(healthCheckError) { upstreamStatus = "TIMEOUT"; }
     }
 
-    res.status(200).json({
+    response.status(200).json({
         status: "success",
         checks: {
             upstream: upstreamStatus,
@@ -597,14 +597,14 @@ app.get("/health", async (_req: Request, res: Response): Promise<void> => {
 app.post(
   "/audit",
   async (
-    req: Request<object, object, AuditRequest>,
-    res: Response,
+    request: Request<object, object, AuditRequest>,
+    response: Response,
   ): Promise<void> => {
     // THREAT: Malformed input causing downstream runtime failures.
     // Rationale: Strict validation at the entry point ensures only valid data reaches the KeyService.
-    const result = v.safeParse(AuditRequestSchema, req.body);
+    const result = v.safeParse(AuditRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
@@ -639,9 +639,9 @@ app.post(
       });
 
       const auditResults = await Promise.all(auditTasks);
-      res.json({ results: auditResults });
+      response.json({ results: auditResults });
     } catch (auditGlobalError) {
-      res.status(500).json({
+      response.status(500).json({
         error: auditGlobalError instanceof Error ? auditGlobalError.message : "unknown",
       });
     }
@@ -661,13 +661,13 @@ app.post(
 app.post(
   "/public/scan",
   async (
-    req: Request<object, object, PublicScanRequest>,
-    res: Response,
+    request: Request<object, object, PublicScanRequest>,
+    response: Response,
   ): Promise<void> => {
     // THREAT: Malformed scan tags or options causing inefficient upstream scanning or worker crashes.
-    const result = v.safeParse(PublicScanRequestSchema, req.body);
+    const result = v.safeParse(PublicScanRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
@@ -712,7 +712,7 @@ app.post(
           prophetCache
         );
 
-        res.json({
+        response.json({
           candidates: scoredResults
             .map((result) => result.content)
             .filter(
@@ -728,10 +728,10 @@ app.post(
         return;
       }
 
-      res.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
+      response.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
     } catch (scanError) {
       console.error("Failed /public/scan", scanError);
-      res.status(500).json({
+      response.status(500).json({
         error: scanError instanceof Error ? scanError.message : "unknown",
       });
     }
@@ -740,22 +740,22 @@ app.post(
 
 // Push subscription storage (in-memory)
 // PERSISTENCE REQUIRED: Push subscriptions are lost on restart and must be migrated to a database.
-const subscriptions = new Set<string>();
+const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: see [issue description]
 
 app.post(
   "/public/subscribe",
-  (req: Request<object, object, SubscriptionRequest>, res: Response): void => {
+  (request: Request<object, object, SubscriptionRequest>, response: Response): void => {
     // THREAT: Silent corruption of the subscription set if malformed data is accepted.
-    const result = v.safeParse(SubscriptionRequestSchema, req.body);
+    const result = v.safeParse(SubscriptionRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
     const sub = result.output;
     subscriptions.add(JSON.stringify(sub));
     console.log(` New Push Subscription. Total: ${subscriptions.size}`);
-    res.json({ success: true, count: subscriptions.size });
+    response.json({ success: true, count: subscriptions.size });
   },
 );
 
@@ -770,13 +770,13 @@ app.post(
 app.post(
   "/scan",
   async (
-    req: Request<object, object, ScanRequest>,
-    res: Response,
+    request: Request<object, object, ScanRequest>,
+    response: Response,
   ): Promise<void> => {
     // THREAT: Unauthorized data access if malformed tags bypass filters.
-    const result = v.safeParse(ScanRequestSchema, req.body);
+    const result = v.safeParse(ScanRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
@@ -825,7 +825,7 @@ app.post(
                 prophetCache
             );
 
-            res.json({
+            response.json({
                 candidates: scoredResults
                     .map((result) => result.content)
                     .filter(
@@ -843,14 +843,14 @@ app.post(
             return;
         }
 
-        res.json({ 
+        response.json({
             candidates, 
             _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: debug },
             _metadata: metadata
         });
     } catch (internalScanError) {
       console.error("Failed /scan", internalScanError);
-      res.status(500).json({
+      response.status(500).json({
         error: internalScanError instanceof Error ? internalScanError.message : "unknown",
       });
     }
@@ -871,13 +871,13 @@ app.post(
 app.post(
   "/clan/full",
   async (
-    req: Request<object, object, ClanFullRequest>,
-    res: Response,
+    request: Request<object, object, ClanFullRequest>,
+    response: Response,
   ): Promise<void> => {
     // THREAT: Malformed clan tag causing upstream API errors or incorrect data snapshots.
-    const result = v.safeParse(ClanFullRequestSchema, req.body);
+    const result = v.safeParse(ClanFullRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
@@ -911,12 +911,12 @@ app.post(
         const validation = v.safeParse(RoyaleClanMembersResponseSchema, membersData);
         if (!validation.success) {
           console.error("[Worker] Members validation failed for /clan/full", validation.issues);
-          res.status(502).json({ error: "Invalid members data format", details: validation.issues });
+          response.status(502).json({ error: "Invalid members data format", details: validation.issues });
           return;
         }
         membersData = validation.output as unknown as ClanMembers;
       } else {
-        res.status(500).json({ error: "Failed to fetch members" });
+        response.status(500).json({ error: "Failed to fetch members" });
         return;
       }
 
@@ -967,14 +967,14 @@ app.post(
         });
       }
 
-      res.json({
+      response.json({
         members: membersData,
         race: raceData,
         history: warHistory,
       });
     } catch (clanFullError) {
       console.error("Failed /clan/full", clanFullError);
-      res.status(500).json({
+      response.status(500).json({
         error: clanFullError instanceof Error ? clanFullError.message : "unknown",
       });
     }
@@ -984,13 +984,13 @@ app.post(
 app.post(
   "/clan/api",
   async (
-    req: Request<object, object, ClanApiRequest>,
-    res: Response,
+    request: Request<object, object, ClanApiRequest>,
+    response: Response,
   ): Promise<void> => {
     // THREAT: Invalid request types or tags leading to unhandled upstream responses.
-    const result = v.safeParse(ClanApiRequestSchema, req.body);
+    const result = v.safeParse(ClanApiRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
@@ -1005,7 +1005,7 @@ app.post(
       } else if (type === "warlog") {
         url = `${CONFIG.apiBase}/clans/${cleanTag}/riverracelog?limit=52`;
       } else {
-        res.status(400).json({ error: "invalid type" });
+        response.status(400).json({ error: "invalid type" });
         return;
       }
 
@@ -1022,7 +1022,7 @@ app.post(
       }, CONFIG.maxRetries, batchManager);
 
       if (code !== 200) {
-        res.status(code).json({ error: "upstream error", details: content });
+        response.status(code).json({ error: "upstream error", details: content });
         return;
       }
 
@@ -1033,7 +1033,7 @@ app.post(
         // Target B [1]: Enforce strict validation boundary for Royale API data.
         const validation = v.safeParse(RoyaleClanMembersResponseSchema, content);
         if (!validation.success) {
-          res.status(502).json({ error: "Invalid upstream data format", details: validation.issues });
+          response.status(502).json({ error: "Invalid upstream data format", details: validation.issues });
           return;
         }
 
@@ -1054,13 +1054,13 @@ app.post(
         // Target B [1]: Enforce strict validation boundary for Royale API data.
         const validation = v.safeParse(RoyaleWarLogResponseSchema, content);
         if (!validation.success) {
-          res.status(502).json({ error: "Invalid upstream data format", details: validation.issues });
+          response.status(502).json({ error: "Invalid upstream data format", details: validation.issues });
           return;
         }
 
-        const parseCRDateISO = (t: string): string => {
-          if (!t) return new Date().toISOString().split("T")[0] ?? "";
-          return `${t.substring(0, 4)}-${t.substring(4, 6)}-${t.substring(6, 8)}`;
+        const parseCRDateISO = (dateString: string): string => {
+          if (!dateString) return new Date().toISOString().split("T")[0] ?? "";
+          return `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
         };
 
         transformed = validation.output.items.map((warLogEntry) => {
@@ -1091,10 +1091,10 @@ app.post(
         });
       }
 
-      res.json({ data: transformed });
+      response.json({ data: transformed });
     } catch (clanApiError) {
       console.error("Failed /clan/api", clanApiError);
-      res.status(500).json({
+      response.status(500).json({
         error: clanApiError instanceof Error ? clanApiError.message : "unknown",
       });
     }
@@ -1104,13 +1104,13 @@ app.post(
 app.post(
   "/fetch",
   async (
-    req: Request<object, object, FetchRequest>,
-    res: Response,
+    request: Request<object, object, FetchRequest>,
+    response: Response,
   ): Promise<void> => {
     // THREAT: Arbitrary URL fetching or malformed scoring weights leading to resource exhaustion.
-    const result = v.safeParse(FetchRequestSchema, req.body);
+    const result = v.safeParse(FetchRequestSchema, request.body);
     if (!result.success) {
-      res.status(400).json({ error: "Invalid request body", details: result.issues });
+      response.status(400).json({ error: "Invalid request body", details: result.issues });
       return;
     }
 
@@ -1130,10 +1130,10 @@ app.post(
         scoring ?? null,
       );
 
-      res.json({ results: batchResults });
+      response.json({ results: batchResults });
     } catch (fetchError) {
       console.error("Failed /fetch", fetchError);
-      res.status(500).json({
+      response.status(500).json({
         error: fetchError instanceof Error ? fetchError.message : "unknown",
       });
     }
