@@ -1,28 +1,41 @@
-import { ref, onMounted } from "vue";
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+import { ref, readonly } from "vue";
 
 /**
  * ⚡ ADAPTIVE HAPTICS ENGINE
  * Optimization #48: Adjusts feedback intensity based on battery status and power mode.
  * Optimization #49: Specialized patterns for high-value recruits.
  */
-export function useHaptics() {
-  const isSupported =
-    typeof navigator !== "undefined" && "vibrate" in navigator;
-  const isLowPowerMode = ref(false);
-  let hasInteracted = false;
 
-  // Initialize Battery Awareness if available
-  interface BatteryManager extends EventTarget {
-    charging: boolean;
-    level: number;
-    saveData?: boolean;
-    addEventListener(
-      type: "chargingchange" | "levelchange",
-      listener: EventListenerOrEventListenerObject,
-    ): void;
-  }
+// Native API Types
+interface BatteryManager extends EventTarget {
+  charging: boolean;
+  level: number;
+  saveData?: boolean;
+  addEventListener(
+    type: "chargingchange" | "levelchange",
+    listener: EventListenerOrEventListenerObject,
+  ): void;
+}
 
-  if (typeof navigator !== "undefined" && "getBattery" in (navigator as any)) {
+// [PERF] Module-level state (Singleton)
+// Ensures state and listeners are shared across all call sites.
+const isLowPowerMode = ref(false);
+let hasInteracted = false;
+let isInitialized = false;
+
+/**
+ * INITIALIZATION ENGINE
+ * Guards against redundant listener attachment and ensures the battery
+ * monitor is only instantiated once.
+ */
+function init() {
+  if (isInitialized || typeof window === "undefined") return;
+
+  // 1. Battery Awareness: Preserves device juice in low-power conditions.
+  if ("getBattery" in (navigator as any)) {
     (navigator as Navigator & { getBattery(): Promise<BatteryManager> })
       .getBattery()
       .then((battery) => {
@@ -37,31 +50,56 @@ export function useHaptics() {
       });
   }
 
-  if (typeof window !== "undefined") {
-    const setInteracted = () => {
-      hasInteracted = true;
-      window.removeEventListener("click", setInteracted);
-      window.removeEventListener("touchstart", setInteracted);
-      window.removeEventListener("keydown", setInteracted);
-    };
-    window.addEventListener("click", setInteracted, {
-      once: true,
-      passive: true,
-    });
-    window.addEventListener("touchstart", setInteracted, {
-      once: true,
-      passive: true,
-    });
-    window.addEventListener("keydown", setInteracted, {
-      once: true,
-      passive: true,
-    });
-  }
+  // 2. Interaction Tracking: Browser security requires user gesture before vibration.
+  const setInteracted = () => {
+    hasInteracted = true;
+    window.removeEventListener("click", setInteracted);
+    window.removeEventListener("touchstart", setInteracted);
+    window.removeEventListener("keydown", setInteracted);
+  };
+
+  window.addEventListener("click", setInteracted, {
+    once: true,
+    passive: true,
+  });
+  window.addEventListener("touchstart", setInteracted, {
+    once: true,
+    passive: true,
+  });
+  window.addEventListener("keydown", setInteracted, {
+    once: true,
+    passive: true,
+  });
+
+  isInitialized = true;
+}
+
+/**
+ * COMPOSABLE: useHaptics
+ *
+ * @remarks
+ * Brokered access to the device vibration hardware. Implements a singleton
+ * pattern to minimize event listener overhead and ensure consistent state
+ * across the application.
+ *
+ * @returns
+ * - isSupported: Hardware capability check.
+ * - isLowPowerMode: Reactive status of the device battery/power state.
+ * - tap/medium/heavy: Standard feedback patterns.
+ * - success/error/warning/sync: Tactical feedback patterns.
+ * - criticalHit/rareFind: Domain-specific reward patterns.
+ */
+export function useHaptics() {
+  const isSupported =
+    typeof navigator !== "undefined" && "vibrate" in navigator;
+
+  // [PERF] LAZY INIT: Call singleton initialization on first use.
+  init();
 
   const vibrate = (pattern: number | number[]) => {
     if (!isSupported || !hasInteracted) return;
 
-    // Scale down feedback in low power mode to preserve juice
+    // [PERF] POWER CONSERVATION: Scale down intensity in low power mode.
     if (isLowPowerMode.value) {
       if (Array.isArray(pattern)) {
         pattern = pattern.map((p) => Math.max(0, p - 5));
@@ -79,7 +117,7 @@ export function useHaptics() {
 
   return {
     isSupported,
-    isLowPowerMode,
+    isLowPowerMode: readonly(isLowPowerMode),
 
     tap: () => vibrate(12),
     medium: () => vibrate(25),
@@ -92,9 +130,21 @@ export function useHaptics() {
     sync: () => vibrate([10, 15, 10, 15]),
 
     // Optimization #49: Special Recruit Patterns
-    criticalHit: () => vibrate([20, 100, 20, 100]), // Intense heart-beat
-    rareFind: () => vibrate([15, 30, 80]), // Ascending pulse
+    criticalHit: () => vibrate([20, 100, 20, 100]),
+    rareFind: () => vibrate([15, 30, 80]),
 
     custom: (pattern: number | number[]) => vibrate(pattern),
   };
+}
+
+/**
+ * TEST EXPORT: Resets the singleton state for unit testing.
+ * @internal
+ */
+export function resetHapticsState() {
+  if (import.meta.env.TEST) {
+    isLowPowerMode.value = false;
+    hasInteracted = false;
+    isInitialized = false;
+  }
 }
