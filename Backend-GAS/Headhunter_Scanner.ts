@@ -66,15 +66,15 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const W = CONFIG.HEADHUNTER.WEIGHTS;
     const keywords = CONFIG.HEADHUNTER.KEYWORDS || [];
     const searchUrls = keywords.map(
-      (k: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${k}`,
+      (keyword: string) => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${keyword}`,
     );
 
     // 1. Discovery: Find Tournaments
     const searchResults: any[] = Registry.Services.Network.fetchRoyaleAPI(searchUrls) || [];
     const uniqueTourneys = new Map<string, TournamentResult>();
-    searchResults.forEach((res: TournamentResult) => {
-      if (res && res.items)
-        res.items.forEach((t: TournamentResult) => uniqueTourneys.set(t.tag, t));
+    searchResults.forEach((searchResult: TournamentResult) => {
+      if (searchResult && searchResult.items)
+        searchResult.items.forEach((tournament: TournamentResult) => uniqueTourneys.set(tournament.tag, tournament));
     });
     console.info(`Discovery: Found ${uniqueTourneys.size} unique tournaments across ${keywords.length} keywords.`);
 
@@ -120,7 +120,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     const tourneyTags = [...new Set(lotteryPool
       .slice(0, lotteryLimit)
-      .map((t: TournamentResult) => t.tag))];
+      .map((tournamentTag: TournamentResult) => tournamentTag.tag))];
     
     if (tourneyTags.length === 0) return [];
 
@@ -151,15 +151,15 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     // Step 5A: Process Remote Results & Verify Yield
     if (usedRemote) {
-        candidates.forEach((c: any) => {
-            if (c.trophies >= minTrophies || c.trophies === undefined)
-                uniqueCandidates.set(c.tag, c);
+        candidates.forEach((candidate: any) => {
+            if (candidate.trophies >= minTrophies || candidate.trophies === undefined)
+                uniqueCandidates.set(candidate.tag, candidate);
         });
         
         tagsToFetch = Array.from(uniqueCandidates.values())
             .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
             .slice(0, playerLimit)
-            .map(p => p.tag);
+            .map(player => player.tag);
 
         // SAFETY: Fallback to local if remote yields nothing
         if (tagsToFetch.length === 0) {
@@ -175,19 +175,19 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       console.info(`Executing GAS-based local scan (${tourneyTags.length} tournaments)...`);
       const details: TournamentResult[] = Registry.Services.Network.fetchRoyaleAPI(
         tourneyTags.map(
-          (t) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t)}`,
+          (tag) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(tag)}`,
         ),
       );
 
       details.forEach((d: TournamentResult) => {
         if (d && d.membersList && d.membersList.length >= 10) {
-          d.membersList.forEach((p) => {
+          d.membersList.forEach((member) => {
             if (
-              (!p.clan || p.clan.tag === "") &&
-              (!blacklistSet || !blacklistSet.has(p.tag)) &&
-              (p.trophies >= minTrophies || p.trophies === undefined)
+              (!member.clan || member.clan.tag === "") &&
+              (!blacklistSet || !blacklistSet.has(member.tag)) &&
+              (member.trophies >= minTrophies || member.trophies === undefined)
             ) {
-              uniqueCandidates.set(p.tag, p);
+              uniqueCandidates.set(member.tag, member);
             }
           });
         }
@@ -198,7 +198,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         .slice(0, playerLimit);
       
       Registry.Services.Core.shuffleArray(localPool);
-      tagsToFetch = localPool.map(p => p.tag);
+      tagsToFetch = localPool.map(member => member.tag);
     }
 
     // 6. PROPHET INTELLIGENCE INTEGRATION
@@ -207,8 +207,8 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // candidates without redundant network calls for their full history.
     const prophetCache = RosterStore?.getProphetCache?.() || new Map();
     const normalizedProphet = new Map<string, any>();
-    prophetCache.forEach((v: any, k: string) => {
-        normalizedProphet.set(k.replace("#", "").trim().toLowerCase(), v);
+    prophetCache.forEach((intel: any, playerTag: string) => {
+        normalizedProphet.set(playerTag.replace("#", "").trim().toLowerCase(), intel);
     });
 
     const validCandidates: Recruit[] = [];
@@ -224,15 +224,15 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     ) {
       // 7A. Process Remote Scored Candidates
       const remoteMap = new Map<string, any>();
-      candidates.forEach(c => remoteMap.set(c.tag, c));
+      candidates.forEach(remoteCandidate => remoteMap.set(remoteCandidate.tag, remoteCandidate));
       
       const remotePool = tagsToFetch
-        .map(t => remoteMap.get(t))
-        .filter(c => c !== undefined);
+        .map(tag => remoteMap.get(tag))
+        .filter(candidate => candidate !== undefined);
 
-      remotePool.forEach((c: any) => {
-        let finalScore = c.rawScore;
-        const normTag = c.tag.replace("#", "").trim().toLowerCase();
+      remotePool.forEach((candidate: any) => {
+        let finalScore = candidate.rawScore;
+        const normTag = candidate.tag.replace("#", "").trim().toLowerCase();
         const intel = normalizedProphet.get(normTag);
         
         // HERITAGE BONUS: 25% multiplier for historically active players.
@@ -243,21 +243,21 @@ const HeadhunterScanner: HeadhunterScannerContract = {
              // We only log if we didn't use remote to avoid console spam.
              if (!usedRemote) {
                 finalScore *= 1.25;
-                console.info(`Prophet: Heritage found for ${c.name}: 25% Participation Bonus.`);
+                console.info(`Prophet: Heritage found for ${candidate.name}: 25% Participation Bonus.`);
              }
         }
 
         validCandidates.push({
-          tag: c.tag,
-          name: c.name,
-          trophies: c.trophies || 0,
-          donations: c.donations || 0,
-          cards: c.cards || 0,
-          war: c.war || 0,
+          tag: candidate.tag,
+          name: candidate.name,
+          trophies: candidate.trophies || 0,
+          donations: candidate.donations || 0,
+          cards: candidate.cards || 0,
+          war: candidate.war || 0,
           foundDate: new Date(),
           invited: false,
           rawScore: finalScore,
-          potentialScore: c.potentialScore,
+          potentialScore: candidate.potentialScore,
           lastScan: Date.now(),
           source: "TOURNAMENT",
         });
@@ -278,20 +278,20 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         let seedTags = validCandidates
           .sort((a, b) => b.rawScore - a.rawScore)
           .slice(0, 5) 
-          .map(c => c.tag);
+          .map(candidate => candidate.tag);
         
         if (seedTags.length === 0 && existingRecruits.size > 0) {
           seedTags = Array.from(existingRecruits.values())
             .sort((a, b) => (b.rawScore || 0) - (a.rawScore || 0))
             .slice(0, 10)
-            .map(c => c.tag);
+            .map(candidate => candidate.tag);
           console.info(`Shadow Scout: Seeding from ${seedTags.length} existing leads.`);
         }
         
         if (seedTags.length > 0) {
           const cb = Math.floor(Date.now() / 900000); 
           const seedLogs: any[][] = Registry.Services.Network.fetchRoyaleAPI(
-            seedTags.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}/battlelog?__cb=${cb}`)
+            seedTags.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`)
           );
 
           for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
@@ -320,31 +320,31 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     } else {
       // Local scoring required
       const playersData: any[] = Registry.Services.Network.fetchRoyaleAPI(
-        tagsToFetch.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+        tagsToFetch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
         remoteAvailable ? W : null,
       ) || [];
 
       const logUrls: string[] = [];
       const candidatesToProfile: any[] = [];
 
-      playersData.forEach((p: any) => {
-        if (p && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-           if (p.rawScore !== undefined) {
+      playersData.forEach((profile: any) => {
+        if (profile && (profile.rawScore !== undefined || profile.trophies >= minTrophies)) {
+           if (profile.rawScore !== undefined) {
             validCandidates.push({
-              tag: p.tag,
-              name: p.name,
-              trophies: p.trophies,
-              donations: p.totalDonations,
-              cards: p.challengeCardsWon,
-              war: p.warDayWins,
+              tag: profile.tag,
+              name: profile.name,
+              trophies: profile.trophies,
+              donations: profile.totalDonations,
+              cards: profile.challengeCardsWon,
+              war: profile.warDayWins,
               foundDate: new Date(),
               invited: false,
-              rawScore: p.rawScore,
+              rawScore: profile.rawScore,
               source: "TOURNAMENT",
             });
           } else {
-             candidatesToProfile.push(p);
-             logUrls.push(`${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}/battlelog`);
+             candidatesToProfile.push(profile);
+             logUrls.push(`${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(profile.tag)}/battlelog`);
           }
         }
       });
@@ -352,46 +352,46 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       if (logUrls.length > 0) {
         const logs: any[][] = Registry.Services.Network.fetchRoyaleAPI(logUrls);
 
-        candidatesToProfile.forEach((p, idx) => {
+        candidatesToProfile.forEach((profile, profileIndex) => {
           let hasWar = false;
-          if (logs[idx]) {
-            hasWar = logs[idx].some((b: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(b.type));
+          if (logs[profileIndex]) {
+            hasWar = logs[profileIndex].some((battleLogEntry: any) => ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(battleLogEntry.type));
 
             if (validCandidates.length < 40 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
-              const recruits = BattleLog.processPlayerHistory(p.tag, AnalysisGoal.RECRUITMENT);
-              recruits.forEach((r: any) => {
-                 if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && r.tag && !processedTags.has(r.tag) && !blacklistSet.has(r.tag)) {
-                    shadowTags.add(r.tag);
-                    processedTags.add(r.tag);
+              const recruits = BattleLog.processPlayerHistory(profile.tag, AnalysisGoal.RECRUITMENT);
+              recruits.forEach((recruit: any) => {
+                 if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && recruit.tag && !processedTags.has(recruit.tag) && !blacklistSet.has(recruit.tag)) {
+                    shadowTags.add(recruit.tag);
+                    processedTags.add(recruit.tag);
                  }
               });
             }
           }
           
-          let totalWarScore = (p.warDayWins || 0);
-          if (existingRecruits && existingRecruits.has(p.tag)) {
-            totalWarScore = Math.max(totalWarScore, existingRecruits.get(p.tag)!.war);
+          let totalWarScore = (profile.warDayWins || 0);
+          if (existingRecruits && existingRecruits.has(profile.tag)) {
+            totalWarScore = Math.max(totalWarScore, existingRecruits.get(profile.tag)!.war);
           }
 
           const rawScore = Registry.Services.Scoring.calculateRecruitRawScore(
-            p.trophies || 0,
-            p.totalDonations || 0,
-            p.warDayWins || 0,
+            profile.trophies || 0,
+            profile.totalDonations || 0,
+            profile.warDayWins || 0,
             hasWar,
             W,
           );
 
           let finalScore = rawScore;
-          const normTag = p.tag.replace("#", "").trim().toLowerCase();
+          const normTag = profile.tag.replace("#", "").trim().toLowerCase();
           const intel = normalizedProphet.get(normTag);
           if (intel && intel.wins > 5) finalScore *= 1.25;
 
           validCandidates.push({
-            tag: p.tag,
-            name: p.name,
-            trophies: p.trophies,
-            donations: p.totalDonations,
-            cards: p.challengeCardsWon,
+            tag: profile.tag,
+            name: profile.name,
+            trophies: profile.trophies,
+            donations: profile.totalDonations,
+            cards: profile.challengeCardsWon,
             war: totalWarScore,
             foundDate: new Date(),
             invited: false,
@@ -406,26 +406,26 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     if (shadowTags.size > 0) {
       const shadowList = Array.from(shadowTags);
       const shadowData: any[] = Registry.Services.Network.fetchRoyaleAPI(
-        shadowList.map(t => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(t)}`),
+        shadowList.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
         remoteAvailable ? W : null,
       );
 
-      shadowData.forEach((p: any) => {
-        if (p && p.tag && (p.rawScore !== undefined || p.trophies >= minTrophies)) {
-          const rs = p.rawScore !== undefined 
-            ? p.rawScore 
-            : Registry.Services.Scoring.calculateRecruitRawScore(p.trophies || 0, p.totalDonations || 0, p.warDayWins || 0, false, W);
+      shadowData.forEach((shadowProfile: any) => {
+        if (shadowProfile && shadowProfile.tag && (shadowProfile.rawScore !== undefined || shadowProfile.trophies >= minTrophies)) {
+          const rawScore = shadowProfile.rawScore !== undefined
+            ? shadowProfile.rawScore
+            : Registry.Services.Scoring.calculateRecruitRawScore(shadowProfile.trophies || 0, shadowProfile.totalDonations || 0, shadowProfile.warDayWins || 0, false, W);
 
           validCandidates.push({
-            tag: p.tag,
-            name: p.name,
-            trophies: p.trophies,
-            donations: p.totalDonations,
-            cards: p.challengeCardsWon,
-            war: p.warDayWins || 0,
+            tag: shadowProfile.tag,
+            name: shadowProfile.name,
+            trophies: shadowProfile.trophies,
+            donations: shadowProfile.totalDonations,
+            cards: shadowProfile.challengeCardsWon,
+            war: shadowProfile.warDayWins || 0,
             foundDate: new Date(),
             invited: false,
-            rawScore: rs,
+            rawScore: rawScore,
             source: "SHADOW",
           });
         }
@@ -433,8 +433,8 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     }
 
     // 9. FINAL SCAN SUMMARY [7/9]
-    const scoutYield = validCandidates.filter(c => c.source === "TOURNAMENT").length;
-    const shadowYield = validCandidates.filter(c => c.source === "SHADOW").length;
+    const scoutYield = validCandidates.filter(candidate => candidate.source === "TOURNAMENT").length;
+    const shadowYield = validCandidates.filter(candidate => candidate.source === "SHADOW").length;
     const totalYield = validCandidates.length;
 
     const shadowReport = shadowStatus === "ACTIVE" 

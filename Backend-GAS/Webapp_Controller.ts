@@ -166,19 +166,19 @@ const WebappController: WebappControllerContract = {
           // @ts-ignore
           const hhResponse = Sheets.Spreadsheets.Values.get(ssId, hhDataRange);
           const rows = hhResponse.values || [];
-          rows.forEach((row: any[]) => {
-            if (!row || row.length < 1) return;
-            const tag = String(row[0] || "").toUpperCase().trim();
-            const rawScore = (row.length > 8) ? sanitizeNum(row[8], "") : 0;
+          rows.forEach((memberRow: any[]) => {
+            if (!memberRow || memberRow.length < 1) return;
+            const tag = String(memberRow[0] || "").toUpperCase().trim();
+            const rawScore = (memberRow.length > 8) ? sanitizeNum(memberRow[8], "") : 0;
             if (tag) scoreMap.set(tag, rawScore);
           });
         } catch (readErr) {}
 
         const now = Date.now();
-        const values = items.map((item) => {
-          let id = (item.id.startsWith("#") ? item.id : "#" + item.id).toUpperCase();
+        const values = items.map((dismissalPayload) => {
+          let id = (dismissalPayload.id.startsWith("#") ? dismissalPayload.id : "#" + dismissalPayload.id).toUpperCase();
           let score = scoreMap.get(id);
-          if (score === undefined) score = Number(item.score) || 0;
+          if (score === undefined) score = Number(dismissalPayload.score) || 0;
           return [id, now, score];
         });
 
@@ -214,10 +214,10 @@ const WebappController: WebappControllerContract = {
         const tagsToUndo = new Set(ids.map(id => (id.startsWith("#") ? id : "#" + id).toUpperCase()));
         
         let removedCount = 0;
-        for (let i = rawEVT.length - 1; i >= 1; i--) {
-          const tag = String(rawEVT[i][0]).toUpperCase().trim();
+        for (let rowIndex = rawEVT.length - 1; rowIndex >= 1; rowIndex--) {
+          const tag = String(rawEVT[rowIndex][0]).toUpperCase().trim();
           if (tagsToUndo.has(tag)) {
-            evtSheet.deleteRow(i + 1);
+            evtSheet.deleteRow(rowIndex + 1);
             removedCount++;
           }
         }
@@ -293,15 +293,15 @@ const WebappController: WebappControllerContract = {
       return [];
     }
 
-    return data[0].items.map((r: any) => {
+    return data[0].items.map((warLogEntry: any) => {
       let myStanding: any = null;
       let opponents: any[] = [];
 
-      if (r.standings) {
-        myStanding = r.standings.find(
+      if (warLogEntry.standings) {
+        myStanding = warLogEntry.standings.find(
           (s: any) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
         );
-        opponents = r.standings.filter(
+        opponents = warLogEntry.standings.filter(
           (s: any) => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG,
         );
       }
@@ -316,7 +316,7 @@ const WebappController: WebappControllerContract = {
 
       return {
         result,
-        endTime: parseCRDateISO(r.createdDate),
+        endTime: parseCRDateISO(warLogEntry.createdDate),
         opponent: bestRival ? bestRival.clan.name : "No Opponent",
         teamSize: 50,
         score: myFame,
@@ -341,9 +341,9 @@ const WebappController: WebappControllerContract = {
         const blResponse = Sheets.Spreadsheets.Values.get(ssId, `'${CONFIG.SHEETS.BL}'!A:B`);
         const rawBL = blResponse.values || [];
         const now = Date.now();
-        rawBL.forEach((r: any) => {
-          const tag = String(r[0] || "").toUpperCase().trim();
-          const expiry = Number(r[1]) || 0;
+        rawBL.forEach((blacklistRow: any) => {
+          const tag = String(blacklistRow[0] || "").toUpperCase().trim();
+          const expiry = Number(blacklistRow[1]) || 0;
           if (tag && expiry > now) exclusionSet.add(tag);
         });
       } catch (e) {}
@@ -352,15 +352,15 @@ const WebappController: WebappControllerContract = {
         // @ts-ignore
         const evtResponse = Sheets.Spreadsheets.Values.get(ssId, `'${CONFIG.SHEETS.EVT}'!A:A`);
         const rawEVT = evtResponse.values || [];
-        rawEVT.forEach((r: any, idx: number) => {
-          if (idx === 0) return;
-          const tag = String(r[0] || "").toUpperCase().trim();
+        rawEVT.forEach((eventRow: any, rowIndex: number) => {
+          if (rowIndex === 0) return;
+          const tag = String(eventRow[0] || "").toUpperCase().trim();
           if (tag) exclusionSet.add(tag);
         });
       } catch (e) {}
 
-      const filteredHH = hhResult.rows.filter((row) => {
-        const id = ("#" + row[0]).toUpperCase();
+      const filteredHH = hhResult.rows.filter((recruitRow) => {
+        const id = ("#" + recruitRow[0]).toUpperCase();
         return !exclusionSet.has(id);
       });
 
@@ -477,8 +477,8 @@ function extractSheetDataStrict(
   const vals = sheet.getRange(startRow, 2, numRows, safeNumCols).getValues();
   const rows: any[][] = [];
 
-  for (let i = 0; i < vals.length; i++) {
-    const rowRaw = vals[i];
+  for (let rowIndex = 0; rowIndex < vals.length; rowIndex++) {
+    const rowRaw = vals[rowIndex];
 
     if (!Array.isArray(rowRaw)) continue;
 
@@ -503,38 +503,38 @@ function extractSheetDataStrict(
 
         if (m.col >= rowRaw.length) return m.type === "num" ? 0 : "";
 
-        const val = rowRaw[m.col];
+        const cellValue = rowRaw[m.col];
 
         switch (m.type) {
           case "tag":
             // Normalize tags for the PWA (No # prefix, Uppercase).
-            return String(val || "").replace("#", "").trim().toUpperCase();
+            return String(cellValue || "").replace("#", "").trim().toUpperCase();
           case "num":
-            return sanitizeNum(val, "");
+            return sanitizeNum(cellValue, "");
           case "rate":
             // Performance Optimization: Manual percentage formatting.
             // Using getDisplayValues() on the sheet is significantly slower (10x+)
             // than getValues() + manual JS parsing because it forces the
             // spreadsheet engine to calculate formatting for every cell.
-            if (val === null || val === undefined || val === "") return "0%";
-            if (typeof val === "number") {
-                if (val <= 1.0) return `${Math.round(val * 100)}%`;
-                return `${Math.round(val)}%`;
+            if (cellValue === null || cellValue === undefined || cellValue === "") return "0%";
+            if (typeof cellValue === "number") {
+                if (cellValue <= 1.0) return `${Math.round(cellValue * 100)}%`;
+                return `${Math.round(cellValue)}%`;
             }
-            const sVal = String(val);
+            const sVal = String(cellValue);
             if (sVal.toUpperCase().includes("N/A")) return "N/A";
             if (sVal.includes("%")) return sVal.trim();
             const n = parseFloat(sVal);
             return isNaN(n) ? "0%" : `${Math.round(n * 100)}%`;
           case "date":
-            const dateObj = Registry.Services.Time.parseFlexibleDate(val);
+            const dateObj = Registry.Services.Time.parseFlexibleDate(cellValue);
             if (isNaN(dateObj.getTime()) || dateObj.getTime() <= 0) {
-                return val ? String(val) : "";
+                return cellValue ? String(cellValue) : "";
             }
             return dateObj.toISOString();
           case "str":
           default:
-            const s = val === null || val === undefined ? "" : String(val);
+            const s = cellValue === null || cellValue === undefined ? "" : String(cellValue);
             // FORMULA STRIPPING:
             // Extract URL from =HYPERLINK("url", "label") artifacts to ensure
             // the JSON API returns raw data instead of spreadsheet formulas.
@@ -587,10 +587,10 @@ const formatRole = (role: string): string =>
     role
   ] || "Member";
 
-function parseCRDateISO(t: string): string {
-  if (!t) return new Date().toISOString().split("T")[0];
+function parseCRDateISO(dateString: string): string {
+  if (!dateString) return new Date().toISOString().split("T")[0];
   const d = new Date(
-    t.replace(
+    dateString.replace(
       /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
       "$1-$2-$3T$4:$5:$6Z",
     ),
