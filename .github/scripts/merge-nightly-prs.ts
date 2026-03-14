@@ -24,8 +24,8 @@ const CONFIG = {
 
 function log(message: string, type: "info" | "warn" | "error" | "success" = "info") {
   const timestamp = new Date().toISOString();
-  const icons = { info: "🔍", warn: "⚠️", error: "❌", success: "✅" };
-  console.log(`[${timestamp}] ${icons[type]} ${message}`);
+  const labels = { info: "[INFO]", warn: "[WARN]", error: "[ERROR]", success: "[SUCCESS]" };
+  console.log(`${timestamp} ${labels[type]} ${message}`);
 }
 
 interface GitHubPR {

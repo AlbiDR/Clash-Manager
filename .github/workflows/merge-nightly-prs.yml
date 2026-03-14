@@ -61,7 +61,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22" # Use stable Active LTS
+          node-version: "24"
 
         # ----------------------------------------------------------------------
         # STEP 2: Execution Logic (Ultra-Robust)
