@@ -1,12 +1,15 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { getPlayerProfile } from "@core/api/GasClient";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import {
   asGold,
   asGems,
-  asXP
 } from "@core";
 import { ref, computed, type Ref, watch } from 'vue'
+import * as v from "valibot";
 
 // Progression Engine 2.0 Primitives
 import {
@@ -14,7 +17,9 @@ import {
   ProfileHydrator,
   KING_XP_TABLE,
   IMPORTANT_KING_LEVELS,
+  RawInventorySchema,
   type PlayerData,
+  type PlayerProfile,
   type OptimizationSettings,
   type SimulationState,
   type Inventory,
@@ -69,7 +74,7 @@ let lastAnalyzedTag: string | null = null;
  * @param originalProfile - The original player profile before simulation.
  * @returns A formatted result compatible with existing UI components.
  */
-function mapStateToResult(state: SimulationState, originalProfile: any): OptimizationResult {
+function mapStateToResult(state: SimulationState, originalProfile: PlayerProfile): OptimizationResult {
   let kingLevel = 1;
   let xpIntoLevel = 0;
   
@@ -218,7 +223,7 @@ export function useLaboratory() {
         const { value, done } = currentSimulation.next();
         if (done) {
           if (value && simId === currentSimulationId) {
-            operation.value = mapStateToResult(value, observation.value?.profile);
+            operation.value = mapStateToResult(value, observation.value?.profile as PlayerProfile);
           }
           if (simId === currentSimulationId) {
             currentSimulation = null;
@@ -231,7 +236,7 @@ export function useLaboratory() {
 
       // Update intermediate state for progress feeling - throttled to ~30fps
       if (lastState && simId === currentSimulationId) {
-        operation.value = mapStateToResult(lastState, observation.value?.profile);
+        operation.value = mapStateToResult(lastState, observation.value?.profile as PlayerProfile);
       }
 
       if (window.requestIdleCallback) {
@@ -254,8 +259,32 @@ export function useLaboratory() {
    * @param rawSnapshot - Raw player profile from API.
    * @param rawInventory - Optional inventory overrides.
    */
-  function ingest(rawSnapshot: any, rawInventory?: any) {
+  function ingest(rawSnapshot: unknown, rawInventory?: unknown) {
     const data = ProfileHydrator.hydrate(rawSnapshot);
+
+    // If rawInventory is provided, merge it into the data before loading persisted overrides
+    if (rawInventory) {
+       const invResult = v.safeParse(RawInventorySchema, rawInventory);
+       if (invResult.success) {
+          const inv = invResult.output;
+          data.inventory = {
+            ...data.inventory,
+            gold: asGold(inv.gold ?? Number(data.inventory.gold)),
+            gems: asGems(inv.gems ?? Number(data.inventory.gems)),
+            wildCards: {
+              ...data.inventory.wildCards,
+              Common: inv.wildCards?.Common ?? data.inventory.wildCards.Common,
+              Rare: inv.wildCards?.Rare ?? data.inventory.wildCards.Rare,
+              Epic: inv.wildCards?.Epic ?? data.inventory.wildCards.Epic,
+              Legendary: inv.wildCards?.Legendary ?? data.inventory.wildCards.Legendary,
+              Champion: inv.wildCards?.Champion ?? data.inventory.wildCards.Champion,
+            }
+          };
+       } else {
+          console.warn("[Laboratory] rawInventory validation failed", invResult.issues);
+       }
+    }
+
     data.inventory = loadPersistedInventory(data);
     observation.value = data;
 
