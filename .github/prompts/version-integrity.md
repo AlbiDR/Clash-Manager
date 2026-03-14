@@ -120,13 +120,14 @@ Identify the highest declared version across all sources. That value is the grou
 
 ### Log Updates:
 - Updated `.github/nightly-logs/version-integrity-coverage.log`
-- Updated `.github/nightly-logs/PR_HISTORY.md` using the format: `## [Date] PR #X: type(scope): [summary]`
+
+> **Note:** `PR_HISTORY.md` is maintained centrally by the merge orchestrator. Do not modify it directly -- include all relevant context in the PR description body.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
 
 * **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. If a reconciliation requires a decision only the developer can make, document it precisely in the PR description and push — do not halt execution.
 * **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow. **CRITICAL: You MUST explicitly parameterize the PR creation tool/API to set the `base` (or target) branch to `Nightly`. If you don't explicitly declare it, it will default to `Stable` and break the automated merge pipeline.**
-* **[3] Push even on a "no drift found" run.** A `chore(version): no drift found` PR is a valid, expected output. It signals a consistent version state, not a failure.
+* **[3] Skip PR on zero-diff runs.** If the scan produced no version drift and no files were modified, do not create a branch or open a PR. A consistent version state is the expected steady state of a healthy codebase.
 * **[4] Never block on tests.** Run `pnpm test` as a diagnostic step. If it cannot execute, note it in the PR description and push regardless.
 * **[5] One PR per run.** Fix one inconsistency per run. Each run is exactly one atomic commit, one PR.

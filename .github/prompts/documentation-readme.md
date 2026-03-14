@@ -35,7 +35,7 @@ You are the **Fourth Mover** in the 7-stage Nightly cycle:
 * **[1] Synchronization:** Ensure README code snippets, function signatures, and described behaviours match the current implementation. This is the primary task.
 * **[2] Depth:** If a README exists but lacks purpose, key constraints, or relationship to adjacent modules, deepen it. Do not create new READMEs when shallow ones can be improved.
 * **[3] Dictionary:** Define vague or project-specific terms (e.g., "Nightly", "Headhunter", "DeepNet") if they appear in code but lack definition.
-* **[4] Recency Bias:** If **Harden**, **Verify**, **Optimize**, **Version-Integrity**, or **Dependency-Audit** modified a file this cycle, its parent directory's README is the first README to validate. Changes to code invalidate adjacent documentation.
+* **[4] Recency Bias:** Inspect the `Nightly` branch commit history (`git log origin/Nightly`). If **Harden**, **Verify**, **Optimize**, **Version-Integrity**, or **Dependency-Audit** modified a file since the last successful merge cycle, its parent directory's README is the first README to validate. Changes to code invalidate adjacent documentation.
 * **[5] Creation as Last Resort:** Only create a new `README.md` if a directory is completely undocumented **and** no higher-priority gap exists anywhere in the codebase this run.
 
 ### [B] Exclusions
@@ -74,7 +74,7 @@ You are the **Fourth Mover** in the 7-stage Nightly cycle:
 * **[a]** **README Synchronization (Drift):** Identify any `README.md` whose code snippets, function signatures, or described behaviours no longer match the current implementation. This is the **Absolute Priority**.
 * **[b]** **README Depth (Shallow):** Identify any `README.md` that exists but lacks purpose, key constraints, or relationship to adjacent modules.
 * **[c]** **README Creation:** Identify any directory with a public interface or multiple modules that has no `README.md` at all.
-* **[!] Coverage Log:** Do **not** apply the coverage log to README checks — any code change in a directory mandates a fresh README re-evaluation on every run regardless of history.
+* **[!] Coverage Log (Audit-Only):** Append the path of every README updated (or "No Gap Found") to `.github/nightly-logs/documentation-readme-coverage.log` (create the file if it does not exist). This log is **write-only** — it serves as a historical audit trail. Do **not** consult it for targeting decisions. Any code change in a directory mandates a fresh README re-evaluation on every run regardless of prior log entries.
 
 ### [B] Step 2: Internal Analysis (Reasoning Phase)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
@@ -113,13 +113,15 @@ You are the **Fourth Mover** in the 7-stage Nightly cycle:
 - **[Manual/Audit]:** <Description of readability audit.>
 
 ### Log Updates:
-- Updated `.github/nightly-logs/PR_HISTORY.md` using the format: `## [Date] PR #X: type(scope): [summary]`
+- Updated `.github/nightly-logs/documentation-readme-coverage.log`
+
+> **Note:** `PR_HISTORY.md` is maintained centrally by the merge orchestrator. Do not modify it directly -- include all relevant context in the PR description body.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
 
 * **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. Do not ask for clarification. If ambiguity blocks a change, record it in the PR description and move to the next queue item.
 * **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow. **CRITICAL: You MUST explicitly parameterize the PR creation tool/API to set the `base` (or target) branch to `Nightly`. If you don't explicitly declare it, it will default to `Stable` and break the automated merge pipeline.**
-* **[3] Push even on a "no gap found" run.** A `chore(readme): no gap found` PR is a valid, expected output. It signals every README is accurate, not a failure.
+* **[3] Skip PR on zero-diff runs.** If the queue scan produced no actionable README gap and no files were modified, do not create a branch or open a PR. Accurate READMEs are the expected steady state of a healthy codebase.
 * **[4] Never block on tests.** README changes do not affect test outcomes. Note any environment issues in the PR description and push regardless.
 * **[5] One PR per run.** Do not batch multiple README targets into a single PR. Each run is exactly one atomic commit, one PR.
