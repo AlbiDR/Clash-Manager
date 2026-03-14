@@ -84,5 +84,5 @@ jobs:
             git pull origin Nightly --rebase
             git push origin Nightly
           else
-            echo "No changelog updates."
+            echo "Changelog status: Nominal. No updates required."
           fi

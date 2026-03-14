@@ -4,10 +4,10 @@ import { fileURLToPath } from "url";
 
 /**
  * ============================================================================
- * ⚖️ SCRIPT: VALIDATE SCORING (TypeScript Edition)
+ * SCRIPT: VALIDATE SCORING
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Direct parity check between Scoring Weights and README.
- * 🏷️ VERSION: 2.0.0
+ * DESCRIPTION: Direct parity check between Scoring Weights and README.
+ * VERSION: 2.1.0
  * ============================================================================
  */
 
@@ -25,12 +25,12 @@ const CONFIG_PATH = path.join(
 const README_PATH = path.join(__dirname, "../../", "README.md");
 
 if (!fs.existsSync(CONFIG_PATH)) {
-  console.error(`❌ Configuration not found at ${CONFIG_PATH}`);
+  console.error(`FAILED: Configuration not found at ${CONFIG_PATH}`);
   (process as any).exit(1);
 }
 
 if (!fs.existsSync(README_PATH)) {
-  console.error(`❌ README not found at ${README_PATH}`);
+  console.error(`FAILED: README not found at ${README_PATH}`);
   (process as any).exit(1);
 }
 
@@ -131,12 +131,12 @@ keys.forEach((k) => {
     console.error(`❌ Mismatch for ${k}: config=${a} vs doc=${b}`);
     ok = false;
   } else {
-    console.log(`✅ OK ${k}: ${a}`);
+    console.log(`OK ${k}: ${a}`);
   }
 });
 
 if (!ok) (process as any).exit(3);
 console.log(
-  "\n🚀 Scoring weights are consistent between Configuration and README.",
+  "\nScoring weights are consistent between Configuration and README.",
 );
 (process as any).exit(0);

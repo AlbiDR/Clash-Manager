@@ -3,10 +3,10 @@ import path from "path";
 
 /**
  * ============================================================================
- * 🤖 SCRIPT: MERGE NIGHTLY PRS (TypeScript Edition)
+ * SCRIPT: MERGE NIGHTLY PRS
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Automates the merging of PRs from google-labs-jules.
- * 🏷️ VERSION: 3.1.0
+ * DESCRIPTION: Automates the merging of PRs from machine authors.
+ * VERSION: 3.2.0
  * ============================================================================
  */
 
@@ -24,7 +24,12 @@ const CONFIG = {
 
 function log(message: string, type: "info" | "warn" | "error" | "success" = "info") {
   const timestamp = new Date().toISOString();
-  const labels = { info: "[INFO]", warn: "[WARN]", error: "[ERROR]", success: "[SUCCESS]" };
+  const labels = {
+    info: "[INFO]   ",
+    warn: "[NOTICE] ",
+    error: "[FAIL]   ",
+    success: "[DONE]   "
+  };
   console.log(`${timestamp} ${labels[type]} ${message}`);
 }
 
@@ -158,12 +163,12 @@ async function run() {
         const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
 
         if (isTargetBranch && !isAllowedAuthor) {
-          log(`Skipping PR #${pr.number} by ${login} (Author not allowed)`, "warn");
+          log(`Skipping PR #${pr.number} by ${login} (Authentication failed: Author not on whitelist)`, "warn");
         }
 
         return isAllowedAuthor && isTargetBranch;
       })
-      .sort((a: GitHubPR, b: GitHubPR) => a.number - b.number); // Preserve pipeline sequence (1 -> 7)
+      .sort((a: GitHubPR, b: GitHubPR) => a.number - b.number); // Preserve pipeline sequence
 
     if (targetPrs.length === 0) {
       log("No matching Nightly PRs found.", "success");
@@ -219,7 +224,7 @@ async function run() {
         const mergeBody = {
           merge_method: "squash",
           commit_title: `${pr.title} (#${pr.number})`,
-          commit_message: `Auto-merged PR #${pr.number} from ${pr.user.login}`,
+          commit_message: `Automated merge of PR #${pr.number} (Actor: ${pr.user.login})`,
         };
 
         while (!merged && tryCount <= maxTries) {
@@ -260,13 +265,13 @@ ${pr.body ? "### Description\n" + pr.body : ""}
 ---
 ` + changelogUpdates;
       } catch (error: any) {
-        console.error(`❌ FAILED: PR #${pr.number}: ${error.message}`);
+        console.error(`FAILED: PR #${pr.number}: ${error.message}`);
         const date = new Date().toISOString().split("T")[0];
         changelogUpdates =
           `
-## [${date}] ❌ FAILED MERGE: PR #${pr.number}: ${pr.title}
+## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}
 > [!CAUTION]
-> **Status**: Auto-merge failed.
+> **Status**: Auto-merge aborted.
 > **Error**: \`${error.message}\`  
 > **PR Link**: [Link](${pr.html_url})
 
@@ -290,10 +295,10 @@ ${pr.body ? "### Description\n" + pr.body : ""}
       }
 
       fs.writeFileSync(CONFIG.changelogPath, content);
-      console.log("✅ Changelog updated.");
+      console.log("DONE: Changelog updated.");
     }
   } catch (error: any) {
-    console.error("💀 Fatal Engine Error:", error.message);
+    console.error("CRITICAL: Fatal Engine Error:", error.message);
     (process as any).exit(1);
   }
 }
