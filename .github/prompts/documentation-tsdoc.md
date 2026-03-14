@@ -84,7 +84,7 @@ You are the **Fifth Mover** in the 7-stage Nightly cycle:
 **[i] Decision:** Work through the priority list in order and stop at the first actionable item found. If all checks yield no actionable gap, do not invent work — proceed directly to Step 4 and record a "No Gap Found" run.
 
 * **[1] Queue (in strict order):**
-* **[a]** **Recent-change priority:** If **Harden**, **Verify**, **Optimize**, **Version-Integrity**, or **Dependency-Audit** modified a file this cycle, its TSDoc and inline annotations are the first to validate. Changes to logic invalidate adjacent documentation.
+* **[a]** **Recent-change priority:** Inspect the `Nightly` branch commit history (`git log origin/Nightly`). If **Harden**, **Verify**, **Optimize**, **Version-Integrity**, or **Dependency-Audit** modified a file since the last successful merge cycle, its TSDoc and inline annotations are the first to validate. Changes to logic invalidate adjacent documentation.
 * **[b]** **Missing JSDoc/TSDoc:** Identify an exported function, Pinia store action, or composable with no documentation block.
 * **[c]** **Inline logic gap:** Identify a complex logic block with no inline explanation of why it exists.
 * **[d]** **Missing Licensing Header:** Identify any `.ts`, `.vue`, or `.gs` file that lacks the standard licensing headers. This is the **Final Fallback** before a "No Gap Found" result.
@@ -132,13 +132,14 @@ You are the **Fifth Mover** in the 7-stage Nightly cycle:
 
 ### Log Updates:
 - Updated `.github/nightly-logs/documentation-tsdoc-coverage.log`
-- Updated `.github/nightly-logs/PR_HISTORY.md` using the format: `## [Date] PR #X: type(scope): [summary]`
+
+> **Note:** `PR_HISTORY.md` is maintained centrally by the merge orchestrator. Do not modify it directly -- include all relevant context in the PR description body.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
 
 * **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. Do not ask for clarification. If ambiguity blocks a change, record it in the PR description and move to the next queue item.
 * **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow. **CRITICAL: You MUST explicitly parameterize the PR creation tool/API to set the `base` (or target) branch to `Nightly`. If you don't explicitly declare it, it will default to `Stable` and break the automated merge pipeline.**
-* **[3] Push even on a "no gap found" run.** A `chore(tsdoc): no gap found` PR is a valid, expected output. It signals complete inline coverage, not a failure.
+* **[3] Skip PR on zero-diff runs.** If the queue scan produced no actionable documentation gap and no files were modified, do not create a branch or open a PR. Complete inline coverage is the expected steady state of a healthy codebase.
 * **[4] Never block on tests.** If `pnpm test` cannot run, note it in the PR description and push regardless. Test validation is **Verify**'s responsibility.
 * **[5] One PR per run.** Do not batch multiple annotation targets into a single PR. Each run is exactly one atomic commit, one PR.

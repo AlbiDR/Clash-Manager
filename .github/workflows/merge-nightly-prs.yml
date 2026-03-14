@@ -9,7 +9,6 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - Nightly
-      - Nightly
 
 concurrency:
   group: merge-nightly
@@ -73,12 +72,12 @@ jobs:
       # ----------------------------------------------------------------------
       # STEP 3: Persistence & Documentation
       # ----------------------------------------------------------------------
-      - name: Commit and Push Changelog
+      - name: Commit and Push History
         run: |
-          if [[ `git status --porcelain .nightly/CHANGELOG.md` ]]; then
+          if [[ `git status --porcelain .github/nightly-logs/PR_HISTORY.md` ]]; then
             git config --global user.name 'github-actions[bot]'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add .nightly/CHANGELOG.md
+            git add .github/nightly-logs/PR_HISTORY.md
             git commit -m "docs: update changelog [skip ci]"
             git pull origin Nightly --rebase
             git push origin Nightly

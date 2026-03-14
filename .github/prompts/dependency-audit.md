@@ -140,13 +140,14 @@ Entries are **never removed automatically**. A dependency leaves the watchlist o
 
 ### Log Updates:
 - Updated `.github/nightly-logs/dependency-audit-coverage.log`
-- Updated `.github/nightly-logs/PR_HISTORY.md` using the format: `## [Date] PR #X: type(scope): [summary]`
+
+> **Note:** `PR_HISTORY.md` is maintained centrally by the merge orchestrator. Do not modify it directly -- include all relevant context in the PR description body.
 
 ### [E] Step 5: Nightly Autonomy Protocol
 **[!] MANDATORY — This is a fully autonomous Nightly pipeline. No human review occurs between runs.**
 
 * **[1] Commit directly to your working branch.** Do not wait for feedback. Do not open issues. If a dependency situation is ambiguous, add it to the watchlist with a clear note and push — do not halt execution.
 * **[2] Always open a PR targeting the `Nightly` branch.** This is the sole integration point for all automated agents. Never target `Beta`, `Stable`, or any other branch — those are managed by the downstream sync workflow. **CRITICAL: You MUST explicitly parameterize the PR creation tool/API to set the `base` (or target) branch to `Nightly`. If you don't explicitly declare it, it will default to `Stable` and break the automated merge pipeline.**
-* **[3] Push even on a "no action required" run.** A `chore(deps): no action required` PR is a valid, expected output. It signals a clean dependency state, not a failure.
+* **[3] Skip PR on zero-diff runs.** If the scan produced no actionable dependency change and no files were modified, do not create a branch or open a PR. A clean dependency state is the expected steady state of a healthy codebase.
 * **[4] Tier 1 changes must pass the test gate.** Unlike your peers, running `pnpm test` is mandatory before pushing any Tier 1 change. A bump that breaks tests must be reverted before the PR is opened.
 * **[5] One PR per run.** One Tier 1 action or one Tier 2 watchlist update per run. Each run is exactly one atomic commit, one PR.
