@@ -16,7 +16,7 @@
     "build": "pnpm run synthesize && pnpm run type-check && vite build",
     "synthesize": "tsx scripts/synthesize_entry.ts",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "type-check": "vue-tsc --noEmit"
