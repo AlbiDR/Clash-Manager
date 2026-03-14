@@ -1,4 +1,4 @@
-# Clash Manager — Client Core (PWA)
+# Clash Manager --- Client Core (PWA)
 
 [![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
@@ -36,7 +36,7 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3.5 ap
 
 ## Sovereign Design System
 
-The application has migrated away from utility frameworks to a custom, highly-optimized **Vanilla CSS** architecture (`style.css`).
+The application has migrated away from utility frameworks to a custom, highly-optimized **Vanilla CSS** architecture powered by a TypeScript-driven injection system (`src/core/theme/`).
 
 - **Theme Engine**: Real-time HSL variable injection for seamless Light/Dark mode transitions.
 - **Glassmorphism**: Hardware-accelerated blurs and translucency effects.
@@ -52,7 +52,7 @@ The application has migrated away from utility frameworks to a custom, highly-op
 | :--- | :--- | :--- |
 | **Core** | **Vue 3.5** | Composition API (`<script setup>`) for maximum type inference |
 | **Language** | **TypeScript** | Strict mode enabled for 100% type safety |
-| **State** | **Composables** | Decentralized, atomic state management (No Pinia/Vuex overhead) |
+| **State** | **Pinia** | Hybrid state management: Pinia for heavy clan data, Composables for atomic logic |
 | **Network** | **GasClient** | Specialized bridge for communicating with Google Apps Script |
 | **Schema** | **Valibot** | Runtime payload validation to ensure data integrity |
 | **PWA** | **Vite 7** | Modern build orchestration with Vite PWA for offline support |
@@ -78,8 +78,8 @@ src/
 ## Development
 
 ### Prerequisites
-- Node.js `v20+`
-- pnpm `v9+`
+- Node.js v20+
+- pnpm v9+
 
 ### Quick Start
 
@@ -93,7 +93,7 @@ pnpm dev
 ```
 
 ### Environment Setup
-Create a `.env` file in the root directory to link to your backend:
+Create a .env file in the root directory to link to your backend:
 
 ```ini
 # URL of your Google Apps Script Web App execution
@@ -119,8 +119,8 @@ pnpm type-check    # Verify TypeScript types
 ## Mobile-First Features
 
 - **Installable**: Meets all PWA criteria for installation on iOS and Android.
-- **Offline Capable**: Views cache automatically (`Stale-While-Revalidate` strategy).
-- **Haptics**: Uses `navigator.vibrate` for tactile feedback on interactions.
+- **Offline Capable**: Views cache automatically (Stale-While-Revalidate strategy).
+- **Haptics**: Uses navigator.vibrate for tactile feedback on interactions.
 - **Deep Linking**: Supports URL routing for sharing specific clan profiles or searches.
 
 ---

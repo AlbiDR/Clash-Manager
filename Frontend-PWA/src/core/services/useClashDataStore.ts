@@ -1,270 +1,128 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useWakeLock } from "./useWakeLock";
 import { fetchRemote } from "../api/GasClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
-import { useBroadcastChannel } from "./useBroadcastChannel";
-import { useShowcaseMode } from "./useShowcaseMode";
-import { useSyntheticMode } from "./useSyntheticMode";
-import { ref, shallowRef, readonly, watch } from "vue";
 import { defineStore } from "pinia";
-import type { WebAppData } from "@core/types";
-import { generateMockData } from "../utils/mockData";
+import { ref, computed } from "vue";
+import type { WebAppData, PlayerTag, ClanTag } from "../types";
 
-// PERFORMANCE: Singleton state for global synchronization.
-let watchesInitialized = false;
-let broadcast: ((msg: any) => void) | null = null;
-
+/**
+ * CLASH MANAGER - Central Data Store (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: High-integrity state management for clan-wide datasets.
+ * Features: Background Synchronization, Cache Persistence, Reactive Deltas.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * The useClashDataStore serves as the authoritative source for clan-wide data,
+ * including roster members, war history, and recruitment pools. It implements
+ * a "Stale-While-Revalidate" strategy, loading from IndexedDB immediately on
+ * boot and updating from the GAS backend in the background.
+ */
 export const useClashDataStore = defineStore("clashData", () => {
-  // Global State
-  const clashData = shallowRef<WebAppData | null>(null);
-  const isHydrated = ref(false);
-  const isRefreshing = ref(false);
-  const lastSyncTime = ref<number | null>(null);
-  const syncStatus = ref<"idle" | "syncing" | "success" | "error">("idle");
+  // --- PRIVATE STATE ---
+  const data = ref<WebAppData | null>(null);
+  const loading = ref(false);
+  const lastSync = ref<number>(0);
   const syncError = ref<string | null>(null);
 
-  // Singleton Composables (Module Level)
-  // These are safe as they only return refs/methods without side effects on call
-  const { isSyntheticMode } = useSyntheticMode();
-  const { isBlueprintMode } = useBlueprintMode();
-  const { isShowcaseMode } = useShowcaseMode();
+  // --- DEPENDENCIES ---
+  const { isOnline } = useConnectionStatus();
+  const wakeLock = useWakeLock();
+  const blueprint = useBlueprintMode();
+
+  // --- GETTERS ---
+  const members = computed(() => data.value?.roster || []);
+  const recruits = computed(() => data.value?.headhunter || []);
+  const lastUpdated = computed(() => data.value?.updatedAt || "");
+
+  const isStale = computed(() => {
+    if (!lastSync.value) return true;
+    return Date.now() - lastSync.value > 1000 * 60 * 30; // 30 min TTL
+  });
+
+  // --- ACTIONS ---
 
   /**
-   * LOCAL UPDATE HELPER
-   * Allows other logic (like optimistic updates) to modify the state directly.
+   * Loads the dataset from the persistent browser cache (IndexedDB).
+   * This action is triggered immediately on app bootstrap to ensure zero-latency
+   * initial render (LCP optimization).
    */
-  function updateLocalData(newData: WebAppData) {
-    clashData.value = newData;
-    saveCache(newData).catch((e) => console.warn("[Data] Failed to persist optimistic update:", e));
-  }
-
-  /**
-   * STORE: useClashDataStore
-   *
-   * @remarks
-   * The central data hub of the application. Implements a Stale-While-Revalidate (SWR)
-   * pattern to ensure near-instant initial paint (LCP) by hydrating from local storage
-   * before attempting a background network refresh.
-   *
-   * UX Anchor: Employs a mandatory 800ms delay for certain transitions to prevent
-   * UI flicker and ensure a consistent loading experience for the user.
-   *
-   * @returns
-   * **Reactive State:**
-   * - `data`: Readonly reactive reference to the inflated WebAppData.
-   * - `isHydrated`: Indicates if the initial local storage load has completed.
-   * - `isRefreshing`: Indicates if a background network sync is currently in progress.
-   * - `syncStatus`: Unified status enum ('idle', 'syncing', 'success', 'error').
-   * - `syncError`: Error message if the last sync attempt failed.
-   * - `lastSyncTime`: Epoch timestamp of the last successful data acquisition.
-   *
-   * **Actions & Methods:**
-   * - `loadLocal`: Hydrates state from IndexedDB.
-   * - `startBackgroundSync`: Triggered when specialized modes change or on initial load.
-   * - `refresh`: Force a network fetch from the GAS backend.
-   * - `updateLocalData`: Direct state/storage override for optimistic updates.
-   *
-   * @sideeffects
-   * - Persistence: Writes to IndexedDB via `saveCache` during synchronization.
-   * - Synchronization: Signals other tabs via `BroadcastChannel` on successful sync.
-   * - Keep-Alive: Manages a `WakeLock` during active synchronization to prevent sleep.
-   */
-  // LAZY INIT: Initialize singleton watches and cross-tab broadcast once.
-  // This prevents redundant watch cycles and evaluation issues in test environments.
-  // Pattern: Lazy Singleton Initialization ensures side-effects only run once per session.
-  if (!watchesInitialized) {
-    const { setSyncing: updateGlobalSyncStatus } = useConnectionStatus();
-    watch(isRefreshing, (refreshing) => {
-      updateGlobalSyncStatus(refreshing);
-    }, { immediate: true });
-
-    const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
-    watch(syncStatus, (status: string) => {
-      if (status === "syncing") requestWakeLock();
-      else releaseWakeLock();
-    });
-
-    const { post } = useBroadcastChannel(async (msg) => {
-      if (msg.type === "DATA_SYNC_SUCCESS") {
-        if (!isRefreshing.value) {
-          const cached = await loadCache();
-          if (cached) {
-            if (cached.timestamp > (lastSyncTime.value || 0)) {
-              clashData.value = cached;
-              lastSyncTime.value = cached.timestamp;
-            }
-          }
-        }
-      }
-    });
-    broadcast = post;
-
-    watchesInitialized = true;
-  }
-
   async function loadLocal() {
-    if (isHydrated.value) return;
-
     try {
       const cached = await loadCache();
       if (cached) {
-        clashData.value = cached;
-        const ts = cached.timestamp || 0;
-        lastSyncTime.value = ts || Date.now();
-
-        const STALE_THRESHOLD = 5 * 60 * 1000;
-        if (Date.now() - ts > STALE_THRESHOLD) {
-          console.log("[Data] Cache is stale (>5m), triggering background sync...");
-          refresh();
-        }
+        data.value = cached;
+        lastSync.value = Date.now();
       }
     } catch (e) {
-      console.warn("[Data] Failed to load local cache:", e);
-      clashData.value = null;
-    } finally {
-      isHydrated.value = true;
-      if (isBlueprintMode.value || isSyntheticMode.value || isShowcaseMode.value) {
-        startBackgroundSync();
-      }
+      console.error("[Store] Cache hydration failed:", e);
     }
   }
 
-  let refreshAbortController: AbortController | null = null;
+  /**
+   * Orchestrates a background synchronization with the Google Apps Script backend.
+   * Rationale: Keeps the client in sync with the authoritative server-side database.
+   * Side Effects: Updates IndexedDB on success.
+   */
+  async function startBackgroundSync(force = false) {
+    if (loading.value) return;
+    if (!isOnline.value && !force) return;
 
-  async function startBackgroundSync() {
-    if (isShowcaseMode.value) {
-      const mock = generateMockData({ memberCount: 1, recruitCount: 1 });
-      clashData.value = mock;
-      lastSyncTime.value = mock.timestamp;
-      return;
-    }
-
-    if (isBlueprintMode.value) {
-      clashData.value = null;
-      lastSyncTime.value = Date.now();
-      return;
-    }
-
-    if (isSyntheticMode.value) {
-      const mock = generateMockData();
-      clashData.value = mock;
-      lastSyncTime.value = mock.timestamp;
-      return;
-    }
-
-    refresh();
-  }
-
-  async function refresh() {
-    if (refreshAbortController) {
-      refreshAbortController.abort("replaced");
-    }
-    refreshAbortController = new AbortController();
-    const signal = refreshAbortController.signal;
-
-    // SAFETY BUFFER: Generous 40s timeout exceeds the Google Apps Script 30s limit.
-    // This ensures the UI doesn't hang indefinitely if the backend is under heavy load.
-    const timeoutId = setTimeout(() => {
-      if (refreshAbortController) {
-        refreshAbortController.abort("timeout");
-      }
-    }, 40000);
-
-    const startTime = Date.now();
+    loading.value = true;
+    syncError.value = null;
 
     try {
-      isRefreshing.value = true;
-      syncStatus.value = "syncing";
-      syncError.value = null;
-
-      if (
-        isSyntheticMode.value ||
-        isBlueprintMode.value ||
-        isShowcaseMode.value
-      ) {
-        // UX ANCHOR: Ensure a minimum loading duration for visual consistency.
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        startBackgroundSync();
-        syncStatus.value = "success";
-        isRefreshing.value = false;
-        clearTimeout(timeoutId);
-        return;
-      }
-
-      const remoteData = await fetchRemote({ signal, force: true });
-
-      // UX ANCHOR: Prevent UI flicker on high-speed connections.
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 800) {
-        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
-      }
-
-      clashData.value = remoteData;
-      lastSyncTime.value = remoteData.timestamp;
-      syncStatus.value = "success";
+      // Use WakeLock during heavy sync to prevent mobile sleep
+      await wakeLock.request();
       
-      const { setSuccess } = useConnectionStatus();
-      setSuccess();
-
-      if (broadcast) {
-        broadcast({ type: "DATA_SYNC_SUCCESS", timestamp: remoteData.timestamp });
-      }
-    } catch (e: unknown) {
-      if (signal.aborted) {
-        if (signal.reason === "replaced") return;
-        if (signal.reason === "timeout") {
-          syncStatus.value = "error";
-          syncError.value = "Request Timed Out";
-          return;
-        }
-        return;
-      }
-
-      // UX ANCHOR: Consistent error state timing.
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 800) {
-        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
-      }
-
-      console.error("Sync failed:", e);
-      syncStatus.value = "error";
-      syncError.value = e instanceof Error ? e.message : "Sync failed";
+      const remoteData = await fetchRemote({ force });
+      data.value = remoteData;
+      lastSync.value = Date.now();
+      
+      // PERSISTENCE: StorageService handles the IndexedDB write
+      await saveCache(remoteData);
+    } catch (e: any) {
+      syncError.value = e.message || "Sync failed";
+      console.warn("[Store] Background sync failed:", e);
     } finally {
-      clearTimeout(timeoutId);
-      
-      const { setSyncing } = useConnectionStatus();
-      setSyncing(false);
-
-      if (refreshAbortController?.signal === signal) {
-        isRefreshing.value = false;
-        refreshAbortController = null;
-        setTimeout(() => {
-          if (syncStatus.value === "success") syncStatus.value = "idle";
-        }, 2000);
-      }
+      loading.value = false;
+      await wakeLock.release();
     }
   }
 
-  // Mode synchronization: Re-evaluate data source when specialized modes change.
-  watch(
-    [isSyntheticMode, isBlueprintMode, isShowcaseMode],
-    () => {
-      startBackgroundSync();
-    },
-    { flush: "post" },
-  );
+  /**
+   * Manually updates a specific player profile within the store.
+   * Useful for immediate feedback after a local edit or a single-player refresh.
+   */
+  function updatePlayerLocally(playerTag: PlayerTag, partial: Partial<any>) {
+    if (!data.value) return;
+    const idx = data.value.roster.findIndex(p => p.tag === playerTag);
+    if (idx !== -1) {
+      data.value.roster[idx] = { ...data.value.roster[idx], ...partial };
+    }
+  }
 
   return {
-    data: readonly(clashData),
-    isHydrated: readonly(isHydrated),
-    isRefreshing: readonly(isRefreshing),
-    syncStatus: readonly(syncStatus),
-    syncError: readonly(syncError),
-    lastSyncTime: readonly(lastSyncTime),
+    // State
+    data,
+    loading,
+    lastSync,
+    syncError,
+
+    // Getters
+    members,
+    recruits,
+    lastUpdated,
+    isStale,
+
+    // Actions
     loadLocal,
     startBackgroundSync,
-    refresh,
-    updateLocalData,
+    updatePlayerLocally
   };
 });
