@@ -4,14 +4,10 @@ import { fileURLToPath } from "url";
 
 /**
  * ============================================================================
- * 🛡️ SCRIPT: VALIDATE PROJECT (TypeScript Edition)
+ * SCRIPT: VALIDATE PROJECT
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Comprehensive integrity check for the entire repository.
- * ⚙️ CHECKS:
- *    1. Scoring Logic Parity (Configuration vs README).
- *    2. Environment URL Safety.
- *    3. Environment Variable Documentation.
- * 🏷️ VERSION: 2.0.0
+ * DESCRIPTION: Comprehensive integrity check for the entire repository.
+ * VERSION: 2.1.0
  * ============================================================================
  */
 
@@ -171,7 +167,7 @@ function checkUrlSafety() {
     log.pass("Targeting PRODUCTION deployment (/exec).");
   } else if (gasUrl.includes("/dev") || gasUrl.includes("/test")) {
     log.warn(
-      "⚠️ Targeting DEVELOPMENT deployment (/dev or /test). Be careful!",
+      "Targeting DEVELOPMENT deployment (/dev or /test). Be careful!",
     );
   } else {
     log.info("URL endpoint type unknown (not standard /exec or /dev).");
@@ -198,7 +194,7 @@ function checkEnvDocumentation() {
   }
 
   if (!fs.existsSync(envExamplePath)) {
-    log.warn("⚠️ Missing .env.example! You should document your secrets.");
+    log.warn("Missing .env.example! You should document your secrets.");
     return;
   }
 
@@ -218,14 +214,14 @@ function checkEnvDocumentation() {
 
   if (missingInExample.length > 0) {
     log.warn(`Undocumented secrets in .env: ${missingInExample.join(", ")}`);
-    log.warn("👉 Add these to .env.example to keep project healthy.");
+    log.warn("Add these to .env.example to keep project healthy.");
   } else {
     log.pass(".env.example fully documents all active secrets.");
   }
 }
 
 // --- Main Execution ---
-console.log("🚀 Starting Project Integrity Check...\n");
+console.log("Starting Project Integrity Check...\n");
 
 try {
   checkScoringIntegrity();
@@ -238,9 +234,9 @@ try {
 
 console.log("\n--------------------------------------------------");
 if (hasFailure) {
-  console.log("❌ Project Integrity Check FAILED. See errors above.");
+  console.log("Project Integrity Check FAILED. See errors above.");
   (process as any).exit(1);
 } else {
-  console.log("✅ Project Integrity Check PASSED. All systems nominal.");
+  console.log("Project Integrity Check PASSED. All systems nominal.");
   (process as any).exit(0);
 }

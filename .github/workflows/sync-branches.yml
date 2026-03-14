@@ -263,7 +263,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "🚀 Triggering PWA Deployment..."
+          echo "Triggering PWA Deployment (System: Nominal)..."
           gh workflow run deploy-pwa.yml --ref Stable -R ${{ github.repository }}
 
   # ============================================================================
@@ -279,7 +279,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "🚀 Triggering GAS Deployment..."
+          echo "Triggering GAS Deployment (System: Nominal)..."
           gh workflow run deploy-gas.yml --ref Stable -R ${{ github.repository }}
 
   # ============================================================================
@@ -295,5 +295,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "🚀 Triggering Worker Deployment..."
+          echo "Triggering Worker Deployment (System: Nominal)..."
           gh workflow run deploy-worker.yml --ref Stable -R ${{ github.repository }}
