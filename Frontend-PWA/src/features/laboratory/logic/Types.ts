@@ -84,7 +84,7 @@ export interface OptimizationResult {
   readonly actions: ReadonlyArray<UpgradeAction>;
   readonly totalXpGained: number;
   readonly projectedKingLevel: number;
-  readonly finalProfile: any; // Dynamic profile data
+  readonly finalProfile: PlayerProfile;
   readonly finalGold: number;
   readonly finalGems: number;
   readonly totalGoldSpent: number;
