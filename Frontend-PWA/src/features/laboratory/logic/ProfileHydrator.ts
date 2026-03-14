@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import type { 
   Card, 
   Inventory, 
@@ -39,12 +42,16 @@ const ProfileHydrator = {
    * This function enforces strict schema validation for all incoming data
    * from both internal cache and external API. Downstream logic is
    * guaranteed to operate on validated structural input.
+   *
+   * @param raw - The raw input to be hydrated. Typed as `unknown` to enforce parsing.
+   * Target B [4]: The 'any Plague' is eliminated.
    */
-  hydrate(raw: any): PlayerData {
+  hydrate(raw: unknown): PlayerData {
     const result = v.safeParse(ProfileInputSchema, raw);
 
     if (!result.success) {
       // THREAT: Corrupted or malicious data crashing the simulation engine.
+      // Target B [1]: Fail loudly at the boundary to prevent silent state corruption.
       console.warn("[ProfileHydrator] Validation failed, returning safe default", result.issues);
       return {
         profile: { name: "Unknown", tag: "0", kingLevel: 1, xpIntoLevel: asXP(0) },
@@ -57,8 +64,8 @@ const ProfileHydrator = {
     const isInternal = "profile" in data;
     
     let profile: PlayerProfile;
-    let cardsData: any[] = [];
-    let inventoryData: any;
+    // Internal mapping structures are typed based on schema outputs to avoid 'any'.
+    let cardsData: Array<{ name?: string, rarity?: string, level?: number, count?: number, isTowerTroop?: boolean }> = [];
 
     if (isInternal) {
       const p = data.profile;
@@ -69,7 +76,6 @@ const ProfileHydrator = {
         xpIntoLevel: asXP(p.xpIntoLevel || 0)
       };
       cardsData = data.cards || [];
-      inventoryData = data.inventory || {};
     } else {
       profile = {
         name: data.name || "Unknown",
@@ -78,27 +84,32 @@ const ProfileHydrator = {
         xpIntoLevel: asXP(data.expPoints || 0)
       };
       cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
-      inventoryData = {}; // Flat RoyaleAPI doesn't have inventory
     }
 
-    const cards: Card[] = cardsData.map((c: any) => {
+    const cards: Card[] = cardsData.map((c) => {
       const rarity = normalizeRarity(c.rarity || "Common");
-      const level = isInternal ? c.level : normalizeLevel(c.level, rarity);
+      const level = isInternal ? (c.level || 1) : normalizeLevel(c.level || 1, rarity);
       
       return {
-        name: c.name as CardName,
+        name: (c.name || "Unknown Card") as CardName,
         rarity: rarity,
         level: Math.max(1, Math.min(level, CARD_LEVEL_CAP)),
         count: c.count || 0,
         // BUGFIX: Ensure boolean coercion is explicit to avoid 'undefined' leaks in domain models.
-        isTowerTroop: Boolean(c.isTowerTroop) || ( !isInternal && data.towerTroops?.some((tt: any) => tt.name === c.name) ) || false
+        isTowerTroop: Boolean(c.isTowerTroop) || ( !isInternal && "towerTroops" in data && Array.isArray(data.towerTroops) && data.towerTroops.some((tt) => tt.name === c.name) ) || false
       };
     });
 
     const inventory: Inventory = {
-      gold: asGold(inventoryData.gold || 0),
-      gems: asGems(inventoryData.gems || 0),
-      wildCards: inventoryData.wildCards || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 }
+      gold: asGold(("inventory" in data ? data.inventory?.gold : 0) || 0),
+      gems: asGems(("inventory" in data ? data.inventory?.gems : 0) || 0),
+      wildCards: {
+        Common: ("inventory" in data ? data.inventory?.wildCards?.Common : 0) || 0,
+        Rare: ("inventory" in data ? data.inventory?.wildCards?.Rare : 0) || 0,
+        Epic: ("inventory" in data ? data.inventory?.wildCards?.Epic : 0) || 0,
+        Legendary: ("inventory" in data ? data.inventory?.wildCards?.Legendary : 0) || 0,
+        Champion: ("inventory" in data ? data.inventory?.wildCards?.Champion : 0) || 0,
+      } as Record<Rarity, number>
     };
 
     return { profile, inventory, cards };
