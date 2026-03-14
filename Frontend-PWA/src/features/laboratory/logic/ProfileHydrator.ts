@@ -11,7 +11,7 @@ import type {
   CardName
 } from './Types';
 import * as v from "valibot";
-import { ProfileInputSchema } from "./Schemas";
+import { ProfileInputSchema } from "@core/api/DataSchemas";
 import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
 import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
 

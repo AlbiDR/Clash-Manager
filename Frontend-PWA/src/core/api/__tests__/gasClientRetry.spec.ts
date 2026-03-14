@@ -13,22 +13,25 @@ const localStorageMock = {
 vi.stubGlobal("localStorage", localStorageMock);
 
 // Mock Valibot (since inflatePayload uses it dynamically)
-vi.mock("valibot", () => ({
-  object: () => ({}),
-  array: () => ({}),
-  unknown: () => ({}),
-  number: () => ({}),
-  string: () => ({}),
-  optional: () => ({}),
-  union: () => ({}),
-  nullable: () => ({}),
-  any: () => ({}),
-  parse: (schema, data) => data,
-  safeParse: () => ({
-    success: true,
-    output: { lb: [], hh: [], timestamp: 123 },
-  }),
-}));
+vi.mock("valibot", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("valibot")>();
+  return {
+    ...actual,
+    parse: (schema, data) => data,
+    safeParse: (schema, data) => {
+       if (data && typeof data === 'object' && 'lb' in data) {
+          return {
+            success: true,
+            output: { lb: [], hh: [], timestamp: 123 },
+          };
+       }
+       return {
+          success: true,
+          output: data
+       };
+    },
+  };
+});
 
 // Mock IDB
 vi.mock("../utils/idb", () => ({
