@@ -25,6 +25,7 @@ jobs:
   merge-prs:
     name: "Merge Google Jules PRs"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       # ----------------------------------------------------------------------
       # STEP 0: Event Buffer (Ensures Jules has finished PR setup)
@@ -42,6 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: Nightly
 
       - name: Ensure Nightly Branch Exists and Checkout
         run: |
@@ -59,7 +61,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "22" # Use stable Active LTS
 
         # ----------------------------------------------------------------------
         # STEP 2: Execution Logic (Ultra-Robust)
