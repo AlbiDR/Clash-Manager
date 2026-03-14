@@ -19,7 +19,6 @@ import express, {
   NextFunction,
   RequestHandler,
 } from "express";
-import fetch from "node-fetch";
 import * as v from "valibot";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import Time from "../../Backend-GAS/Time";
@@ -171,13 +170,11 @@ async function timeoutFetch(
   url: string,
   opts: Record<string, unknown> = {},
   timeout: number = CONFIG.timeout,
-): Promise<fetch.Response> {
-  return Promise.race([
-    fetch(url, { ...opts, timeout }),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), timeout),
-    ),
-  ]);
+): Promise<Response> {
+  return fetch(url, {
+    ...opts,
+    signal: AbortSignal.timeout(timeout),
+  } as RequestInit);
 }
 
 /**
