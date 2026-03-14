@@ -22,6 +22,12 @@ const CONFIG = {
   changelogPath: path.join(".github", "nightly-logs", "PR_HISTORY.md"),
 };
 
+function log(message: string, type: "info" | "warn" | "error" | "success" = "info") {
+  const timestamp = new Date().toISOString();
+  const icons = { info: "🔍", warn: "⚠️", error: "❌", success: "✅" };
+  console.log(`[${timestamp}] ${icons[type]} ${message}`);
+}
+
 interface GitHubPR {
   number: number;
   node_id: string;
@@ -120,7 +126,7 @@ async function run() {
       throw new Error("GITHUB_TOKEN is missing in environment.");
     }
 
-    console.log(`🔎 Checking for PRs targeting ${CONFIG.targetBranch}...`);
+    log(`Checking for PRs targeting ${CONFIG.targetBranch}...`);
 
     // 1. Fetch Open PRs (Paginated)
     let prs: GitHubPR[] = [];
@@ -139,34 +145,32 @@ async function run() {
       }
     }
 
-    console.log(`Found ${prs.length} total open PRs.`);
+    log(`Found ${prs.length} total open PRs.`);
 
-    // 2. Filter for Nightly PRs
-    const targetPrs = prs.filter((pr) => {
-      const login = pr.user.login.toLowerCase();
-      // Check if the author is in our allowed list (or is a bot version of them)
-      const isAllowedAuthor = CONFIG.allowedAuthors.some(allowed =>
-        login === allowed.toLowerCase() || login === `${allowed.toLowerCase()}[bot]`
-      );
+    // 2. Filter for Nightly PRs and Sort by Number ASC
+    const targetPrs = prs
+      .filter((pr: GitHubPR) => {
+        const login = pr.user.login.toLowerCase();
+        const isAllowedAuthor = CONFIG.allowedAuthors.some(allowed =>
+          login === allowed.toLowerCase() || login === `${allowed.toLowerCase()}[bot]`
+        );
 
-      const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
+        const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
 
-      // Debugging Output (so you know why it skips next time)
-      if (isTargetBranch && !isAllowedAuthor) {
-        console.log(`⚠️ Skipping PR #${pr.number} by ${login} (Author not allowed)`);
-      }
+        if (isTargetBranch && !isAllowedAuthor) {
+          log(`Skipping PR #${pr.number} by ${login} (Author not allowed)`, "warn");
+        }
 
-      return isAllowedAuthor && isTargetBranch;
-    });
+        return isAllowedAuthor && isTargetBranch;
+      })
+      .sort((a: GitHubPR, b: GitHubPR) => a.number - b.number); // Preserve pipeline sequence (1 -> 7)
 
     if (targetPrs.length === 0) {
-      console.log("✅ No matching Nightly PRs found.");
+      log("No matching Nightly PRs found.", "success");
       return;
     }
 
-    console.log(
-      `Processing ${targetPrs.length} PR(s) targeting ${CONFIG.targetBranch}...`,
-    );
+    log(`Processing ${targetPrs.length} PR(s) targeting ${CONFIG.targetBranch}...`);
 
     // Ensure .nightly directory exists
     const dir = path.dirname(CONFIG.changelogPath);
@@ -175,7 +179,7 @@ async function run() {
     let changelogUpdates = "";
 
     for (const pr of targetPrs) {
-      console.log(`🚀 Processing PR #${pr.number}: ${pr.title}`);
+      log(`Processing PR #${pr.number}: ${pr.title}`);
 
       try {
         // Fetch full details to check for draft status and mergeability
@@ -184,24 +188,20 @@ async function run() {
         );
 
         if (details.draft) {
-          console.log(
-            `🛠️ PR #${pr.number} is a Draft. Marking as Ready for Review...`,
-          );
+          log(`PR #${pr.number} is a Draft. Marking as Ready for Review...`, "info");
           try {
             await markReadyForReview(pr.node_id);
             // Refresh details after undrafting
             details = await githubApi(`/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`);
           } catch (e: any) {
-            console.warn(
-              `⚠️ Draft conversion failed for PR #${pr.number}: ${e.message}`,
-            );
+            log(`Draft conversion failed for PR #${pr.number}: ${e.message}`, "warn");
           }
         }
 
         // Poll for mergeability resolution (GitHub calculates this asynchronously)
         let pollCount = 0;
         while (details.mergeable === null && pollCount < 5) {
-          console.log(`⏳ Waiting for GitHub to calculate mergeability for PR #${pr.number}...`);
+          log(`Waiting for GitHub to calculate mergeability for PR #${pr.number}...`, "info");
           await new Promise((r) => setTimeout(r, 4000));
           details = await githubApi(`/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`);
           pollCount++;
@@ -224,21 +224,21 @@ async function run() {
 
         while (!merged && tryCount <= maxTries) {
           try {
-            console.log(`Attempting merge #${tryCount}/${maxTries}...`);
+            log(`Attempting merge #${tryCount}/${maxTries} for PR #${pr.number}...`, "info");
             await githubApi(
               `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}/merge`,
               "PUT",
               mergeBody,
             );
             merged = true;
-            console.log(`✅ Successfully merged PR #${pr.number}`);
+            log(`Successfully merged PR #${pr.number}`, "success");
           } catch (error: any) {
             if (
               tryCount < maxTries &&
               (error.message.includes("405") || error.message.includes("409"))
             ) {
               const waitMs = Math.pow(2, tryCount) * 1000;
-              console.log(`⏳ Merge blocked. Retrying in ${waitMs / 1000}s...`);
+              log(`Merge blocked. Retrying in ${waitMs / 1000}s...`, "warn");
               await new Promise((r) => setTimeout(r, waitMs));
               tryCount++;
             } else {
