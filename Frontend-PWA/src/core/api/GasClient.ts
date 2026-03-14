@@ -133,28 +133,7 @@ const WorkerScanResponseSchema = v.object({
   candidates: v.array(WorkerCandidateSchema),
 });
 
-const ProfileSchema = v.union([
-  // Internal Format
-  v.object({
-    profile: v.object({
-      name: v.string(),
-      tag: v.string(),
-      kingLevel: v.number(),
-      xpIntoLevel: v.number(),
-    }),
-    cards: v.array(v.any()),
-    inventory: v.optional(v.any()),
-  }),
-  // RoyaleAPI Format
-  v.object({
-    name: v.string(),
-    tag: v.string(),
-    expLevel: v.number(),
-    expPoints: v.number(),
-    cards: v.array(v.any()),
-    towerTroops: v.optional(v.array(v.any())),
-  }),
-]);
+import { ProfileInputSchema } from "./DataSchemas";
 
 interface GenericEnvelope<T> {
   success?: boolean;
@@ -582,9 +561,11 @@ export async function ping(options?: GasRequestOptions): Promise<PingResponse> {
   return gasRequest<PingResponse>("ping", undefined, options);
 }
 
-export async function getPlayerProfile(tag: string): Promise<any> {
+export async function getPlayerProfile(
+  tag: string,
+): Promise<v.InferOutput<typeof ProfileInputSchema>> {
   const profile = await gasRequest<unknown>("getPlayerProfile", { tag });
-  return v.parse(ProfileSchema, profile);
+  return v.parse(ProfileInputSchema, profile);
 }
 
 export async function dismissRecruits(
