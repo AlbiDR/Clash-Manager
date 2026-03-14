@@ -3,17 +3,17 @@ services:
     name: clash-manager-worker
     runtime: node
     plan: free
-    buildCommand: pnpm install && pnpm run build
-    startCommand: node dist/Backend-Worker/src/index.js
+    buildCommand: pnpm install && pnpm --filter clash-manager-worker run build
+    startCommand: node Backend-Worker/dist/Backend-Worker/src/index.js
     envVars:
       - key: WORKER_CONCURRENCY
-        value: 20
+        value: "20"
       - key: WORKER_TIMEOUT_SEC
-        value: 45
+        value: "45"
       - key: PORT
-        value: 10000
+        value: "10000"
       - key: API_KEYS
         value: "REPLACE_ME"
       - key: NODE_VERSION
         value: "24"
-    rootDir: Backend-Worker
+

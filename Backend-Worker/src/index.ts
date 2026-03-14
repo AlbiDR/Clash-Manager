@@ -15,7 +15,7 @@
 
 import express, {
   Request,
-  Response,
+  Response as ExpressResponse,
   NextFunction,
   RequestHandler,
 } from "express";
@@ -99,7 +99,7 @@ const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on rest
 const app = express(); // EPHEMERAL: instance resets on restart
 
 // CORS Middleware
-app.use((request: Request, response: Response, next: NextFunction): void => {
+app.use((request: Request, response: ExpressResponse, next: NextFunction): void => {
   response.header("Access-Control-Allow-Origin", "*");
   response.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -170,7 +170,7 @@ async function timeoutFetch(
   url: string,
   opts: Record<string, unknown> = {},
   timeout: number = CONFIG.timeout,
-): Promise<Response> {
+): Promise<globalThis.Response> {
   return fetch(url, {
     ...opts,
     signal: AbortSignal.timeout(timeout),
@@ -530,11 +530,11 @@ async function processScanBatch(
 //  ROUTES
 // ============================================================================
 
-app.get("/", (_request: Request, response: Response): void => {
+app.get("/", (_request: Request, response: ExpressResponse): void => {
   response.send("Clash Manager Worker is running");
 });
 
-app.get("/capabilities", (_request: Request, response: Response): void => {
+app.get("/capabilities", (_request: Request, response: ExpressResponse): void => {
   response.json({
     status: "success",
     data: {
@@ -555,7 +555,7 @@ app.get("/capabilities", (_request: Request, response: Response): void => {
  * 2. Upstream: Executes a test call to the Royale API using the healthiest key.
  * 3. System: Reports memory usage (RSS).
  */
-app.get("/health", async (_request: Request, response: Response): Promise<void> => {
+app.get("/health", async (_request: Request, response: ExpressResponse): Promise<void> => {
     // 1. Local Pool Diagnostics
     const pool = KEYS.getPoolStats();
     
@@ -595,7 +595,7 @@ app.post(
   "/audit",
   async (
     request: Request<object, object, AuditRequest>,
-    response: Response,
+    response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Malformed input causing downstream runtime failures.
     // Rationale: Strict validation at the entry point ensures only valid data reaches the KeyService.
@@ -659,7 +659,7 @@ app.post(
   "/public/scan",
   async (
     request: Request<object, object, PublicScanRequest>,
-    response: Response,
+    response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Malformed scan tags or options causing inefficient upstream scanning or worker crashes.
     const result = v.safeParse(PublicScanRequestSchema, request.body);
@@ -741,7 +741,7 @@ const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: see [issue des
 
 app.post(
   "/public/subscribe",
-  (request: Request<object, object, SubscriptionRequest>, response: Response): void => {
+  (request: Request<object, object, SubscriptionRequest>, response: ExpressResponse): void => {
     // THREAT: Silent corruption of the subscription set if malformed data is accepted.
     const result = v.safeParse(SubscriptionRequestSchema, request.body);
     if (!result.success) {
@@ -768,7 +768,7 @@ app.post(
   "/scan",
   async (
     request: Request<object, object, ScanRequest>,
-    response: Response,
+    response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Unauthorized data access if malformed tags bypass filters.
     const result = v.safeParse(ScanRequestSchema, request.body);
@@ -869,7 +869,7 @@ app.post(
   "/clan/full",
   async (
     request: Request<object, object, ClanFullRequest>,
-    response: Response,
+    response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Malformed clan tag causing upstream API errors or incorrect data snapshots.
     const result = v.safeParse(ClanFullRequestSchema, request.body);
@@ -982,7 +982,7 @@ app.post(
   "/clan/api",
   async (
     request: Request<object, object, ClanApiRequest>,
-    response: Response,
+    response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Invalid request types or tags leading to unhandled upstream responses.
     const result = v.safeParse(ClanApiRequestSchema, request.body);
@@ -1102,7 +1102,7 @@ app.post(
   "/fetch",
   async (
     request: Request<object, object, FetchRequest>,
-    response: Response,
+    response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Arbitrary URL fetching or malformed scoring weights leading to resource exhaustion.
     const result = v.safeParse(FetchRequestSchema, request.body);
