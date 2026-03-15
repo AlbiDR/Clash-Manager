@@ -75,42 +75,7 @@ const WebAppDataSchema = v.object({
   playerTag: v.optional(v.string()),
 });
 
-/**
- * [GUARD] VALIDATION BOUNDARY: Base schemas for domain models
- * Enforces strict typing for data entering the Clean Stack.
- */
-const MemberSchema = v.object({
-  id: v.string(),
-  n: v.string(),
-  t: v.number(),
-  performanceScore: v.number(),
-  performanceRawScore: v.number(),
-  dt: v.optional(v.number()),
-  d: v.object({
-    role: v.string(),
-    days: v.number(),
-    avg: v.number(),
-    seen: v.optional(v.nullable(v.string())),
-    rate: v.optional(v.nullable(v.string())),
-    wfame: v.optional(v.number()),
-    hist: v.string(),
-  }),
-});
-
-const RecruitSchema = v.object({
-  id: v.string(),
-  n: v.string(),
-  t: v.number(),
-  potentialScore: v.number(),
-  potentialRawScore: v.number(),
-  d: v.object({
-    don: v.number(),
-    war: v.number(),
-    ago: v.string(),
-    cards: v.optional(v.number()),
-  }),
-  lastScan: v.optional(v.number()),
-});
+import { ProfileInputSchema, MemberSchema, RecruitSchema } from "./DataSchemas";
 
 const BaseWebAppDataSchema = v.object({
   lb: v.array(MemberSchema),
@@ -132,8 +97,6 @@ const WorkerCandidateSchema = v.object({
 const WorkerScanResponseSchema = v.object({
   candidates: v.array(WorkerCandidateSchema),
 });
-
-import { ProfileInputSchema } from "./DataSchemas";
 
 interface GenericEnvelope<T> {
   success?: boolean;

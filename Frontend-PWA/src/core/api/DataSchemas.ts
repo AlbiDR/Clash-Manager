@@ -104,3 +104,44 @@ export const ProfileInputSchema = v.union([
 ]);
 
 export type RawProfileInput = v.InferOutput<typeof ProfileInputSchema>;
+
+/**
+ * [GUARD] MEMBER SCHEMA
+ * Validates a member in the leaderboard.
+ */
+export const MemberSchema = v.object({
+  id: v.string(),
+  n: v.string(),
+  t: v.number(),
+  performanceScore: v.number(),
+  performanceRawScore: v.number(),
+  dt: v.optional(v.number()),
+  d: v.object({
+    role: v.string(),
+    days: v.number(),
+    avg: v.number(),
+    seen: v.optional(v.nullable(v.string())),
+    rate: v.optional(v.nullable(v.string())),
+    wfame: v.optional(v.number()),
+    hist: v.string(),
+  }),
+});
+
+/**
+ * [GUARD] RECRUIT SCHEMA
+ * Validates a recruit in the headhunter.
+ */
+export const RecruitSchema = v.object({
+  id: v.string(),
+  n: v.string(),
+  t: v.number(),
+  potentialScore: v.number(),
+  potentialRawScore: v.number(),
+  d: v.object({
+    don: v.number(),
+    war: v.number(),
+    ago: v.string(),
+    cards: v.optional(v.number()),
+  }),
+  lastScan: v.optional(v.number()),
+});

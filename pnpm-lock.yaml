@@ -58,9 +58,6 @@ importers:
       '@types/express':
         specifier: ^4.17.21
         version: 4.17.25
-      '@types/google-apps-script':
-        specifier: ^2.0.8
-        version: 2.0.8
       '@types/node':
         specifier: ^24.0.0
         version: 24.10.9
@@ -1696,9 +1693,6 @@ packages:
 
   '@types/google-apps-script@1.0.100':
     resolution: {integrity: sha512-POgcjcDbrjYJYf3Av6j5n+z9/z/WulCNh9Gj199HgrcgRLzcQLg5ALw6jdWcgBkzgTLNYZSe7/01aOfiNzzn9g==}
-
-  '@types/google-apps-script@2.0.8':
-    resolution: {integrity: sha512-mGPmzzdgBu1DlwrjOhFQ8u0se6AF/z4OpaTzOGwNKxwXZjE7J+IssfE3oL24j/S/p6aFiSTIptHZvbyqeZD8vA==}
 
   '@types/http-errors@2.0.5':
     resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
@@ -5966,8 +5960,6 @@ snapshots:
       '@types/serve-static': 1.15.10
 
   '@types/google-apps-script@1.0.100': {}
-
-  '@types/google-apps-script@2.0.8': {}
 
   '@types/http-errors@2.0.5': {}
 
