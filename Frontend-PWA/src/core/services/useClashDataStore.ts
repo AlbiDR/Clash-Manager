@@ -47,6 +47,10 @@ export const useClashDataStore = defineStore("clashData", () => {
     return Date.now() - lastSync.value > 1000 * 60 * 30; // 30 min TTL
   });
 
+  const isHydrated = computed(() => data.value !== null);
+  const isRefreshing = computed(() => loading.value);
+  const lastSyncTime = computed(() => lastSync.value);
+
   // --- ACTIONS ---
 
   /**
@@ -146,6 +150,9 @@ export const useClashDataStore = defineStore("clashData", () => {
     recruits,
     lastUpdated,
     isStale,
+    isHydrated,
+    isRefreshing,
+    lastSyncTime,
 
     // Actions
     loadLocal,
