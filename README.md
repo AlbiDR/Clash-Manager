@@ -191,7 +191,8 @@ The Core connects the database (Sheets) to the Worker.
   **Environment**: Google Apps Script
   **Configuration**:
     - `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
-    - `CLAN_TAG`: Target resource identifier.
+    - `CLAN_TAG`: Target resource identifier (Clan Tag).
+    - `PLAYER_TAG`: (Optional) Personal context for the PWA.
   **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
 
 </details>
