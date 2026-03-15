@@ -23,13 +23,13 @@ The Laboratory implements a strict validation boundary. Raw data from the Google
 ### Progression Engine (Simulation.ts)
 A non-blocking, generator-based engine that calculates the most efficient upgrade path.
 - **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
-- **Recursive Lookahead**: Evaluates the "character arc" of a card (up to 5 steps deep) to avoid greedy traps and local optima.
+- **Recursive Lookahead**: Evaluates the "character arc" of a card (determined by `LOOKAHEAD_PRECISION`) to avoid greedy traps and local optima.
 - **Priority Queue**: Uses a Binary Heap to always select the highest-efficiency candidate.
 
 ### Strategy Pattern (ScoringStrategy.ts)
 Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection**: Aggressively prioritizes King Level milestones (15, 16), assuming resources will eventually be acquired.
-- **Resource Efficiency**: Strictly optimizes for XP ROI (Experience per Gold), penalizing gem spending.
+- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes King Level milestones (15, 16), assuming resources will eventually be acquired.
+- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold), penalizing gem spending.
 
 ### Constants Registry (Registry.ts)
 Centralized source of truth for game-specific data:
@@ -38,4 +38,10 @@ Centralized source of truth for game-specific data:
 - `MATERIAL_REQUIREMENTS`: Cards/Wild Cards required per rarity and level.
 
 ## State Management
-Managed via the `useLaboratory` singleton composable. It persists user settings, inventory overrides, and simulation results to `LocalStorage` to ensure a consistent experience across sessions.
+Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, operation results, and settings) is private to the silo and managed via centralized state.
+
+### Behavioral Orchestration (useLaboratory.ts)
+The `useLaboratory` composable serves as the behavioral orchestrator. It encapsulates:
+- **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine.
+- **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
+- **Persistence Sync**: Proxies state updates to the Pinia store and ensures `LocalStorage` consistency for cross-session resilience.
