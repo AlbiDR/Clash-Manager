@@ -163,6 +163,32 @@ To enable the **Round-Robin Load Balancer** and preserve system integrity agains
 ---
 <br />
 
+## Phase 0: Environment & Prerequisites
+
+Before initiating the deployment, ensure your local environment meets the following technical requirements:
+
+- **Runtime**: Node.js (v20+) and `pnpm` (v9+).
+- **Tooling**: `clasp` (Google Apps Script CLI) installed globally (`pnpm add -g @google/clasp`).
+- **Auth**: Authenticate clasp with your Google account (`clasp login`).
+- **External Intel**: A [Clash Royale Developer](https://developer.clashroyale.com/) account to generate API keys.
+
+---
+<br />
+
+## Quick Start: API Key Protocol
+
+To enable the **Round-Robin Load Balancer** and preserve system integrity against platform quotas, all API keys must follow a strict naming and provisioning contract:
+
+- **Naming Convention**: Keys MUST be named with the prefix `CRK` followed by a sequential index (e.g., `CRK01`, `CRK02`... `CRK10`).
+- **IP Whitelisting**: When creating keys on the Supercell portal, you MUST whitelist the IP `0.0.0.0` (or the specific proxy IPs if using a custom proxy) to allow the **RoyaleAPI Proxy** to communicate on your behalf.
+- **Profile Limits**: Supercell allows **10 keys per developer profile**. To maximize concurrency, it is recommended to populate the full `CRK01`–`CRK10` range.
+- **Provisioning**:
+  - **Worker (Render)**: Defined in the `API_KEYS` environment variable as a comma-separated string.
+  - **Core (GAS)**: Defined in **Project Settings > Script Properties** under the `API_KEYS` key.
+
+---
+<br />
+
 ## Deployment Protocol
 
 The system requires a synchronized deployment across all three environments.
@@ -176,7 +202,7 @@ The worker must be online first to provide endpoints for the orchestration engin
   **Environment**: Node.js Service
   **Requirements**:
     - `WORKER_CONCURRENCY`: `20`
-    - `API_KEYS`: Comma-separated list of tokens.
+    - `API_KEYS`: Comma-separated list of `CRK01..CRK10` tokens.
     - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
   **Action**: `pnpm build && pnpm start`
 
@@ -185,7 +211,7 @@ The worker must be online first to provide endpoints for the orchestration engin
 <details>
 <summary><strong>Phase 2: Orchestration Engine (Apps Script)</strong></summary>
 
-The Core connects the database (Sheets) to the Worker.
+The Core connects the database (Sheets) to the Worker. This must be a **Container-Bound** script.
 
   **Source**: `Backend-GAS/`
   **Environment**: Google Apps Script
@@ -193,7 +219,11 @@ The Core connects the database (Sheets) to the Worker.
     - `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
     - `CLAN_TAG`: Target resource identifier (Clan Tag).
     - `PLAYER_TAG`: (Optional) Personal context for the PWA.
-  **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
+  **Action**: 
+    1. Create a new Google Sheet.
+    2. `clasp push` from the `Backend-GAS/` directory (ensure `.clasp.json` points to a bound script).
+    3. **Deploy as Web App**: Set *Execute as* to `Me` and *Who has access* to `Anyone`.
+    4. Run `createTriggers()` in `Orchestrator.ts`.
 
 </details>
 
