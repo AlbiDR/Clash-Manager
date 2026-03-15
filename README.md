@@ -3,7 +3,7 @@
 [![System](https://img.shields.io/badge/System-v13.1.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
 [![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
 [![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
-[![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
+[![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](.github/authoritative-design-references/CleanStack%20Architecture.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 
 **An engineered ecosystem for high-precision clan leadership.**
@@ -132,6 +132,20 @@ flowchart TD
     UI <-->|Direct Scan & Push| Worker
 ```
 
+---
+<br />
+
+## Nightly Pipeline
+
+The ecosystem is maintained by a 7-agent autonomous pipeline that executes nightly to ensure structural purity, security, and documentation synchronization. This pipeline operates directly on the `Nightly` branch and follows a strictly sequenced maintenance cycle:
+
+1.  **Harden**: Secures validation boundaries, normalizes data structures, and eliminates runtime regressions.
+2.  **Verify**: Proves system integrity through automated test suite execution and architectural compliance checks.
+3.  **Optimize**: Refines code structures, enforces DRY principles, and prunes dead code or redundant dependencies.
+4.  **Document (README)**: Synchronizes high-level technical blueprints with actual implementation state.
+5.  **Document (TSDoc)**: Hardens interface contracts and architectural remarks within the source code.
+6.  **Audit**: Monitors dependency health, security vulnerabilities, and version drift.
+7.  **Version Integrity**: Enforces strict semantic versioning and updates the automated [PR History](.github/nightly-logs/PR_HISTORY.md).
 
 ---
 <br />
