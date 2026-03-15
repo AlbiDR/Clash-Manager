@@ -87,7 +87,49 @@ jobs:
         run: |
           git checkout Beta
           git pull origin Beta
-          git merge origin/Nightly --no-edit
+          
+          if ! git merge origin/Nightly --no-edit; then
+            echo "Merge failed. Checking for structural rename conflicts..."
+            
+            # The "Ghost Directory Healer": Handle __tests__ to [parent]-tests renames
+            mapfile -t conflicts < <(git status --porcelain | awk '{if ($1=="UA" || $2=="UA" || $1=="A" || $1=="U") print $2}')
+            healed_count=0
+            
+            for file in "${conflicts[@]}"; do
+              if [[ "$file" == *"/__tests__/"* ]]; then
+                dir=$(dirname "$file")
+                parent=$(dirname "$dir")
+                parent_name=$(basename "$parent")
+                new_dir="${parent}/${parent_name}-tests"
+                new_file="${new_dir}/$(basename "$file")"
+                
+                echo "Healer: Relocating orphaned test file $file -> $new_file" >> $GITHUB_STEP_SUMMARY
+                mkdir -p "$new_dir"
+                
+                # Fetch target file from Nightly
+                git show "origin/Nightly:$file" > "$new_file"
+                git add "$new_file"
+                git rm --cached "$file"
+                ((healed_count++))
+              fi
+            done
+            
+            if [[ -n $(git ls-files -u) ]]; then
+              echo "Fatal: Unresolved conflicts remain after healing." >> $GITHUB_STEP_SUMMARY
+              git merge --abort
+              exit 1
+            fi
+            
+            if [[ $healed_count -gt 0 ]]; then
+              echo "### 🩺 Auto-Healed Structural Drift" >> $GITHUB_STEP_SUMMARY
+              echo "Successfully healed $healed_count file location conflicts." >> $GITHUB_STEP_SUMMARY
+              git commit -m "chore(sync): auto-heal structural rename conflicts [skip ci]"
+            else
+              git merge --abort
+              exit 1 # Abort if we couldn't heal anything
+            fi
+          fi
+          
           git push origin Beta
           echo "merged=true" >> $GITHUB_OUTPUT
 
@@ -234,6 +276,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Verify Beta Stability (Air Gap Guard)
+        run: |
+          git checkout Beta
+          git pull origin Beta
+          npm install -g pnpm
+          pnpm install
+          if ! pnpm test; then
+             echo "### 🛑 Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
+             echo "Unit tests failed on Beta. Downstream sync to Nightly aborted to protect the automated environment from contaminated state." >> $GITHUB_STEP_SUMMARY
+             exit 1
+          fi
+          echo "### ✅ Beta Stable: Proceeding with Downstream Sync" >> $GITHUB_STEP_SUMMARY
 
       - name: Setup Git User
         run: |
