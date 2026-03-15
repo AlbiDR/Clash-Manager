@@ -236,9 +236,9 @@ const DatabaseStore = {
         Registry.Services.Scoring.toStrictValue(data.donationsReceived),
         Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(data.lastSeen)),
         warFame,
+        battleCredit,
         decksToday,
         decksWeekly,
-        battleCredit,
       ];
 
       if (existingMap.has(normalizedTag)) {
