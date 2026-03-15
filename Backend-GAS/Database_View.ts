@@ -82,7 +82,7 @@ const DatabaseView = {
         },
         {
           repeatCell: {
-            range: { sheetId, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.BATTLE_CREDITS },
+            range: { sheetId, startColumnIndex: 1 + S_DB.WAR_FAME, endColumnIndex: 2 + S_DB.DECKS_USED_WEEKLY },
             cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0" } } },
             fields: "userEnteredFormat(numberFormat)"
           }
@@ -178,7 +178,7 @@ const DatabaseView = {
                   startRowIndex: startRow - 1, 
                   endRowIndex: targetRowCount - 1, 
                   startColumnIndex: 1 + S_DB.WAR_FAME, 
-                  endColumnIndex: 2 + S_DB.BATTLE_CREDITS 
+                  endColumnIndex: 2 + S_DB.DECKS_USED_WEEKLY 
                 },
                 cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0" } } },
                 fields: "userEnteredFormat(numberFormat)"
