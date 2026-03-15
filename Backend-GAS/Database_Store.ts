@@ -140,6 +140,8 @@ const DatabaseStore = {
     sheet: any,
     activeMembers: ClanMemberSnapshot[],
     warFameMap: Map<string, number>,
+    deckUsageWeeklyMap: Map<string, number>,
+    deckUsageTodayMap: Map<string, number>,
     isWarDay: boolean,
   ): DatabaseUpdateResult {
     const startRow = CONFIG.LAYOUT.DATA_START_ROW;
@@ -212,6 +214,14 @@ const DatabaseStore = {
           ? Registry.Services.Scoring.toStrictValue(rawFame) 
           : "N/A";
           
+      const decksWeekly = isWarDay
+          ? Registry.Services.Scoring.toStrictValue(deckUsageWeeklyMap.get(data.tag) || 0)
+          : "N/A";
+
+      const decksToday = isWarDay
+          ? Registry.Services.Scoring.toStrictValue(deckUsageTodayMap.get(data.tag) || 0)
+          : "N/A";
+
       const battleCredit = isWarDay 
           ? Registry.Services.Scoring.toStrictValue(Number(rawFame) > 0 ? 1 : 0) 
           : "N/A";
@@ -226,6 +236,8 @@ const DatabaseStore = {
         Registry.Services.Scoring.toStrictValue(data.donationsReceived),
         Registry.Services.Time.formatDate(Registry.Services.Time.parseRoyaleApiDate(data.lastSeen)),
         warFame,
+        decksWeekly,
+        decksToday,
         battleCredit,
       ];
 

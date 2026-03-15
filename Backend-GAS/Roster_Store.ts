@@ -99,7 +99,7 @@ const RosterStore = {
     if (dbSheet && dbSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const dbValues = dbSheet.getRange(
         CONFIG.LAYOUT.DATA_START_ROW, 2,
-        dbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 10
+        dbSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 12
       ).getValues();
       const S_DB = CONFIG.SCHEMA.DB;
 

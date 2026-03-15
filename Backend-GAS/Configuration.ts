@@ -340,6 +340,8 @@ export var CONFIG: AppConfig = {
       DON_REC: "Donations Received",
       LAST_SEEN: "Last Seen",
       WAR_FAME: "War Fame",
+      DECKS_USED_WEEKLY: "War Decks Used",
+      DECKS_USED_TODAY: "War Decks Used Today",
       BATTLE_CREDITS: "Battle Credits",
     },
     DB: {
@@ -352,7 +354,9 @@ export var CONFIG: AppConfig = {
       DON_REC: 6,
       LAST_SEEN: 7,
       WAR_FAME: 8,
-      BATTLE_CREDITS: 9,
+      DECKS_USED_WEEKLY: 9,
+      DECKS_USED_TODAY: 10,
+      BATTLE_CREDITS: 11,
     },
     // Unified Schema: 0-based relative to Data Start (Column B)
     HH: {

@@ -96,9 +96,15 @@ const Database: DatabaseContract = {
             // MAPPING: Tag Normalization & Fame Extraction
             const activeTags = new Set(activeMembers.map((m) => String(m.tag || "").toUpperCase().trim()));
             const warFameMap = new Map<string, number>();
+            const deckUsageWeeklyMap = new Map<string, number>();
+            const deckUsageTodayMap = new Map<string, number>();
+
             if (raceData && raceData.clan && raceData.clan.participants) {
                 raceData.clan.participants.forEach((p: any) => {
-                    warFameMap.set(p.tag, Registry.Services.Scoring.resolveWarFame(p));
+                    const tag = p.tag;
+                    warFameMap.set(tag, Registry.Services.Scoring.resolveWarFame(p));
+                    deckUsageWeeklyMap.set(tag, Number(p.decksUsed) || 0);
+                    deckUsageTodayMap.set(tag, Number(p.decksUsedToday) || 0);
                 });
             }
 
@@ -129,7 +135,7 @@ const Database: DatabaseContract = {
             const stalePruned = DatabaseStore.pruneStaleData(sheet, activeTags);
 
             Registry.Services.Reporting.logStep(6, 6, "Executing Snapshot Upsert...");
-            const updateResult = DatabaseStore.upsertDailySnapshots(sheet, activeMembers, warFameMap, isWarDay);
+            const updateResult = DatabaseStore.upsertDailySnapshots(sheet, activeMembers, warFameMap, deckUsageWeeklyMap, deckUsageTodayMap, isWarDay);
 
             // 6. VISUAL FINALIZATION
             const finalLastRow = sheet.getLastRow();
