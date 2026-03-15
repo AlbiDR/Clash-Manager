@@ -1,6 +1,6 @@
 # Clash Manager — Google Apps Script Engine
 
-[![System](https://img.shields.io/badge/System-v13.1.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![System](https://img.shields.io/badge/System-v13.1.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the **Central Nervous System** of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
@@ -57,6 +57,13 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 | `taskFastScout` | **30 Mins** | Rapidly scans tournament brackets for new potential recruits (Headhunter) |
 | `taskUpdateDatabase` | **1 Hour** | Ingests clan war history and performs deep data deduplication |
 | `taskUpdateRoster` | **1 Hour** | Recalculates member scores, updates ranks, and enforces roles |
+
+---
+<br />
+
+## Nightly Maintenance
+
+The monorepo is governed by a **7-agent Nightly Pipeline** that operates outside the standard GAS runtime. This autonomous system executes via GitHub Actions to ensure the structural integrity of the `Backend-GAS` source code, synchronize documentation, and audit security boundaries before major release tags.
 
 ---
 <br />

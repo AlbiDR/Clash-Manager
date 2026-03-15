@@ -1,6 +1,6 @@
 # Clash Manager — Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
@@ -149,6 +149,13 @@ Validates a list of API keys against the upstream provider to check for validity
   "apiKeys": ["sk_key1", "sk_key2"]
 }
 ```
+
+---
+<br />
+
+## Nightly Maintenance
+
+The monorepo is governed by a **7-agent Nightly Pipeline** (powered by GitHub Actions). This autonomous system executes nightly to audit dependency security, verify architectural compliance, and ensure documentation synchronization across all monorepo components.
 
 ---
 <br />

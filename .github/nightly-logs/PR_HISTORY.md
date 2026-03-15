@@ -1,4 +1,6 @@
-# Changelog
+# Nightly Pipeline Changelog
+
+This document serves as the automated ledger for all modifications performed by the **7-agent Nightly Pipeline**. Every entry represents a consolidation of autonomous maintenance tasks (Harden, Verify, Optimize, Document, Audit, and Version Integrity) applied to the codebase.
 
 
 ## [2026-03-08] PR #198: docs(core): document economy utility primitives
