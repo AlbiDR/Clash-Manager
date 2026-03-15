@@ -128,9 +128,10 @@ const RosterStore = {
         const weekId = Registry.Services.Time.calculateWarWeekId(date);
 
         const snapshotDate = Registry.Services.Time.parseFlexibleDate(dbSnapshotRow[S_DB.DATE]);
-        // DERIVATION: The earliest signal for a player is the MIN of their Last Seen (game activity) 
-        // and the Snapshot Date (system recording).
-        const rowEarliest = (date && date.getTime() > 0 && date < snapshotDate) ? date : snapshotDate;
+        // DERIVATION: Tenure is strictly limited to the first system recording in the Database.
+        // We no longer factor in 'Last Seen' (game activity) as this artificially inflates
+        // tenure for players who were inactive for long periods before joining the clan.
+        const rowEarliest = snapshotDate;
 
         if (!intelligence.has(data.tag)) {
           intelligence.set(data.tag, {
