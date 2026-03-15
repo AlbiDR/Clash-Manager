@@ -17,7 +17,6 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/google-apps-script": "^2.0.8",
     "@types/node": "^24.0.0",
     "@vitest/ui": "^4.0.18",
     "tsx": "^4.19.2",
