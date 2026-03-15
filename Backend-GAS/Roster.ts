@@ -98,6 +98,16 @@ const Roster: RosterContract = {
       // most complete fame value (preventing data loss from API lag).
       const addWarEntry = (tag: string, weekId: string, fame: number) => {
         const cleanTag = (tag.startsWith("#") ? tag : "#" + tag).trim().toUpperCase();
+
+        // --- TENURE CONSTRAINT ---
+        // Reject any API or Database history prior to the player's First Seen date in the DB.
+        const dbRecord = marketIntelligence.get(cleanTag);
+        const cutoffWeekId = dbRecord?.firstSeen 
+          ? Registry.Services.Time.calculateWarWeekId(dbRecord.firstSeen) 
+          : currentWeekId;
+          
+        if (weekId < cutoffWeekId) return;
+
         if (!warHistoryMap.has(cleanTag)) warHistoryMap.set(cleanTag, new Map());
         const userMap = warHistoryMap.get(cleanTag)!;
         userMap.set(weekId, Math.max(userMap.get(weekId) || 0, fame));
@@ -137,9 +147,23 @@ const Roster: RosterContract = {
       activeMembers.forEach(m => {
         const cleanMemberTag = (m.tag.startsWith("#") ? m.tag : "#" + m.tag).trim().toUpperCase();
         const pWarHistory = warHistoryMap.get(cleanMemberTag) || new Map<string, number>();
-        const currentFame = pWarHistory.get(currentWeekId) || 0;
         const lastSeen = Registry.Services.Time.parseRoyaleApiDate(m.lastSeen);
         const dbRecord = marketIntelligence.get(cleanMemberTag);
+
+        // --- TENURE CONSTRAINT ---
+        // Prune any legacy history that might have existed in the Leaderboard sheet
+        // but predates the active DB tenure.
+        const cutoffWeekId = dbRecord?.firstSeen 
+            ? Registry.Services.Time.calculateWarWeekId(dbRecord.firstSeen) 
+            : currentWeekId;
+            
+        for (const week of Array.from(pWarHistory.keys())) {
+            if (week < cutoffWeekId) {
+                pWarHistory.delete(week);
+            }
+        }
+
+        const currentFame = pWarHistory.get(currentWeekId) || 0;
 
         let daysTracked = 0;
         let totalDonations = 0;
