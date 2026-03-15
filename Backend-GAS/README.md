@@ -81,7 +81,12 @@ Required environment variables in **Project Settings > Script Properties**:
 - `WEB_APP_URL`: The public URL of the deployed PWA client.
 
 ### Initial Setup
-Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadsheet's toolbar) to initialize the automation suite.
+1. **Spreadsheet Context**: This system is designed as a **Container-Bound** script. Create a new Google Sheet before deployment.
+2. **Push**: Use `clasp push` to sync the repository with your Google Sheet.
+3. **Deployment**: Manually deploy the script as a **Web App** (Deploy > New Deployment > Select type: Web App).
+   - **Execute as**: `Me`
+   - **Who has access**: `Anyone` (Mandatory for PWA headless integration).
+4. **Triggers**: Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadsheet's toolbar) to initialize the automation suite.
 
 ---
 <br />
