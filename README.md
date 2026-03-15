@@ -223,8 +223,9 @@ The Core connects the database (Sheets) to the Worker. This must be a **Containe
     1. Create a new Google Sheet.
     2. `clasp push` from the `Backend-GAS/` directory (ensure `.clasp.json` points to a bound script).
     3. **Enable Advanced Services**: In the Apps Script Editor, go to **Resources > Advanced Google Services** and enable the **Google Sheets API**.
-    4. **Deploy as Web App**: Set *Execute as* to `Me` and *Who has access* to `Anyone`.
-    5. Run `createTriggers()` in `Orchestrator.ts`.
+    4. **Authorization**: Run `createTriggers()` once manually from the editor. This will prompt for the necessary Google permissions.
+    5. **Deploy as Web App**: Set *Execute as* to `Me` and *Who has access* to `Anyone`.
+    6. Run `createTriggers()` in `Orchestrator.ts`.
 
 </details>
 
@@ -234,11 +235,14 @@ The Core connects the database (Sheets) to the Worker. This must be a **Containe
 The Client consumes the headless JSON API exposed by the Core.
 
   **Source**: `Frontend-PWA/`
-  **Environment**: Static Web Host (e.g., GitHub Pages)
+  **Environment**: Static Web Host (e.g., GitHub Pages, Vercel, Netlify)
   **Configuration**:
     - `VITE_GAS_URL`: The Web App URL generated in Phase 2.
     - `VITE_WORKER_URL`: The HTTPS endpoint from Phase 1.
-  **Action**: `pnpm build`
+  **Action**: 
+    1. `pnpm build`
+    2. Upload the contents of the `dist/` directory to your static host.
+    3. Ensure the `VITE_GAS_URL` is set in your host's environment variables or `.env` file before building.
 
 </details>
 
