@@ -197,7 +197,7 @@ The shape differs. The logic is identical.
 | Environment Variables | `VITE_UPPER_SNAKE` | `VITE_API_URL`, `VITE_WORKER_TOKEN` |
 | Assets / Media | `kebab-case.ext` | `currency-gold.webp`, `pwa-maskable.png` |
 | Config / Static Files | `kebab-case.ext` | `vite.config.ts`, `manifest.json` |
-| Test Files | `tests/[Domain].spec.ts` | `features/roster/tests/useRoster.spec.ts` |
+| Test Files | `[parent]-tests/[Domain].spec.ts` | `features/roster/roster-tests/useRoster.spec.ts` |
 | Barrel Files | `index.ts` (always) | `features/roster/index.ts` |
 
 ### 2. Backend Files (GAS / TypeScript)
@@ -303,7 +303,7 @@ Test type is determined by the layer under test. Mixing strategies across layers
 | L4 · App / Orchestrator | Router, shell, GAS lifecycle | Integration · entry/exit contracts only |
 | L5 · Control | `API_Public.ts`, `doGet`/`doPost` | E2E (Playwright / GAS runner) · black box |
 
-- Test files live in a `tests/` folder inside the module they cover, as a direct child alongside the source files (e.g., `features/roster/tests/useRoster.spec.ts`).
+- Test files live in a `[parent]-tests/` folder inside the module they cover, as a direct child alongside the source files (e.g., `features/roster/roster-tests/useRoster.spec.ts`).
 - L1 service tests must use deep imports, not Barrel aliases, to prevent singleton initialization side effects.
 
 ### Universal Pre-Commit Checklist
@@ -317,7 +317,7 @@ Test type is determined by the layer under test. Mixing strategies across layers
 - [ ] **Caching:** Is L1/L2 caching utilized for repeated lookups before touching persistence?
 - [ ] **Quota Guard:** Is `Network.quotaCheck()` called before high-volume operations?
 - [ ] **Types:** Are all public interfaces explicitly typed? No `any`.
-- [ ] **Tests:** Is there a corresponding `*.spec.ts` in the sibling `tests/` folder, using the correct strategy for this layer?
+- [ ] **Tests:** Is there a corresponding `*.spec.ts` in the sibling `[parent]-tests/` folder, using the correct strategy for this layer?
 - [ ] **Error Propagation:** Are all errors typed (never raw strings) and routed to Layer 5 before classification?
 - [ ] **A11y:** Are touch targets (48px minimum) and ARIA labels correct?
 - [ ] **Visual Purity:** Zero emojis in code, UI, or documentation.
