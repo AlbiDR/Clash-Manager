@@ -1,6 +1,6 @@
 # Clash Manager --- Client Core (PWA)
 
-[![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Command Center**. A high-performance, offline-first Vue 3.5 application that serves as the primary interface for clan management.
 
@@ -112,6 +112,9 @@ pnpm test          # Run unit logic tests
 pnpm test:ui       # Open the Vitest UI dashboard
 pnpm type-check    # Verify TypeScript types
 ```
+
+### Nightly Pipeline
+In addition to local testing, the codebase is autonomously maintained by a **7-agent Nightly Pipeline**. This system executes every 24 hours to enforce structural purity, synchronize README documentation, and audit dependency health via the `Nightly` branch.
 
 ---
 <br />
