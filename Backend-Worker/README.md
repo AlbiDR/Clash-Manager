@@ -29,7 +29,7 @@ The worker behavior is controlled via environment variables:
 | `WORKER_RETRIES` | `2` | Number of retry attempts for failed upstream requests |
 | `PORT` | `8080` | Server listening port |
 | `API_BASE` | `https://proxy.royaleapi.dev/v1` | Upstream API endpoint |
-| `API_KEYS` | - | Comma-separated list of fallback Clash Royale API keys |
+| `API_KEYS` | - | Comma-separated list of `CRK01..CRK10` tokens |
 | `REMOTE_WORKER_SECRET` | - | Mandatory token for Bearer authentication |
 
 ---
@@ -195,8 +195,15 @@ Ensure the following variables are set in the Render Dashboard:
 - `WORKER_CONCURRENCY`: `20`
 - `WORKER_TIMEOUT_SEC`: `45`
 - `API_BASE`: `https://proxy.royaleapi.dev/v1`
-- `API_KEYS`: (Comma-separated list)
+- `API_KEYS`: (Comma-separated list of `CRK01..CRK10` tokens)
 - `REMOTE_WORKER_SECRET`: (Mandatory Bearer token)
+
+---
+<br />
+
+## Key Rotation Protocol
+
+The worker utilizes a sequential round-robin rotation for all provided keys. If a key encounters a `429` (Throttled) or `403` (Rejected) error, it is automatically sidelined for a cooling period (60s and 1hr respectively) to ensure the pool remains healthy. Non-prefixed keys or those violating the `CRK` pattern may be ignored by the rotation engine.
 
 ---
 <br />
