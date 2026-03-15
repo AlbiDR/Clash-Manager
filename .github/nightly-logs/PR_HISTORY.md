@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2026-03-15] PR #231: docs(tsdoc): annotate useLaboratoryStore with architectural context
+**Commit**: `0be1b69081fb7cc3643f52bd97d27363bef7289b`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/231)
+
+### Description
+Annotated the Laboratory Pinia store with detailed TSDoc and architectural context, identifying it as a Layer 3 (@features) component with strict import boundaries and LocalStorage persistence. Updated the TSDoc coverage log.
+
+---
+*PR created automatically by Jules for task [3927870557620489831](https://jules.google.com/task/3927870557620489831) started by @AlbiDR*
+
+---
+
 ## [2026-03-15] PR #230: docs(readme): reconcile laboratory state management with pinia migration
 **Commit**: `6adc93d1be5c66c16eda8f88f41551cfc6492849`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/230)
