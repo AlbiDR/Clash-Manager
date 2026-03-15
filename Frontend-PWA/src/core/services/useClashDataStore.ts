@@ -6,9 +6,11 @@ import { useWakeLock } from "./useWakeLock";
 import { fetchRemote } from "../api/GasClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
+import { MemberSchema } from "../api/DataSchemas";
+import * as v from "valibot";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import type { WebAppData, PlayerTag, ClanTag } from "../types";
+import type { WebAppData, PlayerTag } from "../types";
 
 /**
  * CLASH MANAGER - Central Data Store (Layer 1)
@@ -36,9 +38,9 @@ export const useClashDataStore = defineStore("clashData", () => {
   const blueprint = useBlueprintMode();
 
   // --- GETTERS ---
-  const members = computed(() => data.value?.roster || []);
-  const recruits = computed(() => data.value?.headhunter || []);
-  const lastUpdated = computed(() => data.value?.updatedAt || "");
+  const members = computed(() => data.value?.lb || []);
+  const recruits = computed(() => data.value?.hh || []);
+  const lastUpdated = computed(() => data.value?.timestamp || "");
 
   const isStale = computed(() => {
     if (!lastSync.value) return true;
@@ -98,12 +100,37 @@ export const useClashDataStore = defineStore("clashData", () => {
   /**
    * Manually updates a specific player profile within the store.
    * Useful for immediate feedback after a local edit or a single-player refresh.
+   *
+   * @remarks
+   * Implements a strict validation boundary (Target B [1]) and respects
+   * the clinical isolation of the store state by spreading into a new array.
    */
-  function updatePlayerLocally(playerTag: PlayerTag, partial: Partial<any>) {
+  function updatePlayerLocally(playerTag: PlayerTag, partial: unknown) {
     if (!data.value) return;
-    const idx = data.value.roster.findIndex(p => p.tag === playerTag);
-    if (idx !== -1) {
-      data.value.roster[idx] = { ...data.value.roster[idx], ...partial };
+
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // Rationale: Ensure that manual local updates do not corrupt the central store.
+    const validation = v.safeParse(v.partial(MemberSchema), partial);
+    if (!validation.success) {
+      console.warn("[Store] Local update rejected: Invalid partial data", validation.issues);
+      return;
+    }
+
+    const memberIndex = data.value.lb.findIndex(member => member.id === playerTag);
+
+    if (memberIndex !== -1) {
+      // TRANSACIONAL INTEGRITY: Clone the array to trigger reactivity correctly
+      // and ensure that we're not mutating a readonly property.
+      const newLb = [...data.value.lb];
+      newLb[memberIndex] = {
+        ...newLb[memberIndex],
+        ...validation.output
+      } as any;
+
+      data.value = {
+        ...data.value,
+        lb: newLb
+      };
     }
   }
 
