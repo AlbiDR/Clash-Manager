@@ -150,6 +150,19 @@ The ecosystem is maintained by a 7-agent autonomous pipeline that executes night
 ---
 <br />
 
+## Quick Start: API Key Protocol
+
+To enable the **Round-Robin Load Balancer** and preserve system integrity against platform quotas, all API keys must follow a strict naming and provisioning contract:
+
+- **Naming Convention**: Keys MUST be named with the prefix `CRK` followed by a sequential index (e.g., `CRK01`, `CRK02`... `CRK10`).
+- **Profile Limits**: Supercell allows **10 keys per developer profile**. To maximize concurrency, it is recommended to populate the full `CRK01`–`CRK10` range.
+- **Provisioning**:
+  - **Worker (Render)**: Defined in the `API_KEYS` environment variable as a comma-separated string.
+  - **Core (GAS)**: Defined in **Project Settings > Script Properties** under the `API_KEYS` key.
+
+---
+<br />
+
 ## Deployment Protocol
 
 The system requires a synchronized deployment across all three environments.

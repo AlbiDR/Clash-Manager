@@ -74,7 +74,7 @@ The monorepo is governed by a **7-agent Nightly Pipeline** that operates outside
 Required environment variables in **Project Settings > Script Properties**:
 
 - `CLAN_TAG`: Target clan tag (e.g., `#2PP...`).
-- `API_KEYS`: Personal `CRK01..CRKn` array of Clash Royale API keys necessary to enable round-robin load balancing and support heavy loads (a minimum of 10 individual keys is recommended).
+- `API_KEYS`: Sequential `CRK01..CRK10` array of Clash Royale API keys. A minimum of 10 keys is mandatory to support the high-volume Headhunter scanning protocols.
 - `REMOTE_WORKER_URL`: Endpoint of the Render worker (e.g., `https://clash-worker-xyz.onrender.com`).
 - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
 - `WEB_APP_URL`: The public URL of the deployed PWA client.
