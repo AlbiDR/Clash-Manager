@@ -3,7 +3,7 @@
 [![System](https://img.shields.io/badge/System-v13.1.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
 [![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
 [![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
-[![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](docs/ARCHITECTURE.md)
+[![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](.github/authoritative-design-references/CleanStack%20Architecture.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 
 **An engineered ecosystem for high-precision clan leadership.**
@@ -132,6 +132,59 @@ flowchart TD
     UI <-->|Direct Scan & Push| Worker
 ```
 
+---
+<br />
+
+## Nightly Pipeline
+
+The ecosystem is maintained by a 7-agent autonomous pipeline that executes nightly to ensure structural purity, security, and documentation synchronization. This pipeline operates directly on the `Nightly` branch and follows a strictly sequenced maintenance cycle:
+
+1.  **Harden**: Secures validation boundaries, normalizes data structures, and eliminates runtime regressions.
+2.  **Verify**: Proves system integrity through automated test suite execution and architectural compliance checks.
+3.  **Optimize**: Refines code structures, enforces DRY principles, and prunes dead code or redundant dependencies.
+4.  **Document (README)**: Synchronizes high-level technical blueprints with actual implementation state.
+5.  **Document (TSDoc)**: Hardens interface contracts and architectural remarks within the source code.
+6.  **Audit**: Monitors dependency health, security vulnerabilities, and version drift.
+7.  **Version Integrity**: Enforces strict semantic versioning and updates the automated [PR History](.github/nightly-logs/PR_HISTORY.md).
+
+---
+<br />
+
+## Quick Start: API Key Protocol
+
+To enable the **Round-Robin Load Balancer** and preserve system integrity against platform quotas, all API keys must follow a strict naming and provisioning contract:
+
+- **Naming Convention**: Keys MUST be named with the prefix `CRK` followed by a sequential index (e.g., `CRK01`, `CRK02`... `CRK10`).
+- **Profile Limits**: Supercell allows **10 keys per developer profile**. To maximize concurrency, it is recommended to populate the full `CRK01`–`CRK10` range.
+- **Provisioning**:
+  - **Worker (Render)**: Defined in the `API_KEYS` environment variable as a comma-separated string.
+  - **Core (GAS)**: Defined in **Project Settings > Script Properties** under the `API_KEYS` key.
+
+---
+<br />
+
+## Phase 0: Environment & Prerequisites
+
+Before initiating the deployment, ensure your local environment meets the following technical requirements:
+
+- **Runtime**: Node.js (v20+) and `pnpm` (v9+).
+- **Tooling**: `clasp` (Google Apps Script CLI) installed globally (`pnpm add -g @google/clasp`).
+- **Auth**: Authenticate clasp with your Google account (`clasp login`).
+- **External Intel**: A [Clash Royale Developer](https://developer.clashroyale.com/) account to generate API keys.
+
+---
+<br />
+
+## Quick Start: API Key Protocol
+
+To enable the **Round-Robin Load Balancer** and preserve system integrity against platform quotas, all API keys must follow a strict naming and provisioning contract:
+
+- **Naming Convention**: Keys MUST be named with the prefix `CRK` followed by a sequential index (e.g., `CRK01`, `CRK02`... `CRK10`).
+- **IP Whitelisting**: When creating keys on the Supercell portal, you MUST whitelist the IP `0.0.0.0` (or the specific proxy IPs if using a custom proxy) to allow the **RoyaleAPI Proxy** to communicate on your behalf.
+- **Profile Limits**: Supercell allows **10 keys per developer profile**. To maximize concurrency, it is recommended to populate the full `CRK01`–`CRK10` range.
+- **Provisioning**:
+  - **Worker (Render)**: Defined in the `API_KEYS` environment variable as a comma-separated string.
+  - **Core (GAS)**: Defined in **Project Settings > Script Properties** under the `API_KEYS` key.
 
 ---
 <br />
@@ -149,7 +202,7 @@ The worker must be online first to provide endpoints for the orchestration engin
   **Environment**: Node.js Service
   **Requirements**:
     - `WORKER_CONCURRENCY`: `20`
-    - `API_KEYS`: Comma-separated list of tokens.
+    - `API_KEYS`: Comma-separated list of `CRK01..CRK10` tokens.
     - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
   **Action**: `pnpm build && pnpm start`
 
@@ -158,14 +211,21 @@ The worker must be online first to provide endpoints for the orchestration engin
 <details>
 <summary><strong>Phase 2: Orchestration Engine (Apps Script)</strong></summary>
 
-The Core connects the database (Sheets) to the Worker.
+The Core connects the database (Sheets) to the Worker. This must be a **Container-Bound** script.
 
   **Source**: `Backend-GAS/`
   **Environment**: Google Apps Script
   **Configuration**:
     - `REMOTE_WORKER_URL`: The HTTPS endpoint from Phase 1.
-    - `CLAN_TAG`: Target resource identifier.
-  **Action**: `clasp push` followed by `createTriggers()` in the Orchestrator.
+    - `CLAN_TAG`: Target resource identifier (Clan Tag).
+    - `PLAYER_TAG`: (Optional) Personal context for the PWA.
+  **Action**: 
+    1. Create a new Google Sheet.
+    2. `clasp push` from the `Backend-GAS/` directory (ensure `.clasp.json` points to a bound script).
+    3. **Enable Advanced Services**: In the Apps Script Editor, go to **Resources > Advanced Google Services** and enable the **Google Sheets API**.
+    4. **Authorization**: Run `createTriggers()` once manually from the editor. This will prompt for the necessary Google permissions.
+    5. **Deploy as Web App**: Set *Execute as* to `Me` and *Who has access* to `Anyone`.
+    6. Run `createTriggers()` in `Orchestrator.ts`.
 
 </details>
 
@@ -175,10 +235,14 @@ The Core connects the database (Sheets) to the Worker.
 The Client consumes the headless JSON API exposed by the Core.
 
   **Source**: `Frontend-PWA/`
-  **Environment**: Static Web Host (e.g., GitHub Pages)
+  **Environment**: Static Web Host (e.g., GitHub Pages, Vercel, Netlify)
   **Configuration**:
     - `VITE_GAS_URL`: The Web App URL generated in Phase 2.
-  **Action**: `pnpm build`
+    - `VITE_WORKER_URL`: The HTTPS endpoint from Phase 1.
+  **Action**: 
+    1. `pnpm build`
+    2. Upload the contents of the `dist/` directory to your static host.
+    3. Ensure the `VITE_GAS_URL` is set in your host's environment variables or `.env` file before building.
 
 </details>
 

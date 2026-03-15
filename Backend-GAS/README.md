@@ -1,6 +1,6 @@
 # Clash Manager — Google Apps Script Engine
 
-[![System](https://img.shields.io/badge/System-v13.1.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../docs/ARCHITECTURE.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![System](https://img.shields.io/badge/System-v13.1.0-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the **Central Nervous System** of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
@@ -61,19 +61,32 @@ The system runs on a precise cron schedule configured by the Orchestrator:
 ---
 <br />
 
+## Nightly Maintenance
+
+The monorepo is governed by a **7-agent Nightly Pipeline** that operates outside the standard GAS runtime. This autonomous system executes via GitHub Actions to ensure the structural integrity of the `Backend-GAS` source code, synchronize documentation, and audit security boundaries before major release tags.
+
+---
+<br />
+
 ## Deployment & Configuration
 
 ### Script Properties
 Required environment variables in **Project Settings > Script Properties**:
 
 - `CLAN_TAG`: Target clan tag (e.g., `#2PP...`).
-- `API_KEYS`: Personal `CRK01..CRKn` array of Clash Royale API keys necessary to enable round-robin load balancing and support heavy loads (a minimum of 10 individual keys is recommended).
+- `PLAYER_TAG`: (Optional) Your personal Player Tag (e.g., `#UR...`) for administrative context in the PWA.
+- `API_KEYS`: Sequential `CRK01..CRK10` array of Clash Royale API keys. A minimum of 10 keys is mandatory to support the high-volume Headhunter scanning protocols.
 - `REMOTE_WORKER_URL`: Endpoint of the Render worker (e.g., `https://clash-worker-xyz.onrender.com`).
 - `REMOTE_WORKER_SECRET`: Auth token for worker communication.
 - `WEB_APP_URL`: The public URL of the deployed PWA client.
 
 ### Initial Setup
-Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadsheet's toolbar) to initialize the automation suite.
+1. **Spreadsheet Context**: This system is designed as a **Container-Bound** script. Create a new Google Sheet before deployment.
+2. **Push**: Use `clasp push` to sync the repository with your Google Sheet.
+3. **Deployment**: Manually deploy the script as a **Web App** (Deploy > New Deployment > Select type: Web App).
+   - **Execute as**: `Me`
+   - **Who has access**: `Anyone` (Mandatory for PWA headless integration).
+4. **Triggers**: Run the `createTriggers()` function from the `Orchestrator.ts` file (or via the custom **Clan Manager > Setup Triggers** menu item on the spreadsheet's toolbar) to initialize the automation suite.
 
 ---
 <br />
