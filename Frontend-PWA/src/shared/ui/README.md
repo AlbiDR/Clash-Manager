@@ -68,4 +68,4 @@ Components in this layer must adhere to the **Visual Purity** protocol:
 - **Accessibility**: Minimum touch targets of 48px and descriptive ARIA labels are mandatory.
 
 ## Testing Strategy
-Each component is verified via Vitest (`*.spec.ts`) located in the sibling `__tests__/` directory. Tests focus on prop-driven rendering, event emission, and visual state transitions.
+Each component is verified via Vitest (`*.spec.ts`) located in the sibling `ui-tests/` directory. Tests focus on prop-driven rendering, event emission, and visual state transitions.
