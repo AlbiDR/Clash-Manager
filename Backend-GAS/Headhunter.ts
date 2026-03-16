@@ -296,8 +296,8 @@ const Headhunter: HeadhunterContract = {
       const finalPool = allSorted.slice(0, targetActive);
       const queueList = allSorted.slice(targetActive);
     
-      finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
-      queueList.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
+      finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark))); // Calculate PoS from RPoS
+      queueList.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark))); // Calculate PoS from RPoS
 
       const backupSummary = S.View.backupSheet(ss, CONFIG.SHEETS.HH);
       const queueRes = HeadhunterStore.saveQueue(ss, queueList);

@@ -229,15 +229,15 @@ const Roster: RosterContract = {
       // 5. NORMALIZATION & RANKING
       Registry.Services.Reporting.logStep(4, 6, "Normalizing Elite Benchmarks...");
 
-      // ELITE AVERAGE CALCULATION
-      // Intent: We identify the top-performing member's score to act as the
-      // 100% benchmark. This ensures the leaderboard remains a "relative curve"
+      // ELITE AVERAGE CALCULATION (PeS Normalization)
+      // Intent: We identify the top-performing member's RPeS to act as the
+      // 100% benchmark for PeS normalization. This ensures the leaderboard remains a "relative curve"
       // based on current clan performance rather than a static goalpost.
       let maxPerfScore = 0;
       rawResults.forEach(r => { if (r.scores.perf > maxPerfScore) maxPerfScore = r.scores.perf; });
 
       const finalRows = rawResults.map(r => {
-        // SCALING: Convert raw performance into a relative percentage (0-100%).
+        // SCALING: Convert RPeS into a relative PeS (0-100%).
         const normPerf = Registry.Services.Scoring.calculatePotentialScore(r.scores.perf, maxPerfScore);
         const trend = previousScores.has(r.cleanKey) ? r.scores.raw - previousScores.get(r.cleanKey)! : 0;
         
@@ -298,7 +298,7 @@ const Roster: RosterContract = {
       Registry.Services.Reporting.logReport("ROSTER UPDATE COMPLETE", [
         `STATUS:      SUCCESS`,
         `RANKED POOL: ${rawResults.length} Members`,
-        `ELITE AVG:   ${Math.round(maxPerfScore)} (Benchmark)`,
+        `ELITE AVG:   ${Math.round(maxPerfScore)} (RPeS Benchmark)`,
         `API LATENCY: ${apiDuration}ms`,
         `RUNTIME:     ${totalDuration}s`
       ]);

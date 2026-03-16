@@ -59,12 +59,12 @@ export interface ScoringKernelContract {
   ): { raw: number; perf: number };
 
   /**
-   * Calculates the raw recruitment score for a candidate.
+   * Calculates the RPoS (Raw Potential Score) for a recruit candidate.
    */
   computeRecruitScore(trophies: number, dons: number, wins: number, recentWar: boolean, w: ScoringWeights): number;
 
   /**
-   * Calculates the base roster score for an internal member.
+   * Calculates the RPeS (Raw Performance Score) for a roster member.
    */
   computeRosterRawScore(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number;
 
@@ -108,8 +108,8 @@ const ScoringKernel: ScoringKernelContract = {
 
   /**
    * @remarks
-   * This is the primary entry point for roster scoring. It separates 'Raw'
-   * (lifetime achievement) from 'Performance' (current momentum).
+   * Primary entry point for roster scoring. Returns RPeS (Raw Performance Score)
+   * and PeS (Performance Score).
    */
   computeScores(
     currentFame: number,
@@ -156,7 +156,7 @@ const ScoringKernel: ScoringKernelContract = {
   },
 
   /**
-   * Calculates the raw recruitment score.
+   * Calculates the RPoS (Raw Potential Score).
    *
    * @remarks
    * Uses a 'warBonus' of 500 to provide a baseline credit for recent activity.
@@ -174,7 +174,7 @@ const ScoringKernel: ScoringKernelContract = {
   },
 
   /**
-   * Calculates the base roster score.
+   * Calculates the RPeS (Raw Performance Score).
    */
   computeRosterRawScore(fame: number, avgFame: number, dons: number, trophies: number, warRate: number, w: RosterWeights): number {
     return (
@@ -217,7 +217,7 @@ const ScoringKernel: ScoringKernelContract = {
   },
 
   /**
-   * Calculates the Potential Score relative to a benchmark.
+   * Calculates the PeS (Performance Score) or PoS (Potential Score) relative to a benchmark.
    */
   computePotentialPercentage(raw: number, benchmark: number): number {
     if (benchmark <= 0) return 0;
@@ -291,8 +291,8 @@ const ScoringKernel: ScoringKernelContract = {
    *
    * @remarks
    * Priority:
-   * 1. Performance Score (Momentum)
-   * 2. Raw Score (Lifetime)
+   * 1. PeS (Performance Score) [Momentum]
+   * 2. RPeS (Raw Performance Score) [Lifetime]
    * 3. War Participation Rate (Reliability)
    * 4. Total Donations (Contribution)
    * 5. Days Tracked (Newer players win ties)
@@ -300,13 +300,13 @@ const ScoringKernel: ScoringKernelContract = {
    * Performance: Optimized to minimize redundant Number() conversions during O(N log N) sorts.
    */
   compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number {
-    // 1. Performance Score (Primary Momentum)
+    // 1. PeS (Performance Score)
     const bPerf = Number(b[idx.PERF_SCORE]) || 0;
     const aPerf = Number(a[idx.PERF_SCORE]) || 0;
     const dPerf = bPerf - aPerf;
     if (dPerf !== 0) return dPerf;
 
-    // 2. Raw Score (Lifetime Achievement)
+    // 2. RPeS (Raw Performance Score)
     const bRaw = Number(b[idx.RAW_SCORE]) || 0;
     const aRaw = Number(a[idx.RAW_SCORE]) || 0;
     const dRaw = bRaw - aRaw;
