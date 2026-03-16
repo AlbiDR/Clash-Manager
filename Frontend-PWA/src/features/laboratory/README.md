@@ -1,4 +1,4 @@
-# Laboratory — Progression Engine
+# Laboratory -- Progression Engine
 
 The **Strategic Simulator**. A self-contained Feature (Layer 3) responsible for modeling player progression paths and optimizing card upgrades based on ROI or specific level targets.
 
@@ -28,8 +28,8 @@ A non-blocking, generator-based engine that calculates the most efficient upgrad
 
 ### Strategy Pattern (ScoringStrategy.ts)
 Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes King Level milestones (15, 16), assuming resources will eventually be acquired.
-- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold), penalizing gem spending.
+- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes King Level milestones (15, 16). Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level 16.
+- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Constants Registry (Registry.ts)
 Centralized source of truth for game-specific data:
@@ -38,7 +38,11 @@ Centralized source of truth for game-specific data:
 - `MATERIAL_REQUIREMENTS`: Cards/Wild Cards required per rarity and level.
 
 ## State Management
-Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, operation results, and settings) is private to the silo and managed via centralized state.
+Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
+
+### Persistence & Hydration
+- **LocalStorage**: Settings (`laboratory-settings`) and Simulation Results (`laboratory-observation`) are persisted to ensure session resilience.
+- **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
 
 ### Behavioral Orchestration (useLaboratory.ts)
 The `useLaboratory` composable serves as the behavioral orchestrator. It encapsulates:

@@ -1,4 +1,4 @@
-# Clash Manager — Remote Worker (Render)
+# Clash Manager -- Remote Worker (Render)
 
 [![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
@@ -42,7 +42,7 @@ The worker behavior is controlled via environment variables:
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
-> **Note**: The worker utilizes independent versioning across subsystems (v10.1.1 for discovery / v10.1.4 for scanning).
+> **Note**: The worker utilizes independent versioning across subsystems (`v10.1.1` for discovery / `v10.1.4` for scanning logic).
 
 **Response:**
 ```json
@@ -165,7 +165,7 @@ The monorepo is governed by a **7-agent Nightly Pipeline** (powered by GitHub Ac
 The worker implements a **Deep Delegation** strategy to optimize the entire Clash Manager ecosystem.
 
 1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
-2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"—historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
+2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"--historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
 
 ---
 <br />
