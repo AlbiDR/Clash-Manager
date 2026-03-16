@@ -1,6 +1,6 @@
 # Clash Manager — Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
