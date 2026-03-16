@@ -144,8 +144,8 @@ The ecosystem is maintained by a 7-agent autonomous pipeline that executes night
 3.  **Optimize**: Refines code structures, enforces DRY principles, and prunes dead code or redundant dependencies.
 4.  **Document (README)**: Synchronizes high-level technical blueprints with actual implementation state.
 5.  **Document (TSDoc)**: Hardens interface contracts and architectural remarks within the source code.
-6.  **Audit**: Monitors dependency health, security vulnerabilities, and version drift.
-7.  **Version Integrity**: Enforces strict semantic versioning and updates the automated [PR History](.github/nightly-logs/PR_HISTORY.md).
+6.  **Version Integrity**: Enforces strict semantic versioning and reconciles internal version constants.
+7.  **Dependency Audit**: Monitors external dependency health, security vulnerabilities, and runtime currency.
 
 ---
 <br />
@@ -155,6 +155,7 @@ The ecosystem is maintained by a 7-agent autonomous pipeline that executes night
 To enable the **Round-Robin Load Balancer** and preserve system integrity against platform quotas, all API keys must follow a strict naming and provisioning contract:
 
 - **Naming Convention**: Keys MUST be named with the prefix `CRK` followed by a sequential index (e.g., `CRK01`, `CRK02`... `CRK10`).
+- **IP Whitelisting**: When creating keys on the Supercell portal, you MUST whitelist the IP `0.0.0.0` (or the specific proxy IPs if using a custom proxy) to allow the **RoyaleAPI Proxy** to communicate on your behalf.
 - **Profile Limits**: Supercell allows **10 keys per developer profile**. To maximize concurrency, it is recommended to populate the full `CRK01`–`CRK10` range.
 - **Provisioning**:
   - **Worker (Render)**: Defined in the `API_KEYS` environment variable as a comma-separated string.
@@ -171,20 +172,6 @@ Before initiating the deployment, ensure your local environment meets the follow
 - **Tooling**: `clasp` (Google Apps Script CLI) installed globally (`pnpm add -g @google/clasp`).
 - **Auth**: Authenticate clasp with your Google account (`clasp login`).
 - **External Intel**: A [Clash Royale Developer](https://developer.clashroyale.com/) account to generate API keys.
-
----
-<br />
-
-## Quick Start: API Key Protocol
-
-To enable the **Round-Robin Load Balancer** and preserve system integrity against platform quotas, all API keys must follow a strict naming and provisioning contract:
-
-- **Naming Convention**: Keys MUST be named with the prefix `CRK` followed by a sequential index (e.g., `CRK01`, `CRK02`... `CRK10`).
-- **IP Whitelisting**: When creating keys on the Supercell portal, you MUST whitelist the IP `0.0.0.0` (or the specific proxy IPs if using a custom proxy) to allow the **RoyaleAPI Proxy** to communicate on your behalf.
-- **Profile Limits**: Supercell allows **10 keys per developer profile**. To maximize concurrency, it is recommended to populate the full `CRK01`–`CRK10` range.
-- **Provisioning**:
-  - **Worker (Render)**: Defined in the `API_KEYS` environment variable as a comma-separated string.
-  - **Core (GAS)**: Defined in **Project Settings > Script Properties** under the `API_KEYS` key.
 
 ---
 <br />
