@@ -1,4 +1,4 @@
-# Clash Manager — Google Apps Script Engine
+# Clash Manager -- Google Apps Script Engine
 
 [![System](https://img.shields.io/badge/System-v14.3.2-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
@@ -46,14 +46,10 @@ A pure mathematical engine isolated from the rest of the system. It operates on 
 
 Internal scoring is designed to reward both long-term reliability and short-term excellence.
 
-- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors.
-  - **Fame**: Historical war contribution.
-  - **Donations**: Weekly and daily contribution averages.
-  - **Trophies**: Absolute trophy count.
-  - **War Participation**: Percentage of eligible war days fought.
+- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors (Fame, Donations, Trophies, War Participation).
 - **PeS (Performance Score)**: A relative normalization of the RPeS.
   - **Normalization**: Calculated as `(Member RPeS / Max RPeS in Clan) * 100`.
-  - **Relative Curve**: This ensures that even as the game meta or clan strength shifts, the scores remain a relative indicator of a member's standing within the current roster.
+  - **Relative Curve**: Ensures the leaderboard remains a "relative curve" regardless of meta shifts.
 
 </details>
 
@@ -65,10 +61,19 @@ External scoring focuses on identifying "elite fits" for the clan by comparing c
 - **RPoS (Raw Potential Score)**: Calculates a base score for recruits using external stats:
   - **Trophy Weight**: Base player capability.
   - **War Day Wins**: Historical reliability in clan wars.
-  - **Recent Activity**: Baseline bonus for recent war participation.
+  - **War Baseline Bonus**: A fixed credit (default: 500) applied to recruits with recent activity to prevent "Newbie Gaps".
 - **PoS (Potential Score)**: The final aligned metric.
-  - **Hybrid Benchmark**: A blended target calculated from the current "Elite Roster" (members with PeS > 50%) and the "Market Reference" (top 5% of all scanned recruits).
+  - **Hybrid Benchmark**: A blended target calculated from the current "Elite Roster" (members with PeS > 50%) and the **Market Intelligence** reference (top 5% of all scanned recruits).
   - **Alignment**: Normalized against this hybrid benchmark to ensure recruits are scored on the same scale as internal members.
+
+</details>
+
+<details>
+<summary><strong>Intelligence & Caching</strong></summary>
+
+- **Market Intelligence**: The collective performance baseline derived from high-volume tournament scanning. It defines the "top percentile" of the current available recruit pool.
+- **Prophet Cache**: A persistent memory of external player performance. When a player is scanned multiple times, the Prophet Cache tracks their consistency.
+- **Prophet Bonus**: A **25% RPoS multiplier** applied to recruits with proven historical war success (e.g., >5 wins) detected via the Prophet Cache.
 
 </details>
 
