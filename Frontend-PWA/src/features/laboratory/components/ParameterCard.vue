@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Icon } from "@shared";
+/**
+ * COMPONENT: ParameterCard
+ *
+ * @remarks
+ * Manages simulation parameters for the Laboratory engine.
+ * Following Layer 3 (@features) isolation rules.
+ */
+import { Icon, SettingRow } from "@shared";
 import { computed } from "vue";
 import { type OptimizationSettings, IMPORTANT_KING_LEVELS } from "../logic";
 const props = defineProps<{
@@ -103,19 +110,13 @@ const baseUrl = import.meta.env.BASE_URL;
       </div>
 
       <!-- Gem Spending Toggle -->
-      <label class="toggle-row">
-        <div class="toggle-info">
-          <span class="label">Allow Gem Spending</span>
-          <span class="sub">Buy missing cards with gems</span>
-        </div>
-        <div 
-          class="custom-toggle" 
-          :class="{ active: settings.allowGemSpending }"
-          @click="toggleGemSpending()"
-        >
-          <div class="toggle-nob"></div>
-        </div>
-      </label>
+      <SettingRow
+        label="Allow Gem Spending"
+        description="Buy missing cards with gems"
+        :active="settings.allowGemSpending"
+        class="parameter-toggle"
+        @click="toggleGemSpending()"
+      />
     </div>
   </div>
 </template>
@@ -250,70 +251,9 @@ const baseUrl = import.meta.env.BASE_URL;
   opacity: 0.4;
 }
 
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  cursor: pointer;
+.parameter-toggle {
   padding: 12px 0;
   border-top: 1px solid var(--sys-color-outline-variant);
-  transition: opacity 0.3s;
-}
-
-.toggle-row.disabled {
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-.toggle-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.toggle-info .label {
-  font-size: 14px;
-  font-weight: 750;
-  color: var(--sys-color-on-surface);
-}
-
-.toggle-info .sub {
-  font-size: 10px;
-  font-weight: 600;
-  opacity: 0.5;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.custom-toggle {
-  width: 44px;
-  height: 24px;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: var(--shape-corner-m);
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-}
-
-.custom-toggle.active {
-  background: var(--sys-color-primary);
-}
-
-.toggle-nob {
-  width: 18px;
-  height: 18px;
-  background: white;
-  border-radius: 50%;
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.custom-toggle.active .toggle-nob {
-  transform: translateX(20px);
 }
 
 </style>
