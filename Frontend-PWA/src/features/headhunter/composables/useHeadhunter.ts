@@ -29,8 +29,9 @@ export function useHeadhunter() {
     if (!clashData.value) return;
     const currentHH = clashData.value.hh;
     const idsSet = new Set(ids);
-    if (!currentHH.some((r) => idsSet.has(r.id))) return;
-    const newHH = currentHH.filter((r) => !idsSet.has(r.id));
+    // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
+    if (!currentHH.some((recruit) => idsSet.has(recruit.id))) return;
+    const newHH = currentHH.filter((recruit) => !idsSet.has(recruit.id));
     const updatedData = { ...clashData.value, hh: newHH };
     updateLocalData(updatedData);
   }
@@ -41,11 +42,12 @@ export function useHeadhunter() {
   function applyLocalRestoration(recruits: Recruit[]) {
     if (!clashData.value || recruits.length === 0) return;
     const currentHH = [...clashData.value.hh];
-    const existingIds = new Set(currentHH.map(r => r.id));
+    // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
+    const existingIds = new Set(currentHH.map(recruit => recruit.id));
     let added = 0;
-    recruits.forEach(r => {
-      if (!existingIds.has(r.id)) {
-        currentHH.push(r);
+    recruits.forEach(recruit => {
+      if (!existingIds.has(recruit.id)) {
+        currentHH.push(recruit);
         added++;
       }
     });
@@ -67,7 +69,8 @@ export function useHeadhunter() {
     if (data?.hh) {
       const threshold = modules.notificationThreshold || 75;
       const count = modules.notificationBadgeHighPotential
-        ? data.hh.filter((r) => r.potentialScore >= threshold).length
+        // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
+        ? data.hh.filter((recruit) => recruit.potentialScore >= threshold).length
         : data.hh.length;
       setBadge(count);
     }
@@ -76,12 +79,13 @@ export function useHeadhunter() {
   function processRecruitChanges(oldData: WebAppData | null, newData: WebAppData) {
     if (!newData?.hh || !modules.experimentalNotifications) return;
     const threshold = modules.notificationThreshold || 75;
-    const oldIds = new Set(oldData?.hh?.map((r) => r.id) || []);
-    const newEliteRecruits = newData.hh.filter((r) => r.potentialScore >= threshold && !oldIds.has(r.id));
+    // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
+    const oldIds = new Set(oldData?.hh?.map((recruit) => recruit.id) || []);
+    const newEliteRecruits = newData.hh.filter((recruit) => recruit.potentialScore >= threshold && !oldIds.has(recruit.id));
 
     if (newEliteRecruits.length > 0) {
       const count = newEliteRecruits.length;
-      const topScore = Math.max(...newEliteRecruits.map((r) => r.potentialScore));
+      const topScore = Math.max(...newEliteRecruits.map((recruit) => recruit.potentialScore));
       const title = count === 1 ? "Elite Recruit Found" : "Elite Recruits Located";
       const body = count === 1 ? `A candidate with score ${topScore} just entered the pool.` : `${count} candidates with scores up to ${topScore} detected.`;
       sendLocalNotification(title, body, "headhunter-channel");
@@ -105,7 +109,8 @@ export function useHeadhunter() {
 
   async function dismissRecruitsAction(items: DismissalRequest[]) {
     if (!clashData.value) return;
-    const ids = items.map(i => i.id);
+    // THREAT: Anemic variable 'i' hid intent. Using domain-descriptive 'dismissalRequest' [Target B 4].
+    const ids = items.map(dismissalRequest => dismissalRequest.id);
     const oldData = clashData.value;
     applyLocalDismissal(ids);
 
@@ -114,34 +119,35 @@ export function useHeadhunter() {
     try {
       await dismissRecruits(items);
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
-    } catch (e: any) {
-      const name = e.name || "Error";
-      const msg = (e.message || "").toString();
+    } catch (syncError: unknown) {
+      // THREAT: The "any Plague" hidden behind variable 'e'. Harden to 'unknown' with narrowing [Target B 4].
+      const errorName = syncError instanceof Error ? syncError.name : "Error";
+      const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
       
       const isTransient = 
-        name === "NetworkError" || 
-        name === "AbortError" ||
-        name === "TypeError" || 
-        msg.includes("Lock timeout") ||
-        msg.includes("System is busy") ||
-        msg.includes("HTML Response") ||
-        msg.includes("Malformed JSON") ||
-        msg.includes("Empty Response") ||
-        msg.includes("HTTP 500") ||
-        msg.includes("HTTP 502") ||
-        msg.includes("HTTP 503") ||
-        msg.includes("HTTP 504") ||
-        msg.includes("HTTP 408") ||
-        msg.includes("HTTP 429");
+        errorName === "NetworkError" ||
+        errorName === "AbortError" ||
+        errorName === "TypeError" ||
+        errorMessage.includes("Lock timeout") ||
+        errorMessage.includes("System is busy") ||
+        errorMessage.includes("HTML Response") ||
+        errorMessage.includes("Malformed JSON") ||
+        errorMessage.includes("Empty Response") ||
+        errorMessage.includes("HTTP 500") ||
+        errorMessage.includes("HTTP 502") ||
+        errorMessage.includes("HTTP 503") ||
+        errorMessage.includes("HTTP 504") ||
+        errorMessage.includes("HTTP 408") ||
+        errorMessage.includes("HTTP 429");
       
       if (isTransient) {
-        console.warn(`[Sync] Transient failure suppressed. Enqueued for background retry: ${name}: ${msg}`);
+        console.warn(`[Sync] Transient failure suppressed. Enqueued for background retry: ${errorName}: ${errorMessage}`);
         return;
       }
 
-      toastError(`Sync Failed: ${msg}`);
+      toastError(`Sync Failed: ${errorMessage}`);
       updateLocalData(oldData);
-      throw e;
+      throw syncError;
     }
   }
 
@@ -155,8 +161,9 @@ export function useHeadhunter() {
       try {
         await undismissRecruits(ids);
         broadcast({ type: "RECRUIT_RESTORATION", ids });
-      } catch (e) {
-        console.error("Undo Sync Failed:", e);
+      } catch (undoError: unknown) {
+        // THREAT: Unvalidated error 'e' risks silent corruption if logging fails or masks context [Target B 4].
+        console.error("Undo Sync Failed:", undoError instanceof Error ? undoError.message : String(undoError));
       }
     }
   };
