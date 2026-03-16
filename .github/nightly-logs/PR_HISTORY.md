@@ -1,6 +1,32 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-16] PR #238: docs(tsdoc): document useHeadhunter composable and actions
+**Commit**: `37e3767bd04011543251b22d86920329b0d8aaf7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/238)
+
+### Description
+This PR implements Step 5 of the Nightly Pipeline (Document-TSDoc) for the `useHeadhunter` composable. It adds mandatory licensing headers, comprehensive TSDoc for the Layer 3 orchestrator and its actions, and inline logic annotations explaining the 'Why' behind Zero Latency patterns and transient error suppression.
+
+### Reasoning:
+- **Priority Queue Item:** [a] Recent-change priority (modified during previous hardening).
+- **Safety Checks:** Confirmed ADR Section II (Layering) and Section III (Data Flow) coherence.
+- **Rationale:** The `useHeadhunter` composable is a critical orchestrator; documentation now captures its behavioral intent beyond its signature.
+
+### Changes:
+- **Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts:** Added TSDoc, @remarks, and inline `//` comments.
+- **Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts:** Applied mandatory licensing header.
+
+### Verification:
+- **Automated:** `npx vitest run src/features/headhunter/` passed (33 tests).
+- **Audit:** Confirmed stylistic purity (no emojis) and architectural vocabulary compliance.
+- **Log:** Updated `.github/nightly-logs/documentation-tsdoc-coverage.log`.
+
+---
+*PR created automatically by Jules for task [10829452006437148724](https://jules.google.com/task/10829452006437148724) started by @AlbiDR*
+
+---
+
 ## [2026-03-16] PR #237: docs(readme): reconcile root readme drift and pipeline order
 **Commit**: `d6d77ad65c3b039fafdc40726da706a071b1d9c9`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/237)
