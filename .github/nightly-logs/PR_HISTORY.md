@@ -1,6 +1,38 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-16] PR #235: Verify Headhunter Orchestration Logic
+**Commit**: `647aefeef4111dffe8d5853b573769ff1f54e085`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/235)
+
+### Description
+This PR introduces comprehensive unit tests for the `useRecruiter` composable in the Headhunter feature. As the "Verify" agent, I have focused on hardening the logic governing data synchronization and recruitment management.
+
+### Reasoning:
+**[Coverage Gap]:** The `useRecruiter.ts` composable previously had minimal test coverage, leaving critical orchestration logic (Turbo Scan, optimistic UI, undo flows) unverified.
+**[Scenarios Added]:**
+- **Turbo Scan Logic:** Verified that `handleRefresh` correctly differentiates between Worker-based Turbo Scans and standard GAS syncs based on configuration and application mode.
+- **Optimistic Dismissal:** Verified that recruits are immediately hidden using "tombstones" and that visibility is restored if the backend action fails.
+- **Undo Functionality:** Verified that clicking "undo" on the dismissal toast correctly restores the recruit locally and notifies the backend.
+- **Resilience:** Verified that the recruit blacklist is automatically pruned when new data arrives to prevent memory leaks and stale tombstones.
+**[Rationale]:** This target was selected as it represents a complex orchestration boundary (Layer 3) where state, API calls, and local storage intersect, making it a high-risk area for regressions.
+
+### Changes:
+- **[Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts]:** Expanded test suite with 12 robust test cases.
+- **[Mocks]:** Implemented stable, isolated mocks for `GasClient`, `useClashDataStore`, `useToast`, and other feature dependencies to ensure reliable test execution.
+
+### Verification:
+- **[Automated]:** Ran `npx vitest run src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts` in `Frontend-PWA/`. All 12 tests passed.
+- **[Regression]:** Verified that dependent tests in `useHeadhunter.spec.ts` and `useRecruitBlacklist.spec.ts` also pass (33 tests total).
+
+### Log Updates:
+- Updated `.github/nightly-logs/verification-coverage.log` with `Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts`.
+
+---
+*PR created automatically by Jules for task [17977267867335105981](https://jules.google.com/task/17977267867335105981) started by @AlbiDR*
+
+---
+
 ## [2026-03-16] PR #234: fix(harden): eliminate anemic variables and any plague in useHeadhunter
 **Commit**: `5547034c9f024d6e55d62ed8898bceab536f4606`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/234)
