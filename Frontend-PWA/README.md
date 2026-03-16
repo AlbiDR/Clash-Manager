@@ -75,6 +75,16 @@ src/
 ---
 <br />
 
+
+## Layer Isolation & Import Boundaries
+To ensure the "Clean Stack" integrity, the application enforces strict directional dependencies between layers.
+
+- **Layer 1: Core (@core)**: The system kernel. Zero dependencies on higher layers. Contains agnostic infrastructure, themes, and global utilities.
+- **Layer 2: Shared (@shared)**: Domain-blind UI primitives and layout orchestrators. Can import from Layer 1, but NEVER from Features or App.
+- **Layer 3: Features (@features)**: Domain-specific silos (Roster, Laboratory, Headhunter). Can import from Layer 1 and Layer 2. Strictly forbidden from cross-feature imports (Silo Isolation) or importing from Layer 4.
+- **Layer 4: App (@app)**: The orchestration glue. Can import from all lower layers (L1, L2, L3) to compose the final application shell and router.
+
+Violation of these boundaries is considered architectural debt and will be flagged by the autonomous pipeline.
 ## Development
 
 ### Prerequisites
