@@ -48,12 +48,30 @@ Most clan tools rely on ephemeral API fetches—displaying a snapshot of the pre
 The system builds a **Persistent Clan Database**. By archiving every war, every donation cycle, and every member interaction, the system constructs a rich historical tapestry. This allows for deep trend analysis, "heritage" tracking for long-term members, and the ability to spot performance decay before it becomes a problem.
 
 ### The Valuation Engine
-Not all members are equal. The system replaces intuition with a **Complex Valuation Metric** that sorts members by their true worth.
-- **Raw Performance Score**: Lifetime achievement and grind.
-- **Performance Score**: Current form, momentum, and reliability.
-- **Inertia**: Penalties for stagnation and inactivity.
+Not all members are equal. The system replaces intuition with a **Complex Valuation Metric** that sorts players by their true worth across two distinct dimensions.
 
-This allows leadership to objectively identify the clan's bottom players for rotation and the top clan members for promotion, free from bias.
+<details>
+<summary><strong>Internal Metrics: Clan Roster (RPeS & PeS)</strong></summary>
+
+The system evaluates active clan members using a dual-score model to distinguish between historical contribution and current momentum.
+
+- **RPeS (Raw Performance Score)**: The absolute mathematical value derived from lifetime stats (donations, war fame, trophies, and participation rate). It represents the total "grind" and historical achievement of a member.
+- **PeS (Performance Score)**: A relative percentage (0-100%) that normalizes a member's performance against the current clan benchmark. The top-performing member always represents 100%, and everyone else is scaled accordingly to provide a clear view of current form.
+- **Inertia & Heritage**: Logic that applies inactivity decay to stagnant players (Inertia) while providing momentum bonuses to new, promising recruits (Heritage).
+
+</details>
+
+<details>
+<summary><strong>External Metrics: Headhunter Discovery (RPoS & PoS)</strong></summary>
+
+Recruits are analyzed through a similar but specialized lens to ensure they meet the clan's performance standards before they join.
+
+- **RPoS (Raw Potential Score)**: An absolute value calculated from a recruit's external battle logs, lifetime donations, and war consistency.
+- **PoS (Potential Score)**: The normalized "Potential" of a candidate. To ensure scoring coherency, RPoS is compared against the internal clan performance (RPeS) using a weighted ratio, producing an aligned score that indicates how well the recruit would fit into the current roster's competitive curve.
+
+</details>
+
+This allows leadership to objectively identify the clan's bottom players for rotation and the top candidates for recruitment, free from bias.
 
 ### The Headhunter Protocol
 Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuously scans global tournament brackets, and their individual battles, to populate a pool of high-potential, clanless players.
