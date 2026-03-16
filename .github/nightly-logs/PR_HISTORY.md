@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-16] PR #241: chore(deps): align @types/node across monorepo
+**Commit**: `524caf5276673f8087f105f1f4bb52d4b1e431ed`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/241)
+
+### Description
+Aligned @types/node to ^24.10.9 across the monorepo. verified with tests. updated audit log.
+
+---
+*PR created automatically by Jules for task [12049084240251061085](https://jules.google.com/task/12049084240251061085) started by @AlbiDR*
+
+---
+
 ## [2026-03-16] PR #240: docs(readme): synchronize blueprints with implementation state
 **Commit**: `d62c223333713d235cbba8cc9b7dcc98a4c07e16`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/240)
