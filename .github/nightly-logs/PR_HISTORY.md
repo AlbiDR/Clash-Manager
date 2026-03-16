@@ -1,6 +1,25 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-16] PR #242: docs: clarify scoring metrics (RPeS, PeS, RPoS, PoS)
+**Commit**: `e9ed07bbd4d0a39fd33d2d796685dab6ef0b4bce`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/242)
+
+### Description
+This PR clarifies the scoring metrics used throughout the Clash Manager ecosystem. 
+
+Key changes:
+- **Root README.md**: Refactored "The Valuation Engine" to formally define RPeS, PeS, RPoS, and PoS. Added collapsible sections to distinguish between Internal (Roster) and External (Headhunter) metrics.
+- **Backend-GAS README.md**: Expanded the "Scoring Kernel" section with technical deep-dives into the mathematical formulas for normalization (PeS), Hybrid Benchmarking (PoS), and temporal mechanics like Inertia (Decay) and Heritage (Blessing).
+- **Source Code**: Updated TSDoc in `Scoring_Kernel.ts`, `Scoring.ts`, `Roster.ts`, and `Headhunter.ts` to ensure terminology alignment across the codebase.
+
+These updates resolve ambiguity regarding how members and recruits are scored and compared.
+
+---
+*PR created automatically by Jules for task [14658619202512122185](https://jules.google.com/task/14658619202512122185) started by @AlbiDR*
+
+---
+
 ## [2026-03-16] PR #241: chore(deps): align @types/node across monorepo
 **Commit**: `524caf5276673f8087f105f1f4bb52d4b1e431ed`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/241)
