@@ -49,7 +49,7 @@ The system builds a **Persistent Clan Database**. By archiving every war, every 
 
 ### The Valuation Engine
 Not all members are equal. The system replaces intuition with a **Complex Valuation Metric** that sorts members by their true worth.
-- **Raw Score**: Lifetime achievement and grind.
+- **Raw Performance Score**: Lifetime achievement and grind.
 - **Performance Score**: Current form, momentum, and reliability.
 - **Inertia**: Penalties for stagnation and inactivity.
 
