@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { NetworkError, dismissRecruits, undismissRecruits } from "@core/api/GasClient";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBadge } from "@core/services/useBadge";
@@ -12,6 +15,25 @@ import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
 // Module-level state/references
 let previousData: WebAppData | null = null;
 
+/**
+ * COMPOSABLE: useHeadhunter
+ *
+ * @remarks
+ * Orchestrates the recruitment dismissal and notification logic for the
+ * Headhunter feature. It acts as a Layer 3 feature-level orchestrator,
+ * bridging the gap between global data stores (@core) and UI-specific
+ * behaviors.
+ *
+ * **Side Effects:**
+ * - Dispatches network requests to GAS via `dismissRecruits`/`undismissRecruits`.
+ * - Updates the application badge via `useBadge`.
+ * - Sends local notifications for high-potential recruits.
+ * - Broadcasts state changes to other tabs via `useBroadcastChannel`.
+ *
+ * @returns
+ * - `dismissRecruitsAction`: Async action to optimistically dismiss recruits.
+ * - `undismissRecruitsAction`: Async action to reverse a dismissal.
+ */
 export function useHeadhunter() {
   // Scoped Singleton Initializations
   const { setBadge, sendLocalNotification } = useBadge();
@@ -93,6 +115,8 @@ export function useHeadhunter() {
   }
 
   // Watcher to react to data changes (for badge and notifications)
+  // Rationale: Decouples view logic from state changes, ensuring consistent
+  // updates even when data is refreshed from the background service worker.
   watch(
     clashData,
     (newData) => {
@@ -107,6 +131,15 @@ export function useHeadhunter() {
     { immediate: true },
   );
 
+  /**
+   * Action: dismissRecruitsAction
+   *
+   * @remarks
+   * Implements a "Zero Latency" pattern for UI responsiveness. It optimistically
+   * removes recruits from the local state before the network request completes.
+   *
+   * @throws {Error} Re-throws non-transient errors after rolling back local state.
+   */
   async function dismissRecruitsAction(items: DismissalRequest[]) {
     if (!clashData.value) return;
     // THREAT: Anemic variable 'i' hid intent. Using domain-descriptive 'dismissalRequest' [Target B 4].
@@ -124,6 +157,9 @@ export function useHeadhunter() {
       const errorName = syncError instanceof Error ? syncError.name : "Error";
       const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
       
+      // TRANSIENT ERROR SUPPRESSION
+      // Rationale: Network blips or lock timeouts in GAS should not trigger
+      // noisy error toasts, as they will be resolved by the next background sync.
       const isTransient = 
         errorName === "NetworkError" ||
         errorName === "AbortError" ||
@@ -153,6 +189,13 @@ export function useHeadhunter() {
 
   return {
     dismissRecruitsAction,
+    /**
+     * Action: undismissRecruitsAction
+     *
+     * @remarks
+     * Reverses a previous dismissal. It accepts an optional array of original
+     * recruit objects to restore local state instantly without a network round-trip.
+     */
     undismissRecruitsAction: async (ids: string[], originalRecruits?: Recruit[]) => {
       if (originalRecruits && originalRecruits.length > 0) {
         applyLocalRestoration(originalRecruits);
