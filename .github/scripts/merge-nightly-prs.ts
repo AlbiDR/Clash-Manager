@@ -6,7 +6,7 @@ import path from "path";
  * SCRIPT: MERGE NIGHTLY PRS
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Automates the merging of PRs from machine authors.
- * VERSION: 3.2.0
+ * VERSION: 3.3.0
  * ============================================================================
  */
 
@@ -48,6 +48,7 @@ interface GitHubPR {
   };
   head: {
     sha: string;
+    ref: string;
   };
 }
 
@@ -235,8 +236,25 @@ async function run() {
               "PUT",
               mergeBody,
             );
-            merged = true;
             log(`Successfully merged PR #${pr.number}`, "success");
+
+            // 3.1 Delete Head Branch
+            log(`Attempting to delete head branch ${pr.head.ref} for PR #${pr.number}...`, "info");
+            try {
+              await githubApi(
+                `/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/git/refs/heads/${pr.head.ref}`,
+                "DELETE"
+              );
+              log(`Successfully deleted branch ${pr.head.ref}`, "success");
+            } catch (deleteError: any) {
+              // 404 is acceptable (branch already deleted by GitHub settings if enabled)
+              if (deleteError.message.includes("404")) {
+                log(`Branch ${pr.head.ref} already deleted.`, "info");
+              } else {
+                log(`Failed to delete branch ${pr.head.ref}: ${deleteError.message}`, "warn");
+              }
+            }
+            merged = true;
           } catch (error: any) {
             if (
               tryCount < maxTries &&
