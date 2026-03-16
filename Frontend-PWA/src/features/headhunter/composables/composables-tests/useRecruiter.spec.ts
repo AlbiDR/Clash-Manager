@@ -2,6 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useRecruiter } from "../useRecruiter";
 import { ref } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
+import * as GasClient from "@core/api/GasClient";
+
+// --- Stable Mocks ---
+const mockUpdateLocalData = vi.fn();
+const mockRefreshGas = vi.fn();
+const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
+const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
+const mockHide = vi.fn();
+const mockRestore = vi.fn();
+const mockPrune = vi.fn();
+const mockUndo = vi.fn();
+const mockSuccess = vi.fn();
+const mockInfo = vi.fn();
+const mockError = vi.fn();
+const mockTombstones = ref(new Set<string>());
 
 // Define the core mock state globally so it can be used across multiple mocks
 const { mockPingData, mockClashData, mockIsShowcaseMode, mockIsSyntheticMode } = vi.hoisted(() => {
@@ -22,7 +37,7 @@ const { mockPingData, mockClashData, mockIsShowcaseMode, mockIsSyntheticMode } =
   };
 });
 
-// Mock internal core paths so useConsoleController gets them
+// Mock internal core paths
 vi.mock("@core/api/useApiState", () => ({
   useApiState: vi.fn(() => ({
     pingData: mockPingData,
@@ -37,8 +52,8 @@ vi.mock("@core/services/useClashDataStore", () => ({
     isRefreshing: ref(false),
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
-    refresh: vi.fn(),
-    updateLocalData: vi.fn(),
+    refresh: mockRefreshGas,
+    updateLocalData: mockUpdateLocalData,
   })),
 }));
 
@@ -69,8 +84,8 @@ vi.mock("@core", async (importOriginal) => {
       isRefreshing: ref(false),
       syncError: ref(null),
       lastSyncTime: ref(1700000000000),
-      refresh: vi.fn(),
-      updateLocalData: vi.fn(),
+      refresh: mockRefreshGas,
+      updateLocalData: mockUpdateLocalData,
     })),
     useShowcaseMode: vi.fn(() => ({
       isShowcaseMode: mockIsShowcaseMode,
@@ -79,10 +94,10 @@ vi.mock("@core", async (importOriginal) => {
       isSyntheticMode: mockIsSyntheticMode,
     })),
     useToast: vi.fn(() => ({
-      undo: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-      info: vi.fn(),
+      undo: mockUndo,
+      success: mockSuccess,
+      error: mockError,
+      info: mockInfo,
     })),
     useConnectionStatus: vi.fn(() => ({
       status: ref("online"),
@@ -92,10 +107,13 @@ vi.mock("@core", async (importOriginal) => {
       success: vi.fn(),
       error: vi.fn(),
     })),
-    scanRecruitsDirect: vi.fn().mockResolvedValue([]),
-    isWorkerConfigured: vi.fn().mockReturnValue(false),
   };
 });
+
+vi.mock("@core/api/GasClient", () => ({
+  isWorkerConfigured: vi.fn().mockReturnValue(false),
+  scanRecruitsDirect: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock("@shared", async (importOriginal) => {
   const actual = await importOriginal<any>();
@@ -117,17 +135,26 @@ vi.mock("@shared", async (importOriginal) => {
 
 vi.mock("../useHeadhunter", () => ({
   useHeadhunter: vi.fn(() => ({
-    dismissRecruitsAction: vi.fn().mockResolvedValue(undefined),
-    undismissRecruitsAction: vi.fn().mockResolvedValue(undefined),
+    dismissRecruitsAction: mockDismissRecruitsAction,
+    undismissRecruitsAction: mockUndismissRecruitsAction,
   })),
 }));
 
 vi.mock("../useRecruitBlacklist", () => ({
   useRecruitBlacklist: vi.fn(() => ({
-    tombstones: ref(new Set()),
-    prune: vi.fn(),
-    hide: vi.fn(),
-    restore: vi.fn(),
+    tombstones: mockTombstones,
+    prune: mockPrune,
+    hide: mockHide,
+    restore: mockRestore,
+  })),
+}));
+
+vi.mock("@core/services/useToast", () => ({
+  useToast: vi.fn(() => ({
+    undo: mockUndo,
+    success: mockSuccess,
+    error: mockError,
+    info: mockInfo,
   })),
 }));
 
@@ -141,6 +168,17 @@ vi.mock("vue-router", () => ({
 describe("useRecruiter", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    vi.clearAllMocks();
+    mockIsShowcaseMode.value = false;
+    mockIsSyntheticMode.value = false;
+    mockTombstones.value = new Set();
+    mockClashData.value = {
+      hh: [
+        { id: "1", n: "Recruit A", potentialScore: 80, t: 5000, d: { ago: "2024-01-01T00:00:00Z", don: 100, war: 10 } },
+        { id: "2", n: "Recruit B", potentialScore: 90, t: 6000, d: { ago: "2024-01-02T00:00:00Z", don: 50, war: 5 } }
+      ]
+    };
+    mockDismissRecruitsAction.mockResolvedValue(undefined);
   });
 
   it("calculates sheetUrl correctly with Headhunter GID", () => {
@@ -162,8 +200,114 @@ describe("useRecruiter", () => {
   });
 
   it("filters recruits based on blacklist", () => {
+    mockTombstones.value = new Set(["1"]);
     const { filteredItems } = useRecruiter();
-    // Initially both should be there (blacklist is empty in mock)
-    expect(filteredItems.value.length).toBe(2);
+    expect(filteredItems.value.length).toBe(1);
+    expect(filteredItems.value[0].id).toBe("2");
+  });
+
+  it("prunes blacklist when new recruits are loaded", async () => {
+    useRecruiter();
+    // watch is immediate, so it should have called prune with initial hh
+    expect(mockPrune).toHaveBeenCalledWith(["1", "2"]);
+  });
+
+  describe("handleRefresh", () => {
+    it("triggers Turbo Scan when worker is configured", async () => {
+      vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(true);
+      const newRecruits = [
+        { id: "3", n: "Recruit C", potentialScore: 95, t: 7000, d: { ago: "2024-01-03", don: 0, war: 0 } }
+      ];
+      vi.mocked(GasClient.scanRecruitsDirect).mockResolvedValue(newRecruits as any);
+
+      const { refresh } = useRecruiter();
+
+      await refresh();
+
+      expect(GasClient.scanRecruitsDirect).toHaveBeenCalled();
+      expect(mockUpdateLocalData).toHaveBeenCalledWith(expect.objectContaining({
+        hh: expect.arrayContaining([expect.objectContaining({ id: "3" })])
+      }));
+      expect(mockSuccess).toHaveBeenCalledWith(expect.stringContaining("Found 1 new recruits"));
+      expect(mockRefreshGas).toHaveBeenCalled();
+    });
+
+    it("handles Turbo Scan with no new candidates", async () => {
+      vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(true);
+      vi.mocked(GasClient.scanRecruitsDirect).mockResolvedValue([]);
+
+      const { refresh } = useRecruiter();
+
+      await refresh();
+
+      expect(GasClient.scanRecruitsDirect).toHaveBeenCalled();
+      expect(mockInfo).toHaveBeenCalledWith("Turbo Scan complete. No new candidates.");
+      expect(mockRefreshGas).toHaveBeenCalled();
+    });
+
+    it("triggers only GAS refresh if worker not configured", async () => {
+      vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(false);
+      const { refresh } = useRecruiter();
+
+      await refresh();
+
+      expect(GasClient.scanRecruitsDirect).not.toHaveBeenCalled();
+      expect(mockRefreshGas).toHaveBeenCalled();
+    });
+
+    it("handles synthetic mode by only calling GAS refresh", async () => {
+      mockIsSyntheticMode.value = true;
+      const { refresh } = useRecruiter();
+
+      await refresh();
+
+      expect(GasClient.scanRecruitsDirect).not.toHaveBeenCalled();
+      expect(mockRefreshGas).toHaveBeenCalled();
+    });
+  });
+
+  describe("dismissBulk", () => {
+    it("dismisses selected recruits with optimistic updates", async () => {
+      const { dismissBulk, selectedIds } = useRecruiter();
+
+      selectedIds.value = ["1"];
+      dismissBulk();
+
+      expect(mockHide).toHaveBeenCalledWith(["1"]);
+      expect(mockDismissRecruitsAction).toHaveBeenCalledWith([
+        expect.objectContaining({ id: "1" })
+      ]);
+      expect(mockUndo).toHaveBeenCalled();
+    });
+
+    it("restores visibility if dismissal action fails", async () => {
+      const { dismissBulk, selectedIds } = useRecruiter();
+
+      mockDismissRecruitsAction.mockRejectedValue(new Error("Fail"));
+
+      selectedIds.value = ["1"];
+      dismissBulk();
+
+      // We need to wait for the promise rejection to be handled
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockRestore).toHaveBeenCalledWith(["1"]);
+    });
+
+    it("restores recruits when undo is clicked", async () => {
+      const { dismissBulk, selectedIds } = useRecruiter();
+
+      selectedIds.value = ["1"];
+      dismissBulk();
+
+      // Get the undo callback from the toast mock
+      expect(mockUndo).toHaveBeenCalled();
+      const undoCallback = mockUndo.mock.calls[0][1];
+      undoCallback();
+
+      expect(mockRestore).toHaveBeenCalledWith(["1"]);
+      expect(mockUndismissRecruitsAction).toHaveBeenCalledWith(["1"], [mockClashData.value.hh[0]]);
+      expect(mockSuccess).toHaveBeenCalledWith("Dismissal cancelled");
+    });
   });
 });
