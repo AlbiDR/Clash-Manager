@@ -92,7 +92,7 @@ const Scoring: ScoringContract = {
     const sys = CONFIG.SYSTEM;
     const prophetThreshold = sys ? sys.PROPHET_TENURE_THRESHOLD : 10;
 
-    // 2. Kernel: Calculate Roster Raw
+    // 2. Kernel: Calculate Roster RPeS
     const rawScore = Registry.Services.ScoringKernel.computeRosterRawScore(
         currentFame, avgWarFame, dailyDonations, trophies, warRate, W
     );
@@ -101,7 +101,7 @@ const Scoring: ScoringContract = {
     const daysInactive = Math.max(0, (nowDate - lastSeenDate) / (1000 * 60 * 60 * 24));
     const decayedScore = Registry.Services.ScoringKernel.applyDecay(rawScore, daysInactive, P);
 
-    // 4. Kernel: Calculate Heritage (Blessing)
+    // 4. Kernel: Calculate Heritage (RPoS-based Blessing)
     const recruitWeights = CONFIG.HEADHUNTER.WEIGHTS;
     const recruitRaw = Registry.Services.ScoringKernel.computeRecruitScore(
         trophies, 0, cachedWins, isActiveMember, recruitWeights

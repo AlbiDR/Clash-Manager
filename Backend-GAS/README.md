@@ -39,10 +39,48 @@ The central nervous system that manages automation lifecycles.
 - **Mobile Controls**: Listens for checkbox interactions in **cell A1** of specific sheets (`handleMobileEdit`) to trigger on-demand syncs, enabling management via the mobile app.
 
 ### Scoring Kernel (`Scoring_Kernel.ts`)
-A pure mathematical engine isolated from the rest of the system.
-- **Performance Metrics**: Distinguishes between **Raw Score** (lifetime achievement and grind) and **Performance Score** (current momentum and form).
-- **Potential Metrics**: Evaluates recruits via **Raw Potential** (Unweighted) and **Final Potential** (Normalized against the clan benchmark).
-- **Mechanics**: Implements **Heritage** (momentum bonuses for new members) and **Inertia** (inactivity decay).
+A pure mathematical engine isolated from the rest of the system. It operates on a dual-metric architecture to ensure both historical achievement and current form are accurately represented.
+
+<details>
+<summary><strong>Member Performance Metrics (RPeS & PeS)</strong></summary>
+
+Internal scoring is designed to reward both long-term reliability and short-term excellence.
+
+- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors.
+  - **Fame**: Historical war contribution.
+  - **Donations**: Weekly and daily contribution averages.
+  - **Trophies**: Absolute trophy count.
+  - **War Participation**: Percentage of eligible war days fought.
+- **PeS (Performance Score)**: A relative normalization of the RPeS.
+  - **Normalization**: Calculated as `(Member RPeS / Max RPeS in Clan) * 100`.
+  - **Relative Curve**: This ensures that even as the game meta or clan strength shifts, the scores remain a relative indicator of a member's standing within the current roster.
+
+</details>
+
+<details>
+<summary><strong>Recruit Potential Metrics (RPoS & PoS)</strong></summary>
+
+External scoring focuses on identifying "elite fits" for the clan by comparing candidates against the existing internal elite.
+
+- **RPoS (Raw Potential Score)**: Calculates a base score for recruits using external stats:
+  - **Trophy Weight**: Base player capability.
+  - **War Day Wins**: Historical reliability in clan wars.
+  - **Recent Activity**: Baseline bonus for recent war participation.
+- **PoS (Potential Score)**: The final aligned metric.
+  - **Hybrid Benchmark**: A blended target calculated from the current "Elite Roster" (members with PeS > 50%) and the "Market Reference" (top 5% of all scanned recruits).
+  - **Alignment**: Normalized against this hybrid benchmark to ensure recruits are scored on the same scale as internal members.
+
+</details>
+
+<details>
+<summary><strong>Temporal Mechanics</strong></summary>
+
+- **Inertia (Decay)**: Exponential decay applied to players who haven't been seen recently.
+  - `decayedScore = rawScore * (1 - decayRate) ^ (daysInactive - graceDays)`
+- **Heritage (Blessing)**: A quadratic "momentum bonus" given to new members based on their recruitment RPoS. This ensures they maintain high visibility on the leaderboard until their internal stats stabilize.
+  - `heritageBonus = (recruitRaw * factor) / divisor` where `factor` is a quadratic time-decay.
+
+</details>
 
 ---
 <br />
