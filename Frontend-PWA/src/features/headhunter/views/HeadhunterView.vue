@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import {
-  BaseCardSkeleton,
   Icon,
   ConsoleLayout,
-  ConsoleList,
-  AppFooter
+  ConsoleList
 } from "@shared";
 import { useRecruiter } from "../composables/useRecruiter";
-import { useBlueprintMode } from "@core";
 
 import RecruitCard from "../components/RecruitCard.vue";
 
@@ -44,8 +41,6 @@ const {
   toggleSelect,
 } = useRecruiter();
 
-const { isBlueprintMode } = useBlueprintMode();
-const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 </script>
 
 <template>
@@ -58,7 +53,6 @@ const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0
     :sort-options="sortOptions"
     :current-sort="sortBy"
     :loading="showSkeletons"
-    :skeleton-component="BaseCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
     :total-count="filteredItems.length"
@@ -113,11 +107,6 @@ const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0
         />
       </template>
     </ConsoleList>
-
-    <AppFooter 
-      :version="appVersion" 
-      :badge="isBlueprintMode ? 'BLUEPRINT' : undefined" 
-    />
   </ConsoleLayout>
 </template>
 

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {
   vTactile,
-  ConsoleLayout,
-  AppFooter
+  ConsoleLayout
 } from "@shared";
 import { useSettings } from "../composables/useSettings";
 
@@ -22,7 +21,6 @@ const {
   isRefreshing,
   isHydrated,
   refresh,
-  appVersion,
   footerBadgeText,
   modules,
 } = useSettings();
@@ -36,6 +34,7 @@ const {
     :is-refreshing="isRefreshing"
     sheet-url="https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH"
     :skeleton-component="SkeletonSettingsCard"
+    :footer-badge="footerBadgeText"
     @refresh="refresh()"
   >
     <div class="settings-content">
@@ -46,11 +45,6 @@ const {
       <NetworkSettings />
       <BackendRefresher v-if="modules.backendRefresher" />
       <RecoverySettings />
-
-      <AppFooter 
-        :version="appVersion" 
-        :badge="footerBadgeText" 
-      />
     </div>
   </ConsoleLayout>
 </template>

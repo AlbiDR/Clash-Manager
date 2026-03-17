@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {
   Icon,
-  ConsoleLayout,
-  AppFooter
+  ConsoleLayout
 } from "@shared";
-import { useClashDataStore, useBlueprintMode } from "@core";
+import { useClashDataStore } from "@core";
 import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
@@ -28,9 +27,6 @@ const {
   refresh,
 } = useLaboratory();
 
-const { isBlueprintMode } = useBlueprintMode();
-
-const showSkeletons = computed(() => isFetching.value || isBlueprintMode.value);
 const displayLimit = ref(20);
 
 const displayedActions = computed(() => {
@@ -45,7 +41,6 @@ const hasMoreActions = computed(() => {
 const expandTrajectory = () => {
   displayLimit.value = 999;
 };
-const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 
 const clashDataStore = useClashDataStore();
 const { data: globalData } = storeToRefs(clashDataStore);
@@ -73,7 +68,7 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
   <ConsoleLayout
     title="Laboratory"
     :status="{ type: statusType, text: statusText }"
-    :loading="showSkeletons"
+    :loading="isFetching"
     :is-empty="isEmpty"
     :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
     :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
@@ -140,12 +135,6 @@ const isEmpty = computed(() => !observation.value && !isFetching.value);
         </button>
       </div>
     </div>
-
-    <!-- Brand Alignment Footer -->
-    <AppFooter 
-      :version="appVersion" 
-      :badge="isBlueprintMode ? 'BLUEPRINT' : undefined" 
-    />
   </ConsoleLayout>
 </template>
 
