@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-17] PR #244: fix(harden): enforce validation boundary for app settings
+**Commit**: `4f20df85dabf0e8bffeb344fe50111b1a97cd175`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/244)
+
+### Description
+Enforced a strict validation boundary for application settings in `useAppSettings.ts` using Valibot. Removed `any` casting and manual validation loops in favor of schema-based parsing (`v.safeParse`) to prevent UI instability from malformed LocalStorage data. Updated the hardening coverage log.
+
+---
+*PR created automatically by Jules for task [14099755953694898629](https://jules.google.com/task/14099755953694898629) started by @AlbiDR*
+
+---
+
 ## [2026-03-16] PR #243: docs(readme): synchronize and deepen structural blueprints
 **Commit**: `6c47ab360da0d052fb47c73daa6e36716c3a4730`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/243)
