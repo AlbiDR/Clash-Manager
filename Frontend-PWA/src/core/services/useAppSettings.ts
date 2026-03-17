@@ -1,4 +1,5 @@
 import { idb } from "./StorageService";
+import * as v from "valibot";
 import { ref, watch, reactive, toRaw } from "vue";
 const MODULES_KEY = "cm_modules_v2";
 
@@ -31,6 +32,23 @@ const DEFAULT_STATE: ModuleState = {
   notificationQuietMode: false,
 };
 
+/**
+ * [GUARD] VALIDATION BOUNDARY: Module State Schema
+ * Enforces structural integrity for application settings persisted in LocalStorage.
+ * Rationale: Prevents unvalidated or malformed settings from corrupting the UI state.
+ */
+const ModuleStateSchema = v.object({
+  blitzMode: v.optional(v.boolean(), DEFAULT_STATE.blitzMode),
+  ghostBenchmarking: v.optional(v.boolean(), DEFAULT_STATE.ghostBenchmarking),
+  sortExplanation: v.optional(v.boolean(), DEFAULT_STATE.sortExplanation),
+  backendRefresher: v.optional(v.boolean(), DEFAULT_STATE.backendRefresher),
+  experimentalNotifications: v.optional(v.boolean(), DEFAULT_STATE.experimentalNotifications),
+  notificationBadgeHighPotential: v.optional(v.boolean(), DEFAULT_STATE.notificationBadgeHighPotential),
+  notificationThreshold: v.optional(v.picklist([50, 75]), DEFAULT_STATE.notificationThreshold),
+  notificationSound: v.optional(v.boolean(), DEFAULT_STATE.notificationSound),
+  notificationQuietMode: v.optional(v.boolean(), DEFAULT_STATE.notificationQuietMode),
+});
+
 // [PERF] PERFORMANCE: Use reactive object for direct property access instead of .value
 const modules = reactive<ModuleState>({ ...DEFAULT_STATE });
 const isInitialized = ref(false);
@@ -40,24 +58,22 @@ let watchInitialized = false;
 
 /**
  * Robustly merge stored data with default schema to handle upgrades/regressions.
+ *
+ * @remarks
+ * Implements Target B [1] by enforcing a Valibot schema boundary for
+ * external data retrieved from LocalStorage.
  */
-function mergeStorage(stored: any): ModuleState {
-  const result = { ...DEFAULT_STATE };
-  if (!stored || typeof stored !== "object") return result;
+function mergeStorage(stored: unknown): ModuleState {
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // THREAT: Malformed or malicious settings in LocalStorage causing UI instability.
+  const result = v.safeParse(ModuleStateSchema, stored);
 
-  // Type-safe merging for all keys in ModuleState
-  (Object.keys(DEFAULT_STATE) as (keyof ModuleState)[]).forEach((key) => {
-    const val = stored[key];
-    const expectedType = typeof DEFAULT_STATE[key];
+  if (!result.success) {
+    console.warn("[Modules] Storage validation failed, falling back to defaults", result.issues);
+    return { ...DEFAULT_STATE };
+  }
 
-    if (key === "notificationThreshold") {
-      if (val === 50 || val === 75) result[key] = val;
-    } else if (typeof val === expectedType) {
-      (result as any)[key] = val;
-    }
-  });
-
-  return result;
+  return result.output;
 }
 
 /**
@@ -150,7 +166,9 @@ export function useAppSettings() {
   function toggle(key: keyof ModuleState) {
     const val = modules[key];
     if (typeof val === "boolean") {
-      (modules as any)[key] = !val;
+      // THREAT: The 'any Plague' (Target B [4]).
+      // Rationale: Avoid explicit casting by using a type-safe assignment.
+      Object.assign(modules, { [key]: !val });
     }
   }
 
