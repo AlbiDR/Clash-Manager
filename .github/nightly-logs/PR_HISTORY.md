@@ -1,6 +1,23 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-17] PR #246: docs(readme): synchronize root version badges
+**Commit**: `40eb34a83e1171d5217c2ac61d2a18de183ebba3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/246)
+
+### Description
+The root `README.md` contained stale version badges for the Backend-GAS and Backend-Worker components. This change synchronizes those badges with the authoritative values found in the component `package.json` files.
+
+- Backend-GAS: v13.1.0 -> v14.3.2
+- Backend-Worker: v10.1.4 -> v10.0.0
+
+The documentation coverage log has also been updated to reflect this maintenance.
+
+---
+*PR created automatically by Jules for task [8541608762508035017](https://jules.google.com/task/8541608762508035017) started by @AlbiDR*
+
+---
+
 ## [2026-03-17] PR #245: test(verify): implement defensive coverage for core data schemas
 **Commit**: `39def069c2a465f8e7de749953745fc6b334600a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/245)
