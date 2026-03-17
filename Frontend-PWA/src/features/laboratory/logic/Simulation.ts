@@ -1,3 +1,23 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+/**
+ * LABORATORY - Progression Simulation Engine (Layer 3)
+ * ----------------------------------------------------------------------------
+ * Rationale: High-performance optimization engine for card progression.
+ * Features: Priority Queue selection, Recursive Chain Lookahead, Strategy Injection.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * This module implements the core logic for the progression simulator. It
+ * operates as a pure logic layer within the Laboratory feature.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 (@features)
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 2 (@shared).
+ *   Imports from other Features or Layer 4 (@app) are strictly forbidden.
+ */
+
 import type { 
   Card, 
   Inventory, 
@@ -42,6 +62,12 @@ const EPSILON = 1e-9;
 
 /**
  * Pure function to calculate a candidate for a single card upgrade.
+ *
+ * @param card - The current state of the card to be evaluated.
+ * @param index - The index of the card within the roster.
+ * @param inventory - Current resource state (Gold, Gems, Wild Cards).
+ * @param settings - Optimization constraints and modes.
+ * @returns An UpgradeCandidate if the upgrade is possible, otherwise null.
  */
 function buildCandidate(
   card: Card,
@@ -129,7 +155,11 @@ function buildCandidate(
 }
 
 /**
- * Pure function to apply an upgrade and return the NOVO state.
+ * Pure function to apply an upgrade and return the new state.
+ *
+ * @param state - The current simulation state.
+ * @param candidate - The upgrade candidate to apply.
+ * @returns A new SimulationState reflecting the applied upgrade.
  */
 function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): SimulationState {
   const newRoster = [...state.roster];
@@ -179,7 +209,21 @@ function applyUpgrade(state: SimulationState, candidate: UpgradeCandidate): Simu
 
 /**
  * Non-blocking Generator Engine for Progression Simulation.
- * Uses a Priority Queue for O(log N) selection and Strategy Injection for scoring.
+ *
+ * @remarks
+ * This engine uses a Priority Queue (O(log N) selection) to iteratively pick the
+ * most efficient upgrade. It supports non-blocking execution via the Generator
+ * pattern, allowing the UI to remain responsive during long simulations.
+ *
+ * Algorithmic Complexity:
+ * - Initialization: O(N log N) where N is the number of cards.
+ * - Selection/Update: O(log N) per upgrade step.
+ *
+ * @param initialState - The starting state of the simulation.
+ * @param settings - User-defined optimization settings.
+ * @param providedStrategy - Optional custom scoring strategy.
+ * @yields The next state after each upgrade step.
+ * @returns The final simulation state.
  */
 export function* calculateProgressionPath(
   initialState: SimulationState,
@@ -237,12 +281,10 @@ export function* calculateProgressionPath(
     }
 
     // Since inventory changed, other candidates might now be invalid (affordability)
-    // In a high-performance engine, we'd prune the PQ lazily during pop.
-    // For now, let's peek and prune invalid if they are at the top.
+    // Rationale: We prune invalid candidates lazily or explicitly when resource constraints shift.
     while (pq.size() > 0) {
       const top = pq.peek()!;
       // Simple validation: can we still afford the gold/gems?
-      // Note: buildCandidate already checks this. We re-verify here.
       const stillValid = buildCandidate(currentState.roster[top.index], top.index, currentState.inventory, settings);
       if (!stillValid) {
         pq.pop();
@@ -256,9 +298,21 @@ export function* calculateProgressionPath(
 }
 
 /**
- * Calculates score with Recursive Chain Lookahead.
- * Evaluates the "character arc" of a card to avoid greedy traps.
- * Score = Sum(StepScore[i] * 0.4^i)
+ * Calculates a multidimensional efficiency score using Recursive Chain Lookahead.
+ *
+ * @remarks
+ * This function evaluates the "character arc" of a card by simulating future
+ * upgrade steps. This prevents "greedy" local optima traps where a cheap but
+ * low-value upgrade is picked over a more expensive but higher-impact chain.
+ *
+ * Formula: Score = Sum(StepScore[i] * 0.4^i)
+ *
+ * @param candidate - The immediate upgrade candidate being scored.
+ * @param state - The current simulation state.
+ * @param settings - Optimization settings.
+ * @param strategy - The scoring strategy to use.
+ * @param depth - Current recursion depth for lookahead.
+ * @returns A weighted efficiency score.
  */
 function calculateAdvancedScore(
   candidate: UpgradeCandidate, 
@@ -297,13 +351,19 @@ function calculateAdvancedScore(
       strategy,
       depth + 1
     );
-    // Weighted chain avoids local optima.
+    // Weighted chain avoids local optima by incorporating downstream benefits.
     return currentScore + (nextScore * LOOKAHEAD_WEIGHT);
   }
 
   return currentScore;
 }
 
+/**
+ * Determines the King Level (Account Level) based on total XP earned.
+ *
+ * @param totalXp - The cumulative XP earned from card upgrades.
+ * @returns The corresponding King Level from the game tables.
+ */
 function calculateKingLevel(totalXp: number): number {
   let level = 1;
   for (const row of KING_XP_TABLE) {
