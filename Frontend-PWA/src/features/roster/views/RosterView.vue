@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import {
-  BaseCardSkeleton,
   ConsoleLayout,
-  ConsoleList,
-  AppFooter
+  ConsoleList
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
-import { useBlueprintMode } from "@core";
 
 import MemberCard from "../components/MemberCard.vue";
 
@@ -48,8 +45,6 @@ const {
   handleBlitz,
 } = useLeaderboard();
 
-const { isBlueprintMode } = useBlueprintMode();
-const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
 </script>
 
 <template>
@@ -62,7 +57,6 @@ const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0
     :sort-options="sortOptions"
     :current-sort="sortBy"
     :loading="showSkeletons"
-    :skeleton-component="BaseCardSkeleton"
     :is-selection-mode="isSelectionMode"
     :selected-count="selectedIds.length"
     :total-count="filteredItems.length"
@@ -111,10 +105,5 @@ const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0
         />
       </template>
     </ConsoleList>
-
-    <AppFooter 
-      :version="appVersion" 
-      :badge="isBlueprintMode ? 'BLUEPRINT' : undefined" 
-    />
   </ConsoleLayout>
 </template>
