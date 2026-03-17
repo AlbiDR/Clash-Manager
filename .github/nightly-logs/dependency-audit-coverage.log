@@ -1,0 +1,10 @@
+# Dependency Audit Coverage Log
+
+## Section 1 — Automated Fixes
+| Package | Previous | New | Date Applied | Test Outcome |
+|---------|----------|-----|--------------|--------------|
+| vue     | 3.5.27   | 3.5.30 | 2026-03-14   | PASS         |
+
+## Section 2 — Major Version Watchlist
+| Package | Current | Latest Major | First Detected | Notes |
+|---------|---------|--------------|----------------|-------|
