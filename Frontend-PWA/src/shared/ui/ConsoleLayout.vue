@@ -3,12 +3,15 @@ import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import Icon from "./Icon.vue";
 import SelectionBar from "./SelectionBar.vue";
+import AppFooter from "./AppFooter.vue";
+import BaseCardSkeleton from "./BaseCardSkeleton.vue";
 import {
   useHaptics,
   useUiCoordinator,
   useShowcaseMode,
+  useBlueprintMode,
 } from "@core";
-import { ref, watch, onUnmounted, nextTick, toRef } from "vue";
+import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
 
@@ -40,9 +43,11 @@ const props = defineProps<{
     selectionCount: number;
     blitzEnabled: boolean;
   };
-  skeletonComponent: any;
+  skeletonComponent?: any;
   skeletonCount?: number;
   totalCount?: number;
+  /** Custom badge text for the footer (overrides default BLUEPRINT badge). */
+  footerBadge?: string;
 }>();
 
 const emit = defineEmits<{
@@ -60,6 +65,19 @@ const emit = defineEmits<{
 const { setFabVisible, updateFabState } = useUiCoordinator();
 const haptics = useHaptics();
 const { isShowcaseMode } = useShowcaseMode();
+const { isBlueprintMode } = useBlueprintMode();
+
+const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
+
+const activeFooterBadge = computed(() => {
+  if (props.footerBadge !== undefined) return props.footerBadge;
+  return isBlueprintMode.value ? "BLUEPRINT" : undefined;
+});
+
+const displayLoading = computed(() => {
+  if (isShowcaseMode.value) return false;
+  return props.loading || isBlueprintMode.value;
+});
 
 const { isPulling, ptrStyle, onTouchStart, onTouchMove, onTouchEnd } =
   usePullToRefresh({
@@ -139,7 +157,7 @@ onUnmounted(() => {
         :stats="stats"
         :sort-options="sortOptions"
         :current-sort="currentSort"
-        :loading="loading"
+        :loading="displayLoading"
         reserve-extra-space
         @update:search="(val: string) => $emit('update:search', val)"
         @update:sort="(val: string) => $emit('update:sort', val)"
@@ -150,7 +168,7 @@ onUnmounted(() => {
             v-if="selectedCount !== undefined"
             :count="selectedCount"
             :total-count="totalCount || 0"
-            :loading="loading"
+            :loading="displayLoading"
             @select-all="$emit('select-all')"
             @clear="$emit('clear-selection')"
             @done="$emit('clear-selection')"
@@ -170,9 +188,9 @@ onUnmounted(() => {
       />
 
       <!-- Loading State (Skeletons) -->
-      <div v-else-if="loading" class="list-container gpu-contain">
+      <div v-else-if="displayLoading" class="list-container gpu-contain">
         <component
-          :is="skeletonComponent"
+          :is="skeletonComponent || BaseCardSkeleton"
           v-for="i in (skeletonCount || 8)"
           :key="i"
           :index="i"
@@ -196,6 +214,11 @@ onUnmounted(() => {
       <div v-else v-auto-animate class="list-container gpu-contain">
         <slot></slot>
       </div>
+
+      <AppFooter
+        :version="appVersion"
+        :badge="activeFooterBadge"
+      />
     </div>
 
     <!-- FAB is now rendered by FloatingDock -->
