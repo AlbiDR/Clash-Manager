@@ -8,8 +8,11 @@ import {
   RawCardSchema,
   RawInventorySchema,
   ProfileInputSchema,
+  InternalProfileSchema,
+  ExternalProfileSchema,
   MemberSchema,
-  RecruitSchema
+  RecruitSchema,
+  WebAppDataSchema
 } from "../DataSchemas";
 
 describe("Core DataSchemas", () => {
@@ -94,6 +97,58 @@ describe("Core DataSchemas", () => {
       expect(result.gems).toBe(0);
       expect(result.wildCards.Epic).toBe(10);
       expect(result.wildCards.Common).toBe(0);
+    });
+  });
+
+  describe("InternalProfileSchema", () => {
+    it("should parse valid internal profile", () => {
+      const input = {
+        profile: {
+          name: "Internal Player",
+          tag: "TAG1",
+          kingLevel: 14,
+          xpIntoLevel: 1000,
+        },
+        cards: [{ name: "Knight" }],
+        inventory: { gold: 5000 }
+      };
+      const result = v.parse(InternalProfileSchema, input);
+      expect(result.profile.name).toBe("Internal Player");
+      expect(result.profile.kingLevel).toBe(14);
+      expect(result.inventory?.gold).toBe(5000);
+    });
+
+    it("should use defaults for empty internal profile", () => {
+      const result = v.parse(InternalProfileSchema, { profile: {} });
+      expect(result.profile.name).toBe("Unknown");
+      expect(result.cards).toEqual([]);
+      expect(result.inventory).toEqual({
+        gold: 0,
+        gems: 0,
+        wildCards: {
+          Common: 0,
+          Rare: 0,
+          Epic: 0,
+          Legendary: 0,
+          Champion: 0,
+        },
+      });
+    });
+  });
+
+  describe("ExternalProfileSchema", () => {
+    it("should parse valid external profile", () => {
+      const input = {
+        name: "External Player",
+        tag: "TAG2",
+        expLevel: 15,
+        expPoints: 10000,
+        cards: [{ name: "Archer" }],
+        towerTroops: []
+      };
+      const result = v.parse(ExternalProfileSchema, input);
+      expect(result.name).toBe("External Player");
+      expect(result.expLevel).toBe(15);
     });
   });
 
@@ -188,6 +243,72 @@ describe("Core DataSchemas", () => {
       const invalidRecruit = { ...validRecruit };
       delete (invalidRecruit as any).d;
       expect(() => v.parse(RecruitSchema, invalidRecruit)).toThrow();
+    });
+  });
+
+  describe("WebAppDataSchema", () => {
+    const validAppData = {
+      lb: [
+        {
+          id: "M1",
+          n: "Member 1",
+          t: 1000,
+          performanceScore: 85,
+          performanceRawScore: 1200,
+          d: {
+            role: "elder",
+            days: 30,
+            avg: 500,
+            hist: "1|2|3"
+          }
+        }
+      ],
+      hh: [
+        {
+          id: "R1",
+          n: "Recruit 1",
+          t: 2000,
+          potentialScore: 90,
+          potentialRawScore: 1500,
+          d: {
+            don: 100,
+            war: 10,
+            ago: "2d"
+          }
+        }
+      ],
+      playerTag: "MYTAG",
+      timestamp: 123456789
+    };
+
+    it("should parse valid WebAppData", () => {
+      const result = v.parse(WebAppDataSchema, validAppData);
+      expect(result.lb).toHaveLength(1);
+      expect(result.hh).toHaveLength(1);
+      expect(result.playerTag).toBe("MYTAG");
+      expect(result.timestamp).toBe(123456789);
+    });
+
+    it("should fail for missing required fields (Validation Boundary)", () => {
+      const invalidAppData = { ...validAppData };
+      delete (invalidAppData as any).timestamp;
+
+      const result = v.safeParse(WebAppDataSchema, invalidAppData);
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail for invalid data types", () => {
+      const invalidAppData = { ...validAppData, timestamp: "not-a-number" };
+
+      const result = v.safeParse(WebAppDataSchema, invalidAppData);
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail if lb is not an array", () => {
+      const invalidAppData = { ...validAppData, lb: "not-an-array" };
+
+      const result = v.safeParse(WebAppDataSchema, invalidAppData);
+      expect(result.success).toBe(false);
     });
   });
 });
