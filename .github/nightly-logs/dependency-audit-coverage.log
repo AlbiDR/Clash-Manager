@@ -4,6 +4,7 @@
 | Package | Previous | New | Date Applied | Test Outcome |
 |---------|----------|-----|--------------|--------------|
 | vue     | 3.5.27   | 3.5.30 | 2026-03-14   | PASS         |
+| valibot | 1.2.0    | 1.3.0  | 2026-03-17   | PASS         |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
