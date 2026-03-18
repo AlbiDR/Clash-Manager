@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { ref, computed, reactive } from "vue";
 
 // Global state to share across instances (Singleton pattern)
@@ -18,9 +21,31 @@ const fabState = reactive({
 });
 
 /**
- * 🎨 USE UI COORDINATOR
+ * COMPOSABLE: useUiCoordinator
+ *
+ * @remarks
  * Orchestrates global UI spacing and visibility to prevent component overlap.
- * Ensures the FloatingDock and FAB elements respect each other's boundaries.
+ * This is a Layer 1 (@core) service that ensures the FloatingDock and FAB
+ * (FabIsland) elements respect each other's boundaries.
+ *
+ * It manages a singleton state for the Floating Action Button (FAB) to
+ * coordinate actions and labels across different feature views.
+ *
+ * **Import Boundaries:**
+ * - Allowed: Layer 1 (@core) and external libraries (Vue).
+ * - Forbidden: Layer 2 (@shared), Layer 3 (@features), and Layer 4 (@app).
+ *
+ * @sideeffects
+ * - Mutates the global singleton `isFabVisible` and `fabState`.
+ *
+ * @returns
+ * - `isFabVisible`: Reactive boolean indicating if the FabIsland is active.
+ * - `fabState`: Global reactive object for FAB configuration (label, action, etc).
+ * - `dockVisible`: Computed boolean determining if the main navigation dock should show.
+ * - `fabOffset`: Base bottom offset for the FAB.
+ * - `toastOffset`: Dynamic bottom offset for toast notifications to avoid occlusion.
+ * - `setFabVisible`: Action to toggle FAB visibility.
+ * - `updateFabState`: Action to partially update the global FAB configuration.
  */
 export function useUiCoordinator() {
   /**
@@ -63,6 +88,8 @@ export function useUiCoordinator() {
 
   /**
    * Dynamic bottom offset for the Fab Island.
+   * Rationale: Ensures the primary action button sits above the
+   * safe area of most mobile browsers.
    */
   const fabOffset = computed(() => {
     return 24; // Base offset in pixels
@@ -73,11 +100,13 @@ export function useUiCoordinator() {
    * Strategically shifts to stay visible above other interactive layers.
    */
   const toastOffset = computed(() => {
+    // THREAT: Occlusion. If Toast and FAB overlap, users cannot dismiss errors.
+    // Rationale: We dynamically stack the toast layer based on what's active below it.
     if (isFabVisible.value) {
-      // Positioned above the Fab Island layer
+      // Positioned above the Fab Island layer (Base + Height of FAB + Margin)
       return fabOffset.value + 80;
     }
-    // Positioned above the Floating Dock layer
+    // Positioned above the Floating Dock layer (fixed height of the dock)
     return 110;
   });
 
