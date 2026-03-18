@@ -6,7 +6,7 @@ import { useWakeLock } from "./useWakeLock";
 import { fetchRemote } from "../api/GasClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
-import { MemberSchema } from "../api/DataSchemas";
+import { MemberSchema, WebAppDataSchema } from "../api/DataSchemas";
 import * as v from "valibot";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
@@ -61,12 +61,44 @@ export const useClashDataStore = defineStore("clashData", () => {
   async function loadLocal() {
     try {
       const cached = await loadCache();
-      if (cached) {
-        data.value = cached;
+      if (!cached) return;
+
+      // [GUARD] VALIDATION BOUNDARY: Target B [1]
+      // THREAT: Corrupt IndexedDB state causing silent application crashes.
+      const result = v.safeParse(WebAppDataSchema, cached);
+      if (result.success) {
+        data.value = result.output as WebAppData;
         lastSync.value = Date.now();
+      } else {
+        console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
       }
-    } catch (e) {
-      console.error("[Store] Cache hydration failed:", e);
+    } catch (e: unknown) {
+      console.error("[Store] Cache hydration failed:", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /**
+   * Directly updates the local data state and persists it to the cache.
+   *
+   * @remarks
+   * Implements a strict validation boundary (Target B [1]) to ensure that
+   * external payloads (e.g., from Turbo Scan) do not corrupt the store.
+   */
+  async function updateLocalData(payload: unknown) {
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    const result = v.safeParse(WebAppDataSchema, payload);
+    if (!result.success) {
+      console.warn("[Store] Local update rejected: Invalid WebAppData structure", result.issues);
+      return;
+    }
+
+    data.value = result.output as WebAppData;
+
+    // PERSISTENCE DURABILITY: Target A [2]
+    try {
+      await saveCache(result.output);
+    } catch (e: unknown) {
+      console.error("[Store] Failed to persist local update:", e instanceof Error ? e.message : String(e));
     }
   }
 
@@ -92,8 +124,8 @@ export const useClashDataStore = defineStore("clashData", () => {
       
       // PERSISTENCE: StorageService handles the IndexedDB write
       await saveCache(remoteData);
-    } catch (e: any) {
-      syncError.value = e.message || "Sync failed";
+    } catch (e: unknown) {
+      syncError.value = e instanceof Error ? e.message : "Sync failed";
       console.warn("[Store] Background sync failed:", e);
     } finally {
       loading.value = false;
@@ -129,12 +161,19 @@ export const useClashDataStore = defineStore("clashData", () => {
       newLb[memberIndex] = {
         ...newLb[memberIndex],
         ...validation.output
-      } as any;
+      };
 
-      data.value = {
+      const updatedData = {
         ...data.value,
         lb: newLb
       };
+
+      data.value = updatedData;
+
+      // PERSISTENCE DURABILITY: Target A [2]
+      saveCache(updatedData).catch(e => {
+        console.error("[Store] Failed to persist player update:", e);
+      });
     }
   }
 
@@ -156,6 +195,7 @@ export const useClashDataStore = defineStore("clashData", () => {
 
     // Actions
     loadLocal,
+    updateLocalData,
     startBackgroundSync,
     updatePlayerLocally
   };

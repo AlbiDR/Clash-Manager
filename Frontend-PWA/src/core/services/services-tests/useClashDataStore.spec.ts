@@ -37,7 +37,7 @@ vi.mock("../../api/GasClient", () => ({
 
 vi.mock("../StorageService", () => ({
   loadCache: vi.fn(),
-  saveCache: vi.fn(),
+  saveCache: vi.fn().mockResolvedValue(undefined),
   idb: {
     get: vi.fn(),
     set: vi.fn()
@@ -85,6 +85,37 @@ describe("useClashDataStore", () => {
     // Case 3: Synced 31 minutes ago
     store.lastSync = now - (1000 * 60 * 31);
     expect(store.isStale).toBe(true);
+  });
+
+  describe("updateLocalData", () => {
+    it("should update data with valid payload", async () => {
+      const store = useClashDataStore();
+      const validPayload = {
+        lb: [],
+        hh: [],
+        timestamp: Date.now()
+      };
+
+      await store.updateLocalData(validPayload);
+
+      expect(store.data).toEqual(validPayload);
+      expect(saveCache).toHaveBeenCalledWith(validPayload);
+    });
+
+    it("should reject invalid payload", async () => {
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const store = useClashDataStore();
+      const invalidPayload = {
+        lb: "not an array",
+        timestamp: "not a number"
+      };
+
+      await store.updateLocalData(invalidPayload);
+
+      expect(store.data).toBeNull();
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
   });
 
   describe("loadLocal", () => {
