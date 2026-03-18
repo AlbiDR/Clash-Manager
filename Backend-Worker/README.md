@@ -1,6 +1,6 @@
 # Clash Manager -- Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.1-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
@@ -66,7 +66,7 @@ Performs a deep health check, including upstream API connectivity validation and
   "status": "success",
   "checks": {
     "upstream": "OK",
-    "pool": { "total": 5, "available": 5, "throttled": 0 },
+    "pool": { "total": 10, "available": 10, "throttled": 0 },
     "memory": 102400
   }
 }
@@ -81,8 +81,8 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ```json
 {
   "urls": ["/players/%23TAG1", "/clans/%23TAG2"],
-  "apiKeys": ["sk_..."], // Optional: Overrides server keys
-  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 } // Optional: For player scoring
+  "apiKeys": ["sk_key1", "sk_key2"],
+  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 }
 }
 ```
 
@@ -95,10 +95,11 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 ```json
 {
   "tags": ["#TOURNEY1", "#TOURNEY2"],
-  "apiKeys": ["sk_..."], // Optional: Overrides server keys
+  "apiKeys": ["sk_key1", "sk_key2"],
   "blacklist": ["#PLAYER1"],
-  "scoring": null, // Optional: Include weights to auto-score found players
-  "prophetCache": { "PLAYERTAG": { "wins": 10 } } // Optional: Strategic Intel
+  "minTrophies": 5000,
+  "scoring": { "TROPHY": 1.0, "DON": 0.07, "WAR": 20.0 },
+  "prophetCache": { "PLAYERTAG": { "wins": 10 } }
 }
 ```
 
@@ -122,7 +123,7 @@ Aggregates a complete snapshot of a clan: Members, Current River Race, and aggre
 ```json
 {
   "tag": "#CLAN_TAG",
-  "apiKeys": []
+  "apiKeys": ["sk_key1", "sk_key2"]
 }
 ```
 
@@ -133,8 +134,8 @@ Fetches a specific slice of clan data (`members` or `warlog`) and transforms it 
 ```json
 {
   "tag": "#CLAN_TAG",
-  "type": "members", // or "warlog"
-  "apiKeys": [] // Optional: Overrides server keys
+  "type": "members",
+  "apiKeys": ["sk_key1", "sk_key2"]
 }
 ```
 
@@ -186,8 +187,8 @@ The worker enforces a strict security perimeter via `authMiddleware`:
 Deploy directly to **Render** as a Web Service.
 
 ### Build & Start Command
-- **Build Command**: `pnpm install && pnpm build`
-- **Start Command**: `pnpm start`
+- **Build Command**: `pnpm install && pnpm build` (Installs dependencies and executes `tsc` to compile TypeScript)
+- **Start Command**: `pnpm start` (Runs the compiled JavaScript from `dist/`)
 
 ### Environment Variables
 Ensure the following variables are set in the Render Dashboard:
