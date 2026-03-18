@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-18] PR #254: docs(tsdoc): annotate useUiCoordinator with intent and constraints
+**Commit**: `6fa4b2418bb4f09e65115788212163b8903be4b3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/254)
+
+### Description
+Annotated `useUiCoordinator.ts` with comprehensive TSDoc and inline logic comments. Added mandatory licensing header and updated the coverage log. This change ensures that the global UI coordination logic is documented with its architectural intent, constraints, and side effects, adhering to the CleanStack Architecture ADR.
+
+---
+*PR created automatically by Jules for task [2281999970489963689](https://jules.google.com/task/2281999970489963689) started by @AlbiDR*
+
+---
+
 ## [2026-03-18] PR #253: docs(readme): reconcile backend-worker api and versions
 **Commit**: `401baa7bc919f7097575cb363c582f6882d70057`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/253)
