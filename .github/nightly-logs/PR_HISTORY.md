@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-18] PR #251: fix(harden): Enforce validation and persistence in clashDataStore
+**Commit**: `772128d7fd045e76873e16ee4c5dac7fae46df32`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/251)
+
+### Description
+Implemented validation boundaries and persistence durability in the central Pinia data store to prevent silent corruption and state loss.
+
+---
+*PR created automatically by Jules for task [13403273014934535957](https://jules.google.com/task/13403273014934535957) started by @AlbiDR*
+
+---
+
 ## [2026-03-17] PR #250: refactor(opt): centralize AppFooter orchestration
 **Commit**: `e769b023e3f604bbac255a4d06937c82af610c85`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/250)
