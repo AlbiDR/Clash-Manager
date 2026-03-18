@@ -145,3 +145,14 @@ export const RecruitSchema = v.object({
   }),
   lastScan: v.optional(v.number()),
 });
+
+/**
+ * [GUARD] WEB APP DATA SCHEMA
+ * Authoritative validation boundary for the full application state.
+ */
+export const WebAppDataSchema = v.object({
+  lb: v.array(MemberSchema),
+  hh: v.array(RecruitSchema),
+  playerTag: v.optional(v.string()),
+  timestamp: v.number(),
+});
