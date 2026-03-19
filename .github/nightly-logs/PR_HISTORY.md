@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-19] PR #263: Merge Nightly into Beta (Resolve Conflicts)
+**Commit**: `10a62cb1db93eb0e9af2279768373955dc48f1a3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/263)
+
+### Description
+This PR resolves the merge conflicts between the Nightly and Beta branches. Since the branches have unrelated histories, they were merged using the --allow-unrelated-histories flag. Conflict resolution involved adopting the Nightly versions for all source code, tests, and package manifests to preserve recent hardening and verification work. Log files in .github/nightly-logs/ were merged to combine coverage data from both branches. The pnpm-lock.yaml was regenerated to ensure consistency, and the entire suite was verified with a full pass of 598 PWA tests and 31 Worker tests.
+
+---
+*PR created automatically by Jules for task [10207038154756297011](https://jules.google.com/task/10207038154756297011) started by @AlbiDR*
+
+---
+
 ## [2026-03-19] PR #262: chore(deps): bump valibot from 1.3.0 to 1.3.1
 **Commit**: `e17572323da37fa7b5f1561e6787bd5f9823344f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/262)
