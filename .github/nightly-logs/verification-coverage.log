@@ -1,3 +1,12 @@
+Frontend-PWA/src/shared/directives/vTactile.ts
+Frontend-PWA/src/shared/directives/vTooltip.ts
+Frontend-PWA/src/shared/composables/useHeaderScroll.ts
+Frontend-PWA/src/core/api/GasClient.ts
+Frontend-PWA/src/core/utils/warMath.ts
+Frontend-PWA/src/core/services/StorageService.ts
+Frontend-PWA/src/shared/composables/useTheme.ts
+Frontend-PWA/src/features/laboratory/logic/ProfileHydrator.ts
+Frontend-PWA/src/shared/ui/ConsoleLayout.vue
 Frontend-PWA/src/core/api/api-tests/DataSchemas.spec.ts
 Frontend-PWA/src/shared/ui/ui-tests/SettingRow.spec.ts
 Frontend-PWA/src/shared/ui/ui-tests/StatisticItem.spec.ts
