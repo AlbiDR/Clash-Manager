@@ -1,6 +1,6 @@
 # Clash Manager -- Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.1.1-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
@@ -9,6 +9,8 @@ The **Muscle**. A high-performance, strictly typed Express.js server designed to
 
 ## Technical Specifications
 
+- **Layer**: Layer 1 (@core)
+- **Role**: Infrastructure kernel for high-concurrency network delegation.
 - **Runtime**: Node.js (Express) with TypeScript.
 - **Architecture**: Stateless, high-concurrency worker pool.
 - **Security**: Strict Bearer token validation with path-based exemptions.
@@ -42,7 +44,7 @@ The worker behavior is controlled via environment variables:
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
-> **Note**: The worker utilizes independent versioning across subsystems (`v10.1.1` for discovery / `v10.1.4` for scanning logic).
+> **Note**: The worker utilizes independent discovery versioning (`v10.1.1`) to signal capability sets to the GAS backend. This version is distinct from the package version (`v10.0.0`) which governs the monorepo deployment.
 
 **Response:**
 ```json
@@ -204,7 +206,7 @@ Ensure the following variables are set in the Render Dashboard:
 
 ## Key Rotation Protocol
 
-The worker utilizes a sequential round-robin rotation for all provided keys. If a key encounters a `429` (Throttled) or `403` (Rejected) error, it is automatically sidelined for a cooling period (60s and 1hr respectively) to ensure the pool remains healthy. Non-prefixed keys or those violating the `CRK` pattern may be ignored by the rotation engine.
+The worker utilizes a randomized round-robin rotation for all provided keys. If a key encounters a `429` (Throttled) or `403` (Rejected) error, it is automatically sidelined for a cooling period (60s and 1hr respectively) to ensure the pool remains healthy. While the system recommendation follows the `CRK` prefix convention for provisioning, the worker processes all valid tokens provided in the environment.
 
 ---
 <br />
