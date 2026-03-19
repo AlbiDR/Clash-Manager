@@ -1,2 +1,3 @@
 Frontend-PWA/src/core/api/api-tests/DataSchemas.spec.ts
 Frontend-PWA/src/shared/ui/ui-tests/SettingRow.spec.ts
+Frontend-PWA/src/shared/ui/ui-tests/StatisticItem.spec.ts
