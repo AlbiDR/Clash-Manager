@@ -1,135 +1,70 @@
-
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import HeadhunterStore from './Headhunter_Store';
 import HeadhunterScanner from './Headhunter_Scanner';
 import HeadhunterView from './Headhunter_View';
+import BattleLog from './Battle_Log';
 import type { Recruit } from './Headhunter_Types';
 
-declare var SpreadsheetApp: any;
-declare var Sheets: any;
-declare function refreshWebPayload(): void;
-
 /**
  * ============================================================================
- * MODULE: HEADHUNTER (Core Orchestrator)
+ * MODULE: HEADHUNTER (Recruitment Controller)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: The Director of the Recruitment Pipeline.
- * Orchestrates the full lifecycle of recruitment: from strategy calculation
- * and blacklist management to remote discovery and visual rendering.
- *
- * ARCHITECTURE:
- *    - Pipeline Orchestration: Strategy -> Store -> Scanner -> View.
- *    - Hybrid Validation: Blends local registry state with live API checks.
- *    - Event logging: Uses the EVT sheet to record membership changes.
- *
- * ROLE: The Director (Orchestration & Workflow).
+ * DESCRIPTION: High-level orchestration for the Recruitment scout.
+ *    Coordinates discovery, validation, and visual rendering.
  * ============================================================================
  */
-const VER_HEADHUNTER = "14.3.4";
 
-/**
- * Interface for the Headhunter Core.
- * Orchestrates the multi-phase recruitment scanning process.
- */
+export const VER_HEADHUNTER = "14.3.5";
+
+declare var SpreadsheetApp: any;
+
 export interface HeadhunterContract {
-  /**
-   * Executes the recruitment scouting pipeline.
-   *
-   * @remarks
-   * Implements an 8-step orchestration loop:
-   * 1. Boot schema and logs.
-   * 2. Hydrate clan metrics and quotas.
-   * 3. Hydrate local recruit pool and blacklist.
-   * 4. Prune the registry of blacklisted items.
-   * 5. Validate top candidates against live API.
-   * 6. Execute the Discovery Scanner (Tournaments/Shadows).
-   * 7. Analyze performance and manage reserves.
-   * 8. Render the final pool to the Spreadsheet.
-   *
-   * @warning Consumes significant UrlFetchApp quotas during validation and scanning.
-   */
-  executeRecruitScout(): void;
+  executeRecruitScout(options?: { lowQuotaMode?: boolean }): void;
 }
 
 const Headhunter: HeadhunterContract = {
-  executeRecruitScout(): void {
-    const startTime = Date.now();
+  executeRecruitScout(options: { lowQuotaMode?: boolean } = {}): void {
     const S = Registry.Services;
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-    const safeSheet = (name: string) => {
-      let s = ss.getSheetByName(name);
-      if (!s) {
-         s = ss.insertSheet(name);
-         S.View.enforceGlobalTabHygiene();
-      }
-      return s;
-    };
-
-    let sheet = safeSheet(CONFIG.SHEETS.HH);
+    const lowQuotaMode = options.lowQuotaMode || false;
     
-    // 1. INITIALIZE [1/8]
-    const schemaResults = S.Schema.bootDynamicSchema();
-    S.Reporting.logReport(`[1/8] INITIALIZE: HEADHUNTER PIPELINE v${VER_HEADHUNTER}`, [
-      `CONFIG: Clan ${CONFIG.SYSTEM.CLAN_TAG || "ERR"} | Mode: RAPID_GLOBAL_SCOUT | Target: ${CONFIG.HEADHUNTER.TARGET}`,
-      `STATUS: Sheets Synced (${schemaResults})`
-    ]);
-
-    if (!CONFIG.SYSTEM.CLAN_TAG) {
-      console.error("CONFIGURATION ERROR: Missing CLAN_TAG. Aborting Headhunter Scout.");
-      return;
-    }
-
     try {
-      // L1 CACHE PURGE: Ensure a fresh start for this execution
-      S.Network._clearCache();
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+      if (!sheet) throw new Error(`CRITICAL: '${CONFIG.SHEETS.HH}' sheet not found.`);
 
-      const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-      const cb = Date.now();
+      const safeSheet = (name: string) => ss.getSheetByName(name) || ss.insertSheet(name);
 
-      // 2. RESOURCE HYDRATION (Baseline & Quota)
-      const clanDetailResponse = S.Network.fetchRoyaleAPI([
-        `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}?__cb=${cb}`,
-      ]);
+      // 1. INITIALIZATION & METRICS [1/8]
+      const startTime = Date.now();
+      const members: any[] = S.Network.fetchRoyaleAPI(`${CONFIG.SYSTEM.API_BASE}/clans/${encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG)}/members`)?.items || [];
+      const remainingQuota = 50 - members.length;
 
-      let inGameRequirement = 0;
-      let members: any[] = [];
-      if (clanDetailResponse && clanDetailResponse[0]) {
-        const clan = clanDetailResponse[0];
-        inGameRequirement = clan.requiredTrophies || 0;
-        members = clan.memberList || [];
-      }
+      // 2. STRATEGY ALIGNMENT
+      // High-resolution scouting requires at least 5 open slots.
+      // If the clan is near capacity, we switch to "Maintenance Mode".
+      const isFull = members.length >= 48;
+      const strategy = isFull
+        ? { method: "MAINTENANCE", floor: 9000 }
+        : { method: "DISCOVERY", floor: 0 };
 
-      const remainingQuota = S.Network.getRemainingQuota();
-      if (remainingQuota < 300) {
-        console.warn(`QUOTA ALERT: Insufficient API capacity (${remainingQuota}). Aborting.`);
-        return;
-      }
-      const lowQuotaMode = remainingQuota < 1000;
-
-      // 3. STATE HYDRATION
+      // 3. LOAD REGISTRY
       const mathConfig = {
-        ELITE_THRESHOLD: CONFIG.SYSTEM.ELITE_MEMBERSHIP_THRESHOLD,
-        REBUILD_MIN_PERCENTILE: CONFIG.HEADHUNTER.REBUILD_MIN_PERCENTILE,
-        BENCHMARK_CLAN_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_CLAN_WEIGHT,
-        BENCHMARK_MARKET_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_MARKET_WEIGHT
+         percentile: CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE,
+         decay: CONFIG.HEADHUNTER.BENCHMARK_DECAY,
+         minPool: CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL
       };
 
-      // OVERRIDE: Allow explicit decoupling of Gatekeeping (In-Game) vs Recruiting (Headhunter)
-      const overrideFloor = CONFIG.HEADHUNTER.MIN_TROPHIES;
-      const effectiveRequirement = (overrideFloor > 0) ? overrideFloor : inGameRequirement;
-
-      const strategy = S.Scoring.calculateTrophyFloor(members, effectiveRequirement, mathConfig);
+      const inGameRequirement = S.Scoring.calculateClanTrophyFloor(members, strategy.floor);
+      const effectiveRequirement = S.Scoring.calculateEffectiveScoutFloor(inGameRequirement, mathConfig);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
       
       const existingPool = HeadhunterStore.loadDatabase(sheet);
       const queuePool = HeadhunterStore.loadQueue(ss);
       
-      // Merge for unified processing
       const combinedRegistry = new Map<string, Recruit>();
-      existingPool.forEach(r => combinedRegistry.set(r.tag, r));
-      queuePool.forEach(r => combinedRegistry.set(r.tag, r));
+      existingPool.forEach(r => combinedRegistry.set(S.Core.normalizeTag(r.tag), r));
+      queuePool.forEach(r => combinedRegistry.set(S.Core.normalizeTag(r.tag), r));
 
       // 4. STORAGE MAINTENANCE
       const beforePrune = combinedRegistry.size;
@@ -138,7 +73,6 @@ const Headhunter: HeadhunterContract = {
       });
       const prunedCount = beforePrune - combinedRegistry.size;
 
-      // REPORT [2-4]: STATE & METRICS
       S.Reporting.logReport(`[2-4] STATE: Local Registry & Metrics`, [
         `NETWORK: ${S.Network.getWorkerSummary()}`,
         `CLAN:    ${members.length} Members | Entry Req: ${inGameRequirement} (Scouting Floor: ${effectiveRequirement})`,
@@ -147,45 +81,39 @@ const Headhunter: HeadhunterContract = {
       ]);
 
       // 5. MEMBERSHIP VALIDATION (Smart Lazy Loader)
-      // Intent: We must verify if candidates have joined other clans since our last scan.
       const evtSheet = safeSheet(CONFIG.SHEETS.EVT);
       const logDismissal = (tag: string, score: number) => {
         evtSheet.appendRow([tag, Date.now(), score]);
       };
 
-      // Constraint: We limit validation to the Top 100 candidates to stay within the
-      // 6-minute GAS execution limit and conserve UrlFetchApp daily quotas.
       const sortedRegistry = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
       const validationHead = sortedRegistry.slice(0, 100); 
       
       let joinedCount = 0;
       
-      // DELTA-VALIDATION: Filter out candidates scanned recently (< 6 hours).
-      // Rationale: Data freshness is balanced against API call frequency.
-      // Active recruits (existingPool) are ALWAYS validated to ensure UI accuracy.
-      // The 6-hour threshold applies ONLY to the bench reservoir to minimize redundant calls.
       const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
       const candidatesToValidate = validationHead.filter(r => {
-        const isActiveRecruit = existingPool.has(r.tag);
-        if (isActiveRecruit) return true; // Force validation for people on the main sheet
-        return !r.lastScan || r.lastScan < sixHoursAgo; // 6h Delta for queue/bench
+        const tag = S.Core.normalizeTag(r.tag);
+        const isActiveRecruit = existingPool.has(tag);
+        if (isActiveRecruit) return true;
+        return !r.lastScan || r.lastScan < sixHoursAgo;
       });
 
       if (candidatesToValidate.length > 0) {
-        // Network Layer handles batching (up to 100 is safe for a single RPC call).
         const profiles = S.Network.fetchRoyaleAPI(
           candidatesToValidate.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
         );
         
         profiles.forEach((p: any) => {
           if (p?.clan?.tag) {
-             const recruit = combinedRegistry.get(p.tag);
-             if (recruit) logDismissal(p.tag, recruit.rawScore);
-             combinedRegistry.delete(p.tag);
+             const tag = S.Core.normalizeTag(p.tag);
+             const recruit = combinedRegistry.get(tag);
+             if (recruit) logDismissal(tag, recruit.rawScore);
+             combinedRegistry.delete(tag);
              joinedCount++;
           } else if (p && p.tag) {
-             // UPDATE FRESHNESS
-             const recruit = combinedRegistry.get(p.tag);
+             const tag = S.Core.normalizeTag(p.tag);
+             const recruit = combinedRegistry.get(tag);
              if (recruit) recruit.lastScan = Date.now();
           }
         });
@@ -202,8 +130,6 @@ const Headhunter: HeadhunterContract = {
       }
 
       // 6. Scanner: Launch
-      const H = CONFIG.HEADHUNTER.STRATEGY;
-      
       const scanned = HeadhunterScanner.scanTournaments(
         effectiveRequirement,
         combinedRegistry, 
@@ -215,13 +141,14 @@ const Headhunter: HeadhunterContract = {
       let updatedExisting = 0;
       
       scanned.forEach((c) => {
-        if (combinedRegistry.has(c.tag)) {
-          c.foundDate = combinedRegistry.get(c.tag)!.foundDate;
+        const tag = S.Core.normalizeTag(c.tag);
+        if (combinedRegistry.has(tag)) {
+          c.foundDate = combinedRegistry.get(tag)!.foundDate;
           updatedExisting++;
         } else {
           newArrivals++;
         }
-        combinedRegistry.set(c.tag, c);
+        combinedRegistry.set(tag, c);
       });
 
       // 7. ANALYSIS & ARCHIVE [7/8]
@@ -239,8 +166,8 @@ const Headhunter: HeadhunterContract = {
         const trophiesCol = String.fromCharCode(65 + 1 + L.TROPHIES);
         const donCol = String.fromCharCode(65 + 1 + L.TOTAL_DON);
         const historyCol = String.fromCharCode(65 + 1 + L.HISTORY);
-    
         const tagCol = String.fromCharCode(65 + 1 + L.TAG);
+
         const ranges = [
           `'${sheetName}'!${perfCol}${startRow}:${perfCol}${lastRow}`,
           `'${sheetName}'!${ trophiesCol}${startRow}:${trophiesCol}${lastRow}`,
@@ -259,21 +186,18 @@ const Headhunter: HeadhunterContract = {
 
           const currentWk = S.Time.calculateWarWeekId(new Date());
 
-          // Build correlation map for API stats
           const liveMemberMap = new Map<string, any>();
-          members.forEach((m: any) => liveMemberMap.set(m.tag, m));
+          members.forEach((m: any) => liveMemberMap.set(S.Core.normalizeTag(m.tag), m));
 
           for (let i = 0; i < perfs.length; i++) {
             const perf = Number(perfs[i] ? perfs[i][0] : 0);
-            if (perf >= H.PERFORMANCE_BENCHMARK_MIN) {
-              const tag = String(tags[i] ? tags[i][0] : "");
+            if (perf >= CONFIG.HEADHUNTER.STRATEGY.PERFORMANCE_BENCHMARK_MIN) {
+              const tag = S.Core.normalizeTag(String(tags[i] ? tags[i][0] : ""));
               const liveStats = liveMemberMap.get(tag);
               
               const histStr = String(histories[i] ? histories[i][0] : "");
               const hasRecentWar = histStr.includes(currentWk);
               
-              // DATA-DRIVEN REFINEMENT: Use actual API warWins if available, fallback to 0. 
-              // Zero tolerance for hardcoded baselines.
               const actualWarWins = liveStats ? (liveStats.warDayWins || 0) : 0;
 
               const raw = S.Scoring.calculateRecruitRawScore(
@@ -296,8 +220,8 @@ const Headhunter: HeadhunterContract = {
       const finalPool = allSorted.slice(0, targetActive);
       const queueList = allSorted.slice(targetActive);
     
-      finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark))); // Calculate PoS from RPoS
-      queueList.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark))); // Calculate PoS from RPoS
+      finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
+      queueList.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
 
       const backupSummary = S.View.backupSheet(ss, CONFIG.SHEETS.HH);
       const queueRes = HeadhunterStore.saveQueue(ss, queueList);
@@ -311,7 +235,6 @@ const Headhunter: HeadhunterContract = {
         `STORAGE:   '${CONFIG.SHEETS.HH}' sheet backed up`
       ]);
 
-      // 8. RENDER: Visual Sync [8/8]
       const hygieneSummary = S.View.enforceGlobalTabHygiene(ss);
       HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
 
@@ -320,7 +243,6 @@ const Headhunter: HeadhunterContract = {
         `DISPLAY: ${finalPool.length} candidates updated in sheet`
       ], 150);
 
-      // [SUMMARY]
       S.Reporting.logReport(`[SUMMARY] OPERATION SUCCESSFUL`, [
         `STRATEGY: ${strategy.method}`,
         `CAPACITY: [${members.length}/50] clan capacity used`,
@@ -345,7 +267,6 @@ if (typeof module !== "undefined" && module.exports) {
 
 /**
  * GLOBAL BRIDGE (Legacy Support)
- * Preserves compatibility with existing GAS Triggers.
  */
 function scoutRecruits() {
   Headhunter.executeRecruitScout();
