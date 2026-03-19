@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-19] PR #262: chore(deps): bump valibot from 1.3.0 to 1.3.1
+**Commit**: `e17572323da37fa7b5f1561e6787bd5f9823344f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/262)
+
+### Description
+Updated valibot dependency to version ^1.3.1 across the monorepo (Backend-Worker, Frontend-PWA, and Backend-GAS). Synchronized the pnpm-lock.yaml and updated the dependency audit log with the test results (693 tests passed). All changes target the Nightly branch.
+
+---
+*PR created automatically by Jules for task [17926961665192638458](https://jules.google.com/task/17926961665192638458) started by @AlbiDR*
+
+---
+
 ## [2026-03-19] PR #261: test(verify): implement validation boundary tests for Backend-Worker schemas
 **Commit**: `b5980a04b829d8fb5d2fe3f0e9d70229a7e417f2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/261)
