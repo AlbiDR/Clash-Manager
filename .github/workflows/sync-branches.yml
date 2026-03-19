@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       nightly_beta_diff: ${{ steps.check.outputs.nightly_beta_diff }}
+      nightly_beta_diverged: ${{ steps.check.outputs.nightly_beta_diverged }}
       beta_stable_diff: ${{ steps.check.outputs.beta_stable_diff }}
       stable_beta_diff: ${{ steps.check.outputs.stable_beta_diff }}
       beta_nightly_diff: ${{ steps.check.outputs.beta_nightly_diff }}
@@ -30,11 +31,29 @@ jobs:
         run: |
           git fetch origin
 
+          # ----------------------------------------------------------------
           # Nightly -> Beta
-          if git merge-base --is-ancestor origin/Nightly origin/Beta; then
+          # Checks both directions to detect a TRUE divergence (both branches
+          # have commits the other does not). A divergence requires conflict-
+          # tolerant merge strategy (-X theirs). A normal ahead/behind does not.
+          # ----------------------------------------------------------------
+          NIGHTLY_IN_BETA=$(git merge-base --is-ancestor origin/Nightly origin/Beta && echo "true" || echo "false")
+          BETA_IN_NIGHTLY=$(git merge-base --is-ancestor origin/Beta origin/Nightly && echo "true" || echo "false")
+
+          if [ "$NIGHTLY_IN_BETA" = "true" ]; then
+            # Beta already contains all of Nightly. No upstream sync needed.
             echo "nightly_beta_diff=false" >> $GITHUB_OUTPUT
+            echo "nightly_beta_diverged=false" >> $GITHUB_OUTPUT
           else
             echo "nightly_beta_diff=true" >> $GITHUB_OUTPUT
+            if [ "$BETA_IN_NIGHTLY" = "false" ]; then
+              # Both branches have commits the other doesn't: TRUE DIVERGENCE.
+              # This happens when a direct push is made to Beta outside the pipeline.
+              echo "nightly_beta_diverged=true" >> $GITHUB_OUTPUT
+              echo "::warning::Nightly and Beta have DIVERGED. A conflict-tolerant merge (-X theirs) will be used, preserving Nightly as the source of truth."
+            else
+              echo "nightly_beta_diverged=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
           # Beta -> Stable
@@ -87,7 +106,21 @@ jobs:
         run: |
           git checkout Beta
           git pull origin Beta
-          git merge origin/Nightly --no-edit
+
+          # ----------------------------------------------------------------
+          # Robustness: If branches have diverged, use `-X theirs` to prefer
+          # Nightly as the authoritative source. Nightly is the primary
+          # integration target for all automated pipeline work; it must always
+          # win over any out-of-band direct pushes to Beta.
+          # ----------------------------------------------------------------
+          DIVERGED="${{ needs.check-sync.outputs.nightly_beta_diverged }}"
+          if [ "$DIVERGED" = "true" ]; then
+            echo "Diverged branches detected. Merging with conflict strategy: Nightly wins (-X theirs)."
+            git merge origin/Nightly -X theirs --no-edit
+          else
+            git merge origin/Nightly --no-edit
+          fi
+
           git push origin Beta
           echo "merged=true" >> $GITHUB_OUTPUT
 
@@ -128,7 +161,9 @@ jobs:
           git pull origin Stable
 
           BEFORE_SHA=$(git rev-parse HEAD)
-          git merge origin/Beta --no-edit
+          # Beta is always the source of truth for Stable promotion.
+          # Use -X theirs to ensure Beta content wins on any unexpected divergence.
+          git merge origin/Beta -X theirs --no-edit
           AFTER_SHA=$(git rev-parse HEAD)
 
           echo "before_sha=$BEFORE_SHA" >> $GITHUB_OUTPUT
@@ -208,7 +243,8 @@ jobs:
           git pull origin Beta
 
           BEFORE_SHA=$(git rev-parse HEAD)
-          git merge origin/Stable --no-edit
+          # Stable content (hotfixes) always wins when flowing downstream to Beta.
+          git merge origin/Stable -X theirs --no-edit
           AFTER_SHA=$(git rev-parse HEAD)
 
           if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
@@ -247,11 +283,11 @@ jobs:
           npm install -g pnpm
           pnpm install
           if ! pnpm test; then
-             echo "### 🛑 Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
+             echo "### Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
              echo "Unit tests failed on Beta. Downstream sync to Nightly aborted to protect the automated environment from contaminated state." >> $GITHUB_STEP_SUMMARY
              exit 1
           fi
-          echo "### ✅ Beta Stable: Proceeding with Downstream Sync" >> $GITHUB_STEP_SUMMARY
+          echo "### Beta Stable: Proceeding with Downstream Sync" >> $GITHUB_STEP_SUMMARY
 
       - name: Setup Git User
         run: |
@@ -265,7 +301,9 @@ jobs:
         run: |
           git checkout Nightly
           git pull origin Nightly
-          git merge origin/Beta --no-edit
+          # Downstream hotfix content from Beta/Stable should integrate cleanly.
+          # Use -X theirs so that Stable-origin hotfixes propagate without friction.
+          git merge origin/Beta -X theirs --no-edit
           git push origin Nightly
 
   # ============================================================================
