@@ -1,6 +1,29 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-19] PR #259: docs(readme): reconcile Backend-Worker architectural context
+**Commit**: `60a6fd750953666303285c23493b6c1a719a1589`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/259)
+
+### Description
+### Reasoning:
+**[Priority Queue Item]:** README Synchronization (Drift) & README Depth (Shallow).
+**[Safety Checks]:** Confirmed ADR coherence and Layer 1 (@core) vocabulary compliance.
+**[Rationale]:** The Backend-Worker README had drifted from the actual implementation regarding its versioning and key rotation logic. This update reconciles those discrepancies and deepens the architectural context by explicitly defining its role within the CleanStack Architecture.
+
+### Changes:
+- **[README/File]:** Backend-Worker/README.md reconciled and deepened.
+- **[Log/File]:** Updated .github/nightly-logs/documentation-readme-coverage.log.
+
+### Verification:
+- **[Automated]:** All tests passed across Backend-Worker, Backend-GAS, and Frontend-PWA.
+- **[Manual/Audit]:** Readability audit confirmed alignment with ADR Section VII naming conventions and visual purity (no emojis).
+
+---
+*PR created automatically by Jules for task [15688780643059967487](https://jules.google.com/task/15688780643059967487) started by @AlbiDR*
+
+---
+
 ## [2026-03-19] PR #258: refactor(opt): standardize console layout props
 **Commit**: `c2c8f372db8209da0e33dc7b1bd4e240b1b62c02`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/258)
