@@ -1,7 +1,6 @@
-
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import type { Recruit, BlacklistResult, BlacklistEntry } from './Headhunter_Types';
+import type { Recruit } from './Headhunter_Types';
 import * as v from 'valibot';
 import { RecruitSchema } from './Validation';
 
@@ -9,14 +8,28 @@ import { RecruitSchema } from './Validation';
  * ============================================================================
  * MODULE: HEADHUNTER STORE
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Persistence handling for the Headhunter system.
- *    Manages the Recruit Database and the Blacklist Event Stream.
+ * DESCRIPTION: Persistence layer for Recruitment data.
+ *    Handles Database I/O, Blacklist reconciliation, and Queue management.
  * ============================================================================
  */
 
+declare var Sheets: any;
+declare var SpreadsheetApp: any;
+
+export interface BlacklistEntry {
+  t: string; // tag
+  e: number; // expiry timestamp
+  s: number; // score
+}
+
+export interface BlacklistResult {
+  ids: Set<string>;
+  entries: Array<{ rawScore: number }>;
+}
+
 export interface HeadhunterStoreContract {
   /**
-   * Loads the current recruit pool from the Headhunter sheet.
+   * Loads the current active recruits from the Headhunter sheet.
    */
   loadDatabase(sheet: any): Map<string, Recruit>;
 
@@ -52,12 +65,13 @@ const HeadhunterStore: HeadhunterStoreContract = {
       .getValues();
 
     const recruitMap = new Map<string, Recruit>();
-    rows.forEach((recruitRow: any) => {
-      const tag = String(recruitRow[H.TAG]);
+    rows.forEach((recruitRow: any, i: number) => {
+      const rawTag = String(recruitRow[H.TAG]);
+      const tag = Registry.Services.Core.normalizeTag(rawTag);
       if (tag) {
         const payload = {
           tag,
-          invited: false,
+          invited: recruitRow[H.INVITED] === true || String(recruitRow[H.INVITED]).toUpperCase() === "TRUE",
           name: String(recruitRow[H.NAME]),
           trophies: Number(recruitRow[H.TROPHIES]),
           donations: Number(recruitRow[H.DONATIONS]),
@@ -70,7 +84,11 @@ const HeadhunterStore: HeadhunterStoreContract = {
         };
 
         const result = v.safeParse(RecruitSchema, payload);
-        if (result.success) recruitMap.set(tag, result.output as Recruit);
+        if (result.success) {
+          recruitMap.set(tag, result.output as Recruit);
+        } else {
+          console.warn(`HeadhunterStore: Validation failed for row ${CONFIG.LAYOUT.DATA_START_ROW + i} (${tag}). Errors:`, result.issues.map(iss => `${iss.path?.[0]?.key}: ${iss.message}`).join(", "));
+        }
       }
     });
     return recruitMap;
@@ -105,7 +123,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
     if (blSheet.getLastRow() > 1) {
       const rawData = blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).getValues();
       rawData.forEach((blacklistRow: any) => {
-        const tag = String(blacklistRow[0]).trim().toUpperCase();
+        const tag = Registry.Services.Core.normalizeTag(blacklistRow[0]);
         if (!tag) return;
         const expiry = Number(blacklistRow[1]) || 0;
         const score = Number(blacklistRow[2]) || 0;
@@ -128,13 +146,10 @@ const HeadhunterStore: HeadhunterStoreContract = {
     if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const numRows = sheet.getLastRow() - startRow + 1;
-      // Get TAG (Column B is index 1, but SCHEMA.HH.TAG is 0 relative to start?)
-      // BATCH LOAD SURVIVAL: Map tags to recruits
-      // SCHEMA.HH.TAG is 0. So it gets columns B to ...
       
       const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
       rawMain.forEach((mainSheetRow: any, i: number) => {
-        const tag = String(mainSheetRow[H.TAG]).trim().toUpperCase();
+        const tag = Registry.Services.Core.normalizeTag(mainSheetRow[H.TAG]);
         if (tag) {
           mainDataMap.set(tag, { 
             row: startRow + i, 
@@ -146,16 +161,14 @@ const HeadhunterStore: HeadhunterStoreContract = {
 
     // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
     if (evtSheet.getLastRow() > 1) {
-      // Upgraded to support optional 3rd column: [Tag, Timestamp, Score]
       const rawEvt = evtSheet.getDataRange().getValues();
       for (let i = 1; i < rawEvt.length; i++) {
-         const tag = String(rawEvt[i][0]).toUpperCase().trim();
+         const tag = Registry.Services.Core.normalizeTag(rawEvt[i][0]);
          if (!tag) continue;
 
          const meta = mainDataMap.get(tag);
-         const evtScore = Number(rawEvt[i][2]) || 0; // Optional 3rd column
+         const evtScore = Number(rawEvt[i][2]) || 0;
 
-         // A. Add to Blacklist memory with Score preservation (EVT vs Main vs Existing)
          if (!entryMap.has(tag)) {
            entryMap.set(tag, { t: tag, e: now + expiryDuration, s: Math.max(evtScore, meta ? meta.score : 0) });
          } else {
@@ -163,12 +176,10 @@ const HeadhunterStore: HeadhunterStoreContract = {
            existing.s = Math.max(existing.s, evtScore, meta ? meta.score : 0);
          }
 
-         // B. Tick main sheet visually
          if (meta) {
            sheet.getRange(meta.row, 2 + H.INVITED).setValue(true);
          }
       }
-      // C. Clear the log (Reconciliation Complete)
       const lastRow = evtSheet.getLastRow();
       if (lastRow > 1) {
         evtSheet.getRange(2, 1, lastRow - 1, evtSheet.getLastColumn()).clearContent();
@@ -180,12 +191,10 @@ const HeadhunterStore: HeadhunterStoreContract = {
     if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
       const numRows = sheet.getLastRow() - startRow + 1;
-      
-      // FIX: Deduplicate read. Use the H.INVITED index within the already-loaded rawMain.
       const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
 
       rawMain.forEach((mainSheetRow: any, i: number) => {
-        const tag = String(mainSheetRow[H.TAG]).trim().toUpperCase();
+        const tag = Registry.Services.Core.normalizeTag(mainSheetRow[H.TAG]);
         if (!tag) return;
 
         const isInvited = mainSheetRow[H.INVITED] === true || String(mainSheetRow[H.INVITED]).toUpperCase() === "TRUE";
@@ -254,7 +263,6 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const queueSheet = ss.getSheetByName(CONFIG.SHEETS.QUEUE);
     if (!queueSheet || queueSheet.getLastRow() < 2) return new Map();
 
-    // SAFETY CHECK: Use getDataRange to avoid "Range coordinates are invalid" on legacy 9-col sheets
     const range = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, queueSheet.getLastColumn());
     const data = range.getValues();
     
@@ -262,12 +270,11 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const now = Date.now();
     const expiryMs = (CONFIG.HEADHUNTER.QUEUE_EXPIRY_DAYS || 7) * 86400000;
     
-    // Index mapping based on current width
     const INDEX_TAG = 0;
-    const INDEX_LAST_SCAN = 9; // Expected index for Column J
+    const INDEX_LAST_SCAN = 9;
 
-    data.forEach((queueRow: any) => {
-      const tag = String(queueRow[INDEX_TAG]).trim().toUpperCase();
+    data.forEach((queueRow: any, i: number) => {
+      const tag = Registry.Services.Core.normalizeTag(queueRow[INDEX_TAG]);
       const foundDate = Registry.Services.Time.parseFlexibleDate(queueRow[7]);
       
       if (now - foundDate.getTime() > expiryMs) return;
@@ -288,7 +295,11 @@ const HeadhunterStore: HeadhunterStoreContract = {
         };
 
         const result = v.safeParse(RecruitSchema, payload);
-        if (result.success) map.set(tag, result.output as Recruit);
+        if (result.success) {
+          map.set(tag, result.output as Recruit);
+        } else {
+          console.warn(`HeadhunterStore: Queue validation failed for tag ${tag}. Errors:`, result.issues.map(iss => `${iss.path?.[0]?.key}: ${iss.message}`).join(", "));
+        }
       }
     });
 
@@ -298,7 +309,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
   saveQueue(ss: any, recruits: Recruit[]): { count: number; pruned: number } {
     const sheetName = CONFIG.SHEETS.QUEUE;
     const queueSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
-    const HOT_COLOR = "#795548"; // Brownish color for the Queue (Bench)
+    const HOT_COLOR = "#795548";
 
     if (queueSheet.getLastRow() === 0) {
       queueSheet.getRange(1, 1, 1, 10).setValues([["Tag", "Name", "Trophies", "Donations", "Cards", "War", "Raw Score", "Found Date", "Source", "Last Scan"]]);
@@ -311,21 +322,16 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const toSave = recruits.slice(0, maxQueue);
     const ssId = ss.getId();
 
-    // SAFETY: Ensure sheet has at least 10 columns (A-J) for the new schema
-    // The previous version (v12.1.16) only used 9 columns (A-I).
     if (queueSheet.getMaxColumns() < 10) {
        queueSheet.insertColumnsAfter(queueSheet.getMaxColumns(), 10 - queueSheet.getMaxColumns());
     }
-    // ALWAYS enforce headers to ensure Schema Sync
     queueSheet.getRange(1, 1, 1, 10).setValues([["Tag", "Name", "Trophies", "Donations", "Cards", "War", "Raw Score", "Found Date", "Source", "Last Scan"]]);
 
-    // Prepare the 2D array for the entire queue range (2 to maxQueue + 1)
-    // This allows us to overwrite old data and set new data in ONE ATOMIC CALL.
     const values = new Array(maxQueue).fill(0).map(() => new Array(10).fill(""));
     
     toSave.forEach((recruitObject, i) => {
       values[i] = [
-        recruitObject.tag,
+        Registry.Services.Core.normalizeTag(recruitObject.tag),
         recruitObject.name,
         recruitObject.trophies,
         recruitObject.donations,
@@ -347,7 +353,6 @@ const HeadhunterStore: HeadhunterStoreContract = {
         { valueInputOption: "USER_ENTERED" }
       );
     } else {
-      // Fallback for non-Advanced API environments (though unlikely in production)
       if (queueSheet.getLastRow() > 1) {
         queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, 10).clearContent();
       }
