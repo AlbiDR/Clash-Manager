@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { idb } from "./StorageService";
 import * as v from "valibot";
 import { ref, watch, reactive, toRaw } from "vue";
@@ -77,11 +80,15 @@ function mergeStorage(stored: unknown): ModuleState {
 }
 
 /**
- * COMPOSABLE: useAppSettings
+ * COMPOSABLE: useAppSettings (Layer 1 - @core)
  *
  * @remarks
  * Manages the global application settings and feature flags. This composable
  * acts as a bridge between the reactive UI state and persistent storage layers.
+ *
+ * [ARCHITECTURE] ADR LAYER: @core
+ * - Permitted Imports: Layer 1 services (e.g., StorageService), utility libraries (Valibot), and Vue core.
+ * - Forbidden Imports: Any component or service from Layer 2 (Shared) or Layer 3 (Features).
  *
  * It employs a "Redundant Persistence" strategy, ensuring that settings are
  * available both to the main UI thread (via LocalStorage) and the background
@@ -123,6 +130,17 @@ export function useAppSettings() {
     watchInitialized = true;
   }
 
+  /**
+   * INITIALIZATION: Hydrate application settings.
+   *
+   * @remarks
+   * Performs the following critical startup tasks:
+   * 1. Hydrates the reactive `modules` state from `LocalStorage`.
+   * 2. Registers a global `storage` event listener to ensure settings are synchronized across
+   *    multiple open browser tabs.
+   * 3. Performs an initial synchronization of notification settings to `IndexedDB` (idb) to
+   *    ensure the Service Worker has access to the user's notification preferences.
+   */
   function init() {
     if (isInitialized.value) return;
 
