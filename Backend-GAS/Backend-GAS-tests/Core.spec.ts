@@ -1,8 +1,6 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Core from '../Core';
 
-// Mock GAS services
 const mockLock = {
   tryLock: vi.fn().mockReturnValue(true),
   releaseLock: vi.fn(),
@@ -11,7 +9,6 @@ const mockLockService = {
   getScriptLock: vi.fn().mockReturnValue(mockLock),
 };
 
-// Inject mocks into global scope
 vi.stubGlobal('LockService', mockLockService);
 
 describe('Core Module', () => {
@@ -22,9 +19,7 @@ describe('Core Module', () => {
   describe('Core.executeSafely', () => {
     it('should acquire and release lock for safe execution', () => {
       const callback = vi.fn().mockReturnValue('result');
-      
       const result = Core.executeSafely('TEST_LOCK', callback);
-      
       expect(mockLockService.getScriptLock).toHaveBeenCalled();
       expect(mockLock.tryLock).toHaveBeenCalledWith(60000);
       expect(callback).toHaveBeenCalled();
@@ -36,15 +31,33 @@ describe('Core Module', () => {
       const callback = vi.fn().mockImplementation(() => {
         throw new Error('Test error');
       });
-
       expect(() => Core.executeSafely('TEST_LOCK', callback)).toThrow('Test error');
       expect(mockLock.releaseLock).toHaveBeenCalled();
     });
 
     it('should throw if lock cannot be acquired', () => {
       mockLock.tryLock.mockReturnValueOnce(false);
-      
       expect(() => Core.executeSafely('TEST_LOCK', () => {})).toThrow(/Lock timeout/);
+    });
+  });
+
+  describe('Core.normalizeTag', () => {
+    it('should uppercase and trim tags', () => {
+      expect(Core.normalizeTag('  #abc123  ')).toBe('#ABC123');
+    });
+
+    it('should add missing # prefix', () => {
+      expect(Core.normalizeTag('abc123')).toBe('#ABC123');
+    });
+
+    it('should return empty string for null/undefined/empty', () => {
+      expect(Core.normalizeTag(null as any)).toBe('');
+      expect(Core.normalizeTag(undefined as any)).toBe('');
+      expect(Core.normalizeTag('')).toBe('');
+    });
+
+    it('should handle already normalized tags', () => {
+      expect(Core.normalizeTag('#P123')).toBe('#P123');
     });
   });
 
@@ -52,18 +65,12 @@ describe('Core Module', () => {
     it('should shuffle array in place', () => {
       const original = [1, 2, 3, 4, 5];
       const copy = [...original];
-      
-      // Mock Math.random to control shuffle
       const randomValues = [0.9, 0.1, 0.5, 0.2];
       let callIndex = 0;
       vi.spyOn(Math, 'random').mockImplementation(() => randomValues[callIndex++ % randomValues.length]);
-
       const result = Core.shuffleArray(copy);
-      
-      // Verify mutation
-      expect(result).toBe(copy); // Same reference
+      expect(result).toBe(copy);
       expect(result.length).toBe(original.length);
-      
       vi.restoreAllMocks();
     });
     

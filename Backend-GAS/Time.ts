@@ -1,4 +1,3 @@
-
 /**
  * ============================================================================
  * MODULE: TIME (Temporal Engine)
@@ -13,7 +12,7 @@
  *    - Pure Service: Deterministic logic, no external dependencies.
  *    - Single Source of Truth for "When is War?".
  * 
- *  VERSION: 1.0.0
+ *  VERSION: 1.0.1
  * ============================================================================
  */
 
@@ -22,7 +21,7 @@ import { CONFIG } from "./Configuration";
 /**
  * GLOBAL VERSION
  */
-export const VER_TIME = "1.0.0";
+export const VER_TIME = "1.0.1";
 
 declare var Utilities: any;
 declare var module: any;
@@ -99,7 +98,7 @@ var Time: TimeContract = {
    * Parses RoyaleAPI date strings (YYYYMMDDTHHMMSS) or standard dates into a Date object.
    */
   parseRoyaleApiDate(dateStr: string | Date | null | undefined): Date {
-    if (!dateStr) return new Date();
+    if (!dateStr) return new Date(0); // Sentinel
     if (dateStr instanceof Date) return dateStr;
     
     if (typeof dateStr === "string" && /^\d{8}T\d{6}/.test(dateStr)) {
@@ -112,7 +111,8 @@ var Time: TimeContract = {
       return new Date(Date.UTC(y, m, d, h, min, s));
     }
     
-    return new Date(dateStr as any);
+    const d = new Date(dateStr as any);
+    return isNaN(d.getTime()) ? new Date(0) : d;
   },
 
   /**
@@ -120,15 +120,15 @@ var Time: TimeContract = {
    * Handles Date objects, ISO 8601 strings, and custom formats like dd/MM/yyyy HH.mm.ss.
    */
   parseFlexibleDate(val: any): Date {
-    if (val === null || val === undefined) return new Date();
+    if (val === null || val === undefined) return new Date(0); // Sentinel
     
     // 0. Handle already instantiated Date objects (Safer Type Check)
     if (Object.prototype.toString.call(val) === "[object Date]") {
-        return isNaN(val.getTime()) ? new Date() : val;
+        return isNaN(val.getTime()) ? new Date(0) : val;
     }
     
     const s = String(val).trim();
-    if (!s || s === "N/A" || s === "-") return new Date(0);
+    if (!s || s === "N/A" || s === "-" || s === "" || s === "null") return new Date(0);
 
     // 1. Try numeric parsing (Spreadsheet Serial vs Unix Timestamps)
     const num = Number(val);
@@ -140,13 +140,13 @@ var Time: TimeContract = {
             const ms = Math.round((num - days) * 86400 * 1000);
             date.setDate(date.getDate() + days);
             date.setMilliseconds(date.getMilliseconds() + ms);
-            return isNaN(date.getTime()) ? new Date() : date;
+            return isNaN(date.getTime()) ? new Date(0) : date;
         }
         
         // 1.2 Unix Timestamps (Seconds or Milliseconds)
         if (num >= 1000000000) {
           const date = new Date(num < 10000000000 ? num * 1000 : num);
-          return isNaN(date.getTime()) ? new Date() : date;
+          return isNaN(date.getTime()) ? new Date(0) : date;
         }
     }
 
@@ -157,22 +157,19 @@ var Time: TimeContract = {
     }
 
     // 3. Try dd/MM/yyyy (Project Standard without time)
-    // Matches "30/01/2026" using dots, colons, or spaces
     const matchNoTime = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})$/);
     if (matchNoTime) {
         const day = parseInt(matchNoTime[1]!, 10);
         const month = parseInt(matchNoTime[2]!, 10) - 1;
         const year = parseInt(matchNoTime[3]!, 10);
         
-        // Validation:
         if (month < 0 || month > 11 || day < 1 || day > 31) return new Date(0); 
         
-        const date = new Date(year, month, day, 0, 0, 0); // No time, default to midnight
+        const date = new Date(year, month, day, 0, 0, 0);
         return isNaN(date.getTime()) ? new Date(0) : date;
     }
 
-    // 4. Try dd/MM/yyyy HH.mm.ss parsing (Project Standard compatible format)
-    // Matches "30/01/2026 13:42" or "30 01 2026 13 42 56" using dots, colons, or spaces
+    // 4. Try dd/MM/yyyy HH.mm.ss parsing
     const match = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})\s+(\d{1,2})[:.\s](\d{2})(?:[:.\s](\d{2}))?$/);
     if (match) {
         const day = parseInt(match[1]!, 10);
@@ -182,19 +179,15 @@ var Time: TimeContract = {
         const min = parseInt(match[5]!, 10);
         const sec = match[6] ? parseInt(match[6]!, 10) : 0;
         
-        // Validation: Ensure digits make sense before creating date
-        if (month < 0 || month > 11 || day < 1 || day > 31) return new Date(0); // Sentinel
+        if (month < 0 || month > 11 || day < 1 || day > 31) return new Date(0);
         
         const date = new Date(year, month, day, hour, min, sec);
-        return isNaN(date.getTime()) ? new Date(0) : date; // Sentinel on NaN
+        return isNaN(date.getTime()) ? new Date(0) : date;
     }
 
-    // 4. Last resort standard parser
     const fallback = new Date(s);
     if (!isNaN(fallback.getTime())) return fallback;
     
-    // 5. Hard Failure: Sentinel Date (Epoch 0) instead of "Today"
-    // This prevents grouping different days as "Today" during deduplication
     return new Date(0);
   },
 
@@ -204,20 +197,17 @@ var Time: TimeContract = {
   calculateWarWeekId(d: Date | null | undefined): string {
     if (!d || isNaN(d.getTime())) return "Unknown";
     
-    // RESET-AWARE NORMALIZATION (10:00 UTC Monday Reset)
     const date = new Date(d.getTime());
     const RESET_H = 10;
     const resetToday = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), RESET_H, 0, 0);
     
-    // Shift back if before reset to align with previous logical day/week
     if (date.getTime() < resetToday) {
       date.setUTCDate(date.getUTCDate() - 1);
     }
     
-    // ISO-8601 Week Calculation (Pure UTC)
     date.setUTCHours(0, 0, 0, 0);
-    const day = (date.getUTCDay() + 6) % 7; // 0=Mon, ..., 6=Sun
-    date.setUTCDate(date.getUTCDate() + 3 - day); // Target Thursday
+    const day = (date.getUTCDay() + 6) % 7;
+    date.setUTCDate(date.getUTCDate() + 3 - day);
     
     const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
     const firstThursDay = (firstThursday.getUTCDay() + 6) % 7;
@@ -240,15 +230,12 @@ var Time: TimeContract = {
     if (d.getTime() < resetToday) {
       d.setUTCDate(d.getUTCDate() - 1);
     }
-    const dayIndex = d.getUTCDay(); // 0=Sun, 1=Mon...
-    return dayIndex === 0 ? 7 : dayIndex; // Return 1-7 (Mon-Sun)
+    const dayIndex = d.getUTCDay();
+    return dayIndex === 0 ? 7 : dayIndex;
   },
 
   /**
    * ELIGIBLE BATTLE DAYS CALCULATOR
-   * Determines theoretical maximum battle days based on player tenure.
-   * Standard Week = 4 Battle Days (Thu-Sun)
-   * Colosseum Week = 7 Battle Days (All days count)
    */
   getEligibleBattleDays(daysTracked: number, isColosseum = false): number {
     if (daysTracked <= 0) return 0;
@@ -259,33 +246,26 @@ var Time: TimeContract = {
     const fullWeeks = Math.floor(daysTracked / DAYS_PER_WEEK);
     const remainderDays = daysTracked % DAYS_PER_WEEK;
     
-    // Full weeks contribute their full quota
     let eligibleDays = fullWeeks * BATTLE_DAYS_PER_WEEK;
     
-    // Partial week: For standard weeks, assume 4/7 ratio of remainder
-    // For colosseum, all remainder days count
     if (remainderDays > 0) {
       if (isColosseum) {
         eligibleDays += remainderDays;
       } else {
-        // Conservative estimate: (remainderDays / 7) * 4, rounded up
         eligibleDays += Math.ceil((remainderDays / DAYS_PER_WEEK) * BATTLE_DAYS_PER_WEEK);
       }
     }
     
-    return Math.max(1, eligibleDays); // At least 1 to prevent divide-by-zero
+    return Math.max(1, eligibleDays);
   },
 
   /**
-   * WAR PHASE HEURISTIC (Single Source of Truth)
-   * Determines the War Day based on the deterministic Monday 10:00 UTC cycle.
+   * WAR PHASE HEURISTIC
    */
   getWarPhaseFromDate(date: Date, snapshot?: any, options: { forceCalendarDay?: boolean } = {}): WarPhaseResult {
-    const RESET_H = 10; // 10:00 UTC
-    let utcDay = date.getUTCDay(); // 0=Sun, 1=Mon, ...
+    const RESET_H = 10;
+    let utcDay = date.getUTCDay();
 
-    // MODE A: High-Precision (Game Clock Aware)
-    // Used for Live Logging & Participation Logic.
     if (!options.forceCalendarDay) {
         const reset = new Date(
           Date.UTC(
@@ -303,11 +283,7 @@ var Time: TimeContract = {
           utcDay = (utcDay + 6) % 7;
         }
     } 
-    // MODE B: Calendar-Consistent (Audit Mode)
-    // Used for Repair/Historical Audits where "Monday" means "Monday".
     else {
-        // Construct a safe "Noon" representation of the LOCAL date to ensure proper day index
-        // This handles cases where local midnight is previous-day UTC
         const localBasedUTC = new Date(Date.UTC(
             date.getFullYear(), 
             date.getMonth(), 
@@ -317,17 +293,15 @@ var Time: TimeContract = {
         utcDay = localBasedUTC.getUTCDay();
     }
 
-    // DYNAMIC GROUNDING: If a snapshot is provided for the exact same date, trust it.
     if (snapshot && snapshot.protocol) {
       const snapDate = new Date(snapshot.meta.timestamp);
-      // Compare calendar dates (YYYY-MM-DD)
       const isSameDate = snapDate.getUTCDate() === date.getUTCDate() && 
                          snapDate.getUTCMonth() === date.getUTCMonth() &&
                          snapDate.getUTCFullYear() === date.getUTCFullYear();
       
       if (isSameDate) {
         return {
-          rawDay: snapshot.schedule.day - 1, // Snapshot day is 1-based
+          rawDay: snapshot.schedule.day - 1,
           isTraining: snapshot.protocol.phase === "TRIAL",
           isBattle: snapshot.protocol.phase !== "TRIAL",
           phase: snapshot.protocol.phase,
@@ -335,9 +309,6 @@ var Time: TimeContract = {
       }
     }
 
-    // HEURISTIC FALLBACK (Corrected Mapping)
-    // Shift: Mon(1) -> 0, Tue(2) -> 1, Wed(3) -> 2 (Training)
-    // Thu(4) -> 3, Fri(5) -> 4, Sat(6) -> 5, Sun(0) -> 6 (Battle)
     const rawDay = (utcDay + 6) % 7;
 
     return {

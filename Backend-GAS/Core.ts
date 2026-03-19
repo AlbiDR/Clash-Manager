@@ -1,4 +1,3 @@
-
 /**
  * ============================================================================
  * MODULE: CORE (Execution Engine)
@@ -75,6 +74,12 @@ export interface CoreContract {
    * @param obj - The item to clone.
    */
   deepClone<T>(obj: T): T;
+
+  /**
+   * Normalizes a player or clan tag (Uppercase, Trimmed, prefixed with #).
+   * @param tag - The tag to normalize.
+   */
+  normalizeTag(tag: string): string;
 
   /**
    * Runtime metrics for performance tracking.
@@ -194,6 +199,15 @@ var Core: CoreContract = {
       }
     }
     return copy;
+  },
+
+  normalizeTag(tag: string): string {
+    if (!tag) return "";
+    let clean = String(tag).trim().toUpperCase();
+    if (clean && !clean.startsWith("#")) {
+      clean = "#" + clean;
+    }
+    return clean;
   }
 };
 
