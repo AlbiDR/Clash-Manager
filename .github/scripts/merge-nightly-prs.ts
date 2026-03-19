@@ -205,10 +205,12 @@ async function run() {
         }
 
         // Poll for mergeability resolution (GitHub calculates this asynchronously)
+        // We poll up to 10 times with a 5-second interval (50 seconds total)
         let pollCount = 0;
-        while (details.mergeable === null && pollCount < 5) {
-          log(`Waiting for GitHub to calculate mergeability for PR #${pr.number}...`, "info");
-          await new Promise((r) => setTimeout(r, 4000));
+        const maxPolls = 10;
+        while (details.mergeable === null && pollCount < maxPolls) {
+          log(`Waiting for GitHub to calculate mergeability for PR #${pr.number} (Attempt ${pollCount + 1}/${maxPolls})...`, "info");
+          await new Promise((r) => setTimeout(r, 5000));
           details = await githubApi(`/repos/${CONFIG.targetOwner}/${CONFIG.targetRepo}/pulls/${pr.number}`);
           pollCount++;
         }
@@ -218,7 +220,7 @@ async function run() {
         }
 
         // 3. Merge Logic with Exponential Backoff
-        const maxTries = 5;
+        const maxTries = 8;
         let merged = false;
         let tryCount = 1;
 

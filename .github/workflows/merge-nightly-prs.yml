@@ -33,8 +33,8 @@ jobs:
       - name: Wait for PR Finalization
         if: github.event_name == 'pull_request'
         run: |
-          echo "Triggered by PR event. Waiting 5 minutes to ensure PR metadata is fully ready..."
-          sleep 300
+          echo "Triggered by PR event. Holding for 60s to allow GitHub indexing and PR finalization..."
+          sleep 60
 
       # ----------------------------------------------------------------------
       # STEP 1: Environment Setup
