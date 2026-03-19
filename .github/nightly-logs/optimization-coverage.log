@@ -1,0 +1,4 @@
+Frontend-PWA/src/core/services/useConsoleController.ts
+Frontend-PWA/src/features/roster/views/RosterView.vue
+Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
+Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts

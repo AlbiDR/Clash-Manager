@@ -302,7 +302,31 @@ export function useConsoleController<T extends { id: string }>(
     selectAll(ids);
   }
 
+  /**
+   * LAYOUT PROPS (Standardized Interface)
+   *
+   * @remarks
+   * Groups all reactive properties intended for ConsoleLayout into a
+   * single object to minimize boilerplate in the view layer.
+   * This facilitates the "Structural Purity" goal of the Optimize agent.
+   */
+  const layoutProps = computed(() => ({
+    status: status.value,
+    loading: showSkeletons.value,
+    isRefreshing: isRefreshing.value,
+    syncError: syncError.value || undefined,
+    sheetUrl: sheetUrl.value,
+    stats: statsBadge.value,
+    fabState: fabState.value,
+    isSelectionMode: isSelectionMode.value,
+    selectedCount: selectedIds.value.length,
+    totalCount: filteredItems.value.length,
+    currentSort: sortBy.value,
+    isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
+  }));
+
   return {
+    // State & Computed
     searchQuery,
     sortBy,
     visibleItems,
@@ -319,6 +343,9 @@ export function useConsoleController<T extends { id: string }>(
     isRefreshing,
     syncError,
     isHydrated,
+    layoutProps,
+
+    // Actions
     refresh: refreshFn,
     updateSort,
     toggleSelect,
