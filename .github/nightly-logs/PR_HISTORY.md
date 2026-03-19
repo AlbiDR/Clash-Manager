@@ -1,6 +1,35 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-19] PR #257: test(verify): add logic coverage for StatisticItem component
+**Commit**: `f1c41db07349c77ab2bf5e4a130376733f9bf5f4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/257)
+
+### Description
+### Reasoning:
+**[Coverage Gap]:** `Frontend-PWA/src/shared/ui/StatisticItem.vue` had zero test coverage.
+**[Scenarios Added]:** 
+- Happy Path: Proper rendering of labels and values.
+- Sad Path: Loading state renders skeletons instead of data.
+- Logic: Tooltip/Benchmarking values are correctly computed and passed to the `v-tooltip` directive based on presence of props and loading state.
+**[Rationale]:** This was identified as a zero-coverage target in the `@shared/ui` layer during the blindspot scan.
+
+### Changes:
+- **[Component/File]:** `Frontend-PWA/src/shared/ui/ui-tests/StatisticItem.spec.ts` (New test file)
+- **[Log]:** Updated `.github/nightly-logs/verification-coverage.log`
+
+### Verification:
+- **[Automated]:** `pnpm test StatisticItem.spec.ts` passed with 8/8 tests. All 67 tests in `src/shared/ui/ui-tests/` passed.
+- **[Manual/Audit]:** Verified that mocking `useBenchmarking` and the `v-tooltip` directive correctly isolates the component and proves its internal reactive logic.
+
+### Log Updates:
+- Updated `.github/nightly-logs/verification-coverage.log`
+
+---
+*PR created automatically by Jules for task [1569761421610408524](https://jules.google.com/task/1569761421610408524) started by @AlbiDR*
+
+---
+
 ## [2026-03-18] PR #256: chore(deps): bump valibot from 1.2.0 to 1.3.0
 **Commit**: `d024d5eb1185b2c70bf626955033039e7919f83d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/256)
