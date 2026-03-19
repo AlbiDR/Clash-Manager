@@ -12,24 +12,15 @@ const {
   // Data & Status
   data,
   isRefreshing,
-  syncError,
-  sheetUrl,
-  status,
-  statsBadge,
-  showSkeletons,
   isShowcaseMode,
 
   // List State
   visibleItems,
-  filteredItems,
   expandedIds,
-  selectedIds,
   selectedSet,
   isSelectionMode,
-  fabState,
 
   // Config
-  sortBy,
   sortOptions,
 
   // Actions
@@ -43,6 +34,7 @@ const {
   handleSelectScore,
   handleAction,
   handleBlitz,
+  layoutProps,
 } = useLeaderboard();
 
 </script>
@@ -50,20 +42,9 @@ const {
 <template>
   <ConsoleLayout
     title="Roster"
-    :status="status"
+    v-bind="layoutProps"
     :show-search="true"
-    :sheet-url="sheetUrl"
-    :stats="statsBadge"
     :sort-options="sortOptions"
-    :current-sort="sortBy"
-    :loading="showSkeletons"
-    :is-selection-mode="isSelectionMode"
-    :selected-count="selectedIds.length"
-    :total-count="filteredItems.length"
-    :is-refreshing="isRefreshing"
-    :sync-error="syncError"
-    :is-empty="!showSkeletons && filteredItems.length === 0"
-    :fab-state="fabState"
     @refresh="refresh"
     @update:search="handleSearch"
     @update:sort="updateSort"

@@ -10,20 +10,9 @@ import RecruitCard from "../components/RecruitCard.vue";
 
 
 const {
-  status,
-  sheetUrl,
-  statsBadge,
   sortOptions,
-  sortBy,
   isRefreshing,
-  isHydrated,
   isTurboScanning,
-  isSelectionMode,
-  selectedIds,
-  filteredItems,
-  syncError,
-  showSkeletons,
-  fabState,
   visibleItems,
   expandedIds,
   selectedSet,
@@ -39,6 +28,7 @@ const {
   dismissBulk,
   toggleExpand,
   toggleSelect,
+  layoutProps,
 } = useRecruiter();
 
 </script>
@@ -46,20 +36,10 @@ const {
 <template>
   <ConsoleLayout
     title="Headhunter"
-    :status="status"
+    v-bind="layoutProps"
     :show-search="true"
-    :sheet-url="sheetUrl"
-    :stats="statsBadge"
     :sort-options="sortOptions"
-    :current-sort="sortBy"
-    :loading="showSkeletons"
-    :is-selection-mode="isSelectionMode"
-    :selected-count="selectedIds.length"
-    :total-count="filteredItems.length"
     :is-refreshing="isRefreshing || isTurboScanning"
-    :sync-error="syncError"
-    :is-empty="!showSkeletons && filteredItems.length === 0"
-    :fab-state="fabState"
     @refresh="refresh"
     @update:search="handleSearch"
     @update:sort="updateSort"

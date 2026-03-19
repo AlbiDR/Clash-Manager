@@ -1,5 +1,6 @@
 import { useConsoleController } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ref } from "vue";
 
 const { sharedState } = vi.hoisted(() => ({
   sharedState: {
@@ -107,7 +108,6 @@ vi.mock("../useConnectionStatus", () => {
 describe("useConsoleController", () => {
   // Use a factory function to get fresh default options
   const createOptions = () => {
-      const { ref } = require("vue");
       return {
         data: ref([{ id: "1", n: "Test" }]),
         isHydrated: ref(true),
@@ -144,7 +144,6 @@ describe("useConsoleController", () => {
   });
 
   it("shows skeletons during initial hydration if refreshing and no data", () => {
-    const { ref } = require("vue");
     const options = {
       ...createOptions(),
       isHydrated: ref(false),
@@ -156,7 +155,6 @@ describe("useConsoleController", () => {
   });
 
   it("hides skeletons once hydrated even if refreshing", () => {
-    const { ref } = require("vue");
     const options = {
       ...createOptions(),
       isHydrated: ref(true),
@@ -202,5 +200,22 @@ describe("useConsoleController", () => {
     const { handleSelectScore } = useConsoleController(options);
     handleSelectScore(50, "ge");
     expect(scoreGetter).toHaveBeenCalled();
+  });
+
+  it("exposes standardized layoutProps for ConsoleLayout", () => {
+    const options = {
+      ...createOptions(),
+      isRefreshing: ref(true),
+      data: ref([]),
+    };
+    const { layoutProps } = useConsoleController(options);
+
+    expect(layoutProps.value).toMatchObject({
+      status: { type: "loading", text: "Syncing..." },
+      loading: true,
+      isRefreshing: true,
+      isEmpty: false,
+      selectedCount: 0,
+    });
   });
 });
