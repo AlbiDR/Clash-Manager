@@ -32,7 +32,7 @@ import type {
 } from "@core/types";
 import * as v from "valibot";
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
-const pendingRequests = new Map<string, Promise<any>>();
+const pendingRequests = new Map<string, Promise<unknown>>(); // EPHEMERAL: intentionally resets on restart
 
 /**
  * CUSTOM ERROR TYPE
@@ -166,43 +166,65 @@ export function createSchemaMap(schema: string[]): Record<string, number> {
   return map;
 }
 
-const safeStr = (v: unknown) => (v === null || v === undefined ? "" : String(v));
-const safeNum = (v: unknown) => {
-  if (typeof v === "number") return v;
-  if (typeof v === "string") {
-    const cleaned = v.replace(/,/g, "").replace(/%/g, "");
-    const n = parseFloat(cleaned);
-    return isNaN(n) ? 0 : n;
-  }
-  return 0;
-};
+/**
+ * [GUARD] VALIDATION BOUNDARY: Safe Data Extraction
+ * Rationale: Matrix payloads are heterogeneous arrays. We enforce schema-based
+ * normalization at the extraction point to ensure "Defense in Depth".
+ */
+const SafeStringSchema = v.pipe(
+  v.unknown(),
+  v.transform((val) => (val === null || val === undefined ? "" : String(val)))
+);
+
+const SafeNumberSchema = v.pipe(
+  v.unknown(),
+  v.transform((val) => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const cleaned = val.replace(/,/g, "").replace(/%/g, "");
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? 0 : n;
+    }
+    return 0;
+  })
+);
+
+const SafeTimestampSchema = v.pipe(
+  v.unknown(),
+  v.transform((val) => {
+    if (!val) return 0;
+    const date = new Date(String(val));
+    const time = date.getTime();
+    return isNaN(time) ? 0 : time;
+  })
+);
 
 /**
  * Maps a single Leaderboard row to a LeaderboardMember object.
  * Uses direct index access for maximum performance.
  */
-export function mapLbRow(row: unknown[], m: Record<string, number>): LeaderboardMember | null {
-  if (!row || !Array.isArray(row)) return null;
+export function mapLbRow(rowSnapshot: unknown[], schemaMap: Record<string, number>): LeaderboardMember | null {
+  if (!rowSnapshot || !Array.isArray(rowSnapshot)) return null;
 
   // Optimized field access (with fallbacks for legacy keys 's' and 'r')
-  const perfScore = row[m["performanceScore"]] ?? row[m["s"]];
-  const perfRaw = row[m["performanceRawScore"]] ?? row[m["r"]];
+  const perfScore = rowSnapshot[schemaMap["performanceScore"]] ?? rowSnapshot[schemaMap["s"]];
+  const perfRaw = rowSnapshot[schemaMap["performanceRawScore"]] ?? rowSnapshot[schemaMap["r"]];
 
   return {
-    id: safeStr(row[m["id"]]),
-    n: safeStr(row[m["n"]]),
-    t: safeNum(row[m["t"]]),
-    performanceScore: safeNum(perfScore),
-    performanceRawScore: safeNum(perfRaw),
-    dt: safeNum(row[m["dt"]]),
+    id: v.parse(SafeStringSchema, rowSnapshot[schemaMap["id"]]),
+    n: v.parse(SafeStringSchema, rowSnapshot[schemaMap["n"]]),
+    t: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["t"]]),
+    performanceScore: v.parse(SafeNumberSchema, perfScore),
+    performanceRawScore: v.parse(SafeNumberSchema, perfRaw),
+    dt: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["dt"]]),
     d: {
-      role: safeStr(row[m["role"]]),
-      days: safeNum(row[m["days"]]),
-      avg: safeNum(row[m["avg"]]),
-      seen: safeStr(row[m["seen"]] || "-"),
-      rate: safeStr(row[m["rate"]] || "0%"),
-      wfame: safeNum(row[m["wfame"]]),
-      hist: safeStr(row[m["hist"]]),
+      role: v.parse(SafeStringSchema, rowSnapshot[schemaMap["role"]]),
+      days: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["days"]]),
+      avg: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["avg"]]),
+      seen: v.parse(SafeStringSchema, rowSnapshot[schemaMap["seen"]] || "-"),
+      rate: v.parse(SafeStringSchema, rowSnapshot[schemaMap["rate"]] || "0%"),
+      wfame: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["wfame"]]),
+      hist: v.parse(SafeStringSchema, rowSnapshot[schemaMap["hist"]]),
     },
   };
 }
@@ -211,21 +233,21 @@ export function mapLbRow(row: unknown[], m: Record<string, number>): Leaderboard
  * Maps a single Headhunter row to a Recruit object.
  * Uses direct index access for maximum performance.
  */
-export function mapHhRow(row: unknown[], m: Record<string, number>): Recruit | null {
-  if (!row || !Array.isArray(row)) return null;
+export function mapHhRow(rowSnapshot: unknown[], schemaMap: Record<string, number>): Recruit | null {
+  if (!rowSnapshot || !Array.isArray(rowSnapshot)) return null;
 
   return {
-    id: safeStr(row[m["id"]]),
-    n: safeStr(row[m["n"]]),
-    t: safeNum(row[m["t"]]),
-    potentialScore: safeNum(row[m["potentialScore"]]),
-    potentialRawScore: safeNum(row[m["potentialRawScore"]]),
-    lastScan: row[m["lastScan"]] ? new Date(row[m["lastScan"]] as string).getTime() : 0,
+    id: v.parse(SafeStringSchema, rowSnapshot[schemaMap["id"]]),
+    n: v.parse(SafeStringSchema, rowSnapshot[schemaMap["n"]]),
+    t: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["t"]]),
+    potentialScore: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["potentialScore"]]),
+    potentialRawScore: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["potentialRawScore"]]),
+    lastScan: v.parse(SafeTimestampSchema, rowSnapshot[schemaMap["lastScan"]]),
     d: {
-      don: safeNum(row[m["don"]]),
-      war: safeNum(row[m["war"]]),
-      ago: safeStr(row[m["ago"]]) || new Date().toISOString(),
-      cards: safeNum(row[m["cards"]]),
+      don: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["don"]]),
+      war: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["war"]]),
+      ago: v.parse(SafeStringSchema, rowSnapshot[schemaMap["ago"]]) || new Date().toISOString(),
+      cards: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["cards"]]),
     },
   };
 }
@@ -254,14 +276,16 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     parsedData = data;
   }
 
-  if (!parsedData || typeof parsedData !== "object") {
+  if (!parsedData || typeof parsedData !== "object" || parsedData === null) {
     throw new Error("Invalid payload: data is null or not an object");
   }
 
+  const typedData = parsedData as Record<string, unknown>;
+
   //  VALIDATION BOUNDARY: Enforce strict schema validation for all incoming data
-  if ((parsedData as any).format !== "matrix") {
+  if (typedData.format !== "matrix") {
     //  THREAT: Unvalidated object payload could crash the Clean Stack.
-    const validated = v.parse(BaseWebAppDataSchema, parsedData);
+    const validated = v.parse(BaseWebAppDataSchema, typedData);
     return {
       ...validated,
       timestamp: Number(validated.timestamp) || Date.now(),
@@ -292,11 +316,11 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   return {
     lb: lbMatrix
-      .map((r) => mapLbRow(r as unknown[], lbMap))
-      .filter((r): r is LeaderboardMember => !!r),
+      .map((rowSnapshot) => mapLbRow(rowSnapshot as unknown[], lbMap))
+      .filter((rowSnapshot): rowSnapshot is LeaderboardMember => !!rowSnapshot),
     hh: hhMatrix
-      .map((r) => mapHhRow(r as unknown[], hhMap))
-      .filter((r): r is Recruit => !!r),
+      .map((rowSnapshot) => mapHhRow(rowSnapshot as unknown[], hhMap))
+      .filter((rowSnapshot): rowSnapshot is Recruit => !!rowSnapshot),
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
   };
@@ -338,12 +362,12 @@ async function fetchWithRetry(
       return response;
     }
     return response;
-  } catch (e: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
     
     //  RECOGNITION: Correctly identify if the error was a deliberate abort vs timeout
-    if (e.name === "AbortError") {
-      throw e; 
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
     }
 
     if (retries > 0) {
@@ -352,7 +376,8 @@ async function fetchWithRetry(
       await new Promise((r) => setTimeout(r, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
     }
-    throw new NetworkError(e.message || "Network request failed");
+    const message = error instanceof Error ? error.message : "Network request failed";
+    throw new NetworkError(message);
   }
 }
 
@@ -457,16 +482,16 @@ async function _executeGasRequest<T>(
     const errorMessage =
       envelope.error?.message || envelope.message || "Operation failed on server";
     throw new Error(errorMessage);
-  } catch (e: any) {
+  } catch (error: unknown) {
     // ABORT HANDLING
     // We only throw immediately if the request was cancelled by the UI (replaced).
     // If it's a timeout, we treat it as a background-syncable event.
-    if (e.name === "AbortError") {
-      if (e.message !== "replaced") {
+    if (error instanceof Error && error.name === "AbortError") {
+      if (error.message !== "replaced") {
         console.warn(`[API] Request timed out. Enqueuing for background sync: ${action}`);
         await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
       }
-      throw e; 
+      throw error;
     }
     
     // Offline Queue logic
@@ -475,17 +500,22 @@ async function _executeGasRequest<T>(
       if ("serviceWorker" in navigator && "SyncManager" in window) {
         try {
           const reg = await navigator.serviceWorker.ready;
-          await (reg as any).sync.register("offline-queue-sync");
-        } catch (syncErr) {}
+          const syncManager = (reg as any).sync;
+          if (syncManager) {
+            await syncManager.register("offline-queue-sync");
+          }
+        } catch (syncErr) {
+          /* fail silent on sync registration */
+        }
       }
     }
 
-    throw e; 
+    throw error;
   }
 }
 
-async function enqueueOfflineRequest(request: any) {
-  const queue = (await idb.get<any[]>("offline_queue")) || [];
+async function enqueueOfflineRequest(request: Record<string, unknown>) {
+  const queue = (await idb.get<unknown[]>("offline_queue")) || [];
   queue.push(request);
   await idb.set("offline_queue", queue);
 }
@@ -510,7 +540,7 @@ export async function fetchRemote(options?: {
   force?: boolean;
 }): Promise<WebAppData> {
   const action = options?.force ? "refresh" : "getwebappdata";
-  const data = await gasRequest<any>(action, undefined, {
+  const data = await gasRequest<unknown>(action, undefined, {
     signal: options?.signal,
   });
 
@@ -612,7 +642,8 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       },
       lastScan: 0
     }));
-  } catch (e) {
+  } catch (error: unknown) {
+    console.warn("[GasClient] Worker scan failed:", error instanceof Error ? error.message : String(error));
     return null;
   }
 }
