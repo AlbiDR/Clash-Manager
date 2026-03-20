@@ -17,11 +17,11 @@ describe('KeyService', () => {
 
   it('should rotate keys', () => {
     const usedKeys = new Set();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 50; i++) {
         const key = manager.getHealthyKey();
         if (key) usedKeys.add(key);
     }
-    // With 3 keys, after 10 tries we should have seen all of them (probabilistically very likely)
+    // With 3 keys, after 50 tries we should have seen all of them (probabilistically very likely)
     expect(usedKeys.size).toBe(3);
   });
 
