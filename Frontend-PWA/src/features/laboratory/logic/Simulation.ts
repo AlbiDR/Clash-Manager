@@ -25,7 +25,9 @@ import type {
   SimulationState, 
   UpgradeAction, 
   UpgradeCandidate,
-  Rarity
+  Rarity,
+  PlayerProfile,
+  OptimizationResult
 } from './Types';
 import { 
   subGold, 
@@ -47,7 +49,8 @@ import {
   EFFICIENCY_OVERRIDES, 
   KING_XP_TABLE,
   LOOKAHEAD_WEIGHT,
-  LOOKAHEAD_PRECISION
+  LOOKAHEAD_PRECISION,
+  IMPORTANT_KING_LEVELS
 } from './Registry';
 import { PriorityQueue } from '@core/utils/PriorityQueue';
 import type { 
@@ -364,7 +367,7 @@ function calculateAdvancedScore(
  * @param totalXp - The cumulative XP earned from card upgrades.
  * @returns The corresponding King Level from the game tables.
  */
-function calculateKingLevel(totalXp: number): number {
+export function calculateKingLevel(totalXp: number): number {
   let level = 1;
   for (const row of KING_XP_TABLE) {
     if (totalXp >= Number(row.cumulative)) {
@@ -374,4 +377,55 @@ function calculateKingLevel(totalXp: number): number {
     }
   }
   return level;
+}
+
+/**
+ * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
+ *
+ * @param state - The current state of the simulation.
+ * @param originalProfile - The original player profile before simulation.
+ * @param initialXp - The initial XP of the player.
+ * @returns A formatted result compatible with existing UI components.
+ */
+export function mapStateToResult(
+  state: SimulationState,
+  originalProfile: PlayerProfile,
+  initialXp: number
+): OptimizationResult {
+  const kingLevel = calculateKingLevel(state.totalXp);
+  let xpIntoLevel = 0;
+
+  for (const row of KING_XP_TABLE) {
+    if (row.level === kingLevel) {
+      xpIntoLevel = Number(state.totalXp) - Number(row.cumulative);
+      break;
+    }
+  }
+
+  return {
+    actions: state.history as UpgradeAction[],
+    totalXpGained: Number(state.totalXp) - initialXp,
+    projectedKingLevel: kingLevel,
+    finalProfile: {
+      ...originalProfile,
+      kingLevel,
+      xpIntoLevel
+    },
+    finalGold: Number(state.inventory.gold),
+    finalGems: Number(state.inventory.gems),
+    totalGoldSpent: Number(state.totalGoldSpent),
+    totalGemsSpent: Number(state.totalGemsSpent),
+    totalWildCardsUsed: state.totalWildCardsUsed as Record<Rarity, number>
+  };
+}
+
+/**
+ * Determines the next logical King Level milestone for target projection.
+ *
+ * @param currentLevel - Current King Level.
+ * @returns The next milestone level.
+ */
+export function calculateDefaultTarget(currentLevel: number): number {
+  const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
+  return nextMilestone || (currentLevel + 1);
 }
