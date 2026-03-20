@@ -64,6 +64,13 @@ const HeadhunterStore: HeadhunterStoreContract = {
       )
       .getValues();
 
+    const parseNumeric = (val: any): number => {
+      if (val === "" || val === null || val === undefined) return 0;
+      const clean = String(val).replace(/[^0-9.-]/g, "");
+      const num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+    };
+
     const recruitMap = new Map<string, Recruit>();
     rows.forEach((recruitRow: any, i: number) => {
       const rawTag = String(recruitRow[H.TAG]);
@@ -73,13 +80,13 @@ const HeadhunterStore: HeadhunterStoreContract = {
           tag,
           invited: recruitRow[H.INVITED] === true || String(recruitRow[H.INVITED]).toUpperCase() === "TRUE",
           name: String(recruitRow[H.NAME]),
-          trophies: Number(recruitRow[H.TROPHIES]),
-          donations: Number(recruitRow[H.DONATIONS]),
-          cards: Number(recruitRow[H.CARDS]),
-          war: Number(recruitRow[H.WAR_WINS]),
+          trophies: parseNumeric(recruitRow[H.TROPHIES]),
+          donations: parseNumeric(recruitRow[H.DONATIONS]),
+          cards: parseNumeric(recruitRow[H.CARDS]),
+          war: parseNumeric(recruitRow[H.WAR_WINS]),
           foundDate: Registry.Services.Time.parseFlexibleDate(recruitRow[H.FOUND_DATE]),
-          rawScore: Number(recruitRow[H.RAW_SCORE]),
-          potentialScore: Number(recruitRow[H.POTENTIAL_SCORE]),
+          rawScore: parseNumeric(recruitRow[H.RAW_SCORE]),
+          potentialScore: parseNumeric(recruitRow[H.POTENTIAL_SCORE]),
           lastScan: recruitRow[H.LAST_SCAN] ? new Date(recruitRow[H.LAST_SCAN]).getTime() : 0,
         };
 
@@ -87,10 +94,16 @@ const HeadhunterStore: HeadhunterStoreContract = {
         if (result.success) {
           recruitMap.set(tag, result.output as Recruit);
         } else {
-          console.warn(`HeadhunterStore: Validation failed for row ${CONFIG.LAYOUT.DATA_START_ROW + i} (${tag}). Errors:`, result.issues.map(iss => `${iss.path?.[0]?.key}: ${iss.message}`).join(", "));
+          const errors = result.issues.map(iss => `${iss.path?.[0]?.key}: ${iss.message}`).join(", ");
+          console.warn(`HeadhunterStore: Validation failed for row ${CONFIG.LAYOUT.DATA_START_ROW + i} (${tag}). Errors: ${errors}`);
         }
       }
     });
+
+    if (recruitMap.size === 0 && rows.length > 0) {
+      console.error(`CRITICAL: HeadhunterStore loaded 0 recruits from ${rows.length} rows. Possible schema or validation failure.`);
+    }
+
     return recruitMap;
   },
 

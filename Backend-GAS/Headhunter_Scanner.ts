@@ -126,7 +126,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         const normTag = S.Core.normalizeTag(candidate.tag).replace("#", "").toLowerCase();
         const intel = normalizedProphet.get(normTag);
         
-        if (intel && intel.wins > 5) {
+        if (intel && intel.warFame > 500) {
              if (!usedRemote) {
                 finalScore *= 1.25;
                 console.info(`Prophet: Heritage found for ${candidate.name}: 25% Participation Bonus.`);
@@ -270,7 +270,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
           let finalScore = rawScore;
           const normTag = tag.replace("#", "").toLowerCase();
           const intel = normalizedProphet.get(normTag);
-          if (intel && intel.wins > 5) finalScore *= 1.25;
+          if (intel && intel.warFame > 500) finalScore *= 1.25;
 
           validCandidates.push({
             tag,

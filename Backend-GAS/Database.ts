@@ -186,7 +186,7 @@ const Database: DatabaseContract = {
             CONFIG.LAYOUT.DATA_START_ROW, 
             1, 
             sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
-            12
+            13
         ).getValues();
 
         return data.map((row: any[]) => ({
