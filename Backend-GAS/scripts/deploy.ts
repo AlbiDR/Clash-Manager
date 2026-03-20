@@ -95,6 +95,7 @@ async function main() {
       outfile: join(DIST_DIR, 'Valibot.gs'),
       format: 'iife',
       globalName: 'v',
+      target: 'es2019',
     });
     log('Valibot successfully bundled.');
   } catch (err) {
