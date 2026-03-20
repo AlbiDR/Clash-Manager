@@ -90,7 +90,7 @@ describe('Headhunter Orchestrator', () => {
     });
 
     it('should run full executeRecruitScout pipeline successfully', () => {
-        mocks.Network.fetchRoyaleAPI.mockReturnValue({ items: [] });
+        mocks.Network.fetchRoyaleAPI.mockReturnValue([{ items: [] }]);
 
         Headhunter.executeRecruitScout();
 
