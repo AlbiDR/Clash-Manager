@@ -184,7 +184,7 @@ const Database: DatabaseContract = {
         const S_DB = CONFIG.SCHEMA.DB;
         const data = sheet.getRange(
             CONFIG.LAYOUT.DATA_START_ROW, 
-            2, 
+            1, 
             sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
             12
         ).getValues();
