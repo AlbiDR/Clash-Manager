@@ -22,6 +22,7 @@ const VER_DATABASE = "13.1.0";
 export interface DatabaseContract {
     synchronizeClanSnapshot(): void;
     purgeDuplicateSnapshots(): { pruned: number };
+    loadDatabase(): any[];
 }
 
 const Database: DatabaseContract = {
@@ -173,6 +174,26 @@ const Database: DatabaseContract = {
         const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
         if (!sheet) return { pruned: 0 };
         return DatabaseStore.deduplicateDatabase(sheet);
+    },
+
+    loadDatabase(): any[] {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const sheet = ss.getSheetByName(CONFIG.SHEETS.DB);
+        if (!sheet || sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return [];
+        
+        const S_DB = CONFIG.SCHEMA.DB;
+        const data = sheet.getRange(
+            CONFIG.LAYOUT.DATA_START_ROW, 
+            2, 
+            sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
+            12
+        ).getValues();
+
+        return data.map((row: any[]) => ({
+            tag: String(row[S_DB.TAG]),
+            name: String(row[S_DB.NAME]),
+            warFame: Number(row[S_DB.WAR_FAME]) || 0
+        }));
     }
 };
 

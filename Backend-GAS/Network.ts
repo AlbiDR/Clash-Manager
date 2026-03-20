@@ -141,6 +141,11 @@ export interface NetworkContract {
   getLastWorkerError(): string;
 
   /**
+   * Generic remote worker execution.
+   */
+  fetchRemoteWorker(endpoint: string, payload: any): any;
+
+  /**
    * Resets the internal execution cache. Used primarily for testing.
    */
   _clearCache(): void;
@@ -813,6 +818,24 @@ var Network: NetworkContract = {
 
   getLastWorkerError() {
     return _LAST_WORKER_ERROR;
+  },
+
+  fetchRemoteWorker(endpoint: string, payload: any): any {
+    if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
+
+    const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}${endpoint}`, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true,
+        headers: headers
+    });
+
+    const code = res.getResponseCode();
+    if (code !== 200) throw new Error(`Worker Error ${code}: ${res.getContentText()}`);
+    return JSON.parse(res.getContentText());
   },
 
   _clearCache() {

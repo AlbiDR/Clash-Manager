@@ -52,7 +52,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const normalizedProphet = new Map<string, any>();
     try {
       const prophetData = S.Database.loadDatabase();
-      prophetData.forEach(p => {
+      prophetData.forEach((p: any) => {
         const normTag = S.Core.normalizeTag(p.tag).replace("#", "").toLowerCase();
         normalizedProphet.set(normTag, p);
       });
@@ -63,7 +63,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // 4. Batch Player Discovery
     const playerTags = new Set<string>();
     const tourneyDetails: any[] = S.Network.fetchRoyaleAPI(
-      activeTourneys.map(t => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t.tag)}`)
+      activeTourneys.map((t: any) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t.tag)}`)
     );
 
     tourneyDetails.forEach(detail => {
@@ -88,7 +88,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     if (remoteAvailable && tagsToFetch.length > 0) {
       try {
-        const remoteResponse = S.Network.fetchRemoteWorker("/public/scan", {
+        const remoteResponse = S.Network.fetchRemoteWorker("/scan", {
            tags: tagsToFetch,
            weights: W
         });

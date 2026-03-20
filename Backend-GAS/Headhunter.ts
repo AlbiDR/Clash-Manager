@@ -52,10 +52,14 @@ const Headhunter: HeadhunterContract = {
       const mathConfig = {
          percentile: CONFIG.HEADHUNTER.BENCHMARK_PERCENTILE,
          decay: CONFIG.HEADHUNTER.BENCHMARK_DECAY,
-         minPool: CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL
+         minPool: CONFIG.HEADHUNTER.BENCHMARK_MIN_POOL,
+         ELITE_THRESHOLD: CONFIG.SYSTEM.ELITE_MEMBERSHIP_THRESHOLD,
+         REBUILD_MIN_PERCENTILE: CONFIG.HEADHUNTER.REBUILD_MIN_PERCENTILE,
+         BENCHMARK_CLAN_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_CLAN_WEIGHT,
+         BENCHMARK_MARKET_WEIGHT: CONFIG.HEADHUNTER.BENCHMARK_MARKET_WEIGHT
       };
 
-      const inGameRequirement = S.Scoring.calculateClanTrophyFloor(members, strategy.floor);
+      const inGameRequirement = S.Scoring.calculateClanTrophyFloor(members, strategy.floor, mathConfig).floor;
       const effectiveRequirement = S.Scoring.calculateEffectiveScoutFloor(inGameRequirement, mathConfig);
       const blacklistResult = HeadhunterStore.updateAndGetBlacklist(sheet);
       
