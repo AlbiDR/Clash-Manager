@@ -14,9 +14,9 @@ import * as v from "valibot";
 // Progression Engine 2.0 Primitives
 import {
   calculateProgressionPath,
+  mapStateToResult,
+  calculateDefaultTarget,
   ProfileHydrator,
-  KING_XP_TABLE,
-  IMPORTANT_KING_LEVELS,
   RawInventorySchema,
   type PlayerData,
   type PlayerProfile,
@@ -43,55 +43,6 @@ import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLabora
 // Performance Control Block
 let currentSimulationId = 0;
 let lastAnalyzedTag: string | null = null;
-
-/**
- * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
- *
- * @param state - The current state of the simulation.
- * @param originalProfile - The original player profile before simulation.
- * @param initialXp - The initial XP of the player.
- * @returns A formatted result compatible with existing UI components.
- */
-function mapStateToResult(state: SimulationState, originalProfile: PlayerProfile, initialXp: number): OptimizationResult {
-  let kingLevel = 1;
-  let xpIntoLevel = 0;
-  
-  for (const row of KING_XP_TABLE) {
-    if (state.totalXp >= Number(row.cumulative)) {
-      kingLevel = row.level;
-      xpIntoLevel = Number(state.totalXp) - Number(row.cumulative);
-    } else {
-      break;
-    }
-  }
-
-  return {
-    actions: state.history as any[],
-    totalXpGained: Number(state.totalXp) - initialXp,
-    projectedKingLevel: kingLevel,
-    finalProfile: {
-      ...originalProfile,
-      kingLevel,
-      xpIntoLevel
-    },
-    finalGold: Number(state.inventory.gold),
-    finalGems: Number(state.inventory.gems),
-    totalGoldSpent: Number(state.totalGoldSpent),
-    totalGemsSpent: Number(state.totalGemsSpent),
-    totalWildCardsUsed: state.totalWildCardsUsed as Record<Rarity, number>
-  };
-}
-
-/**
- * Determines the next logical King Level milestone for target projection.
- *
- * @param currentLevel - Current King Level.
- * @returns The next milestone level.
- */
-function calculateDefaultTarget(currentLevel: number): number {
-  const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
-  return nextMilestone || (currentLevel + 1);
-}
 
 /**
  * Primary composable for Laboratory operations.
@@ -293,6 +244,55 @@ export function useLaboratory() {
     }
   }, { immediate: false }); // Initial run handled by hydration block above
 
+  /**
+   * SYSTEM STATUS RESOLVER
+   */
+  const status = computed(() => {
+    if (isFetching.value) return { type: "loading", text: "Scanning Vault..." } as const;
+    if (isSimulating.value) return { type: "loading", text: "Computing Trajectory..." } as const;
+    if (fetchError.value) return { type: "error", text: "Extraction Failed" } as const;
+    if (!clashData.value?.playerTag) return { type: "ready", text: "Target Required" } as const;
+    return { type: "ready", text: "Engine Operational" } as const;
+  });
+
+  const isEmpty = computed(() => !observation.value && !isFetching.value);
+
+  /**
+   * LAYOUT PROPS (Standardized Interface)
+   *
+   * @remarks
+   * Groups reactive properties for ConsoleLayout to minimize view boilerplate.
+   */
+  const layoutProps = computed(() => ({
+    status: status.value,
+    loading: isFetching.value,
+    isEmpty: isEmpty.value,
+    syncError: fetchError.value || undefined,
+  }));
+
+  /**
+   * UPDATES VAULT INVENTORY
+   *
+   * @remarks
+   * Maps UI update keys (gold, gems, wc_*) to structured inventory updates.
+   */
+  function handleVaultUpdate(key: string, value: number) {
+    const strategy: Record<string, () => void> = {
+      gold: () => store.updateInventory({ gold: value }),
+      gems: () => store.updateInventory({ gems: value }),
+    };
+
+    if (strategy[key]) {
+      strategy[key]();
+    } else if (key.startsWith('wc_')) {
+      const rawRarity = key.split('_')[1] || '';
+      const capitalized = (rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1)) as Rarity;
+      store.updateInventory({
+        wildCards: { [capitalized]: value } as Partial<Record<Rarity, number>>
+      });
+    }
+  }
+
   return {
     observation: computed(() => observation.value),
     operation: computed(() => operation.value),
@@ -300,24 +300,13 @@ export function useLaboratory() {
     isSimulating,
     isFetching,
     fetchError,
+    layoutProps,
 
     ingest,
     updateInventory: store.updateInventory,
     analyze,
     setSettings: store.setSettings,
-    handleVaultUpdate(key: string, value: number) {
-      if (key === 'gold') store.updateInventory({ gold: value });
-      else if (key === 'gems') store.updateInventory({ gems: value });
-      else if (key.startsWith('wc_')) {
-        const rawRarity = key.split('_')[1];
-        const capitalized = (rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1)) as Rarity;
-        store.updateInventory({
-          wildCards: {
-            [capitalized]: value
-          } as Partial<Record<Rarity, number>>
-        });
-      }
-    },
+    handleVaultUpdate,
     refresh: fetchTrackedPlayer
   };
 }

@@ -44,7 +44,7 @@ The worker behavior is controlled via environment variables:
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
-> **Note**: The worker utilizes independent discovery versioning (`v10.1.1`) to signal capability sets to the GAS backend. This version is distinct from the package version (`v10.0.0`) which governs the monorepo deployment.
+> **Note**: The worker utilizes a tiered versioning hierarchy. The **Discovery Version** (`v10.1.1`) signals capability sets and protocol stability to the GAS backend, while **Internal Metadata** (`v10.1.4`) tracks specific scan logic refinements. These are decoupled from the **Package Version** (`v10.0.0`) which governs the monorepo deployment.
 
 **Response:**
 ```json

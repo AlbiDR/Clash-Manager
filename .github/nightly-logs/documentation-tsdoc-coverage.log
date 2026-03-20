@@ -1,2 +1,3 @@
 Frontend-PWA/src/core/services/useUiCoordinator.ts
 Frontend-PWA/src/core/services/useAppSettings.ts
+Frontend-PWA/src/core/services/useConnectionStatus.ts
