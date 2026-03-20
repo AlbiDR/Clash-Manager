@@ -19,9 +19,7 @@ const {
   observation,
   operation,
   settings,
-  isFetching,
-  isSimulating,
-  fetchError,
+  layoutProps,
   setSettings,
   handleVaultUpdate,
   refresh,
@@ -45,37 +43,17 @@ const expandTrajectory = () => {
 const clashDataStore = useClashDataStore();
 const { data: globalData } = storeToRefs(clashDataStore);
 
-const statusText = computed(() => {
-  if (isFetching.value) return "Scanning Vault...";
-  if (isSimulating.value) return "Computing Trajectory...";
-  if (fetchError.value) return "Extraction Failed";
-  if (!globalData.value?.playerTag) return "Target Required";
-  return "Engine Operational";
-});
-
-const statusType = computed(() => {
-  if (isFetching.value || isSimulating.value) return "loading";
-  if (fetchError.value) return "error";
-  return "ready";
-});
-
-const isEmpty = computed(() => !observation.value && !isFetching.value);
-
-
 </script>
 
 <template>
   <ConsoleLayout
     title="Laboratory"
-    :status="{ type: statusType, text: statusText }"
-    :loading="isFetching"
-    :is-empty="isEmpty"
+    v-bind="layoutProps"
     :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
     :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
     empty-icon="flask"
     :skeleton-component="LaboratorySkeleton"
     :skeleton-count="1"
-    :sync-error="fetchError || undefined"
     @refresh="refresh"
   >
     <template #empty-action>
