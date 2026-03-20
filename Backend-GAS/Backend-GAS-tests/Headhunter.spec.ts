@@ -7,6 +7,7 @@ import HeadhunterView from '../Headhunter_View';
 const mocks = vi.hoisted(() => ({
     Network: {
         fetchRoyaleAPI: vi.fn(),
+        fetchRoyaleAPIOne: vi.fn(),
         getWorkerSummary: vi.fn().mockReturnValue('Healthy'),
     },
     Reporting: {
@@ -90,7 +91,9 @@ describe('Headhunter Orchestrator', () => {
     });
 
     it('should run full executeRecruitScout pipeline successfully', () => {
-        mocks.Network.fetchRoyaleAPI.mockReturnValue([{ items: [] }]);
+        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
+            items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
+        });
 
         Headhunter.executeRecruitScout();
 

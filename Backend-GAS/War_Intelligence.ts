@@ -109,11 +109,11 @@ const WarIntelligence = (() => {
           const tag = encodeURIComponent(rawTag);
           
           // API HANDSHAKE
-          const res = Registry.Services.Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`]);
+          const res = Registry.Services.Network.fetchRoyaleAPIOne(`${CONFIG.SYSTEM.API_BASE}/clans/%23${tag}/currentriverrace`);
           
-          if (!res?.[0]) throw new Error("API_EMPTY");
+          if (!res) throw new Error("API_EMPTY");
           
-          const snap = this.parse(res[0], 'HIGH-FIDELITY');
+          const snap = this.parse(res, 'HIGH-FIDELITY');
 
           // PERSISTENCE SYNC
           // Save to both short-term cache and long-term persistent storage.

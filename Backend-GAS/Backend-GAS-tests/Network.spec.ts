@@ -84,6 +84,31 @@ describe('Network Module', () => {
       Network.fetchRoyaleAPI(['url1']);
       expect(mockStore.props.setJSON).toHaveBeenCalled();
     });
+
+    it('should throw error if urls is not an array', () => {
+      // @ts-ignore
+      expect(() => Network.fetchRoyaleAPI('not-an-array')).toThrow(/Network: fetchRoyaleAPI expects an Array of URLs/);
+    });
+  });
+
+  describe('fetchRoyaleAPIOne', () => {
+    it('should fetch a single URL and return the object', () => {
+      const url = 'https://api.clashroyale.com/v1/players/%23TAG';
+      mockUrlFetch.fetchAll.mockReturnValueOnce([{
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({ name: 'Player' }),
+      }]);
+      
+      const result = Network.fetchRoyaleAPIOne(url);
+      
+      expect(mockUrlFetch.fetchAll).toHaveBeenCalled();
+      expect(result.name).toBe('Player');
+    });
+
+    it('should throw error if url is not a string', () => {
+      // @ts-ignore
+      expect(() => Network.fetchRoyaleAPIOne(['not-a-string'])).toThrow(/Network: fetchRoyaleAPIOne expects a string URL/);
+    });
   });
 
   describe('remoteWorkerHealthy', () => {

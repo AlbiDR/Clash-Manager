@@ -785,8 +785,8 @@ function verifyApiKeysInternal(
     }
 
     try {
-      const response = Registry.Services.Network.fetchRoyaleAPI([url]);
-      if (response && response[0]) {
+      const response = Registry.Services.Network.fetchRoyaleAPIOne(url);
+      if (response) {
         results.push({ name: keyObj.name, success: true });
       } else {
         results.push({ name: keyObj.name, success: false, error: "Invalid Key or Maintenance" });
