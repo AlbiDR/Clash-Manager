@@ -7,17 +7,13 @@ import {
   ProphetIntelSchema,
   AuditRequestSchema,
   PublicScanRequestSchema,
-  ScanRequestSchema,
-  ClanFullRequestSchema,
   ClanApiRequestSchema,
   FetchRequestSchema,
   SubscriptionRequestSchema,
   RoyaleClanMembersResponseSchema,
   RoyalePlayerSchema,
-  RoyaleBattleLogResponseSchema,
   RoyaleTournamentMemberSchema,
   RoyaleTournamentResponseSchema,
-  RoyaleCurrentRiverRaceSchema,
   RoyaleWarLogResponseSchema
 } from '../schemas';
 
