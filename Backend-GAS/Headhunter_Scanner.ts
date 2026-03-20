@@ -37,19 +37,22 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // 1. Fetch Global Tournaments (Aggressive Discovery)
     const uniqueTourneys = new Set<string>();
     let activeTourneys: any[] = [];
-    const keywords = [...CONFIG.HEADHUNTER.KEYWORDS];
-    const maxRetries = 3;
+    // Pre-shuffle to guarantee a unique keyword per attempt (no repeat draws)
+    const keywords = [...CONFIG.HEADHUNTER.KEYWORDS].sort(() => Math.random() - 0.5);
+    // 3-tier threshold decay: be strict on first pass, increasingly lenient on retries
+    const THRESHOLDS = [50, 25, 10];
+    const maxRetries = THRESHOLDS.length;
     let attempts = 0;
 
     while (activeTourneys.length === 0 && attempts < maxRetries) {
-      const keyword = keywords[Math.floor(Math.random() * keywords.length)];
+      const keyword = keywords[attempts % keywords.length];
       const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(keyword)}`;
       const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
       
       if (tourneyResponse && Array.isArray(tourneyResponse.items)) {
         console.log(`HeadhunterScanner: Found ${tourneyResponse.items.length} raw tournaments for keyword '${keyword}'.`);
         // [FLEXIBLE FILTERING]: Prioritize large tournaments, but accept smaller ones if yield is low.
-        const threshold = attempts === 0 ? 50 : 25;
+        const threshold = THRESHOLDS[attempts] ?? 10;
         activeTourneys = tourneyResponse.items.filter(
           (t: any) => t.type === "open" && t.maxPlayers >= threshold
         );
