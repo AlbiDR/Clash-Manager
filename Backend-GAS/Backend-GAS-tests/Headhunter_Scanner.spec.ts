@@ -54,9 +54,9 @@ describe('HeadhunterScanner', () => {
 
     it('should use Local Scan when Remote is offline', () => {
         // 1. Discovery
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce({
+        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
             items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
-        });
+        }]);
 
         // 2. Details
         mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
@@ -87,9 +87,9 @@ describe('HeadhunterScanner', () => {
 
     it('should use Remote Scan when Worker is healthy', () => {
         // 1. Discovery
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce({
+        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
             items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
-        });
+        }]);
         
         // 2. Details
         mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{

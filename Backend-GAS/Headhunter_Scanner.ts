@@ -35,7 +35,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const W = CONFIG.HEADHUNTER.WEIGHTS;
 
     // 1. Fetch Global Tournaments
-    const tourneyResponse: any = S.Network.fetchRoyaleAPI(`${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(CONFIG.HEADHUNTER.KEYWORDS[Math.floor(Math.random() * CONFIG.HEADHUNTER.KEYWORDS.length)])}`);
+    const tourneyResponse: any = S.Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(CONFIG.HEADHUNTER.KEYWORDS[Math.floor(Math.random() * CONFIG.HEADHUNTER.KEYWORDS.length)])}`])[0];
     if (!tourneyResponse || !Array.isArray(tourneyResponse.items)) return [];
 
     // 2. Filter Active & High-Yield Tournaments
