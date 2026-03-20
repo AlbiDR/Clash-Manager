@@ -185,7 +185,10 @@ const HeadhunterScanner: HeadhunterScannerContract = {
                   const tag = S.Core.normalizeTag(opp.tag);
                   const isClanless = !opp.clan || !opp.clan.tag;
                   if (tag && isClanless && !processedTags.has(tag) && !blacklistSet.has(tag)) {
-                    shadowTags.add(tag);
+                    // [FIX] Ensure we don't treat existing recruits as new shadow arrivals
+                    if (!existingRecruits.has(tag)) {
+                      shadowTags.add(tag);
+                    }
                     processedTags.add(tag);
                   }
                 }
@@ -237,13 +240,16 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
             if (validCandidates.length < 40 && shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS) {
               const recruits = BattleLog.processPlayerHistory(S.Core.normalizeTag(profile.tag), AnalysisGoal.RECRUITMENT);
-              recruits.forEach((recruit: any) => {
-                 const tag = S.Core.normalizeTag(recruit.tag);
-                 if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && tag && !processedTags.has(tag) && !blacklistSet.has(tag)) {
-                    shadowTags.add(tag);
+               recruits.forEach((recruit: any) => {
+                  const tag = S.Core.normalizeTag(recruit.tag);
+                  if (shadowTags.size < CONFIG.HEADHUNTER.MAX_SHADOW_RECRUITS && tag && !processedTags.has(tag) && !blacklistSet.has(tag)) {
+                    // [FIX] Double-check against existing pool before adding to shadowTags
+                    if (!existingRecruits.has(tag)) {
+                      shadowTags.add(tag);
+                    }
                     processedTags.add(tag);
-                 }
-              });
+                  }
+               });
             }
           }
           
