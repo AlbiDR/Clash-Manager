@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-20] PR #267: Structural Optimization of Laboratory Feature
+**Commit**: `1f00498b0039a32e064cc856d675e84092f1d58a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/267)
+
+### Description
+The structural optimization of the Laboratory feature is complete. Logic has been moved to the logic layer, and the View now uses the standardized `layoutProps` pattern for a leaner, more maintainable implementation.
+
+---
+*PR created automatically by Jules for task [9704141557039341604](https://jules.google.com/task/9704141557039341604) started by @AlbiDR*
+
+---
+
 ## [2026-03-20] PR #266: test(verify): add comprehensive coverage for useDeepLinkHandler
 **Commit**: `99449f0e5e47ec99081bf25b0bd3109546e41254`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/266)
