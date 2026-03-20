@@ -167,6 +167,13 @@ const HeadhunterView: HeadhunterViewContract = {
       },
       {
         repeatCell: {
+          range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 1, endColumnIndex: CONFIG.SCHEMA.HH.FOUND_DATE + 2 },
+          cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
+          fields: "userEnteredFormat.numberFormat"
+        }
+      },
+      {
+        repeatCell: {
           range: { sheetId, startRowIndex: startIdx, endRowIndex: startIdx + contentRows, startColumnIndex: CONFIG.SCHEMA.HH.LAST_SCAN + 1, endColumnIndex: CONFIG.SCHEMA.HH.LAST_SCAN + 2 },
           cell: { userEnteredFormat: { numberFormat: { type: "DATE_TIME", pattern: CONFIG.SYSTEM.DATE_FORMAT_DATETIME } } },
           fields: "userEnteredFormat.numberFormat"
