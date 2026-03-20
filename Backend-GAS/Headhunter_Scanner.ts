@@ -34,17 +34,38 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const validCandidates: Recruit[] = [];
     const W = CONFIG.HEADHUNTER.WEIGHTS;
 
-    // 1. Fetch Global Tournaments
-    const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(`${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(CONFIG.HEADHUNTER.KEYWORDS[Math.floor(Math.random() * CONFIG.HEADHUNTER.KEYWORDS.length)])}`);
-    if (!tourneyResponse || !Array.isArray(tourneyResponse.items)) return [];
-
-    // 2. Filter Active & High-Yield Tournaments
-    // We prioritize "Open" tournaments with high player counts.
+    // 1. Fetch Global Tournaments (Aggressive Discovery)
     const uniqueTourneys = new Set<string>();
-    const activeTourneys = tourneyResponse.items
-      .filter((t: any) => t.type === "open" && t.maxPlayers >= 50)
-      .slice(0, lowQuotaMode ? 1 : 5); // Conserve API calls in low quota mode
+    let activeTourneys: any[] = [];
+    const keywords = [...CONFIG.HEADHUNTER.KEYWORDS];
+    const maxRetries = 3;
+    let attempts = 0;
 
+    while (activeTourneys.length === 0 && attempts < maxRetries) {
+      const keyword = keywords[Math.floor(Math.random() * keywords.length)];
+      const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(keyword)}`;
+      const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
+      
+      if (tourneyResponse && Array.isArray(tourneyResponse.items)) {
+        // [FLEXIBLE FILTERING]: Prioritize large tournaments, but accept smaller ones if yield is low.
+        const threshold = attempts === 0 ? 50 : 25;
+        activeTourneys = tourneyResponse.items.filter(
+          (t: any) => t.type === "open" && t.maxPlayers >= threshold
+        );
+        
+        if (activeTourneys.length > 0) {
+          console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Threshold: ${threshold}).`);
+        }
+      }
+      attempts++;
+    }
+
+    if (activeTourneys.length === 0) {
+        console.warn("HeadhunterScanner: Exhausted tournament discovery retries. Discovery Yield: 0.");
+        return [];
+    }
+
+    activeTourneys = activeTourneys.slice(0, lowQuotaMode ? 1 : 5); // Conserve API calls
     activeTourneys.forEach((t: any) => uniqueTourneys.add(t.tag));
 
     // 3. Load Prophet Intelligence (Historical Context)
