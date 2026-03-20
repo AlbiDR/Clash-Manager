@@ -4,6 +4,7 @@ import HeadhunterScanner from '../Headhunter_Scanner';
 const mocks = vi.hoisted(() => ({
     Network: {
         fetchRoyaleAPI: vi.fn(),
+        fetchRoyaleAPIOne: vi.fn(),
         fetchRemoteWorker: vi.fn(),
     },
     Reporting: {
@@ -54,9 +55,9 @@ describe('HeadhunterScanner', () => {
 
     it('should use Local Scan when Remote is offline', () => {
         // 1. Discovery
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
+        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
             items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
-        }]);
+        });
 
         // 2. Details
         mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
@@ -87,9 +88,9 @@ describe('HeadhunterScanner', () => {
 
     it('should use Remote Scan when Worker is healthy', () => {
         // 1. Discovery
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
+        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
             items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
-        }]);
+        });
         
         // 2. Details
         mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{

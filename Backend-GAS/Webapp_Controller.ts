@@ -246,16 +246,16 @@ const WebappController: WebappControllerContract = {
 
     console.info("WebappController: getMembers: Using local GAS fallback (remote unavailable).");
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-    const data = Registry.Services.Network.fetchRoyaleAPI([
+    const data = Registry.Services.Network.fetchRoyaleAPIOne(
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
-    ]);
+    );
 
-    if (!data || !data[0] || !data[0].memberList) {
+    if (!data || !data.memberList) {
       console.warn("WebappController: getMembers: No data returned from Clash Royale API.");
       return [];
     }
 
-    return data[0].memberList.map((m: any) => ({
+    return data.memberList.map((m: any) => ({
       tag: m.tag,
       name: m.name,
       role: formatRole(m.role),
@@ -267,15 +267,15 @@ const WebappController: WebappControllerContract = {
 
   getPlayerProfile(tag: string): any {
     const cleanTag = encodeURIComponent(tag.startsWith("#") ? tag : `#${tag}`);
-    const data = Registry.Services.Network.fetchRoyaleAPI([
+    const data = Registry.Services.Network.fetchRoyaleAPIOne(
       `${CONFIG.SYSTEM.API_BASE}/players/${cleanTag}`,
-    ]);
+    );
 
-    if (!data || !data[0]) {
+    if (!data) {
       throw new Error(`Player ${tag} not found`);
     }
 
-    return data[0];
+    return data;
   },
 
   retrieveWarLogEntries(): any[] {
@@ -284,16 +284,16 @@ const WebappController: WebappControllerContract = {
 
     console.info("WebappController: getWarLog: Using local GAS fallback (remote unavailable).");
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-    const data = Registry.Services.Network.fetchRoyaleAPI([
+    const data = Registry.Services.Network.fetchRoyaleAPIOne(
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
-    ]);
+    );
 
-    if (!data || !data[0] || !data[0].items) {
+    if (!data || !data.items) {
       console.warn("WebappController: getWarLog: No data returned from Clash Royale API.");
       return [];
     }
 
-    return data[0].items.map((warLogEntry: any) => {
+    return data.items.map((warLogEntry: any) => {
       let myStanding: any = null;
       let opponents: any[] = [];
 

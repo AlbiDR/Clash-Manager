@@ -37,7 +37,7 @@ const Headhunter: HeadhunterContract = {
 
       // 1. INITIALIZATION & METRICS [1/8]
       const startTime = Date.now();
-      const members: any[] = S.Network.fetchRoyaleAPI([`${CONFIG.SYSTEM.API_BASE}/clans/${encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG)}/members`])[0]?.items || [];
+      const members: any[] = S.Network.fetchRoyaleAPIOne(`${CONFIG.SYSTEM.API_BASE}/clans/${encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG)}/members`)?.items || [];
       const remainingQuota = 50 - members.length;
 
       // 2. STRATEGY ALIGNMENT

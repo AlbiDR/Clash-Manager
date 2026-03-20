@@ -67,6 +67,15 @@ export interface NetworkContract {
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchRoyaleAPI(urls: string[], scoring?: ScoringWeights | null): any[];
+  
+  /**
+   * Executes a single Royale API request with smart caching.
+   *
+   * @param url - The fully qualified API endpoint to fetch.
+   * @param scoring - Optional weights for server-side recruit scoring.
+   * @returns The parsed JSON response or null if the request failed.
+   */
+  fetchRoyaleAPIOne(url: string, scoring?: ScoringWeights | null): any;
 
   /**
    * Fetches an aggregated clan snapshot (Members + Race + History).
@@ -288,7 +297,11 @@ var Network: NetworkContract = {
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
   fetchRoyaleAPI(urls: string[], scoring = null) {
-    if (!urls || urls.length === 0) return [];
+    if (!urls) return [];
+    if (!Array.isArray(urls)) {
+      throw new Error(`Network: fetchRoyaleAPI expects an Array of URLs. Received: ${typeof urls}. Use fetchRoyaleAPIOne for single requests.`);
+    }
+    if (urls.length === 0) return [];
 
     // 1. Initialize Quota
     if (_FETCH_COUNT === 0) NetworkInternal.initQuota();
@@ -476,6 +489,16 @@ var Network: NetworkContract = {
     }
 
     return finalResults;
+  },
+
+  /**
+   * SINGLE FETCH HELPER
+   * Wraps the batch fetcher for single-URL convenience and type safety.
+   */
+  fetchRoyaleAPIOne(url, scoring = null) {
+    if (typeof url !== "string") throw new Error("Network: fetchRoyaleAPIOne expects a string URL.");
+    const results = this.fetchRoyaleAPI([url], scoring);
+    return results && results.length > 0 ? results[0] : null;
   },
 
   /**
