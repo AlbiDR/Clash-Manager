@@ -182,12 +182,10 @@ const Database: DatabaseContract = {
         if (!sheet || sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return [];
         
         const S_DB = CONFIG.SCHEMA.DB;
-        const data = sheet.getRange(
-            CONFIG.LAYOUT.DATA_START_ROW, 
-            1, 
-            sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1), 
-            13
-        ).getValues();
+        // [FIX] Correct absolute column mapping: Column A=1, B=2, etc. 
+        // SCHEMA.DB indices (TAG: 1, NAME: 2) are absolute, so we MUST start from Column 1 (A).
+        const lastRow = sheet.getLastRow();
+        const data = sheet.getRange(CONFIG.LAYOUT.DATA_START_ROW, 1, lastRow - CONFIG.LAYOUT.DATA_START_ROW + 1, 12).getValues();
 
         return data.map((row: any[]) => ({
             tag: String(row[S_DB.TAG]),

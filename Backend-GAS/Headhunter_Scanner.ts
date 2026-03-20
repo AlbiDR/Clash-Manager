@@ -47,6 +47,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
       
       if (tourneyResponse && Array.isArray(tourneyResponse.items)) {
+        console.log(`HeadhunterScanner: Found ${tourneyResponse.items.length} raw tournaments for keyword '${keyword}'.`);
         // [FLEXIBLE FILTERING]: Prioritize large tournaments, but accept smaller ones if yield is low.
         const threshold = attempts === 0 ? 50 : 25;
         activeTourneys = tourneyResponse.items.filter(
@@ -54,14 +55,18 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         );
         
         if (activeTourneys.length > 0) {
-          console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Threshold: ${threshold}).`);
+          console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Threshold: ${threshold}, Matches: ${activeTourneys.length}).`);
+        } else {
+          console.warn(`HeadhunterScanner: No 'open' tournaments >= ${threshold} for keyword '${keyword}'.`);
         }
+      } else {
+        console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no items for '${keyword}'. Response: ${JSON.stringify(tourneyResponse).slice(0, 100)}`);
       }
       attempts++;
     }
 
     if (activeTourneys.length === 0) {
-        console.warn("HeadhunterScanner: Exhausted tournament discovery retries. Discovery Yield: 0.");
+        console.error("HeadhunterScanner: Exhausted tournament discovery retries. Discovery Yield: 0.");
         return [];
     }
 
@@ -351,6 +356,13 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       `SHADOWS:     ${shadowReport}`,
       `TOTAL:       ${totalYield} candidates identified for profiling`
     ]);
+
+    // 10. Local Discovery Check
+    if (validCandidates.length === 0 && usedRemote) {
+        console.warn("HeadhunterScanner: Remote worker returned 0 candidates. Verification of local yield required.");
+    } else {
+        console.info(`HeadhunterScanner: Discovery Cycle Complete. Yield: ${validCandidates.length} potential recruits.`);
+    }
 
     return validCandidates;
   }

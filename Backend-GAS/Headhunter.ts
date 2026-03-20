@@ -147,9 +147,9 @@ const Headhunter: HeadhunterContract = {
       scanned.forEach((c) => {
         const tag = S.Core.normalizeTag(c.tag);
         const existing = combinedRegistry.get(tag);
-        
         if (existing) {
           // [FIX] Strictly preserve existing foundDate if it's valid
+          // If the date is a valid object or a parsable string, reuse it.
           const oldDate = S.Time.parseFlexibleDate(existing.foundDate);
           if (oldDate.getTime() > 0) {
             c.foundDate = oldDate;
@@ -157,6 +157,7 @@ const Headhunter: HeadhunterContract = {
           updatedExisting++;
         } else {
           newArrivals++;
+          // For truly new arrivals, foundDate is already set to new Date() by the scanner
         }
         combinedRegistry.set(tag, c);
       });
