@@ -36,6 +36,9 @@ export interface HeadhunterMathConfig {
   REBUILD_MIN_PERCENTILE: number;
   BENCHMARK_CLAN_WEIGHT: number;
   BENCHMARK_MARKET_WEIGHT: number;
+  percentile: number;
+  decay: number;
+  minPool: number;
 }
 
 export interface RosterSchemaIndex {

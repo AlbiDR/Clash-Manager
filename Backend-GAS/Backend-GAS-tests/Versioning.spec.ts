@@ -17,7 +17,7 @@ describe('System Versioning & Manifest Integrity', () => {
   });
 
   it('should have consistent VER_TIME', () => {
-    expect(VER_TIME).toBe("1.0.0");
+    expect(VER_TIME).toBe("1.0.1");
     expect(CONFIG.SYSTEM.MANIFEST.TIME).toBe(VER_TIME);
   });
 

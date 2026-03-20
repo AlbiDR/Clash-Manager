@@ -50,6 +50,17 @@ export interface ScoringContract {
     config: HeadhunterMathConfig
   ): { floor: number; method: string; mode: string };
 
+  calculateClanTrophyFloor(
+    members: any[], 
+    inGameReq: number,
+    config: HeadhunterMathConfig
+  ): { floor: number; method: string; mode: string };
+
+  calculateEffectiveScoutFloor(
+    inGameRequirement: number, 
+    config: HeadhunterMathConfig
+  ): number;
+
   calculateHybridBenchmark(
     clanElite: Array<{ rawScore: number; perfScore: number }>,
     blacklist: Array<{ rawScore: number }>,
@@ -162,6 +173,14 @@ const Scoring: ScoringContract = {
 
   calculateTrophyFloor: function (members: any[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: string } {
     return Registry.Services.ScoringKernel.evaluateTrophyStrategy(members, inGameReq, config);
+  },
+
+  calculateClanTrophyFloor: function (members: any[], inGameReq: number, config: HeadhunterMathConfig): { floor: number; method: string; mode: string } {
+    return this.calculateTrophyFloor(members, inGameReq, config);
+  },
+
+  calculateEffectiveScoutFloor: function (inGameRequirement: number, config: HeadhunterMathConfig): number {
+    return Math.round(inGameRequirement * (config.percentile || 1));
   },
 
   resolveWarFame: function (p: any): number {
