@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-20] PR #266: test(verify): add comprehensive coverage for useDeepLinkHandler
+**Commit**: `99449f0e5e47ec99081bf25b0bd3109546e41254`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/266)
+
+### Description
+Added comprehensive unit tests for the `useDeepLinkHandler` composable in `Frontend-PWA`. The tests cover all logical branches, including happy paths for valid deep links, sad paths for missing or invalid query parameters, and edge cases like missing DOM elements or empty item lists. This fulfills the "Skeptic" archetype by ensuring the logic handles malformed input and unexpected environmental states gracefully. All tests pass with Vitest.
+
+---
+*PR created automatically by Jules for task [11483476947962564429](https://jules.google.com/task/11483476947962564429) started by @AlbiDR*
+
+---
+
 ## [2026-03-20] PR #265: fix(harden): enforce validation boundaries and eliminate any plague in GasClient.ts
 **Commit**: `b439ed9381bd9257540d625d7e1596e474a38c44`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/265)
