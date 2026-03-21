@@ -15,18 +15,19 @@ Before analyzing changes, the environment must be synced to the absolute git sta
     ```bash
     git fetch origin --tags
     ```
-2.  **Identify Baseline**:
-    ```bash
-    ST=$(git describe --tags --abbrev=0 origin/Stable 2>/dev/null || git rev-list --max-parents=0 HEAD)
-    ```
+2.  **Identify Baseline (Multi-Source)**:
+    - **Git Source**: `ST_GIT=$(git describe --tags --abbrev=0 origin/Stable 2>/dev/null || git rev-list --max-parents=0 HEAD)`
+    - **Folder Source**: List files in `.github/releases/` and identify the version of the most recent entry.
+    - **Cross-Reference**: **CRITICAL**: The AI must verify that the latest tag aligns with the most recent file in `.github/releases/`. If they differ (e.g., a file exists for v13.2.0 but no tag exists), the AI must hypothesize the cause (e.g., failed tag push) and use the file version as the true baseline.
+    - **Final Baseline**: `ST=$ST_GIT` (if aligned) or the higher version found in the folder.
 3.  **Extract Authoritative Delta**:
     ```bash
     git log "$ST"..origin/Stable --format="<c>%h: %s%n%b</c>%n"
     ```
 4.  **Version Parity Check**:
-    - Verify the `previous_version` (tag).
+    - Verify the `previous_version` (against tags and `.github/releases/` history).
     - Verify the current `package.json` version.
-    - Confirm the `expected_version` aligns with SemVer logic (Major/Minor/Patch).
+    - Confirm the `expected_version` aligns with SemVer logic.
     - **CRITICAL**: Do NOT proceed if the version chain is broken or non-sequential.
 
 ---
@@ -47,7 +48,7 @@ Using the `release-schema.json`, generate the structural JSON then bake the fina
 1.  **Title Geometry**: The release title must conform to `[Primary Feature Name]` or `[Primary Component] [Primary Action]`, but it **MUST** be catchy, insightful, and genuine.
 2.  **Generate JSON**: Follow the narrational strictures (Passive Voice). Present the JSON draft for approval before proceeding.
 3.  **Bake Markdown**: Apply the OCD delimiters (`--- <br>`).
-4.  **Local Draft**: Create the local release file in `.github/releases/`. It serves as the definitive source.
+4.  **Local Drafts**: Create the new release file in `.github/releases/`. The **files** in this directory serve as the definitive "Draft" source of truth for the stack.
     `file:///.github/releases/v[VERSION]: [Title].md`
 
 ---
