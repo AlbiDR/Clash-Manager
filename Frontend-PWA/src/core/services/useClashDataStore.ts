@@ -119,11 +119,23 @@ export const useClashDataStore = defineStore("clashData", () => {
       await wakeLock.request();
       
       const remoteData = await fetchRemote({ force });
-      data.value = remoteData;
+
+      // [GUARD] VALIDATION BOUNDARY: Target B [1]
+      // Rationale: Ensure that the remote payload matches the expected schema
+      // before it enters the application state. Malformed responses from GAS
+      // or the Worker must be rejected to prevent silent corruption.
+      const validation = v.safeParse(WebAppDataSchema, remoteData);
+      if (!validation.success) {
+        syncError.value = "Remote data validation failed";
+        console.error("[Store] Sync rejected: Invalid WebAppData structure", validation.issues);
+        return;
+      }
+
+      data.value = validation.output as WebAppData;
       lastSync.value = Date.now();
       
       // PERSISTENCE: StorageService handles the IndexedDB write
-      await saveCache(remoteData);
+      await saveCache(validation.output as WebAppData);
     } catch (e: unknown) {
       syncError.value = e instanceof Error ? e.message : "Sync failed";
       console.warn("[Store] Background sync failed:", e);
