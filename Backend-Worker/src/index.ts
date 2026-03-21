@@ -23,6 +23,7 @@ import * as v from "valibot";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import Time from "../../Backend-GAS/Time";
 import { KeyService } from "./KeyService.js";
+import { WorkerHubController } from "./controllers/WorkerHubController.js";
 import {
   AuditRequestSchema,
   PublicScanRequestSchema,
@@ -125,6 +126,7 @@ const authMiddleware: RequestHandler = (request, response, next) => {
     "/capabilities",
     "/public/scan",
     "/public/subscribe",
+    "/hub/state",
   ];
 
   // Normalize path to handle trailing slashes consistently
@@ -1151,6 +1153,38 @@ app.post(
   },
 );
 
+/**
+ * HUB STATE ENDPOINT
+ * 
+ * Publicly exposes the synchronized Worker Hub payload to the PWA.
+ * Strictly stateless to prevent locking read queries.
+ */
+app.get("/hub/state", async (_request: Request, response: ExpressResponse): Promise<void> => {
+  try {
+    const state = await WorkerHubController.getHubState();
+    response.json({ success: true, data: state });
+  } catch (e: any) {
+    if (e.code === "ERR_STATE_MISSING") {
+      response.status(503).json({ error: e.message, layer: e.layer });
+    } else {
+      response.status(500).json({ error: e.message || "unknown" });
+    }
+  }
+});
+
+/**
+ * MANUAL SYNC ENDPOINT
+ * 
+ * Allows forcing a synchronization cycle manually (e.g. via GAS triggers or Webhooks).
+ * Requires the REMOTE_WORKER_SECRET.
+ */
+app.post("/hub/sync/manual", async (_request: Request, response: ExpressResponse): Promise<void> => {
+  const secret = process.env["REMOTE_WORKER_SECRET"] || "";
+  const gasBase = process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "";
+  const didSync = await WorkerHubController.executeSync(gasBase, secret);
+  response.json({ success: didSync });
+});
+
 // ============================================================================
 //  SERVER STARTUP
 // ============================================================================
@@ -1159,4 +1193,13 @@ app.listen(CONFIG.port, () => {
   console.log(
     `Worker listening on ${CONFIG.port} (concurrency=${CONFIG.concurrency})`,
   );
+  
+  const gasUrl = process.env["VITE_GAS_URL"] || process.env["GAS_URL"];
+  const secret = process.env["REMOTE_WORKER_SECRET"];
+  
+  if (gasUrl && secret) {
+    WorkerHubController.startSyncDaemon(gasUrl, secret);
+  } else {
+    console.warn("[Worker] Hub Sync Daemon disabled: VITE_GAS_URL or REMOTE_WORKER_SECRET is missing.");
+  }
 });
