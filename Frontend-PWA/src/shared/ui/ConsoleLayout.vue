@@ -10,6 +10,7 @@ import {
   useUiCoordinator,
   useShowcaseMode,
   useBlueprintMode,
+  useSystemInfo,
 } from "@core";
 import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import { usePullToRefresh } from "../index";
@@ -66,12 +67,11 @@ const { setFabVisible, updateFabState } = useUiCoordinator();
 const haptics = useHaptics();
 const { isShowcaseMode } = useShowcaseMode();
 const { isBlueprintMode } = useBlueprintMode();
-
-const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
+const { appVersion, activeBadge } = useSystemInfo();
 
 const activeFooterBadge = computed(() => {
   if (props.footerBadge !== undefined) return props.footerBadge;
-  return isBlueprintMode.value ? "BLUEPRINT" : undefined;
+  return activeBadge.value || undefined;
 });
 
 const displayLoading = computed(() => {
