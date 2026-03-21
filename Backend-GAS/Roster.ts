@@ -318,6 +318,13 @@ const Roster: RosterContract = {
    */
   getProphetCache(): Map<string, any> {
     return RosterStore.getProphetCache();
+  },
+
+  /**
+   * EXPOSURE: Returns the top performing tags from the Leaderboard.
+   */
+  getTopPerformers(count: number = 3): string[] {
+    return RosterStore.loadTopPerformers(count);
   }
 };
 

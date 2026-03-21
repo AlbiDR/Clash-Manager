@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
         fetchRemoteWorker: vi.fn(),
         remoteWorkerHealthy: vi.fn(),
     },
+    Roster: {
+        getTopPerformers: vi.fn().mockReturnValue(["#TOP1", "#TOP2", "#TOP3"])
+    },
     Reporting: {
         logReport: vi.fn()
     },
@@ -38,7 +41,8 @@ vi.mock('../Registry', () => ({
             Core: mocks.Core,
             Scoring: mocks.Scoring,
             Database: mocks.Database,
-            BattleLog: mocks.BattleLog
+            BattleLog: mocks.BattleLog,
+            Roster: mocks.Roster
         }
     }
 }));

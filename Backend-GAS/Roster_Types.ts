@@ -50,6 +50,7 @@ export interface RaceParticipant {
 export interface RosterContract {
   synchronizeLeaderboard(): void;
   getProphetCache(): Map<string, any>;
+  getTopPerformers(count?: number): string[];
 }
 
 export const VER_ROSTER_TYPES = "1.0.0";

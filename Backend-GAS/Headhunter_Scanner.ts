@@ -33,6 +33,8 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const S = Registry.Services;
     const validCandidates: Recruit[] = [];
     const W = CONFIG.HEADHUNTER.WEIGHTS;
+    let seedTags: string[] = [];
+    let shadowStatus = "INACTIVE";
 
     // 1. Fetch Global Tournaments (Aggressive Discovery)
     const uniqueTourneys = new Set<string>();
@@ -73,7 +75,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     // CONSOLDATED LOGGING: Combine discovery into a single block for readability.
     if (discoveryLogs.length > 0) {
-        console.info(`Tournament Discovery Trace:\n${discoveryLogs.join("\n")}`);
+        S.Reporting.logReport("TOURNAMENT DISCOVERY TRACE", discoveryLogs);
     }
 
     if (activeTourneys.length === 0) {
@@ -122,7 +124,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     
     let candidates: any[] = [];
     let usedRemote = false;
-    let shadowStatus = "ACTIVE";
+    shadowStatus = "ACTIVE";
 
     if (remoteAvailable && tagsToFetch.length > 0) {
       try {
@@ -192,23 +194,34 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       });
 
       const discoveryYield = validCandidates.length;
+      const heritageTags = S.Roster.getTopPerformers(3);
       const shadowThreshold = 40;
+      seedTags = [...heritageTags];
+      let shadowSeedingStatus = heritageTags.length > 0 ? "Heritage (Top 3)" : "None";
 
       if (discoveryYield < shadowThreshold) {
-        let seedTags = validCandidates
+        const recruitSeeds = validCandidates
           .sort((a, b) => b.rawScore - a.rawScore)
           .slice(0, 5) 
           .map(candidate => candidate.tag);
         
-        if (seedTags.length === 0 && existingRecruits.size > 0) {
-          seedTags = Array.from(existingRecruits.values())
+        if (recruitSeeds.length > 0) {
+          seedTags = Array.from(new Set([...seedTags, ...recruitSeeds]));
+          shadowSeedingStatus += " + Recruits";
+        } else if (existingRecruits.size > 0) {
+          const fallbackSeeds = Array.from(existingRecruits.values())
             .sort((a, b) => (b.rawScore || 0) - (a.rawScore || 0))
             .slice(0, 10)
             .map(candidate => candidate.tag);
-          console.info(`Shadow Scout: Seeding from ${seedTags.length} existing leads.`);
+          seedTags = Array.from(new Set([...seedTags, ...fallbackSeeds]));
+          shadowSeedingStatus += " + Prophet Leads";
         }
+      } else {
+        shadowStatus = "ACTIVE (Heritage Only)";
+      }
         
-        if (seedTags.length > 0) {
+      if (seedTags.length > 0) {
+        console.info(`Shadow Scout: Seeding from ${seedTags.length} sources (${shadowSeedingStatus}).`);
           const cb = Math.floor(Date.now() / 900000); 
           const seedLogs: any[][] = S.Network.fetchRoyaleAPI(
             seedTags.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`),
@@ -240,9 +253,6 @@ const HeadhunterScanner: HeadhunterScannerContract = {
             }
           }
         }
-      } else {
-        shadowStatus = "SKIPPED (High Yield)";
-      }
     } else {
       const playersData: any[] = S.Network.fetchRoyaleAPI(
         tagsToFetch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
@@ -374,9 +384,9 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       : shadowStatus;
     
     S.Reporting.logReport(`[7/9] DISCOVERY: Tournament & Shadow Scouting`, [
-      `TOURNAMENTS: ${uniqueTourneys.size} scanned | ${scoutYield} candidates found`,
-      `SHADOWS:     ${shadowReport}`,
-      `TOTAL:       ${totalYield} candidates identified for profiling`
+      `TOURNAMENTS: ${uniqueTourneys.size} scanned | ${scoutYield} candidates identified`,
+      `SHADOWS:     ${shadowReport} (Sources: ${seedTags.length})`,
+      `TOTAL:       ${totalYield} candidates identifies for profiling`
     ]);
 
     // 10. Local Discovery Check
