@@ -18,6 +18,7 @@ export interface LegacyApiResponse<T> {
   error: { code: string; message: string } | null;
 }
 
+
 // Member in Leaderboard
 export interface LeaderboardMember {
   id: string; // Player tag without #
@@ -65,6 +66,8 @@ export interface WebAppData {
   readonly hh: readonly Recruit[];
   readonly playerTag?: string; // Player tag without # to highlight
   readonly timestamp: number;
+  readonly dataSource?: "WORKER" | "GAS";
+  readonly hubTimestamp?: number;
 }
 
 // Real-time clan member

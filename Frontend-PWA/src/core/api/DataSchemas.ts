@@ -155,4 +155,6 @@ export const WebAppDataSchema = v.object({
   hh: v.array(RecruitSchema),
   playerTag: v.optional(v.string()),
   timestamp: v.number(),
+  dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
+  hubTimestamp: v.optional(v.number()),
 });
