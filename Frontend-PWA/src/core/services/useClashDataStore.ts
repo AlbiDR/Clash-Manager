@@ -32,6 +32,8 @@ export const useClashDataStore = defineStore("clashData", () => {
   const lastSync = ref<number>(0);
   const syncError = ref<string | null>(null);
   const consecutiveSyncFailures = ref(0);
+  const dataSource = ref<"WORKER" | "GAS" | null>(null);
+  const hubTimestamp = ref<number | null>(null);
 
   // --- DEPENDENCIES ---
   const { isOnline } = useConnectionStatus();
@@ -42,6 +44,8 @@ export const useClashDataStore = defineStore("clashData", () => {
   const members = computed(() => data.value?.lb || []);
   const recruits = computed(() => data.value?.hh || []);
   const lastUpdated = computed(() => data.value?.timestamp || "");
+  const currentSource = computed(() => data.value?.dataSource || dataSource.value);
+  const hubSyncTime = computed(() => data.value?.hubTimestamp || hubTimestamp.value);
 
   const isStale = computed(() => {
     if (!lastSync.value) return true;
@@ -70,6 +74,8 @@ export const useClashDataStore = defineStore("clashData", () => {
       if (result.success) {
         data.value = result.output as WebAppData;
         lastSync.value = Date.now();
+        dataSource.value = (result.output as WebAppData).dataSource || null;
+        hubTimestamp.value = (result.output as WebAppData).hubTimestamp || null;
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
       }
@@ -134,6 +140,8 @@ export const useClashDataStore = defineStore("clashData", () => {
 
       data.value = validation.output as WebAppData;
       lastSync.value = Date.now();
+      dataSource.value = (validation.output as WebAppData).dataSource || null;
+      hubTimestamp.value = (validation.output as WebAppData).hubTimestamp || null;
       consecutiveSyncFailures.value = 0;
       syncError.value = null; // Clear error on success
       
@@ -208,11 +216,15 @@ export const useClashDataStore = defineStore("clashData", () => {
     loading,
     lastSync,
     syncError,
+    dataSource,
+    hubTimestamp,
 
     // Getters
     members,
     recruits,
     lastUpdated,
+    currentSource,
+    hubSyncTime,
     isStale,
     isHydrated,
     isRefreshing,

@@ -573,10 +573,10 @@ export async function fetchRemote(options?: {
         ? new Date(hubState.metadata.timestamp).getTime() 
         : Date.now();
 
-      const mappedData = {
+      const mappedData: any = {
         format: "matrix",
         timestamp,
-        playerTag: "", // Worker hub doesn't override playerTag
+        playerTag: "", 
         schema: {
           lb: rosterRaw[0] || [],
           hh: hhRaw[0] || []
@@ -586,6 +586,13 @@ export async function fetchRemote(options?: {
       };
 
       const inflated = await inflatePayload(mappedData);
+      
+      // DECORATION: Attach Hub Observability metadata
+      Object.assign(inflated, { 
+        dataSource: "WORKER",
+        hubTimestamp: timestamp 
+      });
+
       idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
       return inflated;
     } catch (e: any) {
@@ -605,6 +612,10 @@ export async function fetchRemote(options?: {
   if (!data) throw new Error("Invalid response structure");
 
   const inflated = await inflatePayload(data);
+  
+  // DECORATION: Attach fallback source info
+  Object.assign(inflated, { dataSource: "GAS" });
+  
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
   return inflated;
 }
