@@ -19,6 +19,7 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 | **Modules** | Domain-specific features (MVCS Pattern) | `Roster.ts`, `Headhunter.ts`, `Database.ts` |
 | **Views** | Sheet manipulation and UI rendering | `View.ts`, `*_View.ts` |
 | **Stores** | Data persistence and state management | `Store.ts`, `*_Store.ts` |
+| **Data Hub** | High-speed raw extraction for Worker Sync | `API_Raw.ts` |
 
 ---
 <br />
@@ -31,6 +32,11 @@ A sophisticated API gateway that manages the limited Google Apps Script quotas.
 - **Remote Delegation**: Automatically offloads requests to the **Backend-Worker** (Render) to preserve local quota.
 - **Quota Guard**: Implements a strict **>50 batch quota guard** that prevents local fallbacks for large requests if the worker is offline, protecting the core service from accidental exhaustion.
 - **Smart Rotation**: Manages a pool of API keys with automatic failure handling and cooling periods.
+
+### Worker Hub Integration (`API_Raw.ts`)
+A minimalist "Dumb Store" access layer designed exclusively for the Worker's 5-minute synchronization daemon.
+- **Raw Export**: Bypasses the traditional PWA JSON matrix compression and directly returns unadulterated sheet arrays.
+- **Dedicated Authentication**: Validates requests securely against `REMOTE_WORKER_SECRET` allowing the Render worker continuous access without Oauth friction.
 
 ### The Orchestrator (`Orchestrator.ts`)
 The central nervous system that manages automation lifecycles.
