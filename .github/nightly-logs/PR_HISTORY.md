@@ -1,6 +1,28 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-21] PR #273: Centralize Application Metadata and Badge Logic
+**Commit**: `610835999ce88012b9d590aa1dcc8b3e4d9c0bf8`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/273)
+
+### Description
+This refactor consolidates application-level metadata (version and status badges) into a centralized `@core` service (`useSystemInfo`). 
+
+Previously, the logic to resolve the build-time version and determine which "mode" badge (SHOWCASE, BLUEPRINT, SYNTHETIC) to show in the footer was duplicated across `App.vue`, `ConsoleLayout.vue`, and `useSettings.ts`. This led to inconsistent UI behavior, where some views only showed the BLUEPRINT badge while others showed all three depending on priority.
+
+By moving this to a Layer 1 service:
+1. We have a **Single Source of Truth** for the app version and active badge.
+2. We've established a clear **Priority Queue** for badges: Showcase > Blueprint > Synthetic.
+3. We've **Deduplicated** code in 3 major call sites.
+4. **Consistency** is now guaranteed across all views using `ConsoleLayout`.
+
+Verified with 31 unit tests (Vitest) and visual verification (Playwright) confirming correct badge display and version resolution.
+
+---
+*PR created automatically by Jules for task [9300420416331653766](https://jules.google.com/task/9300420416331653766) started by @AlbiDR*
+
+---
+
 ## [2026-03-21] PR #272: test(verify): add comprehensive coverage for BaseCard.vue
 **Commit**: `abbc369fdf8a8457b78244a6920475a8fe5f9349`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/272)
