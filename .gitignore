@@ -40,7 +40,7 @@ clasp.json
 
 # AI & Temporary Configs
 .agent
-.agent/workflows/
+!.agent/workflows/
 .agents
 .gemini
 .cursor
