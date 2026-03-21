@@ -75,6 +75,7 @@ This allows leadership to objectively identify the clan's bottom players for rot
 
 ### The Headhunter Protocol
 Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuously scans global tournament brackets, and their individual battles, to populate a pool of high-potential, clanless players.
+- **Agnostic Discovery**: Scans continuously across all tournament states (open, private, full, terminated) using full alphanumeric (`a-z`, `0-9`) search keys to guarantee maximum candidate yield.
 - **Deep Delegation**: The Worker handles the heavy lifting of scanning and initial scoring, applying a **Prophet Bonus** multiplier to players with proven historical war success.
 - **Smart Filtering**: Automatically rejects players who don't meet the clan's exact "Hybrid Benchmark" using Valibot-enforced validation boundaries.
 - **Batch Operations**: The PWA allows leaders to select promising recruits and trigger a **Batch Open** flow, launching their in-game profiles sequentially for rapid-fire inviting.
