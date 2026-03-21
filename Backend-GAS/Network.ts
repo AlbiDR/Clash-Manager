@@ -358,19 +358,26 @@ var Network: NetworkContract = {
 
     if (urlsToFetch.length === 0) return finalResults;
 
-    // 4. Check Quota Limits (Daily Guard)
-    const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
-    if (remainingQuota <= 0) {
-        console.warn(`Critical: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all requests.`);
-        return finalResults;
-    }
-
-    // Truncate if necessary (Safety First)
-    const validUrls = urlsToFetch.slice(0, remainingQuota);
-    NetworkInternal.updateQuota(validUrls.length);
-
     // 5. Execution Strategy
     let useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
+
+    if (!useRemote) {
+        // LOCAL QUOTA GUARD: Only consume and enforce local quota if we are NOT using the worker.
+        const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
+        if (remainingQuota <= 0) {
+            console.warn(`Critical: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all local requests.`);
+            return finalResults;
+        }
+        // Truncate if necessary (Safety First)
+        const validUrls = urlsToFetch.slice(0, remainingQuota);
+        NetworkInternal.updateQuota(validUrls.length);
+    } else {
+        // REMOTE: We still log intent but don't hard-throttle based on local budget.
+        // This allows high-concurrency discovery even if local GAS quota is near zero.
+        console.info(`Network: Delegating ${urlsToFetch.length} fetches to Remote Worker.`);
+    }
+
+    const validUrls = urlsToFetch; // Use all unique URLs if worker is active or if local quota allows.
     // BATCH SIZE: 100
     // Intent: Balancing request overhead with Remote Worker payload limits.
     // Smaller batches increase overhead; larger batches risk memory/timeout issues.

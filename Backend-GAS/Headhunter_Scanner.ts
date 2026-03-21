@@ -39,21 +39,22 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     let activeTourneys: any[] = [];
     // The search MUST be alphanumerical (a-z, 0-9) to guarantee the best discovery yield.
     const keywords = "abcdefghijklmnopqrstuvwxyz0123456789".split("").sort(() => Math.random() - 0.5);
-    // 3-tier threshold decay: be strict on first pass, increasingly lenient on retries
-    const THRESHOLDS = [50, 25, 10];
-    const maxRetries = THRESHOLDS.length;
+    // 3-tier threshold decay: be strict on first pass, increasingly lenient on retries.
+    // If discovery yield is still 0, we perform a "Deep Drill" up to 12 alphanumeric characters.
+    const THRESHOLDS = [50, 25, 10, 5, 2];
+    const maxRetries = 12; // Search deeper into the a-z0-9 pool if starving.
     let attempts = 0;
 
-    while (activeTourneys.length === 0 && attempts < maxRetries) {
-      const keyword = keywords[attempts % keywords.length];
+    while (activeTourneys.length === 0 && attempts < Math.min(maxRetries, keywords.length)) {
+      const keyword = keywords[attempts];
       const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(keyword)}`;
       const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
       
       if (tourneyResponse && Array.isArray(tourneyResponse.items)) {
         console.log(`HeadhunterScanner: Found ${tourneyResponse.items.length} raw tournaments for keyword '${keyword}'.`);
         // [FLEXIBLE FILTERING]: Prioritize large tournaments, but accept smaller ones if yield is low.
-        // NOTE: We do not restrict by 'open' status. All types (open, full, private, terminated) are valid.
-        const threshold = THRESHOLDS[attempts] ?? 10;
+        // Threshold decays with attempts: [50, 25, 10, 5, 2] then persists at 2 for deep drills.
+        const threshold = THRESHOLDS[attempts] ?? 2;
         activeTourneys = tourneyResponse.items.filter(
           (t: any) => t.maxPlayers >= threshold
         );
@@ -64,13 +65,13 @@ const HeadhunterScanner: HeadhunterScannerContract = {
           console.warn(`HeadhunterScanner: No tournaments >= ${threshold} for keyword '${keyword}'.`);
         }
       } else {
-        console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no items for '${keyword}'. Response: ${JSON.stringify(tourneyResponse).slice(0, 100)}`);
+        console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no items for '${keyword}'.`);
       }
       attempts++;
     }
 
     if (activeTourneys.length === 0) {
-        console.error("HeadhunterScanner: Exhausted tournament discovery retries. Discovery Yield: 0.");
+        console.error(`HeadhunterScanner: Exhausted tournament discovery after ${attempts} alphanumeric retries. Discovery Yield: 0.`);
         return [];
     }
 
