@@ -1,5 +1,8 @@
 name: Sync Nightly PRs
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   schedule:
     # 9:00 AM CET

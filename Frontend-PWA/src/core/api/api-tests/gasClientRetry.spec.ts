@@ -100,16 +100,15 @@ describe("gasClient", () => {
     // Fail 5 times (1 initial + 4 retries)
     fetchMock.mockResolvedValue({ ok: false, status: 505 });
 
-    const promise = fetchRemote();
+    let caughtError: Error | undefined;
+    const promise = fetchRemote().catch((error) => { caughtError = error; });
     
     // Process all retries
     await vi.runAllTimersAsync();
+    await promise;
     
-    try {
-      await promise;
-    } catch (error: any) {
-      expect(error.message).toContain("HTTP 505");
-    }
+    expect(caughtError).toBeDefined();
+    expect(caughtError?.message).toContain("HTTP 505");
 
     expect(fetchMock).toHaveBeenCalledTimes(5);
   });
