@@ -10,6 +10,7 @@ import { useToast } from "@core/services/useToast";
 import { useConnectionStatus } from "@core/services/useConnectionStatus";
 import { useHaptics } from "@core/services/useHaptics";
 import { useWakeLock } from "@core/services/useWakeLock";
+import { useSystemInfo } from "@core/services/useSystemInfo";
 import { computed } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 /**
@@ -42,15 +43,7 @@ export function useSettings() {
   const { status: unifiedStatus } = useConnectionStatus();
   const { updateServiceWorker } = useRegisterSW();
   const toast = useToast();
-
-  const appVersion = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
-
-  const footerBadgeText = computed(() => {
-    if (isShowcaseMode.value) return "SHOWCASE";
-    if (isBlueprintMode.value) return "BLUEPRINT";
-    if (isSyntheticMode.value) return "SYNTHETIC";
-    return "";
-  });
+  const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
 
   const apiStatusObject = computed(() => {
     if (unifiedStatus.value === "online")

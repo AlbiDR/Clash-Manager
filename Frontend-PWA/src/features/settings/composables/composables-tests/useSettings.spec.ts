@@ -15,9 +15,11 @@ const {
   mockToast,
   mockReload,
   mockConfirm,
+  mockAppVersion,
 } = vi.hoisted(() => {
   const { ref } = require("vue");
   return {
+    mockAppVersion: ref("1.2.3"),
     mockStatus: ref("online"),
     mockIsShowcaseMode: ref(false),
     mockIsBlueprintMode: ref(false),
@@ -54,8 +56,25 @@ import { useToast } from "../../../../core/services/useToast";
 import { useConnectionStatus } from "../../../../core/services/useConnectionStatus";
 import { useHaptics } from "../../../../core/services/useHaptics";
 import { useWakeLock } from "../../../../core/services/useWakeLock";
+import { useSystemInfo } from "../../../../core/services/useSystemInfo";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 import { useSettings } from "../useSettings";
+
+vi.mock("../../../../core/services/useSystemInfo", () => {
+  const { computed } = require("vue");
+  return {
+    useSystemInfo: vi.fn(() => ({
+      appVersion: mockAppVersion.value,
+      activeBadge: computed(() => {
+        if (mockIsShowcaseMode.value) return "SHOWCASE";
+        if (mockIsBlueprintMode.value) return "BLUEPRINT";
+        if (mockIsSyntheticMode.value) return "SYNTHETIC";
+        return "";
+      }),
+    })),
+    appVersion: mockAppVersion.value,
+  };
+});
 
 vi.mock("../../../../shared/composables/useTheme", () => ({
   useTheme: vi.fn(() => ({
@@ -174,14 +193,10 @@ describe("useSettings", () => {
   });
 
   it("handles default app version if __APP_VERSION__ is undefined", () => {
-    // @ts-ignore
-    const originalVersion = global.__APP_VERSION__;
-    // @ts-ignore
-    delete global.__APP_VERSION__;
+    mockAppVersion.value = "0.0.0";
     const { appVersion } = useSettings();
     expect(appVersion).toBe("0.0.0");
-    // @ts-ignore
-    global.__APP_VERSION__ = originalVersion;
+    mockAppVersion.value = "1.2.3";
   });
 
   describe("footerBadgeText", () => {

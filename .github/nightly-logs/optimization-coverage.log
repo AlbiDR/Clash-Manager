@@ -5,3 +5,9 @@ Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
 Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
 Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue
+Frontend-PWA/src/core/services/useSystemInfo.ts
+Frontend-PWA/src/core/index.ts
+Frontend-PWA/src/shared/ui/ConsoleLayout.vue
+Frontend-PWA/src/features/settings/composables/useSettings.ts
+Frontend-PWA/src/app/App.vue
+Frontend-PWA/src/features/settings/composables/composables-tests/useSettings.spec.ts
