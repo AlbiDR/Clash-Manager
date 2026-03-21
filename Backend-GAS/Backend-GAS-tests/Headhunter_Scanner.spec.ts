@@ -55,7 +55,7 @@ vi.mock('../Battle_Log', () => ({
 vi.mock('../Configuration', () => ({
     CONFIG: {
         HEADHUNTER: {
-            KEYWORDS: ["Open", "Join", "8", "x", "k", "7", "l"],
+            KEYWORDS: ["a", "b", "c", "1", "2", "3"],
             WEIGHTS: { trophies: 1, donations: 1, war: 1, cards: 1 },
             MAX_SHADOW_RECRUITS: 10
         },
