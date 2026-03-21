@@ -68,42 +68,42 @@ function openOverlay() {
         <div class="left-cluster">
           <h1 class="view-title">
             <a
-              v-if="props.sheetUrl"
-              :href="props.sheetUrl"
+              v-if="sheetUrl"
+              :href="sheetUrl"
               target="_blank"
               rel="noopener noreferrer"
               class="title-link"
               @click="haptics.tap()"
             >
-              {{ props.title }}
+              {{ title }}
               <Icon name="spreadsheet" size="14" class="title-icon" />
             </a>
-            <span v-else>{{ props.title }}</span>
+            <span v-else>{{ title }}</span>
           </h1>
 
-          <div v-if="props.stats && !props.loading" class="stats-pill">
-            <span class="sp-value">{{ props.stats.value }}</span>
-            <span class="sp-label">{{ props.stats.label }}</span>
+          <div v-if="stats && !loading" class="stats-pill">
+            <span class="sp-value">{{ stats.value }}</span>
+            <span class="sp-label">{{ stats.label }}</span>
           </div>
-          <div v-else-if="props.loading" class="sk-badge-m skeleton-anim"></div>
+          <div v-else-if="loading" class="sk-badge-m skeleton-anim"></div>
         </div>
 
         <StatusPill
-          v-if="props.status && !props.loading"
-          :type="props.status.type"
-          :text="props.status.text"
-          :hub-info="props.hubInfo"
+          v-if="status && !loading"
+          :type="status.type"
+          :text="status.text"
+          :hub-info="hubInfo"
           @refresh="$emit('refresh')"
         />
-        <div v-else-if="props.loading" class="sk-pill skeleton-anim"></div>
+        <div v-else-if="loading" class="sk-pill skeleton-anim"></div>
       </div>
 
       <!-- Bottom Row: Controls -->
-      <div v-if="props.showSearch" class="header-row bottom">
+      <div v-if="showSearch" class="header-row bottom">
         <div class="search-container">
           <Icon name="search" class="input-icon" size="20" />
           <input
-            v-if="!props.loading"
+            v-if="!loading"
             type="text"
             class="glass-input"
             placeholder="Search..."
@@ -118,8 +118,8 @@ function openOverlay() {
           <div class="sort-container">
             <Icon name="filter" size="16" class="sort-icon" />
             <select
-              v-if="!props.loading"
-              :value="props.currentSort"
+              v-if="!loading"
+              :value="currentSort"
               class="glass-select"
               :class="{ 'has-info': !!activeSortDescription }"
               @change="
@@ -128,9 +128,9 @@ function openOverlay() {
               "
               aria-label="Sort by"
             >
-              <template v-if="props.sortOptions">
+              <template v-if="sortOptions">
                 <option
-                  v-for="opt in props.sortOptions"
+                  v-for="opt in sortOptions"
                   :key="opt.value"
                   :value="opt.value"
                 >
@@ -141,7 +141,7 @@ function openOverlay() {
             <div v-else class="sk-select skeleton-anim"></div>
 
             <button
-              v-if="activeSortDescription && !props.loading"
+              v-if="activeSortDescription && !loading"
               class="info-dot-inline"
               @click="openOverlay"
               aria-label="Sort Information"
@@ -154,9 +154,9 @@ function openOverlay() {
 
       <!-- Extra Row: Selection Context -->
       <div
-        v-if="$slots.extra || props.reserveExtraSpace"
+        v-if="$slots.extra || reserveExtraSpace"
         class="header-row extra"
-        :class="{ reserved: props.reserveExtraSpace }"
+        :class="{ reserved: reserveExtraSpace }"
       >
         <slot name="extra"></slot>
       </div>

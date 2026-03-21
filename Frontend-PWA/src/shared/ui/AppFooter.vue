@@ -40,10 +40,10 @@ const hubAge = computed(() => {
 
 <template>
   <div class="footer-info">
-    <div v-if="store.currentSource" class="hub-status">
+    <div v-if="props.currentSource" class="hub-status">
       <span class="status-dot" :style="{ backgroundColor: statusColor }"></span>
       <span class="status-text">{{ statusLabel }}</span>
-      <span v-if="store.hubSyncTime" class="status-age">{{ hubAge }}</span>
+      <span v-if="props.hubSyncTime" class="status-age">{{ hubAge }}</span>
     </div>
 
     <div
@@ -51,8 +51,8 @@ const hubAge = computed(() => {
       @click="handleReload"
       v-tactile
     >
-      CLASH MANAGER V{{ version }}
-      <span v-if="badge" class="demo-tag">{{ badge }}</span>
+      CLASH MANAGER V{{ props.version }}
+      <span v-if="props.badge" class="demo-tag">{{ props.badge }}</span>
     </div>
     <div class="copy">Copyright © 2026 AlbiDR</div>
   </div>
