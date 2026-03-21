@@ -62,7 +62,7 @@ export class WorkerHubController {
 
     this.isSyncing = true;
     try {
-      const rawUrl = `${gasBaseUrl}?action=raw&token=${secret}`;
+      const rawUrl = `${gasBaseUrl}?action=raw&token=${encodeURIComponent(secret)}`;
       const response = await fetch(rawUrl);
 
       if (!response.ok) {
