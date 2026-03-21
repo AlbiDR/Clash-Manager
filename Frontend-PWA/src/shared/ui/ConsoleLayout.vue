@@ -48,6 +48,10 @@ const props = defineProps<{
   skeletonCount?: number;
   totalCount?: number;
   /** Custom badge text for the footer (overrides default BLUEPRINT badge). */
+  hubInfo?: {
+    source: "WORKER" | "GAS";
+    hubAge: string | null;
+  };
   footerBadge?: string;
 }>();
 
@@ -150,14 +154,15 @@ onUnmounted(() => {
       </div>
 
       <ConsoleHeader
-        :title="title"
-        :status="status"
-        :show-search="showSearch"
-        :sheet-url="sheetUrl"
-        :stats="stats"
-        :sort-options="sortOptions"
-        :current-sort="currentSort"
+        :title="props.title"
+        :status="props.status"
+        :show-search="props.showSearch"
+        :sheet-url="props.sheetUrl"
+        :stats="props.stats"
+        :sort-options="props.sortOptions"
+        :current-sort="props.currentSort"
         :loading="displayLoading"
+        :hub-info="props.hubInfo"
         reserve-extra-space
         @update:search="(val: string) => $emit('update:search', val)"
         @update:sort="(val: string) => $emit('update:sort', val)"
@@ -165,9 +170,9 @@ onUnmounted(() => {
       >
         <template #extra>
           <SelectionBar
-            v-if="selectedCount !== undefined"
-            :count="selectedCount"
-            :total-count="totalCount || 0"
+            v-if="props.selectedCount !== undefined"
+            :count="props.selectedCount"
+            :total-count="props.totalCount || 0"
             :loading="displayLoading"
             @select-all="$emit('select-all')"
             @clear="$emit('clear-selection')"
@@ -182,16 +187,16 @@ onUnmounted(() => {
 
       <!-- Error State -->
       <ErrorState
-        v-if="syncError && isEmpty"
-        :message="syncError"
+        v-if="props.syncError && props.isEmpty"
+        :message="props.syncError"
         @retry="$emit('refresh')"
       />
 
       <!-- Loading State (Skeletons) -->
       <div v-else-if="displayLoading" class="list-container gpu-contain">
         <component
-          :is="skeletonComponent || BaseCardSkeleton"
-          v-for="i in (skeletonCount || 8)"
+          :is="props.skeletonComponent || BaseCardSkeleton"
+          v-for="i in (props.skeletonCount || 8)"
           :key="i"
           :index="i"
           :style="{ '--i': i }"
@@ -200,10 +205,10 @@ onUnmounted(() => {
 
       <!-- Empty State -->
       <EmptyState
-        v-else-if="isEmpty"
-        :icon="emptyIcon || 'telescope'"
-        :message="emptyMessage || 'No items found'"
-        :hint="emptyHint"
+        v-else-if="props.isEmpty"
+        :icon="props.emptyIcon || 'telescope'"
+        :message="props.emptyMessage || 'No items found'"
+        :hint="props.emptyHint"
       >
         <template #action>
           <slot name="empty-action"></slot>

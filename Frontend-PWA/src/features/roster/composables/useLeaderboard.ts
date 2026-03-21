@@ -26,7 +26,7 @@ export function useLeaderboard() {
   const { pingData } = useApiState();
   const { isShowcaseMode } = useShowcaseMode();
   const clashDataStore = useClashDataStore();
-  const { data, isHydrated, isRefreshing, syncError, lastSyncTime } = storeToRefs(clashDataStore);
+  const { data, isHydrated, isRefreshing, syncError, lastSyncTime, currentSource, hubSyncTime } = storeToRefs(clashDataStore);
   const { refresh } = clashDataStore;
 
   const members = computed(() => data.value?.lb || []);
@@ -37,6 +37,8 @@ export function useLeaderboard() {
     isRefreshing,
     syncError,
     lastSyncTime,
+    currentSource,
+    hubSyncTime,
     filterFn: (m: LeaderboardMember) => [m.n, m.id],
     sortStrategies: LeaderboardSort,
     defaultSort: "score",

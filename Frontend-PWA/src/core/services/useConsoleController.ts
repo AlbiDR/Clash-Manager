@@ -33,6 +33,8 @@ interface ConsoleLogicOptions<T> {
   isRefreshing: Ref<boolean> | ComputedRef<boolean>;
   syncError: Ref<string | null> | ComputedRef<string | null>;
   lastSyncTime: Ref<number | null> | ComputedRef<number | null>;
+  currentSource: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
+  hubSyncTime: Ref<number | null> | ComputedRef<number | null>;
   filterFn: (item: T) => string[];
   sortStrategies: Record<string, (a: T, b: T) => number>;
   defaultSort: string;
@@ -90,6 +92,8 @@ export function useConsoleController<T extends { id: string }>(
     isRefreshing,
     syncError,
     lastSyncTime,
+    currentSource,
+    hubSyncTime,
     filterFn,
     sortStrategies,
     defaultSort,
@@ -323,6 +327,10 @@ export function useConsoleController<T extends { id: string }>(
     totalCount: filteredItems.value.length,
     currentSort: sortBy.value,
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
+    hubInfo: currentSource.value ? {
+      source: currentSource.value,
+      hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
+    } : undefined
   }));
 
   return {
@@ -343,6 +351,8 @@ export function useConsoleController<T extends { id: string }>(
     isRefreshing,
     syncError,
     isHydrated,
+    currentSource,
+    hubSyncTime,
     layoutProps,
 
     // Actions

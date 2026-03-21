@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { useHaptics } from "../../core/services/useHaptics";
+import { computed } from "vue";
 
 const props = defineProps<{
   type: "updated" | "error" | "loading" | "ready";
   text: string;
+  hubInfo?: {
+    source: "WORKER" | "GAS";
+    hubAge: string | null;
+  };
 }>();
 
 const emit = defineEmits<{
@@ -17,18 +22,36 @@ function handleRefresh() {
   haptics.tap();
   emit("refresh");
 }
+
+const displayStatusText = computed(() => {
+  if (props.hubInfo?.source === "WORKER" && props.hubInfo.hubAge) {
+    return `Hub: ${props.hubInfo.hubAge}`;
+  }
+  return props.text;
+});
+
+const indicatorColor = computed(() => {
+  if (props.type === "error") return "var(--sys-color-error)";
+  if (props.hubInfo?.source === "WORKER") return "var(--sys-color-success)";
+  if (props.hubInfo?.source === "GAS") return "var(--sys-color-primary)";
+  return "currentColor";
+});
 </script>
 
 <template>
   <button
     class="status-pill hit-target"
-    :class="[type, { 'is-refreshing': type === 'loading' }]"
+    :class="[props.type, { 'is-refreshing': props.type === 'loading', 'is-worker': props.hubInfo?.source === 'WORKER' }]"
     @click="handleRefresh"
     aria-label="Refresh Data"
   >
-    <div v-if="type === 'loading'" class="spinner"></div>
-    <div v-else class="status-dot"></div>
-    <span class="status-text">{{ text }}</span>
+    <div v-if="props.type === 'loading'" class="spinner"></div>
+    <div 
+      v-else 
+      class="status-dot" 
+      :style="{ backgroundColor: indicatorColor, boxShadow: props.hubInfo?.source === 'WORKER' ? '0 0 8px var(--sys-color-success)' : 'none' }"
+    ></div>
+    <span class="status-text">{{ displayStatusText }}</span>
   </button>
 </template>
 
@@ -64,6 +87,7 @@ function handleRefresh() {
   opacity: 0.8;
 }
 
+/* Base states: fallback to semantic containers */
 .status-pill.ready,
 .status-pill.updated {
   color: var(--sys-color-success);
@@ -75,11 +99,22 @@ function handleRefresh() {
   background: var(--sys-color-error-container);
 }
 
+/* Worker specific override: Glow and higher visibility */
+.status-pill.is-worker {
+  background: rgba(var(--sys-color-success-rgb), 0.15);
+  border-color: rgba(var(--sys-color-success-rgb), 0.3);
+}
+
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.is-worker .status-dot {
+  animation: pulse 2s infinite;
 }
 
 .spinner {
@@ -95,6 +130,12 @@ function handleRefresh() {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 @media (max-width: 600px) {

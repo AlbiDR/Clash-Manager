@@ -7,6 +7,7 @@ import { storeToRefs } from "pinia";
 import {
   asGold,
   asGems,
+  formatTimeAgo,
 } from "@core";
 import { computed, watch } from 'vue';
 import * as v from "valibot";
@@ -73,7 +74,7 @@ export function useLaboratory() {
   } = storeToRefs(store);
 
   const clashDataStore = useClashDataStore();
-  const { data: clashData } = storeToRefs(clashDataStore);
+  const { data: clashData, currentSource, hubSyncTime } = storeToRefs(clashDataStore);
 
   let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
 
@@ -268,6 +269,10 @@ export function useLaboratory() {
     loading: isFetching.value,
     isEmpty: isEmpty.value,
     syncError: fetchError.value || undefined,
+    hubInfo: currentSource.value ? {
+      source: currentSource.value,
+      hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
+    } : undefined
   }));
 
   /**
