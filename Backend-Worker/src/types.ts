@@ -144,6 +144,7 @@ export interface ScoredPlayer {
   cards?: number;
   war?: number;
   rawScore: number;
+  clan?: string | null;
 }
 
 export type WarHistory = Record<PlayerTag, Record<WarWeekId, number>>;

@@ -262,7 +262,7 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
 /**
  * Generic batch processor with worker pool pattern
  */
-async function processBatch<T = unknown>(
+export async function processBatch<T = unknown>(
   urls: string[],
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,
@@ -359,6 +359,15 @@ async function processBatch<T = unknown>(
             const warBonus = hasWar ? 500 : 0;
             const totalWarScore = (profile.warDayWins ?? 0) + warBonus;
 
+            // STRATEGY: Strict Clanless Enforcement
+            // Rationale: Even if a player was clanless during Phase 1 (Discovery),
+            // they may have joined a clan by Phase 2 (Scoring).
+            // Rejecting them here prevents uninvitable recruits from reaching GAS.
+            if (scoring && profile.clan?.tag) {
+                results[currentBatchIndex] = { code: 200, content: null as unknown as T };
+                continue;
+            }
+
             results[currentBatchIndex] = {
               code: 200,
               content: {
@@ -369,6 +378,7 @@ async function processBatch<T = unknown>(
                 cards: profile.challengeCardsWon,
                 war: totalWarScore,
                 rawScore,
+                clan: profile.clan?.name || null,
               } as unknown as T,
             };
           } else {
@@ -420,7 +430,7 @@ async function processBatch<T = unknown>(
 /**
  * Tournament scan batch processor
  */
-async function processScanBatch(
+export async function processScanBatch(
   tags: TournamentTag[],
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,

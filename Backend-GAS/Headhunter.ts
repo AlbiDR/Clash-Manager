@@ -90,17 +90,16 @@ const Headhunter: HeadhunterContract = {
         evtSheet.appendRow([tag, Date.now(), score]);
       };
 
-      const sortedRegistry = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
-      const validationHead = sortedRegistry.slice(0, 100); 
+      const validationHead = sortedRegistry.slice(0, 250); 
       
       let joinedCount = 0;
       
-      const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
       const candidatesToValidate = validationHead.filter(r => {
         const tag = S.Core.normalizeTag(r.tag);
         const isActiveRecruit = existingPool.has(tag);
         if (isActiveRecruit) return true;
-        return !r.lastScan || r.lastScan < sixHoursAgo;
+        return !r.lastScan || r.lastScan < oneHourAgo;
       });
 
       if (candidatesToValidate.length > 0) {
