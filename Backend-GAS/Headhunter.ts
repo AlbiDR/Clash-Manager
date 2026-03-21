@@ -90,12 +90,13 @@ const Headhunter: HeadhunterContract = {
         evtSheet.appendRow([tag, Date.now(), score]);
       };
 
+      const sortedRegistry = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
       const validationHead = sortedRegistry.slice(0, 250); 
       
       let joinedCount = 0;
       
       const oneHourAgo = Date.now() - (60 * 60 * 1000);
-      const candidatesToValidate = validationHead.filter(r => {
+      const candidatesToValidate = validationHead.filter((r: Recruit) => {
         const tag = S.Core.normalizeTag(r.tag);
         const isActiveRecruit = existingPool.has(tag);
         if (isActiveRecruit) return true;
@@ -104,7 +105,7 @@ const Headhunter: HeadhunterContract = {
 
       if (candidatesToValidate.length > 0) {
         const profiles = S.Network.fetchRoyaleAPI(
-          candidatesToValidate.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
+          candidatesToValidate.map((p: Recruit) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
         );
         
         profiles.forEach((p: any, pIdx: number) => {
@@ -153,7 +154,7 @@ const Headhunter: HeadhunterContract = {
       let newArrivals = 0;
       let updatedExisting = 0;
       
-      scanned.forEach((c) => {
+      scanned.forEach((c: Recruit) => {
         const tag = S.Core.normalizeTag(c.tag);
         const existing = combinedRegistry.get(tag);
         if (existing) {
@@ -234,14 +235,14 @@ const Headhunter: HeadhunterContract = {
       }
 
       const finalBenchmark = S.Scoring.calculateHybridBenchmark(clanEliteData, blacklistResult.entries, mathConfig);
-      const allSorted = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
+      const allSorted = sortedRegistry;
       
       const targetActive = CONFIG.HEADHUNTER.TARGET;
       const finalPool = allSorted.slice(0, targetActive);
       const queueList = allSorted.slice(targetActive);
     
-      finalPool.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
-      queueList.forEach(p => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
+      finalPool.forEach((p: Recruit) => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
+      queueList.forEach((p: Recruit) => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
 
       const backupSummary = S.View.backupSheet(ss, CONFIG.SHEETS.HH);
       const queueRes = HeadhunterStore.saveQueue(ss, queueList);
