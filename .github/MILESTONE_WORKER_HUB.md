@@ -3,67 +3,96 @@
 
 # Milestone: Worker-Led Data Hub Transition (Architectural Honesty)
 
-This document is the **Single Source of Truth** for the transition to a **Worker-Led Data Hub**. It integrates architectural principles, technical risk assessments, and the phase-by-phase implementation plan.
+This document is the **Single Source of Truth** and a comprehensive **Standalone Directive** for the transition to a **Worker-Led Data Hub**. It is designed for execution by an AI agent, following the **CleanStack Architecture (ADR)**.
 
 ---
 
-## I. Mission Statement
-The objective is to pivot the primary data synchronization pipeline from a GAS-driven model to a **Render Worker-driven Hub**. This fulfills the **Deep Delegation Strategy** (ADR Section IV) by offloading heavy computational lifting (aggregation and compression) to the Render Worker while relegating GAS to a "Dumb Raw Storage" role.
+## I. Mission & Strategic Context
+Pivot the primary data synchronization from a GAS-driven model to a **Worker-driven Hub**. This fulfills the **Deep Delegation Strategy** (ADR Section IV) by offloading heavy aggregation and matrix compression to the Render Worker while relegating GAS to a "Dumb Raw Storage" role.
 
-- **Current Model:** 60-minute cadence; PWA reads from GAS/Sheets.
-- **Proposed Model:** 5-minute cadence; PWA reads from the Worker Hub (Active State).
-
----
-
-## II. Architectural Assessment (Honesty vs. Patching)
-
-### 1. Risk Obviation Strategy
-Instead of patching complexity (e.g., sharing logic modules), we **obviate** it by centralizing intelligence:
-- **Shared Logic:** Deprecated. The **Worker is the sole owner** of transformation logic. GAS exports raw data; the Worker generates the matrix.
-- **Split-Brain Sync:** Resolved via **Unified Brokering**. The Worker intercepts PWA writes, updates its cache instantly, and fire-and-forgets to GAS.
-- **State Vacuum:** Obviated by **Local Persistence**. The Worker persists its latest state to a local JSON file to survive container restarts.
-
-### 2. Gains & Regressions
-- **Performance:** PWA cold starts drop from ~3s to **< 500ms**.
-- **Scalability:** Near-infinite read throughput by bypassing Google's 20,000 requests/day quota.
-- **Regression:** The Google Sheet becomes "Eventual Persistence" (Archive) rather than "Real-Time Truth."
+- **Current Model:** 60/30-minute GAS sync. PWA reads from a cached JSON (`v13.1.0`).
+- **Target Model:** **5-minute cadence** (Worker). The Worker Hub is the active state-holder and primary data source for the PWA.
 
 ---
 
-## III. Structural Unitary Alignment (ADR)
+## II. Architectural Honesty: Obviation Strategics (ADR Section I, III)
 
-### Layer 1: Core Engine (`@kernel` - Worker Only)
-- **`PayloadCompressor.ts`:** The sole engine for matrix generation.
-- **`HubPersistenceService.ts`:** Handles state-saving to disk for instant hydration.
-- **`DataSchemas.ts`:** Valibot schemas governing the stack's validation boundary.
+Instead of patching existing sync complexity, this implementation **obviates** failure points:
 
-### Layer 2 & 5: Persistence & Control
-- **`RawDataFeed.gs` (GAS - L2):** A minimalist API that exports spreadsheet rows as raw JSON.
-- **`WorkerHubController.ts` (Worker - L5):** The primary entry point for all PWA traffic (Proxy for Reads/Writes).
+### 1. Unified Mutation Brokering
+- **Rule:** The Worker intercepts PWA writes (e.g., player dismissals) via a `POST /execute` proxy.
+- **Action:** The Worker updates its internal Hub cache **instantly** (Optimistic Update) before fire-and-forgetting the update to GAS.
+- **Outcome:** Eliminates "split-brain" lag where the PWA waits for GAS to re-cache.
+
+### 2. Physical Cache Persistence (Section IV)
+- **Rule:** Worker state must survive container restarts to prevent the "5-minute vacuum" after Render updates.
+- **Action:** Implement `HubPersistenceService` using an **Atomic Rename Strategy** (`fs.rename` from `.tmp` to `.json`).
+
+### 3. Intelligence Centralization
+- **Rule:** Deprecate shared logic modules.
+- **Action:** The Worker is the **sole owner** of the matrix transformation logic. GAS dumps raw data rows; the Worker's `PayloadKernel` generates the application state.
 
 ---
 
-## IV. Implementation Blueprint (The Honest Path)
+## III. Operational Security & Reliability (ADR Section IV, VII)
+
+### 1. The Circuit Breaker (Zero-Downtime Cut-over)
+- **Shadow Mode:** Phase 1-2 runs in the background. PWA fetches data from the Hub but defaults to GAS if the Hub is unhealthy.
+- **3s Deadline Fallback:** The PWA `GasClient` will feature a hard 3-second timeout for the Hub. If the deadline is exceeded, it **silently reverts** to GAS.
+- **Feature Flag:** `VITE_USE_WORKER_HUB` global kill-switch in PWA.
+
+### 2. Quota & Token Guarding
+- **Zero-Trust Token Boundary:** All communication (PWA -> Worker, Worker -> GAS) must validate Bearer tokens.
+- **Quota Guard:** Mandatory `Network.quotaCheck()` in the 5m Hub synchronization loop.
+
+---
+
+## IV. Structural Unitary Blueprint (Section VII Naming)
+
+### Layer 1: Core Engine (`@kernel` - Worker)
+- **`PayloadKernel.ts` (L1):** Pure matrix transformation engine.
+- **`HubPersistenceService.ts` (L1):** Async file system persistence.
+- **`DataSchemas.ts` (L1):** Valibot schemas for **Validation Boundary** (ingress/egress).
+- **`HubTypes.ts` (L1):** Typed error/state shapes. Every error must be `{ code, message, layer: 'WORKER_HUB' }`.
+
+### Layer 5: Control Surface (`@root`)
+- **`API_Raw.gs` (GAS - L5):** Minimalist API to dump sheet rows as JSON.
+- **`WorkerHubController.ts` (Worker - L5):** Entry point for PWA Reads/Writes.
+
+---
+
+## V. Execution Phases (Actionable Path)
+
+### Phase 0: System Hardening
+- [ ] Define `HubError` and `HubState` types in `HubTypes.ts`.
+- [ ] Implement `Network.quotaCheck()` logic in the Worker loop.
 
 ### Phase 1: Storage & Intelligence Foundation
-- [ ] **1.1: GAS Raw API:** Create `API_Raw.ts` in GAS to dump sheet rows as untransformed JSON.
-- [ ] **1.2: Payload Compressor:** Port the matrix logic to the Worker and harden for Node.js.
-- [ ] **1.3: Persistence Engine:** Implement `fs`-based file saving for background state persistence.
-- [ ] **1.4: Unit Testing:** 100% Vitest coverage for `PayloadCompressor.ts` (Layer 1 requirement).
+- [ ] **`API_Raw.gs` (GAS):** Create minimalist entry point (Bearer token check mandatory).
+- [ ] **`PayloadKernel.ts` (Worker):** Port matrix logic (100% Vitest coverage required).
+- [ ] **`HubPersistenceService.ts` (Worker):** Implement atomic `fs.rename` strategy.
 
-### Phase 2: Hub Integration & Brokering
-- [ ] **2.1: The Sync Daemon:** Implement a 5m `setInterval` loop in the Worker to fetch from Royale API + GAS Raw Feed.
-- [ ] **2.2: Mutation Proxy:** Implement the `POST /execute` route in the Worker to forward writes to GAS.
-- [ ] **2.3: Validation Boundary:** Wrap all Hub updates in a `validatePayload()` check.
+### Phase 2: Integration & Unified Brokering
+- [ ] **Sync Daemon:** Implement 5m loop with **Overlap Protection** (semaphore).
+- [ ] **Mutation Proxy:** Implement `POST /execute` route with **Optimistic Cache Updates**.
+- [ ] **Symmetry Audit:** Background task compares Worker vs GAS output to ensure 1:1 parity.
 
 ### Phase 3: PWA & Scheduling Cut-over
-- [ ] **3.1: Unified Client:** Point `GasClient.ts` to the Worker for all operations.
-- [ ] **3.2: Cleaning Logic:** Remove legacy PWA caching and retry code that compensated for GAS's high latency.
-- [ ] **3.3: Trigger Calibration:** Shift GAS archival triggers to a **30-minute cadence**.
+- [ ] **Unified Client:** Point `GasClient.ts` to the Worker Hub.
+- [ ] **Cleaning:** Purge legacy PWA retry logic (Obviated by Worker performance).
+- [ ] **Trigger Calibration:** Adjust GAS archival frequency to 30 minutes.
 
 ---
 
-## V. Verification & Stability Protocol
-- **Cold Boot Test:** Verify the PWA loads instantly from the Worker's local JSON cache upon restart.
-- **Mutation Immediacy:** Confirm PWA writes are reflected in the Hub state in < 100ms.
-- **Symmetry Audit:** Ensure Worker Matrix output matches the legacy GAS output 1:1.
+## VI. Verification Protocol
+- **Cold Boot Recovery:** Delete memory state, restart Hub, confirm hydration from `hub_state.json`.
+- **Mutation Immediacy:** Confirm cache update < 100ms before GAS write completes.
+- **Safety Fallback:** Verify 3s timeout silent fallback to GAS in the PWA.
+
+---
+
+## VII. Governance Checklist (Pre-Commit)
+- [ ] **SPDX Headers:** Mandatory GPL-3.0-only license header at line 1.
+- [ ] **Naming Contract:** `Domain_Role` (GAS) vs `[Domain][Role].ts` (Worker).
+- [ ] **Validation Boundary:** All ingress/egress requires `v.parse()` check.
+- [ ] **Isolation:** Zero business logic in entry points; delegate to Kernel/Service.
