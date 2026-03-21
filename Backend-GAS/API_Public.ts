@@ -19,6 +19,7 @@ import {
   LoggerPayloadSchema,
   BaseActionSchema
 } from "./Validation";
+import { doGetRawFeed } from "./API_Raw";
 
 // Global Version Constant
 // @ts-ignore
@@ -154,6 +155,9 @@ function handleRequest(e: GoogleAppsScript.Events.DoGet | GoogleAppsScript.Event
       case "getleaderboard":
       case "getwebappdata":
         return respondRaw(Registry.Services.WebappController.getWebAppData(false));
+
+      case "raw":
+        return doGetRawFeed(e);
 
       case "getrecruits":
         const recruitData = Registry.Services.WebappController.getWebAppData(false);
