@@ -120,7 +120,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       try {
         const remoteResponse = S.Network.fetchRemoteWorker("/scan", {
            tags: tagsToFetch,
-           weights: W
+           scoring: W // Correct parameter name
         });
         if (remoteResponse && Array.isArray(remoteResponse.candidates)) {
            candidates = remoteResponse.candidates;
@@ -251,6 +251,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
               foundDate: new Date(),
               invited: false,
               rawScore: profile.rawScore,
+              lastScan: Date.now(),
               source: "TOURNAMENT",
             });
           } else {
@@ -312,6 +313,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
             foundDate: new Date(),
             invited: false,
             rawScore: finalScore,
+            lastScan: Date.now(),
             source: "TOURNAMENT",
           });
         });
@@ -341,6 +343,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
             foundDate: new Date(),
             invited: false,
             rawScore: rawScore,
+            lastScan: Date.now(),
             source: "SHADOW",
           });
         }
