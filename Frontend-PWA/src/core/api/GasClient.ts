@@ -565,20 +565,24 @@ export async function fetchRemote(options?: {
       if (!resJson.success || !resJson.data) throw new Error("Worker Hub malformed payload");
 
       const hubState = resJson.data;
-      const rosterRaw = hubState.data?.roster || [];
-      const hhRaw = hubState.data?.headhunter || [];
+      const rosterRaw = hubState?.data?.roster || [];
+      const hhRaw = hubState?.data?.headhunter || [];
 
       // Transform into GAS Matrix format for `inflatePayload`
+      const timestamp = hubState?.metadata?.timestamp 
+        ? new Date(hubState.metadata.timestamp).getTime() 
+        : Date.now();
+
       const mappedData = {
         format: "matrix",
-        timestamp: new Date(hubState.metadata.timestamp).getTime(),
+        timestamp,
         playerTag: "", // Worker hub doesn't override playerTag
         schema: {
           lb: rosterRaw[0] || [],
           hh: hhRaw[0] || []
         },
-        lb: rosterRaw.slice(1),
-        hh: hhRaw.slice(1)
+        lb: rosterRaw.length > 0 ? rosterRaw.slice(1) : [],
+        hh: hhRaw.length > 0 ? hhRaw.slice(1) : []
       };
 
       const inflated = await inflatePayload(mappedData);
