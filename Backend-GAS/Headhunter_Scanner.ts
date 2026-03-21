@@ -39,9 +39,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     let activeTourneys: any[] = [];
     // The search MUST be alphanumerical (a-z, 0-9) to guarantee the best discovery yield.
     const keywords = "abcdefghijklmnopqrstuvwxyz0123456789".split("").sort(() => Math.random() - 0.5);
-    // 3-tier threshold decay: be strict on first pass, increasingly lenient on retries.
-    // If discovery yield is still 0, we perform a "Deep Drill" up to 12 alphanumeric characters.
-    const THRESHOLDS = [50, 25, 10, 5, 2];
+    // Deep Drill: Search up to 12 alphanumeric characters if discovery yield is low.
     const maxRetries = 12; // Search deeper into the a-z0-9 pool if starving.
     let attempts = 0;
 
@@ -108,9 +106,9 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     });
 
     // 5. Remote vs Local Profiling
-    // We attempt to offload heavy scoring logic to a remote worker if available.
-    const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL;
-    const tagsToFetch = Array.from(playerTags).slice(0, lowQuotaMode ? 50 : 200);
+    // HARDENED: Gate on actual health, not just URL existence, to avoid wasted calls.
+    const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && S.Network.remoteWorkerHealthy();
+    let tagsToFetch = Array.from(playerTags).slice(0, lowQuotaMode ? 50 : 200);
     
     let candidates: any[] = [];
     let usedRemote = false;
@@ -120,7 +118,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       try {
         const remoteResponse = S.Network.fetchRemoteWorker("/scan", {
            tags: tagsToFetch,
-           scoring: W // Correct parameter name
+           scoring: W
         });
         if (remoteResponse && Array.isArray(remoteResponse.candidates)) {
            candidates = remoteResponse.candidates;
@@ -128,6 +126,8 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         }
       } catch (e) {
         console.warn("HeadhunterScanner: Remote worker scan failed. Falling back to local profiling.");
+        // HARDENED: Re-slice to local-safe limit to prevent quota exhaustion.
+        tagsToFetch = tagsToFetch.slice(0, 50);
       }
     }
 
@@ -157,10 +157,8 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         const intel = normalizedProphet.get(normTag);
         
         if (intel && intel.warFame > 500) {
-             if (!usedRemote) {
-                finalScore *= 1.25;
-                console.info(`Prophet: Heritage found for ${candidate.name}: 25% Participation Bonus.`);
-             }
+            finalScore *= 1.25;
+            console.info(`Prophet: Heritage found for ${candidate.name}: 25% Participation Bonus.`);
         }
 
         validCandidates.push({

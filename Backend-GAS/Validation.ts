@@ -83,15 +83,15 @@ export const ClanMemberSnapshotSchema = v.object({
 export const RecruitSchema = v.object({
   tag: v.string(),
   name: v.string(),
-  trophies: v.any(),
-  donations: v.any(),
-  cards: v.any(),
-  war: v.any(),
+  trophies: v.optional(v.number(), 0),
+  donations: v.optional(v.number(), 0),
+  cards: v.optional(v.number(), 0),
+  war: v.optional(v.number(), 0),
   foundDate: v.unknown(), // Date or ISO string
   invited: v.boolean(),
-  rawScore: v.any(),
-  potentialScore: v.optional(v.any()),
-  lastScan: v.optional(v.any()),
+  rawScore: v.optional(v.number(), 0),
+  potentialScore: v.optional(v.number(), 0),
+  lastScan: v.optional(v.number(), 0),
   source: v.optional(v.union([v.literal("TOURNAMENT"), v.literal("SHADOW")]))
 });
 
