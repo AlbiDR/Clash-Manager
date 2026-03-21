@@ -108,8 +108,18 @@ const Headhunter: HeadhunterContract = {
           candidatesToValidate.map((p) => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(p.tag)}`)
         );
         
-        profiles.forEach((p: any) => {
-          if (p?.clan?.tag) {
+        profiles.forEach((p: any, pIdx: number) => {
+          const candidateTag = S.Core.normalizeTag(candidatesToValidate[pIdx]?.tag);
+          if (!candidateTag) return;
+
+          if (p === null || p === undefined) {
+            // HARDENED: Player no longer exists (deleted/banned account).
+            // Remove from pool to prevent ghost recruits persisting forever.
+            const recruit = combinedRegistry.get(candidateTag);
+            if (recruit) logDismissal(candidateTag, recruit.rawScore);
+            combinedRegistry.delete(candidateTag);
+            joinedCount++;
+          } else if (p?.clan?.tag) {
              const tag = S.Core.normalizeTag(p.tag);
              const recruit = combinedRegistry.get(tag);
              if (recruit) logDismissal(tag, recruit.rawScore);

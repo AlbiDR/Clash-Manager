@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
         fetchRoyaleAPI: vi.fn(),
         fetchRoyaleAPIOne: vi.fn(),
         fetchRemoteWorker: vi.fn(),
+        remoteWorkerHealthy: vi.fn(),
     },
     Reporting: {
         logReport: vi.fn()
@@ -53,6 +54,7 @@ describe('HeadhunterScanner', () => {
         vi.clearAllMocks();
         // Ensure remote worker is "offline" by default for local-scan tests
         mocks.Network.fetchRemoteWorker.mockReturnValue(undefined);
+        mocks.Network.remoteWorkerHealthy.mockReturnValue(false);
     });
 
     it('should use Local Scan when Remote is offline', () => {
@@ -100,7 +102,8 @@ describe('HeadhunterScanner', () => {
             membersList: [{ tag: "#P1", name: "Player1" }]
         }]);
 
-        // 3. Remote Scan
+        // 3. Remote Scan — Worker is healthy
+        mocks.Network.remoteWorkerHealthy.mockReturnValue(true);
         mocks.Network.fetchRemoteWorker.mockReturnValue({
             candidates: [{ tag: "#P1", name: "Player1", rawScore: 200, trophies: 6000 }]
         });

@@ -474,7 +474,11 @@ async function processScanBatch(
           const validation = v.safeParse(RoyaleTournamentResponseSchema, fetchResponse.content);
           if (validation.success) {
             validation.output.membersList?.forEach((memberCandidate) => {
-              if (memberCandidate.clan?.tag) return;              // filter out clan members
+              // DESIGN CONSTRAINT: Reject ALL players with any clan affiliation.
+              // Rationale: Only clanless players are recruitable. Filtering at the
+              // earliest stage (tournament member scan) prevents wasting API quota
+              // on profile fetches for non-recruitable targets.
+              if (memberCandidate.clan?.tag) return;
         const candidateTag = memberCandidate.tag as PlayerTag;
         if (blacklistSet.has(candidateTag)) return;
 
