@@ -66,7 +66,7 @@ export interface NetworkContract {
    * @returns Array of parsed JSON responses corresponding to the input URLs.
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
-  fetchRoyaleAPI(urls: string[], scoring?: ScoringWeights | null): any[];
+  fetchRoyaleAPI(urls: string[], scoring?: any, context?: string): any[];
   
   /**
    * Executes a single Royale API request with smart caching.
@@ -301,7 +301,7 @@ var Network: NetworkContract = {
    * @returns Array of parsed JSON responses corresponding to the input URLs.
    * @warning Consumes UrlFetchApp and CacheService quotas.
    */
-  fetchRoyaleAPI(urls: string[], scoring = null) {
+  fetchRoyaleAPI(urls: string[], scoring: any = null, context: string = ""): any[] {
     if (!urls) return [];
     if (!Array.isArray(urls)) {
       throw new Error(`Network: fetchRoyaleAPI expects an Array of URLs. Received: ${typeof urls}. Use fetchRoyaleAPIOne for single requests.`);
@@ -361,6 +361,7 @@ var Network: NetworkContract = {
     // 5. Execution Strategy
     let useRemote = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && this.remoteWorkerHealthy();
 
+    let validUrls: string[] = [];
     if (!useRemote) {
         // LOCAL QUOTA GUARD: Only consume and enforce local quota if we are NOT using the worker.
         const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
@@ -369,15 +370,14 @@ var Network: NetworkContract = {
             return finalResults;
         }
         // Truncate if necessary (Safety First)
-        const validUrls = urlsToFetch.slice(0, remainingQuota);
+        validUrls = urlsToFetch.slice(0, remainingQuota);
         NetworkInternal.updateQuota(validUrls.length);
     } else {
         // REMOTE: We still log intent but don't hard-throttle based on local budget.
         // This allows high-concurrency discovery even if local GAS quota is near zero.
-        console.info(`Network: Delegating ${urlsToFetch.length} fetches to Remote Worker.`);
+        console.info(`Network: Delegating ${urlsToFetch.length} fetches to Remote Worker${context ? ` (${context})` : ""}.`);
+        validUrls = urlsToFetch;
     }
-
-    const validUrls = urlsToFetch; // Use all unique URLs if worker is active or if local quota allows.
     // BATCH SIZE: 100
     // Intent: Balancing request overhead with Remote Worker payload limits.
     // Smaller batches increase overhead; larger batches risk memory/timeout issues.

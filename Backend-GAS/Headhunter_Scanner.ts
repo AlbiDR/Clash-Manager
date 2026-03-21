@@ -43,11 +43,12 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // HARDENED: Gate on actual health early to optimize discovery targets.
     const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && S.Network.remoteWorkerHealthy();
 
-    // Deep Drill: Search up to 12 alphanumeric characters if discovery yield is low.
+    // Deep Drill: Search up to keywords.length alphanumeric characters if discovery yield is low.
     // If Remote is available, we use the FULL keyword set (36) to maximize discovery.
     const maxRetries = remoteAvailable ? keywords.length : 12; 
-    const discoveryTarget = lowQuotaMode ? 2 : (remoteAvailable ? 10 : 5);
+    const discoveryTarget = lowQuotaMode ? 2 : (remoteAvailable ? 25 : 5);
     let attempts = 0;
+    const discoveryLogs: string[] = [];
 
     while (activeTourneys.length < discoveryTarget && attempts < Math.min(maxRetries, keywords.length)) {
       const keyword = keywords[attempts];
@@ -59,18 +60,20 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         const foundItems = Array.isArray(tourneyResponse) ? tourneyResponse : (tourneyResponse.items || []);
         
         if (foundItems.length > 0) {
-          console.log(`HeadhunterScanner: Found ${foundItems.length} raw tournaments for keyword '${keyword}'.`);
-          // NOTE: We DO NOT filter by maxPlayers here. The search endpoint typically omits 
-          // capacity/member counts. We collect these tags and will check capacity in the Detail Pass.
+          discoveryLogs.push(`Found ${foundItems.length} tournaments via '${keyword}'.`);
           activeTourneys.push(...foundItems);
-          console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Matches: ${foundItems.length}).`);
         } else {
-          console.warn(`HeadhunterScanner: No tournaments found for keyword '${keyword}'.`);
+          discoveryLogs.push(`No results for '${keyword}'.`);
         }
       } else {
-        console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no results for '${keyword}'.`);
+        discoveryLogs.push(`Search failed for '${keyword}'.`);
       }
       attempts++;
+    }
+
+    // CONSOLDATED LOGGING: Combine discovery into a single block for readability.
+    if (discoveryLogs.length > 0) {
+        console.info(`Tournament Discovery Trace:\n${discoveryLogs.join("\n")}`);
     }
 
     if (activeTourneys.length === 0) {
@@ -97,7 +100,9 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // 4. Batch Player Discovery
     const playerTags = new Set<string>();
     const tourneyDetails: any[] = S.Network.fetchRoyaleAPI(
-      activeTourneys.map((t: any) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t.tag)}`)
+      activeTourneys.map((t: any) => `${CONFIG.SYSTEM.API_BASE}/tournaments/${encodeURIComponent(t.tag)}`),
+      null,
+      "Tourney Details"
     );
 
     tourneyDetails.forEach(detail => {
@@ -121,6 +126,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     if (remoteAvailable && tagsToFetch.length > 0) {
       try {
+        console.info(`HeadhunterScanner: Attempting remote scan for ${tagsToFetch.length} tags.`);
         const remoteResponse = S.Network.fetchRemoteWorker("/scan", {
            tags: tagsToFetch,
            scoring: W
@@ -128,6 +134,9 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         if (remoteResponse && Array.isArray(remoteResponse.candidates)) {
            candidates = remoteResponse.candidates;
            usedRemote = true;
+           console.info(`HeadhunterScanner: Remote scan successful, found ${candidates.length} candidates.`);
+        } else {
+           console.warn("HeadhunterScanner: Remote worker returned invalid response. Falling back to local profiling.");
         }
       } catch (e) {
         console.warn("HeadhunterScanner: Remote worker scan failed. Falling back to local profiling.");
@@ -202,7 +211,9 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         if (seedTags.length > 0) {
           const cb = Math.floor(Date.now() / 900000); 
           const seedLogs: any[][] = S.Network.fetchRoyaleAPI(
-            seedTags.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`)
+            seedTags.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}/battlelog?__cb=${cb}`),
+            null,
+            "Shadow Seeding"
           );
 
           for (let sIdx = 0; sIdx < seedLogs.length; sIdx++) {
@@ -236,6 +247,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       const playersData: any[] = S.Network.fetchRoyaleAPI(
         tagsToFetch.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
         remoteAvailable ? W : null,
+        "Candidate Profiles"
       ) || [];
 
       const logUrls: string[] = [];
