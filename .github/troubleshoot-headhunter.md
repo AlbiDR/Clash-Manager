@@ -28,3 +28,8 @@ If the headhunter (taskFastScout) is broken and not finding any new candidates, 
 ## 6. Inspect `Headhunter_View.ts`
 - If no new candidates are found but no errors are thrown, the tournament search logic in `headhunter:scout` may be filtering everyone out. 
 - Ensure that the minimum trophies or rules set for candidates haven't become impossible to meet (e.g., filtering for an obsolete tag or unusually high trophies).
+
+## 7. Tournament Discovery Exhaustion
+If the logs show `Exhausted tournament discovery retries. Discovery Yield: 0`, and warnings like `No 'open' tournaments >= 50 for keyword 'w'`, it indicates the scanner successfully reached RoyaleAPI but found zero actionable tournaments.
+- **Cause:** The game's current global open tournaments matching the search keywords (`w`, `0`, `9`, etc.) do not meet the minimum capacity thresholds (e.g., `50`, `25`, `10`).
+- **Solution:** This is normal during times when few open tournaments are running. If this persists for days, you may need to lower the minimum tournament capacity thresholds or update the search keywords in the Headhunter's configuration.
