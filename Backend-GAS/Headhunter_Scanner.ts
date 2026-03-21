@@ -168,6 +168,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         .filter(candidate => candidate !== undefined);
 
       remotePool.forEach((candidate: any) => {
+        if (candidate && candidate.clan) return;
         let finalScore = candidate.rawScore;
         const normTag = S.Core.normalizeTag(candidate.tag).replace("#", "").toLowerCase();
         const intel = normalizedProphet.get(normTag);

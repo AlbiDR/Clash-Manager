@@ -109,15 +109,10 @@ describe('HeadhunterScanner', () => {
         // 3. Remote Scan — Worker is healthy
         mocks.Network.remoteWorkerHealthy.mockReturnValue(true);
         mocks.Network.fetchRemoteWorker.mockReturnValue({
-            candidates: [{ 
-                tag: "#P1", 
-                name: "Player1", 
-                rawScore: 200, 
-                trophies: 6000,
-                donations: 150,
-                cards: 2000,
-                war: 25
-            }]
+            candidates: [
+                { tag: "#P1", name: "Player1", rawScore: 200, trophies: 6000, donations: 150, cards: 2000, war: 25 },
+                { tag: "#P2_CLANNED", name: "Clanned", rawScore: 300, trophies: 7000, clan: "Enemy Clan" }
+            ]
         });
 
         // 4. Seed Logs (Shadow Scouting)
