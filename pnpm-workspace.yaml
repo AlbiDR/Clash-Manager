@@ -6,7 +6,7 @@ packages:
   - Backend-Worker
   - Frontend-PWA
 
-auditLevel: high
+auditLevel: moderate
 
 catalogs:
   default:
