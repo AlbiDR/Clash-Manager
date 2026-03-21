@@ -71,6 +71,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
       return isNaN(num) ? 0 : num;
     };
 
+    const parseDateMs = (val: any): number => {
+      if (!val) return 0;
+      const t = new Date(val).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
     const recruitMap = new Map<string, Recruit>();
     rows.forEach((recruitRow: any, i: number) => {
       const rawTag = String(recruitRow[H.TAG]);
@@ -87,7 +93,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
           foundDate: Registry.Services.Time.parseFlexibleDate(recruitRow[H.FOUND_DATE]),
           rawScore: parseNumeric(recruitRow[H.RAW_SCORE]),
           potentialScore: parseNumeric(recruitRow[H.POTENTIAL_SCORE]),
-          lastScan: recruitRow[H.LAST_SCAN] ? new Date(recruitRow[H.LAST_SCAN]).getTime() : 0,
+          lastScan: parseDateMs(recruitRow[H.LAST_SCAN]),
         };
 
         const result = v.safeParse(RecruitSchema, payload);
@@ -286,6 +292,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const INDEX_TAG = 0;
     const INDEX_LAST_SCAN = 9;
 
+    const parseDateMs = (val: any): number => {
+      if (!val) return 0;
+      const t = new Date(val).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
     data.forEach((queueRow: any, i: number) => {
       const tag = Registry.Services.Core.normalizeTag(queueRow[INDEX_TAG]);
       const foundDate = Registry.Services.Time.parseFlexibleDate(queueRow[7]);
@@ -304,7 +316,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
           foundDate: foundDate,
           invited: false,
           source: queueRow[8] || "TOURNAMENT",
-          lastScan: (queueRow.length > INDEX_LAST_SCAN && queueRow[INDEX_LAST_SCAN]) ? new Date(queueRow[INDEX_LAST_SCAN]).getTime() : 0 
+          lastScan: parseDateMs(queueRow[INDEX_LAST_SCAN]) 
         };
 
         const result = v.safeParse(RecruitSchema, payload);
