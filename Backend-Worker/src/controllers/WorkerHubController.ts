@@ -38,6 +38,17 @@ export class WorkerHubController {
   }
 
   /**
+   * Gracefully shuts down the synchronization daemon to prevent memory leaks.
+   */
+  static stopSyncDaemon(): void {
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
+      console.log("[WorkerHubController] Sync Daemon stopped.");
+    }
+  }
+
+  /**
    * Single-execution synchronization flow with strict overlap protection.
    *
    * @param gasBaseUrl Base URL of the GAS deployments
