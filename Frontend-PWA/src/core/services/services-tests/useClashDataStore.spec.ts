@@ -204,11 +204,59 @@ describe("useClashDataStore", () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("API Down"));
 
       const store = useClashDataStore();
+      // Case 1: No data yet -> Immediate error
       await store.startBackgroundSync();
 
       expect(store.loading).toBe(false);
       expect(store.syncError).toBe("API Down");
       expect(mockWakeLock.release).toHaveBeenCalled();
+    });
+
+    it("should tolerate up to 2 consecutive failures if data exists", async () => {
+      const store = useClashDataStore();
+      store.data = { lb: [], hh: [], timestamp: Date.now() }; // Mock existing data
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Transient Error"));
+
+      // 1st failure
+      await store.startBackgroundSync();
+      expect(store.syncError).toBeNull(); // Tolerated
+
+      // 2nd failure
+      await store.startBackgroundSync();
+      expect(store.syncError).toBeNull(); // Tolerated
+
+      // 3rd failure
+      await store.startBackgroundSync();
+      expect(store.syncError).toBe("Transient Error"); // Surfaced
+    });
+
+    it("should reset consecutive failures on success", async () => {
+      const store = useClashDataStore();
+      store.data = { lb: [], hh: [], timestamp: Date.now() };
+      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Error 1"));
+      
+      // 1st failure
+      await store.startBackgroundSync();
+      
+      // Success
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now() });
+      await store.startBackgroundSync();
+      
+      // Another failure (should be considered the new 1st failure)
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Error 2"));
+      await store.startBackgroundSync();
+      
+      expect(store.syncError).toBeNull(); // Still tolerated because counter was reset
+    });
+
+    it("should clear syncError on successful sync", async () => {
+      const store = useClashDataStore();
+      store.syncError = "Previous Error";
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now() });
+
+      await store.startBackgroundSync();
+
+      expect(store.syncError).toBeNull();
     });
   });
 

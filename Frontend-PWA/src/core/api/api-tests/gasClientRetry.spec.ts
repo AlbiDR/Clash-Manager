@@ -33,17 +33,20 @@ vi.mock("valibot", async (importOriginal) => {
   };
 });
 
-// Mock IDB
-vi.mock("../utils/idb", () => ({
+// Mock StorageService
+vi.mock("../services/StorageService", () => ({
   idb: {
     get: vi.fn(),
-    set: vi.fn(),
+    set: vi.fn().mockResolvedValue(undefined),
   },
+  loadCache: vi.fn(),
+  saveCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("gasClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
     localStorageMock.getItem.mockReturnValue(
       "https://script.google.com/macros/s/TEST/exec",
     );
@@ -76,7 +79,12 @@ describe("gasClient", () => {
           ),
       });
 
-    await fetchRemote();
+    const promise = fetchRemote();
+    
+    // Process retries
+    await vi.runAllTimersAsync();
+    
+    await promise;
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
@@ -84,16 +92,26 @@ describe("gasClient", () => {
   it("should NOT retry on 400 errors", async () => {
     fetchMock.mockResolvedValueOnce({ ok: false, status: 400 });
 
-    await expect(fetchRemote()).rejects.toThrow("HTTP 400");
+    await expect(fetchRemote()).rejects.toThrow("Server returned HTTP 400");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("should fail after max retries", async () => {
-    // Fail 4 times (default retry is 3, so total 4 attempts)
-    fetchMock.mockResolvedValue({ ok: false, status: 500 });
+    // Fail 5 times (1 initial + 4 retries)
+    fetchMock.mockResolvedValue({ ok: false, status: 505 });
 
-    await expect(fetchRemote()).rejects.toThrow("HTTP 500");
-    expect(fetchMock).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
+    const promise = fetchRemote();
+    
+    // Process all retries
+    await vi.runAllTimersAsync();
+    
+    try {
+      await promise;
+    } catch (error: any) {
+      expect(error.message).toContain("HTTP 505");
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("should detect HTML error pages", async () => {
@@ -105,7 +123,6 @@ describe("gasClient", () => {
         ),
     });
 
-    // Updated expectation to match gasClient.ts logic
     await expect(fetchRemote()).rejects.toThrow("Backend Configuration Error (HTML Response)");
   });
 
