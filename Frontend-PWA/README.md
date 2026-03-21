@@ -36,12 +36,13 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3.5 ap
 
 ## Sovereign Design System
 
-The application has migrated away from utility frameworks to a custom, highly-optimized **Vanilla CSS** architecture powered by a TypeScript-driven injection system (`src/core/theme/`).
+The application utilizes a custom-engineered **Sovereign Design System** built on Vanilla CSS and TypeScript-driven injection (`src/core/theme/`).
 
-- **Theme Engine**: Real-time HSL variable injection for seamless Light/Dark mode transitions.
-- **Glassmorphism**: Hardware-accelerated blurs and translucency effects.
-- **Fluid Topology**: Layouts that adapt continuously from mobile viewports to ultra-wide desktop dashboards.
-- **Micro-Interactions**: Haptic feedback patterns (vibration) synchronized with visual cues.
+- **Theme Engine**: Dynamic HSL variable injection for seamless Light/Dark mode transitions without CSS-in-JS overhead.
+- **Visual Purity**: Zero dependency on third-party icon libraries; all iconography is rendered via custom SVG paths in the `Icon.vue` primitive.
+- **Hardware-Accelerated blurs**: Strategic use of `backdrop-filter` for glassmorphism effects on navigation and overlay layers.
+- **Haptic Synchronization**: Interactions are paired with `navigator.vibrate` patterns (Heavy/Light/Success) via the `useHaptics` broker to provide physical feedback on mobile devices.
+- **Fluid Topology**: Layouts that adapt continuously from mobile viewports to ultra-wide desktop dashboards using container queries and flexbox.
 
 ---
 <br />
@@ -50,16 +51,43 @@ The application has migrated away from utility frameworks to a custom, highly-op
 
 | Layer | Technology | Description |
 | :--- | :--- | :--- |
-| **Core** | **Vue 3.5** | Composition API (`<script setup>`) for maximum type inference |
-| **Language** | **TypeScript** | Strict mode enabled for 100% type safety |
-| **State** | **Pinia** | Hybrid state management: Pinia for heavy clan data, Composables for atomic logic |
-| **Network** | **GasClient** | Specialized bridge for communicating with Google Apps Script |
-| **Schema** | **Valibot** | Runtime payload validation to ensure data integrity |
-| **PWA** | **Vite 7** | Modern build orchestration with Vite PWA for offline support |
-| **Testing** | **Vitest** | Unit and component testing with JSDOM environment |
+| **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
+| **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
+| **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
+| **Transport** | **GasClient** | High-integrity bridge for Google Apps Script Web App communication |
+| **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
+| **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
+| **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
 
 ---
 <br />
+
+## Core Orchestration & Infrastructure
+
+The application kernel (@core) manages complex system-level behaviors through specialized Layer 1 services:
+
+### 1. Unified State & Sync (`useClashDataStore`)
+Implements a **Stale-While-Revalidate** strategy for clan datasets.
+- **Validation Boundary**: All inbound payloads from the GAS backend are validated against `WebAppDataSchema` before store hydration.
+- **Background Sync**: Orchestrates periodic data refreshes with `wakeLock` protection to prevent mobile sleep during heavy operations.
+
+### 2. UI Coordination (`useUiCoordinator`)
+The master arbiter of layout spacing and element visibility.
+- **Occlusion Prevention**: Dynamically calculates bottom offsets for the `FabIsland` and `ToastContainer` to ensure interactive elements never overlap.
+- **Singleton Control**: Manages a global FAB state, allowing different feature views to register actions and labels in a unified UI layer.
+
+### 3. Redundant Persistence (`useAppSettings`)
+A multi-tier strategy for application configuration and feature flags.
+- **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access).
+- **Tab Synchronization**: Listens for `storage` events to ensure configuration remains consistent across multiple open browser tabs.
+
+### 4. Metadata Centralization (`useSystemInfo`)
+Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic).
+
+---
+<br />
+
+## Architectural Layers
 
 The codebase is organized using a layered, feature-driven architecture to ensure scalability and maintainable "Clean Stack" principles.
 
@@ -85,11 +113,15 @@ To ensure the "Clean Stack" integrity, the application enforces strict direction
 - **Layer 4: App (@app)**: The orchestration glue. Can import from all lower layers (L1, L2, L3) to compose the final application shell and router.
 
 Violation of these boundaries is considered architectural debt and will be flagged by the autonomous pipeline.
+
+---
+<br />
+
 ## Development
 
 ### Prerequisites
-- Node.js v20+
-- pnpm v9+
+- Node.js v24+
+- pnpm v10+
 
 ### Quick Start
 
@@ -133,7 +165,7 @@ In addition to local testing, the codebase is autonomously maintained by a **7-a
 
 - **Installable**: Meets all PWA criteria for installation on iOS and Android.
 - **Offline Capable**: Views cache automatically (Stale-While-Revalidate strategy).
-- **Haptics**: Uses navigator.vibrate for tactile feedback on interactions.
+- **Haptics**: Uses `navigator.vibrate` for tactile feedback on interactions.
 - **Deep Linking**: Supports URL routing for sharing specific clan profiles or searches.
 
 ---
