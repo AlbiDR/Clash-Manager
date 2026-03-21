@@ -6,6 +6,7 @@
     "key_improvements",
     "deep_dive",
     "files_modified",
+    "full_changelog_url",
     "final_markdown_output"
   ],
   "properties": {
@@ -16,12 +17,15 @@
         "previous_version": { "type": "string" },
         "new_version": { "type": "string" },
         "impact_level": { "type": "string", "enum": ["Major", "Minor", "Patch"] },
-        "reasoning": { "type": "string" }
+        "reasoning": { 
+          "type": "string", 
+          "description": "Logic-driven reasoning for the version bump. Note: The IDE must handle/create tags to maintain the git log chain."
+        }
       }
     },
     "release_summary": {
       "type": "string",
-      "description": "The 'Hero' paragraph. A high-level narrative introduction to the release."
+      "description": "The 'Hero' paragraph. A high-level, project-centric narrative (passive voice). Tone: Approachable, insightful, and genuine (acknowledging solo-use nature despite live status). No emojis."
     },
     "key_improvements": {
       "type": "array",
@@ -29,9 +33,9 @@
         "type": "object",
         "required": ["title", "context", "summary", "details"],
         "properties": {
-          "title": { "type": "string" },
-          "context": { "type": "string" },
-          "summary": { "type": "string" },
+          "title": { "type": "string", "description": "Clinical title (e.g., '1. Type Safety Hardening'). No emojis. Passive voice." },
+          "context": { "type": "string", "description": "System-centric context. No 'I/We'." },
+          "summary": { "type": "string", "description": "Passive voice only." },
           "details": {
             "type": "array",
             "items": {
@@ -39,11 +43,11 @@
               "required": ["bold_label", "description"],
               "properties": {
                 "bold_label": { "type": "string" },
-                "description": { "type": "string" },
+                "description": { "type": "string", "description": "Passive voice only." },
                 "sub_points": { 
                   "type": "array", 
                   "items": { "type": "string" },
-                  "description": "Optional nested bullets for Proposition 2."
+                  "description": "Optional nested bullets. Passive voice only."
                 }
               }
             }
@@ -57,16 +61,16 @@
       "properties": {
         "title": { "type": "string" },
         "type": { "type": "string", "enum": ["Bug Fix", "Architecture Spotlight", "Strategic Pivot"] },
-        "problem_statement": { "type": "string" },
-        "root_cause_analysis": { "type": "array", "items": { "type": "string" } },
+        "problem_statement": { "type": "string", "description": "Insightful description of the hurdle. Passive voice." },
+        "root_cause_analysis": { "type": "array", "items": { "type": "string" }, "description": "Deeply analytical. Passive voice." },
         "solution_implementation": {
           "type": "array",
           "items": {
             "type": "object",
             "required": ["step", "outcome"],
             "properties": {
-              "step": { "type": "string" },
-              "outcome": { "type": "string" }
+              "step": { "type": "string", "description": "Command mood or passive voice." },
+              "outcome": { "type": "string", "description": "Passive voice only." }
             }
           }
         }
@@ -82,7 +86,11 @@
             "type": "object",
             "required": ["component_name", "file_list"],
             "properties": {
-              "component_name": { "type": "string" },
+              "component_name": { 
+                "type": "string", 
+                "enum": ["@substrate", "@core", "@shared", "@features", "@app", "@root"],
+                "description": "Must correspond exactly to the ADR Layer names."
+              },
               "file_list": {
                 "type": "array",
                 "items": {
@@ -90,7 +98,7 @@
                   "required": ["filename", "change_summary"],
                   "properties": {
                     "filename": { "type": "string" },
-                    "change_summary": { "type": "string" }
+                    "change_summary": { "type": "string", "description": "Passive voice only." }
                   }
                 }
               }
@@ -99,16 +107,21 @@
         },
         "omission_strategy": {
           "type": "string",
-          "description": "Safekeeping field: Stores the specific formatting string to be used for future large-scale omissions (e.g., '* - [Count] additional files omitted for brevity.')."
+          "description": "Formatting string (e.g., '* - [Count] additional files omitted for brevity.')."
         }
       }
     },
+    "full_changelog_url": {
+      "type": "string",
+      "description": "Absolute URL to GitHub comparison. Mandatory for git log integrity."
+    },
     "final_markdown_output": {
       "type": "string",
-      "description": "Must use the exact separator: '\\n---\\n<br>\\n' before all H2 headers. Start with # {new_version}: {Title} followed immediately by the release_summary."
+      "description": "Clinical OCD Formatting. Must use exact separators: '\\n---\\n<br>\\n' before H2 headers. End with Full Changelog line then EXACTLY '\\n---\\n---'. No emojis. Scannable bold highlights. Passive voice throughout."
     }
   }
 }
 
 ---
 ---
+
