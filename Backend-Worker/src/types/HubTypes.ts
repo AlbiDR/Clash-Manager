@@ -16,7 +16,14 @@ export interface HubError {
 }
 
 export interface HubState {
-  timestamp: string;
-  status: 'healthy' | 'degraded' | 'offline';
-  data: Record<string, unknown>; // Will be refined with specific matrix types later
+  metadata: {
+    timestamp: string;
+    status: 'healthy' | 'degraded' | 'offline';
+    version: string;
+    source: string;
+  };
+  data: {
+    roster: any[];
+    headhunter: any[];
+  };
 }
