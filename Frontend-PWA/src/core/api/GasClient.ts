@@ -541,6 +541,51 @@ export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
 }): Promise<WebAppData> {
+  const useWorkerHub = import.meta.env.VITE_USE_WORKER_HUB === "true";
+
+  if (useWorkerHub) {
+    try {
+      // 1. Try to fetch from Worker Hub
+      const workerUrl = getWorkerUrl() + "/hub/state";
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s deadline
+      
+      const res = await fetch(workerUrl, {
+        method: "GET",
+        signal: options?.signal || controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error("Worker Hub HTTP " + res.status);
+      const resJson = await res.json();
+      if (!resJson.success || !resJson.data) throw new Error("Worker Hub malformed payload");
+
+      const hubState = resJson.data;
+      const rosterRaw = hubState.data?.roster || [];
+      const hhRaw = hubState.data?.headhunter || [];
+
+      // Transform into GAS Matrix format for `inflatePayload`
+      const mappedData = {
+        format: "matrix",
+        timestamp: new Date(hubState.metadata.timestamp).getTime(),
+        playerTag: "", // Worker hub doesn't override playerTag
+        schema: {
+          lb: rosterRaw[0] || [],
+          hh: hhRaw[0] || []
+        },
+        lb: rosterRaw.slice(1),
+        hh: hhRaw.slice(1)
+      };
+
+      const inflated = await inflatePayload(mappedData);
+      idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+      return inflated;
+    } catch (e) {
+      console.warn("[WorkerHub] Fetch failed, falling back to GAS:", e);
+      // Fallthrough to GAS legacy fetch
+    }
+  }
+
   const action = options?.force ? "refresh" : "getwebappdata";
   const data = await gasRequest<unknown>(action, undefined, {
     signal: options?.signal,
