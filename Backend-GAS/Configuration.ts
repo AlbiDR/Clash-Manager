@@ -415,6 +415,10 @@ export var CONFIG: AppConfig = {
       TROPHY_FLOOR_MAX: 10000,
       PERFORMANCE_BENCHMARK_MIN: 50,
     },
+    KEYWORDS: [
+      "Open", "Join", "No pass", "Max", "8", "x", "k", "7", "l",
+      "p", "5", "m", "j", "a", "s", "d", "f", "1", "2", "3"
+    ],
   },
 
   ROSTER: {

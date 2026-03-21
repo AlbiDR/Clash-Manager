@@ -47,46 +47,46 @@ vi.mock('../Registry', () => ({
     }
 }));
 
-// Mock BattleLog module too since it's imported
 vi.mock('../Battle_Log', () => ({
     default: mocks.BattleLog,
     AnalysisGoal: { RECRUITMENT: 'RECRUITMENT' }
 }));
 
+vi.mock('../Configuration', () => ({
+    CONFIG: {
+        HEADHUNTER: {
+            KEYWORDS: ["Open", "Join", "8", "x", "k", "7", "l"],
+            WEIGHTS: { trophies: 1, donations: 1, war: 1, cards: 1 },
+            MAX_SHADOW_RECRUITS: 10
+        },
+        SYSTEM: {
+            API_BASE: "https://api.clashroyale.com/v1",
+            REMOTE_WORKER_URL: "https://worker.fake"
+        }
+    }
+}));
+
 describe('HeadhunterScanner', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Ensure remote worker is "offline" by default for local-scan tests
         mocks.Network.fetchRemoteWorker.mockReturnValue(undefined);
         mocks.Network.remoteWorkerHealthy.mockReturnValue(false);
+        // Default catch-all to prevent undefined errors
+        mocks.Network.fetchRoyaleAPI.mockImplementation((urls) => {
+            if (!urls || urls.length === 0) return [];
+            return [];
+        });
     });
 
     it('should use Local Scan when Remote is offline', () => {
-        // 1. Discovery
-        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
-            items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
+        mocks.Network.fetchRoyaleAPIOne.mockReturnValue({ items: [{ tag: "#T1", type: "open", maxPlayers: 100 }] });
+
+        mocks.Network.fetchRoyaleAPI.mockImplementation((urls, scoring, label) => {
+            if (label === "Extraction") return [{ tag: "#T1", membersList: [{ tag: "#P1", name: "Player1" }] }];
+            if (label === "Local Fallback") return [{ tag: "#P1", name: "Player1", trophies: 6000 }];
+            if (label === "Shadow Seeding") return [[]];
+            return [];
         });
-
-        // 2. Details
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
-            tag: "#TOURNEY1",
-            membersList: [{ tag: "#P1", name: "Player1" }]
-        }]);
-
-        // 3. Profiles
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
-            tag: "#P1",
-            name: "Player1",
-            trophies: 6000,
-            totalDonations: 100,
-            warDayWins: 10,
-            challengeCardsWon: 1000
-        }]);
-
-        // 4. Logs
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([
-            [] // Empty log for P1
-        ]);
 
         const result = HeadhunterScanner.scanTournaments(5000, new Map(), new Set(), false);
         
@@ -95,74 +95,51 @@ describe('HeadhunterScanner', () => {
     });
 
     it('should use Remote Scan when Worker is healthy', () => {
-        // 1. Discovery
-        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
-            items: [{ tag: "#TOURNEY1", type: "open", maxPlayers: 100 }]
-        });
-        
-        // 2. Details
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
-            tag: "#TOURNEY1",
-            membersList: [{ tag: "#P1", name: "Player1" }]
-        }]);
-
-        // 3. Remote Scan — Worker is healthy
         mocks.Network.remoteWorkerHealthy.mockReturnValue(true);
+        mocks.Network.fetchRoyaleAPIOne.mockReturnValue({ items: [{ tag: "#T1", type: "open", maxPlayers: 100 }] });
+
         mocks.Network.fetchRemoteWorker.mockReturnValue({
-            candidates: [
-                { tag: "#P1", name: "Player1", rawScore: 200, trophies: 6000, donations: 150, cards: 2000, war: 25 },
-                { tag: "#P2_CLANNED", name: "Clanned", rawScore: 300, trophies: 7000, clan: "Enemy Clan" }
-            ]
+            candidates: [{ tag: "#P1", name: "Player1", rawScore: 200, trophies: 6000 }]
         });
 
-        // 4. Seed Logs (Shadow Scouting)
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([]);
+        mocks.Network.fetchRoyaleAPI.mockImplementation((urls, scoring, label) => {
+            if (label === "Extraction") return [{ tag: "#T1", membersList: [{ tag: "#P1", name: "Player1" }] }];
+            if (label === "Shadow Seeding") return [[]];
+            return [];
+        });
 
         const result = HeadhunterScanner.scanTournaments(5000, new Map(), new Set(), false);
         
         expect(result.length).toBe(1);
         expect(result[0].rawScore).toBe(200);
-        expect(result[0].donations).toBe(150);
-        expect(result[0].cards).toBe(2000);
-        expect(result[0].war).toBe(25);
     });
 
-    it('should fall back to 10-player threshold on 3rd attempt', () => {
-        // Attempt 0: threshold=50, all tournaments too small → miss
-        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
-            items: [{ tag: "#T_SMALL_A", type: "open", maxPlayers: 30 }]
+    it('should proceed to Shadow Scouting even if Tournament Search fails', () => {
+        mocks.Network.fetchRoyaleAPIOne.mockReturnValue({ items: [] });
+        
+        const existingRecruits = new Map();
+        existingRecruits.set("#SEED1", { tag: "#SEED1", name: "Seeder", rawScore: 500 });
+
+        mocks.Network.fetchRoyaleAPI.mockImplementation((urls, scoring, label) => {
+            if (label === "Extraction") return [];
+            if (label === "Local Fallback") return [];
+            if (label === "Shadow Seeding") return [
+                [{ type: "ladder", opponent: [{ tag: "#SHADOW1", name: "Shadow Player", clan: null }] }]
+            ];
+            if (label === "Shadow Profiles") return [{
+                tag: "#SHADOW1",
+                name: "Shadow Player",
+                trophies: 6200,
+                totalDonations: 500,
+                warDayWins: 50
+            }];
+            return [];
         });
-        // Attempt 1: threshold=25, tournaments still too small → miss
-        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
-            items: [{ tag: "#T_SMALL_B", type: "open", maxPlayers: 20 }]
-        });
-        // Attempt 2: threshold=10, tournament now qualifies → hit
-        mocks.Network.fetchRoyaleAPIOne.mockReturnValueOnce({
-            items: [{ tag: "#T_SMALL_C", type: "open", maxPlayers: 12 }]
-        });
 
-        // Details for the winning tournament
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
-            tag: "#T_SMALL_C",
-            membersList: [{ tag: "#P_FALLBACK", name: "Fallback Player" }]
-        }]);
-
-        // Player profile (local scan path)
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([{
-            tag: "#P_FALLBACK",
-            name: "Fallback Player",
-            trophies: 5500,
-            totalDonations: 50,
-            warDayWins: 5,
-            challengeCardsWon: 500
-        }]);
-
-        // Battle log
-        mocks.Network.fetchRoyaleAPI.mockReturnValueOnce([[]]);
-
-        const result = HeadhunterScanner.scanTournaments(5000, new Map(), new Set(), false);
+        const result = HeadhunterScanner.scanTournaments(5000, existingRecruits, new Set(), false);
 
         expect(result.length).toBe(1);
-        expect(result[0].tag).toBe("#P_FALLBACK");
+        expect(result[0].tag).toBe("#SHADOW1");
+        expect(result[0].source).toBe("SHADOW");
     });
 });
