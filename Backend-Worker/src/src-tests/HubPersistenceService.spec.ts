@@ -5,13 +5,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "fs";
 import * as path from "path";
 import { HubPersistenceService } from "../services/HubPersistenceService.js";
+import { HubState } from "../types/HubTypes.js";
 
 describe("HubPersistenceService", () => {
   const dirPath = path.resolve(process.cwd(), "test_data");
   
   // Override internal paths for isolated testing via prototype / mocked methods
   const MOCK_FILE_PATH = path.join(dirPath, "hub_state.json");
-  const MOCK_TEMP_PATH = path.join(dirPath, "hub_state_test.tmp");
 
   beforeEach(() => {
     vi.spyOn(fs, "mkdir").mockResolvedValue(true as any);

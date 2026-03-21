@@ -12,7 +12,7 @@
 export interface HubError {
   code: string;
   message: string;
-  layer: 'WORKER_HUB';
+  layer: 'WORKER_HUB' | 'WORKER_PAYLOAD_KERNEL' | 'WORKER_PERSISTENCE' | 'GAS_API_RAW';
 }
 
 export interface HubState {

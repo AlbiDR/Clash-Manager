@@ -11,7 +11,9 @@
  */
 
 import type { RegistryContract } from "./Registry";
+import { CONFIG } from "./Configuration";
 declare const Registry: RegistryContract;
+declare const SpreadsheetApp: any;
 
 /**
  * Exports raw table data for the Worker Hub matrix.
@@ -22,7 +24,7 @@ declare const Registry: RegistryContract;
 export const doGetRawFeed = (e: any): any => {
   // 1. Zero-Trust Token Boundary
   const authHeader = e?.parameter?.token; // GAS query parameter is e.parameter.key
-  const envSecret = Registry.Services.Store.props.getString('REMOTE_WORKER_SECRET');
+  const envSecret = Registry.Services.Store.props.get('REMOTE_WORKER_SECRET');
 
   if (!envSecret || authHeader !== envSecret) {
     return ContentService.createTextOutput(JSON.stringify({ 
@@ -34,8 +36,13 @@ export const doGetRawFeed = (e: any): any => {
 
   // 2. Fetch Raw Storage (Dumb Store)
   try {
-    const rosterRows = Registry.Services.Database.fetchTable('Roster');
-    const headhunterRows = Registry.Services.Database.fetchTable('Headhunter');
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    const rosterSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
+    const rosterRows = rosterSheet ? rosterSheet.getDataRange().getValues() : [];
+
+    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
+    const headhunterRows = hhSheet ? hhSheet.getDataRange().getValues() : [];
     // Extend with other tables as needed for matrix generation
 
     const rawPayload = {
