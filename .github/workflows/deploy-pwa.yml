@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: "24"
           cache: "pnpm"
-          cache-dependency-path: "Frontend-PWA/pnpm-lock.yaml"
+          cache-dependency-path: "pnpm-lock.yaml"
 
       - name: Project Validation
         working-directory: .
@@ -62,6 +62,7 @@ jobs:
           fi
 
       - name: Install Dependencies
+        working-directory: .
         run: pnpm install
 
       - name: Run Tests
