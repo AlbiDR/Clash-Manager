@@ -30,5 +30,6 @@ If the headhunter (taskFastScout) is broken and not finding any new candidates, 
 
 ## 7. Tournament Discovery Exhaustion
 If the logs show `Exhausted tournament discovery retries. Discovery Yield: 0`, and warnings like `No 'open' tournaments >= 50 for keyword 'w'`, the script is overly restrictive by filtering for "open" statuses.
-- **Tournament Status Filter:** There is absolutely no need to look for exclusively OPEN tournaments. All types of tournaments (active, full, private, or terminated) work perfectly for scouting candidates. 
-- **The Golden Rule of Search:** Using alphanumeric search (`a-z`, `0-9`) is the absolutely BEST and ONLY way to execute the tournament search. Ensure no other character patterns are injected and DO NOT restrict by "open" status. Filtering by alphanumeric queries across all tournament states guarantees candidate discovery.
+- **Tournament Status Irrelevance:** You can absolutely ignore the state of the tournaments (open, closed, full, private, or terminated). All of them work perfectly for scouting candidates; there is zero requirement for a tournament to be "open."
+- **The Golden Rule of Search:** Using alphanumeric search (`a-z`, `0-9`) is the absolutely BEST and ONLY way to execute the tournament search. Ensure no other character patterns are injected.
+- **Execution Strategy:** Filtering by alphanumeric queries across **all** tournament states regardless of status guarantees the highest candidate discovery yield. If yield is 0, the issue likely resides in the capacity thresholds or a failure to delegate the search to the Render Worker (bypassing GAS quotas).
