@@ -8,10 +8,9 @@ If the headhunter (taskFastScout) is broken and not finding any new candidates, 
 - Run **Clash Manager > System Health > System Diagnostics** to verify that all module versions match the expected manifest.
 - Check the Apps Script Executions dashboard (`Extensions > Apps Script` then click the "Executions" icon on the left) to see if `taskFastScout` is failing with any specific error messages (e.g., Lock timeouts, Quota Exhausted).
 
-## 2. Check the RoyaleAPI Quota
-- If the logs show "Service invoked too many times" or "DAILY QUOTA LIMIT REACHED", the RoyaleAPI keys have exhausted their daily quota.
-- Ensure that the worker (Render) is functioning to offload requests. 
-- You may need to add additional active RoyaleAPI keys in the configuration.
+## 2. Check the RoyaleAPI Quota & Worker Delegation
+- If the logs show "Service invoked too many times" or "DAILY QUOTA LIMIT REACHED", the embedded Google Apps Script has exhausted the daily RoyaleAPI quota.
+- **Important:** If you use the intended Render Worker to look for tournaments, there is no need to worry about quota. Quota limits only apply to the embedded GAS search. Ensure the Render Worker is correctly configured and online to bypass this limitation.
 
 ## 3. Worker Node Health (Render)
 - The headhunter can offload requests to the remote worker if configured. Verify the worker is awake and returning 200 OK statuses.
@@ -30,6 +29,6 @@ If the headhunter (taskFastScout) is broken and not finding any new candidates, 
 - Ensure that the minimum trophies or rules set for candidates haven't become impossible to meet (e.g., filtering for an obsolete tag or unusually high trophies).
 
 ## 7. Tournament Discovery Exhaustion
-If the logs show `Exhausted tournament discovery retries. Discovery Yield: 0`, and warnings like `No 'open' tournaments >= 50 for keyword 'w'`, it indicates the scanner successfully reached RoyaleAPI but found zero actionable tournaments.
-- **Cause:** The game's current global open tournaments matching the search keywords (`w`, `0`, `9`, etc.) do not meet the minimum capacity thresholds (e.g., `50`, `25`, `10`).
-- **Solution:** This is normal during times when few open tournaments are running. If this persists for days, you may need to lower the minimum tournament capacity thresholds or update the search keywords in the Headhunter's configuration.
+If the logs show `Exhausted tournament discovery retries. Discovery Yield: 0`, and warnings like `No 'open' tournaments >= 50 for keyword 'w'`, the script is overly restrictive by filtering for "open" statuses.
+- **Tournament Status Filter:** There is absolutely no need to look for exclusively OPEN tournaments. All types of tournaments (active, full, private, or terminated) work perfectly for scouting candidates. 
+- **The Golden Rule of Search:** Using alphanumeric search (`a-z`, `0-9`) is the absolutely BEST and ONLY way to execute the tournament search. Ensure no other character patterns are injected and DO NOT restrict by "open" status. Filtering by alphanumeric queries across all tournament states guarantees candidate discovery.
