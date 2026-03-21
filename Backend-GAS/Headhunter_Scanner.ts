@@ -45,27 +45,26 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const maxRetries = 12; // Search deeper into the a-z0-9 pool if starving.
     let attempts = 0;
 
-    while (activeTourneys.length === 0 && attempts < Math.min(maxRetries, keywords.length)) {
+    while (activeTourneys.length < (lowQuotaMode ? 2 : 5) && attempts < Math.min(maxRetries, keywords.length)) {
       const keyword = keywords[attempts];
       const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(keyword)}`;
       const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
       
-      if (tourneyResponse && Array.isArray(tourneyResponse.items)) {
-        console.log(`HeadhunterScanner: Found ${tourneyResponse.items.length} raw tournaments for keyword '${keyword}'.`);
-        // [FLEXIBLE FILTERING]: Prioritize large tournaments, but accept smaller ones if yield is low.
-        // Threshold decays with attempts: [50, 25, 10, 5, 2] then persists at 2 for deep drills.
-        const threshold = THRESHOLDS[attempts] ?? 2;
-        activeTourneys = tourneyResponse.items.filter(
-          (t: any) => t.maxPlayers >= threshold
-        );
+      if (tourneyResponse) {
+        // [FLEXIBLE ACQUISITION]: Handle both wrapped {items: []} and raw [] responses.
+        const foundItems = Array.isArray(tourneyResponse) ? tourneyResponse : (tourneyResponse.items || []);
         
-        if (activeTourneys.length > 0) {
-          console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Threshold: ${threshold}, Matches: ${activeTourneys.length}).`);
+        if (foundItems.length > 0) {
+          console.log(`HeadhunterScanner: Found ${foundItems.length} raw tournaments for keyword '${keyword}'.`);
+          // NOTE: We DO NOT filter by maxPlayers here. The search endpoint typically omits 
+          // capacity/member counts. We collect these tags and will check capacity in the Detail Pass.
+          activeTourneys.push(...foundItems);
+          console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Matches: ${foundItems.length}).`);
         } else {
-          console.warn(`HeadhunterScanner: No tournaments >= ${threshold} for keyword '${keyword}'.`);
+          console.warn(`HeadhunterScanner: No tournaments found for keyword '${keyword}'.`);
         }
       } else {
-        console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no items for '${keyword}'.`);
+        console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no results for '${keyword}'.`);
       }
       attempts++;
     }
