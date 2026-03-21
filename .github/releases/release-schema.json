@@ -25,7 +25,7 @@
     },
     "release_summary": {
       "type": "string",
-      "description": "The 'Hero' paragraph. A high-level, project-centric narrative (passive voice). Tone: Approachable, insightful, and genuine (acknowledging solo-use nature despite live status). No emojis."
+      "description": "The 'Hero' paragraph. A high-level, project-centric narrative (passive voice). Must explicitly state the tangible benefits, pros, and systemic impact of the release. Tone: Approachable, insightful, and genuine. No emojis."
     },
     "key_improvements": {
       "type": "array",
@@ -69,8 +69,8 @@
             "type": "object",
             "required": ["step", "outcome"],
             "properties": {
-              "step": { "type": "string", "description": "Command mood or passive voice." },
-              "outcome": { "type": "string", "description": "Passive voice only." }
+              "step": { "type": "string", "description": "Command mood or passive voice. AI MUST format markdown as: '1. **Step:** [step string]'" },
+              "outcome": { "type": "string", "description": "Passive voice only. AI MUST format markdown as: '   * **Outcome:** [outcome string]'" }
             }
           }
         }
@@ -89,7 +89,7 @@
               "component_name": { 
                 "type": "string", 
                 "enum": ["@substrate", "@core", "@shared", "@features", "@app", "@root"],
-                "description": "Must correspond exactly to the ADR Layer names."
+                "description": "Must strictly evaluate the file path against the CleanStack Architecture ADR before categorizing. Layer map: @substrate = index.html, manifest.json, assets, appsscript.json | @core = api/, theme/, services/, utils/, Scoring_Kernel | @shared = ui/, composables/, directives/, Store, View, Database | @features = roster/, laboratory/, headhunter/, scoring/, settings/ | @app = router/, layouts/, sw.ts, App.vue, Orchestrator, Registry | @root = vite.config, package.json, tsconfig, API_Public, Controllers."
               },
               "file_list": {
                 "type": "array",
@@ -97,8 +97,8 @@
                   "type": "object",
                   "required": ["filename", "change_summary"],
                   "properties": {
-                    "filename": { "type": "string" },
-                    "change_summary": { "type": "string", "description": "Passive voice only." }
+                    "filename": { "type": "string", "description": "The file path. AI MUST format markdown list items as: '* **[Filename]**: '" },
+                    "change_summary": { "type": "string", "description": "Passive voice only. Placed on the same line after the filename string." }
                   }
                 }
               }
@@ -111,13 +111,18 @@
         }
       }
     },
+    "architectural_shifts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional. Detect and highlight when foundational project rules, ADR pillars, or structural dependencies change (e.g., deprecation of legacy docs in favor of a unified ADR, migration of build tools, or new governance policies). Each entry is rendered as a bullet under Key Improvements or as a dedicated subsection."
+    },
     "full_changelog_url": {
       "type": "string",
       "description": "Absolute URL to GitHub comparison. Mandatory for git log integrity."
     },
     "final_markdown_output": {
       "type": "string",
-      "description": "Clinical OCD Formatting. Must use exact separators: '\\n---\\n<br>\\n' before H2 headers. End with Full Changelog line then EXACTLY '\\n---\\n---'. No emojis. Scannable bold highlights. Passive voice throughout."
+      "description": "Clinical OCD Formatting. Must use exact separators: '\\n---\\n<br>\\n' before H2 headers. End with Full Changelog line then EXACTLY '\\n---\\n---'. No emojis. Scannable bold highlights. Passive voice. AI MUST strictly follow the exact Markdown rendering formats embedded in the Deep Dive and File List component descriptions. If architectural_shifts exist, they MUST be surfaced prominently."
     }
   }
 }
