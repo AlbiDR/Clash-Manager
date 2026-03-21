@@ -69,9 +69,10 @@ describe('Worker Hygiene Logic', () => {
     const scoring = { TROPHY: 1.0, DON: 0.1, WAR: 10.0, WAR_BASELINE_BONUS: 500 };
     
     const results = await processBatch(urls, ['fake-key'], 1, scoring);
-
+    
     expect(results).toHaveLength(1);
-    expect((results[0].content as any).tag).toBe('#PLAYER2');
-    expect((results[0].content as any).clan).toBeNull();
+    expect(results[0]).toBeDefined();
+    expect((results[0]!.content as any).tag).toBe('#PLAYER2');
+    expect((results[0]!.content as any).clan).toBeNull();
   });
 });

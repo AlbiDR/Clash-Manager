@@ -202,8 +202,8 @@ const RosterStore = {
 
     const rows = sheet.getRange(startRow, 2, actualCount, 1).getValues();
     return rows
-      .map(r => String(r[0]).trim())
-      .filter(tag => tag && tag !== "" && tag.startsWith("#"));
+      .map((r: any[]) => String(r[0]).trim())
+      .filter((tag: string) => tag && tag !== "" && tag.startsWith("#"));
   }
 };
 
