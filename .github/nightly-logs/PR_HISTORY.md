@@ -1,6 +1,22 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-21] PR #271: Harden Background Sync Validation Boundary
+**Commit**: `8afd3c4c6eba847cc8e4c0840ca0c9740b72f432`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/271)
+
+### Description
+This PR hardens the `Frontend-PWA` by introducing a strict validation boundary for background synchronization. 
+
+External data returned from the `fetchRemote` call in `useClashDataStore.ts` is now validated against the `WebAppDataSchema` using `v.safeParse`. This prevents malformed payloads from the GAS backend or the Remote Worker from corrupting the Pinia store or the persistent IndexedDB cache. If validation fails, the sync process is halted, and a descriptive error is set in `syncError.value`, allowing the system to degrade gracefully while preserving the last known good state.
+
+This change adheres to **Target B [1] Validation Boundary** and the **CleanStack Architecture** ADR (Section III).
+
+---
+*PR created automatically by Jules for task [9390755158448647169](https://jules.google.com/task/9390755158448647169) started by @AlbiDR*
+
+---
+
 ## [2026-03-20] PR #270: test(verify): add defensive coverage for AppFooter.vue
 **Commit**: `8d207b33f66921caf7a1aa57f1606e6a87230ce1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/270)
