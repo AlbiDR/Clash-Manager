@@ -51,6 +51,8 @@ export function useRecruiter() {
     isRefreshing,
     syncError,
     lastSyncTime,
+    currentSource,
+    hubSyncTime,
   } = storeToRefs(clashDataStore);
   const { refresh: refreshGas, updateLocalData } = clashDataStore;
   const { dismissRecruitsAction } = useHeadhunter();

@@ -16,6 +16,10 @@ const props = defineProps<{
   currentSort?: string;
   loading?: boolean;
   reserveExtraSpace?: boolean;
+  hubInfo?: {
+    source: "WORKER" | "GAS";
+    hubAge: string | null;
+  };
 }>();
 
 const emit = defineEmits<{
@@ -59,48 +63,47 @@ function openOverlay() {
   <div class="header-wrapper" :class="{ 'is-scrolled': isScrolled }">
     <div class="console-glass">
       <div class="bloom-effect"></div>
-
       <!-- Top Row: Identity & Status -->
       <div class="header-row top">
         <div class="left-cluster">
-          <!-- Title is now the Link -->
           <h1 class="view-title">
             <a
-              v-if="sheetUrl"
-              :href="sheetUrl"
+              v-if="props.sheetUrl"
+              :href="props.sheetUrl"
               target="_blank"
               rel="noopener noreferrer"
               class="title-link"
               @click="haptics.tap()"
             >
-              {{ title }}
+              {{ props.title }}
               <Icon name="spreadsheet" size="14" class="title-icon" />
             </a>
-            <span v-else>{{ title }}</span>
+            <span v-else>{{ props.title }}</span>
           </h1>
 
-          <div v-if="stats && !loading" class="stats-pill">
-            <span class="sp-value">{{ stats.value }}</span>
-            <span class="sp-label">{{ stats.label }}</span>
+          <div v-if="props.stats && !props.loading" class="stats-pill">
+            <span class="sp-value">{{ props.stats.value }}</span>
+            <span class="sp-label">{{ props.stats.label }}</span>
           </div>
-          <div v-else-if="loading" class="sk-badge-m skeleton-anim"></div>
+          <div v-else-if="props.loading" class="sk-badge-m skeleton-anim"></div>
         </div>
 
         <StatusPill
-          v-if="status && !loading"
-          :type="status.type"
-          :text="status.text"
+          v-if="props.status && !props.loading"
+          :type="props.status.type"
+          :text="props.status.text"
+          :hub-info="props.hubInfo"
           @refresh="$emit('refresh')"
         />
-        <div v-else-if="loading" class="sk-pill skeleton-anim"></div>
+        <div v-else-if="props.loading" class="sk-pill skeleton-anim"></div>
       </div>
 
       <!-- Bottom Row: Controls -->
-      <div v-if="showSearch" class="header-row bottom">
+      <div v-if="props.showSearch" class="header-row bottom">
         <div class="search-container">
           <Icon name="search" class="input-icon" size="20" />
           <input
-            v-if="!loading"
+            v-if="!props.loading"
             type="text"
             class="glass-input"
             placeholder="Search..."
@@ -115,8 +118,8 @@ function openOverlay() {
           <div class="sort-container">
             <Icon name="filter" size="16" class="sort-icon" />
             <select
-              v-if="!loading"
-              :value="currentSort"
+              v-if="!props.loading"
+              :value="props.currentSort"
               class="glass-select"
               :class="{ 'has-info': !!activeSortDescription }"
               @change="
@@ -125,9 +128,9 @@ function openOverlay() {
               "
               aria-label="Sort by"
             >
-              <template v-if="sortOptions">
+              <template v-if="props.sortOptions">
                 <option
-                  v-for="opt in sortOptions"
+                  v-for="opt in props.sortOptions"
                   :key="opt.value"
                   :value="opt.value"
                 >
@@ -138,7 +141,7 @@ function openOverlay() {
             <div v-else class="sk-select skeleton-anim"></div>
 
             <button
-              v-if="activeSortDescription && !loading"
+              v-if="activeSortDescription && !props.loading"
               class="info-dot-inline"
               @click="openOverlay"
               aria-label="Sort Information"
@@ -151,9 +154,9 @@ function openOverlay() {
 
       <!-- Extra Row: Selection Context -->
       <div
-        v-if="$slots.extra || reserveExtraSpace"
+        v-if="$slots.extra || props.reserveExtraSpace"
         class="header-row extra"
-        :class="{ reserved: reserveExtraSpace }"
+        :class="{ reserved: props.reserveExtraSpace }"
       >
         <slot name="extra"></slot>
       </div>

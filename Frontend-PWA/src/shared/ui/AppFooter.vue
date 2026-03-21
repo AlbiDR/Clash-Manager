@@ -1,27 +1,16 @@
 <script setup lang="ts">
 import { vTactile } from "../directives/vTactile";
-import { useHaptics, useClashDataStore } from "@core";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useHaptics } from "@core";
+import { computed } from "vue";
 
 const props = defineProps<{
   version: string;
   badge?: string;
+  currentSource?: "WORKER" | "GAS" | null;
+  hubSyncTime?: number | null;
 }>();
 
 const haptics = useHaptics();
-const store = useClashDataStore();
-const now = ref(Date.now());
-
-let timer: number;
-onMounted(() => {
-  timer = window.setInterval(() => {
-    now.value = Date.now();
-  }, 30000); // Update every 30s
-});
-
-onUnmounted(() => {
-  clearInterval(timer);
-});
 
 const handleReload = () => {
   haptics.heavy();
@@ -29,20 +18,20 @@ const handleReload = () => {
 };
 
 const statusLabel = computed(() => {
-  if (store.currentSource === "WORKER") return "Worker Hub (0ms)";
-  if (store.currentSource === "GAS") return "Legacy GAS (Fallback)";
+  if (props.currentSource === "WORKER") return "Worker Hub (0ms)";
+  if (props.currentSource === "GAS") return "Legacy GAS (Fallback)";
   return "Disconnected";
 });
 
 const statusColor = computed(() => {
-  if (store.currentSource === "WORKER") return "var(--sys-color-success)";
-  if (store.currentSource === "GAS") return "var(--sys-color-primary)";
+  if (props.currentSource === "WORKER") return "var(--sys-color-success)";
+  if (props.currentSource === "GAS") return "var(--sys-color-primary)";
   return "var(--sys-color-error)";
 });
 
 const hubAge = computed(() => {
-  if (!store.hubSyncTime) return "";
-  const minutes = Math.floor((now.value - store.hubSyncTime) / 60000);
+  if (!props.hubSyncTime) return "";
+  const minutes = Math.floor((Date.now() - props.hubSyncTime) / 60000);
   if (minutes < 1) return "Just now";
   if (minutes >= 60) return `${Math.floor(minutes / 60)}h ago`;
   return `${minutes}m ago`;
