@@ -18,7 +18,6 @@ export class HubPersistenceService {
   private static readonly FILE_DIR = path.resolve(process.cwd(), "data");
   private static readonly FILE_NAME = "hub_state.json";
   private static readonly FILE_PATH = path.join(this.FILE_DIR, this.FILE_NAME);
-  private static readonly TEMP_FILE_PATH = path.join(this.FILE_DIR, `hub_state_${Date.now()}.tmp`);
 
   /**
    * Initializes the persistence directory if it doesn't exist.
@@ -37,19 +36,20 @@ export class HubPersistenceService {
    * @param state The structured HubState payload.
    */
   static async saveState(state: HubState): Promise<void> {
+    const tempFilePath = path.join(this.FILE_DIR, `hub_state_${Date.now()}_${Math.random().toString(36).substring(7)}.tmp`);
     const rawData = JSON.stringify(state);
     
     try {
       // 1. Write to a temporary file
-      await fs.writeFile(this.TEMP_FILE_PATH, rawData, { encoding: "utf8" });
+      await fs.writeFile(tempFilePath, rawData, { encoding: "utf8" });
 
       // 2. Atomically rename the temporary file to overwrite the target
       // This strictly avoids race conditions if the PWA is requesting the file
       // at the exact millisecond it is being updated.
-      await fs.rename(this.TEMP_FILE_PATH, this.FILE_PATH);
+      await fs.rename(tempFilePath, this.FILE_PATH);
     } catch (err: any) {
       // Clean up the temp file if the atomic rename fails
-      await fs.rm(this.TEMP_FILE_PATH, { force: true });
+      await fs.rm(tempFilePath, { force: true });
       
       const error: HubError = {
         code: "ERR_PERSISTENCE_FAILED",

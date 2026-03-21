@@ -21,7 +21,7 @@ declare const Registry: RegistryContract;
  */
 export const doGetRawFeed = (e: any): any => {
   // 1. Zero-Trust Token Boundary
-  const authHeader = e?.parameters?.token; // Alternatively extract from headers if standard proxy used
+  const authHeader = e?.parameter?.token; // GAS query parameter is e.parameter.key
   const envSecret = Registry.Services.Store.props.getString('REMOTE_WORKER_SECRET');
 
   if (!envSecret || authHeader !== envSecret) {
@@ -29,8 +29,7 @@ export const doGetRawFeed = (e: any): any => {
       error: "Unauthorized", 
       layer: 'GAS_API_RAW' 
     }))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setStatusCode(401); // Requires specific deployment options in GAS to respect status code, but semantically correct
+    .setMimeType(ContentService.MimeType.JSON); // GAS Web Apps always return 200/302/404; manual 401 is not supported via TextOutput
   }
 
   // 2. Fetch Raw Storage (Dumb Store)

@@ -38,6 +38,7 @@ export class PayloadKernel {
     return {
       metadata: {
         timestamp: new Date().toISOString(),
+        status: "healthy",
         version: "v1_hub",
         source: "RENDER_WORKER"
       },
