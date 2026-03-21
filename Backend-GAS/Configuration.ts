@@ -126,7 +126,6 @@ export interface AppConfig {
   HEADHUNTER: {
     TARGET: number;
     BLACKLIST_DAYS: number;
-    KEYWORDS: string[];
     WEIGHTS: {
       TROPHY: number;
       DON: number;
@@ -394,44 +393,6 @@ export var CONFIG: AppConfig = {
   HEADHUNTER: {
     TARGET: 50,
     BLACKLIST_DAYS: 30,
-    KEYWORDS: [
-      "0",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "a",
-      "b",
-      "c",
-      "d",
-      "e",
-      "f",
-      "g",
-      "h",
-      "i",
-      "j",
-      "k",
-      "l",
-      "m",
-      "n",
-      "o",
-      "p",
-      "q",
-      "r",
-      "s",
-      "t",
-      "u",
-      "v",
-      "w",
-      "x",
-      "y",
-      "z",
-    ],
     WEIGHTS: { TROPHY: 1.0, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
     DEEP_SCAN: {
       LOCAL: { TOURNEYS: 600, PLAYERS: 500 },
