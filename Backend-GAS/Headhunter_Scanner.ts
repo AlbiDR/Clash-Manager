@@ -37,8 +37,8 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     // 1. Fetch Global Tournaments (Aggressive Discovery)
     const uniqueTourneys = new Set<string>();
     let activeTourneys: any[] = [];
-    // Pre-shuffle to guarantee a unique keyword per attempt (no repeat draws)
-    const keywords = [...CONFIG.HEADHUNTER.KEYWORDS].sort(() => Math.random() - 0.5);
+    // The search MUST be alphanumerical (a-z, 0-9) to guarantee the best discovery yield.
+    const keywords = "abcdefghijklmnopqrstuvwxyz0123456789".split("").sort(() => Math.random() - 0.5);
     // 3-tier threshold decay: be strict on first pass, increasingly lenient on retries
     const THRESHOLDS = [50, 25, 10];
     const maxRetries = THRESHOLDS.length;
@@ -52,15 +52,16 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       if (tourneyResponse && Array.isArray(tourneyResponse.items)) {
         console.log(`HeadhunterScanner: Found ${tourneyResponse.items.length} raw tournaments for keyword '${keyword}'.`);
         // [FLEXIBLE FILTERING]: Prioritize large tournaments, but accept smaller ones if yield is low.
+        // NOTE: We do not restrict by 'open' status. All types (open, full, private, terminated) are valid.
         const threshold = THRESHOLDS[attempts] ?? 10;
         activeTourneys = tourneyResponse.items.filter(
-          (t: any) => t.type === "open" && t.maxPlayers >= threshold
+          (t: any) => t.maxPlayers >= threshold
         );
         
         if (activeTourneys.length > 0) {
           console.info(`HeadhunterScanner: Discovery yield found via '${keyword}' (Threshold: ${threshold}, Matches: ${activeTourneys.length}).`);
         } else {
-          console.warn(`HeadhunterScanner: No 'open' tournaments >= ${threshold} for keyword '${keyword}'.`);
+          console.warn(`HeadhunterScanner: No tournaments >= ${threshold} for keyword '${keyword}'.`);
         }
       } else {
         console.warn(`HeadhunterScanner: RoyaleAPI search failed or returned no items for '${keyword}'. Response: ${JSON.stringify(tourneyResponse).slice(0, 100)}`);
