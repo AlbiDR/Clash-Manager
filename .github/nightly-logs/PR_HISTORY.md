@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-21] PR #277: chore(deps): align @types/node across monorepo
+**Commit**: `9ad5e9a7f1d7d369a5619da6653477fa08b49cb9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/277)
+
+### Description
+Aligned `@types/node` to version `^24.12.0` across the entire monorepo (root, `Backend-Worker`, `Frontend-PWA`, `Backend-GAS`) to maintain consistency with the Node.js v24 runtime. Verified that tests pass in all subsystems after the update.
+
+---
+*PR created automatically by Jules for task [8247617457166229762](https://jules.google.com/task/8247617457166229762) started by @AlbiDR*
+
+---
+
 ## [2026-03-21] PR #276: test(verify): add defensive coverage for useSystemInfo.ts
 **Commit**: `b7be5d4d076b1d272e07ae306c1985cd52609e0c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/276)
