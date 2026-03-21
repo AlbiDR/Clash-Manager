@@ -54,7 +54,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
 | **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
-| **Transport** | **GasClient** | High-integrity bridge for Google Apps Script Web App communication |
+| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker with a Google Apps Script fallback |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
 | **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
@@ -140,6 +140,9 @@ Create a .env file in the root directory to link to your backend:
 ```ini
 # URL of your Google Apps Script Web App execution
 VITE_GAS_URL=https://script.google.com/macros/s/.../exec
+
+# Worker Hub Opt-In (Enables 0ms latency Data Hub reads with fallback)
+VITE_USE_WORKER_HUB=true
 ```
 
 ---

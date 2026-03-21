@@ -109,8 +109,8 @@ The command center. A **Vue 3 Progressive Web Application** designed for adminis
 <summary><strong>Remote Worker (Render)</strong></summary>
 
 The muscle. A high-performance Node.js service hosted on **Render**.
-- **Role**: Offloads high-volume network operations and scanning tasks to circumvent platform quotas.
-- **Capabilities**: Parallel processing, Smart Key Rotation, and "Headless" API proxying.
+- **Role**: Offloads high-volume network operations, acts as the primary Data Hub for the PWA, and executes the 5-minute background sync daemon.
+- **Capabilities**: Zero-latency L1 Caching (`/hub/state`), Parallel processing, Smart Key Rotation, and "Headless" API proxying.
 - **Documentation**: [Read Technical Specifications](Backend-Worker/README.md)
 
 </details>
@@ -136,6 +136,7 @@ flowchart TD
 
     subgraph "Compute Layer (Render)"
         Worker["Remote Worker<br/>(Node.js/Express)"]
+        DataHub["Worker Data Hub<br/>(5m Sync & Cache)"]
     end
 
     subgraph "Client Layer (PWA)"
@@ -146,7 +147,9 @@ flowchart TD
     Orchestrator -->|Delegates Scan| Worker
     Worker <-->|High-Volume Fetch| CRAPI
     Orchestrator <-->|Sync| Store
-    UI <-->|JSON Headless| Orchestrator
+    Store <-->|Raw Extract| DataHub
+    UI <-->|0ms Latency Read| DataHub
+    UI -.->|Circuit Breaker Fallback| Orchestrator
     UI <-->|Hydration| Cache
     UI <-->|Direct Scan & Push| Worker
 ```
@@ -245,6 +248,7 @@ The Client consumes the headless JSON API exposed by the Core.
   **Configuration**:
     - `VITE_GAS_URL`: The Web App URL generated in Phase 2.
     - `VITE_WORKER_URL`: The HTTPS endpoint from Phase 1.
+    - `VITE_USE_WORKER_HUB`: Set to `true` to enable the 0ms latency Worker Data Hub.
   **Action**: 
     1. `pnpm build`
     2. Upload the contents of the `dist/` directory to your static host.

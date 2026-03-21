@@ -33,6 +33,7 @@ The worker behavior is controlled via environment variables:
 | `API_BASE` | `https://proxy.royaleapi.dev/v1` | Upstream API endpoint |
 | `API_KEYS` | - | Comma-separated list of `CRK01..CRK10` tokens |
 | `REMOTE_WORKER_SECRET` | - | Mandatory token for Bearer authentication |
+| `VITE_GAS_URL` or `GAS_URL` | - | Location of the upstream GAS Web App for the Sync Daemon |
 
 ---
 <br />
@@ -73,6 +74,25 @@ Performs a deep health check, including upstream API connectivity validation and
   }
 }
 ```
+
+### Worker Data Hub
+
+#### `GET /hub/state`
+Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for the PWA. Fails over to atomic L2 Disk Cache during a cold boot.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "metadata": { "version": "...", "timestamp": ... },
+    "data": { "roster": [...], "headhunter": [...] }
+  }
+}
+```
+
+#### `POST /hub/sync/manual`
+Manually triggers a background synchronization cycle. Requires Bearer authentication. Protects against overlaps.
 
 ### Batch Operations
 
@@ -200,6 +220,7 @@ Ensure the following variables are set in the Render Dashboard:
 - `API_BASE`: `https://proxy.royaleapi.dev/v1`
 - `API_KEYS`: (Comma-separated list of `CRK01..CRK10` tokens)
 - `REMOTE_WORKER_SECRET`: (Mandatory Bearer token)
+- `VITE_GAS_URL` or `GAS_URL`: (Location of the GAS Web App for the Hub Daemon)
 
 ---
 <br />
