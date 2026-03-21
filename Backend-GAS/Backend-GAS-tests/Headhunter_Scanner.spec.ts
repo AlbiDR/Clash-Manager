@@ -105,7 +105,15 @@ describe('HeadhunterScanner', () => {
         // 3. Remote Scan — Worker is healthy
         mocks.Network.remoteWorkerHealthy.mockReturnValue(true);
         mocks.Network.fetchRemoteWorker.mockReturnValue({
-            candidates: [{ tag: "#P1", name: "Player1", rawScore: 200, trophies: 6000 }]
+            candidates: [{ 
+                tag: "#P1", 
+                name: "Player1", 
+                rawScore: 200, 
+                trophies: 6000,
+                donations: 150,
+                cards: 2000,
+                war: 25
+            }]
         });
 
         // 4. Seed Logs (Shadow Scouting)
@@ -115,6 +123,9 @@ describe('HeadhunterScanner', () => {
         
         expect(result.length).toBe(1);
         expect(result[0].rawScore).toBe(200);
+        expect(result[0].donations).toBe(150);
+        expect(result[0].cards).toBe(2000);
+        expect(result[0].war).toBe(25);
     });
 
     it('should fall back to 10-player threshold on 3rd attempt', () => {
