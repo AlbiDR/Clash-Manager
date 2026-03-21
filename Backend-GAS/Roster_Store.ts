@@ -180,6 +180,30 @@ const RosterStore = {
       });
     }
     return intelligence;
+  },
+
+  /**
+   * PERFORMANCE: Loads the top N tags from the Leaderboard sheet.
+   * Assumes the sheet is already sorted by the Roster service.
+   */
+  loadTopPerformers(count: number = 3): string[] {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
+    const startRow = CONFIG.LAYOUT.DATA_START_ROW;
+    const L = CONFIG.SCHEMA.ROSTER;
+    
+    if (!sheet || sheet.getLastRow() < startRow) return [];
+    
+    // Column B is the start of the data range. L.TAG (0) is Column B.
+    // getRange(row, column, numRows, numColumns)
+    const lastRow = sheet.getLastRow();
+    const actualCount = Math.min(count, lastRow - startRow + 1);
+    if (actualCount <= 0) return [];
+
+    const rows = sheet.getRange(startRow, 2, actualCount, 1).getValues();
+    return rows
+      .map(r => String(r[0]).trim())
+      .filter(tag => tag && tag !== "" && tag.startsWith("#"));
   }
 };
 
