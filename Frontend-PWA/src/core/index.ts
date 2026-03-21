@@ -19,6 +19,7 @@ export * from "./services/useBlueprintMode";
 export * from "./services/useToast";
 export * from "./services/useShare";
 export * from "./services/useExternalLink";
+export * from "./services/useSystemInfo";
 
 // Math & Utils
 export * from "./utils/warMath";

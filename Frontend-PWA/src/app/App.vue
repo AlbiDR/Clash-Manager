@@ -13,6 +13,7 @@ import {
   useConnectionStatus,
   useHaptics,
   useUiCoordinator,
+  useSystemInfo,
 } from "@core";
 import { storeToRefs } from "pinia";
 import { onMounted, computed, watch } from "vue";
@@ -24,6 +25,7 @@ const clashDataStore = useClashDataStore();
 const { syncStatus } = storeToRefs(clashDataStore);
 const { refresh, loadLocal } = clashDataStore;
 const { setFabVisible } = useUiCoordinator();
+const { appVersion: currentVersion } = useSystemInfo();
 // Initialize Headhunter (starts watchers for notifications/badge)
 useHeadhunter();
 
@@ -86,7 +88,6 @@ const { updateServiceWorker } = useRegisterSW({
 
 onMounted(() => {
   // VERSION GUARD: Force cache busting if version mismatch detected
-  const currentVersion = __APP_VERSION__;
   const storedVersion = localStorage.getItem("app_version");
 
   if (storedVersion && storedVersion !== currentVersion) {
