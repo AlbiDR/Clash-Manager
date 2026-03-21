@@ -31,6 +31,7 @@ export const useClashDataStore = defineStore("clashData", () => {
   const loading = ref(false);
   const lastSync = ref<number>(0);
   const syncError = ref<string | null>(null);
+  const consecutiveSyncFailures = ref(0);
 
   // --- DEPENDENCIES ---
   const { isOnline } = useConnectionStatus();
@@ -112,7 +113,9 @@ export const useClashDataStore = defineStore("clashData", () => {
     if (!isOnline.value && !force) return;
 
     loading.value = true;
-    syncError.value = null;
+    // Note: syncError is not cleared immediately if we have data, 
+    // to avoid flickering the UI if it's already showing an error.
+    // However, if we succeed, we clear it.
 
     try {
       // Use WakeLock during heavy sync to prevent mobile sleep
@@ -126,19 +129,29 @@ export const useClashDataStore = defineStore("clashData", () => {
       // or the Worker must be rejected to prevent silent corruption.
       const validation = v.safeParse(WebAppDataSchema, remoteData);
       if (!validation.success) {
-        syncError.value = "Remote data validation failed";
-        console.error("[Store] Sync rejected: Invalid WebAppData structure", validation.issues);
-        return;
+        throw new Error("Remote data validation failed");
       }
 
       data.value = validation.output as WebAppData;
       lastSync.value = Date.now();
+      consecutiveSyncFailures.value = 0;
+      syncError.value = null; // Clear error on success
       
       // PERSISTENCE: StorageService handles the IndexedDB write
       await saveCache(validation.output as WebAppData);
     } catch (e: unknown) {
-      syncError.value = e instanceof Error ? e.message : "Sync failed";
-      console.warn("[Store] Background sync failed:", e);
+      consecutiveSyncFailures.value++;
+      
+      const errorMessage = e instanceof Error ? e.message : "Sync failed";
+      
+      // LOGICAL FAULT TOLERANCE:
+      // If we already have data (isHydrated), only surfacing the error after 3 consecutive 
+      // failures to avoid alarming the user with transient network glitches.
+      if (!isHydrated.value || consecutiveSyncFailures.value >= 3) {
+        syncError.value = errorMessage;
+      }
+      
+      console.warn(`[Store] Background sync failed (Attempt ${consecutiveSyncFailures.value}):`, e);
     } finally {
       loading.value = false;
       await wakeLock.release();

@@ -327,12 +327,12 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 }
 
 /**
- * Executes a network fetch with built-in retry logic and exponential backoff.
+ * Executes a network fetch with built-in retry logic and jittered exponential backoff.
  *
  * @param url - The full destination URL.
  * @param options - Standard RequestInit options.
- * @param retries - Number of remaining attempts (defaults to 3).
- * @param backoff - Starting delay in milliseconds (defaults to 1000ms).
+ * @param retries - Number of remaining attempts (defaults to 4).
+ * @param backoff - Starting delay in milliseconds (defaults to 2000ms).
  * @returns The successful Fetch Response.
  * @throws NetworkError if all retries are exhausted.
  * @throws AbortError if the request was cancelled by the caller.
@@ -340,11 +340,12 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  retries = 3,
-  backoff = 1000,
+  retries = 4,
+  backoff = 2000,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "AbortError")), 30000);
+  //  RELIABILITY: Increased timeout to 45s for slow GAS executions
+  const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "AbortError")), 45000);
 
   try {
     const response = await fetch(url, {
@@ -371,10 +372,11 @@ async function fetchWithRetry(
     }
 
     if (retries > 0) {
-      //  EXPONENTIAL BACKOFF: Multiplier of 1.5 helps mitigate transient
-      // network congestion without overwhelming the server during recovery.
-      await new Promise((r) => setTimeout(r, backoff));
-      return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
+      //  JITTERED EXPONENTIAL BACKOFF: Helps mitigate transient network congestion
+      // and prevents "thundering herd" issues during server recovery.
+      const jitter = Math.random() * 800;
+      await new Promise((r) => setTimeout(r, backoff + jitter));
+      return fetchWithRetry(url, options, retries - 1, backoff * 1.8);
     }
     const message = error instanceof Error ? error.message : "Network request failed";
     throw new NetworkError(message);
