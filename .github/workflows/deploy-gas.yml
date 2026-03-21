@@ -28,10 +28,9 @@ jobs:
         with:
           node-version: "24"
           cache: "pnpm"
-          cache-dependency-path: "Backend-GAS/pnpm-lock.yaml"
+          cache-dependency-path: "pnpm-lock.yaml"
 
       - name: Install Dependencies
-        working-directory: Backend-GAS
         run: pnpm install
 
       #  SECRET VALIDATION: Check for presence of required secrets
