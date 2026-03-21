@@ -39,11 +39,17 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     let activeTourneys: any[] = [];
     // The search MUST be alphanumerical (a-z, 0-9) to guarantee the best discovery yield.
     const keywords = "abcdefghijklmnopqrstuvwxyz0123456789".split("").sort(() => Math.random() - 0.5);
+
+    // HARDENED: Gate on actual health early to optimize discovery targets.
+    const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && S.Network.remoteWorkerHealthy();
+
     // Deep Drill: Search up to 12 alphanumeric characters if discovery yield is low.
-    const maxRetries = 12; // Search deeper into the a-z0-9 pool if starving.
+    // If Remote is available, we use the FULL keyword set (36) to maximize discovery.
+    const maxRetries = remoteAvailable ? keywords.length : 12; 
+    const discoveryTarget = lowQuotaMode ? 2 : (remoteAvailable ? 10 : 5);
     let attempts = 0;
 
-    while (activeTourneys.length < (lowQuotaMode ? 2 : 5) && attempts < Math.min(maxRetries, keywords.length)) {
+    while (activeTourneys.length < discoveryTarget && attempts < Math.min(maxRetries, keywords.length)) {
       const keyword = keywords[attempts];
       const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(keyword)}`;
       const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
@@ -72,7 +78,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         return [];
     }
 
-    activeTourneys = activeTourneys.slice(0, lowQuotaMode ? 1 : 5); // Conserve API calls
+    activeTourneys = activeTourneys.slice(0, discoveryTarget); // Conserve API calls
     activeTourneys.forEach((t: any) => uniqueTourneys.add(t.tag));
 
     // 3. Load Prophet Intelligence (Historical Context)
@@ -106,8 +112,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     });
 
     // 5. Remote vs Local Profiling
-    // HARDENED: Gate on actual health, not just URL existence, to avoid wasted calls.
-    const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && S.Network.remoteWorkerHealthy();
+    // We already checked remoteAvailable in step 1.
     let tagsToFetch = Array.from(playerTags).slice(0, lowQuotaMode ? 50 : 200);
     
     let candidates: any[] = [];
