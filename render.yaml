@@ -12,8 +12,6 @@ services:
         value: "45"
       - key: PORT
         value: "10000"
-      - key: API_KEYS
-        value: "REPLACE_ME"
       - key: NODE_VERSION
         value: "24"
 

@@ -716,6 +716,18 @@ function checkSystemHealthInternal(): void {
   if (!keysHealthy) healthy = false;
   report += keyStatusReport;
 
+  // 3. Remote Infrastructure Health
+  const workerHealthy = Registry.Services.Network.remoteWorkerHealthy(true);
+  const workerSummary = Registry.Services.Network.getWorkerSummary();
+  
+  if (!workerHealthy) {
+      healthy = false;
+      report += `[FAIL] Remote Worker: ${Registry.Services.Network.getLastWorkerError()}\n`;
+  } else {
+      report += `[OK] Remote Worker: ${workerSummary}\n`;
+  }
+
+  report += "\nMODULE VERSIONS\n";
   modules.forEach((m: any) => {
     if (m.current === m.expected) report += `[OK] ${m.name}: v${m.current}\n`;
     else {

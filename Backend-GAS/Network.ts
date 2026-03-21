@@ -685,6 +685,13 @@ var Network: NetworkContract = {
                 _LAST_WORKER_ERROR = `Degraded: Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
                 isHealthy = (diagnostic.status === "success"); // Reachable
             }
+
+            // CRITICAL CHECK: Identify if the worker has ZERO keys configured.
+            // This is the common "Render Wipe" scenario where env vars are reset.
+            if (diagnostic?.checks?.pool?.total === 0) {
+                _LAST_WORKER_ERROR = "CRITICAL: No API Keys Configured on Worker.";
+                isHealthy = false;
+            }
         } else {
             _LAST_WORKER_ERROR = `HTTP ${res.getResponseCode()}`;
             if (res.getResponseCode() === 401) _LAST_WORKER_ERROR += " (Secret Mismatch)";
