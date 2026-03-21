@@ -153,6 +153,7 @@ export interface AppConfig {
       TROPHY_FLOOR_MAX: number;
       PERFORMANCE_BENCHMARK_MIN: number;
     };
+    KEYWORDS: string[];
   };
   ROSTER: {
     WEIGHTS: {

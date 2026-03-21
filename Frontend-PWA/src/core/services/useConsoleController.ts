@@ -327,9 +327,9 @@ export function useConsoleController<T extends { id: string }>(
     totalCount: filteredItems.value.length,
     currentSort: sortBy.value,
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
-    hubInfo: currentSource.value ? {
+    hubInfo: currentSource?.value ? {
       source: currentSource.value,
-      hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
+      hubAge: hubSyncTime?.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
     } : undefined
   }));
 
