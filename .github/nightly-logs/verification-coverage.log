@@ -14,3 +14,4 @@ Backend-Worker/src/schemas.ts
 Frontend-PWA/src/core/services/useDeepLinkHandler.ts
 Frontend-PWA/src/shared/ui/AppFooter.vue
 Frontend-PWA/src/shared/ui/BaseCard.vue
+Frontend-PWA/src/core/services/useSystemInfo.ts
