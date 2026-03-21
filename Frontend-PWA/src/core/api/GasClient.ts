@@ -550,9 +550,13 @@ export async function fetchRemote(options?: {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s deadline
       
+      if (options?.signal) {
+        options.signal.addEventListener("abort", () => controller.abort());
+      }
+
       const res = await fetch(workerUrl, {
         method: "GET",
-        signal: options?.signal || controller.signal,
+        signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
@@ -580,7 +584,10 @@ export async function fetchRemote(options?: {
       const inflated = await inflatePayload(mappedData);
       idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
       return inflated;
-    } catch (e) {
+    } catch (e: any) {
+      if (e.name === "AbortError" && options?.signal?.aborted) {
+        throw e; // Honor explicit UI cancellation without triggering GAS fallback
+      }
       console.warn("[WorkerHub] Fetch failed, falling back to GAS:", e);
       // Fallthrough to GAS legacy fetch
     }
