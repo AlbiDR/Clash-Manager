@@ -5,20 +5,20 @@
   "private": true,
   "scripts": {
     "deploy": "pnpm run deploy:gas",
-    "deploy:gas": "pnpm --filter clash-manager-backend deploy",
-    "deploy:pwa": "pnpm --filter clash-manager-pwa build",
-    "dev:pwa": "pnpm --filter clash-manager-pwa dev",
+    "deploy:gas": "pnpm -F clash-manager-backend deploy",
+    "deploy:pwa": "pnpm -F clash-manager-pwa build",
+    "dev:pwa": "pnpm -F clash-manager-pwa dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "fix:gitignore": "git rm -r --cached . && git add ."
   },
   "devDependencies": {
-    "@types/node": "^24.12.0",
-    "typescript": "^5.0.0"
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
   },
-  "packageManager": "pnpm@10.28.0"
+  "packageManager": "pnpm@10.32.1"
 }
