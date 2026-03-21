@@ -25,6 +25,11 @@ export * from "./services/useSystemInfo";
 export * from "./utils/warMath";
 export * from "./utils/PriorityQueue";
 export * from "./utils/economy";
+export * from "./utils/formatters";
+export * from "./utils/bezier";
+export * from "./utils/sortOptions";
+export * from "./utils/sortStrategies";
+export * from "./utils/mockData";
 
 // Infrastructure Services (Promoted from Shared)
 export * from "./services/useHaptics";
