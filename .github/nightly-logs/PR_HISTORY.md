@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-21] PR #276: test(verify): add defensive coverage for useSystemInfo.ts
+**Commit**: `b7be5d4d076b1d272e07ae306c1985cd52609e0c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/276)
+
+### Description
+Created a new Vitest spec file for the `useSystemInfo.ts` service and updated the verification log. The tests cover application version metadata and the priority resolution for global UI status badges (Showcase, Blueprint, Synthetic modes). All tests passed, and no regressions were introduced to the existing test suite.
+
+---
+*PR created automatically by Jules for task [3832032773686207291](https://jules.google.com/task/3832032773686207291) started by @AlbiDR*
+
+---
+
 ## [2026-03-21] PR #275: docs(tsdoc): annotate StorageService with architectural context and licensing
 **Commit**: `b9ba7362fc2b5075e0e8ee67f8a4868e5fe90373`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/275)
