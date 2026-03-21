@@ -186,7 +186,7 @@ To enable the **Round-Robin Load Balancer** and preserve system integrity agains
 
 Before initiating the deployment, ensure your local environment meets the following technical requirements:
 
-- **Runtime**: Node.js (v20+) and `pnpm` (v9+).
+- **Runtime**: Node.js (v24+) and `pnpm` (v10+).
 - **Tooling**: `clasp` (Google Apps Script CLI) installed globally (`pnpm add -g @google/clasp`).
 - **Auth**: Authenticate clasp with your Google account (`clasp login`).
 - **External Intel**: A [Clash Royale Developer](https://developer.clashroyale.com/) account to generate API keys.
