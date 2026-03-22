@@ -11,7 +11,7 @@ export function generateHtmlEntry(version: string): string {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://script.google.com https://script.googleusercontent.com https://lh3.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://sheets.googleapis.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://*.google.com https://*.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://*.google.com https://*.googleusercontent.com https://*.googleapis.com;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
     
@@ -82,11 +82,11 @@ export function generateHtmlEntry(version: string): string {
         "name": "Clash Manager",
         "url": "https://albidr.github.io/Clash-Manager/",
         "description": "Professional recruitment and analytics for Clash Royale.",
-        "softwareVersion": "13.2.1",
+        "softwareVersion": "${version}",
         "operatingSystem": "Android, iOS, Windows, macOS"
       }
     </script>
-    <script type="module" src="/src/app/main.ts"></script>
+    <script type="module" src="src/app/main.ts"></script>
   </body>
 </html>
   `.trim();
