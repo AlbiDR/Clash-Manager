@@ -1,3 +1,16 @@
+# AI & Temporary Configs
+.agent/*
+!.agent/workflows/
+.agents/*
+!.agents/workflows/
+_agent/*
+!_agent/workflows/
+_agents/*
+!_agents/workflows/
+.gemini
+.cursor
+.jules
+.mcp
 
 # Dependencies
 node_modules
@@ -37,15 +50,6 @@ Thumbs.db
 .clasprc.json
 .clasp.json
 clasp.json
-
-# AI & Temporary Configs
-.agent
-!.agent/workflows/
-.agents
-.gemini
-.cursor
-.jules
-.mcp
 
 # PWA / Vite Generated
 public/sw.js
