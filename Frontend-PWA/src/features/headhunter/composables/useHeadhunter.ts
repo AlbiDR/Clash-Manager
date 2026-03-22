@@ -59,26 +59,38 @@ export function useHeadhunter() {
   }
 
   /**
-   * REVERSAL HELPER
+   * RECRUIT INJECTION ENGINE
+   *
+   * @remarks
+   * Merges a collection of recruits into the authoritative store.
+   * Handles deduplication and sorting to ensure state consistency.
+   *
+   * @param recruits - Array of recruit objects to inject.
+   * @returns The count of unique new recruits actually added.
    */
-  function applyLocalRestoration(recruits: Recruit[]) {
-    if (!clashData.value || recruits.length === 0) return;
+  function injectRecruits(recruits: Recruit[]): number {
+    if (!clashData.value || recruits.length === 0) return 0;
     const currentHH = [...clashData.value.hh];
-    // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
-    const existingIds = new Set(currentHH.map(recruit => recruit.id));
+    const existingIds = new Set(currentHH.map((recruit) => recruit.id));
     let added = 0;
-    recruits.forEach(recruit => {
+
+    recruits.forEach((recruit) => {
       if (!existingIds.has(recruit.id)) {
         currentHH.push(recruit);
         added++;
       }
     });
-    if (added === 0) return;
-    const updatedData = { 
-      ...clashData.value, 
-      hh: currentHH.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0)) 
+
+    if (added === 0) return 0;
+
+    const updatedData = {
+      ...clashData.value,
+      hh: currentHH.sort(
+        (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
+      ),
     };
     updateLocalData(updatedData);
+    return added;
   }
 
   const { post: broadcast } = useBroadcastChannel((msg) => {
@@ -188,6 +200,7 @@ export function useHeadhunter() {
   }
 
   return {
+    injectRecruits,
     dismissRecruitsAction,
     /**
      * Action: undismissRecruitsAction
@@ -196,9 +209,12 @@ export function useHeadhunter() {
      * Reverses a previous dismissal. It accepts an optional array of original
      * recruit objects to restore local state instantly without a network round-trip.
      */
-    undismissRecruitsAction: async (ids: string[], originalRecruits?: Recruit[]) => {
+    undismissRecruitsAction: async (
+      ids: string[],
+      originalRecruits?: Recruit[],
+    ) => {
       if (originalRecruits && originalRecruits.length > 0) {
-        applyLocalRestoration(originalRecruits);
+        injectRecruits(originalRecruits);
       }
       if (isSyntheticMode.value) return;
       try {
