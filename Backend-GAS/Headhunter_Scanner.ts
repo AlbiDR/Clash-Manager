@@ -64,16 +64,19 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     let attempts = 0;
     const discoveryLogs: string[] = [];
 
-    while (rawTourneyMatches.length < discoveryTarget && attempts < maxRetries) {
-      const keyword = keywords[attempts];
-      const searchUrl = `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(keyword)}`;
-      const tourneyResponse: any = S.Network.fetchRoyaleAPIOne(searchUrl);
-      
+    // [OPTIMIZED]: Fetch all keywords in parallel to reduce GAS log noise and execution time.
+    const keywordsToFetch = keywords.slice(0, maxRetries);
+    const searchUrls = keywordsToFetch.map(k => `${CONFIG.SYSTEM.API_BASE}/tournaments?name=${encodeURIComponent(k)}`);
+    
+    // Silence individual search logs in Network by passing a context
+    const searchResponses = S.Network.fetchRoyaleAPI(searchUrls, null, "Tournament Discovery") || [];
+
+    searchResponses.forEach((tourneyResponse, idx) => {
+      const keyword = keywordsToFetch[idx];
       if (tourneyResponse) {
         const foundItems = Array.isArray(tourneyResponse) ? tourneyResponse : (tourneyResponse.items || []);
-        const threshold = THRESHOLDS[Math.min(attempts, THRESHOLDS.length - 1)];
+        const threshold = THRESHOLDS[Math.min(idx, THRESHOLDS.length - 1)];
         
-        // [FLEXIBLE FILTERING]: Handle 'capacity' and missing 'type'
         const matches = foundItems.filter((t: any) => 
           (t.type === "open" || !t.type) && 
           (t.maxPlayers || t.capacity || 0) >= threshold
@@ -88,8 +91,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       } else {
         discoveryLogs.push(`Search failed for '${keyword}'.`);
       }
-      attempts++;
-    }
+    });
 
     if (discoveryLogs.length > 0) {
       S.Reporting.logReport("TOURNAMENT DISCOVERY TRACE", discoveryLogs);
