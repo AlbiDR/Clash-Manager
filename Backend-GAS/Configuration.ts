@@ -394,7 +394,7 @@ export var CONFIG: AppConfig = {
   HEADHUNTER: {
     TARGET: 50,
     BLACKLIST_DAYS: 30,
-    WEIGHTS: { TROPHY: 1.0, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
+    WEIGHTS: { TROPHY: 1.0, DON: 0.1, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
     DEEP_SCAN: {
       LOCAL: { TOURNEYS: 600, PLAYERS: 500 },
       REMOTE: { TOURNEYS: 1500, PLAYERS: 1500 },
@@ -427,7 +427,7 @@ export var CONFIG: AppConfig = {
     WEIGHTS: {
       FAME: 3,
       AVG_FAME: 15,
-      DONATION: 50,
+      DONATION: 100,
       TROPHY: 0.1,
       WAR_RATE: 150,
     },
