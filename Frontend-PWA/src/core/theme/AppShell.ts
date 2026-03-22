@@ -76,7 +76,6 @@ export function getAppShellStyles(): string {
       overflow: hidden;
       text-overflow: ellipsis;
       font-family: "Inter", system-ui, sans-serif;
-      text-rendering: optimizeLegibility;
       contain: paint;
     }
 
@@ -135,7 +134,7 @@ export function getAppShellHtml(): string {
     <main id="app-shell">
       <div class="sh-header">
         <div class="sh-h-row">
-          <h1 class="view-title">Roster</h1>
+          <h1 class="view-title"><span>Roster</span></h1>
           <div class="sh-pill sh-pulse"></div>
         </div>
         <div class="sh-search">
