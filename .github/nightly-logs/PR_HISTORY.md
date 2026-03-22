@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-22] PR #280: Optimization: Centralize Recruitment Engine and Refine Console Orchestration
+**Commit**: `a6430ea5da6dc52dc2dbce8d30574a7412cc6ab4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/280)
+
+### Description
+I have completed the structural optimization of the recruitment pipeline and the core console controller. The refactor deduplicates logic, reduces boilerplate in feature-layer composables, and strengthens the single source of truth for recruit data. All unit tests have been verified to pass.
+
+---
+*PR created automatically by Jules for task [14408801322240883602](https://jules.google.com/task/14408801322240883602) started by @AlbiDR*
+
+---
+
 ## [2026-03-22] PR #279: test(verify): add comprehensive unit tests for Toast.vue
 **Commit**: `9a6845b9f4990951470e1ed9d72a327b94492a1d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/279)
