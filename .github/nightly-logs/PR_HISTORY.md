@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-22] PR #284: chore(deps): bump esbuild from 0.27.3 to 0.27.4
+**Commit**: `dc251a5a6ae82149d88c6939fa396a9bfc0581cf`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/284)
+
+### Description
+This PR performs an automated Tier 1 patch bump of `esbuild` from version 0.27.3 to 0.27.4 in the `Backend-GAS` subsystem. It ensures dependency currency and structural hygiene by consolidating multiple versions of `esbuild` previously present in the lockfile into a single updated version. The change has been verified against the mandatory `pnpm test` gate.
+
+---
+*PR created automatically by Jules for task [4152326270058329760](https://jules.google.com/task/4152326270058329760) started by @AlbiDR*
+
+---
+
 ## [2026-03-22] PR #283: Implement defensive coverage for WorkerHubController
 **Commit**: `e8c26eecb745dd61ad9933cb6085798f6cc51c52`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/283)
