@@ -25,13 +25,13 @@ const tooltipVal = computed(() => {
 </script>
 
 <template>
-  <div v-if="loading" class="stat-item skeleton-anim">
+  <div v-if="props.loading" class="stat-item skeleton-anim">
     <div class="sk-label-box"></div>
     <div class="sk-value-box"></div>
   </div>
-  <div v-else class="stat-item hit-target" v-tooltip="tooltipVal">
-    <span class="label">{{ label }}</span>
-    <span class="value">{{ value }}</span>
+  <div v-else class="stat-item hit-target" v-tooltip="tooltipVal" :aria-label="tooltipVal ? `${props.label}: ${props.value}. ${tooltipVal}` : `${props.label}: ${props.value}`">
+    <span class="label" :aria-hidden="'true'">{{ props.label }}</span>
+    <span class="value" :aria-hidden="'true'">{{ props.value }}</span>
   </div>
 </template>
 

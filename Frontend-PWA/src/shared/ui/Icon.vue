@@ -20,9 +20,16 @@ const sizePx = computed(() => {
     :width="sizePx"
     :height="sizePx"
     viewBox="0 0 24 24"
+    role="img"
+    v-bind="{ 'aria-hidden': 'true' }"
     :style="{ width: sizePx, height: sizePx }"
   >
-    <path :d="ICONS[name] || ''" fill="currentColor" :vector-effect="'non-scaling-stroke'" />
+    <title>{{ name }} icon</title>
+    <path
+      :d="ICONS[name] || ''"
+      fill="currentColor"
+      v-bind="{ 'vector-effect': 'non-scaling-stroke' }"
+    />
   </svg>
 </template>
 

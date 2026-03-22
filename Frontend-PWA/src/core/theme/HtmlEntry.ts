@@ -18,15 +18,15 @@ export function generateHtmlEntry(version: string): string {
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://albidr.github.io/Clash-Manager/" />
-    <meta property="og:title" content="Clash Manager" />
-    <meta property="og:description" content="Professional recruitment and performance analytics for Clash Royale." />
+    <meta property="og:title" content="Roster | Clash Manager: Professional Recruitment & Analytics" />
+    <meta property="og:description" content="Professional recruitment and performance analytics for Clash Royale clan leaders. Optimize your roster with clinical precision." />
     <meta property="og:image" content="https://albidr.github.io/Clash-Manager/assets/branding/logo.svg" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://albidr.github.io/Clash-Manager/" />
-    <meta property="twitter:title" content="Clash Manager" />
-    <meta property="twitter:description" content="Professional recruitment and performance analytics for Clash Royale." />
+    <meta property="twitter:title" content="Roster | Clash Manager: Professional Recruitment & Analytics" />
+    <meta property="twitter:description" content="Professional recruitment and performance analytics for Clash Royale clan leaders. Optimize your roster with clinical precision." />
     <meta property="twitter:image" content="https://albidr.github.io/Clash-Manager/assets/branding/logo.svg" />
 
     <!-- Theme Colors (Bi-Modal) -->
@@ -59,7 +59,7 @@ export function generateHtmlEntry(version: string): string {
     <link rel="icon" href="assets/icons/icon-64.png" type="image/png" />
     <link rel="apple-touch-icon" href="assets/icons/pwa-apple.png" />
     
-    <title>Clash Manager</title>
+    <title>Roster | Clash Manager: Professional Recruitment & Analytics</title>
 
     <link rel="preload" href="/fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
@@ -82,7 +82,7 @@ export function generateHtmlEntry(version: string): string {
         "name": "Clash Manager",
         "url": "https://albidr.github.io/Clash-Manager/",
         "description": "Professional recruitment and analytics for Clash Royale.",
-        "softwareVersion": "${version}",
+        "softwareVersion": "13.2.1",
         "operatingSystem": "Android, iOS, Windows, macOS"
       }
     </script>

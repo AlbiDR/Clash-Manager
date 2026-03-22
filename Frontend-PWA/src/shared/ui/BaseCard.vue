@@ -8,11 +8,8 @@ const props = defineProps<{
   selected: boolean;
   selectionMode?: boolean;
   isTagged?: boolean;
-  // Optional score for dynamic pod coloring (0-100)
   score?: number;
-  // Optional tonal class as fallback
   toneClass?: string;
-  // For accessibility
   headerLabel?: string;
 }>();
 
@@ -28,7 +25,7 @@ const {
   handleLongPress,
   handleScoreClick: internalScoreClick,
   handleExpandClick: internalExpandClick,
-} = useCardMechanics(props, {
+} = useCardMechanics(props as any, {
   onExpand: () => emit("toggle"),
   onSelect: () => emit("toggle-select"),
 });
@@ -42,7 +39,9 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
 <template>
   <div
     class="card squish-interaction"
-    :class="{ expanded: expanded, selected: selected, tagged: isTagged }"
+    :class="{ expanded: props.expanded, selected: props.selected, tagged: props.isTagged }"
+    role="article"
+    v-bind="{ 'aria-expanded': props.expanded }"
     v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
   >
     <div class="card-header">
@@ -63,8 +62,8 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
         <div class="score-section" @click.stop="handleScoreClick">
           <div
             class="stat-pod hit-target"
-            :class="toneClass"
-            :style="score !== undefined ? { '--score-pct': `${score}%` } : {}"
+            :class="props.toneClass"
+            :style="props.score !== undefined ? { '--score-pct': `${props.score}%` } : {}"
           >
             <slot name="score-section"></slot>
           </div>
@@ -74,8 +73,8 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
         <button
           class="expand-btn hit-target"
           @click.stop="internalExpandClick"
-          :class="{ 'is-active': expanded }"
-          aria-label="Expand details"
+          :class="{ 'is-active': props.expanded }"
+          v-bind="{ 'aria-expanded': props.expanded, 'aria-label': 'Expand details' }"
         >
           <Icon name="chevron_down" size="20" />
         </button>
@@ -83,7 +82,7 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
     </div>
 
     <!-- Expanded Content -->
-    <div class="card-body" v-if="expanded">
+    <div class="card-body" v-if="props.expanded">
       <slot name="expanded-content"></slot>
     </div>
   </div>
