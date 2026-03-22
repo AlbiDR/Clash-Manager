@@ -155,9 +155,9 @@ const Scoring: ScoringContract = {
         ? clanPool.reduce((a, b) => a + b.rawScore, 0) / clanPool.length
         : 0;
 
-    // 2. Calculate Market Reference Average (Top 5% of Blacklist/Pool)
+    // 2. Calculate Market Reference Average (Top percentile of Blacklist/Pool)
     const pool = [...(blacklist || [])].sort((a, b) => b.rawScore - a.rawScore);
-    const poolSize = Math.max(3, Math.ceil(pool.length * 0.05));
+    const poolSize = Math.max(3, Math.ceil(pool.length * (config.percentile || 0.05)));
     const topPool = pool.slice(0, poolSize);
     const topPoolAvg = topPool.length > 0
         ? topPool.reduce((a, b) => a + b.rawScore, 0) / topPool.length
@@ -180,7 +180,7 @@ const Scoring: ScoringContract = {
   },
 
   calculateEffectiveScoutFloor: function (inGameRequirement: number, config: HeadhunterMathConfig): number {
-    return Math.round(inGameRequirement * (config.percentile || 1));
+    return Registry.Services.ScoringKernel.calculateEffectiveScoutFloor(inGameRequirement, config);
   },
 
   resolveWarFame: function (p: any): number {
