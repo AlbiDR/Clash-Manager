@@ -99,6 +99,11 @@ export interface ScoringKernelContract {
   compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number;
 
   /**
+   * Calculates the effective scouting floor, ensuring it is at least the in-game requirement.
+   */
+  calculateEffectiveScoutFloor(inGameRequirement: number, config: HeadhunterMathConfig): number;
+
+  /**
    * Calculates the percentage of war participation.
    */
   calculateWarRate(totalCredits: number, daysSeen: number): number;
@@ -287,17 +292,16 @@ const ScoringKernel: ScoringKernelContract = {
   },
 
   /**
-   * Standard comparator for roster sorting.
-   *
-   * @remarks
-   * Priority:
-   * 1. PeS (Performance Score) [Momentum]
-   * 2. RPeS (Raw Performance Score) [Lifetime]
-   * 3. War Participation Rate (Reliability)
-   * 4. Total Donations (Contribution)
-   * 5. Days Tracked (Newer players win ties)
-   *
-   * Performance: Optimized to minimize redundant Number() conversions during O(N log N) sorts.
+   * Calculates the effective scouting floor.
+   * [FIX] Ensures the floor is at least the in-game requirement.
+   */
+  calculateEffectiveScoutFloor(inGameRequirement: number, config: HeadhunterMathConfig): number {
+    const minThreshold = config.MIN_TROPHIES || 0;
+    return Math.max(inGameRequirement, minThreshold);
+  },
+
+  /**
+   * Standard comparator for generic roster sorting.
    */
   compareRosterRows(a: any[], b: any[], idx: RosterSchemaIndex): number {
     // 1. PeS (Performance Score)

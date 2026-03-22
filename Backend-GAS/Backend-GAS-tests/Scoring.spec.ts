@@ -90,4 +90,28 @@ describe('Scoring Heritage Protocol', () => {
     const result = Scoring.computeScores(0, 0, 0, 9000, 0, Date.now(), Date.now(), 0, true, 0);
     expect(result.perf).toBe(4700);
   });
+
+  describe('calculateEffectiveScoutFloor', () => {
+    const config = {
+      ELITE_THRESHOLD: 41,
+      REBUILD_MIN_PERCENTILE: 0.1,
+      BENCHMARK_CLAN_WEIGHT: 0.4,
+      BENCHMARK_MARKET_WEIGHT: 0.6,
+      percentile: 0.05,
+      decay: 0.0096,
+      minPool: 3,
+      MIN_TROPHIES: 0
+    };
+
+    it('should return exactly the in-game requirement when no override is present', () => {
+      const result = Scoring.calculateEffectiveScoutFloor(8787, config);
+      expect(result).toBe(8787);
+    });
+
+    it('should respect the MIN_TROPHIES override if it is higher than the requirement', () => {
+      const configWithOverride = { ...config, MIN_TROPHIES: 9000 };
+      const result = Scoring.calculateEffectiveScoutFloor(8787, configWithOverride);
+      expect(result).toBe(9000);
+    });
+  });
 });

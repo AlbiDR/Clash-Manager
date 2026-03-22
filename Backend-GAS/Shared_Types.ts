@@ -39,6 +39,7 @@ export interface HeadhunterMathConfig {
   percentile: number;
   decay: number;
   minPool: number;
+  MIN_TROPHIES?: number;
 }
 
 export interface RosterSchemaIndex {
