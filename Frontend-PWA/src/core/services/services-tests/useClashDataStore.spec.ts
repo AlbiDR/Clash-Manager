@@ -258,6 +258,17 @@ describe("useClashDataStore", () => {
 
       expect(store.syncError).toBeNull();
     });
+
+    it("should provide refresh() as a wrapper for startBackgroundSync(true)", async () => {
+      const mockRemoteData = { lb: [], hh: [], timestamp: Date.now() };
+      vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);
+      
+      const store = useClashDataStore();
+      await store.refresh();
+      
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(store.data).toEqual(mockRemoteData);
+    });
   });
 
   describe("updatePlayerLocally", () => {
