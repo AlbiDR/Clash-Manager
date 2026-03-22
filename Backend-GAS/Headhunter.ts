@@ -271,6 +271,15 @@ const Headhunter: HeadhunterContract = {
         `DELTA:    +${newArrivals} new | -${joinedCount} joined others | ~${updatedExisting} updated`
       ]);
 
+      // 8. NETWORK SUMMARY
+      const stats = S.Network.getExecutionStats();
+      S.Reporting.logReport(`[NETWORK] RESOURCE USAGE`, [
+        `TOTAL:   ${stats.total} fetches`,
+        `REMOTE:  ${stats.remote} delegated`,
+        `LOCAL:   ${stats.local} consumed`,
+        `TIME:    ${((Date.now() - startTime)/1000).toFixed(1)}s elapsed`
+      ]);
+
     } catch (e: any) {
       console.error(`CRITICAL FAILURE: ${e.message}\n${e.stack}`);
     }

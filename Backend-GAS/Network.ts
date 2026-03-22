@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
 /**
  * ============================================================================
@@ -16,7 +18,7 @@
 
 // Global Version Constant
 // @ts-ignore
-const VER_NETWORK = "1.0.1";
+const VER_NETWORK = "1.1.0";
 import type { AppConfig } from "./Configuration";
 import type { RegistryContract } from "./Registry";
 import type { ScoringWeights } from "./Shared_Types";
@@ -48,6 +50,7 @@ const NETWORK_CONFIG = {
 // EXECUTION CACHE: Stores API responses for the duration of one script execution.
 const _EXECUTION_CACHE = new Map<string, any>();
 let _FETCH_COUNT = 0;
+let _REMOTE_FETCH_COUNT = 0;
 let _LAST_WORKER_ERROR = "N/A";
 
 /* ==========================================================================
@@ -146,6 +149,11 @@ export interface NetworkContract {
   fetchRemoteWorker(endpoint: string, payload: any): any;
 
   /**
+   * Returns a summary of total fetches performed during the current execution.
+   */
+  getExecutionStats(): { total: number; remote: number; local: number };
+
+  /**
    * Resets the internal execution cache. Used primarily for testing.
    */
   _clearCache(): void;
@@ -232,6 +240,8 @@ const NetworkInternal = {
       const body = JSON.parse(res.getContentText());
       if (!body || !Array.isArray(body.results)) throw new Error("Invalid remote payload structure");
       
+      _REMOTE_FETCH_COUNT += chunkUrls.length;
+
       if (body.results.length === 0 && chunkUrls.length > 0) {
         console.warn(`Network: Worker returned ZERO results for ${chunkUrls.length} URLs.`);
       }
@@ -326,16 +336,12 @@ var Network: NetworkContract = {
 
     urls.forEach((url, index) => {
       // LEVEL 1: Execution Cache (Intra-run)
-      // Prevents redundant network calls if the same URL is requested multiple
-      // times within a single trigger execution (e.g. nested logic loops).
       if (_EXECUTION_CACHE.has(url)) {
         finalResults[index] = _EXECUTION_CACHE.get(url);
         return;
       }
 
       // LEVEL 2: Script Cache (Inter-run)
-      // Shared across all concurrent and subsequent executions. Significant
-      // quota saver for frequently accessed player profiles and clan stats.
       const cacheKey = NetworkInternal.hashKey(url);
       const cachedStr = scriptCache.get(cacheKey);
       if (cachedStr) {
@@ -343,7 +349,6 @@ var Network: NetworkContract = {
               const json = JSON.parse(cachedStr);
               _EXECUTION_CACHE.set(url, json);
               finalResults[index] = json;
-              // console.log(`[Network] L2 Hit: ${url.slice(-30)}`);
               return;
           } catch(e: any) {}
       }
@@ -363,24 +368,23 @@ var Network: NetworkContract = {
 
     let validUrls: string[] = [];
     if (!useRemote) {
-        // LOCAL QUOTA GUARD: Only consume and enforce local quota if we are NOT using the worker.
+        // LOCAL QUOTA GUARD
         const remainingQuota = NETWORK_CONFIG.MAX_FETCH_DAILY_GUARD - _FETCH_COUNT;
         if (remainingQuota <= 0) {
             console.warn(`Critical: Daily URLFetch budget exhausted (${_FETCH_COUNT}). Throttling all local requests.`);
             return finalResults;
         }
-        // Truncate if necessary (Safety First)
         validUrls = urlsToFetch.slice(0, remainingQuota);
         NetworkInternal.updateQuota(validUrls.length);
     } else {
-        // REMOTE: We still log intent but don't hard-throttle based on local budget.
-        // This allows high-concurrency discovery even if local GAS quota is near zero.
-        console.info(`Network: Delegating ${urlsToFetch.length} fetches to Remote Worker${context ? ` (${context})` : ""}.`);
+        // [BLOCK-CONSOLIDATION]: Silence individual small fetches (<=5) to prevent
+        // GAS log fragmentation and token waste.
+        if (urlsToFetch.length > 5 || context) {
+            console.info(`Network: Delegating ${urlsToFetch.length} fetches to Remote Worker${context ? ` (${context})` : ""}.`);
+        }
         validUrls = urlsToFetch;
     }
-    // BATCH SIZE: 100
-    // Intent: Balancing request overhead with Remote Worker payload limits.
-    // Smaller batches increase overhead; larger batches risk memory/timeout issues.
+
     const BATCH_SIZE = 100;
 
     for (let c = 0; c < validUrls.length; c += BATCH_SIZE) {
@@ -403,32 +407,21 @@ var Network: NetworkContract = {
         try {
           let responses: any[];
 
-          // STRATEGY: Prioritize Remote Worker for all batches to maximize GAS lifespan.
           if (useRemote) {
             try {
               responses = NetworkInternal.remoteFetch(chunk, keyPool, scoring);
             } catch (e: any) {
                 console.warn(`Network: Worker Failure: ${e.message}.`);
-
-                // CONSTRAINT: High volume local fallback is strictly forbidden.
-                // Fetching large batches (50+) locally consumes ~0.25% of the total
-                // daily UrlFetchApp quota (20,000) per call. Under concurrent load,
-                // this would crash the entire clan infrastructure within minutes.
                 if (isHighVolume) {
-                   console.error(`Network: High Volume Batch FAILED. Blocking local fallback to protect core service quota.`);
+                   console.error(`Network: High Volume Batch FAILED. Blocking local fallback.`);
                    useRemote = false; 
-                   break; // Abort this chunk; do not fall back.
+                   break;
                 }
-
-                // ELEGANT DEGRADATION: Small batches can safely fall back to local fetch.
                 useRemote = false; 
                 continue;
             }
           } else {
-            // LOCAL EXECUTION: Only for low-volume or when worker is confirmed offline.
             if (isHighVolume && attempt > 0) {
-               // QUOTA GUARD: Large batches are never retried locally to prevent
-               // accidental exhaustion during "retry storms".
                console.warn(`Network: Quota Guard: Blocking local retry for large batch.`);
                break; 
             }
@@ -437,10 +430,7 @@ var Network: NetworkContract = {
               responses = UrlFetchApp.fetchAll(localRequests);
             } catch (e: any) {
               console.warn(`Network: Batch failed: ${e.message}.`);
-              if (isHighVolume) break; // No retry for high-volume local failures.
-
-              // JITTER: Brief sleep before retry.
-              // Intent: Allow transient network issues to resolve during local fallback.
+              if (isHighVolume) break;
               Utilities.sleep(1500);
               responses = UrlFetchApp.fetchAll(localRequests);
             }
@@ -458,29 +448,20 @@ var Network: NetworkContract = {
                 const json = JSON.parse(text);
                 _EXECUTION_CACHE.set(url, json);
                 
-                // Persist to script cache (SKIP for battle logs due to size limits)
                 if (!url.includes("/battlelog")) {
                   const ttl = url.includes("members") || url.includes("players") ? NETWORK_CONFIG.CACHE_TTL_LONG : NETWORK_CONFIG.CACHE_TTL_SHORT;
                   try {
                     scriptCache.put(NetworkInternal.hashKey(url), text, ttl);
-                  } catch (e: any) {
-                    // Silently skip if cache write fails
-                  }
+                  } catch (e: any) {}
                 }
 
                 urlIndices.get(url)!.forEach(idx => finalResults[idx] = json);
-              } catch (e: any) {
-                // Silently skip parse errors
-              }
+              } catch (e: any) {}
             } else if (code === 404) {
               _EXECUTION_CACHE.set(url, null);
               urlIndices.get(url)!.forEach(idx => finalResults[idx] = null);
             } else if (code === 403 || code === 429) {
               if (!useRemote) {
-                // KEY ROTATION: Burn bad key locally.
-                // 403 (Invalid) or 429 (Throttled) indicates the specific API key is
-                // no longer viable. We remove it from the pool for the remainder
-                // of this execution to avoid repeated failures.
                 const badKey = localRequests[i].headers["Authorization"].replace("Bearer ", "");
                 keyPool = keyPool.filter(k => k.value !== badKey);
               }
@@ -503,34 +484,16 @@ var Network: NetworkContract = {
     return finalResults;
   },
 
-  /**
-   * SINGLE FETCH HELPER
-   * Wraps the batch fetcher for single-URL convenience and type safety.
-   */
   fetchRoyaleAPIOne(url, scoring = null) {
     if (typeof url !== "string") throw new Error("Network: fetchRoyaleAPIOne expects a string URL.");
     const results = this.fetchRoyaleAPI([url], scoring);
     return results && results.length > 0 ? results[0] : null;
   },
 
-  /**
-   * CLAN DATA AGGREGATOR
-   *
-   * @remarks
-   * Fetches a complete clan snapshot (Members + Race + History).
-   * Prioritizes the Remote Worker's optimized `/clan/full` endpoint which
-   * aggregates these data points into a single network call, significantly
-   * reducing total execution time and quota usage.
-   *
-   * @param cleanTag - The encoded clan tag (including %23).
-   * @returns A structured result containing members, race, and history data.
-   * @warning Consumes UrlFetchApp and CacheService quotas.
-   */
   fetchClanDataSmart(cleanTag) {
     const cacheKey = `clan_full_v2_${cleanTag.replace(/%/g, '_')}`;
     const scriptCache = CacheService.getScriptCache();
     
-    // 15-MINUTE PERSISTENT CACHE (Quota Saver)
     const cachedStr = scriptCache.get(cacheKey);
     if (cachedStr) {
       try {
@@ -566,14 +529,12 @@ var Network: NetworkContract = {
                     history: json.history,
                     log: null
                 };
-                // Cache for 15 mins (Quota optimization)
                 scriptCache.put(cacheKey, JSON.stringify(result), NETWORK_CONFIG.CACHE_TTL_LONG);
                 return result;
             }
         } catch(e: any) {}
     }
 
-    // Local Fallback
     const urls = [
         `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`,
         `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/currentriverrace`,
@@ -586,18 +547,6 @@ var Network: NetworkContract = {
     return { members, race, history, log: log || null };
   },
 
-  /**
-   * REMOTE DATA PROXY
-   *
-   * @remarks
-   * Retrieves public JSON data via the remote worker's proxy.
-   * Utilizes worker-cached data to bypass direct API rate limits and
-   * preserve the local GAS UrlFetchApp quota.
-   *
-   * @param type - The data type to retrieve ('members' or 'warlog').
-   * @returns Array of transformed objects or null if the worker is offline.
-   * @warning Consumes UrlFetchApp quota for the worker handshake.
-   */
   fetchPublicJson(type) {
     if (!this.remoteWorkerHealthy()) return null;
     try {
@@ -624,22 +573,6 @@ var Network: NetworkContract = {
     return null;
   },
 
-  /**
-   * DIAGNOSTIC HEALTH HANDSHAKE
-   *
-   * @remarks
-   * The Remote Worker's health status is cached in two places:
-   * 1. In-memory (_EXECUTION_CACHE): For immediate reuse within a script run.
-   * 2. Persistent Store (PropertiesService): To avoid redundant handshakes
-   *    across multiple script executions (5-minute TTL).
-   *
-   * This ensures the system remains responsive even if the worker is cold-starting
-   * or experiencing temporary latency.
-   *
-   * @param force - If true, bypasses the health cache and performs a fresh handshake.
-   * @returns Boolean indicating if the worker is reachable and healthy.
-   * @warning Consumes UrlFetchApp and PropertiesService quotas.
-   */
   remoteWorkerHealthy(force: boolean = false) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) {
         _LAST_WORKER_ERROR = "RemoteWorkerUrl is not configured in Script Properties.";
@@ -648,7 +581,6 @@ var Network: NetworkContract = {
     
     _LAST_WORKER_ERROR = "Initiating Handshake...";
 
-    // HYDRATION: Check persistent health cache to avoid unnecessary handshakes.
     const now = Date.now();
     try {
       if (!force && typeof PropertiesService !== "undefined") {
@@ -656,7 +588,7 @@ var Network: NetworkContract = {
           NETWORK_CONFIG.KEYS.WORKER_HEALTH,
           null,
         ) as { status: boolean; time: number; error?: string } | null;
-        if (cached && now - cached.time < 300000) { // 5 min TTL
+        if (cached && now - cached.time < 300000) {
             _EXECUTION_CACHE.set("worker_health", cached.status);
             _LAST_WORKER_ERROR = cached.error || "";
             return cached.status;
@@ -664,7 +596,6 @@ var Network: NetworkContract = {
       }
     } catch(e: any) {}
 
-    // HANDSHAKE: Verify worker reachability and upstream health.
     let isHealthy = false;
     try {
         const headers: Record<string, string> = {};
@@ -675,33 +606,25 @@ var Network: NetworkContract = {
         });
         if (res.getResponseCode() === 200) {
             const diagnostic = JSON.parse(res.getContentText() || "{}");
-            if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "OK") {
-                isHealthy = true;
-                _LAST_WORKER_ERROR = "";
-            } else if (diagnostic.status === "success" && diagnostic?.checks?.upstream === "UNKNOWN") {
+            if (diagnostic.status === "success" && (diagnostic?.checks?.upstream === "OK" || diagnostic?.checks?.upstream === "UNKNOWN")) {
                 isHealthy = true;
                 _LAST_WORKER_ERROR = "";
             } else {
                 _LAST_WORKER_ERROR = `Degraded: Upstream=${diagnostic?.checks?.upstream || 'Fail'}`;
-                isHealthy = (diagnostic.status === "success"); // Reachable
+                isHealthy = (diagnostic.status === "success");
             }
 
-            // CRITICAL CHECK: Identify if the worker has ZERO keys configured.
-            // This is the common "Render Wipe" scenario where env vars are reset.
             if (diagnostic?.checks?.pool?.total === 0) {
                 _LAST_WORKER_ERROR = "CRITICAL: No API Keys Configured on Worker.";
                 isHealthy = false;
             }
         } else {
             _LAST_WORKER_ERROR = `HTTP ${res.getResponseCode()}`;
-            if (res.getResponseCode() === 401) _LAST_WORKER_ERROR += " (Secret Mismatch)";
-            if (res.getResponseCode() === 404) _LAST_WORKER_ERROR += " (Wrong version or URL)";
         }
     } catch(e: any) { 
         _LAST_WORKER_ERROR = String(e);
     }
 
-    // PERSISTENCE: Synchronize health status across the architecture.
     _EXECUTION_CACHE.set("worker_health", isHealthy);
     Registry.Services.Store.props.setJSON(NETWORK_CONFIG.KEYS.WORKER_HEALTH, {
       status: isHealthy,
@@ -712,18 +635,6 @@ var Network: NetworkContract = {
     return isHealthy;
   },
 
-  /**
-   * REMOTE KEY AUDIT
-   *
-   * @remarks
-   * Audits a pool of API keys using the remote worker to avoid local rate limits.
-   * Delegation to the worker prevents GAS from being throttled by Supercell's
-   * IP-based rate limiting during high-volume key validation.
-   *
-   * @param keys - Array of key objects { name, value } to validate.
-   * @returns Audit results with success/error status per key.
-   * @warning Consumes UrlFetchApp quota.
-   */
   auditKeysRemote(keys: { name: string; value: string }[]) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) return null;
     try {
@@ -747,57 +658,24 @@ var Network: NetworkContract = {
             const r = json.results.find((x: any) => x.key === k.value);
             if (!r) return { name: k.name, success: false, error: "Skipped" };
             if (r.status === 200) return { name: k.name, success: true };
-            
-            let err = `Error ${r.status}`;
-            if (r.status === 403) err = "Access Denied";
-            if (r.status === 429) err = "Throttled";
-            return { name: k.name, success: false, error: err };
+            return { name: k.name, success: false, error: `Error ${r.status}` };
         });
     } catch(e: any) { return null; }
   },
 
-  /**
-   * REMOTE TOURNAMENT SCANNER
-   *
-   * @remarks
-   * Scans global tournaments for potential recruits using the remote worker.
-   * This high-concurrency operation is delegated to the worker to circumvent
-   * GAS execution time limits and UrlFetchApp daily quotas.
-   *
-   * @param tourneyTags - List of tournament tags to scan.
-   * @param minTrophies - Minimum trophy threshold for filtering.
-   * @param blacklistSet - Set or array of player tags to ignore.
-   * @param scoring - Optional weights for calculating recruit potential.
-   * @returns List of scored player candidates.
-   * @warning Consumes UrlFetchApp quota.
-   */
   scanTournamentsRemote(tourneyTags, minTrophies, blacklistSet, scoring = null) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
-    
     const blacklist = Array.isArray(blacklistSet) ? blacklistSet : Array.from(blacklistSet);
     
     const prophetData: Record<string, any> = {}; 
     const pCache = Registry.Services.Roster.getProphetCache();
-    if (pCache && typeof pCache.forEach === "function") {
-        pCache.forEach((v: any, k: string) => {
-            prophetData[k.replace("#", "").trim().toLowerCase()] = v;
-        });
+    if (pCache?.forEach) {
+        pCache.forEach((v: any, k: string) => { prophetData[k.replace("#", "").trim().toLowerCase()] = v; });
     }
 
-    const payload = {
-        tags: tourneyTags,
-        apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: { name: string; value: string }) => k.value),
-        blacklist: blacklist,
-        minTrophies,
-        scoring,
-        prophetCache: prophetData
-    };
-
+    const payload = { tags: tourneyTags, apiKeys: CONFIG.SYSTEM.API_KEYS.map((k: any) => k.value), blacklist, minTrophies, scoring, prophetCache: prophetData };
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
-
-    // DIAGNOSTIC PROBE: Log Payload Summary
-
 
     const res = UrlFetchApp.fetch(`${CONFIG.SYSTEM.REMOTE_WORKER_URL}/scan`, {
         method: "post",
@@ -807,13 +685,8 @@ var Network: NetworkContract = {
         headers: headers
     });
 
-    const code = res.getResponseCode();
-    const text = res.getContentText();
-
-
-
-    if (code !== 200) throw new Error(`Worker Error ${code}`);
-    return JSON.parse(text).candidates || [];
+    if (res.getResponseCode() !== 200) throw new Error(`Worker Error ${res.getResponseCode()}`);
+    return JSON.parse(res.getContentText()).candidates || [];
   },
 
   getRemainingQuota() {
@@ -823,18 +696,14 @@ var Network: NetworkContract = {
 
   getWorkerSummary() {
     const isHealthy = this.remoteWorkerHealthy();
-    if (!isHealthy) return `Worker Offline (${_LAST_WORKER_ERROR})`;
-    
-    // Attempt to find memory info from last handshake
-    // Since we don't store it in health cache yet, just return status
-    return `Worker Healthy (Remote Enabled)`;
+    return isHealthy ? `Worker Healthy (Remote Enabled)` : `Worker Offline (${_LAST_WORKER_ERROR})`;
   },
 
   getLastWorkerError() {
     return _LAST_WORKER_ERROR;
   },
 
-  fetchRemoteWorker(endpoint: string, payload: any): any {
+  fetchRemoteWorker(endpoint, payload) {
     if (!CONFIG.SYSTEM.REMOTE_WORKER_URL) throw new Error("Worker not configured");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (CONFIG.SYSTEM.REMOTE_WORKER_SECRET) headers.Authorization = `Bearer ${CONFIG.SYSTEM.REMOTE_WORKER_SECRET}`;
@@ -847,14 +716,22 @@ var Network: NetworkContract = {
         headers: headers
     });
 
-    const code = res.getResponseCode();
-    if (code !== 200) throw new Error(`Worker Error ${code}: ${res.getContentText()}`);
+    if (res.getResponseCode() !== 200) throw new Error(`Worker Error ${res.getResponseCode()}`);
     return JSON.parse(res.getContentText());
+  },
+
+  getExecutionStats() {
+    return {
+      total: _FETCH_COUNT,
+      remote: _REMOTE_FETCH_COUNT,
+      local: _FETCH_COUNT - _REMOTE_FETCH_COUNT
+    };
   },
 
   _clearCache() {
     _EXECUTION_CACHE.clear();
     _FETCH_COUNT = 0;
+    _REMOTE_FETCH_COUNT = 0;
   }
 };
 
