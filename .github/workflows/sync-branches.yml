@@ -193,8 +193,8 @@ jobs:
               echo "pwa_changed=false" >> $GITHUB_OUTPUT
             fi
 
-            # GAS: Only actual GAS scripts (*.gs.js and appsscript.json)
-            if git diff --name-only $BEFORE $AFTER | grep -E "^Backend-GAS/.*\.gs\.js$|^Backend-GAS/appsscript\.json$" > /dev/null; then
+            # GAS: Only actual GAS scripts (*.ts and appsscript.json)
+            if git diff --name-only $BEFORE $AFTER | grep -E "^Backend-GAS/.*\.ts$|^Backend-GAS/appsscript\.json$" > /dev/null; then
               echo "gas_changed=true" >> $GITHUB_OUTPUT
             else
               echo "gas_changed=false" >> $GITHUB_OUTPUT

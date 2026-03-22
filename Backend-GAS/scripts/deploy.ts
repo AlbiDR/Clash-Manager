@@ -27,15 +27,16 @@ function log(message: string) {
 }
 
 function error(message: string): never {
-  process.stderr.write(`[ERROR] ${message}\n`);
+  process.stderr.write(`[CRITICAL] ${message}\n`);
   process.exit(1);
 }
 
 function runCommand(command: string) {
+  log(`Executing: ${command}`);
   try {
     execSync(command, { stdio: 'inherit', cwd: ROOT_DIR });
   } catch (err) {
-    error(`Command failed: ${command}`);
+    error(`Execution failed for command: ${command}`);
   }
 }
 
@@ -169,7 +170,8 @@ async function main() {
 
   // 9. Deploy via Clasp
   log('Pushing artifacts to Google Apps Script...');
-  runCommand('npx clasp push --force');
+  // Use clasp directly; it should be in the path after pnpm install or provided by devDeps
+  runCommand('clasp push --force');
 
   log('Deployment completed successfully.');
 }
