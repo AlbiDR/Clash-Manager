@@ -69,10 +69,10 @@ export class WorkerHubController {
          throw new Error(`Upstream GAS rejected connection: ${response.status}`);
       }
 
-      const rawJson = await response.json();
+      const rawJson: unknown = await response.json();
       
-      if ((rawJson as any).error) {
-         throw new Error(`Upstream GAS API Error: ${(rawJson as any).error}`);
+      if (rawJson && typeof rawJson === "object" && "error" in rawJson) {
+         throw new Error(`Upstream GAS API Error: ${String(rawJson.error)}`);
       }
 
       // 1. Transform Raw Data -> Structured HubState

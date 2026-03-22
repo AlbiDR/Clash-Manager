@@ -200,3 +200,31 @@ export const RoyaleWarLogItemSchema = v.object({
 export const RoyaleWarLogResponseSchema = v.object({
   items: v.array(RoyaleWarLogItemSchema),
 });
+
+/**
+ * [GUARD] VALIDATION BOUNDARY: Worker Hub Schemas
+ * Rationale: Ensures structural integrity for data synchronization between
+ * the GAS "Dumb Store" and the high-performance Worker subsystem.
+ */
+
+export const GasRawFeedSchema = v.object({
+  timestamp: v.string(),
+  source: v.string(),
+  tables: v.object({
+    roster: v.array(v.array(v.unknown())),
+    headhunter: v.array(v.array(v.unknown())),
+  }),
+});
+
+export const HubStateSchema = v.object({
+  metadata: v.object({
+    timestamp: v.string(),
+    status: v.picklist(["healthy", "degraded", "offline"]),
+    version: v.string(),
+    source: v.string(),
+  }),
+  data: v.object({
+    roster: v.array(v.array(v.unknown())),
+    headhunter: v.array(v.array(v.unknown())),
+  }),
+});
