@@ -28,9 +28,10 @@ vi.stubGlobal("fetch", mockFetch);
 describe("WorkerHubController", () => {
   const mockHubState: HubState = {
     metadata: {
+      timestamp: new Date().toISOString(),
+      status: "healthy",
       version: "1.0.0",
-      timestamp: Date.now(),
-      origin: "GAS",
+      source: "GAS",
     },
     data: {
       roster: [],
