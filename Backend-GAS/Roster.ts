@@ -338,10 +338,7 @@ function updateLeaderboard() {
 // HARDEN: Unified versioning prevents false-negative health check failures.
 const VER_ROSTER = "13.1.0";
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Roster;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Roster, updateLeaderboard, VER_ROSTER });

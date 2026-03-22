@@ -390,10 +390,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
   }
 };
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = HeadhunterStore;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { HeadhunterStore });

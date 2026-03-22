@@ -29,6 +29,15 @@ This project employs a **Strict Unitary Architecture** across six discrete layer
 - **Dependency Inversion Principle (DIP):** Higher layers must depend on abstractions (interfaces or types) of lower layers, not concrete implementations. This ensures that infrastructure shifts in Layer 1 do not oscillate into business logic in Layer 3.
 - **Framework as a Detail:** The selected technology stack (Vue, Vite, Apps Script) is a replaceable implementation detail. Business logic in Layer 3 must never depend on framework-specific APIs. If the framework were swapped, Layer 3 logic should remain untouched.
 
+### Universal Dependency Cataloging (Unitary Versioning)
+
+To enforce monorepo-wide consistency and eliminate environmental fragmentation, all internal packages (Frontend, GAS, Worker) are bound to a strict versioning contract:
+
+- **Unified Surface (SSOT):** All shared infrastructure (Vite, Vitest, Vue, Valibot, esbuild, etc.) must be declared exclusively in the root `pnpm` catalog. Individual `package.json` files are **prohibited** from declaring discrete version strings for common dependencies.
+- **The `catalog:` Protocol:** All internal package references must utilize the `catalog:` shorthand (e.g., `"vitest": "catalog:"`). This ensures that a version jump at the root creates a synchronous, monorepo-wide upgrade path, preventing the formation of "dependency silos" where layer-specific version mismatches trigger behavioral oscillations.
+- **Binary Parity:** Standardizing versions across all discrete layers ensures that test results remain deterministic and idempotent regardless of the execution context (GAS versus high-concurrency Worker).
+- **Lean Pruning (Zero-Waste):** Version fragmentation is an architectural failure. If multiple versions of the same library exist in the lockfile due to un-cataloged declarations, it is a direct violation of the **Lean Pruning** principle and must be consolidated immediately.
+
 ### Layer 0: Substrate (`@static` / `@substrate`) [Foundation]
 **Definition**: The shell, configuration, environment, and public assets.
 - **Rule**: Minimum footprint. Data-centric. Zero processing logic.

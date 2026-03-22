@@ -23,11 +23,6 @@ export interface DatabaseUpdateResult {
 
 export const VER_DATABASE_TYPES = "1.0.0";
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { VER_DATABASE_TYPES };
-}
-
 (function(scope: any) {
   Object.assign(scope, { DatabaseTypes: { VER_DATABASE_TYPES }, VER_DATABASE_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

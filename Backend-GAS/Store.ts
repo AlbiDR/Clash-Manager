@@ -486,10 +486,6 @@ var Store: StoreContract = {
 /* ==========================================================================
    EXPORTS & GLOBAL BRIDGE
    ========================================================================== */
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Store;
-}
 
 (function(scope: any) {
   Object.assign(scope, { Store, VER_STORE });

@@ -77,17 +77,24 @@ const HeadhunterView: HeadhunterViewContract = {
       return Registry.Services.Time.formatDatetime(dateObj);
     };
 
+    const toNum = (v: any) => {
+      if (typeof v === "number") return v;
+      if (typeof v === "string") return Number(v) || 0;
+      if (Array.isArray(v) || (typeof v === "object" && v !== null)) return NaN;
+      return Number(v) || 0;
+    };
+
     const rows = list.map((c) => [
       c.tag,
       c.invited,
       c.name,
-      Number(c.trophies || 0),
-      Number(c.donations || 0),
-      Number(c.cards || 0),
-      Number(c.war || 0),
+      toNum(c.trophies),
+      toNum(c.donations),
+      toNum(c.cards),
+      toNum(c.war),
       fmt(c.foundDate),
-      Number(c.rawScore || 0),
-      Number(c.potentialScore || 0),
+      toNum(c.rawScore),
+      toNum(c.potentialScore),
       fmtDt(c.lastScan),
     ]);
 
@@ -210,10 +217,7 @@ const HeadhunterView: HeadhunterViewContract = {
   }
 };
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = HeadhunterView;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { HeadhunterView });

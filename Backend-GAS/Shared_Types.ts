@@ -53,11 +53,6 @@ export interface RosterSchemaIndex {
 
 export const VER_SHARED_TYPES = "1.0.0";
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { VER_SHARED_TYPES };
-}
-
 (function(scope: any) {
   Object.assign(scope, { SharedTypes: { VER_SHARED_TYPES }, VER_SHARED_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

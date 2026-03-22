@@ -199,10 +199,7 @@ const Scoring: ScoringContract = {
   },
 };
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Scoring;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Scoring, VER_SCORING });

@@ -8,13 +8,15 @@ describe("useBroadcastChannel", () => {
   const mockAddEventListener = vi.fn();
   const mockRemoveEventListener = vi.fn();
 
-  const MockBroadcastChannel = vi.fn().mockImplementation((name: string) => ({
-    name,
-    postMessage: mockPostMessage,
-    close: mockClose,
-    addEventListener: mockAddEventListener,
-    removeEventListener: mockRemoveEventListener,
-  }));
+  const MockBroadcastChannel = vi.fn().mockImplementation(function(name: string) {
+    return {
+      name,
+      postMessage: mockPostMessage,
+      close: mockClose,
+      addEventListener: mockAddEventListener,
+      removeEventListener: mockRemoveEventListener,
+    };
+  });
 
   beforeEach(() => {
     vi.resetModules();
