@@ -57,9 +57,6 @@ jobs:
             exit 1
           fi
 
-      - name: Install Clasp Global
-        run: pnpm add -g @google/clasp
-
       - name: Create Clasp Auth File
         run: echo "$CLASPRC_JSON" > ~/.clasprc.json
         env:
