@@ -58,9 +58,9 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const keywords = [...CONFIG.HEADHUNTER.KEYWORDS].sort(() => Math.random() - 0.5);
     const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && S.Network.remoteWorkerHealthy();
 
-    const THRESHOLDS = [50, 25, 10];
+    const THRESHOLDS = [50, 25, 10, 5, 2];
     const maxRetries = Math.min(keywords.length, remoteAvailable ? 30 : 10);
-    const discoveryTarget = lowQuotaMode ? 5 : (remoteAvailable ? 50 : 10);
+    const discoveryTarget = lowQuotaMode ? 5 : 50;
     let attempts = 0;
     const discoveryHits: string[] = [];
     let discoveryMisses = 0;
