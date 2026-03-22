@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import * as v from "valibot";
 import { HubState, HubError } from "../types/HubTypes.js";
+import { GasRawFeedSchema } from "../schemas.js";
 
 /**
  * ============================================================================
@@ -20,17 +22,21 @@ export class PayloadKernel {
    * @param rawPayload - Untrusted, unverified raw data from GAS.
    * @returns A strongly typed, compressed HubState payload ready for PWA delivery.
    */
-  static generateMatrix(rawPayload: any): HubState {
-    if (!rawPayload || !rawPayload.tables) {
-       console.error("[PayloadKernel] Invalid or missing tables from raw feed");
+  static generateMatrix(rawPayload: unknown): HubState {
+    // THREAT: Malformed matrix data from GAS causing downstream PWA crashes.
+    // Target B [1]: Enforce strict validation boundary for raw feed ingress.
+    const result = v.safeParse(GasRawFeedSchema, rawPayload);
+
+    if (!result.success) {
+       console.error("[PayloadKernel] Matrix validation failed:", result.issues);
        throw {
            code: "ERR_MATRIX_CORRUPTED",
-           message: "Upstream (GAS) returned malformed or missing tables.",
+           message: "Upstream (GAS) returned malformed or unvalidated table data.",
            layer: "WORKER_PAYLOAD_KERNEL"
        } as HubError;
     }
 
-    const { roster, headhunter } = rawPayload.tables;
+    const { roster, headhunter } = result.output.tables;
 
     // Phase 1 MVP Transformation: Directly pass the data structure.
     // In future iterations, field-level compression (e.g., removing redundant
@@ -43,8 +49,8 @@ export class PayloadKernel {
         source: "RENDER_WORKER"
       },
       data: {
-        roster: Array.isArray(roster) ? roster : [],
-        headhunter: Array.isArray(headhunter) ? headhunter : []
+        roster,
+        headhunter
       }
     };
   }

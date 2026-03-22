@@ -39,7 +39,6 @@ const {
     v-bind="layoutProps"
     :show-search="true"
     :sort-options="sortOptions"
-    :is-refreshing="isRefreshing || isTurboScanning"
     @refresh="refresh"
     @update:search="handleSearch"
     @update:sort="updateSort"

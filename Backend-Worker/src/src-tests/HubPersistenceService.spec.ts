@@ -18,7 +18,7 @@ describe("HubPersistenceService", () => {
     vi.spyOn(fs, "writeFile").mockResolvedValue();
     vi.spyOn(fs, "rename").mockResolvedValue();
     vi.spyOn(fs, "readFile").mockResolvedValue(JSON.stringify({ 
-      metadata: { source: "TEST" }, 
+      metadata: { source: "TEST", timestamp: "now", version: "test", status: "healthy" },
       data: { roster: [], headhunter: [] }
     }));
     vi.spyOn(fs, "rm").mockResolvedValue();

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { useListFilter } from "./useListFilter";
 import { useProgressiveList } from "./useProgressiveList";
 import { useUiCoordinator } from "./useUiCoordinator";
@@ -8,6 +11,8 @@ import { useBlueprintMode } from "./useBlueprintMode";
 import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
+import { useClashDataStore } from "./useClashDataStore";
+import { storeToRefs } from "pinia";
 import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
@@ -15,34 +20,43 @@ import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/uti
 /**
  * CONFIGURATION: ConsoleLogicOptions
  *
- * @param data - The source reactive list of items (Members or Recruits).
- * @param isHydrated - Indicates if the initial local storage hydration has finished.
- * @param isRefreshing - Indicates if a background network sync is in progress.
- * @param syncError - Any error message from the last sync attempt.
- * @param lastSyncTime - Epoch timestamp of the last successful data refresh.
- * @param filterFn - Predicate returning an array of searchable strings for each item.
- * @param sortStrategies - Map of sorting functions for the list.
- * @param defaultSort - The initial sorting key to use.
- * @param deepLinkPrefix - The URL hash prefix for expansion (e.g., 'member-').
- * @param batchIdMapper - Maps an item to its unique selection ID.
- * @param statsLabel - Singular label for the count (e.g., 'Member').
+ * @remarks
+ * Defines the configuration contract for the useConsoleController.
+ * This ensures that various list-based features (Roster, Headhunter)
+ * can be orchestrated through a unified interface.
  */
 interface ConsoleLogicOptions<T> {
+  /** The authoritative reactive source of items to be displayed. */
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
-  isHydrated: Ref<boolean> | ComputedRef<boolean>;
-  isRefreshing: Ref<boolean> | ComputedRef<boolean>;
-  syncError: Ref<string | null> | ComputedRef<string | null>;
-  lastSyncTime: Ref<number | null> | ComputedRef<number | null>;
-  currentSource: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
-  hubSyncTime: Ref<number | null> | ComputedRef<number | null>;
+  /** Indicates if the initial local storage hydration has finished. */
+  isHydrated?: Ref<boolean> | ComputedRef<boolean>;
+  /** Indicates if a background network sync (GAS or Worker) is in progress. */
+  isRefreshing?: Ref<boolean> | ComputedRef<boolean>;
+  /** Any error message encountered during the last synchronization attempt. */
+  syncError?: Ref<string | null> | ComputedRef<string | null>;
+  /** Epoch timestamp representing the last successful remote data refresh. */
+  lastSyncTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** The identified backend source that provided the current dataset. */
+  currentSource?: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
+  /** Epoch timestamp of when the Cloud Worker Hub last synced with the Royale API. */
+  hubSyncTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Returns an array of strings per item used for search filtering. */
   filterFn: (item: T) => string[];
+  /** A dictionary of sorting strategies keyed by their UI identifier. */
   sortStrategies: Record<string, (a: T, b: T) => number>;
+  /** The UI identifier of the default sorting strategy. */
   defaultSort: string;
+  /** Prefix used for URL hash deep linking (e.g., 'member-'). */
   deepLinkPrefix: string;
+  /** Maps an item to its unique identifier for batch selection operations. */
   batchIdMapper: (item: T) => string;
+  /** Singular display label for the item type (e.g., 'Member'). */
   statsLabel: string;
+  /** The name of the tab in the backing Google Sheet for external linking. */
   sheetName?: string | string[];
+  /** Optional function to extract a numeric score for threshold-based selection. */
   scoreGetter?: (item: T) => number;
+  /** Trigger function to initiate a fresh data sync from the remote backend. */
   refresh?: () => void | Promise<void>;
 }
 
@@ -54,46 +68,55 @@ interface ConsoleLogicOptions<T> {
  * It coordinates multiple specialized composables to provide a unified "Console"
  * experience including searching, sorting, selection, and deep-linking.
  *
- * @returns
- * - searchQuery: Reactive search string.
- * - sortBy: Current active sorting key.
- * - visibleItems: The final subset of items to render (filtered + sorted + paginated).
- * - expandedIds: IDs of items currently expanded in the UI.
- * - selectedIds: IDs of items currently in the batch selection queue.
- * - selectedSet: Computed Set of selected IDs for O(1) lookup.
- * - fabState: Reactive state of the batch action Floating Action Button.
- * - isSelectionMode: Boolean flag indicating if selection mode is active.
- * - status: Computed object {type, text} describing the system health state.
- * - statsBadge: Computed object {label, value} for the item counter.
- * - showSkeletons: Boolean flag to trigger loading states.
- * - filteredItems: The full list of items matching the current search query.
- * - updateSort: Method to change the active sorting strategy.
- * - toggleSelect: Method to add/remove an item from selection.
- * - toggleExpand: Method to expand/collapse an item's details.
- * - clearSelection: Method to reset the selection queue.
- * - handleAction: Method to execute a batch action on selected items.
- * - handleBlitz: Method to open all selected items in external apps.
- * - handleSelectAll: Method to select all currently filtered items.
- * - handleSelectScore: Method to select items based on a numeric threshold.
- * - setForceSelectionMode: Method to manually override selection mode visibility.
- * - processDeepLink: Method to trigger expansion based on URL hash.
+ * **Architecture:**
+ * - **Structural Unitary Architecture:** Acts as a Layer 1 orchestrator,
+ *   bridging domain-blind infrastructure with feature-level requirements.
+ * - **Dependency Inversion:** Higher layers (Features) depend on this
+ *   controller's abstraction rather than individual infra services.
  *
- * @sideeffects
- * - Updates the UiCoordinator to manage FAB visibility.
- * - Processes deep links on data initialization to auto-expand specific items.
- * - Manages state synchronization for batch operations.
+ * **Side Effects:**
+ * - **UI Coordination:** Mutates `useUiCoordinator` state to manage the visibility
+ *   of the batch action Floating Action Button (FAB).
+ * - **Deep Linking:** Auto-processes URL hashes on hydration to expand items.
+ * - **Lifecycle Management:** Cleans up global UI states on unmount.
+ *
+ * @param options - Configuration payload adhering to the ConsoleLogicOptions contract.
+ * @returns
+ * - `searchQuery`: Reactive search string.
+ * - `sortBy`: Current active sorting key.
+ * - `visibleItems`: Paginated subset of filtered and sorted items.
+ * - `expandedIds`: IDs of items currently expanded in the UI.
+ * - `selectedIds`: IDs of items in the batch selection queue.
+ * - `selectedSet`: Computed Set of selected IDs for O(1) membership checks.
+ * - `fabState`: UI state for the batch action FAB.
+ * - `isSelectionMode`: Boolean flag for active selection state.
+ * - `status`: Tiered system health status (text/type).
+ * - `statsBadge`: Item counter for the header.
+ * - `showSkeletons`: Shimmer visibility flag.
+ * - `layoutProps`: Consolidated object for direct injection into `ConsoleLayout`.
  */
 export function useConsoleController<T extends { id: string }>(
   options: ConsoleLogicOptions<T>,
 ) {
+  // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
+  const clashStore = useClashDataStore();
+  const {
+    isHydrated: storeHydrated,
+    isRefreshing: storeRefreshing,
+    syncError: storeSyncError,
+    lastSyncTime: storeLastSync,
+    currentSource: storeSource,
+    hubSyncTime: storeHubSync,
+  } = storeToRefs(clashStore);
+
   const {
     data,
-    isHydrated,
-    isRefreshing,
-    syncError,
-    lastSyncTime,
-    currentSource,
-    hubSyncTime,
+    isHydrated = storeHydrated,
+    isRefreshing = storeRefreshing,
+    syncError = storeSyncError,
+    lastSyncTime = storeLastSync,
+    currentSource = storeSource,
+    hubSyncTime = storeHubSync,
     filterFn,
     sortStrategies,
     defaultSort,
@@ -105,7 +128,6 @@ export function useConsoleController<T extends { id: string }>(
     refresh: refreshFn,
   } = options;
 
-  // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const { isShowcaseMode: isShowcase } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode } = useBlueprintMode();
@@ -129,7 +151,7 @@ export function useConsoleController<T extends { id: string }>(
   
   const visibleItems = computed(() => {
     // CONSTRAINT: In Showcase mode, we only show a single card
-    // to keep the visual demo clean and focused.
+    // to keep the visual demo clean and focused for presentations.
     if (isShowcase.value) {
       return filteredItems.value.length > 0 ? filteredItems.value.slice(0, 1) : [];
     }
@@ -197,7 +219,7 @@ export function useConsoleController<T extends { id: string }>(
    * information is always visible to the user.
    */
   const status = computed(() => {
-    // Priority 0: Critical configuration missing
+    // Priority 0: Critical configuration missing (Action Required)
     if (apiStatus.value === "unconfigured")
       return { type: "error", text: "Configure URL" } as const;
 
@@ -205,18 +227,18 @@ export function useConsoleController<T extends { id: string }>(
     if (apiStatus.value === "waking" || apiStatus.value === "stale")
       return { type: "loading", text: "Waking Server..." } as const;
 
-    // Priority 2: Physical network disconnect
+    // Priority 2: Physical network disconnect (Logical Offline)
     if (connectionStatus.value === "offline")
       return { type: "error", text: "Offline" } as const;
 
-    // Priority 3: Remote execution or fetch failure
+    // Priority 3: Remote execution or fetch failure (Synchronous error)
     if (syncError.value) return { type: "error", text: "Load Failed" } as const;
 
-    // Priority 4: Background sync in progress (with no cached data)
+    // Priority 4: Background sync in progress (Only show if UI is empty)
     if (isRefreshing.value && (!data.value || data.value.length === 0))
       return { type: "loading", text: "Syncing..." } as const;
 
-    // Priority 5: Success (Display last sync time)
+    // Priority 5: Success (Display last sync time for eventual consistency)
     if (data.value && data.value.length > 0)
       return {
         type: "ready" as const,
@@ -257,7 +279,7 @@ export function useConsoleController<T extends { id: string }>(
    * Controls when to show the shimmer loading states.
    */
   const showSkeletons = computed(() => {
-    // MODE GUARDS: Demo modes handle their own visibility
+    // MODE GUARDS: Demo modes handle their own skeleton logic to maintain visual consistency.
     if (isShowcase.value) return false;
     if (isBlueprintMode.value) return true;
 
