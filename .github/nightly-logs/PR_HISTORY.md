@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-22] PR #283: Implement defensive coverage for WorkerHubController
+**Commit**: `e8c26eecb745dd61ad9933cb6085798f6cc51c52`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/283)
+
+### Description
+Implemented 9 new test cases for WorkerHubController.ts in the Backend-Worker. The tests cover synchronization logic, concurrency protection, error handling, state recovery from disk, and the background sync daemon's lifecycle. All tests pass with no regressions.
+
+---
+*PR created automatically by Jules for task [3265552234387244482](https://jules.google.com/task/3265552234387244482) started by @AlbiDR*
+
+---
+
 ## [2026-03-22] PR #282: docs(tsdoc): enhance useConsoleController documentation and enforce licensing
 **Commit**: `b55c42030ce014d8f1c6b72c1d772597dfa7deab`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/282)
