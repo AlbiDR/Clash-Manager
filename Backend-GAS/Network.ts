@@ -735,13 +735,7 @@ var Network: NetworkContract = {
   }
 };
 
-/* ==========================================================================
-   EXPORTS
-   ========================================================================== */
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { Network, VER_NETWORK };
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Network, VER_NETWORK });

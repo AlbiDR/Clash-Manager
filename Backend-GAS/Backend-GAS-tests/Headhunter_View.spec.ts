@@ -69,7 +69,7 @@ describe('HeadhunterView', () => {
     let mockSheet: any;
 
     beforeEach(() => {
-        vi.restoreAllMocks();
+        vi.clearAllMocks();
         mockSheet = {
             getName: vi.fn().mockReturnValue("Headhunter"),
             getParent: vi.fn().mockReturnValue({ getId: vi.fn().mockReturnValue("ss1") }),

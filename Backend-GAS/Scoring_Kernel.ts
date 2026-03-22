@@ -343,7 +343,7 @@ const ScoringKernel: ScoringKernelContract = {
 
 // Global exports for Google Apps Script and Node.js environments
 // @ts-ignore
-try { if (typeof module !== "undefined" && module.exports) { module.exports = ScoringKernel; } } catch (e) {}
+try {  } catch (e) {}
 
 (function(scope: any) {
   Object.assign(scope, { ScoringKernel, VER_SCORING_KERNEL });

@@ -60,11 +60,6 @@ export interface QueueResult {
 
 export const VER_HH_TYPES = "1.0.1";
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { VER_HH_TYPES };
-}
-
 (function(scope: any) {
   Object.assign(scope, { HeadhunterTypes: { VER_HH_TYPES }, VER_HH_TYPES });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

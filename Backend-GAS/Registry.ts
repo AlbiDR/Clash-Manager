@@ -120,10 +120,7 @@ var Registry: RegistryContract = {
   }
 };
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Registry;
-}
+
 
 /**
  * GLOBAL BRIDGE

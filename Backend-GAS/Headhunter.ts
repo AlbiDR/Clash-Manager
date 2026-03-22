@@ -294,9 +294,7 @@ const Headhunter: HeadhunterContract = {
   }
 };
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Headhunter;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Headhunter, VER_HEADHUNTER });

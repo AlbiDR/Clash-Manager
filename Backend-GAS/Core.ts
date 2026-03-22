@@ -214,10 +214,7 @@ var Core: CoreContract = {
 /* ==========================================================================
    EXPORTS & GLOBAL BRIDGE
    ========================================================================== */
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Core;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Core, VER_UTILITIES });

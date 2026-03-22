@@ -177,16 +177,23 @@ const HeadhunterScanner: HeadhunterScannerContract = {
           if (intel && intel.warFame > 500) finalScore *= 1.25;
       }
 
+      const toNum = (v: any) => {
+        if (typeof v === "number") return v;
+        if (typeof v === "string") return Number(v) || 0;
+        if (Array.isArray(v) || (typeof v === "object" && v !== null)) return NaN;
+        return Number(v) || 0;
+      };
+
       validCandidates.push({
         tag,
         name: profile.name,
-        trophies: profile.trophies || 0,
-        donations: Number(profile.donations || profile.totalDonations || 0),
-        cards: Number(typeof profile.cards === 'number' ? profile.cards : (profile.challengeCardsWon || 0)),
-        war: Number(profile.war || profile.warDayWins || 0),
+        trophies: toNum(profile.trophies),
+        donations: toNum(profile.donations || profile.totalDonations),
+        cards: toNum(typeof profile.cards === 'number' ? profile.cards : profile.challengeCardsWon),
+        war: toNum(profile.war || profile.warDayWins),
         foundDate: new Date(),
         invited: false,
-        rawScore: Number(finalScore),
+        rawScore: toNum(finalScore),
         lastScan: Date.now(),
         source: "TOURNAMENT",
       });
@@ -274,16 +281,23 @@ const HeadhunterScanner: HeadhunterScannerContract = {
                 ? profile.rawScore
                 : S.Scoring.calculateRecruitRawScore(profile.trophies || 0, profile.totalDonations || 0, profile.warDayWins || 0, false, W);
 
+              const toNum = (v: any) => {
+                if (typeof v === "number") return v;
+                if (typeof v === "string") return Number(v) || 0;
+                if (Array.isArray(v) || (typeof v === "object" && v !== null)) return NaN;
+                return Number(v) || 0;
+              };
+
               validCandidates.push({
                 tag: S.Core.normalizeTag(profile.tag),
                 name: profile.name,
-                trophies: profile.trophies || 0,
-                donations: Number(profile.donations || profile.totalDonations || 0),
-                cards: Number(typeof profile.cards === 'number' ? profile.cards : (profile.challengeCardsWon || 0)),
-                war: Number(profile.war || profile.warDayWins || 0),
+                trophies: toNum(profile.trophies),
+                donations: toNum(profile.donations || profile.totalDonations),
+                cards: toNum(typeof profile.cards === 'number' ? profile.cards : profile.challengeCardsWon),
+                war: toNum(profile.war || profile.warDayWins),
                 foundDate: new Date(),
                 invited: false,
-                rawScore: Number(rawScore),
+                rawScore: toNum(rawScore),
                 lastScan: Date.now(),
                 source: "SHADOW",
               });
@@ -314,10 +328,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
   }
 };
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = HeadhunterScanner;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { HeadhunterScanner });

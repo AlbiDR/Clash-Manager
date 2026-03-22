@@ -326,7 +326,7 @@ var Time: TimeContract = {
 };
 
 // @ts-ignore
-try { if (typeof module !== "undefined" && module.exports) { module.exports = Time; } } catch (e) {}
+try {  } catch (e) {}
 
 (function(scope: any) {
   Object.assign(scope, { Time, VER_TIME });

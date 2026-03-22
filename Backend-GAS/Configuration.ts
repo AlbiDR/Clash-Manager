@@ -462,7 +462,6 @@ export var CONFIG: AppConfig = {
   },
 };
 
-try { if (typeof module !== "undefined" && module.exports) { module.exports = { CONFIG, VER_CONFIGURATION }; } } catch (e) {}
 
 /**
  * GLOBAL BRIDGE

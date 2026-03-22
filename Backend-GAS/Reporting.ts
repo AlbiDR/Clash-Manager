@@ -61,10 +61,7 @@ var Reporting: ReportingContract = {
 
 export const VER_REPORTING = "1.2.0";
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Reporting;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Reporting, VER_REPORTING });

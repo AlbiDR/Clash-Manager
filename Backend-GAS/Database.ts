@@ -203,10 +203,7 @@ function updateClanDatabase() {
     Database.synchronizeClanSnapshot();
 }
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Database;
-}
+
 
 (function(scope: any) {
   Object.assign(scope, { Database, updateClanDatabase, VER_DATABASE });

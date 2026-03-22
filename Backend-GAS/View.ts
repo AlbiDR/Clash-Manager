@@ -771,10 +771,7 @@ var View: ViewContract = {
   }
 };
 
-// @ts-ignore
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = View;
-}
+
 
 /**
  * GLOBAL BRIDGE
