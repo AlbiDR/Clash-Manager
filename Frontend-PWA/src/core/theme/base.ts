@@ -109,7 +109,7 @@ img, video { max-width: 100%; height: auto; }
   font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
-  font-display: swap;
+  font-display: optional;
   src: url("fonts/Inter-Variable.woff2") format("woff2");
 }
 
@@ -117,7 +117,7 @@ img, video { max-width: 100%; height: auto; }
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
   src: url("fonts/JetBrainsMono-Bold.woff2") format("woff2");
 }
 
@@ -152,7 +152,6 @@ input, textarea, [contenteditable], .selectable {
 .view-container, .scrollable-area, .list-container {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: auto;
-  will-change: scroll-position;
 }
   /* =========================================
      SHAPE SYSTEM
