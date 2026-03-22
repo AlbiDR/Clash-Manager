@@ -55,5 +55,8 @@ stats.html
 # Testing
 coverage
 
+# Release Temp Changelogs
+.github/releases/_changelog_*
+
 # Generated Assets
 Frontend-PWA/index.html
