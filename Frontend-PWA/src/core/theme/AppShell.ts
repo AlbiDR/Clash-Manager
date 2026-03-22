@@ -124,7 +124,7 @@ export function getAppShellStyles(): string {
     .sh-d-item { padding: 10px 20px; border-radius: 99px; display: flex; gap: 8px; align-items: center; }
     .sh-d-item.active { background: var(--sh-primary); }
     .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; }
-    .sh-pulse { animation: sh-pulse 1.5s infinite ease-in-out; }
+    .sh-pulse { opacity: 0.85; }
     @keyframes sh-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   `;
 }

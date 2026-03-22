@@ -63,7 +63,6 @@ a { text-decoration: underline; color: inherit; }
 
 .squish-interaction {
   transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease, border-color 0.2s ease;
-  will-change: transform;
 }
 .squish-interaction:active { transform: scale(0.96) translateY(1px); }
 .card:active, button:active { transform: scale(0.98); }

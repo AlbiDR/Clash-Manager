@@ -246,8 +246,6 @@ onUnmounted(() => {
   position: relative;
 }
 .gpu-contain {
-  transform: translateZ(0);
-  /* [PERF] PERFORMANCE: Removed 'paint' to allow shadows to bleed, kept layout */
   contain: layout;
 }
 .ptr-indicator {
