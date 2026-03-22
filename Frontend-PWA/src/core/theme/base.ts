@@ -110,7 +110,7 @@ img, video { max-width: 100%; height: auto; }
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("/fonts/Inter-Variable.woff2") format("woff2");
+  src: url("fonts/Inter-Variable.woff2") format("woff2");
 }
 
 @font-face {
@@ -118,7 +118,7 @@ img, video { max-width: 100%; height: auto; }
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+  src: url("fonts/JetBrainsMono-Bold.woff2") format("woff2");
 }
 
 /* =========================================

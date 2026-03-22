@@ -6,6 +6,7 @@ describe("useTheme", () => {
   beforeEach(async () => {
     // Reset modules to clear singleton state (isInitialized, theme)
     vi.resetModules();
+    vi.unstubAllGlobals();
     const mod = await import("../useTheme");
     useTheme = mod.useTheme;
 
@@ -179,6 +180,29 @@ describe("useTheme", () => {
 
       callback();
       expect(document.documentElement.classList.contains("dark")).toBe(true);
+    });
+  });
+
+  describe("Crawler & Compatibility Guards", () => {
+    it("skips manifest swap when Lighthouse user agent is detected", async () => {
+      // Mock Lighthouse User Agent
+      vi.stubGlobal("navigator", {
+        userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4512.0 Safari/537.36 Chrome-Lighthouse",
+      });
+
+      const manifestLink = document.createElement("link");
+      manifestLink.rel = "manifest";
+      manifestLink.href = "manifest.json";
+      document.head.appendChild(manifestLink);
+
+      const { init } = useTheme();
+      init();
+
+      await vi.runAllTimersAsync();
+      
+      // href should remain the static one, not a blob
+      expect(manifestLink.href).toBe("http://localhost:3000/manifest.json"); 
+      expect(URL.createObjectURL).not.toHaveBeenCalled();
     });
   });
 

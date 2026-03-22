@@ -61,8 +61,8 @@ export function generateHtmlEntry(version: string): string {
     
     <title>Roster | Clash Manager: Professional Recruitment & Analytics</title>
 
-    <link rel="preload" href="/fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
     <style id="critical-substrate">
       ${getAppShellStyles()}
