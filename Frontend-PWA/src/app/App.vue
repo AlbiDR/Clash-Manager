@@ -3,9 +3,6 @@ import {
   ErrorBoundary,
   ToastContainer,
   FloatingDock,
-  ConsoleLayout,
-  ConsoleHeader,
-  HeaderInfoOverlay,
 } from "@shared";
 import {
   useClashDataStore,
@@ -150,7 +147,6 @@ onMounted(() => {
   max-width: var(--sys-layout-max-width);
   padding: 0 16px;
   transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-  will-change: transform;
   display: flex;
   flex-direction: column;
   flex: 1;

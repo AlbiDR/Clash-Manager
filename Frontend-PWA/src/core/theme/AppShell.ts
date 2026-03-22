@@ -62,7 +62,6 @@ export function getAppShellStyles(): string {
       flex-direction: column;
       gap: 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      will-change: transform;
     }
 
     .sh-h-row { display: flex; justify-content: space-between; align-items: center; }

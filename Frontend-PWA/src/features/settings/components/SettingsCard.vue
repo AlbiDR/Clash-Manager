@@ -54,7 +54,6 @@ const toggleCollapse = () => {
     background-color 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.25s ease;
-  will-change: transform, box-shadow;
 }
 
 .settings-card:not(.collapsed) {

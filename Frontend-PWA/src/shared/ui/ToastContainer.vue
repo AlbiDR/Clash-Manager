@@ -47,7 +47,6 @@ const containerStyle = computed(() => ({
 
   /* [PERF] PERF: Animate transform only */
   transition: transform 0.4s var(--sys-motion-spring);
-  will-change: transform;
 }
 
 /* Transitions */
