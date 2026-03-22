@@ -21,7 +21,6 @@ export const skeletonStyles = `
   margin-bottom: 8px;
   position: relative;
   overflow: hidden;
-  transform: translateZ(0);
 }
 
 .sk-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
