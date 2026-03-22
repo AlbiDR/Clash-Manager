@@ -162,11 +162,9 @@ onUnmounted(clearTimer);
   font-size: 12px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: filter 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .action-btn:active {
-  filter: brightness(0.9);
+  opacity: 0.8;
   transform: translateY(1px);
 }
 .action-btn:disabled {

@@ -83,7 +83,7 @@ const isActive = ref(false);
 }
 
 .svg-warning {
-  filter: drop-shadow(0 4px 8px rgba(var(--sys-color-error-rgb, 255, 68, 68), 0.3));
+  opacity: 0.9;
 }
 
 .error-message {

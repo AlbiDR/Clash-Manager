@@ -206,9 +206,8 @@ function handleFabDismiss() {
 
 /* On Desktop, we prevent the dock from fully disappearing to maintain layout stability */
 .dock-container.hidden.is-desktop {
-  opacity: 0.2;
+  opacity: 0.15;
   pointer-events: none;
-  filter: grayscale(1) blur(2px);
   transform: translate(-50%, 0) scale(0.95);
 }
 
