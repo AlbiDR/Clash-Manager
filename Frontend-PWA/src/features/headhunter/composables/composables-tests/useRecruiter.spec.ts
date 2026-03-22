@@ -7,6 +7,7 @@ import * as GasClient from "@core/api/GasClient";
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
 const mockRefreshGas = vi.fn();
+const mockInjectRecruits = vi.fn().mockReturnValue(1);
 const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockHide = vi.fn();
@@ -135,6 +136,7 @@ vi.mock("@shared", async (importOriginal) => {
 
 vi.mock("../useHeadhunter", () => ({
   useHeadhunter: vi.fn(() => ({
+    injectRecruits: mockInjectRecruits,
     dismissRecruitsAction: mockDismissRecruitsAction,
     undismissRecruitsAction: mockUndismissRecruitsAction,
   })),
@@ -225,9 +227,7 @@ describe("useRecruiter", () => {
       await refresh();
 
       expect(GasClient.scanRecruitsDirect).toHaveBeenCalled();
-      expect(mockUpdateLocalData).toHaveBeenCalledWith(expect.objectContaining({
-        hh: expect.arrayContaining([expect.objectContaining({ id: "3" })])
-      }));
+      expect(mockInjectRecruits).toHaveBeenCalledWith(newRecruits);
       expect(mockSuccess).toHaveBeenCalledWith(expect.stringContaining("Found 1 new recruits"));
       expect(mockRefreshGas).toHaveBeenCalled();
     });

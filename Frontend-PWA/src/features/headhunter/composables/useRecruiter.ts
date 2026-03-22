@@ -1,5 +1,4 @@
 import { isWorkerConfigured, scanRecruitsDirect } from "@core/api/GasClient";
-import { useApiState } from "@core/api/useApiState";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
@@ -41,45 +40,41 @@ import type { Recruit } from "@core/types";
  * - Dispatches toast notifications for user feedback.
  */
 export function useRecruiter() {
-  const { pingData } = useApiState();
   const { isShowcaseMode } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
   const clashDataStore = useClashDataStore();
-  const {
-    data,
-    isHydrated,
-    isRefreshing,
-    syncError,
-    lastSyncTime,
-    currentSource,
-    hubSyncTime,
-  } = storeToRefs(clashDataStore);
-  const { refresh: refreshGas, updateLocalData } = clashDataStore;
-  const { dismissRecruitsAction } = useHeadhunter();
+  const { data, isRefreshing } = storeToRefs(clashDataStore);
+  const { refresh: refreshGas } = clashDataStore;
+  const { dismissRecruitsAction, injectRecruits } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
-  const { undo, success, error, info } = useToast();
+  const { undo, success, info } = useToast();
 
   // 🛡️ PRE-FILTER: Exclude Tombstones
   const recruits = computed(() => {
     return (data.value?.hh || []).filter(
-      (r) => !blacklist.tombstones.value.has(r.id),
+      (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
   });
 
+  // ⚡ DIRECT SCAN: Turbo Mode
+  // Intent: Bypass the GAS orchestration layer to fetch fresh data directly
+  // from the Cloud Worker. This reduces latency and GAS quota consumption.
+  const isTurboScanning = ref(false);
+  const combinedRefreshing = computed(
+    () => isRefreshing.value || isTurboScanning.value,
+  );
+
   const controller = useConsoleController({
     data: recruits,
-    isHydrated,
-    isRefreshing,
-    syncError,
-    lastSyncTime,
-    filterFn: (r: Recruit) => [r.n, r.id],
+    isRefreshing: combinedRefreshing,
+    filterFn: (recruit: Recruit) => [recruit.n, recruit.id],
     sortStrategies: RecruiterSort,
     defaultSort: "score",
     deepLinkPrefix: "recruit-",
-    batchIdMapper: (r: Recruit) => r.id,
+    batchIdMapper: (recruit: Recruit) => recruit.id,
     statsLabel: "Recruit",
     sheetName: ["Headhunter", "Recruiter"],
-    scoreGetter: (r: Recruit) => r.potentialScore || 0,
+    scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     refresh: handleRefresh,
   });
 
@@ -96,11 +91,6 @@ export function useRecruiter() {
     },
     { deep: true, immediate: true },
   );
-
-  // ⚡ DIRECT SCAN: Turbo Mode
-  // Intent: Bypass the GAS orchestration layer to fetch fresh data directly
-  // from the Cloud Worker. This reduces latency and GAS quota consumption.
-  const isTurboScanning = ref(false);
 
   /**
    * ORCHESTRATED REFRESH
@@ -127,24 +117,11 @@ export function useRecruiter() {
       // GAS execution cycle to complete and propagate changes.
       const newCandidates = await scanRecruitsDirect();
       if (newCandidates && newCandidates.length > 0) {
-        if (data.value) {
-          const existingIds = new Set(data.value.hh.map((r) => r.id));
-          const merged = [...data.value.hh];
-          let added = 0;
-          newCandidates.forEach((c) => {
-            if (!existingIds.has(c.id)) {
-              merged.push(c);
-              added++;
-            }
-          });
-
-          updateLocalData({
-            ...data.value,
-            hh: merged.sort(
-              (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
-            ),
-          });
+        const added = injectRecruits(newCandidates);
+        if (added > 0) {
           success(`Turbo Scan: Found ${added} new recruits`);
+        } else {
+          info("Turbo Scan complete. All candidates already known.");
         }
       } else {
         info("Turbo Scan complete. No new candidates.");

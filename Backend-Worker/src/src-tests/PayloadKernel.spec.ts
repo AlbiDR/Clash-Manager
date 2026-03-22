@@ -7,9 +7,11 @@ import { PayloadKernel } from "../services/PayloadKernel.js";
 describe("PayloadKernel (Worker Hub)", () => {
   it("should generate a proper HubState matrix from raw GAS data", () => {
     const rawFeed = {
+      timestamp: new Date().toISOString(),
+      source: "GAS_RAW_STORE",
       tables: {
-        roster: [{ tag: "#123", name: "PlayerOne" }],
-        headhunter: [{ tag: "#456", name: "RecruitA" }]
+        roster: [["#123", "PlayerOne"]],
+        headhunter: [["#456", "RecruitA"]]
       }
     };
 
@@ -21,7 +23,7 @@ describe("PayloadKernel (Worker Hub)", () => {
     expect(state.metadata.version).toBe("v1_hub");
     expect(state.data.roster).toHaveLength(1);
     expect(state.data.headhunter).toHaveLength(1);
-    expect(state.data.roster[0]?.name).toBe("PlayerOne");
+    expect(state.data.roster[0]?.[1]).toBe("PlayerOne");
   });
 
   it("should throw a typed HubError perfectly when tables are missing", () => {
@@ -29,7 +31,7 @@ describe("PayloadKernel (Worker Hub)", () => {
       malformed: true
     };
 
-    expect(() => PayloadKernel.generateMatrix(rawFeed)).toThrowError("Upstream (GAS) returned malformed or missing tables.");
+    expect(() => PayloadKernel.generateMatrix(rawFeed)).toThrowError("Upstream (GAS) returned malformed or unvalidated table data.");
     
     try {
       PayloadKernel.generateMatrix(rawFeed);
