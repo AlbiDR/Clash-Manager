@@ -1,4 +1,3 @@
-import { useApiState } from "@core/api/useApiState";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
@@ -23,46 +22,29 @@ import type { LeaderboardMember } from "@core/types";
  * - `handleSearch`: Search update handler.
  */
 export function useLeaderboard() {
-  const { pingData } = useApiState();
   const { isShowcaseMode } = useShowcaseMode();
   const clashDataStore = useClashDataStore();
-  const { data, isHydrated, isRefreshing, syncError, lastSyncTime, currentSource, hubSyncTime } = storeToRefs(clashDataStore);
+  const { members } = storeToRefs(clashDataStore);
   const { refresh } = clashDataStore;
-
-  const members = computed(() => data.value?.lb || []);
 
   const controller = useConsoleController({
     data: members,
-    isHydrated,
-    isRefreshing,
-    syncError,
-    lastSyncTime,
-    currentSource,
-    hubSyncTime,
-    filterFn: (m: LeaderboardMember) => [m.n, m.id],
+    filterFn: (member: LeaderboardMember) => [member.n, member.id],
     sortStrategies: LeaderboardSort,
     defaultSort: "score",
     deepLinkPrefix: "member-",
-    batchIdMapper: (m: LeaderboardMember) => m.id,
+    batchIdMapper: (member: LeaderboardMember) => member.id,
     statsLabel: "Member",
     sheetName: "Leaderboard",
-    scoreGetter: (m: LeaderboardMember) => m.performanceScore || 0,
+    scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
     refresh,
   });
 
   const sortOptions = LEADERBOARD_SORT_OPTIONS;
 
-  const sheetUrl = computed(() => {
-    const url = pingData.value?.spreadsheetUrl;
-    const gid = pingData.value?.sheets?.Leaderboard;
-    return url && gid ? `${url}#gid=${gid}` : url;
-  });
-
   return {
     ...controller,
-    data,
     isShowcaseMode,
     sortOptions,
-    sheetUrl,
   };
 }

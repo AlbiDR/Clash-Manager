@@ -73,11 +73,6 @@ describe("useLeaderboard", () => {
     setActivePinia(createPinia());
   });
 
-  it("calculates sheetUrl correctly with GID", () => {
-    const { sheetUrl } = useLeaderboard();
-    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=456");
-  });
-
   it("exposes sortOptions with descriptions", () => {
     const { sortOptions } = useLeaderboard();
     expect(sortOptions.length).toBeGreaterThan(0);

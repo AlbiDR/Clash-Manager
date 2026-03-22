@@ -8,6 +8,8 @@ import { useBlueprintMode } from "./useBlueprintMode";
 import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
+import { useClashDataStore } from "./useClashDataStore";
+import { storeToRefs } from "pinia";
 import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
@@ -29,12 +31,12 @@ import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/uti
  */
 interface ConsoleLogicOptions<T> {
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
-  isHydrated: Ref<boolean> | ComputedRef<boolean>;
-  isRefreshing: Ref<boolean> | ComputedRef<boolean>;
-  syncError: Ref<string | null> | ComputedRef<string | null>;
-  lastSyncTime: Ref<number | null> | ComputedRef<number | null>;
-  currentSource: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
-  hubSyncTime: Ref<number | null> | ComputedRef<number | null>;
+  isHydrated?: Ref<boolean> | ComputedRef<boolean>;
+  isRefreshing?: Ref<boolean> | ComputedRef<boolean>;
+  syncError?: Ref<string | null> | ComputedRef<string | null>;
+  lastSyncTime?: Ref<number | null> | ComputedRef<number | null>;
+  currentSource?: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
+  hubSyncTime?: Ref<number | null> | ComputedRef<number | null>;
   filterFn: (item: T) => string[];
   sortStrategies: Record<string, (a: T, b: T) => number>;
   defaultSort: string;
@@ -86,14 +88,25 @@ interface ConsoleLogicOptions<T> {
 export function useConsoleController<T extends { id: string }>(
   options: ConsoleLogicOptions<T>,
 ) {
+  // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
+  const clashStore = useClashDataStore();
+  const {
+    isHydrated: storeHydrated,
+    isRefreshing: storeRefreshing,
+    syncError: storeSyncError,
+    lastSyncTime: storeLastSync,
+    currentSource: storeSource,
+    hubSyncTime: storeHubSync,
+  } = storeToRefs(clashStore);
+
   const {
     data,
-    isHydrated,
-    isRefreshing,
-    syncError,
-    lastSyncTime,
-    currentSource,
-    hubSyncTime,
+    isHydrated = storeHydrated,
+    isRefreshing = storeRefreshing,
+    syncError = storeSyncError,
+    lastSyncTime = storeLastSync,
+    currentSource = storeSource,
+    hubSyncTime = storeHubSync,
     filterFn,
     sortStrategies,
     defaultSort,
@@ -105,7 +118,6 @@ export function useConsoleController<T extends { id: string }>(
     refresh: refreshFn,
   } = options;
 
-  // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const { isShowcaseMode: isShowcase } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode } = useBlueprintMode();
