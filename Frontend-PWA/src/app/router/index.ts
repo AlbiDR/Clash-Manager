@@ -69,7 +69,14 @@ const router = createRouter({
 });
 
 // ⚡ FIX: View Transitions Support with Safety Timeout
+let isInitialNavigation = true;
+
 router.beforeResolve(async (_to, _from) => {
+  if (isInitialNavigation) {
+    isInitialNavigation = false;
+    return;
+  }
+
   if (!document.startViewTransition) return;
   if (document.visibilityState !== "visible") return;
 
