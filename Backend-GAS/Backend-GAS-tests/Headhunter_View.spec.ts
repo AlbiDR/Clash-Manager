@@ -110,4 +110,25 @@ describe('HeadhunterView', () => {
         expect(payload.values.length).toBe(5);
         expect(payload.values[0][0]).toBe("");
     });
+
+    it('should coerce complex objects to numbers to prevent list_value errors', () => {
+        const recruits: any[] = [
+            { 
+                tag: "#OBJ", 
+                name: "Object Player", 
+                donations: [{ count: 87, name: "Giant" }], // Malformed: Array of objects
+                cards: [{ count: 1, name: "Archer" }],    // Malformed: Array of objects
+                foundDate: new Date() 
+            }
+        ];
+
+        HeadhunterView.render(mockSheet, recruits, 0);
+
+        const callArgs = (global.Sheets.Spreadsheets.Values.update as any).mock.calls[0];
+        const payload = callArgs[0];
+        
+        // donations index 4, cards index 5
+        expect(payload.values[0][4]).toBeNaN();
+        expect(payload.values[0][5]).toBeNaN();
+    });
 });

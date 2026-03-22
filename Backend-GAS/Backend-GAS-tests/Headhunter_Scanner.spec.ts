@@ -83,7 +83,7 @@ describe('HeadhunterScanner', () => {
 
         mocks.Network.fetchRoyaleAPI.mockImplementation((urls, scoring, label) => {
             if (label === "Extraction") return [{ tag: "#T1", membersList: [{ tag: "#P1", name: "Player1" }] }];
-            if (label === "Local Fallback") return [{ tag: "#P1", name: "Player1", trophies: 6000 }];
+            if (label === "Deep Profiling") return [{ tag: "#P1", name: "Player1", trophies: 6000 }];
             if (label === "Shadow Seeding") return [[]];
             return [];
         });
@@ -122,7 +122,7 @@ describe('HeadhunterScanner', () => {
 
         mocks.Network.fetchRoyaleAPI.mockImplementation((urls, scoring, label) => {
             if (label === "Extraction") return [];
-            if (label === "Local Fallback") return [];
+            if (label === "Deep Profiling") return [];
             if (label === "Shadow Seeding") return [
                 [{ type: "ladder", opponent: [{ tag: "#SHADOW1", name: "Shadow Player", clan: null }] }]
             ];
