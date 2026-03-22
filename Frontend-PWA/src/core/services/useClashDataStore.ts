@@ -234,6 +234,7 @@ export const useClashDataStore = defineStore("clashData", () => {
     loadLocal,
     updateLocalData,
     startBackgroundSync,
+    refresh: () => startBackgroundSync(true),
     updatePlayerLocally
   };
 });

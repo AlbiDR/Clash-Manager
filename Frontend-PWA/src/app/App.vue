@@ -29,8 +29,6 @@ const { appVersion: currentVersion } = useSystemInfo();
 // Initialize Headhunter (starts watchers for notifications/badge)
 useHeadhunter();
 
-// Load local data immediately
-loadLocal(); // Non-blocking: main.ts also calls this, but we ensure hydration here.
 const haptics = useHaptics();
 const route = useRoute();
 const currentRoute = computed(() => route);
@@ -80,9 +78,10 @@ const { updateServiceWorker } = useRegisterSW({
       );
   },
   onNeedRefresh() {
-    // Automatically apply update if it's a minor change
-    // or notify user for major shifts.
-    updateServiceWorker(true);
+    // RATIONALE: registerType: 'autoUpdate' handles the skipWaiting/reload.
+    // We can use this hook for a toast, but forcing a manual reload here
+    // can cause loops during automated Lighthouse connection toggles.
+    console.log("[PWA] Update available");
   },
 });
 
