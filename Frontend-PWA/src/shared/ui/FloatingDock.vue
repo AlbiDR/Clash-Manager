@@ -91,6 +91,7 @@ function handleFabDismiss() {
         @click="goTo(item.path)"
         @pointerdown="onInteractionStart"
         :aria-label="item.label"
+        v-bind="{ 'aria-current': route.path === item.path ? 'page' : undefined }"
       >
         <div v-if="route.path === item.path" class="capsule-bg"></div>
         <Icon :name="item.icon" size="22" class="dock-icon" />

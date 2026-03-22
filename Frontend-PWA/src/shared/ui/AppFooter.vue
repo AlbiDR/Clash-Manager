@@ -48,8 +48,13 @@ const hubAge = computed(() => {
 
     <div
       class="brand"
+      role="button"
+      tabindex="0"
       @click="handleReload"
+      @keydown.enter="handleReload"
+      @keydown.space.prevent="handleReload"
       v-tactile
+      v-bind="{ 'aria-label': 'Reload application' }"
     >
       CLASH MANAGER V{{ props.version }}
       <span v-if="props.badge" class="demo-tag">{{ props.badge }}</span>
