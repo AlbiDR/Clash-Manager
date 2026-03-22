@@ -20,6 +20,8 @@ vi.mock("../../../core/services/useHaptics", () => ({
 describe("SelectionBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock scrollTo since JSDOM doesn't implement it
+    Element.prototype.scrollTo = vi.fn();
   });
 
   it("renders correctly in idle state", () => {

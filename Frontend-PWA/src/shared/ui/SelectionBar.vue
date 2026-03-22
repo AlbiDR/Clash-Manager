@@ -50,7 +50,7 @@ function toggleExpand() {
   if (isScoreExpanded.value) {
     // Scroll to end logic
     setTimeout(() => {
-      if (valuePicker.value) {
+      if (valuePicker.value && typeof valuePicker.value.scrollTo === "function") {
         valuePicker.value.scrollTo({
           left: valuePicker.value.scrollWidth,
           behavior: "smooth",
