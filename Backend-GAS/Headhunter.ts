@@ -37,7 +37,10 @@ const Headhunter: HeadhunterContract = {
 
       // 1. INITIALIZATION & METRICS [1/8]
       const startTime = Date.now();
-      const members: any[] = S.Network.fetchRoyaleAPIOne(`${CONFIG.SYSTEM.API_BASE}/clans/${encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG)}/members`)?.items || [];
+      const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
+      const clanInfo: any = S.Network.fetchRoyaleAPIOne(`${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`);
+      const members: any[] = S.Network.fetchRoyaleAPIOne(`${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/members`)?.items || [];
+      const inGameRequiredTrophies: number = clanInfo?.requiredTrophies || 0;
       const remainingQuota = 50 - members.length;
 
       // 2. STRATEGY ALIGNMENT
@@ -46,7 +49,7 @@ const Headhunter: HeadhunterContract = {
       const isFull = members.length >= 48;
       const strategy = isFull
         ? { method: "MAINTENANCE", floor: 9000 }
-        : { method: "DISCOVERY", floor: 0 };
+        : { method: "DISCOVERY", floor: inGameRequiredTrophies };
 
       // 3. LOAD REGISTRY
       const mathConfig = {
@@ -236,11 +239,14 @@ const Headhunter: HeadhunterContract = {
       }
 
       const finalBenchmark = S.Scoring.calculateHybridBenchmark(clanEliteData, blacklistResult.entries, mathConfig);
-      const allSorted = sortedRegistry;
+
+      // [FIX] Re-sort AFTER scanner inserts to include new entries.
+      // The previous snapshot (sortedRegistry) was stale -- created before the scan.
+      const postScanSorted = Array.from(combinedRegistry.values()).sort((a, b) => b.rawScore - a.rawScore);
       
       const targetActive = CONFIG.HEADHUNTER.TARGET;
-      const finalPool = allSorted.slice(0, targetActive);
-      const queueList = allSorted.slice(targetActive);
+      const finalPool = postScanSorted.slice(0, targetActive);
+      const queueList = postScanSorted.slice(targetActive);
     
       finalPool.forEach((p: Recruit) => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
       queueList.forEach((p: Recruit) => (p.potentialScore = S.Scoring.calculatePotentialScore(p.rawScore, finalBenchmark)));
