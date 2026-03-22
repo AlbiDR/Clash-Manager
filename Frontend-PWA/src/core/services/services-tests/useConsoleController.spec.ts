@@ -1,5 +1,6 @@
 import { useConsoleController } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createPinia, setActivePinia } from "pinia";
 import { ref } from "vue";
 
 const { sharedState } = vi.hoisted(() => ({
@@ -125,6 +126,7 @@ describe("useConsoleController", () => {
   }
 
   beforeEach(() => {
+    setActivePinia(createPinia());
     sharedState.mockBlueprintMode.value = false;
     sharedState.mockShowcaseMode.value = false;
     vi.clearAllMocks();
