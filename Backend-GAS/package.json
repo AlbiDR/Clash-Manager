@@ -13,7 +13,7 @@
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:compat",
-    "esbuild": "^0.27.3",
+    "esbuild": "^0.27.4",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:compat"
