@@ -67,6 +67,7 @@ watch(isOnline, (online, wasOnline) => {
 
 // SMART UPDATE: Automated PWA registration and update logic
 const { updateServiceWorker } = useRegisterSW({
+  immediate: false, // Fix: Defer registration until window.onload to prevent PSI crashes
   onRegistered(r: any) {
     // Check for updates every hour
     r &&
