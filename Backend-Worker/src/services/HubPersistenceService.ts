@@ -3,7 +3,9 @@
 
 import { promises as fs } from "fs";
 import * as path from "path";
+import * as v from "valibot";
 import { HubState, HubError } from "../types/HubTypes.js";
+import { HubStateSchema } from "../schemas.js";
 
 /**
  * ============================================================================
@@ -70,7 +72,18 @@ export class HubPersistenceService {
   static async loadState(): Promise<HubState | null> {
     try {
       const data = await fs.readFile(this.FILE_PATH, { encoding: "utf8" });
-      return JSON.parse(data) as HubState;
+      const parsed = JSON.parse(data);
+
+      // [GUARD] VALIDATION BOUNDARY: Harden persistence loading.
+      // Target B [1]: Prevent corrupted or malformed disk state from entering
+      // the application runtime. Fall back to null to trigger a fresh sync.
+      const result = v.safeParse(HubStateSchema, parsed);
+      if (!result.success) {
+        console.error("[HubPersistence] Validation failed for persisted state:", result.issues);
+        return null;
+      }
+
+      return result.output as HubState;
     } catch (err: any) {
       if (err.code === "ENOENT") {
         return null;
