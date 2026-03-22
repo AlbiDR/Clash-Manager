@@ -722,9 +722,9 @@ var Network: NetworkContract = {
 
   getExecutionStats() {
     return {
-      total: _FETCH_COUNT,
+      total: _FETCH_COUNT + _REMOTE_FETCH_COUNT,
       remote: _REMOTE_FETCH_COUNT,
-      local: _FETCH_COUNT - _REMOTE_FETCH_COUNT
+      local: _FETCH_COUNT
     };
   },
 
