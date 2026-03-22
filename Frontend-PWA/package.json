@@ -23,26 +23,26 @@
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
-    "pinia": "^3.0.4",
+    "pinia": "catalog:",
     "valibot": "catalog:",
-    "vue": "^3.5.30",
-    "vue-router": "^4.6.4",
-    "workbox-precaching": "^7.4.0",
-    "workbox-window": "^7.4.0"
+    "vue": "catalog:",
+    "vue-router": "catalog:",
+    "workbox-precaching": "catalog:",
+    "workbox-window": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@vite-pwa/assets-generator": "^1.0.2",
-    "@vitejs/plugin-vue": "^6.0.3",
-    "@vue/test-utils": "^2.4.6",
-    "@vue/tsconfig": "^0.8.1",
-    "jsdom": "^24.1.0",
-    "rollup-plugin-visualizer": "^6.0.5",
+    "@vite-pwa/assets-generator": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "@vue/test-utils": "catalog:",
+    "@vue/tsconfig": "catalog:",
+    "jsdom": "catalog:",
+    "rollup-plugin-visualizer": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vite": "^7.3.1",
-    "vite-plugin-pwa": "^1.2.0",
-    "vitest": "catalog:compat",
-    "vue-tsc": "^3.2.5"
+    "vite": "catalog:",
+    "vite-plugin-pwa": "catalog:",
+    "vitest": "catalog:",
+    "vue-tsc": "catalog:"
   }
 }
