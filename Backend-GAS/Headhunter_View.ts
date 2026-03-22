@@ -80,14 +80,14 @@ const HeadhunterView: HeadhunterViewContract = {
     const rows = list.map((c) => [
       c.tag,
       c.invited,
-      c.name, // Unified Rich-Text Anchor potentially, but string here
-      c.trophies,
-      c.donations,
-      c.cards,
-      c.war,
+      c.name,
+      Number(c.trophies || 0),
+      Number(c.donations || 0),
+      Number(c.cards || 0),
+      Number(c.war || 0),
       fmt(c.foundDate),
-      c.rawScore,
-      (c.potentialScore || 0),
+      Number(c.rawScore || 0),
+      Number(c.potentialScore || 0),
       fmtDt(c.lastScan),
     ]);
 

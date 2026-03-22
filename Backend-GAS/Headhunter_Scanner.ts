@@ -59,10 +59,12 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     const remoteAvailable = !!CONFIG.SYSTEM.REMOTE_WORKER_URL && S.Network.remoteWorkerHealthy();
 
     const THRESHOLDS = [50, 25, 10];
-    const maxRetries = Math.min(keywords.length, remoteAvailable ? 15 : 6);
-    const discoveryTarget = lowQuotaMode ? 2 : (remoteAvailable ? 25 : 5);
+    const maxRetries = Math.min(keywords.length, remoteAvailable ? 30 : 10);
+    const discoveryTarget = lowQuotaMode ? 5 : (remoteAvailable ? 50 : 10);
     let attempts = 0;
-    const discoveryLogs: string[] = [];
+    const discoveryHits: string[] = [];
+    let discoveryMisses = 0;
+    let discoveryFailures = 0;
 
     // [OPTIMIZED]: Fetch all keywords in parallel to reduce GAS log noise and execution time.
     const keywordsToFetch = keywords.slice(0, maxRetries);
@@ -83,18 +85,22 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         );
 
         if (matches.length > 0) {
-          discoveryLogs.push(`Found ${matches.length}/${foundItems.length} tournaments via '${keyword}' (Threshold: ${threshold}).`);
+          discoveryHits.push(`${keyword}(${matches.length}/${foundItems.length})`);
           rawTourneyMatches.push(...matches);
         } else {
-          discoveryLogs.push(`No matches for '${keyword}' (Yield: 0/${foundItems.length}, Threshold: ${threshold}).`);
+          discoveryMisses++;
         }
       } else {
-        discoveryLogs.push(`Search failed for '${keyword}'.`);
+        discoveryFailures++;
       }
     });
 
-    if (discoveryLogs.length > 0) {
-      S.Reporting.logReport("TOURNAMENT DISCOVERY TRACE", discoveryLogs);
+    if (discoveryHits.length > 0 || discoveryMisses > 0 || discoveryFailures > 0) {
+      const trace: string[] = [];
+      if (discoveryHits.length > 0) trace.push(`HITS: ${discoveryHits.join(', ')}`);
+      if (discoveryMisses > 0) trace.push(`${discoveryMisses} keywords zero-yielded`);
+      if (discoveryFailures > 0) trace.push(`${discoveryFailures} searches failed`);
+      S.Reporting.logReport("TOURNAMENT DISCOVERY TRACE", [trace.join(' | ')]);
     }
 
     // 3. Phase II: Member Extraction
@@ -139,14 +145,14 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       }
     }
 
-    // Local Fallback if Remote failed or returned nothing
+    // Deep Profiling if Remote /scan failed or returned nothing
     if (profileResults.length === 0 && tagsToProfile.length > 0) {
       const batchSize = 50;
       const localTags = tagsToProfile.slice(0, batchSize);
       profileResults = S.Network.fetchRoyaleAPI(
         localTags.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
         remoteAvailable ? W : null,
-        "Local Fallback"
+        "Deep Profiling"
       ) || [];
     }
 
@@ -175,12 +181,12 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         tag,
         name: profile.name,
         trophies: profile.trophies || 0,
-        donations: profile.donations || profile.totalDonations || 0,
-        cards: profile.cards || profile.challengeCardsWon || 0,
-        war: profile.war || profile.warDayWins || 0,
+        donations: Number(profile.donations || profile.totalDonations || 0),
+        cards: Number(typeof profile.cards === 'number' ? profile.cards : (profile.challengeCardsWon || 0)),
+        war: Number(profile.war || profile.warDayWins || 0),
         foundDate: new Date(),
         invited: false,
-        rawScore: finalScore,
+        rawScore: Number(finalScore),
         lastScan: Date.now(),
         source: "TOURNAMENT",
       });
@@ -194,7 +200,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
     S.Reporting.logReport("PROFILING REPORT", profilingLogs);
 
     // 5. Phase IV: Unified Shadow Scouting (Horizontal Layer)
-    const shadowThreshold = 40;
+    const shadowThreshold = 100;
     if (validCandidates.length < shadowThreshold) {
       const heritageTags = S.Roster.getTopPerformers(3);
       seedTags = [...heritageTags];
@@ -203,7 +209,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       // Include top discovery hits as seeds
       const discoverySeeds = validCandidates
         .sort((a, b) => b.rawScore - a.rawScore)
-        .slice(0, 5)
+        .slice(0, 10)
         .map(c => c.tag);
       
       if (discoverySeeds.length > 0) {
@@ -215,7 +221,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       if (seedTags.length === 0 && existingRecruits.size > 0) {
         const recruitSeeds = Array.from(existingRecruits.values())
           .sort((a, b) => (b.rawScore || 0) - (a.rawScore || 0))
-          .slice(0, 10)
+          .slice(0, 20)
           .map(c => c.tag);
         seedTags = recruitSeeds;
         seedingSource = "Existing Leads";
@@ -272,12 +278,12 @@ const HeadhunterScanner: HeadhunterScannerContract = {
                 tag: S.Core.normalizeTag(profile.tag),
                 name: profile.name,
                 trophies: profile.trophies || 0,
-                donations: profile.donations || profile.totalDonations || 0,
-                cards: profile.cards || profile.challengeCardsWon || 0,
-                war: profile.war || profile.warDayWins || 0,
+                donations: Number(profile.donations || profile.totalDonations || 0),
+                cards: Number(typeof profile.cards === 'number' ? profile.cards : (profile.challengeCardsWon || 0)),
+                war: Number(profile.war || profile.warDayWins || 0),
                 foundDate: new Date(),
                 invited: false,
-                rawScore: rawScore,
+                rawScore: Number(rawScore),
                 lastScan: Date.now(),
                 source: "SHADOW",
               });
