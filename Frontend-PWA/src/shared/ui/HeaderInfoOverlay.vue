@@ -65,8 +65,7 @@ watch(
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+
   z-index: 2000;
   display: flex;
   justify-content: center;

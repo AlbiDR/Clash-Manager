@@ -190,8 +190,7 @@ function openOverlay() {
 .console-glass {
   position: relative;
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: 24px;
   padding: 16px;

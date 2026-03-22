@@ -111,8 +111,7 @@ function reset() {
 
 .error-content {
   background: var(--sys-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+
   padding: 40px;
   border-radius: 32px;
   text-align: center;
