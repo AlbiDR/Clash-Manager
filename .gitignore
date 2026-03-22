@@ -1,12 +1,8 @@
 # AI & Temporary Configs
-.agent/*
-!.agent/workflows/
-.agents/*
-!.agents/workflows/
-_agent/*
-!_agent/workflows/
-_agents/*
-!_agents/workflows/
+.agent
+.agents
+_agent
+_agents
 .gemini
 .cursor
 .jules
