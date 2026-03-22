@@ -12,11 +12,11 @@
     "@google/clasp": "^3.1.0",
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "catalog:",
-    "@vitest/coverage-v8": "catalog:compat",
-    "esbuild": "^0.27.4",
+    "@vitest/coverage-v8": "catalog:",
+    "esbuild": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:compat"
+    "vitest": "catalog:"
   },
   "dependencies": {
     "valibot": "catalog:"

@@ -18,9 +18,9 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "catalog:",
-    "@vitest/ui": "catalog:modern",
+    "@vitest/ui": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:modern"
+    "vitest": "catalog:"
   }
 }
