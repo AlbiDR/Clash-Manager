@@ -13,8 +13,7 @@ export const componentStyles = `
 }
 
 .ptr-spinner {
-  width: 36px; height: 36px; background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur); border: 1px solid var(--sys-surface-glass-border);
+  border: 1px solid var(--sys-surface-glass-border);
   border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--sys-elevation-2);
 }
 
@@ -79,7 +78,6 @@ a { text-decoration: underline; color: inherit; }
    ========================================= */
 .rich-tooltip {
   position: absolute; background: var(--sys-surface-glass);
-  backdrop-filter: blur(28px) saturate(200%); -webkit-backdrop-filter: blur(28px) saturate(200%);
   color: var(--sys-color-on-surface); padding: 16px; border-radius: 20px; width: 180px;
   pointer-events: none; opacity: 0; z-index: 10000;
   border: 0.5px solid rgba(255, 255, 255, 0.15);
@@ -177,7 +175,6 @@ a { text-decoration: underline; color: inherit; }
    ========================================= */
 .glass-panel {
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--shape-corner-l);
   padding: 20px;

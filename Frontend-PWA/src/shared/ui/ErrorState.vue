@@ -63,8 +63,7 @@ const isActive = ref(false);
   padding: 3rem 2rem;
   text-align: center;
   background: var(--sys-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+
   color: var(--sys-color-on-error-container);
   border-radius: 32px;
   border: 1px solid var(--sys-surface-glass-border);

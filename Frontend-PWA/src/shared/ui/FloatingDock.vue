@@ -177,8 +177,7 @@ function handleFabDismiss() {
   left: 50%;
   transform: translateX(-50%);
   background: var(--sys-surface-glass);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+
   border: 1px solid var(--sys-surface-glass-border);
   padding: 6px;
   border-radius: var(--shape-corner-full);

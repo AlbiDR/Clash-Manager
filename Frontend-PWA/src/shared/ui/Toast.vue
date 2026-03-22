@@ -87,8 +87,7 @@ onUnmounted(clearTimer);
   align-items: center;
   gap: 12px;
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
-  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+
   color: var(--sys-color-on-surface);
   padding: 10px 16px;
   border-radius: 99px; /* Pill shape */
