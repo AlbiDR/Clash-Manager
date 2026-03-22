@@ -240,7 +240,6 @@ onUnmounted(() => {
 }
 .view-content.is-pulling {
   transform: translateY(calc(var(--ptr-offset, 0px) / 2));
-  will-change: transform;
 }
 .list-container {
   padding-bottom: 120px;
@@ -248,7 +247,6 @@ onUnmounted(() => {
 }
 .gpu-contain {
   transform: translateZ(0);
-  will-change: transform;
   /* [PERF] PERFORMANCE: Removed 'paint' to allow shadows to bleed, kept layout */
   contain: layout;
 }

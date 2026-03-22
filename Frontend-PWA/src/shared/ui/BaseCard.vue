@@ -110,7 +110,6 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
     box-shadow 0.25s ease,
     margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  will-change: transform, box-shadow, margin;
 
   /* [PERF] PERFORMANCE: Removed 'paint' containment to allow shadow/scale bleed */
   contain: layout style;
