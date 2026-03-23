@@ -76,6 +76,7 @@ export function useRecruiter() {
     sheetName: ["Headhunter", "Recruiter"],
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     refresh: handleRefresh,
+    onDismiss: dismissBulk,
   });
 
   const sortOptions = RECRUITER_SORT_OPTIONS;
