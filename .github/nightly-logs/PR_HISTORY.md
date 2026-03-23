@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-23] PR #289: Enhance useBatchQueue TSDoc and Logic Annotations
+**Commit**: `8884185b0f2ac2e38b4df6ed8379a028b7ed62bb`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/289)
+
+### Description
+Enhanced TSDoc and inline logic annotations for `useBatchQueue.ts` to improve architectural clarity and explain complex timing logic. Added mandatory licensing headers and updated the coverage log. Verified with unit tests and code review.
+
+---
+*PR created automatically by Jules for task [39955434000662124](https://jules.google.com/task/39955434000662124) started by @AlbiDR*
+
+---
+
 ## [2026-03-23] PR #288: docs(readme): sync client version with package.json
 **Commit**: `69a2adb145373706e9f3b343ef471b45cdcb3669`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/288)
