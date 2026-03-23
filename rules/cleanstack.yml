@@ -1,0 +1,20 @@
+id: find-valibot-schemas
+message: "Found a Valibot schema definition."
+language: typescript
+rule:
+  pattern: "const $SCHEMA = v.object({ $$$ })"
+severity: info
+---
+id: find-tactile-directives
+message: "Found a Vue-based tactile directive."
+language: html
+rule:
+  pattern: 'v-tactile="$VALUE"'
+severity: info
+---
+id: layer-violation-example
+message: "Potential architectural layer violation detected."
+language: typescript
+rule:
+  pattern: "import { $$$ } from '../features/$$$'"
+severity: warning
