@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-json-lines.json",
+  "ignore": [
+    ".agent/**",
+    ".github/**",
+    "dist/**",
+    "public/**"
+  ],
+  "entry": [
+    "Frontend-PWA/src/main.ts",
+    "Backend-GAS/API_Public.ts",
+    "Backend-Worker/src/index.ts"
+  ],
+  "project": [
+    "Frontend-PWA/src/**/*.ts",
+    "Frontend-PWA/src/**/*.vue",
+    "Backend-GAS/**/*.ts",
+    "Backend-Worker/src/**/*.ts"
+  ]
+}
