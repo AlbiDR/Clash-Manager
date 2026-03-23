@@ -216,6 +216,20 @@ export const GasRawFeedSchema = v.object({
   }),
 });
 
+export const HubErrorSchema = v.object({
+  code: v.string(),
+  message: v.string(),
+  layer: v.optional(v.picklist(['WORKER_HUB', 'WORKER_PAYLOAD_KERNEL', 'WORKER_PERSISTENCE', 'GAS_API_RAW']), 'WORKER_HUB'),
+});
+
+/**
+ * [GUARD] FS ERROR SCHEMA
+ * Validates standard Node.js filesystem errors.
+ */
+export const FsErrorSchema = v.object({
+  code: v.string(),
+});
+
 export const HubStateSchema = v.object({
   metadata: v.object({
     timestamp: v.string(),
