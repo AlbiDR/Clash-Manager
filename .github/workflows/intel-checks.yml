@@ -1,4 +1,4 @@
-name: 🧠 Intelligence Checks
+name: Intelligence Checks
 
 on:
   pull_request:
@@ -39,10 +39,10 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: 🔍 Structural Search (ast-grep)
+      - name: Structural Search (ast-grep)
         run: npx ast-grep scan
 
-      - name: 🛡️ Architectural Guard (dependency-cruiser)
+      - name: Architectural Guard (dependency-cruiser)
         run: |
           npx depcruise --config .dependency-cruiser.js Frontend-PWA/src
           npx depcruise --config .dependency-cruiser.js Backend-GAS
