@@ -25,6 +25,7 @@ import Time from "../../Backend-GAS/Time";
 import { KeyService } from "./KeyService.js";
 import { WorkerHubController } from "./controllers/WorkerHubController.js";
 import {
+  HubErrorSchema,
   AuditRequestSchema,
   PublicScanRequestSchema,
   ScanRequestSchema,
@@ -126,7 +127,6 @@ const authMiddleware: RequestHandler = (request, response, next) => {
     "/capabilities",
     "/public/scan",
     "/public/subscribe",
-    "/hub/state",
   ];
 
   // Normalize path to handle trailing slashes consistently
@@ -1163,11 +1163,19 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
   try {
     const state = await WorkerHubController.getHubState();
     response.json({ success: true, data: state });
-  } catch (e: any) {
-    if (e.code === "ERR_STATE_MISSING") {
-      response.status(503).json({ error: e.message, layer: e.layer });
+  } catch (err: unknown) {
+    // THREAT: Silent corruption or uninformative 500 errors in Hub state delivery.
+    // Target B [1]: Robust error classification for the PWA ingress boundary using v.safeParse.
+    const validation = v.safeParse(HubErrorSchema, err);
+
+    if (validation.success && validation.output.code === "ERR_STATE_MISSING") {
+      response.status(503).json({
+        error: validation.output.message,
+        layer: validation.output.layer
+      });
     } else {
-      response.status(500).json({ error: e.message || "unknown" });
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      response.status(500).json({ error: errorMessage || "unknown" });
     }
   }
 });

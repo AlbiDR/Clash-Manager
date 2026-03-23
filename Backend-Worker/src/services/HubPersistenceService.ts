@@ -5,7 +5,7 @@ import { promises as fs } from "fs";
 import * as path from "path";
 import * as v from "valibot";
 import { HubState, HubError } from "../types/HubTypes.js";
-import { HubStateSchema } from "../schemas.js";
+import { HubStateSchema, FsErrorSchema } from "../schemas.js";
 
 /**
  * ============================================================================
@@ -49,13 +49,15 @@ export class HubPersistenceService {
       // This strictly avoids race conditions if the PWA is requesting the file
       // at the exact millisecond it is being updated.
       await fs.rename(tempFilePath, this.FILE_PATH);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Clean up the temp file if the atomic rename fails
       await fs.rm(tempFilePath, { force: true });
+
+      const errorMessage = err instanceof Error ? err.message : String(err);
       
       const error: HubError = {
         code: "ERR_PERSISTENCE_FAILED",
-        message: `Atomic save failed. ${err.message}`,
+        message: `Atomic save failed. ${errorMessage}`,
         layer: "WORKER_PERSISTENCE"
       };
       
@@ -84,11 +86,15 @@ export class HubPersistenceService {
       }
 
       return result.output as HubState;
-    } catch (err: any) {
-      if (err.code === "ENOENT") {
+    } catch (err: unknown) {
+      // THREAT: Corrupted persistence data leading to crash or silent failure.
+      // Target B [1]: Robust recovery from disk corruption using Valibot boundary for ENOENT check.
+      const fsValidation = v.safeParse(FsErrorSchema, err);
+      if (fsValidation.success && fsValidation.output.code === "ENOENT") {
         return null;
       }
-      console.error("[HubPersistence] Failed to load state:", err);
+
+      console.error("[HubPersistence] Failed to load state:", err instanceof Error ? err.message : String(err));
       return null; // Fallback to null on corruption, letting the daemon overwrite it soon.
     }
   }
