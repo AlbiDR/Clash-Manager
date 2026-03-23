@@ -40,9 +40,9 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Structural Search (ast-grep)
-        run: npx ast-grep scan
+        run: npx ast-grep scan --config .github/sgconfig.yml
 
       - name: Architectural Guard (dependency-cruiser)
         run: |
-          npx depcruise --config .dependency-cruiser.js Frontend-PWA/src
-          npx depcruise --config .dependency-cruiser.js Backend-GAS
+          npx depcruise --config .github/.dependency-cruiser.js Frontend-PWA/src
+          npx depcruise --config .github/.dependency-cruiser.js Backend-GAS
