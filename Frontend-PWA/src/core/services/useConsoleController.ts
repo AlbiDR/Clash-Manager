@@ -58,6 +58,8 @@ interface ConsoleLogicOptions<T> {
   scoreGetter?: (item: T) => number;
   /** Trigger function to initiate a fresh data sync from the remote backend. */
   refresh?: () => void | Promise<void>;
+  /** Optional handler for the FAB dismissal event (defaults to clearSelection). */
+  onDismiss?: () => void;
 }
 
 /**
@@ -126,6 +128,7 @@ export function useConsoleController<T extends { id: string }>(
     sheetName,
     scoreGetter,
     refresh: refreshFn,
+    onDismiss: onDismissFn,
   } = options;
 
   const { isShowcaseMode: isShowcase } = useShowcaseMode();
@@ -355,6 +358,26 @@ export function useConsoleController<T extends { id: string }>(
     } : undefined
   }));
 
+  /**
+   * LAYOUT EVENTS (Standardized Interface)
+   *
+   * @remarks
+   * Maps UI events from ConsoleLayout directly to controller methods.
+   * This facilitates the "Structural Purity" goal by allowing
+   * bulk event binding in the view: <ConsoleLayout v-on="layoutEvents" />
+   */
+  const layoutEvents = computed(() => ({
+    refresh: refreshFn,
+    "update:search": (val: string) => (searchQuery.value = val),
+    "update:sort": updateSort,
+    "select-all": handleSelectAll,
+    "clear-selection": clearSelection,
+    "select-score": handleSelectScore,
+    "fab-action": handleAction,
+    "fab-blitz": handleBlitz,
+    "fab-dismiss": onDismissFn || clearSelection,
+  }));
+
   return {
     // State & Computed
     searchQuery,
@@ -376,6 +399,7 @@ export function useConsoleController<T extends { id: string }>(
     currentSource,
     hubSyncTime,
     layoutProps,
+    layoutEvents,
 
     // Actions
     refresh: refreshFn,
