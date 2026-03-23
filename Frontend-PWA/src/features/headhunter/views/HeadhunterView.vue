@@ -12,23 +12,15 @@ import RecruitCard from "../components/RecruitCard.vue";
 const {
   sortOptions,
   isRefreshing,
-  isTurboScanning,
   visibleItems,
   expandedIds,
   selectedSet,
   isShowcaseMode,
   refresh,
-  handleSearch,
-  updateSort,
-  handleSelectAll,
-  clearSelection,
-  handleSelectScore,
-  handleAction,
-  handleBlitz,
-  dismissBulk,
   toggleExpand,
   toggleSelect,
   layoutProps,
+  layoutEvents,
 } = useRecruiter();
 
 </script>
@@ -37,17 +29,9 @@ const {
   <ConsoleLayout
     title="Headhunter"
     v-bind="layoutProps"
+    v-on="layoutEvents"
     :show-search="true"
     :sort-options="sortOptions"
-    @refresh="refresh"
-    @update:search="handleSearch"
-    @update:sort="updateSort"
-    @select-all="handleSelectAll"
-    @clear-selection="clearSelection"
-    @select-score="handleSelectScore"
-    @fab-action="handleAction"
-    @fab-blitz="handleBlitz"
-    @fab-dismiss="dismissBulk"
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
