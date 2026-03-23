@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@google/clasp": "^3.1.0",
+    "@google/clasp": "^3.3.0",
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",

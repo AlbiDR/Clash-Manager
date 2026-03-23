@@ -16,9 +16,9 @@ import { HubState, HubError } from "../types/HubTypes.js";
  */
 
 export class WorkerHubController {
-  private static memoryCache: HubState | null = null;
-  private static isSyncing = false;
-  private static timerId: NodeJS.Timeout | null = null;
+  private static memoryCache: HubState | null = null; // EPHEMERAL: intentionally resets on restart
+  private static isSyncing = false; // EPHEMERAL: intentionally resets on restart
+  private static timerId: NodeJS.Timeout | null = null; // EPHEMERAL: intentionally resets on restart
   private static readonly SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
   /**
@@ -87,8 +87,10 @@ export class WorkerHubController {
       console.log(`[WorkerHubController] Sync complete. V: ${newState.metadata.version}`);
       return true;
 
-    } catch (err: any) {
-      console.error("[WorkerHubController] Sync execution failure:", err);
+    } catch (err: unknown) {
+      // THREAT: Silent sync failure if error is swallowed.
+      // Target B [1]: Robust error propagation for Hub synchronization.
+      console.error("[WorkerHubController] Sync execution failure:", err instanceof Error ? err.message : String(err));
       return false;
     } finally {
       this.isSyncing = false;

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { useAppSettings } from "./useAppSettings";
 import { useExternalLink } from "./useExternalLink";
 import { useToast } from "./useToast";
@@ -10,24 +13,32 @@ interface BatchQueueOptions {
 }
 
 /**
- * USE BATCH QUEUE
+ * COMPOSABLE: useBatchQueue
  *
  * @remarks
  * Orchestrates the "Recruitment Pipeline" for the Headhunter feature.
- * It manages a multi-tier deep-linking strategy:
- * 1. **Sequential Mode**: Users manually trigger the next link in the queue.
- * 2. **Blitz Mode**: An automated sequence that "blasts" through the selection with configurable delays.
+ * It manages a multi-tier deep-linking strategy for processing lists of items.
  *
- * The composable handles throttle management to prevent browser/OS link blocking and
- * implements specialized delays for environment compatibility (e.g., split-screen multitasking).
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
+ * - **Responsibility:** Manages recruitment selection and automated "Blitz" execution.
+ *
+ * **Side Effects:**
+ * - Triggers global toast notifications via `useToast`.
+ * - Invokes external application protocols via `useExternalLink`.
  *
  * @param options - Configuration for throttling and link schemes.
+ * @returns Reactive state and handlers for batch recruitment operations.
  */
 export function useBatchQueue(options: BatchQueueOptions = {}) {
   const { throttleMs = 850 } = options;
 
+  /** Reactive array of selected recruit tags. */
   const selectedIds = ref<string[]>([]);
+  /** Sequential queue of tags remaining to be opened. */
   const queue = ref<string[]>([]);
+  /** Timestamp of the last successful deep-link trigger. */
   const lastActionTime = ref(0);
 
   // Blitz State
@@ -42,9 +53,11 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const { modules } = useAppSettings();
   const { openInGame } = useExternalLink();
 
+  /** Indicates if the UI should be in selection mode. */
   const isSelectionMode = computed(
     () => selectedIds.value.length > 0 || forceSelectionMode.value,
   );
+  /** Indicates if a manual batch queue is currently being processed. */
   const isProcessing = computed(() => queue.value.length > 0);
 
   /**
@@ -58,6 +71,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     return true;
   });
 
+  /**
+   * UI State for the Floating Action Button (FAB).
+   * Calculates labels and hrefs based on selection state and Blitz status.
+   */
   const fabState = computed(() => {
     if (!isSelectionMode.value) {
       return {
@@ -103,10 +120,13 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       blitzEnabled: modules.blitzMode && isTrusted.value,
     };
 
-    // console.log('[useBatchQueue] FAB visible:', fabData);
     return fabData;
   });
 
+  /**
+   * Toggles the selection status of a recruit.
+   * @param id - The unique player tag.
+   */
   function toggleSelect(id: string) {
     if (isProcessing.value || isBlasting.value) {
       return;
@@ -120,17 +140,29 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     }
   }
 
+  /**
+   * Replaces the current selection with a new set of IDs.
+   * @param ids - The new set of player tags.
+   */
   function selectAll(ids: readonly string[]) {
     if (isProcessing.value || isBlasting.value) return;
     selectedIds.value = [...ids];
     queue.value = [];
   }
 
+  /**
+   * Clears all selections and resets the batch processing state.
+   *
+   * @remarks
+   * This ensures a clean slate by stopping any active blitz, emptying the
+   * selection/processing queues, and resetting the manual selection mode.
+   */
   function clearSelection() {
     stopBlitz();
     selectedIds.value = [];
     queue.value = [];
     forceSelectionMode.value = false;
+    currentIndex.value = 0;
   }
 
   /**
@@ -138,6 +170,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    */
   let iframe: HTMLIFrameElement | null = null;
 
+  /**
+   * Forcefully stops an active Blitz operation.
+   */
   function stopBlitz() {
     isBlasting.value = false;
     if (blitzTimer) {
@@ -169,6 +204,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       // without dropping the background PWA state. 4000ms is the observed safety floor.
       const delay = Math.max(throttleMs, 4000);
       if (currentIndex.value < selectedIds.value.length - 1) {
+        // [LOGIC] RECURSION: Schedules next item only after safety delay.
         blitzTimer = setTimeout(() => {
           currentIndex.value++;
           advanceBlitz();
@@ -180,7 +216,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
         }, 1500);
       }
     } else {
-      // Handle skip
+      // Handle skip if ID is missing for some reason
       if (currentIndex.value < selectedIds.value.length - 1) {
         currentIndex.value++;
         advanceBlitz();
@@ -191,7 +227,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   /**
-   * Entry point for the automated Blitz sequence.
+   * Initiates the automated Blitz sequence.
    * Verifies environmental trust before initiating.
    */
   function handleBlitz() {
@@ -206,6 +242,11 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     advanceBlitz();
   }
 
+  /**
+   * Handles the primary action for the batch queue.
+   * Supports both Blitz interception and standard sequential opening.
+   * @param e - The original click event.
+   */
   function handleAction(e: MouseEvent) {
     if (isBlasting.value) {
       e.preventDefault();
@@ -239,8 +280,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       openInGame(id);
     }
 
-    // Delay the queue shift to allow the UI to react to the 'open' intent
-    // and prevent accidental double-triggers.
+    // [LOGIC] REFRESH CYCLE: Delay the queue shift to allow the UI to react to the
+    // 'open' intent and prevent accidental double-triggers or race conditions
+    // between the browser navigation and internal state updates.
     setTimeout(() => {
       if (queue.value.length > 0) {
         queue.value.shift();
