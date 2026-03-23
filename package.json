@@ -17,6 +17,7 @@
     "@google/clasp": "catalog:",
     "@types/node": "catalog:",
     "dependency-cruiser": "^17.3.9",
+    "ts-node": "^10.9.2",
     "typescript": "catalog:"
   },
   "engines": {
