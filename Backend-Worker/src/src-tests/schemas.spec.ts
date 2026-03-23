@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect } from 'vitest';
 import * as v from 'valibot';
@@ -14,7 +16,19 @@ import {
   RoyalePlayerSchema,
   RoyaleTournamentMemberSchema,
   RoyaleTournamentResponseSchema,
-  RoyaleWarLogResponseSchema
+  RoyaleWarLogResponseSchema,
+  RoyaleWarLogItemSchema,
+  RoyaleWarLogStandingSchema,
+  RoyaleRiverRaceParticipantSchema,
+  RoyaleRiverRaceClanSchema,
+  RoyaleRiverRaceStandingSchema,
+  RoyaleCurrentRiverRaceSchema,
+  RoyaleBattleLogItemSchema,
+  RoyaleBattleLogResponseSchema,
+  GasRawFeedSchema,
+  HubErrorSchema,
+  FsErrorSchema,
+  HubStateSchema
 } from '../schemas';
 
 describe('Core Schemas', () => {
@@ -202,11 +216,37 @@ describe('Royale API Response Schemas', () => {
   describe('RoyaleTournamentResponseSchema', () => {
     it('should handle missing membersList', () => {
       const data = { tag: '#TOURN1' };
-      const result = v.safeParse(RoyaleTournamentResponseSchema, data);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.output.membersList).toEqual([]);
-      }
+      const result = v.parse(RoyaleTournamentResponseSchema, data);
+      expect(result.membersList).toEqual([]);
+    });
+  });
+
+  describe('RoyaleWarLogStandingSchema', () => {
+    it('should validate war log standing', () => {
+      const data = {
+        rank: 1,
+        clan: { tag: '#CLAN1', name: 'Clan 1', fame: 1000 }
+      };
+      expect(v.safeParse(RoyaleWarLogStandingSchema, data).success).toBe(true);
+    });
+
+    it('should reject invalid rank', () => {
+      expect(v.safeParse(RoyaleWarLogStandingSchema, { rank: 'first', clan: {} }).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleWarLogItemSchema', () => {
+    it('should validate war log item', () => {
+      const data = {
+        createdDate: '20240101T120000.000Z',
+        seasonId: 1,
+        standings: []
+      };
+      expect(v.safeParse(RoyaleWarLogItemSchema, data).success).toBe(true);
+    });
+
+    it('should reject missing createdDate', () => {
+      expect(v.safeParse(RoyaleWarLogItemSchema, { seasonId: 1, standings: [] }).success).toBe(false);
     });
   });
 
@@ -236,6 +276,202 @@ describe('Royale API Response Schemas', () => {
         }]
       };
       expect(v.safeParse(RoyaleWarLogResponseSchema, data).success).toBe(true);
+    });
+
+    it('should reject malformed items array', () => {
+      expect(v.safeParse(RoyaleWarLogResponseSchema, { items: {} }).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleRiverRaceParticipantSchema', () => {
+    it('should validate participant data', () => {
+      const data = {
+        tag: '#P123',
+        name: 'Player 1',
+        fame: 500,
+        repairPoints: 0,
+        boatAttacks: 0,
+        decksUsed: 4,
+        decksUsedToday: 4
+      };
+      expect(v.safeParse(RoyaleRiverRaceParticipantSchema, data).success).toBe(true);
+    });
+
+    it('should reject malformed participant data', () => {
+      expect(v.safeParse(RoyaleRiverRaceParticipantSchema, { tag: '!!' }).success).toBe(false);
+      expect(v.safeParse(RoyaleRiverRaceParticipantSchema, { tag: '#P1', fame: 'lots' }).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleRiverRaceClanSchema', () => {
+    it('should validate clan data in river race', () => {
+      const data = {
+        tag: '#CLAN1',
+        name: 'Clan 1',
+        fame: 1000,
+        participants: []
+      };
+      expect(v.safeParse(RoyaleRiverRaceClanSchema, data).success).toBe(true);
+    });
+
+    it('should reject invalid tag', () => {
+      expect(v.safeParse(RoyaleRiverRaceClanSchema, { tag: '!!', name: 'C', fame: 0, participants: [] }).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleRiverRaceStandingSchema', () => {
+    it('should validate standing data', () => {
+      const data = {
+        rank: 1,
+        clan: {
+          tag: '#CLAN1',
+          name: 'Clan 1',
+          fame: 1000,
+          participants: []
+        }
+      };
+      expect(v.safeParse(RoyaleRiverRaceStandingSchema, data).success).toBe(true);
+    });
+
+    it('should reject invalid rank', () => {
+      expect(v.safeParse(RoyaleRiverRaceStandingSchema, { rank: 'first', clan: {} }).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleCurrentRiverRaceSchema', () => {
+    it('should validate current river race', () => {
+      const data = {
+        state: 'active',
+        clan: {
+          tag: '#CLAN1',
+          name: 'Clan 1',
+          fame: 1000,
+          participants: []
+        },
+        standings: [
+          {
+            rank: 1,
+            clan: {
+              tag: '#CLAN1',
+              name: 'Clan 1',
+              fame: 1000,
+              participants: []
+            }
+          }
+        ]
+      };
+      expect(v.safeParse(RoyaleCurrentRiverRaceSchema, data).success).toBe(true);
+    });
+
+    it('should reject invalid race state', () => {
+      const data = { state: 123, clan: {}, standings: [] };
+      expect(v.safeParse(RoyaleCurrentRiverRaceSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleBattleLogItemSchema', () => {
+    it('should validate single battle log item', () => {
+      const data = { type: 'riverRacePvP', battleTime: '20240101T120000.000Z' };
+      expect(v.safeParse(RoyaleBattleLogItemSchema, data).success).toBe(true);
+    });
+
+    it('should reject missing type', () => {
+      expect(v.safeParse(RoyaleBattleLogItemSchema, { battleTime: '...' }).success).toBe(false);
+    });
+  });
+
+  describe('RoyaleBattleLogResponseSchema', () => {
+    it('should validate battle log items', () => {
+      const data = [
+        { type: 'riverRacePvP', battleTime: '20240101T120000.000Z' }
+      ];
+      expect(v.safeParse(RoyaleBattleLogResponseSchema, data).success).toBe(true);
+    });
+
+    it('should reject non-array input', () => {
+      expect(v.safeParse(RoyaleBattleLogResponseSchema, {}).success).toBe(false);
+    });
+  });
+});
+
+describe('Worker Hub Schemas', () => {
+  describe('GasRawFeedSchema', () => {
+    it('should validate correct GAS feed', () => {
+      const data = {
+        timestamp: '2024-01-01T00:00:00Z',
+        source: 'GAS',
+        tables: {
+          roster: [['#TAG1', 'Player 1']],
+          headhunter: [['#RECRUIT1', 'Recruit 1']]
+        }
+      };
+      expect(v.safeParse(GasRawFeedSchema, data).success).toBe(true);
+    });
+
+    it('should reject missing tables', () => {
+      const data = { timestamp: '...', source: '...' };
+      expect(v.safeParse(GasRawFeedSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('HubErrorSchema', () => {
+    it('should validate valid HubError', () => {
+      const data = {
+        code: 'ERR_TEST',
+        message: 'A test error',
+        layer: 'WORKER_HUB'
+      };
+      const result = v.safeParse(HubErrorSchema, data);
+      expect(result.success).toBe(true);
+    });
+
+    it('should fallback to default layer', () => {
+      const data = { code: 'ERR', message: 'msg' };
+      const result = v.parse(HubErrorSchema, data);
+      expect(result.layer).toBe('WORKER_HUB');
+    });
+
+    it('should reject invalid layers', () => {
+      const data = { code: 'ERR', message: 'msg', layer: 'INVALID_LAYER' };
+      expect(v.safeParse(HubErrorSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('FsErrorSchema', () => {
+    it('should validate fs errors', () => {
+      expect(v.safeParse(FsErrorSchema, { code: 'ENOENT' }).success).toBe(true);
+      expect(v.safeParse(FsErrorSchema, { }).success).toBe(false);
+    });
+  });
+
+  describe('HubStateSchema', () => {
+    it('should validate full HubState', () => {
+      const data = {
+        metadata: {
+          timestamp: '2024-01-01T00:00:00Z',
+          status: 'healthy',
+          version: '1.0.0',
+          source: 'WORKER'
+        },
+        data: {
+          roster: [],
+          headhunter: []
+        }
+      };
+      expect(v.safeParse(HubStateSchema, data).success).toBe(true);
+    });
+
+    it('should enforce status picklist', () => {
+      const data = {
+        metadata: {
+          timestamp: '...',
+          status: 'invalid_status',
+          version: '1',
+          source: '...'
+        },
+        data: { roster: [], headhunter: [] }
+      };
+      expect(v.safeParse(HubStateSchema, data).success).toBe(false);
     });
   });
 });
