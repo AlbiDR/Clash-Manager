@@ -126,11 +126,19 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     queue.value = [];
   }
 
+  /**
+   * Clears all selections and resets the batch processing state.
+   *
+   * @remarks
+   * This ensures a clean slate by stopping any active blitz, emptying the
+   * selection/processing queues, and resetting the manual selection mode.
+   */
   function clearSelection() {
     stopBlitz();
     selectedIds.value = [];
     queue.value = [];
     forceSelectionMode.value = false;
+    currentIndex.value = 0;
   }
 
   /**

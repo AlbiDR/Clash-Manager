@@ -9,32 +9,18 @@ import MemberCard from "../components/MemberCard.vue";
 
 
 const {
-  // Data & Status
   data,
   isRefreshing,
   isShowcaseMode,
-
-  // List State
   visibleItems,
   expandedIds,
   selectedSet,
   isSelectionMode,
-
-  // Config
   sortOptions,
-
-  // Actions
-  refresh,
-  handleSearch,
-  updateSort,
   toggleExpand,
   toggleSelect,
-  clearSelection,
-  handleSelectAll,
-  handleSelectScore,
-  handleAction,
-  handleBlitz,
   layoutProps,
+  layoutEvents,
 } = useLeaderboard();
 
 </script>
@@ -43,17 +29,9 @@ const {
   <ConsoleLayout
     title="Roster"
     v-bind="layoutProps"
+    v-on="layoutEvents"
     :show-search="true"
     :sort-options="sortOptions"
-    @refresh="refresh"
-    @update:search="handleSearch"
-    @update:sort="updateSort"
-    @select-all="handleSelectAll"
-    @clear-selection="clearSelection"
-    @select-score="handleSelectScore"
-    @fab-action="handleAction"
-    @fab-blitz="handleBlitz"
-    @fab-dismiss="clearSelection"
   >
     <!-- Default Slot: The List -->
     <ConsoleList
