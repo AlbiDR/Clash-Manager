@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-23] PR #287: Consolidate Console Layout Events and Fix Batch Queue State Leaks
+**Commit**: `3765dd8756b2eca0047e73cd6fa8ed9f871d1295`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/287)
+
+### Description
+Consolidated console layout events into a single `layoutEvents` object in `useConsoleController.ts`, allowing for bulk event binding in `RosterView` and `HeadhunterView`. This refactor reduces structural rot and boilerplate in the view layer while maintaining the feature-specific behavior for dismiss actions. Additionally, hardened the `useBatchQueue` service by ensuring the `currentIndex` is reset when the selection is cleared, fixing a potential state leak during multi-mode operations.
+
+---
+*PR created automatically by Jules for task [8781379368693276991](https://jules.google.com/task/8781379368693276991) started by @AlbiDR*
+
+---
+
 ## [2026-03-23] PR #286: test(verify): extend validation boundary coverage for Worker Hub schemas
 **Commit**: `93ecb2fe6a2edfb7d7dd1ba6e6577c8fad6b02ab`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/286)
