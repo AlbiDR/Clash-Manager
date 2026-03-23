@@ -23,7 +23,7 @@ export interface HubState {
     source: string;
   };
   data: {
-    roster: any[];
-    headhunter: any[];
+    roster: unknown[][];
+    headhunter: unknown[][];
   };
 }
