@@ -1,5 +1,5 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
-module.exports = {
+const config = {
   forbidden: [
     // 1. Frontend Modular Rules
     {
@@ -40,8 +40,8 @@ module.exports = {
     }
   ],
   options: {
-    doNotFollow: { path: 'node_modules' },
-    tsPreCompilationDeps: true,
-    tsConfig: { fileName: 'tsconfig.json' }
+    doNotFollow: { path: 'node_modules' }
   }
 };
+
+export default config;
