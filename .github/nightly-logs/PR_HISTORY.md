@@ -1,6 +1,37 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-24] PR #295: fix: resolve recruit truncation and sync issues
+**Commit**: `67a26a78efdc748251f0828cb92152fbae91bf77`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/295)
+
+### Description
+This PR resolves the issue where the PWA only showed 31 recruits instead of 50. The root cause was a combination of fragile status/header row slicing in the data transport layer and over-aggressive filtering in the backend.
+
+### Key Changes:
+
+#### 1. Data Integrity (Worker Hub)
+- **Hardened Backend-GAS \`API_Raw.ts\`**: The raw feed now skips the Status Bar and Header rows by starting extraction from \`CONFIG.LAYOUT.DATA_START_ROW\`. It also explicitly provides field schemas for roster and headhunter data.
+- **Updated Backend-Worker**: Modified \`HubTypes.ts\`, \`schemas.ts\`, and \`PayloadKernel.ts\` to ingest and pass these schemas to the frontend.
+
+#### 2. System Synchronization
+- **Payload Refresh in \`Headhunter.ts\`**: Added a trigger to refresh the PWA's cached data immediately after a successful scout run. This ensures the frontend stays in sync with the spreadsheet state.
+- **Refined Filtering**: Removed the filter in \`Webapp_Controller.ts\` that was hiding recruits marked as "Invited", as these should still be visible in the pool until they are officially moved.
+
+#### 3. Frontend Robustness
+- **Schema-Aware Matrix Inflation**: Refactored \`GasClient.ts\` to use the provided schemas for mapping column indices. Removed the \`slice(1)\` logic which was incorrectly stripping data rows when the feed was already clean.
+- **Defensive API Calls**: Improved network resilience by adding safety checks for header access and mocking compatibility.
+
+### Verification:
+- Ran full test suite across all subsystems: **787 tests passed**.
+- Fixed mocking issues in \`Headhunter.spec.ts\` and \`gasClientRetry.spec.ts\` to align with the improved architecture.
+- Verified logic via code inspection and memory recording.
+
+---
+*PR created automatically by Jules for task [6435126735443103436](https://jules.google.com/task/6435126735443103436) started by @AlbiDR*
+
+---
+
 ## [2026-03-24] PR #294: docs(tsdoc): enhance GasClient architectural context and licensing
 **Commit**: `708e8b779b5e3336209140adabb0ec641187e31a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/294)
