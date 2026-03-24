@@ -20,3 +20,4 @@ Backend-Worker/src/controllers/WorkerHubController.ts
 Backend-Worker/src/schemas.ts
 Frontend-PWA/src/features/roster/components/MemberCard.vue
 Frontend-PWA/src/core/api/GasClient.ts
+Frontend-PWA/src/shared/ui/MomentumPill.vue
