@@ -69,6 +69,21 @@ describe("MemberCard.vue", () => {
           },
           Icon: true,
           MomentumPill: true,
+          TrophyBadge: {
+            name: "TrophyBadge",
+            template: '<div class="trophy-val">{{ value || 0 }}</div>',
+            props: ["value", "context"]
+          },
+          ScoreBadge: {
+            name: "ScoreBadge",
+            template: '<div class="stat-score">{{ Math.round(score || 0) }}</div>',
+            props: ["score", "context", "dt", "performanceRawScore"]
+          },
+          TenureBadge: {
+            name: "TenureBadge",
+            template: '<div class="badge tenure">{{ days }}d</div>',
+            props: ["days"]
+          },
           StatisticItem: {
             name: "StatisticItem",
             template: '<div class="statistic-item-stub"></div>',
@@ -105,7 +120,7 @@ describe("MemberCard.vue", () => {
   it("renders trophies and performance score", () => {
     const wrapper = mountMemberCard();
 
-    expect(wrapper.find(".trophy-val").text()).toBe("7,500");
+    expect(wrapper.find(".trophy-val").text()).toBe("7500");
     expect(wrapper.find(".stat-score").text()).toBe("85");
   });
 

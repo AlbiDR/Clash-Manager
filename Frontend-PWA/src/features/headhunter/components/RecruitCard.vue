@@ -2,10 +2,10 @@
 import {
   BaseCard,
   CardActions,
-  Icon,
+  TrophyBadge,
+  ScoreBadge,
   StatisticItem
 } from "@shared";
-import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed } from "vue";
 import type { Recruit } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
@@ -30,8 +30,6 @@ const emit = defineEmits<{
   "toggle-select": [];
 }>();
 
-const { getSafeBenchmark } = useBenchmarking();
-
 const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 </script>
 
@@ -54,22 +52,12 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
     <!-- SLOT: Name Block -->
     <template #identity-name>
       <span class="player-name">{{ recruit.n }}</span>
-      <div
-        class="trophy-meta hit-target"
-        v-tooltip="getSafeBenchmark('hh', 'trophies', recruit.t)"
-      >
-        <Icon name="trophy" size="12" />
-        <span class="trophy-val">{{ (recruit.t || 0).toLocaleString() }}</span>
-      </div>
+      <TrophyBadge :value="recruit.t" context="hh" />
     </template>
 
     <!-- SLOT: Score Section -->
     <template #score-section>
-      <span
-        class="stat-score"
-        v-tooltip="getSafeBenchmark('hh', 'score', recruit.potentialScore)"
-        >{{ Math.round(recruit.potentialScore || 0) }}</span
-      >
+      <ScoreBadge :score="recruit.potentialScore" context="hh" />
     </template>
 
     <!-- SLOT: Expanded Content -->

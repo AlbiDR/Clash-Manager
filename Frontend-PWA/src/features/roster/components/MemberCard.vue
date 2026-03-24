@@ -2,11 +2,11 @@
 import {
   BaseCard,
   CardActions,
-  Icon,
-  MomentumPill,
+  TrophyBadge,
+  ScoreBadge,
+  TenureBadge,
   StatisticItem
 } from "@shared";
-import { useBenchmarking } from "@core/services/useBenchmarking";
 import { computed, defineAsyncComponent } from "vue";
 import type { LeaderboardMember } from "@core/types";
 import {
@@ -39,8 +39,6 @@ const emit = defineEmits<{
   "toggle-select": [];
 }>();
 
-const { getSafeBenchmark } = useBenchmarking();
-
 // Formatters
 const roleInfo = (role: string) => formatRole(role);
 </script>
@@ -59,12 +57,7 @@ const roleInfo = (role: string) => formatRole(role);
   >
     <!-- SLOT: Meta Stack -->
     <template #identity-meta>
-      <div
-        class="badge tenure hit-target"
-        v-tooltip="getSafeBenchmark('lb', 'tenure', member.d.days)"
-      >
-        {{ member.d.days }}d
-      </div>
+      <TenureBadge :days="member.d.days" />
       <div class="badge role" :class="roleInfo(member.d.role).class">
         {{ roleInfo(member.d.role).label }}
       </div>
@@ -73,25 +66,16 @@ const roleInfo = (role: string) => formatRole(role);
     <!-- SLOT: Name Block -->
     <template #identity-name>
       <span class="player-name">{{ member.n }}</span>
-      <div
-        class="trophy-meta hit-target"
-        v-tooltip="getSafeBenchmark('lb', 'trophies', member.t)"
-      >
-        <Icon name="trophy" size="12" />
-        <span class="trophy-val">{{ (member.t || 0).toLocaleString() }}</span>
-      </div>
+      <TrophyBadge :value="member.t" context="lb" />
     </template>
 
     <!-- SLOT: Score Section -->
     <template #score-section>
-      <span
-        class="stat-score"
-        v-tooltip="getSafeBenchmark('lb', 'score', member.performanceScore)"
-        >{{ Math.round(member.performanceScore || 0) }}</span
-      >
-      <MomentumPill
+      <ScoreBadge
+        :score="member.performanceScore"
         :dt="member.dt"
         :performance-raw-score="member.performanceRawScore"
+        context="lb"
       />
     </template>
 

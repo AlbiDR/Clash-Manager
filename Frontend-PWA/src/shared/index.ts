@@ -4,6 +4,8 @@ export { default as BaseCard } from "./ui/BaseCard.vue";
 export { default as BaseCardSkeleton } from "./ui/BaseCardSkeleton.vue";
 export { default as StatusPill } from "./ui/StatusPill.vue";
 export { default as MomentumPill } from "./ui/MomentumPill.vue";
+export { default as TrophyBadge } from "./ui/TrophyBadge.vue";
+export { default as ScoreBadge } from "./ui/ScoreBadge.vue";
 export { default as StatisticItem } from "./ui/StatisticItem.vue";
 export { default as ErrorState } from "./ui/ErrorState.vue";
 export { default as EmptyState } from "./ui/EmptyState.vue";
