@@ -40,6 +40,7 @@ export class HubPersistenceService {
    * @param state The structured HubState payload.
    */
   static async saveState(state: HubState): Promise<void> {
+    await this.init();
     const tempFilePath = path.join(this.FILE_DIR, `hub_state_${Date.now()}_${Math.random().toString(36).substring(7)}.tmp`);
     const rawData = JSON.stringify(state);
     
