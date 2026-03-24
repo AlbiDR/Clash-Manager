@@ -266,6 +266,11 @@ const Headhunter: HeadhunterContract = {
       const hygieneSummary = S.View.enforceGlobalTabHygiene(ss);
       HeadhunterView.render(safeSheet(CONFIG.SHEETS.HH), finalPool, strategy.floor);
 
+      // 7.5 PAYLOAD REFRESH: Immediately update the PWA's cached data
+      if (typeof Registry !== "undefined" && Registry.Services && Registry.Services.WebappController) {
+        try { Registry.Services.WebappController.persistWebAppDataPayload(); } catch (e) { console.warn("Deferred refresh failed"); }
+      }
+
       S.Reporting.logReport(`[8/8] RENDER: Visual Sync`, [
         `HYGIENE: ${hygieneSummary}`,
         `DISPLAY: ${finalPool.length} candidates updated in sheet`
