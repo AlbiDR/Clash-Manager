@@ -24,3 +24,7 @@ Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
 Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
 Frontend-PWA/src/core/services/useBatchQueue.ts
+Frontend-PWA/src/shared/ui/TrophyBadge.vue
+Frontend-PWA/src/shared/ui/ScoreBadge.vue
+Frontend-PWA/src/features/roster/components/MemberCard.vue
+Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
