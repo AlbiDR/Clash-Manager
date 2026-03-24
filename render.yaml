@@ -14,4 +14,6 @@ services:
         value: "10000"
       - key: NODE_VERSION
         value: "24"
+      - key: PNPM_VERSION
+        value: "10.32.1"
 
