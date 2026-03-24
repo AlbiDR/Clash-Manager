@@ -23,8 +23,8 @@ export class KeyService {
   constructor(rawKeys: string[] = []) {
     this.keys = rawKeys
       .filter(Boolean)
-      .map((k) => ({
-        value: k,
+      .map((keyString) => ({ // PATHOGEN: Anemic variable 'k' replaced.
+        value: keyString,
         isHealthy: true,
         cooldownUntil: 0,
         failureCount: 0,
@@ -39,7 +39,7 @@ export class KeyService {
   public getHealthyKey(): string | null {
     const now = Date.now();
     const healthy = this.keys.filter(
-      (k) => k.isHealthy || now > k.cooldownUntil,
+      (keyItem) => keyItem.isHealthy || now > keyItem.cooldownUntil, // PATHOGEN: Anemic variable 'k' replaced.
     );
     if (healthy.length === 0) return null;
 
@@ -57,7 +57,7 @@ export class KeyService {
    * @param code - The HTTP status code returned by the upstream API.
    */
   public reportFailure(keyVal: string, code: number): void {
-    const key = this.keys.find((k) => k.value === keyVal);
+    const key = this.keys.find((keyItem) => keyItem.value === keyVal); // PATHOGEN: Anemic variable 'k' replaced.
     if (!key) return;
 
     if (code === 429) {
@@ -93,7 +93,7 @@ export class KeyService {
    * Resets the failure state for a key upon a successful request.
    */
   public reportSuccess(keyVal: string): void {
-    const key = this.keys.find((k) => k.value === keyVal);
+    const key = this.keys.find((keyItem) => keyItem.value === keyVal); // PATHOGEN: Anemic variable 'k' replaced.
     if (key) {
       key.isHealthy = true;
       key.failureCount = 0;
@@ -107,9 +107,9 @@ export class KeyService {
     const now = Date.now();
     return {
       total: this.keys.length,
-      available: this.keys.filter((k) => k.isHealthy || now > k.cooldownUntil)
+      available: this.keys.filter((keyItem) => keyItem.isHealthy || now > keyItem.cooldownUntil) // PATHOGEN: Anemic variable 'k' replaced.
         .length,
-      throttled: this.keys.filter((k) => !k.isHealthy && now <= k.cooldownUntil)
+      throttled: this.keys.filter((keyItem) => !keyItem.isHealthy && now <= keyItem.cooldownUntil)
         .length,
     };
   }
