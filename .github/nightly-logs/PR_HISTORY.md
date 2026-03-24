@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-24] PR #293: docs(readme): synchronize and deepen Frontend-PWA Technical Specifications
+**Commit**: `c6eacf3326d24f54de0be47aeddcee7ac259b430`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/293)
+
+### Description
+Synchronized and deepened the `Frontend-PWA/README.md` to reflect the current implementation state. Updated versioning, documented the `useConsoleController` orchestration service, and refined the technical description of the `GasClient` transport layer. Adhered to the procedural constraint of one README update per PR to ensure pipeline stability.
+
+---
+*PR created automatically by Jules for task [16830021030043571548](https://jules.google.com/task/16830021030043571548) started by @AlbiDR*
+
+---
+
 ## [2026-03-24] PR #292: test(verify): expand GasClient coverage and Worker Hub fallbacks
 **Commit**: `dff6d1c33837241f0a25c2a156548286b94d2d56`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/292)
