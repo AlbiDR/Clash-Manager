@@ -1,21 +1,30 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
  * ============================================================================
- * MODULE: API CLIENT (THE BRIDGE)
+ * [MODULE] API CLIENT (THE BRIDGE)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: The primary communication layer between the PWA, the Google
- * Apps Script (GAS) backend, and the high-performance Worker subsystem.
+ * The primary communication layer between the PWA, the Google Apps Script
+ * (GAS) backend, and the high-performance Worker subsystem.
  *
- * ARCHITECTURE:
- *  - Hybrid Transport: Combines a POST-only GAS protocol for persistent
- *    storage with direct JSON/REST communication for Worker-side operations.
- *  - Matrix Inflation: GAS payloads are transmitted as optimized arrays
- *    of arrays to minimize JSON overhead before being re-hydrated.
- *  - Offline Resiliency: Integrated with IndexedDB and a background sync
- *    queue for unreliable network environments.
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  *
- * PERFORMANCE:
- *  - Uses 'text/plain' for GAS to bypass CORS preflight (OPTIONS) overhead.
- *  - Implements exponential backoff and request deduplication.
+ * **Transport Strategy:**
+ * - **Hybrid Transport:** Combines a POST-only GAS protocol for persistent
+ *   storage with direct JSON/REST communication for Worker-side operations.
+ * - **Matrix Inflation:** GAS payloads are transmitted as optimized arrays
+ *   of arrays to minimize JSON overhead before being re-hydrated.
+ * - **Offline Resiliency:** Integrated with IndexedDB and a background sync
+ *   queue for unreliable network environments.
+ *
+ * **Performance Optimization:**
+ * - Uses 'text/plain' for GAS to bypass CORS preflight (OPTIONS) overhead.
+ * - Implements exponential backoff and request deduplication.
  * ============================================================================
  */
 import { idb } from "../services/StorageService";
@@ -206,7 +215,8 @@ const SafeTimestampSchema = v.pipe(
 export function mapLbRow(rowSnapshot: unknown[], schemaMap: Record<string, number>): LeaderboardMember | null {
   if (!rowSnapshot || !Array.isArray(rowSnapshot)) return null;
 
-  // Optimized field access (with fallbacks for legacy keys 's' and 'r')
+  // [PERF] Optimized field access (with fallbacks for legacy keys 's' and 'r')
+  // Rationale: Avoids breaking the UI if the backend is rolled back to a legacy schema.
   const perfScore = rowSnapshot[schemaMap["performanceScore"]] ?? rowSnapshot[schemaMap["s"]];
   const perfRaw = rowSnapshot[schemaMap["performanceRawScore"]] ?? rowSnapshot[schemaMap["r"]];
 
@@ -282,9 +292,11 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   const typedData = parsedData as Record<string, unknown>;
 
-  //  VALIDATION BOUNDARY: Enforce strict schema validation for all incoming data
+  // [GUARD] VALIDATION BOUNDARY: Target III - Data Integrity
+  // Enforce strict schema validation for all incoming data to prevent "any Plague"
+  // from propagating into the core application state.
   if (typedData.format !== "matrix") {
-    //  THREAT: Unvalidated object payload could crash the Clean Stack.
+    // THREAT: Unvalidated object payload could crash the Clean Stack.
     const validated = v.parse(BaseWebAppDataSchema, typedData);
     return {
       ...validated,
@@ -292,13 +304,14 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     };
   }
 
-  // Matrix format requires transformation after validation
+  // MATRIX TRANSFORMATION: Re-hydrating compressed arrays into structured objects.
+  // Rationale: Saves ~70% in JSON payload size by not repeating keys per record.
   const source = v.parse(WebAppDataSchema, parsedData);
 
   const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
   const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
   
-  //  SCHEMA FALLBACK: Use provided schema or default to standard V10 structure
+  // SCHEMA FALLBACK: Ensures forward compatibility with older GAS deployments (V10 standard).
   let lbSchemaArr = source.schema?.lb;
   let hhSchemaArr = source.schema?.hh;
 
@@ -372,8 +385,9 @@ async function fetchWithRetry(
     }
 
     if (retries > 0) {
-      //  JITTERED EXPONENTIAL BACKOFF: Helps mitigate transient network congestion
-      // and prevents "thundering herd" issues during server recovery.
+      // JITTERED EXPONENTIAL BACKOFF: Target IV - Resilience
+      // Helps mitigate transient network congestion and prevents "thundering herd"
+      // issues during server recovery or GAS quota reset periods.
       const jitter = Math.random() * 800;
       await new Promise((r) => setTimeout(r, backoff + jitter));
       return fetchWithRetry(url, options, retries - 1, backoff * 1.8);
@@ -407,6 +421,9 @@ async function gasRequest<T>(
 ): Promise<T> {
   const requestKey = JSON.stringify({ action, payload });
 
+  // [PERF] Request Deduplication: Singleton Pattern
+  // Rationale: Prevents redundant network traffic if multiple components trigger the
+  // same action within the same event loop tick.
   if (pendingRequests.has(requestKey) && !options?.force) {
     return pendingRequests.get(requestKey)!;
   }
@@ -455,7 +472,7 @@ async function _executeGasRequest<T>(
       throw new Error("Empty Response from Server");
     }
 
-    //  AUTH/CRASH DETECTION:
+    // [GUARD] AUTH/CRASH DETECTION: Target IV - Resilience
     // Google Apps Script returns HTML (starting with '<') instead of JSON
     // when a session expires, permissions are revoked, or the script
     // crashes at the global scope. Catching this early prevents 'Unexpected
@@ -522,20 +539,34 @@ async function enqueueOfflineRequest(request: Record<string, unknown>) {
   await idb.set("offline_queue", queue);
 }
 
+/**
+ * Loads the WebAppData from the persistent browser cache.
+ */
 export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
+/**
+ * Persists the WebAppData to the browser's IndexedDB.
+ */
 export async function saveCache(data: WebAppData): Promise<void> {
   return idb.set(CACHE_KEY_MAIN, data);
 }
 
 /**
- * High-level helper to refresh application data from the remote backend.
+ * Orchestrates high-integrity data retrieval from the remote backend.
  *
- * @param options - Object containing AbortSignal and force refresh flag.
- * @returns The fully inflated and validated WebAppData.
- * @sideeffects Updates the IndexedDB 'CLAN_MANAGER_DATA_V7' cache.
+ * @remarks
+ * Implements a "Circuit Breaker" pattern (Target IV - Resilience):
+ * 1. WORKER HUB: Attempts to fetch fresh data from the Node Worker first.
+ *    - Deadline: 3000ms. If the worker stalls, the request is aborted.
+ *    - Rationale: Workers offer sub-100ms response times compared to GAS.
+ * 2. GAS FALLBACK: If the worker is offline, times out, or returns invalid data,
+ *    the client falls back to the authoritative GAS backend.
+ *
+ * @param options - AbortSignal for UI cancellation and force refresh flag.
+ * @returns Fully re-hydrated and validated WebAppData.
+ * @sideeffects Persists the result to IndexedDB on success.
  */
 export async function fetchRemote(options?: {
   signal?: AbortSignal;
@@ -545,7 +576,7 @@ export async function fetchRemote(options?: {
 
   if (useWorkerHub) {
     try {
-      // 1. Try to fetch from Worker Hub
+      // PHASE 1: Try Worker Hub (Optimistic)
       const workerUrl = getWorkerUrl() + "/hub/state";
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s deadline
@@ -568,7 +599,8 @@ export async function fetchRemote(options?: {
       const rosterRaw = hubState?.data?.roster || [];
       const hhRaw = hubState?.data?.headhunter || [];
 
-      // Transform into GAS Matrix format for `inflatePayload`
+      // MATRIX RE-HYDRATION: Transform Hub matrix format into GAS format
+      // Rationale: Reusing `inflatePayload` ensures a single validation boundary (Target III).
       const timestamp = hubState?.metadata?.timestamp 
         ? new Date(hubState.metadata.timestamp).getTime() 
         : Date.now();
@@ -587,7 +619,7 @@ export async function fetchRemote(options?: {
 
       const inflated = await inflatePayload(mappedData);
       
-      // DECORATION: Attach Hub Observability metadata
+      // OBSERVABILITY: Label the data source for system diagnostics
       Object.assign(inflated, { 
         dataSource: "WORKER",
         hubTimestamp: timestamp 
@@ -599,11 +631,12 @@ export async function fetchRemote(options?: {
       if (e.name === "AbortError" && options?.signal?.aborted) {
         throw e; // Honor explicit UI cancellation without triggering GAS fallback
       }
+      // RECOVERY: Log failure and continue to legacy GAS fetch
       console.warn("[WorkerHub] Fetch failed, falling back to GAS:", e);
-      // Fallthrough to GAS legacy fetch
     }
   }
 
+  // PHASE 2: Authority Fallback (GAS)
   const action = options?.force ? "refresh" : "getwebappdata";
   const data = await gasRequest<unknown>(action, undefined, {
     signal: options?.signal,
@@ -613,16 +646,23 @@ export async function fetchRemote(options?: {
 
   const inflated = await inflatePayload(data);
   
-  // DECORATION: Attach fallback source info
   Object.assign(inflated, { dataSource: "GAS" });
   
   idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
   return inflated;
 }
+
+/**
+ * Performs a simple connectivity check against the GAS backend.
+ */
 export async function ping(options?: GasRequestOptions): Promise<PingResponse> {
   return gasRequest<PingResponse>("ping", undefined, options);
 }
 
+/**
+ * Fetches a comprehensive player profile, re-hydrating it into a unified Domain Model.
+ * Enforces Target B [1] validation boundary using ProfileInputSchema.
+ */
 export async function getPlayerProfile(
   tag: string,
 ): Promise<v.InferOutput<typeof ProfileInputSchema>> {
@@ -630,24 +670,34 @@ export async function getPlayerProfile(
   return v.parse(ProfileInputSchema, profile);
 }
 
+/**
+ * Dispatches a batch dismissal request to the GAS backend.
+ *
+ * @remarks
+ * Implements a "Hybrid Compatibility" payload: sends both legacy tag IDs
+ * and modern score-aware objects to ensure safe transitions between deployments.
+ */
 export async function dismissRecruits(
   items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
   return gasRequest<ApiResponse<DismissResponse>>("dismissRecruits", { 
-    // COMPATIBILITY: We send both the new 'items' list (score-aware)
-    // and the legacy 'ids' list (tags only) to ensure we don't break
-    // if the backend is on a versioned deployment that hasn't updated yet.
     items,
     ids: items.map(i => i.id)
   });
 }
 
+/**
+ * Reverts a previous dismissal for the specified recruit tags.
+ */
 export async function undismissRecruits(
   ids: string[],
 ): Promise<ApiResponse<DismissResponse>> {
   return gasRequest<ApiResponse<DismissResponse>>("undismissRecruits", { ids });
 }
 
+/**
+ * Signals the GAS backend to trigger an immediate external update or key audit.
+ */
 export async function triggerBackendUpdate(
   target?: string,
 ): Promise<ApiResponse<{ success: boolean; message: string }>> {
