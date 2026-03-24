@@ -1,6 +1,6 @@
 # Clash Manager --- Client Core (PWA)
 
-[![Client](https://img.shields.io/badge/Client-v13.1.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Client](https://img.shields.io/badge/Client-v13.3.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Command Center**. A high-performance, offline-first Vue 3.5 application that serves as the primary interface for clan management.
 
@@ -54,7 +54,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
 | **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
-| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker with a Google Apps Script fallback |
+| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker with a Google Apps Script fallback. Implements 'text/plain' requests to bypass CORS preflight and 4-tier jittered exponential backoff. |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
 | **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
@@ -68,20 +68,26 @@ The application kernel (@core) manages complex system-level behaviors through sp
 
 ### 1. Unified State & Sync (`useClashDataStore`)
 Implements a **Stale-While-Revalidate** strategy for clan datasets.
-- **Validation Boundary**: All inbound payloads from the GAS backend are validated against `WebAppDataSchema` before store hydration.
+- **Validation Boundary**: All inbound payloads are validated against `WebAppDataSchema` before store hydration to prevent malformed data from entering the application state.
 - **Background Sync**: Orchestrates periodic data refreshes with `wakeLock` protection to prevent mobile sleep during heavy operations.
 
-### 2. UI Coordination (`useUiCoordinator`)
+### 2. List Orchestration (`useConsoleController`)
+The primary behavioral engine for high-density list views (Roster, Headhunter).
+- **Unified Interface**: Coordinates searching, sorting, pagination (`useProgressiveList`), and deep-linking (`useDeepLinkHandler`) through a single reactive interface.
+- **Event Centralization**: Provides `layoutProps` and `layoutEvents` for direct, boilerplate-free binding to `ConsoleLayout` components.
+- **Status Resolver**: Implements a 6-tier priority hierarchy to resolve the most critical system status (Online/Offline/Syncing/Error) for the user.
+
+### 3. UI Coordination (`useUiCoordinator`)
 The master arbiter of layout spacing and element visibility.
 - **Occlusion Prevention**: Dynamically calculates bottom offsets for the `FabIsland` and `ToastContainer` to ensure interactive elements never overlap.
 - **Singleton Control**: Manages a global FAB state, allowing different feature views to register actions and labels in a unified UI layer.
 
-### 3. Redundant Persistence (`useAppSettings`)
+### 4. Redundant Persistence (`useAppSettings`)
 A multi-tier strategy for application configuration and feature flags.
 - **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access).
 - **Tab Synchronization**: Listens for `storage` events to ensure configuration remains consistent across multiple open browser tabs.
 
-### 4. Metadata Centralization (`useSystemInfo`)
+### 5. Metadata Centralization (`useSystemInfo`)
 Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic).
 
 ---
