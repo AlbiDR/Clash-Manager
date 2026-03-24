@@ -166,6 +166,17 @@ app.use(express.json({ limit: "50mb" }));
 // ============================================================================
 
 /**
+ * [GUARD] ERROR MESSAGE EXTRACTION
+ *
+ * Safely extracts an error message from an unknown error object.
+ * THREAT: Unchecked property access on error objects leading to silent runtime crashes.
+ */
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+/**
  * Fetch with timeout protection
  */
 async function timeoutFetch(
@@ -653,9 +664,11 @@ app.post(
 
       const auditResults = await Promise.all(auditTasks);
       response.json({ results: auditResults });
-    } catch (auditGlobalError) {
+    } catch (err: unknown) {
+      // THREAT: Unhandled audit failures leading to worker instability.
+      // Rationale: Strict error capturing prevents untyped exceptions from crashing the route handler.
       response.status(500).json({
-        error: auditGlobalError instanceof Error ? auditGlobalError.message : "unknown",
+        error: getErrorMessage(err),
       });
     }
   },
@@ -742,10 +755,12 @@ app.post(
       }
 
       response.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
-    } catch (scanError) {
-      console.error("Failed /public/scan", scanError);
+    } catch (err: unknown) {
+      // THREAT: Silent scan failures or worker crashes on malformed tournament data.
+      // Rationale: Ensuring all tournament-level exceptions are caught and classified prevents PWA data starvation.
+      console.error("Failed /public/scan", err);
       response.status(500).json({
-        error: scanError instanceof Error ? scanError.message : "unknown",
+        error: getErrorMessage(err),
       });
     }
   },
@@ -765,8 +780,8 @@ app.post(
       return;
     }
 
-    const sub = result.output;
-    subscriptions.add(JSON.stringify(sub));
+    const subscriptionPayload = result.output; // PATHOGEN: Anemic variable 'sub' replaced with domain-descriptive name.
+    subscriptions.add(JSON.stringify(subscriptionPayload));
     console.log(` New Push Subscription. Total: ${subscriptions.size}`);
     response.json({ success: true, count: subscriptions.size });
   },
@@ -861,10 +876,12 @@ app.post(
             _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: debug },
             _metadata: metadata
         });
-    } catch (internalScanError) {
-      console.error("Failed /scan", internalScanError);
+    } catch (err: unknown) {
+      // THREAT: Unauthorized data access or worker crash on internal scan.
+      // Rationale: High-precision scans require a stable failure boundary to prevent GAS orchestrator timeouts.
+      console.error("Failed /scan", err);
       response.status(500).json({
-        error: internalScanError instanceof Error ? internalScanError.message : "unknown",
+        error: getErrorMessage(err),
       });
     }
   },
@@ -985,10 +1002,12 @@ app.post(
         race: raceData,
         history: warHistory,
       });
-    } catch (clanFullError) {
-      console.error("Failed /clan/full", clanFullError);
+    } catch (err: unknown) {
+      // THREAT: Corrupt clan snapshots polluting GAS state.
+      // Rationale: Enforcing a clean error boundary for bulk fetches ensures the GAS backend receives a valid JSON error response.
+      console.error("Failed /clan/full", err);
       response.status(500).json({
-        error: clanFullError instanceof Error ? clanFullError.message : "unknown",
+        error: getErrorMessage(err),
       });
     }
   },
@@ -1105,10 +1124,12 @@ app.post(
       }
 
       response.json({ data: transformed });
-    } catch (clanApiError) {
-      console.error("Failed /clan/api", clanApiError);
+    } catch (err: unknown) {
+      // THREAT: Unhandled upstream errors in clan member/warlog fetching.
+      // Rationale: Consistent error extraction prevents the "any Plague" from leaking into the PWA.
+      console.error("Failed /clan/api", err);
       response.status(500).json({
-        error: clanApiError instanceof Error ? clanApiError.message : "unknown",
+        error: getErrorMessage(err),
       });
     }
   },
@@ -1144,10 +1165,12 @@ app.post(
       );
 
       response.json({ results: batchResults });
-    } catch (fetchError) {
-      console.error("Failed /fetch", fetchError);
+    } catch (err: unknown) {
+      // THREAT: Resource exhaustion or worker crash on arbitrary fetch.
+      // Rationale: Catching all fetch-related exceptions prevents the worker process from entering a zombie state.
+      console.error("Failed /fetch", err);
       response.status(500).json({
-        error: fetchError instanceof Error ? fetchError.message : "unknown",
+        error: getErrorMessage(err),
       });
     }
   },

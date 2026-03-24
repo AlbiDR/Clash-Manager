@@ -27,8 +27,10 @@ export class HubPersistenceService {
   static async init(): Promise<void> {
     try {
       await fs.mkdir(this.FILE_DIR, { recursive: true });
-    } catch (e) {
-      console.error("[HubPersistence] Failed to initialize directory:", e);
+    } catch (err: unknown) { // PATHOGEN: Anemic variable 'e' replaced with 'err: unknown'.
+      // THREAT: Failure to initialize persistence directory leading to data loss on restart.
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("[HubPersistence] Failed to initialize directory:", errorMsg);
     }
   }
 

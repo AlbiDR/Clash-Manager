@@ -30,10 +30,11 @@ export class WorkerHubController {
     console.log("[WorkerHubController] Starting 5m Sync Daemon...");
     
     // Initial fetch
-    this.executeSync(gasBaseUrl, secret).catch(e => console.error("[WorkerHubDaemon] Initial sync failed:", e));
+    // PATHOGEN: Anemic variable 'e' replaced with domain-descriptive name.
+    this.executeSync(gasBaseUrl, secret).catch(syncError => console.error("[WorkerHubDaemon] Initial sync failed:", syncError));
 
     this.timerId = setInterval(() => {
-      this.executeSync(gasBaseUrl, secret).catch(e => console.error("[WorkerHubDaemon] Interval sync failed:", e));
+      this.executeSync(gasBaseUrl, secret).catch(syncError => console.error("[WorkerHubDaemon] Interval sync failed:", syncError));
     }, this.SYNC_INTERVAL_MS);
   }
 
