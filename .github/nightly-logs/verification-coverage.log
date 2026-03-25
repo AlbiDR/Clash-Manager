@@ -22,3 +22,4 @@ Frontend-PWA/src/features/roster/components/MemberCard.vue
 Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/shared/ui/MomentumPill.vue
 Frontend-PWA/src/shared/ui/TrophyBadge.vue
+Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
