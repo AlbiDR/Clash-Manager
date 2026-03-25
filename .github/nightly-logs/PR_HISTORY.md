@@ -1,6 +1,27 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-25] PR #306: fix: resolve worker data integrity and sync drift
+**Commit**: `378951b465935e6be8265a31421531273b7f3a42`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/306)
+
+### Description
+This PR addresses the issue of incomplete data lists in the PWA by resolving a row-offset drift between Google Apps Script (GAS) and the Render Worker, and implementing proactive cache invalidation.
+
+Core Changes:
+1. **Hardened GAS Raw Feed (`API_Raw.ts`)**: Modified to explicitly skip the "Status Row" (Row 1) and return a structured JSON object containing separate `headers` (Row 2) and `rows` (Row 3+).
+2. **Aligned Worker Hub**: Updated `GasRawFeedSchema` and `PayloadKernel.ts` to process the new structured format. Verified with 48 passing unit tests.
+3. **Implemented Proactive Sync**: Added `triggerWorkerSync()` to `Network.ts` (GAS) and integrated it into `Webapp_Controller.ts` and `Headhunter.ts`. This ensures the Worker's cache is invalidated and refreshed immediately after dismissals, undismissals, or scout runs.
+4. **Aligned PWA Client**: Updated `GasClient.ts` to correctly map the structured tables from the Worker, ensuring "Matrix Inflation" uses the authoritative schema.
+5. **Updated Test Suites**: Refined `GasClient.spec.ts` and Worker tests to reflect the architectural changes and verify the new data flow.
+
+These changes ensure 1:1 data parity between the spreadsheet backend and the PWA frontend.
+
+---
+*PR created automatically by Jules for task [8765993303021682200](https://jules.google.com/task/8765993303021682200) started by @AlbiDR*
+
+---
+
 ## [2026-03-25] PR #305: chore(deps): bump express from 4.18.2 to 4.22.1
 **Commit**: `d63b5f8c4d9dd89edf86ed75bc82f36b4ff9cb5c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/305)
