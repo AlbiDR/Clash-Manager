@@ -4,6 +4,8 @@
 import { HubPersistenceService } from "../services/HubPersistenceService.js";
 import { PayloadKernel } from "../services/PayloadKernel.js";
 import { HubState, HubError } from "../types/HubTypes.js";
+import { HubErrorSchema } from "../schemas.js";
+import * as v from "valibot";
 
 /**
  * ============================================================================
@@ -30,7 +32,6 @@ export class WorkerHubController {
     console.log("[WorkerHubController] Starting 5m Sync Daemon...");
     
     // Initial fetch
-    // PATHOGEN: Anemic variable 'e' replaced with domain-descriptive name.
     this.executeSync(gasBaseUrl, secret).catch(syncError => console.error("[WorkerHubDaemon] Initial sync failed:", syncError));
 
     this.timerId = setInterval(() => {
@@ -72,8 +73,18 @@ export class WorkerHubController {
 
       const rawJson: unknown = await response.json();
       
-      if (rawJson && typeof rawJson === "object" && "error" in rawJson) {
-         throw new Error(`Upstream GAS API Error: ${String(rawJson.error)}`);
+      // [GUARD] UPSTREAM ERROR NORMALIZATION: Target B [1] Validation Boundary
+      // Rationale: GAS returns structured JSON errors even on success-adjacent paths.
+      // We must explicitly check and transform these into HubError objects.
+      // [OCD] Standardized validation avoids "any" Plague pathogens.
+      const hubErrorValidation = v.safeParse(v.object({ error: v.string() }), rawJson);
+      if (hubErrorValidation.success) {
+         const hubErr: HubError = {
+            code: "GAS_SYNC_REJECTED",
+            message: hubErrorValidation.output.error,
+            layer: "GAS_API_RAW"
+         };
+         throw hubErr;
       }
 
       // 1. Transform Raw Data -> Structured HubState
@@ -88,10 +99,17 @@ export class WorkerHubController {
       console.log(`[WorkerHubController] Sync complete. V: ${newState.metadata.version}`);
       return true;
 
-    } catch (err: unknown) {
-      // THREAT: Silent sync failure if error is swallowed.
-      // Target B [1]: Robust error propagation for Hub synchronization.
-      console.error("[WorkerHubController] Sync execution failure:", err instanceof Error ? err.message : String(err));
+    } catch (syncError: unknown) {
+      // THREAT: Silent sync failure if error is swallowed or generic 'any' is used.
+      // Target B [1]: Robust error propagation for Hub synchronization using v.safeParse.
+      const validation = v.safeParse(HubErrorSchema, syncError);
+
+      if (validation.success) {
+         console.error(`[WorkerHubController] Sync execution failure (${validation.output.layer}):`, validation.output.message);
+      } else {
+         const message = syncError instanceof Error ? syncError.message : String(syncError);
+         console.error("[WorkerHubController] Sync execution failure (UNCLASSIFIED):", message);
+      }
       return false;
     } finally {
       this.isSyncing = false;

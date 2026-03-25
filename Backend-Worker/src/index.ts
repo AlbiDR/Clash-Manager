@@ -171,9 +171,15 @@ app.use(express.json({ limit: "50mb" }));
  * Safely extracts an error message from an unknown error object.
  * THREAT: Unchecked property access on error objects leading to silent runtime crashes.
  */
-function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
+function getErrorMessage(untypedError: unknown): string {
+  // [GUARD] Target B [1]: Robust extraction of Hub-specific errors using Valibot.
+  // Rationale: Structured errors from the Hub subsystem must be prioritized
+  // over generic Error objects to preserve diagnostic layers.
+  const hubValidation = v.safeParse(HubErrorSchema, untypedError);
+  if (hubValidation.success) return hubValidation.output.message;
+
+  if (untypedError instanceof Error) return untypedError.message;
+  return String(untypedError);
 }
 
 /**
@@ -400,7 +406,7 @@ export async function processBatch<T = unknown>(
         } catch (scoringError) {
           results[currentBatchIndex] = {
             code: 500,
-            content: `Scoring fetch failed: ${scoringError instanceof Error ? scoringError.message : "unknown"}`,
+            content: `Scoring fetch failed: ${getErrorMessage(scoringError)}`,
           };
         }
       } else {
@@ -533,7 +539,7 @@ export async function processScanBatch(
           }
         }
       } catch (scanBatchError) {
-        console.warn(`[Worker] Scan failed for tournament ${tag}: ${scanBatchError instanceof Error ? scanBatchError.message : "unknown"}`);
+        console.warn(`[Worker] Scan failed for tournament ${tag}: ${getErrorMessage(scanBatchError)}`);
       }
     }
   }
@@ -657,18 +663,18 @@ app.post(
           return {
             key: apiKey,
             status: 500,
-            error: auditError instanceof Error ? auditError.message : "unknown",
+            error: getErrorMessage(auditError),
           };
         }
       });
 
       const auditResults = await Promise.all(auditTasks);
       response.json({ results: auditResults });
-    } catch (err: unknown) {
+    } catch (untypedError: unknown) {
       // THREAT: Unhandled audit failures leading to worker instability.
       // Rationale: Strict error capturing prevents untyped exceptions from crashing the route handler.
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(untypedError),
       });
     }
   },
@@ -755,12 +761,12 @@ app.post(
       }
 
       response.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
-    } catch (err: unknown) {
+    } catch (untypedError: unknown) {
       // THREAT: Silent scan failures or worker crashes on malformed tournament data.
       // Rationale: Ensuring all tournament-level exceptions are caught and classified prevents PWA data starvation.
-      console.error("Failed /public/scan", err);
+      console.error("Failed /public/scan", untypedError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(untypedError),
       });
     }
   },
@@ -876,12 +882,12 @@ app.post(
             _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: debug },
             _metadata: metadata
         });
-    } catch (err: unknown) {
+    } catch (untypedError: unknown) {
       // THREAT: Unauthorized data access or worker crash on internal scan.
       // Rationale: High-precision scans require a stable failure boundary to prevent GAS orchestrator timeouts.
-      console.error("Failed /scan", err);
+      console.error("Failed /scan", untypedError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(untypedError),
       });
     }
   },
@@ -1002,12 +1008,12 @@ app.post(
         race: raceData,
         history: warHistory,
       });
-    } catch (err: unknown) {
+    } catch (untypedError: unknown) {
       // THREAT: Corrupt clan snapshots polluting GAS state.
       // Rationale: Enforcing a clean error boundary for bulk fetches ensures the GAS backend receives a valid JSON error response.
-      console.error("Failed /clan/full", err);
+      console.error("Failed /clan/full", untypedError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(untypedError),
       });
     }
   },
@@ -1124,12 +1130,12 @@ app.post(
       }
 
       response.json({ data: transformed });
-    } catch (err: unknown) {
+    } catch (untypedError: unknown) {
       // THREAT: Unhandled upstream errors in clan member/warlog fetching.
       // Rationale: Consistent error extraction prevents the "any Plague" from leaking into the PWA.
-      console.error("Failed /clan/api", err);
+      console.error("Failed /clan/api", untypedError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(untypedError),
       });
     }
   },
@@ -1165,12 +1171,12 @@ app.post(
       );
 
       response.json({ results: batchResults });
-    } catch (err: unknown) {
+    } catch (untypedError: unknown) {
       // THREAT: Resource exhaustion or worker crash on arbitrary fetch.
       // Rationale: Catching all fetch-related exceptions prevents the worker process from entering a zombie state.
-      console.error("Failed /fetch", err);
+      console.error("Failed /fetch", untypedError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(untypedError),
       });
     }
   },
@@ -1186,10 +1192,10 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
   try {
     const state = await WorkerHubController.getHubState();
     response.json({ success: true, data: state });
-  } catch (err: unknown) {
+  } catch (untypedError: unknown) {
     // THREAT: Silent corruption or uninformative 500 errors in Hub state delivery.
     // Target B [1]: Robust error classification for the PWA ingress boundary using v.safeParse.
-    const validation = v.safeParse(HubErrorSchema, err);
+    const validation = v.safeParse(HubErrorSchema, untypedError);
 
     if (validation.success && validation.output.code === "ERR_STATE_MISSING") {
       response.status(503).json({
@@ -1197,8 +1203,7 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
         layer: validation.output.layer
       });
     } else {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      response.status(500).json({ error: errorMessage || "unknown" });
+      response.status(500).json({ error: getErrorMessage(untypedError) });
     }
   }
 });
@@ -1210,10 +1215,17 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
  * Requires the REMOTE_WORKER_SECRET.
  */
 app.post("/hub/sync/manual", async (_request: Request, response: ExpressResponse): Promise<void> => {
-  const secret = process.env["REMOTE_WORKER_SECRET"] || "";
-  const gasBase = process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "";
-  const didSync = await WorkerHubController.executeSync(gasBase, secret);
-  response.json({ success: didSync });
+  // [GUARD] Target B [1]: Enforce try-catch failure boundary for manual sync requests.
+  try {
+    const secret = process.env["REMOTE_WORKER_SECRET"] || "";
+    const gasBase = process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "";
+    const didSync = await WorkerHubController.executeSync(gasBase, secret);
+    response.json({ success: didSync });
+  } catch (syncError: unknown) {
+    // THREAT: Unhandled exceptions in sync orchestration leading to worker instability.
+    console.error("[WorkerHub] Manual sync failed:", syncError);
+    response.status(500).json({ success: false, error: getErrorMessage(syncError) });
+  }
 });
 
 // ============================================================================

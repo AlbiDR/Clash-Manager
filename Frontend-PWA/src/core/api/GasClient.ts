@@ -116,6 +116,17 @@ interface GenericEnvelope<T> {
 }
 
 /**
+ * [GUARD] WORKER HUB ENVELOPE SCHEMA
+ * Rationale: Standardizes response validation from the high-performance
+ * Node.js worker hub.
+ */
+const WorkerHubEnvelopeSchema = v.object({
+  success: v.boolean(),
+  data: v.optional(v.any()),
+  error: v.optional(v.string())
+});
+
+/**
  * Resolves the target Google Apps Script URL.
  *
  * @remarks
@@ -274,30 +285,30 @@ export function mapHhRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
  * @returns A fully inflated WebAppData object ready for the UI.
  * @throws Error if the payload is malformed or invalid.
  */
-export async function inflatePayload(data: unknown): Promise<WebAppData> {
-  let parsedData: unknown;
-  if (typeof data === "string") {
+export async function inflatePayload(unvalidatedData: unknown): Promise<WebAppData> {
+  let parsedPayload: unknown;
+  if (typeof unvalidatedData === "string") {
     try {
-      parsedData = JSON.parse(data);
-    } catch (e) {
+      parsedPayload = JSON.parse(unvalidatedData);
+    } catch (parseError) {
       throw new Error("Failed to parse data string");
     }
   } else {
-    parsedData = data;
+    parsedPayload = unvalidatedData;
   }
 
-  if (!parsedData || typeof parsedData !== "object" || parsedData === null) {
+  if (!parsedPayload || typeof parsedPayload !== "object" || parsedPayload === null) {
     throw new Error("Invalid payload: data is null or not an object");
   }
 
-  const typedData = parsedData as Record<string, unknown>;
+  const typedPayload = parsedPayload as Record<string, unknown>;
 
   // [GUARD] VALIDATION BOUNDARY: Target III - Data Integrity
   // Enforce strict schema validation for all incoming data to prevent "any Plague"
   // from propagating into the core application state.
-  if (typedData.format !== "matrix") {
+  if (typedPayload.format !== "matrix") {
     // THREAT: Unvalidated object payload could crash the Clean Stack.
-    const validated = v.parse(BaseWebAppDataSchema, typedData);
+    const validated = v.parse(BaseWebAppDataSchema, typedPayload);
     return {
       ...validated,
       timestamp: Number(validated.timestamp) || Date.now(),
@@ -306,14 +317,14 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
 
   // MATRIX TRANSFORMATION: Re-hydrating compressed arrays into structured objects.
   // Rationale: Saves ~70% in JSON payload size by not repeating keys per record.
-  const source = v.parse(WebAppDataSchema, parsedData);
+  const sourceMatrix = v.parse(WebAppDataSchema, parsedPayload);
 
-  const lbMatrix = Array.isArray(source.lb) ? source.lb : [];
-  const hhMatrix = Array.isArray(source.hh) ? source.hh : [];
+  const lbMatrix = Array.isArray(sourceMatrix.lb) ? sourceMatrix.lb : [];
+  const hhMatrix = Array.isArray(sourceMatrix.hh) ? sourceMatrix.hh : [];
   
   // SCHEMA FALLBACK: Ensures forward compatibility with older GAS deployments (V10 standard).
-  let lbSchemaArr = source.schema?.lb;
-  let hhSchemaArr = source.schema?.hh;
+  let lbSchemaArr = sourceMatrix.schema?.lb;
+  let hhSchemaArr = sourceMatrix.schema?.hh;
 
   if (!lbSchemaArr || !Array.isArray(lbSchemaArr) || lbSchemaArr.length === 0) {
     lbSchemaArr = DEFAULT_LB_SCHEMA;
@@ -334,8 +345,8 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     hh: hhMatrix
       .map((rowSnapshot) => mapHhRow(rowSnapshot as unknown[], hhMap))
       .filter((rowSnapshot): rowSnapshot is Recruit => !!rowSnapshot),
-    playerTag: source.playerTag,
-    timestamp: Number(source.timestamp) || Date.now(),
+    playerTag: sourceMatrix.playerTag,
+    timestamp: Number(sourceMatrix.timestamp) || Date.now(),
   };
 }
 
@@ -358,10 +369,10 @@ async function fetchWithRetry(
 ): Promise<Response> {
   const controller = new AbortController();
   //  RELIABILITY: Increased timeout to 45s for slow GAS executions
-  const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "AbortError")), 45000);
+  const timeoutId = setTimeout(() => controller.abort(new DOMException("Deadline Exceeded", "AbortError")), 45000);
 
   try {
-    const response = await fetch(url, {
+    const fetchResponse = await fetch(url, {
       ...options,
       cache: "no-store", //  RELIABILITY: Prevent stale redirects or "Blocked" responses
       signal: options.signal || controller.signal,
@@ -369,19 +380,25 @@ async function fetchWithRetry(
     
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      if (response.status >= 500 || response.status === 429) {
-        throw new Error(`HTTP ${response.status}`);
+    if (!fetchResponse.ok) {
+      if (fetchResponse.status >= 500 || fetchResponse.status === 429) {
+        throw new Error(`HTTP ${fetchResponse.status}`);
       }
-      return response;
+      return fetchResponse;
     }
-    return response;
-  } catch (error: unknown) {
+    return fetchResponse;
+  } catch (fetchError: unknown) {
     clearTimeout(timeoutId);
     
-    //  RECOGNITION: Correctly identify if the error was a deliberate abort vs timeout
-    if (error instanceof Error && error.name === "AbortError") {
-      throw error;
+    //  RECOGNITION: Correctly identify if the error was a deliberate abort vs timeout.
+    // We check for both AbortError and TimeoutError names to ensure zero-trust recovery.
+    if (fetchError instanceof Error && (fetchError.name === "AbortError" || fetchError.name === "TimeoutError")) {
+      throw fetchError;
+    }
+
+    // Fallback for environments where DOMException does not inherit from Error (Target IV - Resilience)
+    if (fetchError && typeof fetchError === "object" && "name" in fetchError && (fetchError.name === "AbortError" || fetchError.name === "TimeoutError")) {
+       throw fetchError;
     }
 
     if (retries > 0) {
@@ -389,10 +406,10 @@ async function fetchWithRetry(
       // Helps mitigate transient network congestion and prevents "thundering herd"
       // issues during server recovery or GAS quota reset periods.
       const jitter = Math.random() * 800;
-      await new Promise((r) => setTimeout(r, backoff + jitter));
+      await new Promise((resolve) => setTimeout(resolve, backoff + jitter));
       return fetchWithRetry(url, options, retries - 1, backoff * 1.8);
     }
-    const message = error instanceof Error ? error.message : "Network request failed";
+    const message = fetchError instanceof Error ? fetchError.message : "Network request failed";
     throw new NetworkError(message);
   }
 }
@@ -461,14 +478,14 @@ async function _executeGasRequest<T>(
   const requestUrl = `${url}${separator}action=${action}&_cb=${Date.now()}`;
 
   try {
-    const response = await fetchWithRetry(requestUrl, fetchOptions);
+    const fetchResponse = await fetchWithRetry(requestUrl, fetchOptions);
 
-    if (!response.ok) {
-      throw new Error(`Server returned HTTP ${response.status}`);
+    if (!fetchResponse.ok) {
+      throw new Error(`Server returned HTTP ${fetchResponse.status}`);
     }
 
-    const text = await response.text();
-    if (!text || !text.trim()) {
+    const responseText = await fetchResponse.text();
+    if (!responseText || !responseText.trim()) {
       throw new Error("Empty Response from Server");
     }
 
@@ -477,40 +494,45 @@ async function _executeGasRequest<T>(
     // when a session expires, permissions are revoked, or the script
     // crashes at the global scope. Catching this early prevents 'Unexpected
     // Token' syntax errors during JSON.parse.
-    if (text.trim().startsWith("<")) {
-      console.warn("GAS returned HTML instead of JSON. Possible Auth/Config issue:", text.substring(0, 100));
+    if (responseText.trim().startsWith("<")) {
+      console.warn("GAS returned HTML instead of JSON. Possible Auth/Config issue:", responseText.substring(0, 100));
       throw new Error("Backend Configuration Error (HTML Response)");
     }
 
-    let envelope: GenericEnvelope<T>;
+    let responseEnvelope: GenericEnvelope<T>;
     try {
-      envelope = JSON.parse(text);
-    } catch (e) {
+      responseEnvelope = JSON.parse(responseText);
+    } catch (jsonError) {
       throw new Error("Malformed JSON Response from Backend");
     }
 
     const isSuccess =
-      envelope.success === true ||
-      (envelope.status && envelope.status.toLowerCase() === "success") ||
-      (envelope.data && !envelope.error);
+      responseEnvelope.success === true ||
+      (responseEnvelope.status && responseEnvelope.status.toLowerCase() === "success") ||
+      (responseEnvelope.data && !responseEnvelope.error);
 
     if (isSuccess) {
-      return (envelope.data !== undefined ? envelope.data : envelope) as T;
+      return (responseEnvelope.data !== undefined ? responseEnvelope.data : responseEnvelope) as T;
     }
 
     const errorMessage =
-      envelope.error?.message || envelope.message || "Operation failed on server";
+      responseEnvelope.error?.message || responseEnvelope.message || "Operation failed on server";
     throw new Error(errorMessage);
-  } catch (error: unknown) {
+  } catch (requestError: unknown) {
     // ABORT HANDLING
     // We only throw immediately if the request was cancelled by the UI (replaced).
     // If it's a timeout, we treat it as a background-syncable event.
-    if (error instanceof Error && error.name === "AbortError") {
-      if (error.message !== "replaced") {
+    // [GUARD] Rationale: Checking both AbortError and TimeoutError ensures robust fallback.
+    const isAbort = (requestError instanceof Error && (requestError.name === "AbortError" || requestError.name === "TimeoutError")) ||
+                    (requestError && typeof requestError === "object" && "name" in requestError && (requestError.name === "AbortError" || requestError.name === "TimeoutError"));
+
+    if (isAbort) {
+      const err = requestError as any;
+      if (err.message !== "replaced") {
         console.warn(`[API] Request timed out. Enqueuing for background sync: ${action}`);
         await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
       }
-      throw error;
+      throw requestError;
     }
     
     // Offline Queue logic
@@ -518,25 +540,25 @@ async function _executeGasRequest<T>(
       await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
       if ("serviceWorker" in navigator && "SyncManager" in window) {
         try {
-          const reg = await navigator.serviceWorker.ready;
-          const syncManager = (reg as any).sync;
+          const registration = await navigator.serviceWorker.ready;
+          const syncManager = (registration as any).sync;
           if (syncManager) {
             await syncManager.register("offline-queue-sync");
           }
-        } catch (syncErr) {
+        } catch (syncError) {
           /* fail silent on sync registration */
         }
       }
     }
 
-    throw error;
+    throw requestError;
   }
 }
 
 async function enqueueOfflineRequest(request: Record<string, unknown>) {
-  const queue = (await idb.get<unknown[]>("offline_queue")) || [];
-  queue.push(request);
-  await idb.set("offline_queue", queue);
+  const offlineQueue = (await idb.get<unknown[]>("offline_queue")) || [];
+  offlineQueue.push(request);
+  await idb.set("offline_queue", offlineQueue);
 }
 
 /**
@@ -578,24 +600,31 @@ export async function fetchRemote(options?: {
     try {
       // PHASE 1: Try Worker Hub (Optimistic)
       const workerUrl = getWorkerUrl() + "/hub/state";
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s deadline
+      const circuitBreaker = new AbortController();
+      // RELIABILITY: Normalize "Deadline Exceeded" to trigger fallback instead of generic UI crash.
+      const timeoutId = setTimeout(() => circuitBreaker.abort(new DOMException("Deadline Exceeded", "AbortError")), 3000);
       
       if (options?.signal) {
-        options.signal.addEventListener("abort", () => controller.abort());
+        options.signal.addEventListener("abort", () => circuitBreaker.abort(new DOMException("User Canceled", "AbortError")));
       }
 
-      const res = await fetch(workerUrl, {
+      const hubFetchResponse = await fetch(workerUrl, {
         method: "GET",
-        signal: controller.signal,
+        signal: circuitBreaker.signal,
       });
       clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error("Worker Hub HTTP " + res.status);
-      const resJson = await res.json();
-      if (!resJson.success || !resJson.data) throw new Error("Worker Hub malformed payload");
+      if (!hubFetchResponse.ok) throw new Error("Worker Hub HTTP " + hubFetchResponse.status);
 
-      const hubState = resJson.data;
+      const rawHubPayload = await hubFetchResponse.json();
+
+      // [GUARD] Target B [1]: Enforce validation boundary for Worker Hub envelope.
+      const hubValidation = v.safeParse(WorkerHubEnvelopeSchema, rawHubPayload);
+      if (!hubValidation.success || !hubValidation.output.data) {
+         throw new Error("Worker Hub malformed payload envelope");
+      }
+
+      const hubState = hubValidation.output.data as any;
       const rosterRaw = hubState?.data?.roster || [];
       const hhRaw = hubState?.data?.headhunter || [];
 
@@ -617,39 +646,44 @@ export async function fetchRemote(options?: {
         hh: hhRaw.length > 0 ? hhRaw.slice(1) : []
       };
 
-      const inflated = await inflatePayload(mappedData);
+      const inflatedPayload = await inflatePayload(mappedData);
       
       // OBSERVABILITY: Label the data source for system diagnostics
-      Object.assign(inflated, { 
+      Object.assign(inflatedPayload, {
         dataSource: "WORKER",
         hubTimestamp: timestamp 
       });
 
-      idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
-      return inflated;
-    } catch (e: any) {
-      if (e.name === "AbortError" && options?.signal?.aborted) {
-        throw e; // Honor explicit UI cancellation without triggering GAS fallback
+      idb.set(CACHE_KEY_MAIN, inflatedPayload).catch(() => {});
+      return inflatedPayload;
+    } catch (hubError: any) {
+      // RECOVERY: Honor explicit UI cancellation without triggering GAS fallback.
+      // THREAT: Silent fallback during user-initiated abort wasting bandwidth/battery.
+      // Rationale: Checking options?.signal?.aborted ensures we don't fall back to GAS
+      // if the user explicitly cancelled the action, regardless of the exact error message.
+      if (hubError && typeof hubError === 'object' && hubError.name === "AbortError" && (hubError.message === "User Canceled" || options?.signal?.aborted)) {
+        throw hubError;
       }
       // RECOVERY: Log failure and continue to legacy GAS fetch
-      console.warn("[WorkerHub] Fetch failed, falling back to GAS:", e);
+      const message = hubError instanceof Error ? hubError.message : String(hubError);
+      console.warn("[WorkerHub] Fetch failed, falling back to GAS:", message);
     }
   }
 
   // PHASE 2: Authority Fallback (GAS)
   const action = options?.force ? "refresh" : "getwebappdata";
-  const data = await gasRequest<unknown>(action, undefined, {
+  const remotePayload = await gasRequest<unknown>(action, undefined, {
     signal: options?.signal,
   });
 
-  if (!data) throw new Error("Invalid response structure");
+  if (!remotePayload) throw new Error("Invalid response structure");
 
-  const inflated = await inflatePayload(data);
+  const authoritativePayload = await inflatePayload(remotePayload);
   
-  Object.assign(inflated, { dataSource: "GAS" });
+  Object.assign(authoritativePayload, { dataSource: "GAS" });
   
-  idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
-  return inflated;
+  idb.set(CACHE_KEY_MAIN, authoritativePayload).catch(() => {});
+  return authoritativePayload;
 }
 
 /**
@@ -666,8 +700,8 @@ export async function ping(options?: GasRequestOptions): Promise<PingResponse> {
 export async function getPlayerProfile(
   tag: string,
 ): Promise<v.InferOutput<typeof ProfileInputSchema>> {
-  const profile = await gasRequest<unknown>("getPlayerProfile", { tag });
-  return v.parse(ProfileInputSchema, profile);
+  const profilePayload = await gasRequest<unknown>("getPlayerProfile", { tag });
+  return v.parse(ProfileInputSchema, profilePayload);
 }
 
 /**
@@ -724,7 +758,7 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   if (!workerUrl) return null;
 
   try {
-    const res = await fetch(`${workerUrl}/public/scan`, {
+    const fetchResponse = await fetch(`${workerUrl}/public/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -733,13 +767,13 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       })
     });
 
-    if (!res.ok) throw new Error(`Worker status ${res.status}`);
-    const json = await res.json();
+    if (!fetchResponse.ok) throw new Error(`Worker status ${fetchResponse.status}`);
+    const scanResponsePayload = await fetchResponse.json();
 
     // [GUARD] VALIDATION BOUNDARY: Implements Target B [1] hardening.
     // Enforces strict schema validation for data returned from the remote worker
     // to prevent unvalidated external payloads from polluting the recruitment logic.
-    const result = v.safeParse(WorkerScanResponseSchema, json);
+    const result = v.safeParse(WorkerScanResponseSchema, scanResponsePayload);
     
     if (!result.success) {
       // THREAT: Malformed or malicious worker response causing downstream UI crashes or logic errors.
@@ -747,22 +781,22 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       return null;
     }
 
-    return result.output.candidates.map((c) => ({
-      id: c.tag.replace("#", ""),
-      n: c.name,
-      t: c.trophies,
-      potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)),
-      potentialRawScore: c.rawScore,
+    return result.output.candidates.map((candidate) => ({
+      id: candidate.tag.replace("#", ""),
+      n: candidate.name,
+      t: candidate.trophies,
+      potentialScore: Math.min(100, Math.round((candidate.rawScore / 50000) * 100)),
+      potentialRawScore: candidate.rawScore,
       d: {
-        don: c.donations,
-        war: c.war,
-        cards: c.cards,
+        don: candidate.donations,
+        war: candidate.war,
+        cards: candidate.cards,
         ago: new Date().toISOString()
       },
       lastScan: 0
     }));
-  } catch (error: unknown) {
-    console.warn("[GasClient] Worker scan failed:", error instanceof Error ? error.message : String(error));
+  } catch (scanError: unknown) {
+    console.warn("[GasClient] Worker scan failed:", scanError instanceof Error ? scanError.message : String(scanError));
     return null;
   }
 }
@@ -784,7 +818,7 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
       body: JSON.stringify(subscription)
     });
     return true;
-  } catch (e) {
+  } catch (subscribeError) {
     return false;
   }
 }

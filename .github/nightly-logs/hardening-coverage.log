@@ -1,7 +1,10 @@
 Frontend-PWA/src/core/services/useClashDataStore.ts
 Frontend-PWA/src/core/api/DataSchemas.ts
 Frontend-PWA/src/core/api/GasClient.ts
+Frontend-PWA/src/core/services/StorageService.ts
 Backend-Worker/src/schemas.ts
 Backend-Worker/src/services/PayloadKernel.ts
 Backend-Worker/src/services/HubPersistenceService.ts
 Backend-Worker/src/controllers/WorkerHubController.ts
+Backend-Worker/src/index.ts
+Backend-Worker/src/KeyService.ts
