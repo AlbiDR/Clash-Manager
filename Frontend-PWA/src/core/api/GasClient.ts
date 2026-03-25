@@ -596,8 +596,8 @@ export async function fetchRemote(options?: {
       if (!resJson.success || !resJson.data) throw new Error("Worker Hub malformed payload");
 
       const hubState = resJson.data;
-      const rosterRaw = hubState?.data?.roster || [];
-      const hhRaw = hubState?.data?.headhunter || [];
+      const rosterTable = hubState?.data?.roster || { headers: [], rows: [] };
+      const hhTable = hubState?.data?.headhunter || { headers: [], rows: [] };
 
       // MATRIX RE-HYDRATION: Transform Hub matrix format into GAS format
       // Rationale: Reusing `inflatePayload` ensures a single validation boundary (Target III).
@@ -610,11 +610,11 @@ export async function fetchRemote(options?: {
         timestamp,
         playerTag: "", 
         schema: {
-          lb: rosterRaw[0] || [],
-          hh: hhRaw[0] || []
+          lb: rosterTable.headers || [],
+          hh: hhTable.headers || []
         },
-        lb: rosterRaw.length > 0 ? rosterRaw.slice(1) : [],
-        hh: hhRaw.length > 0 ? hhRaw.slice(1) : []
+        lb: rosterTable.rows || [],
+        hh: hhTable.rows || []
       };
 
       const inflated = await inflatePayload(mappedData);
