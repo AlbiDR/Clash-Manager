@@ -42,6 +42,14 @@ The worker behavior is controlled via environment variables:
 
 ### System Diagnostics
 
+#### `GET /`
+Simple connectivity check.
+
+**Response:**
+```text
+Clash Manager Worker is running
+```
+
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
@@ -85,14 +93,29 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
 {
   "success": true,
   "data": {
-    "metadata": { "version": "...", "timestamp": ... },
-    "data": { "roster": [...], "headhunter": [...] }
+    "metadata": {
+      "timestamp": "2026-01-01T12:00:00.000Z",
+      "status": "healthy",
+      "version": "10.1.4",
+      "source": "GAS_RAW_STORE"
+    },
+    "data": {
+      "roster": [["Tag", "Name", ...], ["#P1", "Player 1", ...]],
+      "headhunter": [["Tag", "Name", ...], ["#R1", "Recruit 1", ...]]
+    }
   }
 }
 ```
 
 #### `POST /hub/sync/manual`
 Manually triggers a background synchronization cycle. Requires Bearer authentication. Protects against overlaps.
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
 
 ### Batch Operations
 
@@ -105,6 +128,16 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
   "urls": ["/players/%23TAG1", "/clans/%23TAG2"],
   "apiKeys": ["sk_key1", "sk_key2"],
   "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 }
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    { "code": 200, "content": { "tag": "#TAG1", "name": "..." } },
+    { "code": 200, "content": { "tag": "#TAG2", "name": "..." } }
+  ]
 }
 ```
 
@@ -125,6 +158,20 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 }
 ```
 
+**Response:**
+```json
+{
+  "candidates": [
+    { "tag": "#R1", "name": "Recruit 1", "trophies": 6500, "rawScore": 12500, ... }
+  ],
+  "_debug": {
+    "phase1": 50,
+    "phase2": 10,
+    "apiBase": "..."
+  }
+}
+```
+
 #### `POST /public/subscribe`
 Registers a Web Push subscription endpoint for background notifications.
 
@@ -133,6 +180,14 @@ Registers a Web Push subscription endpoint for background notifications.
 {
   "endpoint": "https://fcm.googleapis.com/...",
   "keys": { "p256dh": "...", "auth": "..." }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 1
 }
 ```
 
@@ -149,6 +204,15 @@ Aggregates a complete snapshot of a clan: Members, Current River Race, and aggre
 }
 ```
 
+**Response:**
+```json
+{
+  "members": { "items": [...] },
+  "race": { "state": "...", "clan": { ... }, "standings": [...] },
+  "history": { "#P1": { "26W01": 2400, "26W02": 2500 } }
+}
+```
+
 #### `POST /clan/api`
 Fetches a specific slice of clan data (`members` or `warlog`) and transforms it for frontend consumption.
 
@@ -161,6 +225,22 @@ Fetches a specific slice of clan data (`members` or `warlog`) and transforms it 
 }
 ```
 
+**Response:**
+```json
+{
+  "data": [
+    {
+      "tag": "#P1",
+      "name": "Player 1",
+      "role": "Leader",
+      "kingLevel": 15,
+      "donations": 500,
+      "donationsReceived": 200
+    }
+  ]
+}
+```
+
 ### Administration
 
 #### `POST /audit`
@@ -170,6 +250,16 @@ Validates a list of API keys against the upstream provider to check for validity
 ```json
 {
   "apiKeys": ["sk_key1", "sk_key2"]
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    { "key": "sk_key1", "status": 200 },
+    { "key": "sk_key2", "status": 403 }
+  ]
 }
 ```
 
@@ -197,7 +287,7 @@ The worker implements a **Deep Delegation** strategy to optimize the entire Clas
 
 The worker enforces a strict security perimeter via `authMiddleware`:
 
-- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/*`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
 - **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
