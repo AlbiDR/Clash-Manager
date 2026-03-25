@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-25] PR #301: refactor(opt): standardize player identity badges in roster
+**Commit**: `bb1ce13d8cc7b22f1f3788bec809f0981f10e0e9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/301)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** Structural rot in `MemberCard.vue` due to monolithic rendering of player role and tenure, and a missing component (`TenureBadge.vue`) causing a regression in the roster feature.
+**[Refactoring Hypothesis]:** Extracting these identity markers into `@shared/ui` components (`RoleBadge`, `TenureBadge`) reduces duplication and improves maintainability by centralizing formatting and semantic coloring logic.
+**[Rationale]:** Aligns with "Clean Stack" and ADR conventions (Section VII) for atomic components and structural purity.
+
+### Changes:
+- **[Frontend-PWA/src/shared/ui/TenureBadge.vue]:** New atomic component for displaying clan tenure.
+- **[Frontend-PWA/src/shared/ui/RoleBadge.vue]:** New atomic component for displaying clan roles with semantic coloring.
+- **[Frontend-PWA/src/features/roster/components/MemberCard.vue]:** Refactored to use new badges and fixed a prop access bug in `ariaLabel`.
+- **[Frontend-PWA/src/shared/index.ts]:** Added exports for the new badges.
+
+### Verification:
+- **[Automated]:** `pnpm vitest run src/features/roster/components/components-tests/MemberCard.spec.ts` passed (8/8).
+- **[Manual/Audit]:** Verified build integrity via `pnpm build`.
+
+### Log Updates:
+- Updated `.github/nightly-logs/optimization-coverage.log`
+
+---
+*PR created automatically by Jules for task [14330654763410532726](https://jules.google.com/task/14330654763410532726) started by @AlbiDR*
+
+---
+
 ## [2026-03-25] PR #300: test(verify): add unit tests for TrophyBadge component
 **Commit**: `27ab4308c1156da2ff5977c9bf3390d0ee9e4f2f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/300)
