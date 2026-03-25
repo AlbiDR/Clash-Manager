@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-25] PR #304: test(verify): add RecruitCard component tests
+**Commit**: `509bf7ef0a1018c0d82e1061399f242241f11e14`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/304)
+
+### Description
+This PR adds comprehensive unit and component tests for `RecruitCard.vue` in the Headhunter feature.
+
+### Reasoning:
+**[Coverage Gap]:** `Frontend-PWA/src/features/headhunter/components/RecruitCard.vue` had 0% test coverage.
+**[Scenarios Added]:**
+- **Identity**: Player name, tag formatting, and time ago string.
+- **Badges**: Trophy and Potential Score value propagation.
+- **Expanded State**: Correct metric mapping to `StatisticItem` and presence of `CardActions`.
+- **Refining State**: `aria-busy` and loading props when `appIsRefreshing` is true.
+- **Events**: Re-emission of `toggle` and `toggle-select` from `BaseCard`.
+**[Rationale]:** Part of the "Zero Coverage" priority queue item in the `Verify` agent protocol.
+
+### Changes:
+- **[Component/File]:** Created `Frontend-PWA/src/features/headhunter/components/components-tests/RecruitCard.spec.ts`.
+- **[Log Updates]:** Updated `.github/nightly-logs/verification-coverage.log`.
+
+### Verification:
+- **[Automated]:** `PNPM_CONFIG_ENGINE_STRICT=false pnpm test RecruitCard.spec.ts` passed with 6 tests.
+- **[System Integrity]:** Full suite run in `Frontend-PWA` (668 tests) passed.
+
+---
+*PR created automatically by Jules for task [4889659346872689916](https://jules.google.com/task/4889659346872689916) started by @AlbiDR*
+
+---
+
 ## [2026-03-25] PR #303: docs(readme): synchronize worker api specifications
 **Commit**: `f63b01e01ae4d2de7a45a5c105eddb4927b79043`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/303)
