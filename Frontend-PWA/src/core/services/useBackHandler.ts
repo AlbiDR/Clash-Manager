@@ -1,47 +1,69 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
- * useBackHandler
+ * COMPOSABLE: useBackHandler (Layer 1 - @core)
  *
- * Allows a component (like a Modal) to intercept the hardware back button.
- * When the component mounts/opens, it pushes a state to history.
- * When the users presses back, we intercept it, close the component, and prevent navigation.
+ * @remarks
+ * Orchestrates hardware back button interception for modal navigation.
  *
- * @param onClose Callback to run when back button is pressed (to close the modal)
- * @param isActive Function or Ref returning true if the interceptor should be active
+ * This service implements a "History Shimming" strategy to prevent the default
+ * browser behavior of navigating away from the application when a modal is open.
+ * It pushes a temporary state to the history stack, allowing the 'popstate' event
+ * to be intercepted and used as a trigger for closing UI components rather than
+ * navigating the browser.
+ *
+ * [ARCHITECTURE] ADR LAYER: @core
+ * - Permitted Imports: Layer 0 substrate and Layer 1 kernels.
+ * - Forbidden Imports: Any logic or components from Layer 2+ (Shared, Features, App).
+ *
+ * @param onClose - Callback to execute when the back button is pressed.
+ *
+ * @returns
+ * - `register`: Method to initialize the interception and push history state.
+ * - `unregister`: Method to remove the event listener.
  */
 export function useBackHandler(onClose: () => void) {
-  // Unique ID for this history state to identify our own push
+  // [PERF] ID Generation: Generate a unique ID to distinguish this state
+  // from other navigation events within the same session.
   const stateId = Date.now().toString();
 
+  /**
+   * INTERCEPTOR: Handle browser back/forward navigation.
+   *
+   * @remarks
+   * This function is triggered by the 'popstate' event. When a user presses the
+   * hardware back button on Android or navigates back in a desktop browser,
+   * the shimmed state is popped, and this handler triggers the `onClose`
+   * callback instead of allowing the browser to navigate to a previous page.
+   */
   function handlePopState() {
-    // If we receive a popstate, it means the user pressed back (or forward)
-    // Check if we are "open".
-    // Actually, the simpler pattern is:
-    // 1. On open -> pushState
-    // 2. On back -> popstate event fires -> we call onClose()
-
     onClose();
   }
 
+  /**
+   * REGISTRATION: Initialize the shim.
+   *
+   * @remarks
+   * Pushes a "synthetic" state onto the history stack. This state acts as a
+   * buffer that intercepts the next 'back' navigation event.
+   */
   function register() {
     history.pushState({ modalOpen: stateId }, "");
     window.addEventListener("popstate", handlePopState);
   }
 
+  /**
+   * DISPOSAL: Remove listeners.
+   *
+   * @remarks
+   * Standard cleanup to prevent memory leaks. Does not automatically pop the
+   * history state to avoid triggering the 'popstate' handler unnecessarily
+   * if the component is being unmounted through other means (e.g., explicit close).
+   */
   function unregister() {
     window.removeEventListener("popstate", handlePopState);
-    // If we are unregistering manually (e.g. close button clicked),
-    // we might need to go back to remove our pushed state?
-    // It's tricky. If we just go back(), we trigger popstate again?
-    // No, history.back() triggers popstate.
-
-    // Better approach for Vue Modals:
-    // The modal should likely be controlled by a boolean.
-    // If the boolean becomes true -> pushState.
-    // If popstate happens -> set boolean to false.
   }
-
-  // We'll expose a 'open' and 'close' method to manual control,
-  // or just assume the consumer calls this when they open.
 
   return {
     register,
