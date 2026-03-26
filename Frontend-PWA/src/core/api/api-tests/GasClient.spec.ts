@@ -107,6 +107,31 @@ describe("GasClient", () => {
        const result = await GasClient.inflatePayload(legacy);
        expect(result.lb[0].id).toBe("T1");
     });
+
+    it("throws error for null or non-object payloads", async () => {
+      await expect(GasClient.inflatePayload(null)).rejects.toThrow("Invalid payload");
+      await expect(GasClient.inflatePayload(undefined)).rejects.toThrow("Invalid payload");
+      await expect(GasClient.inflatePayload(123)).rejects.toThrow("Invalid payload");
+    });
+
+    it("throws error when non-matrix payload fails validation", async () => {
+      const invalidLegacy = {
+        lb: "not-an-array",
+        hh: [],
+        timestamp: 123456789
+      };
+      await expect(GasClient.inflatePayload(invalidLegacy)).rejects.toThrow();
+    });
+
+    it("throws error when matrix payload fails validation", async () => {
+      const invalidMatrix = {
+        format: "matrix",
+        lb: "not-an-array",
+        hh: [],
+        timestamp: 123456789
+      };
+      await expect(GasClient.inflatePayload(invalidMatrix)).rejects.toThrow();
+    });
   });
 
   describe("Worker Operations", () => {
@@ -130,6 +155,22 @@ describe("GasClient", () => {
       expect(result).not.toBeNull();
       expect(result!).toHaveLength(1);
       expect(result![0].id).toBe("2CCCP");
+    });
+
+    it("returns null when worker scan fails validation", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          candidates: [{
+            // tag is missing
+            name: "Invalid Player",
+            trophies: 6000
+          }]
+        })
+      });
+
+      const result = await GasClient.scanRecruitsDirect();
+      expect(result).toBeNull();
     });
   });
 
@@ -182,6 +223,82 @@ describe("GasClient", () => {
 
       expect(result.dataSource).toBe("WORKER");
       expect(result.lb[0].n).toBe("Worker Player");
+    });
+
+    it("falls back to GAS when Worker Hub returns HTTP error", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) {
+          return Promise.resolve({
+            ok: false,
+            status: 500
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      const result = await GasClient.fetchRemote();
+      expect(result.dataSource).toBe("GAS");
+    });
+
+    it("falls back to GAS when Worker Hub returns malformed payload", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ success: true /* data is missing */ })
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      const result = await GasClient.fetchRemote();
+      expect(result.dataSource).toBe("GAS");
+    });
+
+    it("falls back to GAS when Worker Hub data fails validation", async () => {
+      const invalidHubState = {
+        success: true,
+        data: {
+          metadata: { timestamp: "invalid" },
+          data: { roster: { headers: [], rows: [] }, headhunter: { headers: [], rows: [] } }
+        }
+      };
+
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(invalidHubState)
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      const result = await GasClient.fetchRemote();
+      expect(result.dataSource).toBe("GAS");
     });
   });
 
