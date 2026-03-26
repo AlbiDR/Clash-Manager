@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-26] PR #311: docs(readme): add player identity badges to shared ui documentation
+**Commit**: `005a42008b18d0ea8204e25b362bcbbbb57a881c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/311)
+
+### Description
+Deepened `Frontend-PWA/src/shared/ui/README.md` by documenting the player identity badge molecules and defining domain-specific acronyms. Updated the nightly coverage log to track this improvement.
+
+---
+*PR created automatically by Jules for task [1340234156256122802](https://jules.google.com/task/1340234156256122802) started by @AlbiDR*
+
+---
+
+## [2026-03-26] MERGE FAILED: PR #307: fix(harden): secure worker auth and PWA data integrity boundaries
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/307)
+
+---
+
 ## [2026-03-26] PR #310: refactor(opt): unify console card state resolution
 **Commit**: `6041ebb4a505e23e400095abab784c4f89fc8b66`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/310)
