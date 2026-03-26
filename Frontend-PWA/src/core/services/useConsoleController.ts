@@ -414,5 +414,21 @@ export function useConsoleController<T extends { id: string }>(
     handleSearch,
     setForceSelectionMode,
     processDeepLink,
+
+    /**
+     * ITEM METADATA RESOLVER
+     *
+     * @remarks
+     * Extracts UI-specific state flags for a given item ID.
+     * Centralizing this logic ensures that performance optimizations (like v-memo)
+     * are applied consistently across Roster and Headhunter views.
+     */
+    getCardMetadata: (id: string) => ({
+      isExpanded: expandedIds.value.has(id),
+      isSelected: selectedSet.value.has(id),
+      // [PERF] SCOPED REFRESH: Only signal 'refreshing' to expanded cards
+      // to prevent unnecessary re-renders of the entire collapsed list.
+      isRefreshing: isRefreshing.value && expandedIds.value.has(id),
+    }),
   };
 }

@@ -10,17 +10,15 @@ import MemberCard from "../components/MemberCard.vue";
 
 const {
   data,
-  isRefreshing,
   isShowcaseMode,
   visibleItems,
-  expandedIds,
-  selectedSet,
   isSelectionMode,
   sortOptions,
   toggleExpand,
   toggleSelect,
   layoutProps,
   layoutEvents,
+  getCardMetadata,
 } = useLeaderboard();
 
 </script>
@@ -45,20 +43,20 @@ const {
             item.id,
             item.performanceScore,
             item.dt,
-            expandedIds.has(item.id),
-            selectedSet.has(item.id),
             isSelectionMode,
-            expandedIds.has(item.id) && isRefreshing,
+            getCardMetadata(item.id).isExpanded,
+            getCardMetadata(item.id).isSelected,
+            getCardMetadata(item.id).isRefreshing,
             data?.playerTag === item.id,
           ]"
           :id="`member-${item.id}`"
           :member="item"
-          :expanded="expandedIds.has(item.id)"
-          :selected="selectedSet.has(item.id)"
+          :expanded="getCardMetadata(item.id).isExpanded"
+          :selected="getCardMetadata(item.id).isSelected"
           :selection-mode="isSelectionMode"
           :is-tagged="data?.playerTag === item.id"
           :style="{ '--i': index }"
-          :app-is-refreshing="isRefreshing"
+          :app-is-refreshing="getCardMetadata(item.id).isRefreshing"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
         />
