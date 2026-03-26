@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-26] PR #309: test(verify): add unit tests for ScoreBadge.vue
+**Commit**: `3d2f88584c043752a36592dd8ddd6a9df8850a9f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/309)
+
+### Description
+Created comprehensive unit tests for the `ScoreBadge.vue` component to ensure logic integrity for score rounding, benchmarking tooltips, and conditional rendering. Verified all tests pass and system-wide integrity remains intact. Updated the verification coverage log.
+
+---
+*PR created automatically by Jules for task [5485572423917648961](https://jules.google.com/task/5485572423917648961) started by @AlbiDR*
+
+---
+
+## [2026-03-26] MERGE FAILED: PR #307: fix(harden): secure worker auth and PWA data integrity boundaries
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/307)
+
+---
+
 ## [2026-03-26] PR #308: fix(harden): enforce Valibot validation for Worker Hub response
 **Commit**: `396caa48b59378860aa231b03230723787eddb6a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/308)
