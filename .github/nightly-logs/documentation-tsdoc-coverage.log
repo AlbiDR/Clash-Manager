@@ -6,3 +6,4 @@ Frontend-PWA/src/core/services/useConsoleController.ts
 Frontend-PWA/src/core/services/useBatchQueue.ts
 Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/core/services/useBackHandler.ts
+Frontend-PWA/src/features/roster/views/RosterView.vue
