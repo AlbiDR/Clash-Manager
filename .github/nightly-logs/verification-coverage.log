@@ -24,3 +24,6 @@ Frontend-PWA/src/shared/ui/MomentumPill.vue
 Frontend-PWA/src/shared/ui/TrophyBadge.vue
 Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 Frontend-PWA/src/shared/ui/ScoreBadge.vue
+Frontend-PWA/src/core/api/GasClient.ts
+Frontend-PWA/src/shared/ui/RoleBadge.vue
+Frontend-PWA/src/shared/ui/TenureBadge.vue
