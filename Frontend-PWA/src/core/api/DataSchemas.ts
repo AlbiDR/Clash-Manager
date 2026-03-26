@@ -158,3 +158,26 @@ export const WebAppDataSchema = v.object({
   dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
   hubTimestamp: v.optional(v.number()),
 });
+
+/**
+ * [GUARD] HUB STATE SCHEMA
+ * Validates the raw matrix state returned by the Worker Hub.
+ */
+export const HubStateSchema = v.object({
+  metadata: v.object({
+    timestamp: v.string(),
+    status: v.picklist(["healthy", "degraded", "offline"]),
+    version: v.string(),
+    source: v.string(),
+  }),
+  data: v.object({
+    roster: v.object({
+      headers: v.array(v.string()),
+      rows: v.array(v.array(v.unknown())),
+    }),
+    headhunter: v.object({
+      headers: v.array(v.string()),
+      rows: v.array(v.array(v.unknown())),
+    }),
+  }),
+});

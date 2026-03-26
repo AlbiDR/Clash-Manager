@@ -93,6 +93,8 @@ const BaseWebAppDataSchema = v.object({
   timestamp: v.union([v.number(), v.string()]),
 });
 
+import { HubStateSchema } from "./DataSchemas";
+
 const WorkerCandidateSchema = v.object({
   tag: v.string(),
   name: v.string(),
@@ -585,36 +587,45 @@ export async function fetchRemote(options?: {
         options.signal.addEventListener("abort", () => controller.abort());
       }
 
-      const res = await fetch(workerUrl, {
+      const workerResponse = await fetch(workerUrl, {
         method: "GET",
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error("Worker Hub HTTP " + res.status);
-      const resJson = await res.json();
-      if (!resJson.success || !resJson.data) throw new Error("Worker Hub malformed payload");
+      if (!workerResponse.ok) throw new Error("Worker Hub HTTP " + workerResponse.status);
+      const workerPayload = await workerResponse.json();
+      if (!workerPayload.success || !workerPayload.data) throw new Error("Worker Hub malformed payload");
 
-      const hubState = resJson.data;
-      const rosterTable = hubState?.data?.roster || { headers: [], rows: [] };
-      const hhTable = hubState?.data?.headhunter || { headers: [], rows: [] };
+      // [GUARD] VALIDATION BOUNDARY: Target B [1] hardening.
+      // Enforce strict schema validation for the HubState returned by the worker.
+      // Rationale: Every external boundary is a potential entry point for hostile or malformed input.
+      const validationResult = v.safeParse(HubStateSchema, workerPayload.data);
+
+      if (!validationResult.success) {
+        // THREAT: Malformed matrix data from Worker Hub causing downstream PWA crashes.
+        console.error("[WorkerHub] Matrix validation failed:", validationResult.issues);
+        throw new Error("Worker Hub returned malformed or unvalidated table data.");
+      }
+
+      const validatedHubState = validationResult.output;
+      const rosterTable = validatedHubState.data.roster;
+      const hhTable = validatedHubState.data.headhunter;
 
       // MATRIX RE-HYDRATION: Transform Hub matrix format into GAS format
       // Rationale: Reusing `inflatePayload` ensures a single validation boundary (Target III).
-      const timestamp = hubState?.metadata?.timestamp 
-        ? new Date(hubState.metadata.timestamp).getTime() 
-        : Date.now();
+      const timestamp = new Date(validatedHubState.metadata.timestamp).getTime() || Date.now();
 
       const mappedData: any = {
         format: "matrix",
         timestamp,
         playerTag: "", 
         schema: {
-          lb: rosterTable.headers || [],
-          hh: hhTable.headers || []
+          lb: rosterTable.headers,
+          hh: hhTable.headers
         },
-        lb: rosterTable.rows || [],
-        hh: hhTable.rows || []
+        lb: rosterTable.rows,
+        hh: hhTable.rows
       };
 
       const inflated = await inflatePayload(mappedData);
@@ -627,12 +638,14 @@ export async function fetchRemote(options?: {
 
       idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
       return inflated;
-    } catch (e: any) {
-      if (e.name === "AbortError" && options?.signal?.aborted) {
-        throw e; // Honor explicit UI cancellation without triggering GAS fallback
+    } catch (workerFetchError: unknown) {
+      if (workerFetchError instanceof Error && workerFetchError.name === "AbortError" && options?.signal?.aborted) {
+        throw workerFetchError; // Honor explicit UI cancellation without triggering GAS fallback
       }
       // RECOVERY: Log failure and continue to legacy GAS fetch
-      console.warn("[WorkerHub] Fetch failed, falling back to GAS:", e);
+      // Target B [4]: Harden error 'e' to 'unknown' with narrowing.
+      const errorMsg = workerFetchError instanceof Error ? workerFetchError.message : String(workerFetchError);
+      console.warn(`[WorkerHub] Fetch failed, falling back to GAS: ${errorMsg}`);
     }
   }
 
