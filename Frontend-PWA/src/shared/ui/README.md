@@ -34,6 +34,13 @@ Atomic elements that form the basis of the design system.
 - **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
 - **SettingRow.vue**: Unified molecule for feature settings, supporting toggles, loading states, and disabled variants.
 
+### Player Identity Badges
+Standardized molecules for rendering player-specific metrics and metadata with integrated benchmarking.
+- **TrophyBadge.vue**: Displays trophy counts with context-aware benchmarking tooltips (LB: Leaderboard vs HH: Headhunter).
+- **ScoreBadge.vue**: Renders PeS (Performance Score) / PoS (Potential Score) with integrated benchmarking and optional `MomentumPill` support.
+- **RoleBadge.vue**: Semantic-colored indicator for clan roles (Leader, Co-Leader, Elder, Member).
+- **TenureBadge.vue**: High-density display for "Days in Clan" tracking.
+
 ### Interactive Molecules
 Components that facilitate user interaction and state management.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
