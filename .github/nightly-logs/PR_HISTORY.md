@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-26] PR #314: chore(deps): bump vue from 3.5.30 to 3.5.31
+**Commit**: `13d65471947d04eb68fc5fe2da5e1f6883079402`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/314)
+
+### Description
+Bumped vue from 3.5.30 to 3.5.31 in the shared catalog, synchronized the lockfile, and updated the dependency audit log. All 670 monorepo tests passed.
+
+---
+*PR created automatically by Jules for task [1447269901185677401](https://jules.google.com/task/1447269901185677401) started by @AlbiDR*
+
+---
+
 ## [2026-03-26] PR #313: test(verify): harden data boundaries and UI badges (Nightly)
 **Commit**: `fedac8e2a27aab9db9e418a08b88c7d30828beae`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/313)
