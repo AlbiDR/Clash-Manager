@@ -11,16 +11,15 @@ import RecruitCard from "../components/RecruitCard.vue";
 
 const {
   sortOptions,
-  isRefreshing,
   visibleItems,
-  expandedIds,
-  selectedSet,
   isShowcaseMode,
   refresh,
   toggleExpand,
   toggleSelect,
   layoutProps,
   layoutEvents,
+  getCardMetadata,
+  isSelectionMode,
 } = useRecruiter();
 
 </script>
@@ -53,18 +52,18 @@ const {
             item.potentialScore,
             item.t,
             item.d.ago,
-            expandedIds.has(item.id),
-            selectedSet.has(item.id),
             isSelectionMode,
-            expandedIds.has(item.id) && isRefreshing,
+            getCardMetadata(item.id).isExpanded,
+            getCardMetadata(item.id).isSelected,
+            getCardMetadata(item.id).isRefreshing,
           ]"
           :id="`recruit-${item.id}`"
           :recruit="item"
-          :expanded="expandedIds.has(item.id)"
-          :selected="selectedSet.has(item.id)"
+          :expanded="getCardMetadata(item.id).isExpanded"
+          :selected="getCardMetadata(item.id).isSelected"
           :selection-mode="isSelectionMode"
           :style="{ '--i': index }"
-          :app-is-refreshing="isRefreshing"
+          :app-is-refreshing="getCardMetadata(item.id).isRefreshing"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
         />

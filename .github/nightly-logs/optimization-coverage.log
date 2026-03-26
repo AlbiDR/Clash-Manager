@@ -32,3 +32,6 @@ Frontend-PWA/src/shared/ui/TenureBadge.vue
 Frontend-PWA/src/shared/ui/RoleBadge.vue
 Frontend-PWA/src/shared/index.ts
 Frontend-PWA/src/features/roster/components/MemberCard.vue
+Frontend-PWA/src/core/services/useConsoleController.ts
+Frontend-PWA/src/features/roster/views/RosterView.vue
+Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
