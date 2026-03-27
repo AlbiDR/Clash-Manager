@@ -1,54 +1,70 @@
 /**
-* @vitest-environment jsdom
+ * @vitest-environment jsdom
  */
 import StatusPill from "../StatusPill.vue";
-
 import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
+
 const { tapMock } = vi.hoisted(() => ({
   tapMock: vi.fn(),
 }));
 
-vi.mock("../../../core/services/useHaptics", () => ({
-  useHaptics: () => ({
-    tap: tapMock,
-  }),
-}));
+// Mock @core to intercept useHaptics
+vi.mock("@core", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    useHaptics: () => ({
+      tap: tapMock,
+      warning: vi.fn(),
+      error: vi.fn(),
+    }),
+  };
+});
 
 describe("StatusPill", () => {
-  it("renders correctly for each type", () => {
-    const types = ["updated", "error", "loading", "ready"] as const;
+  it("renders correctly for each valid type", async () => {
+    const types = ["success", "warning", "error", "loading"] as const;
     for (const type of types) {
       const wrapper = mount(StatusPill, {
-        props: { type, text: `Status ${type}` },
+        props: { type, text: `Status ${type}`, nominal: false },
       });
-      expect(wrapper.text()).toContain(`Status ${type}`);
+      
+      // Expand to see text if not loading (loading is auto-expanded)
+      if (type !== "loading") {
+        await wrapper.trigger("click");
+      }
+      
+      const expectedText = type === "loading" ? "Syncing..." : `Status ${type}`;
+      expect(wrapper.text()).toContain(expectedText);
       expect(wrapper.classes()).toContain(type);
-      if (type === "loading") {
-        expect(wrapper.find(".spinner").exists()).toBe(true);
-        expect(wrapper.classes()).toContain("is-refreshing");
-      } else {
-        expect(wrapper.find(".status-dot").exists()).toBe(true);
+      expect(wrapper.find(".status-dot").exists()).toBe(true);
+      
+      if (type !== "success") {
+        expect(wrapper.find(".dot-nucleus.pulse").exists()).toBe(true);
       }
     }
   });
 
-  it("emits refresh and calls haptics on click when not loading", async () => {
+  it("toggles expanded state and calls haptics on click", async () => {
     const wrapper = mount(StatusPill, {
-      props: { type: "ready", text: "Ready" },
+      props: { type: "success", text: "Ready", nominal: true },
     });
+    
+    expect(wrapper.find(".label-wrapper").exists()).toBe(false);
+    
     await wrapper.trigger("click");
-    expect(wrapper.emitted("refresh")).toBeTruthy();
+    
+    expect(wrapper.classes()).toContain("is-expanded");
+    expect(wrapper.find(".label-wrapper").exists()).toBe(true);
     expect(tapMock).toHaveBeenCalled();
   });
 
-  it("does not emit refresh or call haptics on click when loading", async () => {
-    tapMock.mockClear();
+  it("shows label automatically when loading even if nominal", () => {
     const wrapper = mount(StatusPill, {
-      props: { type: "loading", text: "Loading" },
+      props: { type: "loading", text: "Loading", nominal: true },
     });
-    await wrapper.trigger("click");
-    expect(wrapper.emitted("refresh")).toBeFalsy();
-    expect(tapMock).not.toHaveBeenCalled();
+    expect(wrapper.find(".label-wrapper").exists()).toBe(true);
+    expect(wrapper.text()).toContain("Syncing...");
   });
 });

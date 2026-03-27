@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, unref } from "vue";
 import { useHaptics } from "@core";
+import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
 
@@ -19,7 +20,6 @@ const props = defineProps<{
   sortOptions?: { label: string; value: string; desc?: string }[];
   currentSort?: string;
   loading?: boolean;
-  /** Custom badge text for the footer (overrides default BLUEPRINT badge). */
   hubInfo?: {
     source: "WORKER" | "GAS";
     hubAge: string | null;
@@ -34,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const haptics = useHaptics();
-const isScrolled = ref(false);
+const { isScrolled } = useHeaderScroll(10);
 const showInfoOverlay = ref(false);
 
 let debounceTimer: number | null = null;
@@ -65,24 +65,12 @@ const openOverlay = () => {
   haptics.tap();
   showInfoOverlay.value = true;
 };
-
-const handleScroll = () => {
-  isScrolled.value = window.scrollY > 10;
-};
-
-onMounted(() => {
-  window.addEventListener("scroll", handleScroll);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-});
 </script>
 
 <template>
   <header
     class="console-header"
-    :class="{ 'is-scrolled': isScrolled, 'has-extra': props.reserveExtraSpace }"
+    :class="{ 'is-scrolled': unref(isScrolled), 'has-extra': props.reserveExtraSpace }"
   >
     <div class="header-main">
       <div class="title-row">
@@ -143,7 +131,7 @@ onUnmounted(() => {
               :value="props.currentSort"
               class="sort-select"
               aria-label="Sort by"
-              @change="(e) => $emit('update:sort', (e.target as HTMLSelectElement).value)"
+              @change="(e) => emit('update:sort', (e.target as HTMLSelectElement).value)"
             >
               <option
                 v-for="opt in props.sortOptions"
@@ -272,6 +260,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  padding: 0;
+  cursor: pointer;
 }
 
 .icon-btn:active {
@@ -358,6 +348,7 @@ onUnmounted(() => {
   color: var(--sys-text-secondary);
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .sort-chevron {
