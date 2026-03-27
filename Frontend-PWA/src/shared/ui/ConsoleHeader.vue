@@ -185,18 +185,22 @@ const handleOpenSheet = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .title-group {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  flex: 1;
+  min-width: 0; /* Prevents overflow pushing elements off-screen */
 }
 
 .title-main {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .view-title {
@@ -205,6 +209,9 @@ const handleOpenSheet = () => {
   font-weight: 900;
   color: var(--sys-text-primary);
   letter-spacing: -0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .title-label {
@@ -267,6 +274,7 @@ const handleOpenSheet = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .search-sort-row {
@@ -277,6 +285,7 @@ const handleOpenSheet = () => {
 
 .search-bar {
   flex: 1;
+  min-width: 0; /* Allows input side to shrink on small screens */
 }
 
 .search-box {
@@ -288,8 +297,9 @@ const handleOpenSheet = () => {
   align-items: center;
   padding: 0 14px;
   gap: 12px;
-  border: 1px solid var(--sys-color-outline);
-  transition: border-color 0.2s ease;
+  border: 1px solid rgba(128, 128, 128, 0.15); /* Soft, extremely pleasant visual boundary */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02); /* Slight depth */
+  transition: all 0.2s ease;
 }
 
 .search-box:focus-within {
@@ -312,7 +322,7 @@ const handleOpenSheet = () => {
 .sort-box {
   flex-shrink: 0;
   width: auto;
-  min-width: 140px;
+  min-width: 110px; /* Reduced to provide more room on mobile */
 }
 
 .sort-select-wrapper {
@@ -326,7 +336,8 @@ const handleOpenSheet = () => {
   padding: 0 12px;
   padding-right: 32px;
   background: var(--sys-surf-c);
-  border: 1px solid var(--sys-color-outline);
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   border-radius: 10px;
   appearance: none;
   color: var(--sys-text-secondary);
