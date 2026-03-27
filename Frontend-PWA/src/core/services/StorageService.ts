@@ -303,14 +303,14 @@ const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
  * Specific utility to load the main application dataset from cache.
  * @returns The cached dataset or null if empty.
  */
-export async function loadCache(): Promise<any | null> {
-  return idb.get<any>(CACHE_KEY_MAIN);
+export async function loadCache(): Promise<unknown | null> {
+  return idb.get<unknown>(CACHE_KEY_MAIN);
 }
 
 /**
  * Specific utility to persist the main application dataset to cache.
  * @param data - The dataset to save.
  */
-export async function saveCache(data: any): Promise<void> {
+export async function saveCache(data: unknown): Promise<void> {
   return idb.set(CACHE_KEY_MAIN, data);
 }

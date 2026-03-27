@@ -12,8 +12,8 @@ import { HubError } from "../types/HubTypes.js";
  */
 
 export class Network {
-  private static _fetchCount: number = 0;
-  private static _lastResetDate: string = new Date().toISOString().slice(0, 10);
+  private static _fetchCount: number = 0; // EPHEMERAL: intentionally resets on restart
+  private static _lastResetDate: string = new Date().toISOString().slice(0, 10); // EPHEMERAL: intentionally resets on restart
   
   // Daily budget strictly for the autonomous worker daemon.
   // The global 20,000 threshold across all Royale API keys is shared,
