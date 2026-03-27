@@ -17,7 +17,7 @@ const props = defineProps<{
   showSearch?: boolean;
   sheetUrl?: string;
   stats?: { label: string; value: string };
-  sortOptions?: { label: string; value: string; desc?: string }[];
+  sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   currentSort?: string;
   loading?: boolean;
   hubInfo?: {
@@ -52,6 +52,12 @@ const activeSortDescription = computed(() => {
   if (!props.sortOptions || !props.currentSort) return "";
   const opt = props.sortOptions.find((o) => o.value === props.currentSort);
   return opt?.desc || "";
+});
+
+const activeSortFullDescription = computed(() => {
+  if (!props.sortOptions || !props.currentSort) return "";
+  const opt = props.sortOptions.find((o) => o.value === props.currentSort);
+  return opt?.fullDesc || "";
 });
 
 const handleOpenSheet = () => {
@@ -171,6 +177,18 @@ const openOverlay = () => {
               <div class="info-section">
                 <h4>Engine Status</h4>
                 <div class="status-item">
+                  <span class="label">Status</span>
+                  <div class="value-group">
+                    <StatusPill
+                      v-if="props.status"
+                      :type="props.status.type"
+                      :text="props.status.text"
+                      :nominal="props.status.nominal"
+                    />
+                    <span v-else>Disconnected</span>
+                  </div>
+                </div>
+                <div class="status-item">
                   <span class="label">Transport</span>
                   <span class="value">{{ props.hubInfo?.source || 'GAS (Direct)' }}</span>
                 </div>
@@ -182,6 +200,11 @@ const openOverlay = () => {
                   <span class="label">Last Sync</span>
                   <span class="value">{{ props.hubInfo?.hubAge || 'Just Now' }}</span>
                 </div>
+              </div>
+
+              <div v-if="activeSortFullDescription" class="info-section">
+                <h4>Ranking Logic</h4>
+                <p class="logic-desc">{{ activeSortFullDescription }}</p>
               </div>
 
               <div class="info-section">
@@ -201,15 +224,15 @@ const openOverlay = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--sys-glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--sys-border-subtle);
-  border-radius: 24px;
+  background: var(--sys-surface-glass);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  border: 1px solid var(--sys-surface-glass-border);
+  border-radius: 28px;
   padding: 18px;
-  margin-bottom: 16px;
-  transition: all 0.3s var(--sys-motion-standard);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  transition: all 0.4s var(--sys-motion-standard);
+  box-shadow: var(--sys-elevation-2);
 }
 
 .console-header.is-scrolled {
@@ -451,7 +474,18 @@ const openOverlay = () => {
   margin: 0;
   font-size: 14px;
   color: var(--sys-text-secondary);
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.logic-desc {
+  white-space: pre-wrap;
+  font-size: 13px !important;
+}
+
+.value-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Transitions */
