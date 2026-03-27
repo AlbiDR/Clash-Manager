@@ -163,7 +163,7 @@ const handleOpenSheet = () => {
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: 28px;
-  padding: 18px;
+  padding: 18px 18px 24px 18px;
   margin-bottom: 24px;
   transition: all 0.4s var(--sys-motion-standard);
   box-shadow: var(--sys-elevation-2);
@@ -171,7 +171,7 @@ const handleOpenSheet = () => {
 
 .console-header.is-scrolled {
   margin-top: 8px;
-  padding: 12px 18px;
+  padding: 12px 18px 18px 18px;
   border-radius: 20px;
 }
 
