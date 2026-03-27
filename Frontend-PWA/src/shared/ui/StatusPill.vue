@@ -59,11 +59,11 @@ const handleToggle = () => {
 
     <Transition :name="props.direction === 'left' ? 'slide-fade-left' : 'slide-fade'">
       <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
-        <span class="status-label">
+        <span v-if="props.text" class="status-label">
           {{ props.type === "loading" ? "Syncing..." : props.text }}
         </span>
         
-        <div v-if="props.hubInfo && isExpanded" class="hub-meta">
+        <div v-if="props.hubInfo && isExpanded && props.text" class="hub-meta">
           <span class="separator">/</span>
           <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
             <template v-if="props.hubInfo.source === 'WORKER'">
