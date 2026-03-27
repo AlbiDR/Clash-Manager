@@ -518,11 +518,14 @@ async function _executeGasRequest<T>(
     // Offline Queue logic
     if (action !== 'ping' && action !== 'getwebappdata') {
       await enqueueOfflineRequest({ action, payload, timestamp: Date.now() });
+
+      // Target B [4]: Type-safe Service Worker Sync registration
       if ("serviceWorker" in navigator && "SyncManager" in window) {
         try {
           const reg = await navigator.serviceWorker.ready;
-          const syncManager = (reg as any).sync;
-          if (syncManager) {
+          // [GUARD] Check for Background Sync capability without 'any' pathogens
+          if ('sync' in reg) {
+            const syncManager = (reg as unknown as { sync: { register: (tag: string) => Promise<void> } }).sync;
             await syncManager.register("offline-queue-sync");
           }
         } catch (syncErr) {
@@ -616,7 +619,7 @@ export async function fetchRemote(options?: {
       // Rationale: Reusing `inflatePayload` ensures a single validation boundary (Target III).
       const timestamp = new Date(validatedHubState.metadata.timestamp).getTime() || Date.now();
 
-      const mappedData: any = {
+      const mappedData = {
         format: "matrix",
         timestamp,
         playerTag: "", 

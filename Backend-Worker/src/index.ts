@@ -707,13 +707,9 @@ app.post(
 
       const blacklistSet = new Set(blacklist ?? []);
 
-      // THREAT: Allowing unauthenticated query params to override concurrency
-      // creates a potential DoS/Resource Exhaustion vector where a malicious
-      // caller could force the worker to spawn thousands of concurrent fetchers.
-      const concurrency = Number(
-        process.env["WORKER_CONCURRENCY"] ??
-          CONFIG.concurrency,
-      );
+      // THREAT: Utilizing the CONFIG singleton ensures all requests are bound to
+      // environment-defined limits, preventing Resource Exhaustion.
+      const concurrency = CONFIG.concurrency;
 
       const candidates = await processScanBatch(
         tags as TournamentTag[],
@@ -813,13 +809,9 @@ app.post(
 
       const blacklistSet = new Set(blacklist ?? []);
 
-      // THREAT: Allowing query params to override concurrency creates a potential
-      // DoS/Resource Exhaustion vector. Privileged callers should still be
-      // restricted to environment-defined concurrency limits.
-      const concurrency = Number(
-        process.env["WORKER_CONCURRENCY"] ??
-          CONFIG.concurrency,
-      );
+      // THREAT: Privileged callers are restricted to environment-defined
+      // concurrency limits to prevent Resource Exhaustion.
+      const concurrency = CONFIG.concurrency;
 
         const debug: ScanDebugInfo = {} as ScanDebugInfo;
         const candidates = await processScanBatch(
@@ -1151,11 +1143,9 @@ app.post(
     try {
       const { urls, apiKeys, scoring } = result.output;
 
-      // THREAT: Resource Exhaustion via unauthenticated concurrency override.
-      const concurrency = Number(
-        process.env["WORKER_CONCURRENCY"] ??
-          CONFIG.concurrency,
-      );
+      // THREAT: Restricting concurrency to environment-defined limits
+      // prevents Resource Exhaustion during batch operations.
+      const concurrency = CONFIG.concurrency;
 
       const batchResults = await processBatch(
         urls,
@@ -1179,8 +1169,9 @@ app.post(
 /**
  * HUB STATE ENDPOINT
  * 
- * Publicly exposes the synchronized Worker Hub payload to the PWA.
- * Strictly stateless to prevent locking read queries.
+ * Exposes the synchronized Worker Hub payload to the PWA.
+ * Rationale: This is a privileged endpoint protected by authMiddleware as it
+ * serves internal clan data (Roster/Headhunter). Strictly stateless to prevent locking read queries.
  */
 app.get("/hub/state", async (_request: Request, response: ExpressResponse): Promise<void> => {
   try {
