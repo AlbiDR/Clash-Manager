@@ -81,26 +81,34 @@ const openOverlay = () => {
     <div class="header-main">
       <div class="title-row">
         <div class="title-group">
-          <h1 class="view-title">{{ props.title }}</h1>
-          <StatusPill
-            v-if="props.status && !props.loading"
-            :type="props.status.type"
-            :text="props.status.text"
-            :nominal="props.status.nominal"
-            :hub-info="props.hubInfo"
-          />
-        </div>
-
-        <div class="action-group">
+          <div class="title-main">
+            <h1 class="view-title">{{ props.title }}</h1>
+            <div v-if="props.stats" class="title-label">
+              <span class="count-value">{{ props.stats.value }}</span>
+              <span class="count-label">{{ props.stats.label }}</span>
+            </div>
+          </div>
+          
           <button
-            v-if="props.sheetUrl"
-            class="icon-btn"
+            v-if="props.sheetUrl || (props.title === 'Roster')"
+            class="icon-btn spreadsheet-btn"
             title="Open Source Sheet"
             aria-label="Open Source Sheet"
             @click="handleOpenSheet"
           >
             <Icon name="external-link" size="20" />
           </button>
+        </div>
+
+        <div class="action-group">
+          <StatusPill
+            v-if="props.status && !props.loading"
+            :type="props.status.type"
+            :text="props.status.text"
+            :nominal="props.status.nominal"
+            :hub-info="props.hubInfo"
+            direction="left"
+          />
           
           <button
             class="icon-btn info-btn"
@@ -113,22 +121,20 @@ const openOverlay = () => {
         </div>
       </div>
 
-      <div v-if="props.stats" class="stats-row">
-        <span class="stats-label">{{ props.stats.label }}</span>
-        <span class="stats-value">{{ props.stats.value }}</span>
-      </div>
 
       <div v-if="props.showSearch" class="search-sort-row">
-        <div class="search-box">
-          <Icon name="search" size="18" class="search-icon" />
-          <input
-            type="text"
-            class="search-input"
-            placeholder="Search..."
-            autocomplete="off"
-            aria-label="Search"
-            @input="handleInput"
-          />
+        <div class="search-bar">
+          <div class="search-box">
+            <Icon name="search" size="18" class="search-icon" />
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Search..."
+              autocomplete="off"
+              aria-label="Search"
+              @input="handleInput"
+            />
+          </div>
         </div>
 
         <div v-if="props.sortOptions" class="sort-box">
@@ -255,8 +261,14 @@ const openOverlay = () => {
 
 .title-group {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 12px;
+}
+
+.title-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .view-title {
@@ -267,9 +279,27 @@ const openOverlay = () => {
   letter-spacing: -0.03em;
 }
 
-.action-group {
+.title-label {
   display: flex;
-  gap: 8px;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--sys-surf-c);
+  border-radius: 8px;
+  font-family: var(--sys-font-mono);
+}
+
+.count-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sys-primary);
+}
+
+.count-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--sys-text-tertiary);
+  font-weight: 600;
 }
 
 .icon-btn {
@@ -292,30 +322,33 @@ const openOverlay = () => {
   background: var(--sys-surf-h);
 }
 
-.stats-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-family: var(--sys-font-mono);
-}
-
-.stats-label {
-  font-size: 11px;
-  text-transform: uppercase;
+.spreadsheet-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: none;
+  border: none;
   color: var(--sys-text-tertiary);
-  letter-spacing: 0.05em;
 }
 
-.stats-value {
-  font-size: 16px;
-  font-weight: 700;
+.spreadsheet-btn:hover {
   color: var(--sys-primary);
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .search-sort-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
+}
+
+.search-bar {
+  flex: 1;
 }
 
 .search-box {
@@ -349,9 +382,9 @@ const openOverlay = () => {
 }
 
 .sort-box {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-shrink: 0;
+  width: auto;
+  min-width: 140px;
 }
 
 .sort-select-wrapper {
@@ -384,9 +417,7 @@ const openOverlay = () => {
 }
 
 .sort-desc {
-  font-size: 11px;
-  color: var(--sys-text-tertiary);
-  padding-left: 4px;
+  display: none;
 }
 
 /* Info Overlay */

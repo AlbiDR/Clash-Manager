@@ -4,15 +4,18 @@
 import { ref, watch } from "vue";
 import { useHaptics } from "@core";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   type: "success" | "warning" | "error" | "loading";
   text: string;
   nominal?: boolean;
+  direction?: "left" | "right";
   hubInfo?: {
     source: "WORKER" | "GAS";
     hubAge: string | null;
   };
-}>();
+}>(), {
+  direction: "right"
+});
 
 const haptics = useHaptics();
 const isExpanded = ref(false);
@@ -33,7 +36,11 @@ const handleToggle = () => {
 <template>
   <div
     class="status-pill"
-    :class="[props.type, { 'is-expanded': isExpanded, 'is-nominal': props.nominal }]"
+    :class="[
+      props.type, 
+      `expand-${props.direction}`,
+      { 'is-expanded': isExpanded, 'is-nominal': props.nominal }
+    ]"
     @click="handleToggle"
   >
     <div class="status-dot">
@@ -50,7 +57,7 @@ const handleToggle = () => {
       <div v-if="props.type !== 'loading'" class="dot-halo"></div>
     </div>
 
-    <Transition name="slide-fade">
+    <Transition :name="props.direction === 'left' ? 'slide-fade-left' : 'slide-fade'">
       <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
         <span class="status-label">
           {{ props.type === "loading" ? "Syncing..." : props.text }}
@@ -92,12 +99,25 @@ const handleToggle = () => {
   white-space: nowrap;
 }
 
+.status-pill.expand-left {
+  flex-direction: row-reverse;
+}
+
 .status-pill.is-expanded,
 .status-pill.loading {
   max-width: 300px;
-  padding: 0 12px 0 6px;
   background: var(--sys-surf-primary);
   border-color: var(--sys-border-prominent);
+}
+
+.status-pill.expand-right.is-expanded,
+.status-pill.expand-right.loading {
+  padding: 0 12px 0 6px;
+}
+
+.status-pill.expand-left.is-expanded,
+.status-pill.expand-left.loading {
+  padding: 0 6px 0 12px;
 }
 
 /* Logic for nominal mode - only expand on click or loading */
@@ -170,7 +190,14 @@ const handleToggle = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.expand-right .label-wrapper {
   margin-left: 6px;
+}
+
+.expand-left .label-wrapper {
+  margin-right: 6px;
 }
 
 .status-label {
@@ -226,15 +253,25 @@ const handleToggle = () => {
 }
 
 /* Transitions */
-.slide-fade-enter-active {
+.slide-fade-enter-active,
+.slide-fade-left-enter-active {
   transition: all 0.3s ease-out;
 }
-.slide-fade-leave-active {
+.slide-fade-leave-active,
+.slide-fade-left-leave-active {
   transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
 }
+
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   transform: translateX(-10px);
   opacity: 0;
 }
+
+.slide-fade-left-enter-from,
+.slide-fade-left-leave-to {
+  transform: translateX(10px);
+  opacity: 0;
+}
+
 </style>
