@@ -1,4 +1,24 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 <script setup lang="ts">
+/**
+ * [FEATURE] MEMBER CARD
+ * ----------------------------------------------------------------------------
+ * Rationale: Authoritative presentation component for clan roster members.
+ * Layer: @features/roster
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Orchestrates the `BaseCard` molecule by injecting domain-specific member data
+ * into standardized slots. Integrates with the `WarHistoryChart` feature-component
+ * for performance visualization and `CardActions` for roster management.
+ *
+ * **Constraints:**
+ * - Must reside in Layer 3 (@features) as it is coupled to the LeaderboardMember domain type.
+ * - Interaction logic (expansion, selection) is delegated to `BaseCard` and orchestrated
+ *   via the `useConsoleController` in the parent view.
+ */
 import {
   BaseCard,
   CardActions,
@@ -12,25 +32,40 @@ import {
 import { computed, defineAsyncComponent } from "vue";
 import type { LeaderboardMember } from "@core/types";
 import { formatRole, formatTimeAgo } from "@core/utils/formatters";
+
+// [PERF] ASYNC COMPONENT: Deferred loading of the heavy ECharts-based history visualization.
 const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
 );
 
 const props = defineProps<{
+  /** Unique player tag identifier. */
   id: string;
+  /** Authoritative member data object from the Leaderboard dataset. */
   member: LeaderboardMember;
+  /** UI State: Controls the expansion of detailed statistics and charts. */
   expanded: boolean;
+  /** UI State: Indicates if the card is in the batch selection queue. */
   selected: boolean;
+  /** UI State: Toggles between interaction modes (Expansion vs. Selection). */
   selectionMode: boolean;
+  /** Optional: Indicates if the player is currently tagged for an action. */
   isTagged?: boolean;
+  /** UI State: Inherited refresh status to trigger loading skeletons or aria-busy. */
   appIsRefreshing?: boolean;
 }>();
 
 const emit = defineEmits<{
+  /** Triggers card expansion/collapse when not in selection mode. */
   toggle: [];
+  /** Triggers addition/removal from the batch selection queue. */
   "toggle-select": [];
 }>();
 
+/**
+ * ACCESSIBILITY RESOLVER
+ * Constructs a semantic description of the member for screen readers.
+ */
 const ariaLabel = computed(() => {
   const roleLabel = formatRole(props.member.d.role).label;
   return `${props.member.n}, score ${Math.round(props.member.performanceScore)}, ${roleLabel}`;
@@ -49,19 +84,19 @@ const ariaLabel = computed(() => {
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
-    <!-- SLOT: Meta Stack -->
+    <!-- [SLOT] IDENTITY META: Semantic badges for clan tenure and hierarchy role. -->
     <template #identity-meta>
       <TenureBadge :days="props.member.d.days" />
       <RoleBadge :role="props.member.d.role" />
     </template>
 
-    <!-- SLOT: Name Block -->
+    <!-- [SLOT] IDENTITY NAME: Primary player identification and current trophy count. -->
     <template #identity-name>
       <span class="player-name">{{ props.member.n }}</span>
       <TrophyBadge :value="props.member.t" context="lb" />
     </template>
 
-    <!-- SLOT: Score Section -->
+    <!-- [SLOT] SCORE SECTION: PeS (Performance Score) and momentum tracking. -->
     <template #score-section>
       <ScoreBadge
         :score="props.member.performanceScore"
@@ -71,7 +106,7 @@ const ariaLabel = computed(() => {
       />
     </template>
 
-    <!-- Expanded Content -->
+    <!-- [SLOT] EXPANDED CONTENT: Detailed performance metrics, war history, and actions. -->
     <template #expanded-content>
       <StatsGrid
         :columns="2"
