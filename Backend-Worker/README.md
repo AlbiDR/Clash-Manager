@@ -268,7 +268,7 @@ Validates a list of API keys against the upstream provider to check for validity
 
 ## Nightly Maintenance
 
-The monorepo is governed by a **7-agent Nightly Pipeline** (powered by GitHub Actions). This autonomous system executes nightly to audit dependency security, verify architectural compliance, and ensure documentation synchronization across all monorepo components.
+The monorepo is governed by a **7-agent Nightly Pipeline** (powered by Google Jules and GitHub Actions). This autonomous system executes nightly to audit dependency security, verify architectural compliance, and ensure documentation synchronization across all monorepo components.
 
 ---
 <br />
