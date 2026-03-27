@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-27] PR #320: test(verify): add coverage for HeaderInfoOverlay
+**Commit**: `01ebdf01e4e23fcc4c1eb12e1c40c151eeec232f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/320)
+
+### Description
+Added comprehensive unit and component testing for HeaderInfoOverlay.vue to ensure visibility logic, scroll-lock side effects, and event handling are verified. This PR targets the Nightly branch.
+
+---
+*PR created automatically by Jules for task [9565987680092479930](https://jules.google.com/task/9565987680092479930) started by @AlbiDR*
+
+---
+
 ## [2026-03-27] PR #319: docs(tsdoc): annotate MemberCard with architectural context and licensing
 **Commit**: `17f932269ee42f61252f69339dfbb02a692fea6e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/319)
