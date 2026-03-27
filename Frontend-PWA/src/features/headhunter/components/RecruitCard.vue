@@ -4,6 +4,7 @@ import {
   CardActions,
   TrophyBadge,
   ScoreBadge,
+  StatsGrid,
   StatisticItem
 } from "@shared";
 import { computed } from "vue";
@@ -62,7 +63,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 
     <!-- SLOT: Expanded Content -->
     <template #expanded-content>
-      <div class="stats-grid hh-grid" :aria-busy="appIsRefreshing">
+      <StatsGrid :columns="3" :loading="appIsRefreshing">
         <StatisticItem
           label="Donations"
           :value="recruit.d.don"
@@ -87,7 +88,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
           benchmark-metric="cardsWon"
           :benchmark-raw-value="recruit.d.cards || 0"
         />
-      </div>
+      </StatsGrid>
 
       <CardActions
         class="card-actions-margin"
@@ -101,17 +102,6 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 
 <style scoped>
 /* Content specific styles only */
-
-/* Expanded Content Layout */
-.hh-grid {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-@media (max-width: 380px) {
-  .hh-grid {
-    gap: 4px;
-  }
-}
 
 .card-actions-margin {
   margin-top: 8px;

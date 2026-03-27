@@ -142,8 +142,6 @@ a { text-decoration: underline; color: inherit; }
   z-index: 1;
 }
 
-.stats-grid { display: grid; gap: 8px; margin-bottom: 12px; }
-
 .btn-action {
   flex: 1;
   height: 44px;

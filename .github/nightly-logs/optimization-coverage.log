@@ -35,3 +35,7 @@ Frontend-PWA/src/features/roster/components/MemberCard.vue
 Frontend-PWA/src/core/services/useConsoleController.ts
 Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
+Frontend-PWA/src/shared/ui/StatsGrid.vue
+Frontend-PWA/src/features/roster/components/MemberCard.vue
+Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
+Frontend-PWA/src/core/theme/components.ts
