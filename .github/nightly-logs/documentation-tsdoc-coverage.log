@@ -7,3 +7,4 @@ Frontend-PWA/src/core/services/useBatchQueue.ts
 Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/core/services/useBackHandler.ts
 Frontend-PWA/src/features/roster/views/RosterView.vue
+Frontend-PWA/src/features/roster/components/MemberCard.vue
