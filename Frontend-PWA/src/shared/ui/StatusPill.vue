@@ -37,14 +37,17 @@ const handleToggle = () => {
     @click="handleToggle"
   >
     <div class="status-dot">
-      <div class="dot-nucleus" :class="{ pulse: props.type !== 'success' }">
+      <div 
+        class="dot-nucleus" 
+        :class="{ pulse: props.type !== 'success', 'is-syncing': props.type === 'loading' }"
+      >
         <template v-if="props.type === 'loading'">
           <svg class="spinner" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" />
           </svg>
         </template>
       </div>
-      <div v-if="props.type !== 'success' && props.type !== 'loading'" class="dot-halo"></div>
+      <div v-if="props.type !== 'loading'" class="dot-halo"></div>
     </div>
 
     <Transition name="slide-fade">
@@ -120,15 +123,31 @@ const handleToggle = () => {
   border-radius: 50%;
   background: currentColor;
   z-index: 2;
+  box-shadow: 0 0 8px currentColor;
+  transition: all 0.3s ease;
+}
+
+.dot-nucleus.is-syncing {
+  width: 14px;
+  height: 14px;
+  background: none;
+  box-shadow: none;
 }
 
 .dot-halo {
   position: absolute;
-  inset: 0;
+  inset: -4px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.15;
+  opacity: 0.12;
   z-index: 1;
+  transform: scale(0.8);
+  animation: halo-breathing 4s infinite ease-in-out;
+}
+
+@keyframes halo-breathing {
+  0%, 100% { transform: scale(0.8); opacity: 0.12; }
+  50% { transform: scale(1.2); opacity: 0.05; }
 }
 
 /* Pulsing animations */

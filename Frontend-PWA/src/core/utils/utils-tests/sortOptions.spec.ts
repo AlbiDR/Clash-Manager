@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect } from 'vitest';
 import { SORT_DESCRIPTIONS, LEADERBOARD_SORT_OPTIONS, RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
 
@@ -18,15 +20,19 @@ describe('sortOptions', () => {
 
     expectedKeys.forEach(key => {
       expect(SORT_DESCRIPTIONS).toHaveProperty(key);
-      expect(typeof (SORT_DESCRIPTIONS as any)[key]).toBe('string');
-      expect((SORT_DESCRIPTIONS as any)[key].length).toBeGreaterThan(0);
+      const desc = (SORT_DESCRIPTIONS as any)[key];
+      expect(typeof desc).toBe('object');
+      expect(typeof desc.short).toBe('string');
+      expect(typeof desc.full).toBe('string');
+      expect(desc.short.length).toBeGreaterThan(0);
+      expect(desc.full.length).toBeGreaterThan(0);
     });
   });
 
   it('should contain specific keywords in complex descriptions', () => {
-    expect(SORT_DESCRIPTIONS.performance).toContain('War Fame');
-    expect(SORT_DESCRIPTIONS.momentum).toContain('Δ Score');
-    expect(SORT_DESCRIPTIONS.potential).toContain('Hybrid Benchmark');
+    expect(SORT_DESCRIPTIONS.performance.full).toContain('War Fame');
+    expect(SORT_DESCRIPTIONS.momentum.full).toContain('Δ Score');
+    expect(SORT_DESCRIPTIONS.potential.full).toContain('Hybrid Benchmark');
   });
 
   it('should have correctly structured LEADERBOARD_SORT_OPTIONS', () => {
@@ -36,12 +42,16 @@ describe('sortOptions', () => {
       expect(opt).toHaveProperty('label');
       expect(opt).toHaveProperty('value');
       expect(opt).toHaveProperty('desc');
+      expect(opt).toHaveProperty('fullDesc');
+      expect(typeof opt.desc).toBe('string');
+      expect(typeof opt.fullDesc).toBe('string');
     });
 
     // Specific check for a known option
     const perf = LEADERBOARD_SORT_OPTIONS.find(o => o.value === 'score');
     expect(perf?.label).toBe('Performance');
-    expect(perf?.desc).toBe(SORT_DESCRIPTIONS.performance);
+    expect(perf?.desc).toBe(SORT_DESCRIPTIONS.performance.short);
+    expect(perf?.fullDesc).toBe(SORT_DESCRIPTIONS.performance.full);
   });
 
   it('should have correctly structured RECRUITER_SORT_OPTIONS', () => {
@@ -51,11 +61,15 @@ describe('sortOptions', () => {
       expect(opt).toHaveProperty('label');
       expect(opt).toHaveProperty('value');
       expect(opt).toHaveProperty('desc');
+      expect(opt).toHaveProperty('fullDesc');
+      expect(typeof opt.desc).toBe('string');
+      expect(typeof opt.fullDesc).toBe('string');
     });
 
     // Specific check for a known option
     const potential = RECRUITER_SORT_OPTIONS.find(o => o.value === 'score');
     expect(potential?.label).toBe('Potential');
-    expect(potential?.desc).toBe(SORT_DESCRIPTIONS.potential);
+    expect(potential?.desc).toBe(SORT_DESCRIPTIONS.potential.short);
+    expect(potential?.fullDesc).toBe(SORT_DESCRIPTIONS.potential.full);
   });
 });
