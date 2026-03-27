@@ -13,6 +13,6 @@
     "noEmitOnError": true,
     "types": ["google-apps-script", "node"]
   },
-  "include": ["*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }

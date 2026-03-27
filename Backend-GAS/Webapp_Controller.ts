@@ -9,6 +9,7 @@
 
 import type { AppConfig } from "./Configuration";
 import type { RegistryContract } from "./Registry";
+import type { Recruit } from "./Headhunter_Types";
 
 // Global Version Constant
 // @ts-ignore
@@ -363,13 +364,15 @@ const WebappController: WebappControllerContract = {
       // [OCD] 100-Recruit Fresh Pool Strategy:
       // We aim to provide a "Infinite Scroll" feel by merging the main HH sheet
       // with the latest discoveries from the worker (HH_QUEUE).
-      const hhSheetRows = hhResult.rows;
-      const queueRecruits = Registry.Services.Store.HeadhunterStore.loadQueue(ss);
-      
-      const hhSchema = hhResult.schema;
+      const hhSchema = (hhResult as any).schema as string[];
       const tagIdx = hhSchema.indexOf("id");
       const scoreIdx = hhSchema.indexOf("potentialRawScore");
 
+      const hhSheetRows = (hhResult as any).rows as any[][];
+
+      // Reuse ss from outer scope (Line 330)
+      const queueRecruits = Registry.Services.HeadhunterStore.loadQueue(ss);
+      
       // De-duplication Map: Prefer HH Sheet rows over Queue discoveries.
       const recruitPoolMap = new Map<string, any[]>();
 
@@ -382,12 +385,10 @@ const WebappController: WebappControllerContract = {
       });
 
       // B. Inject worker findings from Queue (if not already present or if we need more)
-      queueRecruits.forEach((recruit, tagWithHash) => {
+      queueRecruits.forEach((recruit: Recruit, tagWithHash: string) => {
         const tag = tagWithHash.replace("#", "").toUpperCase();
         if (!recruitPoolMap.has(tag) && !exclusionSet.has("#" + tag)) {
           // Map Recruit object to Schema-Aware matrix format.
-          // This ensures that if the main extractor schema changes, the queue
-          // data remains aligned with the same indices.
           const mappedRow = new Array(hhSchema.length).fill(null);
           
           const recruitData: Record<string, any> = {

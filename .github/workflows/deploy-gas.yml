@@ -58,9 +58,10 @@ jobs:
           fi
 
       - name: Create Clasp Auth File
-        run: echo "$CLASPRC_JSON" > ~/.clasprc.json
-        env:
-          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          cat <<EOF > ~/.clasprc.json
+          ${{ secrets.CLASPRC_JSON }}
+          EOF
 
       - name: Create Clasp Project Settings
         env:
@@ -79,28 +80,26 @@ jobs:
 
           # 2. Fallback to VITE_GAS_URL extraction if SCRIPT_ID is missing
           if [ -z "$TARGET_ID" ] && [ -n "$GAS_URL" ]; then
-            echo " SCRIPT_ID not found. Attempting to extract from VITE_GAS_URL..."
+            echo " [INFO] SCRIPT_ID not found. Attempting extraction from URL..."
             
-            if [[ "$GAS_URL" == *"script.google.com"* ]]; then
-               if [[ "$GAS_URL" == *"/d/"* ]]; then
-                  # Extract ID from /d/<ID>/... (Project URL)
-                  TARGET_ID=$(echo "$GAS_URL" | sed -n 's|.*/d/\([^/]*\).*|\1|p')
-                  echo " Extracted Project ID from URL."
-               else
-                  # Fallback for /s/ or /macros/s/ (Deployment URL)
-                  # Warning: This is usually the Deployment ID, not the Script ID.
-                  echo "::warning::Using ID from Deployment URL. This may fail if it is not the Project ID."
-                  TARGET_ID=$(echo "$GAS_URL" | sed -n 's|.*/s/\([^/]*\).*|\1|p')
-               fi
+            # Pattern 1: project URL (/d/<ID>/)
+            if [[ "$GAS_URL" =~ /d/([a-zA-Z0-9_-]{20,}) ]]; then
+              TARGET_ID="${BASH_REMATCH[1]}"
+              echo " [SUCCESS] Extracted Project ID from path."
+            # Pattern 2: deployment URL (/s/<ID>/)
+            elif [[ "$GAS_URL" =~ /s/([a-zA-Z0-9_-]{20,}) ]]; then
+              TARGET_ID="${BASH_REMATCH[1]}"
+              echo " [WARNING] Extracted ID from Deployment URL. This might not be the project ID."
             else
-               TARGET_ID="$GAS_URL"
-               echo " Using raw VITE_GAS_URL string as ID."
+              # Pattern 3: raw ID or unknown format
+              TARGET_ID=$(echo "$GAS_URL" | sed -E 's|.*/||; s|\?.*||')
+              echo " [INFO] Using tail of URL/string as ID."
             fi
           fi
 
-          # 3. Final Validation
+          # 3. Final Validation (OCD: Zero-Trust Check)
           if [ -z "$TARGET_ID" ]; then
-             echo "::error:: Failed to resolve Script ID. Ensure SCRIPT_ID is set (preferred) or VITE_GAS_URL contains a valid ID."
+             echo "::error:: [CRITICAL] Failed to resolve Script ID. Ensure SCRIPT_ID is set in secrets."
              exit 1
           fi
           

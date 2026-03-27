@@ -24,6 +24,7 @@ import ScoringKernel, { ScoringKernelContract } from './Scoring_Kernel'; // Rena
 import Reporting, { ReportingContract } from './Reporting';
 import WebappController, { WebappControllerContract } from './Webapp_Controller';
 import BattleLog, { BattleLogContract } from './Battle_Log';
+import HeadhunterStore, { HeadhunterStoreContract } from "./Headhunter_Store";
 import Orchestrator, { OrchestratorContract } from './Orchestrator';
 
 import type { StoreContract } from "./Store";
@@ -63,6 +64,7 @@ export interface RegistryContract {
     readonly Time: TimeContract;
     readonly Scoring: ScoringContract; // Renamed
     readonly Headhunter: HeadhunterContract;
+    readonly HeadhunterStore: HeadhunterStoreContract;
     readonly Database: DatabaseContract;
     readonly Roster: RosterContract;
     readonly ScoringKernel: ScoringKernelContract; // Renamed
@@ -88,6 +90,7 @@ var Registry: RegistryContract = {
     get Time() { return Time; },
     get Scoring() { return Scoring; }, // Renamed
     get Headhunter() { return Headhunter; },
+    get HeadhunterStore() { return HeadhunterStore; },
     get Database() { return Database; },
     get Roster() { return Roster; },
     get ScoringKernel() { return ScoringKernel; }, // Renamed
