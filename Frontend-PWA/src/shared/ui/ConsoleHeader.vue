@@ -290,7 +290,7 @@ const handleOpenSheet = () => {
 
 .search-box {
   position: relative;
-  height: 46px;
+  height: 40px;
   background: var(--sys-surf-h);
   border-radius: 14px;
   display: flex;
@@ -332,7 +332,7 @@ const handleOpenSheet = () => {
 
 .sort-select {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   padding-right: 32px;
   background: var(--sys-surf-c);
