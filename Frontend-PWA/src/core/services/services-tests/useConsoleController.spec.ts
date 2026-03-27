@@ -12,7 +12,9 @@ const { sharedState } = vi.hoisted(() => ({
         spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
         sheets: { Leaderboard: 456, Headhunter: 789 },
       }
-    }
+    },
+    mockApiStatus: { value: "online" },
+    mockConnectionStatus: { value: "online" }
   }
 }));
 
@@ -51,7 +53,7 @@ vi.mock("../../api/useApiState", async () => {
   return {
     useApiState: vi.fn(() => ({
       pingData: ref(sharedState.mockPingData.value),
-      apiStatus: ref("online"),
+      apiStatus: ref(sharedState.mockApiStatus.value),
     })),
   };
 });
@@ -91,9 +93,6 @@ vi.mock("@shared", async (importOriginal) => {
     useUiCoordinator: vi.fn(() => ({
       setFabVisible: vi.fn(),
     })),
-    useUiCoordinator: vi.fn(() => ({
-      setFabVisible: vi.fn(),
-    })),
   };
 });
 
@@ -101,7 +100,7 @@ vi.mock("../useConnectionStatus", () => {
   const { ref } = require("vue");
   return {
     useConnectionStatus: vi.fn(() => ({
-      status: ref("online"),
+      status: ref(sharedState.mockConnectionStatus.value),
     })),
   };
 });
@@ -115,6 +114,8 @@ describe("useConsoleController", () => {
         isRefreshing: ref(false),
         syncError: ref(null),
         lastSyncTime: ref(Date.now()),
+        currentSource: ref(null as "WORKER" | "GAS" | null),
+        hubSyncTime: ref(null as number | null),
         filterFn: (item: any) => [item.n],
         sortStrategies: {},
         defaultSort: "score",
@@ -129,6 +130,8 @@ describe("useConsoleController", () => {
     setActivePinia(createPinia());
     sharedState.mockBlueprintMode.value = false;
     sharedState.mockShowcaseMode.value = false;
+    sharedState.mockApiStatus.value = "online";
+    sharedState.mockConnectionStatus.value = "online";
     vi.clearAllMocks();
   });
 
@@ -218,6 +221,180 @@ describe("useConsoleController", () => {
       isRefreshing: true,
       isEmpty: false,
       selectedCount: 0,
+    });
+  });
+
+  describe("status hierarchy", () => {
+    it("returns 'unconfigured' when apiStatus is unconfigured", () => {
+      sharedState.mockApiStatus.value = "unconfigured";
+      const { status } = useConsoleController(createOptions());
+      expect(status.value).toEqual({ type: "error", text: "Configure URL" });
+    });
+
+    it("returns 'waking' when apiStatus is waking", () => {
+      sharedState.mockApiStatus.value = "waking";
+      const { status } = useConsoleController(createOptions());
+      expect(status.value).toEqual({ type: "loading", text: "Waking Server..." });
+    });
+
+    it("returns 'offline' when connection status is offline", () => {
+      sharedState.mockConnectionStatus.value = "offline";
+      const { status } = useConsoleController(createOptions());
+      expect(status.value).toEqual({ type: "error", text: "Offline" });
+    });
+
+    it("returns 'error' when syncError is present", () => {
+      const options = createOptions();
+      options.syncError.value = "Some Error";
+      const { status } = useConsoleController(options);
+      expect(status.value).toEqual({ type: "error", text: "Load Failed" });
+    });
+
+    it("returns 'loading' when refreshing and data is empty", () => {
+      const options = createOptions();
+      options.isRefreshing.value = true;
+      options.data.value = [];
+      const { status } = useConsoleController(options);
+      expect(status.value).toEqual({ type: "loading", text: "Syncing..." });
+    });
+
+    it("returns 'ready' with time ago when data is present", () => {
+      const options = createOptions();
+      const past = Date.now() - 60000; // 1 minute ago
+      options.lastSyncTime.value = past;
+      options.data.value = [{ id: "1", n: "Test" }];
+      const { status } = useConsoleController(options);
+      expect(status.value.type).toBe("ready");
+      expect(status.value.text).toMatch(/1m ago|just now/);
+    });
+
+    it("prioritizes unconfigured over offline", () => {
+      sharedState.mockApiStatus.value = "unconfigured";
+      sharedState.mockConnectionStatus.value = "offline";
+      const { status } = useConsoleController(createOptions());
+      expect(status.value.text).toBe("Configure URL");
+    });
+
+    it("prioritizes offline over sync error", () => {
+      sharedState.mockConnectionStatus.value = "offline";
+      const options = createOptions();
+      options.syncError.value = "Error";
+      const { status } = useConsoleController(options);
+      expect(status.value.text).toBe("Offline");
+    });
+  });
+
+  describe("statsBadge", () => {
+    it("returns correct count in normal mode", () => {
+      const options = createOptions();
+      options.data.value = [{ id: "1" }, { id: "2" }];
+      const { statsBadge } = useConsoleController(options);
+      expect(statsBadge.value).toEqual({ label: "Tests", value: "2" });
+    });
+
+    it("returns count of 1 in Showcase mode", () => {
+      sharedState.mockShowcaseMode.value = true;
+      const options = createOptions();
+      options.data.value = [{ id: "1" }, { id: "2" }];
+      const { statsBadge } = useConsoleController(options);
+      expect(statsBadge.value).toEqual({ label: "Test", value: "1" });
+    });
+
+    it("returns mock counts in Blueprint mode", () => {
+      sharedState.mockBlueprintMode.value = true;
+
+      // Member case
+      const memberOptions = createOptions();
+      memberOptions.statsLabel = "Member";
+      const { statsBadge: memberBadge } = useConsoleController(memberOptions);
+      expect(memberBadge.value.value).toBe("50"); // DEFAULT_MOCK_MEMBER_COUNT
+
+      // Recruit case
+      const recruitOptions = createOptions();
+      recruitOptions.statsLabel = "Recruit";
+      const { statsBadge: recruitBadge } = useConsoleController(recruitOptions);
+      expect(recruitBadge.value.value).toBe("20"); // DEFAULT_MOCK_RECRUIT_COUNT (fixed from 100)
+    });
+  });
+
+  describe("layoutProps and hubInfo", () => {
+    it("maps hubInfo correctly when source is present", () => {
+      const options = createOptions();
+      options.currentSource.value = "WORKER";
+      options.hubSyncTime.value = Date.now() - 3600000; // 1h ago
+      const { layoutProps } = useConsoleController(options);
+
+      expect(layoutProps.value.hubInfo).toMatchObject({
+        source: "WORKER",
+      });
+      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/1h ago/);
+    });
+
+    it("leaves hubInfo undefined when source is null", () => {
+      const options = createOptions();
+      options.currentSource.value = null;
+      const { layoutProps } = useConsoleController(options);
+      expect(layoutProps.value.hubInfo).toBeUndefined();
+    });
+  });
+
+  describe("layoutEvents", () => {
+    it("triggers refresh correctly", () => {
+      const refresh = vi.fn();
+      const options = { ...createOptions(), refresh };
+      const { layoutEvents } = useConsoleController(options);
+      layoutEvents.value.refresh();
+      expect(refresh).toHaveBeenCalled();
+    });
+
+    it("triggers handleSearch correctly via update:search", () => {
+      const { layoutEvents, searchQuery } = useConsoleController(createOptions());
+      layoutEvents.value["update:search"]("Search Trigger");
+      expect(searchQuery.value).toBe("Search Trigger");
+    });
+  });
+
+  describe("getCardMetadata", () => {
+    it("returns correct metadata for an item", () => {
+      const options = createOptions();
+      options.isRefreshing.value = true;
+      const { getCardMetadata, expandedIds, selectedIds } = useConsoleController(options);
+
+      // Default state
+      expect(getCardMetadata("1")).toEqual({
+        isExpanded: false,
+        isSelected: false,
+        isRefreshing: false,
+      });
+
+      // After expansion
+      expandedIds.value.add("1");
+      expect(getCardMetadata("1").isExpanded).toBe(true);
+      // isRefreshing should be true because item is expanded and global isRefreshing is true
+      expect(getCardMetadata("1").isRefreshing).toBe(true);
+
+      // After selection
+      selectedIds.value.push("1");
+      expect(getCardMetadata("1").isSelected).toBe(true);
+
+      // Non-expanded item should NOT be refreshing even if global isRefreshing is true
+      expect(getCardMetadata("2")).toMatchObject({
+        isExpanded: false,
+        isRefreshing: false,
+      });
+    });
+
+    it("reflects global refreshing state correctly", () => {
+      const options = createOptions();
+      options.isRefreshing.value = false;
+      const { getCardMetadata, expandedIds } = useConsoleController(options);
+
+      expandedIds.value.add("1");
+      expect(getCardMetadata("1").isExpanded).toBe(true);
+      expect(getCardMetadata("1").isRefreshing).toBe(false);
+
+      options.isRefreshing.value = true;
+      expect(getCardMetadata("1").isRefreshing).toBe(true);
     });
   });
 });
