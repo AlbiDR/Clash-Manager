@@ -94,13 +94,5 @@ describe("ConsoleHeader", () => {
     expect(wrapper.classes()).toContain("is-scrolled");
   });
 
-  it("toggles info overlay on button click", async () => {
-    const wrapper = mount(ConsoleHeader, {
-      props: { title: "Overlay Test" },
-    });
-
-    const infoBtn = wrapper.find(".info-btn");
-    await infoBtn.trigger("click");
-    expect(mockTap).toHaveBeenCalled();
-  });
+  // Removed "toggles info overlay on button click" test as the overlay was removed
 });

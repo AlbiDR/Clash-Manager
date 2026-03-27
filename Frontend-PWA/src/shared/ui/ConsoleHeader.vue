@@ -35,7 +35,6 @@ const emit = defineEmits<{
 
 const haptics = useHaptics();
 const { isScrolled } = useHeaderScroll(10);
-const showInfoOverlay = ref(false);
 
 let debounceTimer: number | null = null;
 
@@ -65,11 +64,6 @@ const handleOpenSheet = () => {
     haptics.tap();
     window.open(props.sheetUrl, "_blank");
   }
-};
-
-const openOverlay = () => {
-  haptics.tap();
-  showInfoOverlay.value = true;
 };
 </script>
 
@@ -109,15 +103,6 @@ const openOverlay = () => {
             :hub-info="props.hubInfo"
             direction="left"
           />
-          
-          <button
-            class="icon-btn info-btn"
-            title="View System Status"
-            aria-label="View System Status"
-            @click="openOverlay"
-          >
-            <Icon name="info" size="20" />
-          </button>
         </div>
       </div>
 
@@ -162,66 +147,9 @@ const openOverlay = () => {
       </div>
     </div>
 
-    <!-- Extra slot for SelectionBar etc -->
     <div class="header-extra">
       <slot name="extra"></slot>
     </div>
-
-    <!-- System Info Overlay -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showInfoOverlay" class="info-overlay" @click="showInfoOverlay = false">
-          <div class="info-card" @click.stop>
-            <div class="info-header">
-              <h3>System Transparency</h3>
-              <button class="close-btn" aria-label="Close" @click="showInfoOverlay = false">
-                <Icon name="x" size="24" />
-              </button>
-            </div>
-            
-            <div class="info-body">
-              <div class="info-section">
-                <h4>Engine Status</h4>
-                <div class="status-item">
-                  <span class="label">Status</span>
-                  <div class="value-group">
-                    <StatusPill
-                      v-if="props.status"
-                      :type="props.status.type"
-                      :text="props.status.text"
-                      :nominal="props.status.nominal"
-                    />
-                    <span v-else>Disconnected</span>
-                  </div>
-                </div>
-                <div class="status-item">
-                  <span class="label">Transport</span>
-                  <span class="value">{{ props.hubInfo?.source || 'GAS (Direct)' }}</span>
-                </div>
-                <div class="status-item">
-                  <span class="label">Schema</span>
-                  <span class="value">v13.3.1</span>
-                </div>
-                <div class="status-item">
-                  <span class="label">Last Sync</span>
-                  <span class="value">{{ props.hubInfo?.hubAge || 'Just Now' }}</span>
-                </div>
-              </div>
-
-              <div v-if="activeSortFullDescription" class="info-section">
-                <h4>Ranking Logic</h4>
-                <p class="logic-desc">{{ activeSortFullDescription }}</p>
-              </div>
-
-              <div class="info-section">
-                <h4>Operational Limits</h4>
-                <p>Hardware optimization is active. Render muscle is currently handling heavy discovery tasks.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </header>
 </template>
 
@@ -360,7 +288,7 @@ const openOverlay = () => {
   align-items: center;
   padding: 0 14px;
   gap: 12px;
-  border: 1px solid transparent;
+  border: 1px solid var(--sys-border-prominent);
   transition: border-color 0.2s ease;
 }
 
@@ -398,7 +326,7 @@ const openOverlay = () => {
   padding: 0 12px;
   padding-right: 32px;
   background: var(--sys-surf-c);
-  border: 1px solid var(--sys-border-subtle);
+  border: 1px solid var(--sys-border-prominent);
   border-radius: 10px;
   appearance: none;
   color: var(--sys-text-secondary);
@@ -419,107 +347,4 @@ const openOverlay = () => {
 .sort-desc {
   display: none;
 }
-
-/* Info Overlay */
-.info-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.info-card {
-  width: 100%;
-  max-width: 400px;
-  background: var(--sys-surf-primary);
-  border-radius: 28px;
-  border: 1px solid var(--sys-border-subtle);
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-}
-
-.info-header {
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--sys-border-subtle);
-}
-
-.info-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--sys-text-secondary);
-  cursor: pointer;
-}
-
-.info-body {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.info-section h4 {
-  margin: 0 0 12px 0;
-  font-size: 12px;
-  text-transform: uppercase;
-  color: var(--sys-primary);
-  letter-spacing: 0.1em;
-}
-
-.status-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--sys-border-subtle);
-}
-
-.status-item:last-child {
-  border-bottom: none;
-}
-
-.status-item .label {
-  color: var(--sys-text-secondary);
-  font-size: 14px;
-}
-
-.status-item .value {
-  color: var(--sys-text-primary);
-  font-weight: 600;
-  font-family: var(--sys-font-mono);
-}
-
-.info-section p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--sys-text-secondary);
-  line-height: 1.6;
-}
-
-.logic-desc {
-  white-space: pre-wrap;
-  font-size: 13px !important;
-}
-
-.value-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Transitions */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
