@@ -359,16 +359,60 @@ const WebappController: WebappControllerContract = {
         });
       } catch (e) {}
 
-      const filteredHH = hhResult.rows.filter((recruitRow) => {
-        const id = ("#" + recruitRow[0]).toUpperCase();
-        return !exclusionSet.has(id);
+      // --- 3. MERGE HEADHUNTER POOL (Sheets + Queue) ---
+      // [OCD] 100-Recruit Fresh Pool Strategy:
+      // We aim to provide a "Infinite Scroll" feel by merging the main HH sheet
+      // with the latest discoveries from the worker (HH_QUEUE).
+      const hhSheetRows = hhResult.rows;
+      const queueRecruits = Registry.Services.Store.HeadhunterStore.loadQueue(ss);
+      
+      const hhSchema = hhResult.schema;
+      const tagIdx = hhSchema.indexOf("id");
+      const scoreIdx = hhSchema.indexOf("potentialRawScore");
+
+      // De-duplication Map: Prefer HH Sheet rows over Queue discoveries.
+      const recruitPoolMap = new Map<string, any[]>();
+
+      // A. Populate with main sheet findings
+      hhSheetRows.forEach((row) => {
+        const tag = String(row[tagIdx]).toUpperCase();
+        if (!exclusionSet.has("#" + tag)) {
+          recruitPoolMap.set(tag, row);
+        }
       });
+
+      // B. Inject worker findings from Queue (if not already present or if we need more)
+      queueRecruits.forEach((recruit, tagWithHash) => {
+        const tag = tagWithHash.replace("#", "").toUpperCase();
+        if (!recruitPoolMap.has(tag) && !exclusionSet.has("#" + tag)) {
+          // Map Recruit object to Sheet matrix format
+          // [id, n, t, score, rawScore, don, war, cards, ago, lastScan]
+          const mappedRow = [
+            tag,
+            recruit.name,
+            recruit.trophies,
+            recruit.potentialScore || 0,
+            recruit.rawScore || 0,
+            recruit.donations,
+            recruit.war,
+            recruit.cards,
+            recruit.foundDate.toISOString(),
+            recruit.lastScan ? new Date(recruit.lastScan).toISOString() : ""
+          ];
+          recruitPoolMap.set(tag, mappedRow);
+        }
+      });
+
+      // C. Sort by Raw Score (descending) and truncate to 100.
+      const consolidatedPool = Array.from(recruitPoolMap.values())
+        .sort((a, b) => (Number(b[scoreIdx]) || 0) - (Number(a[scoreIdx]) || 0))
+        .slice(0, 100);
 
       const dataPayload = {
         format: "matrix",
         schema: { lb: lbResult.schema, hh: hhResult.schema },
         lb: lbResult.rows,
-        hh: filteredHH,
+        hh: consolidatedPool,
         playerTag: (CONFIG.SYSTEM.PLAYER_TAG || "").replace("#", "").trim(),
         timestamp: new Date().getTime(),
       };
@@ -381,7 +425,7 @@ const WebappController: WebappControllerContract = {
 
       return payloadStr;
     } catch (e: any) {
-      console.error(`[API] persistWebAppDataPayload FAILED: ${e.stack}`);
+      console.error(`[API] _generatePayloadInternal FAILED: ${e.stack}`);
       return JSON.stringify({ success: false, data: null, error: { code: "PAYLOAD_REFRESH_FAILED", message: e.message } });
     }
   }
