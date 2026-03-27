@@ -274,10 +274,15 @@ export function useConsoleController<T extends { id: string }>(
       return { type: "loading", text: "Syncing..." } as const;
 
     // Priority 5: Warning States (Stale or GAS Fallback)
-    // Rationale: If data is > 15m old or coming from GAS (not Worker Hub),
-    // we expand the pill to warn the user about potential data lag.
-    if (currentSource.value === "GAS" || ageMinutes >= 15) {
-      const warningLabel = currentSource.value === "GAS" ? "Fallback" : "Stale Data";
+    // Rationale: "Fallback" is only meaningful when the Worker Hub is the expected
+    // primary channel but GAS was used instead (degraded path). If VITE_USE_WORKER_HUB
+    // is not enabled, GAS is the intentional primary — no warning is warranted.
+    // "Stale Data" applies regardless of source when the age threshold is exceeded.
+    const workerHubEnabled = import.meta.env.VITE_USE_WORKER_HUB === "true";
+    const isGasFallback = workerHubEnabled && currentSource.value === "GAS";
+
+    if (isGasFallback || ageMinutes >= 15) {
+      const warningLabel = isGasFallback ? "Fallback" : "Stale Data";
       return {
         type: "warning" as const,
         text: warningLabel,
