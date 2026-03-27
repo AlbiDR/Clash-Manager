@@ -27,3 +27,4 @@ Frontend-PWA/src/shared/ui/ScoreBadge.vue
 Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/shared/ui/RoleBadge.vue
 Frontend-PWA/src/shared/ui/TenureBadge.vue
+Frontend-PWA/src/core/services/useConsoleController.ts
