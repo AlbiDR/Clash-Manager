@@ -143,6 +143,7 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
   transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
   overflow: hidden;
   max-width: 24px; /* Default Dot Width */
+  will-change: transform, max-width, opacity;
 }
 
 .is-expanded .status-pill,
@@ -159,6 +160,7 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
   position: relative;
   flex-shrink: 0;
   transition: background-color 0.3s;
+  will-change: transform, opacity;
 }
 
 .dot-nucleus {
@@ -174,13 +176,13 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
 }
 
 .warning-pulse {
-  animation: warning-pulse 2s infinite;
+  animation: warning-pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes warning-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(237, 145, 33, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(237, 145, 33, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(237, 145, 33, 0); }
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .label-wrapper {
@@ -254,15 +256,16 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
   100% { transform: scale(1); opacity: 0.4; }
 }
 
-/* Loading Spinner (Fallback for nucleus if preferred) */
-.loading .status-dot {
-  animation: spin 1s linear infinite;
-  border: 2px solid transparent;
-  border-top-color: currentColor;
-  background: transparent !important;
-}
-
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.loading .status-dot {
+  animation: loading-breath 1.5s infinite ease-in-out;
+}
+
+@keyframes loading-breath {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.7); opacity: 0.5; }
 }
 </style>

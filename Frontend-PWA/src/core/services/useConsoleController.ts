@@ -12,8 +12,9 @@ import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useClashDataStore } from "./useClashDataStore";
+import { useHaptics } from "@core";
 import { storeToRefs } from "pinia";
-import { computed, watch, onUnmounted, type Ref, type ComputedRef } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 
@@ -183,8 +184,6 @@ export function useConsoleController<T extends { id: string }>(
     () => fabState.value.visible,
     (visible) => setFabVisible(!!visible),
   );
-  onUnmounted(() => setFabVisible(false));
-
   // INITIALIZATION: Auto-process deep links when data first hydrates
   watch(
     data,
@@ -193,6 +192,36 @@ export function useConsoleController<T extends { id: string }>(
     },
     { immediate: true },
   );
+
+  /**
+   * VISIBILITY LIFECYCLE
+   * Rationale: If the user returns to the app after a long period, we trigger
+   * a silent refresh to ensure the "Nominal" status is actually accurate.
+   */
+  let lastVisibilityTime = Date.now();
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === "visible") {
+      const now = Date.now();
+      const hiddenDuration = now - lastVisibilityTime;
+      
+      // If hidden for > 30 minutes, trigger a background refresh
+      if (hiddenDuration > 30 * 60 * 1000 && !isRefreshing.value && refreshFn) {
+        refreshFn();
+      }
+      lastVisibilityTime = now;
+    } else {
+      lastVisibilityTime = Date.now();
+    }
+  };
+
+  onMounted(() => {
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  });
+
+  onUnmounted(() => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    setFabVisible(false);
+  });
 
   /**
    * BACKING SHEET LINK
