@@ -89,7 +89,7 @@ const handleToggle = () => {
   height: 32px;
   padding: 0 6px;
   background: var(--sys-surf-c);
-  border: 1px solid var(--sys-border-subtle);
+  border: 1px solid var(--sys-color-outline-variant);
   border-radius: 100px;
   cursor: pointer;
   transition: all 0.4s var(--sys-motion-standard);
@@ -107,7 +107,7 @@ const handleToggle = () => {
 .status-pill.loading {
   max-width: 300px;
   background: var(--sys-surf-primary);
-  border-color: var(--sys-border-prominent);
+  border-color: var(--sys-color-outline);
 }
 
 .status-pill.expand-right.is-expanded,
