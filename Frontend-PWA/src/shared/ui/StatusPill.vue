@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { useHaptics } from "../../core/services/useHaptics";
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, watch } from "vue";
+import { useHaptics } from "@core";
 
 const props = defineProps<{
   type: "success" | "warning" | "error" | "loading";
@@ -12,104 +12,60 @@ const props = defineProps<{
     source: "WORKER" | "GAS";
     hubAge: string | null;
   };
-  lastSuccess?: string;
-  schemaVersion?: string;
 }>();
 
 const haptics = useHaptics();
 const isExpanded = ref(false);
-let collapseTimer: ReturnType<typeof setTimeout> | null = null;
 
-/**
- * TOGGLE DETAIL VIEW
- * Rationale: Exception-based UI keeps the hub 'silent' (dot only)
- * until the user requests technical depth or a state shift occurs.
- */
-function handleToggle() {
-  if (collapseTimer) clearTimeout(collapseTimer);
-  isExpanded.value = !isExpanded.value;
+// Reset expansion when status changes significantly
+watch(() => props.type, (newType) => {
+  if (newType === "loading") isExpanded.value = true;
+  else if (!props.nominal) isExpanded.value = false;
+});
+
+const handleToggle = () => {
+  if (props.type === "loading") return;
   haptics.tap();
-
-  if (isExpanded.value) {
-    startCollapseTimer();
-  }
-}
-
-function startCollapseTimer() {
-  if (collapseTimer) clearTimeout(collapseTimer);
-  collapseTimer = setTimeout(() => {
-    isExpanded.value = false;
-  }, 5000); // 5s Auto-collapse
-}
-
-// Watch for state transitions to trigger haptics and expansion
-watch(() => props.type, (newType, oldType) => {
-  if (newType === oldType) return;
-  
-  if (newType === 'warning') {
-    if (collapseTimer) clearTimeout(collapseTimer);
-    haptics.warning();
-    isExpanded.value = true; // Auto-expand on warning
-    startCollapseTimer();
-  } else if (newType === 'error') {
-    if (collapseTimer) clearTimeout(collapseTimer);
-    haptics.error();
-    isExpanded.value = true; // Auto-expand on error
-  }
-});
-
-onUnmounted(() => {
-  if (collapseTimer) clearTimeout(collapseTimer);
-});
-
-const indicatorColor = computed(() => {
-  if (props.type === "error") return "var(--sys-color-error)";
-  if (props.type === "warning") return "var(--sys-color-warning, #ed9121)";
-  if (props.type === "loading") return "var(--sys-color-primary)";
-  return "var(--sys-color-success)";
-});
-
-const showLabel = computed(() => !props.nominal || isExpanded.value || props.type === 'loading');
+  isExpanded.value = !isExpanded.value;
+};
 </script>
 
 <template>
-  <div 
-    class="status-container"
+  <div
+    class="status-pill"
     :class="[props.type, { 'is-expanded': isExpanded, 'is-nominal': props.nominal }]"
     @click="handleToggle"
   >
-    <div class="status-pill">
-      <!-- Pulsing Nucleus -->
-      <div 
-        class="status-dot" 
-        :class="{ 'warning-pulse': props.type === 'warning' }"
-        :style="{ backgroundColor: indicatorColor }"
-      >
-        <div class="dot-nucleus" :class="{ 'pulse': props.type !== 'success' }"></div>
+    <div class="status-dot">
+      <div class="dot-nucleus" :class="{ pulse: props.type !== 'success' }">
+        <template v-if="props.type === 'loading'">
+          <svg class="spinner" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" />
+          </svg>
+        </template>
       </div>
-
-      <!-- Content Expansion -->
-      <Transition name="expand">
-        <div v-if="showLabel" class="label-wrapper">
-          <span class="status-text">{{ props.type === 'loading' ? 'Syncing...' : props.text }}</span>
-        </div>
-      </Transition>
+      <div v-if="props.type !== 'success' && props.type !== 'loading'" class="dot-halo"></div>
     </div>
 
-    <!-- Technical Backdrop (Metadata) -->
-    <Transition name="fade">
-      <div v-if="isExpanded" class="tech-metadata">
-        <div class="meta-row">
-          <span class="meta-label">Transport:</span>
-          <span class="meta-value">{{ props.hubInfo?.source || 'Hub' }}</span>
-        </div>
-        <div v-if="props.lastSuccess" class="meta-row">
-          <span class="meta-label">Last Sync:</span>
-          <span class="meta-value">{{ props.lastSuccess }} ago</span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-label">Schema:</span>
-          <span class="meta-value">{{ props.schemaVersion || 'v13.3.1' }}</span>
+    <Transition name="slide-fade">
+      <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
+        <span class="status-label">
+          {{ props.type === "loading" ? "Syncing..." : props.text }}
+        </span>
+        
+        <div v-if="props.hubInfo && isExpanded" class="hub-meta">
+          <span class="separator">/</span>
+          <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
+            <template v-if="props.hubInfo.source === 'WORKER'">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </template>
+            {{ props.hubInfo.source }}
+          </span>
+          <span v-if="props.hubInfo.hubAge" class="hub-age">
+            {{ props.hubInfo.hubAge }}
+          </span>
         </div>
       </div>
     </Transition>
@@ -117,155 +73,149 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
 </template>
 
 <style scoped>
-.status-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  z-index: 100;
-  position: relative; /* Ensure metadata panel anchors correctly */
-}
-
 .status-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px;
-  background: var(--sys-surface-glass, rgba(255, 255, 255, 0.05));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 99px;
-  border: 1px solid var(--sys-surface-glass-border, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  height: 32px;
+  padding: 0 6px;
+  background: var(--sys-surf-c);
+  border: 1px solid var(--sys-border-subtle);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.4s var(--sys-motion-standard);
+  user-select: none;
   overflow: hidden;
-  max-width: 24px; /* Default Dot Width */
-  will-change: transform, max-width, opacity;
-}
-
-.is-expanded .status-pill,
-.status-container:not(.is-nominal) .status-pill,
-.loading .status-pill {
-  max-width: 200px;
-  padding: 6px 12px 6px 8px;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  position: relative;
-  flex-shrink: 0;
-  transition: background-color 0.3s;
-  will-change: transform, opacity;
-}
-
-.dot-nucleus {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  background: inherit;
-  opacity: 0.3;
-}
-
-.pulse .dot-nucleus {
-  animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-.warning-pulse {
-  animation: warning-pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes warning-pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.6; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.label-wrapper {
-  overflow: hidden;
+  max-width: 32px;
   white-space: nowrap;
 }
 
-.status-text {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--sys-color-on-surface);
-  letter-spacing: -0.02em;
+.status-pill.is-expanded,
+.status-pill.loading {
+  max-width: 300px;
+  padding: 0 12px 0 6px;
+  background: var(--sys-surf-primary);
+  border-color: var(--sys-border-prominent);
 }
 
-/* Metadata Panel */
-.tech-metadata {
+/* Logic for nominal mode - only expand on click or loading */
+.status-pill.is-nominal:not(.is-expanded):not(.loading) {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+.status-dot {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dot-nucleus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  z-index: 2;
+}
+
+.dot-halo {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: var(--sys-surface-glass, rgba(30, 30, 35, 0.9));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 12px;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.15;
+  z-index: 1;
+}
+
+/* Pulsing animations */
+.pulse {
+  animation: pulse-core 2s infinite ease-in-out;
+}
+
+@keyframes pulse-core {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* Status Colors */
+.success { color: var(--sys-success); }
+.warning { color: var(--sys-warning); }
+.error   { color: var(--sys-error); }
+.loading { color: var(--sys-primary); }
+
+.label-wrapper {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 140px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
 }
 
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 11px;
-}
-
-.meta-label {
-  color: var(--sys-color-outline, rgba(255, 255, 255, 0.5));
-  font-weight: 600;
-}
-
-.meta-value {
-  color: var(--sys-color-on-surface, #fff);
+.status-label {
+  font-size: 13px;
   font-weight: 700;
-  font-family: var(--sys-font-mono, monospace);
+  color: var(--sys-text-primary);
 }
 
-/* Transitions */
-.expand-enter-active, .expand-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.expand-enter-from, .expand-leave-to {
-  opacity: 0;
-  transform: translateX(10px);
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
+.hub-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sys-font-mono);
+  font-size: 10px;
+  color: var(--sys-text-tertiary);
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.4; }
-  50% { transform: scale(2.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 0.4; }
+.hub-source {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
 }
 
-@keyframes spin {
+.hub-source.worker {
+  background: var(--sys-primary-muted);
+  color: var(--sys-primary);
+}
+
+.hub-source.gas {
+  background: var(--sys-surf-h);
+  color: var(--sys-text-secondary);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-.loading .status-dot {
-  animation: loading-breath 1.5s infinite ease-in-out;
+.spinner circle {
+  stroke-dasharray: 45;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+  stroke: currentColor;
 }
 
-@keyframes loading-breath {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(0.7); opacity: 0.5; }
+/* Transitions */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(-10px);
+  opacity: 0;
 }
 </style>

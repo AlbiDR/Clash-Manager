@@ -225,10 +225,10 @@ describe("useConsoleController", () => {
   });
 
   describe("status hierarchy", () => {
-    it("returns 'unconfigured' when apiStatus is unconfigured", () => {
+    it("returns 'error' when apiStatus is unconfigured", () => {
       sharedState.mockApiStatus.value = "unconfigured";
       const { status } = useConsoleController(createOptions());
-      expect(status.value).toEqual({ type: "error", text: "Configure URL" });
+      expect(status.value).toEqual({ type: "error", text: "Invalid API URL" });
     });
 
     it("returns 'waking' when apiStatus is waking", () => {
@@ -247,7 +247,7 @@ describe("useConsoleController", () => {
       const options = createOptions();
       options.syncError.value = "Some Error";
       const { status } = useConsoleController(options);
-      expect(status.value).toEqual({ type: "error", text: "Load Failed" });
+      expect(status.value).toEqual({ type: "error", text: "Sync Error" });
     });
 
     it("returns 'loading' when refreshing and data is empty", () => {
@@ -258,21 +258,21 @@ describe("useConsoleController", () => {
       expect(status.value).toEqual({ type: "loading", text: "Syncing..." });
     });
 
-    it("returns 'ready' with time ago when data is present", () => {
+    it("returns 'success' with time ago when data is present", () => {
       const options = createOptions();
       const past = Date.now() - 60000; // 1 minute ago
       options.lastSyncTime.value = past;
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
-      expect(status.value.type).toBe("ready");
-      expect(status.value.text).toMatch(/1m ago|just now/);
+      expect(status.value.type).toBe("success");
+      expect(status.value.text).toBe(""); // Nominal mode hides text
     });
 
     it("prioritizes unconfigured over offline", () => {
       sharedState.mockApiStatus.value = "unconfigured";
       sharedState.mockConnectionStatus.value = "offline";
       const { status } = useConsoleController(createOptions());
-      expect(status.value.text).toBe("Configure URL");
+      expect(status.value.text).toBe("Invalid API URL");
     });
 
     it("prioritizes offline over sync error", () => {
