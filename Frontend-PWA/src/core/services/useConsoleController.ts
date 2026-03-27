@@ -277,11 +277,10 @@ export function useConsoleController<T extends { id: string }>(
     // Rationale: If data is > 15m old or coming from GAS (not Worker Hub),
     // we expand the pill to warn the user about potential data lag.
     if (currentSource.value === "GAS" || ageMinutes >= 15) {
-      const sourceLabel = currentSource.value === "GAS" ? "GAS" : "Hub";
-      const displayAge = ageMinutes > 99 ? "99m+" : `${ageMinutes}m`;
+      const warningLabel = currentSource.value === "GAS" ? "Fallback" : "Stale Data";
       return {
         type: "warning" as const,
-        text: `${sourceLabel}: ${displayAge}`,
+        text: warningLabel,
       };
     }
 
