@@ -234,7 +234,7 @@ const handleOpenSheet = () => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid var(--sys-border-subtle);
+  border: 1px solid var(--sys-color-outline-variant);
   background: var(--sys-surf-c);
   color: var(--sys-text-secondary);
   display: flex;
@@ -288,7 +288,7 @@ const handleOpenSheet = () => {
   align-items: center;
   padding: 0 14px;
   gap: 12px;
-  border: 1px solid var(--sys-border-prominent);
+  border: 1px solid var(--sys-color-outline);
   transition: border-color 0.2s ease;
 }
 
@@ -326,7 +326,7 @@ const handleOpenSheet = () => {
   padding: 0 12px;
   padding-right: 32px;
   background: var(--sys-surf-c);
-  border: 1px solid var(--sys-border-prominent);
+  border: 1px solid var(--sys-color-outline);
   border-radius: 10px;
   appearance: none;
   color: var(--sys-text-secondary);

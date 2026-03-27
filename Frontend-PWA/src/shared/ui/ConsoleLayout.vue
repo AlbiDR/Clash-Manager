@@ -257,7 +257,7 @@ onUnmounted(() => {
   height: 40px;
   border-radius: 50%;
   background: var(--sys-surf-c);
-  border: 1px solid var(--sys-border-subtle);
+  border: 1px solid var(--sys-color-outline-variant);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
