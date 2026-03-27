@@ -1,10 +1,7 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import EmptyState from "./EmptyState.vue";
-import ErrorState from "./ErrorState.vue";
-import Icon from "./Icon.vue";
-import SelectionBar from "./SelectionBar.vue";
-import AppFooter from "./AppFooter.vue";
-import BaseCardSkeleton from "./BaseCardSkeleton.vue";
+import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import {
   useHaptics,
   useUiCoordinator,
@@ -12,13 +9,22 @@ import {
   useBlueprintMode,
   useSystemInfo,
 } from "@core";
-import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
+import EmptyState from "./EmptyState.vue";
+import ErrorState from "./ErrorState.vue";
+import Icon from "./Icon.vue";
+import SelectionBar from "./SelectionBar.vue";
+import AppFooter from "./AppFooter.vue";
+import BaseCardSkeleton from "./BaseCardSkeleton.vue";
 
 const props = defineProps<{
   title: string;
-  status: { type: "updated" | "error" | "loading" | "ready"; text: string };
+  status: {
+    type: "success" | "warning" | "error" | "loading";
+    text: string;
+    nominal?: boolean;
+  };
   showSearch?: boolean;
   sheetUrl?: string;
   stats?: { label: string; value: string };
@@ -90,14 +96,10 @@ const { isPulling, ptrStyle, onTouchStart, onTouchMove, onTouchEnd } =
   });
 
 // [SYNC] FAB SYNCHRONIZATION
-// We watch the entire fabState object to ensure strict ordering of updates.
-// CRITICAL: We MUST update the content (label, etc.) BEFORE toggling visibility
-// to prevent the "Open" -> "Open 1/N" text jump (twitch).
 watch(
   () => props.fabState,
   (state) => {
     if (state) {
-      // 1. Update Content First (Data)
       updateFabState({
         label: state.label,
         actionHref: state.actionHref,
@@ -110,10 +112,6 @@ watch(
         onDismiss: () => emit("fab-dismiss"),
       });
 
-      // 2. Toggle Visibility Second (UI)
-      // This ensures the FAB is fully hydrated with correct text before appearing.
-      // [PERF] FORCE UPDATE: Use nextTick to ensure the reactive state (step 1)
-      // has fully propagated through the system before we flip the visibility switch.
       nextTick(() => {
         setFabVisible(!!state.visible);
       });
@@ -141,11 +139,11 @@ onUnmounted(() => {
       <!-- Pull to Refresh Indicator -->
       <div
         class="ptr-indicator"
-        :class="{ 'is-refreshing': isRefreshing, 'is-pulling': isPulling }"
+        :class="{ 'is-refreshing': props.isRefreshing, 'is-pulling': isPulling }"
       >
         <div class="ptr-spinner">
           <Icon
-            v-if="!isRefreshing"
+            v-if="!props.isRefreshing"
             name="refresh"
             size="18"
             class="ptr-icon"
@@ -164,9 +162,9 @@ onUnmounted(() => {
         :loading="displayLoading"
         :hub-info="props.hubInfo"
         reserve-extra-space
-        @update:search="(val: string) => $emit('update:search', val)"
-        @update:sort="(val: string) => $emit('update:sort', val)"
-        @refresh="$emit('refresh')"
+        @update:search="(val: string) => emit('update:search', val)"
+        @update:sort="(val: string) => emit('update:sort', val)"
+        @refresh="emit('refresh')"
       >
         <template #extra>
           <SelectionBar
@@ -174,11 +172,11 @@ onUnmounted(() => {
             :count="props.selectedCount"
             :total-count="props.totalCount || 0"
             :loading="displayLoading"
-            @select-all="$emit('select-all')"
-            @clear="$emit('clear-selection')"
-            @done="$emit('clear-selection')"
+            @select-all="emit('select-all')"
+            @clear="emit('clear-selection')"
+            @done="emit('clear-selection')"
             @select-score="
-              (t: number, m: string) => $emit('select-score', t, m)
+              (t: number, m: 'ge' | 'le') => emit('select-score', t, m)
             "
           />
           <slot name="extra-header" v-else></slot>
@@ -189,7 +187,7 @@ onUnmounted(() => {
       <ErrorState
         v-if="props.syncError && props.isEmpty"
         :message="props.syncError"
-        @retry="$emit('refresh')"
+        @retry="emit('refresh')"
       />
 
       <!-- Loading State (Skeletons) -->
@@ -216,7 +214,7 @@ onUnmounted(() => {
       </EmptyState>
 
       <!-- Content State -->
-      <div v-else v-auto-animate class="list-container gpu-contain">
+      <div v-else class="list-container gpu-contain">
         <slot></slot>
       </div>
 
@@ -225,8 +223,6 @@ onUnmounted(() => {
         :badge="activeFooterBadge"
       />
     </div>
-
-    <!-- FAB is now rendered by FloatingDock -->
   </div>
 </template>
 
@@ -249,6 +245,46 @@ onUnmounted(() => {
   contain: layout;
 }
 .ptr-indicator {
-  z-index: 50; /* Local layer priority */
+  position: absolute;
+  top: -48px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sys-surf-c);
+  border: 1px solid var(--sys-border-subtle);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.is-pulling .ptr-indicator,
+.is-refreshing .ptr-indicator {
+  opacity: 1;
+}
+
+.ptr-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sys-primary);
+}
+
+.ptr-icon {
+  transition: transform 0.2s ease;
+  transform: rotate(calc(var(--ptr-offset, 0px) * 2deg));
+}
+
+.is-refreshing .ptr-icon {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

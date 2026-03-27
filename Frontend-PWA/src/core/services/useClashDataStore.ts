@@ -72,10 +72,16 @@ export const useClashDataStore = defineStore("clashData", () => {
       // THREAT: Corrupt IndexedDB state causing silent application crashes.
       const result = v.safeParse(WebAppDataSchema, cached);
       if (result.success) {
-        data.value = result.output as WebAppData;
-        lastSync.value = Date.now();
-        dataSource.value = (result.output as WebAppData).dataSource || null;
-        hubTimestamp.value = (result.output as WebAppData).hubTimestamp || null;
+        const output = result.output as WebAppData;
+        data.value = output;
+        
+        // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
+        // Rationale: Use the payload's own generation timestamp to calculate age,
+        // preventing the "Just Now" reset on every hydration/refresh.
+        lastSync.value = new Date(output.timestamp).getTime();
+        
+        dataSource.value = output.dataSource || null;
+        hubTimestamp.value = output.hubTimestamp || null;
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
       }
@@ -138,10 +144,14 @@ export const useClashDataStore = defineStore("clashData", () => {
         throw new Error("Remote data validation failed");
       }
 
-      data.value = validation.output as WebAppData;
-      lastSync.value = Date.now();
-      dataSource.value = (validation.output as WebAppData).dataSource || null;
-      hubTimestamp.value = (validation.output as WebAppData).hubTimestamp || null;
+      const output = validation.output as WebAppData;
+      data.value = output;
+
+      // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
+      lastSync.value = new Date(output.timestamp).getTime();
+      
+      dataSource.value = output.dataSource || null;
+      hubTimestamp.value = output.hubTimestamp || null;
       consecutiveSyncFailures.value = 0;
       syncError.value = null; // Clear error on success
       

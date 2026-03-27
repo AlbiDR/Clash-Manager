@@ -1,445 +1,450 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import Icon from "./Icon.vue";
+import { computed, ref } from "vue";
+import { useHaptics } from "@core";
 import StatusPill from "./StatusPill.vue";
-import { useHaptics } from "@core/services/useHaptics";
-import { useHeaderScroll } from "../composables/useHeaderScroll";
-import { useAppSettings } from "@core/services/useAppSettings";
-import { ref, computed } from "vue";
-import HeaderInfoOverlay from "./HeaderInfoOverlay.vue";
+import Icon from "./Icon.vue";
+
 const props = defineProps<{
   title: string;
-  status?: { type: "updated" | "error" | "loading" | "ready"; text: string };
+  status?: {
+    type: "success" | "warning" | "error" | "loading";
+    text: string;
+    nominal?: boolean;
+  };
   showSearch?: boolean;
   sheetUrl?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string }[];
   currentSort?: string;
   loading?: boolean;
-  reserveExtraSpace?: boolean;
+  /** Custom badge text for the footer (overrides default BLUEPRINT badge). */
   hubInfo?: {
     source: "WORKER" | "GAS";
     hubAge: string | null;
   };
+  reserveExtraSpace?: boolean;
 }>();
 
 const emit = defineEmits<{
-  "update:search": [value: string];
-  "update:sort": [value: string];
+  "update:search": [string];
+  "update:sort": [string];
   refresh: [];
 }>();
 
-const { modules } = useAppSettings();
-const { isScrolled } = useHeaderScroll();
 const haptics = useHaptics();
-
+const isScrolled = ref(false);
 const showInfoOverlay = ref(false);
+
 let debounceTimer: number | null = null;
 
 const handleInput = (e: Event) => {
   const val = (e.target as HTMLInputElement).value;
-  if (debounceTimer) clearTimeout(debounceTimer);
+  if (debounceTimer) window.clearTimeout(debounceTimer);
 
-  // Debounce search by 300ms to improve rendering performance on large lists
   debounceTimer = window.setTimeout(() => {
     emit("update:search", val);
   }, 300);
 };
 
 const activeSortDescription = computed(() => {
-  if (!modules.sortExplanation) return null;
-  const selected = props.sortOptions?.find(
-    (opt) => opt.value === props.currentSort,
-  );
-  return selected?.desc || null;
+  if (!props.sortOptions || !props.currentSort) return "";
+  const opt = props.sortOptions.find((o) => o.value === props.currentSort);
+  return opt?.desc || "";
 });
 
 function openOverlay() {
-  haptics.tap();
+  haptics.vibrate("tap");
   showInfoOverlay.value = true;
 }
 </script>
 
 <template>
-  <div class="header-wrapper" :class="{ 'is-scrolled': isScrolled }">
-    <div class="console-glass">
-      <div class="bloom-effect"></div>
-      <!-- Top Row: Identity & Status -->
-      <div class="header-row top">
-        <div class="left-cluster">
-          <h1 class="view-title">
-            <a
-              v-if="sheetUrl"
-              :href="sheetUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="title-link"
-              @click="haptics.tap()"
-            >
-              {{ title }}
-              <Icon name="spreadsheet" size="14" class="title-icon" />
-            </a>
-            <span v-else>{{ title }}</span>
-          </h1>
-
-          <div v-if="stats && !loading" class="stats-pill">
-            <span class="sp-value">{{ stats.value }}</span>
-            <span class="sp-label">{{ stats.label }}</span>
-          </div>
-          <div v-else-if="loading" class="sk-badge-m skeleton-anim"></div>
+  <header
+    class="console-header"
+    :class="{ 'is-scrolled': isScrolled, 'has-extra': props.reserveExtraSpace }"
+  >
+    <div class="header-main">
+      <div class="title-row">
+        <div class="title-group">
+          <h1 class="view-title">{{ props.title }}</h1>
+          <StatusPill
+            v-if="props.status && !props.loading"
+            :type="props.status.type"
+            :text="props.status.text"
+            :nominal="props.status.nominal"
+            :hub-info="props.hubInfo"
+          />
         </div>
 
-        <StatusPill
-          v-if="status && !loading"
-          :type="status.type"
-          :text="status.text"
-          :hub-info="hubInfo"
-          @refresh="$emit('refresh')"
-        />
-        <div v-else-if="loading" class="sk-pill skeleton-anim"></div>
+        <div class="action-group">
+          <button
+            v-if="props.sheetUrl"
+            class="icon-btn"
+            title="Open Source Sheet"
+            aria-label="Open Source Sheet"
+            @click="window.open(props.sheetUrl, '_blank')"
+          >
+            <Icon name="external-link" size="20" />
+          </button>
+          
+          <button
+            class="icon-btn info-btn"
+            title="View System Status"
+            aria-label="View System Status"
+            @click="openOverlay"
+          >
+            <Icon name="info" size="20" />
+          </button>
+        </div>
       </div>
 
-      <!-- Bottom Row: Controls -->
-      <div v-if="showSearch" class="header-row bottom">
-        <div class="search-container">
-          <Icon name="search" class="input-icon" size="20" />
+      <div v-if="props.stats" class="stats-row">
+        <span class="stats-label">{{ props.stats.label }}</span>
+        <span class="stats-value">{{ props.stats.value }}</span>
+      </div>
+
+      <div v-if="props.showSearch" class="search-sort-row">
+        <div class="search-box">
+          <Icon name="search" size="18" class="search-icon" />
           <input
-            v-if="!loading"
             type="text"
-            class="glass-input"
+            class="search-input"
             placeholder="Search..."
             autocomplete="off"
+            aria-label="Search"
             @input="handleInput"
-            aria-label="Search items"
           />
-          <div v-else class="sk-input skeleton-anim"></div>
         </div>
 
-        <div class="sort-group">
-          <div class="sort-container">
-            <Icon name="filter" size="16" class="sort-icon" />
+        <div v-if="props.sortOptions" class="sort-box">
+          <div class="sort-select-wrapper">
             <select
-              v-if="!loading"
-              :value="currentSort"
-              class="glass-select"
-              :class="{ 'has-info': !!activeSortDescription }"
-              @change="
-                (e) =>
-                  $emit('update:sort', (e.target as HTMLSelectElement).value)
-              "
+              :value="props.currentSort"
+              class="sort-select"
               aria-label="Sort by"
+              @change="(e) => $emit('update:sort', (e.target as HTMLSelectElement).value)"
             >
-              <template v-if="sortOptions">
-                <option
-                  v-for="opt in sortOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </option>
-              </template>
+              <option
+                v-for="opt in props.sortOptions"
+                :key="opt.value"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </option>
             </select>
-            <div v-else class="sk-select skeleton-anim"></div>
-
-            <button
-              v-if="activeSortDescription && !loading"
-              class="info-dot-inline"
-              @click="openOverlay"
-              aria-label="Sort Information"
-            >
-              <Icon name="info" size="16" />
-            </button>
+            <Icon name="chevron-down" size="14" class="sort-chevron" />
           </div>
+          <span v-if="activeSortDescription" class="sort-desc">
+            {{ activeSortDescription }}
+          </span>
         </div>
-      </div>
-
-      <!-- Extra Row: Selection Context -->
-      <div
-        v-if="$slots.extra || reserveExtraSpace"
-        class="header-row extra"
-        :class="{ reserved: reserveExtraSpace }"
-      >
-        <slot name="extra"></slot>
       </div>
     </div>
 
-    <!-- Modular Expansion Overlay -->
-    <HeaderInfoOverlay
-      :show="showInfoOverlay"
-      :content="activeSortDescription"
-      @close="showInfoOverlay = false"
-    />
-  </div>
+    <!-- Extra slot for SelectionBar etc -->
+    <div class="header-extra">
+      <slot name="extra"></slot>
+    </div>
+
+    <!-- System Info Overlay -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showInfoOverlay" class="info-overlay" @click="showInfoOverlay = false">
+          <div class="info-card" @click.stop>
+            <div class="info-header">
+              <h3>System Transparency</h3>
+              <button class="close-btn" aria-label="Close" @click="showInfoOverlay = false">
+                <Icon name="x" size="24" />
+              </button>
+            </div>
+            
+            <div class="info-body">
+              <div class="info-section">
+                <h4>Engine Status</h4>
+                <div class="status-item">
+                  <span class="label">Transport</span>
+                  <span class="value">{{ props.hubInfo?.source || 'GAS (Direct)' }}</span>
+                </div>
+                <div class="status-item">
+                  <span class="label">Schema</span>
+                  <span class="value">v13.3.0</span>
+                </div>
+                <div class="status-item">
+                  <span class="label">Last Sync</span>
+                  <span class="value">{{ props.hubInfo?.hubAge || 'Just Now' }}</span>
+                </div>
+              </div>
+
+              <div class="info-section">
+                <h4>Operational Limits</h4>
+                <p>Hardware optimization is active. Render muscle is currently handling heavy discovery tasks.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </header>
 </template>
 
 <style scoped>
-.header-wrapper {
+.console-header {
   position: sticky;
-  top: var(--sys-safe-frame-offset, 0px);
+  top: 0;
   z-index: 100;
-  padding: 12px var(--sys-safe-frame-offset, 0px);
-  padding-top: calc(12px + env(safe-area-inset-top));
-  box-sizing: border-box;
-  transition: padding 0.4s var(--sys-motion-spring);
-}
-
-.header-wrapper.is-scrolled {
-  padding-top: calc(6px + env(safe-area-inset-top));
-  padding-bottom: 6px;
-}
-
-.console-glass {
-  position: relative;
-  background: var(--sys-surface-glass);
-
-  border: 1px solid var(--sys-surface-glass-border);
+  background: var(--sys-glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--sys-border-subtle);
   border-radius: 24px;
-  padding: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  transition: all 0.3s var(--sys-motion-standard);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.console-header.is-scrolled {
+  margin-top: 8px;
+  padding: 12px 18px;
+  border-radius: 20px;
+}
+
+.header-main {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: var(--sys-elevation-2);
-  overflow: hidden;
-  transition: all 0.4s var(--sys-motion-spring);
 }
 
-.is-scrolled .console-glass {
-  border-radius: 20px;
-  padding: 12px 16px;
-  background: rgba(var(--sys-color-surface-container-high-rgb), 0.85);
-  box-shadow: var(--sys-elevation-3);
-}
-
-.bloom-effect {
-  position: absolute;
-  top: -100px;
-  left: -50px;
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, var(--sys-color-primary) 0%, transparent 70%);
-  opacity: 0.1;
-  pointer-events: none;
-  transition: opacity 0.4s;
-  z-index: 0;
-}
-
-.is-scrolled .bloom-effect {
-  opacity: 0.18;
-}
-
-.header-row {
+.title-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  width: 100%;
-  gap: 12px;
-  min-height: 44px;
+  align-items: center;
 }
 
-.left-cluster {
+.title-group {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
-  flex: 1;
 }
 
-.stats-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--sys-color-surface-container-highest);
-  border-radius: 8px;
-  font-size: 11px;
+.view-title {
+  margin: 0;
+  font-size: 24px;
   font-weight: 900;
-  flex-shrink: 0;
-  font-family: var(--sys-font-family-mono);
+  color: var(--sys-text-primary);
+  letter-spacing: -0.03em;
 }
 
-.sp-value {
-  color: var(--sys-color-primary);
-}
-
-.sp-label {
-  color: var(--sys-color-secondary);
-  text-transform: uppercase;
-  font-size: 8px;
-  opacity: 0.8;
-}
-
-.icon-button {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.action-group {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sys-color-primary);
-  background: var(--sys-color-surface-container-high);
-  transition: all 0.2s;
-  flex-shrink: 0;
-  border: 1px solid var(--sys-color-outline-variant);
-}
-
-.icon-button:active {
-  transform: scale(0.9);
-}
-
-.search-container {
-  position: relative;
-  flex: 1; /* Allow shrinking */
-  min-width: 120px;
-}
-
-.input-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-color-outline);
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-.glass-input {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px 0 40px;
-  border-radius: 12px;
-  background: var(--sys-color-surface-container-high);
-  border: 1px solid transparent;
-  color: var(--sys-color-on-surface);
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.glass-input:focus {
-  background: var(--sys-color-surface);
-  border-color: var(--sys-color-primary);
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(var(--sys-color-primary-rgb), 0.1);
-}
-
-.sort-group {
-  flex: 1.3; /* Give Sort slightly more space for long options */
-  min-width: 140px;
-}
-
-.sort-container {
-  position: relative;
-  width: 100%;
-}
-
-.glass-select {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px 0 36px;
-  border-radius: 12px;
-  background: var(--sys-color-surface-container-high);
-  border: 1px solid var(--sys-color-outline-variant);
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--sys-color-on-surface);
-  appearance: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.glass-select:focus {
-  border-color: var(--sys-color-primary);
-  outline: none;
-}
-
-.glass-select.has-info {
-  padding-right: 36px;
-}
-
-.sort-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-color-outline);
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-.info-dot-inline {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-  z-index: 10;
-}
-
-.info-dot-inline:active {
-  transform: translateY(-50%) scale(0.9);
-}
-
-.header-row.extra {
-  margin-top: 4px;
-  padding-top: 12px;
-  border-top: 1px solid var(--sys-color-outline-variant);
-  min-height: auto;
-}
-
-@media (max-width: 600px) {
-  .header-wrapper {
-    padding: 8px 0;
-  }
-  .console-glass {
-    padding: 12px;
-    border-radius: 16px;
-    margin: 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-}
-
-.title-link {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  color: inherit;
-  text-decoration: none;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--sys-border-subtle);
+  background: var(--sys-surf-c);
+  color: var(--sys-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+  background: var(--sys-surf-h);
+}
+
+.stats-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--sys-font-mono);
+}
+
+.stats-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--sys-text-tertiary);
+  letter-spacing: 0.05em;
+}
+
+.stats-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sys-primary);
+}
+
+.search-sort-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-box {
   position: relative;
+  height: 46px;
+  background: var(--sys-surf-h);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 12px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease;
 }
 
-.title-link::after {
-  content: "";
-  position: absolute;
-  bottom: -2px;
-  left: 0;
+.search-box:focus-within {
+  border-color: var(--sys-primary-muted);
+}
+
+.search-icon {
+  color: var(--sys-text-tertiary);
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--sys-text-primary);
+  font-size: 15px;
+  outline: none;
+}
+
+.sort-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sort-select-wrapper {
+  position: relative;
   width: 100%;
-  height: 2px;
-  background: var(--sys-color-primary);
-  opacity: 0.3;
-  transition: opacity 0.2s;
 }
 
-.title-icon {
-  opacity: 0.5;
-  transition: opacity 0.2s;
-  color: var(--sys-color-primary);
+.sort-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  padding-right: 32px;
+  background: var(--sys-surf-c);
+  border: 1px solid var(--sys-border-subtle);
+  border-radius: 10px;
+  appearance: none;
+  color: var(--sys-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.title-link:active {
-  opacity: 0.7;
+.sort-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sys-text-tertiary);
+  pointer-events: none;
 }
 
-.title-link:active .title-icon {
-  opacity: 1;
+.sort-desc {
+  font-size: 11px;
+  color: var(--sys-text-tertiary);
+  padding-left: 4px;
 }
+
+/* Info Overlay */
+.info-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.info-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--sys-surf-primary);
+  border-radius: 28px;
+  border: 1px solid var(--sys-border-subtle);
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.info-header {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--sys-border-subtle);
+}
+
+.info-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--sys-text-secondary);
+  cursor: pointer;
+}
+
+.info-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.info-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--sys-primary);
+  letter-spacing: 0.1em;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sys-border-subtle);
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-item .label {
+  color: var(--sys-text-secondary);
+  font-size: 14px;
+}
+
+.status-item .value {
+  color: var(--sys-text-primary);
+  font-weight: 600;
+  font-family: var(--sys-font-mono);
+}
+
+.info-section p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sys-text-secondary);
+  line-height: 1.5;
+}
+
+/* Transitions */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

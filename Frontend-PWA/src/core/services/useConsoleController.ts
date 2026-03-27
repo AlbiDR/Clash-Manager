@@ -222,35 +222,52 @@ export function useConsoleController<T extends { id: string }>(
    * information is always visible to the user.
    */
   const status = computed(() => {
+    const ageMs = Date.now() - (lastSyncTime.value || 0);
+    const ageMinutes = Math.floor(ageMs / 60000);
+
     // Priority 0: Critical configuration missing (Action Required)
     if (apiStatus.value === "unconfigured")
-      return { type: "error", text: "Configure URL" } as const;
+      return { type: "error", text: "Invalid API URL" } as const;
 
-    // Priority 1: Handshake with GAS cold start (server waking)
-    if (apiStatus.value === "waking" || apiStatus.value === "stale")
-      return { type: "loading", text: "Waking Server..." } as const;
-
-    // Priority 2: Physical network disconnect (Logical Offline)
+    // Priority 1: Physical network disconnect (Logical Offline)
     if (connectionStatus.value === "offline")
       return { type: "error", text: "Offline" } as const;
 
-    // Priority 3: Remote execution or fetch failure (Synchronous error)
-    if (syncError.value) return { type: "error", text: "Load Failed" } as const;
+    // Priority 2: Remote execution or fetch failure (Synchronous error)
+    if (syncError.value) return { type: "error", text: "Sync Error" } as const;
 
-    // Priority 4: Background sync in progress (Only show if UI is empty)
-    if (isRefreshing.value && (!data.value || data.value.length === 0))
+    // Priority 3: Server Waking (Initial boot delay)
+    if (apiStatus.value === "waking" || apiStatus.value === "stale")
+      return { type: "loading", text: "Waking Server..." } as const;
+
+    // Priority 4: Background fetch in progress
+    if (isRefreshing.value)
       return { type: "loading", text: "Syncing..." } as const;
 
-    // Priority 5: Success (Display last sync time for eventual consistency)
-    if (data.value && data.value.length > 0)
+    // Priority 5: Warning States (Stale or GAS Fallback)
+    // Rationale: If data is > 15m old or coming from GAS (not Worker Hub),
+    // we expand the pill to warn the user about potential data lag.
+    if (currentSource.value === "GAS" || ageMinutes >= 15) {
+      const sourceLabel = currentSource.value === "GAS" ? "GAS" : "Hub";
+      const displayAge = ageMinutes > 99 ? "99m+" : `${ageMinutes}m`;
       return {
-        type: "ready" as const,
-        text: formatTimeAgo(
-          new Date(lastSyncTime.value || Date.now()).toISOString(),
-        ),
+        type: "warning" as const,
+        text: `${sourceLabel}: ${displayAge}`,
       };
+    }
 
-    return { type: "ready" as const, text: "Empty" };
+    // Priority 6: Nominal (Clinical Purity)
+    // Rationale: If the Hub is < 15m old, we hide the label entirely.
+    // This reduces visual noise when the app is in a healthy state.
+    if (data.value && data.value.length > 0) {
+      return {
+        type: "success" as const,
+        text: "", // Hidden in nominal mode
+        nominal: true,
+      };
+    }
+
+    return { type: "success" as const, text: "Empty", nominal: true };
   });
 
   /**
