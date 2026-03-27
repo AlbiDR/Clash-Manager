@@ -6,6 +6,7 @@ import {
   ScoreBadge,
   RoleBadge,
   TenureBadge,
+  StatsGrid,
   StatisticItem
 } from "@shared";
 import { computed, defineAsyncComponent } from "vue";
@@ -72,9 +73,9 @@ const ariaLabel = computed(() => {
 
     <!-- Expanded Content -->
     <template #expanded-content>
-      <div
-        class="stats-grid lb-grid"
-        :aria-busy="props.appIsRefreshing"
+      <StatsGrid
+        :columns="2"
+        :loading="props.appIsRefreshing"
       >
         <StatisticItem
           label="War Rate"
@@ -102,7 +103,7 @@ const ariaLabel = computed(() => {
           :loading="props.appIsRefreshing"
           :value="formatTimeAgo(props.member.d.seen)"
         />
-      </div>
+      </StatsGrid>
 
       <WarHistoryChart :history="props.member.d.hist" :loading="props.appIsRefreshing" />
 
@@ -117,17 +118,6 @@ const ariaLabel = computed(() => {
 
 <style scoped>
 /* Content specific styles only */
-
-/* Expanded Content Layout */
-.lb-grid {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-@media (max-width: 360px) {
-  .lb-grid {
-    gap: 6px;
-  }
-}
 
 .card-actions-margin {
   margin-top: 16px;
