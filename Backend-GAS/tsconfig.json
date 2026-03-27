@@ -14,5 +14,5 @@
     "types": ["google-apps-script", "node"]
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "scripts"]
 }
