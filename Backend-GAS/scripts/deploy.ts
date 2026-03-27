@@ -12,6 +12,7 @@ import {
   renameSync
 } from 'node:fs';
 import { join, basename, extname } from 'node:path';
+import esbuild from 'esbuild';
 
 /**
  * Lead Full-Stack Architect & UI/UX Engineer Refactor
@@ -89,7 +90,6 @@ async function main() {
   const valibotEntryPath = join(ROOT_DIR, 'valibot-entry.js');
   writeFileSync(valibotEntryPath, "export * from 'valibot';");
   try {
-    const esbuild = require('esbuild');
     esbuild.buildSync({
       entryPoints: [valibotEntryPath],
       bundle: true,
@@ -168,10 +168,9 @@ async function main() {
     error('Transformation failed: No .gs files found in distribution.');
   }
 
-  // 9. Deploy via Clasp
   log('Pushing artifacts to Google Apps Script...');
-  // Use clasp directly; it should be in the path after pnpm install or provided by devDeps
-  runCommand('clasp push --force');
+  // Use npx to ensure we use the local version in the workspace
+  runCommand('npx clasp push --force');
 
   log('Deployment completed successfully.');
 }
