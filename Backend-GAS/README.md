@@ -52,7 +52,7 @@ A pure mathematical engine isolated from the rest of the system. It operates on 
 
 Internal scoring is designed to reward both long-term reliability and short-term excellence.
 
-- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors (Fame, Donations, Trophies, War Participation).
+- **RPeS (Raw Performance Score)**: The weighted sum of multiple performance vectors (Fame, Donations, Trophies, War Participation).
 - **PeS (Performance Score)**: A relative normalization of the RPeS.
   - **Normalization**: Calculated as `(Member RPeS / Max RPeS in Clan) * 100`.
   - **Relative Curve**: Ensures the leaderboard remains a "relative curve" regardless of meta shifts.
