@@ -98,6 +98,9 @@ interface ConsoleLogicOptions<T> {
  * - `showSkeletons`: Shimmer visibility flag.
  * - `layoutProps`: Consolidated object for direct injection into `ConsoleLayout`.
  */
+/** Build-time flag — never changes at runtime, intentionally module-scoped. */
+const WORKER_HUB_ENABLED = import.meta.env.VITE_USE_WORKER_HUB === "true";
+
 export function useConsoleController<T extends { id: string }>(
   options: ConsoleLogicOptions<T>,
 ) {
@@ -278,8 +281,7 @@ export function useConsoleController<T extends { id: string }>(
     // primary channel but GAS was used instead (degraded path). If VITE_USE_WORKER_HUB
     // is not enabled, GAS is the intentional primary — no warning is warranted.
     // "Stale Data" applies regardless of source when the age threshold is exceeded.
-    const workerHubEnabled = import.meta.env.VITE_USE_WORKER_HUB === "true";
-    const isGasFallback = workerHubEnabled && currentSource.value === "GAS";
+    const isGasFallback = WORKER_HUB_ENABLED && currentSource.value === "GAS";
 
     if (isGasFallback || ageMinutes >= 15) {
       const warningLabel = isGasFallback ? "Fallback" : "Stale Data";

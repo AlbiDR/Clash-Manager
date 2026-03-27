@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref, unref } from "vue";
+import { computed, unref } from "vue";
 import { useHaptics } from "@core";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
@@ -53,11 +53,7 @@ const activeSortDescription = computed(() => {
   return opt?.desc || "";
 });
 
-const activeSortFullDescription = computed(() => {
-  if (!props.sortOptions || !props.currentSort) return "";
-  const opt = props.sortOptions.find((o) => o.value === props.currentSort);
-  return opt?.fullDesc || "";
-});
+
 
 const handleOpenSheet = () => {
   if (props.sheetUrl) {
