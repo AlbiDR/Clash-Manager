@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useHaptics } from "@core";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
@@ -54,10 +54,29 @@ const activeSortDescription = computed(() => {
   return opt?.desc || "";
 });
 
-function openOverlay() {
-  haptics.vibrate("tap");
+const handleOpenSheet = () => {
+  if (props.sheetUrl) {
+    haptics.tap();
+    window.open(props.sheetUrl, "_blank");
+  }
+};
+
+const openOverlay = () => {
+  haptics.tap();
   showInfoOverlay.value = true;
-}
+};
+
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 10;
+};
+
+onMounted(() => {
+  window.addEventListener("scroll", handleScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("scroll", handleScroll);
+});
 </script>
 
 <template>
@@ -84,7 +103,7 @@ function openOverlay() {
             class="icon-btn"
             title="Open Source Sheet"
             aria-label="Open Source Sheet"
-            @click="window.open(props.sheetUrl, '_blank')"
+            @click="handleOpenSheet"
           >
             <Icon name="external-link" size="20" />
           </button>
@@ -169,7 +188,7 @@ function openOverlay() {
                 </div>
                 <div class="status-item">
                   <span class="label">Schema</span>
-                  <span class="value">v13.3.0</span>
+                  <span class="value">v13.3.1</span>
                 </div>
                 <div class="status-item">
                   <span class="label">Last Sync</span>

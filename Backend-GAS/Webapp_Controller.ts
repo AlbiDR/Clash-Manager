@@ -385,20 +385,30 @@ const WebappController: WebappControllerContract = {
       queueRecruits.forEach((recruit, tagWithHash) => {
         const tag = tagWithHash.replace("#", "").toUpperCase();
         if (!recruitPoolMap.has(tag) && !exclusionSet.has("#" + tag)) {
-          // Map Recruit object to Sheet matrix format
-          // [id, n, t, score, rawScore, don, war, cards, ago, lastScan]
-          const mappedRow = [
-            tag,
-            recruit.name,
-            recruit.trophies,
-            recruit.potentialScore || 0,
-            recruit.rawScore || 0,
-            recruit.donations,
-            recruit.war,
-            recruit.cards,
-            recruit.foundDate.toISOString(),
-            recruit.lastScan ? new Date(recruit.lastScan).toISOString() : ""
-          ];
+          // Map Recruit object to Schema-Aware matrix format.
+          // This ensures that if the main extractor schema changes, the queue
+          // data remains aligned with the same indices.
+          const mappedRow = new Array(hhSchema.length).fill(null);
+          
+          const recruitData: Record<string, any> = {
+            id: tag,
+            n: recruit.name,
+            t: recruit.trophies,
+            potentialScore: recruit.potentialScore || 0,
+            potentialRawScore: recruit.rawScore || 0,
+            don: recruit.donations,
+            war: recruit.war,
+            cards: recruit.cards,
+            ago: recruit.foundDate.toISOString(),
+            lastScan: recruit.lastScan ? new Date(recruit.lastScan).toISOString() : ""
+          };
+
+          hhSchema.forEach((key, idx) => {
+            if (recruitData[key] !== undefined) {
+              mappedRow[idx] = recruitData[key];
+            }
+          });
+          
           recruitPoolMap.set(tag, mappedRow);
         }
       });

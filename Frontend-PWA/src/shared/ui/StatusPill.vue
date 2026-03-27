@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { useHaptics } from "../../core/services/useHaptics";
 import { ref, computed, watch, onUnmounted } from "vue";
@@ -14,13 +16,9 @@ const props = defineProps<{
   schemaVersion?: string;
 }>();
 
-const emit = defineEmits<{
-  refresh: [];
-}>();
-
 const haptics = useHaptics();
 const isExpanded = ref(false);
-let collapeTimer: ReturnType<typeof setTimeout> | null = null;
+let collapseTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * TOGGLE DETAIL VIEW
@@ -28,6 +26,7 @@ let collapeTimer: ReturnType<typeof setTimeout> | null = null;
  * until the user requests technical depth or a state shift occurs.
  */
 function handleToggle() {
+  if (collapseTimer) clearTimeout(collapseTimer);
   isExpanded.value = !isExpanded.value;
   haptics.tap();
 
@@ -37,8 +36,8 @@ function handleToggle() {
 }
 
 function startCollapseTimer() {
-  if (collapeTimer) clearTimeout(collapeTimer);
-  collapeTimer = setTimeout(() => {
+  if (collapseTimer) clearTimeout(collapseTimer);
+  collapseTimer = setTimeout(() => {
     isExpanded.value = false;
   }, 5000); // 5s Auto-collapse
 }
@@ -48,17 +47,19 @@ watch(() => props.type, (newType, oldType) => {
   if (newType === oldType) return;
   
   if (newType === 'warning') {
+    if (collapseTimer) clearTimeout(collapseTimer);
     haptics.warning();
     isExpanded.value = true; // Auto-expand on warning
     startCollapseTimer();
   } else if (newType === 'error') {
+    if (collapseTimer) clearTimeout(collapseTimer);
     haptics.error();
     isExpanded.value = true; // Auto-expand on error
   }
 });
 
 onUnmounted(() => {
-  if (collapeTimer) clearTimeout(collapeTimer);
+  if (collapseTimer) clearTimeout(collapseTimer);
 });
 
 const indicatorColor = computed(() => {
@@ -81,6 +82,7 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
       <!-- Pulsing Nucleus -->
       <div 
         class="status-dot" 
+        :class="{ 'warning-pulse': props.type === 'warning' }"
         :style="{ backgroundColor: indicatorColor }"
       >
         <div class="dot-nucleus" :class="{ 'pulse': props.type !== 'success' }"></div>
@@ -124,6 +126,7 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   z-index: 100;
+  position: relative; /* Ensure metadata panel anchors correctly */
 }
 
 .status-pill {
@@ -166,8 +169,18 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
   opacity: 0.3;
 }
 
-.dot-nucleus.pulse {
+.pulse .dot-nucleus {
   animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.warning-pulse {
+  animation: warning-pulse 2s infinite;
+}
+
+@keyframes warning-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(237, 145, 33, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(237, 145, 33, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(237, 145, 33, 0); }
 }
 
 .label-wrapper {
@@ -187,7 +200,7 @@ const showLabel = computed(() => !props.nominal || isExpanded.value || props.typ
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--sys-surface-glass, rgba(30, 30, 35, 0.8));
+  background: var(--sys-surface-glass, rgba(30, 30, 35, 0.9));
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
