@@ -147,7 +147,7 @@ const handleOpenSheet = () => {
       </div>
     </div>
 
-    <div class="header-extra">
+    <div class="header-extra" v-if="!!$slots.extra">
       <slot name="extra"></slot>
     </div>
   </header>
@@ -179,6 +179,10 @@ const handleOpenSheet = () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.header-extra {
+  margin-top: 32px;
 }
 
 .title-row {
