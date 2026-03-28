@@ -68,6 +68,8 @@ Returns the current worker version and internal configuration limits. Used by th
 }
 ```
 
+> **Note**: The Worker Hub currently returns raw matrices (arrays of arrays) as provided by the GAS dumb store. Re-hydration and field mapping are performed by the PWA's `GasClient.ts` to minimize Worker-side transformation overhead.
+
 #### `GET /health`
 Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
 
