@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-28] PR #323: test(verify): add coverage for ToastContainer
+**Commit**: `5caf81415fcfed821ff6e13251a708d8987c58ba`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/323)
+
+### Description
+Implemented comprehensive unit and component tests for `ToastContainer.vue` in the PWA. The test suite covers rendering logic, dynamic layout coordination (via `useUiCoordinator`), event delegation to the `useToast` service, and accessibility compliance. This closes a zero-coverage gap in the shared UI layer.
+
+---
+*PR created automatically by Jules for task [12726832598490571215](https://jules.google.com/task/12726832598490571215) started by @AlbiDR*
+
+---
+
 ## [2026-03-28] PR #322: fix(harden): integrate quota guarding for high-volume operations
 **Commit**: `d67d285003b7906afea120943c37240228498ce6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/322)
