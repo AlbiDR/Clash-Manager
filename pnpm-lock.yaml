@@ -93,8 +93,8 @@ importers:
         specifier: ^17.3.9
         version: 17.3.9
       knip:
-        specifier: ^6.0.2
-        version: 6.0.2
+        specifier: ^6.0.6
+        version: 6.0.6
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@24.12.0)(typescript@5.9.3)
@@ -3195,8 +3195,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  knip@6.0.2:
-    resolution: {integrity: sha512-W17Bo5N9AYn0ZkgWHGBmK/01SrSmr3B6iStr3zudDa2eqi+Kc8VmPjSpTYKDV2Uy/kojrlcH/gS1wypAXfXRRA==}
+  knip@6.0.6:
+    resolution: {integrity: sha512-PA+r1mTDLHH3eShlffn2ZDyH1hHvmgDj7JsTP3JKuhV/jZTyHbRkGcOd+uaSxfJZmcZyOE5zw3naP33WllTIlA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -7721,7 +7721,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  knip@6.0.2:
+  knip@6.0.6:
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       fast-glob: 3.3.3
