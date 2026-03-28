@@ -7,7 +7,9 @@ import { HubError } from "../types/HubTypes.js";
  * ============================================================================
  * [MODULE] NETWORK (WORKER HUB EDITION)
  * ----------------------------------------------------------------------------
- * Handles Quota Guarding for the Render Worker's autonomous 5m Hub loops.
+ * Handles Quota Guarding for the Render Worker's Royale API traffic.
+ * Rationale: Every high-volume operation (scanning, batch profiling, audits)
+ * must be validated against the daily budget to prevent quota exhaustion.
  * ============================================================================
  */
 
@@ -15,10 +17,10 @@ export class Network {
   private static _fetchCount: number = 0; // EPHEMERAL: intentionally resets on restart
   private static _lastResetDate: string = new Date().toISOString().slice(0, 10); // EPHEMERAL: intentionally resets on restart
   
-  // Daily budget strictly for the autonomous worker daemon.
-  // The global 20,000 threshold across all Royale API keys is shared,
-  // but the worker gets a generous baseline since it operates at 5m intervals.
-  // (12 requests/hour = 288 requests/day base, but scanning consumes more).
+  // Daily budget for all Royale API traffic originating from this worker.
+  // The global 20,000 threshold across all Royale API keys is shared.
+  // This guard ensures the worker does not consume the entire quota, leaving
+  // enough for other subsystems (e.g., PWA direct scans).
   private static readonly MAX_FETCH_DAILY_GUARD = 15000;
 
   /**

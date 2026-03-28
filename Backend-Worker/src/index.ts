@@ -23,6 +23,7 @@ import * as v from "valibot";
 import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
 import Time from "../../Backend-GAS/Time";
 import { KeyService } from "./KeyService.js";
+import { Network } from "./services/Network.js";
 import { WorkerHubController } from "./controllers/WorkerHubController.js";
 import {
   HubErrorSchema,
@@ -221,6 +222,11 @@ async function fetchWithRotatedRetries<T = unknown>(
 
     try {
       const fetchResponse = await timeoutFetch(url, fetchOptions);
+
+      // THREAT: Royale API Quota Exhaustion.
+      // Target B [4]: Track all Royale API attempts to prevent quota guard trips.
+      Network.addQuotaUsage(1);
+
       const responseCode = fetchResponse.status;
       const responseText = await fetchResponse.text();
 
@@ -282,6 +288,12 @@ export async function processBatch<T = unknown>(
   scoring: ScoringWeights | null = null,
   prophetCache?: Record<string, ProphetIntel>
 ): Promise<FetchResult<T>[]> {
+  // THREAT: Resource Exhaustion (Quota).
+  // Target IV: Pre-emptively fail if the batch exceeds remaining daily budget.
+  // We estimate 2 requests per URL if scoring is enabled (Profile + Logs), 1 otherwise.
+  const estimatedUsage = scoring ? urls.length * 2 : urls.length;
+  Network.quotaCheck(estimatedUsage);
+
   const results: FetchResult<T>[] = new Array(urls.length);
   let batchIndex = 0;
 
@@ -451,6 +463,10 @@ export async function processScanBatch(
   prophetCache?: Record<string, ProphetIntel>,
   debug?: ScanDebugInfo
 ): Promise<ScoredPlayer[]> {
+  // THREAT: Resource Exhaustion (Quota).
+  // Target IV: Pre-emptively fail if the scan batch exceeds remaining daily budget.
+  Network.quotaCheck(tags.length);
+
   const candidates: ScoredPlayer[] = [];
   let batchIndex = 0;
   let traceCaptured = false;
@@ -592,9 +608,16 @@ app.get("/health", async (_request: Request, response: ExpressResponse): Promise
     
     if (testKey) {
         try {
+            // THREAT: Resource Exhaustion.
+            // Even health checks consume quota. Track it.
+            Network.quotaCheck(1);
+
             const healthCheckResponse = await timeoutFetch(`${CONFIG.apiBase}/cards`, {
                 headers: { Authorization: `Bearer ${testKey}` }
             }, 3000);
+
+            Network.addQuotaUsage(1);
+
             upstreamStatus = healthCheckResponse.status === 200 ? "OK" : `FAIL_${healthCheckResponse.status}`;
             if (healthCheckResponse.status === 200) KEYS.reportSuccess(testKey);
             if (healthCheckResponse.status === 429 || healthCheckResponse.status === 403) KEYS.reportFailure(testKey, healthCheckResponse.status);
@@ -635,6 +658,10 @@ app.post(
     try {
       const { apiKeys } = result.output;
 
+      // THREAT: Resource Exhaustion.
+      // Audit batches can be large. Fail-fast if quota is low.
+      Network.quotaCheck(apiKeys.length);
+
       const auditUrl = `${CONFIG.apiBase}/cards`;
       const auditTasks = apiKeys.map(async (apiKey): Promise<ApiKeyAuditResult> => {
         try {
@@ -649,6 +676,10 @@ app.post(
             },
             5000,
           );
+
+          // Track usage for each audit attempt
+          Network.addQuotaUsage(1);
+
           if (auditResponse.status === 200) KEYS.reportSuccess(apiKey);
           if (auditResponse.status === 429 || auditResponse.status === 403) KEYS.reportFailure(apiKey, auditResponse.status);
           
