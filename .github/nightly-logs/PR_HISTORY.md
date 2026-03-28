@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-28] PR #327: chore(deps): bump knip from 6.0.2 to 6.0.6
+**Commit**: `13e7820c3483770f4a6703583f9ed36f14d04bfb`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/327)
+
+### Description
+Bumped `knip` from `^6.0.2` to `^6.0.6` in the root `package.json` and updated the dependency audit log. All tests passed.
+
+---
+*PR created automatically by Jules for task [13504383654075756099](https://jules.google.com/task/13504383654075756099) started by @AlbiDR*
+
+---
+
 ## [2026-03-28] PR #326: test(verify): add coverage for TrajectoryItem component
 **Commit**: `ece8b3e1e333af58190a43e5573b135d53ae3b2e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/326)
