@@ -1,16 +1,25 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
  * ============================================================================
- * CLASH MANAGER WORKER (TypeScript Edition)
+ * [MODULE] CLASH MANAGER WORKER (TypeScript Edition)
  * ----------------------------------------------------------------------------
- * High-performance Express server for bulk API operations
- * Migrated from JavaScript with full type safety and modern TS features
+ * High-performance Express server for bulk API operations.
+ * Migrated from JavaScript with full type safety and modern TS features.
  * ============================================================================
  *
  * @remarks
- * The Backend-Worker serves as the high-performance, stateless processing tier
- * of the distributed architecture. Its primary role is to offload resource-intensive
- * network operations (scanning and batch fetching) from the Google Apps Script
- * environment, thereby bypassing GAS execution limits and UrlFetchApp quotas.
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core) / Layer 5 (@root) bridge.
+ * - **Role:** Serves as the high-performance, stateless processing tier
+ *   of the distributed architecture. Its primary role is to offload resource-intensive
+ *   network operations (scanning and batch fetching) from the Google Apps Script
+ *   environment, thereby bypassing GAS execution limits and UrlFetchApp quotas.
+ *
+ * **Constraints:**
+ * - Stateless execution: No long-term persistence should be assumed for local variables.
+ * - Concurrency bound: All batch operations are restricted by `WORKER_CONCURRENCY`.
  */
 
 import express, {
@@ -169,8 +178,12 @@ app.use(express.json({ limit: "50mb" }));
 /**
  * [GUARD] ERROR MESSAGE EXTRACTION
  *
+ * @remarks
  * Safely extracts an error message from an unknown error object.
  * THREAT: Unchecked property access on error objects leading to silent runtime crashes.
+ *
+ * @param err - The unknown error object to extract a message from.
+ * @returns A string representation of the error message.
  */
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -178,7 +191,17 @@ function getErrorMessage(err: unknown): string {
 }
 
 /**
- * Fetch with timeout protection
+ * [NETWORK] TIMEOUT FETCH
+ *
+ * @remarks
+ * Executes a global fetch operation with a built-in AbortSignal timeout.
+ * This serves as a protection layer against hung upstream Royale API requests
+ * that could otherwise exhaust worker concurrency slots.
+ *
+ * @param url - The destination Royale API endpoint.
+ * @param opts - Standard fetch RequestInit options.
+ * @param timeout - Duration in milliseconds before the request is aborted.
+ * @returns The upstream fetch response.
  */
 async function timeoutFetch(
   url: string,
@@ -192,7 +215,19 @@ async function timeoutFetch(
 }
 
 /**
- * Fetch with automatic retries, exponential backoff with jitter, and SMART KEY ROTATION
+ * [NETWORK] SMART ROTATED FETCH
+ *
+ * @remarks
+ * Orchestrates a network request with high-resiliency features:
+ * 1. **Key Rotation:** Automatically selects a healthy key from the provided pool.
+ * 2. **Jittered Backoff:** Retries failed requests (5xx, 429) with exponential delay.
+ * 3. **Quota Tracking:** Increments the global `Network` quota counter on every attempt.
+ *
+ * @param url - The destination Royale API endpoint.
+ * @param baseOpts - Initial fetch options (method, headers).
+ * @param retries - Maximum number of retry attempts.
+ * @param keyService - Optional scoped KeyService; defaults to global `KEYS`.
+ * @returns A structured FetchResult containing the status code and parsed JSON or raw text.
  */
 async function fetchWithRotatedRetries<T = unknown>(
   url: string,
@@ -267,10 +302,15 @@ async function fetchWithRotatedRetries<T = unknown>(
 }
 
 /**
- * Calculate War Week ID (ISO Week Number format: YYWnn)
+ * [LOGIC] WAR WEEK ID CALCULATION
  *
  * @remarks
- * Uses centralized Time module from GAS to ensure 10:00 UTC Monday reset consistency.
+ * Uses the centralized `Time` kernel from the GAS backend to calculate a standardized
+ * War Week ID (YYWnn format). This ensures that the Worker and GAS backends
+ * are perfectly synchronized regarding the 10:00 UTC Monday reset.
+ *
+ * @param dateStr - ISO 8601 date string.
+ * @returns The branded WarWeekId.
  */
 function calculateWarWeekId(dateStr: string): WarWeekId {
   if (!dateStr) return "Unknown" as WarWeekId;
@@ -279,7 +319,23 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
 }
 
 /**
- * Generic batch processor with worker pool pattern
+ * [BATCH] GENERIC FETCH PROCESSOR
+ *
+ * @remarks
+ * Implements a high-concurrency worker pool pattern to process multiple URLs
+ * in parallel. This function handles both raw data fetching and specialized
+ * recruitment scoring (Strategy 2: Deep Delegation).
+ *
+ * **Constraints:**
+ * - **Quota Guard:** Pre-emptively calls `Network.quotaCheck` to prevent exhaustion.
+ * - **Concurrency:** Limited by `CONFIG.concurrency`.
+ *
+ * @param urls - Array of Royale API endpoints to process.
+ * @param apiKeys - Optional array of keys for the local KeyService pool.
+ * @param concurrency - Maximum simultaneous requests.
+ * @param scoring - Optional scoring weights to trigger recruitment processing.
+ * @param prophetCache - Historical heritage data used for scoring multipliers.
+ * @returns Array of FetchResults; sorted by score if recruitment scoring was active.
  */
 export async function processBatch<T = unknown>(
   urls: string[],
@@ -453,7 +509,23 @@ export async function processBatch<T = unknown>(
 }
 
 /**
- * Tournament scan batch processor
+ * [SCAN] TOURNAMENT DISCOVERY PROCESSOR
+ *
+ * @remarks
+ * Phase 1 of the recruitment pipeline. Scans multiple open tournaments to
+ * identify active, clanless players.
+ *
+ * **Constraints:**
+ * - **Quota Guard:** Fail-fast check against the daily worker budget.
+ * - **Strict Filtering:** Automatically rejects players already in a clan.
+ *
+ * @param tags - Tournament tags to scan.
+ * @param apiKeys - Scoped API keys for rotation.
+ * @param concurrency - Maximum concurrent scan requests.
+ * @param blacklistSet - Set of player tags to ignore (dismissed/blacklisted).
+ * @param prophetCache - Heritage data for scoring prioritization.
+ * @param debug - Optional diagnostic object for tracing the first scan result.
+ * @returns Array of unscored recruit candidates (metadata only).
  */
 export async function processScanBatch(
   tags: TournamentTag[],
@@ -573,10 +645,21 @@ export async function processScanBatch(
 //  ROUTES
 // ============================================================================
 
+/**
+ * [ROUTE] ROOT
+ * Returns a simple string to verify the worker is listening.
+ */
 app.get("/", (_request: Request, response: ExpressResponse): void => {
   response.send("Clash Manager Worker is running");
 });
 
+/**
+ * [ROUTE] CAPABILITIES
+ *
+ * @remarks
+ * Returns the worker's operational metadata, including its concurrency limits
+ * and version info. Used by the GAS backend to calibrate request batches.
+ */
 app.get("/capabilities", (_request: Request, response: ExpressResponse): void => {
   response.json({
     status: "success",
@@ -590,13 +673,13 @@ app.get("/capabilities", (_request: Request, response: ExpressResponse): void =>
 });
 
 /**
- * DIAGNOSTIC HEALTH HANDSHAKE
+ * [ROUTE] DIAGNOSTIC HEALTH HANDSHAKE
  *
  * @remarks
- * Performs a multi-tier health check:
- * 1. Internal Pool: Reports key availability and throttling status.
- * 2. Upstream: Executes a test call to the Royale API using the healthiest key.
- * 3. System: Reports memory usage (RSS).
+ * Performs a multi-tier health check to ensure the worker is operational:
+ * 1. **Internal Pool:** Reports key availability and throttling status.
+ * 2. **Upstream:** Executes a test call to the Royale API using the healthiest key.
+ * 3. **System:** Reports memory usage (RSS).
  */
 app.get("/health", async (_request: Request, response: ExpressResponse): Promise<void> => {
     // 1. Local Pool Diagnostics
@@ -635,11 +718,14 @@ app.get("/health", async (_request: Request, response: ExpressResponse): Promise
 });
 
 /**
- * KEY AUDIT ENDPOINT
+ * [ROUTE] KEY AUDIT
  *
  * @remarks
- * Validates an array of API keys provided in the request body.
- * Updates the global KeyService pool with the results of the audit.
+ * Validates an array of API keys provided in the request body against the Royale API.
+ * Updates the global `KEYS` service with the health results of the audit.
+ *
+ * **Constraint:** Privileged endpoint; requires Bearer token.
+ * **Validation:** Enforced via `AuditRequestSchema`.
  */
 app.post(
   "/audit",
@@ -706,14 +792,15 @@ app.post(
 );
 
 /**
- * PUBLIC SCAN ENDPOINT
+ * [ROUTE] PUBLIC RECRUITMENT SCAN
  *
  * @remarks
- * Entry point for unauthenticated recruitment scans.
- * Supports two phases:
- * 1. Discovery: Scans tournaments for active, clanless players.
- * 2. Scoring: If 'scoring' is provided, fetches full profiles and
- *    calculates potential scores server-side.
+ * Public entry point for recruitment scans. Orchestrates two phases:
+ * 1. **Discovery:** Scans tournaments for active, clanless players.
+ * 2. **Scoring:** If `scoring` weights are provided, fetches full profiles
+ *    and calculates RPoS (Raw Potential Score) server-side.
+ *
+ * **Validation:** Enforced via `PublicScanRequestSchema`.
  */
 app.post(
   "/public/scan",
@@ -793,6 +880,13 @@ app.post(
   },
 );
 
+/**
+ * [ROUTE] PUBLIC PUSH SUBSCRIPTION
+ *
+ * @remarks
+ * Ingests a standard browser PushSubscription for future notification dispatch.
+ * Currently stores in an in-memory set; persistence required for durability.
+ */
 // Push subscription storage (in-memory)
 // PERSISTENCE REQUIRED: Push subscriptions are lost on restart and must be migrated to a database.
 const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: see [issue description]
@@ -815,12 +909,15 @@ app.post(
 );
 
 /**
- * INTERNAL SCAN ENDPOINT
+ * [ROUTE] INTERNAL RECRUITMENT SCAN
  *
  * @remarks
- * High-precision recruitment scan with advanced debugging and
- * Prophet Cache integration. Used by the GAS backend for
- * administrative headhunting.
+ * Privileged entry point for high-precision recruitment scans. Includes
+ * advanced telemetry (`trace`) and deep integration with the Prophet Cache
+ * (heritage data) for prioritization.
+ *
+ * **Constraint:** Privileged endpoint; requires Bearer token.
+ * **Validation:** Enforced via `ScanRequestSchema`.
  */
 app.post(
   "/scan",
@@ -911,15 +1008,15 @@ app.post(
 );
 
 /**
- * CLAN SNAPSHOT ENDPOINT
+ * [ROUTE] CLAN SNAPSHOT
  *
  * @remarks
- * Aggregates a multi-resource snapshot of a clan in a single response:
- * 1. Members List
- * 2. Current River Race Status
- * 3. 52-Week War History (Reconciled)
+ * High-density endpoint that aggregates multiple Royale API resources into a
+ * single response, minimizing network round-trips for the GAS orchestrator.
+ * Resources included: Members List, Current River Race, and 52-Week War Log.
  *
- * This minimizes the number of round-trips from GAS to the Worker.
+ * **Constraint:** Privileged endpoint; requires Bearer token.
+ * **Validation:** Enforced via `ClanFullRequestSchema`.
  */
 app.post(
   "/clan/full",
@@ -1036,6 +1133,16 @@ app.post(
   },
 );
 
+/**
+ * [ROUTE] CLAN RESOURCE FETCH
+ *
+ * @remarks
+ * Bridges individual Royale API resources (Members, WarLog) with optional
+ * local data transformation (e.g. role normalization).
+ *
+ * **Constraint:** Privileged endpoint; requires Bearer token.
+ * **Validation:** Enforced via `ClanApiRequestSchema`.
+ */
 app.post(
   "/clan/api",
   async (
@@ -1158,6 +1265,16 @@ app.post(
   },
 );
 
+/**
+ * [ROUTE] GENERIC BULK FETCH
+ *
+ * @remarks
+ * Executes a high-concurrency batch fetch for an arbitrary list of URLs.
+ * Supports recruitment scoring (Strategy 2: Deep Delegation).
+ *
+ * **Constraint:** Privileged endpoint; requires Bearer token.
+ * **Validation:** Enforced via `FetchRequestSchema`.
+ */
 app.post(
   "/fetch",
   async (
@@ -1198,11 +1315,14 @@ app.post(
 );
 
 /**
- * HUB STATE ENDPOINT
+ * [ROUTE] HUB STATE
  * 
+ * @remarks
  * Exposes the synchronized Worker Hub payload to the PWA.
  * Rationale: This is a privileged endpoint protected by authMiddleware as it
  * serves internal clan data (Roster/Headhunter). Strictly stateless to prevent locking read queries.
+ *
+ * **Constraint:** Privileged endpoint; requires Bearer token.
  */
 app.get("/hub/state", async (_request: Request, response: ExpressResponse): Promise<void> => {
   try {
@@ -1226,10 +1346,12 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
 });
 
 /**
- * MANUAL SYNC ENDPOINT
+ * [ROUTE] MANUAL HUB SYNC
  * 
+ * @remarks
  * Allows forcing a synchronization cycle manually (e.g. via GAS triggers or Webhooks).
- * Requires the REMOTE_WORKER_SECRET.
+ *
+ * **Constraint:** Privileged endpoint; requires Bearer token.
  */
 app.post("/hub/sync/manual", async (_request: Request, response: ExpressResponse): Promise<void> => {
   const secret = process.env["REMOTE_WORKER_SECRET"] || "";
