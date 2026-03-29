@@ -179,13 +179,7 @@ export const HubStateSchema = v.object({
     source: v.string(),
   }),
   data: v.object({
-    roster: v.object({
-      headers: v.array(v.string()),
-      rows: v.array(v.array(v.unknown())),
-    }),
-    headhunter: v.object({
-      headers: v.array(v.string()),
-      rows: v.array(v.array(v.unknown())),
-    }),
+    roster: v.array(v.array(v.unknown())),
+    headhunter: v.array(v.array(v.unknown())),
   }),
 });
