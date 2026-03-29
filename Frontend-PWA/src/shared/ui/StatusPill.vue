@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<{
   hubInfo?: {
     source: "WORKER" | "GAS";
     hubAge: string | null;
+    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
 }>(), {
   direction: "right"
@@ -79,6 +80,9 @@ const handleToggle = () => {
             <span v-if="props.hubInfo.hubAge" class="hub-age">
               {{ props.hubInfo.hubAge }}
             </span>
+            <span v-if="props.hubInfo.source !== 'WORKER' && props.hubInfo.diagnosis" class="diagnosis-tag">
+              ({{ props.hubInfo.diagnosis }})
+            </span>
           </div>
         </template>
         <template v-else>
@@ -94,50 +98,44 @@ const handleToggle = () => {
   display: inline-flex;
   align-items: center;
   height: 32px;
-  padding: 0 6px;
+  padding: 0 4px;
+  border-radius: 16px;
   background: var(--sys-surf-c);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  border-radius: 100px;
+  border: 1px solid var(--sys-outline-v);
+  overflow: hidden;
   cursor: pointer;
   transition: all 0.4s var(--sys-motion-standard);
   user-select: none;
-  overflow: hidden;
-  max-width: 32px;
-  white-space: nowrap;
+  position: relative;
+  z-index: 10;
 }
 
-.status-pill.expand-left {
+.status-pill.is-nominal {
+  border-color: transparent;
+  background: transparent;
+}
+
+.status-pill.is-expanded {
+  padding: 0 10px 0 4px;
+  background: var(--sys-surf-l);
+  box-shadow: var(--sys-elev-1);
+}
+
+.status-pill.expand-left.is-expanded {
   flex-direction: row-reverse;
+  padding: 0 4px 0 10px;
 }
 
-.status-pill.is-expanded,
-.status-pill.loading {
-  max-width: 300px;
-  background: var(--sys-surf-primary);
-  border-color: rgba(128, 128, 128, 0.3);
-}
-
-.status-pill.expand-right.is-expanded,
-.status-pill.expand-right.loading {
-  padding: 0 12px 0 6px;
-}
-
-.status-pill.expand-left.is-expanded,
-.status-pill.expand-left.loading {
-  padding: 0 6px 0 12px;
-}
-
-/* Logic for nominal mode - only expand on click or loading */
-.status-pill.is-nominal:not(.is-expanded):not(.loading) {
-  width: 32px;
-  padding: 0;
-  justify-content: center;
-}
+/* Base Types */
+.status-pill.loading { border-color: var(--sys-primary); background: var(--sys-primary-container); }
+.status-pill.success { color: var(--sys-success); }
+.status-pill.warning { color: var(--sys-warning); border-color: var(--sys-warning); }
+.status-pill.error   { color: var(--sys-error); border-color: var(--sys-error); }
 
 .status-dot {
   position: relative;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,145 +148,130 @@ const handleToggle = () => {
   border-radius: 50%;
   background: currentColor;
   z-index: 2;
-  box-shadow: 0 0 8px currentColor;
   transition: all 0.3s ease;
 }
 
-.dot-nucleus.is-syncing {
-  width: 14px;
-  height: 14px;
-  background: none;
-  box-shadow: none;
+.status-pill.loading .dot-nucleus {
+  background: transparent;
+}
+
+.dot-nucleus.pulse {
+  animation: pulse 2s infinite;
 }
 
 .dot-halo {
   position: absolute;
-  inset: -4px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.12;
-  z-index: 1;
-  transform: scale(0.8);
-  animation: halo-breathing 4s infinite ease-in-out;
+  opacity: 0.15;
+  animation: halo-pulse 2s infinite;
 }
-
-@keyframes halo-breathing {
-  0%, 100% { transform: scale(0.8); opacity: 0.12; }
-  50% { transform: scale(1.2); opacity: 0.05; }
-}
-
-/* Pulsing animations */
-.pulse {
-  animation: pulse-core 2s infinite ease-in-out;
-}
-
-@keyframes pulse-core {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.7; }
-}
-
-/* Status Colors */
-.success { color: var(--sys-success); }
-.warning { color: var(--sys-warning); }
-.error   { color: var(--sys-error); }
-.loading { color: var(--sys-primary); }
 
 .label-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.expand-right .label-wrapper {
+  white-space: nowrap;
   margin-left: 6px;
+  overflow: hidden;
 }
 
-.expand-left .label-wrapper {
+.status-pill.expand-left .label-wrapper {
+  margin-left: 0;
   margin-right: 6px;
 }
 
 .status-label {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--sys-text-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .hub-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
   font-family: var(--sys-font-mono);
-  font-size: 10px;
-  color: var(--sys-text-tertiary);
-}
-
-.separator {
-  opacity: 0.3;
-  font-weight: 300;
-  margin: 0 2px;
-}
-
-.hub-age {
-  font-weight: 500;
 }
 
 .hub-source {
   display: flex;
   align-items: center;
-  gap: 3px;
-  font-weight: 800;
-  padding: 1px 4px;
+  gap: 2px;
+  padding: 2px 4px;
   border-radius: 4px;
+  background: var(--sys-surf-c);
 }
 
 .hub-source.worker {
-  background: var(--sys-primary-muted);
   color: var(--sys-primary);
+  background: var(--sys-primary-container);
 }
 
 .hub-source.gas {
-  background: var(--sys-surf-h);
+  color: var(--sys-warning);
+  background: var(--sys-warning-container);
+}
+
+.hub-age {
   color: var(--sys-text-secondary);
 }
 
+.separator {
+  color: var(--sys-outline);
+  opacity: 0.5;
+}
+
+.diagnosis-tag {
+  color: var(--sys-error);
+  font-size: 9px;
+  font-weight: 800;
+}
+
 .spinner {
-  width: 14px;
-  height: 14px;
-  animation: rotate 1s linear infinite;
+  width: 16px;
+  height: 16px;
+  animation: rotate 2s linear infinite;
+  color: var(--sys-primary);
 }
 
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.spinner circle {
-  stroke-dasharray: 45;
-  stroke-dashoffset: 0;
-  transform-origin: center;
-  stroke: currentColor;
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes halo-pulse {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
 /* Transitions */
 .slide-fade-enter-active,
-.slide-fade-left-enter-active {
-  transition: all 0.3s ease-out;
+.slide-fade-leave-active {
+  transition: all 0.3s var(--sys-motion-standard);
 }
-.slide-fade-leave-active,
-.slide-fade-left-leave-active {
-  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
-}
-
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   transform: translateX(-10px);
   opacity: 0;
 }
 
+.slide-fade-left-enter-active,
+.slide-fade-left-leave-active {
+  transition: all 0.3s var(--sys-motion-standard);
+}
 .slide-fade-left-enter-from,
 .slide-fade-left-leave-to {
   transform: translateX(10px);
   opacity: 0;
 }
-
 </style>

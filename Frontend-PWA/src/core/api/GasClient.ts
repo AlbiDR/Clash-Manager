@@ -2,6 +2,13 @@
 // Copyright (C) 2026 AlbiDR
 
 /**
+ * [DIAGNOSTIC] LAST HUB ERROR
+ * Provides an authoritative reason for why the Worker Hub fallback was triggered.
+ */
+import { ref } from "vue";
+export const lastHubDiagnosis = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
+
+/**
  * ============================================================================
  * [MODULE] API CLIENT (THE BRIDGE)
  * ----------------------------------------------------------------------------
@@ -619,27 +626,30 @@ export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
 }): Promise<WebAppData> {
+  const envVal = String(import.meta.env.VITE_USE_WORKER_HUB || "").toLowerCase().trim();
   const useWorkerHub = _workerHubTestOverride !== null 
     ? _workerHubTestOverride 
-    : import.meta.env.VITE_USE_WORKER_HUB === "true";
+    : (envVal === "true" || envVal === "1");
 
-  if (useWorkerHub) {
-    console.debug("🔌 [Sync] Phase 1: Contacting Worker Hub...");
-    try {
-      // PHASE 1: Try Worker Hub (Optimistic)
-      const workerUrl = getWorkerUrl() + "/hub/state";
-      const workerToken = import.meta.env.VITE_WORKER_TOKEN;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); 
+  const workerUrl = (import.meta.env.VITE_WORKER_URL || "").trim();
+  const workerToken = (import.meta.env.VITE_WORKER_TOKEN || "").trim();
+    
+  if (useWorkerHub && workerUrl) {
+    const controller = new AbortController();
+    // Rationale: Boost timeout to 20s to allow Render Free Tier to 'wake up' (spin up latency).
+    const timeoutId = setTimeout(() => controller.abort(), 20000); 
       
-      if (options?.signal) {
-        options.signal.addEventListener("abort", () => controller.abort());
-      }
-
-      const workerResponse = await fetch(workerUrl, {
+    try {
+      console.debug("[Sync] Phase 1: Contacting Worker Hub...");
+      // Cache-Buster: Appending timestamp to bypass any edge-cached 404/500 failure states.
+      const bustUrl = `${workerUrl}/hub/state?v=${Date.now()}`;
+      const workerResponse = await fetch(bustUrl, {
         method: "GET",
-        headers: workerToken ? { "Authorization": `Bearer ${workerToken}` } : {},
-        signal: controller.signal,
+        headers: {
+          "Authorization": `Bearer ${workerToken}`,
+          "Content-Type": "application/json"
+        },
+        signal: controller.signal
       });
       clearTimeout(timeoutId);
 
@@ -701,20 +711,31 @@ export async function fetchRemote(options?: {
             });
 
             idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+            lastHubDiagnosis.value = "SUCCESS";
             console.debug("[Sync] Success: HUB Attribution Active.");
             return inflated;
           } else {
+            lastHubDiagnosis.value = "VALIDATION";
             console.warn("[Sync] Worker Validation Failed. Falling back to GAS.", validationResult.issues);
           }
         } else {
+          lastHubDiagnosis.value = "VALIDATION";
           console.warn("[Sync] Worker responded but payload.success is false.");
         }
       } else if (workerResponse.status === 401 || workerResponse.status === 403) {
+        lastHubDiagnosis.value = "AUTH";
         console.error("[Sync] Worker Authentication failed. Check VITE_WORKER_TOKEN.");
       } else {
+        lastHubDiagnosis.value = "OFFLINE";
         console.warn(`[Sync] Worker returned HTTP ${workerResponse.status}.`);
       }
     } catch (workerFetchError: unknown) {
+      if (workerFetchError instanceof Error && workerFetchError.name === "AbortError") {
+        lastHubDiagnosis.value = "TIMEOUT";
+      } else {
+        lastHubDiagnosis.value = "OFFLINE";
+      }
+      
       if (workerFetchError instanceof Error && workerFetchError.name === "AbortError" && options?.signal?.aborted) {
         throw workerFetchError; 
       }

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import {
   ErrorBoundary,
@@ -12,23 +14,29 @@ import {
   useUiCoordinator,
   useSystemInfo,
 } from "@core";
-import { storeToRefs } from "pinia";
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useHeadhunter } from "@features/headhunter";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
 const clashDataStore = useClashDataStore();
-const { syncStatus } = storeToRefs(clashDataStore);
-const { refresh, loadLocal } = clashDataStore;
+const { refresh } = clashDataStore;
 const { setFabVisible } = useUiCoordinator();
 const { appVersion: currentVersion } = useSystemInfo();
-// Initialize Headhunter (starts watchers for notifications/badge)
-useHeadhunter();
-
+const { isShowcaseMode } = useShowcaseMode();
 const haptics = useHaptics();
 const route = useRoute();
 const currentRoute = computed(() => route);
+
+// Initialize Headhunter (starts watchers for notifications/badge)
+useHeadhunter();
+
+// SYNC STATE ADAPTER: Mapping store loading/error to a unified status
+const syncState = computed(() => {
+  if (clashDataStore.loading) return "syncing";
+  if (clashDataStore.syncError) return "error";
+  return "success";
+});
 
 // Reset UI state (FAB/Dock) on ogni navigation
 watch(() => route.path, () => {
@@ -42,20 +50,15 @@ const {
   isOnline,
 } = useConnectionStatus();
 
-const { isShowcaseMode } = useShowcaseMode();
-
-watch(syncStatus, (newStatus, oldStatus) => {
+watch(syncState, (newStatus, oldStatus) => {
   if (oldStatus === "syncing" && newStatus === "success") {
     setSuccess();
     haptics.success();
   }
+  setSyncing(newStatus === "syncing");
 });
 
-watch(syncStatus, (sStatus) => {
-  setSyncing(sStatus === "syncing");
-});
-
-// Fix 20 (relocated): Trigger refresh when connection returns
+// Trigger refresh when connection returns
 watch(isOnline, (online, wasOnline) => {
   if (online && !wasOnline) {
     refresh();
@@ -76,9 +79,6 @@ const { updateServiceWorker } = useRegisterSW({
       );
   },
   onNeedRefresh() {
-    // RATIONALE: registerType: 'autoUpdate' handles the skipWaiting/reload.
-    // We can use this hook for a toast, but forcing a manual reload here
-    // can cause loops during automated Lighthouse connection toggles.
     console.log("[PWA] Update available");
   },
 });
@@ -91,9 +91,16 @@ onMounted(() => {
     console.log(
       `[Version] Upgrading from ${storedVersion} to ${currentVersion}`,
     );
-    // Optional: Clear old system states if needed
   }
   localStorage.setItem("app_version", currentVersion);
+
+  // AUTO-REFRESH: Listen for Service Worker activation to force a page reload.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log("[PWA] New version activated, refreshing...");
+      window.location.reload();
+    });
+  }
 });
 </script>
 
@@ -130,7 +137,6 @@ onMounted(() => {
   scrollbar-gutter: stable;
 }
 
-/* SHOWCASE FRAME: 1px clinical boundary for screenshots */
 .app-shell.showcase-frame {
   --sys-safe-frame-offset: 1px;
   outline: 1px solid #000000;
@@ -141,7 +147,6 @@ onMounted(() => {
   outline: 1px solid #ffffff;
 }
 
-/* TRANSITION: Smooth transform for page container */
 .app-container {
   width: 100%;
   max-width: var(--sys-layout-max-width);
@@ -193,7 +198,6 @@ onMounted(() => {
   }
 }
 
-/* View Transitions Fallback (Fade + Slightly Slide) */
 .page-enter-active,
 .page-leave-active {
   transition:
@@ -210,6 +214,4 @@ onMounted(() => {
   opacity: 0;
   transform: translateY(-4px);
 }
-
-/* FUTURE: CSS View Transitions API support elsewhere */
 </style>

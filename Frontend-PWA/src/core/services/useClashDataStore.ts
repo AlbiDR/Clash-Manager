@@ -3,7 +3,7 @@
 
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useWakeLock } from "./useWakeLock";
-import { fetchRemote } from "../api/GasClient";
+import { fetchRemote, lastHubDiagnosis } from "../api/GasClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { MemberSchema, WebAppDataSchema } from "../api/DataSchemas";
@@ -33,6 +33,7 @@ export const useClashDataStore = defineStore("clashData", () => {
   const syncError = ref<string | null>(null);
   const consecutiveSyncFailures = ref(0);
   const dataSource = ref<"WORKER" | "GAS" | null>(null);
+  const hubDiagnosis = lastHubDiagnosis;
   const hubTimestamp = ref<number | null>(null);
   const lastCompiled = ref<number | null>(null);
   const lastFetched = ref<number | null>(null);
@@ -269,6 +270,20 @@ export const useClashDataStore = defineStore("clashData", () => {
     }
   }
 
+  /**
+   * [DIAGNOSTIC] TRIGGER UPDATE
+   * Forces the Service Worker to skip-waiting and activate the next version.
+   * Logic: Sends 'SKIP_WAITING' to the waiting registration.
+   */
+  async function triggerUpdate() {
+    if (!('serviceWorker' in navigator)) return;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration?.waiting) {
+      console.debug("[Store] Sending SKIP_WAITING to waiting worker...");
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
+  }
+
   return {
     // State
     data,
@@ -277,6 +292,7 @@ export const useClashDataStore = defineStore("clashData", () => {
     syncError,
     dataSource,
     hubTimestamp,
+    hubDiagnosis,
 
     // Getters
     members,
