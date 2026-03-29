@@ -29,7 +29,7 @@ export const RaritySchema = v.fallback(
         "champion": "Champion"
       };
       return map[val] || "Common";
-    
+    }),
     v.picklist(["Common", "Rare", "Epic", "Legendary", "Champion"])
   ),
   "Common"
@@ -61,7 +61,7 @@ export const RawInventorySchema = v.object({
       Epic: v.optional(v.number(), 0),
       Legendary: v.optional(v.number(), 0),
       Champion: v.optional(v.number(), 0),
-    
+    }),
     { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 }
   ),
 });
@@ -76,9 +76,13 @@ export const InternalProfileSchema = v.object({
     tag: v.optional(v.string(), "0"),
     kingLevel: v.optional(v.number(), 1),
     xpIntoLevel: v.optional(v.number(), 0),
-  
+  }),
   cards: v.optional(v.array(RawCardSchema), []),
   inventory: v.optional(RawInventorySchema, {
+    gold: 0,
+    gems: 0,
+    wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 }
+  }),
 });
 
 /**
@@ -124,7 +128,7 @@ export const MemberSchema = v.object({
     rate: v.optional(v.nullable(v.string())),
     wfame: v.optional(v.number()),
     hist: v.string(),
-  
+  }),
 });
 
 /**
@@ -142,7 +146,7 @@ export const RecruitSchema = v.object({
     war: v.number(),
     ago: v.string(),
     cards: v.optional(v.number()),
-  
+  }),
   lastScan: v.optional(v.number()),
 });
 
@@ -173,15 +177,15 @@ export const HubStateSchema = v.object({
     status: v.picklist(["healthy", "degraded", "offline"]),
     version: v.string(),
     source: v.string(),
-  
+  }),
   data: v.object({
-    roster: v.array(v.array(v.unknown())),
-      
-      
-    
+    roster: v.object({
+      headers: v.array(v.string()),
+      rows: v.array(v.array(v.unknown())),
+    }),
     headhunter: v.object({
-      
-      
-    
-  
+      headers: v.array(v.string()),
+      rows: v.array(v.array(v.unknown())),
+    }),
+  }),
 });
