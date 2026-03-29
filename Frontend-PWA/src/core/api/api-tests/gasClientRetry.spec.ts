@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock environment variables to ensure we only test GAS retry logic
-vi.stubEnv("VITE_USE_WORKER_HUB", "false");
-vi.stubEnv("VITE_GAS_URL", "https://script.google.com/macros/s/TEST/exec");
+vi.mock("import.meta.env", () => ({
+  VITE_USE_WORKER_HUB: "false",
+  VITE_GAS_URL: "https://script.google.com/macros/s/TEST/exec",
+}));
 
 import { fetchRemote } from "@core";
 
