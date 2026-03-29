@@ -258,14 +258,14 @@ describe("useConsoleController", () => {
       expect(status.value).toEqual({ type: "loading", text: "Syncing..." });
     });
 
-    it("returns 'success' with time ago when data is present", () => {
+    it("returns 'success' with 'Nominal' label when data is present", () => {
       const options = createOptions();
       const past = Date.now() - 60000; // 1 minute ago
       options.lastSyncTime.value = past;
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
-      expect(status.value.text).toBe(""); // Nominal mode hides text
+      expect(status.value.text).toBe("Nominal");
     });
 
     it("prioritizes unconfigured over offline", () => {
