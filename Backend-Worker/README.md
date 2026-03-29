@@ -98,8 +98,8 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
     "metadata": {
       "timestamp": "2026-01-01T12:00:00.000Z",
       "status": "healthy",
-      "version": "10.1.4",
-      "source": "GAS_RAW_STORE"
+      "version": "v1_hub",
+      "source": "RENDER_WORKER"
     },
     "data": {
       "roster": [["Tag", "Name", ...], ["#P1", "Player 1", ...]],
