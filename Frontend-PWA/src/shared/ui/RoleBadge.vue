@@ -9,12 +9,12 @@ import { computed } from "vue";
  * [UI] ROLE BADGE
  * Standardized component for displaying player clan roles with semantic coloring.
  */
-const props = defineProps<{
+const { role } = defineProps<{
   /** Raw role string from API (e.g., 'coleader', 'elder') */
   role: string;
 }>();
 
-const roleInfo = computed(() => formatRole(props.role));
+const roleInfo = computed(() => formatRole(role));
 </script>
 
 <template>
