@@ -52,9 +52,9 @@ A pure mathematical engine isolated from the rest of the system. It operates on 
 
 Internal scoring is designed to reward both long-term reliability and short-term excellence.
 
-- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors (Fame, Donations, Trophies, War Participation).
+- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors (Fame, Avg War Fame, Donations, Trophies, and War Rate).
 - **PeS (Performance Score)**: A relative normalization of the RPeS.
-  - **Normalization**: Calculated as `(Member RPeS / Max RPeS in Clan) * 100`.
+  - **Normalization**: Calculated as `(Member RPeS / Benchmark) * 100`.
   - **Relative Curve**: Ensures the leaderboard remains a "relative curve" regardless of meta shifts.
 
 </details>
@@ -66,7 +66,8 @@ External scoring focuses on identifying "elite fits" for the clan by comparing c
 
 - **RPoS (Raw Potential Score)**: Calculates an unweighted base score for recruits using external stats:
   - **Trophy Weight**: Base player capability.
-  - **War Day Wins**: Historical reliability in clan wars.
+  - **Donation Weight**: Contribution baseline.
+  - **War Weight**: Historical reliability in clan wars (War Day Wins).
   - **War Baseline Bonus**: A fixed credit (default: 500) applied to recruits with recent activity to prevent "Newbie Gaps".
 - **PoS (Potential Score)**: The final aligned metric.
   - **Hybrid Benchmark**: A blended target calculated from the current "Elite Roster" (members with PeS > 50%) and the **Market Intelligence** reference (top 5% of all scanned recruits).
