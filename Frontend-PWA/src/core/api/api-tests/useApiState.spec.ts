@@ -6,6 +6,7 @@ import * as gasClient from "@core";
 vi.mock("../../api/GasClient", () => ({
   isConfigured: vi.fn(() => true),
   ping: vi.fn(),
+  pingWorker: vi.fn(() => Promise.resolve(true)),
   getApiUrl: vi.fn(() => "https://mock-gas-url.com"),
 }));
 
@@ -25,11 +26,12 @@ describe("useApiState", () => {
     // @ts-ignore
     vi.mocked(gasClient.ping).mockResolvedValue(mockPingResponse);
 
-    const { apiStatus, pingData, checkApiStatus } = useApiState();
+    const { apiStatus, workerStatus, pingData, checkApiStatus } = useApiState();
 
     await checkApiStatus();
 
     expect(apiStatus.value).toBe("online");
+    expect(workerStatus.value).toBe("online");
     expect(pingData.value).toMatchObject({
       version: "11.0.1",
       status: "online",

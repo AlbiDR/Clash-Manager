@@ -316,6 +316,22 @@ describe("GasClient", () => {
       expect(result.version).toBe("1.0");
     });
 
+    it("pingWorker returns true when hub responds ok", async () => {
+      fetchSpy.mockResolvedValueOnce({
+          ok: true,
+          status: 200
+      } as any);
+      const result = await GasClient.pingWorker();
+      expect(result).toBe(true);
+      expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining("/hub/ping"), expect.any(Object));
+    });
+
+    it("pingWorker returns false when hub fails", async () => {
+      fetchSpy.mockRejectedValueOnce(new Error("Network Error"));
+      const result = await GasClient.pingWorker();
+      expect(result).toBe(false);
+    });
+
     it("dismissRecruits sends correct payload", async () => {
       fetchSpy.mockResolvedValueOnce({
           ok: true,
