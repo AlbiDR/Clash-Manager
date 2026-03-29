@@ -59,24 +59,28 @@ const handleToggle = () => {
 
     <Transition :name="props.direction === 'left' ? 'slide-fade-left' : 'slide-fade'">
       <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
-        <span v-if="props.text" class="status-label">
-          {{ props.type === "loading" ? "Syncing..." : props.text }}
-        </span>
-        
-        <div v-if="props.hubInfo && isExpanded" class="hub-meta">
-          <span v-if="props.text" class="separator">/</span>
-          <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
-            <template v-if="props.hubInfo.source === 'WORKER'">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </template>
-            {{ props.hubInfo.source }}
-          </span>
-          <span v-if="props.hubInfo.hubAge" class="hub-age">
-            {{ props.hubInfo.hubAge }}
-          </span>
-        </div>
+        <template v-if="props.type === 'loading'">
+          <span class="status-label">Syncing...</span>
+        </template>
+        <template v-else-if="props.hubInfo && isExpanded">
+          <div class="hub-meta">
+            <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
+              <template v-if="props.hubInfo.source === 'WORKER'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </template>
+              {{ props.hubInfo.source }}
+            </span>
+            <span v-if="props.hubInfo.hubAge" class="separator">|</span>
+            <span v-if="props.hubInfo.hubAge" class="hub-age">
+              {{ props.hubInfo.hubAge }}
+            </span>
+          </div>
+        </template>
+        <template v-else>
+          <span v-if="props.text" class="status-label">{{ props.text }}</span>
+        </template>
       </div>
     </Transition>
   </div>
@@ -209,10 +213,20 @@ const handleToggle = () => {
 .hub-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-family: var(--sys-font-mono);
   font-size: 10px;
   color: var(--sys-text-tertiary);
+}
+
+.separator {
+  opacity: 0.3;
+  font-weight: 300;
+  margin: 0 2px;
+}
+
+.hub-age {
+  font-weight: 500;
 }
 
 .hub-source {
