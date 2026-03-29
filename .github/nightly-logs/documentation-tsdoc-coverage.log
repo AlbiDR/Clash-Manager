@@ -8,3 +8,5 @@ Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/core/services/useBackHandler.ts
 Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/roster/components/MemberCard.vue
+Backend-Worker/src/index.ts
+Backend-Worker/src/schemas.ts

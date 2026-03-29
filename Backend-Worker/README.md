@@ -68,6 +68,8 @@ Returns the current worker version and internal configuration limits. Used by th
 }
 ```
 
+> **Note**: The Worker Hub currently returns raw matrices (arrays of arrays) as provided by the GAS dumb store. Re-hydration and field mapping are performed by the PWA's `GasClient.ts` to minimize Worker-side transformation overhead.
+
 #### `GET /health`
 Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
 
@@ -96,8 +98,8 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
     "metadata": {
       "timestamp": "2026-01-01T12:00:00.000Z",
       "status": "healthy",
-      "version": "10.1.4",
-      "source": "GAS_RAW_STORE"
+      "version": "v1_hub",
+      "source": "RENDER_WORKER"
     },
     "data": {
       "roster": [["Tag", "Name", ...], ["#P1", "Player 1", ...]],
