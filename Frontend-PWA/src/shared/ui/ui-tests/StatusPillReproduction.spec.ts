@@ -19,7 +19,17 @@ vi.mock("@core", async (importOriginal) => {
 });
 
 describe("StatusPill Hub Source Display", () => {
-  it("displays WORKER source when hubInfo.source is WORKER", async () => {
+  beforeEach(() => {
+    vi.stubGlobal("import", {
+      meta: {
+        env: {
+          VITE_USE_WORKER_HUB: "true"
+        }
+      }
+    });
+  });
+
+  it("displays HUB source when hubInfo.source is WORKER", async () => {
     const wrapper = mount(StatusPill, {
       props: { 
         type: "success", 
@@ -29,12 +39,12 @@ describe("StatusPill Hub Source Display", () => {
     });
     
     // Should NOT show hub info until expanded
-    expect(wrapper.text()).not.toContain("WORKER");
+    expect(wrapper.text()).not.toContain("HUB");
     
     // Expand
     await wrapper.trigger("click");
     
-    expect(wrapper.text()).toContain("WORKER");
+    expect(wrapper.text()).toContain("HUB");
     expect(wrapper.find(".hub-source.worker").exists()).toBe(true);
     expect(wrapper.text()).toContain("5m ago");
   });
