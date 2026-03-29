@@ -17,11 +17,17 @@ const TAG_REGEX = /^[#]?[0-9A-Za-z]{3,12}$/;
 
 /**
  * [VALIDATION] Branded Types Validators
+ * THREAT: Non-normalized tags (lowercase or missing '#') bypassing the recruitment blacklist
+ * or causing duplicate entries in the database.
  */
 export const TagSchema = v.pipe(
   v.string(),
   v.trim(),
-  v.regex(TAG_REGEX, "Invalid tag format")
+  v.regex(TAG_REGEX, "Invalid tag format"),
+  v.transform((val) => {
+    const upper = val.toUpperCase();
+    return upper.startsWith("#") ? upper : `#${upper}`;
+  })
 );
 
 export const ScoringWeightsSchema = v.object({
@@ -54,7 +60,8 @@ export const PublicScanRequestSchema = v.object({
   blacklist: v.optional(v.array(TagSchema)),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(v.string(), ProphetIntelSchema))
+  // THREAT: Un-normalized prophetCache keys bypass heritage lookups for recruits.
+  prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
 });
 
 export const ScanRequestSchema = v.object({
@@ -63,7 +70,8 @@ export const ScanRequestSchema = v.object({
   blacklist: v.optional(v.array(TagSchema)),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(v.string(), ProphetIntelSchema))
+  // THREAT: Un-normalized prophetCache keys bypass heritage lookups for recruits.
+  prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
 });
 
 export const ClanFullRequestSchema = v.object({
