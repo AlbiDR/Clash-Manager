@@ -427,7 +427,8 @@ export async function processBatch<T = unknown>(
             // to the GAS backend are already prioritized based on
             // historical elite performance, saving GAS compute cycles.
             if (prophetCache) {
-                 const normTag = profile.tag.replace("#", "").trim().toLowerCase();
+                 // THREAT: Un-normalized prophetCache lookup causing missed heritage scoring bonuses.
+                 const normTag = profile.tag as unknown as string;
                  const intel = prophetCache[normTag];
                  // Threshold: 5 Wins.
                  // We only apply the 25% multiplier to players with
@@ -554,8 +555,8 @@ export async function processScanBatch(
     const tag = tags[currentBatchIndex];
     if (!tag) continue;
 
-    const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
-    const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(normalizedTag)}`;
+    // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
+    const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag)}`;
 
     const headers: Record<string, string> = {
       "User-Agent": "ClanManagerWorker/1.2",
@@ -595,7 +596,8 @@ export async function processScanBatch(
 
               // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
               if (prophetCache) {
-                const normTag = memberCandidate.tag.replace("#", "").trim().toLowerCase();
+                // THREAT: Un-normalized prophetCache lookup causing missed heritage scoring bonuses.
+                const normTag = memberCandidate.tag as unknown as string;
                 const intel = prophetCache[normTag];
                 if (intel) {
                   // Bonus logic could go here, but strictly we need profile stats for true score.
@@ -840,8 +842,8 @@ app.post(
       if (scoring && candidates.length > 0) {
         const candidateTags = [...new Set(candidates.map((candidate) => candidate.tag))];
         const playerUrls = candidateTags.map((tag) => {
-            const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
-            return `${CONFIG.apiBase}/players/${encodeURIComponent(normalizedTag)}`;
+            // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
+            return `${CONFIG.apiBase}/players/${encodeURIComponent(tag)}`;
         });
 
         const scoredResults = await processBatch<ScoredPlayer>(
@@ -961,8 +963,8 @@ app.post(
         if (scoring && candidates.length > 0) {
             const candidateTags = [...new Set(candidates.map((candidate) => candidate.tag))];
             const playerUrls = candidateTags.map((tag) => {
-                const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
-                return `${CONFIG.apiBase}/players/${encodeURIComponent(normalizedTag)}`;
+                // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
+                return `${CONFIG.apiBase}/players/${encodeURIComponent(tag)}`;
             });
 
             const scoredResults = await processBatch<ScoredPlayer>(
@@ -1101,8 +1103,8 @@ app.post(
         logData.items.forEach((logEntry) => {
           const weekId = calculateWarWeekId(logEntry.createdDate);
           const standings = logEntry.standings ?? [];
-          const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
-          const myClan = standings.find((standing) => standing.clan.tag === normalizedTag);
+          // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
+          const myClan = standings.find((standing) => standing.clan.tag === rawTag);
 
           if (myClan?.clan.participants) {
             myClan.clan.participants.forEach((participant) => {
@@ -1227,10 +1229,10 @@ app.post(
 
         transformed = validation.output.items.map((warLogEntry) => {
           const rawTag = decodeURIComponent(tag);
-          const normalizedTag = rawTag.startsWith("#") ? rawTag : "#" + rawTag;
 
-          const myStanding = warLogEntry.standings.find((standing) => standing.clan.tag === normalizedTag);
-          const opponents = warLogEntry.standings.filter((standing) => standing.clan.tag !== normalizedTag);
+          // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
+          const myStanding = warLogEntry.standings.find((standing) => standing.clan.tag === rawTag);
+          const opponents = warLogEntry.standings.filter((standing) => standing.clan.tag !== rawTag);
 
           const myFame = myStanding ? myStanding.clan.fame : 0;
           const myRank = myStanding ? myStanding.rank : null;
