@@ -32,7 +32,8 @@ vi.mock("../useWakeLock", () => ({
 }));
 
 vi.mock("../../api/GasClient", () => ({
-  fetchRemote: vi.fn()
+  fetchRemote: vi.fn(),
+  lastHubDiagnosis: { value: null }
 }));
 
 vi.mock("../StorageService", () => ({
