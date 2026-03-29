@@ -169,6 +169,32 @@ const getWorkerUrl = () => {
   return import.meta.env.VITE_WORKER_URL || "";
 };
 
+/**
+ * Pings the Worker Hub to verify direct connectivity and health.
+ * Rationale: Allows the PWA to proactively determine if the high-performance
+ * path is available before attempting a heavy data fetch.
+ */
+export async function pingWorker(): Promise<boolean> {
+  const url = getWorkerUrl();
+  if (!url) return false;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const workerToken = import.meta.env.VITE_WORKER_TOKEN;
+
+    const res = await fetch(`${url}/hub/ping`, {
+      method: "GET",
+      headers: workerToken ? { "Authorization": `Bearer ${workerToken}` } : {},
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // --- Utility Helpers for Data Inflation ---
 
 /**
@@ -644,6 +670,10 @@ export async function fetchRemote(options?: {
             return inflated;
           }
         }
+      } else if (workerResponse.status === 401 || workerResponse.status === 403) {
+        console.error("[WorkerHub] Authentication failed. Check VITE_WORKER_TOKEN.");
+        // If it's an auth error, falling back to GAS is the only way to get data, 
+        // but we should log it clearly.
       }
     } catch (workerFetchError: unknown) {
       if (workerFetchError instanceof Error && workerFetchError.name === "AbortError" && options?.signal?.aborted) {

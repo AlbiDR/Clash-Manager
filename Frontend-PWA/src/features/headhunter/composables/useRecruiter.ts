@@ -61,17 +61,9 @@ export function useRecruiter() {
     return alive.slice(0, 50);
   });
 
-  // ⚡ DIRECT SCAN: Turbo Mode
-  // Intent: Bypass the GAS orchestration layer to fetch fresh data directly
-  // from the Cloud Worker. This reduces latency and GAS quota consumption.
-  const isTurboScanning = ref(false);
-  const combinedRefreshing = computed(
-    () => isRefreshing.value || isTurboScanning.value,
-  );
-
   const controller = useConsoleController({
     data: recruits,
-    isRefreshing: combinedRefreshing,
+    isRefreshing,
     filterFn: (recruit: Recruit) => [recruit.n, recruit.id],
     sortStrategies: RecruiterSort,
     defaultSort: "score",
@@ -80,7 +72,7 @@ export function useRecruiter() {
     statsLabel: "Recruit",
     sheetName: ["Headhunter", "Recruiter"],
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
-    refresh: handleRefresh,
+    refresh: clashDataStore.refreshWorker,
     onDismiss: dismissBulk,
     currentSource: storeToRefs(clashDataStore).currentSource,
     hubSyncTime: storeToRefs(clashDataStore).hubSyncTime,
@@ -102,47 +94,6 @@ export function useRecruiter() {
     },
     { deep: true, immediate: true },
   );
-
-  /**
-   * ORCHESTRATED REFRESH
-   *
-   * @remarks
-   * Performs a dual-phase sync:
-   * 1. Turbo Scan: Direct worker-to-client fetch for immediate recruitment updates.
-   * 2. GAS Sync: Full system synchronization to ensure the local database matches the sheet.
-   */
-  async function handleRefresh() {
-    if (isSyntheticMode.value || isShowcaseMode.value) {
-      // Mock refresh already handled by useClashData watcher for mode changes,
-      // but explicit refresh button should still feel responsive.
-      return refreshGas();
-    }
-
-    if (isWorkerConfigured()) {
-      isTurboScanning.value = true;
-      info("Starting Turbo Scan via Worker...");
-
-      // HYBRID MERGE
-      // Intent: Injecting worker results directly into the local reactive state
-      // allows the UI to update instantly without waiting for the slower
-      // GAS execution cycle to complete and propagate changes.
-      const newCandidates = await scanRecruitsDirect();
-      if (newCandidates && newCandidates.length > 0) {
-        const added = injectRecruits(newCandidates);
-        if (added > 0) {
-          success(`Turbo Scan: Found ${added} new recruits`);
-        } else {
-          info("Turbo Scan complete. All candidates already known.");
-        }
-      } else {
-        info("Turbo Scan complete. No new candidates.");
-      }
-      isTurboScanning.value = false;
-    }
-
-    // Always trigger full sync to ensure consistency
-    refreshGas();
-  }
 
   /**
    * RECRUIT DISMISSAL ENGINE
@@ -214,7 +165,6 @@ export function useRecruiter() {
   return {
     ...controller,
     isShowcaseMode,
-    isTurboScanning,
     sortOptions,
     dismissBulk,
   };

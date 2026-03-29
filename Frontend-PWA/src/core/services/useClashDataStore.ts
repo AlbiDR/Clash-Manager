@@ -120,6 +120,45 @@ export const useClashDataStore = defineStore("clashData", () => {
   }
 
   /**
+   * Orchestrates a direct synchronization with the Worker Hub.
+   * Rationale: Provides instantaneous data updates by bypassing the GAS
+   * orchestration layer, primarily for recruitment and roster status.
+   */
+  async function refreshWorker() {
+    if (loading.value) return;
+    if (!isOnline.value) return;
+
+    loading.value = true;
+    try {
+      await wakeLock.request();
+      const remoteData = await fetchRemote({ force: true, preferWorker: true });
+      
+      const validation = v.safeParse(WebAppDataSchema, remoteData);
+      if (!validation.success) {
+        throw new Error("Worker data validation failed");
+      }
+
+      const output = validation.output as WebAppData;
+      data.value = output;
+      lastSync.value = new Date(output.timestamp).getTime();
+      dataSource.value = output.dataSource || null;
+      hubTimestamp.value = output.hubTimestamp || null;
+      lastCompiled.value = output.lastCompiled || null;
+      lastFetched.value = output.lastFetched || null;
+      consecutiveSyncFailures.value = 0;
+      syncError.value = null;
+      await saveCache(validation.output as WebAppData);
+    } catch (e: unknown) {
+      console.warn("[Store] Worker-direct refresh failed:", e);
+      // Falling back to full sync if direct worker fails
+      return startBackgroundSync(true);
+    } finally {
+      loading.value = false;
+      await wakeLock.release();
+    }
+  }
+
+  /**
    * Orchestrates a background synchronization with the Google Apps Script backend.
    * Rationale: Keeps the client in sync with the authoritative server-side database.
    * Side Effects: Updates IndexedDB on success.
@@ -253,6 +292,7 @@ export const useClashDataStore = defineStore("clashData", () => {
     updateLocalData,
     startBackgroundSync,
     refresh: () => startBackgroundSync(true),
+    refreshWorker,
     updatePlayerLocally
   };
 });
