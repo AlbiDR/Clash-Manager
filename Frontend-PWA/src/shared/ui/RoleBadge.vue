@@ -25,33 +25,7 @@ const roleInfo = computed(() => formatRole(props.role));
 
 <style scoped>
 .badge.role {
-  font-family: var(--sys-font-family-body);
-  font-weight: 900;
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  width: fit-content;
-}
-
-/* Semantic Coloring */
-.role-leader {
-  background: rgba(var(--sys-color-primary-rgb), 0.15);
-  color: var(--sys-color-primary);
-}
-
-.role-coleader {
-  background: rgba(var(--sys-color-secondary-rgb), 0.15);
-  color: var(--sys-color-secondary);
-}
-
-.role-elder {
-  background: rgba(var(--sys-color-tertiary-rgb), 0.15);
-  color: var(--sys-color-tertiary);
-}
-
-.role-member {
-  background: rgba(var(--sys-color-outline-rgb), 0.1);
-  color: var(--sys-color-outline);
+  /* Aligned with global .badge system but maintaining domain-specific scaling */
+  width: 100%;
 }
 </style>

@@ -6,7 +6,7 @@
  * [UI] TENURE BADGE
  * Standardized component for displaying player clan tenure (days in clan).
  */
-const props = defineProps<{
+const { days = 0 } = defineProps<{
   /** Total days in clan */
   days: number | undefined;
 }>();
@@ -14,20 +14,14 @@ const props = defineProps<{
 
 <template>
   <div class="badge tenure">
-    {{ props.days || 0 }}d
+    {{ days }}d
   </div>
 </template>
 
 <style scoped>
 .badge.tenure {
-  font-family: var(--sys-font-family-body);
-  font-weight: 700;
-  font-size: 10px;
-  color: var(--sys-color-outline);
-  background: rgba(var(--sys-color-outline-rgb), 0.08);
-  padding: 2px 6px;
-  border-radius: 6px;
-  width: fit-content;
-  white-space: nowrap;
+  color: var(--sys-color-on-surface);
+  background: var(--sys-color-surface-container-highest);
+  opacity: 0.8;
 }
 </style>
