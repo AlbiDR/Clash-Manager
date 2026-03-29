@@ -60,6 +60,24 @@ describe("useBadge", () => {
     expect(isSupported).toBe(true);
   });
 
+  it("should return false for isSupported if no SW and on Android", async () => {
+    vi.stubGlobal("navigator", {
+      userAgent: "Android",
+    });
+    const { useBadge } = await import("../useBadge");
+    const { isSupported } = useBadge();
+    expect(isSupported).toBe(false);
+  });
+
+  it("should return false for isSupported if no SW and no setAppBadge", async () => {
+    vi.stubGlobal("navigator", {
+      userAgent: "Macintosh",
+    });
+    const { useBadge } = await import("../useBadge");
+    const { isSupported } = useBadge();
+    expect(isSupported).toBe(false);
+  });
+
   it("should set badge via setAppBadge on non-Android", async () => {
     const { useBadge } = await import("../useBadge");
     const { setBadge } = useBadge();
@@ -133,6 +151,58 @@ describe("useBadge", () => {
     await setBadge(5);
 
     expect(navigator.serviceWorker.controller?.postMessage).not.toHaveBeenCalled();
+  });
+
+  it("should do nothing in setBadge if not supported", async () => {
+    vi.stubGlobal("navigator", { userAgent: "Android" });
+    const { useBadge } = await import("../useBadge");
+    const { setBadge } = useBadge();
+
+    await setBadge(5);
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it("should handle null service worker controller in setBadge (Android)", async () => {
+    vi.stubGlobal("navigator", {
+      userAgent: "Android",
+      serviceWorker: { controller: null },
+    });
+    const { useBadge } = await import("../useBadge");
+    const { setBadge } = useBadge();
+
+    await setBadge(5);
+    // Should not throw and should still broadcast since it's "supported" by SW existence
+    expect(mockPost).toHaveBeenCalled();
+  });
+
+  it("should handle null service worker controller in setBadge (non-Android)", async () => {
+    vi.stubGlobal("navigator", {
+      userAgent: "Macintosh",
+      setAppBadge: vi.fn().mockResolvedValue(undefined),
+      serviceWorker: { controller: null },
+    });
+    const { useBadge } = await import("../useBadge");
+    const { setBadge } = useBadge();
+
+    await setBadge(5);
+    expect(navigator.setAppBadge).toHaveBeenCalledWith(5);
+    expect(mockPost).toHaveBeenCalled();
+  });
+
+  it("should floor and clamp badge count to 0", async () => {
+    const { useBadge } = await import("../useBadge");
+    const { setBadge } = useBadge();
+
+    // Reset lastUpdate by waiting long enough
+    vi.advanceTimersByTime(2000);
+
+    await setBadge(5.7);
+    expect(navigator.setAppBadge).toHaveBeenCalledWith(5);
+
+    // Ensure we are outside the debounce window for the second call
+    vi.advanceTimersByTime(2000);
+    await setBadge(0);
+    expect(navigator.clearAppBadge).toHaveBeenCalled();
   });
 
   it("should retry on failure (MAX_RETRIES = 2)", async () => {
@@ -216,6 +286,33 @@ describe("useBadge", () => {
     expect(navigator.serviceWorker.controller?.postMessage).not.toHaveBeenCalled();
   });
 
+  it("should NOT send notifications if permission is not granted", async () => {
+    vi.stubGlobal("Notification", {
+      permission: "denied",
+    });
+
+    const { useBadge } = await import("../useBadge");
+    const { sendLocalNotification } = useBadge();
+
+    await sendLocalNotification("Title");
+    expect(navigator.serviceWorker.controller?.postMessage).not.toHaveBeenCalled();
+  });
+
+  it("should handle null service worker controller in sendLocalNotification", async () => {
+    vi.stubGlobal("Notification", {
+      permission: "granted",
+    });
+    vi.stubGlobal("navigator", {
+      serviceWorker: { controller: null },
+    });
+
+    const { useBadge } = await import("../useBadge");
+    const { sendLocalNotification } = useBadge();
+
+    await sendLocalNotification("Title");
+    // Should not throw
+  });
+
   it("should request notification permission", async () => {
     const requestPermission = vi.fn().mockResolvedValue("granted");
     vi.stubGlobal("Notification", {
@@ -228,5 +325,39 @@ describe("useBadge", () => {
     const result = await reqPerm();
     expect(requestPermission).toHaveBeenCalled();
     expect(result).toBe("granted");
+  });
+
+  it("should handle denied notification permission", async () => {
+    const requestPermission = vi.fn().mockResolvedValue("denied");
+    vi.stubGlobal("Notification", {
+      requestPermission,
+    });
+
+    const { useBadge } = await import("../useBadge");
+    const { requestPermission: reqPerm } = useBadge();
+
+    const result = await reqPerm();
+    expect(result).toBe("denied");
+  });
+
+  it("should fallback to denied if Notification is undefined in requestPermission", async () => {
+    vi.stubGlobal("Notification", undefined);
+
+    const { useBadge } = await import("../useBadge");
+    const { requestPermission: reqPerm } = useBadge();
+
+    const result = await reqPerm();
+    expect(result).toBe("denied");
+  });
+
+  it("should explicitly clear badge", async () => {
+    const { useBadge } = await import("../useBadge");
+    const { clearBadge } = useBadge();
+
+    // Reset lastUpdate by waiting long enough
+    vi.advanceTimersByTime(2000);
+
+    await clearBadge();
+    expect(navigator.clearAppBadge).toHaveBeenCalled();
   });
 });

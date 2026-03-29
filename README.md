@@ -83,6 +83,15 @@ Recruitment is no longer a passive wait-list. The **Headhunter Engine** continuo
 ---
 <br />
 
+## Dictionary
+
+- **DeepNet**: The high-performance, offline-first PWA infrastructure (v7+) designed for administrative clan operations.
+- **Headhunter**: The global discovery engine that autonomously scans tournaments to identify elite, clanless recruits.
+- **Nightly**: The automated, 7-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
+
+---
+<br />
+
 ## System Ecosystem
 
 <details>
@@ -160,14 +169,14 @@ flowchart TD
 ## Nightly Pipeline
 
 The ecosystem is maintained by a 7-agent autonomous pipeline that executes nightly to ensure structural purity, security, and documentation synchronization. This pipeline operates directly on the `Nightly` branch and follows a strictly sequenced maintenance cycle:
+
 1.  **Harden**: Secures validation boundaries, normalizes data structures, and eliminates the "any" plague across the stack.
 2.  **Verify**: Proves system integrity through automated test suite execution and strict architectural compliance (ADR) checks.
 3.  **Optimize**: Refines code structures, enforces DRY principles, and prunes dead code or redundant dependencies.
-4.  **Document (README)**: Synchronizes high-level technical blueprints with the actual implementation state.
-5.  **Document (TSDoc)**: Hardens interface contracts and architectural remarks within the source code.
-6.  **Version Integrity**: Enforces strict semantic versioning and reconciles internal version constants.
-7.  **Dependency Audit**: Monitors external dependency health, security vulnerabilities, and runtime currency.
-
+4.  **Document (README)**: The Structural Archivist. Synchronizes high-level technical blueprints with the actual implementation state.
+5.  **Document (TSDoc)**: The Technical Writer. Hardens interface contracts and architectural remarks within the source code.
+6.  **Version Integrity**: The Release Engineer. Enforces strict semantic versioning and reconciles internal version constants.
+7.  **Dependency Audit**: The Watchkeeper. Monitors external dependency health, security vulnerabilities, and runtime currency.
 
 ---
 <br />

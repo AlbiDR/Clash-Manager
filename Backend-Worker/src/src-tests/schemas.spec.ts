@@ -40,8 +40,22 @@ describe('Core Schemas', () => {
       expect(v.safeParse(TagSchema, '8L9PPGRCQ').success).toBe(true);
     });
 
+    it('should enforce uppercase and mandatory # prefix', () => {
+      const result1 = v.safeParse(TagSchema, '2p2gg2gu');
+      expect(result1.success).toBe(true);
+      if (result1.success) {
+        expect(result1.output).toBe('#2P2GG2GU');
+      }
+
+      const result2 = v.safeParse(TagSchema, '#l9ppgrcq');
+      expect(result2.success).toBe(true);
+      if (result2.success) {
+        expect(result2.output).toBe('#L9PPGRCQ');
+      }
+    });
+
     it('should trim whitespace from tags', () => {
-      const result = v.safeParse(TagSchema, '  #2P2GG2GU  ');
+      const result = v.safeParse(TagSchema, '  #2p2gg2gu  ');
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.output).toBe('#2P2GG2GU');
