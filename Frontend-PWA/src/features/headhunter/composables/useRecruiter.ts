@@ -49,11 +49,16 @@ export function useRecruiter() {
   const blacklist = useRecruitBlacklist();
   const { undo, success, info } = useToast();
 
-  // 🛡️ PRE-FILTER: Exclude Tombstones
+  // 🛡️ PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
   const recruits = computed(() => {
-    return (data.value?.hh || []).filter(
+    const alive = (data.value?.hh || []).filter(
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
+    // [ADR] Parity with Spreadsheet: Show only the top 50 active recruits.
+    // The "infinite scroll" strategy is implemented via automatic replacement:
+    // as items are dismissed, the next best results from the 100-item pre-compiled
+    // pool slide in from the "backup" 50, maintaining the 50-recruit window.
+    return alive.slice(0, 50);
   });
 
   // ⚡ DIRECT SCAN: Turbo Mode
