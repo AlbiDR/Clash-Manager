@@ -72,22 +72,19 @@ const handleOpenSheet = () => {
       <div class="title-row">
         <div class="title-group">
           <div class="title-main">
-            <h1 class="view-title">{{ props.title }}</h1>
+            <h1
+              class="view-title"
+              :class="{ 'is-link': props.sheetUrl }"
+              :title="props.sheetUrl ? 'Open Source Sheet' : undefined"
+              @click="handleOpenSheet"
+            >
+              {{ props.title }}
+            </h1>
             <div v-if="props.stats" class="title-label">
               <span class="count-value">{{ props.stats.value }}</span>
               <span class="count-label">{{ props.stats.label }}</span>
             </div>
           </div>
-          
-          <button
-            v-if="props.sheetUrl || (props.title === 'Roster')"
-            class="icon-btn spreadsheet-btn"
-            title="Open Source Sheet"
-            aria-label="Open Source Sheet"
-            @click="handleOpenSheet"
-          >
-            <Icon name="external-link" size="20" />
-          </button>
         </div>
 
         <div class="action-group">
@@ -212,6 +209,20 @@ const handleOpenSheet = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: all 0.2s var(--sys-motion-standard);
+}
+
+.view-title.is-link {
+  cursor: pointer;
+}
+
+.view-title.is-link:hover {
+  color: var(--sys-primary);
+}
+
+.view-title.is-link:active {
+  transform: scale(0.96);
+  opacity: 0.8;
 }
 
 .title-label {
@@ -255,19 +266,6 @@ const handleOpenSheet = () => {
 .icon-btn:active {
   transform: scale(0.92);
   background: var(--sys-surf-h);
-}
-
-.spreadsheet-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: none;
-  border: none;
-  color: var(--sys-text-tertiary);
-}
-
-.spreadsheet-btn:hover {
-  color: var(--sys-primary);
 }
 
 .action-group {
