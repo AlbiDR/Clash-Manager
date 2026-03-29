@@ -178,7 +178,7 @@ const handleOpenSheet = () => {
 }
 
 .header-extra {
-  margin-top: 32px;
+  margin-top: 12px;
 }
 
 .title-row {
