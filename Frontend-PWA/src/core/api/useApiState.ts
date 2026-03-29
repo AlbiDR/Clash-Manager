@@ -1,4 +1,4 @@
-import { getApiUrl, isConfigured, ping } from "./GasClient";
+import { getApiUrl, isConfigured, ping, pingWorker } from "./GasClient";
 import { ref, readonly } from "vue";
 import type { PingResponse } from "@core/types";
 
@@ -13,11 +13,16 @@ export type ApiStatus =
   | "stale"
   | "waking";
 
+export type WorkerStatus = "checking" | "online" | "offline" | "unconfigured";
+
 // Global Shared State (Kernel Singletons)
 const apiUrl = ref("");
 const apiConfigured = ref(false);
 const apiStatus = ref<ApiStatus>("checking");
 const pingData = ref<PingResponse | null>(null);
+
+const workerStatus = ref<WorkerStatus>("unconfigured");
+const workerPingData = ref<any>(null);
 
 let isInitialized = false;
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
@@ -64,6 +69,11 @@ async function checkApiStatus() {
       ),
     ]);
     const latency = Date.now() - start;
+
+    // Direct Worker verification
+    pingWorker().then(isHealthy => {
+      workerStatus.value = isHealthy ? "online" : "offline";
+    });
 
     if (response && response.status === "online") {
       apiStatus.value = "online";
@@ -152,6 +162,8 @@ export function useApiState() {
     apiConfigured: readonly(apiConfigured),
     apiStatus: readonly(apiStatus),
     pingData: readonly(pingData),
+    workerStatus: readonly(workerStatus),
+    workerPingData: readonly(workerPingData),
     checkApiStatus,
     init,
   };

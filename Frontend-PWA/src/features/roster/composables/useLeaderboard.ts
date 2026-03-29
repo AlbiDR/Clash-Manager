@@ -37,7 +37,7 @@ export function useLeaderboard() {
     statsLabel: "Member",
     sheetName: "Leaderboard",
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
-    refresh,
+    refresh: clashDataStore.refreshWorker,
     currentSource: storeToRefs(clashDataStore).currentSource,
     hubSyncTime: storeToRefs(clashDataStore).hubSyncTime,
     lastSyncTime: storeToRefs(clashDataStore).lastSyncTime,
