@@ -31,3 +31,4 @@ Frontend-PWA/src/core/services/useConsoleController.ts
 Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
 Frontend-PWA/src/shared/ui/ToastContainer.vue
 Frontend-PWA/src/features/laboratory/components/TrajectoryItem.vue
+Frontend-PWA/src/features/laboratory/logic/Simulation.ts
