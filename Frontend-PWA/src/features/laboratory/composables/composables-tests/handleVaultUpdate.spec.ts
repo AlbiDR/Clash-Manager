@@ -11,7 +11,8 @@ vi.mock('@core/services/useClashData', () => ({
 }));
 
 vi.mock('@core/api/GasClient', () => ({
-  getPlayerProfile: vi.fn()
+  getPlayerProfile: vi.fn(),
+  lastHubDiagnosis: { value: null }
 }));
 
 // Mock the logic module

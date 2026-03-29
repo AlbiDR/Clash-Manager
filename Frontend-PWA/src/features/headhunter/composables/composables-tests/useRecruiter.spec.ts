@@ -117,6 +117,7 @@ vi.mock("@core", async (importOriginal) => {
 vi.mock("@core/api/GasClient", () => ({
   isWorkerConfigured: vi.fn().mockReturnValue(false),
   scanRecruitsDirect: vi.fn().mockResolvedValue([]),
+  lastHubDiagnosis: { value: null },
 }));
 
 vi.mock("@shared", async (importOriginal) => {
