@@ -64,6 +64,7 @@ vi.mock("@core/services/useToast", () => ({
 vi.mock("@core/api/GasClient", () => ({
   dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
   undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
+  lastHubDiagnosis: { value: null },
   NetworkError: class extends Error {
     constructor(m: string) {
       super(m);

@@ -8,6 +8,7 @@ vi.mock("../../api/GasClient", () => ({
   ping: vi.fn(),
   pingWorker: vi.fn(() => Promise.resolve(true)),
   getApiUrl: vi.fn(() => "https://mock-gas-url.com"),
+  lastHubDiagnosis: { value: null },
 }));
 
 describe("useApiState", () => {
