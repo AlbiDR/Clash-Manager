@@ -23,6 +23,7 @@ const props = defineProps<{
   hubInfo?: {
     source: "WORKER" | "GAS";
     hubAge: string | null;
+    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
   reserveExtraSpace?: boolean;
 }>();
@@ -52,8 +53,6 @@ const activeSortDescription = computed(() => {
   const opt = props.sortOptions.find((o) => o.value === props.currentSort);
   return opt?.desc || "";
 });
-
-
 
 const handleOpenSheet = () => {
   if (props.sheetUrl) {
@@ -98,7 +97,6 @@ const handleOpenSheet = () => {
           />
         </div>
       </div>
-
 
       <div v-if="props.showSearch" class="search-sort-row">
         <div class="search-bar">
@@ -190,7 +188,7 @@ const handleOpenSheet = () => {
   align-items: baseline;
   gap: 12px;
   flex: 1;
-  min-width: 0; /* Prevents overflow pushing elements off-screen */
+  min-width: 0;
 }
 
 .title-main {
@@ -248,26 +246,6 @@ const handleOpenSheet = () => {
   font-weight: 600;
 }
 
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-surf-c);
-  color: var(--sys-text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  padding: 0;
-  cursor: pointer;
-}
-
-.icon-btn:active {
-  transform: scale(0.92);
-  background: var(--sys-surf-h);
-}
-
 .action-group {
   display: flex;
   align-items: center;
@@ -283,7 +261,7 @@ const handleOpenSheet = () => {
 
 .search-bar {
   flex: 1;
-  min-width: 0; /* Allows input side to shrink on small screens */
+  min-width: 0;
 }
 
 .search-box {
@@ -295,8 +273,8 @@ const handleOpenSheet = () => {
   align-items: center;
   padding: 0 14px;
   gap: 12px;
-  border: 1px solid rgba(128, 128, 128, 0.15); /* Soft, extremely pleasant visual boundary */
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02); /* Slight depth */
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease;
 }
 
@@ -320,7 +298,7 @@ const handleOpenSheet = () => {
 .sort-box {
   flex-shrink: 0;
   width: auto;
-  min-width: 110px; /* Reduced to provide more room on mobile */
+  min-width: 110px;
 }
 
 .sort-select-wrapper {
