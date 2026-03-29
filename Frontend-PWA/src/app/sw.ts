@@ -145,6 +145,11 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
       ...options,
     });
   }
+
+  // FORCE UPDATE: Manual skipWaiting via message
+  if ((data as any).type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 /**

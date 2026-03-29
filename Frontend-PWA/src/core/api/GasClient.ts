@@ -624,6 +624,7 @@ export async function fetchRemote(options?: {
     : import.meta.env.VITE_USE_WORKER_HUB === "true";
 
   if (useWorkerHub) {
+    console.debug("🔌 [Sync] Phase 1: Contacting Worker Hub...");
     try {
       // PHASE 1: Try Worker Hub (Optimistic)
       const workerUrl = getWorkerUrl() + "/hub/state";
@@ -643,6 +644,7 @@ export async function fetchRemote(options?: {
       clearTimeout(timeoutId);
 
       if (workerResponse.ok) {
+        console.debug("[Sync] Worker HTTP Success. Parsing payload...");
         const workerPayload = await workerResponse.json();
         if (workerPayload.success && workerPayload.data) {
           const validationResult = v.safeParse(HubStateSchema, workerPayload.data);
@@ -699,22 +701,27 @@ export async function fetchRemote(options?: {
             });
 
             idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+            console.debug("[Sync] Success: HUB Attribution Active.");
             return inflated;
           } else {
-            console.warn("[WorkerHub] Payload Validation Failed. Falling back to GAS.", validationResult.issues);
+            console.warn("[Sync] Worker Validation Failed. Falling back to GAS.", validationResult.issues);
           }
+        } else {
+          console.warn("[Sync] Worker responded but payload.success is false.");
         }
       } else if (workerResponse.status === 401 || workerResponse.status === 403) {
-        console.error("[WorkerHub] Authentication failed. Check VITE_WORKER_TOKEN.");
-        // If it's an auth error, falling back to GAS is the only way to get data, 
-        // but we should log it clearly.
+        console.error("[Sync] Worker Authentication failed. Check VITE_WORKER_TOKEN.");
+      } else {
+        console.warn(`[Sync] Worker returned HTTP ${workerResponse.status}.`);
       }
     } catch (workerFetchError: unknown) {
       if (workerFetchError instanceof Error && workerFetchError.name === "AbortError" && options?.signal?.aborted) {
         throw workerFetchError; 
       }
-      console.warn("[WorkerHub] Fetch failed, falling back to GAS");
+      console.warn("[Sync] Worker Fetch failed (Network/CORS), falling back to GAS.", workerFetchError);
     }
+  } else {
+    console.debug("⏭[Sync] Skipping Worker Hub (VITE_USE_WORKER_HUB is false).");
   }
 
   // PHASE 2: Authority Fallback (GAS) - Standardized Retry Loop
