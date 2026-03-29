@@ -1,6 +1,27 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-29] PR #331: docs(tsdoc): document validation schemas in backend worker
+**Commit**: `29513aaf51dc22dd4eeb59cbee3ec6200e066054`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/331)
+
+### Description
+This PR implements the **Document-TSDoc** (Step 5) requirements for the `Backend-Worker/src/schemas.ts` file. 
+
+Key improvements:
+1.  **Mandatory Licensing:** Added the standard SPDX-License-Identifier and Copyright header.
+2.  **Interface Contracts:** Provided comprehensive TSDoc for all exported Valibot schemas, defining their intent, constraints, and architectural role as the "Layer 1 validation boundary" for the worker.
+3.  **Contextual Remarks:** Used `@remarks` to document domain-specific logic, such as the distinction between tournament 'score' and global 'trophies' to prevent silent recruitment yield failures.
+4.  **Threat Mitigation:** Added inline comments and TSDoc annotations explaining how specific validation rules (like tag normalization) prevent runtime risks like database duplication or recruitment blacklist bypass.
+5.  **Verified Integrity:** Confirmed all changes with 78 passing unit tests and ADR alignment.
+
+All changes target the `Nightly` branch as per the autonomous pipeline protocol.
+
+---
+*PR created automatically by Jules for task [17280771368479129629](https://jules.google.com/task/17280771368479129629) started by @AlbiDR*
+
+---
+
 ## [2026-03-29] PR #330: docs(readme): Reconcile Worker Hub Metadata Drift
 **Commit**: `f1c48517039dcd485583542412cfd06cb2b42611`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/330)
