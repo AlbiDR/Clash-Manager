@@ -46,6 +46,28 @@ describe("ConsoleHeader", () => {
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
   });
 
+  it("opens the spreadsheet URL when the title is clicked", async () => {
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/test";
+    // @ts-ignore - Mocking window.open in JSDOM
+    const windowSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Test Feature",
+        sheetUrl,
+      },
+    });
+
+    const title = wrapper.find(".view-title");
+    expect(title.classes()).toContain("is-link");
+
+    await title.trigger("click");
+
+    expect(mockTap).toHaveBeenCalled();
+    expect(windowSpy).toHaveBeenCalledWith(sheetUrl, "_blank");
+    windowSpy.mockRestore();
+  });
+
   it("handles search input emission", async () => {
     vi.useFakeTimers();
     const wrapper = mount(ConsoleHeader, {
