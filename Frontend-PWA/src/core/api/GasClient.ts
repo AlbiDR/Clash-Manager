@@ -650,6 +650,17 @@ export async function fetchRemote(options?: {
             const lastCompiled = new Date(validatedHubState.metadata.lastCompiled).getTime() || timestamp;
             const lastFetched = new Date(validatedHubState.metadata.lastFetched).getTime() || timestamp;
 
+            // The Worker Hub sends raw matrices (array of arrays).
+            // Index 0: Title block
+            // Index 1: Human-readable headers
+            // Index 2: Internal schema keys
+            // Index 3+: Data rows
+            const lbSchema = Array.isArray(rosterTable) && rosterTable.length > 2 ? rosterTable[2] : [];
+            const lbRows = Array.isArray(rosterTable) && rosterTable.length > 3 ? rosterTable.slice(3) : [];
+            
+            const hhSchema = Array.isArray(hhTable) && hhTable.length > 2 ? hhTable[2] : [];
+            const hhRows = Array.isArray(hhTable) && hhTable.length > 3 ? hhTable.slice(3) : [];
+
             const mappedData = {
               format: "matrix",
               timestamp,
@@ -657,11 +668,11 @@ export async function fetchRemote(options?: {
               lastFetched,
               playerTag: "", 
               schema: {
-                lb: rosterTable.headers,
-                hh: hhTable.headers
+                lb: lbSchema,
+                hh: hhSchema
               },
-              lb: rosterTable.rows,
-              hh: hhTable.rows
+              lb: lbRows,
+              hh: hhRows
             };
 
             const inflated = await inflatePayload(mappedData);
