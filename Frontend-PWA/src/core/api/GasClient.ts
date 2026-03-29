@@ -583,8 +583,9 @@ export async function fetchRemote(options?: {
     try {
       // PHASE 1: Try Worker Hub (Optimistic)
       const workerUrl = getWorkerUrl() + "/hub/state";
+      const workerToken = import.meta.env.VITE_WORKER_TOKEN;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s deadline
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s deadline (slightly increased for cold starts)
       
       if (options?.signal) {
         options.signal.addEventListener("abort", () => controller.abort());
@@ -592,11 +593,17 @@ export async function fetchRemote(options?: {
 
       const workerResponse = await fetch(workerUrl, {
         method: "GET",
+        headers: workerToken ? { "Authorization": `Bearer ${workerToken}` } : {},
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
-      if (!workerResponse.ok) throw new Error("Worker Hub HTTP " + workerResponse.status);
+      if (!workerResponse.ok) {
+        if (workerResponse.status === 401) {
+          console.error("[Worker] Hub authentication failed. Check VITE_WORKER_TOKEN.");
+        }
+        throw new Error("Worker Hub HTTP " + workerResponse.status);
+      }
       const workerPayload = await workerResponse.json();
       if (!workerPayload.success || !workerPayload.data) throw new Error("Worker Hub malformed payload");
 

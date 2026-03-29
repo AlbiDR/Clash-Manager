@@ -14,7 +14,8 @@ vi.mock("../../services/StorageService", () => ({
 const envMock = vi.hoisted(() => ({
   VITE_USE_WORKER_HUB: "true",
   VITE_GAS_URL: "https://script.google.com/macros/s/123/exec",
-  VITE_WORKER_URL: "https://worker.test"
+  VITE_WORKER_URL: "https://worker.test",
+  VITE_WORKER_TOKEN: "test-token"
 }));
 vi.mock("import.meta.env", () => envMock);
 
