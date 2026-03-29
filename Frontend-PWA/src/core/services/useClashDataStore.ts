@@ -82,6 +82,7 @@ export const useClashDataStore = defineStore("clashData", () => {
         // preventing the "Just Now" reset on every hydration/refresh.
         lastSync.value = new Date(output.timestamp).getTime();
         
+        console.debug(`💾 [Store] Hydrated from cache. Source: ${output.dataSource || "GAS"}`);
         dataSource.value = output.dataSource || null;
         hubTimestamp.value = output.hubTimestamp || null;
         lastCompiled.value = output.lastCompiled || null;
@@ -142,6 +143,8 @@ export const useClashDataStore = defineStore("clashData", () => {
       const output = validation.output as WebAppData;
       data.value = output;
       lastSync.value = new Date(output.timestamp).getTime();
+      
+      console.debug(`🌐 [Store] Refresh successful. Attribution: ${output.dataSource || "GAS"}`);
       dataSource.value = output.dataSource || null;
       hubTimestamp.value = output.hubTimestamp || null;
       lastCompiled.value = output.lastCompiled || null;
