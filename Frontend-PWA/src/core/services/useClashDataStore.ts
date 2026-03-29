@@ -135,6 +135,7 @@ export const useClashDataStore = defineStore("clashData", () => {
       
       const validation = v.safeParse(WebAppDataSchema, remoteData);
       if (!validation.success) {
+        console.error("[Store] Worker Validation Failure Details:", JSON.stringify(validation.issues, null, 2));
         throw new Error("Worker data validation failed");
       }
 

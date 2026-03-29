@@ -87,11 +87,11 @@ const WebAppDataSchema = v.object({
   lb: v.array(v.array(v.unknown())),
   hh: v.array(v.array(v.unknown())),
   timestamp: v.union([v.number(), v.string()]),
-  playerTag: v.optional(v.string()),
+  playerTag: v.optional(v.nullable(v.string())),
   dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
-  hubTimestamp: v.optional(v.number()),
-  lastCompiled: v.optional(v.number()),
-  lastFetched: v.optional(v.number()),
+  hubTimestamp: v.optional(v.union([v.number(), v.string(), v.null()])),
+  lastCompiled: v.optional(v.union([v.number(), v.string(), v.null()])),
+  lastFetched: v.optional(v.union([v.number(), v.string(), v.null()])),
 });
 
 import { ProfileInputSchema, MemberSchema, RecruitSchema } from "./DataSchemas";
@@ -659,11 +659,20 @@ export async function fetchRemote(options?: {
             // Index 1: Human-readable headers
             // Index 2: Internal schema keys
             // Index 3+: Data rows
-            const lbSchema = Array.isArray(rosterTable) && rosterTable.length > 2 ? rosterTable[2] : [];
-            const lbRows = Array.isArray(rosterTable) && rosterTable.length > 3 ? rosterTable.slice(3) : [];
+            // [ROBUSTNESS] DETECT SCHEMA ROW:
+            // The matrix can have 2 or 3 header rows depending on the backend version.
+            // Row 0: Title, Row 1: Headers, Row 2: Keys (Optional)
+            const row2 = Array.isArray(rosterTable) && rosterTable.length > 2 ? rosterTable[2] : [];
+            const isRow2Schema = Array.isArray(row2) && row2.includes("id");
+
+            const lbSchema = isRow2Schema ? (row2 as string[]) : DEFAULT_LB_SCHEMA;
+            const lbRows = Array.isArray(rosterTable) ? rosterTable.slice(isRow2Schema ? 3 : 2) : [];
             
-            const hhSchema = Array.isArray(hhTable) && hhTable.length > 2 ? hhTable[2] : [];
-            const hhRows = Array.isArray(hhTable) && hhTable.length > 3 ? hhTable.slice(3) : [];
+            const row2hh = Array.isArray(hhTable) && hhTable.length > 2 ? hhTable[2] : [];
+            const isRow2HhSchema = Array.isArray(row2hh) && row2hh.includes("id");
+
+            const hhSchema = isRow2HhSchema ? (row2hh as string[]) : DEFAULT_HH_SCHEMA;
+            const hhRows = Array.isArray(hhTable) ? hhTable.slice(isRow2HhSchema ? 3 : 2) : [];
 
             const mappedData = {
               format: "matrix",

@@ -110,44 +110,59 @@ export const ProfileInputSchema = v.union([
 export type RawProfileInput = v.InferOutput<typeof ProfileInputSchema>;
 
 /**
- * [GUARD] MEMBER SCHEMA
- * Validates a member in the leaderboard.
+ * [GUARD] CORE COERCION PIPES
+ * Rationale: Matrix data is often heterogeneous (e.g., numbers for tags).
+ * We coerce at the boundary to prevent total payload rejection.
  */
+const SafeStringPipe = v.pipe(
+  v.unknown(),
+  v.transform((val) => (val === null || val === undefined ? "" : String(val)))
+);
+
+const SafeNumberPipe = v.pipe(
+  v.unknown(),
+  v.transform((val) => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const cleaned = val.replace(/,/g, "").replace(/%/g, "");
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? 0 : n;
+    }
+    return 0;
+  })
+);
+
 export const MemberSchema = v.object({
-  id: v.string(),
-  n: v.string(),
-  t: v.number(),
-  performanceScore: v.number(),
-  performanceRawScore: v.number(),
-  dt: v.optional(v.number()),
+  id: SafeStringPipe,
+  n: SafeStringPipe,
+  t: SafeNumberPipe,
+  performanceScore: SafeNumberPipe,
+  performanceRawScore: SafeNumberPipe,
+  dt: v.optional(SafeNumberPipe),
   d: v.object({
-    role: v.string(),
-    days: v.number(),
-    avg: v.number(),
-    seen: v.optional(v.nullable(v.string())),
-    rate: v.optional(v.nullable(v.string())),
-    wfame: v.optional(v.number()),
-    hist: v.string(),
+    role: SafeStringPipe,
+    days: SafeNumberPipe,
+    avg: SafeNumberPipe,
+    seen: v.optional(v.nullable(SafeStringPipe)),
+    rate: v.optional(v.nullable(SafeStringPipe)),
+    wfame: v.optional(SafeNumberPipe),
+    hist: SafeStringPipe,
   }),
 });
 
-/**
- * [GUARD] RECRUIT SCHEMA
- * Validates a recruit in the headhunter.
- */
 export const RecruitSchema = v.object({
-  id: v.string(),
-  n: v.string(),
-  t: v.number(),
-  potentialScore: v.number(),
-  potentialRawScore: v.number(),
+  id: SafeStringPipe,
+  n: SafeStringPipe,
+  t: SafeNumberPipe,
+  potentialScore: v.optional(SafeNumberPipe),
+  potentialRawScore: v.optional(SafeNumberPipe),
   d: v.object({
-    don: v.number(),
-    war: v.number(),
-    ago: v.string(),
-    cards: v.optional(v.number()),
+    don: SafeNumberPipe,
+    war: SafeNumberPipe,
+    ago: SafeStringPipe,
+    cards: v.optional(SafeNumberPipe),
   }),
-  lastScan: v.optional(v.number()),
+  lastScan: v.optional(SafeNumberPipe),
 });
 
 /**
@@ -157,12 +172,12 @@ export const RecruitSchema = v.object({
 export const WebAppDataSchema = v.object({
   lb: v.array(MemberSchema),
   hh: v.array(RecruitSchema),
-  playerTag: v.optional(v.string()),
-  timestamp: v.number(),
+  playerTag: v.optional(SafeStringPipe),
+  timestamp: SafeNumberPipe,
   dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
-  hubTimestamp: v.optional(v.number()),
-  lastCompiled: v.optional(v.number()),
-  lastFetched: v.optional(v.number()),
+  hubTimestamp: v.optional(SafeNumberPipe),
+  lastCompiled: v.optional(SafeNumberPipe),
+  lastFetched: v.optional(SafeNumberPipe),
 });
 
 /**
@@ -171,12 +186,12 @@ export const WebAppDataSchema = v.object({
  */
 export const HubStateSchema = v.object({
   metadata: v.object({
-    timestamp: v.string(),
-    lastCompiled: v.string(),
-    lastFetched: v.string(),
+    timestamp: SafeStringPipe,
+    lastCompiled: SafeStringPipe,
+    lastFetched: SafeStringPipe,
     status: v.picklist(["healthy", "degraded", "offline"]),
-    version: v.string(),
-    source: v.string(),
+    version: SafeStringPipe,
+    source: SafeStringPipe,
   }),
   data: v.object({
     roster: v.array(v.array(v.unknown())),
