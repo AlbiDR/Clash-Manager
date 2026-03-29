@@ -361,7 +361,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   const lbMap = createSchemaMap(lbSchemaArr);
   const hhMap = createSchemaMap(hhSchemaArr);
 
-  return {
+  const result: WebAppData = {
     lb: lbMatrix
       .map((rowSnapshot) => mapLbRow(rowSnapshot as unknown[], lbMap))
       .filter((rowSnapshot): rowSnapshot is LeaderboardMember => !!rowSnapshot),
@@ -370,7 +370,13 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
       .filter((rowSnapshot): rowSnapshot is Recruit => !!rowSnapshot),
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
+    dataSource: source.dataSource,
+    hubTimestamp: source.hubTimestamp,
+    lastCompiled: source.lastCompiled,
+    lastFetched: source.lastFetched,
   };
+
+  return result;
 }
 
 /**
@@ -659,6 +665,8 @@ export async function fetchRemote(options?: {
             };
 
             const inflated = await inflatePayload(mappedData);
+            
+            // Set dataSource and timestamps to trigger Hub attribution in UI
             Object.assign(inflated, { 
               dataSource: "WORKER",
               hubTimestamp: timestamp,

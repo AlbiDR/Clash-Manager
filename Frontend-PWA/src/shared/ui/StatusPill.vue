@@ -20,6 +20,8 @@ const props = withDefaults(defineProps<{
 const haptics = useHaptics();
 const isExpanded = ref(false);
 
+const WORKER_HUB_ENABLED = import.meta.env.VITE_USE_WORKER_HUB === "true";
+
 // Reset expansion when status changes significantly
 watch(() => props.type, (newType) => {
   if (newType === "loading") isExpanded.value = true;
@@ -62,15 +64,18 @@ const handleToggle = () => {
         <template v-if="props.type === 'loading'">
           <span class="status-label">Syncing...</span>
         </template>
-        <template v-else-if="props.hubInfo && isExpanded">
+        <template v-else-if="props.hubInfo && isExpanded && WORKER_HUB_ENABLED">
           <div class="hub-meta">
             <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
               <template v-if="props.hubInfo.source === 'WORKER'">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
+                HUB
               </template>
-              {{ props.hubInfo.source }}
+              <template v-else>
+                GAS
+              </template>
             </span>
             <span v-if="props.hubInfo.hubAge" class="separator">|</span>
             <span v-if="props.hubInfo.hubAge" class="hub-age">
