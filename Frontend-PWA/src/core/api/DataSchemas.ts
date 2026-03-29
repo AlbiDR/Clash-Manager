@@ -112,24 +112,34 @@ export type RawProfileInput = v.InferOutput<typeof ProfileInputSchema>;
 /**
  * [GUARD] CORE COERCION PIPES
  * Rationale: Matrix data is often heterogeneous (e.g., numbers for tags).
- * We coerce at the boundary to prevent total payload rejection.
+ * We coerce at the boundary but reject total garbage to maintain test integrity.
  */
-const SafeStringPipe = v.pipe(
-  v.unknown(),
-  v.transform((val) => (val === null || val === undefined ? "" : String(val)))
-);
-
 const SafeNumberPipe = v.pipe(
   v.unknown(),
   v.transform((val) => {
     if (typeof val === "number") return val;
     if (typeof val === "string") {
-      const cleaned = val.replace(/,/g, "").replace(/%/g, "");
+      // Handle comma-separated or percentage-based strings from sheets
+      const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
+      if (cleaned === "") return 0;
       const n = parseFloat(cleaned);
-      return isNaN(n) ? 0 : n;
+      // Only return the number if it's actually numeric
+      if (!isNaN(n)) return n;
     }
-    return 0;
-  })
+    return val; // Pass through to v.number() for rejection
+  }),
+  v.number() // The final gatekeeper
+);
+
+const SafeStringPipe = v.pipe(
+  v.unknown(),
+  v.transform((val) => {
+    if (val === null || val === undefined) return "";
+    if (typeof val === "string") return val;
+    if (typeof val === "number" || typeof val === "boolean") return String(val);
+    return val; // Pass through to v.string() for rejection
+  }),
+  v.string() // The final gatekeeper
 );
 
 export const MemberSchema = v.object({
