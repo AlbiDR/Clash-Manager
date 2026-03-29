@@ -229,7 +229,7 @@ onUnmounted(() => {
 <style scoped>
 .view-container {
   min-height: 100%;
-  padding-bottom: 24px;
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 .view-content {
   transition: transform 0.2s var(--sys-motion-spring);
@@ -238,7 +238,7 @@ onUnmounted(() => {
   transform: translateY(calc(var(--ptr-offset, 0px) / 2));
 }
 .list-container {
-  padding-bottom: 120px;
+  padding-bottom: 48px;
   position: relative;
 }
 .gpu-contain {

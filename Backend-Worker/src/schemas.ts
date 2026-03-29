@@ -233,6 +233,8 @@ export const FsErrorSchema = v.object({
 export const HubStateSchema = v.object({
   metadata: v.object({
     timestamp: v.string(),
+    lastCompiled: v.string(),
+    lastFetched: v.string(),
     status: v.picklist(["healthy", "degraded", "offline"]),
     version: v.string(),
     source: v.string(),

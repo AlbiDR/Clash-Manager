@@ -34,6 +34,8 @@ export const useClashDataStore = defineStore("clashData", () => {
   const consecutiveSyncFailures = ref(0);
   const dataSource = ref<"WORKER" | "GAS" | null>(null);
   const hubTimestamp = ref<number | null>(null);
+  const lastCompiled = ref<number | null>(null);
+  const lastFetched = ref<number | null>(null);
 
   // --- DEPENDENCIES ---
   const { isOnline } = useConnectionStatus();
@@ -82,6 +84,8 @@ export const useClashDataStore = defineStore("clashData", () => {
         
         dataSource.value = output.dataSource || null;
         hubTimestamp.value = output.hubTimestamp || null;
+        lastCompiled.value = output.lastCompiled || null;
+        lastFetched.value = output.lastFetched || null;
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
       }
