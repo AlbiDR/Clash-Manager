@@ -156,6 +156,8 @@ export const useClashDataStore = defineStore("clashData", () => {
       
       dataSource.value = output.dataSource || null;
       hubTimestamp.value = output.hubTimestamp || null;
+      lastCompiled.value = output.lastCompiled || null;
+      lastFetched.value = output.lastFetched || null;
       consecutiveSyncFailures.value = 0;
       syncError.value = null; // Clear error on success
       
@@ -239,6 +241,8 @@ export const useClashDataStore = defineStore("clashData", () => {
     lastUpdated,
     currentSource,
     hubSyncTime,
+    lastCompiledTime: computed(() => lastCompiled.value),
+    lastFetchedTime: computed(() => lastFetched.value),
     isStale,
     isHydrated,
     isRefreshing,

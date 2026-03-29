@@ -180,6 +180,8 @@ describe("GasClient", () => {
       data: {
         metadata: {
           timestamp: "2026-03-23T12:00:00Z",
+          lastCompiled: "2026-03-23T12:00:00Z",
+          lastFetched: "2026-03-23T12:00:00Z",
           status: "healthy",
           version: "v2_structured",
           source: "RENDER_WORKER"

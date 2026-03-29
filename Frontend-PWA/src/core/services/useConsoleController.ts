@@ -113,6 +113,8 @@ export function useConsoleController<T extends { id: string }>(
     lastSyncTime: storeLastSync,
     currentSource: storeSource,
     hubSyncTime: storeHubSync,
+    lastCompiledTime: storeLastCompiled,
+    lastFetchedTime: storeLastFetched,
   } = storeToRefs(clashStore);
 
   const {
@@ -123,6 +125,8 @@ export function useConsoleController<T extends { id: string }>(
     lastSyncTime = storeLastSync,
     currentSource = storeSource,
     hubSyncTime = storeHubSync,
+    lastCompiledTime = storeLastCompiled,
+    lastFetchedTime = storeLastFetched,
     filterFn,
     sortStrategies,
     defaultSort,
@@ -254,7 +258,15 @@ export function useConsoleController<T extends { id: string }>(
    * information is always visible to the user.
    */
   const status = computed(() => {
-    const ageMs = Date.now() - (lastSyncTime.value || 0);
+    // [FIX] SOURCE-AUTHORITATIVE STALE LOGIC: Target A [1]
+    // Rationale: data age must be calculated relative to the original find/fetch 
+    // at the source (GAS), not just the latest compilation in the worker hub.
+    const now = Date.now();
+    const effectiveSyncTime = (currentSource.value === "WORKER" && lastFetchedTime.value)
+      ? lastFetchedTime.value
+      : (lastSyncTime.value || 0);
+
+    const ageMs = now - effectiveSyncTime;
     const ageMinutes = Math.floor(ageMs / 60000);
 
     // Priority 0: Critical configuration missing (Action Required)
@@ -406,7 +418,7 @@ export function useConsoleController<T extends { id: string }>(
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
     hubInfo: currentSource?.value ? {
       source: currentSource.value,
-      hubAge: hubSyncTime?.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
+      hubAge: lastCompiledTime?.value ? formatTimeAgo(new Date(lastCompiledTime.value).toISOString()) : null
     } : undefined
   }));
 
