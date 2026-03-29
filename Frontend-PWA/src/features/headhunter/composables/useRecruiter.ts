@@ -82,6 +82,11 @@ export function useRecruiter() {
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     refresh: handleRefresh,
     onDismiss: dismissBulk,
+    currentSource: storeToRefs(clashDataStore).currentSource,
+    hubSyncTime: storeToRefs(clashDataStore).hubSyncTime,
+    lastSyncTime: storeToRefs(clashDataStore).lastSyncTime,
+    lastCompiledTime: storeToRefs(clashDataStore).lastCompiledTime,
+    lastFetchedTime: storeToRefs(clashDataStore).lastFetchedTime,
   });
 
   const sortOptions = RECRUITER_SORT_OPTIONS;

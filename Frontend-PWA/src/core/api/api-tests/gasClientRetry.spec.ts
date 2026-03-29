@@ -6,7 +6,7 @@ vi.mock("import.meta.env", () => ({
   VITE_GAS_URL: "https://script.google.com/macros/s/TEST/exec",
 }));
 
-import { fetchRemote } from "@core";
+import { fetchRemote, _setWorkerHubTestOverride } from "../GasClient";
 
 // Mock fetch global
 const fetchMock = vi.fn();
@@ -55,19 +55,18 @@ describe("gasClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    localStorageMock.getItem.mockReturnValue(
-      "https://script.google.com/macros/s/TEST/exec",
-    );
-    // Default success response
+    //  ISOLATION: Explicitly disable the Worker Hub for all legacy retry tests
+    // to prevent Hub fetch attempts from polluting call counts and timing.
+    _setWorkerHubTestOverride(false);
+
+    // Default successful fetch
     fetchMock.mockResolvedValue({
       ok: true,
-      text: () =>
-        Promise.resolve(
-          JSON.stringify({
-            success: true,
-            data: { lb: [], hh: [], timestamp: 123 },
-          }),
-        ),
+      text: () => Promise.resolve(JSON.stringify({ 
+        success: true, 
+        data: { lb: [], hh: [], timestamp: 123 } 
+      })),
+      json: () => Promise.resolve({ success: true, data: { lb: [], hh: [], timestamp: 123 } }),
     });
   });
 
