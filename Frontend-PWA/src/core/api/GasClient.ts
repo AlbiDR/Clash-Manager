@@ -618,10 +618,14 @@ export async function fetchRemote(options?: {
       // MATRIX RE-HYDRATION: Transform Hub matrix format into GAS format
       // Rationale: Reusing `inflatePayload` ensures a single validation boundary (Target III).
       const timestamp = new Date(validatedHubState.metadata.timestamp).getTime() || Date.now();
+      const lastCompiled = new Date(validatedHubState.metadata.lastCompiled).getTime() || timestamp;
+      const lastFetched = new Date(validatedHubState.metadata.lastFetched).getTime() || timestamp;
 
       const mappedData = {
         format: "matrix",
         timestamp,
+        lastCompiled,
+        lastFetched,
         playerTag: "", 
         schema: {
           lb: rosterTable.headers,
@@ -636,7 +640,9 @@ export async function fetchRemote(options?: {
       // OBSERVABILITY: Label the data source for system diagnostics
       Object.assign(inflated, { 
         dataSource: "WORKER",
-        hubTimestamp: timestamp 
+        hubTimestamp: timestamp,
+        lastCompiled,
+        lastFetched
       });
 
       idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});

@@ -18,6 +18,8 @@ export interface HubError {
 export interface HubState {
   metadata: {
     timestamp: string;
+    lastCompiled: string;
+    lastFetched: string;
     status: 'healthy' | 'degraded' | 'offline';
     version: string;
     source: string;

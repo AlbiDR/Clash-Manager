@@ -41,9 +41,14 @@ export class PayloadKernel {
     // Phase 1 MVP Transformation: Directly pass the data structure.
     // In future iterations, field-level compression (e.g., removing redundant
     // meta columns or mapping to smaller keys) happens here.
+    const compiledAt = new Date().toISOString();
+    const fetchedAt = result.output.timestamp;
+
     return {
       metadata: {
-        timestamp: new Date().toISOString(),
+        timestamp: compiledAt,
+        lastCompiled: compiledAt,
+        lastFetched: fetchedAt,
         status: "healthy",
         version: "v1_hub",
         source: "RENDER_WORKER"

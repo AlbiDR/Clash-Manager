@@ -157,6 +157,8 @@ export const WebAppDataSchema = v.object({
   timestamp: v.number(),
   dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
   hubTimestamp: v.optional(v.number()),
+  lastCompiled: v.optional(v.number()),
+  lastFetched: v.optional(v.number()),
 });
 
 /**
@@ -166,6 +168,8 @@ export const WebAppDataSchema = v.object({
 export const HubStateSchema = v.object({
   metadata: v.object({
     timestamp: v.string(),
+    lastCompiled: v.string(),
+    lastFetched: v.string(),
     status: v.picklist(["healthy", "degraded", "offline"]),
     version: v.string(),
     source: v.string(),
