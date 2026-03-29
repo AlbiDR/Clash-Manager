@@ -37,6 +37,9 @@ jobs:
     timeout-minutes: 10
     env:
       VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
+      VITE_USE_WORKER_HUB: ${{ secrets.VITE_USE_WORKER_HUB }}
+      VITE_WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
+      VITE_WORKER_TOKEN: ${{ secrets.VITE_WORKER_TOKEN }}
     steps:
       - name: Suppress Git Advice
         run: git config --global advice.defaultBranchName false
