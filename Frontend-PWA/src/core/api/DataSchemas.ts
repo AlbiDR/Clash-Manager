@@ -131,6 +131,24 @@ const SafeNumberPipe = v.pipe(
   v.number() // The final gatekeeper
 );
 
+/**
+ * [GUARD] LAX NUMBER PIPE: Metadata Resilience
+ * Rationale: Metadata fields like timestamps must NEVER trigger a full 
+ * validation failure, as it results in a silent fallback to GAS.
+ */
+const LaxNumberPipe = v.pipe(
+  v.unknown(),
+  v.transform((val) => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const n = parseFloat(val);
+      return isNaN(n) ? 0 : n;
+    }
+    return 0;
+  }),
+  v.number() // The final gatekeeper
+);
+
 const SafeStringPipe = v.pipe(
   v.unknown(),
   v.transform((val) => {
@@ -185,9 +203,9 @@ export const WebAppDataSchema = v.object({
   playerTag: v.optional(SafeStringPipe),
   timestamp: SafeNumberPipe,
   dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
-  hubTimestamp: v.optional(SafeNumberPipe),
-  lastCompiled: v.optional(SafeNumberPipe),
-  lastFetched: v.optional(SafeNumberPipe),
+  hubTimestamp: v.optional(LaxNumberPipe),
+  lastCompiled: v.optional(LaxNumberPipe),
+  lastFetched: v.optional(LaxNumberPipe),
 });
 
 /**
@@ -197,9 +215,9 @@ export const WebAppDataSchema = v.object({
 export const HubStateSchema = v.object({
   metadata: v.object({
     timestamp: SafeStringPipe,
-    lastCompiled: SafeStringPipe,
-    lastFetched: SafeStringPipe,
-    status: v.picklist(["healthy", "degraded", "offline"]),
+    lastCompiled: LaxNumberPipe, // Metadata resilience
+    lastFetched: LaxNumberPipe,  // Metadata resilience
+    status: SafeStringPipe,
     version: SafeStringPipe,
     source: SafeStringPipe,
   }),

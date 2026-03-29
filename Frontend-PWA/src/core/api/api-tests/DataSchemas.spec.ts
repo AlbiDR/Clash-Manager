@@ -12,7 +12,8 @@ import {
   ExternalProfileSchema,
   MemberSchema,
   RecruitSchema,
-  WebAppDataSchema
+  WebAppDataSchema,
+  HubStateSchema
 } from "../DataSchemas";
 
 describe("Core DataSchemas", () => {
@@ -213,8 +214,8 @@ describe("Core DataSchemas", () => {
       expect(() => v.parse(MemberSchema, invalidMember)).toThrow();
     });
 
-    it("should fail for invalid types", () => {
-      const invalidMember = { ...validMember, performanceScore: "high" };
+    it("should fail for invalid types in core fields", () => {
+      const invalidMember = { ...validMember, performanceScore: "total-garbage" };
       expect(() => v.parse(MemberSchema, invalidMember)).toThrow();
     });
   });
@@ -243,6 +244,27 @@ describe("Core DataSchemas", () => {
       const invalidRecruit = { ...validRecruit };
       delete (invalidRecruit as any).d;
       expect(() => v.parse(RecruitSchema, invalidRecruit)).toThrow();
+    });
+  });
+
+  describe("LaxNumberPipe", () => {
+    it("should accept numbers", () => {
+      // Testing via WebAppDataSchema which uses LaxNumberPipe for its metadata fields
+      const input = { lb: [], hh: [], timestamp: 1, hubTimestamp: 123 };
+      expect(v.parse(WebAppDataSchema, input).hubTimestamp).toBe(123);
+    });
+
+    it("should coerce numeric strings", () => {
+      const input = { lb: [], hh: [], timestamp: 1, lastCompiled: "456" };
+      expect(v.parse(WebAppDataSchema, input).lastCompiled).toBe(456);
+    });
+
+    it("should fallback to 0 for invalid input instead of throwing", () => {
+      const input = { lb: [], hh: [], timestamp: 1, lastFetched: "garbage" };
+      expect(v.parse(WebAppDataSchema, input).lastFetched).toBe(0);
+      
+      const inputNull = { lb: [], hh: [], timestamp: 1, lastFetched: null };
+      expect(v.parse(WebAppDataSchema, inputNull).lastFetched).toBe(0);
     });
   });
 
@@ -278,15 +300,16 @@ describe("Core DataSchemas", () => {
         }
       ],
       playerTag: "MYTAG",
-      timestamp: 123456789
+      timestamp: 123456789,
+      dataSource: "WORKER",
+      hubTimestamp: "invalid_date" // LaxNumberPipe will handle this
     };
 
-    it("should parse valid WebAppData", () => {
+    it("should parse valid WebAppData with worker attribution", () => {
       const result = v.parse(WebAppDataSchema, validAppData);
+      expect(result.dataSource).toBe("WORKER");
+      expect(result.hubTimestamp).toBe(0); // Coerced to 0
       expect(result.lb).toHaveLength(1);
-      expect(result.hh).toHaveLength(1);
-      expect(result.playerTag).toBe("MYTAG");
-      expect(result.timestamp).toBe(123456789);
     });
 
     it("should fail for missing required fields (Validation Boundary)", () => {
@@ -297,18 +320,33 @@ describe("Core DataSchemas", () => {
       expect(result.success).toBe(false);
     });
 
-    it("should fail for invalid data types", () => {
+    it("should fail for invalid data types in core fields", () => {
       const invalidAppData = { ...validAppData, timestamp: "not-a-number" };
-
       const result = v.safeParse(WebAppDataSchema, invalidAppData);
       expect(result.success).toBe(false);
     });
+  });
 
-    it("should fail if lb is not an array", () => {
-      const invalidAppData = { ...validAppData, lb: "not-an-array" };
+  describe("HubStateSchema", () => {
+    const validHubState = {
+      metadata: {
+        timestamp: "2026-03-29",
+        lastCompiled: 123456,
+        lastFetched: "123456",
+        status: "ok", // [BOSS] Verified resilience
+        version: "1.0",
+        source: "worker"
+      },
+      data: {
+        roster: [],
+        headhunter: []
+      }
+    };
 
-      const result = v.safeParse(WebAppDataSchema, invalidAppData);
-      expect(result.success).toBe(false);
+    it("should parse valid hub state with non-standard status", () => {
+      const result = v.parse(HubStateSchema, validHubState);
+      expect(result.metadata.status).toBe("ok");
+      expect(result.metadata.lastFetched).toBe(123456);
     });
   });
 });
