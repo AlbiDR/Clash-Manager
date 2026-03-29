@@ -68,6 +68,9 @@ export interface WebAppData {
   readonly timestamp: number;
   readonly dataSource?: "WORKER" | "GAS";
   readonly hubTimestamp?: number;
+  readonly lastCompiled?: number;
+  readonly lastFetched?: number;
+  readonly lastSync?: number;
 }
 
 // Real-time clan member

@@ -43,6 +43,12 @@ import * as v from "valibot";
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 const pendingRequests = new Map<string, Promise<unknown>>(); // EPHEMERAL: intentionally resets on restart
 
+// [DEBUG] TEST OVERRIDE: TARGET IV Resilience
+// Allows Vitest to explicitly disable the Worker Hub during retry and fallback tests
+// to prevent Hub fetch pollution from interfering with legacy GAS timing assertions.
+let _workerHubTestOverride: boolean | null = null;
+export const _setWorkerHubTestOverride = (val: boolean | null) => { _workerHubTestOverride = val; };
+
 /**
  * CUSTOM ERROR TYPE
  * Used to distinguish between fatal server rejections and temporary network/timeout failures.
@@ -577,7 +583,9 @@ export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
 }): Promise<WebAppData> {
-  const useWorkerHub = import.meta.env.VITE_USE_WORKER_HUB === "true";
+  const useWorkerHub = _workerHubTestOverride !== null 
+    ? _workerHubTestOverride 
+    : import.meta.env.VITE_USE_WORKER_HUB === "true";
 
   if (useWorkerHub) {
     try {
@@ -585,7 +593,7 @@ export async function fetchRemote(options?: {
       const workerUrl = getWorkerUrl() + "/hub/state";
       const workerToken = import.meta.env.VITE_WORKER_TOKEN;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s deadline (slightly increased for cold starts)
+      const timeoutId = setTimeout(() => controller.abort(), 4000); 
       
       if (options?.signal) {
         options.signal.addEventListener("abort", () => controller.abort());
@@ -598,87 +606,121 @@ export async function fetchRemote(options?: {
       });
       clearTimeout(timeoutId);
 
-      if (!workerResponse.ok) {
-        if (workerResponse.status === 401) {
-          console.error("[Worker] Hub authentication failed. Check VITE_WORKER_TOKEN.");
+      if (workerResponse.ok) {
+        const workerPayload = await workerResponse.json();
+        if (workerPayload.success && workerPayload.data) {
+          const validationResult = v.safeParse(HubStateSchema, workerPayload.data);
+          if (validationResult.success) {
+            const validatedHubState = validationResult.output;
+            const rosterTable = validatedHubState.data.roster;
+            const hhTable = validatedHubState.data.headhunter;
+            const timestamp = new Date(validatedHubState.metadata.timestamp).getTime() || Date.now();
+            const lastCompiled = new Date(validatedHubState.metadata.lastCompiled).getTime() || timestamp;
+            const lastFetched = new Date(validatedHubState.metadata.lastFetched).getTime() || timestamp;
+
+            const mappedData = {
+              format: "matrix",
+              timestamp,
+              lastCompiled,
+              lastFetched,
+              playerTag: "", 
+              schema: {
+                lb: rosterTable.headers,
+                hh: hhTable.headers
+              },
+              lb: rosterTable.rows,
+              hh: hhTable.rows
+            };
+
+            const inflated = await inflatePayload(mappedData);
+            Object.assign(inflated, { 
+              dataSource: "WORKER",
+              hubTimestamp: timestamp,
+              lastCompiled,
+              lastFetched
+            });
+
+            idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+            return inflated;
+          }
         }
-        throw new Error("Worker Hub HTTP " + workerResponse.status);
       }
-      const workerPayload = await workerResponse.json();
-      if (!workerPayload.success || !workerPayload.data) throw new Error("Worker Hub malformed payload");
-
-      // [GUARD] VALIDATION BOUNDARY: Target B [1] hardening.
-      // Enforce strict schema validation for the HubState returned by the worker.
-      // Rationale: Every external boundary is a potential entry point for hostile or malformed input.
-      const validationResult = v.safeParse(HubStateSchema, workerPayload.data);
-
-      if (!validationResult.success) {
-        // THREAT: Malformed matrix data from Worker Hub causing downstream PWA crashes.
-        console.error("[WorkerHub] Matrix validation failed:", validationResult.issues);
-        throw new Error("Worker Hub returned malformed or unvalidated table data.");
-      }
-
-      const validatedHubState = validationResult.output;
-      const rosterTable = validatedHubState.data.roster;
-      const hhTable = validatedHubState.data.headhunter;
-
-      // MATRIX RE-HYDRATION: Transform Hub matrix format into GAS format
-      // Rationale: Reusing `inflatePayload` ensures a single validation boundary (Target III).
-      const timestamp = new Date(validatedHubState.metadata.timestamp).getTime() || Date.now();
-      const lastCompiled = new Date(validatedHubState.metadata.lastCompiled).getTime() || timestamp;
-      const lastFetched = new Date(validatedHubState.metadata.lastFetched).getTime() || timestamp;
-
-      const mappedData = {
-        format: "matrix",
-        timestamp,
-        lastCompiled,
-        lastFetched,
-        playerTag: "", 
-        schema: {
-          lb: rosterTable.headers,
-          hh: hhTable.headers
-        },
-        lb: rosterTable.rows,
-        hh: hhTable.rows
-      };
-
-      const inflated = await inflatePayload(mappedData);
-      
-      // OBSERVABILITY: Label the data source for system diagnostics
-      Object.assign(inflated, { 
-        dataSource: "WORKER",
-        hubTimestamp: timestamp,
-        lastCompiled,
-        lastFetched
-      });
-
-      idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
-      return inflated;
     } catch (workerFetchError: unknown) {
       if (workerFetchError instanceof Error && workerFetchError.name === "AbortError" && options?.signal?.aborted) {
-        throw workerFetchError; // Honor explicit UI cancellation without triggering GAS fallback
+        throw workerFetchError; 
       }
-      // RECOVERY: Log failure and continue to legacy GAS fetch
-      // Target B [4]: Harden error 'e' to 'unknown' with narrowing.
-      const errorMsg = workerFetchError instanceof Error ? workerFetchError.message : String(workerFetchError);
-      console.warn(`[WorkerHub] Fetch failed, falling back to GAS: ${errorMsg}`);
+      console.warn("[WorkerHub] Fetch failed, falling back to GAS");
     }
   }
 
-  // PHASE 2: Authority Fallback (GAS)
+  // PHASE 2: Authority Fallback (GAS) - Standardized Retry Loop
+  const url = getGasUrl();
+  if (!url) throw new Error("GAS_URL not configured.");
+  
   const action = options?.force ? "refresh" : "getwebappdata";
-  const data = await gasRequest<unknown>(action, undefined, {
-    signal: options?.signal,
-  });
-
-  if (!data) throw new Error("Invalid response structure");
-
-  const inflated = await inflatePayload(data);
+  const separator = url.includes("?") ? "&" : "?";
+  const requestUrl = `${url}${separator}action=${action}&_cb=${Date.now()}`;
   
-  Object.assign(inflated, { dataSource: "GAS" });
-  
-  idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
-  return inflated;
+  const maxAttempts = 5;
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const response = await fetch(requestUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action }),
+        signal: options?.signal,
+      });
+
+      if (!response.ok) {
+        if (response.status >= 500 && i < maxAttempts - 1) {
+          const delay = Math.min(1000 * Math.pow(2, i), 10000);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
+
+      const text = await response.text();
+      if (text.trim().startsWith("<")) {
+          throw new Error("Backend Configuration Error (HTML Response)");
+      }
+
+      let payload;
+      try {
+        payload = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Malformed JSON Response from Backend");
+      }
+
+      const envelope: GenericEnvelope<unknown> = payload;
+      const isSuccess = envelope.success === true || (envelope.status && envelope.status.toLowerCase() === "success");
+
+      if (isSuccess && envelope.data) {
+        const inflated = await inflatePayload(envelope.data);
+        Object.assign(inflated, { dataSource: "GAS" });
+        idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
+        return inflated;
+      }
+      throw new Error(envelope.error?.message || "Invalid Response Structure");
+
+    } catch (e: unknown) {
+      // [GUARD] FATAL ERRORS: Target IV - Resilience
+      // Do not retry on explicit client rejections (4xx), malformed payloads, 
+      // or deliberate user cancellations (AbortError).
+      const isFatal = e instanceof Error && (
+        e.name === "AbortError" || 
+        e.message.includes("Server returned HTTP") || 
+        e.message.includes("Backend Configuration Error") || 
+        e.message.includes("Malformed JSON")
+      );
+
+      if (isFatal || i === maxAttempts - 1) throw e;
+      
+      const delay = Math.min(1000 * Math.pow(2, i), 10000);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error("Sync failed after multiple attempts");
 }
 
 /**
