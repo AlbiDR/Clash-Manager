@@ -1,5 +1,11 @@
-import { fetchRemote } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock environment variables to ensure we only test GAS retry logic
+vi.stubEnv("VITE_USE_WORKER_HUB", "false");
+vi.stubEnv("VITE_GAS_URL", "https://script.google.com/macros/s/TEST/exec");
+
+import { fetchRemote } from "@core";
+
 // Mock fetch global
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
@@ -17,8 +23,8 @@ vi.mock("valibot", async (importOriginal) => {
   const actual = await importOriginal<typeof import("valibot")>();
   return {
     ...actual,
-    parse: (schema, data) => data,
-    safeParse: (schema, data) => {
+    parse: (schema: any, data: any) => data,
+    safeParse: (schema: any, data: any) => {
        if (data && typeof data === 'object' && 'lb' in data) {
           return {
             success: true,
