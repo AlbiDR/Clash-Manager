@@ -449,6 +449,8 @@ describe('Worker Hub Schemas', () => {
       const data = {
         metadata: {
           timestamp: '2024-01-01T00:00:00Z',
+          lastCompiled: '2024-01-01T00:00:00Z',
+          lastFetched: '2024-01-01T00:00:00Z',
           status: 'healthy',
           version: '1.0.0',
           source: 'WORKER'

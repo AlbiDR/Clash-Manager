@@ -18,7 +18,14 @@ describe("HubPersistenceService", () => {
     vi.spyOn(fs, "writeFile").mockResolvedValue();
     vi.spyOn(fs, "rename").mockResolvedValue();
     vi.spyOn(fs, "readFile").mockResolvedValue(JSON.stringify({ 
-      metadata: { source: "TEST", timestamp: "now", version: "test", status: "healthy" },
+      metadata: { 
+        source: "TEST", 
+        timestamp: "now", 
+        lastCompiled: "now",
+        lastFetched: "now",
+        version: "test", 
+        status: "healthy" 
+      },
       data: { roster: [], headhunter: [] }
     }));
     vi.spyOn(fs, "rm").mockResolvedValue();
@@ -39,7 +46,14 @@ describe("HubPersistenceService", () => {
 
   it("should save state using an atomic rename operation", async () => {
     const dummyState: HubState = { 
-        metadata: { source: "SAVE_TEST", timestamp: "now", version: "test", status: "healthy" }, 
+        metadata: { 
+            source: "SAVE_TEST", 
+            timestamp: "now", 
+            lastCompiled: "now",
+            lastFetched: "now",
+            version: "test", 
+            status: "healthy" 
+        }, 
         data: { roster: [], headhunter: [] } 
     };
 
@@ -53,7 +67,14 @@ describe("HubPersistenceService", () => {
       vi.spyOn(fs, "rename").mockRejectedValue(new Error("Permission denied"));
 
       const dummyState: HubState = { 
-        metadata: { source: "SAVE_TEST", timestamp: "now", version: "test", status: "healthy" }, 
+        metadata: { 
+            source: "SAVE_TEST", 
+            timestamp: "now", 
+            lastCompiled: "now",
+            lastFetched: "now",
+            version: "test", 
+            status: "healthy" 
+        }, 
         data: { roster: [], headhunter: [] } 
       };
 

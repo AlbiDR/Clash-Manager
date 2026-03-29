@@ -29,6 +29,8 @@ describe("WorkerHubController", () => {
   const mockHubState: HubState = {
     metadata: {
       timestamp: new Date().toISOString(),
+      lastCompiled: new Date().toISOString(),
+      lastFetched: new Date().toISOString(),
       status: "healthy",
       version: "1.0.0",
       source: "GAS",

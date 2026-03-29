@@ -116,6 +116,8 @@ describe("useConsoleController", () => {
         lastSyncTime: ref(Date.now()),
         currentSource: ref(null as "WORKER" | "GAS" | null),
         hubSyncTime: ref(null as number | null),
+        lastCompiledTime: ref(null as number | null),
+        lastFetchedTime: ref(null as number | null),
         filterFn: (item: any) => [item.n],
         sortStrategies: {},
         defaultSort: "score",
@@ -321,7 +323,7 @@ describe("useConsoleController", () => {
     it("maps hubInfo correctly when source is present", () => {
       const options = createOptions();
       options.currentSource.value = "WORKER";
-      options.hubSyncTime.value = Date.now() - 3600000; // 1h ago
+      options.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
       const { layoutProps } = useConsoleController(options);
 
       expect(layoutProps.value.hubInfo).toMatchObject({
