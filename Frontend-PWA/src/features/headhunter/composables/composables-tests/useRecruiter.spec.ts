@@ -7,6 +7,7 @@ import * as GasClient from "@core/api/GasClient";
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
 const mockRefreshGas = vi.fn();
+const mockRefreshWorker = vi.fn();
 const mockInjectRecruits = vi.fn().mockReturnValue(1);
 const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
@@ -54,6 +55,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
     refresh: mockRefreshGas,
+    refreshWorker: mockRefreshWorker,
     updateLocalData: mockUpdateLocalData,
   })),
 }));
@@ -86,6 +88,7 @@ vi.mock("@core", async (importOriginal) => {
       syncError: ref(null),
       lastSyncTime: ref(1700000000000),
       refresh: mockRefreshGas,
+      refreshWorker: mockRefreshWorker,
       updateLocalData: mockUpdateLocalData,
     })),
     useShowcaseMode: vi.fn(() => ({
@@ -215,54 +218,10 @@ describe("useRecruiter", () => {
   });
 
   describe("handleRefresh", () => {
-    it("triggers Turbo Scan when worker is configured", async () => {
-      vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(true);
-      const newRecruits = [
-        { id: "3", n: "Recruit C", potentialScore: 95, t: 7000, d: { ago: "2024-01-03", don: 0, war: 0 } }
-      ];
-      vi.mocked(GasClient.scanRecruitsDirect).mockResolvedValue(newRecruits as any);
-
+    it("calls refreshWorker from the store", async () => {
       const { refresh } = useRecruiter();
-
       await refresh();
-
-      expect(GasClient.scanRecruitsDirect).toHaveBeenCalled();
-      expect(mockInjectRecruits).toHaveBeenCalledWith(newRecruits);
-      expect(mockSuccess).toHaveBeenCalledWith(expect.stringContaining("Found 1 new recruits"));
-      expect(mockRefreshGas).toHaveBeenCalled();
-    });
-
-    it("handles Turbo Scan with no new candidates", async () => {
-      vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(true);
-      vi.mocked(GasClient.scanRecruitsDirect).mockResolvedValue([]);
-
-      const { refresh } = useRecruiter();
-
-      await refresh();
-
-      expect(GasClient.scanRecruitsDirect).toHaveBeenCalled();
-      expect(mockInfo).toHaveBeenCalledWith("Turbo Scan complete. No new candidates.");
-      expect(mockRefreshGas).toHaveBeenCalled();
-    });
-
-    it("triggers only GAS refresh if worker not configured", async () => {
-      vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(false);
-      const { refresh } = useRecruiter();
-
-      await refresh();
-
-      expect(GasClient.scanRecruitsDirect).not.toHaveBeenCalled();
-      expect(mockRefreshGas).toHaveBeenCalled();
-    });
-
-    it("handles synthetic mode by only calling GAS refresh", async () => {
-      mockIsSyntheticMode.value = true;
-      const { refresh } = useRecruiter();
-
-      await refresh();
-
-      expect(GasClient.scanRecruitsDirect).not.toHaveBeenCalled();
-      expect(mockRefreshGas).toHaveBeenCalled();
+      expect(mockRefreshWorker).toHaveBeenCalled();
     });
   });
 
