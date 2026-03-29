@@ -297,7 +297,7 @@ export function useConsoleController<T extends { id: string }>(
     if (data.value && data.value.length > 0) {
       return {
         type: "success" as const,
-        text: "", // Hidden in nominal mode
+        text: "Nominal",
         nominal: true,
       };
     }

@@ -63,8 +63,8 @@ const handleToggle = () => {
           {{ props.type === "loading" ? "Syncing..." : props.text }}
         </span>
         
-        <div v-if="props.hubInfo && isExpanded && props.text" class="hub-meta">
-          <span class="separator">/</span>
+        <div v-if="props.hubInfo && isExpanded" class="hub-meta">
+          <span v-if="props.text" class="separator">/</span>
           <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
             <template v-if="props.hubInfo.source === 'WORKER'">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
