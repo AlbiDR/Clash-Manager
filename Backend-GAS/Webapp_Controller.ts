@@ -415,6 +415,8 @@ const WebappController: WebappControllerContract = {
       });
 
       // C. Sort by Raw Score (descending) and truncate to 100.
+      // [OCD] 100-Recruit Pool: This provides the top 50 for immediate PWA parity with 
+      // the spreadsheet, plus a 50-recruit "backup" for automatic repopulation.
       const consolidatedPool = Array.from(recruitPoolMap.values())
         .sort((a, b) => (Number(b[scoreIdx]) || 0) - (Number(a[scoreIdx]) || 0))
         .slice(0, 100);
