@@ -188,14 +188,18 @@ describe("GasClient", () => {
           source: "RENDER_WORKER"
         },
         data: {
-          roster: {
-            headers: ["id", "n", "role", "t", "performanceScore", "performanceRawScore", "days", "req", "avg", "tot", "seen", "rate", "wfame", "hist", "dt", "war"],
-            rows: [["W1", "Worker Player", "elder", 6500, 95, 55000, 200, 0, 100, 0, "today", "100%", 2000, "hist", 10, 30]]
-          },
-          headhunter: {
-            headers: ["id", "n", "t", "potentialScore", "potentialRawScore", "don", "war", "cards", "ago", "lastScan"],
-            rows: [["R1", "Worker Recruit", 3000, 70, 35000, 100, 5, 50, "1d", 12345678]]
-          }
+          roster: [
+            [false, "ROSTER TITLE"],
+            ["Tag", "Name"],
+            ["id", "n", "role", "t", "performanceScore", "performanceRawScore", "days", "req", "avg", "tot", "seen", "rate", "wfame", "hist", "dt", "war"],
+            ["W1", "Worker Player", "elder", 6500, 95, 55000, 200, 0, 100, 0, "today", "100%", 2000, "hist", 10, 30]
+          ],
+          headhunter: [
+            [false, "HEADHUNTER TITLE"],
+            ["Tag", "Name"],
+            ["id", "n", "t", "potentialScore", "potentialRawScore", "don", "war", "cards", "ago", "lastScan"],
+            ["R1", "Worker Recruit", 3000, 70, 35000, 100, 5, 50, "1d", 12345678]
+          ]
         }
       }
     };
@@ -278,7 +282,7 @@ describe("GasClient", () => {
         success: true,
         data: {
           metadata: { timestamp: "invalid" },
-          data: { roster: { headers: [], rows: [] }, headhunter: { headers: [], rows: [] } }
+          data: { roster: [], headhunter: [] }
         }
       };
 
