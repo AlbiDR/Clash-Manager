@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-29] PR #332: test(verify): increase defensive coverage for useBadge service
+**Commit**: `a849917de130aea6df1a9c6b43434031e7c00544`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/332)
+
+### Description
+Increased defensive test coverage for the `useBadge` service in the PWA. Added 11 new test cases covering:
+- Platform support detection (Android vs. non-Android).
+- Service Worker controller null-safety (resiliency against SW initialization delays).
+- Logic edge cases: Numeric clamping (rounding non-integers, flooring negatives).
+- Debounce window validation.
+- OS Notification permission denial handling.
+- Explicit verification of `clearBadge` (triggering `clearAppBadge`).
+
+All 21 tests in `useBadge.spec.ts` are now passing, ensuring the integrity of this core cross-platform service.
+
+---
+*PR created automatically by Jules for task [11654594919481987112](https://jules.google.com/task/11654594919481987112) started by @AlbiDR*
+
+---
+
 ## [2026-03-29] PR #331: docs(tsdoc): document validation schemas in backend worker
 **Commit**: `29513aaf51dc22dd4eeb59cbee3ec6200e066054`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/331)
