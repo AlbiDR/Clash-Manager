@@ -88,6 +88,10 @@ const WebAppDataSchema = v.object({
   hh: v.array(v.array(v.unknown())),
   timestamp: v.union([v.number(), v.string()]),
   playerTag: v.optional(v.string()),
+  dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
+  hubTimestamp: v.optional(v.number()),
+  lastCompiled: v.optional(v.number()),
+  lastFetched: v.optional(v.number()),
 });
 
 import { ProfileInputSchema, MemberSchema, RecruitSchema } from "./DataSchemas";
@@ -687,6 +691,8 @@ export async function fetchRemote(options?: {
 
             idb.set(CACHE_KEY_MAIN, inflated).catch(() => {});
             return inflated;
+          } else {
+            console.warn("[WorkerHub] Payload Validation Failed. Falling back to GAS.", validationResult.issues);
           }
         }
       } else if (workerResponse.status === 401 || workerResponse.status === 403) {
