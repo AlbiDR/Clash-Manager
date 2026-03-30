@@ -39,3 +39,4 @@ Frontend-PWA/src/shared/ui/StatsGrid.vue
 Frontend-PWA/src/features/roster/components/MemberCard.vue
 Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 Frontend-PWA/src/core/theme/components.ts
+Frontend-PWA/src/core/services/useProgressiveList.ts
