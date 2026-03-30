@@ -1,10 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// Mock environment variables to ensure we only test GAS retry logic
-vi.mock("import.meta.env", () => ({
-  VITE_USE_WORKER_HUB: "false",
-  VITE_GAS_URL: "https://script.google.com/macros/s/TEST/exec",
-}));
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { fetchRemote, _setWorkerHubTestOverride } from "../GasClient";
 
@@ -55,7 +49,15 @@ describe("gasClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    //  ISOLATION: Explicitly disable the Worker Hub for all legacy retry tests
+
+    // ISOLATION: Stub import.meta.env so the GAS_URL guard does not fire.
+    // vi.mock("import.meta.env") is invalid — import.meta.env is a Vite
+    // compile-time global, not a resolvable module. vi.stubEnv is the
+    // correct Vitest API for patching it at runtime.
+    vi.stubEnv("VITE_GAS_URL", "https://script.google.com/macros/s/TEST/exec");
+    vi.stubEnv("VITE_USE_WORKER_HUB", "false");
+
+    // ISOLATION: Explicitly disable the Worker Hub for all legacy retry tests
     // to prevent Hub fetch attempts from polluting call counts and timing.
     _setWorkerHubTestOverride(false);
 
@@ -68,6 +70,11 @@ describe("gasClient", () => {
       })),
       json: () => Promise.resolve({ success: true, data: { lb: [], hh: [], timestamp: 123 } }),
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
   });
 
   it("should retry on 500 errors", async () => {
