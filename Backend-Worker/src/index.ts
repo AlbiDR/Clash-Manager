@@ -137,6 +137,7 @@ const authMiddleware: RequestHandler = (request, response, next) => {
     "/capabilities",
     "/public/scan",
     "/public/subscribe",
+    "/hub/state",
   ];
 
   // Normalize path to handle trailing slashes consistently
@@ -1321,10 +1322,10 @@ app.post(
  * 
  * @remarks
  * Exposes the synchronized Worker Hub payload to the PWA.
- * Rationale: This is a privileged endpoint protected by authMiddleware as it
- * serves internal clan data (Roster/Headhunter). Strictly stateless to prevent locking read queries.
+ * Rationale: Read-only cache delivery; data is pre-compiled by the Sync Daemon.
+ * Serves internal clan data (Roster/Headhunter). Strictly stateless to prevent locking read queries.
  *
- * **Constraint:** Privileged endpoint; requires Bearer token.
+ * **Constraint:** Public endpoint; no Bearer token required.
  */
 app.get("/hub/state", async (_request: Request, response: ExpressResponse): Promise<void> => {
   try {
