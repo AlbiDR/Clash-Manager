@@ -10,3 +10,4 @@ Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/roster/components/MemberCard.vue
 Backend-Worker/src/index.ts
 Backend-Worker/src/schemas.ts
+Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
