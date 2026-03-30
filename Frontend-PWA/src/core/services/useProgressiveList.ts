@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from "vue";
+import { ref, watch, type Ref, shallowRef, onScopeDispose } from "vue";
 
 /**
  * COMPOSABLE: useProgressiveList
@@ -10,9 +10,10 @@ import { ref, watch, type Ref } from "vue";
  * items at once, it breaks the list into manageable chunks and schedules their
  * injection during idle browser frames.
  *
- * It also includes "Churn Prevention" logic (Bug #17) to ensure that background
- * data refreshes (e.g., small score updates) do not trigger a full list reset,
- * which would be jarring for the user.
+ * [PERF] Optimized for v13.4:
+ * - Uses shallowRef to reduce reactive overhead of the visible list.
+ * - Utilizes IdleDeadline to process multiple chunks per idle frame.
+ * - Implements automated cleanup via onScopeDispose.
  *
  * @param sourceList - The full reactive list of items to be rendered.
  * @param initialSize - The number of items to render immediately on first load.
@@ -26,14 +27,30 @@ export function useProgressiveList<T>(
 ) {
   /**
    * REACTIVE STATE
+   * [PERF] shallowRef: Prevents deep reactivity on large arrays,
+   * significantly reducing CPU cycles during list expansion.
    */
-  const visibleItems = ref<T[]>([]) as Ref<T[]>;
+  const visibleItems = shallowRef<T[]>([]) as Ref<T[]>;
 
   /**
    * SIDE EFFECTS
    * Manages scheduling and cancellation of frame-based chunk injections.
    */
   let currentChunkTimer: number | null = null;
+
+  function clearTimer() {
+    if (currentChunkTimer !== null) {
+      if (window.cancelIdleCallback) {
+        window.cancelIdleCallback(currentChunkTimer);
+      } else {
+        cancelAnimationFrame(currentChunkTimer);
+      }
+      currentChunkTimer = null;
+    }
+  }
+
+  // [CLEANUP] Automated disposal of timers on scope unmount
+  onScopeDispose(clearTimer);
 
   watch(
     sourceList,
@@ -57,11 +74,7 @@ export function useProgressiveList<T>(
 
       // Fresh load or major structural change (e.g., filter applied)
       // We cancel any pending chunk injections to prevent race conditions.
-      if (currentChunkTimer !== null) {
-        if (window.cancelIdleCallback)
-          window.cancelIdleCallback(currentChunkTimer);
-        else cancelAnimationFrame(currentChunkTimer);
-      }
+      clearTimer();
 
       // Initial render for immediate perceived performance
       visibleItems.value = newList.slice(0, initialSize) as T[];
@@ -83,18 +96,30 @@ export function useProgressiveList<T>(
     const scheduler =
       window.requestIdleCallback || window.requestAnimationFrame;
 
-    currentChunkTimer = scheduler(() => {
-      // Decision: Chunk Size Scaling
-      // For extremely long lists (>100), we increase chunk size to 20 to speed up
-      // total hydration time. For smaller lists, 10 items per frame is the
-      // "Golden Ratio" for maintaining smooth scrolling during injection.
-      const chunkSize = all.length > 100 ? 20 : 10;
-      const nextCount = Math.min(currentCount + chunkSize, all.length);
+    currentChunkTimer = (scheduler as any)((deadline?: any) => {
+      let nextCount = currentCount;
+
+      // [PERF] IDLE BUDGETING: If we have an idle deadline, we attempt to
+      // process as many chunks as possible within the remaining time.
+      // [FIX] SAFETY CHECK: requestAnimationFrame passes a DOMHighResTimeStamp,
+      // not an IdleDeadline. We must verify 'timeRemaining' exists before calling.
+      const hasIdleDeadline = deadline && typeof deadline.timeRemaining === "function";
+
+      do {
+        const chunkSize = all.length > 100 ? 20 : 10;
+        nextCount = Math.min(nextCount + chunkSize, all.length);
+
+        // Break early if we've reached the end of the list
+        if (nextCount >= all.length) break;
+
+      } while (hasIdleDeadline && deadline.timeRemaining() > 1 && !deadline.didTimeout);
 
       visibleItems.value = all.slice(0, nextCount);
 
       if (nextCount < all.length) {
         scheduleChunk(all, nextCount);
+      } else {
+        currentChunkTimer = null;
       }
     }) as unknown as number;
   }

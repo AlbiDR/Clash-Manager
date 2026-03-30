@@ -15,6 +15,7 @@ The **Muscle**. A high-performance, strictly typed Express.js server designed to
 - **Architecture**: Stateless, high-concurrency worker pool.
 - **Security**: Strict Bearer token validation with path-based exemptions.
 - **Intelligence**: Integrated "Deep Delegation" scoring and Prophet Cache logic.
+- **Resource Management**: Proactive "Quota Guard" (15,000 daily request limit) to preserve the shared Royale API budget.
 - **Resilience**: Automatic retries with exponential backoff and jitter.
 
 ---
@@ -97,13 +98,21 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
   "data": {
     "metadata": {
       "timestamp": "2026-01-01T12:00:00.000Z",
+      "lastCompiled": "2026-01-01T12:00:00.000Z",
+      "lastFetched": "2026-01-01T11:55:00.000Z",
       "status": "healthy",
       "version": "v1_hub",
       "source": "RENDER_WORKER"
     },
     "data": {
-      "roster": [["Tag", "Name", ...], ["#P1", "Player 1", ...]],
-      "headhunter": [["Tag", "Name", ...], ["#R1", "Recruit 1", ...]]
+      "roster": {
+        "headers": ["Tag", "Name", "Role", ...],
+        "rows": [["#P1", "Player 1", "Leader", ...]]
+      },
+      "headhunter": {
+        "headers": ["Tag", "Name", "Trophies", ...],
+        "rows": [["#R1", "Recruit 1", 7500, ...]]
+      }
     }
   }
 }
@@ -283,6 +292,16 @@ The worker implements a **Deep Delegation** strategy to optimize the entire Clas
 2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"--historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
 
 ---
+
+## Resource Management (Quota Guard)
+
+To preserve the project's shared Royale API budget and prevent accidental exhaustion by the autonomous Hub, the worker implements a strict **Quota Guard**:
+
+- **Daily Budget**: All Royale API traffic originating from the worker is capped at **15,000 requests per 24-hour period**.
+- **Fail-Fast Evaluation**: High-volume operations (`processBatch`, `processScanBatch`) perform an estimated usage check before execution. If the operation would exceed the remaining budget, it is aborted with a `ERR_QUOTA_EXHAUSTED` HubError.
+- **Real-Time Tracking**: Every upstream request is tracked in memory (ephemeral) and reset daily at 00:00 UTC.
+
+---
 <br />
 
 ## Security Architecture
@@ -292,6 +311,12 @@ The worker enforces a strict security perimeter via `authMiddleware`:
 - **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/*`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
 - **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
+
+### Data Integrity: Tag Normalization
+Runtime integrity is enforced at the Layer 1 validation boundary. The `TagSchema` (Valibot) ensures that all player, clan, and tournament tags are normalized before processing:
+- **Case Sensitivity**: All tags are automatically converted to **UPPERCASE**.
+- **Prefix Consistency**: Tags are prepended with a mandatory **'#'** prefix if missing.
+This prevents duplicate entries in the Prophet Cache and ensures that recruitment blacklists cannot be bypassed by varying the input format.
 
 ---
 <br />

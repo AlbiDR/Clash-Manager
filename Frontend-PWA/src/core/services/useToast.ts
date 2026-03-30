@@ -7,7 +7,7 @@ export interface ToastOptions {
   duration?: number;
   actionLabel?: string;
   onAction?: () => void;
-  timer?: any; // Internal use for cleanup
+  timer?: ReturnType<typeof setTimeout>; // Internal use for cleanup
 }
 
 const toasts = ref<ToastOptions[]>([]);
