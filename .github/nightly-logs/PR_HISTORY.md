@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-30] PR #334: fix(harden): purge any plague from useToast timer
+**Commit**: `a39262f7ccae9c471a1b7ea9ad5f2e9601fbc758`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/334)
+
+### Description
+Hardened the `useToast` service by replacing the `any` type for its internal timer with `ReturnType<typeof setTimeout>`. This ensures type safety for dismissal logic and aligns with the project's architecture standards. Verified with passing unit tests.
+
+---
+*PR created automatically by Jules for task [17830225852317035525](https://jules.google.com/task/17830225852317035525) started by @AlbiDR*
+
+---
+
 ## [2026-03-29] PR #333: chore(deps): remove redundant ts-node dependency
 **Commit**: `8c39b684cfa91c211ad37649b59f8b93ecf540b1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/333)
