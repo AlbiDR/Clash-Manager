@@ -1,4 +1,25 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 <script setup lang="ts">
+/**
+ * [FEATURE] RECRUIT CARD
+ * ----------------------------------------------------------------------------
+ * Rationale: Orchestration component for displaying prospective clan recruits.
+ * Layer: @features/headhunter
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * This component acts as the primary interface for evaluating a recruit's
+ * potential. It delegates layout and interaction (expansion/selection) to the
+ * `BaseCard` molecule and populates it with domain-specific metrics from the
+ * Headhunter feature.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 (@features)
+ * - **Import Boundaries:** Consumes @shared UI primitives and @core utilities.
+ *   Strictly isolated from other features (e.g., Roster, Laboratory).
+ */
 import {
   BaseCard,
   CardActions,
@@ -10,6 +31,7 @@ import {
 import { computed } from "vue";
 import type { Recruit } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
+
 const {
   id,
   recruit,
@@ -18,19 +40,31 @@ const {
   selectionMode,
   appIsRefreshing = false,
 } = defineProps<{
+  /** Unique identifier for the recruit (Player Tag). */
   id: string;
+  /** Authoritative recruit data object containing potential scores and activity metrics. */
   recruit: Recruit;
+  /** UI State: Controls the expansion of detailed performance statistics. */
   expanded: boolean;
+  /** UI State: Indicates if the card is currently in the selection queue. */
   selected: boolean;
+  /** UI State: Toggles between interaction modes (Details vs. Batch Action). */
   selectionMode: boolean;
+  /** Optional: Inherited refresh status to manage loading skeletons and accessibility states. */
   appIsRefreshing?: boolean;
 }>();
 
 const emit = defineEmits<{
+  /** Triggers card expansion/collapse when not in selection mode. */
   toggle: [];
+  /** Triggers addition/removal from the batch selection queue. */
   "toggle-select": [];
 }>();
 
+/**
+ * ACCESSIBILITY RESOLVER
+ * Converts the raw 'ago' timestamp into a human-readable duration since last sighting.
+ */
 const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
 </script>
 
@@ -44,24 +78,24 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
-    <!-- SLOT: Meta Stack -->
+    <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
       <div class="badge time">{{ timeAgo }}</div>
       <div class="badge tag">#{{ recruit.id.substring(0, 5) }}</div>
     </template>
 
-    <!-- SLOT: Name Block -->
+    <!-- [SLOT] IDENTITY NAME: Primary player identification and trophy count. -->
     <template #identity-name>
       <span class="player-name">{{ recruit.n }}</span>
       <TrophyBadge :value="recruit.t" context="hh" />
     </template>
 
-    <!-- SLOT: Score Section -->
+    <!-- [SLOT] SCORE SECTION: PoS (Potential Score) for recruitment prioritization. -->
     <template #score-section>
       <ScoreBadge :score="recruit.potentialScore" context="hh" />
     </template>
 
-    <!-- SLOT: Expanded Content -->
+    <!-- [SLOT] EXPANDED CONTENT: Detailed recruitment metrics and actions. -->
     <template #expanded-content>
       <StatsGrid :columns="3" :loading="appIsRefreshing">
         <StatisticItem
