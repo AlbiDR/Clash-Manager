@@ -15,6 +15,7 @@
 | vitest  | 4.1.0    | 4.1.2  | 2026-03-27   | PASS         |
 | knip    | 6.0.2    | 6.0.6  | 2026-03-28   | PASS         |
 | ts-node | 10.9.2   | REMOVED | 2026-03-29 | PASS |
+| knip    | 6.0.6    | 6.1.0  | 2026-03-30 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
