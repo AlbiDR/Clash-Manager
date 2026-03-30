@@ -1,6 +1,33 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-30] PR #337: docs(readme): reconcile worker hub schema and resource management
+**Commit**: `c55fdf398a07d38d6d69cdb521aabdd45e90b123`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/337)
+
+### Description
+### Reasoning:
+**[Priority Queue Item]:** README Synchronization (Drift) and README Depth (Shallow).
+**[Safety Checks]:** Confirmed ADR coherence and vocabulary compliance. No logic changes or side effects.
+**[Rationale]:** The worker documentation had drifted regarding the Hub State schema and lacked documentation for the recently integrated Quota Guard and Tag Normalization features. These updates ensure "Structural Truth" for future agents and developers.
+
+### Changes:
+- **[Backend-Worker/README.md]:** Reconciled Hub State JSON example; added sections for Quota Guard and Tag Normalization.
+
+### Verification:
+- **[Automated]:** Ran test suite; all Backend-Worker and Frontend-PWA tests passed.
+- **[Manual/Audit]:** Readability audit confirmed ADR alignment and stylistic purity (no emojis).
+
+### Log Updates:
+- Updated `.github/nightly-logs/documentation-readme-coverage.log`
+
+> **Note:** This PR targets the `Nightly` branch as per the autonomous pipeline mandate.
+
+---
+*PR created automatically by Jules for task [17932659778508748059](https://jules.google.com/task/17932659778508748059) started by @AlbiDR*
+
+---
+
 ## [2026-03-30] PR #336: refactor(opt): optimize useProgressiveList rendering engine
 **Commit**: `e000b522f492dd6dd578b4e19a3d2b9e2b1270fb`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/336)
