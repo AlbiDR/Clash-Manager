@@ -1,6 +1,35 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-31] PR #340: fix(harden): purge any plague and dead state from useApiState
+**Commit**: `c1150eb52a214fa0a4d2c5cf0ad3d83fc62dcf43`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/340)
+
+### Description
+I have hardened `Frontend-PWA/src/core/api/useApiState.ts` by eliminating the `any` Plague and removing dead logic.
+
+### Reasoning:
+- **[Threat Statement]:** If `any` is used in core service boundaries (like `useApiState.ts`), then type safety is compromised, allowing malformed error objects or unvalidated data to propagate through the Clean Stack.
+- **[Blast Radius]:** `useApiState.ts`, and any component consuming `apiStatus` or its exported state.
+- **[Rationale]:** Removing the `any` plague and anemic variables aligns with the CleanStack Architecture ADR.
+
+### Changes:
+- **[Frontend-PWA/src/core/api/useApiState.ts]**: 
+    - Removed the anemic and unused `workerPingData` variable.
+    - Replaced `any` in the `Promise.race` timeout rejection with `PingResponse`.
+    - Transitioned `catch` blocks from `any` to `unknown` and implemented type-safe `instanceof Error` checks for `AbortError` detection.
+
+### Verification:
+- **[Automated]**: Ran `pnpm test` for `GasClient.spec.ts` and `useApiState.spec.ts`. All 20 tests passed.
+- **[Manual/Audit]**: Verified file structure and confirmed no `any` pathogens remain in the logic.
+
+This PR targets the **Nightly** branch as per the Nightly Autonomy Directive.
+
+---
+*PR created automatically by Jules for task [16670334884907340034](https://jules.google.com/task/16670334884907340034) started by @AlbiDR*
+
+---
+
 ## [2026-03-30] PR #339: chore(deps): bump knip from 6.0.6 to 6.1.0
 **Commit**: `7f92dbf65dca5536fcde865e5a88cb19183dc390`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/339)
