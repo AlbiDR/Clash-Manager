@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-03-31] PR #341: test(verify): add defensive coverage for VaultCard component
+**Commit**: `df417ed68a99536beb07b138668d9ebefd66a416`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/341)
+
+### Description
+Add defensive unit test coverage for the VaultCard component in the Laboratory feature. Tests cover initial rendering, user input validation/parsing, and simulation states.
+
+---
+*PR created automatically by Jules for task [13046560145208749262](https://jules.google.com/task/13046560145208749262) started by @AlbiDR*
+
+---
+
 ## [2026-03-31] PR #340: fix(harden): purge any plague and dead state from useApiState
 **Commit**: `c1150eb52a214fa0a4d2c5cf0ad3d83fc62dcf43`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/340)
