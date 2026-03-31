@@ -22,7 +22,6 @@ const apiStatus = ref<ApiStatus>("checking");
 const pingData = ref<PingResponse | null>(null);
 
 const workerStatus = ref<WorkerStatus>("unconfigured");
-const workerPingData = ref<any>(null);
 
 let isInitialized = false;
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
@@ -64,7 +63,7 @@ async function checkApiStatus() {
     // PATIENT HANDSHAKE: Pass the signal through to the ping call
     const response = await Promise.race([
       ping({ signal }),
-      new Promise<any>((_, reject) =>
+      new Promise<PingResponse>((_, reject) =>
         setTimeout(() => reject(new DOMException("Handshake Timeout", "AbortError")), 25000),
       ),
     ]);
@@ -86,8 +85,8 @@ async function checkApiStatus() {
     } else {
       handleFailure(signal);
     }
-  } catch (e: any) {
-    if (e.name === "AbortError" && signal.aborted) {
+  } catch (e: unknown) {
+    if (e instanceof Error && e.name === "AbortError" && signal.aborted) {
        // Gracefully handle deliberate aborts
        return;
     }
@@ -163,7 +162,6 @@ export function useApiState() {
     apiStatus: readonly(apiStatus),
     pingData: readonly(pingData),
     workerStatus: readonly(workerStatus),
-    workerPingData: readonly(workerPingData),
     checkApiStatus,
     init,
   };
