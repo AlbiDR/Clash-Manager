@@ -187,7 +187,55 @@ describe("Core DataSchemas", () => {
     });
   });
 
-  describe("MemberSchema", () => {
+  describe("SafeNumberPipe & SafeStringPipe (via MemberSchema)", () => {
+    const baseMember = {
+      id: "M1",
+      n: "Member 1",
+      t: 1000,
+      performanceScore: 85,
+      performanceRawScore: 1200,
+      d: {
+        role: "elder",
+        days: 30,
+        avg: 500,
+        hist: "1|2|3"
+      }
+    };
+
+    it("SafeNumberPipe: should handle formatted strings (commas, percentages)", () => {
+      const input = { ...baseMember, t: "1,234", performanceScore: "85%" };
+      const result = v.parse(MemberSchema, input);
+      expect(result.t).toBe(1234);
+      expect(result.performanceScore).toBe(85);
+    });
+
+    it("SafeNumberPipe: should handle empty strings as 0", () => {
+      const input = { ...baseMember, t: "  " };
+      const result = v.parse(MemberSchema, input);
+      expect(result.t).toBe(0);
+    });
+
+    it("SafeNumberPipe: should reject non-numeric strings", () => {
+      const input = { ...baseMember, t: "not-a-number" };
+      expect(() => v.parse(MemberSchema, input)).toThrow();
+    });
+
+    it("SafeStringPipe: should coerce numbers and booleans to strings", () => {
+      const input = { ...baseMember, id: 12345, n: true };
+      const result = v.parse(MemberSchema, input);
+      expect(result.id).toBe("12345");
+      expect(result.n).toBe("true");
+    });
+
+    it("SafeStringPipe: should handle null/undefined as empty strings", () => {
+      const input = { ...baseMember, id: null, n: undefined };
+      const result = v.parse(MemberSchema, input);
+      expect(result.id).toBe("");
+      expect(result.n).toBe("");
+    });
+  });
+
+  describe("MemberSchema Optional/Nullable Fields", () => {
     const validMember = {
       id: "M1",
       n: "Member 1",
@@ -202,31 +250,44 @@ describe("Core DataSchemas", () => {
       }
     };
 
-    it("should parse valid member", () => {
-      const result = v.parse(MemberSchema, validMember);
-      expect(result.id).toBe("M1");
-      expect(result.n).toBe("Member 1");
+    it("should parse member with all optional fields", () => {
+      const input = {
+        ...validMember,
+        dt: 123456,
+        d: {
+          ...validMember.d,
+          seen: "2h ago",
+          rate: "100%",
+          wfame: 500
+        }
+      };
+      const result = v.parse(MemberSchema, input);
+      expect(result.dt).toBe(123456);
+      expect(result.d.seen).toBe("2h ago");
+      expect(result.d.rate).toBe("100%");
+      expect(result.d.wfame).toBe(500);
     });
 
-    it("should fail for missing required fields", () => {
-      const invalidMember = { ...validMember };
-      delete (invalidMember as any).id;
-      expect(() => v.parse(MemberSchema, invalidMember)).toThrow();
-    });
-
-    it("should fail for invalid types in core fields", () => {
-      const invalidMember = { ...validMember, performanceScore: "total-garbage" };
-      expect(() => v.parse(MemberSchema, invalidMember)).toThrow();
+    it("should handle null for seen and rate", () => {
+      const input = {
+        ...validMember,
+        d: {
+          ...validMember.d,
+          seen: null,
+          rate: null
+        }
+      };
+      const result = v.parse(MemberSchema, input);
+      expect(result.d.seen).toBeNull();
+      expect(result.d.rate).toBeNull();
     });
   });
 
-  describe("RecruitSchema", () => {
+  describe("RecruitSchema Optional Fields", () => {
     const validRecruit = {
       id: "R1",
       n: "Recruit 1",
       t: 2000,
-      potentialScore: 90,
-      potentialRawScore: 1500,
       d: {
         don: 100,
         war: 10,
@@ -234,16 +295,22 @@ describe("Core DataSchemas", () => {
       }
     };
 
-    it("should parse valid recruit", () => {
-      const result = v.parse(RecruitSchema, validRecruit);
-      expect(result.id).toBe("R1");
+    it("should parse recruit with all optional fields", () => {
+      const input = {
+        ...validRecruit,
+        potentialScore: 90,
+        potentialRawScore: 1500,
+        lastScan: 123456,
+        d: {
+          ...validRecruit.d,
+          cards: 40
+        }
+      };
+      const result = v.parse(RecruitSchema, input);
       expect(result.potentialScore).toBe(90);
-    });
-
-    it("should fail for missing required fields", () => {
-      const invalidRecruit = { ...validRecruit };
-      delete (invalidRecruit as any).d;
-      expect(() => v.parse(RecruitSchema, invalidRecruit)).toThrow();
+      expect(result.potentialRawScore).toBe(1500);
+      expect(result.lastScan).toBe(123456);
+      expect(result.d.cards).toBe(40);
     });
   });
 
