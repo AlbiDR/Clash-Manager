@@ -105,14 +105,18 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
       "source": "RENDER_WORKER"
     },
     "data": {
-      "roster": {
-        "headers": ["Tag", "Name", "Role", ...],
-        "rows": [["#P1", "Player 1", "Leader", ...]]
-      },
-      "headhunter": {
-        "headers": ["Tag", "Name", "Trophies", ...],
-        "rows": [["#R1", "Recruit 1", 7500, ...]]
-      }
+      "roster": [
+        ["Clan Leaderboard"],
+        ["Tag", "Name", "Role", "Trophies", "Score"],
+        ["id", "n", "role", "t", "performanceScore"],
+        ["#P1", "Player 1", "Leader", 7500, 100]
+      ],
+      "headhunter": [
+        ["Headhunter Pool"],
+        ["Tag", "Name", "Trophies", "Potential"],
+        ["id", "n", "t", "potentialScore"],
+        ["#R1", "Recruit 1", 8000, 95]
+      ]
     }
   }
 }
