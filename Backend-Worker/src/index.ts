@@ -1211,6 +1211,7 @@ app.post(
           name: member.name,
           role: formatRole(member.role),
           kingLevel: member.expLevel,
+          trophies: member.trophies, // THREAT: Trophies were omitted from transformation, causing data starvation in PWA.
           donations: member.donations,
           donationsReceived: member.donationsReceived,
         }));
