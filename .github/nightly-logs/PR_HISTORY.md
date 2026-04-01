@@ -1,6 +1,25 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-01] PR #349: docs(readme): reconcile worker api and matrix schemas
+**Commit**: `969e5d90a4fd7d07609abb3b12776e77e5da27ed`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/349)
+
+### Description
+Reconciled `Backend-Worker/README.md` with the current implementation.
+Key updates include:
+- Corrected `/hub/state` response examples to use raw matrices (15 columns for Roster, 10 for Headhunter) matching the authoritative GAS `Configuration.ts` and `PayloadKernel.ts` implementation.
+- Aligned "Security Architecture" to identify `/hub/state` as a public exemption and `/hub/sync/manual` as privileged, matching the `authMiddleware` logic.
+- Updated `/clan/api` example to include the `trophies` field.
+- Deepened `/scan` response examples with `_debug.trace` and `_metadata` blocks.
+
+Verified via 85 passing tests in the Backend-Worker suite.
+
+---
+*PR created automatically by Jules for task [17318169082556017851](https://jules.google.com/task/17318169082556017851) started by @AlbiDR*
+
+---
+
 ## [2026-04-01] PR #348: refactor(opt): internalize store fallbacks in useConsoleController
 **Commit**: `d09468d350e4354e4cb30694ae7108df6be332be`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/348)
