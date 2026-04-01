@@ -107,15 +107,15 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
     "data": {
       "roster": [
         ["Clan Leaderboard"],
-        ["Tag", "Name", "Role", "Trophies", "Score"],
-        ["id", "n", "role", "t", "performanceScore"],
-        ["#P1", "Player 1", "Leader", 7500, 100]
+        ["Tag", "Name", "Role", "Trophies", "Days Tracked", "Received Weekly", "Average Daily Donations", "Total Donations", "Last Seen", "War Rate", "Average War Fame", "War History", "Performance Raw Score", "Performance Score", "Trend"],
+        ["id", "n", "role", "t", "days", "req", "avg", "tot", "seen", "rate", "wfame", "hist", "performanceRawScore", "performanceScore", "dt"],
+        ["#P1", "Player 1", "Leader", 7500, 150, 200, 50, 7500, "2026-01-01T12:00:00Z", "100%", 2400, "2400 26W01 | 2500 26W02", 50000, 100, 250]
       ],
       "headhunter": [
         ["Headhunter Pool"],
-        ["Tag", "Name", "Trophies", "Potential"],
-        ["id", "n", "t", "potentialScore"],
-        ["#R1", "Recruit 1", 8000, 95]
+        ["Tag", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
+        ["id", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"],
+        ["#R1", "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
       ]
     }
   }
@@ -182,7 +182,19 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
   "_debug": {
     "phase1": 50,
     "phase2": 10,
-    "apiBase": "..."
+    "apiBase": "...",
+    "trace": {
+      "firstUrl": "...",
+      "firstStatus": 200,
+      "firstContent": "...",
+      "keyUsed": "..."
+    }
+  },
+  "_metadata": {
+    "version": "10.1.4",
+    "uptime": 3600,
+    "pool": { "total": 10, "available": 10, "throttled": 0 },
+    "envKeys": true
   }
 }
 ```
@@ -249,6 +261,7 @@ Fetches a specific slice of clan data (`members` or `warlog`) and transforms it 
       "name": "Player 1",
       "role": "Leader",
       "kingLevel": 15,
+      "trophies": 7500,
       "donations": 500,
       "donationsReceived": 200
     }
@@ -312,8 +325,8 @@ To preserve the project's shared Royale API budget and prevent accidental exhaus
 
 The worker enforces a strict security perimeter via `authMiddleware`:
 
-- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/*`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
-- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
+- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`, `/hub/state`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
 ### Data Integrity: Tag Normalization
