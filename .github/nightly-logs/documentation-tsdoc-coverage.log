@@ -12,3 +12,4 @@ Backend-Worker/src/index.ts
 Backend-Worker/src/schemas.ts
 Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 Frontend-PWA/src/core/services/useToast.ts
+Frontend-PWA/src/shared/composables/useCardMechanics.ts
