@@ -43,7 +43,7 @@ export function useRecruiter() {
   const { isShowcaseMode } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
   const clashDataStore = useClashDataStore();
-  const { data, isRefreshing } = storeToRefs(clashDataStore);
+  const { data } = storeToRefs(clashDataStore);
   const { refresh: refreshGas } = clashDataStore;
   const { dismissRecruitsAction, injectRecruits } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
@@ -63,7 +63,6 @@ export function useRecruiter() {
 
   const controller = useConsoleController({
     data: recruits,
-    isRefreshing,
     filterFn: (recruit: Recruit) => [recruit.n, recruit.id],
     sortStrategies: RecruiterSort,
     defaultSort: "score",
@@ -74,11 +73,6 @@ export function useRecruiter() {
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     refresh: clashDataStore.refreshWorker,
     onDismiss: dismissBulk,
-    currentSource: storeToRefs(clashDataStore).currentSource,
-    hubSyncTime: storeToRefs(clashDataStore).hubSyncTime,
-    lastSyncTime: storeToRefs(clashDataStore).lastSyncTime,
-    lastCompiledTime: storeToRefs(clashDataStore).lastCompiledTime,
-    lastFetchedTime: storeToRefs(clashDataStore).lastFetchedTime,
   });
 
   const sortOptions = RECRUITER_SORT_OPTIONS;

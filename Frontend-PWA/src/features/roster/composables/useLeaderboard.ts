@@ -38,11 +38,6 @@ export function useLeaderboard() {
     sheetName: "Leaderboard",
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
     refresh: clashDataStore.refreshWorker,
-    currentSource: storeToRefs(clashDataStore).currentSource,
-    hubSyncTime: storeToRefs(clashDataStore).hubSyncTime,
-    lastSyncTime: storeToRefs(clashDataStore).lastSyncTime,
-    lastCompiledTime: storeToRefs(clashDataStore).lastCompiledTime,
-    lastFetchedTime: storeToRefs(clashDataStore).lastFetchedTime,
   });
 
   const sortOptions = LEADERBOARD_SORT_OPTIONS;
