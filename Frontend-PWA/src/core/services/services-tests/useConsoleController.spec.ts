@@ -1,4 +1,5 @@
 import { useConsoleController } from "@core";
+import { useClashDataStore } from "../useClashDataStore";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { ref } from "vue";
@@ -44,6 +45,25 @@ vi.mock("../useDeepLinkHandler", async () => {
             toggleExpand: vi.fn(),
             processDeepLink: vi.fn(),
         })),
+    };
+});
+
+// Mock useClashDataStore first
+vi.mock("../useClashDataStore", async () => {
+    const { ref } = await import("vue");
+    const mockStore = {
+        isHydrated: ref(true),
+        isRefreshing: ref(false),
+        syncError: ref(null),
+        lastSyncTime: ref(0),
+        currentSource: ref(null),
+        hubSyncTime: ref(null),
+        lastCompiledTime: ref(null),
+        lastFetchedTime: ref(null),
+        refreshWorker: vi.fn(),
+    };
+    return {
+        useClashDataStore: vi.fn(() => mockStore),
     };
 });
 
@@ -316,6 +336,27 @@ describe("useConsoleController", () => {
       recruitOptions.statsLabel = "Recruit";
       const { statsBadge: recruitBadge } = useConsoleController(recruitOptions);
       expect(recruitBadge.value.value).toBe("20"); // DEFAULT_MOCK_RECRUIT_COUNT (fixed from 100)
+    });
+  });
+
+  describe("store fallback mechanism", () => {
+    it("falls back to useClashDataStore for sync status when omitted from options", () => {
+      const clashStore = useClashDataStore();
+      clashStore.isRefreshing.value = true;
+      clashStore.syncError.value = "Store Error";
+
+      // Create options WITHOUT isRefreshing and syncError
+      const options = {
+        ...createOptions(),
+        isRefreshing: undefined,
+        syncError: undefined,
+      };
+
+      const { isRefreshing, syncError, status } = useConsoleController(options);
+
+      expect(isRefreshing.value).toBe(true);
+      expect(syncError.value).toBe("Store Error");
+      expect(status.value.text).toBe("Sync Error");
     });
   });
 
