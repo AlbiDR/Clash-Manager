@@ -186,6 +186,7 @@ export const RoyaleClanMemberSchema = v.object({
   name: v.string(),
   role: v.string(),
   expLevel: v.number(),
+  trophies: v.number(), // THREAT: Trophies were being stripped by Valibot due to a schema omission.
   donations: v.number(),
   donationsReceived: v.number(),
 });
