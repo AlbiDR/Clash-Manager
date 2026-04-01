@@ -175,6 +175,7 @@ describe('Royale API Response Schemas', () => {
           name: 'Player 1',
           role: 'member',
           expLevel: 14,
+          trophies: 6000,
           donations: 100,
           donationsReceived: 50
         }]
