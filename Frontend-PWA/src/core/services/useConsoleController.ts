@@ -41,6 +41,10 @@ interface ConsoleLogicOptions<T> {
   currentSource?: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
   /** Epoch timestamp of when the Cloud Worker Hub last synced with the Royale API. */
   hubSyncTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Epoch timestamp of when the Cloud Worker last compiled the current dataset. */
+  lastCompiledTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Epoch timestamp of when the Cloud Worker last fetched raw data from the API. */
+  lastFetchedTime?: Ref<number | null> | ComputedRef<number | null>;
   /** Returns an array of strings per item used for search filtering. */
   filterFn: (item: T) => string[];
   /** A dictionary of sorting strategies keyed by their UI identifier. */

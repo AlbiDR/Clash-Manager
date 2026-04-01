@@ -40,3 +40,7 @@ Frontend-PWA/src/features/roster/components/MemberCard.vue
 Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 Frontend-PWA/src/core/theme/components.ts
 Frontend-PWA/src/core/services/useProgressiveList.ts
+Frontend-PWA/src/core/services/useConsoleController.ts
+Frontend-PWA/src/features/roster/composables/useLeaderboard.ts
+Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
+Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
