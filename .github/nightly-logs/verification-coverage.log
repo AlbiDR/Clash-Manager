@@ -36,3 +36,4 @@ Frontend-PWA/src/core/services/useBadge.ts
 Frontend-PWA/src/features/laboratory/components/ParameterCard.vue
 Frontend-PWA/src/features/laboratory/components/VaultCard.vue
 Frontend-PWA/src/core/api/DataSchemas.ts
+Backend-Worker/src/index.ts
