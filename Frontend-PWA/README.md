@@ -75,13 +75,14 @@ Implements a **Stale-While-Revalidate** strategy for clan datasets.
 The primary behavioral engine for high-density list views (Roster, Headhunter).
 - **Unified Interface**: Coordinates searching, sorting, pagination (`useProgressiveList`), and deep-linking (`useDeepLinkHandler`) through a single reactive interface.
 - **Event Centralization**: Provides `layoutProps` and `layoutEvents` for direct, boilerplate-free binding to `ConsoleLayout` components.
-- **Status Resolver**: Implements a 6-tier priority hierarchy to resolve the most critical system status:
-  1. **Unconfigured**: No backend URL defined.
-  2. **Waking**: Server cold start (GAS).
-  3. **Offline**: Physical network disconnect.
-  4. **Load Failed**: Critical synchronization error.
-  5. **Syncing**: Background refresh on empty UI.
-  6. **Ready**: Success (displays "Time Ago").
+- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status:
+  1. **Tier 0: Invalid API URL**: Critical configuration missing or invalid.
+  2. **Tier 1: Offline**: Physical network disconnect (Logical Offline).
+  3. **Tier 2: Sync Error**: Remote execution or fetch failure (Synchronous error).
+  4. **Tier 3: Waking Server...**: Server cold-boot delay or stale metadata detection.
+  5. **Tier 4: Syncing...**: Background refresh in progress.
+  6. **Tier 5: Warning (Fallback / Stale Data)**: Data age exceeded 15m or unexpected GAS fallback.
+  7. **Tier 6: Nominal / Empty**: Successful synchronization (Clinical Purity).
 
 ### 3. UI Coordination (`useUiCoordinator`)
 The master arbiter of layout spacing and element visibility.
