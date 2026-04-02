@@ -14,14 +14,25 @@ import { storeToRefs } from "pinia";
 
 import { computed, type ComputedRef } from "vue";
 
+/**
+ * Result object for a benchmarking comparison.
+ */
 export interface BenchmarkData {
+  /** Human-readable name of the metric (e.g., 'Trophy Rank'). */
   label: string;
+  /** Evaluated performance tier relative to the clan average. */
   tier: "ELITE" | "TOP TIER" | "GROWING" | "UNDER";
+  /** The actual numeric value being compared. */
   value: number;
+  /** The calculated mean value for this metric across the dataset. */
   avg: number;
+  /** The lowest value recorded for this metric in the dataset. */
   min: number;
+  /** The highest value recorded for this metric in the dataset. */
   max: number;
+  /** Absolute percentage difference from the average. */
   percent: number;
+  /** Indicates if the value is equal to or better than the average. */
   isBetter: boolean;
 }
 
@@ -36,8 +47,15 @@ let sharedModules: ModuleState | null = null;
 
 /**
  * [PERF] SINGLE-PASS STATS CALCULATOR
+ *
+ * @remarks
  * Reduces loop complexity from O(N*M) passes to O(N) by aggregating all
- * metrics in one traversal.
+ * metrics in one traversal. This is critical for maintaining 60FPS when
+ * processing large member lists.
+ *
+ * @param items - Readonly array of items to analyze.
+ * @param extractors - Dictionary of functions to pull numeric values from items.
+ * @returns A map of calculated statistics (avg, max, min) per metric.
  */
 const calculateStats = <T>(
   items: readonly T[],
@@ -86,7 +104,21 @@ const calculateStats = <T>(
 
 /**
  * CORE: getBenchmark
- * Computes comparative data for a specific metric.
+ *
+ * @remarks
+ * Computes comparative data for a specific metric by looking up pre-calculated
+ * statistics in the singleton state.
+ *
+ * **Tier Resolution:**
+ * - **ELITE**: Value is >= 90% of the maximum recorded value.
+ * - **TOP TIER**: Value is above the clan average.
+ * - **GROWING**: Value is between 50% and 100% of the clan average.
+ * - **UNDER**: Value is below 50% of the clan average.
+ *
+ * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
+ * @param metric - The key of the metric to compare.
+ * @param value - The individual player's value for the metric.
+ * @returns A BenchmarkData object or null if statistics are unavailable.
  */
 function getBenchmark(
   context: "lb" | "hh",
@@ -137,8 +169,15 @@ function getBenchmark(
 
 /**
  * HELPER: getSafeBenchmark
+ *
+ * @remarks
  * Combines App Settings (ghostBenchmarking toggle) and value validation
  * to provide a clean, one-liner for template tooltips.
+ *
+ * @param context - The dataset context ('lb' or 'hh').
+ * @param metric - The key of the metric.
+ * @param value - The value to compare (handles undefined).
+ * @returns A BenchmarkData object or null if benchmarking is disabled or value is missing.
  */
 function getSafeBenchmark(
   context: "lb" | "hh",
@@ -156,6 +195,15 @@ function getSafeBenchmark(
  * Statistical engine for comparing player performance against clan averages.
  * Optimized via a module-level singleton pattern to share results across
  * all component instances.
+ *
+ * **Architecture:**
+ * - **Structural Unitary Architecture:** Acts as a Layer 1 core service.
+ * - **Clinical Isolation:** Logic is domain-agnostic, relying on extractors
+ *   provided at the core level.
+ *
+ * @returns
+ * - `getBenchmark`: Direct comparison function.
+ * - `getSafeBenchmark`: Settings-guarded comparison function.
  */
 export function useBenchmarking() {
   // [PERF] LAZY INIT: Only initialize the singleton when first requested.
@@ -167,6 +215,7 @@ export function useBenchmarking() {
     sharedModules = modules;
 
     lbStats = computed(() => {
+      // Logic: Extract metrics for the Leaderboard (Internal Member) context
       const lb = data.value?.lb || [];
       // [GUARD] HARDENING: Remove 'any' pathogens to ensure extractor type safety.
       // Target B [4]: The 'any' Plague eliminated by allowing readonly arrays in calculateStats.
@@ -181,6 +230,7 @@ export function useBenchmarking() {
     });
 
     hhStats = computed(() => {
+      // Logic: Extract metrics for the Headhunter (Prospective Recruit) context
       const hh = data.value?.hh || [];
       // [GUARD] HARDENING: Remove 'any' pathogens to ensure extractor type safety.
       // Target B [4]: The 'any' Plague eliminated by allowing readonly arrays in calculateStats.
