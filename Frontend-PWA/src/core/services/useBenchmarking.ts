@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
  * [LOGIC] USE BENCHMARKING
  * Statistical engine for comparing player performance against clan averages.
@@ -37,7 +40,7 @@ let sharedModules: ModuleState | null = null;
  * metrics in one traversal.
  */
 const calculateStats = <T>(
-  items: T[],
+  items: readonly T[],
   extractors: Record<string, (item: T) => number>,
 ): StatsMap | null => {
   if (!items.length) return null;
@@ -165,7 +168,9 @@ export function useBenchmarking() {
 
     lbStats = computed(() => {
       const lb = data.value?.lb || [];
-      return calculateStats(lb as any[], {
+      // [GUARD] HARDENING: Remove 'any' pathogens to ensure extractor type safety.
+      // Target B [4]: The 'any' Plague eliminated by allowing readonly arrays in calculateStats.
+      return calculateStats(lb, {
         trophies: (m) => m.t || 0,
         warRate: (m) => parseFloat(m.d?.rate || "0"),
         donations: (m) => m.d?.avg || 0,
@@ -177,7 +182,9 @@ export function useBenchmarking() {
 
     hhStats = computed(() => {
       const hh = data.value?.hh || [];
-      return calculateStats(hh as any[], {
+      // [GUARD] HARDENING: Remove 'any' pathogens to ensure extractor type safety.
+      // Target B [4]: The 'any' Plague eliminated by allowing readonly arrays in calculateStats.
+      return calculateStats(hh, {
         trophies: (m) => m.t || 0,
         donations: (m) => m.d?.don || 0,
         warWins: (m) => m.d?.war || 0,
