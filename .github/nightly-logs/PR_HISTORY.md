@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-02] PR #358: chore(deps): bump knip from 6.1.1 to 6.2.0
+**Commit**: `a65448ee7f43f59b3a1c021c0fb415e2a84d29f0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/358)
+
+### Description
+I have performed a Tier 1 (Automated Minor Bump) of the `knip` package from `6.1.1` to `6.2.0` in the root `package.json`. 
+
+Following the project's dependency audit protocol:
+1. I audited all `package.json` files and identified `knip` as a candidate for a safe minor bump.
+2. I applied the update in the root `package.json` and updated the `pnpm-lock.yaml`.
+3. I verified the change by running the full test suite (857 tests) across all workspaces (`Backend-GAS`, `Backend-Worker`, `Frontend-PWA`) using the `--config.engine-strict=false` flag to account for the current Node 22 environment. All tests passed.
+4. I recorded the update in the persistent audit log at `.github/nightly-logs/dependency-audit-coverage.log`.
+
+This PR targets the `Nightly` branch as required by the automated pipeline sequence.
+
+---
+*PR created automatically by Jules for task [11515826533154234191](https://jules.google.com/task/11515826533154234191) started by @AlbiDR*
+
+---
+
 ## [2026-04-02] PR #357: test(verify): enhance useApiState defensive coverage
 **Commit**: `68e7ac67d5b94323dda439b1644dc6f81f4d37b4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/357)
