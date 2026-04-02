@@ -18,6 +18,7 @@
 | knip    | 6.0.6    | 6.1.0  | 2026-03-30 | PASS |
 | @vitejs/plugin-vue | ^6.0.3 | ^6.0.5 | 2026-03-31 | PASS |
 | knip    | 6.1.0    | 6.1.1  | 2026-04-01 | PASS |
+| knip    | 6.1.1    | 6.2.0  | 2026-04-02 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
