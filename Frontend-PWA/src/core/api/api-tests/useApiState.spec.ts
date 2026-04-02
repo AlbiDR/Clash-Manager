@@ -1,20 +1,34 @@
-import { resetApiState, useApiState } from "@core";
+import { resetApiState, useApiState } from "../useApiState";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as gasClient from "@core";
+import { isConfigured, ping, pingWorker, getApiUrl } from "../GasClient";
+import { nextTick } from "vue";
 
-// Mock gasClient
-vi.mock("../../api/GasClient", () => ({
-  isConfigured: vi.fn(() => true),
+// Mock GasClient directly using deep import path to avoid singleton/barrel issues
+vi.mock("../GasClient", () => ({
+  isConfigured: vi.fn(),
   ping: vi.fn(),
-  pingWorker: vi.fn(() => Promise.resolve(true)),
-  getApiUrl: vi.fn(() => "https://mock-gas-url.com"),
+  pingWorker: vi.fn(),
+  getApiUrl: vi.fn(),
   lastHubDiagnosis: { value: null },
 }));
 
 describe("useApiState", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.resetAllMocks();
     resetApiState();
+
+    // Set default mock behaviors
+    vi.mocked(isConfigured).mockReturnValue(true);
+    vi.mocked(ping).mockResolvedValue({ status: "online", version: "1.0", modules: {} });
+    vi.mocked(pingWorker).mockResolvedValue(true);
+    vi.mocked(getApiUrl).mockReturnValue("https://mock-gas-url.com");
+    vi.stubGlobal("navigator", { onLine: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("sets status to online when ping succeeds with status 'online'", async () => {
@@ -25,7 +39,7 @@ describe("useApiState", () => {
     };
 
     // @ts-ignore
-    vi.mocked(gasClient.ping).mockResolvedValue(mockPingResponse);
+    vi.mocked(ping).mockResolvedValue(mockPingResponse);
 
     const { apiStatus, workerStatus, pingData, checkApiStatus } = useApiState();
 
@@ -48,7 +62,7 @@ describe("useApiState", () => {
     };
 
     // @ts-ignore
-    vi.mocked(gasClient.ping).mockResolvedValue(mockPingResponse);
+    vi.mocked(ping).mockResolvedValue(mockPingResponse);
 
     const { apiStatus, checkApiStatus } = useApiState();
 
@@ -59,9 +73,8 @@ describe("useApiState", () => {
   });
 
   it("sets status to offline only after consecutive failures (Soft Fail)", async () => {
-    vi.useFakeTimers();
     // @ts-ignore
-    vi.mocked(gasClient.ping).mockRejectedValue(new Error("Network Error"));
+    vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
 
     const { apiStatus, checkApiStatus } = useApiState();
 
@@ -90,7 +103,122 @@ describe("useApiState", () => {
     
     // After Fail 5, it finally gives up and goes 'offline'
     expect(apiStatus.value).toBe("offline");
+  });
 
-    vi.useRealTimers();
+  it("sets status to unconfigured when isConfigured returns false", async () => {
+    // @ts-ignore
+    vi.mocked(isConfigured).mockReturnValue(false);
+
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    await checkApiStatus();
+
+    expect(apiStatus.value).toBe("unconfigured");
+  });
+
+  it("init() bootstraps the status check only once", async () => {
+    const { init } = useApiState();
+
+    init();
+    init();
+
+    // checkApiStatus is internal, but it calls ping
+    // Note: We expect 1 here. If it was already called by another test, resetApiState() in beforeEach should handle it.
+    expect(ping).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates workerStatus based on pingWorker result", async () => {
+    // @ts-ignore
+    vi.mocked(pingWorker).mockResolvedValue(false);
+    const { workerStatus, checkApiStatus } = useApiState();
+
+    await checkApiStatus();
+    await nextTick(); // Wait for pingWorker().then callback
+    expect(workerStatus.value).toBe("offline");
+
+    // Success case
+    // @ts-ignore
+    vi.mocked(pingWorker).mockResolvedValue(true);
+    await checkApiStatus();
+    await nextTick();
+    expect(workerStatus.value).toBe("online");
+  });
+
+  it("sets status to offline immediately when navigator.onLine is false", async () => {
+    vi.stubGlobal("navigator", { onLine: false });
+    // @ts-ignore
+    vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
+
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    await checkApiStatus();
+
+    expect(apiStatus.value).toBe("offline");
+  });
+
+  it("sets status to waking during retries", async () => {
+    // @ts-ignore
+    vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
+
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    // First Check (Fail 1) -> transitions to 'stale'
+    await checkApiStatus();
+    expect(apiStatus.value).toBe("stale");
+
+    // Mock ping to be slow and check status during next attempt
+    vi.mocked(ping).mockImplementation(() => {
+        expect(apiStatus.value).toBe("waking");
+        return Promise.reject(new Error("Network Error"));
+    });
+
+    // Advance to next retry
+    await vi.advanceTimersByTimeAsync(2100);
+  });
+
+  it("handshake times out after 25 seconds", async () => {
+    // ping never resolves
+    // @ts-ignore
+    vi.mocked(ping).mockImplementation(() => new Promise(() => {}));
+
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    const checkPromise = checkApiStatus();
+
+    // Advance 25s to trigger timeout
+    await vi.advanceTimersByTimeAsync(25001);
+    await checkPromise;
+
+    // Timeout should trigger handleFailure -> stale
+    expect(apiStatus.value).toBe("stale");
+  });
+
+  it("cancels and replaces pending handshake when checkApiStatus is called twice", async () => {
+    // Reset call count and state for this test
+    resetApiState();
+    vi.mocked(ping).mockClear();
+
+    // Mock ping: first one hangs/aborts, second one resolves immediately
+    vi.mocked(ping)
+      .mockImplementationOnce(({ signal }) => {
+        return new Promise((resolve, reject) => {
+          signal.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          }, { once: true });
+        });
+      })
+      .mockResolvedValueOnce({ status: "online", version: "1.0", modules: {} });
+
+    const { checkApiStatus } = useApiState();
+
+    // First call - will hang
+    const promise1 = checkApiStatus();
+    // Immediate second call - should abort the first one and then resolve
+    const promise2 = checkApiStatus();
+
+    await Promise.all([promise1, promise2]);
+
+    // Should be called exactly twice
+    expect(ping).toHaveBeenCalledTimes(2);
   });
 });
