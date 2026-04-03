@@ -40,12 +40,10 @@ import type { Recruit } from "@core/types";
  * - Dispatches toast notifications for user feedback.
  */
 export function useRecruiter() {
-  const { isShowcaseMode } = useShowcaseMode();
-  const { isSyntheticMode } = useSyntheticMode();
   const clashDataStore = useClashDataStore();
   const { data } = storeToRefs(clashDataStore);
   const { refresh: refreshGas } = clashDataStore;
-  const { dismissRecruitsAction, injectRecruits } = useHeadhunter();
+  const { dismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
   const { undo, success, info } = useToast();
 
@@ -71,7 +69,6 @@ export function useRecruiter() {
     statsLabel: "Recruit",
     sheetName: ["Headhunter", "Recruiter"],
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
-    refresh: clashDataStore.refreshWorker,
     onDismiss: dismissBulk,
   });
 
@@ -158,7 +155,6 @@ export function useRecruiter() {
 
   return {
     ...controller,
-    isShowcaseMode,
     sortOptions,
     dismissBulk,
   };

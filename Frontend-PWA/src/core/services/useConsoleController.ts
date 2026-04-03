@@ -105,7 +105,7 @@ interface ConsoleLogicOptions<T> {
 /** Build-time flag — never changes at runtime, intentionally module-scoped. */
 const WORKER_HUB_ENABLED = import.meta.env.VITE_USE_WORKER_HUB === "true";
 
-export function useConsoleController<T extends { id: string }>(
+export function useConsoleController<T extends { id: string; n?: string }>(
   options: ConsoleLogicOptions<T>,
 ) {
   // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
@@ -139,7 +139,7 @@ export function useConsoleController<T extends { id: string }>(
     statsLabel,
     sheetName,
     scoreGetter,
-    refresh: refreshFn,
+    refresh: refreshFn = () => clashStore.refreshWorker(),
     onDismiss: onDismissFn,
   } = options;
 
@@ -423,7 +423,7 @@ export function useConsoleController<T extends { id: string }>(
     hubInfo: currentSource?.value ? {
       source: currentSource.value,
       hubAge: (lastCompiledTime?.value || lastSyncTime?.value) 
-        ? formatTimeAgo(new Date(lastCompiledTime?.value || lastSyncTime.value!).toISOString()) 
+        ? formatTimeAgo(new Date(Number(lastCompiledTime?.value || lastSyncTime.value)).toISOString())
         : null
     } : undefined
   }));
@@ -458,6 +458,7 @@ export function useConsoleController<T extends { id: string }>(
     selectedSet,
     fabState,
     isSelectionMode,
+    isShowcaseMode: isShowcase,
     status,
     statsBadge,
     showSkeletons,
