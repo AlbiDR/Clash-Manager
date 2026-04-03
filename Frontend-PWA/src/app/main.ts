@@ -136,16 +136,19 @@ async function bootstrap() {
     // This prevents GAS 'Too Many Requests' errors on cold boot.
     apiState.init();
 
-    // Watch for API health before triggering heavy data load
+    // PERFORMANCE: High-Speed HUB Bypass
+    // Rationale: We no longer gate the full sync by the GAS handshake if the 
+    // high-speed Worker is already available. This allows the 'HUB' source
+    // to win the race and minimize LCP.
     const unwatch = watch(
-      () => apiState.apiStatus.value,
-      (status) => {
-        if (status === "online") {
-          // Server is awake and reachable, safe to sync data
+      [() => apiState.apiStatus.value, () => apiState.workerStatus.value],
+      ([apiStatus, workerStatus]) => {
+        if (apiStatus === "online" || workerStatus === "online") {
+          // At least one authoritative source is awake; proceed with sync
           clashDataStore.startBackgroundSync();
           unwatch(); // Run once per session
-        } else if (status === "offline") {
-          // If handshake fails completely, stop watching (Manual retry required)
+        } else if (apiStatus === "offline" && workerStatus === "offline") {
+          // Hard fail only if both pathways are unavailable
           unwatch();
         }
       },
