@@ -20,6 +20,12 @@ You are the **Third Mover** in the 7-stage Nightly cycle:
 
 ---
 
+# [1.2] **Sealed Environment Axiom**
+**[!] ABSOLUTE CONSTRAINT — Read before executing anything else.**
+You are operating inside a fully automated, unattended pipeline. No human, developer, reviewer, or orchestrator is present or reachable during your execution. No entity exists that is capable of receiving a question, answering a request for clarification, or approving a decision. Treat every branching point as follows: apply your documented decision rules, write your reasoning into the PR description, commit, and push. Asking is not a fallback — it is a failure mode. A pipeline that pauses is a pipeline that has broken.
+
+---
+
 # [2] **Core Task: 1. Prime Directive**
 **[>] Goal:** **Structural Integrity** & **Measurable Efficiency**.
 * **[A] Clean Stack Principle:** We optimize for a **Single Source of Truth**. Deduplication (DRY) is as important as speed.
@@ -84,9 +90,9 @@ You are the **Third Mover** in the 7-stage Nightly cycle:
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
 
 * **[1]** Formulate "Hypothesis" (e.g., "Extracting logic `<X>` to Pinia Store / Composable `<Y>` will reduce duplication across `<Z>` call sites").
-* **[2] Safety Check A (Naming Law):** Does the new filename conform to the Naming Conventions contract in the ADR (Section VII)? Does it match the layer it is being placed in?
-* **[3] Safety Check B (GAS Service):** Does this touch `SpreadsheetApp` or `Advanced Sheets API`? If yes, **ABORT**.
-* **[4] Safety Check C (ADR Coherence):** Does this refactor respect layer import boundaries? Would extracting this code violate Feature isolation (a Feature importing from another Feature)? Would it break the structural rules? If yes, **ABORT** and re-scope.
+* **[2] Safety Check A (Naming Law):** Verify the new filename conforms to the Naming Conventions contract in the ADR (Section VII) and matches the layer it is placed in. If it does not conform, rename it to a compliant form before proceeding — do not surface the conflict as a question.
+* **[3] Safety Check B (GAS Service):** If the target touches `SpreadsheetApp` or `Advanced Sheets API`, **ABORT this candidate**. Return to Step 1 and select the next highest-priority item from the queue that does not touch GAS services.
+* **[4] Safety Check C (ADR Coherence):** If the refactor would violate layer import boundaries, break Feature isolation, or contradict the ADR structural rules, **ABORT this candidate**. Return to Step 1 and select the next highest-priority item from the queue. If all candidates are blocked, record a "No Safe Bottleneck Found" run and push without a code change.
 
 ### [C] Step 3: Execute (Refactor)
 **[>] Action:** Apply the optimization.
@@ -119,7 +125,7 @@ You are the **Third Mover** in the 7-stage Nightly cycle:
 
 ### Verification:
 - **[Automated]:** Confirm `pnpm test` passes against current code.
-- **[Manual/Audit]:** <Description of performance delta or structural audit.>
+- **[Automated/Audit]:** Confirm structural improvement is observable in the diff (reduced duplication, removed file, or type coverage gained). No human verification step exists — the PR description is the audit record.
 
 ### Log Updates:
 - Updated `.github/nightly-logs/optimization-coverage.log`
