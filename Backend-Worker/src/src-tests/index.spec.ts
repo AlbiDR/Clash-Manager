@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Set environment variables before importing index.js to initialize global state correctly
 process.env["API_KEYS"] = "test-key-1,test-key-2";
@@ -47,6 +47,7 @@ vi.stubGlobal("fetch", mockFetch);
 // Import targets after mocks are established
 import { processBatch, processScanBatch } from "../index.js";
 import { Network } from "../services/Network.js";
+import type { PlayerTag } from "../types.js";
 
 describe("Worker Core Logic (index.ts)", () => {
   beforeEach(() => {
@@ -67,8 +68,8 @@ describe("Worker Core Logic (index.ts)", () => {
       expect(Network.quotaCheck).toHaveBeenCalledWith(urls.length);
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(results).toHaveLength(2);
-      expect(results[0].code).toBe(200);
-      expect(results[0].content).toEqual({ data: "ok" });
+      expect(results[0]!.code).toBe(200);
+      expect(results[0]!.content).toEqual({ data: "ok" });
       expect(Network.addQuotaUsage).toHaveBeenCalledTimes(2);
     });
 
@@ -108,7 +109,7 @@ describe("Worker Core Logic (index.ts)", () => {
       const results = await processBatch(urls, [], 1, scoringWeights, prophetCache);
 
       expect(results).toHaveLength(1);
-      const player = results[0].content as any;
+      const player = results[0]!.content as any;
       expect(player.tag).toBe("#PLAYER1");
       // Score calculation should have applied the 1.25x prophet bonus because wins > 5
       // Base score roughly: (6000 * 1) + (1000 * 0.1) + (50 * 10) + 500 (war bonus) = 6000 + 100 + 500 + 500 = 7100
@@ -155,8 +156,8 @@ describe("Worker Core Logic (index.ts)", () => {
 
         const results = await processBatch(urls, [], 1);
 
-        expect(results[0].code).toBe(520); // Retries exhausted
-        expect(results[0].content).toContain("rate_limit");
+        expect(results[0]!.code).toBe(520); // Retries exhausted
+        expect(results[0]!.content).toContain("rate_limit");
     });
   });
 
@@ -181,7 +182,7 @@ describe("Worker Core Logic (index.ts)", () => {
 
       expect(Network.quotaCheck).toHaveBeenCalledWith(1);
       expect(candidates).toHaveLength(1);
-      expect(candidates[0].tag).toBe("#RECRUIT1");
+      expect(candidates[0]!.tag).toBe("#RECRUIT1");
     });
 
     it("should respect the blacklist", async () => {
@@ -200,10 +201,10 @@ describe("Worker Core Logic (index.ts)", () => {
         })),
       });
 
-      const candidates = await processScanBatch(tags, [], 1, blacklist);
+      const candidates = await processScanBatch(tags, [], 1, blacklist as any as Set<PlayerTag>);
 
       expect(candidates).toHaveLength(1);
-      expect(candidates[0].tag).toBe("#GOOD");
+      expect(candidates[0]!.tag).toBe("#GOOD");
     });
 
     it("should handle malformed tournament data gracefully", async () => {
