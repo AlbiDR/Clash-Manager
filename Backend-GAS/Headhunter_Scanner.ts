@@ -160,10 +160,12 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     // Convert profiles to Recruit objects
     profileResults.forEach((profile: any) => {
-      const leagueTrophies = profile.leagueStatistics?.currentSeason?.trophies || 0;
+      if (!profile) return;
+      
+      const leagueTrophies = profile?.leagueStatistics?.currentSeason?.trophies || 0;
       const effectiveTrophies = (profile.trophies || 0) + (profile.trophies >= 9000 ? leagueTrophies : 0);
 
-      if (!profile || effectiveTrophies < minTrophies) return;
+      if (effectiveTrophies < minTrophies) return;
       if (profile.clan && profile.clan.tag) return; // Skip players already in clans
 
       const tag = S.Core.normalizeTag(profile.tag);
