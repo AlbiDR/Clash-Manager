@@ -669,22 +669,54 @@ export async function fetchRemote(options?: {
             // The Worker Hub sends raw matrices (array of arrays).
             // Index 0: Title block
             // Index 1: Human-readable headers
-            // Index 2: Internal schema keys
-            // Index 3+: Data rows
-            // [ROBUSTNESS] DETECT SCHEMA ROW:
-            // The matrix can have 2 or 3 header rows depending on the backend version.
-            // Row 0: Title, Row 1: Headers, Row 2: Keys (Optional)
-            const row2 = Array.isArray(rosterTable) && rosterTable.length > 2 ? rosterTable[2] : [];
-            const isRow2Schema = Array.isArray(row2) && row2.includes("id");
-
-            const lbSchema = isRow2Schema ? (row2 as string[]) : DEFAULT_LB_SCHEMA;
-            const lbRows = Array.isArray(rosterTable) ? rosterTable.slice(isRow2Schema ? 3 : 2) : [];
+            // Index 2+: Data rows
+            // Depending on the backend, it could also send exactly what GAS sends.
             
-            const row2hh = Array.isArray(hhTable) && hhTable.length > 2 ? hhTable[2] : [];
-            const isRow2HhSchema = Array.isArray(row2hh) && row2hh.includes("id");
+            // Defensively check if this is the Raw Spreadsheet export
+            // The Raw export has an empty Column A, so Tag is at index 1.
+            let lbSchema = DEFAULT_LB_SCHEMA;
+            let lbRows: any[][] = [];
+            
+            let hhSchema = DEFAULT_HH_SCHEMA;
+            let hhRows: any[][] = [];
 
-            const hhSchema = isRow2HhSchema ? (row2hh as string[]) : DEFAULT_HH_SCHEMA;
-            const hhRows = Array.isArray(hhTable) ? hhTable.slice(isRow2HhSchema ? 3 : 2) : [];
+            if (Array.isArray(rosterTable) && rosterTable.length > 2) {
+              const row1 = rosterTable[1];
+              // If Row 1 has 'Tag' at index 1, it's the Raw Sheet
+              if (Array.isArray(row1) && String(row1[1]).toUpperCase() === 'TAG') {
+                lbSchema = [
+                  "_", "id", "n", "role", "t", "days", "req", "avg", "tot", "seen", "rate", "wfame", 
+                  "hist", "performanceRawScore", "performanceScore", "trend"
+                ];
+                lbRows = rosterTable.slice(2);
+              } else {
+                // It might be the perfectly formatted GAS matrix disguised as Worker payload
+                const row2 = rosterTable[2];
+                const isRow2Schema = Array.isArray(row2) && row2.includes("id");
+                lbSchema = isRow2Schema ? (row2 as string[]) : DEFAULT_LB_SCHEMA;
+                lbRows = rosterTable.slice(isRow2Schema ? 3 : 2);
+              }
+            }
+            
+            if (Array.isArray(hhTable) && hhTable.length > 2) {
+              const row1hh = hhTable[1];
+              if (Array.isArray(row1hh) && String(row1hh[1]).toUpperCase() === 'TAG') {
+                hhSchema = [
+                  "_", "id", "invited", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"
+                ];
+                // In Raw HH Data, we must filter out invited manually if they are true, just like extractSheetDataStrict
+                hhRows = hhTable.slice(2).filter((row) => {
+                  if (!Array.isArray(row)) return false;
+                  const invited = String(row[2]).toUpperCase();
+                  return invited !== 'TRUE';
+                });
+              } else {
+                const row2hh = hhTable[2];
+                const isRow2HhSchema = Array.isArray(row2hh) && row2hh.includes("id");
+                hhSchema = isRow2HhSchema ? (row2hh as string[]) : DEFAULT_HH_SCHEMA;
+                hhRows = hhTable.slice(isRow2HhSchema ? 3 : 2);
+              }
+            }
 
             const mappedData = {
               format: "matrix",
