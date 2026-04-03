@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-03] PR #359: fix(harden): enforce strict laboratory validation boundary
+**Commit**: `fdfbfce6bbeb8e2e9d9b41d77c94e1553282c8c7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/359)
+
+### Description
+Hardened the Laboratory feature by enforcing strict validation at the data boundary. The ProfileHydrator now throws descriptive errors instead of returning safe defaults when validation fails, ensuring the simulation engine never runs on invalid data. Additionally, eradicated the "any" plague from useLaboratory catch blocks and ensured proper error handling during profile ingestion. All 110 laboratory-related tests passed.
+
+---
+*PR created automatically by Jules for task [13650448375793885162](https://jules.google.com/task/13650448375793885162) started by @AlbiDR*
+
+---
+
 ## [2026-04-02] PR #358: chore(deps): bump knip from 6.1.1 to 6.2.0
 **Commit**: `a65448ee7f43f59b3a1c021c0fb415e2a84d29f0`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/358)
