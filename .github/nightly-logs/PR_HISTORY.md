@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-03] PR #364: chore(deps): bump knip from 6.2.0 to 6.3.0
+**Commit**: `e4498141dbc2c0798e5d9f0d1bc397f701dace67`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/364)
+
+### Description
+Bumps knip from 6.2.0 to 6.3.0 in the root package.json and updates the dependency audit log. This is a Tier 1 automated update.
+
+---
+*PR created automatically by Jules for task [4630461446465030228](https://jules.google.com/task/4630461446465030228) started by @AlbiDR*
+
+---
+
 ## [2026-04-03] PR #363: test(verify): add sad path coverage for useLaboratory.ts
 **Commit**: `2986e094461b270f2b5ae89021aef53d002e2857`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/363)
