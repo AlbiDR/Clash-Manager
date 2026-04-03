@@ -31,6 +31,11 @@ export interface ClashRoyalePlayer {
     tag: ClanTag;
     name: string;
   };
+  leagueStatistics?: {
+    currentSeason?: {
+      trophies?: number;
+    };
+  };
 }
 
 export interface BattleLogEntry {
@@ -134,6 +139,7 @@ export interface ScoringWeights {
   TROPHY: number;
   DON: number;
   WAR: number;
+  WAR_BASELINE_BONUS?: number;
 }
 
 export interface ScoredPlayer {

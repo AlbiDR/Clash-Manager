@@ -415,9 +415,12 @@ export async function processBatch<T = unknown>(
               }
             }
 
+            const leagueTrophies = (profile as any).leagueStatistics?.currentSeason?.trophies || 0;
+            const effectiveTrophies = (profile.trophies || 0) + (profile.trophies >= 9000 ? leagueTrophies : 0);
+
             // Use shared scoring system (Kernel)
             let rawScore = ScoringKernel.computeRecruitScore(
-              profile.trophies ?? 0,
+              effectiveTrophies,
               profile.totalDonations ?? 0,
               profile.warDayWins ?? 0,
               hasWar,
@@ -447,7 +450,8 @@ export async function processBatch<T = unknown>(
             // STRATEGY: Mandatory Trophy Requirement
             // Rationale: High-potential players with low current trophies are intentionally discarded
             // to satisfy the strictly enforced in-game requirement specified by the user.
-            if (minTrophies > 0 && (profile.trophies || 0) < minTrophies) {
+            if (minTrophies > 0 && effectiveTrophies < minTrophies) {
+                console.info(`[Headhunter] Discarded ${profile.tag} (${profile.name}): ${effectiveTrophies} < ${minTrophies}`);
                 results[currentBatchIndex] = { code: 200, content: null as unknown as T };
                 continue;
             }
@@ -466,7 +470,7 @@ export async function processBatch<T = unknown>(
               content: {
                 tag: profile.tag as PlayerTag,
                 name: profile.name,
-                trophies: profile.trophies,
+                trophies: effectiveTrophies,
                 donations: profile.totalDonations,
                 cards: profile.challengeCardsWon,
                 war: totalWarScore,

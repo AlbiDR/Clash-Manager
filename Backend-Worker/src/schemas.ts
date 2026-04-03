@@ -50,6 +50,7 @@ export const ScoringWeightsSchema = v.object({
   TROPHY: v.number(),
   DON: v.number(),
   WAR: v.number(),
+  WAR_BASELINE_BONUS: v.optional(v.number(), 500),
 });
 
 /**
@@ -220,6 +221,11 @@ export const RoyalePlayerSchema = v.object({
   clan: v.optional(v.object({
     tag: TagSchema,
     name: v.string(),
+  })),
+  leagueStatistics: v.optional(v.object({
+    currentSeason: v.optional(v.object({
+      trophies: v.optional(v.number(), 0),
+    })),
   })),
 });
 
