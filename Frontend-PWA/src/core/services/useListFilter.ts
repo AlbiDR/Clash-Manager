@@ -23,7 +23,12 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * @sideeffects
  * None. This composable manages internal reactive state only.
  */
-export function useListFilter<T>(
+// PERFORMANCE: Cache normalized search strings to avoid O(N * F) work on every keystroke.
+// We use a persistent WeakMap to enable O(1) amortized normalization per item.
+// [PERF] MODULE SCOPE: Shared across instances (Roster/Headhunter) to avoid re-indexing.
+const searchCache = new WeakMap<object, string[]>();
+
+export function useListFilter<T extends { id: string; n?: string }>(
   items: Ref<readonly T[]> | ComputedRef<readonly T[]>,
   searchFields: (item: T) => string[],
   sortStrategies: Record<string, (a: T, b: T) => number>,
@@ -31,10 +36,6 @@ export function useListFilter<T>(
 ) {
   const searchQuery = ref("");
   const sortBy = ref(defaultSort);
-
-  // PERFORMANCE: Cache normalized search strings to avoid O(N * F) work on every keystroke.
-  // We use a persistent WeakMap to enable O(1) amortized normalization per item.
-  const searchCache = new WeakMap<object, string[]>();
 
   const filteredItems = computed(() => {
     let result: T[];
@@ -70,11 +71,12 @@ export function useListFilter<T>(
         const res = comparator(a, b);
         if (res !== 0) return res;
         // 🛡️ Tie-breaker: Ensure stable sorting by Name, then ID
-        const nameA = (a as any).n || "";
-        const nameB = (b as any).n || "";
+        // Target B [2]: Removed 'any' pathogens by enforcing T extends { id, n }.
+        const nameA = a.n || "";
+        const nameB = b.n || "";
         const nameRes = nameA.localeCompare(nameB);
         if (nameRes !== 0) return nameRes;
-        return ((a as any).id || "").localeCompare((b as any).id || "");
+        return a.id.localeCompare(b.id);
       });
     }
 
