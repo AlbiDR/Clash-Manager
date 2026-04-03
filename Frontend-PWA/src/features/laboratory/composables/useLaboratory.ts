@@ -157,7 +157,18 @@ export function useLaboratory() {
    * @param rawInventory - Optional inventory overrides.
    */
   function ingest(rawSnapshot: unknown, rawInventory?: unknown) {
-    const data = ProfileHydrator.hydrate(rawSnapshot);
+    let data: PlayerData;
+    try {
+      data = ProfileHydrator.hydrate(rawSnapshot);
+    } catch (err: unknown) {
+      // THREAT: Malformed player profile causing simulation engine crash.
+      // Rationale: Explicitly catching hydration failures prevents the engine
+      // from running on invalid state and provides feedback to the store.
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[Laboratory] Ingestion Failed:", message);
+      store.setFetchError(message);
+      return;
+    }
 
     // If rawInventory is provided, merge it into the data before loading persisted overrides
     if (rawInventory) {
@@ -207,9 +218,12 @@ export function useLaboratory() {
     try {
       const profile = await getPlayerProfile(tag);
       ingest(profile);
-    } catch (e: any) {
-      console.error("[Laboratory] Fetch Failed:", e);
-      store.setFetchError(e.message || "Failed to fetch player profile");
+    } catch (err: unknown) {
+      // THREAT: Network or API failure on profile retrieval.
+      // Target B [4]: The 'any' plague eliminated; using unknown for error catch.
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[Laboratory] Fetch Failed:", message);
+      store.setFetchError(message);
     } finally {
       store.setFetching(false);
     }
@@ -224,13 +238,15 @@ export function useLaboratory() {
         const currentGlobalTag = clashData.value?.playerTag;
         if (parsed && (!currentGlobalTag || parsed.profile.tag === currentGlobalTag)) {
           // Re-hydrate to ensure branded types and new structure
+          // THREAT: Corrupted LocalStorage state causing silent boot failure.
           const hydrated = ProfileHydrator.hydrate(parsed);
           store.setObservation(hydrated);
           // Only trigger analysis if tags match or no tag filter applied
           analyze();
         }
-      } catch (e) {
-        console.warn("[Laboratory] Cache hydration failed", e);
+      } catch (err: unknown) {
+        // Target B [4]: The 'any' plague eliminated.
+        console.warn("[Laboratory] Cache hydration failed:", err instanceof Error ? err.message : String(err));
       }
     }
   }

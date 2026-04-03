@@ -52,12 +52,10 @@ const ProfileHydrator = {
     if (!result.success) {
       // THREAT: Corrupted or malicious data crashing the simulation engine.
       // Target B [1]: Fail loudly at the boundary to prevent silent state corruption.
-      console.warn("[ProfileHydrator] Validation failed, returning safe default", result.issues);
-      return {
-        profile: { name: "Unknown", tag: "0", kingLevel: 1, xpIntoLevel: asXP(0) },
-        inventory: { gold: asGold(0), gems: asGems(0), wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
-        cards: []
-      };
+      // Rationale: By throwing instead of returning a default, we ensure that
+      // downstream simulation logic never executes on unvalidated or partial state.
+      const firstIssue = result.issues[0]?.message || "Invalid Profile Structure";
+      throw new Error(`Profile Extraction Failed: ${firstIssue}`);
     }
 
     const data = result.output;
