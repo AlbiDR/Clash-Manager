@@ -73,32 +73,45 @@ Implements a **Stale-While-Revalidate** strategy for clan datasets.
 
 ### 2. List Orchestration (`useConsoleController`)
 The primary behavioral engine for high-density list views (Roster, Headhunter).
-- **Unified Interface**: Coordinates searching, sorting, pagination (`useProgressiveList`), and deep-linking (`useDeepLinkHandler`) through a single reactive interface.
-- **Event Centralization**: Provides `layoutProps` and `layoutEvents` for direct, boilerplate-free binding to `ConsoleLayout` components.
-- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status:
-  1. **Tier 0: Invalid API URL**: Critical configuration missing or invalid.
-  2. **Tier 1: Offline**: Physical network disconnect (Logical Offline).
-  3. **Tier 2: Sync Error**: Remote execution or fetch failure (Synchronous error).
-  4. **Tier 3: Waking Server...**: Server cold-boot delay or stale metadata detection.
-  5. **Tier 4: Syncing...**: Background refresh in progress.
-  6. **Tier 5: Warning (Fallback / Stale Data)**: Data age exceeded 15m or unexpected GAS fallback.
-  7. **Tier 6: Nominal / Empty**: Successful synchronization (Clinical Purity).
+- **Unified Interface**: Coordinates searching, sorting, pagination (`useProgressiveList`), and deep-linking through a single reactive interface.
+- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status (Invalid API URL, Offline, Sync Error, Waking Server..., Syncing..., Fallback, and Nominal).
 
-### 3. UI Coordination (`useUiCoordinator`)
+### 3. Progressive Rendering Engine (`useProgressiveList`)
+Maintains 60FPS UI performance when handling large datasets via a time-sliced rendering strategy.
+- **Idle Budgeting**: Utilizes `requestIdleCallback`'s `IdleDeadline` to process multiple items per frame without blocking the main interaction thread.
+- **Memory Safety**: Uses `shallowRef` to minimize reactive overhead and ensures deterministic cleanup via `onScopeDispose`.
+
+### 4. Haptic Notification System (`useToast`)
+A resilient, global notification service with integrated hardware feedback.
+- **Hardware Brokerage**: Pairs semantic notification types (Success, Error, Info) with specific haptic patterns via the `useHaptics` engine.
+- **Interaction Safety**: Implements a debounce-locked action handler to prevent race conditions during rapid user input.
+
+### 5. Connectivity Singleton (`useApiState`)
+The authoritative arbiter of backend availability and handshake discovery.
+- **Handshake Discovery**: Orchestrates the initial 25,000ms handshake to detect server availability, cold-boot "waking" states, or configuration gaps.
+- **Physical Detection**: Integrates with `navigator.onLine` to distinguish between logical server failures and physical network disconnects.
+
+### 6. Statistical Benchmarking (`useBenchmarking`)
+A high-performance O(N) engine for comparing individual metrics against clan-wide averages.
+- **Single-Pass Optimization**: Aggregates mean, min, and max values across all metrics in a single traversal of the dataset.
+- **Tier Resolution**: Dynamically classifies performance into 4 tiers (Elite, Top Tier, Growing, Under) based on statistical deviations.
+
+### 7. UI Coordination (`useUiCoordinator`)
 The master arbiter of layout spacing and element visibility.
 - **Occlusion Prevention**: Dynamically calculates bottom offsets for the `FabIsland` and `ToastContainer` to ensure interactive elements never overlap.
 - **Singleton Control**: Manages a global FAB state, allowing different feature views to register actions and labels in a unified UI layer.
 
-### 4. Redundant Persistence (`useAppSettings`)
+### 8. Redundant Persistence (`useAppSettings`)
 A multi-tier strategy for application configuration and feature flags.
 - **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access).
 - **Tab Synchronization**: Listens for `storage` events to ensure configuration remains consistent across multiple open browser tabs.
 
-### 5. Metadata Centralization (`useSystemInfo`)
+### 9. Metadata Centralization (`useSystemInfo`)
 Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic).
 
 ---
 <br />
+
 
 ## Architectural Layers
 
