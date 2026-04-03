@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
         fetchRoyaleAPI: vi.fn(),
         fetchRoyaleAPIOne: vi.fn(),
         getWorkerSummary: vi.fn().mockReturnValue('Healthy'),
+        getExecutionStats: vi.fn().mockReturnValue({ total: 0, remote: 0, local: 0 }),
     },
     Reporting: {
         logReport: vi.fn()
