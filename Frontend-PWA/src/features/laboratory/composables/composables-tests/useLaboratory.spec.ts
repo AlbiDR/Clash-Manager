@@ -5,9 +5,14 @@ import { setActivePinia, createPinia } from 'pinia';
 // --- Mocks ---
 
 const mockClashData = ref({ playerTag: '#TAG123' });
+const mockCurrentSource = ref('GAS_BACKEND');
+const mockHubSyncTime = ref(Date.now());
+
 vi.mock("@core/services/useClashDataStore", () => ({
   useClashDataStore: () => ({
-    data: mockClashData
+    data: mockClashData,
+    currentSource: mockCurrentSource,
+    hubSyncTime: mockHubSyncTime
   })
 }));
 
@@ -33,10 +38,15 @@ const localStorageMock = {
 vi.stubGlobal('localStorage', localStorageMock);
 
 // --- Logic Mocks ---
+const mockHydrate = vi.fn();
 vi.mock('../../logic', async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,
+    ProfileHydrator: {
+      ...actual.ProfileHydrator,
+      hydrate: (raw: any) => mockHydrate(raw) || actual.ProfileHydrator.hydrate(raw)
+    },
     calculateProgressionPath: vi.fn(function* () {
       yield { history: [], totalXp: 0, inventory: { gold: 0, gems: 0, wildCards: {} } };
     })
@@ -136,5 +146,87 @@ describe('useLaboratory', () => {
 
     setSettings({ strategy: 'Resource Efficiency' });
     expect(settings.value.strategy).toBe('Resource Efficiency');
+  });
+
+  describe('Hardening & Sad Paths', () => {
+    it('ingest: should handle ProfileHydrator failure gracefully', async () => {
+      mockHydrate.mockImplementation(() => {
+        throw new Error("Mock Extraction Failed");
+      });
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { ingest, fetchError } = useLaboratory();
+
+      ingest({ malformed: true });
+
+      expect(fetchError.value).toBe("Mock Extraction Failed");
+    });
+
+    it('ingest: should process rawInventory if provided', async () => {
+      // Clear mockHydrate to let actual ProfileHydrator run (which uses our mock logic's defaults)
+      mockHydrate.mockReturnValue(null);
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { ingest, observation } = useLaboratory();
+
+      const rawProfile = { name: 'New User', tag: '#TAG123', expLevel: 5, expPoints: 0, cards: [] };
+      const rawInventory = { gold: 999999, wildCards: { Common: 500 } };
+
+      ingest(rawProfile, rawInventory);
+
+      expect(observation.value?.inventory.gold).toBe(999999);
+      expect(observation.value?.inventory.wildCards.Common).toBe(500);
+    });
+
+    it('fetchTrackedPlayer: should handle API rejection', async () => {
+      mockGetPlayerProfile.mockRejectedValue(new Error("API Down"));
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { refresh, fetchError, isFetching } = useLaboratory();
+
+      await refresh();
+
+      expect(isFetching.value).toBe(false);
+      expect(fetchError.value).toBe("API Down");
+    });
+  });
+
+  describe('Reactive States (layoutProps)', () => {
+    it('should reflect loading state during fetch', async () => {
+      mockGetPlayerProfile.mockReturnValue(new Promise(() => {})); // Never resolves
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { refresh, layoutProps } = useLaboratory();
+
+      refresh();
+      await nextTick();
+
+      expect(layoutProps.value.loading).toBe(true);
+      expect(layoutProps.value.status.type).toBe('loading');
+      expect(layoutProps.value.status.text).toBe('Scanning Vault...');
+    });
+
+    it('should reflect error state', async () => {
+      mockGetPlayerProfile.mockRejectedValue(new Error("Fail"));
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { refresh, layoutProps } = useLaboratory();
+
+      await refresh();
+
+      expect(layoutProps.value.syncError).toBe("Fail");
+      expect(layoutProps.value.status.type).toBe('error');
+      expect(layoutProps.value.status.text).toBe('Extraction Failed');
+    });
+
+    it('should reflect "Target Required" when no tag is present', async () => {
+      mockClashData.value.playerTag = "";
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { layoutProps } = useLaboratory();
+
+      expect(layoutProps.value.status.type).toBe('ready');
+      expect(layoutProps.value.status.text).toBe('Target Required');
+    });
   });
 });
