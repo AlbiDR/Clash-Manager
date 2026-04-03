@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-03] PR #362: Document useShowcaseMode logic and side effects
+**Commit**: `16b0ccc080f1fa2d84d81f26aacec312974b514e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/362)
+
+### Description
+Documented the `useShowcaseMode.ts` service with TSDoc, architectural context, and inline comments explaining the synchronization logic and side effects. Updated the coverage log.
+
+---
+*PR created automatically by Jules for task [2416392125626218560](https://jules.google.com/task/2416392125626218560) started by @AlbiDR*
+
+---
+
 ## [2026-04-03] PR #361: docs(readme): reconcile core orchestration and infrastructure
 **Commit**: `5165b209ecfbfd5e93998b667edc8ded934a139f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/361)
