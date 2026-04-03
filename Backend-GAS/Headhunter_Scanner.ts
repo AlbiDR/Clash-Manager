@@ -160,7 +160,10 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     // Convert profiles to Recruit objects
     profileResults.forEach((profile: any) => {
-      if (!profile || (profile.trophies || 0) < minTrophies) return;
+      const leagueTrophies = profile.leagueStatistics?.currentSeason?.trophies || 0;
+      const effectiveTrophies = (profile.trophies || 0) + (profile.trophies >= 9000 ? leagueTrophies : 0);
+
+      if (!profile || effectiveTrophies < minTrophies) return;
       if (profile.clan && profile.clan.tag) return; // Skip players already in clans
 
       const tag = S.Core.normalizeTag(profile.tag);
@@ -173,7 +176,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       
       if (finalScore === undefined) {
           // Local profile needs scoring and battlelog check if available
-          finalScore = S.Scoring.calculateRecruitRawScore(profile.trophies || 0, profile.totalDonations || 0, profile.warDayWins || 0, false, W);
+          finalScore = S.Scoring.calculateRecruitRawScore(effectiveTrophies, profile.totalDonations || 0, profile.warDayWins || 0, false, W);
           if (intel && intel.warFame > 500) finalScore *= 1.25;
       }
 
@@ -187,7 +190,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
       validCandidates.push({
         tag,
         name: profile.name,
-        trophies: toNum(profile.trophies),
+        trophies: toNum(effectiveTrophies),
         donations: toNum(profile.donations || profile.totalDonations),
         cards: toNum(typeof profile.cards === 'number' ? profile.cards : profile.challengeCardsWon),
         war: toNum(profile.war || profile.warDayWins),
