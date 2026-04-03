@@ -399,7 +399,7 @@ describe("Core DataSchemas", () => {
       metadata: {
         timestamp: "2026-03-29",
         lastCompiled: 123456,
-        lastFetched: "123456",
+        lastFetched: 123456,
         status: "ok", // [BOSS] Verified resilience
         version: "1.0",
         source: "worker"

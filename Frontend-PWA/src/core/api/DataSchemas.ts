@@ -215,8 +215,8 @@ export const WebAppDataSchema = v.object({
 export const HubStateSchema = v.object({
   metadata: v.object({
     timestamp: SafeStringPipe,
-    lastCompiled: SafeStringPipe,
-    lastFetched: SafeStringPipe,
+    lastCompiled: SafeNumberPipe,
+    lastFetched: SafeNumberPipe,
     status: SafeStringPipe,
     version: SafeStringPipe,
     source: SafeStringPipe,
