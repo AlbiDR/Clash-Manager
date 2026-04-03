@@ -338,12 +338,14 @@ function calculateWarWeekId(dateStr: string): WarWeekId {
  * @param prophetCache - Historical heritage data used for scoring multipliers.
  * @returns Array of FetchResults; sorted by score if recruitment scoring was active.
  */
+
 export async function processBatch<T = unknown>(
   urls: string[],
   apiKeys: string[] = [],
   concurrency: number = CONFIG.concurrency,
   scoring: ScoringWeights | null = null,
-  prophetCache?: Record<string, ProphetIntel>
+  prophetCache?: Record<string, ProphetIntel>,
+  minTrophies: number = 0
 ): Promise<FetchResult<T>[]> {
   // THREAT: Resource Exhaustion (Quota).
   // Target IV: Pre-emptively fail if the batch exceeds remaining daily budget.
@@ -441,6 +443,14 @@ export async function processBatch<T = unknown>(
 
             const warBonus = hasWar ? 500 : 0;
             const totalWarScore = (profile.warDayWins ?? 0) + warBonus;
+
+            // STRATEGY: Mandatory Trophy Requirement
+            // Rationale: High-potential players with low current trophies are intentionally discarded
+            // to satisfy the strictly enforced in-game requirement specified by the user.
+            if (minTrophies > 0 && (profile.trophies || 0) < minTrophies) {
+                results[currentBatchIndex] = { code: 200, content: null as unknown as T };
+                continue;
+            }
 
             // STRATEGY: Strict Clanless Enforcement
             // Rationale: Even if a player was clanless during Phase 1 (Discovery),
@@ -819,7 +829,7 @@ app.post(
     }
 
     try {
-      const { tags, blacklist, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
+      const { tags, blacklist, minTrophies, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
 
       // THREAT: Manually parsing env keys bypasses the global KeyManager's health state.
       // Target B [3]: Remove dead/misleading code. Fall back to empty array so processScanBatch
@@ -852,7 +862,8 @@ app.post(
           apiKeys,
           concurrency,
           scoring,
-          prophetCache
+          prophetCache,
+          minTrophies
         );
 
         response.json({
@@ -936,7 +947,7 @@ app.post(
     }
 
     try {
-      const { tags, apiKeys, blacklist, scoring, prophetCache } = result.output;
+      const { tags, apiKeys, blacklist, minTrophies, scoring, prophetCache } = result.output;
 
       const blacklistSet = new Set(blacklist ?? []);
 
@@ -973,7 +984,8 @@ app.post(
                 apiKeys ?? [],
                 concurrency,
                 scoring,
-                prophetCache
+                prophetCache,
+                minTrophies
             );
 
             response.json({
@@ -1293,7 +1305,7 @@ app.post(
     }
 
     try {
-      const { urls, apiKeys, scoring } = result.output;
+      const { urls, apiKeys, scoring, minTrophies } = result.output;
 
       // THREAT: Restricting concurrency to environment-defined limits
       // prevents Resource Exhaustion during batch operations.
@@ -1304,6 +1316,8 @@ app.post(
         apiKeys ?? [],
         concurrency,
         scoring ?? null,
+        undefined,
+        minTrophies
       );
 
       response.json({ results: batchResults });

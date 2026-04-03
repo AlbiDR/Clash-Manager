@@ -135,7 +135,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     if (remoteAvailable && tagsToProfile.length > 0) {
       try {
-        const remoteResponse = S.Network.fetchRemoteWorker("/scan", { tags: tagsToProfile, scoring: W });
+        const remoteResponse = S.Network.fetchRemoteWorker("/scan", { tags: tagsToProfile, scoring: W, minTrophies });
         if (remoteResponse && Array.isArray(remoteResponse.candidates)) {
           profileResults = remoteResponse.candidates;
           profilingMode = "REMOTE";
@@ -160,7 +160,7 @@ const HeadhunterScanner: HeadhunterScannerContract = {
 
     // Convert profiles to Recruit objects
     profileResults.forEach((profile: any) => {
-      if (!profile || (profile.rawScore === undefined && (profile.trophies || 0) < minTrophies)) return;
+      if (!profile || (profile.trophies || 0) < minTrophies) return;
       if (profile.clan && profile.clan.tag) return; // Skip players already in clans
 
       const tag = S.Core.normalizeTag(profile.tag);
@@ -269,14 +269,11 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         // Profile Shadow Candidates
         if (shadowTags.size > 0) {
           const shadowList = Array.from(shadowTags);
-          const shadowData = S.Network.fetchRoyaleAPI(
-            shadowList.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
-            remoteAvailable ? W : null,
-            "Shadow Profiles"
-          ) || [];
+          const shadowResponse = S.Network.fetchRemoteWorker("/scan", { tags: shadowList, scoring: W, minTrophies });
+          const shadowData = shadowResponse?.candidates || [];
 
           shadowData.forEach((profile: any) => {
-            if (profile && profile.tag && (profile.rawScore !== undefined || (profile.trophies || 0) >= minTrophies)) {
+            if (profile && profile.tag && (profile.trophies || 0) >= minTrophies) {
                const rawScore = profile.rawScore !== undefined
                 ? profile.rawScore
                 : S.Scoring.calculateRecruitRawScore(profile.trophies || 0, profile.totalDonations || 0, profile.warDayWins || 0, false, W);

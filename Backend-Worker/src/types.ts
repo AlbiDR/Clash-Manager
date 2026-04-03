@@ -163,6 +163,7 @@ export interface FetchRequest {
   urls: string[];
   apiKeys?: string[];
   scoring?: ScoringWeights | null;
+  minTrophies?: number;
 }
 
 /**
