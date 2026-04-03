@@ -152,7 +152,8 @@ export const ClanApiRequestSchema = v.object({
 export const FetchRequestSchema = v.object({
   urls: v.array(v.string()),
   apiKeys: v.optional(v.array(v.string())),
-  scoring: v.optional(v.nullable(ScoringWeightsSchema))
+  scoring: v.optional(v.nullable(ScoringWeightsSchema)),
+  minTrophies: v.optional(v.number())
 });
 
 /**
