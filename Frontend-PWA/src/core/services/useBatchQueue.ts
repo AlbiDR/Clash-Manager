@@ -166,11 +166,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   }
 
   /**
-   *  DEEP LINK IGNITION
-   */
-  let iframe: HTMLIFrameElement | null = null;
-
-  /**
    * Forcefully stops an active Blitz operation.
    */
   function stopBlitz() {
@@ -296,16 +291,6 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   if (getCurrentInstance()) {
     onUnmounted(() => {
       stopBlitz();
-
-      // MEMORY SAFETY: Legacy Iframe Cleanup (Bug #8)
-      // Earlier versions of the deep-link engine utilized a hidden iframe
-      // to trigger custom schemes. While now handled by useExternalLink via
-      // direct intents or window.location, this cleanup ensures no DOM
-      // fragments persist if the strategy is toggled or polyfilled.
-      if (iframe && iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-        iframe = null;
-      }
     });
   }
 

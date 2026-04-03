@@ -22,10 +22,8 @@ import type { LeaderboardMember } from "@core/types";
  * - `handleSearch`: Search update handler.
  */
 export function useLeaderboard() {
-  const { isShowcaseMode } = useShowcaseMode();
   const clashDataStore = useClashDataStore();
   const { members } = storeToRefs(clashDataStore);
-  const { refresh } = clashDataStore;
 
   const controller = useConsoleController({
     data: members,
@@ -37,14 +35,12 @@ export function useLeaderboard() {
     statsLabel: "Member",
     sheetName: "Leaderboard",
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
-    refresh: clashDataStore.refreshWorker,
   });
 
   const sortOptions = LEADERBOARD_SORT_OPTIONS;
 
   return {
     ...controller,
-    isShowcaseMode,
     sortOptions,
   };
 }
