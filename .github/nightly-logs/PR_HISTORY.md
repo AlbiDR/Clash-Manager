@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-04] PR #369: fix(version): reconcile HEADHUNTER version drift
+**Commit**: `818dd8d94d76947335341a4d627ae74028581056`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/369)
+
+### Description
+Reconciled the GAS HEADHUNTER version manifest drift by updating Configuration.ts to match the module constant in Headhunter.ts. Logged remaining drifts for future reconciliation.
+
+---
+*PR created automatically by Jules for task [16524484432352254537](https://jules.google.com/task/16524484432352254537) started by @AlbiDR*
+
+---
+
 ## [2026-04-04] PR #368: docs(tsdoc): document useProgressiveList architectural role and logic
 **Commit**: `c9b4aaf5fa81eb2242220968fc9780f6faff2c2b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/368)
