@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-04] PR #367: docs(readme): reconcile GAS version drift and refine laboratory strategy documentation
+**Commit**: `ff93cb39d644b457c7fc00503ed39c3274e32f72`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/367)
+
+### Description
+This PR reconciles documentation drift in the monorepo's README files as part of the Step 4 (Document-README) Nightly Pipeline cycle.
+
+### Reasoning:
+**[Priority Queue Item]:** README Synchronization (Drift) & README Depth (Shallow).
+**[Safety Checks]:** Confirmed ADR coherence and vocabulary compliance. No emojis or corporate fluff introduced.
+**[Rationale]:** The System (GAS) version badges were stale (v14.3.2), while the actual module implementation in `Configuration.ts` showed `v14.3.4` for the Headhunter module. Additionally, the Laboratory documentation was clarified to accurately reflect the King Level milestone prioritization in the `ProjectionStrategy`.
+
+### Changes:
+- **[README.md]:** Updated GAS version badge to v14.3.4.
+- **[Backend-GAS/README.md]:** Updated GAS version badge to v14.3.4.
+- **[Frontend-PWA/src/features/laboratory/README.md]:** Refined strategy pattern documentation for Level Projection.
+- **[.github/nightly-logs/documentation-readme-coverage.log]:** Appended updated file paths.
+
+### Verification:
+- **[Automated]:** Verified with `pnpm test` in `Frontend-PWA` (776 passed) and `Backend-Worker` (84 passed).
+- **[Automated/Audit]:** Confirmed all documented behaviors match the underlying logic in `Backend-GAS/Configuration.ts` and `Frontend-PWA/src/features/laboratory/logic/ScoringStrategy.ts`.
+
+### Log Updates:
+- Updated `.github/nightly-logs/documentation-readme-coverage.log`
+
+---
+*PR created automatically by Jules for task [5198301881440458572](https://jules.google.com/task/5198301881440458572) started by @AlbiDR*
+
+---
+
 ## [2026-04-04] PR #366: test(verify): extend useClashDataStore coverage and identify logic cracks
 **Commit**: `099627e73c450b415b1433a0e584bf81621204aa`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/366)
