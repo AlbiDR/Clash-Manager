@@ -29,23 +29,33 @@ Deno.serve(async (req) => {
     });
   }
 
-  // 2. Select a Random Key (Rotation Factory)
-  const activeKey = keys[Math.floor(Math.random() * keys.length)];
-  const headers = { Authorization: `Bearer ${activeKey}` };
-
+  // 2. Client & Protocol Initialization
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
+  const fetchWithRotation = async (endpoint: string) => {
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      console.log(`[Protocol-Ingest] Hunting with key index ${i}...`);
+      const res = await fetch(`https://api.clashroyale.com/v1${endpoint}`, {
+        headers: { Authorization: `Bearer ${key}` }
+      });
+      if (res.status === 403) {
+        console.warn(`[Protocol-Ingest] Key ${i} Forbidden (403). Rotating to next...`);
+        continue;
+      }
+      return res;
+    }
+    throw new Error(`[Protocol-Ingest] All ${keys.length} keys returned 403 Forbidden.`);
+  };
+
   try {
     // 3. Execution Phase: Hunt for Data
     // A. Clan Profile (L0 Substrate)
     console.log(`Hunting for Clan Tag: ${CLAN_TAG}`);
-    const profileRes = await fetch(
-      `https://api.clashroyale.com/v1/clans/${encodeURIComponent(CLAN_TAG)}`,
-      { headers }
-    );
+    const profileRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}`);
     
     if (!profileRes.ok) {
       const errBody = await profileRes.text();
@@ -59,10 +69,7 @@ Deno.serve(async (req) => {
 
     // B. Member Roster (L0 Substrate)
     console.log(`Hunting for Members of Clan: ${CLAN_TAG}`);
-    const membersRes = await fetch(
-      `https://api.clashroyale.com/v1/clans/${encodeURIComponent(CLAN_TAG)}/members`,
-      { headers }
-    );
+    const membersRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}/members`);
 
     if (!membersRes.ok) {
       const errBody = await membersRes.text();
