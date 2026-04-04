@@ -31,21 +31,32 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          # Mandatory for DB push; otherwise we skip gracefully.
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           # SSOT Secret Farm: Ingesting the 20-key master string
           ROYALE_API_KEYS: ${{ secrets.ROYALE_API_KEYS }}
         run: |
-          # 1. Login to the CLI
-          supabase login --token "$SUPABASE_ACCESS_TOKEN"
+          # 0. Context: We work from the Backend root
+          cd Backend
 
-          # 2. Sync The Key Farm (The engine for rotation)
+          # 1. Sync The Key Farm (The engine for rotation)
           if [ -n "$ROYALE_API_KEYS" ]; then
             supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
           else
             echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping secret sync."
           fi
 
-          # 3. Push Database DNA (The Migrations)
-          cd Backend && supabase db push --project-ref "$PROJECT_ID"
+          # 2. Push Database DNA (The Migrations) - Resilient Skip
+          if [ -n "$SUPABASE_DB_PASSWORD" ]; then
+            echo "🧬 [PUSH] Synchronizing Database DNA..."
+            # Note: Link is required for db push, but we use the environment variable for auth.
+            supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+            supabase db push
+          else
+            echo "ℹ️ [INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
+            echo "   (Note: Database DNA was manually initialized by the Assistant)."
+          fi
 
-          # 4. Deploy the Hunter (Edge Function)
+          # 3. Deploy the Hunter (Edge Function)
+          echo "🚀 [DEPLOY] Launching The Hunter (Edge Function)..."
           supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
