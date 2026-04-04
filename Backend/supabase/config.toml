@@ -1,8 +1,8 @@
-project_id = \"hucktamloykszinwbtuh\"
+project_id = "hucktamloykszinwbtuh"
 
 [api]
 port = 54321
-schemas = [\"public\", \"substrate\", \"drivers\", \"features\"]
+schemas = ["public", "substrate", "drivers", "features"]
 
 [db]
 port = 54322
