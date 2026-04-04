@@ -20,6 +20,7 @@
 | knip    | 6.1.0    | 6.1.1  | 2026-04-01 | PASS |
 | knip    | 6.1.1    | 6.2.0  | 2026-04-02 | PASS |
 | knip    | 6.2.0    | 6.3.0  | 2026-04-03 | PASS |
+| vue     | 3.5.31   | 3.5.32 | 2026-04-04 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
