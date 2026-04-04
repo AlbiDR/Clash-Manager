@@ -41,19 +41,35 @@ Deno.serve(async (req) => {
   try {
     // 3. Execution Phase: Hunt for Data
     // A. Clan Profile (L0 Substrate)
+    console.log(`Hunting for Clan Tag: ${CLAN_TAG}`);
     const profileRes = await fetch(
       `https://api.clashroyale.com/v1/clans/${encodeURIComponent(CLAN_TAG)}`,
       { headers }
     );
+    
+    if (!profileRes.ok) {
+      const errBody = await profileRes.text();
+      console.error(`Royale API Clan Profile Error (${profileRes.status}): ${errBody}`);
+      throw new Error(`Royale API Clan Profile failed with status ${profileRes.status}`);
+    }
+
     const profileData = await profileRes.json();
     const { error: profileError } = await supabase.schema("substrate").from("raw_clan_profile").insert({ payload: profileData });
     if (profileError) throw new Error(`Profile insert failed: ${profileError.message}`);
 
     // B. Member Roster (L0 Substrate)
+    console.log(`Hunting for Members of Clan: ${CLAN_TAG}`);
     const membersRes = await fetch(
       `https://api.clashroyale.com/v1/clans/${encodeURIComponent(CLAN_TAG)}/members`,
       { headers }
     );
+
+    if (!membersRes.ok) {
+      const errBody = await membersRes.text();
+      console.error(`Royale API Clan Members Error (${membersRes.status}): ${errBody}`);
+      throw new Error(`Royale API Clan Members failed with status ${membersRes.status}`);
+    }
+
     const membersData = await membersRes.json();
     const { error: membersError } = await supabase.schema("substrate").from("raw_clan_members").insert({ payload: membersData });
     if (membersError) throw new Error(`Members insert failed: ${membersError.message}`);
