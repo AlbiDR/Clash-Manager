@@ -32,14 +32,14 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
           # SSOT Secret Farm: Ingesting the 20-key master string
-          ROYALE_API_KEY: ${{ secrets.ROYALE_API_KEY }}
+          ROYALE_API_KEYS: ${{ secrets.ROYALE_API_KEYS }}
         run: |
           # 1. Login to the CLI
           supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
           # 2. Sync The Key Farm (The engine for rotation)
-          if [ -n "$ROYALE_API_KEY" ]; then
-            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEY="$ROYALE_API_KEY"
+          if [ -n "$ROYALE_API_KEYS" ]; then
+            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
           else
             echo "⚠️ [SKIP] ROYALE_API_KEY secret not found in GitHub. Skipping secret sync."
           fi
