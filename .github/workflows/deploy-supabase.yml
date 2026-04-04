@@ -6,8 +6,8 @@ name: Deploy Supabase Parallel Universe
 on:
   push:
     paths:
-      - \"Backend/**\"
-      - \".github/workflows/deploy-supabase.yml\"
+      - "Backend/**"
+      - ".github/workflows/deploy-supabase.yml"
   workflow_dispatch:
 
 jobs:
@@ -24,14 +24,14 @@ jobs:
       - name: Deploy Binary Heartbeat
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          API_KEYS_SSOT: ${{ secrets.ROYALE_API_KEY }}
+          API_KEYS_SSOT: ${{ secrets.ROYALE_API_KEYS }}
           PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
         run: |
           # 1. Login
-          supabase login --token \"$SUPABASE_ACCESS_TOKEN\"
+          supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
           # 2. Sync Secrets (The Key Farm)
-          supabase secrets set --project-ref \"$PROJECT_ID\" ROYALE_API_KEY=\"$API_KEYS_SSOT\"
+          supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$API_KEYS_SSOT"
 
           # 3. Deploy the Hunter (from the final elegant root)
-          cd Backend && supabase functions deploy ingest-royale-data --project-ref \"$PROJECT_ID\"
+          cd Backend && supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
