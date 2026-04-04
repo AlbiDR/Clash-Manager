@@ -58,7 +58,12 @@ Deno.serve(async (req) => {
     
     for (let i = 0; i < keys.length; i++) {
       const targetIndex = (startIndex + i) % keys.length;
-      const key = keys[targetIndex];
+      let key = keys[targetIndex].trim();
+      
+      // Aggressive scrubbing: remove surrounding quotes etc.
+      if (key.startsWith('"') && key.endsWith('"')) {
+        key = key.substring(1, key.length - 1);
+      }
       
       console.log(`[Protocol-Ingest] Hunting with key index ${targetIndex} (Step ${i+1}/${keys.length})...`);
       const res = await fetch(`https://api.clashroyale.com/v1${endpoint}`, {
@@ -113,7 +118,20 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { 
+    console.error(`[CRITICAL] Ingestion Failed: ${err.message}`);
+
+    // Return the diagnostics in the response so we can see them in curl
+    const diagnostics = keys.map((k, idx) => ({
+      index: idx,
+      length: k.length,
+      preview: `${k.substring(0, 4)}...${k.substring(k.length - 4)}`
+    }));
+
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      diagnostics: diagnostics,
+      raw_string_length: ROYALE_API_KEYS.length
+    }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
