@@ -28,7 +28,7 @@ A non-blocking, generator-based engine that calculates the most efficient upgrad
 
 ### Strategy Pattern (ScoringStrategy.ts)
 Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes King Level milestones (15, 16). Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level 16.
+- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
 - **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Constants Registry (Registry.ts)
