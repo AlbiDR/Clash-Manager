@@ -1,7 +1,7 @@
 ---
 title: Supabase Binary Stack Migration Plan
 status: Live
-version: 1.0.4
+version: 1.8.0
 license: GPL-3.0-only
 copyright: Copyright (C) 2026 AlbiDR
 ---
@@ -17,140 +17,90 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 - **Structural Coherence**: The database organization mirrors the project layers (L0-L5) for perfect technical purity.
 - **Edge-Native Ingestion**: Supabase Edge Functions (Deno) replace the legacy Node.js worker.
 - **Binary Bridge**: GitHub Actions serve as the automated pipeline for secret synchronization and deployment.
-- **20-Key Farm**: A high-concurrency rotation logic that leverages 20 Royale API keys for maximum throughput.
+- **Career Engine**: A high-fidelity telemetry model tracking player progress (Gold, Cards, Wins) across daily snapshots.
 
 ---
 
 ## II. Project Layers (Database Substrate)
 - **Cloud Provider**: Supabase (Postgres 17.6).
-- **Project Ref**: `hucktamloykszinwbtuh` (Region: `eu-west-1`).
+- **Project Ref**: `hucktamloykszinwbtuh` (Region: `eu-central-1`).
 - **Orchestration**:
     - **PWA (Frontend)**: Reads from `features.` views via `anon` key + Realtime.
     - **Edge Functions (Backend)**: Ingests raw state, dumps into `substrate.` via `service_role` key.
-    - **GitHub (Pipeline)**: Automated deployment of functions and secret sync via `deploy-supabase.yml` targeting the `Backend/` root.
-    - **pg_cron (Database)**: Triggers the heartbeat for 30-minute ingestion cycles with authenticated `anon` bearer tokens.
+    - **GitHub (Pipeline)**: Automated deployment and secret sync via `deploy-supabase.yml`.
+    - **pg_cron (Database)**: Triggers the heartbeat for 15-minute ingestion cycles.
 
 ---
 
 ## III. Repository Structure (Authoritative Root: /Backend)
-To align with the **Supabase CLI** hardcoded expectations, the project follows the standard directory mapping:
-
 | Target Component | Source Path | Role |
 | :--- | :--- | :--- |
-| **Edge Functions** | `Backend/supabase/functions/` | Deno-native business logic (The Hunter). |
-| **SQL Migrations** | `Backend/supabase/migrations/` | Relational DNA and trigger-shredders (The DNA). |
+| **Edge Functions** | `Backend/supabase/functions/` | Deno-native business logic. |
+| **SQL Migrations** | `Backend/supabase/migrations/` | Relational DNA and triggers. |
 | **Project Config** | `Backend/supabase/config.toml` | Identity mapping and schema configuration. |
 
 ---
 
-## IV. The Clinical Ingestion Strategy
+## IV. The Clinical Ingestion Strategy (v1.8.0)
 
 ### 1. Ingestion Gate (substrate. Layer)
 - **The Hunter**: A single Edge Function (`ingest-royale-data`) fetches all endpoints.
-- **Rotation Factory**: The function rotates between 20 unique Royale API keys stored in GitHub Secrets.
-- **Operation**: Secret-backed Edge Functions perform "Fetch and Dump" into `substrate.` tables.
+- **Proxy Protocol**: Uses `proxy.royaleapi.dev` to bypass IP-whitelisting constraints.
+- **Quad-Stage Pipe**: Sequentially fetches **Clan Profile**, **Members**, **War Activity**, and **War Log**. (GAS Parity).
 
 ### 2. The Collection Shredder (drivers. Layer)
-- **Role**: Automatically shreds `substrate.raw_*` payloads into relational molecules.
-- **Logic**: A PostgreSQL `FOR` loop iterates through JSON arrays and "fans-out" into `drivers.members` and `drivers.member_snapshots`.
-- **Value**: Discards noise; extracts **Assets** (Fame, Trophies, Activity).
+- **Single Source of Truth**: `drivers.members` accumulates every daily heartbeat (L2 Archive/Database).
+- **War History**: `drivers.war_history` tracks **52 weeks** of historical fame (Career Performance).
+- **War Activity**: `drivers.war_activity` tracks daily deck usage and participation status.
+
+### 3. Feature Presentation (features. Layer) — Minimalist UI
+- **Roster View**: `features.roster_view` (Custom sorting + Dynamic Labeling: `5m`, `2h`, `3d`).
+- **War Analytics**: `features.war_activity_view` (Whos missing battles?).
+- **War Loyalty**: `features.war_loyalty_view` (Historical fame averaging).
 
 ---
 
 ## V. Strategic Migration Timeline
 
 ### Phase 1: Substrate & Isolation (Verified ✅)
-- [x] Configure Supabase Project & Extensions (`pg_cron`, `pg_net`, `moddatetime`).
-- [x] Create ADR-compliant schemas: `substrate`, `drivers`, `features`.
-- [x] Perform clinical purge of legacy `public` and `bronze` schemas.
+- [x] ADR-compliant schemas created: `substrate`, `drivers`, `features`.
 
-### Phase 2: Domain Schema (Verified ✅)
-- [x] SQL: Create `substrate.raw_clan_profile` and `drivers.clans`.
-- [x] SQL: Create `substrate.raw_clan_members`, `drivers.members`, and `drivers.member_snapshots`.
-- [x] SQL: Implement **Collection Shredder** (Fan-out Trigger) for roster ingestion (L0 -> L2).
+### Phase 2: Domain Schema & Telemetry (Verified ✅)
+- [x] SQL: Consolidated L2 drivers into a Single Source of Truth (`drivers.members`).
+- [x] SQL: Established deep telemetry (Best Trophies, War Wins, Progress Stats).
+- [x] SQL: Implemented Automated Tenure logic (`joined_at` fact + dynamic view).
 
 ### Phase 3: The Binary Heartbeat (Verified ✅)
-- [x] Edge Function: Implement `ingest-royale-data` with 20-Key Rotation logic.
-- [x] pg_cron: Configure the 30-minute heartbeat (Implemented via SQL migration).
+- [x] Edge Function: Implemented with **RoyaleAPI Proxy** and **True Round-Robin** rotation.
+- [x] pg_cron: Configured 15-minute heartbeat via migrations.
 
-### Phase 4: CI/CD Pipeline (Verified ✅)
-- [x] GitHub: Configure `ROYALE_API_KEYS`, `SUPABASE_PROJECT_ID`, and `SUPABASE_ACCESS_TOKEN`.
-- [x] Workflow: Implement `deploy-supabase.yml` with resilient migration-skip logic and automated secret-sync.
+### Phase 4: Schema Hardening & Security (Verified ✅)
+- [x] SQL: Clinical Documentation applied to all tables/columns.
+- [x] SQL: RLS Lockdown (Deny-by-default).
+- [x] SQL: Realtime Activation for live PWA dashboard broadcasts.
 
-### Phase 5: Reliability & Governance (Verified ✅)
-- [x] DNA Sync: Harmonized local migration history with cloud state via surgical `repair`.
-- [x] Authentication: Hardened `pg_cron` heartbeat using `Authorization: Bearer` with `anon` keys.
-- [x] Documentation: Migrated technical specs into the authoritative GitHub repository.
+### Phase 5: Deep Ingestion & Historical War (Verified ✅)
+- [x] Edge Function: Upgraded to Quad-Stage (Profile, Members, War Activity, War Log).
+- [x] SQL: Implemented 52-week Historical Archive (`drivers.war_history`).
+
+### Phase 6: Storage Maintenance & Janitor (Verified ✅)
+- [x] SQL: Unified `maintenance_janitor()` to prune obsolete L0/L2 data.
+- [x] SQL: Registered Weekly Cron for 500MB Free-Tier safety.
+
+### Phase 7: PWA Dashboard Integration (PENDING) [NEXT]
+- [ ] PWA: Migrate Roster Feature to source from `features.roster_view`.
+- [ ] PWA: Implement War Participation dashboard from `features.war_activity_view`.
 
 ---
 
 ## VI. Secret & Environment Registry
-*Authoritative list of variables required to sustain the Parallel Universe.*
-
 | Constant | Scope | Role | Content |
 | :--- | :--- | :--- | :--- |
-| `ROYALE_API_KEYS` | GitHub | The Key Farm. | Comma-separated list of 20 Royale API tokens. |
-| `SUPABASE_ACCESS_TOKEN` | GitHub | The Bridge. | Profile-level token used by CLI for automated deployment. |
-| `SUPABASE_PROJECT_ID` | GitHub | The Target. | `hucktamloykszinwbtuh` |
-| `SUPABASE_DB_PASSWORD` | GitHub | The Key (Optional). | Mandatory for automated DNA sync (migrations); otherwise skips. |
-| `CLAN_TAG` | Supabase | The Hunt. | The target clan identifier (e.g., `#92U0CQ`). |
+| `ROYALE_API_KEYS` | GitHub Secret | The Key Farm. | 20 Supercell JWTs (Sanitized). |
+| `CLAN_TAG` | GitHub Variable | The Hunt. | Targeted Clan Tag (SSOT). |
 
 ---
 
-## VII. State-of-the-Art README Seeds
-*Structural metadata for the future README file.*
-
-### 1. The Binary Stack
-- **Architecture**: Clinical Medallion (Substrate -> Drivers -> Features).
-- **Host**: 100% Supabase-Native.
-- **Engine**: Deno (Edge Functions) + PostgreSQL (Trigger Logic).
-
-### 2. High-Grade Features
-- **Deterministic Shredding**: Automatic transformation of JSONB arrays into relational identity tables.
-- **Zero-Latency Orchestration**: Database-internal scheduling via `pg_cron` eliminates external trigger overhead.
-- **20-Key Key Farm**: Industrial-grade rate-limit mitigation across multiple API tokens with automated rotation.
-- **Security Poisoning Protection**: Fail-fast validation gates at the `substrate.` layer prevent malformed data from reaching core drivers.
-
----
-
-## VIII. The Clinical README Blueprint
-*This structure is required to meet the project's 100/100 documentation standard.*
-
-### 1. Visual Identity
-- **Badges**: Standardize on flat-square style for Lighthouse scores, Build status, and License.
-- **Typography**: Reference the CleanStack Inter/Roboto typography.
-- **Graphics**: Include a Mermaid diagram illustrating the **Binary Stack** (PWA ↔ Supabase).
-
-### 2. The Architectural Narrative
-- **Unitary Core**: Explain the shift from GAS/Worker to the unified Supabase environment.
-- **CleanStack Layers**: Explicitly document the L0-L5 mapping within the database schemas.
-
-### 3. High-Performance Benchmarks
-- **Lighthouse**: Document the 100/100 performance, accessibility, and SEO targets.
-- **Availability**: Real-time synchronization benchmarks (<100ms first paint via Service Worker).
-
-### 4. Engineer's Guide
-- **Local Setup**: Step-by-step guide for `supabase start` and local development.
-- **Type Safety**: Document the `supabase gen types` workflow for end-to-end TypeScript integrity.
-
-### 5. Operations & Security
-- **Heartbeat Diagnostics**: Explain how to verify the `ingest-royale-heartbeat` via the `cron.job` table.
-- **Token Lifecycle**: Document the PoLP (Principle of Least Privilege) usage for `ANON` vs `SERVICE_ROLE` keys.
-
----
-
-## IX. Administrative Recovery Log (DNA Repair)
-*Commands used to resolve history conflicts during the v1.0.4 synchronization.*
-
-```bash
-# Repairing drift between local and remote
-supabase migration repair --status reverted <LEGACY_VERSIONS>
-
-# Synchronizing to the authoritative 171549 version
-supabase db push --linked-project-id hucktamloykszinwbtuh
-```
-
----
 > [!IMPORTANT]
 > This document remains the **Single Source of Truth** for the `Clash-Manager` Supabase infrastructure.
-↳ *Last Updated: 2026-04-04T19:47:00Z by Antigravity*
+> ↴ *Last Updated: 2026-04-05 by Antigravity*
