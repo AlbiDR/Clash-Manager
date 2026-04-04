@@ -58,12 +58,10 @@ Deno.serve(async (req) => {
     
     for (let i = 0; i < keys.length; i++) {
       const targetIndex = (startIndex + i) % keys.length;
-      let key = keys[targetIndex].trim();
       
-      // Aggressive scrubbing: remove surrounding quotes etc.
-      if (key.startsWith('"') && key.endsWith('"')) {
-        key = key.substring(1, key.length - 1);
-      }
+      // Aggressive scrubbing: remove EVERYTHING that isn't a JWT character
+      // Royale keys are Base64/JWT (A-Z, a-z, 0-9, ., -, _)
+      let key = keys[targetIndex].replace(/[^a-zA-Z0-9.\-_]/g, "");
       
       console.log(`[Protocol-Ingest] Hunting with key index ${targetIndex} (Step ${i+1}/${keys.length})...`);
       const res = await fetch(`https://api.clashroyale.com/v1${endpoint}`, {
