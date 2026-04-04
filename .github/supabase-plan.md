@@ -1,81 +1,124 @@
-# Supabase Migration Plan — Architectural Pivot
+---
+title: Supabase Binary Stack Migration Plan
+status: Live
+version: 1.0.0
+license: GPL-3.0-only
+copyright: Copyright (C) 2026 AlbiDR
+---
 
-This document outlines the strategic transition from a Google Apps Script (GAS) and Google Sheets backend to a robust, PostgreSQL-powered **Supabase** infrastructure.
+# Supabase Migration Plan — Binary Unitary Architecture (CleanStack)
 
-## I. Objectives
-- **Eliminate Latency**: Replace slow `SpreadsheetApp` operations with high-performance SQL queries.
-- **Bypass Quotas**: Move complex logic from the restricted GAS environment (6-minute limit) to Supabase Edge Functions and the Render-hosted Backend-Worker.
-- **Relational Integrity**: Transition from flat-row snapshots to normalized PostgreSQL tables.
-- **Realtime UX**: Implement Supabase Realtime for instant frontend UI updates.
+This document is the **Single Source of Truth** for the transition of the `Clash-Manager` stack from Google Apps Script (GAS) to a **Supabase**-native environment. It follows the **CleanStack Authoritative Design Reference (ADR)** by strictly mapping database domains to project layers.
 
 ---
 
-## II. Data Ingestion Arch: "The Raw Tier" (Bronze)
-*Direct mapping of Royale API responses to JSONB storage. This layer preserves "Raw Truth" and allows re-processing without fetching new data.*
-
-| Source Endpoint | Target Supabase Table | Purpose |
-| :--- | :--- | :--- |
-| `GET /clans/{tag}` | `clash_raw_clan_profile` | Validation & Branding |
-| `GET /clans/{tag}/members` | `clash_raw_clan_members` | Core Roster Extraction |
-| `GET /clans/{tag}/currentrace` | `clash_raw_clan_currentrace` | Live War Tracking |
-| `GET /clans/{tag}/racelog` | `clash_raw_clan_racelog` | History Alignment |
-| `GET /players/{tag}` | `clash_raw_player_profile` | Deep Scoring / Validation |
-| `GET /players/{tag}/battlelog` | `clash_raw_player_battlelog` | Activity Analysis |
-| `GET /tournaments/{tag}` | `clash_raw_tournament` | Recruitment Scanning |
+## I. The Vision: "Clash Manager — Redux"
+The project is moving from a distributed 3-platform model to a streamlined **Binary Stack**.
+- **Structural Coherence**: The database organization mirrors the project layers (L0-L5) for perfect technical purity.
+- **Edge-Native Ingestion**: Supabase Edge Functions (Deno) replace the legacy Node.js worker.
+- **Binary Bridge**: GitHub Actions serve as the automated pipeline for secret synchronization and deployment.
+- **20-Key Farm**: A high-concurrency rotation logic that leverages 20 Royale API keys for maximum throughput.
 
 ---
 
-## III. Domain Schema: "The Domain Tier" (Silver)
-*Relational tables hydrated via SQL Triggers or Edge Functions from the Raw Tier.*
-
-- [ ] **Members (`members`)**: Current snapshot of the 50 clan members.
-    - Fields: `tag` (PK), `name`, `exp_level`, `trophies`, `current_rank`, `last_seen_at`.
-- [ ] **Member Snapshots (`member_snapshots`)**: Time-series history.
-    - Logic: Every 30 mins, fresh data replaces the "Current Day" entry.
-    - Fields: `tag`, `date`, `trophies`, `donations`, `war_fame`.
-- [ ] **Roster State (`roster_view`)**: (SQL VIEW)
-    - Replaces "The Roster" sheet.
-    - Aggregates snapshots to calculate **Tenure**, **Average Performance**, and runs the **Sorting Algorithm** (Weighted Scores) on-the-fly.
-- [ ] **Recruitment (`prospects`)**: 
-    - Replaces "The Headhunter" sheet.
-    - Fields: `tag`, `name`, `source_tournament`, `score`, `invitation_status`.
+## II. Project Layers (Database Substrate)
+- **Cloud Provider**: Supabase (Postgres 17.6).
+- **Project Ref**: `hucktamloykszinwbtuh` (Region: `eu-west-1`).
+- **Orchestration**:
+    - **PWA (Frontend)**: Reads from `features.` views via `anon` key + Realtime.
+    - **Edge Functions (Backend)**: Ingests raw state, dumps into `substrate.` via `service_role` key.
+    - **GitHub (Pipeline)**: Automated deployment of functions and secret sync via `deploy-supabase.yml` targeting the `Backend/` root.
+    - **pg_cron (Database)**: Triggers the heartbeat for 30-minute ingestion cycles.
 
 ---
 
-## IV. Core Logic Migration
-*Transitioning the "Brain" from JS Loops to SQL & Workers.*
+## III. Data Arch: "The Substrate Tier" (Layer 0)
+*Authoritative raw data storage. Unfiltered truth mapping from the Royale API.*
 
-- [ ] **The Ingestion Cycle**:
-    - **Trigger**: Every 30 minutes via Render Worker / Edge Function.
-    - **Member Retention**: Logic moved to a daily `purge_inactive` routine (Removes non-clan members who haven't been seen in 14 days).
-- [ ] **The Roster Algorithm**:
-    - Migrated from `Roster.ts` JS logic into a **PostgreSQL Materialized View**.
-    - Factors: Trophies, War Fame (from `member_snapshots`), and Tenure (dynamic delta between joining date and now).
-- [ ] **The Headhunter Scanner**:
-    - Periodically triggers `/tournaments/{tag}` scans.
-    - Filters result in SQL (Where `clan_tag` is NULL and `score` > threshold).
+| Target Table | Source Endpoint | Role | Directory |
+| :--- | :--- | :--- | :--- |
+| `substrate.raw_clan_profile` | `GET /clans/{tag}` | Clan branding/validation. | `Backend/functions` |
+| `substrate.raw_clan_members` | `GET /clans/{tag}/members` | The core 50-member array. | `Backend/functions` |
+| `substrate.raw_clan_currentrace` | `GET /clans/{tag}/currentriverrace` | Live war/fame tracking. |
+| `substrate.raw_clan_racelog` | `GET /clans/{tag}/riverracelog` | Historical analysis. |
 
 ---
 
-## V. Execution Phases (`CleanStack` ADR Compliant)
+## IV. The Clinical Ingestion Strategy
 
-### Phase 1: Substrate & Client
-- [ ] **Layer 0**: Environment variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`).
-- [ ] **Layer 1**: Implement `Supabase_Client.ts` (Singleton).
-- [ ] **Layer 1**: Define **Valibot** schemas for inbound Raw JSONB.
+### 1. Ingestion Gate (substrate. Layer)
+- **The Hunter**: A single Edge Function (`ingest-royale-data`) fetches all endpoints.
+- **Rotation Factory**: The function rotates between 20 unique Royale API keys stored in GitHub Secrets.
+- **Operation**: Secret-backed Edge Functions perform "Fetch and Dump" into `substrate.` tables.
 
-### Phase 2: Schema Deployment
-- [ ] Implement `migrations/` folder with SQL for Table structures and JSONB "Shredding" triggers.
-- [ ] Setup RLS (Row Level Security) for public/private data access.
+### 2. The Collection Shredder (drivers. Layer)
+- **Role**: Automatically shreds `substrate.raw_*` payloads into relational molecules.
+- **Logic**: A PostgreSQL `FOR` loop iterates through JSON arrays and "fans-out" into `drivers.members` and `drivers.member_snapshots`.
+- **Value**: Discards noise; extracts **Assets** (Fame, Trophies, Activity).
 
-### Phase 3: Logic Delegation
-- [ ] Refactor Render Worker to handle the 7 API endpoint calls.
-- [ ] Replace `Backend-GAS/Database.ts` with calls to the Worker/Supabase RPCs.
+---
 
-### Phase 4: Frontend "Live" Roster
-- [ ] Replace `useRosterStore` data fetching with Supabase `Subscribe`.
-- [ ] Implement PWA Service Worker caching for offline member views.
+## V. Strategic Migration Timeline
+
+### Phase 1: Substrate & Isolation (Verified ✅)
+- [x] Configure Supabase Project & Extensions (`pg_cron`, `pg_net`, `moddatetime`).
+- [x] Create ADR-compliant schemas: `substrate`, `drivers`, `features`.
+- [x] Perform clinical purge of legacy `public` and `bronze` schemas.
+
+### Phase 2: Domain Schema (Verified ✅)
+- [x] SQL: Create `substrate.raw_clan_profile` and `drivers.clans`.
+- [x] SQL: Create `substrate.raw_clan_members`, `drivers.members`, and `drivers.member_snapshots`.
+- [x] SQL: Implement **Collection Shredder** (Fan-out Trigger) for roster ingestion (L0 -> L2).
+
+### Phase 3: The Binary Heartbeat (Verified ✅)
+- [x] Edge Function: Implement `ingest-royale-data` with 20-Key Rotation logic.
+- [x] pg_cron: Configure the 30-minute heartbeat (Implemented via SQL migration).
+
+### Phase 4: CI/CD Pipeline (Verified ✅)
+- [x] GitHub: Configure `ROYALE_API_KEY`, `SUPABASE_PROJECT_ID`, and `SUPABASE_ACCESS_TOKEN`.
+- [x] Workflow: Implement `deploy-supabase.yml` for automated secret-sync and deployment.
+
+---
+
+## VI. README Seed (State-of-The-Art Evidence)
+*Data for the future README to demonstrate engineering mastery.*
+
+### 1. Architectural Brilliance
+- **No-Worker Paradigm**: 100% serverless. No server to maintain, no runtime to manage.
+- **JSONB Shredding**: Near-zero latency transformation from raw API data to clean relational tables using native Postgres triggers.
+- **Key-Farm Rotation**: Industrial-grade rate-limit mitigation across multiple API tokens.
+
+### 2. Performance & Health
+- **Binary Stack**: High-speed communication between GitHub and Supabase.
+- **Unitary Isolation**: Zero noise between layers. A feature change at L3 cannot break an L1 Driver.
+
+---
+
+## VII. Secret & Environment Registry
+*Authoritative list of variables required to sustain the Parallel Universe.*
+
+| Constant | Scope | Role | Content |
+| :--- | :--- | :--- | :--- |
+| `ROYALE_API_KEY` | GitHub | The Key Farm. | Comma-separated list of 20 Royale API tokens. |
+| `SUPABASE_ACCESS_TOKEN` | GitHub | The Bridge. | Profile-level token used by CLI for automated deployment. |
+| `SUPABASE_PROJECT_ID` | GitHub | The Target. | `hucktamloykszinwbtuh` |
+| `CLAN_TAG` | Supabase | The Hunt. | The target clan identifier (e.g., `#92U0CQ`). |
+
+---
+
+## VIII. State-of-the-Art README Seeds
+*Structural metadata for the future README file.*
+
+### 1. The Binary Stack
+- **Architecture**: Clinical Medallion (Substrate -> Drivers -> Features).
+- **Host**: 100% Supabase-Native.
+- **Engine**: Deno (Edge Functions) + PostgreSQL (Trigger Logic).
+
+### 2. High-Grade Features
+- **Deterministic Shredding**: Automatic transformation of JSONB arrays into relational identity tables.
+- **Zero-Latency Orchestration**: Database-internal scheduling via `pg_cron` eliminates external trigger overhead.
+- **20-Key Rotation**: Industrial-grade API management to guarantee 100% uptime and high rate-limit tolerance.
 
 ---
 > [!IMPORTANT]
-> The framework remains a detail. All database operations must be brokered through a **Layer 2 Driver** (`Supabase_Driver.ts`) to maintain persistence ignorance in the feature modules.
+> This document remains the **Single Source of Truth** for the `Clash-Manager` Supabase infrastructure.
