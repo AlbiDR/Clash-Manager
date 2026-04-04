@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-04] PR #370: chore(deps): bump vue from 3.5.31 to 3.5.32
+**Commit**: `73d18e9e4fad366a1f15ee841ee3ec73d177028a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/370)
+
+### Description
+Bumping `vue` to `3.5.32` in the monorepo catalog and updating the audit log.
+
+---
+*PR created automatically by Jules for task [7299223489289972992](https://jules.google.com/task/7299223489289972992) started by @AlbiDR*
+
+---
+
 ## [2026-04-04] PR #369: fix(version): reconcile HEADHUNTER version drift
 **Commit**: `818dd8d94d76947335341a4d627ae74028581056`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/369)
