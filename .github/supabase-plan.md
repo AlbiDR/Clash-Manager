@@ -87,6 +87,7 @@ To align with the **Supabase CLI** hardcoded expectations, the project follows t
 | `ROYALE_API_KEYS` | GitHub | The Key Farm. | Comma-separated list of 20 Royale API tokens. |
 | `SUPABASE_ACCESS_TOKEN` | GitHub | The Bridge. | Profile-level token used by CLI for automated deployment. |
 | `SUPABASE_PROJECT_ID` | GitHub | The Target. | `hucktamloykszinwbtuh` |
+| `SUPABASE_DB_PASSWORD` | GitHub | The Key (Optional). | Mandatory for automated DNA sync (migrations); otherwise skips. |
 | `CLAN_TAG` | Supabase | The Hunt. | The target clan identifier (e.g., `#92U0CQ`). |
 
 ---
