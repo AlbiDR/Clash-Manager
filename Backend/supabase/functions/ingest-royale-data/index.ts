@@ -120,19 +120,51 @@ Deno.serve(async (req) => {
       }
     } catch (e) { console.error('[v7.4.0] S3 River Race Failed:', e.message); }
 
-    // --- STAGE 4: WAR LOG (Historical Analytics) ---
+    // --- STAGE 4: WAR LOG (Historical Discovery) ---
     try {
       const warlogRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}/warlog`);
       if (warlogRes.ok) {
         const warlogData = await warlogRes.json();
-        const { error: wErr } = await supabase.rpc('ingest_war_log', { p_payload: warlogData });
+        // The RPC 'ingest_war_log' UPSERTS - building history over weeks.
+        const { error: wErr } = await supabase.rpc('ingest_war_log', { 
+            p_payload: warlogData 
+        });
         if (!wErr) results.warlog = true;
       }
-    } catch (e) { console.error('[v7.4.0] S4 War Log Failed:', e.message); }
+    } catch (e) { console.error('[v18.1.0] S4 War Log Failed:', e.message); }
+
+    // --- STAGE 5: DEEP DEPTH (Individual Career Logs) ---
+    // This accumulates 100 battles per resident for deep performance scoring.
+    try {
+        const { data: members, error: mErr } = await supabase
+            .from('members')
+            .select('tag')
+            .eq('snapshot_date', new Date().toISOString().split('T')[0]);
+        
+        if (!mErr && members) {
+            console.log(`[v18.1.0] S5: Ingesting Battles for ${members.length} Residents.`);
+            for (let i = 0; i < members.length; i += 5) {
+                const batch = members.slice(i, i + 5);
+                await Promise.all(batch.map(async (m) => {
+                    try {
+                        const logRes = await fetchWithRotation(`/players/${encodeURIComponent(m.tag)}/battlelog`);
+                        if (logRes.ok) {
+                            const logData = await logRes.json();
+                            await supabase.rpc('ingest_player_battles', { 
+                                p_tag: m.tag, 
+                                p_payload: logData 
+                            });
+                        }
+                    } catch (e) { /* Individual fail silent */ }
+                }));
+            }
+            results.battles = true;
+        }
+    } catch (e) { console.error('[v18.1.0] S5 Deep Depth Failed:', e.message); }
 
     return new Response(JSON.stringify({
       success: true,
-      version: '7.4.0',
+      version: '12.2.0',
       pipeline: results,
       ingested_at: new Date().toISOString()
     }), { headers: { "Content-Type": "application/json" } });

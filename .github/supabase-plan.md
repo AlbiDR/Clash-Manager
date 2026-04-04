@@ -41,51 +41,39 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 
 ---
 
-## IV. The Clinical Ingestion Strategy (v1.8.0)
+## IV. The Clinical Ingestion Strategy (v1.9.0)
 
 ### 1. Ingestion Gate (substrate. Layer)
 - **The Hunter**: A single Edge Function (`ingest-royale-data`) fetches all endpoints.
 - **Proxy Protocol**: Uses `proxy.royaleapi.dev` to bypass IP-whitelisting constraints.
-- **Quad-Stage Pipe**: Sequentially fetches **Clan Profile**, **Members**, **War Activity**, and **War Log**. (GAS Parity).
+- **Penta-Stage Pipe**: Sequentially fetches **Clan Profile**, **Members**, **War Activity**, **War Log**, and **Deep-Depth Battle Logs**.
+- **Rate Limit Defense**: Batch-processing (5 players per batch) for battle logs to respect RoyaleAPI quotas.
 
 ### 2. The Collection Shredder (drivers. Layer)
+- **The Point (Persistence over Ephemerality)**: `drivers.war_history` is an **Infinite Career Ledger**. It discovery-syncs 52 weeks but **never prunes**, building a 10-year heritage.
+- **Battle Depth**: `drivers.player_battles` maintains a **100-sample rolling window** per resident for high-fidelity PeS/Inertia scoring.
 - **Single Source of Truth**: `drivers.members` accumulates every daily heartbeat (L2 Archive/Database).
-- **War History**: `drivers.war_history` tracks **52 weeks** of historical fame (Career Performance).
-- **War Activity**: `drivers.war_activity` tracks daily deck usage and participation status.
 
 ### 3. Feature Presentation (features. Layer) — Minimalist UI
 - **Roster View**: `features.roster_view` (Custom sorting + Dynamic Labeling: `5m`, `2h`, `3d`).
 - **War Analytics**: `features.war_activity_view` (Whos missing battles?).
-- **War Loyalty**: `features.war_loyalty_view` (Historical fame averaging).
+- **War Loyalty**: `features.war_loyalty_view` (Historical fame averaging over years).
 
 ---
 
 ## V. Strategic Migration Timeline
 
-### Phase 1: Substrate & Isolation (Verified ✅)
-- [x] ADR-compliant schemas created: `substrate`, `drivers`, `features`.
+### Phase 1-4: Substrate & Core (Verified ✅)
 
-### Phase 2: Domain Schema & Telemetry (Verified ✅)
-- [x] SQL: Consolidated L2 drivers into a Single Source of Truth (`drivers.members`).
-- [x] SQL: Established deep telemetry (Best Trophies, War Wins, Progress Stats).
-- [x] SQL: Implemented Automated Tenure logic (`joined_at` fact + dynamic view).
+### Phase 5: Deep Ingestion & Career History (Verified ✅)
+- [x] Edge Function: Upgraded to Penta-Stage (Profile, Members, War Activity, War Log, Battles).
+- [x] SQL: Established **Infinite Career Ledger** logic for `drivers.war_history`.
+- [x] SQL: Implemented **100-Sample Battle Sampling** window for deep scoring.
 
-### Phase 3: The Binary Heartbeat (Verified ✅)
-- [x] Edge Function: Implemented with **RoyaleAPI Proxy** and **True Round-Robin** rotation.
-- [x] pg_cron: Configured 15-minute heartbeat via migrations.
-
-### Phase 4: Schema Hardening & Security (Verified ✅)
-- [x] SQL: Clinical Documentation applied to all tables/columns.
-- [x] SQL: RLS Lockdown (Deny-by-default).
-- [x] SQL: Realtime Activation for live PWA dashboard broadcasts.
-
-### Phase 5: Deep Ingestion & Historical War (Verified ✅)
-- [x] Edge Function: Upgraded to Quad-Stage (Profile, Members, War Activity, War Log).
-- [x] SQL: Implemented 52-week Historical Archive (`drivers.war_history`).
-
-### Phase 6: Storage Maintenance & Janitor (Verified ✅)
-- [x] SQL: Unified `maintenance_janitor()` to prune obsolete L0/L2 data.
-- [x] SQL: Registered Weekly Cron for 500MB Free-Tier safety.
+### Phase 6: Operational Security & Janitor (Verified ✅)
+- [x] SQL: Unified `maintenance_janitor()` to prune volatile JSON/Opponent data.
+- [x] SQL: Hard-Exempted career history (war_history) from pruning cycles.
+- [x] SQL: Registered Weekly Cron for 500MB Free-Tier safety (~60MB plateau after 10 years).
 
 ### Phase 7: PWA Dashboard Integration (PENDING) [NEXT]
 - [ ] PWA: Migrate Roster Feature to source from `features.roster_view`.
@@ -98,6 +86,18 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 | :--- | :--- | :--- | :--- |
 | `ROYALE_API_KEYS` | GitHub Secret | The Key Farm. | 20 Supercell JWTs (Sanitized). |
 | `CLAN_TAG` | GitHub Variable | The Hunt. | Targeted Clan Tag (SSOT). |
+
+---
+
+## VII. Storage Logic (Aggressive-Lean Refined)
+| Layer | Domain | Policy | Rationale |
+| :--- | :--- | :--- | :--- |
+| **L0** | Raw JSON | 7-Day Prune | Volatile transit only. |
+| **L2** | War History | **Never Prune** | Infinite Career Heritage. |
+| **L2** | Snapshots | 365-Day Pruned | Maintain annual momentum. |
+| **L2** | Opponents | 7-Day Pruned | Zero noise for dead data. |
+| **L2** | Battles | 100-Sample Window | Deep Performance Fidelity. |
+| **L2** | **Leavers** | **Total Purge (7d)** | 7-day "Heritage Zero" guard. |
 
 ---
 

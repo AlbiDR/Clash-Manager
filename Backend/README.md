@@ -36,7 +36,8 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 - **Role**: Persistence-ignorant domain objects and historical archives.
 - **Core Models**:
     - `drivers.members`: The single authoritative source for active player telemetry.
-    - `drivers.war_history`: 52-week historical archive tracking career performance.
+    - `drivers.war_history`: **Infinite Career Ledger** tracking every week since first sync (Unlimited History).
+    - `drivers.player_battles`: **100-Sample Rolling Window** per resident for deep performance scoring.
     - `drivers.war_activity`: Daily deck usage and participation logs.
 
 ### 3. `features` (L3 — Business Presentation)
@@ -44,16 +45,16 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 - **Interfaces**:
     - `features.roster_view`: Deeply sorted roster with dynamic tenure labeling.
     - `features.war_activity_view`: Realtime participation tracking.
-    - `features.war_loyalty_view`: Historical fame averaging for recruitment scoring.
+    - `features.war_loyalty_view`: **Career Fame Averaging** (Infinite lookback for PeS calculation).
 
 ---
 
 ## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Quad-Stage Pipe** triggered by a 15-minute heartbeat.
+Ingestion is performed via a **Penta-Stage Pipe** (Profile, Members, War Activity, History, Battles).
 
-1. **Gatekeeper (`ingest-royale-data`)**: A single Deno Edge Function utilizing `proxy.royaleapi.dev` and Round-Robin token rotation to bypass rate-limiting.
+1. **Gatekeeper (`ingest-royale-data`)**: A single Deno Edge Function utilizing `proxy.royaleapi.dev` and Round-Robin token rotation.
 2. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
-3. **Janitor (`maintenance_janitor`)**: Weekly automated culling of obsolete L0/L2 data to maintain 500MB free-tier constraints.
+3. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while **Hard-Exempting** career history.
 
 ---
 
