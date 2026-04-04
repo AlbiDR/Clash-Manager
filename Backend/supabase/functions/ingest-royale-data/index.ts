@@ -84,46 +84,61 @@ Deno.serve(async (req) => {
     throw new Error(`[Protocol-Ingest] All ${keys.length} keys returned 403 Forbidden via Proxy.`);
   };
 
-  try {
-    // 3. Execution Phase: Hunt for Data
-    // A. Clan Profile (L0 Substrate)
-    console.log(`Hunting for Clan Tag: ${CLAN_TAG}`);
-    const profileRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}`);
-    
-    if (!profileRes.ok) {
-      const errBody = await profileRes.text();
-      console.error(`Royale API Clan Profile Error (${profileRes.status}): ${errBody}`);
-      throw new Error(`Royale API Clan Profile failed with status ${profileRes.status}`);
-    }
+    // -------------------------------------------------------------------------
+    // CLINICAL QUAD-STAGE INGESTION PIPELINE (v7.4.0 Stable)
+    // S1: Profile | S2: Members | S3: Current River Race | S4: War Log
+    // -------------------------------------------------------------------------
+    const results = { profile: false, members: false, race: false, warlog: false };
 
-    const profileData = await profileRes.json();
-    const { error: profileError } = await supabase.rpc("ingest_clan_profile", { p_payload: profileData });
-    if (profileError) throw new Error(`Profile RPC ingest failed: ${profileError.message}`);
+    // --- STAGE 1: CLAN PROFILE ---
+    try {
+      const profileRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}`);
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        const { error: pErr } = await supabase.rpc('ingest_clan_profile', { p_payload: profileData });
+        if (!pErr) results.profile = true;
+      }
+    } catch (e) { console.error('[v7.4.0] S1 Profile Failed:', e.message); }
 
-    // B. Member Roster (L0 Substrate)
-    console.log(`Hunting for Members of Clan: ${CLAN_TAG}`);
-    const membersRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}/members`);
+    // --- STAGE 2: CLAN MEMBERS ---
+    try {
+      const membersRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}/members`);
+      if (membersRes.ok) {
+        const membersData = await membersRes.json();
+        const { error: mErr } = await supabase.rpc('ingest_clan_members', { p_payload: membersData });
+        if (!mErr) results.members = true;
+      }
+    } catch (e) { console.error('[v7.4.0] S2 Members Failed:', e.message); }
 
-    if (!membersRes.ok) {
-      const errBody = await membersRes.text();
-      console.error(`Royale API Clan Members Error (${membersRes.status}): ${errBody}`);
-      throw new Error(`Royale API Clan Members failed with status ${membersRes.status}`);
-    }
+    // --- STAGE 3: CURRENT RIVER RACE (War Activity) ---
+    try {
+      const raceRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}/currentriverrace`);
+      if (raceRes.ok) {
+        const raceData = await raceRes.json();
+        const { error: rErr } = await supabase.rpc('ingest_river_race', { p_payload: raceData });
+        if (!rErr) results.race = true;
+      }
+    } catch (e) { console.error('[v7.4.0] S3 River Race Failed:', e.message); }
 
-    const membersData = await membersRes.json();
-    const { error: membersError } = await supabase.rpc("ingest_clan_members", { p_payload: membersData });
-    if (membersError) throw new Error(`Members RPC ingest failed: ${membersError.message}`);
+    // --- STAGE 4: WAR LOG (Historical Analytics) ---
+    try {
+      const warlogRes = await fetchWithRotation(`/clans/${encodeURIComponent(CLAN_TAG)}/warlog`);
+      if (warlogRes.ok) {
+        const warlogData = await warlogRes.json();
+        const { error: wErr } = await supabase.rpc('ingest_war_log', { p_payload: warlogData });
+        if (!wErr) results.warlog = true;
+      }
+    } catch (e) { console.error('[v7.4.0] S4 War Log Failed:', e.message); }
 
-    return new Response(JSON.stringify({ 
-      status: "OK", 
-      keys_in_farm: keys.length,
-      ingested_at: new Date().toISOString() 
-    }), { 
-      headers: { "Content-Type": "application/json" } 
-    });
+    return new Response(JSON.stringify({
+      success: true,
+      version: '7.4.0',
+      pipeline: results,
+      ingested_at: new Date().toISOString()
+    }), { headers: { "Content-Type": "application/json" } });
 
   } catch (err) {
-    console.error(`[CRITICAL] Ingestion Failed: ${err.message}`);
+    console.error(`[CRITICAL] Ingestion Pipeline Failed: ${err.message}`);
     return new Response(JSON.stringify({ error: err.message }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
