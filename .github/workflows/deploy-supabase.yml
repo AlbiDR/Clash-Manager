@@ -1,37 +1,48 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 AlbiDR
 
-name: Deploy Supabase Parallel Universe
+name: Deploy Supabase
 
 on:
   push:
+    branches: ["Stable", "Beta"]
     paths:
       - "Backend/**"
       - ".github/workflows/deploy-supabase.yml"
   workflow_dispatch:
 
+concurrency:
+  group: supabase-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-      - uses: supabase/setup-cli@v1
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Deploy Binary Heartbeat
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          API_KEYS_SSOT: ${{ secrets.ROYALE_API_KEYS }}
           PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          # SSOT Secret Farm: Ingesting the 20-key master string
+          ROYALE_API_KEY: ${{ secrets.ROYALE_API_KEY }}
         run: |
-          # 1. Login
+          # 1. Login to the CLI
           supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
-          # 2. Sync Secrets (The Key Farm)
-          supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$API_KEYS_SSOT"
+          # 2. Sync The Key Farm (The engine for rotation)
+          if [ -n "$ROYALE_API_KEY" ]; then
+            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEY="$ROYALE_API_KEY"
+          else
+            echo "⚠️ [SKIP] ROYALE_API_KEY secret not found in GitHub. Skipping secret sync."
+          fi
 
-          # 3. Deploy the Hunter (from the final elegant root)
+          # 3. Deploy Edge Function (from the new authoritative root)
           cd Backend && supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
