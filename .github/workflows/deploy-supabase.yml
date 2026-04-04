@@ -58,5 +58,5 @@ jobs:
           fi
 
           # 3. Deploy the Hunter (Edge Function)
-          echo "🚀 [DEPLOY] Launching The Hunter (Edge Function)..."
+          echo " [DEPLOY] Launching The Hunter (Edge Function)..."
           supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
