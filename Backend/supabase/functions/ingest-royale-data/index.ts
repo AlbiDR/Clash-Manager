@@ -58,14 +58,21 @@ Deno.serve(async (req) => {
     
     for (let i = 0; i < keys.length; i++) {
       const targetIndex = (startIndex + i) % keys.length;
+      let key = keys[targetIndex].trim();
       
-      // Aggressive scrubbing: remove EVERYTHING that isn't a JWT character
-      // Royale keys are Base64/JWT (A-Z, a-z, 0-9, ., -, _)
-      let key = keys[targetIndex].replace(/[^a-zA-Z0-9.\-_]/g, "");
+      // Sanitization: remove surrounding quotes if present
+      if (key.startsWith('"') && key.endsWith('"')) {
+        key = key.substring(1, key.length - 1);
+      }
       
       console.log(`[Protocol-Ingest] Hunting with key index ${targetIndex} (Step ${i+1}/${keys.length})...`);
-      const res = await fetch(`https://api.clashroyale.com/v1${endpoint}`, {
-        headers: { Authorization: `Bearer ${key}` }
+      
+      // Using RoyaleAPI Proxy to bypass IP restrictions
+      const res = await fetch(`https://proxy.royaleapi.com/v1${endpoint}`, {
+        headers: { 
+          Authorization: `Bearer ${key}`,
+          "Accept": "application/json"
+        }
       });
       
       if (res.status === 403) {
@@ -74,7 +81,7 @@ Deno.serve(async (req) => {
       }
       return res;
     }
-    throw new Error(`[Protocol-Ingest] All ${keys.length} keys returned 403 Forbidden.`);
+    throw new Error(`[Protocol-Ingest] All ${keys.length} keys returned 403 Forbidden via Proxy.`);
   };
 
   try {
@@ -117,19 +124,7 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     console.error(`[CRITICAL] Ingestion Failed: ${err.message}`);
-
-    // Return the diagnostics in the response so we can see them in curl
-    const diagnostics = keys.map((k, idx) => ({
-      index: idx,
-      length: k.length,
-      preview: `${k.substring(0, 4)}...${k.substring(k.length - 4)}`
-    }));
-
-    return new Response(JSON.stringify({ 
-      error: err.message,
-      diagnostics: diagnostics,
-      raw_string_length: ROYALE_API_KEYS.length
-    }), { 
+    return new Response(JSON.stringify({ error: err.message }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
