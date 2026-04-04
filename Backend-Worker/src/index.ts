@@ -91,15 +91,17 @@ const CONFIG: ServerConfig = {
 
 
 // Global Key Singleton
-const rawKeys = (process.env["API_KEYS"] ?? "")
-  .split(",")
-  .map(rawKey => rawKey.trim())
-  .filter(rawKey => rawKey && rawKey !== "REPLACE_ME" && rawKey !== "YOUR_KEYS"); // EPHEMERAL: intentionally resets on restart
+const rawKeys = Array.from(new Set(
+  (process.env["API_KEYS"] ?? "")
+    .split(",")
+    .map(rawKey => rawKey.trim())
+    .filter(rawKey => rawKey && rawKey !== "REPLACE_ME" && rawKey !== "YOUR_KEYS")
+)); // EPHEMERAL: intentionally resets on restart
 
 if (rawKeys.length === 0) {
     console.warn("[Worker] Warning: No API_KEYS found in environment variables.");
 } else {
-    console.log(`[Worker] Initialized internal pool with ${rawKeys.length} keys.`);
+    console.log(`[Worker] Initialized internal pool with ${rawKeys.length} unique keys.`);
 }
 
 const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on restart
@@ -147,7 +149,7 @@ const authMiddleware: RequestHandler = (request, response, next) => {
     return next();
   }
 
-  const secret = process.env["REMOTE_WORKER_SECRET"];
+  const secret = (process.env["REMOTE_WORKER_SECRET"] || "").trim();
   const authHeader = request.headers.authorization;
 
   if (!secret) {
