@@ -10,12 +10,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 Deno.serve(async (req) => {
   // 1. Fetch Configuration (SSOT from Supabase Secrets set by GitHub)
   const ROYALE_API_KEYS = Deno.env.get("ROYALE_API_KEYS") || "";
-  const CLAN_TAG = Deno.env.get("CLAN_TAG") || "#92U0CQ";
+  const CLAN_TAG = Deno.env.get("CLAN_TAG");
+  const PLAYER_TAG = Deno.env.get("PLAYER_TAG"); // Fetched for potential future use
 
   const keys = ROYALE_API_KEYS.split(",").map(k => k.trim()).filter(Boolean);
   
   if (keys.length === 0) {
     return new Response(JSON.stringify({ error: "Missing API Keys in Secret Vault" }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  if (!CLAN_TAG || !PLAYER_TAG) {
+    return new Response(JSON.stringify({ error: "Missing Target Tags in Environment Variables" }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
     });

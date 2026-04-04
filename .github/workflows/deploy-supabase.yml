@@ -35,13 +35,16 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           # SSOT Secret Farm: Ingesting the 20-key master string
           ROYALE_API_KEYS: ${{ secrets.ROYALE_API_KEYS }}
+          # Authoritative Repository Tags
+          CLAN_TAG: ${{ vars.CLAN_TAG }}
+          PLAYER_TAG: ${{ vars.PLAYER_TAG }}
         run: |
           # 0. Context: We work from the Backend root
           cd Backend
 
-          # 1. Sync The Key Farm (The engine for rotation)
+          # 1. Sync The Configuration and Key Farm
           if [ -n "$ROYALE_API_KEYS" ]; then
-            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
+            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS" CLAN_TAG="$CLAN_TAG" PLAYER_TAG="$PLAYER_TAG"
           else
             echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping secret sync."
           fi
