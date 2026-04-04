@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       console.log(`[Protocol-Ingest] Hunting with key index ${targetIndex} (Step ${i+1}/${keys.length})...`);
       
       // Using RoyaleAPI Proxy to bypass IP restrictions
-      const res = await fetch(`https://proxy.royaleapi.com/v1${endpoint}`, {
+      const res = await fetch(`https://proxy.royaleapi.dev/v1${endpoint}`, {
         headers: { 
           Authorization: `Bearer ${key}`,
           "Accept": "application/json"
