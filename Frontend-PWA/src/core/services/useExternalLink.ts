@@ -10,7 +10,7 @@ export function useExternalLink() {
 
   async function openExternal(url: string) {
     try {
-      // 🚀 BROWSER / PWA FALLBACK:
+      //  BROWSER / PWA FALLBACK:
       // Note: On Android WebView, window.open with custom schemes often triggers ERR_UNKNOWN_URL_SCHEME.
       // We prioritize the system browser for deep links if possible.
       const newWindow = window.open(url, "_blank", "noopener,noreferrer");
@@ -104,7 +104,7 @@ export function buildDeepLink(tag: string): string {
     typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
 
   if (isAndroid) {
-    // 🚀 Android Intent protocol: Most reliable way to open apps from browser/Webview
+    //  Android Intent protocol: Most reliable way to open apps from browser/Webview
     return (
       `intent://playerInfo?id=${id}#Intent;` +
       `scheme=clashroyale;` +
