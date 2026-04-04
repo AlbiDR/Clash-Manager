@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
       { headers }
     );
     const profileData = await profileRes.json();
-    await supabase.schema("substrate").from("raw_clan_profile").insert({ payload: profileData });
+    const { error: profileError } = await supabase.schema("substrate").from("raw_clan_profile").insert({ payload: profileData });
+    if (profileError) throw new Error(`Profile insert failed: ${profileError.message}`);
 
     // B. Member Roster (L0 Substrate)
     const membersRes = await fetch(
@@ -54,7 +55,8 @@ Deno.serve(async (req) => {
       { headers }
     );
     const membersData = await membersRes.json();
-    await supabase.schema("substrate").from("raw_clan_members").insert({ payload: membersData });
+    const { error: membersError } = await supabase.schema("substrate").from("raw_clan_members").insert({ payload: membersData });
+    if (membersError) throw new Error(`Members insert failed: ${membersError.message}`);
 
     return new Response(JSON.stringify({ 
       status: "OK", 
