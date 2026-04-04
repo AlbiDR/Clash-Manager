@@ -13,15 +13,24 @@ Deno.serve(async (req) => {
   const CLAN_TAG = Deno.env.get("CLAN_TAG");
   const PLAYER_TAG = Deno.env.get("PLAYER_TAG"); // Fetched for potential future use
 
+  console.log(`[Diagnostic] Found ROYALE_API_KEYS string length: ${ROYALE_API_KEYS.length}`);
   let keys: string[] = [];
   try {
     // A. Strategy 1: JSON Array
     const parsed = JSON.parse(ROYALE_API_KEYS);
     keys = Array.isArray(parsed) ? parsed : [parsed];
+    console.log(`[Diagnostic] Strategy: JSON Array. Count: ${keys.length}`);
   } catch {
     // B. Strategy 2: Comma Separated (Legacy/Standard)
     keys = ROYALE_API_KEYS.split(",").map(k => k.trim()).filter(Boolean);
+    console.log(`[Protocol-Ingest] Strategy: Comma-Separated. Count: ${keys.length}`);
   }
+  
+  // Minimalist Sanitized Check: Log length and edge characters of each key
+  keys.forEach((k, idx) => {
+    const preview = `${k.substring(0, 4)}...${k.substring(k.length - 4)}`;
+    console.log(`[Diagnostic] Key ${idx}: Length=${k.length} Preview=${preview}`);
+  });
   
   if (keys.length === 0) {
     return new Response(JSON.stringify({ error: "Missing API Keys in Secret Vault (Format Error?)" }), { 
@@ -44,14 +53,20 @@ Deno.serve(async (req) => {
   );
 
   const fetchWithRotation = async (endpoint: string) => {
+    // True Round-Robin: Start at a random index and loop through all keys.
+    const startIndex = Math.floor(Math.random() * keys.length);
+    
     for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      console.log(`[Protocol-Ingest] Hunting with key index ${i}...`);
+      const targetIndex = (startIndex + i) % keys.length;
+      const key = keys[targetIndex];
+      
+      console.log(`[Protocol-Ingest] Hunting with key index ${targetIndex} (Step ${i+1}/${keys.length})...`);
       const res = await fetch(`https://api.clashroyale.com/v1${endpoint}`, {
         headers: { Authorization: `Bearer ${key}` }
       });
+      
       if (res.status === 403) {
-        console.warn(`[Protocol-Ingest] Key ${i} Forbidden (403). Rotating to next...`);
+        console.warn(`[Protocol-Ingest] Key ${targetIndex} Forbidden (403). Rotating to next...`);
         continue;
       }
       return res;
