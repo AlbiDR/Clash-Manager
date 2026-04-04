@@ -272,6 +272,75 @@ describe("useClashDataStore", () => {
     });
   });
 
+  describe("refreshWorker", () => {
+    it("should sync data successfully from worker", async () => {
+      const mockRemoteData = {
+        lb: [],
+        hh: [],
+        timestamp: Date.now(),
+        dataSource: "WORKER"
+      };
+      vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);
+
+      const store = useClashDataStore();
+      await store.refreshWorker();
+
+      expect(store.loading).toBe(false);
+      expect(store.data).toEqual(mockRemoteData);
+      expect(store.dataSource).toBe("WORKER");
+      expect(mockWakeLock.request).toHaveBeenCalled();
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true, preferWorker: true });
+      expect(saveCache).toHaveBeenCalledWith(mockRemoteData);
+      expect(mockWakeLock.release).toHaveBeenCalled();
+    });
+
+    it("should attempt fallback to startBackgroundSync(true) if fetchRemote fails [CRACK: Guard Blocked]", async () => {
+      // [CRACK IDENTIFIED]: The current implementation of refreshWorker calls startBackgroundSync
+      // while loading.value is still true. startBackgroundSync has a guard 'if (loading.value) return;'
+      // which causes the fallback to exit immediately without performing the sync.
+      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Worker Down"));
+
+      const store = useClashDataStore();
+      await store.refreshWorker();
+
+      // Should ideally be 2, but is 1 due to the loading guard bug
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true, preferWorker: true });
+    });
+
+    it("should attempt fallback to startBackgroundSync(true) if validation fails [CRACK: Guard Blocked]", async () => {
+      // [CRACK IDENTIFIED]: Same loading guard issue as above.
+      vi.mocked(fetchRemote).mockResolvedValueOnce({ invalid: "data" });
+
+      const store = useClashDataStore();
+      await store.refreshWorker();
+
+      // Should ideally be 2, but is 1 due to the loading guard bug
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+    });
+
+    it("should respect offline guard", async () => {
+      mockConnectionStatus.isOnline.value = false;
+
+      const store = useClashDataStore();
+      await store.refreshWorker();
+
+      expect(fetchRemote).not.toHaveBeenCalled();
+      mockConnectionStatus.isOnline.value = true;
+    });
+
+    it("should not start if already loading", async () => {
+      const store = useClashDataStore();
+      store.loading = true;
+
+      await store.refreshWorker();
+
+      expect(fetchRemote).not.toHaveBeenCalled();
+    });
+  });
+
+  // [CRACK IDENTIFIED]: triggerUpdate is defined in useClashDataStore.ts but not exported in the return object.
+  // It is currently inaccessible for testing or external use.
   describe("updatePlayerLocally", () => {
     const initialData = {
       lb: [
