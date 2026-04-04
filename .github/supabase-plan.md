@@ -1,7 +1,7 @@
 ---
 title: Supabase Binary Stack Migration Plan
 status: Live
-version: 1.0.0
+version: 1.0.1
 license: GPL-3.0-only
 copyright: Copyright (C) 2026 AlbiDR
 ---
@@ -32,15 +32,14 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 
 ---
 
-## III. Data Arch: "The Substrate Tier" (Layer 0)
-*Authoritative raw data storage. Unfiltered truth mapping from the Royale API.*
+## III. Repository Structure (Authoritative Root: /Backend)
+To align with the **Supabase CLI** hardcoded expectations, the project follows the standard directory mapping:
 
-| Target Table | Source Endpoint | Role | Directory |
-| :--- | :--- | :--- | :--- |
-| `substrate.raw_clan_profile` | `GET /clans/{tag}` | Clan branding/validation. | `Backend/functions` |
-| `substrate.raw_clan_members` | `GET /clans/{tag}/members` | The core 50-member array. | `Backend/functions` |
-| `substrate.raw_clan_currentrace` | `GET /clans/{tag}/currentriverrace` | Live war/fame tracking. |
-| `substrate.raw_clan_racelog` | `GET /clans/{tag}/riverracelog` | Historical analysis. |
+| Target Component | Source Path | Role |
+| :--- | :--- | :--- |
+| **Edge Functions** | `Backend/supabase/functions/` | Deno-native business logic (The Hunter). |
+| **SQL Migrations** | `Backend/supabase/migrations/` | Relational DNA and trigger-shredders (The DNA). |
+| **Project Config** | `Backend/supabase/config.toml` | Identity mapping and schema configuration. |
 
 ---
 
@@ -75,26 +74,12 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 - [x] pg_cron: Configure the 30-minute heartbeat (Implemented via SQL migration).
 
 ### Phase 4: CI/CD Pipeline (Verified ✅)
-- [x] GitHub: Configure `ROYALE_API_KEY`, `SUPABASE_PROJECT_ID`, and `SUPABASE_ACCESS_TOKEN`.
-- [x] Workflow: Implement `deploy-supabase.yml` for automated secret-sync and deployment.
+- [x] GitHub: Configure `ROYALE_API_KEYS`, `SUPABASE_PROJECT_ID`, and `SUPABASE_ACCESS_TOKEN`.
+- [x] Workflow: Implement `deploy-supabase.yml` for automated secret-sync, migration push, and deployment.
 
 ---
 
-## VI. README Seed (State-of-The-Art Evidence)
-*Data for the future README to demonstrate engineering mastery.*
-
-### 1. Architectural Brilliance
-- **No-Worker Paradigm**: 100% serverless. No server to maintain, no runtime to manage.
-- **JSONB Shredding**: Near-zero latency transformation from raw API data to clean relational tables using native Postgres triggers.
-- **Key-Farm Rotation**: Industrial-grade rate-limit mitigation across multiple API tokens.
-
-### 2. Performance & Health
-- **Binary Stack**: High-speed communication between GitHub and Supabase.
-- **Unitary Isolation**: Zero noise between layers. A feature change at L3 cannot break an L1 Driver.
-
----
-
-## VII. Secret & Environment Registry
+## VI. Secret & Environment Registry
 *Authoritative list of variables required to sustain the Parallel Universe.*
 
 | Constant | Scope | Role | Content |
@@ -106,7 +91,7 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 
 ---
 
-## VIII. State-of-the-Art README Seeds
+## VII. State-of-the-Art README Seeds
 *Structural metadata for the future README file.*
 
 ### 1. The Binary Stack
@@ -117,7 +102,7 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 ### 2. High-Grade Features
 - **Deterministic Shredding**: Automatic transformation of JSONB arrays into relational identity tables.
 - **Zero-Latency Orchestration**: Database-internal scheduling via `pg_cron` eliminates external trigger overhead.
-- **20-Key Rotation**: Industrial-grade API management to guarantee 100% uptime and high rate-limit tolerance.
+- **20-Key Rotation**: Industrial-grade rate-limit mitigation across multiple API tokens.
 
 ---
 > [!IMPORTANT]

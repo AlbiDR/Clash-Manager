@@ -27,7 +27,7 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy Binary Heartbeat
+      - name: Deploy Binary Stack
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
@@ -41,8 +41,11 @@ jobs:
           if [ -n "$ROYALE_API_KEYS" ]; then
             supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
           else
-            echo "⚠️ [SKIP] ROYALE_API_KEY secret not found in GitHub. Skipping secret sync."
+            echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping secret sync."
           fi
 
-          # 3. Deploy Edge Function (from the new authoritative root)
-          cd Backend && supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
+          # 3. Push Database DNA (The Migrations)
+          cd Backend && supabase db push --project-ref "$PROJECT_ID"
+
+          # 4. Deploy the Hunter (Edge Function)
+          supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
