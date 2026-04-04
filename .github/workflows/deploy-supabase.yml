@@ -43,10 +43,14 @@ jobs:
           cd Backend
 
           # 1. Sync The Configuration and Key Farm
+          echo "🔄 Syncing Authoritative Repository Tags to Supabase..."
+          supabase secrets set --project-ref "$PROJECT_ID" CLAN_TAG="$CLAN_TAG" PLAYER_TAG="$PLAYER_TAG"
+
           if [ -n "$ROYALE_API_KEYS" ]; then
-            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS" CLAN_TAG="$CLAN_TAG" PLAYER_TAG="$PLAYER_TAG"
+            echo "🔄 Syncing ROYALE_API_KEYS..."
+            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
           else
-            echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping secret sync."
+            echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping Key Farm sync."
           fi
 
           # 2. Push Database DNA (The Migrations) - Resilient Skip
