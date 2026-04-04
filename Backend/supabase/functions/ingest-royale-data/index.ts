@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
     }
 
     const profileData = await profileRes.json();
-    const { error: profileError } = await supabase.schema("substrate").from("raw_clan_profile").insert({ payload: profileData });
-    if (profileError) throw new Error(`Profile insert failed: ${profileError.message}`);
+    const { error: profileError } = await supabase.rpc("ingest_clan_profile", { p_payload: profileData });
+    if (profileError) throw new Error(`Profile RPC ingest failed: ${profileError.message}`);
 
     // B. Member Roster (L0 Substrate)
     console.log(`Hunting for Members of Clan: ${CLAN_TAG}`);
@@ -71,8 +71,8 @@ Deno.serve(async (req) => {
     }
 
     const membersData = await membersRes.json();
-    const { error: membersError } = await supabase.schema("substrate").from("raw_clan_members").insert({ payload: membersData });
-    if (membersError) throw new Error(`Members insert failed: ${membersError.message}`);
+    const { error: membersError } = await supabase.rpc("ingest_clan_members", { p_payload: membersData });
+    if (membersError) throw new Error(`Members RPC ingest failed: ${membersError.message}`);
 
     return new Response(JSON.stringify({ 
       status: "OK", 
