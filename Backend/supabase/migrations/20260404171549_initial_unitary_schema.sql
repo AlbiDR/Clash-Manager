@@ -8,7 +8,7 @@ CREATE SCHEMA IF NOT EXISTS features;  -- L3: Business Silos (Views)
 CREATE SCHEMA IF NOT EXISTS system;    -- L5: Internal Orchestration
 
 -- 2. EXTENSIONS (The Engine)
-CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 CREATE EXTENSION IF NOT EXISTS moddatetime;
@@ -118,10 +118,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 6. TRIGGERS (Automated Activation)
+DROP TRIGGER IF EXISTS on_clan_profile_ingested ON substrate.raw_clan_profile;
 CREATE TRIGGER on_clan_profile_ingested AFTER INSERT ON substrate.raw_clan_profile FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_profile();
+
+DROP TRIGGER IF EXISTS on_roster_ingested ON substrate.raw_clan_members;
 CREATE TRIGGER on_roster_ingested AFTER INSERT ON substrate.raw_clan_members FOR EACH ROW EXECUTE FUNCTION substrate.shred_member_list();
 
 -- 7. ORCHESTRATION (The Watchdog Heartbeat)
+DO $$
+BEGIN
+    PERFORM cron.unschedule('ingest-royale-heartbeat');
+EXCEPTION WHEN OTHERS THEN
+    -- Ignore if job doesn't exist
+END $$;
+
 SELECT cron.schedule('ingest-royale-heartbeat', '30 * * * *', $$
     SELECT net.http_post(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/ingest-royale-data',
