@@ -1,7 +1,7 @@
 ---
 title: Supabase Binary Stack Migration Plan
 status: Live
-version: 1.0.1
+version: 1.0.4
 license: GPL-3.0-only
 copyright: Copyright (C) 2026 AlbiDR
 ---
@@ -28,7 +28,7 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
     - **PWA (Frontend)**: Reads from `features.` views via `anon` key + Realtime.
     - **Edge Functions (Backend)**: Ingests raw state, dumps into `substrate.` via `service_role` key.
     - **GitHub (Pipeline)**: Automated deployment of functions and secret sync via `deploy-supabase.yml` targeting the `Backend/` root.
-    - **pg_cron (Database)**: Triggers the heartbeat for 30-minute ingestion cycles.
+    - **pg_cron (Database)**: Triggers the heartbeat for 30-minute ingestion cycles with authenticated `anon` bearer tokens.
 
 ---
 
@@ -75,7 +75,12 @@ To align with the **Supabase CLI** hardcoded expectations, the project follows t
 
 ### Phase 4: CI/CD Pipeline (Verified ✅)
 - [x] GitHub: Configure `ROYALE_API_KEYS`, `SUPABASE_PROJECT_ID`, and `SUPABASE_ACCESS_TOKEN`.
-- [x] Workflow: Implement `deploy-supabase.yml` for automated secret-sync, migration push, and deployment.
+- [x] Workflow: Implement `deploy-supabase.yml` with resilient migration-skip logic and automated secret-sync.
+
+### Phase 5: Reliability & Governance (Verified ✅)
+- [x] DNA Sync: Harmonized local migration history with cloud state via surgical `repair`.
+- [x] Authentication: Hardened `pg_cron` heartbeat using `Authorization: Bearer` with `anon` keys.
+- [x] Documentation: Migrated technical specs into the authoritative GitHub repository.
 
 ---
 
@@ -103,8 +108,49 @@ To align with the **Supabase CLI** hardcoded expectations, the project follows t
 ### 2. High-Grade Features
 - **Deterministic Shredding**: Automatic transformation of JSONB arrays into relational identity tables.
 - **Zero-Latency Orchestration**: Database-internal scheduling via `pg_cron` eliminates external trigger overhead.
-- **20-Key Rotation**: Industrial-grade rate-limit mitigation across multiple API tokens.
+- **20-Key Key Farm**: Industrial-grade rate-limit mitigation across multiple API tokens with automated rotation.
+- **Security Poisoning Protection**: Fail-fast validation gates at the `substrate.` layer prevent malformed data from reaching core drivers.
+
+---
+
+## VIII. The Clinical README Blueprint
+*This structure is required to meet the project's 100/100 documentation standard.*
+
+### 1. Visual Identity
+- **Badges**: Standardize on flat-square style for Lighthouse scores, Build status, and License.
+- **Typography**: Reference the CleanStack Inter/Roboto typography.
+- **Graphics**: Include a Mermaid diagram illustrating the **Binary Stack** (PWA ↔ Supabase).
+
+### 2. The Architectural Narrative
+- **Unitary Core**: Explain the shift from GAS/Worker to the unified Supabase environment.
+- **CleanStack Layers**: Explicitly document the L0-L5 mapping within the database schemas.
+
+### 3. High-Performance Benchmarks
+- **Lighthouse**: Document the 100/100 performance, accessibility, and SEO targets.
+- **Availability**: Real-time synchronization benchmarks (<100ms first paint via Service Worker).
+
+### 4. Engineer's Guide
+- **Local Setup**: Step-by-step guide for `supabase start` and local development.
+- **Type Safety**: Document the `supabase gen types` workflow for end-to-end TypeScript integrity.
+
+### 5. Operations & Security
+- **Heartbeat Diagnostics**: Explain how to verify the `ingest-royale-heartbeat` via the `cron.job` table.
+- **Token Lifecycle**: Document the PoLP (Principle of Least Privilege) usage for `ANON` vs `SERVICE_ROLE` keys.
+
+---
+
+## IX. Administrative Recovery Log (DNA Repair)
+*Commands used to resolve history conflicts during the v1.0.4 synchronization.*
+
+```bash
+# Repairing drift between local and remote
+supabase migration repair --status reverted <LEGACY_VERSIONS>
+
+# Synchronizing to the authoritative 171549 version
+supabase db push --linked-project-id hucktamloykszinwbtuh
+```
 
 ---
 > [!IMPORTANT]
 > This document remains the **Single Source of Truth** for the `Clash-Manager` Supabase infrastructure.
+↳ *Last Updated: 2026-04-04T19:47:00Z by Antigravity*
