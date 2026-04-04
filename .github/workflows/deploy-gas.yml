@@ -40,8 +40,8 @@ jobs:
       - name: Validate Secrets
         env:
           CLASPRC: ${{ secrets.CLASPRC_JSON }}
-          GAS_URL: ${{ secrets.VITE_GAS_URL }}
-          SID: ${{ secrets.SCRIPT_ID }}
+          GAS_URL: ${{ vars.VITE_GAS_URL }}
+          SID: ${{ vars.SCRIPT_ID }}
         run: |
           if [ -z "$CLASPRC" ]; then
             echo "::error:: CRITICAL ERROR: CLASPRC_JSON secret is missing."
@@ -51,7 +51,7 @@ jobs:
 
           if [ -z "$GAS_URL" ] && [ -z "$SID" ]; then
             echo "::error:: CRITICAL ERROR: VITE_GAS_URL secret is missing."
-            echo "Please add 'VITE_GAS_URL' to your repository secrets."
+            echo "Please add 'VITE_GAS_URL' to your repository variables."
             exit 1
           fi
 
@@ -63,8 +63,8 @@ jobs:
 
       - name: Create Clasp Project Settings
         env:
-          GAS_URL: ${{ secrets.VITE_GAS_URL }}
-          SID: ${{ secrets.SCRIPT_ID }}
+          GAS_URL: ${{ vars.VITE_GAS_URL }}
+          SID: ${{ vars.SCRIPT_ID }}
         working-directory: Backend-GAS
         run: |
           #  INTELLIGENT ID RESOLUTION
@@ -97,7 +97,7 @@ jobs:
 
           # 3. Final Validation (OCD: Zero-Trust Check)
           if [ -z "$TARGET_ID" ]; then
-             echo "::error:: [CRITICAL] Failed to resolve Script ID. Ensure SCRIPT_ID is set in secrets."
+             echo "::error:: [CRITICAL] Failed to resolve Script ID. Ensure SCRIPT_ID is set in repository variables."
              exit 1
           fi
           
