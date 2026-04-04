@@ -13,10 +13,18 @@ Deno.serve(async (req) => {
   const CLAN_TAG = Deno.env.get("CLAN_TAG");
   const PLAYER_TAG = Deno.env.get("PLAYER_TAG"); // Fetched for potential future use
 
-  const keys = ROYALE_API_KEYS.split(",").map(k => k.trim()).filter(Boolean);
+  let keys: string[] = [];
+  try {
+    // A. Strategy 1: JSON Array
+    const parsed = JSON.parse(ROYALE_API_KEYS);
+    keys = Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    // B. Strategy 2: Comma Separated (Legacy/Standard)
+    keys = ROYALE_API_KEYS.split(",").map(k => k.trim()).filter(Boolean);
+  }
   
   if (keys.length === 0) {
-    return new Response(JSON.stringify({ error: "Missing API Keys in Secret Vault" }), { 
+    return new Response(JSON.stringify({ error: "Missing API Keys in Secret Vault (Format Error?)" }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
