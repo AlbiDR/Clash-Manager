@@ -9,7 +9,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  */
 Deno.serve(async (req) => {
   // 1. Fetch Configuration (SSOT from Supabase Secrets set by GitHub)
-  const ROYALE_API_KEYS = Deno.env.get("ROYALE_API_KEY") || "";
+  const ROYALE_API_KEYS = Deno.env.get("ROYALE_API_KEYS") || "";
   const CLAN_TAG = Deno.env.get("CLAN_TAG") || "#92U0CQ";
 
   const keys = ROYALE_API_KEYS.split(",").map(k => k.trim()).filter(Boolean);
