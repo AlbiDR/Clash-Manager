@@ -42,3 +42,4 @@ Frontend-PWA/src/features/laboratory/components/SummaryCard.vue
 Frontend-PWA/src/core/api/useApiState.ts
 Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
 Frontend-PWA/src/core/services/useClashDataStore.ts
+Frontend-PWA/src/core/api/GasClient.ts
