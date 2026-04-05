@@ -11,3 +11,4 @@ Frontend-PWA/src/core/services/useToast.ts
 Frontend-PWA/src/core/services/useBenchmarking.ts
 Frontend-PWA/src/features/laboratory/logic/ProfileHydrator.ts
 Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
+2026-04-05 03:19:14 - [Harden] Backend-Worker/src/controllers/WorkerHubController.ts: Hardened executeSync with 30s timeout to prevent daemon stalls.

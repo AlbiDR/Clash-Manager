@@ -64,7 +64,12 @@ export class WorkerHubController {
     this.isSyncing = true;
     try {
       const rawUrl = `${gasBaseUrl}?action=raw&token=${encodeURIComponent(secret)}`;
-      const response = await fetch(rawUrl);
+      // THREAT: Hanging sync daemon due to upstream GAS latency or network stalls.
+      // Rationale: A 30s timeout prevents the daemon from entering a zombie state,
+      // ensuring that the next cycle (5m) can proceed normally even if one fails.
+      const response = await fetch(rawUrl, {
+        signal: AbortSignal.timeout(30000)
+      });
 
       if (!response.ok) {
          throw new Error(`Upstream GAS rejected connection: ${response.status}`);
