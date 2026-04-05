@@ -173,6 +173,41 @@ describe("GasClient", () => {
       const result = await GasClient.scanRecruitsDirect();
       expect(result).toBeNull();
     });
+
+    it("returns null when workerUrl is not configured", async () => {
+      localStorage.removeItem("cm_worker_url");
+      vi.stubEnv("VITE_WORKER_URL", "");
+
+      const result = await GasClient.scanRecruitsDirect();
+      expect(result).toBeNull();
+    });
+
+    it("returns null when worker scan returns non-OK HTTP status", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: false,
+        status: 500
+      });
+
+      const result = await GasClient.scanRecruitsDirect();
+      expect(result).toBeNull();
+    });
+
+    it("returns null when fetch throws a network error", async () => {
+      fetchSpy.mockRejectedValueOnce(new Error("Fetch Failure"));
+
+      const result = await GasClient.scanRecruitsDirect();
+      expect(result).toBeNull();
+    });
+
+    it("returns null when worker response is malformed JSON", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.reject(new Error("SyntaxError: Unexpected token"))
+      });
+
+      const result = await GasClient.scanRecruitsDirect();
+      expect(result).toBeNull();
+    });
   });
 
   describe("fetchRemote", () => {
@@ -275,6 +310,7 @@ describe("GasClient", () => {
 
       const result = await GasClient.fetchRemote();
       expect(result.dataSource).toBe("GAS");
+      expect(GasClient.lastHubDiagnosis.value).toBe("VALIDATION");
     });
 
     it("falls back to GAS when Worker Hub data fails validation", async () => {
@@ -306,6 +342,69 @@ describe("GasClient", () => {
 
       const result = await GasClient.fetchRemote();
       expect(result.dataSource).toBe("GAS");
+      expect(GasClient.lastHubDiagnosis.value).toBe("VALIDATION");
+    });
+
+    it("sets lastHubDiagnosis to AUTH when Worker Hub returns 401/403", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) {
+          return Promise.resolve({
+            ok: false,
+            status: 401
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      await GasClient.fetchRemote();
+      expect(GasClient.lastHubDiagnosis.value).toBe("AUTH");
+    });
+
+    it("sets lastHubDiagnosis to OFFLINE on generic network error during worker fetch", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) {
+          return Promise.reject(new Error("Network Failure"));
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      await GasClient.fetchRemote();
+      expect(GasClient.lastHubDiagnosis.value).toBe("OFFLINE");
+    });
+
+    it("sets lastHubDiagnosis to TIMEOUT when Worker Hub fetch times out", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) {
+          const error = new Error("The operation was aborted.");
+          error.name = "AbortError";
+          return Promise.reject(error);
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      await GasClient.fetchRemote();
+      expect(GasClient.lastHubDiagnosis.value).toBe("TIMEOUT");
     });
   });
 
