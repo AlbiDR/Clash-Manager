@@ -18,7 +18,7 @@
 
 // Global Version Constant
 // @ts-ignore
-const VER_NETWORK = "1.1.0";
+export const VER_NETWORK = "1.1.0";
 import type { AppConfig } from "./Configuration";
 import type { RegistryContract } from "./Registry";
 import type { ScoringWeights } from "./Shared_Types";
