@@ -1,5 +1,12 @@
 # Version Integrity Reconciliation Log
 
+## [2026-04-05]
+### Reconciled:
+- **GAS - NETWORK**: Updated manifest from `1.0.1` to `1.1.0` in `Configuration.ts` to match `Network.ts` (Rule B).
+
+### Logged Drift (Unresolved):
+- **Backend-Worker**: `package.json` version `10.0.0`, `/capabilities` `10.1.1` vs `/scan` metadata `10.1.4`. (Highest is `10.1.4`).
+
 ## [2026-04-04]
 ### Reconciled:
 - **GAS - HEADHUNTER**: Updated manifest from `14.3.4` to `14.3.5` to match `Headhunter.ts` (Rule B).
