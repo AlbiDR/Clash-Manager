@@ -225,7 +225,7 @@ export var CONFIG: AppConfig = {
       API_PUBLIC: "13.1.0",
       SHARED_TYPES: "1.0.0",
       DATABASE_TYPES: "1.0.0",
-      NETWORK: "1.0.1",
+      NETWORK: "1.1.0",
       SCHEMA: "1.0.0",
       ROSTER_TYPES: "1.0.0",
       HH_TYPES: "1.0.1",
