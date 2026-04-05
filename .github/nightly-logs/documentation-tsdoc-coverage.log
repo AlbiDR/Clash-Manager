@@ -16,3 +16,4 @@ Frontend-PWA/src/shared/composables/useCardMechanics.ts
 Frontend-PWA/src/core/services/useBenchmarking.ts
 Frontend-PWA/src/core/services/useShowcaseMode.ts
 Frontend-PWA/src/core/services/useProgressiveList.ts
+Frontend-PWA/src/features/laboratory/logic/ScoringStrategy.ts
