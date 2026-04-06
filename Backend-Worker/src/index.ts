@@ -667,7 +667,7 @@ app.get("/capabilities", (_request: Request, response: ExpressResponse): void =>
   response.json({
     status: "success",
     data: {
-      version: "10.1.1",
+      version: "10.1.4",
       concurrency: CONFIG.concurrency,
       timeoutMs: CONFIG.timeout,
       maxRetries: CONFIG.maxRetries,

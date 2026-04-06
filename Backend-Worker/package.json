@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-worker",
-  "version": "10.0.0",
+  "version": "10.1.4",
   "license": "GPL-3.0-only",
   "description": "Worker to perform bulk URL fetches for Clash Manager (designed for Cloud Run)",
   "main": "dist/Backend-Worker/src/index.js",
