@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-06] PR #380: docs(readme): reconcile Backend-GAS version badge
+**Commit**: `1a5f4fbc7963a32476a511be0d3aa5fb91950b26`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/380)
+
+### Description
+This submission reconciles a version drift in the Backend-GAS documentation. The version badge was updated from v14.3.4 to v14.3.5 to match the module ground truth defined in Configuration.ts. Additionally, the mandatory procedural audit log was updated. Full test suites for all monorepo projects were verified as passing.
+
+---
+*PR created automatically by Jules for task [312921751321975230](https://jules.google.com/task/312921751321975230) started by @AlbiDR*
+
+---
+
 ## [2026-04-06] PR #379: perf(opt): centralize v-memo keys and optimize card metadata
 **Commit**: `fb8d36b10a6ea4259b03b1ab36804ea101a22701`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/379)
