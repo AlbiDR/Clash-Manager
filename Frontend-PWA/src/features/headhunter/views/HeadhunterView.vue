@@ -19,6 +19,7 @@ const {
   layoutProps,
   layoutEvents,
   getCardMetadata,
+  getMemoKeys,
   isSelectionMode,
 } = useRecruiter();
 
@@ -47,23 +48,16 @@ const {
       <template #item="{ item, index }">
         <RecruitCard
           :key="item.id"
-          v-memo="[
-            item.id,
+          v-memo="getMemoKeys(item.id, [
             item.potentialScore,
             item.t,
-            item.d.ago,
-            isSelectionMode,
-            getCardMetadata(item.id).isExpanded,
-            getCardMetadata(item.id).isSelected,
-            getCardMetadata(item.id).isRefreshing,
-          ]"
+            item.d.ago
+          ])"
           :id="`recruit-${item.id}`"
           :recruit="item"
-          :expanded="getCardMetadata(item.id).isExpanded"
-          :selected="getCardMetadata(item.id).isSelected"
+          v-bind="getCardMetadata(item.id)"
           :selection-mode="isSelectionMode"
           :style="{ '--i': index }"
-          :app-is-refreshing="getCardMetadata(item.id).isRefreshing"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
         />
