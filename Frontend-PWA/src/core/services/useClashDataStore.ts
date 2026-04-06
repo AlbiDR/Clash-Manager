@@ -20,22 +20,49 @@ import type { WebAppData, PlayerTag } from "../types";
  * ----------------------------------------------------------------------------
  *
  * @remarks
- * The useClashDataStore serves as the authoritative source for clan-wide data,
+ * The `useClashDataStore` serves as the authoritative source for clan-wide data,
  * including roster members, war history, and recruitment pools. It implements
  * a "Stale-While-Revalidate" strategy, loading from IndexedDB immediately on
  * boot and updating from the GAS backend in the background.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Data Flow:** Authoritative server-side data (GAS/Worker) -> Valibot Validation ->
+ *   Reactive State -> Persistent Cache (IndexedDB).
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  */
 export const useClashDataStore = defineStore("clashData", () => {
   // --- PRIVATE STATE ---
+
+  /** The central dataset containing all clan and recruitment data. Null until hydration completes. */
   const data = ref<WebAppData | null>(null);
+
+  /** Reactive flag to prevent concurrent synchronization cycles and drive UI progress indicators. */
   const loading = ref(false);
+
+  /** Unix timestamp (ms) representing the authoritative age of the local data. Used for TTL checks. */
   const lastSync = ref<number>(0);
+
+  /** Stores the most recent sync error message. Suppressed until failure threshold to prevent UI flicker. */
   const syncError = ref<string | null>(null);
+
+  /** Fault tolerance tracker; triggers user-visible errors only after 3 consecutive failures. */
   const consecutiveSyncFailures = ref(0);
+
+  /** Indicates the provenance of the dataset (Backend-Worker vs. Backend-GAS) for diagnostic tracing. */
   const dataSource = ref<"WORKER" | "GAS" | null>(null);
+
+  /** Authoritative health state of the Worker Hub used to guide synchronization fallbacks. */
   const hubDiagnosis = lastHubDiagnosis;
+
+  /** Authoritative timestamp from the Worker Hub to detect drift against client/GAS state. */
   const hubTimestamp = ref<number | null>(null);
+
+  /** Server-side compilation marker; indicates when the database last processed raw API data. */
   const lastCompiled = ref<number | null>(null);
+
+  /** Raw API fetch marker; indicates the last time the server queried Supercell's endpoint. */
   const lastFetched = ref<number | null>(null);
 
   // --- DEPENDENCIES ---
@@ -44,27 +71,50 @@ export const useClashDataStore = defineStore("clashData", () => {
   const blueprint = useBlueprintMode();
 
   // --- GETTERS ---
+
+  /** Direct access to the clan roster (Leaderboard) for Layer 3 views. */
   const members = computed(() => data.value?.lb || []);
+
+  /** Direct access to the recruitment pool (Headhunter) for Layer 3 views. */
   const recruits = computed(() => data.value?.hh || []);
+
+  /** The human-readable ISO-8601 timestamp of when the server generated this payload. */
   const lastUpdated = computed(() => data.value?.timestamp || "");
+
+  /** Final resolution of where data was fetched from; used for debug badges in the footer. */
   const currentSource = computed(() => data.value?.dataSource || dataSource.value);
+
+  /** Authoritative Hub generation time used to detect stale background worker cycles. */
   const hubSyncTime = computed(() => data.value?.hubTimestamp || hubTimestamp.value);
 
+  /** Logic boundary: Marks data as 'STALE' if older than 30 minutes to prompt background refresh. */
   const isStale = computed(() => {
     if (!lastSync.value) return true;
     return Date.now() - lastSync.value > 1000 * 60 * 30; // 30 min TTL
   });
 
+  /** Indicates the store is ready for consumption. Guards components from accessing null `data`. */
   const isHydrated = computed(() => data.value !== null);
+
+  /** Centralized loading state for pull-to-refresh and initial boot indicators. */
   const isRefreshing = computed(() => loading.value);
+
+  /** The authoritative age of the client's dataset in milliseconds. */
   const lastSyncTime = computed(() => lastSync.value);
 
   // --- ACTIONS ---
 
   /**
    * Loads the dataset from the persistent browser cache (IndexedDB).
+   *
+   * @remarks
    * This action is triggered immediately on app bootstrap to ensure zero-latency
-   * initial render (LCP optimization).
+   * initial render (LCP optimization). It bypasses network requests by reading
+   * from the Layer 0 StorageService.
+   *
+   * @sideeffects
+   * - WRITES to reactive `data` and `lastSync` state on success.
+   * - READS from `IndexedDB` via `loadCache`.
    */
   async function loadLocal() {
     try {
@@ -102,6 +152,12 @@ export const useClashDataStore = defineStore("clashData", () => {
    * @remarks
    * Implements a strict validation boundary (Target B [1]) to ensure that
    * external payloads (e.g., from Turbo Scan) do not corrupt the store.
+   *
+   * @param payload - The raw data object (usually WebAppData shape).
+   *
+   * @sideeffects
+   * - MUTATES reactive `data` state.
+   * - WRITES to `IndexedDB` via `saveCache`.
    */
   async function updateLocalData(payload: unknown) {
     // [GUARD] VALIDATION BOUNDARY: Target B [1]
@@ -123,8 +179,16 @@ export const useClashDataStore = defineStore("clashData", () => {
 
   /**
    * Orchestrates a direct synchronization with the Worker Hub.
-   * Rationale: Provides instantaneous data updates by bypassing the GAS
-   * orchestration layer, primarily for recruitment and roster status.
+   *
+   * @remarks
+   * Provides instantaneous data updates by bypassing the GAS orchestration layer,
+   * primarily for recruitment and roster status updates (5-minute refresh vs 60-minute GAS cycle).
+   *
+   * @sideeffects
+   * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
+   * - MUTATES `data`, `loading`, and `lastSync` reactive state.
+   * - WRITES to `IndexedDB` via `saveCache`.
+   * - FALLBACKS to `startBackgroundSync` on Worker failure.
    */
   async function refreshWorker() {
     if (loading.value) return;
@@ -165,8 +229,18 @@ export const useClashDataStore = defineStore("clashData", () => {
 
   /**
    * Orchestrates a background synchronization with the Google Apps Script backend.
-   * Rationale: Keeps the client in sync with the authoritative server-side database.
-   * Side Effects: Updates IndexedDB on success.
+   *
+   * @remarks
+   * Keeps the client in sync with the authoritative server-side database.
+   * Employs logical fault tolerance, only surfacing errors after 3 failed attempts
+   * to mitigate noise from transient network fluctuations.
+   *
+   * @param force - If true, ignores `isOnline` and `loading` guards for a mandatory fetch.
+   *
+   * @sideeffects
+   * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
+   * - MUTATES `data`, `loading`, `lastSync`, and `consecutiveSyncFailures` state.
+   * - WRITES to `IndexedDB` via `saveCache`.
    */
   async function startBackgroundSync(force = false) {
     if (loading.value) return;
@@ -228,11 +302,18 @@ export const useClashDataStore = defineStore("clashData", () => {
 
   /**
    * Manually updates a specific player profile within the store.
-   * Useful for immediate feedback after a local edit or a single-player refresh.
    *
    * @remarks
+   * Useful for immediate feedback after a local edit or a single-player refresh.
    * Implements a strict validation boundary (Target B [1]) and respects
-   * the clinical isolation of the store state by spreading into a new array.
+   * the clinical isolation of the store state by cloning the array to trigger reactivity.
+   *
+   * @param playerTag - The unique Supercell tag of the player to update.
+   * @param partial - The subset of player properties to merge into the state.
+   *
+   * @sideeffects
+   * - MUTATES reactive `data.lb` array.
+   * - WRITES to `IndexedDB` via `saveCache`.
    */
   function updatePlayerLocally(playerTag: PlayerTag, partial: unknown) {
     if (!data.value) return;
@@ -272,8 +353,13 @@ export const useClashDataStore = defineStore("clashData", () => {
 
   /**
    * [DIAGNOSTIC] TRIGGER UPDATE
+   *
+   * @remarks
    * Forces the Service Worker to skip-waiting and activate the next version.
-   * Logic: Sends 'SKIP_WAITING' to the waiting registration.
+   * This is used when the client detects a newer PWA version is available.
+   *
+   * @sideeffects
+   * - COMMUNICATES with the Service Worker via `postMessage`.
    */
   async function triggerUpdate() {
     if (!('serviceWorker' in navigator)) return;
@@ -300,7 +386,9 @@ export const useClashDataStore = defineStore("clashData", () => {
     lastUpdated,
     currentSource,
     hubSyncTime,
+    /** Computed Unix timestamp (ms) of the server's dataset compilation. */
     lastCompiledTime: computed(() => lastCompiled.value),
+    /** Computed Unix timestamp (ms) of the server's last fetch from Supercell. */
     lastFetchedTime: computed(() => lastFetched.value),
     isStale,
     isHydrated,
