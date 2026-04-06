@@ -132,14 +132,12 @@ app.use((request: Request, response: ExpressResponse, next: NextFunction): void 
  * Public routes are explicitly exempted to allow health checks and public scans.
  * Registered before body-parsing to prevent unauthenticated DoS via large payloads.
  */
-const authMiddleware: RequestHandler = (request, response, next) => {
+export const authMiddleware: RequestHandler = (request, response, next) => {
   const publicRoutes = [
-    "/",
     "/health",
     "/capabilities",
     "/public/scan",
     "/public/subscribe",
-    "/hub/state",
   ];
 
   // Normalize path to handle trailing slashes consistently
