@@ -37,6 +37,9 @@ describe("GasClient", () => {
     } catch (e) {}
 
     fetchSpy = vi.spyOn(global, "fetch");
+    // Suppress console.error/warn to keep test output clean during expected failures
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -268,6 +271,7 @@ describe("GasClient", () => {
     });
 
     it("falls back to GAS when Worker Hub returns HTTP error", async () => {
+      vi.mocked(GasClient._setWorkerHubTestOverride)(null);
       fetchSpy.mockImplementation(((url: string) => {
         if (url.includes("/hub/state")) {
           return Promise.resolve({
@@ -406,6 +410,100 @@ describe("GasClient", () => {
       await GasClient.fetchRemote();
       expect(GasClient.lastHubDiagnosis.value).toBe("TIMEOUT");
     });
+
+    it("respects _workerHubTestOverride = false", async () => {
+      GasClient._setWorkerHubTestOverride(false);
+      fetchSpy.mockImplementation(((url: string) => {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({
+            success: true,
+            data: { format: "matrix", timestamp: 123456789, lb: [], hh: [] }
+          }))
+        });
+      }) as any);
+
+      const result = await GasClient.fetchRemote();
+      expect(result.dataSource).toBe("GAS");
+      // Should not have called worker endpoint
+      expect(fetchSpy).not.toHaveBeenCalledWith(expect.stringContaining("/hub/state"), expect.any(Object));
+      GasClient._setWorkerHubTestOverride(null);
+    });
+
+    it("fails immediately when GAS returns HTML (Auth Failure)", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) return Promise.reject(new Error("OFFLINE"));
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve("<html><body>Login</body></html>")
+        });
+      }) as any);
+
+      await expect(GasClient.fetchRemote()).rejects.toThrow("Backend Configuration Error (HTML Response)");
+      // Should only be called once for GAS (plus the worker attempt)
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("exhausts 5 retries on 500 errors and respects backoff", async () => {
+      fetchSpy.mockImplementation(((url: string) => {
+        if (url.includes("/hub/state")) return Promise.reject(new Error("OFFLINE"));
+        return Promise.resolve({
+          ok: false,
+          status: 500
+        });
+      }) as any);
+
+      const fetchPromise = GasClient.fetchRemote();
+      // Attach catch immediately to prevent Unhandled Rejection warnings
+      const assertionPromise = expect(fetchPromise).rejects.toThrow("Server returned HTTP 500");
+
+      // Attempt 0 fails -> wait 1000ms
+      await vi.advanceTimersByTimeAsync(1100);
+      // Attempt 1 fails -> wait 2000ms
+      await vi.advanceTimersByTimeAsync(2100);
+      // Attempt 2 fails -> wait 4000ms
+      await vi.advanceTimersByTimeAsync(4100);
+      // Attempt 3 fails -> wait 8000ms
+      await vi.advanceTimersByTimeAsync(8100);
+      // Attempt 4 fails -> throws
+
+      await assertionPromise;
+      // 1 (worker) + 5 (GAS attempts) = 6
+      expect(fetchSpy).toHaveBeenCalledTimes(6);
+    });
+
+    it("aborts immediately when signal is triggered mid-retry", async () => {
+      fetchSpy.mockImplementation(((url: string, opts: any) => {
+        if (opts?.signal?.aborted) {
+          const err = new Error("Aborted");
+          err.name = "AbortError";
+          return Promise.reject(err);
+        }
+        if (url.includes("/hub/state")) return Promise.reject(new Error("OFFLINE"));
+        return Promise.resolve({
+          ok: false,
+          status: 500
+        });
+      }) as any);
+
+      const controller = new AbortController();
+      const fetchPromise = GasClient.fetchRemote({ signal: controller.signal });
+      const assertionPromise = expect(fetchPromise).rejects.toThrow();
+
+      // Ensure first GAS attempt happened and we're in the first delay
+      await vi.advanceTimersByTimeAsync(100);
+
+      controller.abort();
+
+      // Advance time to pass the current sleep delay (1000ms)
+      await vi.advanceTimersByTimeAsync(1500);
+
+      await assertionPromise;
+      // Total calls should be: 1 (worker) + 1 (GAS first fail) + 1 (GAS second abort) = 3
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe("Utility Methods", () => {
@@ -445,6 +543,47 @@ describe("GasClient", () => {
       expect(fetchSpy).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
         body: expect.stringContaining('"ids":["R1"]')
       }));
+    });
+  });
+
+  describe("GAS Request Resilience (fetchWithRetry)", () => {
+    beforeEach(() => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+    });
+
+    it("exhausts 5 attempts and respects exponential backoff", async () => {
+      fetchSpy.mockResolvedValue({
+        ok: false,
+        status: 502
+      });
+
+      const profilePromise = GasClient.getPlayerProfile("ABC");
+      // Attach catch immediately to prevent Unhandled Rejection warnings
+      const assertionPromise = expect(profilePromise).rejects.toThrow("HTTP 502");
+
+      // Attempt 0 fails -> wait 2000ms (no jitter)
+      await vi.advanceTimersByTimeAsync(2100);
+      // Attempt 1 fails -> wait 2000 * 1.8 = 3600
+      await vi.advanceTimersByTimeAsync(3700);
+      // Attempt 2 fails -> wait 3600 * 1.8 = 6480
+      await vi.advanceTimersByTimeAsync(6580);
+      // Attempt 3 fails -> wait 6480 * 1.8 = 11664
+      await vi.advanceTimersByTimeAsync(11764);
+      // Attempt 4 fails -> throws
+
+      await assertionPromise;
+      expect(fetchSpy).toHaveBeenCalledTimes(5);
+    });
+
+    it("fails fast on HTML response", async () => {
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("<html>Error</html>")
+      });
+
+      await expect(GasClient.getPlayerProfile("ABC")).rejects.toThrow("Backend Configuration Error");
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
