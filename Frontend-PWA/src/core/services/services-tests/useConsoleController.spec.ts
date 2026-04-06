@@ -405,25 +405,25 @@ describe("useConsoleController", () => {
 
       // Default state
       expect(getCardMetadata("1")).toEqual({
-        isExpanded: false,
-        isSelected: false,
-        isRefreshing: false,
+        expanded: false,
+        selected: false,
+        appIsRefreshing: false,
       });
 
       // After expansion
       expandedIds.value.add("1");
-      expect(getCardMetadata("1").isExpanded).toBe(true);
-      // isRefreshing should be true because item is expanded and global isRefreshing is true
-      expect(getCardMetadata("1").isRefreshing).toBe(true);
+      expect(getCardMetadata("1").expanded).toBe(true);
+      // appIsRefreshing should be true because item is expanded and global isRefreshing is true
+      expect(getCardMetadata("1").appIsRefreshing).toBe(true);
 
       // After selection
       selectedIds.value.push("1");
-      expect(getCardMetadata("1").isSelected).toBe(true);
+      expect(getCardMetadata("1").selected).toBe(true);
 
       // Non-expanded item should NOT be refreshing even if global isRefreshing is true
       expect(getCardMetadata("2")).toMatchObject({
-        isExpanded: false,
-        isRefreshing: false,
+        expanded: false,
+        appIsRefreshing: false,
       });
     });
 
@@ -433,11 +433,11 @@ describe("useConsoleController", () => {
       const { getCardMetadata, expandedIds } = useConsoleController(options);
 
       expandedIds.value.add("1");
-      expect(getCardMetadata("1").isExpanded).toBe(true);
-      expect(getCardMetadata("1").isRefreshing).toBe(false);
+      expect(getCardMetadata("1").expanded).toBe(true);
+      expect(getCardMetadata("1").appIsRefreshing).toBe(false);
 
       options.isRefreshing.value = true;
-      expect(getCardMetadata("1").isRefreshing).toBe(true);
+      expect(getCardMetadata("1").appIsRefreshing).toBe(true);
     });
   });
 });

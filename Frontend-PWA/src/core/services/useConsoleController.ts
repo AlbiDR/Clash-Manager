@@ -495,11 +495,33 @@ export function useConsoleController<T extends { id: string; n?: string }>(
      * are applied consistently across Roster and Headhunter views.
      */
     getCardMetadata: (id: string) => ({
-      isExpanded: expandedIds.value.has(id),
-      isSelected: selectedSet.value.has(id),
+      expanded: expandedIds.value.has(id),
+      selected: selectedSet.value.has(id),
       // [PERF] SCOPED REFRESH: Only signal 'refreshing' to expanded cards
       // to prevent unnecessary re-renders of the entire collapsed list.
-      isRefreshing: isRefreshing.value && expandedIds.value.has(id),
+      appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
     }),
+
+    /**
+     * MEMOIZATION KEY GENERATOR
+     *
+     * @remarks
+     * Centralizes the dependency list for Vue's `v-memo` directive.
+     * This ensures that performance-critical re-render optimizations are
+     * applied consistently across different feature views (Roster, Headhunter)
+     * without duplicating complex dependency logic in templates.
+     *
+     * @param id - The unique item identifier.
+     * @param extraKeys - Optional feature-specific reactive dependencies.
+     * @returns A stable array of dependencies for `v-memo`.
+     */
+    getMemoKeys: (id: string, extraKeys: any[] = []) => [
+      id,
+      isSelectionMode.value,
+      expandedIds.value.has(id),
+      selectedSet.value.has(id),
+      isRefreshing.value && expandedIds.value.has(id),
+      ...extraKeys,
+    ],
   };
 }
