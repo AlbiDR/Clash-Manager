@@ -1,6 +1,27 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-06] PR #383: chore(deps): bump @ast-grep/cli from 0.42.0 to 0.42.1
+**Commit**: `cb44f766eb93ab3e3a416abc1d5ecb40ccce93ef`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/383)
+
+### Description
+I have performed a Tier 1 dependency update for `@ast-grep/cli`, bumping it from version `0.42.0` to `0.42.1`. 
+
+### Summary of Actions:
+1.  **Dependency Scan:** Identified a patch version update for `@ast-grep/cli`.
+2.  **Implementation:** Updated the root `package.json` to the new version.
+3.  **Synchronization:** Ran `pnpm install` with the `--config.engine-strict=false` override to synchronize `pnpm-lock.yaml` while working in the current Node 22 environment.
+4.  **Verification:** Ran the full test suite (`pnpm test`), which resulted in 789 passing tests.
+5.  **Logging:** Appended the update to the persistent audit log in `.github/nightly-logs/dependency-audit-coverage.log`.
+
+This change ensures the project's static analysis infrastructure remains current with the latest bugfixes and minor improvements.
+
+---
+*PR created automatically by Jules for task [13454322854120930152](https://jules.google.com/task/13454322854120930152) started by @AlbiDR*
+
+---
+
 ## [2026-04-06] PR #382: fix(version): reconcile Backend-Worker version drift
 **Commit**: `30409c5b44bc314ad4e83f8bfee72a28257448e3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/382)
