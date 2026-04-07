@@ -21,3 +21,4 @@
 ### Logged Drift (Unresolved):
 - **GAS - NETWORK**: Manifest `1.0.1` vs Module `1.1.0` (Rule B).
 - **Backend-Worker**: `package.json` version `10.0.0`, `/capabilities` `10.1.1` vs `/scan` metadata `10.1.4`. (Highest is `10.1.4`).
+Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
