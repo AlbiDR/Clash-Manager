@@ -1326,7 +1326,7 @@ app.post(
  * Rationale: Read-only cache delivery; data is pre-compiled by the Sync Daemon.
  * Serves internal clan data (Roster/Headhunter). Strictly stateless to prevent locking read queries.
  *
- * **Constraint:** Public endpoint; no Bearer token required.
+ * **Constraint:** Privileged endpoint; requires Bearer token.
  */
 app.get("/hub/state", async (_request: Request, response: ExpressResponse): Promise<void> => {
   try {
@@ -1358,8 +1358,21 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
  * **Constraint:** Privileged endpoint; requires Bearer token.
  */
 app.post("/hub/sync/manual", async (_request: Request, response: ExpressResponse): Promise<void> => {
-  const secret = process.env["REMOTE_WORKER_SECRET"] || "";
-  const gasBase = process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "";
+  const secret = (process.env["REMOTE_WORKER_SECRET"] || "").trim();
+  const gasBase = (process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "").trim();
+
+  // THREAT: Hanging sync daemon due to missing upstream configuration.
+  // Rationale: Fast failure if environment variables are not set prevents
+  // malformed fetch attempts and unhandled promise rejections.
+  if (!secret || !gasBase) {
+    console.error("[Worker] Manual sync failed: REMOTE_WORKER_SECRET or GAS_URL is not set.");
+    response.status(500).json({
+      error: "Worker configuration incomplete",
+      details: "Upstream GAS URL or Secret is missing."
+    });
+    return;
+  }
+
   const didSync = await WorkerHubController.executeSync(gasBase, secret);
   response.json({ success: didSync });
 });
