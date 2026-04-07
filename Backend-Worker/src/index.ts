@@ -366,7 +366,7 @@ export async function processBatch<T = unknown>(
       if (!url) continue;
 
       const headers: Record<string, string> = {
-        "User-Agent": "ClanManagerWorker/1.0",
+        "User-Agent": "ClanManagerWorker/10.1.4",
         "Accept-Encoding": "gzip",
       };
 
@@ -560,7 +560,7 @@ export async function processScanBatch(
     const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag)}`;
 
     const headers: Record<string, string> = {
-      "User-Agent": "ClanManagerWorker/1.2",
+      "User-Agent": "ClanManagerWorker/10.1.4",
       "Accept-Encoding": "gzip",
     };
 
@@ -760,7 +760,7 @@ app.post(
               method: "GET",
               headers: {
                 Authorization: `Bearer ${apiKey}`,
-                "User-Agent": "ClanManagerWorker/Audit",
+                "User-Agent": "ClanManagerWorker/10.1.4",
               },
             },
             5000,
@@ -1182,7 +1182,7 @@ app.post(
       const { code, content } = await fetchWithRotatedRetries(url, {
         method: "GET",
         headers: {
-          "User-Agent": "ClanManagerWorker/1.0",
+          "User-Agent": "ClanManagerWorker/10.1.4",
         },
       }, CONFIG.maxRetries, batchManager);
 
