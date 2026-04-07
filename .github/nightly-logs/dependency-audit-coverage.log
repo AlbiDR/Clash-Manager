@@ -23,6 +23,7 @@
 | vue     | 3.5.31   | 3.5.32 | 2026-04-04 | PASS |
 | dependency-cruiser | ^17.3.9 | ^17.3.10 | 2026-04-05 | PASS |
 | @ast-grep/cli | ^0.42.0 | ^0.42.1 | 2026-04-06 | PASS |
+| vue-tsc | ^3.2.5 | ^3.2.6 | 2026-04-07 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
