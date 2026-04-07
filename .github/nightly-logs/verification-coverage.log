@@ -44,3 +44,4 @@ Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
 Frontend-PWA/src/core/services/useClashDataStore.ts
 Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/core/api/GasClient.ts
+Frontend-PWA/src/core/services/useConsoleController.ts
