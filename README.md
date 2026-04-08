@@ -1,8 +1,8 @@
 # Clash Manager
 
-[![System](https://img.shields.io/badge/System-v14.3.2-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
+[![System](https://img.shields.io/badge/System-v14.3.5-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](Backend-GAS/README.md)
 [![Client](https://img.shields.io/badge/Client-v13.3.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
-[![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](Backend-Worker/README.md)
 [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](.github/authoritative-design-references/CleanStack%20Architecture.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 

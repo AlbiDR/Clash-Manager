@@ -23,6 +23,7 @@ const {
   setSettings,
   handleVaultUpdate,
   refresh,
+  getTrajectoryMemoKeys,
 } = useLaboratory();
 
 const displayLimit = ref(20);
@@ -96,7 +97,8 @@ const { data: globalData } = storeToRefs(clashDataStore);
         <div class="trajectory-list">
           <TrajectoryItem 
             v-for="(upgrade, index) in displayedActions" 
-            :key="`${upgrade.cardName}-${index}`"
+            :key="`${upgrade.cardName}-${upgrade.targetLevel}`"
+            v-memo="getTrajectoryMemoKeys(upgrade)"
             :upgrade="upgrade"
             :index="index"
           />

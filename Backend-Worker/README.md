@@ -1,6 +1,6 @@
 # Clash Manager -- Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
@@ -54,14 +54,14 @@ Clash Manager Worker is running
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
-> **Note**: The worker utilizes a tiered versioning hierarchy. The **Discovery Version** (`v10.1.1`) signals capability sets and protocol stability to the GAS backend, while **Internal Metadata** (`v10.1.4`) tracks specific scan logic refinements. These are decoupled from the **Package Version** (`v10.0.0`) which governs the monorepo deployment.
+> **Note**: The worker utilizes a tiered versioning hierarchy. The **Discovery Version** (`v10.1.4`) signals capability sets and protocol stability to the GAS backend, while **Internal Metadata** (`v10.1.4`) tracks specific scan logic refinements. These are decoupled from the **Package Version** (`v10.1.4`) which governs the monorepo deployment.
 
 **Response:**
 ```json
 {
   "status": "success",
   "data": {
-    "version": "10.1.1",
+    "version": "10.1.4",
     "concurrency": 20,
     "timeoutMs": 45000,
     "maxRetries": 2
@@ -101,7 +101,7 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
       "lastCompiled": "2026-01-01T12:00:00.000Z",
       "lastFetched": "2026-01-01T11:55:00.000Z",
       "status": "healthy",
-      "version": "v1_hub",
+      "version": "10.1.4",
       "source": "RENDER_WORKER"
     },
     "data": {
@@ -113,9 +113,9 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
       ],
       "headhunter": [
         ["Headhunter Pool"],
-        ["Tag", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
-        ["id", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"],
-        ["#R1", "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
+        ["Tag", "Invited", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
+        ["id", "inv", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"],
+        ["#R1", false, "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
       ]
     }
   }
@@ -325,8 +325,8 @@ To preserve the project's shared Royale API budget and prevent accidental exhaus
 
 The worker enforces a strict security perimeter via `authMiddleware`:
 
-- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
-- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`, `/hub/state`) are exempt from token validation.
+- **Bearer Token**: All privileged requests (`/`, `/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`, `/hub/state`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
 ### Data Integrity: Tag Normalization

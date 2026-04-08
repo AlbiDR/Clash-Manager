@@ -67,7 +67,12 @@ describe("WorkerHubController", () => {
       const result = await WorkerHubController.executeSync("http://gas.url", "secret-token");
 
       expect(result).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("http://gas.url"));
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("http://gas.url"),
+        expect.objectContaining({
+          signal: expect.any(AbortSignal)
+        })
+      );
       expect(PayloadKernel.generateMatrix).toHaveBeenCalled();
       expect(HubPersistenceService.saveState).toHaveBeenCalledWith(mockHubState);
 

@@ -91,15 +91,17 @@ const CONFIG: ServerConfig = {
 
 
 // Global Key Singleton
-const rawKeys = (process.env["API_KEYS"] ?? "")
-  .split(",")
-  .map(rawKey => rawKey.trim())
-  .filter(rawKey => rawKey && rawKey !== "REPLACE_ME" && rawKey !== "YOUR_KEYS"); // EPHEMERAL: intentionally resets on restart
+const rawKeys = Array.from(new Set(
+  (process.env["API_KEYS"] ?? "")
+    .split(",")
+    .map(rawKey => rawKey.trim())
+    .filter(rawKey => rawKey && rawKey !== "REPLACE_ME" && rawKey !== "YOUR_KEYS")
+)); // EPHEMERAL: intentionally resets on restart
 
 if (rawKeys.length === 0) {
     console.warn("[Worker] Warning: No API_KEYS found in environment variables.");
 } else {
-    console.log(`[Worker] Initialized internal pool with ${rawKeys.length} keys.`);
+    console.log(`[Worker] Initialized internal pool with ${rawKeys.length} unique keys.`);
 }
 
 const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on restart
@@ -130,14 +132,12 @@ app.use((request: Request, response: ExpressResponse, next: NextFunction): void 
  * Public routes are explicitly exempted to allow health checks and public scans.
  * Registered before body-parsing to prevent unauthenticated DoS via large payloads.
  */
-const authMiddleware: RequestHandler = (request, response, next) => {
+export const authMiddleware: RequestHandler = (request, response, next) => {
   const publicRoutes = [
-    "/",
     "/health",
     "/capabilities",
     "/public/scan",
     "/public/subscribe",
-    "/hub/state",
   ];
 
   // Normalize path to handle trailing slashes consistently
@@ -147,7 +147,7 @@ const authMiddleware: RequestHandler = (request, response, next) => {
     return next();
   }
 
-  const secret = process.env["REMOTE_WORKER_SECRET"];
+  const secret = (process.env["REMOTE_WORKER_SECRET"] || "").trim();
   const authHeader = request.headers.authorization;
 
   if (!secret) {
@@ -368,7 +368,7 @@ export async function processBatch<T = unknown>(
       if (!url) continue;
 
       const headers: Record<string, string> = {
-        "User-Agent": "ClanManagerWorker/1.0",
+        "User-Agent": "ClanManagerWorker/10.1.4",
         "Accept-Encoding": "gzip",
       };
 
@@ -574,7 +574,7 @@ export async function processScanBatch(
     const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag)}`;
 
     const headers: Record<string, string> = {
-      "User-Agent": "ClanManagerWorker/1.2",
+      "User-Agent": "ClanManagerWorker/10.1.4",
       "Accept-Encoding": "gzip",
     };
 
@@ -681,7 +681,7 @@ app.get("/capabilities", (_request: Request, response: ExpressResponse): void =>
   response.json({
     status: "success",
     data: {
-      version: "10.1.1",
+      version: "10.1.4",
       concurrency: CONFIG.concurrency,
       timeoutMs: CONFIG.timeout,
       maxRetries: CONFIG.maxRetries,
@@ -774,7 +774,7 @@ app.post(
               method: "GET",
               headers: {
                 Authorization: `Bearer ${apiKey}`,
-                "User-Agent": "ClanManagerWorker/Audit",
+                "User-Agent": "ClanManagerWorker/10.1.4",
               },
             },
             5000,
@@ -1198,7 +1198,7 @@ app.post(
       const { code, content } = await fetchWithRotatedRetries(url, {
         method: "GET",
         headers: {
-          "User-Agent": "ClanManagerWorker/1.0",
+          "User-Agent": "ClanManagerWorker/10.1.4",
         },
       }, CONFIG.maxRetries, batchManager);
 
@@ -1344,7 +1344,7 @@ app.post(
  * Rationale: Read-only cache delivery; data is pre-compiled by the Sync Daemon.
  * Serves internal clan data (Roster/Headhunter). Strictly stateless to prevent locking read queries.
  *
- * **Constraint:** Public endpoint; no Bearer token required.
+ * **Constraint:** Privileged endpoint; requires Bearer token.
  */
 app.get("/hub/state", async (_request: Request, response: ExpressResponse): Promise<void> => {
   try {
@@ -1376,8 +1376,21 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
  * **Constraint:** Privileged endpoint; requires Bearer token.
  */
 app.post("/hub/sync/manual", async (_request: Request, response: ExpressResponse): Promise<void> => {
-  const secret = process.env["REMOTE_WORKER_SECRET"] || "";
-  const gasBase = process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "";
+  const secret = (process.env["REMOTE_WORKER_SECRET"] || "").trim();
+  const gasBase = (process.env["VITE_GAS_URL"] || process.env["GAS_URL"] || "").trim();
+
+  // THREAT: Hanging sync daemon due to missing upstream configuration.
+  // Rationale: Fast failure if environment variables are not set prevents
+  // malformed fetch attempts and unhandled promise rejections.
+  if (!secret || !gasBase) {
+    console.error("[Worker] Manual sync failed: REMOTE_WORKER_SECRET or GAS_URL is not set.");
+    response.status(500).json({
+      error: "Worker configuration incomplete",
+      details: "Upstream GAS URL or Secret is missing."
+    });
+    return;
+  }
+
   const didSync = await WorkerHubController.executeSync(gasBase, secret);
   response.json({ success: didSync });
 });

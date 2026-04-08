@@ -42,6 +42,7 @@ const {
   layoutProps,
   layoutEvents,
   getCardMetadata,
+  getMemoKeys,
 } = useLeaderboard();
 
 </script>
@@ -62,27 +63,17 @@ const {
       <template #item="{ item, index }">
         <MemberCard
           :key="item.id"
-          v-memo="[
-            item.id,
+          v-memo="getMemoKeys(item.id, [
             item.performanceScore,
             item.dt,
-            isSelectionMode,
-            // [PERF] STABLE STATUS FLAGS: Accessing primitive properties from the
-            // metadata helper ensures v-memo performs a correct shallow comparison,
-            // bypassing the new object reference returned on every render.
-            getCardMetadata(item.id).isExpanded,
-            getCardMetadata(item.id).isSelected,
-            getCardMetadata(item.id).isRefreshing,
-            data?.playerTag === item.id,
-          ]"
+            data?.playerTag === item.id
+          ])"
           :id="`member-${item.id}`"
           :member="item"
-          :expanded="getCardMetadata(item.id).isExpanded"
-          :selected="getCardMetadata(item.id).isSelected"
+          v-bind="getCardMetadata(item.id)"
           :selection-mode="isSelectionMode"
           :is-tagged="data?.playerTag === item.id"
           :style="{ '--i': index }"
-          :app-is-refreshing="getCardMetadata(item.id).isRefreshing"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
         />
