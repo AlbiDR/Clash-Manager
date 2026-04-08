@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import express from "express";
 
@@ -17,9 +17,9 @@ describe("Authentication Middleware", () => {
     app = express();
 
     app.use(authMiddleware);
-    app.get("/", (req, res) => res.status(200).send("OK"));
-    app.get("/hub/state", (req, res) => res.status(200).send("DATA"));
-    app.get("/health", (req, res) => res.status(200).send("HEALTHY"));
+    app.get("/", (_req, res) => res.status(200).send("OK"));
+    app.get("/hub/state", (_req, res) => res.status(200).send("DATA"));
+    app.get("/health", (_req, res) => res.status(200).send("HEALTHY"));
   });
 
   it("should block unauthenticated access to /", async () => {
