@@ -219,11 +219,21 @@ export const useClashDataStore = defineStore("clashData", () => {
       await saveCache(validation.output as WebAppData);
     } catch (e: unknown) {
       console.warn("[Store] Worker-direct refresh failed:", e);
-      // Falling back to full sync if direct worker fails
-      return startBackgroundSync(true);
-    } finally {
+
+      // THREAT: Failure-mode deadlock during Worker outages.
+      // Target A [2]: The loading state MUST be cleared before calling the fallback
+      // sync, otherwise the guard in startBackgroundSync will trigger and
+      // silently abort the recovery attempt.
       loading.value = false;
       await wakeLock.release();
+
+      return startBackgroundSync(true);
+    } finally {
+      // Ensure loading is cleared and lock is released even on success
+      if (loading.value) {
+        loading.value = false;
+        await wakeLock.release();
+      }
     }
   }
 

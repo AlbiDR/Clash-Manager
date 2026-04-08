@@ -303,20 +303,21 @@ describe("useClashDataStore", () => {
       const store = useClashDataStore();
       await store.refreshWorker();
 
-      // Should ideally be 2, but is 1 due to the loading guard bug
-      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      // [FIX VERIFIED]: Previously failed with 1 due to the loading guard deadlock.
+      // Now correctly attempts the fallback (2nd call to fetchRemote).
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
       expect(fetchRemote).toHaveBeenCalledWith({ force: true, preferWorker: true });
     });
 
-    it("should attempt fallback to startBackgroundSync(true) if validation fails [CRACK: Guard Blocked]", async () => {
-      // [CRACK IDENTIFIED]: Same loading guard issue as above.
+    it("should attempt fallback to startBackgroundSync(true) if validation fails", async () => {
+      // [FIX VERIFIED]: Previously failed with 1 due to the loading guard deadlock.
+      // Now correctly attempts the fallback (2nd call to fetchRemote).
       vi.mocked(fetchRemote).mockResolvedValueOnce({ invalid: "data" });
 
       const store = useClashDataStore();
       await store.refreshWorker();
 
-      // Should ideally be 2, but is 1 due to the loading guard bug
-      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
     });
 
     it("should respect offline guard", async () => {
