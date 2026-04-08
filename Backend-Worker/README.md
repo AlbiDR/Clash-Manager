@@ -101,7 +101,7 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
       "lastCompiled": "2026-01-01T12:00:00.000Z",
       "lastFetched": "2026-01-01T11:55:00.000Z",
       "status": "healthy",
-      "version": "v1_hub",
+      "version": "10.1.4",
       "source": "RENDER_WORKER"
     },
     "data": {
