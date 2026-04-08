@@ -53,3 +53,6 @@ Frontend-PWA/src/core/services/useConsoleController.ts
 Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
 Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
+Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
+Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue
+Frontend-PWA/src/features/laboratory/components/TrajectoryItem.vue
