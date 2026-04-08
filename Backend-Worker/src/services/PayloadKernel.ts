@@ -50,7 +50,7 @@ export class PayloadKernel {
         lastCompiled: compiledAt,
         lastFetched: fetchedAt,
         status: "healthy",
-        version: "v1_hub",
+        version: "10.1.4",
         source: "RENDER_WORKER"
       },
       data: {
