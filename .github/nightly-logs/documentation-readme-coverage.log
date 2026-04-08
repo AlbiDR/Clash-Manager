@@ -24,3 +24,4 @@ Frontend-PWA/README.md
 README.md
 2026-04-06: Backend-GAS/README.md updated (GAS version badge: v14.3.4 -> v14.3.5)
 2026-04-07 Reconciled Backend-Worker/README.md and root README.md: Synced version badges to 10.1.4, updated /hub/state schema, and hardened security documentation.
+2026-04-08: Frontend-PWA/README.md updated (Transport: 20s timeout & 5-attempt retry loop)
