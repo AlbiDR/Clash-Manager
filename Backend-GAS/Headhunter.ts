@@ -201,7 +201,8 @@ const Headhunter: HeadhunterContract = {
           `'${sheetName}'!${tagCol}${startRow}:${tagCol}${lastRow}`
         ];
         
-        const response = S.Network.fetchRoyaleAPI(ranges);
+        const batchResponse = Sheets.Spreadsheets!.Values.batchGet(ssId, { ranges });
+        const response = batchResponse.valueRanges;
         if (response) {
           const perfs = response[0]?.values || [];
           const trophies = response[1]?.values || [];
