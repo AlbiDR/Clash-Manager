@@ -1,8 +1,8 @@
 import { useConsoleController } from "@core";
 import { useClashDataStore } from "../useClashDataStore";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
-import { ref } from "vue";
+import { ref, effectScope } from "vue";
 
 const { sharedState } = vi.hoisted(() => ({
   sharedState: {
@@ -75,6 +75,15 @@ vi.mock("../../api/useApiState", async () => {
       pingData: ref(sharedState.mockPingData.value),
       apiStatus: ref(sharedState.mockApiStatus.value),
     })),
+  };
+});
+
+vi.mock("vue", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    onMounted: vi.fn((fn) => fn()),
+    onUnmounted: vi.fn((fn) => fn()),
   };
 });
 
@@ -155,6 +164,11 @@ describe("useConsoleController", () => {
     sharedState.mockApiStatus.value = "online";
     sharedState.mockConnectionStatus.value = "online";
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("shows skeletons when Blueprint Mode is active", () => {
@@ -304,6 +318,114 @@ describe("useConsoleController", () => {
       const { status } = useConsoleController(options);
       expect(status.value.text).toBe("Offline");
     });
+
+    it("returns 'Stale Data' when data is older than 15 minutes", () => {
+      const options = createOptions();
+      const now = Date.now();
+      options.lastSyncTime.value = now - 16 * 60000; // 16 minutes ago
+      options.data.value = [{ id: "1", n: "Test" }];
+      const { status } = useConsoleController(options);
+      expect(status.value.type).toBe("warning");
+      expect(status.value.text).toBe("Stale Data");
+    });
+
+    it("returns 'Nominal' when data is exactly 14 minutes old", () => {
+      const options = createOptions();
+      const now = Date.now();
+      options.lastSyncTime.value = now - 14 * 60000; // 14 minutes ago
+      options.data.value = [{ id: "1", n: "Test" }];
+      const { status } = useConsoleController(options);
+      expect(status.value.type).toBe("success");
+      expect(status.value.text).toBe("Nominal");
+    });
+  });
+
+  describe("visibility lifecycle", () => {
+    it("triggers refresh when app becomes visible after > 30 minutes", () => {
+      const scope = effectScope();
+      const refresh = vi.fn();
+      const options = { ...createOptions(), refresh };
+
+      let visibilityHandler: any;
+      const addSpy = vi.spyOn(document, "addEventListener").mockImplementation((event, handler) => {
+        if (event === "visibilitychange") visibilityHandler = handler;
+      });
+
+      scope.run(() => {
+        useConsoleController(options);
+      });
+
+      expect(addSpy).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+
+      // Simulate being hidden
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "hidden",
+      });
+      visibilityHandler();
+
+      // Advance time by 31 minutes
+      vi.advanceTimersByTime(31 * 60000);
+
+      // Simulate being visible
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "visible",
+      });
+      visibilityHandler();
+
+      expect(refresh).toHaveBeenCalled();
+      addSpy.mockRestore();
+      scope.stop();
+    });
+
+    it("does NOT trigger refresh when app becomes visible after < 30 minutes", () => {
+      const scope = effectScope();
+      const refresh = vi.fn();
+      const options = { ...createOptions(), refresh };
+
+      let visibilityHandler: any;
+      const addSpy = vi.spyOn(document, "addEventListener").mockImplementation((event, handler) => {
+        if (event === "visibilitychange") visibilityHandler = handler;
+      });
+
+      scope.run(() => {
+        useConsoleController(options);
+      });
+
+      // Simulate being hidden
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "hidden",
+      });
+      visibilityHandler();
+
+      // Advance time by 29 minutes
+      vi.advanceTimersByTime(29 * 60000);
+
+      // Simulate being visible
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "visible",
+      });
+      visibilityHandler();
+
+      expect(refresh).not.toHaveBeenCalled();
+      addSpy.mockRestore();
+      scope.stop();
+    });
+  });
+
+  describe("Showcase Mode", () => {
+    it("limits visibleItems to 1 item regardless of filtered count", () => {
+      sharedState.mockShowcaseMode.value = true;
+      const options = createOptions();
+      options.data.value = [{ id: "1" }, { id: "2" }, { id: "3" }];
+      const { visibleItems, filteredItems } = useConsoleController(options);
+
+      expect(filteredItems.value).toHaveLength(3);
+      expect(visibleItems.value).toHaveLength(1);
+    });
   });
 
   describe("statsBadge", () => {
@@ -405,25 +527,25 @@ describe("useConsoleController", () => {
 
       // Default state
       expect(getCardMetadata("1")).toEqual({
-        isExpanded: false,
-        isSelected: false,
-        isRefreshing: false,
+        expanded: false,
+        selected: false,
+        appIsRefreshing: false,
       });
 
       // After expansion
       expandedIds.value.add("1");
-      expect(getCardMetadata("1").isExpanded).toBe(true);
-      // isRefreshing should be true because item is expanded and global isRefreshing is true
-      expect(getCardMetadata("1").isRefreshing).toBe(true);
+      expect(getCardMetadata("1").expanded).toBe(true);
+      // appIsRefreshing should be true because item is expanded and global isRefreshing is true
+      expect(getCardMetadata("1").appIsRefreshing).toBe(true);
 
       // After selection
       selectedIds.value.push("1");
-      expect(getCardMetadata("1").isSelected).toBe(true);
+      expect(getCardMetadata("1").selected).toBe(true);
 
       // Non-expanded item should NOT be refreshing even if global isRefreshing is true
       expect(getCardMetadata("2")).toMatchObject({
-        isExpanded: false,
-        isRefreshing: false,
+        expanded: false,
+        appIsRefreshing: false,
       });
     });
 
@@ -433,11 +555,11 @@ describe("useConsoleController", () => {
       const { getCardMetadata, expandedIds } = useConsoleController(options);
 
       expandedIds.value.add("1");
-      expect(getCardMetadata("1").isExpanded).toBe(true);
-      expect(getCardMetadata("1").isRefreshing).toBe(false);
+      expect(getCardMetadata("1").expanded).toBe(true);
+      expect(getCardMetadata("1").appIsRefreshing).toBe(false);
 
       options.isRefreshing.value = true;
-      expect(getCardMetadata("1").isRefreshing).toBe(true);
+      expect(getCardMetadata("1").appIsRefreshing).toBe(true);
     });
   });
 });

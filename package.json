@@ -13,10 +13,10 @@
     "fix:gitignore": "git rm -r --cached . && git add ."
   },
   "devDependencies": {
-    "@ast-grep/cli": "^0.42.0",
+    "@ast-grep/cli": "^0.42.1",
     "@google/clasp": "catalog:",
     "@types/node": "catalog:",
-    "dependency-cruiser": "^17.3.9",
+    "dependency-cruiser": "^17.3.10",
     "knip": "^6.3.0",
     "typescript": "catalog:"
   },

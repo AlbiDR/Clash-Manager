@@ -328,6 +328,24 @@ export function useLaboratory() {
     analyze,
     setSettings: store.setSettings,
     handleVaultUpdate,
-    refresh: fetchTrackedPlayer
+    refresh: fetchTrackedPlayer,
+
+    /**
+     * MEMOIZATION KEY GENERATOR
+     *
+     * @remarks
+     * Centralizes the dependency list for Vue's `v-memo` directive.
+     * Ensures that trajectory list items only re-render when the recommended
+     * upgrade action actually changes, improving performance during simulations.
+     *
+     * @param upgrade - The upgrade action to memoize.
+     * @returns A stable array of dependencies for `v-memo`.
+     */
+    getTrajectoryMemoKeys: (upgrade: UpgradeAction) => [
+      upgrade.cardName,
+      upgrade.targetLevel,
+      upgrade.efficiencyIndex,
+      upgrade.upgradeType
+    ],
   };
 }

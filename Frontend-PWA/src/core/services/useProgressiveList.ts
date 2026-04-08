@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { ref, watch, type Ref, shallowRef, onScopeDispose } from "vue";
 
 /**
@@ -14,6 +17,11 @@ import { ref, watch, type Ref, shallowRef, onScopeDispose } from "vue";
  * - Uses shallowRef to reduce reactive overhead of the visible list.
  * - Utilizes IdleDeadline to process multiple chunks per idle frame.
  * - Implements automated cleanup via onScopeDispose.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  *
  * @param sourceList - The full reactive list of items to be rendered.
  * @param initialSize - The number of items to render immediately on first load.
@@ -55,10 +63,15 @@ export function useProgressiveList<T>(
   watch(
     sourceList,
     (newList, oldList) => {
-      // Logic: Churn Prevention (Bug #17)
-      // A "Refresh" is defined as a minor change in list size (< 5 items).
-      // We assume these are score updates or single member changes.
-      // In this case, we update existing visible items without resetting the view.
+      /**
+       * Logic: Churn Prevention (Bug #17)
+       *
+       * @remarks
+       * A "Refresh" is defined as a minor change in list size (< 5 items).
+       * We assume these are score updates or single member changes.
+       * In this case, we update existing visible items without resetting the view
+       * to prevent jarring scroll jumps or layout shifts.
+       */
       const isRefresh =
         oldList &&
         oldList.length > 0 &&
@@ -105,6 +118,8 @@ export function useProgressiveList<T>(
       // not an IdleDeadline. We must verify 'timeRemaining' exists before calling.
       const hasIdleDeadline = deadline && typeof deadline.timeRemaining === "function";
 
+      // [PERF] IDLE BUDGETING: Process multiple chunks within a single frame
+      // if the browser provides an IdleDeadline with sufficient time remaining.
       do {
         const chunkSize = all.length > 100 ? 20 : 10;
         nextCount = Math.min(nextCount + chunkSize, all.length);

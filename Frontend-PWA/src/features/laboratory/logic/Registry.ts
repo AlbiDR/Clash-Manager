@@ -1,8 +1,32 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+/**
+ * LABORATORY - Game Registry & Calibration (Layer 3)
+ * ----------------------------------------------------------------------------
+ * Rationale: Central source of truth for all Clash Royale game constants,
+ * costs, and XP tables used by the Laboratory simulation engine.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 3 (@features)
+ * - Import Boundaries: Restricted to Layer 1 (@core) and Layer 2 (@shared).
+ *   Imports from Layer 4 (@app) or other Features are strictly forbidden.
+ */
+
 import type { Rarity } from './Types';
 import { asGold, asXP, type Gold, type XP } from '@core/utils/economy';
 
+/**
+ * The maximum level any card can achieve in the current game version.
+ */
 export const CARD_LEVEL_CAP = 16;
 
+/**
+ * The starting level for each card rarity.
+ * Rationale: Used to normalize relative levels (1-14) to absolute game levels.
+ */
 export const CARD_RARITY_START_LEVELS: Readonly<Record<Rarity, number>> = {
   "Common": 1,
   "Rare": 3,
@@ -12,19 +36,45 @@ export const CARD_RARITY_START_LEVELS: Readonly<Record<Rarity, number>> = {
 };
 
 // --- Logic Calibration (Engine 2.3) ---
+
+/**
+ * The weight factor applied to future steps during Recursive Chain Lookahead.
+ * Higher values make the engine more "farsighted" but increase sensitivity to
+ * deep-chain local optima.
+ */
 export const LOOKAHEAD_WEIGHT = 0.4;
+
+/**
+ * The threshold at which the Recursive Chain Lookahead stops.
+ * Rationale: Principled convergence ensures the engine doesn't waste cycles on
+ * statistically insignificant future weights.
+ */
 export const LOOKAHEAD_PRECISION = 0.01;
 
+/**
+ * Gold costs required for each level upgrade.
+ * Key: Target Level.
+ * Value: Gold amount.
+ */
 export const GOLD_COST_TABLE: Readonly<Record<number, Gold>> = {
   2: asGold(5), 3: asGold(20), 4: asGold(50), 5: asGold(150), 6: asGold(400), 7: asGold(1000), 8: asGold(2000),
   9: asGold(4000), 10: asGold(8000), 11: asGold(15000), 12: asGold(25000), 13: asGold(40000), 14: asGold(60000), 15: asGold(90000), 16: asGold(120000)
 };
 
+/**
+ * Experience points (XP) gained for each level upgrade.
+ * Key: Target Level.
+ * Value: XP amount.
+ */
 export const CARD_XP_TABLE: Readonly<Record<number, XP>> = {
   2: asXP(4), 3: asXP(5), 4: asXP(6), 5: asXP(10), 6: asXP(25), 7: asXP(50), 8: asXP(100),
   9: asXP(200), 10: asXP(400), 11: asXP(600), 12: asXP(800), 13: asXP(1600), 14: asXP(2000), 15: asXP(50000), 16: asXP(200000)
 };
 
+/**
+ * Required card counts for each level upgrade, categorized by rarity.
+ * Key: Rarity -> Target Level -> Required Count.
+ */
 export const MATERIAL_REQUIREMENTS: Readonly<Record<Rarity, Readonly<Record<number, number>>>> = {
   "Common": {
     2: 2, 3: 4, 4: 10, 5: 20, 6: 50, 7: 100, 8: 200, 9: 400, 10: 800,
@@ -45,6 +95,10 @@ export const MATERIAL_REQUIREMENTS: Readonly<Record<Rarity, Readonly<Record<numb
   }
 };
 
+/**
+ * Gem-to-Card conversion rates used when 'Allow Gem Spending' is enabled.
+ * Rationale: Represents the market value of a single card unit in Gems.
+ */
 export const GEM_CONVERSION_RATES: Readonly<Record<Rarity, number>> = {
   "Common": 0.36,
   "Rare": 2.14,
@@ -53,6 +107,10 @@ export const GEM_CONVERSION_RATES: Readonly<Record<Rarity, number>> = {
   "Champion": 400.0
 };
 
+/**
+ * Cumulative XP requirements for each King Level (Account Level).
+ * Rationale: Used to project the player's account level after a series of upgrades.
+ */
 export const KING_XP_TABLE = [
   { level: 1, cumulative: asXP(0) },
   { level: 2, cumulative: asXP(20) },
@@ -146,11 +204,19 @@ export const KING_XP_TABLE = [
   { level: 90, cumulative: asXP(27438770) }
 ];
 
+/**
+ * Key milestones for King Level projection.
+ * Rationale: Represents levels where significant game features or rewards are unlocked.
+ */
 export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
   2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75
 ];
 
+/**
+ * Specific efficiency overrides for individual cards.
+ * Rationale: Allows manual calibration for cards that provide abnormal value
+ * relative to their level (e.g., Champions or recently buffed cards).
+ */
 export const EFFICIENCY_OVERRIDES: Readonly<Record<string, number>> = {
   // Add specific card overrides here if necessary
 };
-

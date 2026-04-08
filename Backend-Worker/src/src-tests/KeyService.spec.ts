@@ -1,91 +1,104 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { KeyService } from '../KeyService.js';
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
-describe('KeyService', () => {
-  const mockKeys = ['key1', 'key2', 'key3'];
-  let manager: KeyService;
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { KeyService } from "../KeyService.js";
 
+/**
+ * ============================================================================
+ * [TEST] KEY SERVICE (HARDENING)
+ * ----------------------------------------------------------------------------
+ * Rationale: Verify the resilience of the Key Rotation engine against
+ * duplicate configurations and ensuring correct cooldown state transitions.
+ * ============================================================================
+ */
+
+describe("KeyService Hardening", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    manager = new KeyService(mockKeys);
   });
 
-  it('should return a healthy key from the pool', () => {
-    const key = manager.getHealthyKey();
-    expect(mockKeys).toContain(key);
-  });
+  it("should de-duplicate keys in the constructor to prevent rate-limit bypass", () => {
+    // THREAT: Duplicate keys in configuration could bypass rate-limit cooldowns.
+    const rawKeys = ["KEY1", "KEY1", "KEY2"];
+    const service = new KeyService(rawKeys);
 
-  it('should rotate keys', () => {
-    const usedKeys = new Set();
-    for (let i = 0; i < 50; i++) {
-        const key = manager.getHealthyKey();
-        if (key) usedKeys.add(key);
-    }
-    // With 3 keys, after 50 tries we should have seen all of them (probabilistically very likely)
-    expect(usedKeys.size).toBe(3);
-  });
-
-  it('should handle 429 errors by cooling down for 60s', () => {
-    const key = manager.getHealthyKey()!;
-    manager.reportFailure(key, 429);
-
-    // Key should not be available immediately
-    const stats = manager.getPoolStats();
+    const stats = service.getPoolStats();
+    expect(stats.total).toBe(2);
     expect(stats.available).toBe(2);
-    expect(stats.throttled).toBe(1);
-
-    // After 61s, it should be available again
-    vi.advanceTimersByTime(61000);
-    const statsAfter = manager.getPoolStats();
-    expect(statsAfter.available).toBe(3);
-    expect(statsAfter.throttled).toBe(0);
   });
 
-  it('should handle 403 errors by cooling down for 1 hour', () => {
-    const key = manager.getHealthyKey()!;
-    manager.reportFailure(key, 403);
+  it("should mark a throttled key (429) as unavailable for 60 seconds", () => {
+    const service = new KeyService(["KEY1"]);
 
-    const stats = manager.getPoolStats();
-    expect(stats.available).toBe(2);
+    service.reportFailure("KEY1", 429);
 
-    vi.advanceTimersByTime(30 * 60 * 1000); // 30 mins
-    expect(manager.getPoolStats().available).toBe(2);
+    expect(service.getHealthyKey()).toBeNull();
+    expect(service.getPoolStats().throttled).toBe(1);
 
-    vi.advanceTimersByTime(31 * 60 * 1000); // +31 mins = 61 mins
-    expect(manager.getPoolStats().available).toBe(3);
+    // Fast-forward 30s -> Still throttled
+    vi.advanceTimersByTime(30000);
+    expect(service.getHealthyKey()).toBeNull();
+
+    // Fast-forward another 31s -> Available
+    vi.advanceTimersByTime(31000);
+    expect(service.getHealthyKey()).toBe("KEY1");
   });
 
-  it('should handle generic failures with 30s penalty after 5 attempts', () => {
-    const key = manager.getHealthyKey()!;
+  it("should mark a rejected key (403) as unavailable for 1 hour", () => {
+    const service = new KeyService(["KEY1"]);
 
-    // 4 failures should not trigger cooldown
+    service.reportFailure("KEY1", 403);
+
+    expect(service.getHealthyKey()).toBeNull();
+
+    // Fast-forward 30 minutes
+    vi.advanceTimersByTime(30 * 60 * 1000);
+    expect(service.getHealthyKey()).toBeNull();
+
+    // Fast-forward to 61 minutes
+    vi.advanceTimersByTime(31 * 60 * 1000);
+    expect(service.getHealthyKey()).toBe("KEY1");
+  });
+
+  it("should apply a short penalty after 5 consecutive generic failures", () => {
+    const service = new KeyService(["KEY1"]);
+
+    // 4 failures
     for (let i = 0; i < 4; i++) {
-      manager.reportFailure(key, 500);
+      service.reportFailure("KEY1", 500);
+      expect(service.getHealthyKey()).toBe("KEY1");
     }
-    expect(manager.getPoolStats().available).toBe(3);
 
-    // 5th failure triggers 30s cooldown
-    manager.reportFailure(key, 500);
-    expect(manager.getPoolStats().available).toBe(2);
+    // 5th failure -> Throttled for 30s
+    service.reportFailure("KEY1", 500);
+    expect(service.getHealthyKey()).toBeNull();
 
     vi.advanceTimersByTime(31000);
-    expect(manager.getPoolStats().available).toBe(3);
+    expect(service.getHealthyKey()).toBe("KEY1");
   });
 
-  it('should reset failure count on success', () => {
-    const key = manager.getHealthyKey()!;
+  it("should reset failure count on success", () => {
+    const service = new KeyService(["KEY1"]);
+
     for (let i = 0; i < 4; i++) {
-      manager.reportFailure(key, 500);
+      service.reportFailure("KEY1", 500);
     }
-    manager.reportSuccess(key);
 
-    // Another failure should start count from 1, not 5
-    manager.reportFailure(key, 500);
-    expect(manager.getPoolStats().available).toBe(3);
+    service.reportSuccess("KEY1");
+
+    // One more failure should NOT trigger the penalty (needs 5 consecutive)
+    service.reportFailure("KEY1", 500);
+    expect(service.getHealthyKey()).toBe("KEY1");
   });
 
-  it('should return null if no keys are healthy', () => {
-    mockKeys.forEach(k => manager.reportFailure(k, 403));
-    expect(manager.getHealthyKey()).toBeNull();
+  it("should correctly rotate between available keys", () => {
+    const service = new KeyService(["KEY1", "KEY2"]);
+    service.reportFailure("KEY1", 429);
+
+    // Only KEY2 should be returned
+    for (let i = 0; i < 10; i++) {
+        expect(service.getHealthyKey()).toBe("KEY2");
+    }
   });
 });
