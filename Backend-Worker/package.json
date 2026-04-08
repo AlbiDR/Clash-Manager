@@ -3,11 +3,11 @@
   "version": "10.1.4",
   "license": "GPL-3.0-only",
   "description": "Worker to perform bulk URL fetches for Clash Manager (designed for Cloud Run)",
-  "main": "dist/Backend-Worker/src/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/Backend-Worker/src/index.js",
+    "start": "node dist/src/index.js",
     "test": "vitest run",
     "type-check": "tsc --noEmit"
   },
