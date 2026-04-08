@@ -20,7 +20,7 @@ describe("PayloadKernel (Worker Hub)", () => {
     expect(state).toBeDefined();
     expect(state.metadata.source).toBe("RENDER_WORKER");
     expect(state.metadata.status).toBe("healthy");
-    expect(state.metadata.version).toBe("v1_hub");
+    expect(state.metadata.version).toBe("10.1.4");
     expect(state.data.roster).toHaveLength(1);
     expect(state.data.headhunter).toHaveLength(1);
     expect(state.data.roster[0]?.[1]).toBe("PlayerOne");
