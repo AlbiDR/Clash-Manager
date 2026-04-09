@@ -106,16 +106,14 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
     },
     "data": {
       "roster": [
-        ["Clan Leaderboard"],
-        ["Tag", "Name", "Role", "Trophies", "Days Tracked", "Received Weekly", "Average Daily Donations", "Total Donations", "Last Seen", "War Rate", "Average War Fame", "War History", "Performance Raw Score", "Performance Score", "Trend"],
-        ["id", "n", "role", "t", "days", "req", "avg", "tot", "seen", "rate", "wfame", "hist", "performanceRawScore", "performanceScore", "dt"],
-        ["#P1", "Player 1", "Leader", 7500, 150, 200, 50, 7500, "2026-01-01T12:00:00Z", "100%", 2400, "2400 26W01 | 2500 26W02", 50000, 100, 250]
+        ["", "Clan Leaderboard"],
+        ["", "Tag", "Name", "Role", "Trophies", "Days Tracked", "Received Weekly", "Average Daily Donations", "Total Donations", "Last Seen", "War Rate", "Average War Fame", "War History", "Performance Raw Score", "Performance Score", "Trend"],
+        ["", "#P1", "Player 1", "Leader", 7500, 150, 200, 50, 7500, "2026-01-01T12:00:00Z", "100%", 2400, "2400 26W01 | 2500 26W02", 50000, 100, 250]
       ],
       "headhunter": [
-        ["Headhunter Pool"],
-        ["Tag", "Invited", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
-        ["id", "inv", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"],
-        ["#R1", false, "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
+        ["", "Headhunter Pool"],
+        ["", "Tag", "Invited", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
+        ["", "#R1", false, "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
       ]
     }
   }
@@ -314,9 +312,9 @@ The worker implements a **Deep Delegation** strategy to optimize the entire Clas
 
 To preserve the project's shared Royale API budget and prevent accidental exhaustion by the autonomous Hub, the worker implements a strict **Quota Guard**:
 
-- **Daily Budget**: All Royale API traffic originating from the worker is capped at **15,000 requests per 24-hour period**.
-- **Fail-Fast Evaluation**: High-volume operations (`processBatch`, `processScanBatch`) perform an estimated usage check before execution. If the operation would exceed the remaining budget, it is aborted with a `ERR_QUOTA_EXHAUSTED` HubError.
-- **Real-Time Tracking**: Every upstream request is tracked in memory (ephemeral) and reset daily at 00:00 UTC.
+- **Daily Budget**: All Royale API traffic originating from the worker is capped at **15,000 requests per 24-hour period** (configured via `MAX_FETCH_DAILY_GUARD` in `Network.ts`).
+- **Fail-Fast Evaluation**: High-volume operations (`processBatch`, `processScanBatch`, `audit`) perform an estimated usage check before execution using `Network.quotaCheck()`. If the operation would exceed the remaining budget, it is aborted with a `ERR_QUOTA_EXHAUSTED` HubError.
+- **Real-Time Tracking**: Every upstream request is tracked in memory (ephemeral) via `Network.addQuotaUsage()` and reset daily at 00:00 UTC.
 
 ---
 <br />
