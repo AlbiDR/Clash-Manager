@@ -56,3 +56,8 @@ Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
 Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
 Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue
 Frontend-PWA/src/features/laboratory/components/TrajectoryItem.vue
+Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts
+Frontend-PWA/src/features/settings/components/BackendRefresher.vue
+Frontend-PWA/src/features/settings/composables/index.ts
+Frontend-PWA/src/features/settings/composables/composables-tests/useBackendRefresher.spec.ts
+Frontend-PWA/src/features/settings/components/components-tests/BackendRefresher.spec.ts
