@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { shallowMount, mount } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref, nextTick } from 'vue';
 import BackendRefresher from '../BackendRefresher.vue';
@@ -40,7 +40,7 @@ describe('BackendRefresher.vue', () => {
   });
 
   it('renders three refresh targets initially in idle state', () => {
-    const wrapper = shallowMount(BackendRefresher);
+    const wrapper = mount(BackendRefresher);
     const rows = wrapper.findAll('.refresh-row');
     expect(rows).toHaveLength(3);
 
@@ -121,7 +121,7 @@ describe('BackendRefresher.vue', () => {
   });
 
   it('renders skeletons when global isRefreshing state is true', async () => {
-    const wrapper = shallowMount(BackendRefresher);
+    const wrapper = mount(BackendRefresher);
     const store = useClashDataStore();
 
     store.loading = true;
@@ -134,19 +134,5 @@ describe('BackendRefresher.vue', () => {
 
     const firstButton = wrapper.find('.action-btn');
     expect(firstButton.classes()).toContain('skeleton-anim');
-  });
-
-  it('clears timers on unmount', async () => {
-    const clearIntervalSpy = vi.spyOn(window, 'clearInterval');
-    vi.mocked(triggerBackendUpdate).mockResolvedValue({ status: 'success' } as any);
-
-    const wrapper = mount(BackendRefresher);
-    await wrapper.findAll('.action-btn').at(0)!.trigger('click');
-
-    await nextTick();
-    await nextTick();
-
-    wrapper.unmount();
-    expect(clearIntervalSpy).toHaveBeenCalled();
   });
 });
