@@ -1,6 +1,24 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-09] PR #402: chore(version): no drift found
+**Commit**: `5e90fbf09f02a846e2b848c75a03e451c044fc71`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/402)
+
+### Description
+I have performed a thorough version consistency audit across the monorepo, covering both Target A (Backend-GAS) and Target B (Backend-Worker).
+
+Findings:
+- Backend-GAS: All 24 modules (CONFIGURATION, UTILITIES, ORCHESTRATOR, etc.) have VER_ constants that match the manifest in Configuration.ts.
+- Backend-Worker: All version declarations (package.json, capabilities, User-Agent, PayloadKernel) are synchronized at v10.1.4.
+
+As no version drift was found, this run confirms the healthy steady state of the codebase. I have updated the version-integrity-coverage.log to record the audit.
+
+---
+*PR created automatically by Jules for task [5097023519240361699](https://jules.google.com/task/5097023519240361699) started by @AlbiDR*
+
+---
+
 ## [2026-04-09] PR #401: docs(tsdoc): document useDeepLinkHandler.ts
 **Commit**: `71a1291511a551c7af8a809829c4eed4b5a2b1a2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/401)
