@@ -245,7 +245,7 @@ async function fetchWithRotatedRetries<T = unknown>(
   while (attempt <= retries) {
     const currentApiKey = manager.getHealthyKey();
     if (!currentApiKey) {
-      return { code: 429, content: "ERR_QUOTA_EMPTY" as unknown as T };
+      return { code: 429, content: "ERR_QUOTA_EMPTY" as T };
     }
 
     const fetchOptions = {
@@ -271,14 +271,14 @@ async function fetchWithRotatedRetries<T = unknown>(
         try {
           return { code: responseCode, content: JSON.parse(responseText) as T };
         } catch {
-          return { code: responseCode, content: responseText as unknown as T };
+          return { code: responseCode, content: responseText as T };
         }
       }
 
       // Handle Failures
       manager.reportFailure(currentApiKey, responseCode);
       
-      if (responseCode === 404) return { code: responseCode, content: responseText as unknown as T };
+      if (responseCode === 404) return { code: responseCode, content: responseText as T };
       if (responseCode === 403) throw new Error("auth_denied");
       if (responseCode === 429) throw new Error("rate_limit");
       
@@ -415,7 +415,7 @@ export async function processBatch<T = unknown>(
               }
             }
 
-            const leagueTrophies = (profile as any).leagueStatistics?.currentSeason?.trophies || 0;
+            const leagueTrophies = profile.leagueStatistics?.currentSeason?.trophies || 0;
             const effectiveTrophies = (profile.trophies || 0) + (profile.trophies >= 9000 ? leagueTrophies : 0);
 
             // Use shared scoring system (Kernel)
@@ -434,7 +434,7 @@ export async function processBatch<T = unknown>(
             // historical elite performance, saving GAS compute cycles.
             if (prophetCache) {
                  // THREAT: Un-normalized prophetCache lookup causing missed heritage scoring bonuses.
-                 const normTag = profile.tag as unknown as string;
+                 const normTag = profile.tag;
                  const intel = prophetCache[normTag];
                  // Threshold: 5 Wins.
                  // We only apply the 25% multiplier to players with
@@ -452,7 +452,7 @@ export async function processBatch<T = unknown>(
             // to satisfy the strictly enforced in-game requirement specified by the user.
             if (minTrophies > 0 && effectiveTrophies < minTrophies) {
                 console.info(`[Headhunter] Discarded ${profile.tag} (${profile.name}): ${effectiveTrophies} < ${minTrophies}`);
-                results[currentBatchIndex] = { code: 200, content: null as unknown as T };
+                results[currentBatchIndex] = { code: 200, content: null as T };
                 continue;
             }
 
@@ -461,14 +461,14 @@ export async function processBatch<T = unknown>(
             // they may have joined a clan by Phase 2 (Scoring).
             // Rejecting them here prevents uninvitable recruits from reaching GAS.
             if (scoring && profile.clan?.tag) {
-                results[currentBatchIndex] = { code: 200, content: null as unknown as T };
+                results[currentBatchIndex] = { code: 200, content: null as T };
                 continue;
             }
 
             results[currentBatchIndex] = {
               code: 200,
               content: {
-                tag: profile.tag as PlayerTag,
+                tag: profile.tag,
                 name: profile.name,
                 trophies: effectiveTrophies,
                 donations: profile.totalDonations,
@@ -476,7 +476,7 @@ export async function processBatch<T = unknown>(
                 war: totalWarScore,
                 rawScore,
                 clan: profile.clan?.name || null,
-              } as unknown as T,
+              } as T,
             };
           } else {
             results[currentBatchIndex] = profileResult as FetchResult<T>;
@@ -514,8 +514,8 @@ export async function processBatch<T = unknown>(
           "rawScore" in resultRecord.content,
       )
       .sort((aCandidate, bCandidate) => {
-        const aScore = (aCandidate.content as unknown as ScoredPlayer).rawScore;
-        const bScore = (bCandidate.content as unknown as ScoredPlayer).rawScore;
+        const aScore = (aCandidate.content as ScoredPlayer).rawScore;
+        const bScore = (bCandidate.content as ScoredPlayer).rawScore;
         return bScore - aScore;
       })
       .slice(0, 200);
@@ -600,7 +600,7 @@ export async function processScanBatch(
           // Target B [1]: Enforce strict validation boundary for Royale API data.
           const validation = v.safeParse(RoyaleTournamentResponseSchema, fetchResponse.content);
           if (validation.success) {
-            validation.output.membersList?.forEach((memberCandidate) => {
+            validation.output.membersList.forEach((memberCandidate) => {
               // DESIGN CONSTRAINT: Reject ALL players with any clan affiliation.
               // Rationale: Only clanless players are recruitable. Filtering at the
               // earliest stage (tournament member scan) prevents wasting API quota
@@ -608,16 +608,6 @@ export async function processScanBatch(
               if (memberCandidate.clan?.tag) return;
         const candidateTag = memberCandidate.tag as PlayerTag;
         if (blacklistSet.has(candidateTag)) return;
-
-              // STRATEGY 2: Deep Delegation - Apply Prophet Logic Server-Side
-              if (prophetCache) {
-                // THREAT: Un-normalized prophetCache lookup causing missed heritage scoring bonuses.
-                const normTag = memberCandidate.tag as unknown as string;
-                const intel = prophetCache[normTag];
-                if (intel) {
-                  // Bonus logic could go here, but strictly we need profile stats for true score.
-                }
-              }
 
               candidates.push({
           tag: candidateTag,
@@ -628,7 +618,7 @@ export async function processScanBatch(
               });
             });
           } else {
-            const rawContent = fetchResponse.content as unknown as Record<string, unknown>;
+            const rawContent = fetchResponse.content as Record<string, unknown>;
             console.warn(`[WORKER SCAN FAIL] Schema rejected tournament response for tag: ${rawContent?.["tag"] || "Unknown"}`);
             console.warn(JSON.stringify(validation.issues, null, 2));
             const membersList = rawContent?.["membersList"];
@@ -1083,7 +1073,7 @@ app.post(
           response.status(502).json({ error: "Invalid members data format", details: validation.issues });
           return;
         }
-        membersData = validation.output as unknown as ClanMembers;
+        membersData = validation.output;
       } else {
         response.status(500).json({ error: "Failed to fetch members" });
         return;
@@ -1097,7 +1087,7 @@ app.post(
           console.warn("[Worker] Race validation failed for /clan/full", validation.issues);
           raceData = null; // Graceful degradation for secondary resource
         } else {
-          raceData = validation.output as unknown as CurrentRiverRace;
+          raceData = validation.output;
         }
       }
 
@@ -1109,7 +1099,7 @@ app.post(
           console.warn("[Worker] War Log validation failed for /clan/full", validation.issues);
           logData = null; // Graceful degradation for secondary resource
         } else {
-          logData = validation.output as unknown as RiverRaceLog;
+          logData = validation.output;
         }
       }
 

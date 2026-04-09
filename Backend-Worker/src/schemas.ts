@@ -31,10 +31,10 @@ export const TagSchema = v.pipe(
   v.string(),
   v.trim(),
   v.regex(TAG_REGEX, "Invalid tag format"),
-  v.transform((val) => {
+  v.transform((inputTag) => {
     // Normalize to uppercase and ensure '#' prefix to prevent duplicate entries
     // and bypass of the recruitment blacklist.
-    const upper = val.toUpperCase();
+    const upper = inputTag.toUpperCase();
     return upper.startsWith("#") ? upper : `#${upper}`;
   })
 );
