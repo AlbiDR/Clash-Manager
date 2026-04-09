@@ -46,3 +46,4 @@ Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/core/api/GasClient.ts
 Frontend-PWA/src/core/services/useConsoleController.ts
 Frontend-PWA/src/features/settings/components/SettingsCard.vue
+Frontend-PWA/src/features/settings/components/BackendRefresher.vue
