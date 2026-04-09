@@ -14,3 +14,4 @@ Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
 2026-04-05 03:19:14 - [Harden] Backend-Worker/src/controllers/WorkerHubController.ts: Hardened executeSync with 30s timeout to prevent daemon stalls.
 2026-04-07 03:17:04 - [Harden] Backend-Worker/src/index.ts: Hardened manual sync route and corrected privileged endpoint documentation.
 2026-04-10 03:44:26 - [Harden] Frontend-PWA/src/core/services/useClashDataStore.ts: Resolved failure-mode deadlock in refreshWorker by clearing loading state before fallback.
+2026-04-13 Hardened Backend-Worker/src/index.ts and schemas.ts by removing 'Forbidden Pathogens' (as any, redundant casts, anemic variables).
