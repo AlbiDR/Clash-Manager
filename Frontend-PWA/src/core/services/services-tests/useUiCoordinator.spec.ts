@@ -1,20 +1,14 @@
-import { describe, it, expect, beforeEach } from "vitest";
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useUiCoordinator } from "../useUiCoordinator";
 
 describe("useUiCoordinator", () => {
-  const {
-    isFabVisible,
-    fabState,
-    dockVisible,
-    fabOffset,
-    toastOffset,
-    setFabVisible,
-    updateFabState
-  } = useUiCoordinator();
-
   beforeEach(() => {
-    // Reset global state
+    const { setFabVisible, updateFabState } = useUiCoordinator();
     setFabVisible(false);
+    // Manual reset of the singleton state for clean tests
     updateFabState({
       label: "Open",
       actionHref: undefined,
@@ -22,21 +16,27 @@ describe("useUiCoordinator", () => {
       isBlasting: false,
       selectionCount: 0,
       blitzEnabled: false,
-      onAction: null,
-      onBlitz: null,
-      onDismiss: null,
-    } as any);
+      onAction: undefined,
+      onBlitz: undefined,
+      onDismiss: undefined,
+    });
+    // @ts-ignore - reset internal callbacks to null
+    const { fabState } = useUiCoordinator();
+    fabState.onAction = null;
+    fabState.onBlitz = null;
+    fabState.onDismiss = null;
   });
 
-  it("should initialize with default values", () => {
+  it("should have correct initial state", () => {
+    const { isFabVisible, dockVisible, fabState } = useUiCoordinator();
     expect(isFabVisible.value).toBe(false);
     expect(dockVisible.value).toBe(true);
     expect(fabState.label).toBe("Open");
-    expect(fabOffset.value).toBe(24);
-    expect(toastOffset.value).toBe(110);
   });
 
-  it("should update isFabVisible and dockVisible when setFabVisible is called", () => {
+  it("should update FAB visibility and dock visibility accordingly", () => {
+    const { isFabVisible, dockVisible, setFabVisible } = useUiCoordinator();
+
     setFabVisible(true);
     expect(isFabVisible.value).toBe(true);
     expect(dockVisible.value).toBe(false);
@@ -46,39 +46,47 @@ describe("useUiCoordinator", () => {
     expect(dockVisible.value).toBe(true);
   });
 
-  it("should update fabState correctly via updateFabState", () => {
-    const onAction = () => {};
+  it("should update fabState correctly", () => {
+    const { fabState, updateFabState } = useUiCoordinator();
+    const onAction = vi.fn();
+
     updateFabState({
-      label: "Confirm",
+      label: "Delete",
       selectionCount: 5,
-      onAction,
+      onAction
     });
 
-    expect(fabState.label).toBe("Confirm");
+    expect(fabState.label).toBe("Delete");
     expect(fabState.selectionCount).toBe(5);
     expect(fabState.onAction).toBe(onAction);
-
-    // Check that other values remain same
+    // Unchanged values should remain
     expect(fabState.isProcessing).toBe(false);
   });
 
-  it("should calculate toastOffset correctly based on isFabVisible", () => {
-    // When FAB is hidden
+  it("should calculate toastOffset based on FAB visibility", () => {
+    const { toastOffset, setFabVisible } = useUiCoordinator();
+
     setFabVisible(false);
     expect(toastOffset.value).toBe(110);
 
-    // When FAB is visible (fabOffset 24 + 80 = 104)
     setFabVisible(true);
+    // fabOffset (24) + 80 = 104
     expect(toastOffset.value).toBe(104);
   });
 
-  it("should maintain singleton state across multiple calls to the composable", () => {
-    const { isFabVisible: isFab1, setFabVisible: setFab1 } = useUiCoordinator();
-    const { isFabVisible: isFab2 } = useUiCoordinator();
+  it("should maintain singleton state across different instances", () => {
+    const instance1 = useUiCoordinator();
+    const instance2 = useUiCoordinator();
 
-    expect(isFab1.value).toBe(isFab2.value);
+    instance1.setFabVisible(true);
+    expect(instance2.isFabVisible.value).toBe(true);
 
-    setFab1(true);
-    expect(isFab2.value).toBe(true);
+    instance2.updateFabState({ label: "Instance 2 Update" });
+    expect(instance1.fabState.label).toBe("Instance 2 Update");
+  });
+
+  it("should calculate fabOffset correctly", () => {
+    const { fabOffset } = useUiCoordinator();
+    expect(fabOffset.value).toBe(24);
   });
 });
