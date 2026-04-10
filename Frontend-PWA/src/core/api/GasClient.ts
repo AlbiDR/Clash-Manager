@@ -126,6 +126,20 @@ const WorkerScanResponseSchema = v.object({
   candidates: v.array(WorkerCandidateSchema),
 });
 
+/**
+ * [GUARD] GENERIC ENVELOPE SCHEMA
+ * Validates the standard response wrapper used by the GAS backend.
+ * Target B [1]: Enforce "Defense in Depth" by validating the response structure
+ * before extracting payload data.
+ */
+const GenericEnvelopeSchema = v.object({
+  success: v.optional(v.boolean()),
+  status: v.optional(v.string()),
+  data: v.optional(v.unknown()),
+  error: v.optional(v.object({ message: v.string() })),
+  message: v.optional(v.string()),
+});
+
 interface GenericEnvelope<T> {
   success?: boolean;
   status?: string;
@@ -194,13 +208,14 @@ export async function pingWorker(): Promise<boolean> {
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     const workerToken = import.meta.env.VITE_WORKER_TOKEN;
 
-    const res = await fetch(`${url}/hub/ping`, {
+    // PATHOGEN: Anemic variable 'res' replaced with domain-descriptive name.
+    const pingResponse = await fetch(`${url}/hub/ping`, {
       method: "GET",
       headers: workerToken ? { "Authorization": `Bearer ${workerToken}` } : {},
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-    return res.ok;
+    return pingResponse.ok;
   } catch {
     return false;
   }
@@ -324,7 +339,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   if (typeof data === "string") {
     try {
       parsedData = JSON.parse(data);
-    } catch (e) {
+    } catch (parseError) { // PATHOGEN: Anemic variable 'e' replaced.
       throw new Error("Failed to parse data string");
     }
   } else {
@@ -533,12 +548,22 @@ async function _executeGasRequest<T>(
       throw new Error("Backend Configuration Error (HTML Response)");
     }
 
-    let envelope: GenericEnvelope<T>;
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Malformed or malicious envelopes causing downstream logic failure.
+    // Rationale: We validate the envelope structure before processing its contents.
+    let json: unknown;
     try {
-      envelope = JSON.parse(text);
-    } catch (e) {
+      json = JSON.parse(text);
+    } catch (jsonError) { // PATHOGEN: Anemic variable 'e' replaced.
       throw new Error("Malformed JSON Response from Backend");
     }
+
+    const envelopeValidation = v.safeParse(GenericEnvelopeSchema, json);
+    if (!envelopeValidation.success) {
+      throw new Error("Invalid Response Envelope from Backend");
+    }
+
+    const envelope = envelopeValidation.output;
 
     const isSuccess =
       envelope.success === true ||
@@ -571,10 +596,15 @@ async function _executeGasRequest<T>(
       // Target B [4]: Type-safe Service Worker Sync registration
       if ("serviceWorker" in navigator && "SyncManager" in window) {
         try {
-          const reg = await navigator.serviceWorker.ready;
-          // [GUARD] Check for Background Sync capability without 'any' pathogens
-          if ('sync' in reg) {
-            const syncManager = (reg as unknown as { sync: { register: (tag: string) => Promise<void> } }).sync;
+          const registration = await navigator.serviceWorker.ready;
+
+          // [GUARD] Type-safe access to SyncManager without pathogens.
+          interface SyncRegistration {
+            sync: { register: (tag: string) => Promise<void> };
+          }
+
+          if ('sync' in registration) {
+            const syncManager = (registration as unknown as SyncRegistration).sync;
             await syncManager.register("offline-queue-sync");
           }
         } catch (syncErr) {
@@ -675,10 +705,10 @@ export async function fetchRemote(options?: {
             // Defensively check if this is the Raw Spreadsheet export
             // The Raw export has an empty Column A, so Tag is at index 1.
             let lbSchema = DEFAULT_LB_SCHEMA;
-            let lbRows: any[][] = [];
+            let lbRows: unknown[][] = []; // PATHOGEN: Replacing any[][] with unknown[][]
             
             let hhSchema = DEFAULT_HH_SCHEMA;
-            let hhRows: any[][] = [];
+            let hhRows: unknown[][] = []; // PATHOGEN: Replacing any[][] with unknown[][]
 
             if (Array.isArray(rosterTable) && rosterTable.length > 2) {
               const row1 = rosterTable[1];
@@ -786,7 +816,7 @@ export async function fetchRemote(options?: {
   const requestUrl = `${url}${separator}action=${action}&_cb=${Date.now()}`;
   
   const maxAttempts = 5;
-  for (let i = 0; i < maxAttempts; i++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) { // PATHOGEN: Anemic variable 'i' replaced.
     try {
       const response = await fetch(requestUrl, {
         method: "POST",
@@ -796,8 +826,8 @@ export async function fetchRemote(options?: {
       });
 
       if (!response.ok) {
-        if (response.status >= 500 && i < maxAttempts - 1) {
-          const delay = Math.min(1000 * Math.pow(2, i), 10000);
+        if (response.status >= 500 && attempt < maxAttempts - 1) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
@@ -809,14 +839,20 @@ export async function fetchRemote(options?: {
           throw new Error("Backend Configuration Error (HTML Response)");
       }
 
-      let payload;
+      // [GUARD] VALIDATION BOUNDARY: Target B [1]
+      let payload: unknown;
       try {
         payload = JSON.parse(text);
-      } catch (e) {
+      } catch (jsonError) { // PATHOGEN: Anemic variable 'e' replaced.
         throw new Error("Malformed JSON Response from Backend");
       }
 
-      const envelope: GenericEnvelope<unknown> = payload;
+      const envelopeValidation = v.safeParse(GenericEnvelopeSchema, payload);
+      if (!envelopeValidation.success) {
+        throw new Error("Invalid Response Envelope from Backend");
+      }
+
+      const envelope = envelopeValidation.output;
       const isSuccess = envelope.success === true || (envelope.status && envelope.status.toLowerCase() === "success");
 
       if (isSuccess && envelope.data) {
@@ -827,20 +863,20 @@ export async function fetchRemote(options?: {
       }
       throw new Error(envelope.error?.message || "Invalid Response Structure");
 
-    } catch (e: unknown) {
+    } catch (fetchError: unknown) { // PATHOGEN: Anemic variable 'e' replaced.
       // [GUARD] FATAL ERRORS: Target IV - Resilience
       // Do not retry on explicit client rejections (4xx), malformed payloads, 
       // or deliberate user cancellations (AbortError).
-      const isFatal = e instanceof Error && (
-        e.name === "AbortError" || 
-        e.message.includes("Server returned HTTP") || 
-        e.message.includes("Backend Configuration Error") || 
-        e.message.includes("Malformed JSON")
+      const isFatal = fetchError instanceof Error && (
+        fetchError.name === "AbortError" ||
+        fetchError.message.includes("Server returned HTTP") ||
+        fetchError.message.includes("Backend Configuration Error") ||
+        fetchError.message.includes("Malformed JSON")
       );
 
-      if (isFatal || i === maxAttempts - 1) throw e;
+      if (isFatal || attempt === maxAttempts - 1) throw fetchError;
       
-      const delay = Math.min(1000 * Math.pow(2, i), 10000);
+      const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
