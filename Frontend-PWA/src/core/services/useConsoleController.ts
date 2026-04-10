@@ -111,6 +111,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const clashStore = useClashDataStore();
   const {
+    data: storeRawData,
     isHydrated: storeHydrated,
     isRefreshing: storeRefreshing,
     syncError: storeSyncError,
@@ -469,6 +470,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     isHydrated,
     currentSource,
     hubSyncTime,
+    data: storeRawData,
     layoutProps,
     layoutEvents,
 
@@ -497,6 +499,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     getCardMetadata: (id: string) => ({
       expanded: expandedIds.value.has(id),
       selected: selectedSet.value.has(id),
+      selectionMode: isSelectionMode.value,
+      isTagged: storeRawData.value?.playerTag === id,
       // [PERF] SCOPED REFRESH: Only signal 'refreshing' to expanded cards
       // to prevent unnecessary re-renders of the entire collapsed list.
       appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
@@ -521,6 +525,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       expandedIds.value.has(id),
       selectedSet.value.has(id),
       isRefreshing.value && expandedIds.value.has(id),
+      storeRawData.value?.playerTag === id,
       ...extraKeys,
     ],
   };
