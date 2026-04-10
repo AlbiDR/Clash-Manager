@@ -26,3 +26,4 @@ README.md
 2026-04-07 Reconciled Backend-Worker/README.md and root README.md: Synced version badges to 10.1.4, updated /hub/state schema, and hardened security documentation.
 2026-04-08: Frontend-PWA/README.md updated (Transport: 20s timeout & 5-attempt retry loop)
 2026-04-09: Reconciled Backend-Worker/README.md with implementation ground truth. Updated /hub/state example with empty Column A and removed redundant 'Keys' row. Deepened Resource Management documentation with Network.ts technical details and synchronized version to 10.1.4.
+Frontend-PWA/README.md
