@@ -56,7 +56,6 @@ const {
           :id="`recruit-${item.id}`"
           :recruit="item"
           v-bind="getCardMetadata(item.id)"
-          :selection-mode="isSelectionMode"
           :style="{ '--i': index }"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"

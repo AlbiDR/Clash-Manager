@@ -6,7 +6,7 @@ const props = defineProps<{
   id: string;
   expanded: boolean;
   selected: boolean;
-  selectionMode?: boolean;
+  selectionMode: boolean;
   isTagged?: boolean;
   score?: number;
   toneClass?: string;
@@ -25,7 +25,7 @@ const {
   handleLongPress,
   handleScoreClick: internalScoreClick,
   handleExpandClick: internalExpandClick,
-} = useCardMechanics(props as any, {
+} = useCardMechanics(props, {
   onExpand: () => emit("toggle"),
   onSelect: () => emit("toggle-select"),
 });

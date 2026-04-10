@@ -38,6 +38,7 @@ const {
   expanded,
   selected,
   selectionMode,
+  isTagged = false,
   appIsRefreshing = false,
 } = defineProps<{
   /** Unique identifier for the recruit (Player Tag). */
@@ -50,6 +51,8 @@ const {
   selected: boolean;
   /** UI State: Toggles between interaction modes (Details vs. Batch Action). */
   selectionMode: boolean;
+  /** Optional: Indicates if the player is currently tagged for an action. */
+  isTagged?: boolean;
   /** Optional: Inherited refresh status to manage loading skeletons and accessibility states. */
   appIsRefreshing?: boolean;
 }>();
@@ -74,6 +77,7 @@ const timeAgo = computed(() => formatTimeAgo(recruit.d.ago));
     :expanded="expanded"
     :selected="selected"
     :selection-mode="selectionMode"
+    :is-tagged="isTagged"
     :score="recruit.potentialScore"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"

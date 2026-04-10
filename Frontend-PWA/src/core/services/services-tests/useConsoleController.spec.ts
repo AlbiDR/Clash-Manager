@@ -52,6 +52,7 @@ vi.mock("../useDeepLinkHandler", async () => {
 vi.mock("../useClashDataStore", async () => {
     const { ref } = await import("vue");
     const mockStore = {
+        data: ref({ playerTag: null }),
         isHydrated: ref(true),
         isRefreshing: ref(false),
         syncError: ref(null),
@@ -529,6 +530,8 @@ describe("useConsoleController", () => {
       expect(getCardMetadata("1")).toEqual({
         expanded: false,
         selected: false,
+        selectionMode: false,
+        isTagged: false,
         appIsRefreshing: false,
       });
 
