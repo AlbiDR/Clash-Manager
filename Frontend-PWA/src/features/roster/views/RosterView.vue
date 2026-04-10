@@ -65,14 +65,11 @@ const {
           :key="item.id"
           v-memo="getMemoKeys(item.id, [
             item.performanceScore,
-            item.dt,
-            data?.playerTag === item.id
+            item.dt
           ])"
           :id="`member-${item.id}`"
           :member="item"
           v-bind="getCardMetadata(item.id)"
-          :selection-mode="isSelectionMode"
-          :is-tagged="data?.playerTag === item.id"
           :style="{ '--i': index }"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
