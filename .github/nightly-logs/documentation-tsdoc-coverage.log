@@ -21,3 +21,4 @@ Frontend-PWA/src/core/services/useClashDataStore.ts
 Frontend-PWA/src/core/services/useWakeLock.ts
 Frontend-PWA/src/features/laboratory/logic/Registry.ts
 Frontend-PWA/src/core/services/useDeepLinkHandler.ts
+Frontend-PWA/src/core/services/useExternalLink.ts
