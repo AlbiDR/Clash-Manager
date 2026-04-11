@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-11] PR #409: test(verify): add defensive coverage for NetworkSettings component
+**Commit**: `ebee66f61ae1cbc8e0147a5c4a76faf24b3fbb4e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/409)
+
+### Description
+Add unit tests for the NetworkSettings component to ensure it correctly handles API status states, user configuration of the API endpoint, and the reset of custom URL overrides.
+
+---
+*PR created automatically by Jules for task [16825988014999337736](https://jules.google.com/task/16825988014999337736) started by @AlbiDR*
+
+---
+
 ## [2026-04-10] PR #408: chore(deps): bump vitest suite from 4.1.3 to 4.1.4
 **Commit**: `71774dde69b9f40b6a618af8b783cc1911183eb9`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/408)
