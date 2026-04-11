@@ -1,6 +1,24 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-11] PR #410: Document Capacity-Aware Scouting and Scoring Logic
+**Commit**: `449d837fbd2bc69157fcc96b1920275527a90fd3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/410)
+
+### Description
+I have updated `Backend-GAS/README.md` to include a new section titled "Capacity-Aware Scouting & Scoring". This section provides technical depth on the dynamic behaviors of the recruitment and scoring systems, specifically detailing:
+- The **Headhunter Scouting Strategy** and its two operational modes (Maintenance vs. Discovery).
+- The **Trophy Floor Calibration** logic used by the Scoring Kernel (Elite vs. Rebuild modes).
+- The **Hybrid Benchmark Alignment** process, including the specific thresholds and blending logic.
+- The **Smart Membership Validation** procedures for maintaining pool hygiene.
+
+These changes ensure the documentation is synchronized with the actual implementation found in `Headhunter.ts`, `Scoring.ts`, and `Scoring_Kernel.ts`. I have also updated the nightly coverage log and verified the changes through the automated test suite.
+
+---
+*PR created automatically by Jules for task [2020419618697616943](https://jules.google.com/task/2020419618697616943) started by @AlbiDR*
+
+---
+
 ## [2026-04-11] PR #409: test(verify): add defensive coverage for NetworkSettings component
 **Commit**: `ebee66f61ae1cbc8e0147a5c4a76faf24b3fbb4e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/409)
