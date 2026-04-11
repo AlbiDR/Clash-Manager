@@ -7,6 +7,34 @@ The **Operational Core**. A high-performance, event-driven Google Apps Script ru
 ---
 <br />
 
+## Capacity-Aware Scouting & Scoring
+
+The system implements dynamic behavior models that adapt based on the current clan capacity and competitive density.
+
+### Headhunter Scouting Strategy
+The scouting engine (`Headhunter.ts`) automatically pivots its discovery strategy to optimize candidate quality:
+- **Maintenance Mode**: Triggered when the clan has **>= 48 members**. The system prioritizes elite-only discovery by enforcing a hard **9000 trophy floor**, minimizing administrative noise when recruitment slots are scarce.
+- **Discovery Mode**: Triggered when the clan has significant vacancies. The system utilizes the **In-Game Required Trophies** as the baseline, maximizing candidate yield to fill the roster rapidly.
+
+### Trophy Floor Calibration
+The `Scoring_Kernel.ts` dynamically calculates the optimal recruitment standard based on clan size:
+- **Elite Mode**: Active when the clan exceeds **41 members** (the "Critical Mass" threshold). The scouting floor is set to the **Median Trophy Count** of the current roster, ensuring that recruits are consistently better than the bottom half of the clan.
+- **Rebuild Mode**: Active during growth phases. The floor is set to the **Bottom 10% Average**, protecting the clan's baseline while allowing for easier entry of new talent.
+
+### Hybrid Benchmark Alignment
+To prevent standards from stagnating, the system calculates a blended performance target:
+- **Elite Roster Reference**: Analyzes the average Raw Performance Score (RPeS) of all members with a **Performance Score (PeS) >= 50%**.
+- **Market Intelligence Reference**: Analyzes the **top 5%** of all scanned candidates in the global pool.
+- **Blending**: These two metrics are blended (defaulting to a 40/60 split) to produce a "Hybrid Benchmark" that reflects both internal excellence and external market potential.
+
+### Smart Membership Validation
+The recruitment pool is proactively pruned during every scout cycle to maintain high data hygiene:
+- **Auto-Dismissal**: Recruits discovered in other clans are immediately removed from the active scout feed.
+- **Account Hygiene**: Candidates whose accounts have been deleted or banned are identified via null profile responses and purged from the database.
+
+---
+<br />
+
 ## System Architecture
 
 The codebase adheres to the **"Clean Stack"** philosophy, organized into distinct layers:
