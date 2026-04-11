@@ -1,6 +1,20 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-11] PR #411: docs(tsdoc): document useNetworkInfo hardware broker
+**Commit**: `d767614e5408e81433f8b76faae1005a4fb3372c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/411)
+
+### Description
+This PR documents the `useNetworkInfo` Layer 1 (@core) service in `Frontend-PWA`. It adds mandatory licensing headers, formal TSDoc explaining its role as a hardware-brokering singleton, and inline rationale for its performance thresholds. It also explicitly defines the import boundaries for Layer 1 modules per the CleanStack ADR.
+
+Target Branch: Nightly
+
+---
+*PR created automatically by Jules for task [12785825946190285753](https://jules.google.com/task/12785825946190285753) started by @AlbiDR*
+
+---
+
 ## [2026-04-11] PR #410: Document Capacity-Aware Scouting and Scoring Logic
 **Commit**: `449d837fbd2bc69157fcc96b1920275527a90fd3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/410)
