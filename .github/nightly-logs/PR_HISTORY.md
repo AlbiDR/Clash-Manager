@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-12] PR #416: docs(tsdoc): enhance sort strategies documentation and enforce licensing
+**Commit**: `4b7fd487c2af6ed4ea36ad33b41f8ec9eec6de3f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/416)
+
+### Description
+This PR enhances the documentation for the `sortStrategies.ts` utility in the Frontend-PWA core. It adds comprehensive TSDoc blocks to all exported sorting functions, explaining their architectural role, parameters, and the intent behind specific logic like hybrid tie-breaking. Additionally, it enforces the project's mandatory licensing header at the top of the file. All changes were verified with the existing test suite, ensuring no regressions in the clinical sorting logic.
+
+---
+*PR created automatically by Jules for task [14341142714954029450](https://jules.google.com/task/14341142714954029450) started by @AlbiDR*
+
+---
+
 ## [2026-04-12] PR #415: Reconcile worker hardening boundaries in README
 **Commit**: `98325216f8d913e1f0dd6de261e86c9b88157ec7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/415)
