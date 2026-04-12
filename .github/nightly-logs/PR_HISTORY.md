@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-12] PR #417: Reconcile War Intelligence into system manifest
+**Commit**: `339174218713a85c0d17309c8d6eec6b34c55ee1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/417)
+
+### Description
+Reconciled the War Intelligence module into the project's centralized version integrity system. This involved promoting the internal version constant to a standardized `VER_WAR_INTELLIGENCE`, adding it to the system manifest in `Configuration.ts`, and registering it in the health check logic within `Orchestrator.ts`. Tests were updated to ensure ongoing consistency. Out-of-scope header version bumps were reverted to adhere strictly to the reconciliation mandate.
+
+---
+*PR created automatically by Jules for task [16312345028360615421](https://jules.google.com/task/16312345028360615421) started by @AlbiDR*
+
+---
+
 ## [2026-04-12] PR #416: docs(tsdoc): enhance sort strategies documentation and enforce licensing
 **Commit**: `4b7fd487c2af6ed4ea36ad33b41f8ec9eec6de3f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/416)
