@@ -90,12 +90,13 @@ export const ProphetIntelSchema = v.object({
  * Boundary for the `/public/scan` endpoint. Handles unauthenticated requests
  * for tournament discovery and initial recruit scoring.
  *
+ * THREAT: Unauthenticated quota depletion via large tag arrays. Bounded to 25.
  * THREAT: Un-normalized prophetCache keys bypass heritage lookups for recruits.
  */
 export const PublicScanRequestSchema = v.object({
-  tags: v.array(TagSchema),
+  tags: v.pipe(v.array(TagSchema), v.maxLength(25)),
   apiKeys: v.optional(v.array(v.string())),
-  blacklist: v.optional(v.array(TagSchema)),
+  blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(25))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
   prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
@@ -108,12 +109,13 @@ export const PublicScanRequestSchema = v.object({
  * Boundary for the privileged `/scan` endpoint. Supports full-precision
  * discovery and heritage-augmented scoring.
  *
+ * THREAT: Privileged resource exhaustion via large tag arrays. Bounded to 100.
  * THREAT: Un-normalized prophetCache keys bypass heritage lookups for recruits.
  */
 export const ScanRequestSchema = v.object({
-  tags: v.array(TagSchema),
+  tags: v.pipe(v.array(TagSchema), v.maxLength(100)),
   apiKeys: v.optional(v.array(v.string())),
-  blacklist: v.optional(v.array(TagSchema)),
+  blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(100))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
   prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))

@@ -16,3 +16,4 @@ Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
 2026-04-10 03:44:26 - [Harden] Frontend-PWA/src/core/services/useClashDataStore.ts: Resolved failure-mode deadlock in refreshWorker by clearing loading state before fallback.
 2026-04-13 Hardened Backend-Worker/src/index.ts and schemas.ts by removing 'Forbidden Pathogens' (as any, redundant casts, anemic variables).
 2026-04-10 03:43:36 - [Harden] Frontend-PWA/src/core/api/GasClient.ts: Implemented GenericEnvelopeSchema for strict response validation; eliminated CleanStack pathogens (any[][], anemic variables, untyped SW sync).
+[2026-04-12] HARDENED: PublicScanRequestSchema & ScanRequestSchema (Backend-Worker/src/schemas.ts). Applied v.maxLength constraints (25/100) to 'tags' and 'blacklist' arrays to prevent unauthenticated quota depletion and DoS.
