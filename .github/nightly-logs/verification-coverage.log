@@ -49,3 +49,4 @@ Frontend-PWA/src/features/settings/components/SettingsCard.vue
 Frontend-PWA/src/features/settings/components/BackendRefresher.vue
 Frontend-PWA/src/core/services/useUiCoordinator.ts
 Frontend-PWA/src/features/settings/components/NetworkSettings.vue
+Backend-Worker/src/schemas.ts
