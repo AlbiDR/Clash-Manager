@@ -9,6 +9,8 @@ import {
   ProphetIntelSchema,
   AuditRequestSchema,
   PublicScanRequestSchema,
+  ScanRequestSchema,
+  ClanFullRequestSchema,
   ClanApiRequestSchema,
   FetchRequestSchema,
   SubscriptionRequestSchema,
@@ -135,6 +137,84 @@ describe('Request Schemas', () => {
     it('should reject invalid fields', () => {
       expect(v.safeParse(PublicScanRequestSchema, { tags: 'not-an-array' }).success).toBe(false);
       expect(v.safeParse(PublicScanRequestSchema, { tags: ['#T'], minTrophies: 'high' }).success).toBe(false);
+    });
+
+    it('should reject tags array exceeding maxLength of 25', () => {
+      const tags = Array(26).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject blacklist array exceeding maxLength of 25', () => {
+      const tags = ['#TAG1'];
+      const blacklist = Array(26).fill('#TAG2');
+      const data = {
+        tags,
+        blacklist,
+        apiKeys: ['key1'],
+        minTrophies: 5000
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('ScanRequestSchema', () => {
+    it('should validate internal scan requests', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['key1'],
+        blacklist: ['#TAG2'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(true);
+    });
+
+    it('should reject tags array exceeding maxLength of 100', () => {
+      const tags = Array(101).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject blacklist array exceeding maxLength of 100', () => {
+      const tags = ['#TAG1'];
+      const blacklist = Array(101).fill('#TAG2');
+      const data = {
+        tags,
+        blacklist,
+        apiKeys: ['key1'],
+        minTrophies: 5000
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('ClanFullRequestSchema', () => {
+    it('should validate clan full snapshot requests', () => {
+      expect(v.safeParse(ClanFullRequestSchema, { tag: '#TAG1' }).success).toBe(true);
+      expect(v.safeParse(ClanFullRequestSchema, { tag: '#TAG1', apiKeys: ['key1'] }).success).toBe(true);
+    });
+
+    it('should normalize tag in clan full requests', () => {
+      const result = v.safeParse(ClanFullRequestSchema, { tag: 'tag1' });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.tag).toBe('#TAG1');
+      }
+    });
+
+    it('should reject missing tag', () => {
+      expect(v.safeParse(ClanFullRequestSchema, {}).success).toBe(false);
     });
   });
 
