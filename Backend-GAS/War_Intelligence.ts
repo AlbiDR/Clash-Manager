@@ -75,11 +75,12 @@ function getWarSnapshot(): WarSnapshot {
  * WAR INTELLIGENCE ENGINE
  * Singleton module for managing war state snapshots.
  */
+export const VER_WAR_INTELLIGENCE = "12.4.1";
+
 const WarIntelligence = (() => {
   const K = "W_SNAP_V12_1"; // Cache Key
   const TTL = 900;          // 15 Min Cache (Quota Preservation)
   const RESET_H = 10;       // 10:00 UTC Reset (Game Standard)
-  const VERSION = "12.4.1";
 
   return {
     /**
@@ -225,7 +226,7 @@ const WarIntelligence = (() => {
         },
         meta: {
           timestamp: now.toISOString(),
-          version: VERSION
+          version: VER_WAR_INTELLIGENCE
         }
       };
     },
@@ -263,3 +264,10 @@ const WarIntelligence = (() => {
     }
   };
 })();
+
+/**
+ * GLOBAL BRIDGE
+ */
+(function(scope: any) {
+  Object.assign(scope, { WarIntelligence, VER_WAR_INTELLIGENCE });
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

@@ -36,3 +36,10 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ### Logged Drift (Unresolved):
 - **None**: No version drift detected across 24 GAS modules or Worker string declarations.
+
+## [2026-04-23]
+### Reconciled:
+- **GAS - WAR_INTELLIGENCE**: Promoted internal VERSION ("12.4.1") to VER_WAR_INTELLIGENCE constant and integrated into CONFIG.SYSTEM.MANIFEST (Rule D). Registered module in Orchestrator.ts health check.
+
+### Logged Drift (Unresolved):
+- **None**: Both GAS and Worker subsystems are now fully synchronized.
