@@ -159,6 +159,8 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 #### `POST /scan` / `POST /public/scan`
 Scans tournament brackets to discover new recruits. Configurable with blacklists. `POST /scan` requires authentication, while `/public/scan` is open.
 
+> **Note**: These endpoints are subject to **Input Bounding**. `/public/scan` allows up to **25** tags/blacklist entries, while `/scan` allows up to **100**.
+
 **Payload:**
 ```json
 {
@@ -332,6 +334,13 @@ Runtime integrity is enforced at the Layer 1 validation boundary. The `TagSchema
 - **Case Sensitivity**: All tags are automatically converted to **UPPERCASE**.
 - **Prefix Consistency**: Tags are prepended with a mandatory **'#'** prefix if missing.
 This prevents duplicate entries in the Prophet Cache and ensures that recruitment blacklists cannot be bypassed by varying the input format.
+
+### Input Bounding
+To mitigate Denial-of-Service (DoS) and resource exhaustion attacks, the worker enforces strict input boundaries at the Layer 1 validation boundary:
+- **JSON Payload Limit**: The Express server restricts incoming JSON request bodies to **50MB** (configured in `index.ts`).
+- **Tag Array Bounding**: Recruitment scan requests are bounded by `v.maxLength` (Valibot) to prevent unauthenticated quota depletion:
+  - **Public Scan (`/public/scan`)**: Limited to **25** tournament tags and **25** blacklist tags.
+  - **Internal Scan (`/scan`)**: Limited to **100** tournament tags and **100** blacklist tags.
 
 ---
 <br />
