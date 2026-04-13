@@ -95,7 +95,7 @@ export const ProphetIntelSchema = v.object({
  */
 export const PublicScanRequestSchema = v.object({
   tags: v.pipe(v.array(TagSchema), v.maxLength(25)),
-  apiKeys: v.optional(v.array(v.string())),
+  apiKeys: v.pipe(v.array(v.string()), v.minLength(1)),
   blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(25))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),

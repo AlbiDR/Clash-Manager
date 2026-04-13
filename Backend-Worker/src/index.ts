@@ -110,7 +110,7 @@ const KEYS = new KeyService(rawKeys); // EPHEMERAL: intentionally resets on rest
 //  EXPRESS APP SETUP
 // ============================================================================
 
-const app = express(); // EPHEMERAL: instance resets on restart
+export const app = express(); // EPHEMERAL: instance resets on restart
 
 // CORS Middleware
 app.use((request: Request, response: ExpressResponse, next: NextFunction): void => {
@@ -134,6 +134,7 @@ app.use((request: Request, response: ExpressResponse, next: NextFunction): void 
  */
 export const authMiddleware: RequestHandler = (request, response, next) => {
   const publicRoutes = [
+    "/",
     "/health",
     "/capabilities",
     "/public/scan",
@@ -688,15 +689,21 @@ app.get("/capabilities", (_request: Request, response: ExpressResponse): void =>
  * 2. **Upstream:** Executes a test call to the Royale API using the healthiest key.
  * 3. **System:** Reports memory usage (RSS).
  */
-app.get("/health", async (_request: Request, response: ExpressResponse): Promise<void> => {
+app.get("/health", async (request: Request, response: ExpressResponse): Promise<void> => {
     // 1. Local Pool Diagnostics
     const pool = KEYS.getPoolStats();
     
     // 2. Upstream Check (Current Healthiest Key)
+    // THREAT: Unauthenticated quota depletion via public health endpoint.
+    // Target A [1]: Only perform upstream checks for authenticated callers.
+    const secret = (process.env["REMOTE_WORKER_SECRET"] || "").trim();
+    const authHeader = request.headers.authorization;
+    const isAuthenticated = secret && authHeader === `Bearer ${secret}`;
+
     const testKey = KEYS.getHealthyKey();
-    let upstreamStatus = "UNKNOWN";
+    let upstreamStatus = "SKIPPED_UNAUTHENTICATED";
     
-    if (testKey) {
+    if (isAuthenticated && testKey) {
         try {
             // THREAT: Resource Exhaustion.
             // Even health checks consume quota. Track it.
@@ -1056,13 +1063,13 @@ app.post(
       >(urls, apiKeys, 3, null);
 
       let membersData =
-        results[0]?.code === 200 ? (results[0].content as ClanMembers) : null;
+        results[0]?.code === 200 ? (results[0].content as unknown) : null;
       let raceData =
         results[1]?.code === 200
-          ? (results[1].content as CurrentRiverRace)
+          ? (results[1].content as unknown)
           : null;
       let logData =
-        results[2]?.code === 200 ? (results[2].content as RiverRaceLog) : null;
+        results[2]?.code === 200 ? (results[2].content as unknown) : null;
 
       if (membersData) {
         // THREAT: Malformed member list causing downstream UI crashes.
@@ -1208,9 +1215,10 @@ app.post(
           return;
         }
 
-        const formatRole = (role: string): string =>
-          ({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" })[role] ??
-          "Member";
+        const formatRole = (role: string): string => {
+          const roleMap: Record<string, string> = { leader: "Leader", coLeader: "Co-Leader", elder: "Elder" };
+          return roleMap[role] ?? "Member";
+        };
 
         transformed = validation.output.items.map((member) => ({
           tag: member.tag,
@@ -1372,6 +1380,7 @@ app.post("/hub/sync/manual", async (_request: Request, response: ExpressResponse
   // THREAT: Hanging sync daemon due to missing upstream configuration.
   // Rationale: Fast failure if environment variables are not set prevents
   // malformed fetch attempts and unhandled promise rejections.
+  // NOTE: Auth is handled by global authMiddleware.
   if (!secret || !gasBase) {
     console.error("[Worker] Manual sync failed: REMOTE_WORKER_SECRET or GAS_URL is not set.");
     response.status(500).json({
