@@ -105,6 +105,41 @@ export const useClashDataStore = defineStore("clashData", () => {
   // --- ACTIONS ---
 
   /**
+   * [INTERNAL] Authoritative state commitment for WebAppData.
+   *
+   * @remarks
+   * Rationale: Centralizes the success path for all sync operations to ensure
+   * metadata, persistence, and error-resets are handled identically.
+   * This facilitates the "Structural Integrity" goal by eliminating duplication
+   * and providing a clinical success boundary.
+   */
+  async function commitSyncResult(payload: WebAppData) {
+    data.value = payload;
+
+    // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
+    // Rationale: Use payload's generation timestamp to calculate age,
+    // preventing the "Just Now" reset on every hydration/refresh.
+    lastSync.value = new Date(payload.timestamp).getTime();
+
+    // Metadata Sync
+    dataSource.value = payload.dataSource || null;
+    hubTimestamp.value = payload.hubTimestamp || null;
+    lastCompiled.value = payload.lastCompiled || null;
+    lastFetched.value = payload.lastFetched || null;
+
+    // Status Reset
+    consecutiveSyncFailures.value = 0;
+    syncError.value = null;
+
+    // PERSISTENCE DURABILITY: Target A [2]
+    try {
+      await saveCache(payload);
+    } catch (e: unknown) {
+      console.error("[Store] Commit persistence failed:", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /**
    * Loads the dataset from the persistent browser cache (IndexedDB).
    *
    * @remarks
@@ -122,22 +157,10 @@ export const useClashDataStore = defineStore("clashData", () => {
       if (!cached) return;
 
       // [GUARD] VALIDATION BOUNDARY: Target B [1]
-      // THREAT: Corrupt IndexedDB state causing silent application crashes.
       const result = v.safeParse(WebAppDataSchema, cached);
       if (result.success) {
-        const output = result.output as WebAppData;
-        data.value = output;
-        
-        // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
-        // Rationale: Use the payload's own generation timestamp to calculate age,
-        // preventing the "Just Now" reset on every hydration/refresh.
-        lastSync.value = new Date(output.timestamp).getTime();
-        
-        console.debug(`💾 [Store] Hydrated from cache. Source: ${output.dataSource || "GAS"}`);
-        dataSource.value = output.dataSource || null;
-        hubTimestamp.value = output.hubTimestamp || null;
-        lastCompiled.value = output.lastCompiled || null;
-        lastFetched.value = output.lastFetched || null;
+        console.debug(`💾 [Store] Hydrated from cache. Source: ${result.output.dataSource || "GAS"}`);
+        await commitSyncResult(result.output);
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
       }
@@ -154,10 +177,6 @@ export const useClashDataStore = defineStore("clashData", () => {
    * external payloads (e.g., from Turbo Scan) do not corrupt the store.
    *
    * @param payload - The raw data object (usually WebAppData shape).
-   *
-   * @sideeffects
-   * - MUTATES reactive `data` state.
-   * - WRITES to `IndexedDB` via `saveCache`.
    */
   async function updateLocalData(payload: unknown) {
     // [GUARD] VALIDATION BOUNDARY: Target B [1]
@@ -167,14 +186,7 @@ export const useClashDataStore = defineStore("clashData", () => {
       return;
     }
 
-    data.value = result.output as WebAppData;
-
-    // PERSISTENCE DURABILITY: Target A [2]
-    try {
-      await saveCache(result.output);
-    } catch (e: unknown) {
-      console.error("[Store] Failed to persist local update:", e instanceof Error ? e.message : String(e));
-    }
+    await commitSyncResult(result.output);
   }
 
   /**
@@ -186,8 +198,6 @@ export const useClashDataStore = defineStore("clashData", () => {
    *
    * @sideeffects
    * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
-   * - MUTATES `data`, `loading`, and `lastSync` reactive state.
-   * - WRITES to `IndexedDB` via `saveCache`.
    * - FALLBACKS to `startBackgroundSync` on Worker failure.
    */
   async function refreshWorker() {
@@ -199,24 +209,14 @@ export const useClashDataStore = defineStore("clashData", () => {
       await wakeLock.request();
       const remoteData = await fetchRemote({ force: true, preferWorker: true });
       
-      const validation = v.safeParse(WebAppDataSchema, remoteData);
-      if (!validation.success) {
-        console.error("[Store] Worker Validation Failure Details:", JSON.stringify(validation.issues, null, 2));
+      const result = v.safeParse(WebAppDataSchema, remoteData);
+      if (!result.success) {
+        console.error("[Store] Worker Validation Failure Details:", JSON.stringify(result.issues, null, 2));
         throw new Error("Worker data validation failed");
       }
 
-      const output = validation.output as WebAppData;
-      data.value = output;
-      lastSync.value = new Date(output.timestamp).getTime();
-      
-      console.debug(`🌐 [Store] Refresh successful. Attribution: ${output.dataSource || "GAS"}`);
-      dataSource.value = output.dataSource || null;
-      hubTimestamp.value = output.hubTimestamp || null;
-      lastCompiled.value = output.lastCompiled || null;
-      lastFetched.value = output.lastFetched || null;
-      consecutiveSyncFailures.value = 0;
-      syncError.value = null;
-      await saveCache(validation.output as WebAppData);
+      console.debug(`🌐 [Store] Refresh successful. Attribution: ${result.output.dataSource || "GAS"}`);
+      await commitSyncResult(result.output);
     } catch (e: unknown) {
       console.warn("[Store] Worker-direct refresh failed:", e);
 
@@ -249,8 +249,6 @@ export const useClashDataStore = defineStore("clashData", () => {
    *
    * @sideeffects
    * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
-   * - MUTATES `data`, `loading`, `lastSync`, and `consecutiveSyncFailures` state.
-   * - WRITES to `IndexedDB` via `saveCache`.
    */
   async function startBackgroundSync(force = false) {
     if (loading.value) return;
@@ -259,7 +257,6 @@ export const useClashDataStore = defineStore("clashData", () => {
     loading.value = true;
     // Note: syncError is not cleared immediately if we have data, 
     // to avoid flickering the UI if it's already showing an error.
-    // However, if we succeed, we clear it.
 
     try {
       // Use WakeLock during heavy sync to prevent mobile sleep
@@ -268,29 +265,12 @@ export const useClashDataStore = defineStore("clashData", () => {
       const remoteData = await fetchRemote({ force });
 
       // [GUARD] VALIDATION BOUNDARY: Target B [1]
-      // Rationale: Ensure that the remote payload matches the expected schema
-      // before it enters the application state. Malformed responses from GAS
-      // or the Worker must be rejected to prevent silent corruption.
-      const validation = v.safeParse(WebAppDataSchema, remoteData);
-      if (!validation.success) {
+      const result = v.safeParse(WebAppDataSchema, remoteData);
+      if (!result.success) {
         throw new Error("Remote data validation failed");
       }
 
-      const output = validation.output as WebAppData;
-      data.value = output;
-
-      // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
-      lastSync.value = new Date(output.timestamp).getTime();
-      
-      dataSource.value = output.dataSource || null;
-      hubTimestamp.value = output.hubTimestamp || null;
-      lastCompiled.value = output.lastCompiled || null;
-      lastFetched.value = output.lastFetched || null;
-      consecutiveSyncFailures.value = 0;
-      syncError.value = null; // Clear error on success
-      
-      // PERSISTENCE: StorageService handles the IndexedDB write
-      await saveCache(validation.output as WebAppData);
+      await commitSyncResult(result.output);
     } catch (e: unknown) {
       consecutiveSyncFailures.value++;
       
