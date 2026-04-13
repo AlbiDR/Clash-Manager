@@ -159,6 +159,16 @@ describe("GasClient", () => {
       expect(result).not.toBeNull();
       expect(result!).toHaveLength(1);
       expect(result![0].id).toBe("2CCCP");
+
+      // Verify correct endpoint and authentication
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/scan"),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "Authorization": "Bearer test-token"
+          })
+        })
+      );
     });
 
     it("returns null when worker scan fails validation", async () => {
