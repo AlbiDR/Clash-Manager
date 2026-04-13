@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Single Source of Truth for the entire application.
  * ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * VERSION: 10.0.20
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
