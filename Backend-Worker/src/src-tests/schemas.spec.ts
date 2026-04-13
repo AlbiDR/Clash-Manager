@@ -131,12 +131,16 @@ describe('Request Schemas', () => {
     });
 
     it('should validate minimal scan requests', () => {
-      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#TAG1'] }).success).toBe(true);
+      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#TAG1'], apiKeys: ['key1'] }).success).toBe(true);
+    });
+
+    it('should reject requests with missing apiKeys', () => {
+      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#TAG1'] }).success).toBe(false);
     });
 
     it('should reject invalid fields', () => {
-      expect(v.safeParse(PublicScanRequestSchema, { tags: 'not-an-array' }).success).toBe(false);
-      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#T'], minTrophies: 'high' }).success).toBe(false);
+      expect(v.safeParse(PublicScanRequestSchema, { tags: 'not-an-array', apiKeys: ['key1'] }).success).toBe(false);
+      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#T'], apiKeys: ['key1'], minTrophies: 'high' }).success).toBe(false);
     });
 
     it('should reject tags array exceeding maxLength of 25', () => {

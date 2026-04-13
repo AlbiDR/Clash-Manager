@@ -952,25 +952,29 @@ export async function triggerBackendUpdate(
  */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const workerUrl = getWorkerUrl();
+  const workerToken = import.meta.env.VITE_WORKER_TOKEN;
   if (!workerUrl) return null;
 
   try {
-    const res = await fetch(`${workerUrl}/public/scan`, {
+    const scanResponse = await fetch(`${workerUrl}/scan`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(workerToken ? { "Authorization": `Bearer ${workerToken}` } : {})
+      },
       body: JSON.stringify({
         tags: ["2CCCP", "9U9Q9", "29UQQ282", "200000"],
         scoring: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 }
       })
     });
 
-    if (!res.ok) throw new Error(`Worker status ${res.status}`);
-    const json = await res.json();
+    if (!scanResponse.ok) throw new Error(`Worker status ${scanResponse.status}`);
+    const rawScanResults = await scanResponse.json();
 
     // [GUARD] VALIDATION BOUNDARY: Implements Target B [1] hardening.
     // Enforces strict schema validation for data returned from the remote worker
     // to prevent unvalidated external payloads from polluting the recruitment logic.
-    const result = v.safeParse(WorkerScanResponseSchema, json);
+    const result = v.safeParse(WorkerScanResponseSchema, rawScanResults);
     
     if (!result.success) {
       // THREAT: Malformed or malicious worker response causing downstream UI crashes or logic errors.
@@ -978,16 +982,16 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       return null;
     }
 
-    return result.output.candidates.map((c) => ({
-      id: c.tag.replace("#", ""),
-      n: c.name,
-      t: c.trophies,
-      potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)),
-      potentialRawScore: c.rawScore,
+    return result.output.candidates.map((candidate) => ({
+      id: candidate.tag.replace("#", ""),
+      n: candidate.name,
+      t: candidate.trophies,
+      potentialScore: Math.min(100, Math.round((candidate.rawScore / 50000) * 100)),
+      potentialRawScore: candidate.rawScore,
       d: {
-        don: c.donations,
-        war: c.war,
-        cards: c.cards,
+        don: candidate.donations,
+        war: candidate.war,
+        cards: candidate.cards,
         ago: new Date().toISOString()
       },
       lastScan: 0
@@ -1015,7 +1019,7 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
       body: JSON.stringify(subscription)
     });
     return true;
-  } catch (e) {
+  } catch (pushError) {
     return false;
   }
 }

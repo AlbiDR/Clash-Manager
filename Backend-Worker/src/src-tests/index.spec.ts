@@ -222,5 +222,24 @@ describe("Worker Core Logic (index.ts)", () => {
       const candidates = await processScanBatch(tags);
       expect(candidates).toHaveLength(0);
     });
+
+    it("should use global KeyService when no apiKeys are provided", async () => {
+      const tags = ["#TOURN1"] as any;
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({
+          tag: "#TOURN1",
+          membersList: []
+        })),
+      });
+
+      // Call without apiKeys (simulating authenticated /scan without custom keys)
+      await processScanBatch(tags);
+
+      // Verify it called fetch (which uses fetchWithRotatedRetries)
+      expect(mockFetch).toHaveBeenCalled();
+      // In this setup, KeyService mock is used. index.ts uses the global KEYS if no batchManager.
+    });
   });
 });

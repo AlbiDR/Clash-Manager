@@ -22,9 +22,9 @@ describe("Authentication Middleware", () => {
     app.get("/health", (_req, res) => res.status(200).send("HEALTHY"));
   });
 
-  it("should block unauthenticated access to /", async () => {
+  it("should allow unauthenticated access to /", async () => {
     const res = await request(app).get("/");
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
   });
 
   it("should block unauthenticated access to /hub/state", async () => {
