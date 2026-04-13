@@ -72,7 +72,7 @@ Returns the current worker version and internal configuration limits. Used by th
 > **Note**: The Worker Hub currently returns raw matrices (arrays of arrays) as provided by the GAS dumb store. Re-hydration and field mapping are performed by the PWA's `GasClient.ts` to minimize Worker-side transformation overhead.
 
 #### `GET /health`
-Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
+Performs a deep health check, including internal key pool statistics. **Upstream API connectivity validation** is performed only for authenticated callers to prevent unauthorized quota depletion.
 
 **Response:**
 ```json
@@ -157,7 +157,7 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ### Intelligence & Scanning
 
 #### `POST /scan` / `POST /public/scan`
-Scans tournament brackets to discover new recruits. Configurable with blacklists. `POST /scan` requires authentication, while `/public/scan` is open.
+Scans tournament brackets to discover new recruits. Configurable with blacklists. `POST /scan` requires authentication, while `/public/scan` is open. Both endpoints require mandatory `apiKeys` in the payload to prevent unauthorized usage of the worker's internal key pool.
 
 > **Note**: These endpoints are subject to **Input Bounding**. `/public/scan` allows up to **25** tags/blacklist entries, while `/scan` allows up to **100**.
 
@@ -165,7 +165,7 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 ```json
 {
   "tags": ["#TOURNEY1", "#TOURNEY2"],
-  "apiKeys": ["sk_key1", "sk_key2"],
+  "apiKeys": ["sk_key1", "sk_key2"], // MANDATORY for both /scan and /public/scan
   "blacklist": ["#PLAYER1"],
   "minTrophies": 5000,
   "scoring": { "TROPHY": 1.0, "DON": 0.07, "WAR": 20.0 },
@@ -325,8 +325,8 @@ To preserve the project's shared Royale API budget and prevent accidental exhaus
 
 The worker enforces a strict security perimeter via `authMiddleware`:
 
-- **Bearer Token**: All privileged requests (`/`, `/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`, `/hub/state`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
-- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
+- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`, `/hub/state`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 
 ### Data Integrity: Tag Normalization
@@ -338,7 +338,7 @@ This prevents duplicate entries in the Prophet Cache and ensures that recruitmen
 ### Input Bounding
 To mitigate Denial-of-Service (DoS) and resource exhaustion attacks, the worker enforces strict input boundaries at the Layer 1 validation boundary:
 - **JSON Payload Limit**: The Express server restricts incoming JSON request bodies to **50MB** (configured in `index.ts`).
-- **Tag Array Bounding**: Recruitment scan requests are bounded by `v.maxLength` (Valibot) to prevent unauthenticated quota depletion:
+- **Tag Array Bounding**: Recruitment scan requests are bounded by `v.maxLength` (Valibot) and mandatory `apiKeys` (v.minLength(1)) to prevent unauthenticated quota depletion:
   - **Public Scan (`/public/scan`)**: Limited to **25** tournament tags and **25** blacklist tags.
   - **Internal Scan (`/scan`)**: Limited to **100** tournament tags and **100** blacklist tags.
 
