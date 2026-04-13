@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-13] PR #425: chore(deps): update major version watchlist
+**Commit**: `e52161d1644ef3424def4f5298252e7eabefcf5d`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/425)
+
+### Description
+Escalated @vitejs/plugin-vue to the major version watchlist after a failed Tier 1 patch bump attempt. The bump failed the mandatory test gate due to a pre-existing failure in Backend-GAS-tests/Headhunter_Scanner.spec.ts. Following the Dependency-Audit protocol, the changes were reverted and documented in the persistent audit log.
+
+---
+*PR created automatically by Jules for task [14409200576728467429](https://jules.google.com/task/14409200576728467429) started by @AlbiDR*
+
+---
+
 ## [2026-04-13] PR #424: fix(version): reconcile Backend-GAS header drift
 **Commit**: `d1d82d451c4f51349c75b780aae3ead240f94917`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/424)
