@@ -25,6 +25,9 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ## [2026-04-13]
 ### Reconciled:
+- **GAS - CONFIGURATION**: Updated header VERSION from `10.0.20` to `13.1.0` to match `VER_CONFIGURATION` (Rule B/Consistency).
+- **GAS - API_PUBLIC**: Updated header VERSION from `11.0.1` to `13.1.0` to match `VER_API_PUBLIC` (Rule B/Consistency).
+- **GAS - REPORTING**: Updated header VERSION from `1.1.0` to `1.2.0` to match `VER_REPORTING` (Rule B/Consistency).
 - **Backend-Worker**: Synchronized version declaration in `PayloadKernel.ts` from `v1_hub` to `10.1.4` to match the ground truth.
 
 ### Logged Drift (Unresolved):

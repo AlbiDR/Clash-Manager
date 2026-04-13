@@ -4,7 +4,7 @@
  * MODULE: API_PUBLIC - TypeScript Edition
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
- * VERSION: 11.0.1
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
