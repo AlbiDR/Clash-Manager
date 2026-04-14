@@ -3,6 +3,8 @@
 
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import * as v from "valibot";
+import { OptimizationSettingsSchema, InventoryOverrideSchema } from "../logic/Schemas";
 import type {
   PlayerData,
   OptimizationSettings,
@@ -65,12 +67,26 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
    */
   const fetchError = ref<string | null>(null);
 
-  const storedSettings = JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || "{}");
+  // [GUARD] VALIDATION BOUNDARY: Harden settings ingestion from LocalStorage.
+  // Target B [1]: Prevents "The any Plague" by validating persisted settings.
+  const getStoredSettings = (): Partial<OptimizationSettings> => {
+    const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    if (!raw) return {};
+    try {
+      const parsed = JSON.parse(raw);
 
-  // MIGRATION: LEGACY COMPATIBILITY
-  // Rationale: Ensure users with old strategy names are migrated to prevent simulation mismatch.
-  if (storedSettings.strategy === "Target") storedSettings.strategy = "Level Projection";
-  if (storedSettings.strategy === "Maximize") storedSettings.strategy = "Resource Efficiency";
+      // MIGRATION: LEGACY COMPATIBILITY
+      // Rationale: Ensure users with old strategy names are migrated to prevent simulation mismatch.
+      if (parsed.strategy === "Target") parsed.strategy = "Level Projection";
+      if (parsed.strategy === "Maximize") parsed.strategy = "Resource Efficiency";
+
+      const result = v.safeParse(v.partial(OptimizationSettingsSchema), parsed);
+      return result.success ? result.output : {};
+    } catch (parseError) { // PATHOGEN: Anemic variable 'e' replaced with 'parseError'.
+      console.warn("[LaboratoryStore] Failed to parse stored settings");
+      return {};
+    }
+  };
 
   /**
    * REACTIVE STATE: User-defined constraints for the optimization engine.
@@ -81,7 +97,7 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     allowGemSpending: false,
     infiniteResources: false,
     targetLevel: undefined,
-    ...storedSettings
+    ...getStoredSettings()
   });
 
   // --- ACTIONS ---
@@ -110,18 +126,25 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     const stored = localStorage.getItem(STORAGE_KEY_INVENTORY);
     if (stored) {
       try {
-        const persisted = JSON.parse(stored);
-        return {
-          ...profileData.inventory,
-          ...persisted,
-          gold: asGold(persisted.gold ?? Number(profileData.inventory.gold)),
-          gems: asGems(persisted.gems ?? Number(profileData.inventory.gems)),
-          wildCards: {
-            ...profileData.inventory.wildCards,
-            ...(persisted.wildCards || {})
-          }
-        };
-      } catch (e) {
+        const parsed = JSON.parse(stored);
+        // [GUARD] VALIDATION BOUNDARY: Harden inventory ingestion from LocalStorage.
+        // Target B [1]: Ensures that corrupted persistence data does not poison simulation state.
+        const result = v.safeParse(InventoryOverrideSchema, parsed);
+
+        if (result.success) {
+          const persisted = result.output;
+          return {
+            ...profileData.inventory,
+            ...persisted,
+            gold: asGold(persisted.gold ?? Number(profileData.inventory.gold)),
+            gems: asGems(persisted.gems ?? Number(profileData.inventory.gems)),
+            wildCards: {
+              ...profileData.inventory.wildCards,
+              ...(persisted.wildCards || {})
+            }
+          };
+        }
+      } catch (parseError) { // PATHOGEN: Anemic variable 'e' replaced with 'parseError'.
         console.warn("[LaboratoryStore] Failed to parse persisted inventory");
       }
     }
