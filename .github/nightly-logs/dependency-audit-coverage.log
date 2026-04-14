@@ -33,6 +33,7 @@
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
-| knip | ^6.3.0 | 6.4.0 | 2026-04-22 | Tier 1 bump (minor) failed test gate due to pre-existing Headhunter_Scanner.spec.ts failure. |
-| @types/node | ^24.12.0 | 24.12.2 | 2026-04-12 | Tier 1 bump (patch) failed test gate due to pre-existing Headhunter_Scanner.spec.ts failure. |
-| @vitejs/plugin-vue | ^6.0.5 | 6.0.6 | 2026-04-13 | Tier 1 bump (patch) failed test gate due to pre-existing Headhunter_Scanner.spec.ts failure. |
+| vite | ^7.3.1 | 8.0.8 | 2026-05-17 | Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. Verify manualChunks. |
+| knip | ^6.3.0 | 6.4.1 | 2026-04-22 | [Updated] Tier 1 minor bump previously failed test gate. |
+| @types/node | ^24.12.0 | 25.6.0 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
+| @vitejs/plugin-vue | ^6.0.5 | 6.0.6 | 2026-04-13 | [Updated] Tier 1 patch bump previously failed test gate. |
