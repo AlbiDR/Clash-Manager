@@ -128,6 +128,41 @@ Manages item expansion and auto-scroll based on URL query parameters.
 ### 12. Metadata Centralization (`useSystemInfo`)
 Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic).
 
+### 13. Adaptive Haptics Engine (`useHaptics`)
+Brokered access to device vibration hardware for tactical physical feedback.
+- **Battery Awareness**: Implements power-aware scaling, automatically reducing vibration intensity when the device is in low-power mode or below 20% battery.
+- **Interaction Security**: Enforces a strict user-gesture requirement before allowing hardware access to comply with browser security models.
+
+### 14. Cross-Platform Badging (`useBadge`)
+Orchestrates application-level notification badges across inconsistent platform APIs.
+- **Dual-Path Strategy**: Utilizes the native W3C Badge API for iOS/Desktop and a persistent notification fallback for Android.
+- **Flood Protection**: Implements a 1500ms debounce and exponential backoff retry mechanism to prevent API exhaustion and Service Worker instability.
+
+### 15. Intent Orchestration (`useExternalLink`)
+Specialized broker for deep-linking into external applications and the Clash Royale client.
+- **Hidden Anchor Pattern**: Employs a temporary DOM element with a 100ms cleanup lifecycle to trigger OS Intents without dropping PWA execution context.
+- **Android Intent Protocol**: Uses direct `intent://` schemes to ensure reliability when launching from sandboxed WebViews or Chrome Custom Tabs.
+
+### 16. Native Share Broker (`useShare`)
+Provides a unified interface for the Web Share API with defensive error management.
+- **Cancellation Handling**: Automatically silences `AbortError` exceptions to treat user cancellation as a successful termination of the UI flow.
+- **Capability Guard**: Proactively detects hardware sharing support before exposing interactive elements.
+
+### 17. Cross-Tab Synchronization (`useBroadcastChannel`)
+Ensures atomic state consistency across multiple open browser tabs/windows.
+- **Real-Time Events**: Dispatches high-priority messages for data synchronization success and recruit dismissal to prevent UI desynchronization.
+- **Memory Safety**: Implements deterministic cleanup of the communication channel on component unmount.
+
+### 18. Advanced Network Telemetry (`useNetworkInfo`)
+Layer 1 hardware broker for the Network Information API.
+- **Degradation Detection**: Proactively identifies "Slow" connection states based on high latency (>500ms RTT) or low bandwidth (<1Mbps downlink).
+- **Singleton Persistence**: Maintains a module-level state to ensure consistent connection metrics across all application call sites.
+
+### 19. Optimized List Logic (`useListFilter`)
+A domain-blind engine for high-performance searching and sorting of large datasets.
+- **WeakMap Caching**: Utilizes a module-level `WeakMap` to cache normalized search fields, achieving O(1) amortized lookup performance and maintaining 60FPS during active filtering.
+- **Stability Support**: Implements stable tie-breaking logic (Name -> ID) to ensure deterministic rendering order across sort transitions.
+
 ---
 <br />
 
