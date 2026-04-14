@@ -15,6 +15,7 @@ import { useClashDataStore } from "./useClashDataStore";
 import { useHaptics } from "@core";
 import { storeToRefs } from "pinia";
 import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
+import type { ConsoleCardMetadata } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 
@@ -496,7 +497,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
      * Centralizing this logic ensures that performance optimizations (like v-memo)
      * are applied consistently across Roster and Headhunter views.
      */
-    getCardMetadata: (id: string) => ({
+    getCardMetadata: (id: string): ConsoleCardMetadata => ({
       expanded: expandedIds.value.has(id),
       selected: selectedSet.value.has(id),
       selectionMode: isSelectionMode.value,
