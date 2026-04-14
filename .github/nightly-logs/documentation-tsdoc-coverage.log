@@ -25,3 +25,4 @@ Frontend-PWA/src/core/services/useExternalLink.ts
 Frontend-PWA/src/core/services/useNetworkInfo.ts
 Frontend-PWA/src/core/utils/sortStrategies.ts
 Frontend-PWA/src/core/services/useShare.ts
+Frontend-PWA/src/core/services/useBroadcastChannel.ts
