@@ -4,7 +4,7 @@
 // Optimized for Native System Compatibility (WebAPK)
 import { precacheAndRoute } from "workbox-precaching";
 
-declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
+declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] };
 declare const clients: Clients;
 
 interface PeriodicSyncEvent extends ExtendableEvent {
@@ -124,7 +124,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
             shortcutId: "recruit_shortcut_id",
             url: "/#/headhunter",
           },
-        } as any);
+        } as NotificationOptions);
       } else {
         const notifications = await self.registration.getNotifications({
           tag: "com.app.RECRUIT_UPDATES",
@@ -147,7 +147,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   }
 
   // FORCE UPDATE: Manual skipWaiting via message
-  if ((data as any).type === "SKIP_WAITING") {
+  if (data.type === ("SKIP_WAITING" as string)) {
     self.skipWaiting();
   }
 });
@@ -176,7 +176,7 @@ self.addEventListener("push", (event: PushEvent) => {
           badge: "pwa-64.png",
           tag: payload.tag || "push-alert",
           data: payload.data || {},
-        } as any);
+        } as NotificationOptions);
       }
     })(),
   );
@@ -209,7 +209,7 @@ async function handlePushBadge(payload: PushPayload): Promise<void> {
           shortcutId: "recruit_shortcut_id",
           url: "/#/headhunter",
         },
-      } as any,
+      } as NotificationOptions,
     );
   }
 
@@ -227,9 +227,10 @@ async function handlePushBadge(payload: PushPayload): Promise<void> {
 /**
  * Periodic background sync
  */
-self.addEventListener("periodicsync", (event: any) => {
-  if (event.tag === "update-recruit-badge") {
-    event.waitUntil(handleBackgroundSync());
+self.addEventListener("periodicsync", (event: Event) => {
+  const periodicEvent = event as PeriodicSyncEvent;
+  if (periodicEvent.tag === "update-recruit-badge") {
+    periodicEvent.waitUntil(handleBackgroundSync());
   }
 });
 
@@ -280,7 +281,7 @@ async function handleBackgroundSync(): Promise<void> {
               url: "/#/headhunter",
               timestamp: Date.now(),
             },
-          } as any);
+          } as NotificationOptions);
         } else {
           const notifications = await self.registration.getNotifications({
             tag: "com.app.RECRUIT_UPDATES",
@@ -299,9 +300,10 @@ async function handleBackgroundSync(): Promise<void> {
 /**
  * One-time background sync (recovery)
  */
-self.addEventListener("sync", (event: any) => {
-  if (event.tag === "offline-queue-sync") {
-    event.waitUntil(processOfflineQueue());
+self.addEventListener("sync", (event: Event) => {
+  const syncEvent = event as SyncEvent;
+  if (syncEvent.tag === "offline-queue-sync") {
+    syncEvent.waitUntil(processOfflineQueue());
   }
 });
 

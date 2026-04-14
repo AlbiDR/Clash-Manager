@@ -38,6 +38,7 @@ function handleScoreClick(e: MouseEvent | TouchEvent) {
 
 <template>
   <div
+    :id="props.id"
     class="card squish-interaction"
     :class="{ expanded: props.expanded, selected: props.selected, tagged: props.isTagged }"
     role="article"

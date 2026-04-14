@@ -62,3 +62,10 @@ Frontend-PWA/src/features/settings/composables/index.ts
 Frontend-PWA/src/features/settings/composables/composables-tests/useBackendRefresher.spec.ts
 Frontend-PWA/src/features/settings/components/components-tests/BackendRefresher.spec.ts
 Frontend-PWA/src/core/services/useClashDataStore.ts
+Frontend-PWA/src/core/types/index.ts
+Frontend-PWA/src/features/roster/components/MemberCard.vue
+Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
+Frontend-PWA/src/app/main.ts
+Frontend-PWA/src/app/sw.ts
+Frontend-PWA/src/shared/ui/BaseCard.vue
+Frontend-PWA/src/core/services/useConsoleController.ts
