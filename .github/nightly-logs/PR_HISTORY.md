@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-14] PR #430: chore(deps): update major version watchlist for Vite 8.0
+**Commit**: `1719ffb3d138dde12038f3e5e3eb04929c7c44ad`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/430)
+
+### Description
+Atomic Tier 2 update to the dependency watchlist for Vite 8.0. Includes analysis of the Rolldown migration impact and synchronization of existing watchlist entries for knip and node types. All Tier 1 bumps remain blocked by the pre-existing scanner test failure.
+
+---
+*PR created automatically by Jules for task [3482721374182093015](https://jules.google.com/task/3482721374182093015) started by @AlbiDR*
+
+---
+
 ## [2026-04-14] PR #429: docs(readme): deepen core service documentation in PWA
 **Commit**: `9e51117fa79de42ee01bec5d7cc69295d402ce13`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/429)
