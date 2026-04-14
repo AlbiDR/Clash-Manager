@@ -173,21 +173,25 @@ async function bootstrap() {
       // NATIVE: Register Periodic Sync for WebAPK
       if (
         "serviceWorker" in navigator &&
-        "periodicSync" in (navigator as any).serviceWorker
+        "periodicSync" in (navigator.serviceWorker as unknown as { periodicSync: unknown })
       ) {
         try {
           const registration = await navigator.serviceWorker.ready;
-          const status = await (navigator as any).permissions.query({
-            name: "periodic-background-sync",
-          });
+          const periodicSync = (registration as unknown as { periodicSync?: { register: (tag: string, options: { minInterval: number }) => Promise<void> } }).periodicSync;
 
-          if (status.state === "granted") {
-            await (registration as any).periodicSync.register(
-              "update-recruit-badge",
-              {
-                minInterval: 12 * 60 * 60 * 1000, // 12 hours
-              },
-            );
+          if (periodicSync) {
+            const status = await (navigator.permissions as unknown as { query: (options: { name: string }) => Promise<{ state: string }> }).query({
+              name: "periodic-background-sync",
+            });
+
+            if (status.state === "granted") {
+              await periodicSync.register(
+                "update-recruit-badge",
+                {
+                  minInterval: 12 * 60 * 60 * 1000, // 12 hours
+                },
+              );
+            }
           }
         } catch (e) {
           console.warn("Periodic Sync registration failed", e);
