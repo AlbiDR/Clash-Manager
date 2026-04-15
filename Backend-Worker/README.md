@@ -91,6 +91,8 @@ Performs a deep health check, including internal key pool statistics. **Upstream
 #### `GET /hub/state`
 Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for the PWA. Fails over to atomic L2 Disk Cache during a cold boot.
 
+> **Note**: Returns a **503 Service Unavailable** response with a structured `HubError` (`ERR_STATE_MISSING`) if the state has not yet been initialized or synced from the GAS backend.
+
 **Response:**
 ```json
 {
@@ -316,6 +318,7 @@ To preserve the project's shared Royale API budget and prevent accidental exhaus
 
 - **Daily Budget**: All Royale API traffic originating from the worker is capped at **15,000 requests per 24-hour period** (configured via `MAX_FETCH_DAILY_GUARD` in `Network.ts`).
 - **Fail-Fast Evaluation**: High-volume operations (`processBatch`, `processScanBatch`, `audit`) perform an estimated usage check before execution using `Network.quotaCheck()`. If the operation would exceed the remaining budget, it is aborted with a `ERR_QUOTA_EXHAUSTED` HubError.
+- **Error Classification**: The worker utilizes robust error classification at the Layer 5 control surface. Structured `HubError` objects (like quota exhaustion) are validated via Valibot and reported with human-readable messages to ensure clear diagnostic feedback for the PWA and GAS backend.
 - **Real-Time Tracking**: Every upstream request is tracked in memory (ephemeral) via `Network.addQuotaUsage()` and reset daily at 00:00 UTC.
 
 ---
