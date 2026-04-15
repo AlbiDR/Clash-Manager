@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-15] PR #435: docs(tsdoc): document useShareTarget service
+**Commit**: `c270498bc06eb173e6a73d1447be1183afee88de`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/435)
+
+### Description
+This PR adds formal TSDoc and mandatory licensing headers to the `useShareTarget` service in the Frontend-PWA. It establishes the module's architectural role as a Layer 1 (@core) hardware broker responsible for processing incoming Web Share Target intents.
+
+Key additions:
+- **Licensing Header:** Added the standard GPL-3.0-only header.
+- **Architectural Context:** Documented its role within Layer 1 and its strict import boundaries.
+- **Functional Annotation:** Detailed the regex-based extraction of player tags and the "Zero Latency" cleanup of the browser history.
+- **Side Effects:** Explicitly documented writes to `window.history`, toast dispatching, and routing triggers.
+
+Verified via 831 passing tests in the PWA suite.
+
+---
+*PR created automatically by Jules for task [923480366347589156](https://jules.google.com/task/923480366347589156) started by @AlbiDR*
+
+---
+
 ## [2026-04-15] PR #434: docs(readme): reconcile worker error classification
 **Commit**: `597448f765eacd9fef20e6eab3f6f9827516c10c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/434)
