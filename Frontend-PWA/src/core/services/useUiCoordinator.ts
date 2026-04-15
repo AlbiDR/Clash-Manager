@@ -15,7 +15,7 @@ const fabState = reactive({
   selectionCount: 0,
   blitzEnabled: false,
   // Callbacks - set by the view that owns the selection
-  onAction: null as ((e: MouseEvent) => void) | null,
+  onAction: null as ((event: MouseEvent) => void) | null,
   onBlitz: null as (() => void) | null,
   onDismiss: null as (() => void) | null,
 });
@@ -65,7 +65,7 @@ export function useUiCoordinator() {
     isBlasting?: boolean;
     selectionCount?: number;
     blitzEnabled?: boolean;
-    onAction?: (e: MouseEvent) => void;
+    onAction?: (event: MouseEvent) => void;
     onBlitz?: () => void;
     onDismiss?: () => void;
   }) {

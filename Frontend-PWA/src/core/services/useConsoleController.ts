@@ -12,7 +12,7 @@ import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useClashDataStore } from "./useClashDataStore";
-import { useHaptics } from "@core";
+import { useHaptics } from "./useHaptics";
 import { storeToRefs } from "pinia";
 import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
 import type { ConsoleCardMetadata } from "@core/types";
@@ -50,6 +50,10 @@ interface ConsoleLogicOptions<T> {
   filterFn: (item: T) => string[];
   /** A dictionary of sorting strategies keyed by their UI identifier. */
   sortStrategies: Record<string, (a: T, b: T) => number>;
+  /** Available sorting options for the UI. */
+  sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
+  /** Whether to show the search input in the header. */
+  showSearch?: boolean;
   /** The UI identifier of the default sorting strategy. */
   defaultSort: string;
   /** Prefix used for URL hash deep linking (e.g., 'member-'). */
@@ -135,6 +139,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     lastFetchedTime = storeLastFetched,
     filterFn,
     sortStrategies,
+    sortOptions,
+    showSearch = true,
     defaultSort,
     deepLinkPrefix,
     batchIdMapper,
@@ -375,8 +381,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     selectAll(ids);
   }
 
-  function handleSearch(val: string) {
-    searchQuery.value = val;
+  function handleSearch(query: string) {
+    searchQuery.value = query;
   }
 
   /**
@@ -393,8 +399,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
 
     const ids = filteredItems.value
       .filter((item: T) => {
-        const s = getter(item);
-        return mode === "ge" ? s >= threshold : s <= threshold;
+        const score = getter(item);
+        return mode === "ge" ? score >= threshold : score <= threshold;
       })
       .map(batchIdMapper);
     setForceSelectionMode(ids.length === 0);
@@ -416,6 +422,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     syncError: syncError.value || undefined,
     sheetUrl: sheetUrl.value,
     stats: statsBadge.value,
+    sortOptions,
+    showSearch,
     fabState: fabState.value,
     isSelectionMode: isSelectionMode.value,
     selectedCount: selectedIds.value.length,
@@ -440,7 +448,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
    */
   const layoutEvents = computed(() => ({
     refresh: refreshFn,
-    "update:search": (val: string) => (searchQuery.value = val),
+    "update:search": (query: string) => (searchQuery.value = query),
     "update:sort": updateSort,
     "select-all": handleSelectAll,
     "clear-selection": clearSelection,
