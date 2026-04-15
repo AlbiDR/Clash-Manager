@@ -31,3 +31,5 @@ Backend-GAS/README.md
 Backend-Worker/README.md
 2026-04-25: Reconciled Backend-Worker/README.md (Authenticated health checks & mandatory scan apiKeys)
 Frontend-PWA/README.md
+Backend-Worker/README.md
+2026-04-26: Reconciled Backend-Worker/README.md (Robust Error Classification & Hub State status)
