@@ -32,11 +32,8 @@ import MemberCard from "../components/MemberCard.vue";
 
 
 const {
-  data,
   isShowcaseMode,
   visibleItems,
-  isSelectionMode,
-  sortOptions,
   toggleExpand,
   toggleSelect,
   layoutProps,
@@ -52,8 +49,6 @@ const {
     title="Roster"
     v-bind="layoutProps"
     v-on="layoutEvents"
-    :show-search="true"
-    :sort-options="sortOptions"
   >
     <!-- Default Slot: The List -->
     <ConsoleList
