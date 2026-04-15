@@ -1,11 +1,8 @@
-import { isWorkerConfigured, scanRecruitsDirect } from "@core/api/GasClient";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
-import { useShowcaseMode } from "@core/services/useShowcaseMode";
-import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
-import { computed, watch, ref } from "vue";
+import { computed, watch } from "vue";
 import { useHeadhunter } from "./useHeadhunter";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
@@ -63,6 +60,7 @@ export function useRecruiter() {
     data: recruits,
     filterFn: (recruit: Recruit) => [recruit.n, recruit.id],
     sortStrategies: RecruiterSort,
+    sortOptions: RECRUITER_SORT_OPTIONS,
     defaultSort: "score",
     deepLinkPrefix: "recruit-",
     batchIdMapper: (recruit: Recruit) => recruit.id,
@@ -72,14 +70,12 @@ export function useRecruiter() {
     onDismiss: dismissBulk,
   });
 
-  const sortOptions = RECRUITER_SORT_OPTIONS;
-
   // 🧹 CLEANUP: Extra Recruit Logic managed here
   watch(
     () => data.value?.hh,
     (newRecruits) => {
       if (newRecruits && newRecruits.length > 0) {
-        const currentIds = newRecruits.map((r) => r.id);
+        const currentIds = newRecruits.map((recruit) => recruit.id);
         blacklist.prune(currentIds);
       }
     },
@@ -97,16 +93,16 @@ export function useRecruiter() {
    * 3. RECOVERY: Roll back local state only if the server explicitly rejects the change.
    */
   function executeDismiss(recruitsToRemove: Recruit[]) {
-    const ids = recruitsToRemove.map(r => r.id);
+    const ids = recruitsToRemove.map(recruit => recruit.id);
     
     // 🎯 DIRECT SCORE CAPTURE: Extract score at the point of dismissal
-    const items = recruitsToRemove.map(r => ({
-      id: r.id,
-      score: r.potentialRawScore || 0,
-      potentialRawScore: r.potentialRawScore || 0
+    const items = recruitsToRemove.map(recruit => ({
+      id: recruit.id,
+      score: recruit.potentialRawScore || 0,
+      potentialRawScore: recruit.potentialRawScore || 0
     }));
 
-    console.log('[Dismissal] Captured scores:', items.map(i => `${i.id}: ${i.score}`));
+    console.log('[Dismissal] Captured scores:', items.map(dismissalItem => `${dismissalItem.id}: ${dismissalItem.score}`));
 
     const { undismissRecruitsAction } = useHeadhunter();
 
@@ -147,7 +143,7 @@ export function useRecruiter() {
     const ids = [...controller.selectedIds.value];
     
     // 🎯 CAPTURE FULL RECRUITS: Get the complete objects before any state changes
-    const recruitsToRemove = recruits.value.filter(r => ids.includes(r.id));
+    const recruitsToRemove = recruits.value.filter(recruit => ids.includes(recruit.id));
     
     controller.clearSelection();
     executeDismiss(recruitsToRemove);
@@ -155,7 +151,7 @@ export function useRecruiter() {
 
   return {
     ...controller,
-    sortOptions,
+    sortOptions: RECRUITER_SORT_OPTIONS,
     dismissBulk,
   };
 }

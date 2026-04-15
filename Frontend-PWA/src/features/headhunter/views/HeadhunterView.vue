@@ -10,7 +10,6 @@ import RecruitCard from "../components/RecruitCard.vue";
 
 
 const {
-  sortOptions,
   visibleItems,
   isShowcaseMode,
   refresh,
@@ -20,7 +19,6 @@ const {
   layoutEvents,
   getCardMetadata,
   getMemoKeys,
-  isSelectionMode,
 } = useRecruiter();
 
 </script>
@@ -30,8 +28,6 @@ const {
     title="Headhunter"
     v-bind="layoutProps"
     v-on="layoutEvents"
-    :show-search="true"
-    :sort-options="sortOptions"
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>

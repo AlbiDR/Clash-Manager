@@ -49,14 +49,14 @@ export function useListFilter<T extends { id: string; n?: string }>(
         if (typeof item === "object" && item !== null) {
           let normalizedFields = searchCache.get(item);
           if (!normalizedFields) {
-            normalizedFields = searchFields(item).map((f) => f.toLowerCase());
+            normalizedFields = searchFields(item).map((field) => field.toLowerCase());
             searchCache.set(item, normalizedFields);
           }
-          return normalizedFields?.some((f) => f.includes(query));
+          return normalizedFields?.some((field) => field.includes(query));
         }
         // Fallback for primitives or non-object types
-        return searchFields(item).some((f) =>
-          f.toLowerCase().includes(query),
+        return searchFields(item).some((field) =>
+          field.toLowerCase().includes(query),
         );
       });
     } else {

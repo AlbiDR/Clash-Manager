@@ -1,8 +1,6 @@
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
-import { useShowcaseMode } from "@core/services/useShowcaseMode";
-import { computed } from "vue";
 import { LEADERBOARD_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { LeaderboardSort } from "@core/utils/sortStrategies";
 import type { LeaderboardMember } from "@core/types";
@@ -16,10 +14,6 @@ import type { LeaderboardMember } from "@core/types";
  *
  * @returns
  * - All state and methods from useConsoleController.
- * - `sheetUrl`: Computed URL to the Leaderboard sheet.
- * - `sortOptions`: Array of sorting configurations for the UI.
- * - `onSelectScore`: Specific helper for score-based bulk selection.
- * - `handleSearch`: Search update handler.
  */
 export function useLeaderboard() {
   const clashDataStore = useClashDataStore();
@@ -29,6 +23,7 @@ export function useLeaderboard() {
     data: members,
     filterFn: (member: LeaderboardMember) => [member.n, member.id],
     sortStrategies: LeaderboardSort,
+    sortOptions: LEADERBOARD_SORT_OPTIONS,
     defaultSort: "score",
     deepLinkPrefix: "member-",
     batchIdMapper: (member: LeaderboardMember) => member.id,
@@ -37,10 +32,8 @@ export function useLeaderboard() {
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
   });
 
-  const sortOptions = LEADERBOARD_SORT_OPTIONS;
-
   return {
     ...controller,
-    sortOptions,
+    sortOptions: LEADERBOARD_SORT_OPTIONS,
   };
 }
