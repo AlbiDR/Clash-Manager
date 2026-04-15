@@ -184,12 +184,21 @@ app.use(express.json({ limit: "50mb" }));
  * Safely extracts an error message from an unknown error object.
  * THREAT: Unchecked property access on error objects leading to silent runtime crashes.
  *
- * @param err - The unknown error object to extract a message from.
+ * @param errorPayload - The unknown error object to extract a message from.
  * @returns A string representation of the error message.
  */
-function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
+function getErrorMessage(errorPayload: unknown): string {
+  // [GUARD] STRUCTURAL ERROR EXTRACTION
+  // Target B [1]: Enforce robust error classification using Valibot boundary.
+  // This ensures that structured HubErrors (like quota exhaustion) are reported
+  // with their human-readable messages instead of generic stringifications.
+  const validation = v.safeParse(HubErrorSchema, errorPayload);
+  if (validation.success) {
+    return validation.output.message;
+  }
+
+  if (errorPayload instanceof Error) return errorPayload.message;
+  return String(errorPayload);
 }
 
 /**
