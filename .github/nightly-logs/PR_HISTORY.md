@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-15] PR #432: test(verify): implement defensive coverage for NotificationSettings
+**Commit**: `0af42cbc8788ccf545ea761c94186458fd68cb46`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/432)
+
+### Description
+Implemented comprehensive defensive coverage for the `NotificationSettings.vue` component in the Frontend-PWA. The new test suite covers initial permission states, threshold logic, Cloud Push registration, and test alert mechanisms. Architectural integrity was maintained by using deep imports for Layer 1 service mocks and adhering to the project's strict Pinia initialization protocols. All tests passed, and no regressions were introduced to the monorepo.
+
+---
+*PR created automatically by Jules for task [6545346798223782793](https://jules.google.com/task/6545346798223782793) started by @AlbiDR*
+
+---
+
 ## [2026-04-15] PR #431: fix(harden): structural error reporting in worker
 **Commit**: `b5e3f4391cd53477a932f510617c3b3cd631e021`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/431)
