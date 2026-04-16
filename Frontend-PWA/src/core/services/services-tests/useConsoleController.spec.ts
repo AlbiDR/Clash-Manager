@@ -338,6 +338,31 @@ describe("useConsoleController", () => {
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
       expect(status.value.text).toBe("Nominal");
+      expect((status.value as any).nominal).toBe(true);
+    });
+
+    it("uses lastFetchedTime for age calculation when source is WORKER", () => {
+      const options = createOptions();
+      const now = Date.now();
+      options.currentSource.value = "WORKER";
+      options.lastFetchedTime.value = now - 16 * 60000; // 16m ago (STALE)
+      options.lastSyncTime.value = now - 1 * 60000;    // 1m ago (NOT STALE)
+      options.data.value = [{ id: "1", n: "Test" }];
+
+      const { status } = useConsoleController(options);
+      expect(status.value.text).toBe("Stale Data");
+    });
+
+    it("uses lastSyncTime for age calculation when source is GAS", () => {
+      const options = createOptions();
+      const now = Date.now();
+      options.currentSource.value = "GAS";
+      options.lastFetchedTime.value = now - 1 * 60000;  // 1m ago
+      options.lastSyncTime.value = now - 16 * 60000;   // 16m ago (STALE)
+      options.data.value = [{ id: "1", n: "Test" }];
+
+      const { status } = useConsoleController(options);
+      expect(status.value.text).toBe("Stale Data");
     });
   });
 
@@ -496,11 +521,30 @@ describe("useConsoleController", () => {
       expect(layoutProps.value.hubInfo?.hubAge).toMatch(/1h ago/);
     });
 
+    it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {
+      const options = createOptions();
+      options.currentSource.value = "WORKER";
+      options.lastCompiledTime.value = null;
+      options.lastSyncTime.value = Date.now() - 7200000; // 2h ago
+      const { layoutProps } = useConsoleController(options);
+
+      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/2h ago/);
+    });
+
     it("leaves hubInfo undefined when source is null", () => {
       const options = createOptions();
       options.currentSource.value = null;
       const { layoutProps } = useConsoleController(options);
       expect(layoutProps.value.hubInfo).toBeUndefined();
+    });
+
+    it("sets isEmpty correctly when data is empty and not loading", () => {
+      const options = createOptions();
+      options.data.value = [];
+      options.isRefreshing.value = false;
+      options.isHydrated.value = true;
+      const { layoutProps } = useConsoleController(options);
+      expect(layoutProps.value.isEmpty).toBe(true);
     });
   });
 
@@ -517,6 +561,19 @@ describe("useConsoleController", () => {
       const { layoutEvents, searchQuery } = useConsoleController(createOptions());
       layoutEvents.value["update:search"]("Search Trigger");
       expect(searchQuery.value).toBe("Search Trigger");
+    });
+  });
+
+  describe("getMemoKeys", () => {
+    it("returns a stable array of dependencies including extraKeys", () => {
+      const options = createOptions();
+      const { getMemoKeys } = useConsoleController(options);
+      const extra = ["custom-key"];
+      const keys = getMemoKeys("1", extra);
+
+      expect(keys).toContain("1");
+      expect(keys).toContain("custom-key");
+      expect(keys).toHaveLength(7); // id, isSelectionMode, expanded, selected, isRefreshingExpanded, isTagged, +1 extra
     });
   });
 
