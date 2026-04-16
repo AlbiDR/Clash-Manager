@@ -223,10 +223,34 @@ describe('Request Schemas', () => {
   });
 
   describe('FetchRequestSchema', () => {
-    it('should validate fetch requests', () => {
-      expect(v.safeParse(FetchRequestSchema, { urls: ['http://api.com'] }).success).toBe(true);
-      expect(v.safeParse(FetchRequestSchema, { urls: [], scoring: null }).success).toBe(true);
+    it('should validate fetch requests targeting authorized API base', () => {
+      // Default API_BASE is https://proxy.royaleapi.dev/v1
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v1/players/%23P1'] }).success).toBe(true);
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v1/clans/%23C1'], scoring: null }).success).toBe(true);
       expect(v.safeParse(FetchRequestSchema, { }).success).toBe(false);
+    });
+
+    it('should reject URLs from unauthorized domains (SSRF prevention)', () => {
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://attacker.com/v1/players'] }).success).toBe(false);
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev.attacker.com/v1'] }).success).toBe(false);
+    });
+
+    it('should reject URLs targeting sibling paths', () => {
+      // Base path is /v1. /v11 should be rejected.
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v11/players'] }).success).toBe(false);
+    });
+
+    it('should reject empty urls array', () => {
+      expect(v.safeParse(FetchRequestSchema, { urls: [] }).success).toBe(false);
+    });
+
+    it('should reject invalid URL formats', () => {
+      expect(v.safeParse(FetchRequestSchema, { urls: ['not-a-url'] }).success).toBe(false);
+    });
+
+    it('should reject urls array exceeding maxLength of 100', () => {
+      const urls = Array(101).fill('https://proxy.royaleapi.dev/v1/test');
+      expect(v.safeParse(FetchRequestSchema, { urls }).success).toBe(false);
     });
   });
 
