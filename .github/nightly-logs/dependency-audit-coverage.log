@@ -35,6 +35,7 @@
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
 | vite | ^7.3.1 | 8.0.8 | 2026-05-17 | Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. Verify manualChunks. |
+| express | ^4.22.1 | 5.2.1 | 2026-05-21 | Breaking: Route matching (low impact on worker), async error propagation. |
 | knip | ^6.3.0 | 6.4.1 | 2026-04-22 | [Updated] Tier 1 minor bump previously failed test gate. |
 | @types/node | ^24.12.0 | 25.6.0 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
 | @vitejs/plugin-vue | ^6.0.5 | 6.0.6 | 2026-04-13 | [Updated] Tier 1 patch bump previously failed test gate. |
