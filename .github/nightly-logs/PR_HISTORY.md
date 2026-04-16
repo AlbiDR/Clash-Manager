@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-16] PR #442: chore(deps): update major version watchlist
+**Commit**: `b38ecdd1aea0572032c3351ba53256e45f70510c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/442)
+
+### Description
+Added Express 5.2.1 to the major version watchlist in the dependency audit coverage log and restored historical integrity of the automated fixes section. This action follows the 'Watchkeeper' principle of surfacing breaking external changes for developer review while maintaining a clean audit trail. Verified via monorepo test suite (baseline state maintained).
+
+---
+*PR created automatically by Jules for task [1147097795452097755](https://jules.google.com/task/1147097795452097755) started by @AlbiDR*
+
+---
+
 ## [2026-04-16] PR #441: docs(tsdoc): document useBlueprintMode and enforce licensing
 **Commit**: `ebe2f5109926841b61a4a61f0cde9fb2f4fe0f13`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/441)
