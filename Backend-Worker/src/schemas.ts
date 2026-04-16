@@ -151,9 +151,44 @@ export const ClanApiRequestSchema = v.object({
  * @remarks
  * Validates the payload for the `/fetch` endpoint, supporting high-concurrency
  * retrieval of arbitrary Royale API URLs with optional scoring.
+ *
+ * THREAT: Resource exhaustion and SSRF via unbounded arbitrary URL fetching.
+ * Rationale: Enforcing array length bounds and URL format validation ensures
+ * the endpoint is only used for legitimate Royale API requests.
+ * We enforce a robust origin and path check to prevent bypasses like
+ * 'api.clashroyale.com.attacker.com' or sibling path exfiltration.
  */
 export const FetchRequestSchema = v.object({
-  urls: v.array(v.string()),
+  urls: v.pipe(
+    v.array(
+      v.pipe(
+        v.string(),
+        v.url(),
+        v.check((urlStr) => {
+          try {
+            // [GUARD] SECURITY BOUNDARY: SSRF / Key Leakage Prevention
+            // ADR Rationale: Moving security checks into the schema ensures
+            // all data enters the Clean Stack already validated.
+            const apiBase = process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1";
+            const apiBaseUrl = new URL(apiBase);
+            const requestedUrl = new URL(urlStr);
+
+            // 1. Origin Match: Ensure host and protocol are identical.
+            if (requestedUrl.origin !== apiBaseUrl.origin) return false;
+
+            // 2. Path Match: Ensure the request targets the authorized API version/path.
+            // We append a trailing slash to the base path to prevent sibling path bypasses.
+            const basePath = apiBaseUrl.pathname.endsWith('/') ? apiBaseUrl.pathname : `${apiBaseUrl.pathname}/`;
+            return requestedUrl.pathname.startsWith(basePath) || requestedUrl.pathname === apiBaseUrl.pathname;
+          } catch {
+            return false;
+          }
+        }, "URL must target the authorized Royale API base")
+      )
+    ),
+    v.minLength(1),
+    v.maxLength(100)
+  ),
   apiKeys: v.optional(v.array(v.string())),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
   minTrophies: v.optional(v.number())
