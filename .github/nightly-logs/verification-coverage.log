@@ -52,3 +52,4 @@ Frontend-PWA/src/features/settings/components/NetworkSettings.vue
 Backend-Worker/src/schemas.ts
 Frontend-PWA/src/shared/ui/BaseCardSkeleton.vue
 Frontend-PWA/src/features/settings/components/NotificationSettings.vue
+Frontend-PWA/src/core/services/useConsoleController.ts
