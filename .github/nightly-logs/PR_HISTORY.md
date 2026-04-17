@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-17] PR #445: docs(readme): reconcile technical drift in Backend-Worker
+**Commit**: `49e36184fc6c3370e865ace895838585bf231708`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/445)
+
+### Description
+### Reasoning:
+**[Priority Queue Item]:** **README Synchronization (Drift)**: Reconciled `Backend-Worker/README.md` to match technical implementation and validation logic.
+**[Safety Checks]:** Confirmed ADR coherence (CleanStack vocab: Layer 1 kernel, Validation Boundary) and vocabulary compliance. No application code or administrative context was modified.
+**[Rationale]:** Corrected outdated relative paths in API examples (which now require absolute URLs for SSRF validation), documented the `minTrophies` parameter, and added missing depth regarding resource bounding (Push Subscriptions) and SSRF prevention.
+
+### Changes:
+- **[Backend-Worker/README.md]:** 
+  - Updated `POST /fetch` payload example with absolute URLs.
+  - Documented `minTrophies` optional parameter for `/fetch`, `/scan`, and `/public/scan`.
+  - Added documentation for `MAX_SUBSCRIPTIONS` and field constraints in the "Input Bounding" section.
+  - Documented SSRF prevention mechanisms in the "Security Architecture" section.
+  - Updated `/hub/state` note to include the `layer` field in `HubError` responses.
+
+### Verification:
+- **[Automated]:** Confirm ADR alignment and stylistic purity (no emojis).
+- **[Automated/Audit]:** Verified that all documented parameters (`minTrophies`), constants (`MAX_SUBSCRIPTIONS`), and response fields (`layer`) exist in the source code (`schemas.ts`, `index.ts`, `HubTypes.ts`) via `grep` and `read_file`. Confirmed URL requirements via `v.url()` and origin checks in `schemas.ts`. Verified via 103 passing tests in the `Backend-Worker` suite.
+
+### Log Updates:
+- Updated `.github/nightly-logs/documentation-readme-coverage.log`
+
+---
+*PR created automatically by Jules for task [10823697599844788703](https://jules.google.com/task/10823697599844788703) started by @AlbiDR*
+
+---
+
 ## [2026-04-17] PR #444: perf(opt): refactor settings feature for structural integrity
 **Commit**: `7782b7798672b1352981b796ccb781cc6e87f9ff`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/444)
