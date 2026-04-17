@@ -13,6 +13,7 @@ import { useWakeLock } from "@core/services/useWakeLock";
 import { useSystemInfo } from "@core/services/useSystemInfo";
 import { computed } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";
+
 /**
  * COMPOSABLE: useSettings
  *
@@ -22,7 +23,8 @@ import { useRegisterSW } from "virtual:pwa-register/vue";
  *
  * @returns
  * - All state and methods from sub-composables.
- * - `apiStatusObject`: Computed mapping of connection status to UI state.
+ * - `layoutProps`: Consolidated object for direct injection into `ConsoleLayout`.
+ * - `layoutEvents`: Consolidated events for `ConsoleLayout`.
  * - `footerBadgeText`: Computed label for current specialized display mode.
  * - `appVersion`: Static application version from build environment.
  * - `forceUpdate`: Checks for and applies Service Worker updates.
@@ -47,13 +49,13 @@ export function useSettings() {
 
   const apiStatusObject = computed(() => {
     if (unifiedStatus.value === "online")
-      return { type: "ready", text: "Systems Online" } as const;
+      return { type: "success", text: "Systems Online" } as const;
     if (unifiedStatus.value === "offline")
       return { type: "error", text: "Disconnected" } as const;
     if (unifiedStatus.value === "syncing")
       return { type: "loading", text: "Syncing..." } as const;
     if (unifiedStatus.value === "success-resolve")
-      return { type: "ready", text: "Verified" } as const;
+      return { type: "success", text: "Verified" } as const;
 
     return { type: "loading", text: "Connecting..." } as const;
   });
@@ -65,41 +67,41 @@ export function useSettings() {
 
   async function forceUpdate() {
     haptics.heavy();
-    const tId = toast.info("Checking for updates...");
+    const activeToastId = toast.info("Checking for updates...");
 
     if (!("serviceWorker" in navigator)) {
-      toast.remove(tId);
+      toast.remove(activeToastId);
       toast.error("Service Worker not available");
       return;
     }
 
     try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (!reg) {
-        toast.remove(tId);
+      const swRegistration = await navigator.serviceWorker.getRegistration();
+      if (!swRegistration) {
+        toast.remove(activeToastId);
         toast.error("No active session found");
         return;
       }
 
-      if (reg.waiting) {
-        toast.remove(tId);
+      if (swRegistration.waiting) {
+        toast.remove(activeToastId);
         toast.success("Update ready! Reloading...");
         updateServiceWorker(true);
         return;
       }
 
-      await reg.update();
+      await swRegistration.update();
 
-      if (reg.installing || reg.waiting) {
-        toast.remove(tId);
+      if (swRegistration.installing || swRegistration.waiting) {
+        toast.remove(activeToastId);
         toast.success("Update found! Downloading...");
       } else {
-        toast.remove(tId);
+        toast.remove(activeToastId);
         toast.success("Clash Manager is up to date");
       }
-    } catch (e) {
-      console.error("Update check failed", e);
-      toast.remove(tId);
+    } catch (swUpdateError) {
+      console.error("Update check failed", swUpdateError);
+      toast.remove(activeToastId);
       toast.error("Update check failed");
     }
   }
@@ -112,13 +114,13 @@ export function useSettings() {
       )
     ) {
       if ("serviceWorker" in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
+        const swRegistrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of swRegistrations) {
           await registration.unregister();
         }
       }
       const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
       clearManifestCache();
       window.location.reload();
     }
@@ -135,12 +137,25 @@ export function useSettings() {
       sessionStorage.clear();
       try {
         await idb.clear();
-      } catch (e) {
-        console.warn("IDB clear failed", e);
+      } catch (resetError) {
+        console.warn("IDB clear failed", resetError);
       }
       window.location.reload();
     }
   }
+
+  const layoutProps = computed(() => ({
+    title: "Settings",
+    status: apiStatusObject.value,
+    loading: !isHydrated.value,
+    isRefreshing: isRefreshing.value,
+    sheetUrl: "https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH",
+    footerBadge: footerBadgeText.value,
+  }));
+
+  const layoutEvents = computed(() => ({
+    refresh: () => refresh(),
+  }));
 
   return {
     // State
@@ -155,6 +170,8 @@ export function useSettings() {
     appVersion,
     footerBadgeText,
     apiStatusObject,
+    layoutProps,
+    layoutEvents,
 
     // Methods
     toggle,

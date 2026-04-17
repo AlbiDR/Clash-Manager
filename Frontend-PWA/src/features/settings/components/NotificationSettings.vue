@@ -59,8 +59,8 @@ const setThreshold = (value: 50 | 75) => {
 const enableNotifications = async () => {
   haptics.tap();
   // Improvement #13 was implemented in template (UI rationale)
-  const res = await requestPermission();
-  permissionState.value = res;
+  const permissionResult = await requestPermission();
+  permissionState.value = permissionResult;
 };
 
 // ⚡ FEATURE 1: PUSH SUBSCRIPTION
