@@ -199,12 +199,14 @@ export const FetchRequestSchema = v.object({
  *
  * @remarks
  * Validates the browser-standard PushSubscription object for notification registration.
+ * THREAT: Maliciously large subscription payloads leading to memory exhaustion.
+ * Bounding individual fields ensures the total size of a stored subscription is predictable.
  */
 export const SubscriptionRequestSchema = v.object({
-  endpoint: v.string(),
+  endpoint: v.pipe(v.string(), v.maxLength(500)),
   keys: v.optional(v.object({
-    p256dh: v.string(),
-    auth: v.string()
+    p256dh: v.pipe(v.string(), v.maxLength(200)),
+    auth: v.pipe(v.string(), v.maxLength(200))
   }))
 });
 
