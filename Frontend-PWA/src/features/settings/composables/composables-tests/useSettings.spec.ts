@@ -233,10 +233,10 @@ describe("useSettings", () => {
   });
 
   describe("apiStatusObject", () => {
-    it("returns 'ready' for online status", () => {
+    it("returns 'success' for online status", () => {
       mockStatus.value = "online";
       const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "ready", text: "Systems Online" });
+      expect(apiStatusObject.value).toEqual({ type: "success", text: "Systems Online" });
     });
 
     it("returns 'error' for offline status", () => {
@@ -251,10 +251,10 @@ describe("useSettings", () => {
       expect(apiStatusObject.value).toEqual({ type: "loading", text: "Syncing..." });
     });
 
-    it("returns 'ready' for success-resolve status", () => {
+    it("returns 'success' for success-resolve status", () => {
       mockStatus.value = "success-resolve";
       const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "ready", text: "Verified" });
+      expect(apiStatusObject.value).toEqual({ type: "success", text: "Verified" });
     });
 
     it("returns 'loading' for unknown status", () => {

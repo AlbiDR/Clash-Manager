@@ -77,3 +77,9 @@ Frontend-PWA/src/features/roster/composables/useLeaderboard.ts
 Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
 Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
+Frontend-PWA/src/features/settings/components/index.ts
+Frontend-PWA/src/features/settings/composables/useSettings.ts
+Frontend-PWA/src/features/settings/views/SettingsView.vue
+Frontend-PWA/src/features/settings/components/NetworkSettings.vue
+Frontend-PWA/src/features/settings/components/NotificationSettings.vue
+Frontend-PWA/src/features/settings/composables/composables-tests/useSettings.spec.ts
