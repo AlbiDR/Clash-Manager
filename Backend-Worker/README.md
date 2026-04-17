@@ -91,7 +91,7 @@ Performs a deep health check, including internal key pool statistics. **Upstream
 #### `GET /hub/state`
 Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for the PWA. Fails over to atomic L2 Disk Cache during a cold boot.
 
-> **Note**: Returns a **503 Service Unavailable** response with a structured `HubError` (`ERR_STATE_MISSING`) if the state has not yet been initialized or synced from the GAS backend.
+> **Note**: Returns a **503 Service Unavailable** response with a structured `HubError` (`ERR_STATE_MISSING`) if the state has not yet been initialized or synced from the GAS backend. The error object includes the `layer` field (e.g., `WORKER_PERSISTENCE`) to assist in distributed debugging.
 
 **Response:**
 ```json
@@ -140,9 +140,13 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 **Payload:**
 ```json
 {
-  "urls": ["/players/%23TAG1", "/clans/%23TAG2"],
+  "urls": [
+    "https://proxy.royaleapi.dev/v1/players/%23TAG1",
+    "https://proxy.royaleapi.dev/v1/clans/%23TAG2"
+  ],
   "apiKeys": ["sk_key1", "sk_key2"],
-  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 }
+  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 },
+  "minTrophies": 5000
 }
 ```
 
@@ -331,6 +335,7 @@ The worker enforces a strict security perimeter via `authMiddleware`:
 - **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`, `/hub/state`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
 - **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
+- **SSRF Prevention (Validation Boundary)**: The `/fetch` endpoint utilizes a strict `v.url()` and origin/path-prefix check (Valibot) to ensure requested URLs target only the authorized Royale API base (configured via `API_BASE`). This prevents Server-Side Request Forgery and unauthorized exfiltration of internal resources.
 
 ### Data Integrity: Tag Normalization
 Runtime integrity is enforced at the Layer 1 validation boundary. The `TagSchema` (Valibot) ensures that all player, clan, and tournament tags are normalized before processing:
@@ -344,6 +349,7 @@ To mitigate Denial-of-Service (DoS) and resource exhaustion attacks, the worker 
 - **Tag Array Bounding**: Recruitment scan requests are bounded by `v.maxLength` (Valibot) and mandatory `apiKeys` (v.minLength(1)) to prevent unauthenticated quota depletion:
   - **Public Scan (`/public/scan`)**: Limited to **25** tournament tags and **25** blacklist tags.
   - **Internal Scan (`/scan`)**: Limited to **100** tournament tags and **100** blacklist tags.
+- **Push Subscription Bounding**: Web Push registration is capped at **10,000** in-memory subscriptions (`MAX_SUBSCRIPTIONS`). Individual fields are also bounded (`endpoint`: 500, `p256dh`: 200, `auth`: 200) to prevent memory exhaustion.
 
 ---
 <br />
