@@ -914,10 +914,19 @@ app.post(
 // Push subscription storage (in-memory)
 // PERSISTENCE REQUIRED: Push subscriptions are lost on restart and must be migrated to a database.
 const subscriptions = new Set<string>(); // PERSISTENCE REQUIRED: see [issue description]
+const MAX_SUBSCRIPTIONS = 10000; // THREAT: Unbounded in-memory growth leading to Denial of Service (DoS).
 
 app.post(
   "/public/subscribe",
   (request: Request<object, object, SubscriptionRequest>, response: ExpressResponse): void => {
+    // THREAT: Denial of Service (DoS) via memory exhaustion.
+    // Target B [1]: Enforce a hard boundary on in-memory collections that grow based on external input.
+    if (subscriptions.size >= MAX_SUBSCRIPTIONS) {
+      console.warn(`[Push] Subscription limit reached (${MAX_SUBSCRIPTIONS}). Rejecting new registration.`);
+      response.status(507).json({ error: "Subscription limit reached", code: "ERR_LIMIT_EXCEEDED" });
+      return;
+    }
+
     // THREAT: Silent corruption of the subscription set if malformed data is accepted.
     const result = v.safeParse(SubscriptionRequestSchema, request.body);
     if (!result.success) {
