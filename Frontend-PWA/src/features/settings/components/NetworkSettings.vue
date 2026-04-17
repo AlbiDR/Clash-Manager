@@ -16,8 +16,8 @@ const isChecking = computed(() => apiStatus.value === "checking");
 
 watch(
   apiStatus,
-  (newVal) => {
-    if (newVal === "unconfigured") isEditing.value = true;
+  (statusUpdate) => {
+    if (statusUpdate === "unconfigured") isEditing.value = true;
   },
   { immediate: true },
 );
