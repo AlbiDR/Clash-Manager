@@ -230,6 +230,13 @@ describe('Request Schemas', () => {
       expect(v.safeParse(FetchRequestSchema, { }).success).toBe(false);
     });
 
+    it('should respect dynamic API_BASE environment variable', () => {
+      process.env["API_BASE"] = "https://custom.proxy/v1";
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://custom.proxy/v1/players'] }).success).toBe(true);
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v1/players'] }).success).toBe(false);
+      delete process.env["API_BASE"];
+    });
+
     it('should reject URLs from unauthorized domains (SSRF prevention)', () => {
       expect(v.safeParse(FetchRequestSchema, { urls: ['https://attacker.com/v1/players'] }).success).toBe(false);
       expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev.attacker.com/v1'] }).success).toBe(false);
@@ -270,6 +277,23 @@ describe('Request Schemas', () => {
         keys: { p256dh: 'd', auth: 'a' }
       }).success).toBe(true);
       expect(v.safeParse(SubscriptionRequestSchema, { endpoint: 'https://push.com', keys: {} }).success).toBe(false);
+    });
+
+    it('should reject endpoint exceeding 500 characters', () => {
+      const longEndpoint = 'https://push.com/' + 'a'.repeat(500);
+      expect(v.safeParse(SubscriptionRequestSchema, { endpoint: longEndpoint }).success).toBe(false);
+    });
+
+    it('should reject p256dh and auth exceeding 200 characters', () => {
+      const longKey = 'a'.repeat(201);
+      expect(v.safeParse(SubscriptionRequestSchema, {
+        endpoint: 'https://push.com',
+        keys: { p256dh: longKey, auth: 'a' }
+      }).success).toBe(false);
+      expect(v.safeParse(SubscriptionRequestSchema, {
+        endpoint: 'https://push.com',
+        keys: { p256dh: 'a', auth: longKey }
+      }).success).toBe(false);
     });
   });
 });
