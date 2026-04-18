@@ -4,20 +4,23 @@ import {
   ConsoleLayout
 } from "@shared";
 import { useClashDataStore } from "@core";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
 
 // Laboratory Components
-import VaultCard from "../components/VaultCard.vue";
-import ParameterCard from "../components/ParameterCard.vue";
-import SummaryCard from "../components/SummaryCard.vue";
-import TrajectoryItem from "../components/TrajectoryItem.vue";
-import LaboratorySkeleton from "../components/LaboratorySkeleton.vue";
+import {
+  VaultCard,
+  ParameterCard,
+  SummaryCard,
+  TrajectoryList,
+  LaboratorySkeleton
+} from "../components";
 
 const {
   observation,
   operation,
+  isSimulating,
   settings,
   layoutProps,
   setSettings,
@@ -25,21 +28,6 @@ const {
   refresh,
   getTrajectoryMemoKeys,
 } = useLaboratory();
-
-const displayLimit = ref(20);
-
-const displayedActions = computed(() => {
-  if (!operation.value) return [];
-  return operation.value.actions.slice(0, displayLimit.value);
-});
-
-const hasMoreActions = computed(() => {
-  return (operation.value?.actions.length || 0) > displayLimit.value;
-});
-
-const expandTrajectory = () => {
-  displayLimit.value = 999;
-};
 
 const clashDataStore = useClashDataStore();
 const { data: globalData } = storeToRefs(clashDataStore);
@@ -89,31 +77,11 @@ const { data: globalData } = storeToRefs(clashDataStore);
       />
 
       <!-- 3. Trajectory (Upgrade List) -->
-      <div v-if="operation && operation.actions.length > 0" class="trajectory-section">
-        <h3 class="section-title">
-          <Icon name="trend_up" size="18" />
-          <span>Recommended Trajectory</span>
-        </h3>
-        <div class="trajectory-list">
-          <TrajectoryItem 
-            v-for="(upgrade, index) in displayedActions" 
-            :key="`${upgrade.cardName}-${upgrade.targetLevel}`"
-            v-memo="getTrajectoryMemoKeys(upgrade)"
-            :upgrade="upgrade"
-            :index="index"
-          />
-        </div>
-
-        <!-- Expansion Control -->
-        <button 
-          v-if="hasMoreActions" 
-          class="btn-ghost expand-btn"
-          @click="expandTrajectory"
-        >
-          <Icon name="expand_more" size="18" />
-          <span>Show More ({{ operation.actions.length - displayLimit }} remaining)</span>
-        </button>
-      </div>
+      <TrajectoryList
+        v-if="operation && operation.actions.length > 0"
+        :actions="[...operation.actions]"
+        :get-trajectory-memo-keys="getTrajectoryMemoKeys"
+      />
     </div>
   </ConsoleLayout>
 </template>
@@ -136,37 +104,5 @@ const { data: globalData } = storeToRefs(clashDataStore);
   .dashboard-sidebar {
     grid-template-columns: 1fr 1fr;
   }
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 900;
-  margin: 12px 0;
-  padding: 0 8px;
-}
-
-.trajectory-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.expand-btn {
-  margin-top: 12px;
-  width: 100%;
-  justify-content: center;
-  color: var(--sys-color-primary);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  background: var(--sys-color-surface-container-low);
-  border: 1px dashed var(--sys-color-outline-variant);
-}
-
-.expand-btn:hover {
-  background: var(--sys-color-surface-container);
-  border-style: solid;
 }
 </style>
