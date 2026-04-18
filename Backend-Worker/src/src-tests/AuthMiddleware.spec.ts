@@ -37,6 +37,11 @@ describe("Authentication Middleware", () => {
     expect(res.status).toBe(200);
   });
 
+  it("should handle trailing slashes in public routes via normalization", async () => {
+    const res = await request(app).get("/health/");
+    expect(res.status).toBe(200);
+  });
+
   it("should allow authenticated access to /hub/state", async () => {
     const res = await request(app)
       .get("/hub/state")

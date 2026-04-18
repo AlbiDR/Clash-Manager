@@ -53,3 +53,6 @@ Backend-Worker/src/schemas.ts
 Frontend-PWA/src/shared/ui/BaseCardSkeleton.vue
 Frontend-PWA/src/features/settings/components/NotificationSettings.vue
 Frontend-PWA/src/core/services/useConsoleController.ts
+Backend-Worker/src/src-tests/index.spec.ts
+Backend-Worker/src/src-tests/schemas.spec.ts
+Backend-Worker/src/src-tests/AuthMiddleware.spec.ts
