@@ -29,3 +29,4 @@ Frontend-PWA/src/core/services/useBroadcastChannel.ts
 Frontend-PWA/src/core/services/useShareTarget.ts
 Frontend-PWA/src/core/services/useBlueprintMode.ts
 Frontend-PWA/src/core/services/useStoragePersistence.ts
+Frontend-PWA/src/core/services/useSyntheticMode.ts
