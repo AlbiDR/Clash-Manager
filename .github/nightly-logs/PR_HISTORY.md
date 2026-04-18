@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-18] PR #453: chore(version): no drift found
+**Commit**: `1646b54b55c177e344b2d0f30e96193c2121e4ce`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/453)
+
+### Description
+This PR records the results of the daily version integrity scan. No version drift was detected across the Backend-GAS modules or the Backend-Worker subsystem. All internal version declarations remain synchronized at their respective ground truths. The `.github/nightly-logs/version-integrity-coverage.log` has been updated to reflect this steady state.
+
+---
+*PR created automatically by Jules for task [16517067037559918876](https://jules.google.com/task/16517067037559918876) started by @AlbiDR*
+
+---
+
 ## [2026-04-18] PR #452: docs(tsdoc): document and harden useSyntheticMode.ts
 **Commit**: `cc2ecb16a6541dbed5ac635d720eba89421c22c7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/452)
