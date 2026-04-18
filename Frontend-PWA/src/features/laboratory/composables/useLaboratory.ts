@@ -96,11 +96,11 @@ export function useLaboratory() {
     const simId = ++currentSimulationId;
     store.setSimulating(true);
     
-    const s = settings.value;
-    const forceInfinite = s.strategy === "Level Projection";
+    const currentSettings = settings.value;
+    const forceInfinite = currentSettings.strategy === "Level Projection";
     
     const engineSettings: OptimizationSettings = {
-      ...s,
+      ...currentSettings,
       infiniteResources: forceInfinite
     };
 
@@ -157,9 +157,9 @@ export function useLaboratory() {
    * @param rawInventory - Optional inventory overrides.
    */
   function ingest(rawSnapshot: unknown, rawInventory?: unknown) {
-    let data: PlayerData;
+    let hydratedData: PlayerData;
     try {
-      data = ProfileHydrator.hydrate(rawSnapshot);
+      hydratedData = ProfileHydrator.hydrate(rawSnapshot);
     } catch (err: unknown) {
       // THREAT: Malformed player profile causing simulation engine crash.
       // Rationale: Explicitly catching hydration failures prevents the engine
@@ -172,37 +172,33 @@ export function useLaboratory() {
 
     // If rawInventory is provided, merge it into the data before loading persisted overrides
     if (rawInventory) {
-       const invResult = v.safeParse(RawInventorySchema, rawInventory);
-       if (invResult.success) {
-          const inv = invResult.output;
-          data.inventory = {
-            ...data.inventory,
-            gold: asGold(inv.gold ?? Number(data.inventory.gold)),
-            gems: asGems(inv.gems ?? Number(data.inventory.gems)),
+       const inventoryValidation = v.safeParse(RawInventorySchema, rawInventory);
+       if (inventoryValidation.success) {
+          const validatedInventory = inventoryValidation.output;
+          hydratedData.inventory = {
+            ...hydratedData.inventory,
+            gold: asGold(validatedInventory.gold ?? Number(hydratedData.inventory.gold)),
+            gems: asGems(validatedInventory.gems ?? Number(hydratedData.inventory.gems)),
             wildCards: {
-              ...data.inventory.wildCards,
-              Common: inv.wildCards?.Common ?? data.inventory.wildCards.Common,
-              Rare: inv.wildCards?.Rare ?? data.inventory.wildCards.Rare,
-              Epic: inv.wildCards?.Epic ?? data.inventory.wildCards.Epic,
-              Legendary: inv.wildCards?.Legendary ?? data.inventory.wildCards.Legendary,
-              Champion: inv.wildCards?.Champion ?? data.inventory.wildCards.Champion,
+              ...hydratedData.inventory.wildCards,
+              ...validatedInventory.wildCards
             }
           };
        } else {
-          console.warn("[Laboratory] rawInventory validation failed", invResult.issues);
+          console.warn("[Laboratory] rawInventory validation failed", inventoryValidation.issues);
        }
     }
 
-    data.inventory = store.loadPersistedInventory(data);
+    hydratedData.inventory = store.loadPersistedInventory(hydratedData);
 
-    const currentLevel = data.profile.kingLevel;
+    const currentLevel = hydratedData.profile.kingLevel;
     if (!settings.value.targetLevel || settings.value.targetLevel <= currentLevel) {
       store.setSettings({
         targetLevel: calculateDefaultTarget(currentLevel)
       });
     }
 
-    store.setObservation(data);
+    store.setObservation(hydratedData);
     analyze();
   }
 

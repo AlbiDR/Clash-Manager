@@ -83,3 +83,7 @@ Frontend-PWA/src/features/settings/views/SettingsView.vue
 Frontend-PWA/src/features/settings/components/NetworkSettings.vue
 Frontend-PWA/src/features/settings/components/NotificationSettings.vue
 Frontend-PWA/src/features/settings/composables/composables-tests/useSettings.spec.ts
+Frontend-PWA/src/features/laboratory/components/TrajectoryList.vue
+Frontend-PWA/src/features/laboratory/components/index.ts
+Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue
+Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
