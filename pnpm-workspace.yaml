@@ -20,7 +20,7 @@ catalogs:
     "@vitest/coverage-v8": "^4.1.4"
     "@vitest/ui": "^4.1.4"
     "@vue/test-utils": "^2.4.6"
-    "@vue/tsconfig": "^0.8.1"
+    "@vue/tsconfig": "^0.9.1"
     esbuild: "^0.27.4"
     jsdom: "^24.1.0"
     pinia: "^3.0.4"
