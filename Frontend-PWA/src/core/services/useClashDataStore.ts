@@ -134,8 +134,10 @@ export const useClashDataStore = defineStore("clashData", () => {
     // PERSISTENCE DURABILITY: Target A [2]
     try {
       await saveCache(payload);
-    } catch (e: unknown) {
-      console.error("[Store] Commit persistence failed:", e instanceof Error ? e.message : String(e));
+    } catch (persistenceError: unknown) {
+      // THREAT: Silent persistence failure leads to data loss on session restart.
+      // Descriptively naming 'persistenceError' ensures failure modes are explicit.
+      console.error("[Store] Commit persistence failed:", persistenceError instanceof Error ? persistenceError.message : String(persistenceError));
     }
   }
 
@@ -164,8 +166,10 @@ export const useClashDataStore = defineStore("clashData", () => {
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
       }
-    } catch (e: unknown) {
-      console.error("[Store] Cache hydration failed:", e instanceof Error ? e.message : String(e));
+    } catch (hydrationError: unknown) {
+      // THREAT: Corrupt disk state causing app boot failure.
+      // desriptively naming 'hydrationError' distinguishes it from network-driven sync failures.
+      console.error("[Store] Cache hydration failed:", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
     }
   }
 
@@ -217,8 +221,10 @@ export const useClashDataStore = defineStore("clashData", () => {
 
       console.debug(`🌐 [Store] Refresh successful. Attribution: ${result.output.dataSource || "GAS"}`);
       await commitSyncResult(result.output);
-    } catch (e: unknown) {
-      console.warn("[Store] Worker-direct refresh failed:", e);
+    } catch (workerRefreshError: unknown) {
+      // THREAT: Resource starvation or worker outage blocking data updates.
+      // Descriptively naming 'workerRefreshError' aids in failure-mode tracing.
+      console.warn("[Store] Worker-direct refresh failed:", workerRefreshError);
 
       // THREAT: Failure-mode deadlock during Worker outages.
       // Target A [2]: The loading state MUST be cleared before calling the fallback
@@ -271,10 +277,13 @@ export const useClashDataStore = defineStore("clashData", () => {
       }
 
       await commitSyncResult(result.output);
-    } catch (e: unknown) {
+    } catch (backgroundSyncError: unknown) {
+      // THREAT: Network instability leading to stale data and user misinformation.
+      // Descriptively naming 'backgroundSyncError' ensures logical containment within the sync handler
+      // and avoids shadowing the global 'syncError' ref.
       consecutiveSyncFailures.value++;
       
-      const errorMessage = e instanceof Error ? e.message : "Sync failed";
+      const errorMessage = backgroundSyncError instanceof Error ? backgroundSyncError.message : "Sync failed";
       
       // LOGICAL FAULT TOLERANCE:
       // If we already have data (isHydrated), only surfacing the error after 3 consecutive 
@@ -283,7 +292,7 @@ export const useClashDataStore = defineStore("clashData", () => {
         syncError.value = errorMessage;
       }
       
-      console.warn(`[Store] Background sync failed (Attempt ${consecutiveSyncFailures.value}):`, e);
+      console.warn(`[Store] Background sync failed (Attempt ${consecutiveSyncFailures.value}):`, backgroundSyncError);
     } finally {
       loading.value = false;
       await wakeLock.release();
@@ -335,8 +344,10 @@ export const useClashDataStore = defineStore("clashData", () => {
       data.value = updatedData;
 
       // PERSISTENCE DURABILITY: Target A [2]
-      saveCache(updatedData).catch(e => {
-        console.error("[Store] Failed to persist player update:", e);
+      saveCache(updatedData).catch(persistenceError => {
+        // THREAT: Local state mutation not surviving session restart.
+        // Descriptively naming 'persistenceError' aids in diagnosing disk-write failures.
+        console.error("[Store] Failed to persist player update:", persistenceError);
       });
     }
   }

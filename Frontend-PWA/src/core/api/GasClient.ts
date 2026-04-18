@@ -229,8 +229,8 @@ export async function pingWorker(): Promise<boolean> {
  */
 export function createSchemaMap(schema: string[]): Record<string, number> {
   const map: Record<string, number> = {};
-  for (let i = 0; i < schema.length; i++) {
-    map[schema[i]] = i;
+  for (let fieldIndex = 0; fieldIndex < schema.length; fieldIndex++) {
+    map[schema[fieldIndex]] = fieldIndex;
   }
   return map;
 }
@@ -242,15 +242,15 @@ export function createSchemaMap(schema: string[]): Record<string, number> {
  */
 const SafeStringSchema = v.pipe(
   v.unknown(),
-  v.transform((val) => (val === null || val === undefined ? "" : String(val)))
+  v.transform((inputValue) => (inputValue === null || inputValue === undefined ? "" : String(inputValue)))
 );
 
 const SafeNumberSchema = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (typeof val === "number") return val;
-    if (typeof val === "string") {
-      const cleaned = val.replace(/,/g, "").replace(/%/g, "");
+  v.transform((inputValue) => {
+    if (typeof inputValue === "number") return inputValue;
+    if (typeof inputValue === "string") {
+      const cleaned = inputValue.replace(/,/g, "").replace(/%/g, "");
       const n = parseFloat(cleaned);
       return isNaN(n) ? 0 : n;
     }
@@ -260,9 +260,9 @@ const SafeNumberSchema = v.pipe(
 
 const SafeTimestampSchema = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (!val) return 0;
-    const date = new Date(String(val));
+  v.transform((inputValue) => {
+    if (!inputValue) return 0;
+    const date = new Date(String(inputValue));
     const time = date.getTime();
     return isNaN(time) ? 0 : time;
   })
@@ -330,20 +330,20 @@ export function mapHhRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
  * in payload size by not repeating field names for every record. This function
  * uses a schema map to "re-hydrate" the records into typed objects.
  *
- * @param data - The raw JSON or string payload from the backend.
+ * @param rawPayload - The raw JSON or string payload from the backend.
  * @returns A fully inflated WebAppData object ready for the UI.
  * @throws Error if the payload is malformed or invalid.
  */
-export async function inflatePayload(data: unknown): Promise<WebAppData> {
+export async function inflatePayload(rawPayload: unknown): Promise<WebAppData> {
   let parsedData: unknown;
-  if (typeof data === "string") {
+  if (typeof rawPayload === "string") {
     try {
-      parsedData = JSON.parse(data);
+      parsedData = JSON.parse(rawPayload);
     } catch (parseError) { // PATHOGEN: Anemic variable 'e' replaced.
       throw new Error("Failed to parse data string");
     }
   } else {
-    parsedData = data;
+    parsedData = rawPayload;
   }
 
   if (!parsedData || typeof parsedData !== "object" || parsedData === null) {
