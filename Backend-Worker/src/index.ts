@@ -171,7 +171,7 @@ export const authMiddleware: RequestHandler = (request, response, next) => {
 
 app.use(authMiddleware);
 
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: "5MB" }));
 
 // ============================================================================
 //  UTILITY FUNCTIONS
@@ -844,7 +844,7 @@ app.post(
       // THREAT: Manually parsing env keys bypasses the global KeyManager's health state.
       // Target B [3]: Remove dead/misleading code. Fall back to empty array so processScanBatch
       // correctly utilizes the global KeyManager singleton health metrics.
-      const apiKeys = reqApiKeys ?? [];
+      const apiKeys = reqApiKeys;
 
       const blacklistSet = new Set(blacklist ?? []);
 
@@ -974,7 +974,12 @@ app.post(
       // concurrency limits to prevent Resource Exhaustion.
       const concurrency = CONFIG.concurrency;
 
-        const debug: ScanDebugInfo = {} as ScanDebugInfo;
+        const debug: ScanDebugInfo = {
+          firstUrl: "",
+          firstStatus: 0,
+          firstContent: "",
+          keyUsed: "",
+        };
         const candidates = await processScanBatch(
             tags as TournamentTag[],
             apiKeys ?? [],
