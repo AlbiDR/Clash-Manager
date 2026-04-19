@@ -1,3 +1,23 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+/**
+ * BADGE SERVICE (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Provides cross-platform application badge management.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * This service orchestrates the display of numeric badges on the application
+ * icon. It handles platform differences between iOS/Windows (Badge API)
+ * and Android (Notification proxy).
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
+ */
+
 import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
 import { ref } from "vue";
@@ -5,12 +25,15 @@ import { ref } from "vue";
 /**
  * Global persistent state to track debounce across multiple useBadge() instances.
  * This is kept outside the composable to ensure shared state across component mounts.
+ * @internal
  */
 const lastUpdate = ref(0);
 
 /**
- * ANDROID DETECTION: Android doesn't support navigator.setAppBadge() directly.
- * Badges on Android only appear via active notifications.
+ * Detects if the current environment is Android.
+ * Android does not support the Badge API directly; badges are only displayed
+ * when an active notification is present.
+ * @internal
  */
 const isAndroid =
   typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
@@ -121,22 +144,24 @@ export function useBadge() {
   async function setBadge(count: number) {
     if (!isSupported) return;
 
-    // Logic: Quiet Mode integration from useAppSettings.
+    // DECISION LOG: Quiet Mode integration from useAppSettings.
     if (modules.notificationQuietMode && count > 0) {
       // Suppress badges in quiet mode on Android (since they require notifications).
       if (isAndroid) return;
     }
 
     // PERFORMANCE: Debounce updates to prevent API flooding (Bug #13).
-    // Rationale: Rapid changes in recruit counts could lead to race conditions in the SW.
+    // Rationale: Rapid changes in recruit counts could lead to race conditions in the SW
+    // and browser-level rate limiting of the Badge API.
     const now = Date.now();
     if (now - lastUpdate.value < 1500) return;
     lastUpdate.value = now;
 
     const safeCount = Math.max(0, Math.floor(count));
 
-    // Retry Mechanism (Bug #7 via Batch 1 refinement).
-    // Rationale: Some browsers temporarily block Badge API calls if flooded or during tab transitions.
+    // RETRY MECHANISM (Bug #7 via Batch 1 refinement).
+    // Rationale: Some browsers temporarily block Badge API calls if flooded or during
+    // tab/visibility transitions. This exponential backoff ensures eventual consistency.
     let attempts = 0;
     const MAX_RETRIES = 2;
 
@@ -178,6 +203,10 @@ export function useBadge() {
    * @param title - The main heading of the notification.
    * @param body - Secondary descriptive text.
    * @param channelId - Optional identifier for grouping (e.g., 'hh-channel').
+   *
+   * @sideeffects
+   * - COMMUNICATES with the `Service Worker` via `postMessage`.
+   * - WRITES to the `Notification API` (indirectly via Service Worker).
    */
   async function sendLocalNotification(
     title: string,
