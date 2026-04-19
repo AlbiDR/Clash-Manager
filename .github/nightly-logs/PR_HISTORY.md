@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-19] PR #460: chore(version): no drift found
+**Commit**: `10e9c99c93b323d2e0683f0640ac02a3c7a5cee7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/460)
+
+### Description
+Performed a comprehensive version consistency scan across Backend-GAS and Backend-Worker. Confirmed that all 25 GAS modules are perfectly synchronized with the manifest in Configuration.ts and all Worker version strings (v10.1.4) are consistent across package.json, index.ts, and PayloadKernel.ts. In accordance with the Stage 6 mandate, recorded the finding in the integrity log.
+
+---
+*PR created automatically by Jules for task [13216654198609376639](https://jules.google.com/task/13216654198609376639) started by @AlbiDR*
+
+---
+
 ## [2026-04-19] PR #459: docs(tsdoc): document useBadge hardware broker
 **Commit**: `b5fc9494ade8719c011f1ebf96d18ce17b3267a6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/459)
