@@ -56,3 +56,4 @@ Frontend-PWA/src/core/services/useConsoleController.ts
 Backend-Worker/src/src-tests/index.spec.ts
 Backend-Worker/src/src-tests/schemas.spec.ts
 Backend-Worker/src/src-tests/AuthMiddleware.spec.ts
+Frontend-PWA/src/features/laboratory/components/TrajectoryList.vue
