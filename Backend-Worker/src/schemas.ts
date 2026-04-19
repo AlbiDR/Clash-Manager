@@ -67,7 +67,7 @@ export const ScoringWeightsSchema = v.object({
  * potential API keys is provided for health verification.
  */
 export const AuditRequestSchema = v.object({
-  apiKeys: v.array(v.string())
+  apiKeys: v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100))
 });
 
 /**
@@ -95,11 +95,11 @@ export const ProphetIntelSchema = v.object({
  */
 export const PublicScanRequestSchema = v.object({
   tags: v.pipe(v.array(TagSchema), v.maxLength(25)),
-  apiKeys: v.pipe(v.array(v.string()), v.minLength(1)),
+  apiKeys: v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.minLength(1), v.maxLength(100)),
   blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(25))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
+  prophetCache: v.optional(v.pipe(v.record(TagSchema, ProphetIntelSchema), v.check((rec) => Object.keys(rec).length <= 1000, "Cache must have at most 1000 entries")))
 });
 
 /**
@@ -114,11 +114,11 @@ export const PublicScanRequestSchema = v.object({
  */
 export const ScanRequestSchema = v.object({
   tags: v.pipe(v.array(TagSchema), v.maxLength(100)),
-  apiKeys: v.optional(v.array(v.string())),
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100))),
   blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(100))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
+  prophetCache: v.optional(v.pipe(v.record(TagSchema, ProphetIntelSchema), v.check((rec) => Object.keys(rec).length <= 1000, "Cache must have at most 1000 entries")))
 });
 
 /**
@@ -130,7 +130,7 @@ export const ScanRequestSchema = v.object({
  */
 export const ClanFullRequestSchema = v.object({
   tag: TagSchema,
-  apiKeys: v.optional(v.array(v.string()))
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100)))
 });
 
 /**
@@ -142,7 +142,7 @@ export const ClanFullRequestSchema = v.object({
 export const ClanApiRequestSchema = v.object({
   tag: TagSchema,
   type: v.picklist(["members", "warlog"]),
-  apiKeys: v.optional(v.array(v.string()))
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100)))
 });
 
 /**
@@ -189,7 +189,7 @@ export const FetchRequestSchema = v.object({
     v.minLength(1),
     v.maxLength(100)
   ),
-  apiKeys: v.optional(v.array(v.string())),
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100))),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
   minTrophies: v.optional(v.number())
 });
