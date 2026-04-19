@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { WAR_CONSTANTS, calculatePrediction, parseHistoryString } from "@core/utils/warMath";
 import { computed } from "vue";
 import { generateLinearTrend, type Point } from "@core/utils/bezier";
@@ -43,21 +46,21 @@ const chartData = computed(() => {
   }
 
   // 2. Predict (using Newest->Oldest data)
-  const fameValues = processedData.map((d) => d.fame);
-  const nextFame = calculatePrediction(fameValues);
+  const fameSeries = processedData.map((historyEntry) => historyEntry.fame);
+  const nextFame = calculatePrediction(fameSeries);
 
   // 3. Arrange for Display (Oldest -> Newest)
   const chronologicalData = [...processedData].reverse();
   const bars: (BarItem & { id: string })[] = [];
 
   // Actuals
-  chronologicalData.forEach((p, index) => {
+  chronologicalData.forEach((historyPoint, entryIndex) => {
     bars.push({
-      id: `h-${p.readableWeek}-${index}`,
-      fame: p.fame,
-      height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (p.fame / WAR_CONSTANTS.MAX_FAME) * 100))}%`,
+      id: `h-${historyPoint.readableWeek}-${entryIndex}`,
+      fame: historyPoint.fame,
+      height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (historyPoint.fame / WAR_CONSTANTS.MAX_FAME) * 100))}%`,
       isProjection: false,
-      tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase">${p.readableWeek}</span><br>${p.fame.toLocaleString()} Fame`,
+      tooltip: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase">${historyPoint.readableWeek}</span><br>${historyPoint.fame.toLocaleString()} Fame`,
     });
   });
 
@@ -73,8 +76,8 @@ const chartData = computed(() => {
   // 4. Geometry
   const totalSlots = bars.length;
   // Map bars to X,Y coordinates (0-100 scale for SVG viewBox)
-  const curvePoints: Point[] = bars.map((bar, i) => ({
-    x: ((i + 0.5) / totalSlots) * 100,
+  const curvePoints: Point[] = bars.map((bar, barIndex) => ({
+    x: ((barIndex + 0.5) / totalSlots) * 100,
     y: (1 - Math.min(1, bar.fame / WAR_CONSTANTS.MAX_FAME)) * 100, // Invert Y for SVG
   }));
 

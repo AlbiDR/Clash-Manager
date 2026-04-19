@@ -6,7 +6,7 @@ import {
 } from "@shared";
 import { useRecruiter } from "../composables/useRecruiter";
 
-import RecruitCard from "../components/RecruitCard.vue";
+import { RecruitCard } from "../components";
 
 
 const {
