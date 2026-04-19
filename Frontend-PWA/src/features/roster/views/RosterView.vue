@@ -28,7 +28,7 @@ import {
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
 
-import MemberCard from "../components/MemberCard.vue";
+import { MemberCard } from "../components";
 
 
 const {
