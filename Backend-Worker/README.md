@@ -154,11 +154,13 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ```json
 {
   "results": [
-    { "code": 200, "content": { "tag": "#TAG1", "name": "..." } },
-    { "code": 200, "content": { "tag": "#TAG2", "name": "..." } }
+    { "code": 200, "content": { "tag": "#TAG1", "name": "...", "trophies": 6500 } },
+    { "code": 200, "content": null } // Discarded: Trophies < minTrophies
   ]
 }
 ```
+
+> **Note**: If `minTrophies` is specified and a player's **Effective Trophies** do not meet the threshold, the response `content` will be `null`.
 
 ### Intelligence & Scanning
 
@@ -312,7 +314,8 @@ The monorepo is governed by a **7-agent Nightly Pipeline** (powered by Google Ju
 The worker implements a **Deep Delegation** strategy to optimize the entire Clash Manager ecosystem.
 
 1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
-2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"--historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
+2. **Effective Trophies**: To support the game's tiered ranking system, the worker calculates "Effective Trophies" by summing a player's global ladder trophies and their current season league trophies (only if global trophies >= 9,000). This value is used for both recruitment scoring and `minTrophies` filtering.
+3. **Prophet Bonus**: The worker integrates with a "Prophet Cache"—historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
 
 ---
 
@@ -333,6 +336,7 @@ To preserve the project's shared Royale API budget and prevent accidental exhaus
 The worker enforces a strict security perimeter via `authMiddleware`:
 
 - **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`, `/hub/state`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Auth Path Normalization**: Trailing slashes are automatically stripped from request paths before authentication and public exemption checks, ensuring consistent security enforcement.
 - **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 - **SSRF Prevention (Validation Boundary)**: The `/fetch` endpoint utilizes a strict `v.url()` and origin/path-prefix check (Valibot) to ensure requested URLs target only the authorized Royale API base (configured via `API_BASE`). This prevents Server-Side Request Forgery and unauthorized exfiltration of internal resources.
