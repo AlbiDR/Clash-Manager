@@ -10,9 +10,9 @@ const emit = defineEmits<{
   update: [key: string, value: number];
 }>();
 
-const handleInput = (e: Event, key: string) => {
-  const val = parseInt((e.target as HTMLInputElement).value) || 0;
-  emit("update", key, val);
+const handleInput = (inputEvent: Event, resourceKey: string) => {
+  const resourceValue = parseInt((inputEvent.target as HTMLInputElement).value) || 0;
+  emit("update", resourceKey, resourceValue);
 };
 
 const baseUrl = import.meta.env.BASE_URL;

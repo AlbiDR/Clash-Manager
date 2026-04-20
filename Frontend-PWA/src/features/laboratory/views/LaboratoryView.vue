@@ -23,9 +23,9 @@ const {
   isSimulating,
   settings,
   layoutProps,
+  layoutEvents,
   setSettings,
   handleVaultUpdate,
-  refresh,
   getTrajectoryMemoKeys,
 } = useLaboratory();
 
@@ -38,12 +38,9 @@ const { data: globalData } = storeToRefs(clashDataStore);
   <ConsoleLayout
     title="Laboratory"
     v-bind="layoutProps"
-    :empty-message="!globalData?.playerTag ? 'Target Required' : 'No results found'"
-    :empty-hint="!globalData?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.'"
-    empty-icon="flask"
     :skeleton-component="LaboratorySkeleton"
     :skeleton-count="1"
-    @refresh="refresh"
+    v-on="layoutEvents"
   >
     <template #empty-action>
       <router-link v-if="!globalData?.playerTag" to="/settings" class="btn-primary">
