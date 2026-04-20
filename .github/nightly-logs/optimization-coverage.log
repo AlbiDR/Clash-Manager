@@ -93,3 +93,8 @@ Frontend-PWA/src/features/roster/views/RosterView.vue
 Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue
 Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
 Frontend-PWA/src/features/roster/components/WarHistoryChart.vue
+Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
+Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue
+Frontend-PWA/src/features/laboratory/components/VaultCard.vue
+Frontend-PWA/src/features/laboratory/components/ParameterCard.vue
+Frontend-PWA/src/features/laboratory/components/SummaryCard.vue

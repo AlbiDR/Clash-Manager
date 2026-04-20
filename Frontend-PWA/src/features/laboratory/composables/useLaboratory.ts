@@ -93,7 +93,7 @@ export function useLaboratory() {
     if (isSimulating.value && lastAnalyzedTag === currentTag) return;
     lastAnalyzedTag = currentTag;
 
-    const simId = ++currentSimulationId;
+    const simulationId = ++currentSimulationId;
     store.setSimulating(true);
     
     const currentSettings = settings.value;
@@ -110,30 +110,30 @@ export function useLaboratory() {
 
     const processBatch = () => {
       // Cancellation check: if a newer simulation has started, abort this one.
-      if (simId !== currentSimulationId || !currentSimulation) return;
+      if (simulationId !== currentSimulationId || !currentSimulation) return;
 
-      let lastState: SimulationState | null = null;
-      let startTime = performance.now();
+      let latestSimulationState: SimulationState | null = null;
+      let batchStartTime = performance.now();
       const BATCH_TIME_MS = 10;
       
-      while (performance.now() - startTime < BATCH_TIME_MS) {
+      while (performance.now() - batchStartTime < BATCH_TIME_MS) {
         const { value, done } = currentSimulation.next();
         if (done) {
-          if (value && simId === currentSimulationId) {
+          if (value && simulationId === currentSimulationId) {
             store.setOperation(mapStateToResult(value, observation.value?.profile as PlayerProfile, initialTotalXp));
           }
-          if (simId === currentSimulationId) {
+          if (simulationId === currentSimulationId) {
             currentSimulation = null;
             store.setSimulating(false);
           }
           return;
         }
-        lastState = value;
+        latestSimulationState = value;
       }
 
       // Update intermediate state for progress feeling - throttled to ~30fps
-      if (lastState && simId === currentSimulationId) {
-        store.setOperation(mapStateToResult(lastState, observation.value?.profile as PlayerProfile, initialTotalXp));
+      if (latestSimulationState && simulationId === currentSimulationId) {
+        store.setOperation(mapStateToResult(latestSimulationState, observation.value?.profile as PlayerProfile, initialTotalXp));
       }
 
       if (window.requestIdleCallback) {
@@ -281,10 +281,23 @@ export function useLaboratory() {
     loading: isFetching.value,
     isEmpty: isEmpty.value,
     syncError: fetchError.value || undefined,
+    emptyMessage: !clashData.value?.playerTag ? 'Target Required' : 'No results found',
+    emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
+    emptyIcon: 'flask',
     hubInfo: currentSource.value ? {
       source: currentSource.value,
       hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
     } : undefined
+  }));
+
+  /**
+   * LAYOUT EVENTS (Standardized Interface)
+   *
+   * @remarks
+   * Maps UI events from ConsoleLayout directly to controller methods.
+   */
+  const layoutEvents = computed(() => ({
+    refresh: fetchTrackedPlayer
   }));
 
   /**
@@ -318,6 +331,7 @@ export function useLaboratory() {
     isFetching,
     fetchError,
     layoutProps,
+    layoutEvents,
 
     ingest,
     updateInventory: store.updateInventory,
