@@ -6,8 +6,8 @@ const props = defineProps<{
   profile: PlayerProfile;
 }>();
 
-const formatNumber = (num: number) => {
-  return new Intl.NumberFormat().format(num);
+const formatNumber = (valueToFormat: number) => {
+  return new Intl.NumberFormat().format(valueToFormat);
 };
 
 const baseUrl = import.meta.env.BASE_URL;

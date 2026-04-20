@@ -18,14 +18,14 @@ const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
 
-const setStrategy = (val: "Level Projection" | "Resource Efficiency") => {
-  const updates: Partial<OptimizationSettings> = { strategy: val };
+const setStrategy = (strategyType: "Level Projection" | "Resource Efficiency") => {
+  const updates: Partial<OptimizationSettings> = { strategy: strategyType };
   emit("update", { ...props.settings, ...updates });
 };
 
-const handleTargetChange = (e: Event) => {
-  const val = parseInt((e.target as HTMLSelectElement).value);
-  emit("update", { targetLevel: val });
+const handleTargetChange = (changeEvent: Event) => {
+  const targetLevelValue = parseInt((changeEvent.target as HTMLSelectElement).value);
+  emit("update", { targetLevel: targetLevelValue });
 };
 
 const toggleGemSpending = () => {
