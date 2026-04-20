@@ -10,6 +10,11 @@
 import type { AppConfig } from "./Configuration";
 import type { RegistryContract } from "./Registry";
 import type { Recruit } from "./Headhunter_Types";
+import * as v from "valibot";
+import {
+  DismissRecruitsPayloadSchema,
+  UndismissRecruitsPayloadSchema
+} from "./Validation";
 
 // Global Version Constant
 // @ts-ignore
@@ -70,7 +75,7 @@ export interface ExtractionMapping {
  */
 export interface SheetDataResult {
   schema: string[];
-  rows: any[][];
+  rows: unknown[][];
 }
 
 /**
@@ -91,8 +96,8 @@ export interface AppPayload {
       lb: string[];
       hh: string[];
     };
-    lb: any[][];
-    hh: any[][];
+    lb: unknown[][];
+    hh: unknown[][];
     playerTag: string;
     timestamp: number;
   } | null;
@@ -104,20 +109,22 @@ export interface AppPayload {
  */
 export interface WebappControllerContract {
   getWebAppData(forceRefresh: boolean): string;
-  updateRecruitInvitationStatus(items: Array<{ id: string; score: number }>): {
+  updateRecruitInvitationStatus(payload: unknown): {
     success: boolean;
     count: number;
     dbWrite?: number;
     payloadSize?: number;
+    error?: string;
   };
-  revertRecruitDismissal(ids: string[]): {
+  revertRecruitDismissal(payload: unknown): {
     success: boolean;
     count: number;
+    error?: string;
   };
   persistWebAppDataPayload(): string;
-  getMembers(): any[];
-  getPlayerProfile(tag: string): any;
-  retrieveWarLogEntries(): any[];
+  getMembers(): unknown[];
+  getPlayerProfile(tag: string): unknown;
+  retrieveWarLogEntries(): unknown[];
   _generatePayloadInternal(): string;
 }
 
@@ -133,31 +140,39 @@ const WebappController: WebappControllerContract = {
       }
       if (payloadStr) return payloadStr;
       return this.persistWebAppDataPayload();
-    } catch (e: any) {
-      console.error(`[API] getWebAppData CRITICAL FAILURE: ${e.stack}`);
+    } catch (apiError: any) {
+      console.error(`[API] getWebAppData CRITICAL FAILURE: ${apiError.stack}`);
       return JSON.stringify({
         success: false,
         data: null,
         error: {
           code: "PAYLOAD_GENERATION_FAILED",
-          message: `Unable to generate data payload. ${e.message || 'Unknown error'}.`,
+          message: `Unable to generate data payload. ${apiError.message || 'Unknown error'}.`,
         },
       });
     }
   },
 
-  updateRecruitInvitationStatus(items: Array<{ id: string; score: number }>): any {
-    if (!items || !Array.isArray(items) || items.length === 0)
-      return { success: true, count: 0 };
+  updateRecruitInvitationStatus(payload: unknown): any {
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Malformed recruitment event data causing spreadsheet corruption.
+    const validation = v.safeParse(DismissRecruitsPayloadSchema, payload);
+    if (!validation.success) {
+      console.warn("[API] updateRecruitInvitationStatus: Validation failed", validation.issues);
+      return { success: false, error: "Invalid payload structure" };
+    }
+
+    const { items } = validation.output;
+    if (!items || items.length === 0) return { success: true, count: 0 };
 
     return Registry.Services.Core.executeSafely("WRITE_HH_EVT", () => {
       try {
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const ssId = ss.getId();
+        const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+        const ssId = activeSpreadsheet.getId();
         
-        let evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
+        let evtSheet = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.EVT);
         if (!evtSheet) {
-          evtSheet = ss.insertSheet(CONFIG.SHEETS.EVT);
+          evtSheet = activeSpreadsheet.insertSheet(CONFIG.SHEETS.EVT);
           evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
         }
 
@@ -177,9 +192,11 @@ const WebappController: WebappControllerContract = {
 
         const now = Date.now();
         const values = items.map((dismissalPayload) => {
-          let id = (dismissalPayload.id.startsWith("#") ? dismissalPayload.id : "#" + dismissalPayload.id).toUpperCase();
+          const item = typeof dismissalPayload === "string" ? { id: dismissalPayload, score: 0 } : dismissalPayload;
+          const id = (item.id.startsWith("#") ? item.id : "#" + item.id).toUpperCase();
           let score = scoreMap.get(id);
-          if (score === undefined) score = Number(dismissalPayload.score) || 0;
+          // @ts-ignore
+          if (score === undefined) score = Number(item.score || item.potentialRawScore || item.rawScore) || 0;
           return [id, now, score];
         });
 
@@ -192,20 +209,28 @@ const WebappController: WebappControllerContract = {
         Registry.Services.Store.cache.remove(CONFIG.SYSTEM.JSON_STORE_KEY);
 
         return { success: true, count: items.length };
-      } catch (e: any) {
-        throw new Error(`Dismiss Failed: ${e.message}`);
+      } catch (apiError: any) {
+        throw new Error(`Dismiss Failed: ${apiError.message}`);
       }
     });
   },
 
-  revertRecruitDismissal(ids: string[]): any {
-    if (!ids || !Array.isArray(ids) || ids.length === 0)
-      return { success: true, count: 0 };
+  revertRecruitDismissal(payload: unknown): any {
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Malformed undismiss IDs causing incorrect spreadsheet deletions.
+    const validation = v.safeParse(UndismissRecruitsPayloadSchema, payload);
+    if (!validation.success) {
+      console.warn("[API] revertRecruitDismissal: Validation failed", validation.issues);
+      return { success: false, error: "Invalid payload structure" };
+    }
+
+    const { ids } = validation.output;
+    if (!ids || ids.length === 0) return { success: true, count: 0 };
 
     return Registry.Services.Core.executeSafely("REVERSE_HH_EVT", () => {
       try {
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT);
+        const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+        const evtSheet = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.EVT);
         if (!evtSheet) return { success: true, count: 0 };
 
         const lastRow = evtSheet.getLastRow();
@@ -229,8 +254,8 @@ const WebappController: WebappControllerContract = {
         }
 
         return { success: true, count: removedCount };
-      } catch (e: any) {
-        throw new Error(`Undismiss Failed: ${e.message}`);
+      } catch (apiError: any) {
+        throw new Error(`Undismiss Failed: ${apiError.message}`);
       }
     });
   },
@@ -241,9 +266,9 @@ const WebappController: WebappControllerContract = {
     });
   },
 
-  getMembers(): any[] {
+  getMembers(): unknown[] {
     const remoteData = Registry.Services.Network.fetchPublicJson("members");
-    if (remoteData) return remoteData as any[];
+    if (remoteData) return remoteData as unknown[];
 
     console.info("WebappController: getMembers: Using local GAS fallback (remote unavailable).");
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
@@ -256,17 +281,17 @@ const WebappController: WebappControllerContract = {
       return [];
     }
 
-    return data.memberList.map((m: any) => ({
-      tag: m.tag,
-      name: m.name,
-      role: formatRole(m.role),
-      kingLevel: m.expLevel,
-      donations: m.donations,
-      donationsReceived: m.donationsReceived,
+    return (data.memberList as Array<Record<string, unknown>>).map((memberCandidate) => ({
+      tag: String(memberCandidate["tag"] || ""),
+      name: String(memberCandidate["name"] || ""),
+      role: formatRole(String(memberCandidate["role"] || "")),
+      kingLevel: memberCandidate.expLevel,
+      donations: memberCandidate.donations,
+      donationsReceived: memberCandidate.donationsReceived,
     }));
   },
 
-  getPlayerProfile(tag: string): any {
+  getPlayerProfile(tag: string): unknown {
     const cleanTag = encodeURIComponent(tag.startsWith("#") ? tag : `#${tag}`);
     const data = Registry.Services.Network.fetchRoyaleAPIOne(
       `${CONFIG.SYSTEM.API_BASE}/players/${cleanTag}`,
@@ -279,9 +304,9 @@ const WebappController: WebappControllerContract = {
     return data;
   },
 
-  retrieveWarLogEntries(): any[] {
+  retrieveWarLogEntries(): unknown[] {
     const remoteData = Registry.Services.Network.fetchPublicJson("warlog");
-    if (remoteData) return remoteData as any[];
+    if (remoteData) return remoteData as unknown[];
 
     console.info("WebappController: getWarLog: Using local GAS fallback (remote unavailable).");
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
@@ -299,11 +324,11 @@ const WebappController: WebappControllerContract = {
       let opponents: any[] = [];
 
       if (warLogEntry.standings) {
-        myStanding = warLogEntry.standings.find(
-          (s: any) => s.clan.tag === CONFIG.SYSTEM.CLAN_TAG,
+        myStanding = (warLogEntry.standings as Array<Record<string, any>>).find(
+          (standingEntry) => standingEntry["clan"]?.tag === CONFIG.SYSTEM.CLAN_TAG,
         );
-        opponents = warLogEntry.standings.filter(
-          (s: any) => s.clan.tag !== CONFIG.SYSTEM.CLAN_TAG,
+        opponents = (warLogEntry.standings as Array<Record<string, any>>).filter(
+          (standingEntry) => standingEntry["clan"]?.tag !== CONFIG.SYSTEM.CLAN_TAG,
         );
       }
 
@@ -328,12 +353,14 @@ const WebappController: WebappControllerContract = {
 
   _generatePayloadInternal(): string {
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const ssId = ss.getId();
+      const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      const ssId = activeSpreadsheet.getId();
       Registry.Services.Schema.bootDynamicSchema();
 
-      const lbResult = extractSheetDataStrict(ss, CONFIG.SHEETS.ROSTER, "lb");
-      const hhResult = extractSheetDataStrict(ss, CONFIG.SHEETS.HH, "hh");
+      // THREAT: Corrupt matrix data from GAS sheets causing PWA hydration failure.
+      // Target B [1]: Enforce strict extraction boundary for roster and headhunter data.
+      const lbResult = extractSheetDataStrict(activeSpreadsheet, CONFIG.SHEETS.ROSTER, "lb");
+      const hhResult = extractSheetDataStrict(activeSpreadsheet, CONFIG.SHEETS.HH, "hh");
 
       const exclusionSet = new Set<string>();
 
@@ -347,7 +374,7 @@ const WebappController: WebappControllerContract = {
           const expiry = Number(blacklistRow[1]) || 0;
           if (tag && expiry > now) exclusionSet.add(tag);
         });
-      } catch (e) {}
+      } catch (extractionError) {}
 
       try {
         // @ts-ignore
@@ -358,23 +385,23 @@ const WebappController: WebappControllerContract = {
           const tag = String(eventRow[0] || "").toUpperCase().trim();
           if (tag) exclusionSet.add(tag);
         });
-      } catch (e) {}
+      } catch (extractionError) {}
 
       // --- 3. MERGE HEADHUNTER POOL (Sheets + Queue) ---
       // [OCD] 100-Recruit Fresh Pool Strategy:
       // We aim to provide a "Infinite Scroll" feel by merging the main HH sheet
       // with the latest discoveries from the worker (HH_QUEUE).
-      const hhSchema = (hhResult as any).schema as string[];
+      const hhSchema = hhResult.schema;
       const tagIdx = hhSchema.indexOf("id");
       const scoreIdx = hhSchema.indexOf("potentialRawScore");
 
-      const hhSheetRows = (hhResult as any).rows as any[][];
+      const hhSheetRows = hhResult.rows;
 
-      // Reuse ss from outer scope (Line 330)
-      const queueRecruits = Registry.Services.HeadhunterStore.loadQueue(ss);
+      // Reuse activeSpreadsheet from outer scope (Line 330)
+      const queueRecruits = Registry.Services.HeadhunterStore.loadQueue(activeSpreadsheet);
       
       // De-duplication Map: Prefer HH Sheet rows over Queue discoveries.
-      const recruitPoolMap = new Map<string, any[]>();
+      const recruitPoolMap = new Map<string, unknown[]>();
 
       // A. Populate with main sheet findings
       hhSheetRows.forEach((row) => {
@@ -437,9 +464,9 @@ const WebappController: WebappControllerContract = {
       Registry.Services.Store.props.set("LAST_PAYLOAD_TIMESTAMP", String(dataPayload.timestamp));
 
       return payloadStr;
-    } catch (e: any) {
-      console.error(`[API] _generatePayloadInternal FAILED: ${e.stack}`);
-      return JSON.stringify({ success: false, data: null, error: { code: "PAYLOAD_REFRESH_FAILED", message: e.message } });
+    } catch (apiError: any) {
+      console.error(`[API] _generatePayloadInternal FAILED: ${apiError.stack}`);
+      return JSON.stringify({ success: false, data: null, error: { code: "PAYLOAD_REFRESH_FAILED", message: apiError.message } });
     }
   }
 };
@@ -459,18 +486,23 @@ export default WebappController;
  *    rather than calling SpreadsheetApp methods for every cell (which is slow).
  * 3. Matrix Output: Returns raw arrays to minimize JSON size.
  *
- * @param ss - Active Spreadsheet instance.
+ * @param activeSpreadsheet - Active Spreadsheet instance.
  * @param sheetName - Target sheet to extract.
  * @param type - 'lb' (Leaderboard) or 'hh' (Headhunter) to determine schema.
  * @returns Parsed SheetDataResult.
  * @warning Consumes SpreadsheetApp quota for data range retrieval.
  */
+/**
+ * THREAT: Spreadsheet data exfiltration or malformed matrix ingestion.
+ * Rationale: This function serves as the primary boundary between the untrusted
+ * spreadsheet environment and the CleanStack API.
+ */
 function extractSheetDataStrict(
-  ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
+  activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet,
   sheetName: string,
   type: "lb" | "hh",
 ): SheetDataResult {
-  const sheet = ss.getSheetByName(sheetName);
+  const sheet = activeSpreadsheet.getSheetByName(sheetName);
   if (!sheet) {
     console.warn(`[DATA] extractSheetDataStrict: Sheet '${sheetName}' not found.`);
     return { schema: [], rows: [] };
@@ -531,38 +563,38 @@ function extractSheetDataStrict(
   
   // SINGLE RPC CALL: Fetch only raw values. 
   // Formatting is handled in JS to avoid the slow getDisplayValues() RPC.
-  const vals = sheet.getRange(startRow, 2, numRows, safeNumCols).getValues();
-  const rows: any[][] = [];
+  const rawSheetValues = sheet.getRange(startRow, 2, numRows, safeNumCols).getValues();
+  const rows: unknown[][] = [];
 
-  for (let rowIndex = 0; rowIndex < vals.length; rowIndex++) {
-    const rowRaw = vals[rowIndex];
+  for (let rowIndex = 0; rowIndex < rawSheetValues.length; rowIndex++) {
+    const rawRowData = rawSheetValues[rowIndex];
 
-    if (!Array.isArray(rowRaw)) continue;
+    if (!Array.isArray(rawRowData)) continue;
 
-    const tagRaw = String(rowRaw[S.TAG] || "").trim();
+    const tagRaw = String(rawRowData[S.TAG] || "").trim();
     // Validate tag: Minimum 3 characters to exclude empty or corrupted rows.
     if (!tagRaw || tagRaw.length < 3) continue;
 
     if (type === "hh") {
       // In Headhunter mode, we skip recruits already marked as "Invited"
       // in the sheet to prevent UI clutter.
-      const invitedVal = rowRaw[S.INVITED];
+      const invitedVal = rawRowData[S.INVITED];
       const isInvited =
         invitedVal === true || String(invitedVal).toUpperCase() === "TRUE";
       if (isInvited) continue;
     }
 
     const outputRow = mapping
-      .map((m) => {
+      .map((mappingEntry) => {
         // "bool_check" columns are control-only (e.g. checkbox for invitation).
         // They are excluded from the "Matrix" data payload to reduce size.
-        if (m.type === "bool_check") return null;
+        if (mappingEntry.type === "bool_check") return null;
 
-        if (m.col >= rowRaw.length) return m.type === "num" ? 0 : "";
+        if (mappingEntry.col >= rawRowData.length) return mappingEntry.type === "num" ? 0 : "";
 
-        const cellValue = rowRaw[m.col];
+        const cellValue = rawRowData[mappingEntry.col];
 
-        switch (m.type) {
+        switch (mappingEntry.type) {
           case "tag":
             // Normalize tags for the PWA (No # prefix, Uppercase).
             return String(cellValue || "").replace("#", "").trim().toUpperCase();
@@ -581,8 +613,8 @@ function extractSheetDataStrict(
             const sVal = String(cellValue);
             if (sVal.toUpperCase().includes("N/A")) return "N/A";
             if (sVal.includes("%")) return sVal.trim();
-            const n = parseFloat(sVal);
-            return isNaN(n) ? "0%" : `${Math.round(n * 100)}%`;
+            const parsedNumber = parseFloat(sVal);
+            return isNaN(parsedNumber) ? "0%" : `${Math.round(parsedNumber * 100)}%`;
           case "date":
             const dateObj = Registry.Services.Time.parseFlexibleDate(cellValue);
             if (isNaN(dateObj.getTime()) || dateObj.getTime() <= 0) {
@@ -591,23 +623,24 @@ function extractSheetDataStrict(
             return dateObj.toISOString();
           case "str":
           default:
-            const s = cellValue === null || cellValue === undefined ? "" : String(cellValue);
-            // FORMULA STRIPPING:
+            const formulaContent = cellValue === null || cellValue === undefined ? "" : String(cellValue);
+            // [GUARD] FORMULA STRIPPING:
+            // THREAT: Spreadsheet formula exfiltration or malformed JSON artifacts.
             // Extract URL from =HYPERLINK("url", "label") artifacts to ensure
             // the JSON API returns raw data instead of spreadsheet formulas.
-            if (s.startsWith("=")) {
-              return s.replace(/^=HYPERLINK.*"(.*)".*$/, "$1");
+            if (formulaContent.startsWith("=")) {
+              return formulaContent.replace(/^=HYPERLINK.*"(.*)".*$/, "$1");
             }
-            return s.trim();
+            return formulaContent.trim();
         }
       })
-      .filter((v) => v !== null);
+      .filter((filteredValue) => filteredValue !== null);
 
     rows.push(outputRow);
   }
 
   return {
-    schema: mapping.filter((m) => m.type !== "bool_check").map((m) => m.key),
+    schema: mapping.filter((mappingEntry) => mappingEntry.type !== "bool_check").map((mappingEntry) => mappingEntry.key),
     rows: rows,
   };
 }
@@ -622,27 +655,30 @@ function extractSheetDataStrict(
  * It handles the transition from spreadsheet engine strings to JS numbers,
  * stripping common formatting characters that `parseFloat` might choke on.
  *
- * @param v - Raw value from spreadsheet.
+ * THREAT: Malformed numeric strings (e.g., "1,000", "10%") causing NaN or runtime errors.
+ * Rationale: Defense-in-depth ensures that data entering the PWA is already sanitized.
+ *
+ * @param inputValue - Raw value from spreadsheet.
  * @param displayV - (Legacy) Original display value. Deprecated in v11.0.
  * @returns Cleaned numeric value.
  */
-function sanitizeNum(v: any, displayV: string): number {
-  if (v === null || v === undefined) return 0;
-  if (typeof v === "number") return v;
-  const s = String(v).replace(/,/g, "").replace(/%/g, "").trim();
-  if (s.toUpperCase() === "N/A") return 0;
-  const n = parseFloat(s);
-  if (isNaN(n)) return 0;
-  return n;
+function sanitizeNum(inputValue: unknown, displayV: string): number {
+  if (inputValue === null || inputValue === undefined) return 0;
+  if (typeof inputValue === "number") return inputValue;
+  const stringifiedValue = String(inputValue).replace(/,/g, "").replace(/%/g, "").trim();
+  if (stringifiedValue.toUpperCase() === "N/A") return 0;
+  const parsedNumber = parseFloat(stringifiedValue);
+  if (isNaN(parsedNumber)) return 0;
+  return parsedNumber;
 }
 
 /**
  * HELPERS
  */
-const formatRole = (role: string): string =>
-  (({ leader: "Leader", coLeader: "Co-Leader", elder: "Elder" }) as any)[
-    role
-  ] || "Member";
+const formatRole = (role: string): string => {
+  const roleMap: Record<string, string> = { leader: "Leader", coLeader: "Co-Leader", elder: "Elder" };
+  return roleMap[role] || "Member";
+};
 
 function parseCRDateISO(dateString: string): string {
   if (!dateString) return new Date().toISOString().split("T")[0];
