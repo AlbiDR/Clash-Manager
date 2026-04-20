@@ -1,6 +1,35 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-20] PR #463: test(verify): extend schemas coverage for hardening constraints
+**Commit**: `79dcce13102d98d4c063413f83f456c976e50d6a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/463)
+
+### Description
+This PR extends the defensive test coverage for the `Backend-Worker` validation schemas, specifically targeting the hardening constraints introduced on 2026-05-25.
+
+### Reasoning:
+**[Coverage Gap]:** `Backend-Worker/src/schemas.ts` had partial coverage for the newly added hardening constraints (DoS and SSRF mitigations).
+**[Scenarios Added]:**
+- **AuditRequestSchema:** Added tests for `apiKeys` array size (100) and string length (2000).
+- **PublicScanRequestSchema/ScanRequestSchema:** Added tests for `apiKeys` bounds and `prophetCache` size limit (1000 entries).
+- **FetchRequestSchema:** Added tests for `apiKeys` bounds.
+- **RoyaleClanMemberSchema:** Verified that the `trophies` field is mandatory and not stripped.
+**[Rationale]:** These schemas represent the high-risk validation boundary for the Backend-Worker. Ensuring these constraints are strictly enforced prevents regressions that could lead to resource exhaustion or SSRF.
+
+### Changes:
+- **[Backend-Worker/src/src-tests/schemas.spec.ts]:** Added 12 new test cases covering length and count constraints.
+- **[.github/nightly-logs/verification-coverage.log]:** Appended the tested file path.
+
+### Verification:
+- **[Automated]:** Confirmed `pnpm -C Backend-Worker test` passes (122 tests passed).
+- **[Automated/Audit]:** Validated that tests are not trivially true by ensuring optional fields (like `apiKeys`) are populated in failure tests where their absence might otherwise trigger a generic schema failure.
+
+---
+*PR created automatically by Jules for task [10049832975531482771](https://jules.google.com/task/10049832975531482771) started by @AlbiDR*
+
+---
+
 ## [2026-04-20] PR #462: fix(harden): secure Backend-GAS write boundaries and eliminate pathogens
 **Commit**: `22f84f9dca83d278d3e520d47067e10ab779ed63`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/462)
