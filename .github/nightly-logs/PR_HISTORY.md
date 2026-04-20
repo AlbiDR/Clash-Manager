@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-20] PR #465: docs(readme): synchronize Backend-GAS version badge to v14.3.2
+**Commit**: `c3bca33368beaf607ef5d610c99517d8fa938bf9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/465)
+
+### Description
+This PR synchronizes the `Backend-GAS` version badge with the authoritative `package.json` declaration (v14.3.2) to eliminate documentation drift. It also updates the mandatory nightly coverage log.
+
+---
+*PR created automatically by Jules for task [9075619551179350884](https://jules.google.com/task/9075619551179350884) started by @AlbiDR*
+
+---
+
 ## [2026-04-20] PR #464: perf(opt): standardize laboratory orchestration and naming
 **Commit**: `c573c6d5cf6a1c2a18028c700cf06240dfd5afa6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/464)
