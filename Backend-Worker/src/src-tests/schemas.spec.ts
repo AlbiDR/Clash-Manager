@@ -115,6 +115,16 @@ describe('Request Schemas', () => {
       expect(v.safeParse(AuditRequestSchema, { apiKeys: ['key1'] }).success).toBe(true);
       expect(v.safeParse(AuditRequestSchema, { }).success).toBe(false);
     });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const apiKeys = Array(101).fill('key');
+      expect(v.safeParse(AuditRequestSchema, { apiKeys }).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const longKey = 'a'.repeat(2001);
+      expect(v.safeParse(AuditRequestSchema, { apiKeys: [longKey] }).success).toBe(false);
+    });
   });
 
   describe('PublicScanRequestSchema', () => {
@@ -165,6 +175,35 @@ describe('Request Schemas', () => {
       };
       expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
     });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: Array(101).fill('key')
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['a'.repeat(2001)]
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject prophetCache exceeding 1000 entries', () => {
+      const prophetCache: Record<string, any> = {};
+      for (let i = 0; i < 1001; i++) {
+        prophetCache[`#TAG${i.toString(36)}`] = { wins: 5 };
+      }
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['key1'],
+        prophetCache
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
   });
 
   describe('ScanRequestSchema', () => {
@@ -198,6 +237,35 @@ describe('Request Schemas', () => {
         blacklist,
         apiKeys: ['key1'],
         minTrophies: 5000
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: Array(101).fill('key')
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['a'.repeat(2001)]
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject prophetCache exceeding 1000 entries', () => {
+      const prophetCache: Record<string, any> = {};
+      for (let i = 0; i < 1001; i++) {
+        prophetCache[`#TAG${i.toString(36)}`] = { wins: 5 };
+      }
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['key1'],
+        prophetCache
       };
       expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
     });
@@ -259,6 +327,22 @@ describe('Request Schemas', () => {
       const urls = Array(101).fill('https://proxy.royaleapi.dev/v1/test');
       expect(v.safeParse(FetchRequestSchema, { urls }).success).toBe(false);
     });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const data = {
+        urls: ['https://proxy.royaleapi.dev/v1/players/%23P1'],
+        apiKeys: Array(101).fill('key')
+      };
+      expect(v.safeParse(FetchRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const data = {
+        urls: ['https://proxy.royaleapi.dev/v1/players/%23P1'],
+        apiKeys: ['a'.repeat(2001)]
+      };
+      expect(v.safeParse(FetchRequestSchema, data).success).toBe(false);
+    });
   });
 
   describe('ClanApiRequestSchema', () => {
@@ -313,6 +397,20 @@ describe('Royale API Response Schemas', () => {
         }]
       };
       expect(v.safeParse(RoyaleClanMembersResponseSchema, data).success).toBe(true);
+    });
+
+    it('should reject members with missing trophies', () => {
+      const data = {
+        items: [{
+          tag: '#TAG1',
+          name: 'Player 1',
+          role: 'member',
+          expLevel: 14,
+          donations: 100,
+          donationsReceived: 50
+        }]
+      };
+      expect(v.safeParse(RoyaleClanMembersResponseSchema, data).success).toBe(false);
     });
   });
 
