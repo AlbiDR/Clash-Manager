@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { useTheme } from "@shared";
 import { idb } from "@core/services/StorageService";
 import { useAppSettings } from "@core/services/useAppSettings";
@@ -18,18 +21,23 @@ import { useRegisterSW } from "virtual:pwa-register/vue";
  * COMPOSABLE: useSettings
  *
  * @remarks
- * Central orchestrator for the Settings view. Extracts system-level actions
- * (PWA updates, cache management) and display logic from the view.
+ * Central orchestrator for the Settings feature. Acts as a Layer 3 Feature Orchestrator
+ * (CleanStack Section II) that bridges global infrastructure services (@core) with
+ * user-facing configuration views.
+ *
+ * It brokers access to hardware APIs (Haptics, WakeLock) and PWA lifecycle events
+ * (Service Worker updates, Cache purging) through standardized drivers.
+ *
+ * **Import Boundaries:**
+ * - CAN import from `@core`, `@shared`, and internal feature composables.
+ * - FORBIDDEN from importing from other features (e.g., `@features/roster`).
  *
  * @returns
- * - All state and methods from sub-composables.
- * - `layoutProps`: Consolidated object for direct injection into `ConsoleLayout`.
- * - `layoutEvents`: Consolidated events for `ConsoleLayout`.
- * - `footerBadgeText`: Computed label for current specialized display mode.
- * - `appVersion`: Static application version from build environment.
- * - `forceUpdate`: Checks for and applies Service Worker updates.
- * - `clearCache`: Purges browser and service worker caches.
- * - `factoryReset`: Wipes all local application data.
+ * - `layoutProps`: Reactive configuration for ConsoleLayout standardization.
+ * - `layoutEvents`: Action handlers for ConsoleLayout (e.g., refresh).
+ * - `forceUpdate`: Triggers a manual Service Worker update check.
+ * - `clearCache`: Purges the PWA asset cache and reloads.
+ * - `factoryReset`: Destructive wipe of all local application state (IndexedDB, LocalStorage).
  */
 export function useSettings() {
   const { modules, toggle, init: initAppSettings } = useAppSettings();
@@ -65,10 +73,18 @@ export function useSettings() {
     setTheme(newTheme);
   }
 
+  /**
+   * Triggers an explicit check for Service Worker updates.
+   *
+   * @remarks
+   * Uses the native `navigator.serviceWorker` API. If a waiting worker is found,
+   * it triggers an immediate skipWaiting via `updateServiceWorker(true)`.
+   */
   async function forceUpdate() {
     haptics.heavy();
     const activeToastId = toast.info("Checking for updates...");
 
+    // THREAT: Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
     if (!("serviceWorker" in navigator)) {
       toast.remove(activeToastId);
       toast.error("Service Worker not available");
@@ -78,12 +94,14 @@ export function useSettings() {
     try {
       const swRegistration = await navigator.serviceWorker.getRegistration();
       if (!swRegistration) {
+        // Rationale: No registration found usually means the app hasn't fully booted or is in a broken state.
         toast.remove(activeToastId);
         toast.error("No active session found");
         return;
       }
 
       if (swRegistration.waiting) {
+        // Rationale: An update was already downloaded and is ready to be applied.
         toast.remove(activeToastId);
         toast.success("Update ready! Reloading...");
         updateServiceWorker(true);
@@ -106,6 +124,13 @@ export function useSettings() {
     }
   }
 
+  /**
+   * Purges the Service Worker and Cache API assets.
+   *
+   * @remarks
+   * This is a non-destructive recovery action. It unregisters all service workers
+   * and deletes all named caches before triggering a hard reload.
+   */
   async function clearCache() {
     haptics.medium();
     if (
@@ -113,12 +138,14 @@ export function useSettings() {
         "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
       )
     ) {
+      // 1. Unregister Workers: Forces the browser to discard the current control logic.
       if ("serviceWorker" in navigator) {
         const swRegistrations = await navigator.serviceWorker.getRegistrations();
         for (const registration of swRegistrations) {
           await registration.unregister();
         }
       }
+      // 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
       clearManifestCache();
@@ -126,6 +153,13 @@ export function useSettings() {
     }
   }
 
+  /**
+   * Performs a total wipe of local application data.
+   *
+   * @remarks
+   * Destructive action. Clears LocalStorage, SessionStorage, and the authoritative
+   * IndexedDB store. Used to resolve deep state corruption.
+   */
   async function factoryReset() {
     haptics.heavy();
     if (
@@ -136,8 +170,10 @@ export function useSettings() {
       localStorage.clear();
       sessionStorage.clear();
       try {
+        // Rationale: idb.clear() is the most critical step as it contains the unified sync kernel state.
         await idb.clear();
       } catch (resetError) {
+        // Target B [4]: Any plague eliminated.
         console.warn("IDB clear failed", resetError);
       }
       window.location.reload();
