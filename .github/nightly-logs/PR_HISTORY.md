@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-21] PR #471: Version Integrity Audit - 2026-06-03 (No Drift Found)
+**Commit**: `183573fa689af9acc9196dbe28d655f0be1e6381`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/471)
+
+### Description
+Nightly audit of version consistency across the project. No drift was found between module constants and manifests, nor within the Worker subsystem. The audit log has been updated to reflect this steady state.
+
+---
+*PR created automatically by Jules for task [7385101518243111878](https://jules.google.com/task/7385101518243111878) started by @AlbiDR*
+
+---
+
 ## [2026-04-21] PR #470: docs(tsdoc): enhance useSettings architectural context
 **Commit**: `8dfeb23e41d979682d53bc0c96d5b4ca7bc58da2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/470)
