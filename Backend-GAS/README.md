@@ -1,6 +1,6 @@
 # Clash Manager -- Google Apps Script Engine
 
-[![System](https://img.shields.io/badge/System-v14.3.2-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![System](https://img.shields.io/badge/System-v14.3.5-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the **Central Nervous System** of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
 
@@ -23,7 +23,7 @@ The `Scoring_Kernel.ts` dynamically calculates the optimal recruitment standard 
 
 ### Hybrid Benchmark Alignment
 To prevent standards from stagnating, the system calculates a blended performance target:
-- **Elite Roster Reference**: Analyzes the average Raw Performance Score (RPeS) of all members with a **Performance Score (PeS) >= 50%**.
+- **Elite Roster Reference**: Analyzes the average Raw Score (calculated via recruitment weights) of all members with a **Performance Score (PeS) >= 50%**.
 - **Market Intelligence Reference**: Analyzes the **top 5%** of all scanned candidates in the global pool.
 - **Blending**: These two metrics are blended (defaulting to a 40/60 split) to produce a "Hybrid Benchmark" that reflects both internal excellence and external market potential.
 
@@ -43,6 +43,7 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 | :--- | :--- | :--- |
 | **Orchestrator** | Event handling, cron jobs, and master protocol execution | `Orchestrator.ts` |
 | **Registry** | Dependency injection and service location | `Registry.ts`, `Core.ts` |
+| **Validation** | Ingress hardening and runtime integrity enforcement | `Validation.ts` |
 | **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts` |
 | **Modules** | Domain-specific features (MVCS Pattern) | `Roster.ts`, `Headhunter.ts`, `Database.ts` |
 | **Views** | Sheet manipulation and UI rendering | `View.ts`, `*_View.ts` |
@@ -64,6 +65,8 @@ A sophisticated API gateway that manages the limited Google Apps Script quotas.
 ### Worker Hub Integration (`API_Raw.ts`)
 A minimalist "Dumb Store" access layer designed exclusively for the Worker's 5-minute synchronization daemon.
 - **Raw Export**: Bypasses the traditional PWA JSON matrix compression and directly returns unadulterated sheet arrays.
+- **Zero-Trust Validation**: Implements `GasGetEventSchema` to strictly validate all inbound `doGet` parameters at the entry point.
+- **Structured Error Handling**: Utilizes standardized JSON error responses with the `layer: 'GAS_API_RAW'` field to facilitate distributed debugging across the stack.
 - **Dedicated Authentication**: Validates requests securely against `REMOTE_WORKER_SECRET` allowing the Render worker continuous access without Oauth friction.
 
 ### The Orchestrator (`Orchestrator.ts`)
@@ -80,7 +83,7 @@ A pure mathematical engine isolated from the rest of the system. It operates on 
 
 Internal scoring is designed to reward both long-term reliability and short-term excellence.
 
-- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors (Fame, Avg War Fame, Donations, Trophies, and War Rate).
+- **RPeS (Raw Performance Score)**: The weighted sum of multiple performance vectors (Fame, Avg War Fame, Donations, Trophies, and War Rate).
 - **PeS (Performance Score)**: A relative normalization of the RPeS.
   - **Normalization**: Calculated as `(Member RPeS / Benchmark) * 100`.
   - **Relative Curve**: Ensures the leaderboard remains a "relative curve" regardless of meta shifts.
@@ -92,7 +95,7 @@ Internal scoring is designed to reward both long-term reliability and short-term
 
 External scoring focuses on identifying "elite fits" for the clan by comparing candidates against the existing internal elite.
 
-- **RPoS (Raw Potential Score)**: Calculates an unweighted base score for recruits using external stats:
+- **RPoS (Raw Potential Score)**: Calculates a weighted base score for recruits using external stats:
   - **Trophy Weight**: Base player capability.
   - **Donation Weight**: Contribution baseline.
   - **War Weight**: Historical reliability in clan wars (War Day Wins).
@@ -108,7 +111,7 @@ External scoring focuses on identifying "elite fits" for the clan by comparing c
 
 - **Market Intelligence**: The collective performance baseline derived from high-volume tournament scanning. It defines the "top percentile" of the current available recruit pool.
 - **Prophet Cache**: A persistent memory of external player performance. When a player is scanned multiple times, the Prophet Cache tracks their consistency.
-- **Prophet Bonus**: A **25% RPoS multiplier** applied to recruits with proven historical war success (e.g., >5 wins) detected via the Prophet Cache.
+- **Prophet Bonus**: A **25% RPoS bonus** (1.25x multiplier) applied to recruits with proven historical war success (e.g., >5 wins) detected via the Prophet Cache.
 
 </details>
 
