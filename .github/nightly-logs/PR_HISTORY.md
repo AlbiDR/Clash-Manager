@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-22] PR #473: Harden Backend-GAS Raw Feed Boundary
+**Commit**: `5d3f74a8a260c55599bd4a17c964616dc0598e9c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/473)
+
+### Description
+Hardened the Backend-GAS raw feed boundary by implementing Valibot validation, eliminating 'any' pathogens, and standardizing error handling. This addresses the risk of unauthorized data exfiltration and silent crashes at the GAS-Worker sync boundary.
+
+---
+*PR created automatically by Jules for task [17975243993046913437](https://jules.google.com/task/17975243993046913437) started by @AlbiDR*
+
+---
+
 ## [2026-04-21] PR #472: chore(deps): bump @types/google-apps-script from 1.0.83 to 1.0.100
 **Commit**: `0179f1bb43076f70baca7794c9d8c249709b45b6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/472)
