@@ -12,18 +12,45 @@
 
 import type { RegistryContract } from "./Registry";
 import { CONFIG } from "./Configuration";
+import * as v from "valibot";
+import { GasGetEventSchema, HubErrorSchema } from "./Validation";
+
 declare const Registry: RegistryContract;
 declare const SpreadsheetApp: any;
+declare const ContentService: any;
 
 /**
  * Exports raw table data for the Worker Hub matrix.
  * 
- * @param e - The Web App request payload containing headers.
+ * @remarks
+ * This endpoint serves as the primary ingress for the Render Worker's
+ * PayloadKernel. It bypasses the standard WebappController to provide
+ * untransformed matrix data for high-performance processing.
+ *
+ * @param requestEvent - The Web App request payload containing parameters.
  * @returns Serialized JSON string and content type response.
  */
-export const doGetRawFeed = (e: any): any => {
+export const doGetRawFeed = (requestEvent: unknown): any => {
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // THREAT: Malformed request parameters causing unexpected behavior or
+  // bypassing the zero-trust token boundary.
+  const validation = v.safeParse(GasGetEventSchema, requestEvent);
+  if (!validation.success) {
+    return ContentService.createTextOutput(JSON.stringify({
+      error: "Invalid Request",
+      details: validation.issues,
+      layer: 'GAS_API_RAW'
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const { parameter } = validation.output;
+
   // 1. Zero-Trust Token Boundary
-  const authHeader = e?.parameter?.token; // GAS query parameter is e.parameter.key
+  // THREAT: Unauthorized data exfiltration if the token is leaked or bypassed.
+  // Target A [1]: Validating the token from the environment ensures only
+  // authorized workers can access the raw spreadsheet data.
+  const authHeader = parameter.token;
   const envSecret = Registry.Services.Store.props.get('REMOTE_WORKER_SECRET');
 
   if (!envSecret || authHeader !== envSecret) {
@@ -36,13 +63,13 @@ export const doGetRawFeed = (e: any): any => {
 
   // 2. Fetch Raw Storage (Dumb Store)
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     
-    const rosterSheet = ss.getSheetByName(CONFIG.SHEETS.ROSTER);
-    const rosterRows = rosterSheet ? rosterSheet.getDataRange().getValues() : [];
+    const rosterSheetInstance = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.ROSTER);
+    const rosterRows = rosterSheetInstance ? rosterSheetInstance.getDataRange().getValues() : [];
 
-    const hhSheet = ss.getSheetByName(CONFIG.SHEETS.HH);
-    const headhunterRows = hhSheet ? hhSheet.getDataRange().getValues() : [];
+    const headhunterSheetInstance = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.HH);
+    const headhunterRows = headhunterSheetInstance ? headhunterSheetInstance.getDataRange().getValues() : [];
     // Extend with other tables as needed for matrix generation
 
     const rawPayload = {
@@ -57,12 +84,32 @@ export const doGetRawFeed = (e: any): any => {
     return ContentService.createTextOutput(JSON.stringify(rawPayload))
       .setMimeType(ContentService.MimeType.JSON);
 
-  } catch (err: any) {
+  } catch (rawFeedError: unknown) {
+    // THREAT: Silent crash or leaked internal state on storage failure.
+    // Rationale: Consistent error extraction prevents the "any Plague" from leaking.
+    const errorMessage = getErrorMessage(rawFeedError);
     return ContentService.createTextOutput(JSON.stringify({
       error: "Store Connection Failed",
-      details: err.message || String(err),
+      details: errorMessage,
       layer: 'GAS_API_RAW'
     }))
     .setMimeType(ContentService.MimeType.JSON);
   }
 };
+
+/**
+ * [GUARD] ERROR MESSAGE EXTRACTION
+ *
+ * @remarks
+ * Safely extracts an error message from an unknown error object.
+ * Consistent with Backend-Worker error handling patterns.
+ */
+function getErrorMessage(errorPayload: unknown): string {
+  const errorValidation = v.safeParse(HubErrorSchema, errorPayload);
+  if (errorValidation.success) {
+    return errorValidation.output.message;
+  }
+
+  if (errorPayload instanceof Error) return errorPayload.message;
+  return String(errorPayload);
+}
