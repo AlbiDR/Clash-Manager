@@ -34,6 +34,9 @@
 | jsdom             | ^24.1.0  | ^24.1.3  | 2026-05-25 | PASS |
 | vue-tsc           | ^3.2.6   | ^3.2.7   | 2026-04-20 | PASS         |
 | @types/google-apps-script | ^1.0.83 | ^1.0.100 | 2026-06-03 | PASS |
+| vitest | ^4.1.4 | ^4.1.5 | 2026-06-03 | PASS |
+| @vitest/coverage-v8 | ^4.1.4 | ^4.1.5 | 2026-06-03 | PASS |
+| @vitest/ui | ^4.1.4 | ^4.1.5 | 2026-06-03 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
