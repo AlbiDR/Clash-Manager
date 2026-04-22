@@ -56,6 +56,22 @@ export const LoggerPayloadSchema = v.object({
 });
 
 /**
+ * [GUARD] GAS GET EVENT SCHEMA
+ *
+ * @remarks
+ * Validates the Google Apps Script 'doGet' event object.
+ * THREAT: Malformed request parameters causing unexpected behavior or
+ * bypassing the zero-trust token boundary.
+ */
+export const GasGetEventSchema = v.object({
+  parameter: v.object({
+    token: v.optional(v.string()),
+    action: v.optional(v.string())
+  }),
+  parameters: v.optional(v.record(v.string(), v.array(v.string())))
+});
+
+/**
  * [GUARD] GENERIC PAYLOAD: Catch-all for unclassified actions.
  * THREAT: The "any Plague" (Target B [4]).
  * Rationale: Replacing v.any() with v.unknown() ensures that unvalidated
@@ -120,6 +136,7 @@ export const PlayerResultSchema = v.object({
     TriggerUpdatePayloadSchema,
     PlayerProfilePayloadSchema,
     LoggerPayloadSchema,
+    GasGetEventSchema,
     GenericPayloadSchema,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
