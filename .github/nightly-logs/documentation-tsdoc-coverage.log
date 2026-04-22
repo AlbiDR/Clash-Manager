@@ -33,3 +33,4 @@ Frontend-PWA/src/core/services/useSyntheticMode.ts
 Frontend-PWA/src/core/services/useBadge.ts
 Frontend-PWA/src/core/utils/formatters.ts
 Frontend-PWA/src/features/settings/composables/useSettings.ts
+Frontend-PWA/src/features/roster/composables/useLeaderboard.ts
