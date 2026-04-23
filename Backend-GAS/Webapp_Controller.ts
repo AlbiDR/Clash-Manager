@@ -1,10 +1,24 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
 /**
- * MODULE: CONTROLLER_WEBAPP - TypeScript Edition
+ * WEBAPP CONTROLLER (Layer 3)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Data generation and caching layer for the JSON REST API.
- * VERSION: 13.1.0
- * ============================================================================
+ * Rationale: Orchestration layer for the JSON REST API and spreadsheet state.
+ * Features: Matrix Inflation Support, 100-Recruit Pool, Multi-Source Merging.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * The `WebappController` acts as a Layer 3 Feature Orchestrator within the
+ * CleanStack Architecture (Section III). It bridges the gap between the
+ * Spreadsheet (Dumb Store) and the PWA's requirements for high-performance,
+ * low-bandwidth data.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 (@features)
+ * - **Responsibility:** Data aggregation, matrix transformation, and state persistence.
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 2 (@shared).
+ *   Imports from UI layers (Views/Components) are strictly forbidden.
  */
 
 import type { AppConfig } from "./Configuration";
@@ -84,10 +98,15 @@ export interface SheetDataResult {
  * The global response envelope for the PWA.
  *
  * @remarks
- * Implements a "Matrix" format to minimize JSON overhead. Instead of returning
- * an array of objects (where keys are repeated for every row), it returns
- * a single schema array and a 2D matrix of values. The PWA then inflates
- * these values based on the schema index. This reduces payload size by ~40%.
+ * // DECISION LOG: Matrix Reduction Strategy
+ *
+ * Rationale: Minimizes JSON overhead for high-latency mobile networks.
+ *
+ * Pattern:
+ * 1. Single Schema: Column keys are declared once in the `schema` object.
+ * 2. 2D Matrix: Rows are sent as primitive arrays (no repeated keys).
+ * 3. Client Inflation: The PWA inflates these values based on the schema index.
+ * 4. Savings: Reduces payload size by ~40% (up to 70% for large datasets).
  */
 export interface AppPayload {
   success: boolean;
@@ -107,9 +126,30 @@ export interface AppPayload {
 
 /**
  * WEBAPP CONTROLLER CONTRACT
+ *
+ * @remarks
+ * Defines the authoritative interface for the project's REST API.
+ * Methods focus on data retrieval, state mutation (recruitment),
+ * and payload generation for the PWA.
  */
 export interface WebappControllerContract {
+  /**
+   * Retrieves the current application data payload.
+   *
+   * @param forceRefresh - If true, bypasses the cache and regenerates the payload.
+   * @returns A serialized JSON string containing the WebAppData matrix.
+   */
   getWebAppData(forceRefresh: boolean): string;
+
+  /**
+   * Updates the invitation status for recruits (Dismissal).
+   *
+   * @remarks
+   * Implements a "Write-Ahead" pattern by appending dismissal events to the EVT sheet.
+   *
+   * @param payload - Validated DismissRecruitsPayload containing recruit IDs and scores.
+   * @returns Execution result with success status and processed count.
+   */
   updateRecruitInvitationStatus(payload: unknown): {
     success: boolean;
     count: number;
@@ -117,20 +157,71 @@ export interface WebappControllerContract {
     payloadSize?: number;
     error?: string;
   };
+
+  /**
+   * Reverts a previous recruit dismissal (Undismiss).
+   *
+   * @param payload - Validated UndismissRecruitsPayload containing recruit IDs.
+   * @returns Execution result with success status and removed count.
+   */
   revertRecruitDismissal(payload: unknown): {
     success: boolean;
     count: number;
     error?: string;
   };
+
+  /**
+   * Forces the regeneration and persistence of the application data payload.
+   *
+   * @returns The newly generated serialized JSON string.
+   */
   persistWebAppDataPayload(): string;
+
+  /**
+   * Fetches the current clan member list.
+   *
+   * @remarks
+   * Attempts to use the Public Worker Hub as a primary source, falling back
+   * to direct RoyaleAPI calls if the Hub is unavailable.
+   *
+   * @returns Array of raw member objects.
+   */
   getMembers(): unknown[];
+
+  /**
+   * Retrieves a detailed player profile for a specific tag.
+   *
+   * @param tag - The Supercell player tag (e.g., "#PR20C8RR").
+   * @returns Validated RoyalePlayer object.
+   * @throws Error if the player is not found or validation fails.
+   */
   getPlayerProfile(tag: string): unknown;
+
+  /**
+   * Retrieves the historical war log entries for the clan.
+   *
+   * @returns Array of formatted war log objects.
+   */
   retrieveWarLogEntries(): unknown[];
+
+  /**
+   * [INTERNAL] The core engine for matrix payload generation.
+   *
+   * @remarks
+   * Orchestrates data extraction, multi-source merging (Sheets + Worker Queue),
+   * and 100-recruit pool compilation.
+   *
+   * @returns Serialized JSON string of the WebAppData.
+   */
   _generatePayloadInternal(): string;
 }
 
 /**
- * WEBAPP CONTROLLER: JSON REST API Layer.
+ * WEBAPP CONTROLLER
+ *
+ * @remarks
+ * Implements the WebappControllerContract. Orchestrates the flow of data
+ * between the GAS Spreadsheet environment and the JSON REST API.
  */
 const WebappController: WebappControllerContract = {
   getWebAppData(forceRefresh: boolean): string {
@@ -393,9 +484,18 @@ const WebappController: WebappControllerContract = {
       } catch (extractionError) {}
 
       // --- 3. MERGE HEADHUNTER POOL (Sheets + Queue) ---
-      // [OCD] 100-Recruit Fresh Pool Strategy:
-      // We aim to provide a "Infinite Scroll" feel by merging the main HH sheet
-      // with the latest discoveries from the worker (HH_QUEUE).
+      /**
+       * // DECISION LOG: 100-Recruit Fresh Pool Strategy
+       *
+       * Rationale: Provides an "Infinite Scroll" feel by merging the main HH sheet
+       * findings with the latest discoveries from the worker queue.
+       *
+       * Strategy:
+       * 1. De-duplicate: Prefer manually audited spreadsheet rows over raw worker findings.
+       * 2. Windowing: Compile 100 recruits (Top 50 active + 50 backup).
+       * 3. Continuity: As recruits are dismissed in the PWA, the "backup" recruits
+       *    automatically slide into the active view without requiring a full sheet update.
+       */
       const hhSchema = hhResult.schema;
       const tagIdx = hhSchema.indexOf("id");
       const scoreIdx = hhSchema.indexOf("potentialRawScore");
@@ -447,8 +547,6 @@ const WebappController: WebappControllerContract = {
       });
 
       // C. Sort by Raw Score (descending) and truncate to 100.
-      // [OCD] 100-Recruit Pool: This provides the top 50 for immediate PWA parity with 
-      // the spreadsheet, plus a 50-recruit "backup" for automatic repopulation.
       const consolidatedPool = Array.from(recruitPoolMap.values())
         .sort((a, b) => (Number(b[scoreIdx]) || 0) - (Number(a[scoreIdx]) || 0))
         .slice(0, 100);
