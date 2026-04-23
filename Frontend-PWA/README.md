@@ -54,7 +54,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
 | **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
-| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker (20s timeout) with an authoritative Google Apps Script fallback. Implements 'text/plain' requests to bypass CORS preflight and a 5-attempt jittered exponential backoff loop. |
+| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker (20s timeout) with an authoritative Google Apps Script fallback. Implements 'text/plain' requests to bypass CORS preflight and Matrix Inflation (decompressing row-based matrices) to reduce payload size by 70%. |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
 | **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
@@ -69,6 +69,8 @@ The application kernel (@core) manages complex system-level behaviors through sp
 ### 1. Unified State & Sync (`useClashDataStore`)
 The authoritative Layer 1 central store for high-integrity clan datasets.
 - **Unified Sync Kernel**: Centralizes state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence across all hydration paths (local, worker, background).
+- **Hub Attribution Logic**: Tracks dataset provenance via `dataSource` and `hubTimestamp` to distinguish between direct GAS and optimized Worker Hub payloads.
+- **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
 - **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the remote backend in the background.
 - **Validation Boundary**: All inbound payloads are strictly validated against `WebAppDataSchema` to prevent "any" plague propagation into the application state.
 
@@ -98,7 +100,7 @@ A resilient, global notification service with integrated hardware feedback.
 - **Interaction Safety**: Implements an 800ms debounce-locked action handler to prevent race conditions during rapid user input on high-consequence actions like "UNDO".
 
 ### 6. Connectivity Singleton (`useApiState`)
-The authoritative Layer 1 arbiter of backend availability and handshake discovery.
+The authoritative Layer 1 arbiter of backend availability and handshake discovery (located in `@core/api/`).
 - **Handshake Discovery**: Orchestrates the initial 25,000ms handshake to detect server availability, cold-boot "waking" states, or configuration gaps.
 - **Worker Verification**: Proactively pings the high-performance Worker Hub to determine if the optimized data path is available.
 
