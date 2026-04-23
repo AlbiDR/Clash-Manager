@@ -13,7 +13,8 @@ import type { Recruit } from "./Headhunter_Types";
 import * as v from "valibot";
 import {
   DismissRecruitsPayloadSchema,
-  UndismissRecruitsPayloadSchema
+  UndismissRecruitsPayloadSchema,
+  RoyalePlayerSchema
 } from "./Validation";
 
 // Global Version Constant
@@ -292,16 +293,20 @@ const WebappController: WebappControllerContract = {
   },
 
   getPlayerProfile(tag: string): unknown {
-    const cleanTag = encodeURIComponent(tag.startsWith("#") ? tag : `#${tag}`);
-    const data = Registry.Services.Network.fetchRoyaleAPIOne(
-      `${CONFIG.SYSTEM.API_BASE}/players/${cleanTag}`,
+    const encodedPlayerTag = encodeURIComponent(tag.startsWith("#") ? tag : `#${tag}`);
+    const rawProfile = Registry.Services.Network.fetchRoyaleAPIOne(
+      `${CONFIG.SYSTEM.API_BASE}/players/${encodedPlayerTag}`,
     );
 
-    if (!data) {
+    if (!rawProfile) {
       throw new Error(`Player ${tag} not found`);
     }
 
-    return data;
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Malformed player profile data causing downstream runtime failures.
+    // Rationale: Establishing a strict validation boundary for external API data
+    // ensures only valid player profiles enter the Clean Stack.
+    return v.parse(RoyalePlayerSchema, rawProfile);
   },
 
   retrieveWarLogEntries(): unknown[] {
@@ -682,13 +687,13 @@ const formatRole = (role: string): string => {
 
 function parseCRDateISO(dateString: string): string {
   if (!dateString) return new Date().toISOString().split("T")[0];
-  const d = new Date(
+  const parsedDate = new Date(
     dateString.replace(
       /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*/,
       "$1-$2-$3T$4:$5:$6Z",
     ),
   );
-  return Registry.Services.Time.formatDate(d);
+  return Registry.Services.Time.formatDate(parsedDate);
 }
 
 /**
