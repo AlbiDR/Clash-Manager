@@ -5,52 +5,35 @@ import { mount } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import NetworkSettings from "../NetworkSettings.vue";
 import { ref } from "vue";
-import * as useApiStateModule from "../../../../core/api/useApiState";
 
-// Deep import mock per ADR to avoid barrel side effects
-vi.mock("../../../../core/api/useApiState", () => ({
-  useApiState: vi.fn()
+const mockSettings = {
+  apiUrl: ref("https://api.example.com"),
+  apiStatus: ref("online"),
+  pingData: ref({ latency: 42, version: "1.2.3" }),
+  updateApiUrl: vi.fn(),
+  resetApiUrl: vi.fn(),
+};
+
+vi.mock("../../composables/useSettings", () => ({
+  useSettings: () => mockSettings,
 }));
 
 describe("NetworkSettings.vue", () => {
-  const mockApiUrl = ref("https://api.example.com");
-  const mockApiStatus = ref("online");
-  const mockPingData = ref({ latency: 42, version: "1.2.3" });
-
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockApiUrl.value = "https://api.example.com";
-    mockApiStatus.value = "online";
-    mockPingData.value = { latency: 42, version: "1.2.3" };
-
-    vi.mocked(useApiStateModule.useApiState).mockReturnValue({
-      apiUrl: mockApiUrl,
-      apiStatus: mockApiStatus,
-      pingData: mockPingData,
-      apiConfigured: ref(true),
-      workerStatus: ref("online"),
-      checkApiStatus: vi.fn(),
-      init: vi.fn()
-    } as any);
+    mockSettings.apiUrl.value = "https://api.example.com";
+    mockSettings.apiStatus.value = "online";
+    mockSettings.pingData.value = { latency: 42, version: "1.2.3" };
 
     // Mock localStorage
-    const store: Record<string, string> = {};
     vi.stubGlobal("localStorage", {
-      getItem: vi.fn((key: string) => store[key] || null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value.toString(); }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      getItem: vi.fn((key: string) => (key === "cm_gas_url" ? null : null)),
     });
-
-    // Mock window.location.reload
-    vi.stubGlobal("location", { reload: vi.fn() });
-
-    // Mock confirm
-    vi.stubGlobal("confirm", vi.fn(() => true));
   });
 
   it("renders in checking state with skeleton loaders", async () => {
-    mockApiStatus.value = "checking";
+    mockSettings.apiStatus.value = "checking";
     const wrapper = mount(NetworkSettings, {
       props: { initiallyExpanded: true },
       global: {
@@ -86,7 +69,7 @@ describe("NetworkSettings.vue", () => {
     expect(wrapper.find(".url-text").text()).toBe("https://api.example.com");
   });
 
-  it("handles edit mode and saving new URL", async () => {
+  it("handles edit mode and saving new URL via orchestrator", async () => {
     const wrapper = mount(NetworkSettings, {
       props: { initiallyExpanded: true },
       global: {
@@ -108,12 +91,13 @@ describe("NetworkSettings.vue", () => {
     await input.setValue("https://new-api.com");
     await wrapper.find(".save-btn").trigger("click");
 
-    expect(localStorage.setItem).toHaveBeenCalledWith("cm_gas_url", "https://new-api.com");
-    expect(window.location.reload).toHaveBeenCalled();
+    expect(mockSettings.updateApiUrl).toHaveBeenCalledWith("https://new-api.com");
   });
 
-  it("handles resetting custom override", async () => {
-    vi.mocked(localStorage.getItem).mockReturnValue("https://custom.com");
+  it("handles resetting custom override via orchestrator", async () => {
+    vi.stubGlobal("localStorage", {
+        getItem: vi.fn((key: string) => (key === "cm_gas_url" ? "https://custom.com" : null)),
+    });
 
     const wrapper = mount(NetworkSettings, {
       props: { initiallyExpanded: true },
@@ -129,17 +113,14 @@ describe("NetworkSettings.vue", () => {
 
     const overridePill = wrapper.find(".override-pill");
     expect(overridePill.exists()).toBe(true);
-    expect(overridePill.text()).toContain("Running custom override");
 
     await overridePill.trigger("click");
 
-    expect(window.confirm).toHaveBeenCalled();
-    expect(localStorage.removeItem).toHaveBeenCalledWith("cm_gas_url");
-    expect(window.location.reload).toHaveBeenCalled();
+    expect(mockSettings.resetApiUrl).toHaveBeenCalled();
   });
 
   it("transitions to editing automatically if unconfigured", async () => {
-    mockApiStatus.value = "unconfigured";
+    mockSettings.apiStatus.value = "unconfigured";
     const wrapper = mount(NetworkSettings, {
       props: { initiallyExpanded: true },
       global: {

@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { Icon } from "@shared";
-import { useApiState } from "@core/api/useApiState";
+import { useSettings } from "../composables/useSettings";
 import { ref, computed, watch } from "vue";
 import SettingsCard from "./SettingsCard.vue";
+
 const props = defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
-const { apiUrl, apiStatus, pingData } = useApiState();
+const {
+  apiUrl,
+  apiStatus,
+  pingData,
+  updateApiUrl,
+  resetApiUrl,
+} = useSettings();
+
 const newApiUrl = ref("");
 const isEditing = ref(false);
 
@@ -16,24 +24,14 @@ const isChecking = computed(() => apiStatus.value === "checking");
 
 watch(
   apiStatus,
-  (statusUpdate) => {
-    if (statusUpdate === "unconfigured") isEditing.value = true;
+  (newApiStatus) => {
+    if (newApiStatus === "unconfigured") isEditing.value = true;
   },
   { immediate: true },
 );
 
 function saveApiUrl() {
-  if (newApiUrl.value.trim()) {
-    localStorage.setItem("cm_gas_url", newApiUrl.value.trim());
-    window.location.reload();
-  }
-}
-
-function resetApiUrl() {
-  if (confirm("Reset API URL to default?")) {
-    localStorage.removeItem("cm_gas_url");
-    window.location.reload();
-  }
+  updateApiUrl(newApiUrl.value);
 }
 </script>
 
