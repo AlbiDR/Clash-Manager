@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-23] PR #479: test(verify): implement coverage for RecoverySettings component
+**Commit**: `4a35857eb22a49a4bf5652f1924f39ef76fa287a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/479)
+
+### Description
+This PR introduces defensive coverage for the `RecoverySettings.vue` component in the Settings feature. It validates the critical system recovery path, including Service Worker updates, cache purging, and factory resets, ensuring these actions are correctly wired to the orchestrator.
+
+### Reasoning:
+**[Coverage Gap]:** `RecoverySettings.vue` had 0% coverage despite handling high-risk system-level operations.
+**[Scenarios Added]:**
+- Rendering of experimental UI elements.
+- Reactive state propagation for module toggles and global loading indicators.
+- Interaction verification for all recovery buttons (`forceUpdate`, `clearCache`, `factoryReset`).
+**[Rationale]:** This component was selected from the priority queue as it represents a critical system boundary with zero existing verification.
+
+### Changes:
+- **Frontend-PWA/src/features/settings/components/components-tests/RecoverySettings.spec.ts**: New Vitest spec file.
+- **.github/nightly-logs/verification-coverage.log**: Appended the tested component path.
+
+### Verification:
+- **[Automated]:** `pnpm -C Frontend-PWA test RecoverySettings.spec.ts` passed with 7/7 tests.
+- **[Automated/Audit]:** Full `Frontend-PWA` suite passed with 102/102 files (853 tests). Mocking strategy was verified to use direct imports to avoid side effects.
+
+---
+*PR created automatically by Jules for task [17197670033192547479](https://jules.google.com/task/17197670033192547479) started by @AlbiDR*
+
+---
+
 ## [2026-04-23] PR #478: fix(harden): secure external API boundary in Backend-GAS
 **Commit**: `dbbfca08cb097294d261092938ddd22b617930b7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/478)
