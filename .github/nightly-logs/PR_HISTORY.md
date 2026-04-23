@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-23] PR #480: refactor(opt): standardize Settings feature orchestration
+**Commit**: `cefdc1c12420c774f1e332f82d3e48d30732fa6a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/480)
+
+### Description
+Standardized the Settings feature by refactoring `NetworkSettings.vue` and `NotificationSettings.vue` to delegate logic to a centralized Layer 3 Feature Orchestrator (`useSettings.ts`). This alignment with the CleanStack Architecture ensures a single source of truth for settings-related actions, improves testability, and eliminates anemic variable pathogens. Verified via 76 passing tests and Playwright structural audits.
+
+---
+*PR created automatically by Jules for task [2560131938392813847](https://jules.google.com/task/2560131938392813847) started by @AlbiDR*
+
+---
+
 ## [2026-04-23] PR #479: test(verify): implement coverage for RecoverySettings component
 **Commit**: `4a35857eb22a49a4bf5652f1924f39ef76fa287a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/479)
