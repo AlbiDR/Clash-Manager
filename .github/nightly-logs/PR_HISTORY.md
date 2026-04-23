@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-23] PR #484: chore(deps): bump vue from 3.5.32 to 3.5.33
+**Commit**: `ff22a53d1acd8da6fdef5ceb998d449442e84f87`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/484)
+
+### Description
+This PR implements a Tier 1 automated patch bump for `vue` from 3.5.32 to 3.5.33. The change was applied to the monorepo catalog in `pnpm-workspace.yaml` and verified through the full test suite. The dependency audit log has been updated to reflect this maintenance.
+
+---
+*PR created automatically by Jules for task [9607219963764151667](https://jules.google.com/task/9607219963764151667) started by @AlbiDR*
+
+---
+
 ## [2026-04-23] PR #483: chore(version): no drift found
 **Commit**: `f9ec26230c0029bc0639d586071887b4f0d84fa8`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/483)
