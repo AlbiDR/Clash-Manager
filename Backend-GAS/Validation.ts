@@ -12,6 +12,32 @@ import * as v from 'valibot';
 
 const VER_VALIDATION = "1.0.0";
 
+/**
+ * Common regex for Clash Royale tags (Player, Clan, Tournament)
+ */
+const TAG_REGEX = /^[#]?[0-9A-Za-z]{3,12}$/;
+
+/**
+ * [VALIDATION] Branded Types Validators
+ *
+ * @remarks
+ * THREAT: Non-normalized tags (lowercase or missing '#') bypassing the recruitment blacklist
+ * or causing duplicate entries in the database.
+ * This schema enforces strict normalization: converting to uppercase and ensuring
+ * the '#' prefix is present.
+ */
+export const TagSchema = v.pipe(
+  v.string(),
+  v.trim(),
+  v.regex(TAG_REGEX, "Invalid tag format"),
+  v.transform((inputTag) => {
+    // Normalize to uppercase and ensure '#' prefix to prevent duplicate entries
+    // and bypass of the recruitment blacklist.
+    const upper = inputTag.toUpperCase();
+    return upper.startsWith("#") ? upper : `#${upper}`;
+  })
+);
+
 // Base schema to extract 'action' field safely
 export const BaseActionSchema = v.object({
   action: v.optional(v.string())
@@ -45,7 +71,33 @@ export const TriggerUpdatePayloadSchema = v.object({
 
 export const PlayerProfilePayloadSchema = v.object({
   action: v.optional(v.string()),
-  tag: v.string()
+  tag: TagSchema
+});
+
+/**
+ * [GUARD] Player Profile Schema
+ *
+ * @remarks
+ * Validates a full player profile. Used in both Roster auditing and
+ * recruitment scoring.
+ */
+export const RoyalePlayerSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  trophies: v.number(),
+  totalDonations: v.number(),
+  warDayWins: v.number(),
+  challengeCardsWon: v.number(),
+  expLevel: v.optional(v.number()),
+  clan: v.optional(v.object({
+    tag: TagSchema,
+    name: v.string(),
+  })),
+  leagueStatistics: v.optional(v.object({
+    currentSeason: v.optional(v.object({
+      trophies: v.optional(v.number(), 0),
+    })),
+  })),
 });
 
 export const LoggerPayloadSchema = v.object({
@@ -135,8 +187,10 @@ export const PlayerResultSchema = v.object({
     UndismissRecruitsPayloadSchema,
     TriggerUpdatePayloadSchema,
     PlayerProfilePayloadSchema,
+    RoyalePlayerSchema,
     LoggerPayloadSchema,
     GasGetEventSchema,
     GenericPayloadSchema,
+    TagSchema,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
