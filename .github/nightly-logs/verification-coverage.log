@@ -60,3 +60,4 @@ Frontend-PWA/src/features/laboratory/components/TrajectoryList.vue
 Backend-Worker/src/src-tests/schemas.spec.ts
 Frontend-PWA/src/features/settings/components/AppearanceSettings.vue
 Backend-GAS/Validation.ts
+Frontend-PWA/src/features/settings/components/RecoverySettings.vue
