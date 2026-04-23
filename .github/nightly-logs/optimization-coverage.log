@@ -98,3 +98,9 @@ Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue
 Frontend-PWA/src/features/laboratory/components/VaultCard.vue
 Frontend-PWA/src/features/laboratory/components/ParameterCard.vue
 Frontend-PWA/src/features/laboratory/components/SummaryCard.vue
+Frontend-PWA/src/features/settings/composables/useSettings.ts
+Frontend-PWA/src/features/settings/components/NetworkSettings.vue
+Frontend-PWA/src/features/settings/components/NotificationSettings.vue
+Frontend-PWA/src/features/settings/composables/composables-tests/useSettings.spec.ts
+Frontend-PWA/src/features/settings/components/components-tests/NetworkSettings.spec.ts
+Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts
