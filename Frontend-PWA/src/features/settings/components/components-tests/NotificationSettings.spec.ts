@@ -6,69 +6,35 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 import NotificationSettings from "../NotificationSettings.vue";
 import { ref, reactive, nextTick } from "vue";
-import * as GasClient from "@core/api/GasClient";
 
 // --- MOCKS ---
 
-const mockHaptics = {
-  tap: vi.fn(),
-  medium: vi.fn(),
-  heavy: vi.fn(),
-};
+const mockModules = reactive({
+  experimentalNotifications: false,
+  notificationThreshold: 50,
+  notificationQuietMode: false,
+  notificationSound: true,
+});
 
-const mockBadge = {
-  requestPermission: vi.fn().mockResolvedValue("granted"),
-  sendLocalNotification: vi.fn(),
-};
-
-const mockToast = {
-  success: vi.fn(),
-  error: vi.fn(),
-};
-
-const mockAppSettings = {
-  modules: reactive({
-    experimentalNotifications: false,
-    notificationThreshold: 50,
-    notificationQuietMode: false,
-    notificationSound: true,
-  }),
+const mockSettings = {
+  modules: mockModules,
   toggle: vi.fn((key) => {
-    (mockAppSettings.modules as any)[key] = !(mockAppSettings.modules as any)[key];
+    (mockModules as any)[key] = !(mockModules as any)[key];
+  }),
+  notificationPermission: ref("default"),
+  isPushSubscribed: ref(false),
+  hasWorker: ref(true),
+  lastSyncFormatted: ref("12:00"),
+  requestNotificationPermission: vi.fn().mockResolvedValue("granted"),
+  subscribePush: vi.fn().mockResolvedValue(undefined),
+  sendTestNotification: vi.fn().mockResolvedValue(undefined),
+  setNotificationThreshold: vi.fn((val) => {
+    mockModules.notificationThreshold = val;
   }),
 };
 
-// Deep imports for Layer 1 mocks as per ADR
-vi.mock("@core/services/useHaptics", () => ({
-  useHaptics: () => mockHaptics,
-}));
-
-vi.mock("@core/services/useBadge", () => ({
-  useBadge: () => mockBadge,
-}));
-
-vi.mock("@core/services/useToast", () => ({
-  useToast: () => mockToast,
-}));
-
-vi.mock("@core/services/useAppSettings", () => ({
-  useAppSettings: () => mockAppSettings,
-}));
-
-vi.mock("@core/api/GasClient", () => ({
-  isWorkerConfigured: vi.fn().mockReturnValue(true),
-  subscribeToPush: vi.fn().mockResolvedValue(true),
-}));
-
-// Mock store
-const lastSyncTime = ref<number | null>(null);
-const startBackgroundSync = vi.fn();
-
-vi.mock("@core/services/useClashDataStore", () => ({
-  useClashDataStore: () => ({
-    lastSyncTime,
-    startBackgroundSync,
-  }),
+vi.mock("../../composables/useSettings", () => ({
+  useSettings: () => mockSettings,
 }));
 
 // Shared UI Mocks
@@ -80,40 +46,18 @@ vi.mock("@shared", () => ({
   },
 }));
 
-// Browser API Mocks
-const mockServiceWorker = {
-  ready: Promise.resolve({
-    pushManager: {
-      getSubscription: vi.fn().mockResolvedValue(null),
-      subscribe: vi.fn().mockResolvedValue({ endpoint: "mock-endpoint" }),
-    },
-  }),
-  controller: {
-    postMessage: vi.fn(),
-  },
-};
-
 describe("NotificationSettings.vue", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
 
     // Reset state
-    mockAppSettings.modules.experimentalNotifications = false;
-    mockAppSettings.modules.notificationThreshold = 50;
-    lastSyncTime.value = null;
-
-    // Reset mocks to defaults
-    vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(true);
-    vi.mocked(GasClient.subscribeToPush).mockResolvedValue(true);
-
-    // Reset Globals
-    vi.stubGlobal("Notification", {
-      permission: "default",
-    });
-    vi.stubGlobal("navigator", {
-      serviceWorker: mockServiceWorker,
-    });
+    mockModules.experimentalNotifications = false;
+    mockModules.notificationThreshold = 50;
+    mockSettings.notificationPermission.value = "default";
+    mockSettings.isPushSubscribed.value = false;
+    mockSettings.hasWorker.value = true;
+    mockSettings.lastSyncFormatted.value = "Never";
   });
 
   it("renders correctly with default permissions", async () => {
@@ -127,9 +71,8 @@ describe("NotificationSettings.vue", () => {
   });
 
   it("formats the last sync time correctly when granted", async () => {
-    vi.stubGlobal("Notification", { permission: "granted" });
-    const now = new Date(2026, 3, 20, 14, 30).getTime(); // 14:30
-    lastSyncTime.value = now;
+    mockSettings.notificationPermission.value = "granted";
+    mockSettings.lastSyncFormatted.value = "14:30";
 
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
@@ -137,13 +80,12 @@ describe("NotificationSettings.vue", () => {
     await nextTick();
 
     const syncInfo = wrapper.find(".sync-info").text();
-    expect(syncInfo).toMatch(/\d{2}:\d{2}/);
-    expect(syncInfo).not.toContain("Never");
+    expect(syncInfo).toContain("14:30");
   });
 
   it("shows 'Never' for last sync when no sync has occurred", async () => {
-    vi.stubGlobal("Notification", { permission: "granted" });
-    lastSyncTime.value = null;
+    mockSettings.notificationPermission.value = "granted";
+    mockSettings.lastSyncFormatted.value = "Never";
 
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
@@ -153,7 +95,7 @@ describe("NotificationSettings.vue", () => {
     expect(wrapper.find(".sync-info").text()).toContain("Never");
   });
 
-  it("updates threshold and triggers haptics and sync", async () => {
+  it("updates threshold and triggers orchestrator method", async () => {
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
     });
@@ -163,12 +105,10 @@ describe("NotificationSettings.vue", () => {
     // Click '75' button
     await buttons[1].trigger("click");
 
-    expect(mockHaptics.tap).toHaveBeenCalled();
-    expect(mockAppSettings.modules.notificationThreshold).toBe(75);
-    expect(startBackgroundSync).toHaveBeenCalled();
+    expect(mockSettings.setNotificationThreshold).toHaveBeenCalledWith(75);
   });
 
-  it("handles notification permission flow", async () => {
+  it("handles notification permission flow via orchestrator", async () => {
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
     });
@@ -177,20 +117,11 @@ describe("NotificationSettings.vue", () => {
 
     await enableBtn.trigger("click");
 
-    expect(mockHaptics.tap).toHaveBeenCalled();
-    expect(mockBadge.requestPermission).toHaveBeenCalled();
-
-    vi.stubGlobal("Notification", { permission: "granted" });
-    const grantedWrapper = mount(NotificationSettings, {
-      props: { initiallyExpanded: true }
-    });
-    await nextTick();
-    expect(grantedWrapper.find(".toggles-grid").exists()).toBe(true);
-    expect(grantedWrapper.find(".perm-section").exists()).toBe(false);
+    expect(mockSettings.requestNotificationPermission).toHaveBeenCalled();
   });
 
-  it("handles Cloud Push subscription success", async () => {
-    vi.stubGlobal("Notification", { permission: "granted" });
+  it("handles Cloud Push subscription via orchestrator", async () => {
+    mockSettings.notificationPermission.value = "granted";
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
     });
@@ -201,16 +132,14 @@ describe("NotificationSettings.vue", () => {
     expect(pushRow).toBeDefined();
 
     await pushRow!.trigger("click");
-    await flushPromises();
 
-    expect(mockHaptics.medium).toHaveBeenCalled();
-    expect(mockToast.success).toHaveBeenCalledWith("Push Alerts Active");
+    expect(mockSettings.subscribePush).toHaveBeenCalled();
   });
 
   it("hides Cloud Push row if worker is not configured", async () => {
-    vi.mocked(GasClient.isWorkerConfigured).mockReturnValue(false);
+    mockSettings.hasWorker.value = false;
+    mockSettings.notificationPermission.value = "granted";
 
-    vi.stubGlobal("Notification", { permission: "granted" });
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
     });
@@ -221,8 +150,8 @@ describe("NotificationSettings.vue", () => {
     expect(pushRow).toBeUndefined();
   });
 
-  it("sends test alert via Service Worker when available", async () => {
-    vi.stubGlobal("Notification", { permission: "granted" });
+  it("sends test alert via orchestrator", async () => {
+    mockSettings.notificationPermission.value = "granted";
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
     });
@@ -231,29 +160,6 @@ describe("NotificationSettings.vue", () => {
     const testBtn = wrapper.find(".action-btn");
     await testBtn.trigger("click");
 
-    expect(mockHaptics.heavy).toHaveBeenCalled();
-    expect(mockServiceWorker.controller.postMessage).toHaveBeenCalledWith({
-      type: "BADGE_NOTIFICATION_ANDROID",
-      count: 1,
-      threshold: 50,
-    });
-  });
-
-  it("falls back to local notification for test alert if SW is missing", async () => {
-    vi.stubGlobal("navigator", {}); // No SW
-    vi.stubGlobal("Notification", { permission: "granted" });
-
-    const wrapper = mount(NotificationSettings, {
-      props: { initiallyExpanded: true }
-    });
-    await nextTick();
-
-    const testBtn = wrapper.find(".action-btn");
-    await testBtn.trigger("click");
-
-    expect(mockBadge.sendLocalNotification).toHaveBeenCalledWith(
-      "Test Alert",
-      expect.stringContaining("Test notification #1")
-    );
+    expect(mockSettings.sendTestNotification).toHaveBeenCalled();
   });
 });

@@ -1,138 +1,27 @@
 <script setup lang="ts">
 import { Icon, SettingRow } from "@shared";
-import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
-import { useBadge } from "@core/services/useBadge";
-import { useAppSettings } from "@core/services/useAppSettings";
-import { useClashDataStore } from "@core";
-import { storeToRefs } from "pinia";
-import { useToast } from "@core/services/useToast";
-import { useHaptics } from "@core/services/useHaptics";
-import { computed, ref, onMounted } from "vue";
+import { useSettings } from "../composables/useSettings";
+import { computed } from "vue";
 import SettingsCard from "./SettingsCard.vue";
+
 const props = defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
-const { modules, toggle } = useAppSettings();
-const haptics = useHaptics();
-const { requestPermission, sendLocalNotification } = useBadge();
-const clashDataStore = useClashDataStore();
-const { lastSyncTime: lastSync } = storeToRefs(clashDataStore);
-const { startBackgroundSync } = clashDataStore;
-const toast = useToast();
-
-const permissionState = ref<NotificationPermission | "unsupported">("default");
-const isPushSubscribed = ref(false);
-const hasWorker = computed(() => isWorkerConfigured());
-
-// Improvement #10: Time formatting
-const lastSyncFormatted = computed(() => {
-  if (!lastSync?.value) return "Never";
-  const date = new Date(lastSync.value);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-});
-
-onMounted(async () => {
-  if (typeof Notification !== "undefined") {
-    permissionState.value = Notification.permission;
-
-    // Check existing push subscription
-    if ("serviceWorker" in navigator) {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) isPushSubscribed.value = true;
-    }
-  } else {
-    permissionState.value = "unsupported";
-  }
-});
+const {
+  modules,
+  toggle,
+  notificationPermission,
+  isPushSubscribed,
+  hasWorker,
+  lastSyncFormatted,
+  requestNotificationPermission,
+  subscribePush,
+  sendTestNotification,
+  setNotificationThreshold,
+} = useSettings();
 
 const threshold = computed(() => modules.notificationThreshold);
-
-const setThreshold = (value: 50 | 75) => {
-  haptics.tap();
-  modules.notificationThreshold = value;
-  // Trigger update immediately
-  startBackgroundSync();
-};
-
-const enableNotifications = async () => {
-  haptics.tap();
-  // Improvement #13 was implemented in template (UI rationale)
-  const permissionResult = await requestPermission();
-  permissionState.value = permissionResult;
-};
-
-// ⚡ FEATURE 1: PUSH SUBSCRIPTION
-const subscribePush = async () => {
-  if (!hasWorker.value) {
-    toast.error("Cloud Worker not configured");
-    return;
-  }
-
-  try {
-    haptics.medium();
-    const reg = await navigator.serviceWorker.ready;
-    // Note: In a real app, you'd fetch the VAPID key from the server first
-    // For this prototype, we assume the user provides it or we use a demo key
-    // or the browser default if supported (unlikely for web push).
-    // Simulating subscription flow:
-
-    const sub = await reg.pushManager
-      .subscribe({
-        userVisibleOnly: true,
-        applicationServerKey:
-          "BMMA-EXAMPLE-KEY-REPLACE-WITH-REAL-VAPID-KEY-FROM-ENV",
-      })
-      .catch((e) => {
-        console.warn("Push subscribe failed (likely missing VAPID)", e);
-        // Mock success for UI demo if key fails
-        return {
-          endpoint: "https://fcm.googleapis.com/fcm/send/demo",
-        } as PushSubscription;
-      });
-
-    if (sub) {
-      const success = await subscribeToPush(sub);
-      if (success) {
-        isPushSubscribed.value = true;
-        toast.success("Push Alerts Active");
-      } else {
-        toast.error("Server registration failed");
-      }
-    }
-  } catch (e) {
-    console.error(e);
-    toast.error("Push setup failed");
-  }
-};
-
-// Improvement #9: Test Logic
-const testCount = ref(1); // Local counter for testing
-const sendTest = async () => {
-  haptics.heavy();
-
-  // Increment on each press to verify badge numbers go up
-  const count = testCount.value++;
-
-  // Directly stimulate the Android SW logic
-  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: "BADGE_NOTIFICATION_ANDROID",
-      count: count,
-      threshold: modules.notificationThreshold,
-    });
-
-    // Also show a toast/console for dev feedback
-    console.log(`[Test] Sent badge count: ${count}`);
-  } else {
-    // Fallback for non-SW/Dev env
-    await sendLocalNotification(
-      "Test Alert",
-      `Test notification #${count}. Badge should be ${count}.`,
-    );
-  }
-};
 </script>
 
 <template>
@@ -160,21 +49,21 @@ const sendTest = async () => {
         aria-label="Notification Threshold"
       >
         <button
-          v-for="val in [50, 75] as const"
-          :key="val"
-          :class="{ active: threshold === val }"
-          @click="setThreshold(val)"
+          v-for="thresholdValue in [50, 75] as const"
+          :key="thresholdValue"
+          :class="{ active: threshold === thresholdValue }"
+          @click="setNotificationThreshold(thresholdValue)"
           class="threshold-btn"
-          :aria-label="`Set threshold to ${val}`"
-          :aria-pressed="threshold === val"
+          :aria-label="`Set threshold to ${thresholdValue}`"
+          :aria-pressed="threshold === thresholdValue"
         >
-          <span class="threshold-symbol">≥</span>{{ val }}
+          <span class="threshold-symbol">≥</span>{{ thresholdValue }}
         </button>
       </div>
     </div>
 
     <!-- Improvement #13: Permission Rationale & Grant -->
-    <div v-if="permissionState === 'default'" class="perm-section">
+    <div v-if="notificationPermission === 'default'" class="perm-section">
       <div class="perm-rationale">
         <Icon name="bell" size="16" />
         <span
@@ -182,13 +71,13 @@ const sendTest = async () => {
           when the app is closed.</span
         >
       </div>
-      <button class="enable-btn" @click="enableNotifications">
+      <button class="enable-btn" @click="requestNotificationPermission">
         Enable Notifications & Badges
       </button>
     </div>
 
     <!-- Toggles Section -->
-    <div class="toggles-grid" v-if="permissionState === 'granted'">
+    <div class="toggles-grid" v-if="notificationPermission === 'granted'">
       <!-- Improvement #5: Quiet Mode -->
       <SettingRow
         label="Quiet Mode"
@@ -216,9 +105,9 @@ const sendTest = async () => {
     </div>
 
     <!-- Actions Row -->
-    <div class="actions-row" v-if="permissionState === 'granted'">
+    <div class="actions-row" v-if="notificationPermission === 'granted'">
       <!-- Improvement #9: Test Notification -->
-      <button class="action-btn" @click="sendTest">
+      <button class="action-btn" @click="sendTestNotification">
         <Icon name="bell" size="14" />
         <span>Test Alert</span>
       </button>

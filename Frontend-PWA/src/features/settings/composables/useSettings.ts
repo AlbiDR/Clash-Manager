@@ -14,7 +14,10 @@ import { useConnectionStatus } from "@core/services/useConnectionStatus";
 import { useHaptics } from "@core/services/useHaptics";
 import { useWakeLock } from "@core/services/useWakeLock";
 import { useSystemInfo } from "@core/services/useSystemInfo";
-import { computed } from "vue";
+import { useApiState } from "@core/api/useApiState";
+import { useBadge } from "@core/services/useBadge";
+import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
+import { computed, ref, onMounted } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
 /**
@@ -48,12 +51,32 @@ export function useSettings() {
   const { isBlueprintMode, toggleBlueprintMode } = useBlueprintMode();
   const { isShowcaseMode, toggleShowcaseMode } = useShowcaseMode();
   const clashDataStore = useClashDataStore();
-  const { isHydrated, isRefreshing } = storeToRefs(clashDataStore);
-  const { refresh } = clashDataStore;
+  const { isHydrated, isRefreshing, lastSyncTime } = storeToRefs(clashDataStore);
+  const { refresh, startBackgroundSync } = clashDataStore;
   const { status: unifiedStatus } = useConnectionStatus();
   const { updateServiceWorker } = useRegisterSW();
   const toast = useToast();
   const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
+  const { apiUrl, apiStatus, pingData } = useApiState();
+  const { requestPermission, sendLocalNotification } = useBadge();
+
+  const notificationPermission = ref<NotificationPermission | "unsupported">("default");
+  const isPushSubscribed = ref(false);
+  const currentTestCount = ref(1);
+
+  onMounted(async () => {
+    if (typeof Notification !== "undefined") {
+      notificationPermission.value = Notification.permission;
+
+      if ("serviceWorker" in navigator) {
+        const swRegistration = await navigator.serviceWorker.ready;
+        const pushSubscription = await swRegistration.pushManager.getSubscription();
+        if (pushSubscription) isPushSubscribed.value = true;
+      }
+    } else {
+      notificationPermission.value = "unsupported";
+    }
+  });
 
   const apiStatusObject = computed(() => {
     if (unifiedStatus.value === "online")
@@ -180,6 +203,105 @@ export function useSettings() {
     }
   }
 
+  const lastSyncFormatted = computed(() => {
+    if (!lastSyncTime?.value) return "Never";
+    const syncDate = new Date(lastSyncTime.value);
+    return syncDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  });
+
+  const hasWorker = computed(() => isWorkerConfigured());
+
+  function updateApiUrl(newUrl: string) {
+    if (newUrl.trim()) {
+      localStorage.setItem("cm_gas_url", newUrl.trim());
+      window.location.reload();
+    }
+  }
+
+  function resetApiUrl() {
+    if (confirm("Reset API URL to default?")) {
+      localStorage.removeItem("cm_gas_url");
+      window.location.reload();
+    }
+  }
+
+  async function requestNotificationPermission() {
+    haptics.tap();
+    const permissionResult = await requestPermission();
+    notificationPermission.value = permissionResult;
+    return permissionResult;
+  }
+
+  async function subscribePush() {
+    if (!hasWorker.value) {
+      toast.error("Cloud Worker not configured");
+      return;
+    }
+
+    try {
+      haptics.medium();
+
+      if (!("serviceWorker" in navigator)) {
+        toast.error("Push setup failed");
+        return;
+      }
+
+      const swRegistration = await navigator.serviceWorker.ready;
+
+      let pushSubscription: PushSubscription | null = null;
+      try {
+        pushSubscription = await swRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: "BMMA-EXAMPLE-KEY-REPLACE-WITH-REAL-VAPID-KEY-FROM-ENV",
+        });
+      } catch (pushError) {
+        console.warn("Push subscribe failed (likely missing VAPID)", pushError);
+        pushSubscription = {
+          endpoint: "https://fcm.googleapis.com/fcm/send/demo",
+        } as PushSubscription;
+      }
+
+      if (pushSubscription) {
+        const isRegistered = await subscribeToPush(pushSubscription);
+        if (isRegistered) {
+          isPushSubscribed.value = true;
+          toast.success("Push Alerts Active");
+        } else {
+          toast.error("Server registration failed");
+        }
+      }
+    } catch (pushSetupError) {
+      // DECISION LOG: Catching top-level setup failures (navigator or SW ready failures).
+      console.error(pushSetupError);
+      toast.error("Push setup failed");
+    }
+  }
+
+  async function sendTestNotification() {
+    haptics.heavy();
+    const testCount = currentTestCount.value++;
+
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "BADGE_NOTIFICATION_ANDROID",
+        count: testCount,
+        threshold: modules.notificationThreshold,
+      });
+      console.log(`[Test] Sent badge count: ${testCount}`);
+    } else {
+      await sendLocalNotification(
+        "Test Alert",
+        `Test notification #${testCount}. Badge should be ${testCount}.`,
+      );
+    }
+  }
+
+  function setNotificationThreshold(thresholdValue: 50 | 75) {
+    haptics.tap();
+    modules.notificationThreshold = thresholdValue;
+    startBackgroundSync();
+  }
+
   const layoutProps = computed(() => ({
     title: "Settings",
     status: apiStatusObject.value,
@@ -208,6 +330,13 @@ export function useSettings() {
     apiStatusObject,
     layoutProps,
     layoutEvents,
+    apiUrl,
+    apiStatus,
+    pingData,
+    notificationPermission,
+    isPushSubscribed,
+    lastSyncFormatted,
+    hasWorker,
 
     // Methods
     toggle,
@@ -222,5 +351,11 @@ export function useSettings() {
     factoryReset,
     initAppSettings,
     haptics,
+    updateApiUrl,
+    resetApiUrl,
+    requestNotificationPermission,
+    subscribePush,
+    sendTestNotification,
+    setNotificationThreshold,
   };
 }
