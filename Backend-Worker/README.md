@@ -339,7 +339,7 @@ The worker enforces a strict security perimeter via `authMiddleware`:
 - **Auth Path Normalization**: Trailing slashes are automatically stripped from request paths before authentication and public exemption checks, ensuring consistent security enforcement.
 - **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
-- **SSRF Prevention (Validation Boundary)**: The `/fetch` endpoint utilizes a strict `v.url()` and origin/path-prefix check (Valibot) to ensure requested URLs target only the authorized Royale API base (configured via `API_BASE`). This prevents Server-Side Request Forgery and unauthorized exfiltration of internal resources.
+- **SSRF Prevention (Validation Boundary)**: The `/fetch` endpoint utilizes a strict `v.url()` and origin/path-prefix check (Valibot) to ensure requested URLs target only the authorized Royale API base (configured via `API_BASE`). This prevents Server-Side Request Forgery and unauthorized exfiltration of internal resources. Requests are further bounded to **100** URLs per batch to mitigate bulk scanning abuse.
 
 ### Data Integrity: Tag Normalization
 Runtime integrity is enforced at the Layer 1 validation boundary. The `TagSchema` (Valibot) ensures that all player, clan, and tournament tags are normalized before processing:
@@ -349,7 +349,10 @@ This prevents duplicate entries in the Prophet Cache and ensures that recruitmen
 
 ### Input Bounding
 To mitigate Denial-of-Service (DoS) and resource exhaustion attacks, the worker enforces strict input boundaries at the Layer 1 validation boundary:
-- **JSON Payload Limit**: The Express server restricts incoming JSON request bodies to **50MB** (configured in `index.ts`).
+- **JSON Payload Limit**: The Express server restricts incoming JSON request bodies to **5MB** (configured in `index.ts`).
+- **API Key Pool Bounding**: Audit, Fetch, and Scan requests are restricted to a maximum of **100** API keys per payload (`v.maxLength`) to prevent excessive key rotation overhead.
+- **URL Batch Bounding**: The `/fetch` endpoint is limited to **100** URLs per request to ensure predictable execution times and prevent resource exhaustion.
+- **Prophet Cache Bounding**: Scan operations restrict the `prophetCache` to **1,000** entries to maintain efficient in-memory lookups during scoring.
 - **Tag Array Bounding**: Recruitment scan requests are bounded by `v.maxLength` (Valibot) and mandatory `apiKeys` (v.minLength(1)) to prevent unauthenticated quota depletion:
   - **Public Scan (`/public/scan`)**: Limited to **25** tournament tags and **25** blacklist tags.
   - **Internal Scan (`/scan`)**: Limited to **100** tournament tags and **100** blacklist tags.
