@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
  * ============================================================================
- * MODULE: VALIDATION SCEMAS
+ * MODULE: VALIDATION SCHEMAS
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Centralized registry of Valibot schemas for API payload validation.
- * ROLE: Ingress Filtering & Boundary Hardening.
- * VERSION: 1.0.0
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * VERSION: 1.1.0
  * ============================================================================
  */
 
@@ -21,6 +24,8 @@ const TAG_REGEX = /^[#]?[0-9A-Z]{3,15}$/i;
  * [VALIDATION] Branded Types Validators
  *
  * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ *
  * THREAT: Non-normalized tags (lowercase or missing '#') bypassing the recruitment blacklist
  * or causing duplicate entries in the database.
  * This schema enforces strict normalization: converting to uppercase and ensuring
@@ -38,11 +43,26 @@ export const TagSchema = v.pipe(
   })
 );
 
-// Base schema to extract 'action' field safely
+/**
+ * [GUARD] BASE ACTION SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Used to safely extract the 'action' field from incoming payloads before
+ * routing to specialized handlers.
+ */
 export const BaseActionSchema = v.object({
   action: v.optional(v.string())
 });
 
+/**
+ * [GUARD] DISMISS RECRUIT ITEM SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates individual recruit entries within a dismissal payload. Supports
+ * both simple ID strings and structured objects with score metadata.
+ */
 export const DismissRecruitItemSchema = v.union([
   v.string(),
   v.object({
@@ -53,22 +73,50 @@ export const DismissRecruitItemSchema = v.union([
   })
 ]);
 
+/**
+ * [GUARD] DISMISS RECRUITS PAYLOAD SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates the batch dismissal request from the PWA.
+ */
 export const DismissRecruitsPayloadSchema = v.object({
   action: v.optional(v.string()),
   items: v.optional(v.array(DismissRecruitItemSchema)),
   ids: v.optional(v.array(v.string()))
 });
 
+/**
+ * [GUARD] UNDISMISS RECRUITS PAYLOAD SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates requests to restore previously dismissed recruits.
+ */
 export const UndismissRecruitsPayloadSchema = v.object({
   action: v.optional(v.string()),
   ids: v.array(v.string())
 });
 
+/**
+ * [GUARD] TRIGGER UPDATE PAYLOAD SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates manual trigger requests for system updates (e.g., Roster or Headhunter refresh).
+ */
 export const TriggerUpdatePayloadSchema = v.object({
   action: v.optional(v.string()),
   target: v.string()
 });
 
+/**
+ * [GUARD] PLAYER PROFILE PAYLOAD SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates requests for specific player profile lookups.
+ */
 export const PlayerProfilePayloadSchema = v.object({
   action: v.optional(v.string()),
   tag: TagSchema
@@ -78,6 +126,7 @@ export const PlayerProfilePayloadSchema = v.object({
  * [GUARD] PROPHET INTELLIGENCE SCHEMA
  *
  * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
  * Ensures structural integrity for incoming heritage data (Strategy 2: Deep Delegation).
  * Defines historical player performance metrics used for recruitment scoring multipliers.
  */
@@ -91,6 +140,7 @@ export const ProphetIntelSchema = v.object({
  * [GUARD] Player Profile Schema
  *
  * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
  * Validates a full player profile. Used in both Roster auditing and
  * recruitment scoring.
  */
@@ -113,6 +163,13 @@ export const RoyalePlayerSchema = v.object({
   })),
 });
 
+/**
+ * [GUARD] LOGGER PAYLOAD SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates diagnostic logs sent from the PWA to the GAS backend.
+ */
 export const LoggerPayloadSchema = v.object({
   action: v.optional(v.string()),
   level: v.optional(v.string()),
@@ -124,6 +181,7 @@ export const LoggerPayloadSchema = v.object({
  * [GUARD] GAS GET EVENT SCHEMA
  *
  * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
  * Validates the Google Apps Script 'doGet' event object.
  * THREAT: Malformed request parameters causing unexpected behavior or
  * bypassing the zero-trust token boundary.
@@ -138,6 +196,9 @@ export const GasGetEventSchema = v.object({
 
 /**
  * [GUARD] GENERIC PAYLOAD: Catch-all for unclassified actions.
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
  * THREAT: The "any Plague" (Target B [4]).
  * Rationale: Replacing v.any() with v.unknown() ensures that unvalidated
  * data cannot be accessed without explicit type narrowing or parsing.
@@ -155,6 +216,7 @@ export const GenericPayloadSchema = v.objectWithRest(
  * [GUARD] MARKET INTELLIGENCE SCHEMA
  *
  * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
  * Validates the aggregated historical performance data for a player.
  * THREAT: Internal state corruption leading to incorrect scoring or tenure tracking.
  */
@@ -172,6 +234,7 @@ export const MarketIntelligenceSchema = v.object({
  * [GUARD] CLAN MEMBER SNAPSHOT SCHEMA
  *
  * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
  * Validates the core metrics of a clan member as stored in the Database sheet.
  * THREAT: Malformed database rows leading to incorrect tenure or credit calculations.
  */
@@ -189,6 +252,13 @@ export const ClanMemberSnapshotSchema = v.object({
   battleCredits: v.optional(v.union([v.number(), v.string()]), 0)
 });
 
+/**
+ * [GUARD] RECRUIT SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates individual recruit entries as stored in the Headhunter sheet.
+ */
 export const RecruitSchema = v.object({
   tag: v.string(),
   name: v.string(),
@@ -204,6 +274,14 @@ export const RecruitSchema = v.object({
   source: v.optional(v.union([v.literal("TOURNAMENT"), v.literal("SHADOW")]))
 });
 
+/**
+ * [GUARD] PLAYER RESULT SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates the composite result of a player's performance analysis,
+ * combining tenure, donations, and war activity.
+ */
 export const PlayerResultSchema = v.object({
   tag: v.string(),
   name: v.string(),
