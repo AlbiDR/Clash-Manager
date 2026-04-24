@@ -11,7 +11,9 @@ import {
   GenericPayloadSchema,
   ClanMemberSnapshotSchema,
   RecruitSchema,
-  PlayerResultSchema
+  PlayerResultSchema,
+  MarketIntelligenceSchema,
+  ProphetIntelSchema
 } from '../Validation';
 
 describe('Validation Schemas (Backend-GAS)', () => {
@@ -239,6 +241,45 @@ describe('Validation Schemas (Backend-GAS)', () => {
       };
       const result = v.safeParse(PlayerResultSchema, payload);
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('MarketIntelligenceSchema', () => {
+    it('should pass with valid market intelligence', () => {
+      const payload = {
+        firstSeen: new Date(),
+        weeklyMax: new Map([['24W10', 500]]),
+        battleWeeks: new Set(['24W10']),
+        totalBattleCredits: 5,
+        discoveredBattleDays: new Set(['2024-03-01']),
+        dailyBattleCredits: new Map([['2024-03-01', 1]]),
+        fameHistory: new Map([['24W10', 1200]])
+      };
+      const result = v.safeParse(MarketIntelligenceSchema, payload);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('ProphetIntelSchema', () => {
+    it('should pass with valid prophet intel', () => {
+      const payload = {
+        wins: 10,
+        active: true,
+        lastFetch: Date.now()
+      };
+      const result = v.safeParse(ProphetIntelSchema, payload);
+      expect(result.success).toBe(true);
+    });
+
+    it('should pass with defaults', () => {
+      const payload = {};
+      const result = v.safeParse(ProphetIntelSchema, payload);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.wins).toBe(0);
+        expect(result.output.active).toBe(true);
+        expect(result.output.lastFetch).toBe(0);
+      }
     });
   });
 });

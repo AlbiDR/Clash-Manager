@@ -2,8 +2,24 @@
  * [TYPES] ROSTER TYPES
  */
 
+export interface ProphetIntel {
+  wins: number;
+  active: boolean;
+  lastFetch: number;
+}
+
+export interface MarketIntelligence {
+  firstSeen: Date;
+  weeklyMax: Map<string, number>;
+  battleWeeks: Set<string>;
+  totalBattleCredits: number;
+  discoveredBattleDays: Set<string>;
+  dailyBattleCredits: Map<string, number>;
+  fameHistory: Map<string, number>;
+}
+
 export interface PlayerResult {
-  member: any;
+  member: unknown;
   tag: string;
   name: string;
   role: string;
@@ -49,7 +65,7 @@ export interface RaceParticipant {
 
 export interface RosterContract {
   synchronizeLeaderboard(): void;
-  getProphetCache(): Map<string, any>;
+  getProphetCache(): Map<string, ProphetIntel>;
   getTopPerformers(count?: number): string[];
 }
 
