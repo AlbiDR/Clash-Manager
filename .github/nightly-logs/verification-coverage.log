@@ -61,3 +61,4 @@ Backend-Worker/src/src-tests/schemas.spec.ts
 Frontend-PWA/src/features/settings/components/AppearanceSettings.vue
 Backend-GAS/Validation.ts
 Frontend-PWA/src/features/settings/components/RecoverySettings.vue
+Frontend-PWA/src/features/settings/components/ModeSettings.vue
