@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-24] PR #486: Add defensive coverage for ModeSettings.vue
+**Commit**: `366715415946dabc77a7a64838ced94fbe2665c3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/486)
+
+### Description
+Added unit tests for ModeSettings.vue and updated the verification coverage log.
+
+---
+*PR created automatically by Jules for task [13844600471775441718](https://jules.google.com/task/13844600471775441718) started by @AlbiDR*
+
+---
+
 ## [2026-04-24] PR #485: Harden Roster Data Layer and Validation Boundaries
 **Commit**: `e2be61651dc219207fa4f210e07b5a0745554847`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/485)
