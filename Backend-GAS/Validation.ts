@@ -15,7 +15,7 @@ const VER_VALIDATION = "1.0.0";
 /**
  * Common regex for Clash Royale tags (Player, Clan, Tournament)
  */
-const TAG_REGEX = /^[#]?[0-9A-Za-z]{3,12}$/;
+const TAG_REGEX = /^[#]?[0-9A-Z]{3,15}$/i;
 
 /**
  * [VALIDATION] Branded Types Validators
@@ -72,6 +72,19 @@ export const TriggerUpdatePayloadSchema = v.object({
 export const PlayerProfilePayloadSchema = v.object({
   action: v.optional(v.string()),
   tag: TagSchema
+});
+
+/**
+ * [GUARD] PROPHET INTELLIGENCE SCHEMA
+ *
+ * @remarks
+ * Ensures structural integrity for incoming heritage data (Strategy 2: Deep Delegation).
+ * Defines historical player performance metrics used for recruitment scoring multipliers.
+ */
+export const ProphetIntelSchema = v.object({
+  wins: v.optional(v.number(), 0),
+  active: v.optional(v.boolean(), true),
+  lastFetch: v.optional(v.number(), 0)
 });
 
 /**
@@ -138,14 +151,42 @@ export const GenericPayloadSchema = v.objectWithRest(
  * INTERNAL SCHEMAS (L2 Hardening)
  */
 
+/**
+ * [GUARD] MARKET INTELLIGENCE SCHEMA
+ *
+ * @remarks
+ * Validates the aggregated historical performance data for a player.
+ * THREAT: Internal state corruption leading to incorrect scoring or tenure tracking.
+ */
+export const MarketIntelligenceSchema = v.object({
+  firstSeen: v.date(),
+  weeklyMax: v.instance(Map),
+  battleWeeks: v.instance(Set),
+  totalBattleCredits: v.number(),
+  discoveredBattleDays: v.instance(Set),
+  dailyBattleCredits: v.instance(Map),
+  fameHistory: v.instance(Map)
+});
+
+/**
+ * [GUARD] CLAN MEMBER SNAPSHOT SCHEMA
+ *
+ * @remarks
+ * Validates the core metrics of a clan member as stored in the Database sheet.
+ * THREAT: Malformed database rows leading to incorrect tenure or credit calculations.
+ */
 export const ClanMemberSnapshotSchema = v.object({
-  tag: v.string(),
+  tag: TagSchema,
   name: v.string(),
   role: v.string(),
   trophies: v.number(),
   donations: v.number(),
   donationsReceived: v.number(),
-  lastSeen: v.string()
+  lastSeen: v.string(),
+  // Fields for Market Intelligence
+  date: v.optional(v.string()),
+  warFame: v.optional(v.union([v.number(), v.string()]), 0),
+  battleCredits: v.optional(v.union([v.number(), v.string()]), 0)
 });
 
 export const RecruitSchema = v.object({
@@ -187,10 +228,13 @@ export const PlayerResultSchema = v.object({
     UndismissRecruitsPayloadSchema,
     TriggerUpdatePayloadSchema,
     PlayerProfilePayloadSchema,
+    ProphetIntelSchema,
     RoyalePlayerSchema,
     LoggerPayloadSchema,
     GasGetEventSchema,
     GenericPayloadSchema,
+    ClanMemberSnapshotSchema,
+    MarketIntelligenceSchema,
     TagSchema,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
