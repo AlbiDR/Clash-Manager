@@ -28,13 +28,15 @@ import * as v from "valibot";
 import {
   DismissRecruitsPayloadSchema,
   UndismissRecruitsPayloadSchema,
-  RoyalePlayerSchema
+  RoyalePlayerSchema,
+  RoyaleClanSchema,
+  RoyaleWarLogResponseSchema
 } from "./Validation";
 
 // Global Version Constant
 // @ts-ignore
 // HARDEN: Unified versioning prevents false-negative health check failures.
-const VER_CONTROLLER_WEBAPP = "13.1.0";
+const VER_CONTROLLER_WEBAPP = "13.1.2";
 
 declare var SpreadsheetApp: any;
 declare var LockService: any;
@@ -153,8 +155,6 @@ export interface WebappControllerContract {
   updateRecruitInvitationStatus(payload: unknown): {
     success: boolean;
     count: number;
-    dbWrite?: number;
-    payloadSize?: number;
     error?: string;
   };
 
@@ -245,7 +245,7 @@ const WebappController: WebappControllerContract = {
     }
   },
 
-  updateRecruitInvitationStatus(payload: unknown): any {
+  updateRecruitInvitationStatus(payload: unknown): { success: boolean; count: number; error?: string } {
     // [GUARD] VALIDATION BOUNDARY: Target B [1]
     // THREAT: Malformed recruitment event data causing spreadsheet corruption.
     const validation = v.safeParse(DismissRecruitsPayloadSchema, payload);
@@ -307,7 +307,7 @@ const WebappController: WebappControllerContract = {
     });
   },
 
-  revertRecruitDismissal(payload: unknown): any {
+  revertRecruitDismissal(payload: unknown): { success: boolean; count: number; error?: string } {
     // [GUARD] VALIDATION BOUNDARY: Target B [1]
     // THREAT: Malformed undismiss IDs causing incorrect spreadsheet deletions.
     const validation = v.safeParse(UndismissRecruitsPayloadSchema, payload);
@@ -364,19 +364,30 @@ const WebappController: WebappControllerContract = {
 
     console.info("WebappController: getMembers: Using local GAS fallback (remote unavailable).");
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-    const data = Registry.Services.Network.fetchRoyaleAPIOne(
+    const rawClanData = Registry.Services.Network.fetchRoyaleAPIOne(
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}`,
     );
 
-    if (!data || !data.memberList) {
+    if (!rawClanData) {
       console.warn("WebappController: getMembers: No data returned from Clash Royale API.");
       return [];
     }
 
-    return (data.memberList as Array<Record<string, unknown>>).map((memberCandidate) => ({
-      tag: String(memberCandidate["tag"] || ""),
-      name: String(memberCandidate["name"] || ""),
-      role: formatRole(String(memberCandidate["role"] || "")),
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Malformed clan data causing downstream UI crashes or pathogens.
+    // Rationale: Validate the local fallback response before processing.
+    const validation = v.safeParse(RoyaleClanSchema, rawClanData);
+    if (!validation.success) {
+      console.warn("[WebappController] Clan validation failed for getMembers", validation.issues);
+      return [];
+    }
+
+    const clanData = validation.output;
+
+    return clanData.memberList.map((memberCandidate) => ({
+      tag: memberCandidate.tag,
+      name: memberCandidate.name,
+      role: formatRole(memberCandidate.role),
       kingLevel: memberCandidate.expLevel,
       donations: memberCandidate.donations,
       donationsReceived: memberCandidate.donationsReceived,
@@ -406,27 +417,36 @@ const WebappController: WebappControllerContract = {
 
     console.info("WebappController: getWarLog: Using local GAS fallback (remote unavailable).");
     const cleanTag = encodeURIComponent(CONFIG.SYSTEM.CLAN_TAG);
-    const data = Registry.Services.Network.fetchRoyaleAPIOne(
+    const rawWarLog = Registry.Services.Network.fetchRoyaleAPIOne(
       `${CONFIG.SYSTEM.API_BASE}/clans/${cleanTag}/riverracelog?limit=52&__t=${new Date().getTime()}`,
     );
 
-    if (!data || !data.items) {
+    if (!rawWarLog) {
       console.warn("WebappController: getWarLog: No data returned from Clash Royale API.");
       return [];
     }
 
-    return data.items.map((warLogEntry: any) => {
-      let myStanding: any = null;
-      let opponents: any[] = [];
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Corrupt war log data polluting clan historical records.
+    // Rationale: Enforce strict validation boundary for Royale API data.
+    const validation = v.safeParse(RoyaleWarLogResponseSchema, rawWarLog);
+    if (!validation.success) {
+      console.warn("[WebappController] War Log validation failed", validation.issues);
+      return [];
+    }
 
-      if (warLogEntry.standings) {
-        myStanding = (warLogEntry.standings as Array<Record<string, any>>).find(
-          (standingEntry) => standingEntry["clan"]?.tag === CONFIG.SYSTEM.CLAN_TAG,
-        );
-        opponents = (warLogEntry.standings as Array<Record<string, any>>).filter(
-          (standingEntry) => standingEntry["clan"]?.tag !== CONFIG.SYSTEM.CLAN_TAG,
-        );
-      }
+    const warLogData = validation.output;
+
+    const myClanTag = (CONFIG.SYSTEM.CLAN_TAG.startsWith("#") ? CONFIG.SYSTEM.CLAN_TAG : "#" + CONFIG.SYSTEM.CLAN_TAG).toUpperCase();
+
+    return warLogData.items.map((warLogEntry) => {
+      const standings = warLogEntry.standings || [];
+      const myStanding = standings.find(
+        (standingEntry) => standingEntry.clan.tag.toUpperCase() === myClanTag,
+      );
+      const opponents = standings.filter(
+        (standingEntry) => standingEntry.clan.tag.toUpperCase() !== myClanTag,
+      );
 
       const myFame = myStanding ? myStanding.clan.fame : 0;
       const myRank = myStanding ? myStanding.rank : null;
