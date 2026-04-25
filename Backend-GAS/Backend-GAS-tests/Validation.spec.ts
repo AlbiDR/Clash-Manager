@@ -13,7 +13,12 @@ import {
   RecruitSchema,
   PlayerResultSchema,
   MarketIntelligenceSchema,
-  ProphetIntelSchema
+  ProphetIntelSchema,
+  RoyaleClanMemberSchema,
+  RoyaleClanSchema,
+  RoyaleWarLogStandingSchema,
+  RoyaleWarLogItemSchema,
+  RoyaleWarLogResponseSchema
 } from '../Validation';
 
 describe('Validation Schemas (Backend-GAS)', () => {
@@ -280,6 +285,106 @@ describe('Validation Schemas (Backend-GAS)', () => {
         expect(result.output.active).toBe(true);
         expect(result.output.lastFetch).toBe(0);
       }
+    });
+  });
+
+  describe('Royale API Schemas', () => {
+    const validMember = {
+      tag: '#MEMBER1',
+      name: 'Member 1',
+      role: 'member',
+      expLevel: 14,
+      trophies: 6500,
+      donations: 500,
+      donationsReceived: 200
+    };
+
+    describe('RoyaleClanMemberSchema', () => {
+      it('should pass with valid member', () => {
+        const result = v.safeParse(RoyaleClanMemberSchema, validMember);
+        expect(result.success).toBe(true);
+      });
+
+      it('should fail with invalid tag', () => {
+        const result = v.safeParse(RoyaleClanMemberSchema, { ...validMember, tag: 'ID' }); // Too short
+        expect(result.success).toBe(false);
+      });
+    });
+
+    describe('RoyaleClanSchema', () => {
+      it('should pass with valid clan data', () => {
+        const payload = {
+          tag: '#CLAN1',
+          name: 'The Clan',
+          memberList: [validMember]
+        };
+        const result = v.safeParse(RoyaleClanSchema, payload);
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('RoyaleWarLogStandingSchema', () => {
+      it('should pass with valid standing', () => {
+        const payload = {
+          rank: 1,
+          clan: {
+            tag: '#CLAN1',
+            name: 'The Clan',
+            fame: 50000
+          }
+        };
+        const result = v.safeParse(RoyaleWarLogStandingSchema, payload);
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('RoyaleWarLogItemSchema', () => {
+      it('should pass with valid war log item', () => {
+        const payload = {
+          createdDate: '20240101T100000.000Z',
+          standings: [
+            {
+              rank: 1,
+              clan: {
+                tag: '#CLAN1',
+                name: 'The Clan',
+                fame: 50000
+              }
+            }
+          ]
+        };
+        const result = v.safeParse(RoyaleWarLogItemSchema, payload);
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('RoyaleWarLogResponseSchema', () => {
+      it('should pass with valid war log data', () => {
+        const payload = {
+          items: [
+            {
+              createdDate: '20240101T100000.000Z',
+              standings: [
+                {
+                  rank: 1,
+                  clan: {
+                    tag: '#CLAN1',
+                    name: 'The Clan',
+                    fame: 50000
+                  }
+                }
+              ]
+            }
+          ]
+        };
+        const result = v.safeParse(RoyaleWarLogResponseSchema, payload);
+        expect(result.success).toBe(true);
+      });
+
+      it('should fail if items is not an array', () => {
+        const result = v.safeParse(RoyaleWarLogResponseSchema, { items: {} });
+        expect(result.success).toBe(false);
+      });
     });
   });
 });

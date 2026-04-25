@@ -13,7 +13,7 @@
 
 import * as v from 'valibot';
 
-const VER_VALIDATION = "1.0.0";
+const VER_VALIDATION = "1.2.0";
 
 /**
  * Common regex for Clash Royale tags (Player, Clan, Tournament)
@@ -134,6 +134,75 @@ export const ProphetIntelSchema = v.object({
   wins: v.optional(v.number(), 0),
   active: v.optional(v.boolean(), true),
   lastFetch: v.optional(v.number(), 0)
+});
+
+/**
+ * [GUARD] Clan Member Schema
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates individual clan members returned by the /members endpoint.
+ */
+export const RoyaleClanMemberSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  role: v.string(),
+  expLevel: v.number(),
+  trophies: v.number(),
+  donations: v.number(),
+  donationsReceived: v.number(),
+});
+
+/**
+ * [GUARD] Clan Response Schema
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates the full clan object from the Royale API.
+ */
+export const RoyaleClanSchema = v.object({
+  tag: TagSchema,
+  name: v.string(),
+  memberList: v.array(RoyaleClanMemberSchema),
+});
+
+/**
+ * [GUARD] War Log Standing Schema
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates historical clan performance in previous war weeks.
+ */
+export const RoyaleWarLogStandingSchema = v.object({
+  rank: v.number(),
+  clan: v.object({
+    tag: TagSchema,
+    name: v.string(),
+    fame: v.number(),
+  }),
+});
+
+/**
+ * [GUARD] War Log Item Schema
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates a single historical war log entry.
+ */
+export const RoyaleWarLogItemSchema = v.object({
+  createdDate: v.string(),
+  standings: v.array(RoyaleWarLogStandingSchema),
+});
+
+/**
+ * [GUARD] War Log Response Schema
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Top-level validation for the /riverracelog endpoint.
+ */
+export const RoyaleWarLogResponseSchema = v.object({
+  items: v.array(RoyaleWarLogItemSchema),
 });
 
 /**
@@ -314,5 +383,10 @@ export const PlayerResultSchema = v.object({
     ClanMemberSnapshotSchema,
     MarketIntelligenceSchema,
     TagSchema,
+    RoyaleClanMemberSchema,
+    RoyaleClanSchema,
+    RoyaleWarLogStandingSchema,
+    RoyaleWarLogItemSchema,
+    RoyaleWarLogResponseSchema,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));
