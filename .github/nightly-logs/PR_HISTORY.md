@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-25] PR #494: docs(tsdoc): document NetworkSettings.vue and enforce licensing
+**Commit**: `11c2eb6d22de5585082959a10ed6048486b8ed7c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/494)
+
+### Description
+This PR enhances the `NetworkSettings.vue` component with formal TSDoc and mandatory licensing headers as part of the Nightly documentation cycle. It clarifies the component's role in Layer 3 (@features) and documents internal logic decisions regarding onboarding and endpoint management. Verified via existing unit tests.
+
+---
+*PR created automatically by Jules for task [16906942632034812027](https://jules.google.com/task/16906942632034812027) started by @AlbiDR*
+
+---
+
 ## [2026-04-25] PR #493: docs(readme): reconcile worker technical drifts and deepen architecture
 **Commit**: `1bdf04b83e888f40b7df50d3042cf922907f41d2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/493)
