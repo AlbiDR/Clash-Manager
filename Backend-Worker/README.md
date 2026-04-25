@@ -181,7 +181,21 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 }
 ```
 
-**Response:**
+**Response (`/public/scan`):**
+```json
+{
+  "candidates": [
+    { "tag": "#R1", "name": "Recruit 1", "trophies": 6500, "rawScore": 12500, ... }
+  ],
+  "_debug": {
+    "phase1": 50,
+    "phase2": 10,
+    "apiBase": "..."
+  }
+}
+```
+
+**Response (`/scan` — Privileged):**
 ```json
 {
   "candidates": [
@@ -313,7 +327,7 @@ The monorepo is governed by a **7-agent Nightly Pipeline** (powered by Google Ju
 
 The worker implements a **Deep Delegation** strategy to optimize the entire Clash Manager ecosystem.
 
-1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
+1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and facilitates larger batch processing. Recruitment scoring results are automatically sliced to the **top 200** candidates, preventing massive payload inflation when returning data to the GAS "Dumb Store".
 2. **Effective Trophies**: To support the game's tiered ranking system, the worker calculates "Effective Trophies" by summing a player's global ladder trophies and their current season league trophies (only if global trophies >= 9,000). This value is used for both recruitment scoring and `minTrophies` filtering.
 3. **Prophet Bonus**: The worker integrates with a "Prophet Cache"—historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
 
@@ -341,11 +355,19 @@ The worker enforces a strict security perimeter via `authMiddleware`:
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
 - **SSRF Prevention (Validation Boundary)**: The `/fetch` endpoint utilizes a strict `v.url()` and origin/path-prefix check (Valibot) to ensure requested URLs target only the authorized Royale API base (configured via `API_BASE`). This prevents Server-Side Request Forgery and unauthorized exfiltration of internal resources. Requests are further bounded to **100** URLs per batch to mitigate bulk scanning abuse.
 
+### Defense in Depth: Zero-Trust Validation
+The worker implements a **Defense in Depth** strategy by enforcing strict Valibot schema validation at every Layer 1 boundary.
+
+- **Upstream Verification**: All data received from the Royale API (Player Profiles, Tournament Lists, War Logs) is passed through rigorous schemas (e.g., `RoyalePlayerSchema`, `RoyaleTournamentResponseSchema`) before reaching the scoring logic. This ensures that malformed or unexpected upstream data cannot trigger runtime crashes or pollute internal calculations.
+- **Payload Hardening**: Inbound requests from the GAS backend and PWA are validated against specialized Request Schemas, ensuring that all parameters (tags, API keys, scoring weights) conform to expected formats and limits.
+- **Fail-Fast Boundaries**: Validation occurs at the earliest possible entry point, preventing unvalidated data from propagating into the high-performance worker pool.
+
 ### Data Integrity: Tag Normalization
 Runtime integrity is enforced at the Layer 1 validation boundary. The `TagSchema` (Valibot) ensures that all player, clan, and tournament tags are normalized before processing:
 - **Case Sensitivity**: All tags are automatically converted to **UPPERCASE**.
 - **Prefix Consistency**: Tags are prepended with a mandatory **'#'** prefix if missing.
-This prevents duplicate entries in the Prophet Cache and ensures that recruitment blacklists cannot be bypassed by varying the input format.
+
+This serves as a critical **Security Boundary** for the recruitment blacklist and Prophet Cache, ensuring that entries cannot be bypassed or duplicated by varying the input format (e.g., `#abcd` vs `ABCD`).
 
 ### Input Bounding
 To mitigate Denial-of-Service (DoS) and resource exhaustion attacks, the worker enforces strict input boundaries at the Layer 1 validation boundary:
