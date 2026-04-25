@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-25] PR #493: docs(readme): reconcile worker technical drifts and deepen architecture
+**Commit**: `1bdf04b83e888f40b7df50d3042cf922907f41d2`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/493)
+
+### Description
+### Reasoning:
+**[Priority Queue Item]:** README Synchronization (Drift) and README Depth (Shallow). 
+**[Safety Checks]:** Confirmed ADR coherence (CleanStack Architecture) and vocabulary compliance (@core, @shared, Layer 1 boundaries).
+**[Rationale]:** The `Backend-Worker/README.md` had drifted from the actual implementation regarding response metadata and lacked depth on critical security/architectural features like Valibot validation and the 200-result slicing strategy.
+
+### Changes:
+- **[README/File]:** `Backend-Worker/README.md`
+- Added differentiation between public and privileged scan responses.
+- Added "Defense in Depth: Zero-Trust Validation" section.
+- Expanded "Architecture: Deep Delegation" with scoring offload details and result limits.
+- Linked `TagSchema` normalization to security integrity in "Security Architecture".
+- **[Log/File]:** `.github/nightly-logs/documentation-readme-coverage.log`
+
+### Verification:
+- **[Automated]:** Verified ADR alignment; ensured "No Fluff" (no emojis).
+- **[Automated/Audit]:** Confirmed statements match `Backend-Worker/src/index.ts` (e.g., lines 551 for 200-slice, lines 1018+ for metadata, and `schemas.ts` for TagSchema normalization).
+- **[Tests]:** Ran `pnpm -r test`. All subsystems passed (with pre-existing unrelated failure in GAS Headhunter Scanner).
+
+---
+*PR created automatically by Jules for task [17122975250460457473](https://jules.google.com/task/17122975250460457473) started by @AlbiDR*
+
+---
+
 ## [2026-04-25] PR #492: fix(harden): Royale API validation boundaries in GAS
 **Commit**: `04513877e4ee26e2bd275c77d89632297b81152c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/492)
