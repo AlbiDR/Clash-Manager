@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-25] PR #495: fix(version): reconcile CONTROLLER_WEBAPP version drift
+**Commit**: `b8418f952a65dc1c57e0040ee9837d528429da83`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/495)
+
+### Description
+Reconciled version drift for the CONTROLLER_WEBAPP module in Backend-GAS. The manifest in Configuration.ts was updated from 13.1.0 to 13.1.2 to match the authoritative module constant. This fix follows Rule B of the Version-Integrity mandate. Verification via Versioning.spec.ts confirmed system integrity. Remaining drift for the VALIDATION module was identified and logged for future reconciliation.
+
+---
+*PR created automatically by Jules for task [4196234810443473479](https://jules.google.com/task/4196234810443473479) started by @AlbiDR*
+
+---
+
 ## [2026-04-25] PR #494: docs(tsdoc): document NetworkSettings.vue and enforce licensing
 **Commit**: `11c2eb6d22de5585082959a10ed6048486b8ed7c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/494)
