@@ -1,3 +1,25 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+/**
+ * ============================================================================
+ * [FEATURE] NETWORK SETTINGS COMPONENT
+ * ----------------------------------------------------------------------------
+ * Manages the manual override and diagnostic readout of the backend API endpoint.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 Feature Component (@features)
+ * - **Role:** Presentation & Control for the Network domain within Settings.
+ * - **Dependency:** Orchestrated by `useSettings` (Layer 3), which provides
+ *   reactive state for API health and endpoint management.
+ *
+ * **Security & Validation:**
+ * - Manual endpoint overrides are stored in `localStorage` ('cm_gas_url').
+ * - Validation of the new URL is delegated to the `updateApiUrl` service method,
+ *   which performs a handshake to verify backend compatibility.
+ * ============================================================================
+ */
 <script setup lang="ts">
 import { Icon } from "@shared";
 import { useSettings } from "../composables/useSettings";
@@ -25,11 +47,17 @@ const isChecking = computed(() => apiStatus.value === "checking");
 watch(
   apiStatus,
   (newApiStatus) => {
+    // DECISION LOG: Automatically trigger editing mode if no API URL is found.
+    // This improves onboarding by directing the user to the input field.
     if (newApiStatus === "unconfigured") isEditing.value = true;
   },
   { immediate: true },
 );
 
+/**
+ * Persists the manually entered API URL to local storage and triggers a health check.
+ * Delegation to `updateApiUrl` ensures consistent handling of the 'cm_gas_url' key.
+ */
 function saveApiUrl() {
   updateApiUrl(newApiUrl.value);
 }
