@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-25] PR #496: chore(deps): bump @vue/test-utils from ^2.4.6 to ^2.4.8
+**Commit**: `409e8bd2ae7c9da1274db106069db053baf66bc0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/496)
+
+### Description
+Automated Tier 1 dependency bump for @vue/test-utils. Verified via test gate. Targeting Nightly branch.
+
+---
+*PR created automatically by Jules for task [6242841453933169110](https://jules.google.com/task/6242841453933169110) started by @AlbiDR*
+
+---
+
 ## [2026-04-25] PR #495: fix(version): reconcile CONTROLLER_WEBAPP version drift
 **Commit**: `b8418f952a65dc1c57e0040ee9837d528429da83`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/495)
