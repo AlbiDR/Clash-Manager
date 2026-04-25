@@ -221,7 +221,7 @@ export var CONFIG: AppConfig = {
       SCORING: "13.1.0",
       SCORING_KERNEL: "13.1.0",
       HEADHUNTER: "14.3.5",
-      CONTROLLER_WEBAPP: "13.1.0",
+      CONTROLLER_WEBAPP: "13.1.2",
       REGISTRY: "13.1.0",
       API_PUBLIC: "13.1.0",
       SHARED_TYPES: "1.0.0",
