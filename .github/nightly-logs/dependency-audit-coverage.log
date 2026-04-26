@@ -40,6 +40,7 @@
 | vue | ^3.5.32 | ^3.5.33 | 2026-06-03 | PASS |
 | @types/google-apps-script | ^1.0.83 | catalog: (^1.0.100) | 2026-06-03 | PASS |
 | @vue/test-utils | ^2.4.6 | ^2.4.8 | 2026-06-04 | PASS |
+| @types/express | ^4.17.21 | ^4.17.25 | 2026-04-26 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
