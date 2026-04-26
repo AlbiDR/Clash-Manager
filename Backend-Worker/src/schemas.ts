@@ -15,8 +15,10 @@ import * as v from "valibot";
 
 /**
  * Common regex for Clash Royale tags (Player, Clan, Tournament)
+ * // THREAT: Stale regex constraints causing silent rejection of valid long tags (13-15 chars).
+ * Rationale: Aligning with the GAS authoritative boundary prevents data starvation.
  */
-const TAG_REGEX = /^[#]?[0-9A-Za-z]{3,12}$/;
+const TAG_REGEX = /^[#]?[0-9A-Z]{3,15}$/i;
 
 /**
  * [VALIDATION] Branded Types Validators
