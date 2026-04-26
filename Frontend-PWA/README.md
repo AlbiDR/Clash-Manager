@@ -127,8 +127,9 @@ The master arbiter of layout spacing and element visibility.
 
 ### 11. Redundant Persistence (`useAppSettings`)
 A multi-tier strategy for application configuration and feature flags.
-- **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access).
-- **Tab Synchronization**: Listens for `storage` events to ensure configuration remains consistent across multiple open browser tabs.
+- **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access). This ensures the Service Worker can access user preferences (like notification thresholds) even when the main thread is inactive.
+- **Tab Synchronization**: Listens for the global `storage` event to ensure configuration remains atomic and consistent across multiple open browser tabs.
+- **Validation Boundary**: Enforces strict Valibot schema validation (`ModuleStateSchema`) on all data retrieved from storage to prevent UI instability.
 
 ### 12. Deep Link Navigation (`useDeepLinkHandler`)
 Manages item expansion and auto-scroll based on URL query parameters.
