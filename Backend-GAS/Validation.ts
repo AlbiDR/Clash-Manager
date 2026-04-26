@@ -13,7 +13,7 @@
 
 import * as v from 'valibot';
 
-const VER_VALIDATION = "1.2.0";
+export const VER_VALIDATION = "1.2.0";
 
 /**
  * Common regex for Clash Royale tags (Player, Clan, Tournament)
