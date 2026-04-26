@@ -1,0 +1,35 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SkeletonSettingsCard.vue > matches snapshot 1`] = `
+"<div data-v-62a6a481="" class="settings-card skeleton-anim">
+  <div data-v-62a6a481="" class="card-header">
+    <div data-v-62a6a481="" class="sk-icon-small"></div><!-- Placeholder for header icon -->
+    <div data-v-62a6a481="" class="sk-line-m" style="width: 140px;"></div><!-- Placeholder for header title -->
+  </div>
+  <div data-v-62a6a481="" class="card-body">
+    <div data-v-62a6a481="" class="features-list">
+      <div data-v-62a6a481="" class="toggle-row">
+        <div data-v-62a6a481="" class="row-info">
+          <div data-v-62a6a481="" class="sk-text-line-m" style="width: 180px;"></div>
+          <div data-v-62a6a481="" class="sk-text-line-s" style="width: calc(126px);"></div>
+        </div>
+        <div data-v-62a6a481="" class="sk-badge-s" style="width: 44px;"></div>
+      </div>
+      <div data-v-62a6a481="" class="toggle-row">
+        <div data-v-62a6a481="" class="row-info">
+          <div data-v-62a6a481="" class="sk-text-line-m" style="width: 180px;"></div>
+          <div data-v-62a6a481="" class="sk-text-line-s" style="width: calc(126px);"></div>
+        </div>
+        <div data-v-62a6a481="" class="sk-badge-s" style="width: 44px;"></div>
+      </div>
+      <div data-v-62a6a481="" class="toggle-row">
+        <div data-v-62a6a481="" class="row-info">
+          <div data-v-62a6a481="" class="sk-text-line-m" style="width: 180px;"></div>
+          <div data-v-62a6a481="" class="sk-text-line-s" style="width: calc(126px);"></div>
+        </div>
+        <div data-v-62a6a481="" class="sk-badge-s" style="width: 44px;"></div>
+      </div>
+    </div>
+  </div>
+</div>"
+`;
