@@ -231,7 +231,7 @@ export var CONFIG: AppConfig = {
       ROSTER_TYPES: "1.0.0",
       HH_TYPES: "1.0.1",
       VIEW: "1.0.1",
-      VALIDATION: "1.0.0",
+      VALIDATION: "1.2.0",
       REPORTING: "1.2.0",
       DATABASE_STORE: "13.1.1",
       BATTLE_LOG: "1.0.0",

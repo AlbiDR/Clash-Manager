@@ -5,6 +5,7 @@ import { VER_STORE } from '../Store';
 import { VER_TIME } from '../Time';
 import { VER_NETWORK } from '../Network';
 import { VER_WAR_INTELLIGENCE } from '../War_Intelligence';
+import { VER_VALIDATION } from '../Validation';
 import { CONFIG } from '../Configuration';
 
 describe('System Versioning & Manifest Integrity', () => {
@@ -31,6 +32,11 @@ describe('System Versioning & Manifest Integrity', () => {
   it('should have consistent VER_WAR_INTELLIGENCE', () => {
     expect(VER_WAR_INTELLIGENCE).toBe("12.4.1");
     expect(CONFIG.SYSTEM.MANIFEST.WAR_INTELLIGENCE).toBe(VER_WAR_INTELLIGENCE);
+  });
+
+  it('should have consistent VER_VALIDATION', () => {
+    expect(VER_VALIDATION).toBe("1.2.0");
+    expect(CONFIG.SYSTEM.MANIFEST.VALIDATION).toBe(VER_VALIDATION);
   });
 
   it('should expose versions to globalThis (mocked context)', () => {
