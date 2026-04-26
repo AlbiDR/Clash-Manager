@@ -165,7 +165,6 @@ export function useRecruiter() {
 
   return {
     ...controller,
-    sortOptions: RECRUITER_SORT_OPTIONS,
     dismissBulk,
   };
 }

@@ -47,6 +47,5 @@ export function useLeaderboard() {
 
   return {
     ...controller,
-    sortOptions: LEADERBOARD_SORT_OPTIONS,
   };
 }

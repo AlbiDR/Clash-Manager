@@ -54,6 +54,10 @@ vi.mock("@core/services/useClashDataStore", () => ({
     isRefreshing: ref(false),
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
+    currentSource: ref("GAS"),
+    hubSyncTime: ref(null),
+    lastCompiledTime: ref(null),
+    lastFetchedTime: ref(null),
     refresh: mockRefreshGas,
     refreshWorker: mockRefreshWorker,
     updateLocalData: mockUpdateLocalData,
@@ -87,6 +91,10 @@ vi.mock("@core", async (importOriginal) => {
       isRefreshing: ref(false),
       syncError: ref(null),
       lastSyncTime: ref(1700000000000),
+      currentSource: ref("GAS"),
+      hubSyncTime: ref(null),
+      lastCompiledTime: ref(null),
+      lastFetchedTime: ref(null),
       refresh: mockRefreshGas,
       refreshWorker: mockRefreshWorker,
       updateLocalData: mockUpdateLocalData,
@@ -192,11 +200,12 @@ describe("useRecruiter", () => {
     expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=789");
   });
 
-  it("exposes sortOptions with descriptions", () => {
-    const { sortOptions } = useRecruiter();
-    expect(sortOptions.length).toBeGreaterThan(0);
-    expect(sortOptions[0]).toHaveProperty("label");
-    expect(sortOptions[0]).toHaveProperty("desc");
+  it("exposes layoutProps containing sortOptions with descriptions", () => {
+    const { layoutProps } = useRecruiter();
+    const sortOptions = layoutProps.value.sortOptions;
+    expect(sortOptions!.length).toBeGreaterThan(0);
+    expect(sortOptions![0]).toHaveProperty("label");
+    expect(sortOptions![0]).toHaveProperty("desc");
   });
 
   it("handles search updates", () => {
