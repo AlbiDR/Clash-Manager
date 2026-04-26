@@ -68,8 +68,8 @@ export function useListFilter<T extends { id: string; n?: string }>(
     const comparator = sortStrategies[sortBy.value];
     if (comparator) {
       result.sort((a, b) => {
-        const res = comparator(a, b);
-        if (res !== 0) return res;
+        const comparisonResult = comparator(a, b);
+        if (comparisonResult !== 0) return comparisonResult;
         // 🛡️ Tie-breaker: Ensure stable sorting by Name, then ID
         // Target B [2]: Removed 'any' pathogens by enforcing T extends { id, n }.
         const nameA = a.n || "";
@@ -90,15 +90,15 @@ export function useListFilter<T extends { id: string; n?: string }>(
    * Employs the `document.startViewTransition` API when available to provide
    * smooth layout animations as list items re-order.
    *
-   * @param val - The key of the sorting strategy to apply.
+   * @param targetSortKey - The key of the sorting strategy to apply.
    */
-  function updateSort(val: string) {
+  function updateSort(targetSortKey: string) {
     if (document.startViewTransition) {
       document.startViewTransition(() => {
-        sortBy.value = val;
+        sortBy.value = targetSortKey;
       });
     } else {
-      sortBy.value = val;
+      sortBy.value = targetSortKey;
     }
   }
 

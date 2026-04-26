@@ -28,6 +28,10 @@ vi.mock("@core/services/useClashDataStore", () => ({
     isRefreshing: ref(false),
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
+    currentSource: ref("GAS"),
+    hubSyncTime: ref(null),
+    lastCompiledTime: ref(null),
+    lastFetchedTime: ref(null),
     refresh: vi.fn(),
   }),
 }));
@@ -47,16 +51,18 @@ vi.mock("@core/services/useConsoleController", () => ({
       status: ref({ type: "ready", text: "Ready" }),
       handleSelectScore: vi.fn(),
       handleReset: vi.fn(),
-      sortKey: ref(config.defaultSort),
-      sortDirection: ref("desc"),
-      handleSort: vi.fn(),
-      filteredData: mockData.value.lb,
+      sortBy: ref(config.defaultSort),
+      filteredItems: ref(mockData.value.lb),
       isSelectionMode: ref(false),
-      selectedCount: ref(0),
       selectedIds: ref([]),
       toggleSelection: vi.fn(),
       clearSelection: vi.fn(),
       selectAll: vi.fn(),
+      layoutProps: ref({
+        status: { type: "ready", text: "Ready" },
+        sortOptions: config.sortOptions || []
+      }),
+      layoutEvents: {},
     };
   },
 }));
@@ -73,11 +79,12 @@ describe("useLeaderboard", () => {
     setActivePinia(createPinia());
   });
 
-  it("exposes sortOptions with descriptions", () => {
-    const { sortOptions } = useLeaderboard();
-    expect(sortOptions.length).toBeGreaterThan(0);
-    expect(sortOptions[0]).toHaveProperty("label");
-    expect(sortOptions[0]).toHaveProperty("desc");
+  it("exposes layoutProps containing sortOptions with descriptions", () => {
+    const { layoutProps } = useLeaderboard();
+    const sortOptions = layoutProps.value.sortOptions;
+    expect(sortOptions!.length).toBeGreaterThan(0);
+    expect(sortOptions![0]).toHaveProperty("label");
+    expect(sortOptions![0]).toHaveProperty("desc");
   });
 
   it("handles search updates", () => {

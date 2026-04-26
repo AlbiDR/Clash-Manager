@@ -105,34 +105,34 @@ export function useProgressiveList<T>(
    * Utilizes requestIdleCallback where available to minimize impact on
    * user interaction threads. Falls back to requestAnimationFrame.
    */
-  function scheduleChunk(all: T[], currentCount: number) {
+  function scheduleChunk(fullSourceList: T[], renderedItemCount: number) {
     const scheduler =
       window.requestIdleCallback || window.requestAnimationFrame;
 
-    currentChunkTimer = (scheduler as any)((deadline?: any) => {
-      let nextCount = currentCount;
+    currentChunkTimer = (scheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
+      let nextCount = renderedItemCount;
 
       // [PERF] IDLE BUDGETING: If we have an idle deadline, we attempt to
       // process as many chunks as possible within the remaining time.
       // [FIX] SAFETY CHECK: requestAnimationFrame passes a DOMHighResTimeStamp,
       // not an IdleDeadline. We must verify 'timeRemaining' exists before calling.
-      const hasIdleDeadline = deadline && typeof deadline.timeRemaining === "function";
+      const hasIdleDeadline = !!(deadline && typeof (deadline as IdleDeadline).timeRemaining === "function");
 
       // [PERF] IDLE BUDGETING: Process multiple chunks within a single frame
       // if the browser provides an IdleDeadline with sufficient time remaining.
       do {
-        const chunkSize = all.length > 100 ? 20 : 10;
-        nextCount = Math.min(nextCount + chunkSize, all.length);
+        const chunkSize = fullSourceList.length > 100 ? 20 : 10;
+        nextCount = Math.min(nextCount + chunkSize, fullSourceList.length);
 
         // Break early if we've reached the end of the list
-        if (nextCount >= all.length) break;
+        if (nextCount >= fullSourceList.length) break;
 
-      } while (hasIdleDeadline && deadline.timeRemaining() > 1 && !deadline.didTimeout);
+      } while (hasIdleDeadline && (deadline as IdleDeadline).timeRemaining() > 1 && !(deadline as IdleDeadline).didTimeout);
 
-      visibleItems.value = all.slice(0, nextCount);
+      visibleItems.value = fullSourceList.slice(0, nextCount);
 
-      if (nextCount < all.length) {
-        scheduleChunk(all, nextCount);
+      if (nextCount < fullSourceList.length) {
+        scheduleChunk(fullSourceList, nextCount);
       } else {
         currentChunkTimer = null;
       }
