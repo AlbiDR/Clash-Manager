@@ -1,3 +1,10 @@
+## [2026-06-05]
+### Reconciled:
+- **GAS - VALIDATION**: Updated manifest from `1.0.0` to `1.2.0` in `Configuration.ts` to match `Validation.ts` (Rule B).
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-06-04]
 ### Reconciled:
 - **GAS - CONTROLLER_WEBAPP**: Updated manifest from `13.1.0` to `13.1.2` in `Configuration.ts` to match `Webapp_Controller.ts` (Rule B).
