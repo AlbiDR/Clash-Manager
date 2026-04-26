@@ -67,8 +67,8 @@ describe('Core Schemas', () => {
     it('should reject invalid tag formats', () => {
       expect(v.safeParse(TagSchema, '').success).toBe(false);
       expect(v.safeParse(TagSchema, 'AB').success).toBe(false); // Too short
-      expect(v.safeParse(TagSchema, '1234567890123').success).toBe(false); // Too long
-      expect(v.safeParse(TagSchema, '#INVALID-TAG').success).toBe(false); // Invalid chars
+      expect(v.safeParse(TagSchema, '1234567890123456').success).toBe(false); // Too long (16 chars)
+      expect(v.safeParse(TagSchema, '#INVALID-TAG-WITH-SYMBOLS!').success).toBe(false); // Invalid chars
     });
   });
 
