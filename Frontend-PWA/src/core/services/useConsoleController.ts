@@ -249,16 +249,16 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets || !sheetName)
       return undefined;
 
-    const names = Array.isArray(sheetName) ? sheetName : [sheetName];
-    let gid: number | undefined;
+    const potentialSheetNames = Array.isArray(sheetName) ? sheetName : [sheetName];
+    let sheetId: number | undefined;
 
-    for (const name of names) {
-      gid = pingData.value.sheets[name];
-      if (gid !== undefined) break;
+    for (const name of potentialSheetNames) {
+      sheetId = pingData.value.sheets[name];
+      if (sheetId !== undefined) break;
     }
 
-    return gid !== undefined
-      ? `${pingData.value.spreadsheetUrl}#gid=${gid}`
+    return sheetId !== undefined
+      ? `${pingData.value.spreadsheetUrl}#gid=${sheetId}`
       : pingData.value.spreadsheetUrl;
   });
 
@@ -394,12 +394,12 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     mode: "ge" | "le",
     customScoreGetter?: (item: T) => number,
   ) {
-    const getter = customScoreGetter || scoreGetter;
-    if (!getter) return;
+    const scoreExtractor = customScoreGetter || scoreGetter;
+    if (!scoreExtractor) return;
 
     const ids = filteredItems.value
       .filter((item: T) => {
-        const score = getter(item);
+        const score = scoreExtractor(item);
         return mode === "ge" ? score >= threshold : score <= threshold;
       })
       .map(batchIdMapper);
@@ -528,7 +528,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
      * @param extraKeys - Optional feature-specific reactive dependencies.
      * @returns A stable array of dependencies for `v-memo`.
      */
-    getMemoKeys: (id: string, extraKeys: any[] = []) => [
+    getMemoKeys: (id: string, extraKeys: unknown[] = []) => [
       id,
       isSelectionMode.value,
       expandedIds.value.has(id),

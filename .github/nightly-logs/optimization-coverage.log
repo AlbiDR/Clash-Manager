@@ -104,3 +104,10 @@ Frontend-PWA/src/features/settings/components/NotificationSettings.vue
 Frontend-PWA/src/features/settings/composables/composables-tests/useSettings.spec.ts
 Frontend-PWA/src/features/settings/components/components-tests/NetworkSettings.spec.ts
 Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts
+Frontend-PWA/src/core/services/useConsoleController.ts
+Frontend-PWA/src/core/services/useProgressiveList.ts
+Frontend-PWA/src/core/services/useListFilter.ts
+Frontend-PWA/src/features/roster/composables/useLeaderboard.ts
+Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
+Frontend-PWA/src/features/roster/composables/composables-tests/useLeaderboard.spec.ts
+Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts
