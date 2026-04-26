@@ -37,3 +37,4 @@ Frontend-PWA/src/features/roster/composables/useLeaderboard.ts
 Backend-GAS/Webapp_Controller.ts
 Backend-GAS/Validation.ts
 Frontend-PWA/src/features/settings/components/NetworkSettings.vue
+Backend-GAS/API_Public.ts
