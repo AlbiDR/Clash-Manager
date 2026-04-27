@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-27] PR #506: Refactor Backend-Worker monolithic entry point into services
+**Commit**: `3a272b1764f6720e23e902293f06bc3b36def101`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/506)
+
+### Description
+Refactored the Backend-Worker's monolithic `index.ts` into specialized services (`RoyaleApiService`, `RecruitmentService`) and implemented the Barrel Protocol. This structural optimization improves code isolation, readability, and maintainability while adhering to the project's CleanStack Architecture. Mandatory licensing headers and domain-descriptive naming have been applied throughout. Backward compatibility for the test suite was preserved.
+
+---
+*PR created automatically by Jules for task [17153032901254225240](https://jules.google.com/task/17153032901254225240) started by @AlbiDR*
+
+---
+
 ## [2026-04-27] PR #505: test(verify): extend schema validation coverage for Backend-Worker
 **Commit**: `6592c49977ce755393f09c946db78d4033a15f2f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/505)
