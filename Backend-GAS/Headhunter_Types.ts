@@ -22,10 +22,13 @@ export interface Recruit {
   source?: "TOURNAMENT" | "SHADOW";
 }
 
+/**
+ * // THREAT: Anemic fields renamed to domain-descriptive names for architectural purity.
+ */
 export interface BlacklistEntry {
-  t: string; // tag
-  e: number; // expiry timestamp
-  s: number; // rawScore
+  tag: string;
+  expiry: number;
+  rawScore: number;
 }
 
 export interface BlacklistResult {

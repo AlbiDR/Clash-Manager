@@ -137,6 +137,19 @@ export const ProphetIntelSchema = v.object({
 });
 
 /**
+ * [GUARD] BLACKLIST ENTRY SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Validates entries in the technical Blacklist sheet.
+ */
+export const BlacklistEntrySchema = v.object({
+  tag: TagSchema,
+  expiry: v.number(),
+  rawScore: v.number()
+});
+
+/**
  * [GUARD] Clan Member Schema
  *
  * @remarks
@@ -383,6 +396,7 @@ export const PlayerResultSchema = v.object({
     ClanMemberSnapshotSchema,
     MarketIntelligenceSchema,
     TagSchema,
+    BlacklistEntrySchema,
     RoyaleClanMemberSchema,
     RoyaleClanSchema,
     RoyaleWarLogStandingSchema,
