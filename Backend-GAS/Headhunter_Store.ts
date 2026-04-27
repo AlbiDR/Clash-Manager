@@ -1,8 +1,8 @@
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
-import type { Recruit } from './Headhunter_Types';
+import type { Recruit, BlacklistEntry, BlacklistResult } from './Headhunter_Types';
 import * as v from 'valibot';
-import { RecruitSchema } from './Validation';
+import { RecruitSchema, BlacklistEntrySchema } from './Validation';
 
 /**
  * ============================================================================
@@ -16,92 +16,84 @@ import { RecruitSchema } from './Validation';
 declare var Sheets: any;
 declare var SpreadsheetApp: any;
 
-export interface BlacklistEntry {
-  t: string; // tag
-  e: number; // expiry timestamp
-  s: number; // score
-}
-
-export interface BlacklistResult {
-  ids: Set<string>;
-  entries: Array<{ rawScore: number }>;
-}
-
 export interface HeadhunterStoreContract {
   /**
    * Loads the current active recruits from the Headhunter sheet.
    */
-  loadDatabase(sheet: any): Map<string, Recruit>;
+  loadDatabase(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): Map<string, Recruit>;
 
   /**
    * Reconciles the Blacklist by processing the Event Stream (EVT)
    * and Manual Ticks (HH Sheet). Persists changes and cleans up.
    */
-  updateAndGetBlacklist(sheet: any): BlacklistResult;
+  updateAndGetBlacklist(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): BlacklistResult;
 
   /**
    * Loads the recruitment queue reservoir.
    */
-  loadQueue(ss: any): Map<string, Recruit>;
+  loadQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet): Map<string, Recruit>;
 
   /**
    * Persists the recruitment queue reservoir with freshness pruning.
    */
-  saveQueue(ss: any, recruits: Recruit[]): { count: number; pruned: number };
+  saveQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet, recruits: Recruit[]): { count: number; pruned: number };
 }
 
 const HeadhunterStore: HeadhunterStoreContract = {
   
-  loadDatabase(sheet: any): Map<string, Recruit> {
-    if (!sheet || sheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return new Map();
-    const H = CONFIG.SCHEMA.HH;
-    const rows = sheet
+  /**
+   * // THREAT: Replacing 'any' with specific Google Apps Script types to eliminate pathogens.
+   */
+  loadDatabase(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): Map<string, Recruit> {
+    if (!headhunterSheet || headhunterSheet.getLastRow() < CONFIG.LAYOUT.DATA_START_ROW) return new Map();
+    const headhunterSchema = CONFIG.SCHEMA.HH;
+    const rows = headhunterSheet
       .getRange(
         CONFIG.LAYOUT.DATA_START_ROW,
         2,
-        sheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
+        headhunterSheet.getLastRow() - (CONFIG.LAYOUT.DATA_START_ROW - 1),
         20,
       )
       .getValues();
 
-    const parseNumeric = (val: any): number => {
-      if (val === "" || val === null || val === undefined) return 0;
-      const clean = String(val).replace(/[^0-9.-]/g, "");
+    const parseNumeric = (cellValue: unknown): number => {
+      if (cellValue === "" || cellValue === null || cellValue === undefined) return 0;
+      const clean = String(cellValue).replace(/[^0-9.-]/g, "");
       const num = parseFloat(clean);
       return isNaN(num) ? 0 : num;
     };
 
-    const parseDateMs = (val: any): number => {
-      if (!val) return 0;
-      const t = new Date(val).getTime();
+    const parseDateMs = (cellValue: unknown): number => {
+      if (!cellValue) return 0;
+      const t = new Date(cellValue as string | number | Date).getTime();
       return isNaN(t) ? 0 : t;
     };
 
     const recruitMap = new Map<string, Recruit>();
-    rows.forEach((recruitRow: any, i: number) => {
-      const rawTag = String(recruitRow[H.TAG]);
+    rows.forEach((rawRecruitRow: unknown[], rowIndex: number) => {
+      const rawTag = String(rawRecruitRow[headhunterSchema.TAG] || "");
       const tag = Registry.Services.Core.normalizeTag(rawTag);
       if (tag) {
         const payload = {
           tag,
-          invited: recruitRow[H.INVITED] === true || String(recruitRow[H.INVITED]).toUpperCase() === "TRUE",
-          name: String(recruitRow[H.NAME]),
-          trophies: parseNumeric(recruitRow[H.TROPHIES]),
-          donations: parseNumeric(recruitRow[H.DONATIONS]),
-          cards: parseNumeric(recruitRow[H.CARDS]),
-          war: parseNumeric(recruitRow[H.WAR_WINS]),
-          foundDate: Registry.Services.Time.parseFlexibleDate(recruitRow[H.FOUND_DATE]),
-          rawScore: parseNumeric(recruitRow[H.RAW_SCORE]),
-          potentialScore: parseNumeric(recruitRow[H.POTENTIAL_SCORE]),
-          lastScan: parseDateMs(recruitRow[H.LAST_SCAN]),
+          invited: rawRecruitRow[headhunterSchema.INVITED] === true || String(rawRecruitRow[headhunterSchema.INVITED]).toUpperCase() === "TRUE",
+          name: String(rawRecruitRow[headhunterSchema.NAME] || ""),
+          trophies: parseNumeric(rawRecruitRow[headhunterSchema.TROPHIES]),
+          donations: parseNumeric(rawRecruitRow[headhunterSchema.DONATIONS]),
+          cards: parseNumeric(rawRecruitRow[headhunterSchema.CARDS]),
+          war: parseNumeric(rawRecruitRow[headhunterSchema.WAR_WINS]),
+          foundDate: Registry.Services.Time.parseFlexibleDate(rawRecruitRow[headhunterSchema.FOUND_DATE]),
+          rawScore: parseNumeric(rawRecruitRow[headhunterSchema.RAW_SCORE]),
+          potentialScore: parseNumeric(rawRecruitRow[headhunterSchema.POTENTIAL_SCORE]),
+          lastScan: parseDateMs(rawRecruitRow[headhunterSchema.LAST_SCAN]),
         };
 
         const result = v.safeParse(RecruitSchema, payload);
         if (result.success) {
           recruitMap.set(tag, result.output as Recruit);
         } else {
-          const errors = result.issues.map(iss => `${iss.path?.[0]?.key}: ${iss.message}`).join(", ");
-          console.warn(`HeadhunterStore: Validation failed for row ${CONFIG.LAYOUT.DATA_START_ROW + i} (${tag}). Errors: ${errors}`);
+          const errors = result.issues.map(issue => `${issue.path?.[0]?.key}: ${issue.message}`).join(", ");
+          console.warn(`HeadhunterStore: Validation failed for row ${CONFIG.LAYOUT.DATA_START_ROW + rowIndex} (${tag}). Errors: ${errors}`);
         }
       }
     });
@@ -113,25 +105,28 @@ const HeadhunterStore: HeadhunterStoreContract = {
     return recruitMap;
   },
 
-  updateAndGetBlacklist(sheet: any): BlacklistResult {
-    if (!sheet) return { ids: new Set(), entries: [] };
-    const ss = sheet.getParent();
+  /**
+   * // THREAT: OCD Clean Stack: Replacing anemic variables with domain-descriptive names.
+   */
+  updateAndGetBlacklist(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): BlacklistResult {
+    if (!headhunterSheet) return { ids: new Set(), entries: [] };
+    const activeSpreadsheet = headhunterSheet.getParent();
     // Ensure Technical Sheets exist with proper headers
-    const blSheet = ss.getSheetByName(CONFIG.SHEETS.BL) || ss.insertSheet(CONFIG.SHEETS.BL);
-    if (blSheet.getLastRow() === 0) {
-      blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
+    const blacklistSheet = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.BL) || activeSpreadsheet.insertSheet(CONFIG.SHEETS.BL);
+    if (blacklistSheet.getLastRow() === 0) {
+      blacklistSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
     }
     // Robust header verification (Ensures headers persist even if cleared)
-    if (blSheet.getRange(1,1).getValue() !== "Tag") {
-       blSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
+    if (blacklistSheet.getRange(1,1).getValue() !== "Tag") {
+       blacklistSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Expiry", "Raw Score"]]);
     }
 
-    const evtSheet = ss.getSheetByName(CONFIG.SHEETS.EVT) || ss.insertSheet(CONFIG.SHEETS.EVT);
-    if (evtSheet.getLastRow() === 0) {
-      evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
+    const eventSheet = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.EVT) || activeSpreadsheet.insertSheet(CONFIG.SHEETS.EVT);
+    if (eventSheet.getLastRow() === 0) {
+      eventSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
     }
-    if (evtSheet.getRange(1, 1).getValue() !== "Tag" || evtSheet.getLastColumn() < 3) {
-       evtSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
+    if (eventSheet.getRange(1, 1).getValue() !== "Tag" || eventSheet.getLastColumn() < 3) {
+       eventSheet.getRange(1, 1, 1, 3).setValues([["Tag", "Timestamp", CONFIG.SCHEMA.HH_HEADERS.RAW_SCORE]]);
     }
 
     const now = Date.now();
@@ -139,118 +134,124 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const entryMap = new Map<string, BlacklistEntry>();
 
     // A. Load existing Blacklist (Skip Header row 1)
-    if (blSheet.getLastRow() > 1) {
-      const rawData = blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).getValues();
-      rawData.forEach((blacklistRow: any) => {
-        const tag = Registry.Services.Core.normalizeTag(blacklistRow[0]);
-        if (!tag) return;
-        const expiry = Number(blacklistRow[1]) || 0;
-        const score = Number(blacklistRow[2]) || 0;
+    if (blacklistSheet.getLastRow() > 1) {
+      const rawBlacklistData = blacklistSheet.getRange(2, 1, blacklistSheet.getLastRow() - 1, 3).getValues();
+      rawBlacklistData.forEach((rawBlacklistRow: unknown[]) => {
+        const rawPayload = {
+          tag: String(rawBlacklistRow[0] || ""),
+          expiry: Number(rawBlacklistRow[1]) || 0,
+          rawScore: Number(rawBlacklistRow[2]) || 0
+        };
+
+        const result = v.safeParse(BlacklistEntrySchema, rawPayload);
+        if (!result.success) return;
+
+        const { tag, expiry, rawScore } = result.output;
 
         if (expiry > now) {
           if (entryMap.has(tag)) {
             const existing = entryMap.get(tag)!;
-            existing.e = Math.max(existing.e, expiry);
-            existing.s = Math.max(existing.s, score);
+            existing.expiry = Math.max(existing.expiry, expiry);
+            existing.rawScore = Math.max(existing.rawScore, rawScore);
           } else {
-            entryMap.set(tag, { t: tag, e: expiry, s: score });
+            entryMap.set(tag, { tag: tag, expiry: expiry, rawScore: rawScore });
           }
         }
       });
     }
 
     // B. Pre-load Recruit Metadata from Main Sheet for matching
-    const H = CONFIG.SCHEMA.HH;
+    const headhunterSchema = CONFIG.SCHEMA.HH;
     const mainDataMap = new Map<string, { row: number; score: number }>();
-    if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    if (headhunterSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-      const numRows = sheet.getLastRow() - startRow + 1;
+      const numRows = headhunterSheet.getLastRow() - startRow + 1;
       
-      const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
-      rawMain.forEach((mainSheetRow: any, i: number) => {
-        const tag = Registry.Services.Core.normalizeTag(mainSheetRow[H.TAG]);
+      const rawHeadhunterData = headhunterSheet.getRange(startRow, 2, numRows, headhunterSchema.LAST_SCAN + 1).getValues();
+      rawHeadhunterData.forEach((rawHeadhunterRow: unknown[], rowIndex: number) => {
+        const tag = Registry.Services.Core.normalizeTag(String(rawHeadhunterRow[headhunterSchema.TAG] || ""));
         if (tag) {
           mainDataMap.set(tag, { 
-            row: startRow + i, 
-            score: Number(mainSheetRow[H.RAW_SCORE]) || 0 
+            row: startRow + rowIndex,
+            score: Number(rawHeadhunterRow[headhunterSchema.RAW_SCORE]) || 0
           });
         }
       });
     }
 
     // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
-    if (evtSheet.getLastRow() > 1) {
-      const rawEvt = evtSheet.getDataRange().getValues();
-      for (let i = 1; i < rawEvt.length; i++) {
-         const tag = Registry.Services.Core.normalizeTag(rawEvt[i][0]);
+    if (eventSheet.getLastRow() > 1) {
+      const rawEventData = eventSheet.getDataRange().getValues() as unknown[][];
+      for (let rowIndex = 1; rowIndex < rawEventData.length; rowIndex++) {
+         const tag = Registry.Services.Core.normalizeTag(String(rawEventData[rowIndex][0] || ""));
          if (!tag) continue;
 
-         const meta = mainDataMap.get(tag);
-         const evtScore = Number(rawEvt[i][2]) || 0;
+         const recruitMetadata = mainDataMap.get(tag);
+         const eventScore = Number(rawEventData[rowIndex][2]) || 0;
 
          if (!entryMap.has(tag)) {
-           entryMap.set(tag, { t: tag, e: now + expiryDuration, s: Math.max(evtScore, meta ? meta.score : 0) });
+           entryMap.set(tag, { tag: tag, expiry: now + expiryDuration, rawScore: Math.max(eventScore, recruitMetadata ? recruitMetadata.score : 0) });
          } else {
            const existing = entryMap.get(tag)!;
-           existing.s = Math.max(existing.s, evtScore, meta ? meta.score : 0);
+           existing.rawScore = Math.max(existing.rawScore, eventScore, recruitMetadata ? recruitMetadata.score : 0);
          }
 
-         if (meta) {
-           sheet.getRange(meta.row, 2 + H.INVITED).setValue(true);
+         if (recruitMetadata) {
+           headhunterSheet.getRange(recruitMetadata.row, 2 + headhunterSchema.INVITED).setValue(true);
          }
       }
-      const lastRow = evtSheet.getLastRow();
+      const lastRow = eventSheet.getLastRow();
       if (lastRow > 1) {
-        evtSheet.getRange(2, 1, lastRow - 1, evtSheet.getLastColumn()).clearContent();
+        eventSheet.getRange(2, 1, lastRow - 1, eventSheet.getLastColumn()).clearContent();
       }
     }
 
     // --- 2. AUDIT MANUAL TICKS (Standard Cleanup) ---
-    const rowsToDelete: number[] = [];
-    if (sheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
+    const rowIndicesToDelete: number[] = [];
+    if (headhunterSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
-      const numRows = sheet.getLastRow() - startRow + 1;
-      const rawMain = sheet.getRange(startRow, 2, numRows, H.LAST_SCAN + 1).getValues();
+      const numRows = headhunterSheet.getLastRow() - startRow + 1;
+      const rawHeadhunterData = headhunterSheet.getRange(startRow, 2, numRows, headhunterSchema.LAST_SCAN + 1).getValues();
 
-      rawMain.forEach((mainSheetRow: any, i: number) => {
-        const tag = Registry.Services.Core.normalizeTag(mainSheetRow[H.TAG]);
+      rawHeadhunterData.forEach((rawHeadhunterRow: unknown[], rowIndex: number) => {
+        const tag = Registry.Services.Core.normalizeTag(String(rawHeadhunterRow[headhunterSchema.TAG] || ""));
         if (!tag) return;
 
-        const isInvited = mainSheetRow[H.INVITED] === true || String(mainSheetRow[H.INVITED]).toUpperCase() === "TRUE";
-        const score = Number(mainSheetRow[H.RAW_SCORE]) || 0;
-        const rowNum = startRow + i;
+        const isInvited = rawHeadhunterRow[headhunterSchema.INVITED] === true || String(rawHeadhunterRow[headhunterSchema.INVITED]).toUpperCase() === "TRUE";
+        const score = Number(rawHeadhunterRow[headhunterSchema.RAW_SCORE]) || 0;
+        const targetRowNumber = startRow + rowIndex;
 
         if (isInvited) {
           if (entryMap.has(tag)) {
             const existingEntry = entryMap.get(tag)!;
-            existingEntry.e = now + expiryDuration;
-            existingEntry.s = Math.max(existingEntry.s, score);
+            existingEntry.expiry = now + expiryDuration;
+            existingEntry.rawScore = Math.max(existingEntry.rawScore, score);
           } else {
-            entryMap.set(tag, { t: tag, e: now + expiryDuration, s: score });
+            entryMap.set(tag, { tag: tag, expiry: now + expiryDuration, rawScore: score });
           }
-          rowsToDelete.push(rowNum);
+          rowIndicesToDelete.push(targetRowNumber);
         }
       });
     }
 
     // --- 3. PERSIST BLACKLIST ---
-    const validEntries = Array.from(entryMap.values());
-    validEntries.sort((a, b) => b.s - a.s);
+    const consolidatedBlacklistEntries = Array.from(entryMap.values());
+    consolidatedBlacklistEntries.sort((a, b) => b.rawScore - a.rawScore);
 
-    if (blSheet.getLastRow() > 1) {
-      blSheet.getRange(2, 1, blSheet.getLastRow() - 1, 3).clearContent();
+    if (blacklistSheet.getLastRow() > 1) {
+      blacklistSheet.getRange(2, 1, blacklistSheet.getLastRow() - 1, 3).clearContent();
     }
-    if (validEntries.length > 0) {
-      const output = validEntries.map((blacklistEntry) => [blacklistEntry.t, blacklistEntry.e, blacklistEntry.s]);
-      blSheet.getRange(2, 1, output.length, 3).setValues(output);
+    if (consolidatedBlacklistEntries.length > 0) {
+      const blacklistOutputValues = consolidatedBlacklistEntries.map((blacklistEntry) => [blacklistEntry.tag, blacklistEntry.expiry, blacklistEntry.rawScore]);
+      blacklistSheet.getRange(2, 1, blacklistOutputValues.length, 3).setValues(blacklistOutputValues);
     }
 
-    if (rowsToDelete.length > 0) {
-      const sortedRows = [...new Set(rowsToDelete)].sort((a, b) => b - a);
-      const sheetId = sheet.getSheetId();
-      const ssId = ss.getId();
+    if (rowIndicesToDelete.length > 0) {
+      const sortedRowIndices = [...new Set(rowIndicesToDelete)].sort((a, b) => b - a);
+      const sheetId = headhunterSheet.getSheetId();
+      const activeSpreadsheetId = activeSpreadsheet.getId();
 
-      const deleteRequests = sortedRows.map(rowIdx => ({
+      const deleteRequests = sortedRowIndices.map(rowIdx => ({
         deleteDimension: {
           range: {
             sheetId: sheetId,
@@ -264,7 +265,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
       if (deleteRequests.length > 0) {
         // @ts-ignore
         if (typeof Sheets !== 'undefined' && Sheets.Spreadsheets) {
-          Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, ssId);
+          Sheets.Spreadsheets.batchUpdate({ requests: deleteRequests }, activeSpreadsheetId);
         }
         console.info(`Cleanup: Atomic deletion of ${deleteRequests.length} row(s) complete.`);
         // @ts-ignore
@@ -273,17 +274,17 @@ const HeadhunterStore: HeadhunterStoreContract = {
     }
 
     return {
-      ids: new Set(validEntries.map((blacklistEntry) => blacklistEntry.t)),
-      entries: validEntries.map((blacklistEntry) => ({ rawScore: blacklistEntry.s })),
+      ids: new Set(consolidatedBlacklistEntries.map((blacklistEntry) => blacklistEntry.tag)),
+      entries: consolidatedBlacklistEntries.map((blacklistEntry) => ({ rawScore: blacklistEntry.rawScore })),
     };
   },
 
-  loadQueue(ss: any): Map<string, Recruit> {
-    const queueSheet = ss.getSheetByName(CONFIG.SHEETS.QUEUE);
+  loadQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet): Map<string, Recruit> {
+    const queueSheet = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.QUEUE);
     if (!queueSheet || queueSheet.getLastRow() < 2) return new Map();
 
     const range = queueSheet.getRange(2, 1, queueSheet.getLastRow() - 1, queueSheet.getLastColumn());
-    const data = range.getValues();
+    const rawQueueData = range.getValues();
     
     const map = new Map<string, Recruit>();
     const now = Date.now();
@@ -292,31 +293,31 @@ const HeadhunterStore: HeadhunterStoreContract = {
     const INDEX_TAG = 0;
     const INDEX_LAST_SCAN = 9;
 
-    const parseDateMs = (val: any): number => {
-      if (!val) return 0;
-      const t = new Date(val).getTime();
+    const parseDateMs = (cellValue: unknown): number => {
+      if (!cellValue) return 0;
+      const t = new Date(cellValue as string | number | Date).getTime();
       return isNaN(t) ? 0 : t;
     };
 
-    data.forEach((queueRow: any, i: number) => {
-      const tag = Registry.Services.Core.normalizeTag(queueRow[INDEX_TAG]);
-      const foundDate = Registry.Services.Time.parseFlexibleDate(queueRow[7]);
+    rawQueueData.forEach((rawQueueRow: unknown[], rowIndex: number) => {
+      const tag = Registry.Services.Core.normalizeTag(String(rawQueueRow[INDEX_TAG] || ""));
+      const foundDate = Registry.Services.Time.parseFlexibleDate(rawQueueRow[7]);
       
       if (now - foundDate.getTime() > expiryMs) return;
 
       if (tag) {
         const payload = {
           tag,
-          name: String(queueRow[1]),
-          trophies: Number(queueRow[2]),
-          donations: Number(queueRow[3]),
-          cards: Number(queueRow[4]),
-          war: Number(queueRow[5]),
-          rawScore: Number(queueRow[6]),
+          name: String(rawQueueRow[1]),
+          trophies: Number(rawQueueRow[2]),
+          donations: Number(rawQueueRow[3]),
+          cards: Number(rawQueueRow[4]),
+          war: Number(rawQueueRow[5]),
+          rawScore: Number(rawQueueRow[6]),
           foundDate: foundDate,
           invited: false,
-          source: queueRow[8] || "TOURNAMENT",
-          lastScan: parseDateMs(queueRow[INDEX_LAST_SCAN]) 
+          source: rawQueueRow[8] || "TOURNAMENT",
+          lastScan: parseDateMs(rawQueueRow[INDEX_LAST_SCAN])
         };
 
         const result = v.safeParse(RecruitSchema, payload);
@@ -331,9 +332,9 @@ const HeadhunterStore: HeadhunterStoreContract = {
     return map;
   },
 
-  saveQueue(ss: any, recruits: Recruit[]): { count: number; pruned: number } {
+  saveQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet, recruits: Recruit[]): { count: number; pruned: number } {
     const sheetName = CONFIG.SHEETS.QUEUE;
-    const queueSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    const queueSheet = activeSpreadsheet.getSheetByName(sheetName) || activeSpreadsheet.insertSheet(sheetName);
     const HOT_COLOR = "#795548";
 
     if (queueSheet.getLastRow() === 0) {
@@ -345,7 +346,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
 
     const maxQueue = CONFIG.HEADHUNTER.MAX_QUEUE_SIZE || 500;
     const toSave = recruits.slice(0, maxQueue);
-    const ssId = ss.getId();
+    const activeSpreadsheetId = activeSpreadsheet.getId();
 
     if (queueSheet.getMaxColumns() < 10) {
        queueSheet.insertColumnsAfter(queueSheet.getMaxColumns(), 10 - queueSheet.getMaxColumns());
@@ -354,8 +355,8 @@ const HeadhunterStore: HeadhunterStoreContract = {
 
     const values = new Array(maxQueue).fill(0).map(() => new Array(10).fill(""));
     
-    toSave.forEach((recruitObject, i) => {
-      values[i] = [
+    toSave.forEach((recruitObject, rowIndex) => {
+      values[rowIndex] = [
         Registry.Services.Core.normalizeTag(recruitObject.tag),
         recruitObject.name,
         recruitObject.trophies,
@@ -373,7 +374,7 @@ const HeadhunterStore: HeadhunterStoreContract = {
       const range = `'${sheetName}'!A2:J${maxQueue + 1}`;
       Sheets.Spreadsheets.Values!.update(
         { values: values },
-        ssId,
+        activeSpreadsheetId,
         range,
         { valueInputOption: "USER_ENTERED" }
       );
