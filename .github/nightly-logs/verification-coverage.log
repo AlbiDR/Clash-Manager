@@ -64,3 +64,4 @@ Frontend-PWA/src/features/settings/components/RecoverySettings.vue
 Frontend-PWA/src/features/settings/components/ModeSettings.vue
 Frontend-PWA/src/features/settings/components/FeatureSettings.vue
 Frontend-PWA/src/features/settings/components/SkeletonSettingsCard.vue
+Backend-Worker/src/schemas.ts

@@ -42,6 +42,26 @@ describe('Core Schemas', () => {
       expect(v.safeParse(TagSchema, '8L9PPGRCQ').success).toBe(true);
     });
 
+    it('should validate boundary length tags (15 chars)', () => {
+      // 15 chars without # (will be transformed to 16 with #)
+      const longTag = 'ABCDE12345FGHIJ';
+      const result1 = v.safeParse(TagSchema, longTag);
+      expect(result1.success).toBe(true);
+      if (result1.success) {
+        expect(result1.output).toBe(`#${longTag}`);
+        expect(result1.output.length).toBe(16);
+      }
+
+      // 15 chars with # (already includes prefix)
+      const longTagWithHash = '#ABCDE12345FGHIJ';
+      const result2 = v.safeParse(TagSchema, longTagWithHash);
+      expect(result2.success).toBe(true);
+      if (result2.success) {
+        expect(result2.output).toBe(longTagWithHash);
+        expect(result2.output.length).toBe(16);
+      }
+    });
+
     it('should enforce uppercase and mandatory # prefix', () => {
       const result1 = v.safeParse(TagSchema, '2p2gg2gu');
       expect(result1.success).toBe(true);
@@ -75,7 +95,20 @@ describe('Core Schemas', () => {
   describe('ScoringWeightsSchema', () => {
     it('should validate correct scoring weights', () => {
       const valid = { TROPHY: 1, DON: 0.5, WAR: 2 };
-      expect(v.safeParse(ScoringWeightsSchema, valid).success).toBe(true);
+      const result = v.safeParse(ScoringWeightsSchema, valid);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.WAR_BASELINE_BONUS).toBe(500);
+      }
+    });
+
+    it('should allow overriding WAR_BASELINE_BONUS', () => {
+      const custom = { TROPHY: 1, DON: 0.5, WAR: 2, WAR_BASELINE_BONUS: 1000 };
+      const result = v.safeParse(ScoringWeightsSchema, custom);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.WAR_BASELINE_BONUS).toBe(1000);
+      }
     });
 
     it('should reject missing or invalid weight types', () => {
@@ -153,6 +186,17 @@ describe('Request Schemas', () => {
       expect(v.safeParse(PublicScanRequestSchema, { tags: ['#T'], apiKeys: ['key1'], minTrophies: 'high' }).success).toBe(false);
     });
 
+    it('should validate tags array at exactly maxLength of 25', () => {
+      const tags = Array(25).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(true);
+    });
+
     it('should reject tags array exceeding maxLength of 25', () => {
       const tags = Array(26).fill('#TAG1');
       const data = {
@@ -212,6 +256,17 @@ describe('Request Schemas', () => {
         tags: ['#TAG1'],
         apiKeys: ['key1'],
         blacklist: ['#TAG2'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(true);
+    });
+
+    it('should validate tags array at exactly maxLength of 100', () => {
+      const tags = Array(100).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
         minTrophies: 5000,
         scoring: { TROPHY: 1, DON: 1, WAR: 1 }
       };
@@ -321,6 +376,11 @@ describe('Request Schemas', () => {
 
     it('should reject invalid URL formats', () => {
       expect(v.safeParse(FetchRequestSchema, { urls: ['not-a-url'] }).success).toBe(false);
+    });
+
+    it('should validate urls array at exactly maxLength of 100', () => {
+      const urls = Array(100).fill('https://proxy.royaleapi.dev/v1/test');
+      expect(v.safeParse(FetchRequestSchema, { urls }).success).toBe(true);
     });
 
     it('should reject urls array exceeding maxLength of 100', () => {
@@ -438,6 +498,46 @@ describe('Royale API Response Schemas', () => {
         challengeCardsWon: 1000
       };
       expect(v.safeParse(RoyalePlayerSchema, data).success).toBe(true);
+    });
+
+    it('should validate nested leagueStatistics', () => {
+      const data = {
+        tag: '#TAG1',
+        name: 'Player 1',
+        trophies: 6000,
+        totalDonations: 10000,
+        warDayWins: 50,
+        challengeCardsWon: 1000,
+        leagueStatistics: {
+          currentSeason: {
+            trophies: 6500
+          }
+        }
+      };
+      const result = v.safeParse(RoyalePlayerSchema, data);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.leagueStatistics?.currentSeason?.trophies).toBe(6500);
+      }
+    });
+
+    it('should provide default for trophies in nested leagueStatistics', () => {
+      const data = {
+        tag: '#TAG1',
+        name: 'Player 1',
+        trophies: 6000,
+        totalDonations: 10000,
+        warDayWins: 50,
+        challengeCardsWon: 1000,
+        leagueStatistics: {
+          currentSeason: {}
+        }
+      };
+      const result = v.safeParse(RoyalePlayerSchema, data);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.leagueStatistics?.currentSeason?.trophies).toBe(0);
+      }
     });
   });
 
