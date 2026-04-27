@@ -51,3 +51,4 @@
 | knip | ^6.3.0 | 6.4.1 | 2026-04-22 | [Updated] Tier 1 minor bump previously failed test gate. |
 | @types/node | ^24.12.0 | 25.6.0 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
 | @vitejs/plugin-vue | ^6.0.5 | 6.0.6 | 2026-04-13 | [Updated] Tier 1 patch bump previously failed test gate. |
+| vue-router | ^4.6.4 | 5.0.6 | 2026-06-05 | Breaking: Transition release. No breaking changes for manual routes. |
