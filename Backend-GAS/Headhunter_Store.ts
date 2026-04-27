@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { CONFIG } from './Configuration';
 import Registry from './Registry';
 import type { Recruit, BlacklistEntry, BlacklistResult } from './Headhunter_Types';
@@ -6,10 +9,20 @@ import { RecruitSchema, BlacklistEntrySchema } from './Validation';
 
 /**
  * ============================================================================
- * MODULE: HEADHUNTER STORE
+ * [MODULE] HEADHUNTER STORE
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Persistence layer for Recruitment data.
  *    Handles Database I/O, Blacklist reconciliation, and Queue management.
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * This module acts as the authoritative bridge between the internal Headhunter
+ * logic and the Google Sheets "Dumb Store." It is responsible for translating
+ * raw spreadsheet rows into validated recruitment objects and vice versa.
+ *
+ * @import_constraints
+ * - CAN import from: CONFIG, Registry, Validation (Schemas), Headhunter_Types.
+ * - FORBIDDEN: Direct calls to external APIs or UI components.
  * ============================================================================
  */
 
@@ -18,23 +31,38 @@ declare var SpreadsheetApp: any;
 
 export interface HeadhunterStoreContract {
   /**
-   * Loads the current active recruits from the Headhunter sheet.
+   * Loads the current active recruits from the primary Headhunter sheet.
+   *
+   * @param headhunterSheet - The active Headhunter spreadsheet sheet instance.
+   * @returns A Map of normalized player tags to validated Recruit objects.
    */
   loadDatabase(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): Map<string, Recruit>;
 
   /**
-   * Reconciles the Blacklist by processing the Event Stream (EVT)
-   * and Manual Ticks (HH Sheet). Persists changes and cleans up.
+   * Reconciles the Blacklist by synchronizing the Event Stream (EVT) and Manual Ticks (HH Sheet).
+   * Persists results to the Blacklist (BL) sheet and cleans up the Headhunter sheet.
+   *
+   * @param headhunterSheet - The active Headhunter spreadsheet sheet instance.
+   * @returns An object containing the set of blacklisted tags and their metadata.
    */
   updateAndGetBlacklist(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): BlacklistResult;
 
   /**
-   * Loads the recruitment queue reservoir.
+   * Loads the recruitment queue reservoir from the internal technical sheet.
+   * Filters out expired entries based on CONFIG.HEADHUNTER.QUEUE_EXPIRY_DAYS.
+   *
+   * @param activeSpreadsheet - The active Spreadsheet instance.
+   * @returns A Map of normalized player tags to validated Recruit objects.
    */
   loadQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet): Map<string, Recruit>;
 
   /**
-   * Persists the recruitment queue reservoir with freshness pruning.
+   * Persists the recruitment queue reservoir to the internal technical sheet.
+   * Implements freshness pruning and maximum size limits.
+   *
+   * @param activeSpreadsheet - The active Spreadsheet instance.
+   * @param recruits - The array of Recruit objects to persist.
+   * @returns Statistics on the number of saved and pruned recruits.
    */
   saveQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet, recruits: Recruit[]): { count: number; pruned: number };
 }
@@ -42,6 +70,11 @@ export interface HeadhunterStoreContract {
 const HeadhunterStore: HeadhunterStoreContract = {
   
   /**
+   * @remarks
+   * IMPLEMENTATION: Database Loader.
+   * Extracts raw data from the Headhunter sheet, normalizes tags, and enforces
+   * schema validation via Valibot.
+   *
    * // THREAT: Replacing 'any' with specific Google Apps Script types to eliminate pathogens.
    */
   loadDatabase(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): Map<string, Recruit> {
@@ -106,6 +139,14 @@ const HeadhunterStore: HeadhunterStoreContract = {
   },
 
   /**
+   * @remarks
+   * IMPLEMENTATION: Blacklist Reconciliation.
+   * Orchestrates a multi-phase reconciliation process:
+   * 1. Loads current blacklist from the BL sheet.
+   * 2. Consumes 'Hot Dismissals' from the Event Stream (EVT).
+   * 3. Audits 'Manual Ticks' (Invited column) on the primary HH sheet.
+   * 4. Persists the consolidated results and triggers atomic row deletions.
+   *
    * // THREAT: OCD Clean Stack: Replacing anemic variables with domain-descriptive names.
    */
   updateAndGetBlacklist(headhunterSheet: GoogleAppsScript.Spreadsheet.Sheet): BlacklistResult {
@@ -179,7 +220,9 @@ const HeadhunterStore: HeadhunterStoreContract = {
       });
     }
 
-    // --- 1. RECONCILE EVENT STREAM (Hot Dismissals) ---
+    // // DECISION LOG: Phase 1 - Event Stream Reconciliation (Hot Dismissals).
+    // The Event Stream (EVT) acts as a low-latency buffer for dismissals triggered
+    // by the PWA or Worker. This phase drains the EVT and marks recruits as invited.
     if (eventSheet.getLastRow() > 1) {
       const rawEventData = eventSheet.getDataRange().getValues() as unknown[][];
       for (let rowIndex = 1; rowIndex < rawEventData.length; rowIndex++) {
@@ -206,7 +249,9 @@ const HeadhunterStore: HeadhunterStoreContract = {
       }
     }
 
-    // --- 2. AUDIT MANUAL TICKS (Standard Cleanup) ---
+    // // DECISION LOG: Phase 2 - Manual Tick Audit.
+    // Detects recruits manually marked as 'Invited' in the spreadsheet UI.
+    // These recruits are moved to the Blacklist and their rows are queued for deletion.
     const rowIndicesToDelete: number[] = [];
     if (headhunterSheet.getLastRow() >= CONFIG.LAYOUT.DATA_START_ROW) {
       const startRow = CONFIG.LAYOUT.DATA_START_ROW;
@@ -247,6 +292,10 @@ const HeadhunterStore: HeadhunterStoreContract = {
     }
 
     if (rowIndicesToDelete.length > 0) {
+      // // DECISION LOG: Atomic Batch Deletion Strategy.
+      // To maintain UI responsiveness and prevent index shifting during deletion,
+      // we sort indices in descending order and execute a single batchUpdate
+      // via the Advanced Sheets Service.
       const sortedRowIndices = [...new Set(rowIndicesToDelete)].sort((a, b) => b - a);
       const sheetId = headhunterSheet.getSheetId();
       const activeSpreadsheetId = activeSpreadsheet.getId();
@@ -279,6 +328,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
     };
   },
 
+  /**
+   * @remarks
+   * IMPLEMENTATION: Queue Loader.
+   * Ingests the technical Queue sheet and filters for freshness. Entries older than
+   * the configured expiry threshold are discarded at the point of ingestion.
+   */
   loadQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet): Map<string, Recruit> {
     const queueSheet = activeSpreadsheet.getSheetByName(CONFIG.SHEETS.QUEUE);
     if (!queueSheet || queueSheet.getLastRow() < 2) return new Map();
@@ -332,6 +387,12 @@ const HeadhunterStore: HeadhunterStoreContract = {
     return map;
   },
 
+  /**
+   * @remarks
+   * IMPLEMENTATION: Queue Persister.
+   * Uses the Google Sheets Advanced Service (Spreadsheets.Values.update) for
+   * high-performance batch writing when available.
+   */
   saveQueue(activeSpreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet, recruits: Recruit[]): { count: number; pruned: number } {
     const sheetName = CONFIG.SHEETS.QUEUE;
     const queueSheet = activeSpreadsheet.getSheetByName(sheetName) || activeSpreadsheet.insertSheet(sheetName);
@@ -371,6 +432,9 @@ const HeadhunterStore: HeadhunterStoreContract = {
     });
 
     if (typeof Sheets !== 'undefined' && Sheets.Spreadsheets) {
+      // // DECISION LOG: High-Performance Batch Write.
+      // Bypasses the slow row-by-row SpreadsheetApp API in favor of the
+      // REST-based Advanced Sheets Service for large queue updates.
       const range = `'${sheetName}'!A2:J${maxQueue + 1}`;
       Sheets.Spreadsheets.Values!.update(
         { values: values },
