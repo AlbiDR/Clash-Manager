@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-27] PR #507: docs(readme): create settings feature documentation
+**Commit**: `d03442a92bd3e101aadd02a9936cb24875554827`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/507)
+
+### Description
+Created `Frontend-PWA/src/features/settings/README.md` to provide architectural context for the Settings feature. Documented its role as a Layer 3 Feature Orchestrator, its sub-modules, and its delegation to Layer 1 services. Enforced ADR-compliant import boundaries and standardized naming. Verified via a full frontend test gate.
+
+---
+*PR created automatically by Jules for task [11961672245652468292](https://jules.google.com/task/11961672245652468292) started by @AlbiDR*
+
+---
+
 ## [2026-04-27] PR #506: Refactor Backend-Worker monolithic entry point into services
 **Commit**: `3a272b1764f6720e23e902293f06bc3b36def101`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/506)
