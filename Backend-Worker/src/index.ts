@@ -29,11 +29,13 @@ import express, {
   RequestHandler,
 } from "express";
 import * as v from "valibot";
-import ScoringKernel from "../../Backend-GAS/Scoring_Kernel";
-import Time from "../../Backend-GAS/Time";
 import { KeyService } from "./KeyService.js";
-import { Network } from "./services/Network.js";
 import { WorkerHubController } from "./controllers/WorkerHubController.js";
+import {
+  Network,
+  RoyaleApiService,
+  RecruitmentService,
+} from "./services/index.js";
 import {
   HubErrorSchema,
   AuditRequestSchema,
@@ -44,15 +46,11 @@ import {
   FetchRequestSchema,
   SubscriptionRequestSchema,
   RoyaleClanMembersResponseSchema,
-  RoyaleWarLogResponseSchema,
   RoyaleCurrentRiverRaceSchema,
-  RoyalePlayerSchema,
-  RoyaleBattleLogResponseSchema,
-  RoyaleTournamentResponseSchema,
+  RoyaleWarLogResponseSchema,
 } from "./schemas.js";
 import type {
   ServerConfig,
-  FetchResult,
   ScoringWeights,
   ScoredPlayer,
   WarHistory,
@@ -66,14 +64,9 @@ import type {
   ApiKeyAuditResult,
   PlayerTag,
   TournamentTag,
-  WarWeekId,
-  ClashRoyalePlayer,
-  BattleLogEntry,
-  Tournament,
   ClanMembers,
   CurrentRiverRace,
   RiverRaceLog,
-  ProphetIntel,
   ScanDebugInfo,
 } from "./types.js";
 
@@ -201,462 +194,61 @@ function getErrorMessage(errorPayload: unknown): string {
   return String(errorPayload);
 }
 
-/**
- * [NETWORK] TIMEOUT FETCH
- *
- * @remarks
- * Executes a global fetch operation with a built-in AbortSignal timeout.
- * This serves as a protection layer against hung upstream Royale API requests
- * that could otherwise exhaust worker concurrency slots.
- *
- * @param url - The destination Royale API endpoint.
- * @param opts - Standard fetch RequestInit options.
- * @param timeout - Duration in milliseconds before the request is aborted.
- * @returns The upstream fetch response.
- */
-async function timeoutFetch(
-  url: string,
-  opts: Record<string, unknown> = {},
-  timeout: number = CONFIG.timeout,
-): Promise<globalThis.Response> {
-  return fetch(url, {
-    ...opts,
-    signal: AbortSignal.timeout(timeout),
-  } as RequestInit);
-}
+// ============================================================================
+//  LEGACY EXPORTS (FOR TESTING BACKWARD COMPATIBILITY)
+// ============================================================================
 
 /**
- * [NETWORK] SMART ROTATED FETCH
+ * [LEGACY] BATCH PROCESSOR WRAPPER
  *
  * @remarks
- * Orchestrates a network request with high-resiliency features:
- * 1. **Key Rotation:** Automatically selects a healthy key from the provided pool.
- * 2. **Jittered Backoff:** Retries failed requests (5xx, 429) with exponential delay.
- * 3. **Quota Tracking:** Increments the global `Network` quota counter on every attempt.
- *
- * @param url - The destination Royale API endpoint.
- * @param baseOpts - Initial fetch options (method, headers).
- * @param retries - Maximum number of retry attempts.
- * @param keyService - Optional scoped KeyService; defaults to global `KEYS`.
- * @returns A structured FetchResult containing the status code and parsed JSON or raw text.
+ * Maintains backward compatibility for tests and internal callers that expect
+ * the original processBatch signature. Automatically injects the global KEYS singleton.
  */
-async function fetchWithRotatedRetries<T = unknown>(
-  url: string,
-  baseOpts: Record<string, unknown>,
-  retries: number = CONFIG.maxRetries,
-  keyService?: KeyService,
-): Promise<FetchResult<T>> {
-  let attempt = 0;
-  let lastErr: Error | null = null;
-
-  // Use provided KeyService (for batches) or fallback to global singleton
-  const manager = keyService ?? KEYS;
-
-  while (attempt <= retries) {
-    const currentApiKey = manager.getHealthyKey();
-    if (!currentApiKey) {
-      return { code: 429, content: "ERR_QUOTA_EMPTY" as T };
-    }
-
-    const fetchOptions = {
-      ...baseOpts,
-      headers: {
-        ...(baseOpts["headers"] || {}),
-        "Authorization": `Bearer ${currentApiKey}`
-      }
-    };
-
-    try {
-      const fetchResponse = await timeoutFetch(url, fetchOptions);
-
-      // THREAT: Royale API Quota Exhaustion.
-      // Target B [4]: Track all Royale API attempts to prevent quota guard trips.
-      Network.addQuotaUsage(1);
-
-      const responseCode = fetchResponse.status;
-      const responseText = await fetchResponse.text();
-
-      if (responseCode === 200) {
-        manager.reportSuccess(currentApiKey);
-        try {
-          return { code: responseCode, content: JSON.parse(responseText) as T };
-        } catch {
-          return { code: responseCode, content: responseText as T };
-        }
-      }
-
-      // Handle Failures
-      manager.reportFailure(currentApiKey, responseCode);
-      
-      if (responseCode === 404) return { code: responseCode, content: responseText as T };
-      if (responseCode === 403) throw new Error("auth_denied");
-      if (responseCode === 429) throw new Error("rate_limit");
-      
-      throw new Error(`upstream_status_${responseCode}`);
-
-    } catch (fetchError) {
-      lastErr = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
-      attempt++;
-      
-      if (attempt <= retries) {
-        const backoff = Math.min(10000, (500 * Math.pow(2, attempt)) + (Math.random() * 1000));
-        console.warn(`[Worker] Rotate-Retry ${attempt}/${retries} for ${url.slice(-20)}. Backoff: ${Math.round(backoff)}ms. Reason: ${lastErr.message}`);
-        await new Promise((resolve) => setTimeout(resolve, backoff));
-      }
-    }
-  }
-
-  return {
-    code: 520,
-    content: `Fetch exhausted: ${lastErr?.message ?? "unknown"}`,
-  };
-}
-
-/**
- * [LOGIC] WAR WEEK ID CALCULATION
- *
- * @remarks
- * Uses the centralized `Time` kernel from the GAS backend to calculate a standardized
- * War Week ID (YYWnn format). This ensures that the Worker and GAS backends
- * are perfectly synchronized regarding the 10:00 UTC Monday reset.
- *
- * @param dateStr - ISO 8601 date string.
- * @returns The branded WarWeekId.
- */
-function calculateWarWeekId(dateStr: string): WarWeekId {
-  if (!dateStr) return "Unknown" as WarWeekId;
-  const date = Time.parseRoyaleApiDate(dateStr);
-  return Time.calculateWarWeekId(date) as WarWeekId;
-}
-
-/**
- * [BATCH] GENERIC FETCH PROCESSOR
- *
- * @remarks
- * Implements a high-concurrency worker pool pattern to process multiple URLs
- * in parallel. This function handles both raw data fetching and specialized
- * recruitment scoring (Strategy 2: Deep Delegation).
- *
- * **Constraints:**
- * - **Quota Guard:** Pre-emptively calls `Network.quotaCheck` to prevent exhaustion.
- * - **Concurrency:** Limited by `CONFIG.concurrency`.
- *
- * @param urls - Array of Royale API endpoints to process.
- * @param apiKeys - Optional array of keys for the local KeyService pool.
- * @param concurrency - Maximum simultaneous requests.
- * @param scoring - Optional scoring weights to trigger recruitment processing.
- * @param prophetCache - Historical heritage data used for scoring multipliers.
- * @returns Array of FetchResults; sorted by score if recruitment scoring was active.
- */
-
 export async function processBatch<T = unknown>(
-  urls: string[],
+  targetEndpoints: string[],
   apiKeys: string[] = [],
-  concurrency: number = CONFIG.concurrency,
-  scoring: ScoringWeights | null = null,
+  concurrencyLimit: number = CONFIG.concurrency,
+  scoringWeights: ScoringWeights | null = null,
   prophetCache?: Record<string, ProphetIntel>,
-  minTrophies: number = 0
-): Promise<FetchResult<T>[]> {
-  // THREAT: Resource Exhaustion (Quota).
-  // Target IV: Pre-emptively fail if the batch exceeds remaining daily budget.
-  // We estimate 2 requests per URL if scoring is enabled (Profile + Logs), 1 otherwise.
-  const estimatedUsage = scoring ? urls.length * 2 : urls.length;
-  Network.quotaCheck(estimatedUsage);
-
-  const results: FetchResult<T>[] = new Array(urls.length);
-  let batchIndex = 0;
-
-  // Shared KeyService for the entire batch to preserve health state across requests
-  const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : undefined;
-
-  async function worker(): Promise<void> {
-    while (true) {
-      const currentBatchIndex = batchIndex++;
-      if (currentBatchIndex >= urls.length) return;
-
-      const url = urls[currentBatchIndex];
-      if (!url) continue;
-
-      const headers: Record<string, string> = {
-        "User-Agent": "ClanManagerWorker/10.1.4",
-        "Accept-Encoding": "gzip",
-      };
-
-      // Special handling for player profiles with scoring
-      if (scoring && url.includes("/players/") && !url.includes("/battlelog")) {
-        try {
-          const profileResult = await fetchWithRotatedRetries<ClashRoyalePlayer>(url, {
-            method: "GET",
-            headers,
-          }, CONFIG.maxRetries, batchManager);
-
-          if (profileResult.code === 200 && typeof profileResult.content === "object" && profileResult.content !== null) {
-            // THREAT: Malformed player profile causing downstream scoring errors.
-            // Target B [1]: Enforce [VALIDATION] boundary for Royale API data.
-            const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
-            if (!profileValidation.success) {
-              results[currentBatchIndex] = { code: 502, content: "Invalid player profile format" };
-              continue;
-            }
-            const profile = profileValidation.output;
-
-            const logUrl = `${url}/battlelog`;
-            const logsResult = await fetchWithRotatedRetries<BattleLogEntry[]>(
-              logUrl,
-              {
-                method: "GET",
-                headers,
-              },
-              CONFIG.maxRetries,
-              batchManager,
-            );
-
-            let hasWar = false;
-            if (logsResult.code === 200 && Array.isArray(logsResult.content)) {
-              // THREAT: Malformed battle logs causing incorrect war activity detection.
-              // Target B [1]: Enforce [VALIDATION] boundary for Royale API data.
-              const logsValidation = v.safeParse(RoyaleBattleLogResponseSchema, logsResult.content);
-              if (logsValidation.success) {
-                hasWar = logsValidation.output.some((logEntry) =>
-                  ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(
-                    logEntry.type,
-                  ),
-                );
-              }
-            }
-
-            const leagueTrophies = profile.leagueStatistics?.currentSeason?.trophies || 0;
-            const effectiveTrophies = (profile.trophies || 0) + (profile.trophies >= 9000 ? leagueTrophies : 0);
-
-            // Use shared scoring system (Kernel)
-            let rawScore = ScoringKernel.computeRecruitScore(
-              effectiveTrophies,
-              profile.totalDonations ?? 0,
-              profile.warDayWins ?? 0,
-              hasWar,
-              scoring || { TROPHY: 1.0, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
-            );
-
-            // STRATEGY 2: Deep Delegation - Prophet Bonus
-            // Rationale: By offloading the "Prophet Bonus" (Heritage logic)
-            // to the worker, we ensure that recruitment lists returned
-            // to the GAS backend are already prioritized based on
-            // historical elite performance, saving GAS compute cycles.
-            if (prophetCache) {
-                 // THREAT: Un-normalized prophetCache lookup causing missed heritage scoring bonuses.
-                 const normTag = profile.tag;
-                 const intel = prophetCache[normTag];
-                 // Threshold: 5 Wins.
-                 // We only apply the 25% multiplier to players with
-                 // proven historical war success to minimize false positives.
-                 if (intel && intel.wins > 5) {
-                    rawScore *= 1.25;
-                 }
-            }
-
-            const warBonus = hasWar ? 500 : 0;
-            const totalWarScore = (profile.warDayWins ?? 0) + warBonus;
-
-            // STRATEGY: Mandatory Trophy Requirement
-            // Rationale: High-potential players with low current trophies are intentionally discarded
-            // to satisfy the strictly enforced in-game requirement specified by the user.
-            if (minTrophies > 0 && effectiveTrophies < minTrophies) {
-                console.info(`[Headhunter] Discarded ${profile.tag} (${profile.name}): ${effectiveTrophies} < ${minTrophies}`);
-                results[currentBatchIndex] = { code: 200, content: null as T };
-                continue;
-            }
-
-            // STRATEGY: Strict Clanless Enforcement
-            // Rationale: Even if a player was clanless during Phase 1 (Discovery),
-            // they may have joined a clan by Phase 2 (Scoring).
-            // Rejecting them here prevents uninvitable recruits from reaching GAS.
-            if (scoring && profile.clan?.tag) {
-                results[currentBatchIndex] = { code: 200, content: null as T };
-                continue;
-            }
-
-            results[currentBatchIndex] = {
-              code: 200,
-              content: {
-                tag: profile.tag,
-                name: profile.name,
-                trophies: effectiveTrophies,
-                donations: profile.totalDonations,
-                cards: profile.challengeCardsWon,
-                war: totalWarScore,
-                rawScore,
-                clan: profile.clan?.name || null,
-              } as T,
-            };
-          } else {
-            results[currentBatchIndex] = profileResult as FetchResult<T>;
-          }
-        } catch (scoringError) {
-          results[currentBatchIndex] = {
-            code: 500,
-            content: `Scoring fetch failed: ${scoringError instanceof Error ? scoringError.message : "unknown"}`,
-          };
-        }
-      } else {
-        const fetchResponse = await fetchWithRotatedRetries<T>(url, { method: "GET", headers }, CONFIG.maxRetries, batchManager);
-        results[currentBatchIndex] = fetchResponse;
-      }
-    }
-  }
-
-  // Spawn worker pool
-  const workers: Promise<void>[] = [];
-  const spawnCount = Math.min(concurrency, urls.length);
-  for (let workerIndex = 0; workerIndex < spawnCount; workerIndex++) {
-    workers.push(worker());
-  }
-  await Promise.all(workers);
-
-  // Filter and sort if scoring is enabled
-  if (scoring) {
-    return results
-      .filter(
-        (resultRecord): resultRecord is FetchResult<T> =>
-          resultRecord !== undefined &&
-          resultRecord.code === 200 &&
-          typeof resultRecord.content === "object" &&
-          resultRecord.content !== null &&
-          "rawScore" in resultRecord.content,
-      )
-      .sort((aCandidate, bCandidate) => {
-        const aScore = (aCandidate.content as ScoredPlayer).rawScore;
-        const bScore = (bCandidate.content as ScoredPlayer).rawScore;
-        return bScore - aScore;
-      })
-      .slice(0, 200);
-  }
-
-  return results;
+  minTrophyThreshold: number = 0,
+): Promise<any[]> {
+  return RecruitmentService.processBatch<T>(
+    targetEndpoints,
+    apiKeys,
+    concurrencyLimit,
+    scoringWeights,
+    prophetCache,
+    minTrophyThreshold,
+    KEYS
+  );
 }
 
 /**
- * [SCAN] TOURNAMENT DISCOVERY PROCESSOR
+ * [LEGACY] SCAN PROCESSOR WRAPPER
  *
  * @remarks
- * Phase 1 of the recruitment pipeline. Scans multiple open tournaments to
- * identify active, clanless players.
- *
- * **Constraints:**
- * - **Quota Guard:** Fail-fast check against the daily worker budget.
- * - **Strict Filtering:** Automatically rejects players already in a clan.
- *
- * @param tags - Tournament tags to scan.
- * @param apiKeys - Scoped API keys for rotation.
- * @param concurrency - Maximum concurrent scan requests.
- * @param blacklistSet - Set of player tags to ignore (dismissed/blacklisted).
- * @param prophetCache - Heritage data for scoring prioritization.
- * @param debug - Optional diagnostic object for tracing the first scan result.
- * @returns Array of unscored recruit candidates (metadata only).
+ * Maintains backward compatibility for tests and internal callers that expect
+ * the original processScanBatch signature. Automatically injects the global KEYS singleton.
  */
 export async function processScanBatch(
-  tags: TournamentTag[],
+  tournamentTags: TournamentTag[],
   apiKeys: string[] = [],
-  concurrency: number = CONFIG.concurrency,
-  blacklistSet: Set<PlayerTag> = new Set(),
+  concurrencyLimit: number = CONFIG.concurrency,
+  dismissedPlayerTags: Set<PlayerTag> = new Set(),
   prophetCache?: Record<string, ProphetIntel>,
-  debug?: ScanDebugInfo
+  diagnosticTrace?: ScanDebugInfo,
 ): Promise<ScoredPlayer[]> {
-  // THREAT: Resource Exhaustion (Quota).
-  // Target IV: Pre-emptively fail if the scan batch exceeds remaining daily budget.
-  Network.quotaCheck(tags.length);
-
-  const candidates: ScoredPlayer[] = [];
-  let batchIndex = 0;
-  let traceCaptured = false;
-
-  // Shared KeyService for the entire batch to preserve health state across requests
-  const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : undefined;
-
-  async function worker(): Promise<void> {
-    while (true) {
-      const currentBatchIndex = batchIndex++;
-      if (currentBatchIndex >= tags.length) return;
-
-    const tag = tags[currentBatchIndex];
-    if (!tag) continue;
-
-    // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
-    const url = `${CONFIG.apiBase}/tournaments/${encodeURIComponent(tag)}`;
-
-    const headers: Record<string, string> = {
-      "User-Agent": "ClanManagerWorker/10.1.4",
-      "Accept-Encoding": "gzip",
-    };
-
-      try {
-        const fetchResponse = await fetchWithRotatedRetries<Tournament>(url, {
-          method: "GET",
-          headers,
-        }, CONFIG.maxRetries, batchManager);
-
-        // SUPER DIAGNOSTIC: Capture raw response of the first attempt
-        if (debug && !traceCaptured) {
-            traceCaptured = true;
-            debug.firstUrl = url;
-            debug.firstStatus = fetchResponse.code;
-            debug.firstContent = typeof fetchResponse.content === "string"
-                ? fetchResponse.content.substring(0, 1000)
-                : JSON.stringify(fetchResponse.content).substring(0, 1000);
-            debug.keyUsed = (headers["Authorization"] || "None").substring(0, 15) + "...";
-        }
-
-        if (fetchResponse.code === 200 && typeof fetchResponse.content === "object" && fetchResponse.content !== null) {
-          // THREAT: Malformed tournament data causing incorrect candidate discovery.
-          // Target B [1]: Enforce strict validation boundary for Royale API data.
-          const validation = v.safeParse(RoyaleTournamentResponseSchema, fetchResponse.content);
-          if (validation.success) {
-            validation.output.membersList.forEach((memberCandidate) => {
-              // DESIGN CONSTRAINT: Reject ALL players with any clan affiliation.
-              // Rationale: Only clanless players are recruitable. Filtering at the
-              // earliest stage (tournament member scan) prevents wasting API quota
-              // on profile fetches for non-recruitable targets.
-              if (memberCandidate.clan?.tag) return;
-        const candidateTag = memberCandidate.tag as PlayerTag;
-        if (blacklistSet.has(candidateTag)) return;
-
-              candidates.push({
-          tag: candidateTag,
-                name: memberCandidate.name || "Unknown",
-                // NOTE: We omit 'trophies' since tournament score is not global rank.
-                // This prevents the incorrect filtering that caused zero-yields.
-                rawScore: 0,
-              });
-            });
-          } else {
-            const rawContent = fetchResponse.content as Record<string, unknown>;
-            console.warn(`[WORKER SCAN FAIL] Schema rejected tournament response for tag: ${rawContent?.["tag"] || "Unknown"}`);
-            console.warn(JSON.stringify(validation.issues, null, 2));
-            const membersList = rawContent?.["membersList"];
-            if (Array.isArray(membersList) && membersList.length > 0) {
-              console.warn(`[SAMPLE REJECTED MEMBER]`, JSON.stringify(membersList[0], null, 2));
-            }
-          }
-        }
-      } catch (scanBatchError) {
-        console.warn(`[Worker] Scan failed for tournament ${tag}: ${scanBatchError instanceof Error ? scanBatchError.message : "unknown"}`);
-      }
-    }
-  }
-
-  const workers: Promise<void>[] = [];
-  const spawnCount = Math.min(concurrency, tags.length);
-  for (let workerIndex = 0; workerIndex < spawnCount; workerIndex++) {
-    workers.push(worker());
-  }
-  await Promise.all(workers);
-
-  return candidates;
+  return RecruitmentService.processScanBatch(
+    tournamentTags,
+    apiKeys,
+    concurrencyLimit,
+    dismissedPlayerTags,
+    prophetCache,
+    diagnosticTrace,
+    KEYS
+  );
 }
-
-// ============================================================================
-//  MIDDLEWARE
-// ============================================================================
-
 
 // ============================================================================
 //  ROUTES
@@ -700,7 +292,7 @@ app.get("/capabilities", (_request: Request, response: ExpressResponse): void =>
  */
 app.get("/health", async (request: Request, response: ExpressResponse): Promise<void> => {
     // 1. Local Pool Diagnostics
-    const pool = KEYS.getPoolStats();
+    const poolStats = KEYS.getPoolStats();
     
     // 2. Upstream Check (Current Healthiest Key)
     // THREAT: Unauthenticated quota depletion via public health endpoint.
@@ -709,24 +301,24 @@ app.get("/health", async (request: Request, response: ExpressResponse): Promise<
     const authHeader = request.headers.authorization;
     const isAuthenticated = secret && authHeader === `Bearer ${secret}`;
 
-    const testKey = KEYS.getHealthyKey();
+    const testApiKey = KEYS.getHealthyKey();
     let upstreamStatus = "SKIPPED_UNAUTHENTICATED";
     
-    if (isAuthenticated && testKey) {
+    if (isAuthenticated && testApiKey) {
         try {
             // THREAT: Resource Exhaustion.
             // Even health checks consume quota. Track it.
             Network.quotaCheck(1);
 
-            const healthCheckResponse = await timeoutFetch(`${CONFIG.apiBase}/cards`, {
-                headers: { Authorization: `Bearer ${testKey}` }
+            const healthCheckResponse = await RoyaleApiService.timeoutFetch(`${CONFIG.apiBase}/cards`, {
+                headers: { Authorization: `Bearer ${testApiKey}` }
             }, 3000);
 
             Network.addQuotaUsage(1);
 
             upstreamStatus = healthCheckResponse.status === 200 ? "OK" : `FAIL_${healthCheckResponse.status}`;
-            if (healthCheckResponse.status === 200) KEYS.reportSuccess(testKey);
-            if (healthCheckResponse.status === 429 || healthCheckResponse.status === 403) KEYS.reportFailure(testKey, healthCheckResponse.status);
+            if (healthCheckResponse.status === 200) KEYS.reportSuccess(testApiKey);
+            if (healthCheckResponse.status === 429 || healthCheckResponse.status === 403) KEYS.reportFailure(testApiKey, healthCheckResponse.status);
         } catch(healthCheckError) { upstreamStatus = "TIMEOUT"; }
     }
 
@@ -734,7 +326,7 @@ app.get("/health", async (request: Request, response: ExpressResponse): Promise<
         status: "success",
         checks: {
             upstream: upstreamStatus,
-            pool: pool,
+            pool: poolStats,
             memory: process.memoryUsage().rss
         }
     });
@@ -758,14 +350,14 @@ app.post(
   ): Promise<void> => {
     // THREAT: Malformed input causing downstream runtime failures.
     // Rationale: Strict validation at the entry point ensures only valid data reaches the KeyService.
-    const result = v.safeParse(AuditRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(AuditRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
     try {
-      const { apiKeys } = result.output;
+      const { apiKeys } = validationResult.output;
 
       // THREAT: Resource Exhaustion.
       // Audit batches can be large. Fail-fast if quota is low.
@@ -774,7 +366,7 @@ app.post(
       const auditUrl = `${CONFIG.apiBase}/cards`;
       const auditTasks = apiKeys.map(async (apiKey): Promise<ApiKeyAuditResult> => {
         try {
-          const auditResponse = await timeoutFetch(
+          const auditResponse = await RoyaleApiService.timeoutFetch(
             auditUrl,
             {
               method: "GET",
@@ -804,11 +396,11 @@ app.post(
 
       const auditResults = await Promise.all(auditTasks);
       response.json({ results: auditResults });
-    } catch (err: unknown) {
+    } catch (operationError: unknown) {
       // THREAT: Unhandled audit failures leading to worker instability.
       // Rationale: Strict error capturing prevents untyped exceptions from crashing the route handler.
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(operationError),
       });
     }
   },
@@ -832,53 +424,46 @@ app.post(
     response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Malformed scan tags or options causing inefficient upstream scanning or worker crashes.
-    const result = v.safeParse(PublicScanRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(PublicScanRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
     try {
-      const { tags, blacklist, minTrophies, scoring, apiKeys: reqApiKeys, prophetCache } = result.output;
-
-      // THREAT: Manually parsing env keys bypasses the global KeyManager's health state.
-      // Target B [3]: Remove dead/misleading code. Fall back to empty array so processScanBatch
-      // correctly utilizes the global KeyManager singleton health metrics.
-      const apiKeys = reqApiKeys;
+      const { tags, blacklist, minTrophies, scoring, apiKeys, prophetCache } = validationResult.output;
 
       const blacklistSet = new Set(blacklist ?? []);
 
-      // THREAT: Utilizing the CONFIG singleton ensures all requests are bound to
-      // environment-defined limits, preventing Resource Exhaustion.
-      const concurrency = CONFIG.concurrency;
-
-      const candidates = await processScanBatch(
+      const candidates = await RecruitmentService.processScanBatch(
         tags as TournamentTag[],
-        apiKeys,
-        concurrency,
+        apiKeys ?? [],
+        CONFIG.concurrency,
         blacklistSet as Set<PlayerTag>,
-        prophetCache
+        prophetCache,
+        undefined,
+        KEYS
       );
 
       if (scoring && candidates.length > 0) {
         const candidateTags = [...new Set(candidates.map((candidate) => candidate.tag))];
         const playerUrls = candidateTags.map((tag) => {
-            // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
             return `${CONFIG.apiBase}/players/${encodeURIComponent(tag)}`;
         });
 
-        const scoredResults = await processBatch<ScoredPlayer>(
+        const scoredResults = await RecruitmentService.processBatch<ScoredPlayer>(
           playerUrls,
-          apiKeys,
-          concurrency,
+          apiKeys ?? [],
+          CONFIG.concurrency,
           scoring,
           prophetCache,
-          minTrophies
+          minTrophies,
+          KEYS
         );
 
         response.json({
           candidates: scoredResults
-            .map((result) => result.content)
+            .map((resultRecord) => resultRecord.content)
             .filter(
               (candidate): candidate is ScoredPlayer =>
                 typeof candidate === "object" && candidate !== null && "tag" in candidate,
@@ -893,12 +478,12 @@ app.post(
       }
 
       response.json({ candidates, _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase } });
-    } catch (err: unknown) {
+    } catch (operationError: unknown) {
       // THREAT: Silent scan failures or worker crashes on malformed tournament data.
       // Rationale: Ensuring all tournament-level exceptions are caught and classified prevents PWA data starvation.
-      console.error("Failed /public/scan", err);
+      console.error("Failed /public/scan", operationError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(operationError),
       });
     }
   },
@@ -928,14 +513,14 @@ app.post(
     }
 
     // THREAT: Silent corruption of the subscription set if malformed data is accepted.
-    const result = v.safeParse(SubscriptionRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(SubscriptionRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
-    const subscriptionPayload = result.output; // PATHOGEN: Anemic variable 'sub' replaced with domain-descriptive name.
-    subscriptions.add(JSON.stringify(subscriptionPayload));
+    const pushSubscriptionPayload = validationResult.output;
+    subscriptions.add(JSON.stringify(pushSubscriptionPayload));
     console.log(` New Push Subscription. Total: ${subscriptions.size}`);
     response.json({ success: true, count: subscriptions.size });
   },
@@ -959,37 +544,34 @@ app.post(
     response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Unauthorized data access if malformed tags bypass filters.
-    const result = v.safeParse(ScanRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(ScanRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
     try {
-      const { tags, apiKeys, blacklist, minTrophies, scoring, prophetCache } = result.output;
+      const { tags, apiKeys, blacklist, minTrophies, scoring, prophetCache } = validationResult.output;
 
       const blacklistSet = new Set(blacklist ?? []);
 
-      // THREAT: Privileged callers are restricted to environment-defined
-      // concurrency limits to prevent Resource Exhaustion.
-      const concurrency = CONFIG.concurrency;
-
-        const debug: ScanDebugInfo = {
+        const diagnosticTrace: ScanDebugInfo = {
           firstUrl: "",
           firstStatus: 0,
           firstContent: "",
           keyUsed: "",
         };
-        const candidates = await processScanBatch(
+        const candidates = await RecruitmentService.processScanBatch(
             tags as TournamentTag[],
             apiKeys ?? [],
-            concurrency,
+            CONFIG.concurrency,
             blacklistSet as Set<PlayerTag>,
             prophetCache,
-            debug
+            diagnosticTrace,
+            KEYS
         );
 
-        const metadata = {
+        const serverMetadata = {
             version: "10.1.4",
             uptime: process.uptime(),
             pool: KEYS.getPoolStats(),
@@ -999,22 +581,22 @@ app.post(
         if (scoring && candidates.length > 0) {
             const candidateTags = [...new Set(candidates.map((candidate) => candidate.tag))];
             const playerUrls = candidateTags.map((tag) => {
-                // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
                 return `${CONFIG.apiBase}/players/${encodeURIComponent(tag)}`;
             });
 
-            const scoredResults = await processBatch<ScoredPlayer>(
+            const scoredResults = await RecruitmentService.processBatch<ScoredPlayer>(
                 playerUrls,
                 apiKeys ?? [],
-                concurrency,
+                CONFIG.concurrency,
                 scoring,
                 prophetCache,
-                minTrophies
+                minTrophies,
+                KEYS
             );
 
             response.json({
                 candidates: scoredResults
-                    .map((result) => result.content)
+                    .map((resultRecord) => resultRecord.content)
                     .filter(
                         (candidate): candidate is ScoredPlayer =>
                             typeof candidate === "object" && candidate !== null && "tag" in candidate,
@@ -1023,24 +605,24 @@ app.post(
                     phase1: candidates.length,
                     phase2: scoredResults.length,
                     apiBase: CONFIG.apiBase,
-                    trace: debug
+                    trace: diagnosticTrace
                 },
-                _metadata: metadata
+                _metadata: serverMetadata
             });
             return;
         }
 
         response.json({
             candidates, 
-            _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: debug },
-            _metadata: metadata
+            _debug: { phase1: candidates.length, apiBase: CONFIG.apiBase, trace: diagnosticTrace },
+            _metadata: serverMetadata
         });
-    } catch (err: unknown) {
+    } catch (operationError: unknown) {
       // THREAT: Unauthorized data access or worker crash on internal scan.
       // Rationale: High-precision scans require a stable failure boundary to prevent GAS orchestrator timeouts.
-      console.error("Failed /scan", err);
+      console.error("Failed /scan", operationError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(operationError),
       });
     }
   },
@@ -1064,35 +646,35 @@ app.post(
     response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Malformed clan tag causing upstream API errors or incorrect data snapshots.
-    const result = v.safeParse(ClanFullRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(ClanFullRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
     try {
-      const { tag, apiKeys } = result.output;
+      const { tag, apiKeys } = validationResult.output;
 
       const rawTag = decodeURIComponent(tag);
       const cleanTag = encodeURIComponent(rawTag);
-      const urls = [
+      const targetEndpoints = [
         `${CONFIG.apiBase}/clans/${cleanTag}/members`,
         `${CONFIG.apiBase}/clans/${cleanTag}/currentriverrace`,
         `${CONFIG.apiBase}/clans/${cleanTag}/riverracelog?limit=52`,
       ];
 
-      const results = await processBatch<
+      const batchResults = await RecruitmentService.processBatch<
         ClanMembers | CurrentRiverRace | RiverRaceLog
-      >(urls, apiKeys, 3, null);
+      >(targetEndpoints, apiKeys ?? [], 3, null, undefined, 0, KEYS);
 
       let membersData =
-        results[0]?.code === 200 ? (results[0].content as unknown) : null;
+        batchResults[0]?.code === 200 ? (batchResults[0].content as unknown) : null;
       let raceData =
-        results[1]?.code === 200
-          ? (results[1].content as unknown)
+        batchResults[1]?.code === 200
+          ? (batchResults[1].content as unknown)
           : null;
       let logData =
-        results[2]?.code === 200 ? (results[2].content as unknown) : null;
+        batchResults[2]?.code === 200 ? (batchResults[2].content as unknown) : null;
 
       if (membersData) {
         // THREAT: Malformed member list causing downstream UI crashes.
@@ -1138,9 +720,8 @@ app.post(
 
       if (logData?.items) {
         logData.items.forEach((logEntry) => {
-          const weekId = calculateWarWeekId(logEntry.createdDate);
+          const weekId = RecruitmentService.calculateWarWeekId(logEntry.createdDate);
           const standings = logEntry.standings ?? [];
-          // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
           const myClan = standings.find((standing) => standing.clan.tag === rawTag);
 
           if (myClan?.clan.participants) {
@@ -1161,12 +742,12 @@ app.post(
         race: raceData,
         history: warHistory,
       });
-    } catch (err: unknown) {
+    } catch (operationError: unknown) {
       // THREAT: Corrupt clan snapshots polluting GAS state.
       // Rationale: Enforcing a clean error boundary for bulk fetches ensures the GAS backend receives a valid JSON error response.
-      console.error("Failed /clan/full", err);
+      console.error("Failed /clan/full", operationError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(operationError),
       });
     }
   },
@@ -1189,33 +770,30 @@ app.post(
     response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Invalid request types or tags leading to unhandled upstream responses.
-    const result = v.safeParse(ClanApiRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(ClanApiRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
     try {
-      const { tag, type, apiKeys } = result.output;
+      const { tag, type, apiKeys } = validationResult.output;
 
       const cleanTag = encodeURIComponent(tag);
-      let url = "";
+      let targetEndpoint = "";
 
       if (type === "members") {
-        url = `${CONFIG.apiBase}/clans/${cleanTag}/members`;
+        targetEndpoint = `${CONFIG.apiBase}/clans/${cleanTag}/members`;
       } else if (type === "warlog") {
-        url = `${CONFIG.apiBase}/clans/${cleanTag}/riverracelog?limit=52`;
+        targetEndpoint = `${CONFIG.apiBase}/clans/${cleanTag}/riverracelog?limit=52`;
       } else {
         response.status(400).json({ error: "invalid type" });
         return;
       }
 
-      // THREAT: Ignoring provided apiKeys in /clan/api leads to quota exhaustion on the global pool.
-      // Target B [3]: Use the validated keys from the request body via a batch-scoped KeyManager.
-      // Fall back to global KeyManager if apiKeys is empty.
-      const batchManager = (apiKeys && apiKeys.length > 0) ? new KeyService(apiKeys) : undefined;
+      const batchManager = (apiKeys && apiKeys.length > 0) ? new KeyService(apiKeys) : KEYS;
 
-      const { code, content } = await fetchWithRotatedRetries(url, {
+      const { code, content } = await RoyaleApiService.fetchWithRotatedRetries(targetEndpoint, {
         method: "GET",
         headers: {
           "User-Agent": "ClanManagerWorker/10.1.4",
@@ -1227,7 +805,7 @@ app.post(
         return;
       }
 
-      let transformed: unknown[] = [];
+      let transformedData: unknown[] = [];
 
       if (type === "members") {
         // THREAT: Malformed upstream member list causing downstream runtime crashes.
@@ -1243,12 +821,12 @@ app.post(
           return roleMap[role] ?? "Member";
         };
 
-        transformed = validation.output.items.map((member) => ({
+        transformedData = validation.output.items.map((member) => ({
           tag: member.tag,
           name: member.name,
           role: formatRole(member.role),
           kingLevel: member.expLevel,
-          trophies: member.trophies, // THREAT: Trophies were omitted from transformation, causing data starvation in PWA.
+          trophies: member.trophies,
           donations: member.donations,
           donationsReceived: member.donationsReceived,
         }));
@@ -1266,10 +844,9 @@ app.post(
           return `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
         };
 
-        transformed = validation.output.items.map((warLogEntry) => {
+        transformedData = validation.output.items.map((warLogEntry) => {
           const rawTag = decodeURIComponent(tag);
 
-          // THREAT: Redundant manual tag normalization removed; relying on TagSchema hardening.
           const myStanding = warLogEntry.standings.find((standing) => standing.clan.tag === rawTag);
           const opponents = warLogEntry.standings.filter((standing) => standing.clan.tag !== rawTag);
 
@@ -1294,13 +871,13 @@ app.post(
         });
       }
 
-      response.json({ data: transformed });
-    } catch (err: unknown) {
+      response.json({ data: transformedData });
+    } catch (operationError: unknown) {
       // THREAT: Unhandled upstream errors in clan member/warlog fetching.
       // Rationale: Consistent error extraction prevents the "any Plague" from leaking into the PWA.
-      console.error("Failed /clan/api", err);
+      console.error("Failed /clan/api", operationError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(operationError),
       });
     }
   },
@@ -1323,35 +900,32 @@ app.post(
     response: ExpressResponse,
   ): Promise<void> => {
     // THREAT: Arbitrary URL fetching or malformed scoring weights leading to resource exhaustion.
-    const result = v.safeParse(FetchRequestSchema, request.body);
-    if (!result.success) {
-      response.status(400).json({ error: "Invalid request body", details: result.issues });
+    const validationResult = v.safeParse(FetchRequestSchema, request.body);
+    if (!validationResult.success) {
+      response.status(400).json({ error: "Invalid request body", details: validationResult.issues });
       return;
     }
 
     try {
-      const { urls, apiKeys, scoring, minTrophies } = result.output;
+      const { urls, apiKeys, scoring, minTrophies } = validationResult.output;
 
-      // THREAT: Restricting concurrency to environment-defined limits
-      // prevents Resource Exhaustion during batch operations.
-      const concurrency = CONFIG.concurrency;
-
-      const batchResults = await processBatch(
+      const batchResults = await RecruitmentService.processBatch(
         urls,
         apiKeys ?? [],
-        concurrency,
+        CONFIG.concurrency,
         scoring ?? null,
         undefined,
-        minTrophies
+        minTrophies,
+        KEYS
       );
 
       response.json({ results: batchResults });
-    } catch (err: unknown) {
+    } catch (operationError: unknown) {
       // THREAT: Resource exhaustion or worker crash on arbitrary fetch.
       // Rationale: Catching all fetch-related exceptions prevents the worker process from entering a zombie state.
-      console.error("Failed /fetch", err);
+      console.error("Failed /fetch", operationError);
       response.status(500).json({
-        error: getErrorMessage(err),
+        error: getErrorMessage(operationError),
       });
     }
   },
@@ -1371,10 +945,10 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
   try {
     const state = await WorkerHubController.getHubState();
     response.json({ success: true, data: state });
-  } catch (err: unknown) {
+  } catch (operationError: unknown) {
     // THREAT: Silent corruption or uninformative 500 errors in Hub state delivery.
     // Target B [1]: Robust error classification for the PWA ingress boundary using v.safeParse.
-    const validation = v.safeParse(HubErrorSchema, err);
+    const validation = v.safeParse(HubErrorSchema, operationError);
 
     if (validation.success && validation.output.code === "ERR_STATE_MISSING") {
       response.status(503).json({
@@ -1382,7 +956,7 @@ app.get("/hub/state", async (_request: Request, response: ExpressResponse): Prom
         layer: validation.output.layer
       });
     } else {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = operationError instanceof Error ? operationError.message : String(operationError);
       response.status(500).json({ error: errorMessage || "unknown" });
     }
   }
