@@ -33,6 +33,18 @@ import type {
  * Handles high-level recruitment operations, including batch processing,
  * tournament scanning, and server-side scoring (Strategy 2: Deep Delegation).
  * ============================================================================
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core).
+ * - **Role:** Primary business logic engine for recruitment. Orchestrates the
+ *   discovery and evaluation of potential clan members.
+ *
+ * **Constraints & Dependencies:**
+ * - **GAS Kernel Dependency:** Utilizes `ScoringKernel` and `Time` from the
+ *   Backend-GAS environment for calculation parity.
+ * - **Environment Variables:** Restricted by `WORKER_CONCURRENCY` and `WORKER_RETRIES`
+ *   to prevent upstream rate-limiting and resource exhaustion.
  */
 
 export class RecruitmentService {
@@ -44,7 +56,7 @@ export class RecruitmentService {
    * Uses the centralized Time kernel from the GAS backend to calculate a standardized
    * War Week ID (YYWnn format).
    *
-   * @param dateString - ISO 8601 date string.
+   * @param dateString - ISO 8601 date string from the Royale API.
    * @returns The branded WarWeekId.
    */
   static calculateWarWeekId(dateString: string): WarWeekId {
@@ -65,7 +77,8 @@ export class RecruitmentService {
    * @param prophetCache - Historical heritage data used for scoring multipliers.
    * @param minTrophyThreshold - Minimum trophies required to be included in results.
    * @param globalKeys - Global KeyService instance as fallback.
-   * @returns Array of FetchResults; sorted by score if recruitment scoring was active.
+   * @returns Array of FetchResults; sorted descending by `rawScore` if scoring was active.
+   * @throws {HubError} Throws ERR_QUOTA_EXHAUSTED if the daily worker budget is exceeded.
    */
   static async processBatch<T = unknown>(
     targetEndpoints: string[],
@@ -84,6 +97,10 @@ export class RecruitmentService {
 
     const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : globalKeys;
 
+    // // DECISION LOG: Worker Pool Concurrency Pattern
+    // Rationale: Utilizing a shared `currentBatchIndex` across multiple `worker` instances
+    // ensures optimal throughput and automatic load balancing across the available
+    // API key pool without the overhead of complex queue management.
     const worker = async (): Promise<void> => {
       while (true) {
         const index = currentBatchIndex++;
@@ -134,6 +151,10 @@ export class RecruitmentService {
               }
 
               const currentLeagueTrophies = playerProfile.leagueStatistics?.currentSeason?.trophies || 0;
+              // // DECISION LOG: Effective Trophy Calculation
+              // Rationale: For players who have reached the 9000 trophy ceiling, their current
+              // season league performance is added to provide a more accurate representation
+              // of their competitive skill level.
               const effectiveTrophies = (playerProfile.trophies || 0) + (playerProfile.trophies >= 9000 ? currentLeagueTrophies : 0);
 
               let rawPotentialScore = ScoringKernel.computeRecruitScore(
@@ -147,6 +168,9 @@ export class RecruitmentService {
               if (prophetCache) {
                    const normalizedTag = playerProfile.tag;
                    const historicalIntel = prophetCache[normalizedTag];
+                   // // DECISION LOG: Prophet Heritage Multiplier
+                   // Rationale: Recruits with a verified history of success (>5 wins in heritage data)
+                   // receive a 25% score boost to prioritize proven talent over raw ladder stats.
                    if (historicalIntel && historicalIntel.wins > 5) {
                       rawPotentialScore *= 1.25;
                    }
@@ -155,6 +179,10 @@ export class RecruitmentService {
               const warActivityBonus = hasWarActivity ? 500 : 0;
               const combinedWarScore = (playerProfile.warDayWins ?? 0) + warActivityBonus;
 
+              // // THREAT: Data Starvation via Aggressive Filtering
+              // Rationale: We strictly exclude players already in a clan and those falling
+              // below the `minTrophyThreshold` to ensure the GAS backend only receives
+              // high-quality, actionable recruitment targets.
               if (minTrophyThreshold > 0 && effectiveTrophies < minTrophyThreshold) {
                   console.info(`[RecruitmentService] Discarded ${playerProfile.tag} (${playerProfile.name}): ${effectiveTrophies} < ${minTrophyThreshold}`);
                   batchProcessingResults[index] = { code: 200, content: null as T };
@@ -212,11 +240,18 @@ export class RecruitmentService {
             resultRecord.content !== null &&
             "rawScore" in resultRecord.content,
         )
+        // // DECISION LOG: Descending Score Priority
+        // Rationale: Sorting by `rawScore` ensures the PWA and GAS orchestrator
+        // process the most promising candidates first.
         .sort((aCandidate, bCandidate) => {
           const aScore = (aCandidate.content as ScoredPlayer).rawScore;
           const bScore = (bCandidate.content as ScoredPlayer).rawScore;
           return bScore - aScore;
         })
+        // // THREAT: Payload Inflation & GAS Execution Limits
+        // Rationale: We slice results to the top 200 candidates. Sending thousands of
+        // results would exceed the GAS JSON parsing time limits and spreadsheet
+        // write quotas, causing orchestrator failure.
         .slice(0, 200);
     }
 
@@ -235,6 +270,7 @@ export class RecruitmentService {
    * @param diagnosticTrace - Optional diagnostic object for tracing the first scan result.
    * @param globalKeys - Global KeyService instance as fallback.
    * @returns Array of unscored recruit candidates (metadata only).
+   * @throws {HubError} Throws ERR_QUOTA_EXHAUSTED if the daily worker budget is exceeded.
    */
   static async processScanBatch(
     tournamentTags: TournamentTag[],
