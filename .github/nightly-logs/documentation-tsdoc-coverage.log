@@ -39,3 +39,4 @@ Backend-GAS/Validation.ts
 Frontend-PWA/src/features/settings/components/NetworkSettings.vue
 Backend-GAS/API_Public.ts
 Backend-GAS/Headhunter_Store.ts
+Backend-Worker/src/services/RecruitmentService.ts
