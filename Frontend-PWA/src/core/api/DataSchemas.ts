@@ -118,6 +118,11 @@ const SafeNumberPipe = v.pipe(
   v.unknown(),
   v.transform((val) => {
     if (typeof val === "number") return val;
+    // THREAT: Missing matrix columns causing validation failure.
+    // Rationale: Defaulting to 0 for missing numeric fields ensures
+    // that the PWA can still display a partial roster if the backend
+    // schema is slightly out of sync or if optional columns are omitted.
+    if (val === null || val === undefined) return 0;
     if (typeof val === "string") {
       // Handle comma-separated or percentage-based strings from sheets
       const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
@@ -182,15 +187,17 @@ export const RecruitSchema = v.object({
   id: SafeStringPipe,
   n: SafeStringPipe,
   t: SafeNumberPipe,
-  potentialScore: v.optional(SafeNumberPipe),
-  potentialRawScore: v.optional(SafeNumberPipe),
+  potentialScore: v.optional(SafeNumberPipe, 0),
+  potentialRawScore: v.optional(SafeNumberPipe, 0),
   d: v.object({
     don: SafeNumberPipe,
     war: SafeNumberPipe,
     ago: SafeStringPipe,
-    cards: v.optional(SafeNumberPipe),
+    cards: v.optional(SafeNumberPipe, 0),
   }),
-  lastScan: v.optional(SafeNumberPipe),
+  // Rationale: Ensuring lastScan defaults to 0 (epoch) instead of undefined
+  // maintains backward compatibility with legacy UI components and tests.
+  lastScan: v.optional(SafeNumberPipe, 0),
 });
 
 /**

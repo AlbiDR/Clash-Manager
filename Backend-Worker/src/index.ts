@@ -212,7 +212,11 @@ export async function processBatch<T = unknown>(
   scoringWeights: ScoringWeights | null = null,
   prophetCache?: Record<string, ProphetIntel>,
   minTrophyThreshold: number = 0,
-): Promise<any[]> {
+): Promise<FetchResult<T>[]> {
+  // [GUARD] TYPE SAFETY: Target B [4]
+  // THREAT: Untyped data leakage from the legacy bridge.
+  // Rationale: Aligning the legacy wrapper return type with RecruitmentService ensures
+  // that callers receive structured, typed results instead of ambiguous 'any' arrays.
   return RecruitmentService.processBatch<T>(
     targetEndpoints,
     apiKeys,

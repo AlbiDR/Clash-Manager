@@ -280,23 +280,32 @@ export function mapLbRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
   const perfScore = rowSnapshot[schemaMap["performanceScore"]] ?? rowSnapshot[schemaMap["s"]];
   const perfRaw = rowSnapshot[schemaMap["performanceRawScore"]] ?? rowSnapshot[schemaMap["r"]];
 
-  return {
-    id: v.parse(SafeStringSchema, rowSnapshot[schemaMap["id"]]),
-    n: v.parse(SafeStringSchema, rowSnapshot[schemaMap["n"]]),
-    t: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["t"]]),
-    performanceScore: v.parse(SafeNumberSchema, perfScore),
-    performanceRawScore: v.parse(SafeNumberSchema, perfRaw),
-    dt: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["dt"]]),
+  const candidate = {
+    id: rowSnapshot[schemaMap["id"]],
+    n: rowSnapshot[schemaMap["n"]],
+    t: rowSnapshot[schemaMap["t"]],
+    performanceScore: perfScore,
+    performanceRawScore: perfRaw,
+    dt: rowSnapshot[schemaMap["dt"]],
     d: {
-      role: v.parse(SafeStringSchema, rowSnapshot[schemaMap["role"]]),
-      days: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["days"]]),
-      avg: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["avg"]]),
-      seen: v.parse(SafeStringSchema, rowSnapshot[schemaMap["seen"]] || "-"),
-      rate: v.parse(SafeStringSchema, rowSnapshot[schemaMap["rate"]] || "0%"),
-      wfame: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["wfame"]]),
-      hist: v.parse(SafeStringSchema, rowSnapshot[schemaMap["hist"]]),
+      role: rowSnapshot[schemaMap["role"]],
+      days: rowSnapshot[schemaMap["days"]],
+      avg: rowSnapshot[schemaMap["avg"]],
+      seen: rowSnapshot[schemaMap["seen"]] || "-",
+      rate: rowSnapshot[schemaMap["rate"]] || "0%",
+      wfame: rowSnapshot[schemaMap["wfame"]],
+      hist: rowSnapshot[schemaMap["hist"]],
     },
   };
+
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // THREAT: Malformed matrix rows from GAS causing downstream Clean Stack corruption.
+  const validation = v.safeParse(MemberSchema, candidate);
+  if (!validation.success) {
+    console.warn("[GasClient] Leaderboard row validation failed", validation.issues);
+    return null;
+  }
+  return validation.output;
 }
 
 /**
@@ -306,20 +315,29 @@ export function mapLbRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
 export function mapHhRow(rowSnapshot: unknown[], schemaMap: Record<string, number>): Recruit | null {
   if (!rowSnapshot || !Array.isArray(rowSnapshot)) return null;
 
-  return {
-    id: v.parse(SafeStringSchema, rowSnapshot[schemaMap["id"]]),
-    n: v.parse(SafeStringSchema, rowSnapshot[schemaMap["n"]]),
-    t: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["t"]]),
-    potentialScore: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["potentialScore"]]),
-    potentialRawScore: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["potentialRawScore"]]),
-    lastScan: v.parse(SafeTimestampSchema, rowSnapshot[schemaMap["lastScan"]]),
+  const candidate = {
+    id: rowSnapshot[schemaMap["id"]],
+    n: rowSnapshot[schemaMap["n"]],
+    t: rowSnapshot[schemaMap["t"]],
+    potentialScore: rowSnapshot[schemaMap["potentialScore"]],
+    potentialRawScore: rowSnapshot[schemaMap["potentialRawScore"]],
+    lastScan: rowSnapshot[schemaMap["lastScan"]],
     d: {
-      don: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["don"]]),
-      war: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["war"]]),
-      ago: v.parse(SafeStringSchema, rowSnapshot[schemaMap["ago"]]) || new Date().toISOString(),
-      cards: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["cards"]]),
+      don: rowSnapshot[schemaMap["don"]],
+      war: rowSnapshot[schemaMap["war"]],
+      ago: rowSnapshot[schemaMap["ago"]] || new Date().toISOString(),
+      cards: rowSnapshot[schemaMap["cards"]],
     },
   };
+
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // THREAT: Malformed matrix rows from the Headhunter sheet causing UI crashes.
+  const validation = v.safeParse(RecruitSchema, candidate);
+  if (!validation.success) {
+    console.warn("[GasClient] Headhunter row validation failed", validation.issues);
+    return null;
+  }
+  return validation.output;
 }
 
 /**
@@ -384,15 +402,16 @@ export async function inflatePayload(rawPayload: unknown): Promise<WebAppData> {
   }
 
   // Pre-calculate Schema Maps (O(S))
-  const lbMap = createSchemaMap(lbSchemaArr);
-  const hhMap = createSchemaMap(hhSchemaArr);
+  // PATHOGEN: Anemic variables renamed to domain-descriptive names.
+  const rosterSchemaMap = createSchemaMap(lbSchemaArr);
+  const recruitSchemaMap = createSchemaMap(hhSchemaArr);
 
-  const result: WebAppData = {
+  const inflatedWebAppData: WebAppData = {
     lb: lbMatrix
-      .map((rowSnapshot) => mapLbRow(rowSnapshot as unknown[], lbMap))
+      .map((rowSnapshot) => mapLbRow(rowSnapshot as unknown[], rosterSchemaMap))
       .filter((rowSnapshot): rowSnapshot is LeaderboardMember => !!rowSnapshot),
     hh: hhMatrix
-      .map((rowSnapshot) => mapHhRow(rowSnapshot as unknown[], hhMap))
+      .map((rowSnapshot) => mapHhRow(rowSnapshot as unknown[], recruitSchemaMap))
       .filter((rowSnapshot): rowSnapshot is Recruit => !!rowSnapshot),
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
@@ -402,7 +421,7 @@ export async function inflatePayload(rawPayload: unknown): Promise<WebAppData> {
     lastFetched: source.lastFetched,
   };
 
-  return result;
+  return inflatedWebAppData;
 }
 
 /**
