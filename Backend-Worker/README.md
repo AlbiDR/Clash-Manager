@@ -9,14 +9,28 @@ The **Muscle**. A high-performance, strictly typed Express.js server designed to
 
 ## Technical Specifications
 
-- **Layer**: Layer 1 (@core)
-- **Role**: Infrastructure kernel for high-concurrency network delegation.
+- **Layer**: Layer 1 (@core) / Layer 5 (@root) bridge.
+- **Role**: Infrastructure kernel for high-concurrency network delegation and autonomous data synchronization.
 - **Runtime**: Node.js (Express) with TypeScript.
-- **Architecture**: Stateless, high-concurrency worker pool.
-- **Security**: Strict Bearer token validation with path-based exemptions.
+- **Architecture**: Registry-based service pattern with isolated business modules.
+- **Security**: Strict Bearer token validation with path-based exemptions and SSRF prevention.
 - **Intelligence**: Integrated "Deep Delegation" scoring and Prophet Cache logic.
 - **Resource Management**: Proactive "Quota Guard" (15,000 daily request limit) to preserve the shared Royale API budget.
 - **Resilience**: Automatic retries with exponential backoff and jitter.
+
+---
+<br />
+
+## System Architecture
+
+The worker follows the **CleanStack Architecture** (Section II), organizing logic into distinct services and controllers:
+
+| Layer | Responsibility | Key Modules |
+| :--- | :--- | :--- |
+| **Control** | Public API ingress, routing, and authentication | `index.ts`, `WorkerHubController.ts` |
+| **Services** | High-level business logic (Recruitment & Scoring) | `RecruitmentService.ts`, `PayloadKernel.ts` |
+| **Drivers** | Low-level hardware/network brokerage | `RoyaleApiService.ts`, `HubPersistenceService.ts` |
+| **Registry** | Singleton management and pool statistics | `KeyService.ts`, `Network.ts` |
 
 ---
 <br />
@@ -54,8 +68,6 @@ Clash Manager Worker is running
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
-> **Note**: The worker utilizes a tiered versioning hierarchy. The **Discovery Version** (`v10.1.4`) signals capability sets and protocol stability to the GAS backend, while **Internal Metadata** (`v10.1.4`) tracks specific scan logic refinements. These are decoupled from the **Package Version** (`v10.1.4`) which governs the monorepo deployment.
-
 **Response:**
 ```json
 {
@@ -72,7 +84,7 @@ Returns the current worker version and internal configuration limits. Used by th
 > **Note**: The Worker Hub currently returns raw matrices (arrays of arrays) as provided by the GAS dumb store. Re-hydration and field mapping are performed by the PWA's `GasClient.ts` to minimize Worker-side transformation overhead.
 
 #### `GET /health`
-Performs a deep health check, including internal key pool statistics. **Upstream API connectivity validation** is performed only for authenticated callers to prevent unauthorized quota depletion.
+Performs a multi-tier health check to ensure the worker is operational. **Upstream API connectivity validation** is performed only for authenticated callers to prevent unauthorized quota depletion.
 
 **Response:**
 ```json
@@ -165,7 +177,10 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ### Intelligence & Scanning
 
 #### `POST /scan` / `POST /public/scan`
-Scans tournament brackets to discover new recruits. Configurable with blacklists. `POST /scan` requires authentication, while `/public/scan` is open. Both endpoints require mandatory `apiKeys` in the payload to prevent unauthorized usage of the worker's internal key pool.
+Scans tournament brackets to discover new recruits. Orchestrates two phases: Discovery (Phase 1) and optional Scoring (Phase 2).
+
+- **`/scan`**: Privileged entry point; requires authentication. Includes advanced telemetry (`trace`) and deep Prophet Cache integration. `apiKeys` are **optional** (falls back to internal pool).
+- **`/public/scan`**: Public entry point. Requires **mandatory** `apiKeys` in the payload to prevent unauthorized usage of the worker's internal key pool.
 
 > **Note**: These endpoints are subject to **Input Bounding**. `/public/scan` allows up to **25** tags/blacklist entries, while `/scan` allows up to **100**.
 
@@ -173,7 +188,7 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 ```json
 {
   "tags": ["#TOURNEY1", "#TOURNEY2"],
-  "apiKeys": ["sk_key1", "sk_key2"], // MANDATORY for both /scan and /public/scan
+  "apiKeys": ["sk_key1", "sk_key2"],
   "blacklist": ["#PLAYER1"],
   "minTrophies": 5000,
   "scoring": { "TROPHY": 1.0, "DON": 0.07, "WAR": 20.0 },
