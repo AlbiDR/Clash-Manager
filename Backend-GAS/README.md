@@ -44,16 +44,28 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 | **Orchestrator** | Event handling, cron jobs, and master protocol execution | `Orchestrator.ts` |
 | **Registry** | Dependency injection and service location | `Registry.ts`, `Core.ts` |
 | **Validation** | Ingress hardening and runtime integrity enforcement | `Validation.ts` |
-| **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts` |
+| **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts`, `War_Intelligence.ts`, `Battle_Log.ts`, `Reporting.ts`, `Schema.ts` |
 | **Modules** | Domain-specific features (MVCS Pattern) | `Roster.ts`, `Headhunter.ts`, `Database.ts` |
-| **Views** | Sheet manipulation and UI rendering | `View.ts`, `*_View.ts` |
-| **Stores** | Data persistence and state management | `Store.ts`, `*_Store.ts` |
-| **Data Hub** | High-speed raw extraction for Worker Sync | `API_Raw.ts` |
+| **Views** | Sheet manipulation and UI rendering | `View.ts`, `Roster_View.ts`, `Headhunter_View.ts`, `Database_View.ts` |
+| **Stores** | Data persistence and state management | `Store.ts`, `Roster_Store.ts`, `Headhunter_Store.ts`, `Database_Store.ts` |
+| **Data Hub** | High-speed data delivery and API orchestration | `Webapp_Controller.ts`, `API_Public.ts`, `API_Raw.ts` |
 
 ---
 <br />
 
 ## Key Components
+
+### Webapp Controller (`Webapp_Controller.ts`)
+The primary Feature Orchestrator (Layer 3) bridging the spreadsheet "Dumb Store" with the PWA's high-fidelity requirements.
+- **Matrix Reduction Strategy**: Minimizes JSON overhead for mobile clients by compressing data into row-based matrices before transmission. Re-hydration is performed client-side.
+- **100-Recruit Fresh Pool**: Orchestrates a blended recruitment feed by merging persistent candidates from the spreadsheet with real-time discoveries from the Worker scan, ensuring a fresh discovery experience.
+- **Contract Enforcement**: Implements the `WebappControllerContract` to manage member data, recruitment state mutation, and player profile retrieval.
+
+### Public API (`API_Public.ts`)
+The primary REST ingress bridge (Layer 3) that translates external PWA/Worker requests into internal system actions.
+- **Backward Compatibility**: Implements normalization logic that supports both legacy `ids` and modern `items` formats during recruitment dismissal.
+- **Background Dispatcher**: Utilizes `triggerAsyncUpdate` to offload long-running operations (like full roster refreshes) to time-based triggers, preventing request timeouts and ensuring system stability.
+- **Stateless Routing**: Routes `doGet` and `doPost` events to the `WebappController` while enforcing structured JSON responses.
 
 ### Network Engine (`Network.ts`)
 A sophisticated API gateway that manages the limited Google Apps Script quotas.
