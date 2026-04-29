@@ -6,11 +6,10 @@ import {
 } from "@shared";
 import { useRecruiter } from "../composables/useRecruiter";
 
-import RecruitCard from "../components/RecruitCard.vue";
+import { RecruitCard } from "../components";
 
 
 const {
-  sortOptions,
   visibleItems,
   isShowcaseMode,
   refresh,
@@ -19,7 +18,7 @@ const {
   layoutProps,
   layoutEvents,
   getCardMetadata,
-  isSelectionMode,
+  getMemoKeys,
 } = useRecruiter();
 
 </script>
@@ -29,8 +28,6 @@ const {
     title="Headhunter"
     v-bind="layoutProps"
     v-on="layoutEvents"
-    :show-search="true"
-    :sort-options="sortOptions"
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
@@ -47,23 +44,15 @@ const {
       <template #item="{ item, index }">
         <RecruitCard
           :key="item.id"
-          v-memo="[
-            item.id,
+          v-memo="getMemoKeys(item.id, [
             item.potentialScore,
             item.t,
-            item.d.ago,
-            isSelectionMode,
-            getCardMetadata(item.id).isExpanded,
-            getCardMetadata(item.id).isSelected,
-            getCardMetadata(item.id).isRefreshing,
-          ]"
+            item.d.ago
+          ])"
           :id="`recruit-${item.id}`"
           :recruit="item"
-          :expanded="getCardMetadata(item.id).isExpanded"
-          :selected="getCardMetadata(item.id).isSelected"
-          :selection-mode="isSelectionMode"
+          v-bind="getCardMetadata(item.id)"
           :style="{ '--i': index }"
-          :app-is-refreshing="getCardMetadata(item.id).isRefreshing"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
         />

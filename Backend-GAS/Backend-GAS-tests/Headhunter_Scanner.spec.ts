@@ -126,14 +126,17 @@ describe('HeadhunterScanner', () => {
             if (label === "Shadow Seeding") return [
                 [{ type: "ladder", opponent: [{ tag: "#SHADOW1", name: "Shadow Player", clan: null }] }]
             ];
-            if (label === "Shadow Profiles") return [{
+            return [];
+        });
+
+        mocks.Network.fetchRemoteWorker.mockReturnValue({
+            candidates: [{
                 tag: "#SHADOW1",
                 name: "Shadow Player",
                 trophies: 6200,
                 totalDonations: 500,
                 warDayWins: 50
-            }];
-            return [];
+            }]
         });
 
         const result = HeadhunterScanner.scanTournaments(5000, existingRecruits, new Set(), false);

@@ -9,6 +9,8 @@ import {
   ProphetIntelSchema,
   AuditRequestSchema,
   PublicScanRequestSchema,
+  ScanRequestSchema,
+  ClanFullRequestSchema,
   ClanApiRequestSchema,
   FetchRequestSchema,
   SubscriptionRequestSchema,
@@ -40,6 +42,26 @@ describe('Core Schemas', () => {
       expect(v.safeParse(TagSchema, '8L9PPGRCQ').success).toBe(true);
     });
 
+    it('should validate boundary length tags (15 chars)', () => {
+      // 15 chars without # (will be transformed to 16 with #)
+      const longTag = 'ABCDE12345FGHIJ';
+      const result1 = v.safeParse(TagSchema, longTag);
+      expect(result1.success).toBe(true);
+      if (result1.success) {
+        expect(result1.output).toBe(`#${longTag}`);
+        expect(result1.output.length).toBe(16);
+      }
+
+      // 15 chars with # (already includes prefix)
+      const longTagWithHash = '#ABCDE12345FGHIJ';
+      const result2 = v.safeParse(TagSchema, longTagWithHash);
+      expect(result2.success).toBe(true);
+      if (result2.success) {
+        expect(result2.output).toBe(longTagWithHash);
+        expect(result2.output.length).toBe(16);
+      }
+    });
+
     it('should enforce uppercase and mandatory # prefix', () => {
       const result1 = v.safeParse(TagSchema, '2p2gg2gu');
       expect(result1.success).toBe(true);
@@ -65,15 +87,28 @@ describe('Core Schemas', () => {
     it('should reject invalid tag formats', () => {
       expect(v.safeParse(TagSchema, '').success).toBe(false);
       expect(v.safeParse(TagSchema, 'AB').success).toBe(false); // Too short
-      expect(v.safeParse(TagSchema, '1234567890123').success).toBe(false); // Too long
-      expect(v.safeParse(TagSchema, '#INVALID-TAG').success).toBe(false); // Invalid chars
+      expect(v.safeParse(TagSchema, '1234567890123456').success).toBe(false); // Too long (16 chars)
+      expect(v.safeParse(TagSchema, '#INVALID-TAG-WITH-SYMBOLS!').success).toBe(false); // Invalid chars
     });
   });
 
   describe('ScoringWeightsSchema', () => {
     it('should validate correct scoring weights', () => {
       const valid = { TROPHY: 1, DON: 0.5, WAR: 2 };
-      expect(v.safeParse(ScoringWeightsSchema, valid).success).toBe(true);
+      const result = v.safeParse(ScoringWeightsSchema, valid);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.WAR_BASELINE_BONUS).toBe(500);
+      }
+    });
+
+    it('should allow overriding WAR_BASELINE_BONUS', () => {
+      const custom = { TROPHY: 1, DON: 0.5, WAR: 2, WAR_BASELINE_BONUS: 1000 };
+      const result = v.safeParse(ScoringWeightsSchema, custom);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.WAR_BASELINE_BONUS).toBe(1000);
+      }
     });
 
     it('should reject missing or invalid weight types', () => {
@@ -113,6 +148,16 @@ describe('Request Schemas', () => {
       expect(v.safeParse(AuditRequestSchema, { apiKeys: ['key1'] }).success).toBe(true);
       expect(v.safeParse(AuditRequestSchema, { }).success).toBe(false);
     });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const apiKeys = Array(101).fill('key');
+      expect(v.safeParse(AuditRequestSchema, { apiKeys }).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const longKey = 'a'.repeat(2001);
+      expect(v.safeParse(AuditRequestSchema, { apiKeys: [longKey] }).success).toBe(false);
+    });
   });
 
   describe('PublicScanRequestSchema', () => {
@@ -129,20 +174,234 @@ describe('Request Schemas', () => {
     });
 
     it('should validate minimal scan requests', () => {
-      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#TAG1'] }).success).toBe(true);
+      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#TAG1'], apiKeys: ['key1'] }).success).toBe(true);
+    });
+
+    it('should reject requests with missing apiKeys', () => {
+      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#TAG1'] }).success).toBe(false);
     });
 
     it('should reject invalid fields', () => {
-      expect(v.safeParse(PublicScanRequestSchema, { tags: 'not-an-array' }).success).toBe(false);
-      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#T'], minTrophies: 'high' }).success).toBe(false);
+      expect(v.safeParse(PublicScanRequestSchema, { tags: 'not-an-array', apiKeys: ['key1'] }).success).toBe(false);
+      expect(v.safeParse(PublicScanRequestSchema, { tags: ['#T'], apiKeys: ['key1'], minTrophies: 'high' }).success).toBe(false);
+    });
+
+    it('should validate tags array at exactly maxLength of 25', () => {
+      const tags = Array(25).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(true);
+    });
+
+    it('should reject tags array exceeding maxLength of 25', () => {
+      const tags = Array(26).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject blacklist array exceeding maxLength of 25', () => {
+      const tags = ['#TAG1'];
+      const blacklist = Array(26).fill('#TAG2');
+      const data = {
+        tags,
+        blacklist,
+        apiKeys: ['key1'],
+        minTrophies: 5000
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: Array(101).fill('key')
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['a'.repeat(2001)]
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject prophetCache exceeding 1000 entries', () => {
+      const prophetCache: Record<string, any> = {};
+      for (let i = 0; i < 1001; i++) {
+        prophetCache[`#TAG${i.toString(36)}`] = { wins: 5 };
+      }
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['key1'],
+        prophetCache
+      };
+      expect(v.safeParse(PublicScanRequestSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('ScanRequestSchema', () => {
+    it('should validate internal scan requests', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['key1'],
+        blacklist: ['#TAG2'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(true);
+    });
+
+    it('should validate tags array at exactly maxLength of 100', () => {
+      const tags = Array(100).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(true);
+    });
+
+    it('should reject tags array exceeding maxLength of 100', () => {
+      const tags = Array(101).fill('#TAG1');
+      const data = {
+        tags,
+        apiKeys: ['key1'],
+        minTrophies: 5000,
+        scoring: { TROPHY: 1, DON: 1, WAR: 1 }
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject blacklist array exceeding maxLength of 100', () => {
+      const tags = ['#TAG1'];
+      const blacklist = Array(101).fill('#TAG2');
+      const data = {
+        tags,
+        blacklist,
+        apiKeys: ['key1'],
+        minTrophies: 5000
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: Array(101).fill('key')
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['a'.repeat(2001)]
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject prophetCache exceeding 1000 entries', () => {
+      const prophetCache: Record<string, any> = {};
+      for (let i = 0; i < 1001; i++) {
+        prophetCache[`#TAG${i.toString(36)}`] = { wins: 5 };
+      }
+      const data = {
+        tags: ['#TAG1'],
+        apiKeys: ['key1'],
+        prophetCache
+      };
+      expect(v.safeParse(ScanRequestSchema, data).success).toBe(false);
+    });
+  });
+
+  describe('ClanFullRequestSchema', () => {
+    it('should validate clan full snapshot requests', () => {
+      expect(v.safeParse(ClanFullRequestSchema, { tag: '#TAG1' }).success).toBe(true);
+      expect(v.safeParse(ClanFullRequestSchema, { tag: '#TAG1', apiKeys: ['key1'] }).success).toBe(true);
+    });
+
+    it('should normalize tag in clan full requests', () => {
+      const result = v.safeParse(ClanFullRequestSchema, { tag: 'tag1' });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.tag).toBe('#TAG1');
+      }
+    });
+
+    it('should reject missing tag', () => {
+      expect(v.safeParse(ClanFullRequestSchema, {}).success).toBe(false);
     });
   });
 
   describe('FetchRequestSchema', () => {
-    it('should validate fetch requests', () => {
-      expect(v.safeParse(FetchRequestSchema, { urls: ['http://api.com'] }).success).toBe(true);
-      expect(v.safeParse(FetchRequestSchema, { urls: [], scoring: null }).success).toBe(true);
+    it('should validate fetch requests targeting authorized API base', () => {
+      // Default API_BASE is https://proxy.royaleapi.dev/v1
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v1/players/%23P1'] }).success).toBe(true);
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v1/clans/%23C1'], scoring: null }).success).toBe(true);
       expect(v.safeParse(FetchRequestSchema, { }).success).toBe(false);
+    });
+
+    it('should respect dynamic API_BASE environment variable', () => {
+      process.env["API_BASE"] = "https://custom.proxy/v1";
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://custom.proxy/v1/players'] }).success).toBe(true);
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v1/players'] }).success).toBe(false);
+      delete process.env["API_BASE"];
+    });
+
+    it('should reject URLs from unauthorized domains (SSRF prevention)', () => {
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://attacker.com/v1/players'] }).success).toBe(false);
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev.attacker.com/v1'] }).success).toBe(false);
+    });
+
+    it('should reject URLs targeting sibling paths', () => {
+      // Base path is /v1. /v11 should be rejected.
+      expect(v.safeParse(FetchRequestSchema, { urls: ['https://proxy.royaleapi.dev/v11/players'] }).success).toBe(false);
+    });
+
+    it('should reject empty urls array', () => {
+      expect(v.safeParse(FetchRequestSchema, { urls: [] }).success).toBe(false);
+    });
+
+    it('should reject invalid URL formats', () => {
+      expect(v.safeParse(FetchRequestSchema, { urls: ['not-a-url'] }).success).toBe(false);
+    });
+
+    it('should validate urls array at exactly maxLength of 100', () => {
+      const urls = Array(100).fill('https://proxy.royaleapi.dev/v1/test');
+      expect(v.safeParse(FetchRequestSchema, { urls }).success).toBe(true);
+    });
+
+    it('should reject urls array exceeding maxLength of 100', () => {
+      const urls = Array(101).fill('https://proxy.royaleapi.dev/v1/test');
+      expect(v.safeParse(FetchRequestSchema, { urls }).success).toBe(false);
+    });
+
+    it('should reject apiKeys array exceeding 100 entries', () => {
+      const data = {
+        urls: ['https://proxy.royaleapi.dev/v1/players/%23P1'],
+        apiKeys: Array(101).fill('key')
+      };
+      expect(v.safeParse(FetchRequestSchema, data).success).toBe(false);
+    });
+
+    it('should reject individual apiKeys exceeding 2000 characters', () => {
+      const data = {
+        urls: ['https://proxy.royaleapi.dev/v1/players/%23P1'],
+        apiKeys: ['a'.repeat(2001)]
+      };
+      expect(v.safeParse(FetchRequestSchema, data).success).toBe(false);
     });
   });
 
@@ -163,6 +422,23 @@ describe('Request Schemas', () => {
       }).success).toBe(true);
       expect(v.safeParse(SubscriptionRequestSchema, { endpoint: 'https://push.com', keys: {} }).success).toBe(false);
     });
+
+    it('should reject endpoint exceeding 500 characters', () => {
+      const longEndpoint = 'https://push.com/' + 'a'.repeat(500);
+      expect(v.safeParse(SubscriptionRequestSchema, { endpoint: longEndpoint }).success).toBe(false);
+    });
+
+    it('should reject p256dh and auth exceeding 200 characters', () => {
+      const longKey = 'a'.repeat(201);
+      expect(v.safeParse(SubscriptionRequestSchema, {
+        endpoint: 'https://push.com',
+        keys: { p256dh: longKey, auth: 'a' }
+      }).success).toBe(false);
+      expect(v.safeParse(SubscriptionRequestSchema, {
+        endpoint: 'https://push.com',
+        keys: { p256dh: 'a', auth: longKey }
+      }).success).toBe(false);
+    });
   });
 });
 
@@ -181,6 +457,20 @@ describe('Royale API Response Schemas', () => {
         }]
       };
       expect(v.safeParse(RoyaleClanMembersResponseSchema, data).success).toBe(true);
+    });
+
+    it('should reject members with missing trophies', () => {
+      const data = {
+        items: [{
+          tag: '#TAG1',
+          name: 'Player 1',
+          role: 'member',
+          expLevel: 14,
+          donations: 100,
+          donationsReceived: 50
+        }]
+      };
+      expect(v.safeParse(RoyaleClanMembersResponseSchema, data).success).toBe(false);
     });
   });
 
@@ -208,6 +498,46 @@ describe('Royale API Response Schemas', () => {
         challengeCardsWon: 1000
       };
       expect(v.safeParse(RoyalePlayerSchema, data).success).toBe(true);
+    });
+
+    it('should validate nested leagueStatistics', () => {
+      const data = {
+        tag: '#TAG1',
+        name: 'Player 1',
+        trophies: 6000,
+        totalDonations: 10000,
+        warDayWins: 50,
+        challengeCardsWon: 1000,
+        leagueStatistics: {
+          currentSeason: {
+            trophies: 6500
+          }
+        }
+      };
+      const result = v.safeParse(RoyalePlayerSchema, data);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.leagueStatistics?.currentSeason?.trophies).toBe(6500);
+      }
+    });
+
+    it('should provide default for trophies in nested leagueStatistics', () => {
+      const data = {
+        tag: '#TAG1',
+        name: 'Player 1',
+        trophies: 6000,
+        totalDonations: 10000,
+        warDayWins: 50,
+        challengeCardsWon: 1000,
+        leagueStatistics: {
+          currentSeason: {}
+        }
+      };
+      const result = v.safeParse(RoyalePlayerSchema, data);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.output.leagueStatistics?.currentSeason?.trophies).toBe(0);
+      }
     });
   });
 

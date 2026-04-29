@@ -77,6 +77,7 @@ declare var VER_DATABASE_STORE: string;
 declare var VER_BATTLE_LOG: string;
 declare var VER_STORE: string;
 declare var VER_TIME: string;
+declare var VER_WAR_INTELLIGENCE: string;
 
 /**
  * MANAGED AUTOMATION KEYS
@@ -707,6 +708,11 @@ function checkSystemHealthInternal(): void {
       name: "Time",
       current: typeof VER_TIME !== "undefined" ? VER_TIME : "MISSING",
       expected: manifest.TIME,
+    },
+    {
+      name: "War Intelligence",
+      current: typeof VER_WAR_INTELLIGENCE !== "undefined" ? VER_WAR_INTELLIGENCE : "MISSING",
+      expected: manifest.WAR_INTELLIGENCE,
     }
   ];
 

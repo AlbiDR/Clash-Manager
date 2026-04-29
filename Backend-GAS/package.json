@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@google/clasp": "catalog:",
-    "@types/google-apps-script": "^1.0.83",
+    "@types/google-apps-script": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "esbuild": "catalog:",

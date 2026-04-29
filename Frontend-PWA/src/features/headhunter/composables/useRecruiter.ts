@@ -1,11 +1,11 @@
-import { isWorkerConfigured, scanRecruitsDirect } from "@core/api/GasClient";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import { useConsoleController } from "@core/services/useConsoleController";
-import { useShowcaseMode } from "@core/services/useShowcaseMode";
-import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
-import { computed, watch, ref } from "vue";
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+import { computed, watch } from "vue";
 import { useHeadhunter } from "./useHeadhunter";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
@@ -49,20 +49,21 @@ export function useRecruiter() {
 
   // 🛡️ PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
   const recruits = computed(() => {
-    const alive = (data.value?.hh || []).filter(
+    const activeRecruits = (data.value?.hh || []).filter(
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
     // [ADR] Parity with Spreadsheet: Show only the top 50 active recruits.
     // The "infinite scroll" strategy is implemented via automatic replacement:
     // as items are dismissed, the next best results from the 100-item pre-compiled
     // pool slide in from the "backup" 50, maintaining the 50-recruit window.
-    return alive.slice(0, 50);
+    return activeRecruits.slice(0, 50);
   });
 
   const controller = useConsoleController({
     data: recruits,
     filterFn: (recruit: Recruit) => [recruit.n, recruit.id],
     sortStrategies: RecruiterSort,
+    sortOptions: RECRUITER_SORT_OPTIONS,
     defaultSort: "score",
     deepLinkPrefix: "recruit-",
     batchIdMapper: (recruit: Recruit) => recruit.id,
@@ -72,14 +73,12 @@ export function useRecruiter() {
     onDismiss: dismissBulk,
   });
 
-  const sortOptions = RECRUITER_SORT_OPTIONS;
-
   // 🧹 CLEANUP: Extra Recruit Logic managed here
   watch(
     () => data.value?.hh,
     (newRecruits) => {
       if (newRecruits && newRecruits.length > 0) {
-        const currentIds = newRecruits.map((r) => r.id);
+        const currentIds = newRecruits.map((recruit) => recruit.id);
         blacklist.prune(currentIds);
       }
     },
@@ -96,43 +95,51 @@ export function useRecruiter() {
    * 2. BACKGROUND SYNC: Dispatch the dismissal to the GAS backend.
    * 3. RECOVERY: Roll back local state only if the server explicitly rejects the change.
    */
+  /**
+   * RECRUIT DISMISSAL ENGINE
+   *
+   * @remarks
+   * Implements a "Zero Latency" pattern for UI responsiveness.
+   *
+   * @param recruitsToRemove - The set of recruits to be dismissed.
+   */
   function executeDismiss(recruitsToRemove: Recruit[]) {
-    const ids = recruitsToRemove.map(r => r.id);
+    const targetRecruitIds = recruitsToRemove.map(recruit => recruit.id);
     
     // 🎯 DIRECT SCORE CAPTURE: Extract score at the point of dismissal
-    const items = recruitsToRemove.map(r => ({
-      id: r.id,
-      score: r.potentialRawScore || 0,
-      potentialRawScore: r.potentialRawScore || 0
+    const dismissalPayload = recruitsToRemove.map(recruit => ({
+      id: recruit.id,
+      score: recruit.potentialRawScore || 0,
+      potentialRawScore: recruit.potentialRawScore || 0
     }));
 
-    console.log('[Dismissal] Captured scores:', items.map(i => `${i.id}: ${i.score}`));
+    console.log('[Dismissal] Captured scores:', dismissalPayload.map(dismissalItem => `${dismissalItem.id}: ${dismissalItem.score}`));
 
     const { undismissRecruitsAction } = useHeadhunter();
 
     // ⚡ ZERO LATENCY: Visual hide (Tombstone injection)
-    blacklist.hide(ids);
+    blacklist.hide(targetRecruitIds);
 
-    let backendCalled = false;
+    let isBackendContacted = false;
 
-    backendCalled = true;
-    dismissRecruitsAction(items).catch(() => {
+    isBackendContacted = true;
+    dismissRecruitsAction(dismissalPayload).catch(() => {
       // RECOVERY: The dismissRecruitsAction already handles rollback and 
       // error notification for non-transient errors. We just restore 
       // visibility if the action totally fails beyond transient retry.
-      blacklist.restore(ids);
+      blacklist.restore(targetRecruitIds);
     });
 
     // Show undo toast
-    undo(`Dismissed ${ids.length} recruits`, () => {
+    undo(`Dismissed ${targetRecruitIds.length} recruits`, () => {
       // 1. Immediate Local Restore
-      blacklist.restore(ids);
+      blacklist.restore(targetRecruitIds);
       
       // If we have the original recruit data, restore it to the local state
       // to avoid waiting for a refresh or showing filtered out items.
       if (recruitsToRemove.length > 0) {
-        undismissRecruitsAction(ids, recruitsToRemove);
-      } else if (backendCalled) {
+        undismissRecruitsAction(targetRecruitIds, recruitsToRemove);
+      } else if (isBackendContacted) {
         // Fallback if we don't have local data
         info("Restoring from server...");
         refreshGas();
@@ -142,12 +149,15 @@ export function useRecruiter() {
     });
   }
 
+  /**
+   * Triggers the dismissal process for all currently selected recruits in the controller.
+   */
   function dismissBulk() {
     if (controller.selectedIds.value.length === 0) return;
-    const ids = [...controller.selectedIds.value];
+    const targetRecruitIds = [...controller.selectedIds.value];
     
     // 🎯 CAPTURE FULL RECRUITS: Get the complete objects before any state changes
-    const recruitsToRemove = recruits.value.filter(r => ids.includes(r.id));
+    const recruitsToRemove = recruits.value.filter(recruit => targetRecruitIds.includes(recruit.id));
     
     controller.clearSelection();
     executeDismiss(recruitsToRemove);
@@ -155,7 +165,6 @@ export function useRecruiter() {
 
   return {
     ...controller,
-    sortOptions,
     dismissBulk,
   };
 }

@@ -26,9 +26,13 @@ A non-blocking, generator-based engine that calculates the most efficient upgrad
 - **Recursive Lookahead**: Evaluates the "character arc" of a card (determined by `LOOKAHEAD_PRECISION`) to avoid greedy traps and local optima.
 - **Priority Queue**: Uses a Binary Heap to always select the highest-efficiency candidate.
 
+### Trajectory Rendering (TrajectoryList.vue)
+Renders the recommended upgrade path using a high-performance rendering strategy.
+- **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion.
+
 ### Strategy Pattern (ScoringStrategy.ts)
 Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes King Level milestones (15, 16). Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level 16.
+- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
 - **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Constants Registry (Registry.ts)
@@ -44,8 +48,12 @@ Managed via the `useLaboratoryStore` Pinia store. Following Section III of the A
 - **LocalStorage**: Settings (`laboratory-settings`) and Simulation Results (`laboratory-observation`) are persisted to ensure session resilience.
 - **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
 
+### Performance & Memoization
+- **Stability Support**: Implements `getTrajectoryMemoKeys` to provide stable dependency arrays for Vue's `v-memo` directive. This ensures that trajectory items only re-render when critical metrics (Efficiency Index, Upgrade Type) actually change, maintaining 60FPS during active simulations.
+
 ### Behavioral Orchestration (useLaboratory.ts)
-The `useLaboratory` composable serves as the behavioral orchestrator. It encapsulates:
-- **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine.
+The `useLaboratory` composable serves as the behavioral orchestrator, standardizing communication between the simulation logic and the UI.
+- **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution (e.g., "Engine Operational", "Computing Trajectory") and refresh logic.
+- **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine and cancellation of stale runs.
 - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
-- **Persistence Sync**: Proxies state updates to the Pinia store and ensures `LocalStorage` consistency for cross-session resilience.
+- **Performance Optimization**: Centralizes the `getTrajectoryMemoKeys` logic to ensure stable rendering performance across the trajectory list.

@@ -1,8 +1,27 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 <script setup lang="ts">
+/**
+ * [FEATURE] TRAJECTORY ITEM
+ * ----------------------------------------------------------------------------
+ * Rationale: Presentation component for a single upgrade action in the
+ * progression trajectory.
+ * Layer: @features/laboratory
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Displays the transformation of a card (level, rarity) and the resources
+ * required (gold, wildcards, gems) along with the gained experience.
+ * Optimized via `v-memo` in the parent view to prevent re-renders during
+ * intensive simulation cycles.
+ */
 import { Icon } from "@shared";
 import { type UpgradeAction } from "../logic";
 defineProps<{
+  /** The upgrade action data to display. */
   upgrade: UpgradeAction;
+  /** The index in the list for animation staggering. */
   index: number;
 }>();
 

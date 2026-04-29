@@ -2,10 +2,9 @@
 // Copyright (C) 2026 AlbiDR
 
 import { useAppSettings } from "./useAppSettings";
-import { useExternalLink } from "./useExternalLink";
+import { useExternalLink, buildDeepLink } from "./useExternalLink";
 import { useToast } from "./useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
-import { buildDeepLink } from "./useExternalLink";
 
 interface BatchQueueOptions {
   throttleMs?: number;
@@ -240,11 +239,11 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   /**
    * Handles the primary action for the batch queue.
    * Supports both Blitz interception and standard sequential opening.
-   * @param e - The original click event.
+   * @param event - The original click event.
    */
-  function handleAction(e: MouseEvent) {
+  function handleAction(event: MouseEvent) {
     if (isBlasting.value) {
-      e.preventDefault();
+      event.preventDefault();
       const id = selectedIds.value[currentIndex.value];
       if (id) {
         openInGame(id);
@@ -260,7 +259,7 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
     const now = Date.now();
     if (now - lastActionTime.value < throttleMs) {
-      e.preventDefault();
+      event.preventDefault();
       return;
     }
     lastActionTime.value = now;

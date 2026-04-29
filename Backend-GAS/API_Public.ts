@@ -1,10 +1,19 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
 /**
  * ============================================================================
- * MODULE: API_PUBLIC - TypeScript Edition
+ * [MODULE] API_PUBLIC (LAYER 3: FEATURE ORCHESTRATOR)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Pure JSON REST API for the Vue 3 PWA frontend.
- * VERSION: 11.0.1
+ * Pure JSON REST API for the Vue 3 PWA frontend. This module serves as the
+ * primary ingress for all external requests, handling routing, action-based
+ * delegation, and response normalization.
+ *
+ * @remarks
+ * Architecture: CleanStack Layer 3 (@app).
+ * Responsibility: Bridge between external PWA/Worker clients and internal GAS
+ * business logic (WebappController).
+ * Constraint: Must strictly use JSDoc for compatibility with GAS legacy runtime.
  * ============================================================================
  */
 
@@ -93,7 +102,14 @@ export interface WarLogEntry {
 }
 
 /**
- * GET Handler
+ * [ENTRY] GET HANDLER
+ *
+ * @remarks
+ * Standard entry point for Google Apps Script Web App GET requests.
+ * Delegates to handleRequest with "GET" method context.
+ *
+ * @param e - The GAS DoGet event object.
+ * @returns Serialized JSON response.
  */
 function doGet(
   e: GoogleAppsScript.Events.DoGet,
@@ -101,8 +117,20 @@ function doGet(
   return handleRequest(e, "GET");
 }
 
+/**
+ * [ORCHESTRATOR] REQUEST ROUTER
+ *
+ * @remarks
+ * Centralizes request processing for both GET and POST methods.
+ * Implements action-based routing and zero-trust validation boundaries.
+ *
+ * @param e - The GAS event object (DoGet or DoPost).
+ * @param method - The HTTP method used for the request.
+ * @returns Serialized JSON response.
+ */
 function handleRequest(e: GoogleAppsScript.Events.DoGet | GoogleAppsScript.Events.DoPost, method: "GET" | "POST"): GoogleAppsScript.Content.TextOutput {
   try {
+    // [GUARD] ACTION VALIDATION
     // THREAT: Manual validation (Target B [4]).
     // Rationale: Using BaseActionSchema ensures the action is always safely extracted
     // and validated against a schema before processing.
@@ -209,7 +237,14 @@ function handleRequest(e: GoogleAppsScript.Events.DoGet | GoogleAppsScript.Event
 }
 
 /**
- * POST Handler
+ * [ENTRY] POST HANDLER
+ *
+ * @remarks
+ * Standard entry point for Google Apps Script Web App POST requests.
+ * Handles JSON payload parsing and action-based delegation.
+ *
+ * @param e - The GAS DoPost event object.
+ * @returns Serialized JSON response.
  */
 function doPost(
   e: GoogleAppsScript.Events.DoPost,
@@ -225,6 +260,7 @@ function doPost(
       }
     }
 
+    // [GUARD] ACTION EXTRACTION
     // THREAT: Manual validation and "any Plague" (Target B [4]).
     // Rationale: Extracting action via schema ensures consistency between URL params
     // and POST body while eliminating unvalidated 'any' lookups.
@@ -237,15 +273,22 @@ function doPost(
         if (!valRes.success) return respond(null, "VALIDATION_ERROR", `Invalid payload structure.`);
         const payload = valRes.output;
 
-        // [GUARD] DUAL-MODE SUPPORT: Handle both mapping formats and ensure score capture
+        // [GUARD] DUAL-MODE SUPPORT
+        // DECISION LOG: Support both legacy 'ids' (simple string array) and modern 'items'
+        // (objects with scores) to ensure backward compatibility with cached client versions.
         const rawItems = payload.items || [];
         const rawIds = payload.ids || [];
         
         // Normalize: Zip entries and prioritize score-aware objects
         const normalizedItems = (rawItems.length > 0 ? rawItems : rawIds).map(item => {
+          // DECISION LOG: If legacy string ID, default score to 0.
           if (typeof item === 'string') return { id: item, score: 0 };
+
           if (item && typeof item === 'object') {
-             // [GUARD] AGGRESSIVE FALLBACK: Handle any possible naming variant from any client version
+             // [GUARD] AGGRESSIVE FALLBACK
+             // DECISION LOG: Client-side score field names have drifted over versions
+             // (score vs rawScore vs potentialRawScore). This fallback chain ensures
+             // recruitment performance data is captured regardless of the client's build date.
              const rawVal = item.potentialRawScore !== undefined ? item.potentialRawScore : 
                             (item.score !== undefined ? item.score : (item.rawScore || 0));
              
@@ -272,6 +315,7 @@ function doPost(
       }
 
       case "triggerupdate": {
+        // [GUARD] PAYLOAD VALIDATION
         const valRes = v.safeParse(TriggerUpdatePayloadSchema, rawPayload);
         if (!valRes.success) return respond(null, "VALIDATION_ERROR", `triggerUpdate requires a "target" string.`);
         return respond(triggerAsyncUpdate(valRes.output.target));
@@ -305,7 +349,15 @@ function doPost(
 }
 
 /**
- * RESPONSE UTILITIES
+ * [UTILITY] RESPONSE ENVELOPE WRAPPER
+ *
+ * @remarks
+ * Normalizes all API responses into a consistent envelope structure.
+ *
+ * @param data - The successful response payload.
+ * @param errorCode - Optional error code if the request failed.
+ * @param errorMessage - Optional descriptive error message.
+ * @returns GAS TextOutput formatted as application/json.
  */
 function respond<T>(
   data: T,
@@ -324,6 +376,16 @@ function respond<T>(
   );
 }
 
+/**
+ * [UTILITY] RAW RESPONSE PASS-THROUGH
+ *
+ * @remarks
+ * Returns a pre-serialized JSON string without additional wrapping.
+ * Used for cached responses or large-matrix data.
+ *
+ * @param jsonString - Pre-serialized JSON payload.
+ * @returns GAS TextOutput formatted as application/json.
+ */
 function respondRaw(jsonString: string): GoogleAppsScript.Content.TextOutput {
   return ContentService.createTextOutput(jsonString).setMimeType(
     ContentService.MimeType.JSON,
@@ -355,7 +417,16 @@ function getModuleVersions(): Record<string, string> {
 }
 
 /**
- * ASYNC UPDATE DISPATCHER
+ * [ASYNC] UPDATE DISPATCHER (QUEUE)
+ *
+ * @remarks
+ * Queues a background update task using GAS time-based triggers.
+ * Rationale: Prevents request timeouts for long-running synchronization tasks.
+ *
+ * @warning Side Effect: Mutates ScriptApp triggers and global UserProperties.
+ *
+ * @param target - The subsystem to update (members|roster|headhunter).
+ * @returns Status object indicating success or BUSY state.
  */
 function triggerAsyncUpdate(target: string | undefined): any {
   const normTarget = (target || "").toLowerCase().trim();
@@ -402,6 +473,15 @@ function triggerAsyncUpdate(target: string | undefined): any {
   });
 }
 
+/**
+ * [ASYNC] UPDATE EXECUTOR
+ *
+ * @remarks
+ * Triggered by GAS time-based infrastructure. Executes the actual sync logic
+ * based on the target stored in UserProperties.
+ *
+ * @warning Critical: This function is invoked as a global callback.
+ */
 function dispatchAsyncUpdate(): void {
   const target = Registry.Services.Store.props.get("PENDING_UPDATE_TARGET");
   if (!target) {

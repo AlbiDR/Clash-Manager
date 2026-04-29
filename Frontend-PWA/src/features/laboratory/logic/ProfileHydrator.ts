@@ -66,12 +66,13 @@ const ProfileHydrator = {
     let cardsData: Array<{ name?: string, rarity?: string, level?: number, count?: number, isTowerTroop?: boolean }> = [];
 
     if (isInternal) {
-      const p = data.profile;
+      // PATHOGEN: Anemic variable 'p' replaced with domain-descriptive 'rawProfile'.
+      const rawProfile = data.profile;
       profile = {
-        name: p.name || "Unknown",
-        tag: p.tag || "0",
-        kingLevel: p.kingLevel || 1,
-        xpIntoLevel: asXP(p.xpIntoLevel || 0)
+        name: rawProfile.name || "Unknown",
+        tag: rawProfile.tag || "0",
+        kingLevel: rawProfile.kingLevel || 1,
+        xpIntoLevel: asXP(rawProfile.xpIntoLevel || 0)
       };
       cardsData = data.cards || [];
     } else {
@@ -84,17 +85,18 @@ const ProfileHydrator = {
       cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
     }
 
-    const cards: Card[] = cardsData.map((c) => {
-      const rarity = normalizeRarity(c.rarity || "Common");
-      const level = isInternal ? (c.level || 1) : normalizeLevel(c.level || 1, rarity);
+    const cards: Card[] = cardsData.map((cardSnapshot) => {
+      // PATHOGEN: Anemic variable 'c' replaced with 'cardSnapshot'.
+      const rarity = normalizeRarity(cardSnapshot.rarity || "Common");
+      const level = isInternal ? (cardSnapshot.level || 1) : normalizeLevel(cardSnapshot.level || 1, rarity);
       
       return {
-        name: (c.name || "Unknown Card") as CardName,
+        name: (cardSnapshot.name || "Unknown Card") as CardName,
         rarity: rarity,
         level: Math.max(1, Math.min(level, CARD_LEVEL_CAP)),
-        count: c.count || 0,
+        count: cardSnapshot.count || 0,
         // BUGFIX: Ensure boolean coercion is explicit to avoid 'undefined' leaks in domain models.
-        isTowerTroop: Boolean(c.isTowerTroop) || ( !isInternal && "towerTroops" in data && Array.isArray(data.towerTroops) && data.towerTroops.some((tt) => tt.name === c.name) ) || false
+        isTowerTroop: Boolean(cardSnapshot.isTowerTroop) || ( !isInternal && "towerTroops" in data && Array.isArray(data.towerTroops) && data.towerTroops.some((towerTroopSnapshot) => towerTroopSnapshot.name === cardSnapshot.name) ) || false
       };
     });
 
@@ -117,8 +119,9 @@ const ProfileHydrator = {
    * Initial seed for the simulation loop.
    */
   createInitialState(data: PlayerData): SimulationState {
-    const kingRow = KING_XP_TABLE.find(k => k.level === data.profile.kingLevel) || KING_XP_TABLE[0];
-    const cumulativeXp = addXP(kingRow.cumulative, data.profile.xpIntoLevel);
+    // PATHOGEN: Anemic variable 'k' replaced with 'kingLevelRow'.
+    const kingLevelRow = KING_XP_TABLE.find(kingLevelEntry => kingLevelEntry.level === data.profile.kingLevel) || KING_XP_TABLE[0];
+    const cumulativeXp = addXP(kingLevelRow.cumulative, data.profile.xpIntoLevel);
 
     return {
       roster: data.cards,

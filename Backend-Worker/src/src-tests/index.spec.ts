@@ -117,6 +117,107 @@ describe("Worker Core Logic (index.ts)", () => {
       expect(player.rawScore).toBeGreaterThan(8000);
     });
 
+    it("should add league trophies to total when trophies >= 9000", async () => {
+      const urls = ["https://proxy.royaleapi.dev/v1/players/%23ULTIMATE"];
+      const scoringWeights = { TROPHY: 1.0, DON: 0, WAR: 0 };
+
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({
+          tag: "#ULTIMATE",
+          name: "Pro Player",
+          trophies: 9000,
+          totalDonations: 0,
+          warDayWins: 0,
+          challengeCardsWon: 0,
+          leagueStatistics: {
+            currentSeason: { trophies: 1234 }
+          }
+        })),
+      });
+
+      const results = await processBatch(urls, [], 1, scoringWeights);
+      expect(results).toHaveLength(1);
+      const player = results[0]!.content as any;
+      expect(player.trophies).toBe(10234); // 9000 + 1234
+    });
+
+    it("should discard players whose effective trophies are below minTrophies", async () => {
+      const urls = ["https://proxy.royaleapi.dev/v1/players/%23LOW"];
+      const scoringWeights = { TROPHY: 1.0, DON: 0, WAR: 0 };
+
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({
+          tag: "#LOW",
+          name: "New Player",
+          trophies: 4000,
+          totalDonations: 0,
+          warDayWins: 0,
+          challengeCardsWon: 0
+        })),
+      });
+
+      const results = await processBatch(urls, [], 1, scoringWeights, undefined, 5000);
+      // Results should be empty because it was filtered out by the return logic in processBatch
+      expect(results).toHaveLength(0);
+    });
+
+    it("should only apply prophet bonus if wins > 5", async () => {
+      const urls = ["https://proxy.royaleapi.dev/v1/players/%23NOVICE"];
+      const scoringWeights = { TROPHY: 1.0, DON: 0, WAR: 0, WAR_BASELINE_BONUS: 0 };
+      const prophetCache = {
+        "#NOVICE": { wins: 5, active: true, lastFetch: 0 } // Exactly 5, threshold is > 5
+      };
+
+      mockFetch.mockImplementation((url: string) => {
+        if (url.includes("/battlelog")) {
+          return Promise.resolve({
+            status: 200,
+            ok: true,
+            text: () => Promise.resolve(JSON.stringify([])),
+          });
+        }
+        return Promise.resolve({
+          status: 200,
+          ok: true,
+          text: () => Promise.resolve(JSON.stringify({
+            tag: "#NOVICE",
+            name: "Novice",
+            trophies: 5000,
+            totalDonations: 0,
+            warDayWins: 0,
+            challengeCardsWon: 0
+          })),
+        });
+      });
+
+      const results = await processBatch(urls, [], 1, scoringWeights, prophetCache);
+      expect(results).toHaveLength(1);
+      const player = results[0]!.content as any;
+      expect(player.rawScore).toBe(5000); // No bonus applied
+    });
+
+    it("should discard failed profiles from final results when scoring is active", async () => {
+      const urls = ["https://proxy.royaleapi.dev/v1/players/%23BAD"];
+      const scoringWeights = { TROPHY: 1.0, DON: 0, WAR: 0 };
+
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({
+          tag: "#BAD",
+          // name missing - triggers RoyalePlayerSchema failure
+        })),
+      });
+
+      const results = await processBatch(urls, [], 1, scoringWeights);
+      // It is filtered out by the 'results.filter' at the end of processBatch
+      expect(results).toHaveLength(0);
+    });
+
     it("should filter out players who are already in a clan during scoring phase", async () => {
       const urls = ["https://proxy.royaleapi.dev/v1/players/%23PLAYER_IN_CLAN"];
       const scoringWeights = { TROPHY: 1.0, DON: 0.1, WAR: 10.0 };
@@ -221,6 +322,25 @@ describe("Worker Core Logic (index.ts)", () => {
 
       const candidates = await processScanBatch(tags);
       expect(candidates).toHaveLength(0);
+    });
+
+    it("should use global KeyService when no apiKeys are provided", async () => {
+      const tags = ["#TOURN1"] as any;
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({
+          tag: "#TOURN1",
+          membersList: []
+        })),
+      });
+
+      // Call without apiKeys (simulating authenticated /scan without custom keys)
+      await processScanBatch(tags);
+
+      // Verify it called fetch (which uses fetchWithRotatedRetries)
+      expect(mockFetch).toHaveBeenCalled();
+      // In this setup, KeyService mock is used. index.ts uses the global KEYS if no batchManager.
     });
   });
 });

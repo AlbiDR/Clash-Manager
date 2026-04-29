@@ -93,14 +93,14 @@ export function useLaboratory() {
     if (isSimulating.value && lastAnalyzedTag === currentTag) return;
     lastAnalyzedTag = currentTag;
 
-    const simId = ++currentSimulationId;
+    const simulationId = ++currentSimulationId;
     store.setSimulating(true);
     
-    const s = settings.value;
-    const forceInfinite = s.strategy === "Level Projection";
+    const currentSettings = settings.value;
+    const forceInfinite = currentSettings.strategy === "Level Projection";
     
     const engineSettings: OptimizationSettings = {
-      ...s,
+      ...currentSettings,
       infiniteResources: forceInfinite
     };
 
@@ -110,30 +110,30 @@ export function useLaboratory() {
 
     const processBatch = () => {
       // Cancellation check: if a newer simulation has started, abort this one.
-      if (simId !== currentSimulationId || !currentSimulation) return;
+      if (simulationId !== currentSimulationId || !currentSimulation) return;
 
-      let lastState: SimulationState | null = null;
-      let startTime = performance.now();
+      let latestSimulationState: SimulationState | null = null;
+      let batchStartTime = performance.now();
       const BATCH_TIME_MS = 10;
       
-      while (performance.now() - startTime < BATCH_TIME_MS) {
+      while (performance.now() - batchStartTime < BATCH_TIME_MS) {
         const { value, done } = currentSimulation.next();
         if (done) {
-          if (value && simId === currentSimulationId) {
+          if (value && simulationId === currentSimulationId) {
             store.setOperation(mapStateToResult(value, observation.value?.profile as PlayerProfile, initialTotalXp));
           }
-          if (simId === currentSimulationId) {
+          if (simulationId === currentSimulationId) {
             currentSimulation = null;
             store.setSimulating(false);
           }
           return;
         }
-        lastState = value;
+        latestSimulationState = value;
       }
 
       // Update intermediate state for progress feeling - throttled to ~30fps
-      if (lastState && simId === currentSimulationId) {
-        store.setOperation(mapStateToResult(lastState, observation.value?.profile as PlayerProfile, initialTotalXp));
+      if (latestSimulationState && simulationId === currentSimulationId) {
+        store.setOperation(mapStateToResult(latestSimulationState, observation.value?.profile as PlayerProfile, initialTotalXp));
       }
 
       if (window.requestIdleCallback) {
@@ -157,9 +157,9 @@ export function useLaboratory() {
    * @param rawInventory - Optional inventory overrides.
    */
   function ingest(rawSnapshot: unknown, rawInventory?: unknown) {
-    let data: PlayerData;
+    let hydratedData: PlayerData;
     try {
-      data = ProfileHydrator.hydrate(rawSnapshot);
+      hydratedData = ProfileHydrator.hydrate(rawSnapshot);
     } catch (err: unknown) {
       // THREAT: Malformed player profile causing simulation engine crash.
       // Rationale: Explicitly catching hydration failures prevents the engine
@@ -172,37 +172,33 @@ export function useLaboratory() {
 
     // If rawInventory is provided, merge it into the data before loading persisted overrides
     if (rawInventory) {
-       const invResult = v.safeParse(RawInventorySchema, rawInventory);
-       if (invResult.success) {
-          const inv = invResult.output;
-          data.inventory = {
-            ...data.inventory,
-            gold: asGold(inv.gold ?? Number(data.inventory.gold)),
-            gems: asGems(inv.gems ?? Number(data.inventory.gems)),
+       const inventoryValidation = v.safeParse(RawInventorySchema, rawInventory);
+       if (inventoryValidation.success) {
+          const validatedInventory = inventoryValidation.output;
+          hydratedData.inventory = {
+            ...hydratedData.inventory,
+            gold: asGold(validatedInventory.gold ?? Number(hydratedData.inventory.gold)),
+            gems: asGems(validatedInventory.gems ?? Number(hydratedData.inventory.gems)),
             wildCards: {
-              ...data.inventory.wildCards,
-              Common: inv.wildCards?.Common ?? data.inventory.wildCards.Common,
-              Rare: inv.wildCards?.Rare ?? data.inventory.wildCards.Rare,
-              Epic: inv.wildCards?.Epic ?? data.inventory.wildCards.Epic,
-              Legendary: inv.wildCards?.Legendary ?? data.inventory.wildCards.Legendary,
-              Champion: inv.wildCards?.Champion ?? data.inventory.wildCards.Champion,
+              ...hydratedData.inventory.wildCards,
+              ...validatedInventory.wildCards
             }
           };
        } else {
-          console.warn("[Laboratory] rawInventory validation failed", invResult.issues);
+          console.warn("[Laboratory] rawInventory validation failed", inventoryValidation.issues);
        }
     }
 
-    data.inventory = store.loadPersistedInventory(data);
+    hydratedData.inventory = store.loadPersistedInventory(hydratedData);
 
-    const currentLevel = data.profile.kingLevel;
+    const currentLevel = hydratedData.profile.kingLevel;
     if (!settings.value.targetLevel || settings.value.targetLevel <= currentLevel) {
       store.setSettings({
         targetLevel: calculateDefaultTarget(currentLevel)
       });
     }
 
-    store.setObservation(data);
+    store.setObservation(hydratedData);
     analyze();
   }
 
@@ -285,10 +281,23 @@ export function useLaboratory() {
     loading: isFetching.value,
     isEmpty: isEmpty.value,
     syncError: fetchError.value || undefined,
+    emptyMessage: !clashData.value?.playerTag ? 'Target Required' : 'No results found',
+    emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
+    emptyIcon: 'flask',
     hubInfo: currentSource.value ? {
       source: currentSource.value,
       hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
     } : undefined
+  }));
+
+  /**
+   * LAYOUT EVENTS (Standardized Interface)
+   *
+   * @remarks
+   * Maps UI events from ConsoleLayout directly to controller methods.
+   */
+  const layoutEvents = computed(() => ({
+    refresh: fetchTrackedPlayer
   }));
 
   /**
@@ -322,12 +331,31 @@ export function useLaboratory() {
     isFetching,
     fetchError,
     layoutProps,
+    layoutEvents,
 
     ingest,
     updateInventory: store.updateInventory,
     analyze,
     setSettings: store.setSettings,
     handleVaultUpdate,
-    refresh: fetchTrackedPlayer
+    refresh: fetchTrackedPlayer,
+
+    /**
+     * MEMOIZATION KEY GENERATOR
+     *
+     * @remarks
+     * Centralizes the dependency list for Vue's `v-memo` directive.
+     * Ensures that trajectory list items only re-render when the recommended
+     * upgrade action actually changes, improving performance during simulations.
+     *
+     * @param upgrade - The upgrade action to memoize.
+     * @returns A stable array of dependencies for `v-memo`.
+     */
+    getTrajectoryMemoKeys: (upgrade: UpgradeAction) => [
+      upgrade.cardName,
+      upgrade.targetLevel,
+      upgrade.efficiencyIndex,
+      upgrade.upgradeType
+    ],
   };
 }

@@ -1,0 +1,11 @@
+project_id = "hucktamloykszinwbtuh"
+
+[api]
+port = 54321
+schemas = ["public", "substrate", "drivers", "features"]
+
+[db]
+port = 54322
+
+[functions.ingest-royale-data]
+verify_jwt = false

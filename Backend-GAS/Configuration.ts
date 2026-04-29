@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Single Source of Truth for the entire application.
  * ROLE: Controls API Keys, Endpoints, Layouts, Schemas, and the UI Menu.
- * VERSION: 10.0.20
+ * VERSION: 13.1.0
  * ============================================================================
  */
 
@@ -69,6 +69,7 @@ export interface AppConfig {
       BATTLE_LOG: string;
       STORE: string;
       TIME: string;
+      WAR_INTELLIGENCE: string;
     };
     CLAN_TAG: string;
     PLAYER_TAG: string;
@@ -219,8 +220,8 @@ export var CONFIG: AppConfig = {
       ROSTER: "13.1.0",
       SCORING: "13.1.0",
       SCORING_KERNEL: "13.1.0",
-      HEADHUNTER: "14.3.5", 
-      CONTROLLER_WEBAPP: "13.1.0",
+      HEADHUNTER: "14.3.5",
+      CONTROLLER_WEBAPP: "13.1.2",
       REGISTRY: "13.1.0",
       API_PUBLIC: "13.1.0",
       SHARED_TYPES: "1.0.0",
@@ -230,12 +231,13 @@ export var CONFIG: AppConfig = {
       ROSTER_TYPES: "1.0.0",
       HH_TYPES: "1.0.1",
       VIEW: "1.0.1",
-      VALIDATION: "1.0.0",
+      VALIDATION: "1.2.0",
       REPORTING: "1.2.0",
       DATABASE_STORE: "13.1.1",
       BATTLE_LOG: "1.0.0",
       STORE: "2.0.0",
-      TIME: "1.0.1"
+      TIME: "1.0.1",
+      WAR_INTELLIGENCE: "12.4.1"
     },
 
     CLAN_TAG: _PROPS["ClanTag"] || "",

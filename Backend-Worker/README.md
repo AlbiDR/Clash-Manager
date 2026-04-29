@@ -1,6 +1,6 @@
 # Clash Manager -- Remote Worker (Render)
 
-[![Worker](https://img.shields.io/badge/Worker-v10.0.0-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Worker](https://img.shields.io/badge/Worker-v10.1.4-6D409F?style=flat-square&logo=render&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Muscle**. A high-performance, strictly typed Express.js server designed to offload heavy data operations from the Google Apps Script environment. It handles bulk URL fetching, intelligent player scanning, deduplication, and complex scoring logic to circumvent generic platform quotas. Hosted on **Render**.
 
@@ -9,14 +9,28 @@ The **Muscle**. A high-performance, strictly typed Express.js server designed to
 
 ## Technical Specifications
 
-- **Layer**: Layer 1 (@core)
-- **Role**: Infrastructure kernel for high-concurrency network delegation.
+- **Layer**: Layer 1 (@core) / Layer 5 (@root) bridge.
+- **Role**: Infrastructure kernel for high-concurrency network delegation and autonomous data synchronization.
 - **Runtime**: Node.js (Express) with TypeScript.
-- **Architecture**: Stateless, high-concurrency worker pool.
-- **Security**: Strict Bearer token validation with path-based exemptions.
+- **Architecture**: Registry-based service pattern with isolated business modules.
+- **Security**: Strict Bearer token validation with path-based exemptions and SSRF prevention.
 - **Intelligence**: Integrated "Deep Delegation" scoring and Prophet Cache logic.
 - **Resource Management**: Proactive "Quota Guard" (15,000 daily request limit) to preserve the shared Royale API budget.
 - **Resilience**: Automatic retries with exponential backoff and jitter.
+
+---
+<br />
+
+## System Architecture
+
+The worker follows the **CleanStack Architecture** (Section II), organizing logic into distinct services and controllers:
+
+| Layer | Responsibility | Key Modules |
+| :--- | :--- | :--- |
+| **Control** | Public API ingress, routing, and authentication | `index.ts`, `WorkerHubController.ts` |
+| **Services** | High-level business logic (Recruitment & Scoring) | `RecruitmentService.ts`, `PayloadKernel.ts` |
+| **Drivers** | Low-level hardware/network brokerage | `RoyaleApiService.ts`, `HubPersistenceService.ts` |
+| **Registry** | Singleton management and pool statistics | `KeyService.ts`, `Network.ts` |
 
 ---
 <br />
@@ -54,14 +68,12 @@ Clash Manager Worker is running
 #### `GET /capabilities`
 Returns the current worker version and internal configuration limits. Used by the GAS backend for environment discovery.
 
-> **Note**: The worker utilizes a tiered versioning hierarchy. The **Discovery Version** (`v10.1.1`) signals capability sets and protocol stability to the GAS backend, while **Internal Metadata** (`v10.1.4`) tracks specific scan logic refinements. These are decoupled from the **Package Version** (`v10.0.0`) which governs the monorepo deployment.
-
 **Response:**
 ```json
 {
   "status": "success",
   "data": {
-    "version": "10.1.1",
+    "version": "10.1.4",
     "concurrency": 20,
     "timeoutMs": 45000,
     "maxRetries": 2
@@ -72,7 +84,7 @@ Returns the current worker version and internal configuration limits. Used by th
 > **Note**: The Worker Hub currently returns raw matrices (arrays of arrays) as provided by the GAS dumb store. Re-hydration and field mapping are performed by the PWA's `GasClient.ts` to minimize Worker-side transformation overhead.
 
 #### `GET /health`
-Performs a deep health check, including upstream API connectivity validation and internal key pool statistics.
+Performs a multi-tier health check to ensure the worker is operational. **Upstream API connectivity validation** is performed only for authenticated callers to prevent unauthorized quota depletion.
 
 **Response:**
 ```json
@@ -91,6 +103,8 @@ Performs a deep health check, including upstream API connectivity validation and
 #### `GET /hub/state`
 Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for the PWA. Fails over to atomic L2 Disk Cache during a cold boot.
 
+> **Note**: Returns a **503 Service Unavailable** response with a structured `HubError` (`ERR_STATE_MISSING`) if the state has not yet been initialized or synced from the GAS backend. The error object includes the `layer` field (e.g., `WORKER_PERSISTENCE`) to assist in distributed debugging.
+
 **Response:**
 ```json
 {
@@ -101,21 +115,19 @@ Returns the 0ms-latency L1 Memory Cache representing the current `HubState` for 
       "lastCompiled": "2026-01-01T12:00:00.000Z",
       "lastFetched": "2026-01-01T11:55:00.000Z",
       "status": "healthy",
-      "version": "v1_hub",
+      "version": "10.1.4",
       "source": "RENDER_WORKER"
     },
     "data": {
       "roster": [
-        ["Clan Leaderboard"],
-        ["Tag", "Name", "Role", "Trophies", "Days Tracked", "Received Weekly", "Average Daily Donations", "Total Donations", "Last Seen", "War Rate", "Average War Fame", "War History", "Performance Raw Score", "Performance Score", "Trend"],
-        ["id", "n", "role", "t", "days", "req", "avg", "tot", "seen", "rate", "wfame", "hist", "performanceRawScore", "performanceScore", "dt"],
-        ["#P1", "Player 1", "Leader", 7500, 150, 200, 50, 7500, "2026-01-01T12:00:00Z", "100%", 2400, "2400 26W01 | 2500 26W02", 50000, 100, 250]
+        ["", "Clan Leaderboard"],
+        ["", "Tag", "Name", "Role", "Trophies", "Days Tracked", "Received Weekly", "Average Daily Donations", "Total Donations", "Last Seen", "War Rate", "Average War Fame", "War History", "Performance Raw Score", "Performance Score", "Trend"],
+        ["", "#P1", "Player 1", "Leader", 7500, 150, 200, 50, 7500, "2026-01-01T12:00:00Z", "100%", 2400, "2400 26W01 | 2500 26W02", 50000, 100, 250]
       ],
       "headhunter": [
-        ["Headhunter Pool"],
-        ["Tag", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
-        ["id", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"],
-        ["#R1", "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
+        ["", "Headhunter Pool"],
+        ["", "Tag", "Invited", "Name", "Trophies", "Donations", "Cards Won", "War Wins", "Found Date", "Potential Raw Score", "Potential Score", "Last Scan (Timestamp)"],
+        ["", "#R1", false, "Recruit 1", 8000, 500, 1000, 50, "2026-01-01T10:00:00Z", 48000, 95, "2026-01-01T11:55:00Z"]
       ]
     }
   }
@@ -140,9 +152,13 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 **Payload:**
 ```json
 {
-  "urls": ["/players/%23TAG1", "/clans/%23TAG2"],
+  "urls": [
+    "https://proxy.royaleapi.dev/v1/players/%23TAG1",
+    "https://proxy.royaleapi.dev/v1/clans/%23TAG2"
+  ],
   "apiKeys": ["sk_key1", "sk_key2"],
-  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 }
+  "scoring": { "TROPHY": 0.4, "DON": 0.3, "WAR": 0.3 },
+  "minTrophies": 5000
 }
 ```
 
@@ -150,16 +166,23 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ```json
 {
   "results": [
-    { "code": 200, "content": { "tag": "#TAG1", "name": "..." } },
-    { "code": 200, "content": { "tag": "#TAG2", "name": "..." } }
+    { "code": 200, "content": { "tag": "#TAG1", "name": "...", "trophies": 6500 }, "keyUsed": "CRK01" },
+    { "code": 200, "content": null, "keyUsed": "CRK02" } // Discarded: Trophies < minTrophies
   ]
 }
 ```
 
+> **Note**: If `minTrophies` is specified and a player's **Effective Trophies** do not meet the threshold, the response `content` will be `null`.
+
 ### Intelligence & Scanning
 
 #### `POST /scan` / `POST /public/scan`
-Scans tournament brackets to discover new recruits. Configurable with blacklists. `POST /scan` requires authentication, while `/public/scan` is open.
+Scans tournament brackets to discover new recruits. Orchestrates two phases: Discovery (Phase 1) and optional Scoring (Phase 2).
+
+- **`/scan`**: Privileged entry point; requires authentication. Includes advanced telemetry (`trace`) and deep Prophet Cache integration. `apiKeys` are **optional** (falls back to internal pool).
+- **`/public/scan`**: Public entry point. Requires **mandatory** `apiKeys` in the payload to prevent unauthorized usage of the worker's internal key pool.
+
+> **Note**: These endpoints are subject to **Input Bounding**. `/public/scan` allows up to **25** tags/blacklist entries, while `/scan` allows up to **100**.
 
 **Payload:**
 ```json
@@ -173,7 +196,21 @@ Scans tournament brackets to discover new recruits. Configurable with blacklists
 }
 ```
 
-**Response:**
+**Response (`/public/scan`):**
+```json
+{
+  "candidates": [
+    { "tag": "#R1", "name": "Recruit 1", "trophies": 6500, "rawScore": 12500, ... }
+  ],
+  "_debug": {
+    "phase1": 50,
+    "phase2": 10,
+    "apiBase": "..."
+  }
+}
+```
+
+**Response (`/scan` — Privileged):**
 ```json
 {
   "candidates": [
@@ -305,8 +342,9 @@ The monorepo is governed by a **7-agent Nightly Pipeline** (powered by Google Ju
 
 The worker implements a **Deep Delegation** strategy to optimize the entire Clash Manager ecosystem.
 
-1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and allows for larger batch processing than the GAS environment could handle alone.
-2. **Prophet Bonus**: The worker integrates with a "Prophet Cache"--historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
+1. **Scoring Offload**: By calculating complex player scores server-side (using the Scoring_Kernel), the worker reduces GAS execution time and facilitates larger batch processing. Recruitment scoring results are automatically sliced to the **top 200** candidates, preventing massive payload inflation when returning data to the GAS "Dumb Store".
+2. **Effective Trophies**: To support the game's tiered ranking system, the worker calculates "Effective Trophies" by summing a player's global ladder trophies and their current season league trophies (only if global trophies >= 9,000). This value is used for both recruitment scoring and `minTrophies` filtering.
+3. **Prophet Bonus**: The worker integrates with a "Prophet Cache"—historical war data provided by the GAS backend. When scanning or fetching players, the worker automatically applies a **25% multiplier** (Prophet Bonus) to players with proven historical war success (e.g., >5 wins), ensuring elite candidates are prioritized in the results.
 
 ---
 
@@ -314,9 +352,10 @@ The worker implements a **Deep Delegation** strategy to optimize the entire Clas
 
 To preserve the project's shared Royale API budget and prevent accidental exhaustion by the autonomous Hub, the worker implements a strict **Quota Guard**:
 
-- **Daily Budget**: All Royale API traffic originating from the worker is capped at **15,000 requests per 24-hour period**.
-- **Fail-Fast Evaluation**: High-volume operations (`processBatch`, `processScanBatch`) perform an estimated usage check before execution. If the operation would exceed the remaining budget, it is aborted with a `ERR_QUOTA_EXHAUSTED` HubError.
-- **Real-Time Tracking**: Every upstream request is tracked in memory (ephemeral) and reset daily at 00:00 UTC.
+- **Daily Budget**: All Royale API traffic originating from the worker is capped at **15,000 requests per 24-hour period** (configured via `MAX_FETCH_DAILY_GUARD` in `Network.ts`).
+- **Fail-Fast Evaluation**: High-volume operations (`processBatch`, `processScanBatch`, `audit`) perform an estimated usage check before execution using `Network.quotaCheck()`. If the operation would exceed the remaining budget, it is aborted with a `ERR_QUOTA_EXHAUSTED` HubError.
+- **Error Classification**: The worker utilizes robust error classification at the Layer 5 control surface. Structured `HubError` objects (like quota exhaustion) are validated via Valibot and reported with human-readable messages to ensure clear diagnostic feedback for the PWA and GAS backend.
+- **Real-Time Tracking**: Every upstream request is tracked in memory (ephemeral) via `Network.addQuotaUsage()` and reset daily at 00:00 UTC.
 
 ---
 <br />
@@ -325,15 +364,36 @@ To preserve the project's shared Royale API budget and prevent accidental exhaus
 
 The worker enforces a strict security perimeter via `authMiddleware`:
 
-- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
-- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`, `/hub/state`) are exempt from token validation.
+- **Bearer Token**: All privileged requests (`/fetch`, `/scan`, `/clan/*`, `/audit`, `/hub/sync/manual`, `/hub/state`) must include the `Authorization: Bearer <REMOTE_WORKER_SECRET>` header.
+- **Auth Path Normalization**: Trailing slashes are automatically stripped from request paths before authentication and public exemption checks, ensuring consistent security enforcement.
+- **Public Exemptions**: To support PWA health checks and public recruitment scans, specific routes (`/`, `/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are exempt from token validation.
 - **DOS Protection**: Authentication is validated before large payloads are parsed, mitigating potential Denial-of-Service attacks.
+- **SSRF Prevention (Validation Boundary)**: The `/fetch` endpoint utilizes a strict `v.url()` and origin/path-prefix check (Valibot) to ensure requested URLs target only the authorized Royale API base (configured via `API_BASE`). This prevents Server-Side Request Forgery and unauthorized exfiltration of internal resources. Requests are further bounded to **100** URLs per batch to mitigate bulk scanning abuse.
+
+### Defense in Depth: Zero-Trust Validation
+The worker implements a **Defense in Depth** strategy by enforcing strict Valibot schema validation at every Layer 1 boundary.
+
+- **Upstream Verification**: All data received from the Royale API (Player Profiles, Tournament Lists, War Logs) is passed through rigorous schemas (e.g., `RoyalePlayerSchema`, `RoyaleTournamentResponseSchema`) before reaching the scoring logic. This ensures that malformed or unexpected upstream data cannot trigger runtime crashes or pollute internal calculations.
+- **Payload Hardening**: Inbound requests from the GAS backend and PWA are validated against specialized Request Schemas, ensuring that all parameters (tags, API keys, scoring weights) conform to expected formats and limits.
+- **Fail-Fast Boundaries**: Validation occurs at the earliest possible entry point, preventing unvalidated data from propagating into the high-performance worker pool.
 
 ### Data Integrity: Tag Normalization
 Runtime integrity is enforced at the Layer 1 validation boundary. The `TagSchema` (Valibot) ensures that all player, clan, and tournament tags are normalized before processing:
 - **Case Sensitivity**: All tags are automatically converted to **UPPERCASE**.
 - **Prefix Consistency**: Tags are prepended with a mandatory **'#'** prefix if missing.
-This prevents duplicate entries in the Prophet Cache and ensures that recruitment blacklists cannot be bypassed by varying the input format.
+
+This serves as a critical **Security Boundary** for the recruitment blacklist and Prophet Cache, ensuring that entries cannot be bypassed or duplicated by varying the input format (e.g., `#abcd` vs `ABCD`).
+
+### Input Bounding
+To mitigate Denial-of-Service (DoS) and resource exhaustion attacks, the worker enforces strict input boundaries at the Layer 1 validation boundary:
+- **JSON Payload Limit**: The Express server restricts incoming JSON request bodies to **5MB** (configured in `index.ts`).
+- **API Key Pool Bounding**: Audit, Fetch, and Scan requests are restricted to a maximum of **100** API keys per payload (`v.maxLength`) to prevent excessive key rotation overhead.
+- **URL Batch Bounding**: The `/fetch` endpoint is limited to **100** URLs per request to ensure predictable execution times and prevent resource exhaustion.
+- **Prophet Cache Bounding**: Scan operations restrict the `prophetCache` to **1,000** entries to maintain efficient in-memory lookups during scoring.
+- **Tag Array Bounding**: Recruitment scan requests are bounded by `v.maxLength` (Valibot) and mandatory `apiKeys` (v.minLength(1)) to prevent unauthenticated quota depletion:
+  - **Public Scan (`/public/scan`)**: Limited to **25** tournament tags and **25** blacklist tags.
+  - **Internal Scan (`/scan`)**: Limited to **100** tournament tags and **100** blacklist tags.
+- **Push Subscription Bounding**: Web Push registration is capped at **10,000** in-memory subscriptions (`MAX_SUBSCRIPTIONS`). Individual fields are also bounded (`endpoint`: 500, `p256dh`: 200, `auth`: 200) to prevent memory exhaustion.
 
 ---
 <br />

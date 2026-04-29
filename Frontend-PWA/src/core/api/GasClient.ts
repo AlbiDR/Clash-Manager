@@ -126,6 +126,20 @@ const WorkerScanResponseSchema = v.object({
   candidates: v.array(WorkerCandidateSchema),
 });
 
+/**
+ * [GUARD] GENERIC ENVELOPE SCHEMA
+ * Validates the standard response wrapper used by the GAS backend.
+ * Target B [1]: Enforce "Defense in Depth" by validating the response structure
+ * before extracting payload data.
+ */
+const GenericEnvelopeSchema = v.object({
+  success: v.optional(v.boolean()),
+  status: v.optional(v.string()),
+  data: v.optional(v.unknown()),
+  error: v.optional(v.object({ message: v.string() })),
+  message: v.optional(v.string()),
+});
+
 interface GenericEnvelope<T> {
   success?: boolean;
   status?: string;
@@ -194,13 +208,14 @@ export async function pingWorker(): Promise<boolean> {
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     const workerToken = import.meta.env.VITE_WORKER_TOKEN;
 
-    const res = await fetch(`${url}/hub/ping`, {
+    // PATHOGEN: Anemic variable 'res' replaced with domain-descriptive name.
+    const pingResponse = await fetch(`${url}/hub/ping`, {
       method: "GET",
       headers: workerToken ? { "Authorization": `Bearer ${workerToken}` } : {},
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-    return res.ok;
+    return pingResponse.ok;
   } catch {
     return false;
   }
@@ -214,8 +229,8 @@ export async function pingWorker(): Promise<boolean> {
  */
 export function createSchemaMap(schema: string[]): Record<string, number> {
   const map: Record<string, number> = {};
-  for (let i = 0; i < schema.length; i++) {
-    map[schema[i]] = i;
+  for (let fieldIndex = 0; fieldIndex < schema.length; fieldIndex++) {
+    map[schema[fieldIndex]] = fieldIndex;
   }
   return map;
 }
@@ -227,15 +242,15 @@ export function createSchemaMap(schema: string[]): Record<string, number> {
  */
 const SafeStringSchema = v.pipe(
   v.unknown(),
-  v.transform((val) => (val === null || val === undefined ? "" : String(val)))
+  v.transform((inputValue) => (inputValue === null || inputValue === undefined ? "" : String(inputValue)))
 );
 
 const SafeNumberSchema = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (typeof val === "number") return val;
-    if (typeof val === "string") {
-      const cleaned = val.replace(/,/g, "").replace(/%/g, "");
+  v.transform((inputValue) => {
+    if (typeof inputValue === "number") return inputValue;
+    if (typeof inputValue === "string") {
+      const cleaned = inputValue.replace(/,/g, "").replace(/%/g, "");
       const n = parseFloat(cleaned);
       return isNaN(n) ? 0 : n;
     }
@@ -245,9 +260,9 @@ const SafeNumberSchema = v.pipe(
 
 const SafeTimestampSchema = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (!val) return 0;
-    const date = new Date(String(val));
+  v.transform((inputValue) => {
+    if (!inputValue) return 0;
+    const date = new Date(String(inputValue));
     const time = date.getTime();
     return isNaN(time) ? 0 : time;
   })
@@ -265,23 +280,32 @@ export function mapLbRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
   const perfScore = rowSnapshot[schemaMap["performanceScore"]] ?? rowSnapshot[schemaMap["s"]];
   const perfRaw = rowSnapshot[schemaMap["performanceRawScore"]] ?? rowSnapshot[schemaMap["r"]];
 
-  return {
-    id: v.parse(SafeStringSchema, rowSnapshot[schemaMap["id"]]),
-    n: v.parse(SafeStringSchema, rowSnapshot[schemaMap["n"]]),
-    t: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["t"]]),
-    performanceScore: v.parse(SafeNumberSchema, perfScore),
-    performanceRawScore: v.parse(SafeNumberSchema, perfRaw),
-    dt: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["dt"]]),
+  const candidate = {
+    id: rowSnapshot[schemaMap["id"]],
+    n: rowSnapshot[schemaMap["n"]],
+    t: rowSnapshot[schemaMap["t"]],
+    performanceScore: perfScore,
+    performanceRawScore: perfRaw,
+    dt: rowSnapshot[schemaMap["dt"]],
     d: {
-      role: v.parse(SafeStringSchema, rowSnapshot[schemaMap["role"]]),
-      days: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["days"]]),
-      avg: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["avg"]]),
-      seen: v.parse(SafeStringSchema, rowSnapshot[schemaMap["seen"]] || "-"),
-      rate: v.parse(SafeStringSchema, rowSnapshot[schemaMap["rate"]] || "0%"),
-      wfame: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["wfame"]]),
-      hist: v.parse(SafeStringSchema, rowSnapshot[schemaMap["hist"]]),
+      role: rowSnapshot[schemaMap["role"]],
+      days: rowSnapshot[schemaMap["days"]],
+      avg: rowSnapshot[schemaMap["avg"]],
+      seen: rowSnapshot[schemaMap["seen"]] || "-",
+      rate: rowSnapshot[schemaMap["rate"]] || "0%",
+      wfame: rowSnapshot[schemaMap["wfame"]],
+      hist: rowSnapshot[schemaMap["hist"]],
     },
   };
+
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // THREAT: Malformed matrix rows from GAS causing downstream Clean Stack corruption.
+  const validation = v.safeParse(MemberSchema, candidate);
+  if (!validation.success) {
+    console.warn("[GasClient] Leaderboard row validation failed", validation.issues);
+    return null;
+  }
+  return validation.output;
 }
 
 /**
@@ -291,20 +315,29 @@ export function mapLbRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
 export function mapHhRow(rowSnapshot: unknown[], schemaMap: Record<string, number>): Recruit | null {
   if (!rowSnapshot || !Array.isArray(rowSnapshot)) return null;
 
-  return {
-    id: v.parse(SafeStringSchema, rowSnapshot[schemaMap["id"]]),
-    n: v.parse(SafeStringSchema, rowSnapshot[schemaMap["n"]]),
-    t: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["t"]]),
-    potentialScore: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["potentialScore"]]),
-    potentialRawScore: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["potentialRawScore"]]),
-    lastScan: v.parse(SafeTimestampSchema, rowSnapshot[schemaMap["lastScan"]]),
+  const candidate = {
+    id: rowSnapshot[schemaMap["id"]],
+    n: rowSnapshot[schemaMap["n"]],
+    t: rowSnapshot[schemaMap["t"]],
+    potentialScore: rowSnapshot[schemaMap["potentialScore"]],
+    potentialRawScore: rowSnapshot[schemaMap["potentialRawScore"]],
+    lastScan: rowSnapshot[schemaMap["lastScan"]],
     d: {
-      don: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["don"]]),
-      war: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["war"]]),
-      ago: v.parse(SafeStringSchema, rowSnapshot[schemaMap["ago"]]) || new Date().toISOString(),
-      cards: v.parse(SafeNumberSchema, rowSnapshot[schemaMap["cards"]]),
+      don: rowSnapshot[schemaMap["don"]],
+      war: rowSnapshot[schemaMap["war"]],
+      ago: rowSnapshot[schemaMap["ago"]] || new Date().toISOString(),
+      cards: rowSnapshot[schemaMap["cards"]],
     },
   };
+
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // THREAT: Malformed matrix rows from the Headhunter sheet causing UI crashes.
+  const validation = v.safeParse(RecruitSchema, candidate);
+  if (!validation.success) {
+    console.warn("[GasClient] Headhunter row validation failed", validation.issues);
+    return null;
+  }
+  return validation.output;
 }
 
 /**
@@ -315,20 +348,20 @@ export function mapHhRow(rowSnapshot: unknown[], schemaMap: Record<string, numbe
  * in payload size by not repeating field names for every record. This function
  * uses a schema map to "re-hydrate" the records into typed objects.
  *
- * @param data - The raw JSON or string payload from the backend.
+ * @param rawPayload - The raw JSON or string payload from the backend.
  * @returns A fully inflated WebAppData object ready for the UI.
  * @throws Error if the payload is malformed or invalid.
  */
-export async function inflatePayload(data: unknown): Promise<WebAppData> {
+export async function inflatePayload(rawPayload: unknown): Promise<WebAppData> {
   let parsedData: unknown;
-  if (typeof data === "string") {
+  if (typeof rawPayload === "string") {
     try {
-      parsedData = JSON.parse(data);
-    } catch (e) {
+      parsedData = JSON.parse(rawPayload);
+    } catch (parseError) { // PATHOGEN: Anemic variable 'e' replaced.
       throw new Error("Failed to parse data string");
     }
   } else {
-    parsedData = data;
+    parsedData = rawPayload;
   }
 
   if (!parsedData || typeof parsedData !== "object" || parsedData === null) {
@@ -369,15 +402,16 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
   }
 
   // Pre-calculate Schema Maps (O(S))
-  const lbMap = createSchemaMap(lbSchemaArr);
-  const hhMap = createSchemaMap(hhSchemaArr);
+  // PATHOGEN: Anemic variables renamed to domain-descriptive names.
+  const rosterSchemaMap = createSchemaMap(lbSchemaArr);
+  const recruitSchemaMap = createSchemaMap(hhSchemaArr);
 
-  const result: WebAppData = {
+  const inflatedWebAppData: WebAppData = {
     lb: lbMatrix
-      .map((rowSnapshot) => mapLbRow(rowSnapshot as unknown[], lbMap))
+      .map((rowSnapshot) => mapLbRow(rowSnapshot as unknown[], rosterSchemaMap))
       .filter((rowSnapshot): rowSnapshot is LeaderboardMember => !!rowSnapshot),
     hh: hhMatrix
-      .map((rowSnapshot) => mapHhRow(rowSnapshot as unknown[], hhMap))
+      .map((rowSnapshot) => mapHhRow(rowSnapshot as unknown[], recruitSchemaMap))
       .filter((rowSnapshot): rowSnapshot is Recruit => !!rowSnapshot),
     playerTag: source.playerTag,
     timestamp: Number(source.timestamp) || Date.now(),
@@ -387,7 +421,7 @@ export async function inflatePayload(data: unknown): Promise<WebAppData> {
     lastFetched: source.lastFetched,
   };
 
-  return result;
+  return inflatedWebAppData;
 }
 
 /**
@@ -533,12 +567,22 @@ async function _executeGasRequest<T>(
       throw new Error("Backend Configuration Error (HTML Response)");
     }
 
-    let envelope: GenericEnvelope<T>;
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // THREAT: Malformed or malicious envelopes causing downstream logic failure.
+    // Rationale: We validate the envelope structure before processing its contents.
+    let json: unknown;
     try {
-      envelope = JSON.parse(text);
-    } catch (e) {
+      json = JSON.parse(text);
+    } catch (jsonError) { // PATHOGEN: Anemic variable 'e' replaced.
       throw new Error("Malformed JSON Response from Backend");
     }
+
+    const envelopeValidation = v.safeParse(GenericEnvelopeSchema, json);
+    if (!envelopeValidation.success) {
+      throw new Error("Invalid Response Envelope from Backend");
+    }
+
+    const envelope = envelopeValidation.output;
 
     const isSuccess =
       envelope.success === true ||
@@ -571,10 +615,15 @@ async function _executeGasRequest<T>(
       // Target B [4]: Type-safe Service Worker Sync registration
       if ("serviceWorker" in navigator && "SyncManager" in window) {
         try {
-          const reg = await navigator.serviceWorker.ready;
-          // [GUARD] Check for Background Sync capability without 'any' pathogens
-          if ('sync' in reg) {
-            const syncManager = (reg as unknown as { sync: { register: (tag: string) => Promise<void> } }).sync;
+          const registration = await navigator.serviceWorker.ready;
+
+          // [GUARD] Type-safe access to SyncManager without pathogens.
+          interface SyncRegistration {
+            sync: { register: (tag: string) => Promise<void> };
+          }
+
+          if ('sync' in registration) {
+            const syncManager = (registration as unknown as SyncRegistration).sync;
             await syncManager.register("offline-queue-sync");
           }
         } catch (syncErr) {
@@ -669,22 +718,54 @@ export async function fetchRemote(options?: {
             // The Worker Hub sends raw matrices (array of arrays).
             // Index 0: Title block
             // Index 1: Human-readable headers
-            // Index 2: Internal schema keys
-            // Index 3+: Data rows
-            // [ROBUSTNESS] DETECT SCHEMA ROW:
-            // The matrix can have 2 or 3 header rows depending on the backend version.
-            // Row 0: Title, Row 1: Headers, Row 2: Keys (Optional)
-            const row2 = Array.isArray(rosterTable) && rosterTable.length > 2 ? rosterTable[2] : [];
-            const isRow2Schema = Array.isArray(row2) && row2.includes("id");
-
-            const lbSchema = isRow2Schema ? (row2 as string[]) : DEFAULT_LB_SCHEMA;
-            const lbRows = Array.isArray(rosterTable) ? rosterTable.slice(isRow2Schema ? 3 : 2) : [];
+            // Index 2+: Data rows
+            // Depending on the backend, it could also send exactly what GAS sends.
             
-            const row2hh = Array.isArray(hhTable) && hhTable.length > 2 ? hhTable[2] : [];
-            const isRow2HhSchema = Array.isArray(row2hh) && row2hh.includes("id");
+            // Defensively check if this is the Raw Spreadsheet export
+            // The Raw export has an empty Column A, so Tag is at index 1.
+            let lbSchema = DEFAULT_LB_SCHEMA;
+            let lbRows: unknown[][] = []; // PATHOGEN: Replacing any[][] with unknown[][]
+            
+            let hhSchema = DEFAULT_HH_SCHEMA;
+            let hhRows: unknown[][] = []; // PATHOGEN: Replacing any[][] with unknown[][]
 
-            const hhSchema = isRow2HhSchema ? (row2hh as string[]) : DEFAULT_HH_SCHEMA;
-            const hhRows = Array.isArray(hhTable) ? hhTable.slice(isRow2HhSchema ? 3 : 2) : [];
+            if (Array.isArray(rosterTable) && rosterTable.length > 2) {
+              const row1 = rosterTable[1];
+              // If Row 1 has 'Tag' at index 1, it's the Raw Sheet
+              if (Array.isArray(row1) && String(row1[1]).toUpperCase() === 'TAG') {
+                lbSchema = [
+                  "_", "id", "n", "role", "t", "days", "req", "avg", "tot", "seen", "rate", "wfame", 
+                  "hist", "performanceRawScore", "performanceScore", "trend"
+                ];
+                lbRows = rosterTable.slice(2);
+              } else {
+                // It might be the perfectly formatted GAS matrix disguised as Worker payload
+                const row2 = rosterTable[2];
+                const isRow2Schema = Array.isArray(row2) && row2.includes("id");
+                lbSchema = isRow2Schema ? (row2 as string[]) : DEFAULT_LB_SCHEMA;
+                lbRows = rosterTable.slice(isRow2Schema ? 3 : 2);
+              }
+            }
+            
+            if (Array.isArray(hhTable) && hhTable.length > 2) {
+              const row1hh = hhTable[1];
+              if (Array.isArray(row1hh) && String(row1hh[1]).toUpperCase() === 'TAG') {
+                hhSchema = [
+                  "_", "id", "invited", "n", "t", "don", "cards", "war", "ago", "potentialRawScore", "potentialScore", "lastScan"
+                ];
+                // In Raw HH Data, we must filter out invited manually if they are true, just like extractSheetDataStrict
+                hhRows = hhTable.slice(2).filter((row) => {
+                  if (!Array.isArray(row)) return false;
+                  const invited = String(row[2]).toUpperCase();
+                  return invited !== 'TRUE';
+                });
+              } else {
+                const row2hh = hhTable[2];
+                const isRow2HhSchema = Array.isArray(row2hh) && row2hh.includes("id");
+                hhSchema = isRow2HhSchema ? (row2hh as string[]) : DEFAULT_HH_SCHEMA;
+                hhRows = hhTable.slice(isRow2HhSchema ? 3 : 2);
+              }
+            }
 
             const mappedData = {
               format: "matrix",
@@ -754,7 +835,7 @@ export async function fetchRemote(options?: {
   const requestUrl = `${url}${separator}action=${action}&_cb=${Date.now()}`;
   
   const maxAttempts = 5;
-  for (let i = 0; i < maxAttempts; i++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) { // PATHOGEN: Anemic variable 'i' replaced.
     try {
       const response = await fetch(requestUrl, {
         method: "POST",
@@ -764,8 +845,8 @@ export async function fetchRemote(options?: {
       });
 
       if (!response.ok) {
-        if (response.status >= 500 && i < maxAttempts - 1) {
-          const delay = Math.min(1000 * Math.pow(2, i), 10000);
+        if (response.status >= 500 && attempt < maxAttempts - 1) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
@@ -777,14 +858,20 @@ export async function fetchRemote(options?: {
           throw new Error("Backend Configuration Error (HTML Response)");
       }
 
-      let payload;
+      // [GUARD] VALIDATION BOUNDARY: Target B [1]
+      let payload: unknown;
       try {
         payload = JSON.parse(text);
-      } catch (e) {
+      } catch (jsonError) { // PATHOGEN: Anemic variable 'e' replaced.
         throw new Error("Malformed JSON Response from Backend");
       }
 
-      const envelope: GenericEnvelope<unknown> = payload;
+      const envelopeValidation = v.safeParse(GenericEnvelopeSchema, payload);
+      if (!envelopeValidation.success) {
+        throw new Error("Invalid Response Envelope from Backend");
+      }
+
+      const envelope = envelopeValidation.output;
       const isSuccess = envelope.success === true || (envelope.status && envelope.status.toLowerCase() === "success");
 
       if (isSuccess && envelope.data) {
@@ -795,20 +882,20 @@ export async function fetchRemote(options?: {
       }
       throw new Error(envelope.error?.message || "Invalid Response Structure");
 
-    } catch (e: unknown) {
+    } catch (fetchError: unknown) { // PATHOGEN: Anemic variable 'e' replaced.
       // [GUARD] FATAL ERRORS: Target IV - Resilience
       // Do not retry on explicit client rejections (4xx), malformed payloads, 
       // or deliberate user cancellations (AbortError).
-      const isFatal = e instanceof Error && (
-        e.name === "AbortError" || 
-        e.message.includes("Server returned HTTP") || 
-        e.message.includes("Backend Configuration Error") || 
-        e.message.includes("Malformed JSON")
+      const isFatal = fetchError instanceof Error && (
+        fetchError.name === "AbortError" ||
+        fetchError.message.includes("Server returned HTTP") ||
+        fetchError.message.includes("Backend Configuration Error") ||
+        fetchError.message.includes("Malformed JSON")
       );
 
-      if (isFatal || i === maxAttempts - 1) throw e;
+      if (isFatal || attempt === maxAttempts - 1) throw fetchError;
       
-      const delay = Math.min(1000 * Math.pow(2, i), 10000);
+      const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -884,25 +971,29 @@ export async function triggerBackendUpdate(
  */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const workerUrl = getWorkerUrl();
+  const workerToken = import.meta.env.VITE_WORKER_TOKEN;
   if (!workerUrl) return null;
 
   try {
-    const res = await fetch(`${workerUrl}/public/scan`, {
+    const scanResponse = await fetch(`${workerUrl}/scan`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(workerToken ? { "Authorization": `Bearer ${workerToken}` } : {})
+      },
       body: JSON.stringify({
         tags: ["2CCCP", "9U9Q9", "29UQQ282", "200000"],
         scoring: { TROPHY: 1.0, DON: 0.07, WAR: 20.0 }
       })
     });
 
-    if (!res.ok) throw new Error(`Worker status ${res.status}`);
-    const json = await res.json();
+    if (!scanResponse.ok) throw new Error(`Worker status ${scanResponse.status}`);
+    const rawScanResults = await scanResponse.json();
 
     // [GUARD] VALIDATION BOUNDARY: Implements Target B [1] hardening.
     // Enforces strict schema validation for data returned from the remote worker
     // to prevent unvalidated external payloads from polluting the recruitment logic.
-    const result = v.safeParse(WorkerScanResponseSchema, json);
+    const result = v.safeParse(WorkerScanResponseSchema, rawScanResults);
     
     if (!result.success) {
       // THREAT: Malformed or malicious worker response causing downstream UI crashes or logic errors.
@@ -910,16 +1001,16 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
       return null;
     }
 
-    return result.output.candidates.map((c) => ({
-      id: c.tag.replace("#", ""),
-      n: c.name,
-      t: c.trophies,
-      potentialScore: Math.min(100, Math.round((c.rawScore / 50000) * 100)),
-      potentialRawScore: c.rawScore,
+    return result.output.candidates.map((candidate) => ({
+      id: candidate.tag.replace("#", ""),
+      n: candidate.name,
+      t: candidate.trophies,
+      potentialScore: Math.min(100, Math.round((candidate.rawScore / 50000) * 100)),
+      potentialRawScore: candidate.rawScore,
       d: {
-        don: c.donations,
-        war: c.war,
-        cards: c.cards,
+        don: candidate.donations,
+        war: candidate.war,
+        cards: candidate.cards,
         ago: new Date().toISOString()
       },
       lastScan: 0
@@ -947,7 +1038,7 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
       body: JSON.stringify(subscription)
     });
     return true;
-  } catch (e) {
+  } catch (pushError) {
     return false;
   }
 }

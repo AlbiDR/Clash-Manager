@@ -397,9 +397,9 @@ describe("Core DataSchemas", () => {
   describe("HubStateSchema", () => {
     const validHubState = {
       metadata: {
-        timestamp: "2026-03-29",
-        lastCompiled: 123456,
-        lastFetched: 123456,
+        timestamp: "2026-03-29T00:00:00.000Z",
+        lastCompiled: "2026-04-03T21:22:06.463Z", // Worker emits ISO-8601 strings
+        lastFetched: "2026-04-03T21:22:05.824Z",  // Worker emits ISO-8601 strings
         status: "ok", // [BOSS] Verified resilience
         version: "1.0",
         source: "worker"
@@ -413,7 +413,8 @@ describe("Core DataSchemas", () => {
     it("should parse valid hub state with non-standard status", () => {
       const result = v.parse(HubStateSchema, validHubState);
       expect(result.metadata.status).toBe("ok");
-      expect(result.metadata.lastFetched).toBe(123456);
+      // lastFetched is an ISO-8601 string from the Worker; GasClient converts to epoch ms after validation
+      expect(result.metadata.lastFetched).toBe("2026-04-03T21:22:05.824Z");
     });
   });
 });
