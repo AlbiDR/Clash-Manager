@@ -9,7 +9,7 @@
  *    2. Report Boxes: ASCII-art style boxes for summaries.
  *    3. Banners: High-visibility section headers.
  * 
- * VERSION: 1.1.0
+ * VERSION: 1.2.0
  * ============================================================================
  */
 

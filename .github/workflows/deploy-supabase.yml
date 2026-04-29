@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+name: Deploy Supabase
+
+on:
+  push:
+    branches: ["Stable", "Beta"]
+    paths:
+      - "Backend/**"
+      - ".github/workflows/deploy-supabase.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Binary Stack
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+          # Mandatory for DB push; otherwise we skip gracefully.
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          # SSOT Secret Farm: Ingesting the 20-key master string
+          ROYALE_API_KEYS: ${{ secrets.ROYALE_API_KEYS }}
+          # Authoritative Repository Tags
+          CLAN_TAG: ${{ vars.CLAN_TAG }}
+          PLAYER_TAG: ${{ vars.PLAYER_TAG }}
+        run: |
+          # 0. Context: We work from the Backend root
+          cd Backend
+
+          # 1. Sync The Configuration and Key Farm
+          echo "🔄 Syncing Authoritative Repository Tags to Supabase..."
+          supabase secrets set --project-ref "$PROJECT_ID" CLAN_TAG="$CLAN_TAG" PLAYER_TAG="$PLAYER_TAG"
+
+          if [ -n "$ROYALE_API_KEYS" ]; then
+            echo "🔄 Syncing ROYALE_API_KEYS..."
+            supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
+          else
+            echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping Key Farm sync."
+          fi
+
+          # 2. Push Database DNA (The Migrations) - Resilient Skip
+          if [ -n "$SUPABASE_DB_PASSWORD" ]; then
+            echo "🧬 [PUSH] Synchronizing Database DNA..."
+            # Note: Link is required for db push, but we use the environment variable for auth.
+            supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+            supabase db push
+          else
+            echo "ℹ️ [INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
+            echo "   (Note: Database DNA was manually initialized by the Assistant)."
+          fi
+
+          # 3. Deploy the Hunter (Edge Function)
+          echo " [DEPLOY] Launching The Hunter (Edge Function)..."
+          supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"

@@ -12,9 +12,10 @@ import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useClashDataStore } from "./useClashDataStore";
-import { useHaptics } from "@core";
+import { useHaptics } from "./useHaptics";
 import { storeToRefs } from "pinia";
 import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
+import type { ConsoleCardMetadata } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 
@@ -49,6 +50,10 @@ interface ConsoleLogicOptions<T> {
   filterFn: (item: T) => string[];
   /** A dictionary of sorting strategies keyed by their UI identifier. */
   sortStrategies: Record<string, (a: T, b: T) => number>;
+  /** Available sorting options for the UI. */
+  sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
+  /** Whether to show the search input in the header. */
+  showSearch?: boolean;
   /** The UI identifier of the default sorting strategy. */
   defaultSort: string;
   /** Prefix used for URL hash deep linking (e.g., 'member-'). */
@@ -111,6 +116,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const clashStore = useClashDataStore();
   const {
+    data: storeRawData,
     isHydrated: storeHydrated,
     isRefreshing: storeRefreshing,
     syncError: storeSyncError,
@@ -133,6 +139,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     lastFetchedTime = storeLastFetched,
     filterFn,
     sortStrategies,
+    sortOptions,
+    showSearch = true,
     defaultSort,
     deepLinkPrefix,
     batchIdMapper,
@@ -241,16 +249,16 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets || !sheetName)
       return undefined;
 
-    const names = Array.isArray(sheetName) ? sheetName : [sheetName];
-    let gid: number | undefined;
+    const potentialSheetNames = Array.isArray(sheetName) ? sheetName : [sheetName];
+    let sheetId: number | undefined;
 
-    for (const name of names) {
-      gid = pingData.value.sheets[name];
-      if (gid !== undefined) break;
+    for (const name of potentialSheetNames) {
+      sheetId = pingData.value.sheets[name];
+      if (sheetId !== undefined) break;
     }
 
-    return gid !== undefined
-      ? `${pingData.value.spreadsheetUrl}#gid=${gid}`
+    return sheetId !== undefined
+      ? `${pingData.value.spreadsheetUrl}#gid=${sheetId}`
       : pingData.value.spreadsheetUrl;
   });
 
@@ -373,8 +381,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     selectAll(ids);
   }
 
-  function handleSearch(val: string) {
-    searchQuery.value = val;
+  function handleSearch(query: string) {
+    searchQuery.value = query;
   }
 
   /**
@@ -386,13 +394,13 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     mode: "ge" | "le",
     customScoreGetter?: (item: T) => number,
   ) {
-    const getter = customScoreGetter || scoreGetter;
-    if (!getter) return;
+    const scoreExtractor = customScoreGetter || scoreGetter;
+    if (!scoreExtractor) return;
 
     const ids = filteredItems.value
       .filter((item: T) => {
-        const s = getter(item);
-        return mode === "ge" ? s >= threshold : s <= threshold;
+        const score = scoreExtractor(item);
+        return mode === "ge" ? score >= threshold : score <= threshold;
       })
       .map(batchIdMapper);
     setForceSelectionMode(ids.length === 0);
@@ -414,6 +422,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     syncError: syncError.value || undefined,
     sheetUrl: sheetUrl.value,
     stats: statsBadge.value,
+    sortOptions,
+    showSearch,
     fabState: fabState.value,
     isSelectionMode: isSelectionMode.value,
     selectedCount: selectedIds.value.length,
@@ -438,7 +448,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
    */
   const layoutEvents = computed(() => ({
     refresh: refreshFn,
-    "update:search": (val: string) => (searchQuery.value = val),
+    "update:search": (query: string) => (searchQuery.value = query),
     "update:sort": updateSort,
     "select-all": handleSelectAll,
     "clear-selection": clearSelection,
@@ -469,6 +479,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     isHydrated,
     currentSource,
     hubSyncTime,
+    data: storeRawData,
     layoutProps,
     layoutEvents,
 
@@ -494,12 +505,37 @@ export function useConsoleController<T extends { id: string; n?: string }>(
      * Centralizing this logic ensures that performance optimizations (like v-memo)
      * are applied consistently across Roster and Headhunter views.
      */
-    getCardMetadata: (id: string) => ({
-      isExpanded: expandedIds.value.has(id),
-      isSelected: selectedSet.value.has(id),
+    getCardMetadata: (id: string): ConsoleCardMetadata => ({
+      expanded: expandedIds.value.has(id),
+      selected: selectedSet.value.has(id),
+      selectionMode: isSelectionMode.value,
+      isTagged: storeRawData.value?.playerTag === id,
       // [PERF] SCOPED REFRESH: Only signal 'refreshing' to expanded cards
       // to prevent unnecessary re-renders of the entire collapsed list.
-      isRefreshing: isRefreshing.value && expandedIds.value.has(id),
+      appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
     }),
+
+    /**
+     * MEMOIZATION KEY GENERATOR
+     *
+     * @remarks
+     * Centralizes the dependency list for Vue's `v-memo` directive.
+     * This ensures that performance-critical re-render optimizations are
+     * applied consistently across different feature views (Roster, Headhunter)
+     * without duplicating complex dependency logic in templates.
+     *
+     * @param id - The unique item identifier.
+     * @param extraKeys - Optional feature-specific reactive dependencies.
+     * @returns A stable array of dependencies for `v-memo`.
+     */
+    getMemoKeys: (id: string, extraKeys: unknown[] = []) => [
+      id,
+      isSelectionMode.value,
+      expandedIds.value.has(id),
+      selectedSet.value.has(id),
+      isRefreshing.value && expandedIds.value.has(id),
+      storeRawData.value?.playerTag === id,
+      ...extraKeys,
+    ],
   };
 }

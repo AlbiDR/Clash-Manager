@@ -1,8 +1,36 @@
 # Clash Manager -- Google Apps Script Engine
 
-[![System](https://img.shields.io/badge/System-v14.3.2-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![System](https://img.shields.io/badge/System-v14.3.5-0F9D58?style=flat-square&logo=google-apps-script&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Core**. A high-performance, event-driven Google Apps Script runtime that serves as the **Central Nervous System** of the Clash Manager ecosystem. It implements a strict **Registry-based Service Architecture** to decouple business logic, persistent storage, and UI presentation.
+
+---
+<br />
+
+## Capacity-Aware Scouting & Scoring
+
+The system implements dynamic behavior models that adapt based on the current clan capacity and competitive density.
+
+### Headhunter Scouting Strategy
+The scouting engine (`Headhunter.ts`) automatically pivots its discovery strategy to optimize candidate quality:
+- **Maintenance Mode**: Triggered when the clan has **>= 48 members**. The system prioritizes elite-only discovery by enforcing a hard **9000 trophy floor**, minimizing administrative noise when recruitment slots are scarce.
+- **Discovery Mode**: Triggered when the clan has significant vacancies. The system utilizes the **In-Game Required Trophies** as the baseline, maximizing candidate yield to fill the roster rapidly.
+
+### Trophy Floor Calibration
+The `Scoring_Kernel.ts` dynamically calculates the optimal recruitment standard based on clan size:
+- **Elite Mode**: Active when the clan exceeds **41 members** (the "Critical Mass" threshold). The scouting floor is set to the **Median Trophy Count** of the current roster, ensuring that recruits are consistently better than the bottom half of the clan.
+- **Rebuild Mode**: Active during growth phases. The floor is set to the **Bottom 10% Average**, protecting the clan's baseline while allowing for easier entry of new talent.
+
+### Hybrid Benchmark Alignment
+To prevent standards from stagnating, the system calculates a blended performance target:
+- **Elite Roster Reference**: Analyzes the average Raw Score (calculated via recruitment weights) of all members with a **Performance Score (PeS) >= 50%**.
+- **Market Intelligence Reference**: Analyzes the **top 5%** of all scanned candidates in the global pool.
+- **Blending**: These two metrics are blended (defaulting to a 40/60 split) to produce a "Hybrid Benchmark" that reflects both internal excellence and external market potential.
+
+### Smart Membership Validation
+The recruitment pool is proactively pruned during every scout cycle to maintain high data hygiene:
+- **Auto-Dismissal**: Recruits discovered in other clans are immediately removed from the active scout feed.
+- **Account Hygiene**: Candidates whose accounts have been deleted or banned are identified via null profile responses and purged from the database.
 
 ---
 <br />
@@ -15,16 +43,29 @@ The codebase adheres to the **"Clean Stack"** philosophy, organized into distinc
 | :--- | :--- | :--- |
 | **Orchestrator** | Event handling, cron jobs, and master protocol execution | `Orchestrator.ts` |
 | **Registry** | Dependency injection and service location | `Registry.ts`, `Core.ts` |
-| **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts` |
+| **Validation** | Ingress hardening and runtime integrity enforcement | `Validation.ts` |
+| **Services** | Pure business logic and complex calculations | `Scoring_Kernel.ts`, `Network.ts`, `Time.ts`, `War_Intelligence.ts`, `Battle_Log.ts`, `Reporting.ts`, `Schema.ts` |
 | **Modules** | Domain-specific features (MVCS Pattern) | `Roster.ts`, `Headhunter.ts`, `Database.ts` |
-| **Views** | Sheet manipulation and UI rendering | `View.ts`, `*_View.ts` |
-| **Stores** | Data persistence and state management | `Store.ts`, `*_Store.ts` |
-| **Data Hub** | High-speed raw extraction for Worker Sync | `API_Raw.ts` |
+| **Views** | Sheet manipulation and UI rendering | `View.ts`, `Roster_View.ts`, `Headhunter_View.ts`, `Database_View.ts` |
+| **Stores** | Data persistence and state management | `Store.ts`, `Roster_Store.ts`, `Headhunter_Store.ts`, `Database_Store.ts` |
+| **Data Hub** | High-speed data delivery and API orchestration | `Webapp_Controller.ts`, `API_Public.ts`, `API_Raw.ts` |
 
 ---
 <br />
 
 ## Key Components
+
+### Webapp Controller (`Webapp_Controller.ts`)
+The primary Feature Orchestrator (Layer 3) bridging the spreadsheet "Dumb Store" with the PWA's high-fidelity requirements.
+- **Matrix Reduction Strategy**: Minimizes JSON overhead for mobile clients by compressing data into row-based matrices before transmission. Re-hydration is performed client-side.
+- **100-Recruit Fresh Pool**: Orchestrates a blended recruitment feed by merging persistent candidates from the spreadsheet with real-time discoveries from the Worker scan, ensuring a fresh discovery experience.
+- **Contract Enforcement**: Implements the `WebappControllerContract` to manage member data, recruitment state mutation, and player profile retrieval.
+
+### Public API (`API_Public.ts`)
+The primary REST ingress bridge (Layer 3) that translates external PWA/Worker requests into internal system actions.
+- **Backward Compatibility**: Implements normalization logic that supports both legacy `ids` and modern `items` formats during recruitment dismissal.
+- **Background Dispatcher**: Utilizes `triggerAsyncUpdate` to offload long-running operations (like full roster refreshes) to time-based triggers, preventing request timeouts and ensuring system stability.
+- **Stateless Routing**: Routes `doGet` and `doPost` events to the `WebappController` while enforcing structured JSON responses.
 
 ### Network Engine (`Network.ts`)
 A sophisticated API gateway that manages the limited Google Apps Script quotas.
@@ -36,6 +77,8 @@ A sophisticated API gateway that manages the limited Google Apps Script quotas.
 ### Worker Hub Integration (`API_Raw.ts`)
 A minimalist "Dumb Store" access layer designed exclusively for the Worker's 5-minute synchronization daemon.
 - **Raw Export**: Bypasses the traditional PWA JSON matrix compression and directly returns unadulterated sheet arrays.
+- **Zero-Trust Validation**: Implements `GasGetEventSchema` to strictly validate all inbound `doGet` parameters at the entry point.
+- **Structured Error Handling**: Utilizes standardized JSON error responses with the `layer: 'GAS_API_RAW'` field to facilitate distributed debugging across the stack.
 - **Dedicated Authentication**: Validates requests securely against `REMOTE_WORKER_SECRET` allowing the Render worker continuous access without Oauth friction.
 
 ### The Orchestrator (`Orchestrator.ts`)
@@ -52,7 +95,7 @@ A pure mathematical engine isolated from the rest of the system. It operates on 
 
 Internal scoring is designed to reward both long-term reliability and short-term excellence.
 
-- **RPeS (Raw Performance Score)**: The unweighted sum of multiple performance vectors (Fame, Avg War Fame, Donations, Trophies, and War Rate).
+- **RPeS (Raw Performance Score)**: The weighted sum of multiple performance vectors (Fame, Avg War Fame, Donations, Trophies, and War Rate).
 - **PeS (Performance Score)**: A relative normalization of the RPeS.
   - **Normalization**: Calculated as `(Member RPeS / Benchmark) * 100`.
   - **Relative Curve**: Ensures the leaderboard remains a "relative curve" regardless of meta shifts.
@@ -64,7 +107,7 @@ Internal scoring is designed to reward both long-term reliability and short-term
 
 External scoring focuses on identifying "elite fits" for the clan by comparing candidates against the existing internal elite.
 
-- **RPoS (Raw Potential Score)**: Calculates an unweighted base score for recruits using external stats:
+- **RPoS (Raw Potential Score)**: Calculates a weighted base score for recruits using external stats:
   - **Trophy Weight**: Base player capability.
   - **Donation Weight**: Contribution baseline.
   - **War Weight**: Historical reliability in clan wars (War Day Wins).
@@ -80,7 +123,7 @@ External scoring focuses on identifying "elite fits" for the clan by comparing c
 
 - **Market Intelligence**: The collective performance baseline derived from high-volume tournament scanning. It defines the "top percentile" of the current available recruit pool.
 - **Prophet Cache**: A persistent memory of external player performance. When a player is scanned multiple times, the Prophet Cache tracks their consistency.
-- **Prophet Bonus**: A **25% RPoS multiplier** applied to recruits with proven historical war success (e.g., >5 wins) detected via the Prophet Cache.
+- **Prophet Bonus**: A **25% RPoS bonus** (1.25x multiplier) applied to recruits with proven historical war success (e.g., >5 wins) detected via the Prophet Cache.
 
 </details>
 

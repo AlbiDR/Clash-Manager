@@ -274,8 +274,29 @@ const HeadhunterScanner: HeadhunterScannerContract = {
         // Profile Shadow Candidates
         if (shadowTags.size > 0) {
           const shadowList = Array.from(shadowTags);
-          const shadowResponse = S.Network.fetchRemoteWorker("/scan", { tags: shadowList, scoring: W, minTrophies });
-          const shadowData = shadowResponse?.candidates || [];
+          let shadowData: any[] = [];
+
+          if (remoteAvailable) {
+            try {
+              const shadowResponse = S.Network.fetchRemoteWorker("/scan", { tags: shadowList, scoring: W, minTrophies });
+              if (shadowResponse && Array.isArray(shadowResponse.candidates)) {
+                shadowData = shadowResponse.candidates;
+              }
+            } catch (e) {
+              console.warn("HeadhunterScanner: Remote shadow profiling failed, falling back to local.");
+            }
+          }
+
+          // Local fallback: profile a capped batch via direct API calls
+          if (shadowData.length === 0 && shadowList.length > 0) {
+            const batchSize = 50;
+            const localShadowTags = shadowList.slice(0, batchSize);
+            shadowData = S.Network.fetchRoyaleAPI(
+              localShadowTags.map(tag => `${CONFIG.SYSTEM.API_BASE}/players/${encodeURIComponent(tag)}`),
+              null,
+              "Shadow Profiling (Local)"
+            ) || [];
+          }
 
           shadowData.forEach((profile: any) => {
             if (profile && profile.tag && (profile.trophies || 0) >= minTrophies) {

@@ -1,0 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+export { default as MemberCard } from './MemberCard.vue';
+export { default as WarHistoryChart } from './WarHistoryChart.vue';

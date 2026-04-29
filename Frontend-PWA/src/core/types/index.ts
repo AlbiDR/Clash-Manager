@@ -113,3 +113,23 @@ export interface DismissResponse {
   count?: number;
   message?: string;
 }
+
+/**
+ * Shared UI State for Console Cards
+ *
+ * @remarks
+ * Standardizes the metadata returned by the console controller for various list-based
+ * feature cards (e.g., MemberCard, RecruitCard).
+ */
+export interface ConsoleCardMetadata {
+  /** UI State: Controls the expansion of detailed statistics and charts. */
+  expanded: boolean;
+  /** UI State: Indicates if the card is in the batch selection queue. */
+  selected: boolean;
+  /** UI State: Toggles between interaction modes (Expansion vs. Selection). */
+  selectionMode: boolean;
+  /** Optional: Indicates if the item is currently tagged (e.g., target player). */
+  isTagged?: boolean;
+  /** UI State: Indicates if the card's data is being refreshed in the background. */
+  appIsRefreshing?: boolean;
+}

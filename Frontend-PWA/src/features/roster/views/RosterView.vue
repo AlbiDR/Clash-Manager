@@ -28,20 +28,18 @@ import {
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
 
-import MemberCard from "../components/MemberCard.vue";
+import { MemberCard } from "../components";
 
 
 const {
-  data,
   isShowcaseMode,
   visibleItems,
-  isSelectionMode,
-  sortOptions,
   toggleExpand,
   toggleSelect,
   layoutProps,
   layoutEvents,
   getCardMetadata,
+  getMemoKeys,
 } = useLeaderboard();
 
 </script>
@@ -51,8 +49,6 @@ const {
     title="Roster"
     v-bind="layoutProps"
     v-on="layoutEvents"
-    :show-search="true"
-    :sort-options="sortOptions"
   >
     <!-- Default Slot: The List -->
     <ConsoleList
@@ -62,27 +58,14 @@ const {
       <template #item="{ item, index }">
         <MemberCard
           :key="item.id"
-          v-memo="[
-            item.id,
+          v-memo="getMemoKeys(item.id, [
             item.performanceScore,
-            item.dt,
-            isSelectionMode,
-            // [PERF] STABLE STATUS FLAGS: Accessing primitive properties from the
-            // metadata helper ensures v-memo performs a correct shallow comparison,
-            // bypassing the new object reference returned on every render.
-            getCardMetadata(item.id).isExpanded,
-            getCardMetadata(item.id).isSelected,
-            getCardMetadata(item.id).isRefreshing,
-            data?.playerTag === item.id,
-          ]"
+            item.dt
+          ])"
           :id="`member-${item.id}`"
           :member="item"
-          :expanded="getCardMetadata(item.id).isExpanded"
-          :selected="getCardMetadata(item.id).isSelected"
-          :selection-mode="isSelectionMode"
-          :is-tagged="data?.playerTag === item.id"
+          v-bind="getCardMetadata(item.id)"
           :style="{ '--i': index }"
-          :app-is-refreshing="getCardMetadata(item.id).isRefreshing"
           @toggle="toggleExpand(item.id)"
           @toggle-select="toggleSelect(item.id)"
         />

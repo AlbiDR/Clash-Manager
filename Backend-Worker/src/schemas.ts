@@ -15,8 +15,10 @@ import * as v from "valibot";
 
 /**
  * Common regex for Clash Royale tags (Player, Clan, Tournament)
+ * // THREAT: Stale regex constraints causing silent rejection of valid long tags (13-15 chars).
+ * Rationale: Aligning with the GAS authoritative boundary prevents data starvation.
  */
-const TAG_REGEX = /^[#]?[0-9A-Za-z]{3,12}$/;
+const TAG_REGEX = /^[#]?[0-9A-Z]{3,15}$/i;
 
 /**
  * [VALIDATION] Branded Types Validators
@@ -31,10 +33,10 @@ export const TagSchema = v.pipe(
   v.string(),
   v.trim(),
   v.regex(TAG_REGEX, "Invalid tag format"),
-  v.transform((val) => {
+  v.transform((inputTag) => {
     // Normalize to uppercase and ensure '#' prefix to prevent duplicate entries
     // and bypass of the recruitment blacklist.
-    const upper = val.toUpperCase();
+    const upper = inputTag.toUpperCase();
     return upper.startsWith("#") ? upper : `#${upper}`;
   })
 );
@@ -67,7 +69,7 @@ export const ScoringWeightsSchema = v.object({
  * potential API keys is provided for health verification.
  */
 export const AuditRequestSchema = v.object({
-  apiKeys: v.array(v.string())
+  apiKeys: v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100))
 });
 
 /**
@@ -90,15 +92,16 @@ export const ProphetIntelSchema = v.object({
  * Boundary for the `/public/scan` endpoint. Handles unauthenticated requests
  * for tournament discovery and initial recruit scoring.
  *
+ * THREAT: Unauthenticated quota depletion via large tag arrays. Bounded to 25.
  * THREAT: Un-normalized prophetCache keys bypass heritage lookups for recruits.
  */
 export const PublicScanRequestSchema = v.object({
-  tags: v.array(TagSchema),
-  apiKeys: v.optional(v.array(v.string())),
-  blacklist: v.optional(v.array(TagSchema)),
+  tags: v.pipe(v.array(TagSchema), v.maxLength(25)),
+  apiKeys: v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.minLength(1), v.maxLength(100)),
+  blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(25))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
+  prophetCache: v.optional(v.pipe(v.record(TagSchema, ProphetIntelSchema), v.check((rec) => Object.keys(rec).length <= 1000, "Cache must have at most 1000 entries")))
 });
 
 /**
@@ -108,15 +111,16 @@ export const PublicScanRequestSchema = v.object({
  * Boundary for the privileged `/scan` endpoint. Supports full-precision
  * discovery and heritage-augmented scoring.
  *
+ * THREAT: Privileged resource exhaustion via large tag arrays. Bounded to 100.
  * THREAT: Un-normalized prophetCache keys bypass heritage lookups for recruits.
  */
 export const ScanRequestSchema = v.object({
-  tags: v.array(TagSchema),
-  apiKeys: v.optional(v.array(v.string())),
-  blacklist: v.optional(v.array(TagSchema)),
+  tags: v.pipe(v.array(TagSchema), v.maxLength(100)),
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100))),
+  blacklist: v.optional(v.pipe(v.array(TagSchema), v.maxLength(100))),
   minTrophies: v.optional(v.number()),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
-  prophetCache: v.optional(v.record(TagSchema, ProphetIntelSchema))
+  prophetCache: v.optional(v.pipe(v.record(TagSchema, ProphetIntelSchema), v.check((rec) => Object.keys(rec).length <= 1000, "Cache must have at most 1000 entries")))
 });
 
 /**
@@ -128,7 +132,7 @@ export const ScanRequestSchema = v.object({
  */
 export const ClanFullRequestSchema = v.object({
   tag: TagSchema,
-  apiKeys: v.optional(v.array(v.string()))
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100)))
 });
 
 /**
@@ -140,7 +144,7 @@ export const ClanFullRequestSchema = v.object({
 export const ClanApiRequestSchema = v.object({
   tag: TagSchema,
   type: v.picklist(["members", "warlog"]),
-  apiKeys: v.optional(v.array(v.string()))
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100)))
 });
 
 /**
@@ -149,10 +153,45 @@ export const ClanApiRequestSchema = v.object({
  * @remarks
  * Validates the payload for the `/fetch` endpoint, supporting high-concurrency
  * retrieval of arbitrary Royale API URLs with optional scoring.
+ *
+ * THREAT: Resource exhaustion and SSRF via unbounded arbitrary URL fetching.
+ * Rationale: Enforcing array length bounds and URL format validation ensures
+ * the endpoint is only used for legitimate Royale API requests.
+ * We enforce a robust origin and path check to prevent bypasses like
+ * 'api.clashroyale.com.attacker.com' or sibling path exfiltration.
  */
 export const FetchRequestSchema = v.object({
-  urls: v.array(v.string()),
-  apiKeys: v.optional(v.array(v.string())),
+  urls: v.pipe(
+    v.array(
+      v.pipe(
+        v.string(),
+        v.url(),
+        v.check((urlStr) => {
+          try {
+            // [GUARD] SECURITY BOUNDARY: SSRF / Key Leakage Prevention
+            // ADR Rationale: Moving security checks into the schema ensures
+            // all data enters the Clean Stack already validated.
+            const apiBase = process.env["API_BASE"] ?? "https://proxy.royaleapi.dev/v1";
+            const apiBaseUrl = new URL(apiBase);
+            const requestedUrl = new URL(urlStr);
+
+            // 1. Origin Match: Ensure host and protocol are identical.
+            if (requestedUrl.origin !== apiBaseUrl.origin) return false;
+
+            // 2. Path Match: Ensure the request targets the authorized API version/path.
+            // We append a trailing slash to the base path to prevent sibling path bypasses.
+            const basePath = apiBaseUrl.pathname.endsWith('/') ? apiBaseUrl.pathname : `${apiBaseUrl.pathname}/`;
+            return requestedUrl.pathname.startsWith(basePath) || requestedUrl.pathname === apiBaseUrl.pathname;
+          } catch {
+            return false;
+          }
+        }, "URL must target the authorized Royale API base")
+      )
+    ),
+    v.minLength(1),
+    v.maxLength(100)
+  ),
+  apiKeys: v.optional(v.pipe(v.array(v.pipe(v.string(), v.maxLength(2000))), v.maxLength(100))),
   scoring: v.optional(v.nullable(ScoringWeightsSchema)),
   minTrophies: v.optional(v.number())
 });
@@ -162,12 +201,14 @@ export const FetchRequestSchema = v.object({
  *
  * @remarks
  * Validates the browser-standard PushSubscription object for notification registration.
+ * THREAT: Maliciously large subscription payloads leading to memory exhaustion.
+ * Bounding individual fields ensures the total size of a stored subscription is predictable.
  */
 export const SubscriptionRequestSchema = v.object({
-  endpoint: v.string(),
+  endpoint: v.pipe(v.string(), v.maxLength(500)),
   keys: v.optional(v.object({
-    p256dh: v.string(),
-    auth: v.string()
+    p256dh: v.pipe(v.string(), v.maxLength(200)),
+    auth: v.pipe(v.string(), v.maxLength(200))
   }))
 });
 

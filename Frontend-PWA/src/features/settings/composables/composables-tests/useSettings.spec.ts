@@ -1,23 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ref } from "vue";
+import { ref, reactive, defineComponent, h } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
 
-const {
-  mockStatus,
-  mockIsShowcaseMode,
-  mockIsBlueprintMode,
-  mockIsSyntheticMode,
-  mockTheme,
-  mockSetTheme,
-  mockClearManifestCache,
-  mockHaptics,
-  mockUpdateServiceWorker,
-  mockToast,
-  mockReload,
-  mockConfirm,
-  mockAppVersion,
-} = vi.hoisted(() => {
-  const { ref } = require("vue");
+const mocks = vi.hoisted(() => {
+  const { ref, reactive } = require("vue");
   return {
     mockAppVersion: ref("1.2.3"),
     mockStatus: ref("online"),
@@ -41,6 +27,17 @@ const {
     },
     mockReload: vi.fn(),
     mockConfirm: vi.fn(),
+    mockRequestPermission: vi.fn().mockResolvedValue("granted"),
+    mockSendLocalNotification: vi.fn(),
+    mockIsWorkerConfigured: vi.fn().mockReturnValue(true),
+    mockSubscribeToPush: vi.fn().mockResolvedValue(true),
+    mockIsHydrated: ref(true),
+    mockIsRefreshing: ref(false),
+    mockLastSyncTime: ref(1700000000000),
+    mockApiUrl: ref("https://mock-api.com"),
+    mockApiStatus: ref("online"),
+    mockPingData: ref({ latency: 42, version: "1.0.0" }),
+    mockModules: reactive({ notificationThreshold: 75 }),
   };
 });
 
@@ -64,23 +61,23 @@ vi.mock("../../../../core/services/useSystemInfo", () => {
   const { computed } = require("vue");
   return {
     useSystemInfo: vi.fn(() => ({
-      appVersion: mockAppVersion.value,
+      appVersion: mocks.mockAppVersion.value,
       activeBadge: computed(() => {
-        if (mockIsShowcaseMode.value) return "SHOWCASE";
-        if (mockIsBlueprintMode.value) return "BLUEPRINT";
-        if (mockIsSyntheticMode.value) return "SYNTHETIC";
+        if (mocks.mockIsShowcaseMode.value) return "SHOWCASE";
+        if (mocks.mockIsBlueprintMode.value) return "BLUEPRINT";
+        if (mocks.mockIsSyntheticMode.value) return "SYNTHETIC";
         return "";
       }),
     })),
-    appVersion: mockAppVersion.value,
+    appVersion: mocks.mockAppVersion.value,
   };
 });
 
 vi.mock("../../../../shared/composables/useTheme", () => ({
   useTheme: vi.fn(() => ({
-    theme: mockTheme,
-    setTheme: mockSetTheme,
-    clearManifestCache: mockClearManifestCache,
+    theme: mocks.mockTheme,
+    setTheme: mocks.mockSetTheme,
+    clearManifestCache: mocks.mockClearManifestCache,
   })),
 }));
 
@@ -90,55 +87,81 @@ vi.mock("../../../../core/services/StorageService", () => ({
   },
 }));
 
-vi.mock("../../../../core/services/useAppSettings", () => ({
-  useAppSettings: vi.fn(() => ({
-    modules: ref([]),
-    toggle: vi.fn(),
-    init: vi.fn(),
-  })),
-}));
+vi.mock("../../../../core/services/useAppSettings", () => {
+  return {
+    useAppSettings: vi.fn(() => ({
+      modules: mocks.mockModules,
+      toggle: vi.fn(),
+      init: vi.fn(),
+    })),
+  };
+});
 
 vi.mock("../../../../core/services/useBlueprintMode", () => ({
   useBlueprintMode: vi.fn(() => ({
-    isBlueprintMode: mockIsBlueprintMode,
+    isBlueprintMode: mocks.mockIsBlueprintMode,
     toggleBlueprintMode: vi.fn(),
   })),
 }));
 
 vi.mock("../../../../core/services/useClashDataStore", () => ({
   useClashDataStore: vi.fn(() => ({
-    isHydrated: ref(true),
-    isRefreshing: ref(false),
+    isHydrated: mocks.mockIsHydrated,
+    isRefreshing: mocks.mockIsRefreshing,
+    lastSyncTime: mocks.mockLastSyncTime,
     refresh: vi.fn(),
+    startBackgroundSync: vi.fn(),
   })),
 }));
 
 vi.mock("../../../../core/services/useShowcaseMode", () => ({
   useShowcaseMode: vi.fn(() => ({
-    isShowcaseMode: mockIsShowcaseMode,
+    isShowcaseMode: mocks.mockIsShowcaseMode,
     toggleShowcaseMode: vi.fn(),
   })),
 }));
 
 vi.mock("../../../../core/services/useSyntheticMode", () => ({
   useSyntheticMode: vi.fn(() => ({
-    isSyntheticMode: mockIsSyntheticMode,
+    isSyntheticMode: mocks.mockIsSyntheticMode,
     toggleSyntheticMode: vi.fn(),
   })),
 }));
 
 vi.mock("../../../../core/services/useToast", () => ({
-  useToast: vi.fn(() => mockToast),
+  useToast: vi.fn(() => mocks.mockToast),
 }));
 
 vi.mock("../../../../core/services/useConnectionStatus", () => ({
   useConnectionStatus: vi.fn(() => ({
-    status: mockStatus,
+    status: mocks.mockStatus,
   })),
 }));
 
 vi.mock("../../../../core/services/useHaptics", () => ({
-  useHaptics: vi.fn(() => mockHaptics),
+  useHaptics: vi.fn(() => mocks.mockHaptics),
+}));
+
+vi.mock("../../../../core/api/useApiState", () => {
+  return {
+    useApiState: vi.fn(() => ({
+      apiUrl: mocks.mockApiUrl,
+      apiStatus: mocks.mockApiStatus,
+      pingData: mocks.mockPingData,
+    })),
+  };
+});
+
+vi.mock("../../../../core/services/useBadge", () => ({
+  useBadge: vi.fn(() => ({
+    requestPermission: mocks.mockRequestPermission,
+    sendLocalNotification: mocks.mockSendLocalNotification,
+  })),
+}));
+
+vi.mock("../../../../core/api/GasClient", () => ({
+  isWorkerConfigured: mocks.mockIsWorkerConfigured,
+  subscribeToPush: mocks.mockSubscribeToPush,
 }));
 
 vi.mock("../../../../core/services/useWakeLock", () => ({
@@ -146,21 +169,41 @@ vi.mock("../../../../core/services/useWakeLock", () => ({
     isActive: ref(false),
     request: vi.fn(),
     release: vi.fn(),
+    isSupported: true,
+    toggle: vi.fn(),
   })),
 }));
 
 vi.mock("virtual:pwa-register/vue", () => ({
   useRegisterSW: vi.fn(() => ({
-    updateServiceWorker: mockUpdateServiceWorker,
+    updateServiceWorker: mocks.mockUpdateServiceWorker,
   })),
 }));
+
+// Helper to run composable within a component context
+function withSetup<T>(hook: () => T) {
+  let result: T;
+  const setup = defineComponent({
+    setup() {
+      result = hook();
+      return () => h("div");
+    },
+  });
+  const wrapper = require("@vue/test-utils").mount(setup);
+  return { result: result!, wrapper };
+}
 
 describe("useSettings", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    vi.stubGlobal("location", { reload: mockReload });
-    vi.stubGlobal("confirm", mockConfirm);
-    vi.stubGlobal("localStorage", { clear: vi.fn() });
+    vi.stubGlobal("location", { reload: mocks.mockReload });
+    vi.stubGlobal("confirm", mocks.mockConfirm);
+    vi.stubGlobal("localStorage", {
+      clear: vi.fn(),
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
     vi.stubGlobal("sessionStorage", { clear: vi.fn() });
     vi.stubGlobal("navigator", {
       serviceWorker: {
@@ -176,10 +219,11 @@ describe("useSettings", () => {
     global.__APP_VERSION__ = "1.2.3";
 
     // Reset mocks
-    mockStatus.value = "online";
-    mockIsShowcaseMode.value = false;
-    mockIsBlueprintMode.value = false;
-    mockIsSyntheticMode.value = false;
+    mocks.mockStatus.value = "online";
+    mocks.mockIsShowcaseMode.value = false;
+    mocks.mockIsBlueprintMode.value = false;
+    mocks.mockIsSyntheticMode.value = false;
+    mocks.mockApiStatus.value = "online";
     vi.clearAllMocks();
   });
 
@@ -188,102 +232,102 @@ describe("useSettings", () => {
   });
 
   it("exposes the correct app version", () => {
-    const { appVersion } = useSettings();
-    expect(appVersion).toBe("1.2.3");
+    const { result } = withSetup(useSettings);
+    expect(result.appVersion).toBe("1.2.3");
   });
 
   it("handles default app version if __APP_VERSION__ is undefined", () => {
-    mockAppVersion.value = "0.0.0";
-    const { appVersion } = useSettings();
-    expect(appVersion).toBe("0.0.0");
-    mockAppVersion.value = "1.2.3";
+    mocks.mockAppVersion.value = "0.0.0";
+    const { result } = withSetup(useSettings);
+    expect(result.appVersion).toBe("0.0.0");
+    mocks.mockAppVersion.value = "1.2.3";
   });
 
   describe("footerBadgeText", () => {
     it("returns 'SHOWCASE' when in showcase mode", () => {
-      mockIsShowcaseMode.value = true;
-      const { footerBadgeText } = useSettings();
-      expect(footerBadgeText.value).toBe("SHOWCASE");
+      mocks.mockIsShowcaseMode.value = true;
+      const { result } = withSetup(useSettings);
+      expect(result.footerBadgeText.value).toBe("SHOWCASE");
     });
 
     it("returns 'BLUEPRINT' when in blueprint mode and not showcase", () => {
-      mockIsBlueprintMode.value = true;
-      const { footerBadgeText } = useSettings();
-      expect(footerBadgeText.value).toBe("BLUEPRINT");
+      mocks.mockIsBlueprintMode.value = true;
+      const { result } = withSetup(useSettings);
+      expect(result.footerBadgeText.value).toBe("BLUEPRINT");
     });
 
     it("returns 'SYNTHETIC' when in synthetic mode and no others", () => {
-      mockIsSyntheticMode.value = true;
-      const { footerBadgeText } = useSettings();
-      expect(footerBadgeText.value).toBe("SYNTHETIC");
+      mocks.mockIsSyntheticMode.value = true;
+      const { result } = withSetup(useSettings);
+      expect(result.footerBadgeText.value).toBe("SYNTHETIC");
     });
 
     it("returns empty string when no modes are active", () => {
-      const { footerBadgeText } = useSettings();
-      expect(footerBadgeText.value).toBe("");
+      const { result } = withSetup(useSettings);
+      expect(result.footerBadgeText.value).toBe("");
     });
 
     it("prioritizes SHOWCASE over other modes", () => {
-      mockIsShowcaseMode.value = true;
-      mockIsBlueprintMode.value = true;
-      mockIsSyntheticMode.value = true;
-      const { footerBadgeText } = useSettings();
-      expect(footerBadgeText.value).toBe("SHOWCASE");
+      mocks.mockIsShowcaseMode.value = true;
+      mocks.mockIsBlueprintMode.value = true;
+      mocks.mockIsSyntheticMode.value = true;
+      const { result } = withSetup(useSettings);
+      expect(result.footerBadgeText.value).toBe("SHOWCASE");
     });
   });
 
   describe("apiStatusObject", () => {
-    it("returns 'ready' for online status", () => {
-      mockStatus.value = "online";
-      const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "ready", text: "Systems Online" });
+    it("returns 'success' for online status", () => {
+      mocks.mockStatus.value = "online";
+      const { result } = withSetup(useSettings);
+      expect(result.apiStatusObject.value).toEqual({ type: "success", text: "Systems Online" });
     });
 
     it("returns 'error' for offline status", () => {
-      mockStatus.value = "offline";
-      const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "error", text: "Disconnected" });
+      mocks.mockStatus.value = "offline";
+      const { result } = withSetup(useSettings);
+      expect(result.apiStatusObject.value).toEqual({ type: "error", text: "Disconnected" });
     });
 
     it("returns 'loading' for syncing status", () => {
-      mockStatus.value = "syncing";
-      const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "loading", text: "Syncing..." });
+      mocks.mockStatus.value = "syncing";
+      const { result } = withSetup(useSettings);
+      expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Syncing..." });
     });
 
-    it("returns 'ready' for success-resolve status", () => {
-      mockStatus.value = "success-resolve";
-      const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "ready", text: "Verified" });
+    it("returns 'success' for success-resolve status", () => {
+      mocks.mockStatus.value = "success-resolve";
+      const { result } = withSetup(useSettings);
+      expect(result.apiStatusObject.value).toEqual({ type: "success", text: "Verified" });
     });
 
     it("returns 'loading' for unknown status", () => {
       // @ts-ignore
-      mockStatus.value = "something-else";
-      const { apiStatusObject } = useSettings();
-      expect(apiStatusObject.value).toEqual({ type: "loading", text: "Connecting..." });
+      mocks.mockStatus.value = "something-else";
+      const { result } = withSetup(useSettings);
+      expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Connecting..." });
     });
   });
 
   it("handles theme change with haptics", () => {
-    const { handleThemeChange } = useSettings();
-    handleThemeChange("dark");
-    expect(mockHaptics.tap).toHaveBeenCalled();
-    expect(mockSetTheme).toHaveBeenCalledWith("dark");
+    const { result } = withSetup(useSettings);
+    result.handleThemeChange("dark");
+    expect(mocks.mockHaptics.tap).toHaveBeenCalled();
+    expect(mocks.mockSetTheme).toHaveBeenCalledWith("dark");
   });
 
   describe("forceUpdate", () => {
     it("reports error if serviceWorker is not in navigator", async () => {
       vi.stubGlobal("navigator", {});
-      const { forceUpdate } = useSettings();
-      await forceUpdate();
-      expect(mockToast.error).toHaveBeenCalledWith("Service Worker not available");
+      const { result } = withSetup(useSettings);
+      await result.forceUpdate();
+      expect(mocks.mockToast.error).toHaveBeenCalledWith("Service Worker not available");
     });
 
     it("reports error if no registration is found", async () => {
-      const { forceUpdate } = useSettings();
-      await forceUpdate();
-      expect(mockToast.error).toHaveBeenCalledWith("No active session found");
+      const { result } = withSetup(useSettings);
+      await result.forceUpdate();
+      expect(mocks.mockToast.error).toHaveBeenCalledWith("No active session found");
     });
 
     it("updates and reloads if a waiting worker exists", async () => {
@@ -293,10 +337,10 @@ describe("useSettings", () => {
           getRegistration: vi.fn().mockResolvedValue(mockReg),
         },
       });
-      const { forceUpdate } = useSettings();
-      await forceUpdate();
-      expect(mockToast.success).toHaveBeenCalledWith("Update ready! Reloading...");
-      expect(mockUpdateServiceWorker).toHaveBeenCalledWith(true);
+      const { result } = withSetup(useSettings);
+      await result.forceUpdate();
+      expect(mocks.mockToast.success).toHaveBeenCalledWith("Update ready! Reloading...");
+      expect(mocks.mockUpdateServiceWorker).toHaveBeenCalledWith(true);
     });
 
     it("triggers update if no waiting worker", async () => {
@@ -306,10 +350,10 @@ describe("useSettings", () => {
           getRegistration: vi.fn().mockResolvedValue(mockReg),
         },
       });
-      const { forceUpdate } = useSettings();
-      await forceUpdate();
+      const { result } = withSetup(useSettings);
+      await result.forceUpdate();
       expect(mockReg.update).toHaveBeenCalled();
-      expect(mockToast.success).toHaveBeenCalledWith("Clash Manager is up to date");
+      expect(mocks.mockToast.success).toHaveBeenCalledWith("Clash Manager is up to date");
     });
 
     it("reports success if update results in installing/waiting state", async () => {
@@ -325,9 +369,9 @@ describe("useSettings", () => {
           getRegistration: vi.fn().mockResolvedValue(mockReg),
         },
       });
-      const { forceUpdate } = useSettings();
-      await forceUpdate();
-      expect(mockToast.success).toHaveBeenCalledWith("Update found! Downloading...");
+      const { result } = withSetup(useSettings);
+      await result.forceUpdate();
+      expect(mocks.mockToast.success).toHaveBeenCalledWith("Update found! Downloading...");
     });
 
     it("handles update failure", async () => {
@@ -337,22 +381,22 @@ describe("useSettings", () => {
           getRegistration: vi.fn().mockResolvedValue(mockReg),
         },
       });
-      const { forceUpdate } = useSettings();
-      await forceUpdate();
-      expect(mockToast.error).toHaveBeenCalledWith("Update check failed");
+      const { result } = withSetup(useSettings);
+      await result.forceUpdate();
+      expect(mocks.mockToast.error).toHaveBeenCalledWith("Update check failed");
     });
   });
 
   describe("clearCache", () => {
     it("does nothing if user cancels", async () => {
-      mockConfirm.mockReturnValue(false);
-      const { clearCache } = useSettings();
-      await clearCache();
-      expect(mockReload).not.toHaveBeenCalled();
+      mocks.mockConfirm.mockReturnValue(false);
+      const { result } = withSetup(useSettings);
+      await result.clearCache();
+      expect(mocks.mockReload).not.toHaveBeenCalled();
     });
 
     it("clears caches and reloads if user confirms", async () => {
-      mockConfirm.mockReturnValue(true);
+      mocks.mockConfirm.mockReturnValue(true);
       const mockUnregister = vi.fn();
       vi.stubGlobal("navigator", {
         serviceWorker: {
@@ -365,50 +409,186 @@ describe("useSettings", () => {
         delete: mockCacheDelete,
       });
 
-      const { clearCache } = useSettings();
-      await clearCache();
+      const { result } = withSetup(useSettings);
+      await result.clearCache();
 
-      expect(mockHaptics.medium).toHaveBeenCalled();
+      expect(mocks.mockHaptics.medium).toHaveBeenCalled();
       expect(mockUnregister).toHaveBeenCalled();
       expect(mockCacheDelete).toHaveBeenCalledWith("cache-v1");
-      expect(mockClearManifestCache).toHaveBeenCalled();
-      expect(mockReload).toHaveBeenCalled();
+      expect(mocks.mockClearManifestCache).toHaveBeenCalled();
+      expect(mocks.mockReload).toHaveBeenCalled();
     });
   });
 
   describe("factoryReset", () => {
     it("does nothing if user cancels", async () => {
-      mockConfirm.mockReturnValue(false);
-      const { factoryReset } = useSettings();
-      await factoryReset();
-      expect(mockReload).not.toHaveBeenCalled();
+      mocks.mockConfirm.mockReturnValue(false);
+      const { result } = withSetup(useSettings);
+      await result.factoryReset();
+      expect(mocks.mockReload).not.toHaveBeenCalled();
     });
 
     it("clears storage and reloads if user confirms", async () => {
-      mockConfirm.mockReturnValue(true);
-      const { factoryReset } = useSettings();
-      await factoryReset();
+      mocks.mockConfirm.mockReturnValue(true);
+      const { result } = withSetup(useSettings);
+      await result.factoryReset();
 
-      expect(mockHaptics.heavy).toHaveBeenCalled();
+      expect(mocks.mockHaptics.heavy).toHaveBeenCalled();
       expect(localStorage.clear).toHaveBeenCalled();
       expect(sessionStorage.clear).toHaveBeenCalled();
       expect(idb.clear).toHaveBeenCalled();
-      expect(mockReload).toHaveBeenCalled();
+      expect(mocks.mockReload).toHaveBeenCalled();
     });
 
     it("handles IDB clear failure gracefully", async () => {
-      mockConfirm.mockReturnValue(true);
+      mocks.mockConfirm.mockReturnValue(true);
       vi.mocked(idb.clear).mockRejectedValue(new Error("IDB Error"));
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const { factoryReset } = useSettings();
-      await factoryReset();
+      const { result } = withSetup(useSettings);
+      await result.factoryReset();
 
       expect(idb.clear).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith("IDB clear failed", expect.any(Error));
-      expect(mockReload).toHaveBeenCalled();
+      expect(mocks.mockReload).toHaveBeenCalled();
 
       consoleWarnSpy.mockRestore();
+    });
+  });
+
+  describe("API URL Management", () => {
+    it("updates API URL and reloads", () => {
+      const { result } = withSetup(useSettings);
+      result.updateApiUrl(" https://new-api.com ");
+      expect(localStorage.setItem).toHaveBeenCalledWith("cm_gas_url", "https://new-api.com");
+      expect(mocks.mockReload).toHaveBeenCalled();
+    });
+
+    it("does not update for empty URL", () => {
+      const { result } = withSetup(useSettings);
+      result.updateApiUrl(" ");
+      expect(mocks.mockReload).not.toHaveBeenCalled();
+    });
+
+    it("resets API URL and reloads on confirmation", () => {
+      mocks.mockConfirm.mockReturnValue(true);
+      const { result } = withSetup(useSettings);
+      result.resetApiUrl();
+      expect(localStorage.removeItem).toHaveBeenCalledWith("cm_gas_url");
+      expect(mocks.mockReload).toHaveBeenCalled();
+    });
+  });
+
+  describe("Notification Management", () => {
+    it("requests notification permission with haptics", async () => {
+      const { result } = withSetup(useSettings);
+      await result.requestNotificationPermission();
+      expect(mocks.mockHaptics.tap).toHaveBeenCalled();
+      expect(mocks.mockRequestPermission).toHaveBeenCalled();
+      expect(result.notificationPermission.value).toBe("granted");
+    });
+
+    describe("subscribePush", () => {
+      it("reports error if worker not configured", async () => {
+        mocks.mockIsWorkerConfigured.mockReturnValue(false);
+        const { result } = withSetup(useSettings);
+        await result.subscribePush();
+        expect(mocks.mockToast.error).toHaveBeenCalledWith("Cloud Worker not configured");
+      });
+
+      it("subscribes to push successfully", async () => {
+        mocks.mockIsWorkerConfigured.mockReturnValue(true);
+        const mockSubscribe = vi.fn().mockResolvedValue({ endpoint: "mock" });
+        vi.stubGlobal("navigator", {
+          serviceWorker: {
+            ready: Promise.resolve({
+              pushManager: { subscribe: mockSubscribe }
+            })
+          }
+        });
+
+        const { result } = withSetup(useSettings);
+        await result.subscribePush();
+
+        expect(mocks.mockHaptics.medium).toHaveBeenCalled();
+        expect(mockSubscribe).toHaveBeenCalled();
+        expect(mocks.mockSubscribeToPush).toHaveBeenCalledWith({ endpoint: "mock" });
+        expect(result.isPushSubscribed.value).toBe(true);
+        expect(mocks.mockToast.success).toHaveBeenCalledWith("Push Alerts Active");
+      });
+
+      it("handles push setup failure (navigator error)", async () => {
+        mocks.mockIsWorkerConfigured.mockReturnValue(true);
+        // Simulate navigator error by making ready a rejecting promise
+        vi.stubGlobal("navigator", {
+          serviceWorker: {
+            ready: Promise.reject(new Error("SW Failure"))
+          }
+        });
+
+        const { result } = withSetup(useSettings);
+        await result.subscribePush();
+        expect(mocks.mockToast.error).toHaveBeenCalledWith("Push setup failed");
+      });
+
+      it("handles server registration failure", async () => {
+        mocks.mockIsWorkerConfigured.mockReturnValue(true);
+        mocks.mockSubscribeToPush.mockResolvedValue(false);
+        const mockSubscribe = vi.fn().mockResolvedValue({ endpoint: "mock" });
+        vi.stubGlobal("navigator", {
+          serviceWorker: {
+            ready: Promise.resolve({
+              pushManager: { subscribe: mockSubscribe }
+            })
+          }
+        });
+
+        const { result } = withSetup(useSettings);
+        await result.subscribePush();
+        expect(mocks.mockToast.error).toHaveBeenCalledWith("Server registration failed");
+      });
+    });
+
+    describe("sendTestNotification", () => {
+      it("sends message to service worker if available", async () => {
+        const mockPostMessage = vi.fn();
+        vi.stubGlobal("navigator", {
+          serviceWorker: {
+            controller: { postMessage: mockPostMessage }
+          }
+        });
+
+        const { result } = withSetup(useSettings);
+        await result.sendTestNotification();
+
+        expect(mocks.mockHaptics.heavy).toHaveBeenCalled();
+        expect(mockPostMessage).toHaveBeenCalledWith({
+          type: "BADGE_NOTIFICATION_ANDROID",
+          count: 1,
+          threshold: 75
+        });
+      });
+
+      it("falls back to local notification", async () => {
+        vi.stubGlobal("navigator", { serviceWorker: {} });
+        const { result } = withSetup(useSettings);
+        await result.sendTestNotification();
+        expect(mocks.mockSendLocalNotification).toHaveBeenCalled();
+      });
+    });
+
+    it("sets notification threshold with haptics and sync", () => {
+      const { result } = withSetup(useSettings);
+      result.setNotificationThreshold(50);
+      expect(mocks.mockHaptics.tap).toHaveBeenCalled();
+      expect(mocks.mockModules.notificationThreshold).toBe(50);
+    });
+
+    it("formats last sync time correctly", () => {
+      const { result } = withSetup(useSettings);
+      // Date(1700000000000) = 2023-11-14T22:13:20.000Z
+      // result depends on environment locale but should not be "Never"
+      expect(result.lastSyncFormatted.value).not.toBe("Never");
     });
   });
 });

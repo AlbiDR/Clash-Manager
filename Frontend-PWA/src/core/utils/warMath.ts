@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
  * ============================================================================
  * MODULE: WAR MATHEMATICS (Prediction Engine)
@@ -6,6 +9,7 @@
  * performance and projecting future outcomes.
  *
  * ARCHITECTURE:
+ *    - Layer: Layer 1 (@core)
  *    - Recency Bias: Uses weighted averages where newer weeks carry more
  *      influence than older weeks (Exponential Decay approximation).
  *    - Form Modifiers: Applies conditional bonuses (Streaks) to account for
@@ -13,6 +17,10 @@
  *
  * ROLE: Part of the "Persistent Clan Database" strategy, transforming raw
  * archived snapshots into actionable performance forecasts.
+ *
+ * IMPORT BOUNDARIES:
+ * - Terminal leaf in the dependency graph. Must NOT import from any other
+ *   services or features.
  * ============================================================================
  */
 
@@ -39,6 +47,11 @@ export const WAR_CONSTANTS = {
  * historical baseline.
  */
 const PREDICTION_WEIGHTS: Record<number, number[]> = {
+  // // DECISION LOG: Recency Bias Distribution
+  // Rationale: We use a steep decay curve (0.4 for the current week vs 0.08 for week 5)
+  // to ensure that the prediction reflects current form immediately. This is
+  // critical for identifying "burned out" players before their 5-week average
+  // drops significantly.
   1: [1.0],
   2: [0.7, 0.3],
   3: [0.6, 0.3, 0.1],
@@ -50,8 +63,11 @@ const PREDICTION_WEIGHTS: Record<number, number[]> = {
  * Normalized representation of a historical war entry.
  */
 export interface HistoryEntry {
+  /** Raw fame points earned in the week. */
   fame: number;
+  /** Branded Week ID (e.g., "24W01"). */
   weekId: string;
+  /** UI-friendly representation (e.g., "Week 1"). */
   readableWeek: string;
 }
 
@@ -67,6 +83,10 @@ export interface HistoryEntry {
  * The parser is resilient to different delimiter styles (pipe or comma) used
  * by various versions of the GAS backend. It utilizes a strict regex for
  * week ID validation (YY'W'WW format).
+ *
+ * THREAT: Malformed history strings from legacy GAS versions causing UI crashes.
+ * Rationale: Explicitly filtering Boolean and trimming ensures that whitespace
+ * or trailing delimiters do not result in "undefined" entries in the array.
  */
 export function parseHistoryString(
   historyStr: string | undefined,
@@ -130,7 +150,10 @@ export function calculatePrediction(fameHistory: number[]): number {
   }
 
   // PHASE 2: Form Modifier (Streak Bonus)
-  // Logic: 3 consecutive weeks above threshold earns a performance multiplier (additive).
+  // // DECISION LOG: Streak Momentum Logic
+  // Rationale: A 3-week winning streak is a strong indicator of both high
+  // participation and tactical proficiency. The 160pt (5% of MAX) bonus
+  // provides a slight "edge" to reliable performers in the Roster view rankings.
   if (n >= 3) {
     if (
       fameHistory[0] > WAR_CONSTANTS.WIN_THRESHOLD &&
@@ -142,6 +165,8 @@ export function calculatePrediction(fameHistory: number[]): number {
   }
 
   // FINAL: Result Normalization
-  // Ensure the prediction never exceeds the physical game limits.
+  // // THREAT: Prediction overflow.
+  // Rationale: Weighted averages + bonuses can mathematically exceed 3200.
+  // We clamp to MAX_FAME to maintain physical game parity in the UI.
   return Math.max(0, Math.min(WAR_CONSTANTS.MAX_FAME, projection));
 }

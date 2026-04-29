@@ -30,7 +30,7 @@ import {
   StatisticItem
 } from "@shared";
 import { computed, defineAsyncComponent } from "vue";
-import type { LeaderboardMember } from "@core/types";
+import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
 import { formatRole, formatTimeAgo } from "@core/utils/formatters";
 
 // [PERF] ASYNC COMPONENT: Deferred loading of the heavy ECharts-based history visualization.
@@ -38,21 +38,11 @@ const WarHistoryChart = defineAsyncComponent(
   () => import("./WarHistoryChart.vue"),
 );
 
-const props = defineProps<{
+const props = defineProps<ConsoleCardMetadata & {
   /** Unique player tag identifier. */
   id: string;
   /** Authoritative member data object from the Leaderboard dataset. */
   member: LeaderboardMember;
-  /** UI State: Controls the expansion of detailed statistics and charts. */
-  expanded: boolean;
-  /** UI State: Indicates if the card is in the batch selection queue. */
-  selected: boolean;
-  /** UI State: Toggles between interaction modes (Expansion vs. Selection). */
-  selectionMode: boolean;
-  /** Optional: Indicates if the player is currently tagged for an action. */
-  isTagged?: boolean;
-  /** UI State: Inherited refresh status to trigger loading skeletons or aria-busy. */
-  appIsRefreshing?: boolean;
 }>();
 
 const emit = defineEmits<{
