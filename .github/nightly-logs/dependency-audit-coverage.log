@@ -42,6 +42,7 @@
 | @vue/test-utils | ^2.4.6 | ^2.4.8 | 2026-06-04 | PASS |
 | @vue/test-utils | ^2.4.8 | ^2.4.9 | 2026-06-05 | PASS |
 | @types/express | ^4.17.21 | ^4.17.25 | 2026-04-26 | PASS |
+| knip | ^6.3.0 | ^6.7.0 | 2026-06-05 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
@@ -49,7 +50,6 @@
 | vite | ^7.3.1 | 8.0.8 | 2026-05-17 | Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. Verify manualChunks. |
 | express | ^4.22.1 | 5.2.1 | 2026-05-21 | Breaking: Route matching (low impact on worker), async error propagation. |
 | typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Several compiler defaults changed (module: esnext, target: es2025). |
-| knip | ^6.3.0 | 6.4.1 | 2026-04-22 | [Updated] Tier 1 minor bump previously failed test gate. |
 | @types/node | ^24.12.0 | 25.6.0 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
 | @vitejs/plugin-vue | ^6.0.5 | 6.0.6 | 2026-04-13 | [Updated] Tier 1 patch bump previously failed test gate. |
 | vue-router | ^4.6.4 | 5.0.6 | 2026-06-05 | Breaking: Transition release. No breaking changes for manual routes. |
