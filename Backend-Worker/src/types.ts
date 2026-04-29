@@ -123,6 +123,7 @@ export interface RiverRaceLog {
 export interface FetchResult<T = unknown> {
   code: number;
   content: T | string;
+  keyUsed?: string;
 }
 
 export interface ApiResponse<T> {

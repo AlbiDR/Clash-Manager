@@ -57,12 +57,14 @@ export class RoyaleApiService {
   ): Promise<FetchResult<T>> {
     let currentAttempt = 0;
     let lastOperationError: Error | null = null;
+    let lastUsedKey: string = "None";
 
     while (currentAttempt <= maxRetryAttempts) {
       const activeApiKey = keyManager.getHealthyKey();
       if (!activeApiKey) {
-        return { code: 429, content: "ERR_QUOTA_EMPTY" as T };
+        return { code: 429, content: "ERR_QUOTA_EMPTY" as T, keyUsed: "None" };
       }
+      lastUsedKey = activeApiKey;
 
       const fetchOptions = {
         ...requestConfiguration,
@@ -84,10 +86,19 @@ export class RoyaleApiService {
 
         if (responseStatusCode === 200) {
           keyManager.reportSuccess(activeApiKey);
+          const maskedKey = `${activeApiKey.substring(0, 10)}...${activeApiKey.slice(-4)}`;
           try {
-            return { code: responseStatusCode, content: JSON.parse(rawApiResponseText) as T };
+            return {
+              code: responseStatusCode,
+              content: JSON.parse(rawApiResponseText) as T,
+              keyUsed: maskedKey,
+            };
           } catch {
-            return { code: responseStatusCode, content: rawApiResponseText as T };
+            return {
+              code: responseStatusCode,
+              content: rawApiResponseText as T,
+              keyUsed: maskedKey,
+            };
           }
         }
 
@@ -112,9 +123,14 @@ export class RoyaleApiService {
       }
     }
 
+    const finalMaskedKey = lastUsedKey !== "None"
+      ? `${lastUsedKey.substring(0, 10)}...${lastUsedKey.slice(-4)}`
+      : "None";
+
     return {
       code: 520,
       content: `Fetch exhausted: ${lastOperationError?.message ?? "unknown"}` as T,
+      keyUsed: finalMaskedKey,
     };
   }
 }
