@@ -66,6 +66,38 @@ export class RecruitmentService {
   }
 
   /**
+   * Orchestrates a high-concurrency worker pool to process tasks in parallel.
+   * Rationale: Centralizing this logic ensures consistent throughput management
+   * across the recruitment pipeline and eliminates DRY violations.
+   *
+   * @param itemCount - Total number of items to process.
+   * @param concurrencyLimit - Maximum simultaneous workers.
+   * @param taskRunner - Async callback to process a single item by index.
+   */
+  private static async runPool(
+    itemCount: number,
+    concurrencyLimit: number,
+    taskRunner: (index: number) => Promise<void>,
+  ): Promise<void> {
+    let activeIndex = 0;
+
+    const worker = async (): Promise<void> => {
+      while (true) {
+        const index = activeIndex++;
+        if (index >= itemCount) return;
+        await taskRunner(index);
+      }
+    };
+
+    const pool: Promise<void>[] = [];
+    const spawnCount = Math.min(concurrencyLimit, itemCount);
+    for (let i = 0; i < spawnCount; i++) {
+      pool.push(worker());
+    }
+    await Promise.all(pool);
+  }
+
+  /**
    * Implements a high-concurrency worker pool pattern to process multiple URLs
    * in parallel. This function handles both raw data fetching and specialized
    * recruitment scoring.
@@ -93,7 +125,6 @@ export class RecruitmentService {
     Network.quotaCheck(estimatedUsage);
 
     const batchProcessingResults: FetchResult<T>[] = new Array(targetEndpoints.length);
-    let activeBatchTaskIndex = 0;
 
     // // THREAT: KeyService Pathogen.
     // Rationale: Missing KeyService singleton during high-volume batch processing leads
@@ -104,139 +135,123 @@ export class RecruitmentService {
       throw new Error("[RecruitmentService] No API key source provided for batch operation.");
     }
 
-    // // DECISION LOG: Worker Pool Concurrency Pattern
-    // Rationale: Utilizing a shared `activeBatchTaskIndex` across multiple `batchTaskWorker` instances
-    // ensures optimal throughput and automatic load balancing across the available
-    // API key pool without the overhead of complex queue management.
-    const batchTaskWorker = async (): Promise<void> => {
-      while (true) {
-        const batchTaskIndex = activeBatchTaskIndex++;
-        if (batchTaskIndex >= targetEndpoints.length) return;
+    await this.runPool(targetEndpoints.length, concurrencyLimit, async (batchTaskIndex) => {
+      const targetEndpoint = targetEndpoints[batchTaskIndex];
+      if (!targetEndpoint) return;
 
-        const targetEndpoint = targetEndpoints[batchTaskIndex];
-        if (!targetEndpoint) continue;
+      const requestHeaders: Record<string, string> = {
+        "User-Agent": "ClanManagerWorker/10.1.4",
+        "Accept-Encoding": "gzip",
+      };
 
-        const requestHeaders: Record<string, string> = {
-          "User-Agent": "ClanManagerWorker/10.1.4",
-          "Accept-Encoding": "gzip",
-        };
+      if (scoringWeights && targetEndpoint.includes("/players/") && !targetEndpoint.includes("/battlelog")) {
+        try {
+          const profileResult = await RoyaleApiService.fetchWithRotatedRetries<ClashRoyalePlayer>(targetEndpoint, {
+            method: "GET",
+            headers: requestHeaders,
+          }, this.MAX_RETRIES, batchManager);
 
-        if (scoringWeights && targetEndpoint.includes("/players/") && !targetEndpoint.includes("/battlelog")) {
-          try {
-            const profileResult = await RoyaleApiService.fetchWithRotatedRetries<ClashRoyalePlayer>(targetEndpoint, {
-              method: "GET",
-              headers: requestHeaders,
-            }, this.MAX_RETRIES, batchManager);
-
-            if (profileResult.code === 200 && typeof profileResult.content === "object" && profileResult.content !== null) {
-              const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
-              if (!profileValidation.success) {
-                batchProcessingResults[batchTaskIndex] = { code: 502, content: "Invalid player profile format" as T, keyUsed: profileResult.keyUsed };
-                continue;
-              }
-              const playerProfile = profileValidation.output;
-
-              const logUrl = `${targetEndpoint}/battlelog`;
-              const logsResult = await RoyaleApiService.fetchWithRotatedRetries<BattleLogEntry[]>(
-                logUrl,
-                {
-                  method: "GET",
-                  headers: requestHeaders,
-                },
-                this.MAX_RETRIES,
-                batchManager,
-              );
-
-              let hasWarActivity = false;
-              if (logsResult.code === 200 && Array.isArray(logsResult.content)) {
-                const logsValidation = v.safeParse(RoyaleBattleLogResponseSchema, logsResult.content);
-                if (logsValidation.success) {
-                  hasWarActivity = logsValidation.output.some((logEntry) =>
-                    ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(logEntry.type),
-                  );
-                }
-              }
-
-              const currentLeagueTrophies = playerProfile.leagueStatistics?.currentSeason?.trophies || 0;
-              // // DECISION LOG: Effective Trophy Calculation
-              // Rationale: For players who have reached the 9000 trophy ceiling, their current
-              // season league performance is added to provide a more accurate representation
-              // of their competitive skill level.
-              const effectiveTrophies = (playerProfile.trophies || 0) + (playerProfile.trophies >= 9000 ? currentLeagueTrophies : 0);
-
-              let rawPotentialScore = ScoringKernel.computeRecruitScore(
-                effectiveTrophies,
-                playerProfile.totalDonations ?? 0,
-                playerProfile.warDayWins ?? 0,
-                hasWarActivity,
-                scoringWeights || { TROPHY: 1.0, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
-              );
-
-              if (prophetCache) {
-                   const normalizedTag = playerProfile.tag;
-                   const historicalIntel = prophetCache[normalizedTag];
-                   // // DECISION LOG: Prophet Heritage Multiplier
-                   // Rationale: Recruits with a verified history of success (>5 wins in heritage data)
-                   // receive a 25% score boost to prioritize proven talent over raw ladder stats.
-                   if (historicalIntel && historicalIntel.wins > 5) {
-                      rawPotentialScore *= 1.25;
-                   }
-              }
-
-              const warActivityBonus = hasWarActivity ? 500 : 0;
-              const combinedWarScore = (playerProfile.warDayWins ?? 0) + warActivityBonus;
-
-              // // THREAT: Data Starvation via Aggressive Filtering
-              // Rationale: We strictly exclude players already in a clan and those falling
-              // below the `minTrophyThreshold` to ensure the GAS backend only receives
-              // high-quality, actionable recruitment targets.
-              if (minTrophyThreshold > 0 && effectiveTrophies < minTrophyThreshold) {
-                  console.info(`[RecruitmentService] Discarded ${playerProfile.tag} (${playerProfile.name}): ${effectiveTrophies} < ${minTrophyThreshold}`);
-                  batchProcessingResults[batchTaskIndex] = { code: 200, content: null as T, keyUsed: logsResult.keyUsed || profileResult.keyUsed };
-                  continue;
-              }
-
-              if (playerProfile.clan?.tag) {
-                  batchProcessingResults[batchTaskIndex] = { code: 200, content: null as T, keyUsed: logsResult.keyUsed || profileResult.keyUsed };
-                  continue;
-              }
-
-              batchProcessingResults[batchTaskIndex] = {
-                code: 200,
-                content: {
-                  tag: playerProfile.tag,
-                  name: playerProfile.name,
-                  trophies: effectiveTrophies,
-                  donations: playerProfile.totalDonations,
-                  cards: playerProfile.challengeCardsWon,
-                  war: combinedWarScore,
-                  rawScore: rawPotentialScore,
-                  clan: playerProfile.clan?.name || null,
-                } as T,
-                keyUsed: logsResult.keyUsed || profileResult.keyUsed,
-              };
-            } else {
-              batchProcessingResults[batchTaskIndex] = profileResult as FetchResult<T>;
+          if (profileResult.code === 200 && typeof profileResult.content === "object" && profileResult.content !== null) {
+            const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
+            if (!profileValidation.success) {
+              batchProcessingResults[batchTaskIndex] = { code: 502, content: "Invalid player profile format" as T, keyUsed: profileResult.keyUsed };
+              return;
             }
-          } catch (scoringOperationError) {
-            batchProcessingResults[batchTaskIndex] = {
-              code: 500,
-              content: `Scoring fetch failed: ${scoringOperationError instanceof Error ? scoringOperationError.message : "unknown"}` as T,
-            };
-          }
-        } else {
-          const fetchResponse = await RoyaleApiService.fetchWithRotatedRetries<T>(targetEndpoint, { method: "GET", headers: requestHeaders }, this.MAX_RETRIES, batchManager);
-          batchProcessingResults[batchTaskIndex] = fetchResponse;
-        }
-      }
-    };
+            const playerProfile = profileValidation.output;
 
-    const workerPool: Promise<void>[] = [];
-    const spawnCount = Math.min(concurrencyLimit, targetEndpoints.length);
-    for (let workerPoolIndex = 0; workerPoolIndex < spawnCount; workerPoolIndex++) {
-      workerPool.push(batchTaskWorker());
-    }
-    await Promise.all(workerPool);
+            const logUrl = `${targetEndpoint}/battlelog`;
+            const logsResult = await RoyaleApiService.fetchWithRotatedRetries<BattleLogEntry[]>(
+              logUrl,
+              {
+                method: "GET",
+                headers: requestHeaders,
+              },
+              this.MAX_RETRIES,
+              batchManager,
+            );
+
+            let hasWarActivity = false;
+            if (logsResult.code === 200 && Array.isArray(logsResult.content)) {
+              const logsValidation = v.safeParse(RoyaleBattleLogResponseSchema, logsResult.content);
+              if (logsValidation.success) {
+                hasWarActivity = logsValidation.output.some((logEntry) =>
+                  ["riverRacePvP", "boatBattle", "riverRaceDuel"].includes(logEntry.type),
+                );
+              }
+            }
+
+            const currentLeagueTrophies = playerProfile.leagueStatistics?.currentSeason?.trophies || 0;
+            // // DECISION LOG: Effective Trophy Calculation
+            // Rationale: For players who have reached the 9000 trophy ceiling, their current
+            // season league performance is added to provide a more accurate representation
+            // of their competitive skill level.
+            const effectiveTrophies = (playerProfile.trophies || 0) + (playerProfile.trophies >= 9000 ? currentLeagueTrophies : 0);
+
+            let rawPotentialScore = ScoringKernel.computeRecruitScore(
+              effectiveTrophies,
+              playerProfile.totalDonations ?? 0,
+              playerProfile.warDayWins ?? 0,
+              hasWarActivity,
+              scoringWeights || { TROPHY: 1.0, DON: 0.07, WAR: 20.0, WAR_BASELINE_BONUS: 500 },
+            );
+
+            if (prophetCache) {
+              const normalizedTag = playerProfile.tag;
+              const historicalIntel = prophetCache[normalizedTag];
+              // // DECISION LOG: Prophet Heritage Multiplier
+              // Rationale: Recruits with a verified history of success (>5 wins in heritage data)
+              // receive a 25% score boost to prioritize proven talent over raw ladder stats.
+              if (historicalIntel && historicalIntel.wins > 5) {
+                rawPotentialScore *= 1.25;
+              }
+            }
+
+            const warActivityBonus = hasWarActivity ? 500 : 0;
+            const combinedWarScore = (playerProfile.warDayWins ?? 0) + warActivityBonus;
+
+            // // THREAT: Data Starvation via Aggressive Filtering
+            // Rationale: We strictly exclude players already in a clan and those falling
+            // below the `minTrophyThreshold` to ensure the GAS backend only receives
+            // high-quality, actionable recruitment targets.
+            if (minTrophyThreshold > 0 && effectiveTrophies < minTrophyThreshold) {
+              console.info(`[RecruitmentService] Discarded ${playerProfile.tag} (${playerProfile.name}): ${effectiveTrophies} < ${minTrophyThreshold}`);
+              batchProcessingResults[batchTaskIndex] = { code: 200, content: null as T, keyUsed: logsResult.keyUsed || profileResult.keyUsed };
+              return;
+            }
+
+            if (playerProfile.clan?.tag) {
+              batchProcessingResults[batchTaskIndex] = { code: 200, content: null as T, keyUsed: logsResult.keyUsed || profileResult.keyUsed };
+              return;
+            }
+
+            batchProcessingResults[batchTaskIndex] = {
+              code: 200,
+              content: {
+                tag: playerProfile.tag,
+                name: playerProfile.name,
+                trophies: effectiveTrophies,
+                donations: playerProfile.totalDonations,
+                cards: playerProfile.challengeCardsWon,
+                war: combinedWarScore,
+                rawScore: rawPotentialScore,
+                clan: playerProfile.clan?.name || null,
+              } as T,
+              keyUsed: logsResult.keyUsed || profileResult.keyUsed,
+            };
+          } else {
+            batchProcessingResults[batchTaskIndex] = profileResult as FetchResult<T>;
+          }
+        } catch (scoringOperationError) {
+          batchProcessingResults[batchTaskIndex] = {
+            code: 500,
+            content: `Scoring fetch failed: ${scoringOperationError instanceof Error ? scoringOperationError.message : "unknown"}` as T,
+          };
+        }
+      } else {
+        const fetchResponse = await RoyaleApiService.fetchWithRotatedRetries<T>(targetEndpoint, { method: "GET", headers: requestHeaders }, this.MAX_RETRIES, batchManager);
+        batchProcessingResults[batchTaskIndex] = fetchResponse;
+      }
+    });
 
     if (scoringWeights) {
       return batchProcessingResults
@@ -292,7 +307,6 @@ export class RecruitmentService {
     Network.quotaCheck(tournamentTags.length);
 
     const recruitmentCandidates: ScoredPlayer[] = [];
-    let activeBatchTaskIndex = 0;
     let isTraceCaptured = false;
 
     // // THREAT: KeyService Pathogen.
@@ -301,13 +315,9 @@ export class RecruitmentService {
       throw new Error("[RecruitmentService] No API key source provided for scan operation.");
     }
 
-    const batchTaskWorker = async (): Promise<void> => {
-      while (true) {
-        const batchTaskIndex = activeBatchTaskIndex++;
-        if (batchTaskIndex >= tournamentTags.length) return;
-
+    await this.runPool(tournamentTags.length, concurrencyLimit, async (batchTaskIndex) => {
       const tournamentTag = tournamentTags[batchTaskIndex];
-      if (!tournamentTag) continue;
+      if (!tournamentTag) return;
 
       const targetEndpoint = `${this.API_BASE}/tournaments/${encodeURIComponent(tournamentTag)}`;
 
@@ -316,55 +326,47 @@ export class RecruitmentService {
         "Accept-Encoding": "gzip",
       };
 
-        try {
-          const tournamentApiResponse = await RoyaleApiService.fetchWithRotatedRetries<Tournament>(targetEndpoint, {
-            method: "GET",
-            headers: requestHeaders,
-          }, this.MAX_RETRIES, batchManager);
+      try {
+        const tournamentApiResponse = await RoyaleApiService.fetchWithRotatedRetries<Tournament>(targetEndpoint, {
+          method: "GET",
+          headers: requestHeaders,
+        }, this.MAX_RETRIES, batchManager);
 
-          if (diagnosticTrace && !isTraceCaptured) {
-              isTraceCaptured = true;
-              diagnosticTrace.firstUrl = targetEndpoint;
-              diagnosticTrace.firstStatus = tournamentApiResponse.code;
-              diagnosticTrace.firstContent = typeof tournamentApiResponse.content === "string"
-                  ? tournamentApiResponse.content.substring(0, 1000)
-                  : JSON.stringify(tournamentApiResponse.content).substring(0, 1000);
+        if (diagnosticTrace && !isTraceCaptured) {
+          isTraceCaptured = true;
+          diagnosticTrace.firstUrl = targetEndpoint;
+          diagnosticTrace.firstStatus = tournamentApiResponse.code;
+          diagnosticTrace.firstContent = typeof tournamentApiResponse.content === "string"
+            ? tournamentApiResponse.content.substring(0, 1000)
+            : JSON.stringify(tournamentApiResponse.content).substring(0, 1000);
 
-              // // THREAT: Misleading Diagnostic Trace.
-              // Rationale: Key rotation details were previously lost because they were read
-              // from the unmutated request headers. We now capture the actual key used
-              // from the transport response.
-              diagnosticTrace.keyUsed = tournamentApiResponse.keyUsed || "Unknown";
-          }
-
-          if (tournamentApiResponse.code === 200 && typeof tournamentApiResponse.content === "object" && tournamentApiResponse.content !== null) {
-            const tournamentValidation = v.safeParse(RoyaleTournamentResponseSchema, tournamentApiResponse.content);
-            if (tournamentValidation.success) {
-              tournamentValidation.output.membersList.forEach((memberCandidate) => {
-                if (memberCandidate.clan?.tag) return;
-                const candidateTag = memberCandidate.tag as PlayerTag;
-                if (dismissedPlayerTags.has(candidateTag)) return;
-
-                recruitmentCandidates.push({
-                  tag: candidateTag,
-                  name: memberCandidate.name || "Unknown",
-                  rawScore: 0,
-                });
-              });
-            }
-          }
-        } catch (scanOperationError) {
-          console.warn(`[RecruitmentService] Scan failed for tournament ${tournamentTag}: ${scanOperationError instanceof Error ? scanOperationError.message : "unknown"}`);
+          // // THREAT: Misleading Diagnostic Trace.
+          // Rationale: Key rotation details were previously lost because they were read
+          // from the unmutated request headers. We now capture the actual key used
+          // from the transport response.
+          diagnosticTrace.keyUsed = tournamentApiResponse.keyUsed || "Unknown";
         }
-      }
-    };
 
-    const workerPool: Promise<void>[] = [];
-    const spawnCount = Math.min(concurrencyLimit, tournamentTags.length);
-    for (let workerPoolIndex = 0; workerPoolIndex < spawnCount; workerPoolIndex++) {
-      workerPool.push(batchTaskWorker());
-    }
-    await Promise.all(workerPool);
+        if (tournamentApiResponse.code === 200 && typeof tournamentApiResponse.content === "object" && tournamentApiResponse.content !== null) {
+          const tournamentValidation = v.safeParse(RoyaleTournamentResponseSchema, tournamentApiResponse.content);
+          if (tournamentValidation.success) {
+            tournamentValidation.output.membersList.forEach((memberCandidate) => {
+              if (memberCandidate.clan?.tag) return;
+              const candidateTag = memberCandidate.tag as PlayerTag;
+              if (dismissedPlayerTags.has(candidateTag)) return;
+
+              recruitmentCandidates.push({
+                tag: candidateTag,
+                name: memberCandidate.name || "Unknown",
+                rawScore: 0,
+              });
+            });
+          }
+        }
+      } catch (scanOperationError) {
+        console.warn(`[RecruitmentService] Scan failed for tournament ${tournamentTag}: ${scanOperationError instanceof Error ? scanOperationError.message : "unknown"}`);
+      }
+    });
 
     return recruitmentCandidates;
   }
