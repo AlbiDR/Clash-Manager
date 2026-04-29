@@ -166,8 +166,8 @@ The core proxy endpoint. Fetches multiple URLs in parallel with key rotation.
 ```json
 {
   "results": [
-    { "code": 200, "content": { "tag": "#TAG1", "name": "...", "trophies": 6500 } },
-    { "code": 200, "content": null } // Discarded: Trophies < minTrophies
+    { "code": 200, "content": { "tag": "#TAG1", "name": "...", "trophies": 6500 }, "keyUsed": "CRK01" },
+    { "code": 200, "content": null, "keyUsed": "CRK02" } // Discarded: Trophies < minTrophies
   ]
 }
 ```
