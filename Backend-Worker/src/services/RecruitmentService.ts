@@ -93,43 +93,50 @@ export class RecruitmentService {
     Network.quotaCheck(estimatedUsage);
 
     const batchProcessingResults: FetchResult<T>[] = new Array(targetEndpoints.length);
-    let currentBatchIndex = 0;
+    let activeBatchTaskIndex = 0;
 
+    // // THREAT: KeyService Pathogen.
+    // Rationale: Missing KeyService singleton during high-volume batch processing leads
+    // to unhandled null pointer exceptions. We enforce a strict guard to ensure the
+    // worker has an authoritative key source before beginning.
     const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : globalKeys;
+    if (!batchManager) {
+      throw new Error("[RecruitmentService] No API key source provided for batch operation.");
+    }
 
     // // DECISION LOG: Worker Pool Concurrency Pattern
-    // Rationale: Utilizing a shared `currentBatchIndex` across multiple `worker` instances
+    // Rationale: Utilizing a shared `activeBatchTaskIndex` across multiple `batchTaskWorker` instances
     // ensures optimal throughput and automatic load balancing across the available
     // API key pool without the overhead of complex queue management.
-    const worker = async (): Promise<void> => {
+    const batchTaskWorker = async (): Promise<void> => {
       while (true) {
-        const index = currentBatchIndex++;
-        if (index >= targetEndpoints.length) return;
+        const batchTaskIndex = activeBatchTaskIndex++;
+        if (batchTaskIndex >= targetEndpoints.length) return;
 
-        const endpoint = targetEndpoints[index];
-        if (!endpoint) continue;
+        const targetEndpoint = targetEndpoints[batchTaskIndex];
+        if (!targetEndpoint) continue;
 
         const requestHeaders: Record<string, string> = {
           "User-Agent": "ClanManagerWorker/10.1.4",
           "Accept-Encoding": "gzip",
         };
 
-        if (scoringWeights && endpoint.includes("/players/") && !endpoint.includes("/battlelog")) {
+        if (scoringWeights && targetEndpoint.includes("/players/") && !targetEndpoint.includes("/battlelog")) {
           try {
-            const profileResult = await RoyaleApiService.fetchWithRotatedRetries<ClashRoyalePlayer>(endpoint, {
+            const profileResult = await RoyaleApiService.fetchWithRotatedRetries<ClashRoyalePlayer>(targetEndpoint, {
               method: "GET",
               headers: requestHeaders,
-            }, this.MAX_RETRIES, batchManager!);
+            }, this.MAX_RETRIES, batchManager);
 
             if (profileResult.code === 200 && typeof profileResult.content === "object" && profileResult.content !== null) {
               const profileValidation = v.safeParse(RoyalePlayerSchema, profileResult.content);
               if (!profileValidation.success) {
-                batchProcessingResults[index] = { code: 502, content: "Invalid player profile format" as T };
+                batchProcessingResults[batchTaskIndex] = { code: 502, content: "Invalid player profile format" as T, keyUsed: profileResult.keyUsed };
                 continue;
               }
               const playerProfile = profileValidation.output;
 
-              const logUrl = `${endpoint}/battlelog`;
+              const logUrl = `${targetEndpoint}/battlelog`;
               const logsResult = await RoyaleApiService.fetchWithRotatedRetries<BattleLogEntry[]>(
                 logUrl,
                 {
@@ -137,7 +144,7 @@ export class RecruitmentService {
                   headers: requestHeaders,
                 },
                 this.MAX_RETRIES,
-                batchManager!,
+                batchManager,
               );
 
               let hasWarActivity = false;
@@ -185,16 +192,16 @@ export class RecruitmentService {
               // high-quality, actionable recruitment targets.
               if (minTrophyThreshold > 0 && effectiveTrophies < minTrophyThreshold) {
                   console.info(`[RecruitmentService] Discarded ${playerProfile.tag} (${playerProfile.name}): ${effectiveTrophies} < ${minTrophyThreshold}`);
-                  batchProcessingResults[index] = { code: 200, content: null as T };
+                  batchProcessingResults[batchTaskIndex] = { code: 200, content: null as T, keyUsed: logsResult.keyUsed || profileResult.keyUsed };
                   continue;
               }
 
               if (playerProfile.clan?.tag) {
-                  batchProcessingResults[index] = { code: 200, content: null as T };
+                  batchProcessingResults[batchTaskIndex] = { code: 200, content: null as T, keyUsed: logsResult.keyUsed || profileResult.keyUsed };
                   continue;
               }
 
-              batchProcessingResults[index] = {
+              batchProcessingResults[batchTaskIndex] = {
                 code: 200,
                 content: {
                   tag: playerProfile.tag,
@@ -206,27 +213,28 @@ export class RecruitmentService {
                   rawScore: rawPotentialScore,
                   clan: playerProfile.clan?.name || null,
                 } as T,
+                keyUsed: logsResult.keyUsed || profileResult.keyUsed,
               };
             } else {
-              batchProcessingResults[index] = profileResult as FetchResult<T>;
+              batchProcessingResults[batchTaskIndex] = profileResult as FetchResult<T>;
             }
           } catch (scoringOperationError) {
-            batchProcessingResults[index] = {
+            batchProcessingResults[batchTaskIndex] = {
               code: 500,
               content: `Scoring fetch failed: ${scoringOperationError instanceof Error ? scoringOperationError.message : "unknown"}` as T,
             };
           }
         } else {
-          const fetchResponse = await RoyaleApiService.fetchWithRotatedRetries<T>(endpoint, { method: "GET", headers: requestHeaders }, this.MAX_RETRIES, batchManager!);
-          batchProcessingResults[index] = fetchResponse;
+          const fetchResponse = await RoyaleApiService.fetchWithRotatedRetries<T>(targetEndpoint, { method: "GET", headers: requestHeaders }, this.MAX_RETRIES, batchManager);
+          batchProcessingResults[batchTaskIndex] = fetchResponse;
         }
       }
     };
 
     const workerPool: Promise<void>[] = [];
     const spawnCount = Math.min(concurrencyLimit, targetEndpoints.length);
-    for (let i = 0; i < spawnCount; i++) {
-      workerPool.push(worker());
+    for (let workerPoolIndex = 0; workerPoolIndex < spawnCount; workerPoolIndex++) {
+      workerPool.push(batchTaskWorker());
     }
     await Promise.all(workerPool);
 
@@ -284,20 +292,24 @@ export class RecruitmentService {
     Network.quotaCheck(tournamentTags.length);
 
     const recruitmentCandidates: ScoredPlayer[] = [];
-    let currentBatchIndex = 0;
+    let activeBatchTaskIndex = 0;
     let isTraceCaptured = false;
 
+    // // THREAT: KeyService Pathogen.
     const batchManager = apiKeys.length > 0 ? new KeyService(apiKeys) : globalKeys;
+    if (!batchManager) {
+      throw new Error("[RecruitmentService] No API key source provided for scan operation.");
+    }
 
-    const worker = async (): Promise<void> => {
+    const batchTaskWorker = async (): Promise<void> => {
       while (true) {
-        const index = currentBatchIndex++;
-        if (index >= tournamentTags.length) return;
+        const batchTaskIndex = activeBatchTaskIndex++;
+        if (batchTaskIndex >= tournamentTags.length) return;
 
-      const tag = tournamentTags[index];
-      if (!tag) continue;
+      const tournamentTag = tournamentTags[batchTaskIndex];
+      if (!tournamentTag) continue;
 
-      const endpoint = `${this.API_BASE}/tournaments/${encodeURIComponent(tag)}`;
+      const targetEndpoint = `${this.API_BASE}/tournaments/${encodeURIComponent(tournamentTag)}`;
 
       const requestHeaders: Record<string, string> = {
         "User-Agent": "ClanManagerWorker/10.1.4",
@@ -305,23 +317,28 @@ export class RecruitmentService {
       };
 
         try {
-          const apiResponse = await RoyaleApiService.fetchWithRotatedRetries<Tournament>(endpoint, {
+          const tournamentApiResponse = await RoyaleApiService.fetchWithRotatedRetries<Tournament>(targetEndpoint, {
             method: "GET",
             headers: requestHeaders,
-          }, this.MAX_RETRIES, batchManager!);
+          }, this.MAX_RETRIES, batchManager);
 
           if (diagnosticTrace && !isTraceCaptured) {
               isTraceCaptured = true;
-              diagnosticTrace.firstUrl = endpoint;
-              diagnosticTrace.firstStatus = apiResponse.code;
-              diagnosticTrace.firstContent = typeof apiResponse.content === "string"
-                  ? apiResponse.content.substring(0, 1000)
-                  : JSON.stringify(apiResponse.content).substring(0, 1000);
-              diagnosticTrace.keyUsed = (requestHeaders["Authorization"] || "None").substring(0, 15) + "...";
+              diagnosticTrace.firstUrl = targetEndpoint;
+              diagnosticTrace.firstStatus = tournamentApiResponse.code;
+              diagnosticTrace.firstContent = typeof tournamentApiResponse.content === "string"
+                  ? tournamentApiResponse.content.substring(0, 1000)
+                  : JSON.stringify(tournamentApiResponse.content).substring(0, 1000);
+
+              // // THREAT: Misleading Diagnostic Trace.
+              // Rationale: Key rotation details were previously lost because they were read
+              // from the unmutated request headers. We now capture the actual key used
+              // from the transport response.
+              diagnosticTrace.keyUsed = tournamentApiResponse.keyUsed || "Unknown";
           }
 
-          if (apiResponse.code === 200 && typeof apiResponse.content === "object" && apiResponse.content !== null) {
-            const tournamentValidation = v.safeParse(RoyaleTournamentResponseSchema, apiResponse.content);
+          if (tournamentApiResponse.code === 200 && typeof tournamentApiResponse.content === "object" && tournamentApiResponse.content !== null) {
+            const tournamentValidation = v.safeParse(RoyaleTournamentResponseSchema, tournamentApiResponse.content);
             if (tournamentValidation.success) {
               tournamentValidation.output.membersList.forEach((memberCandidate) => {
                 if (memberCandidate.clan?.tag) return;
@@ -337,15 +354,15 @@ export class RecruitmentService {
             }
           }
         } catch (scanOperationError) {
-          console.warn(`[RecruitmentService] Scan failed for tournament ${tag}: ${scanOperationError instanceof Error ? scanOperationError.message : "unknown"}`);
+          console.warn(`[RecruitmentService] Scan failed for tournament ${tournamentTag}: ${scanOperationError instanceof Error ? scanOperationError.message : "unknown"}`);
         }
       }
     };
 
     const workerPool: Promise<void>[] = [];
     const spawnCount = Math.min(concurrencyLimit, tournamentTags.length);
-    for (let i = 0; i < spawnCount; i++) {
-      workerPool.push(worker());
+    for (let workerPoolIndex = 0; workerPoolIndex < spawnCount; workerPoolIndex++) {
+      workerPool.push(batchTaskWorker());
     }
     await Promise.all(workerPool);
 

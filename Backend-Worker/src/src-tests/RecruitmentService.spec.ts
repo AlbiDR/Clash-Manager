@@ -222,19 +222,21 @@ describe("RecruitmentService", () => {
       expect(results[0].tag).toBe("#GOOD");
     });
 
-    it("should capture diagnostic trace", async () => {
+    it("should capture diagnostic trace with correct key used", async () => {
       const tags = ["#TOURN1"] as TournamentTag[];
       const trace = { firstUrl: "", firstStatus: 0, firstContent: "", keyUsed: "" };
 
       vi.mocked(RoyaleApiService.fetchWithRotatedRetries).mockResolvedValue({
         code: 200,
         content: { tag: "#TOURN1", membersList: [] },
+        keyUsed: "CRK01...0001",
       });
 
       await RecruitmentService.processScanBatch(tags, [], 1, new Set(), undefined, trace, mockKeyService);
 
       expect(trace.firstStatus).toBe(200);
       expect(trace.firstUrl).toContain("TOURN1");
+      expect(trace.keyUsed).toBe("CRK01...0001");
     });
   });
 });
