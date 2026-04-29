@@ -1,6 +1,32 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-04-29] PR #518: docs(readme): reconcile GAS architecture and worker diagnostics
+**Commit**: `d9b3ba4ffa3b591dab2292bc6c2a74e10b3e6880`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/518)
+
+### Description
+I have completed the documentation reconciliation for the `Backend-GAS` and `Backend-Worker` components as part of the Nightly pipeline.
+
+### Changes in `Backend-GAS/README.md`:
+- **Architecture Table Completion**: Updated the "System Architecture" table to include all missing Layer 1 services (`Reporting`, `Schema`, `Scoring`, `War_Intelligence`, `Battle_Log`) and feature-specific Views/Stores.
+- **Key Component Deepening**: Added authoritative documentation for `Webapp_Controller.ts`, detailing its "Matrix Reduction" strategy (70% payload size reduction) and the hybrid "100-Recruit Pool" logic.
+- **Public API Documentation**: Added a section for `API_Public.ts` documenting its role as the REST ingress bridge and its background update (async) dispatcher to prevent request timeouts.
+
+### Changes in `Backend-Worker/README.md`:
+- **API Example Sync**: Updated the `/fetch` response example to include the `keyUsed` diagnostic field, ensuring structural truth for future integrations.
+
+### Verification:
+- Confirmed ADR alignment and stylistic purity (zero emojis).
+- Verified descriptions against implementation in `Webapp_Controller.ts`, `API_Public.ts`, and `RecruitmentService.ts`.
+- Appended updated paths to `.github/nightly-logs/documentation-readme-coverage.log`.
+- Ran relevant unit tests for versioning and transport diagnostics (14 passing).
+
+---
+*PR created automatically by Jules for task [11569953377372046264](https://jules.google.com/task/11569953377372046264) started by @AlbiDR*
+
+---
+
 ## [2026-04-29] PR #517: refactor(opt): deduplicate worker pool in RecruitmentService
 **Commit**: `c29ce537b200e4d7c3ed782cd0fc34c3e470a8d6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/517)
