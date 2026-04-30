@@ -23,12 +23,11 @@ import type { WebAppData, PlayerTag } from "../types";
  * The `useClashDataStore` serves as the authoritative source for clan-wide data,
  * including roster members, war history, and recruitment pools. It implements
  * a "Stale-While-Revalidate" strategy, loading from IndexedDB immediately on
- * boot and updating from the GAS backend in the background.
+ * boot and updating from the Supabase backend in the background.
  *
  * **Architectural Context:**
  * - **Layer:** Layer 1 (@core)
- * - **Data Flow:** Authoritative server-side data (GAS/Worker) -> Valibot Validation ->
- *   Reactive State -> Persistent Cache (IndexedDB).
+ * - **Data Flow:** Supabase Views -> Valibot Validation -> Reactive State -> Persistent Cache (IndexedDB).
  * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
  *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  */
@@ -51,12 +50,12 @@ export const useClashDataStore = defineStore("clashData", () => {
   const consecutiveSyncFailures = ref(0);
 
   /** Indicates the provenance of the dataset (SUPABASE) for diagnostic tracing. */
-  const dataSource = ref<"WORKER" | "GAS" | null>(null);
+  const dataSource = ref<"SUPABASE" | null>(null);
 
-  /** Authoritative health state of the Worker Hub used to guide synchronization fallbacks. */
+  /** Authoritative diagnosis state from the last Supabase sync attempt. */
   const hubDiagnosis = lastHubDiagnosis;
 
-  /** Authoritative timestamp from the Worker Hub to detect drift against client/GAS state. */
+  /** Authoritative timestamp from the last successful Supabase fetch. */
   const hubTimestamp = ref<number | null>(null);
 
   /** Server-side compilation marker; indicates when the database last processed raw API data. */
@@ -161,7 +160,7 @@ export const useClashDataStore = defineStore("clashData", () => {
       // [GUARD] VALIDATION BOUNDARY: Target B [1]
       const result = v.safeParse(WebAppDataSchema, cached);
       if (result.success) {
-        console.debug(`💾 [Store] Hydrated from cache. Source: ${result.output.dataSource || "GAS"}`);
+        console.debug(`[Store] Hydrated from cache. Source: ${result.output.dataSource || "SUPABASE"}`);
         await commitSyncResult(result.output);
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
@@ -194,17 +193,16 @@ export const useClashDataStore = defineStore("clashData", () => {
   }
 
   /**
-   * Orchestrates a direct synchronization with the Worker Hub.
+   * Triggers a forced, immediate synchronization with the Supabase backend.
    *
    * @remarks
-   * Provides instantaneous data updates by bypassing the GAS orchestration layer,
-   * primarily for recruitment and roster status updates (5-minute refresh vs 60-minute GAS cycle).
+   * Provides instantaneous data updates for recruitment and roster status.
    *
    * @sideeffects
    * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
-   * - FALLBACKS to `startBackgroundSync` on Worker failure.
+   * - FALLS BACK to `startBackgroundSync` on failure.
    */
-  async function refreshWorker() {
+  async function refreshFromSupabase() {
     if (loading.value) return;
     if (!isOnline.value) return;
 
@@ -219,17 +217,12 @@ export const useClashDataStore = defineStore("clashData", () => {
         throw new Error("Worker data validation failed");
       }
 
-      console.debug(`🌐 [Store] Refresh successful. Attribution: ${result.output.dataSource || "GAS"}`);
+      console.debug(`[Store] Refresh successful. Source: ${result.output.dataSource || "SUPABASE"}`);
       await commitSyncResult(result.output);
-    } catch (workerRefreshError: unknown) {
-      // THREAT: Resource starvation or worker outage blocking data updates.
-      // Descriptively naming 'workerRefreshError' aids in failure-mode tracing.
-      console.warn("[Store] Worker-direct refresh failed:", workerRefreshError);
+    } catch (supabaseRefreshError: unknown) {
+      console.warn("[Store] Supabase refresh failed:", supabaseRefreshError);
 
-      // THREAT: Failure-mode deadlock during Worker outages.
-      // Target A [2]: The loading state MUST be cleared before calling the fallback
-      // sync, otherwise the guard in startBackgroundSync will trigger and
-      // silently abort the recovery attempt.
+      // Ensure loading guard is cleared before fallback sync to prevent deadlock.
       loading.value = false;
       await wakeLock.release();
 
@@ -244,10 +237,10 @@ export const useClashDataStore = defineStore("clashData", () => {
   }
 
   /**
-   * Orchestrates a background synchronization with the Google Apps Script backend.
+   * Orchestrates a background synchronization with the Supabase backend.
    *
    * @remarks
-   * Keeps the client in sync with the authoritative server-side database.
+   * Keeps the client in sync with the authoritative Supabase views.
    * Employs logical fault tolerance, only surfacing errors after 3 failed attempts
    * to mitigate noise from transient network fluctuations.
    *
@@ -401,7 +394,7 @@ export const useClashDataStore = defineStore("clashData", () => {
     updateLocalData,
     startBackgroundSync,
     refresh: () => startBackgroundSync(true),
-    refreshWorker,
+    refreshFromSupabase,
     updatePlayerLocally
   };
 });
