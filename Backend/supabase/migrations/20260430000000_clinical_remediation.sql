@@ -13,9 +13,17 @@ DROP VIEW IF EXISTS features.war_loyalty_view;
 -- First, drop the incorrect foreign key that links clan historical data to a player
 ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS fk_war_history_player;
 
--- Rename columns to reflect reality (Clan data)
-ALTER TABLE drivers.war_history RENAME COLUMN player_tag TO clan_tag;
-ALTER TABLE drivers.war_history RENAME COLUMN player_name TO clan_name;
+-- Rename columns to reflect reality (Clan data) if they haven't been renamed yet
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'drivers' AND table_name = 'war_history' AND column_name = 'player_tag') THEN
+        ALTER TABLE drivers.war_history RENAME COLUMN player_tag TO clan_tag;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'drivers' AND table_name = 'war_history' AND column_name = 'player_name') THEN
+        ALTER TABLE drivers.war_history RENAME COLUMN player_name TO clan_name;
+    END IF;
+END $$;
 
 -- 2. Correct drivers.members (Restore missing current_clan_tag)
 ALTER TABLE drivers.members ADD COLUMN IF NOT EXISTS current_clan_tag TEXT;
