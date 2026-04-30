@@ -60,7 +60,7 @@ describe("RecruitmentService", () => {
       expect(Network.quotaCheck).toHaveBeenCalledWith(endpoints.length);
       expect(RoyaleApiService.fetchWithRotatedRetries).toHaveBeenCalledTimes(2);
       expect(results).toHaveLength(2);
-      expect(results[0].code).toBe(200);
+      expect(results[0]!.code).toBe(200);
     });
 
     it("should handle recruitment scoring and filtering", async () => {
@@ -89,7 +89,7 @@ describe("RecruitmentService", () => {
       const results = await RecruitmentService.processBatch(endpoints, [], 1, scoringWeights, undefined, 0, mockKeyService);
 
       expect(results).toHaveLength(1);
-      const player = results[0].content as any;
+      const player = results[0]!.content as any;
       expect(player.tag).toBe("#PLAYER1");
       expect(player.rawScore).toBeDefined();
     });
@@ -121,7 +121,7 @@ describe("RecruitmentService", () => {
       const results = await RecruitmentService.processBatch(endpoints, [], 1, scoringWeights, prophetCache, 0, mockKeyService);
 
       expect(results).toHaveLength(1);
-      const player = results[0].content as any;
+      const player = results[0]!.content as any;
       // Base score 5000. Bonus 1.25x -> 6250
       expect(player.rawScore).toBe(6250);
     });
@@ -176,7 +176,7 @@ describe("RecruitmentService", () => {
 
       const results = await RecruitmentService.processBatch(endpoints, [], 1, scoringWeights, undefined, 0, mockKeyService);
       expect(results).toHaveLength(1);
-      const player = results[0].content as any;
+      const player = results[0]!.content as any;
       expect(player.trophies).toBe(10500); // 9000 + 1500
     });
   });
@@ -199,7 +199,7 @@ describe("RecruitmentService", () => {
       const results = await RecruitmentService.processScanBatch(tags, [], 1, new Set(), undefined, undefined, mockKeyService);
 
       expect(results).toHaveLength(1);
-      expect(results[0].tag).toBe("#CANDIDATE1");
+      expect(results[0]!.tag).toBe("#CANDIDATE1");
     });
 
     it("should respect the blacklist", async () => {
@@ -219,7 +219,7 @@ describe("RecruitmentService", () => {
 
       const results = await RecruitmentService.processScanBatch(tags, [], 1, blacklist, undefined, undefined, mockKeyService);
       expect(results).toHaveLength(1);
-      expect(results[0].tag).toBe("#GOOD");
+      expect(results[0]!.tag).toBe("#GOOD");
     });
 
     it("should capture diagnostic trace with correct key used", async () => {
