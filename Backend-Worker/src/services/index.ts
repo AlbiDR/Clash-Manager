@@ -10,8 +10,8 @@
  * ============================================================================
  */
 
-export * from "./Network.js";
-export * from "./PayloadKernel.js";
-export * from "./HubPersistenceService.js";
-export * from "./RoyaleApiService.js";
-export * from "./RecruitmentService.js";
+export * from "./Network";
+export * from "./PayloadKernel";
+export * from "./HubPersistenceService";
+export * from "./RoyaleApiService";
+export * from "./RecruitmentService";

@@ -2,9 +2,9 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { RoyaleApiService } from "../services/RoyaleApiService.js";
-import { Network } from "../services/Network.js";
-import { KeyService } from "../KeyService.js";
+import { RoyaleApiService } from "../services/RoyaleApiService";
+import { Network } from "../services/Network";
+import { KeyService } from "../KeyService";
 
 // Mock Network
 vi.mock("../services/Network.js", () => ({

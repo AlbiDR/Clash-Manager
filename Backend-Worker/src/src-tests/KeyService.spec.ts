@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { KeyService } from "../KeyService.js";
+import { KeyService } from "../KeyService";
 
 /**
  * ============================================================================

@@ -49,11 +49,30 @@ export async function runDiscovery(
                                     }));
                                     
                                 if (newRecruits.length > 0) {
-                                    await supabase.schema('drivers').from('recruits').upsert(
-                                        newRecruits.map(r => ({ player_tag: r.tag, player_name: r.name, trophies: r.trophies, status: 'ACTIVE' })), 
-                                        { onConflict: 'player_tag' }
-                                    );
-                                    results.discovery.harvested += newRecruits.length;
+                                    const players = newRecruits.map(r => ({
+                                        player_tag: r.tag.startsWith('#') ? r.tag : `#${r.tag}`,
+                                        player_name: r.name
+                                    }));
+                                    
+                                    const recruits = newRecruits.map(r => ({
+                                        player_tag: r.tag.startsWith('#') ? r.tag : `#${r.tag}`,
+                                        player_name: r.name,
+                                        trophies: r.trophies,
+                                        source: 'TOURNAMENT_AUTO',
+                                        status: 'ACTIVE'
+                                    }));
+
+                                    // L2 Drivers: Sync to universal player registry first to satisfy FK
+                                    await supabase.schema('drivers').from('players').upsert(players, { onConflict: 'player_tag' });
+                                    
+                                    // L2 Drivers: Upsert to recruits queue
+                                    const { error: recruitError } = await supabase.schema('drivers').from('recruits').upsert(recruits, { onConflict: 'player_tag' });
+                                    
+                                    if (!recruitError) {
+                                        results.discovery.harvested += newRecruits.length;
+                                    } else {
+                                        logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Upsert Failure', details: recruitError });
+                                    }
                                 }
                                 await supabase.schema('substrate').from('discovery_cache').upsert({ player_tag: t.tag, type: 'TOURNAMENT' });
                             }

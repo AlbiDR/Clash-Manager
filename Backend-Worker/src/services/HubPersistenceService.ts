@@ -4,8 +4,8 @@
 import { promises as fs } from "fs";
 import * as path from "path";
 import * as v from "valibot";
-import { HubState, HubError } from "../types/HubTypes.js";
-import { HubStateSchema, FsErrorSchema } from "../schemas.js";
+import { HubState, HubError } from "../types/HubTypes";
+import { HubStateSchema, FsErrorSchema } from "../schemas";
 
 /**
  * ============================================================================

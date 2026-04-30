@@ -4,8 +4,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "fs";
 import * as path from "path";
-import { HubPersistenceService } from "../services/HubPersistenceService.js";
-import { HubState } from "../types/HubTypes.js";
+import { HubPersistenceService } from "../services/HubPersistenceService";
+import { HubState } from "../types/HubTypes";
 
 describe("HubPersistenceService", () => {
   const dirPath = path.resolve(process.cwd(), "test_data");

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { Network } from "../services/Network.js";
+import { Network } from "../services/Network";
 
 describe("Worker Network (Quota Guard)", () => {
   beforeEach(() => {

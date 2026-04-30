@@ -6,7 +6,7 @@ import request from "supertest";
 import express from "express";
 
 // Import the actual middleware from index.ts to ensure we're testing the real logic.
-import { authMiddleware } from "../index.js";
+import { authMiddleware } from "../index";
 
 describe("Authentication Middleware", () => {
   let app: express.Express;

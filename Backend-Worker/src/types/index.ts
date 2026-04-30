@@ -285,3 +285,4 @@ export function isPlayerTag(value: string): value is PlayerTag {
 export function isClanTag(value: string): value is ClanTag {
   return value.startsWith("#") || /^[0-9A-Z]+$/.test(value);
 }
+export * from './HubTypes';
