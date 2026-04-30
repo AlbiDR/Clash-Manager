@@ -6,7 +6,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useClashDataStore } from "../useClashDataStore";
 import { useConnectionStatus } from "../useConnectionStatus";
 import { useWakeLock } from "../useWakeLock";
-import { fetchRemote } from "../../api/GasClient";
+import { fetchRemote } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 
 // Mock dependencies
@@ -31,7 +31,7 @@ vi.mock("../useWakeLock", () => ({
   useWakeLock: vi.fn(() => mockWakeLock)
 }));
 
-vi.mock("../../api/GasClient", () => ({
+vi.mock("../../api/SupabaseClient", () => ({
   fetchRemote: vi.fn(),
   lastHubDiagnosis: { value: null }
 }));

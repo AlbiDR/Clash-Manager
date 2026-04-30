@@ -4,8 +4,6 @@
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
-    "deploy": "pnpm run deploy:gas",
-    "deploy:gas": "pnpm -F clash-manager-backend deploy",
     "deploy:pwa": "pnpm -F clash-manager-pwa build",
     "dev:pwa": "pnpm -F clash-manager-pwa dev",
     "build": "pnpm -r build",

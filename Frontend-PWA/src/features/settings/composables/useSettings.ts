@@ -16,7 +16,7 @@ import { useWakeLock } from "@core/services/useWakeLock";
 import { useSystemInfo } from "@core/services/useSystemInfo";
 import { useApiState } from "@core/api/useApiState";
 import { useBadge } from "@core/services/useBadge";
-import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
+import { isWorkerConfigured, subscribeToPush } from "@core/api/SupabaseClient";
 import { computed, ref, onMounted } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 

@@ -1,4 +1,4 @@
-import { getApiUrl, isConfigured, ping, pingWorker } from "./GasClient";
+import { getApiUrl, isConfigured, ping, pingWorker } from "./SupabaseClient";
 import { ref, readonly } from "vue";
 import type { PingResponse } from "@core/types";
 

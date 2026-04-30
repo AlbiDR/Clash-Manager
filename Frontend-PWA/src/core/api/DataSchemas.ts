@@ -209,7 +209,7 @@ export const WebAppDataSchema = v.object({
   hh: v.array(RecruitSchema),
   playerTag: v.optional(SafeStringPipe),
   timestamp: SafeNumberPipe,
-  dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
+  dataSource: v.optional(v.picklist(["WORKER", "GAS", "SUPABASE"])),
   hubTimestamp: v.optional(LaxNumberPipe),
   lastCompiled: v.optional(LaxNumberPipe),
   lastFetched: v.optional(LaxNumberPipe),

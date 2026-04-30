@@ -17,7 +17,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
 }));
 
 const mockGetPlayerProfile = vi.fn();
-vi.mock("@core/api/GasClient", () => ({
+vi.mock("@core/api/SupabaseClient", () => ({
   getPlayerProfile: (tag: string) => mockGetPlayerProfile(tag),
   lastHubDiagnosis: { value: null },
   // Include other exports if needed to prevent breakage

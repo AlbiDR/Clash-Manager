@@ -45,4 +45,3 @@ jobs:
       - name: Architectural Guard (dependency-cruiser)
         run: |
           npx depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src
-          npx depcruise --config .github/.dependency-cruiser.mjs Backend-GAS

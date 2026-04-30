@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { NetworkError, dismissRecruits, undismissRecruits } from "@core/api/GasClient";
+import { NetworkError, dismissRecruits, undismissRecruits } from "@core/api/SupabaseClient";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBadge } from "@core/services/useBadge";
 import { useBroadcastChannel } from "@core/services/useBroadcastChannel";

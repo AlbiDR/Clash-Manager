@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useRecruiter } from "../useRecruiter";
 import { ref } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
-import * as GasClient from "@core/api/GasClient";
+import * as SupabaseClient from "@core/api/SupabaseClient";
 
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
@@ -122,7 +122,7 @@ vi.mock("@core", async (importOriginal) => {
   };
 });
 
-vi.mock("@core/api/GasClient", () => ({
+vi.mock("@core/api/SupabaseClient", () => ({
   isWorkerConfigured: vi.fn().mockReturnValue(false),
   scanRecruitsDirect: vi.fn().mockResolvedValue([]),
   lastHubDiagnosis: { value: null },

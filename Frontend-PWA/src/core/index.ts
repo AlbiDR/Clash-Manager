@@ -1,5 +1,5 @@
 // Logic Engine
-export * from "./api/GasClient";
+export * from "./api/SupabaseClient";
 export * from "./api/useApiState";
 export * from "./services/StorageService";
 export * from "./services/useClashDataStore";

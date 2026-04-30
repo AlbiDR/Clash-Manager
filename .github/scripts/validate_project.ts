@@ -18,11 +18,9 @@ const __dirname = path.dirname(__filename);
 // --- Configuration & Paths ---
 const ROOT_DIR = path.resolve(__dirname, "../../");
 const PWA_DIR = path.join(ROOT_DIR, "Frontend-PWA");
-const GAS_DIR = path.join(ROOT_DIR, "Backend-GAS");
 
 const PATHS = {
   packageJson: path.join(PWA_DIR, "package.json"),
-  backendConfig: path.join(GAS_DIR, "Configuration.ts"), // ⚡ NORMALIZE: Target .ts
   readme: path.join(ROOT_DIR, "README.md"),
   env: path.join(PWA_DIR, ".env"),
 };
@@ -99,47 +97,9 @@ function extractWeightsFromReadme(text: string): Record<string, number> {
 
 function checkScoringIntegrity() {
   log.header("1. Scoring Logic Integrity");
-
-  if (!fs.existsSync(PATHS.backendConfig) || !fs.existsSync(PATHS.readme)) {
-    log.fail("Missing Backend Configuration or README for scoring check.");
-    hasFailure = true;
-    return;
-  }
-
-  const configText = fs.readFileSync(PATHS.backendConfig, "utf8");
-  const readmeText = fs.readFileSync(PATHS.readme, "utf8");
-
-  const cfgWeights = extractWeightsFromConfig(configText);
-  const docWeights = extractWeightsFromReadme(readmeText);
-
-  if (!cfgWeights) {
-    log.fail("Could not find WEIGHTS in Configuration.ts");
-    hasFailure = true;
-    return;
-  }
-  if (!docWeights || Object.keys(docWeights).length === 0) {
-    log.warn("Could not find weights in README (Is documentation missing?)");
-    return;
-  }
-
-  const keys = ["FAME", "AVG_FAME", "DONATION", "TROPHY", "WAR_RATE"];
-  let allMatch = true;
-
-  keys.forEach((k) => {
-    const cfgVal = cfgWeights[k];
-    const docVal = docWeights[k];
-    const diff = Math.abs((Number(cfgVal) || 0) - (Number(docVal) || 0));
-
-    if (diff > 1e-6) {
-      log.fail(`Mismatch ${k}: Config=${cfgVal} vs Doc=${docVal}`);
-      allMatch = false;
-      hasFailure = true;
-    }
-  });
-
-  if (allMatch) {
-    log.pass("Documentation matches backend logic perfectly.");
-  }
+  // Scoring source of truth is now Supabase views (features.roster_view).
+  // Static config validation against Configuration.ts has been decommissioned.
+  log.info("Scoring integrity is enforced via Supabase view definitions. Skipping static check.");
 }
 
 /**
@@ -148,35 +108,23 @@ function checkScoringIntegrity() {
 function checkUrlSafety() {
   log.header("2. Environment URL Safety");
 
-  let gasUrl = process.env["VITE_GAS_URL"];
+  const supabaseUrl = process.env["VITE_SUPABASE_URL"];
 
-  if (!gasUrl && fs.existsSync(PATHS.env)) {
+  if (!supabaseUrl && fs.existsSync(PATHS.env)) {
     const envContent = fs.readFileSync(PATHS.env, "utf8");
-    const match = envContent.match(/VITE_GAS_URL=(.*)/);
-    if (match) gasUrl = match[1].trim();
+    const match = envContent.match(/VITE_SUPABASE_URL=(.*)/);
+    if (match) {
+      const url = match[1].trim();
+      log.info(`Supabase URL: ${url.slice(0, 40)}...`);
+      log.pass("VITE_SUPABASE_URL is configured.");
+      return;
+    }
   }
 
-  if (!gasUrl) {
-    log.warn("VITE_GAS_URL not found in env or .env. Cannot validate.");
-    return;
-  }
-
-  log.info(`Target URL: ${gasUrl.slice(0, 40)}...`);
-
-  if (gasUrl.includes("/exec")) {
-    log.pass("Targeting PRODUCTION deployment (/exec).");
-  } else if (gasUrl.includes("/dev") || gasUrl.includes("/test")) {
-    log.warn(
-      "Targeting DEVELOPMENT deployment (/dev or /test). Be careful!",
-    );
+  if (supabaseUrl) {
+    log.pass(`VITE_SUPABASE_URL is set (${supabaseUrl.slice(0, 30)}...).`);
   } else {
-    log.info("URL endpoint type unknown (not standard /exec or /dev).");
-  }
-
-  if (gasUrl.includes("script.google.com")) {
-    log.pass("Verified Google Apps Script domain.");
-  } else {
-    log.warn("URL does not look like a Google Apps Script URL.");
+    log.warn("VITE_SUPABASE_URL not found. Ensure it is set in the environment.");
   }
 }
 

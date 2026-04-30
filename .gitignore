@@ -42,11 +42,6 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# Google Apps Script / Clasp
-.clasprc.json
-.clasp.json
-clasp.json
-
 # PWA / Vite Generated
 public/sw.js
 public/workbox-*.js
@@ -62,18 +57,10 @@ coverage
 Frontend-PWA/index.html
 
 # Supabase & Backend Temp
-Backend/supabase/.temp
-Backend/scripts/data/*.csv
+Backend/supabase/.temp/
+Backend/scripts/data/
 
 # Local Tools & Tests
 mcp_config.json
-Frontend-PWA/test-stack.js
-
-# Supabase
-Backend/supabase/.temp/
-
-# Local Testing and Configs
-mcp_config.json
 test-stack.js
 Frontend-PWA/test-stack.js
-Backend/scripts/data/
