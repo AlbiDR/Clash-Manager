@@ -138,8 +138,8 @@ const SafeNumberPipe = v.pipe(
 
 /**
  * [GUARD] LAX NUMBER PIPE: Metadata Resilience
- * Rationale: Metadata fields like timestamps must NEVER trigger a full 
- * validation failure, as it results in a silent fallback to GAS.
+ * Rationale: Metadata fields like timestamps must NEVER trigger a full
+ * validation failure, as missing metadata should not block UI hydration.
  */
 const LaxNumberPipe = v.pipe(
   v.unknown(),
@@ -209,27 +209,10 @@ export const WebAppDataSchema = v.object({
   hh: v.array(RecruitSchema),
   playerTag: v.optional(SafeStringPipe),
   timestamp: SafeNumberPipe,
-  dataSource: v.optional(v.picklist(["WORKER", "GAS", "SUPABASE"])),
+  dataSource: v.optional(v.picklist(["SUPABASE"])),
   hubTimestamp: v.optional(LaxNumberPipe),
   lastCompiled: v.optional(LaxNumberPipe),
   lastFetched: v.optional(LaxNumberPipe),
 });
 
-/**
- * [GUARD] HUB STATE SCHEMA
- * Validates the raw matrix state returned by the Worker Hub.
- */
-export const HubStateSchema = v.object({
-  metadata: v.object({
-    timestamp: SafeStringPipe,
-    lastCompiled: SafeStringPipe, // Worker emits ISO-8601 strings, not epoch ms
-    lastFetched: SafeStringPipe,  // Worker emits ISO-8601 strings, not epoch ms
-    status: SafeStringPipe,
-    version: SafeStringPipe,
-    source: SafeStringPipe,
-  }),
-  data: v.object({
-    roster: v.array(v.array(v.unknown())),
-    headhunter: v.array(v.array(v.unknown())),
-  }),
-});
+

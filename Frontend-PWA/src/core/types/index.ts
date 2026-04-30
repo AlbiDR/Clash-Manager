@@ -5,17 +5,9 @@
 
 // API Response Envelope
 export interface ApiResponse<T> {
-  status: "success" | "error";
-  data: T | null;
-  error: { code: string; message: string } | null;
-  timestamp: string;
-}
-
-// Legacy format from getWebAppData
-export interface LegacyApiResponse<T> {
   success: boolean;
   data: T | null;
-  error: { code: string; message: string } | null;
+  error?: { code: string; message: string };
 }
 
 
@@ -66,7 +58,7 @@ export interface WebAppData {
   readonly hh: readonly Recruit[];
   readonly playerTag?: string; // Player tag without # to highlight
   readonly timestamp: number;
-  readonly dataSource?: "WORKER" | "GAS";
+  readonly dataSource?: "SUPABASE";
   readonly hubTimestamp?: number;
   readonly lastCompiled?: number;
   readonly lastFetched?: number;
@@ -85,12 +77,9 @@ export interface ClanMember {
 
 // Ping response
 export interface PingResponse {
-  version: string;
+  version?: string;
   status: string;
-  scriptId?: string;
-  spreadsheetUrl?: string;
-  sheets?: Record<string, number>;
-  modules: Record<string, string>;
+  message?: string;
   latency?: number;
 }
 
