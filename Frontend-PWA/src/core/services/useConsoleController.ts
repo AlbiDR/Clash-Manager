@@ -307,8 +307,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     // "Stale Data" applies regardless of source when the age threshold is exceeded.
     const isGasFallback = WORKER_HUB_ENABLED && currentSource.value === "GAS";
 
-    if (isGasFallback || ageMinutes >= 15) {
-      const warningLabel = isGasFallback ? "Fallback" : "Stale Data";
+    if (ageMinutes >= 15 || isGasFallback) {
+      const warningLabel = ageMinutes >= 15 ? "Stale Data" : "Fallback";
       return {
         type: "warning" as const,
         text: warningLabel,
