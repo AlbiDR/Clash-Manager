@@ -1,13 +1,12 @@
 import { resetApiState, useApiState } from "../useApiState";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { isConfigured, ping, pingWorker, getApiUrl } from "../SupabaseClient";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { isConfigured, ping, getApiUrl } from "../SupabaseClient";
 import { nextTick } from "vue";
 
 // Mock SupabaseClient directly using deep import path to avoid singleton/barrel issues
 vi.mock("../SupabaseClient", () => ({
   isConfigured: vi.fn(),
   ping: vi.fn(),
-  pingWorker: vi.fn(),
   getApiUrl: vi.fn(),
   lastHubDiagnosis: { value: null },
   lastSyncStatus: { value: null },
@@ -21,8 +20,7 @@ describe("useApiState", () => {
 
     // Set default mock behaviors
     vi.mocked(isConfigured).mockReturnValue(true);
-    vi.mocked(ping).mockResolvedValue({ status: "online", version: "1.0", modules: {} });
-    vi.mocked(pingWorker).mockResolvedValue(true);
+    vi.mocked(ping).mockResolvedValue({ status: "success", version: "1.0", modules: {} });
     vi.mocked(getApiUrl).mockReturnValue("https://mock-gas-url.com");
     vi.stubGlobal("navigator", { onLine: true });
   });
@@ -32,9 +30,9 @@ describe("useApiState", () => {
     vi.unstubAllGlobals();
   });
 
-  it("sets status to online when ping succeeds with status 'online'", async () => {
+  it("sets status to online when ping succeeds with status 'success'", async () => {
     const mockPingResponse = {
-      status: "online",
+      status: "success",
       version: "11.0.1",
       modules: { API_PUBLIC: "11.0.1" },
     };
@@ -42,15 +40,14 @@ describe("useApiState", () => {
     // @ts-ignore
     vi.mocked(ping).mockResolvedValue(mockPingResponse);
 
-    const { apiStatus, workerStatus, pingData, checkApiStatus } = useApiState();
+    const { apiStatus, pingData, checkApiStatus } = useApiState();
 
     await checkApiStatus();
 
     expect(apiStatus.value).toBe("online");
-    expect(workerStatus.value).toBe("online");
     expect(pingData.value).toMatchObject({
       version: "11.0.1",
-      status: "online",
+      status: "success",
     });
     expect(pingData.value?.latency).toBeDefined();
   });
@@ -128,22 +125,7 @@ describe("useApiState", () => {
     expect(ping).toHaveBeenCalledTimes(1);
   });
 
-  it("updates workerStatus based on pingWorker result", async () => {
-    // @ts-ignore
-    vi.mocked(pingWorker).mockResolvedValue(false);
-    const { workerStatus, checkApiStatus } = useApiState();
 
-    await checkApiStatus();
-    await nextTick(); // Wait for pingWorker().then callback
-    expect(workerStatus.value).toBe("offline");
-
-    // Success case
-    // @ts-ignore
-    vi.mocked(pingWorker).mockResolvedValue(true);
-    await checkApiStatus();
-    await nextTick();
-    expect(workerStatus.value).toBe("online");
-  });
 
   it("sets status to offline immediately when navigator.onLine is false", async () => {
     vi.stubGlobal("navigator", { onLine: false });
@@ -208,7 +190,7 @@ describe("useApiState", () => {
           }, { once: true });
         });
       })
-      .mockResolvedValueOnce({ status: "online", version: "1.0", modules: {} });
+      .mockResolvedValueOnce({ status: "success", version: "1.0", modules: {} });
 
     const { checkApiStatus } = useApiState();
 
