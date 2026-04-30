@@ -70,7 +70,7 @@ async function main() {
 
   // 2. Compiling TypeScript
   log('Compiling TypeScript...');
-  runCommand('npx tsc');
+  runCommand('pnpm tsc');
 
   // 3. Verify dist contains files
   if (!existsSync(DIST_DIR) || readdirSync(DIST_DIR).length === 0) {
@@ -169,8 +169,8 @@ async function main() {
   }
 
   log('Pushing artifacts to Google Apps Script...');
-  // Use npx to ensure we use the local version in the workspace
-  runCommand('npx clasp push --force');
+  // Use pnpm to ensure we use the local version in the workspace
+  runCommand('pnpm clasp push --force');
 
   log('Deployment completed successfully.');
 }
