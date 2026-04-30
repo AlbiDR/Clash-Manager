@@ -41,7 +41,6 @@ export function useLeaderboard() {
     deepLinkPrefix: "member-",
     batchIdMapper: (member: LeaderboardMember) => member.id,
     statsLabel: "Member",
-    sheetName: "Leaderboard",
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
   });
 

@@ -52,9 +52,12 @@ interface AppData {
   [key: string]: unknown;
 }
 
-interface ApiResponse {
-  status: string;
-  data?: AppData;
+/**
+ * [ADR] Service Worker Data Bridge: Optimized for minimal footprint.
+ * Bypasses full client libraries to minimize worker bundle size.
+ */
+interface SupabaseRow {
+  s: number;
 }
 
 // Precache assets injected by workbox-build
@@ -244,52 +247,59 @@ async function handleBackgroundSync(): Promise<void> {
       return;
     }
 
-    const gasUrl = await getValue(db, "cm_gas_url");
-    if (!gasUrl) return;
+    const supabaseUrl = await getValue(db, "cm_supabase_url");
+    if (!supabaseUrl) return;
 
     const threshold = (await getValue(db, "cm_notification_threshold") as number) || 75;
 
-    const response = await fetch(gasUrl as string, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "getwebappdata" }),
+    const supabaseKey = await getValue(db, "cm_supabase_key");
+    if (!supabaseKey) return;
+
+    // [ADR] Direct View Access: Querying the headhunter_view directly with column aliasing.
+    // This removes the dependency on the restricted 'get_pwa_data' RPC.
+    const response = await fetch(`${supabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, {
+      method: "GET",
+      headers: { 
+        "apikey": supabaseKey as string,
+        "Accept-Profile": "features"
+      },
     });
 
-    const json = (await response.json()) as ApiResponse;
-    if (json?.status === "success" && json?.data) {
-      const data = json.data;
-      if (data.hh) {
-        const count = data.hh.filter((r) => r.s >= threshold).length;
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        if (count > 0) {
-          if (self.navigator.setAppBadge) {
-            await self.navigator.setAppBadge(count);
-          }
+    const recruits = (await response.json()) as SupabaseRow[];
+    
+    if (Array.isArray(recruits)) {
+      const count = recruits.filter((r) => r.s >= threshold).length;
 
-          await self.registration.showNotification("New Recruits Available", {
-            body: `You have ${count} recruit${count === 1 ? "" : "s"} above your threshold.`,
-            icon: "pwa-192.png",
-            badge: "pwa-64.png",
-            tag: "com.app.RECRUIT_UPDATES",
-            renotify: false,
-            silent: false,
-            requireInteraction: false,
-            data: {
-              type: "badge",
-              count,
-              shortcutId: "recruit_shortcut_id",
-              url: "/#/headhunter",
-              timestamp: Date.now(),
-            },
-          } as NotificationOptions);
-        } else {
-          const notifications = await self.registration.getNotifications({
-            tag: "com.app.RECRUIT_UPDATES",
-          });
-          notifications.forEach((n) => n.close());
-          if (self.navigator.clearAppBadge)
-            await self.navigator.clearAppBadge();
+      if (count > 0) {
+        if (self.navigator.setAppBadge) {
+          await self.navigator.setAppBadge(count);
         }
+
+        await self.registration.showNotification("New Recruits Available", {
+          body: `You have ${count} recruit${count === 1 ? "" : "s"} above your threshold.`,
+          icon: "pwa-192.png",
+          badge: "pwa-64.png",
+          tag: "com.app.RECRUIT_UPDATES",
+          renotify: false,
+          silent: false,
+          requireInteraction: false,
+          data: {
+            type: "badge",
+            count,
+            shortcutId: "recruit_shortcut_id",
+            url: "/#/headhunter",
+            timestamp: Date.now(),
+          },
+        } as NotificationOptions);
+      } else {
+        const notifications = await self.registration.getNotifications({
+          tag: "com.app.RECRUIT_UPDATES",
+        });
+        notifications.forEach((n) => n.close());
+        if (self.navigator.clearAppBadge)
+          await self.navigator.clearAppBadge();
       }
     }
   } catch (e) {
@@ -311,18 +321,24 @@ async function processOfflineQueue(): Promise<void> {
   try {
     const db = await openDB();
     const queue = ((await getValue(db, "offline_queue")) || []) as unknown[];
-    const gasUrl = await getValue(db, "cm_gas_url");
+    const supabaseUrl = await getValue(db, "cm_supabase_url");
 
-    if (!queue.length || !gasUrl) return;
+    const supabaseKey = await getValue(db, "cm_supabase_key");
+    if (!queue.length || !supabaseUrl || !supabaseKey) return;
 
     const remaining: unknown[] = [];
 
     for (const req of queue) {
       try {
-        await fetch(gasUrl as string, {
+        // Rationale: Process offline recruitment actions via Supabase RPC.
+        await fetch(`${supabaseUrl}/rest/v1/rpc/process_queue`, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(req),
+          headers: { 
+            "Content-Type": "application/json",
+            "apikey": supabaseKey as string,
+            "Content-Profile": "features"
+          },
+          body: JSON.stringify({ req }),
         });
       } catch (e) {
         if (remaining.length < 50) remaining.push(req);

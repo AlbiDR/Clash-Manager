@@ -460,7 +460,7 @@ describe("useSettings", () => {
     it("updates API URL and reloads", () => {
       const { result } = withSetup(useSettings);
       result.updateApiUrl(" https://new-api.com ");
-      expect(localStorage.setItem).toHaveBeenCalledWith("cm_gas_url", "https://new-api.com");
+      expect(localStorage.setItem).toHaveBeenCalledWith("cm_supabase_url", "https://new-api.com");
       expect(mocks.mockReload).toHaveBeenCalled();
     });
 
@@ -474,7 +474,7 @@ describe("useSettings", () => {
       mocks.mockConfirm.mockReturnValue(true);
       const { result } = withSetup(useSettings);
       result.resetApiUrl();
-      expect(localStorage.removeItem).toHaveBeenCalledWith("cm_gas_url");
+      expect(localStorage.removeItem).toHaveBeenCalledWith("cm_supabase_url");
       expect(mocks.mockReload).toHaveBeenCalled();
     });
   });

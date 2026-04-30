@@ -68,7 +68,6 @@ export function useRecruiter() {
     deepLinkPrefix: "recruit-",
     batchIdMapper: (recruit: Recruit) => recruit.id,
     statsLabel: "Recruit",
-    sheetName: ["Headhunter", "Recruiter"],
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     onDismiss: dismissBulk,
   });

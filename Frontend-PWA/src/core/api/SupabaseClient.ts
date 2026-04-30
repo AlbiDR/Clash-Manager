@@ -16,7 +16,7 @@ import { idb } from "../services/StorageService";
 import { ProfileInputSchema } from "./DataSchemas";
 import * as v from "valibot";
 
-export const lastHubDiagnosis = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
+export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 
 export class NetworkError extends Error {
@@ -26,9 +26,6 @@ export class NetworkError extends Error {
     Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
-
-let _workerHubTestOverride: boolean | null = null;
-export const _setWorkerHubTestOverride = (val: boolean | null) => { _workerHubTestOverride = val; };
 
 // Supabase Configuration
 const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
@@ -46,15 +43,6 @@ export function isConfigured(): boolean {
 
 export function getApiUrl(): string {
   return getSupabaseUrl() || "(not configured)";
-}
-
-export function isWorkerConfigured(): boolean {
-  return Boolean(import.meta.env.VITE_WORKER_URL);
-}
-
-export async function pingWorker(): Promise<boolean> {
-  // Not used in Supabase context generally, but preserving signature
-  return true;
 }
 
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
@@ -84,8 +72,8 @@ function mapSbRosterRow(row: any): LeaderboardMember {
     id: row.player_tag?.replace('#', '') || '',
     n: row.player_name || '',
     t: Number(row.trophies) || 0,
-    performanceScore: Number(row.performance_score) || 0,
-    performanceRawScore: Number(row.raw_performance_score) || 0,
+    performanceScore: Number(row.pes || row.performance_score) || 0,
+    performanceRawScore: Number(row.rpes || row.raw_performance_score) || 0,
     dt: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
       role: row.role || '',
@@ -107,14 +95,14 @@ function mapSbHeadhunterRow(row: any): Recruit {
     id: row.player_tag?.replace('#', '') || '',
     n: row.player_name || '',
     t: Number(row.trophies) || 0,
-    potentialScore: Number(row.performance_score) || 0,
-    potentialRawScore: Number(row.raw_performance_score) || 0,
-    lastScan: row.last_ingested_at ? new Date(row.last_ingested_at).getTime() : Date.now(),
+    potentialScore: Number(row.pos || row.potential_score) || 0,
+    potentialRawScore: Number(row.rpos || row.raw_potential_score) || 0,
+    lastScan: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
       don: Number(row.donations) || 0,
-      war: Number(row.war_fame) || 0,
-      ago: row.last_seen_label || '-',
-      cards: Number(row.cards_found) || 0,
+      war: Number(row.war_wins) || 0,
+      ago: row.longevity_label || '-',
+      cards: 0,
     },
   };
 }
@@ -126,20 +114,26 @@ export async function fetchRemote(options?: {
   if (!isConfigured()) throw new Error("Supabase is not configured");
   
   const supabase = createSupabaseClient();
-  
-  // Fetch from Supabase views
-  const [rosterRes, hhRes] = await Promise.all([
-    supabase.from('roster_view').select('*').abortSignal(options?.signal || new AbortController().signal),
-    supabase.from('headhunter_view').select('*').abortSignal(options?.signal || new AbortController().signal)
+  const signal = options?.signal || new AbortController().signal;
+
+  // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC 
+  // to fetch high-fidelity datasets directly from the authoritative feature views.
+  const [rosterRes, headhunterRes, heartbeatRes] = await Promise.all([
+    supabase.from('roster_view').select('*').abortSignal(signal),
+    supabase.from('headhunter_view').select('*').limit(100).abortSignal(signal),
+    supabase.from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal)
   ]);
-  
+
   if (rosterRes.error) throw new Error(`Roster Fetch Error: ${rosterRes.error.message}`);
-  if (hhRes.error) throw new Error(`Headhunter Fetch Error: ${hhRes.error.message}`);
+  if (headhunterRes.error) throw new Error(`Headhunter Fetch Error: ${headhunterRes.error.message}`);
   
   const lb: LeaderboardMember[] = (rosterRes.data || []).map(mapSbRosterRow);
-  const hh: Recruit[] = (hhRes.data || []).map(mapSbHeadhunterRow);
+  const hh: Recruit[] = (headhunterRes.data || []).map(mapSbHeadhunterRow);
   
-  const timestamp = Date.now();
+  // Rationale: Use the kernel's ingestion heartbeat as the authoritative data age.
+  const timestamp = heartbeatRes.data?.last_success_at 
+    ? new Date(heartbeatRes.data.last_success_at).getTime() 
+    : Date.now();
   
   const webAppData: WebAppData = {
     lb,
@@ -147,12 +141,12 @@ export async function fetchRemote(options?: {
     playerTag: "",
     timestamp,
     dataSource: "SUPABASE",
-    hubTimestamp: timestamp,
+    remoteTimestamp: timestamp,
     lastCompiled: timestamp,
     lastFetched: timestamp,
   };
   
-  lastHubDiagnosis.value = "SUCCESS";
+  lastSyncStatus.value = "SUCCESS";
   
   await saveCache(webAppData);
   return webAppData;
@@ -182,20 +176,53 @@ export async function getPlayerProfile(
 export async function dismissRecruits(
   items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
-  // Mocked for Supabase migration compatibility
-  return { success: true, data: { dismissed: items.length } };
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase.rpc('dismiss_recruits', { items });
+  
+  if (error) {
+    // Check if we should enqueue for background retry
+    const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
+    if (isTransient) {
+      const queue = (await idb.get<any[]>("offline_queue")) || [];
+      queue.push({ type: 'RECRUIT_DISMISSAL', items, timestamp: Date.now() });
+      await idb.set("offline_queue", queue);
+      return { success: true, data: { success: true, count: items.length, message: "Enqueued" } };
+    }
+    throw new NetworkError(error.message);
+  }
+  
+  return { success: true, data: data as DismissResponse };
 }
 
 export async function undismissRecruits(
   ids: string[],
 ): Promise<ApiResponse<DismissResponse>> {
-  return { success: true, data: { dismissed: ids.length } };
+  const supabase = createSupabaseClient();
+  const player_tags = ids.map(id => id.startsWith('#') ? id : `#${id}`);
+  const { data, error } = await supabase.rpc('undismiss_recruits', { player_tags });
+  
+  if (error) {
+    const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
+    if (isTransient) {
+      const queue = (await idb.get<any[]>("offline_queue")) || [];
+      queue.push({ type: 'RECRUIT_RESTORATION', ids: player_tags, timestamp: Date.now() });
+      await idb.set("offline_queue", queue);
+      return { success: true, data: { success: true, count: ids.length, message: "Enqueued" } };
+    }
+    throw new NetworkError(error.message);
+  }
+  
+  return { success: true, data: data as DismissResponse };
 }
 
 export async function triggerBackendUpdate(
   target?: string,
 ): Promise<ApiResponse<{ success: boolean; message: string }>> {
-  return { success: true, data: { success: true, message: "Triggered" } };
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase.rpc('trigger_backend_update');
+  
+  if (error) return { success: false, data: null, error: { code: error.code, message: error.message } };
+  return { success: true, data: data as any };
 }
 
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
@@ -206,5 +233,10 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
 }
 
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
-  return true;
+  const supabase = createSupabaseClient();
+  const { error } = await supabase.from('push_subscriptions').insert({
+    subscription: JSON.parse(JSON.stringify(subscription))
+  });
+  
+  return !error;
 }

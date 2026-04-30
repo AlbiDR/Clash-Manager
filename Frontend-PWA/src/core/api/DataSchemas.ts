@@ -210,7 +210,7 @@ export const WebAppDataSchema = v.object({
   playerTag: v.optional(SafeStringPipe),
   timestamp: SafeNumberPipe,
   dataSource: v.optional(v.picklist(["SUPABASE"])),
-  hubTimestamp: v.optional(LaxNumberPipe),
+  remoteTimestamp: v.optional(LaxNumberPipe),
   lastCompiled: v.optional(LaxNumberPipe),
   lastFetched: v.optional(LaxNumberPipe),
 });

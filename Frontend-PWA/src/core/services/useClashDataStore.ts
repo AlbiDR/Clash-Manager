@@ -3,7 +3,7 @@
 
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useWakeLock } from "./useWakeLock";
-import { fetchRemote, lastHubDiagnosis } from "../api/SupabaseClient";
+import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { MemberSchema, WebAppDataSchema } from "../api/DataSchemas";
@@ -49,14 +49,14 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Fault tolerance tracker; triggers user-visible errors only after 3 consecutive failures. */
   const consecutiveSyncFailures = ref(0);
 
-  /** Indicates the provenance of the dataset (SUPABASE) for diagnostic tracing. */
+  /** Indicates the provenance of the dataset (SUPABASE). */
   const dataSource = ref<"SUPABASE" | null>(null);
 
   /** Authoritative diagnosis state from the last Supabase sync attempt. */
-  const hubDiagnosis = lastHubDiagnosis;
+  const syncStatus = lastSyncStatus;
 
   /** Authoritative timestamp from the last successful Supabase fetch. */
-  const hubTimestamp = ref<number | null>(null);
+  const remoteTimestamp = ref<number | null>(null);
 
   /** Server-side compilation marker; indicates when the database last processed raw API data. */
   const lastCompiled = ref<number | null>(null);
@@ -83,8 +83,8 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Final resolution of where data was fetched from; used for debug badges in the footer. */
   const currentSource = computed(() => data.value?.dataSource || dataSource.value);
 
-  /** Authoritative Hub generation time used to detect stale background worker cycles. */
-  const hubSyncTime = computed(() => data.value?.hubTimestamp || hubTimestamp.value);
+  /** Authoritative remote generation time used to detect stale background sync cycles. */
+  const remoteSyncTime = computed(() => data.value?.remoteTimestamp || remoteTimestamp.value);
 
   /** Logic boundary: Marks data as 'STALE' if older than 30 minutes to prompt background refresh. */
   const isStale = computed(() => {
@@ -122,7 +122,7 @@ export const useClashDataStore = defineStore("clashData", () => {
 
     // Metadata Sync
     dataSource.value = payload.dataSource || null;
-    hubTimestamp.value = payload.hubTimestamp || null;
+    remoteTimestamp.value = payload.remoteTimestamp || null;
     lastCompiled.value = payload.lastCompiled || null;
     lastFetched.value = payload.lastFetched || null;
 
@@ -209,15 +209,15 @@ export const useClashDataStore = defineStore("clashData", () => {
     loading.value = true;
     try {
       await wakeLock.request();
-      const remoteData = await fetchRemote({ force: true, preferWorker: true });
+      const remoteData = await fetchRemote({ force: true });
       
       const result = v.safeParse(WebAppDataSchema, remoteData);
       if (!result.success) {
-        console.error("[Store] Worker Validation Failure Details:", JSON.stringify(result.issues, null, 2));
-        throw new Error("Worker data validation failed");
+        console.error("[Store] Data Validation Failure Details:", JSON.stringify(result.issues, null, 2));
+        throw new Error("Remote data validation failed");
       }
 
-      console.debug(`[Store] Refresh successful. Source: ${result.output.dataSource || "SUPABASE"}`);
+      console.debug(`[Store] Refresh successful. Source: ${result.output.dataSource}`);
       await commitSyncResult(result.output);
     } catch (supabaseRefreshError: unknown) {
       console.warn("[Store] Supabase refresh failed:", supabaseRefreshError);
@@ -371,15 +371,15 @@ export const useClashDataStore = defineStore("clashData", () => {
     lastSync,
     syncError,
     dataSource,
-    hubTimestamp,
-    hubDiagnosis,
+    remoteTimestamp,
+    syncStatus,
 
     // Getters
     members,
     recruits,
     lastUpdated,
     currentSource,
-    hubSyncTime,
+    remoteSyncTime,
     /** Computed Unix timestamp (ms) of the server's dataset compilation. */
     lastCompiledTime: computed(() => lastCompiled.value),
     /** Computed Unix timestamp (ms) of the server's last fetch from Supercell. */
@@ -393,7 +393,8 @@ export const useClashDataStore = defineStore("clashData", () => {
     loadLocal,
     updateLocalData,
     startBackgroundSync,
-    refresh: () => startBackgroundSync(true),
+    /** Alias for refreshFromSupabase to satisfy generic controller contracts. */
+    refresh: refreshFromSupabase,
     refreshFromSupabase,
     updatePlayerLocally
   };

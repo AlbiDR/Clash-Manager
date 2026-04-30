@@ -25,7 +25,7 @@ let previousData: WebAppData | null = null;
  * behaviors.
  *
  * **Side Effects:**
- * - Dispatches network requests to GAS via `dismissRecruits`/`undismissRecruits`.
+ * - Dispatches network requests to Supabase via `dismissRecruits`/`undismissRecruits`.
  * - Updates the application badge via `useBadge`.
  * - Sends local notifications for high-potential recruits.
  * - Broadcasts state changes to other tabs via `useBroadcastChannel`.
@@ -170,7 +170,7 @@ export function useHeadhunter() {
       const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
       
       // TRANSIENT ERROR SUPPRESSION
-      // Rationale: Network blips or lock timeouts in GAS should not trigger
+      // Rationale: Network blips or lock timeouts in Supabase should not trigger
       // noisy error toasts, as they will be resolved by the next background sync.
       const isTransient = 
         errorName === "NetworkError" ||

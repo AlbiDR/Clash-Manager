@@ -1,4 +1,4 @@
-import { getApiUrl, isConfigured, ping, pingWorker } from "./SupabaseClient";
+import { getApiUrl, isConfigured, ping } from "./SupabaseClient";
 import { ref, readonly } from "vue";
 import type { PingResponse } from "@core/types";
 
@@ -13,7 +13,7 @@ export type ApiStatus =
   | "stale"
   | "waking";
 
-export type WorkerStatus = "checking" | "online" | "offline" | "unconfigured";
+
 
 // Global Shared State (Kernel Singletons)
 const apiUrl = ref("");
@@ -21,7 +21,7 @@ const apiConfigured = ref(false);
 const apiStatus = ref<ApiStatus>("checking");
 const pingData = ref<PingResponse | null>(null);
 
-const workerStatus = ref<WorkerStatus>("unconfigured");
+
 
 let isInitialized = false;
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
@@ -69,12 +69,9 @@ async function checkApiStatus() {
     ]);
     const latency = Date.now() - start;
 
-    // Direct Worker verification
-    pingWorker().then(isHealthy => {
-      workerStatus.value = isHealthy ? "online" : "offline";
-    });
 
-    if (response && response.status === "online") {
+
+    if (response && response.status === "success") {
       apiStatus.value = "online";
       pingData.value = {
         ...response,
@@ -135,7 +132,7 @@ function handleFailure(signal?: AbortSignal) {
  *
  * @returns An object containing:
  * - Reactive State:
- *   - `apiUrl`: Readonly reference to the current GAS endpoint.
+ *   - `apiUrl`: Readonly reference to the current Supabase endpoint.
  *   - `apiConfigured`: Boolean indicating if a valid URL exists in Substrate.
  *   - `apiStatus`: Current lifecycle state of the connection (e.g., 'online', 'waking').
  *   - `pingData`: Detailed metadata from the last successful handshake (version, latency).
@@ -144,7 +141,7 @@ function handleFailure(signal?: AbortSignal) {
  *   - `init`: Bootstraps the singleton state on application start.
  *
  * @sideeffects
- * - Initiates network fetch calls to the GAS backend via `ping`.
+ * - Initiates network fetch calls to the Supabase backend via `ping`.
  * - Manages an `AbortController` for request lifecycle governance.
  * - Schedules recursive retries using `setTimeout` on failure.
  */
@@ -161,7 +158,6 @@ export function useApiState() {
     apiConfigured: readonly(apiConfigured),
     apiStatus: readonly(apiStatus),
     pingData: readonly(pingData),
-    workerStatus: readonly(workerStatus),
     checkApiStatus,
     init,
   };

@@ -2,7 +2,7 @@ name: Intelligence Checks
 
 on:
   pull_request:
-    branches: [ Beta, main ]
+    branches: [ Stable, Beta ]
   workflow_dispatch:
 
 jobs:
@@ -45,3 +45,31 @@ jobs:
       - name: Architectural Guard (dependency-cruiser)
         run: |
           npx depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src
+
+  backend-suite:
+    name: Backend Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase Local Stack
+        run: |
+          cd Backend
+          supabase db start
+
+      - name: Run Database Tests (pg_tap)
+        run: |
+          cd Backend
+          supabase test db
+
+      - name: Lint Edge Functions
+        run: |
+          cd Backend
+          supabase functions list
+          # Optional: Add deno linting here if deno is installed
