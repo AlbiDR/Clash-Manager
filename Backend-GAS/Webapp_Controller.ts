@@ -251,7 +251,7 @@ const WebappController: WebappControllerContract = {
     const validation = v.safeParse(DismissRecruitsPayloadSchema, payload);
     if (!validation.success) {
       console.warn("[API] updateRecruitInvitationStatus: Validation failed", validation.issues);
-      return { success: false, error: "Invalid payload structure" };
+      return { success: false, count: 0, error: "Invalid payload structure" };
     }
 
     const { items } = validation.output;
@@ -313,7 +313,7 @@ const WebappController: WebappControllerContract = {
     const validation = v.safeParse(UndismissRecruitsPayloadSchema, payload);
     if (!validation.success) {
       console.warn("[API] revertRecruitDismissal: Validation failed", validation.issues);
-      return { success: false, error: "Invalid payload structure" };
+      return { success: false, count: 0, error: "Invalid payload structure" };
     }
 
     const { ids } = validation.output;
