@@ -380,6 +380,18 @@ export const PlayerResultSchema = v.object({
   cleanKey: v.string()
 });
 
+/**
+ * [GUARD] HUB ERROR SCHEMA
+ *
+ * @remarks
+ * ROLE: Layer 2 Shared Driver (@shared).
+ * Used by API_Raw to safely extract error messages from unknown payloads.
+ */
+export const HubErrorSchema = v.object({
+  message: v.string()
+});
+
+
 (function(scope: any) {
   Object.assign(scope, {
     VER_VALIDATION,
@@ -402,5 +414,6 @@ export const PlayerResultSchema = v.object({
     RoyaleWarLogStandingSchema,
     RoyaleWarLogItemSchema,
     RoyaleWarLogResponseSchema,
+    HubErrorSchema,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

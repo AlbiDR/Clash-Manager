@@ -18,6 +18,8 @@ import type { Recruit } from './Headhunter_Types';
 export const VER_HEADHUNTER = "14.3.5";
 
 declare var SpreadsheetApp: any;
+declare var Sheets: any;
+
 
 export interface HeadhunterContract {
   executeRecruitScout(options?: { lowQuotaMode?: boolean }): void;

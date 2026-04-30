@@ -19,7 +19,8 @@ export interface MarketIntelligence {
 }
 
 export interface PlayerResult {
-  member: unknown;
+  member: ClanMemberResult;
+
   tag: string;
   name: string;
   role: string;
