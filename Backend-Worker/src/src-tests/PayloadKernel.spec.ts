@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect } from "vitest";
-import { PayloadKernel } from "../services/PayloadKernel.js";
+import { PayloadKernel } from "../services/PayloadKernel";
 
 describe("PayloadKernel (Worker Hub)", () => {
   it("should generate a proper HubState matrix from raw GAS data", () => {

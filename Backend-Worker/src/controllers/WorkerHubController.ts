@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { HubPersistenceService } from "../services/HubPersistenceService.js";
-import { PayloadKernel } from "../services/PayloadKernel.js";
-import { HubState, HubError } from "../types/HubTypes.js";
+import { HubPersistenceService } from "../services/HubPersistenceService";
+import { PayloadKernel } from "../services/PayloadKernel";
+import { HubState, HubError } from "../types/HubTypes";
 
 /**
  * ============================================================================

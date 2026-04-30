@@ -29,13 +29,13 @@ import express, {
   RequestHandler,
 } from "express";
 import * as v from "valibot";
-import { KeyService } from "./KeyService.js";
-import { WorkerHubController } from "./controllers/WorkerHubController.js";
+import { KeyService } from "./KeyService";
+import { WorkerHubController } from "./controllers/WorkerHubController";
 import {
   Network,
   RoyaleApiService,
   RecruitmentService,
-} from "./services/index.js";
+} from "./services";
 import {
   HubErrorSchema,
   AuditRequestSchema,
@@ -48,7 +48,7 @@ import {
   RoyaleClanMembersResponseSchema,
   RoyaleCurrentRiverRaceSchema,
   RoyaleWarLogResponseSchema,
-} from "./schemas.js";
+} from "./schemas";
 import type {
   ServerConfig,
   ScoringWeights,
@@ -73,7 +73,7 @@ import type {
   ScanDebugInfo,
   ProphetIntel,
   FetchResult,
-} from "./types.js";
+} from "./types";
 
 // ============================================================================
 //  CONFIGURATION

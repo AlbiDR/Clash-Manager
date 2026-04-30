@@ -2,11 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { RecruitmentService } from "../services/RecruitmentService.js";
-import { RoyaleApiService } from "../services/RoyaleApiService.js";
-import { Network } from "../services/Network.js";
-import { KeyService } from "../KeyService.js";
-import type { PlayerTag, TournamentTag } from "../types.js";
+import { RecruitmentService } from "../services/RecruitmentService";
+import { RoyaleApiService } from "../services/RoyaleApiService";
+import { Network } from "../services/Network";
+import { KeyService } from "../KeyService";
+import type { PlayerTag, TournamentTag } from "../types";
 
 // Mock RoyaleApiService
 vi.mock("../services/RoyaleApiService.js", () => ({

@@ -49,13 +49,35 @@ export async function runDeepDepth(
                                 logAudit('S6_BATTLES', 'error', { tag, message: 'RPC Failure', details: rpcErr });
                             }
 
-                            const opponentTags = new Set<string>();
-                            logData.forEach((b: any) => b.opponent?.forEach((op: any) => op.tag && !op.clan?.tag && opponentTags.add(op.tag)));
-                            if (opponentTags.size > 0) {
-                                await supabase.schema('drivers').from('recruits').upsert(
-                                    Array.from(opponentTags).sort().map(t => ({ player_tag: t, status: 'ACTIVE' })), 
-                                    { onConflict: 'player_tag' }
-                                );
+                            const shadowLeads = new Map<string, string>();
+                            logData.forEach((b: any) => {
+                                b.opponent?.forEach((op: any) => {
+                                    if (op.tag && !op.clan?.tag) {
+                                        shadowLeads.set(op.tag, op.name || 'Unknown Recruit');
+                                    }
+                                });
+                            });
+
+                            if (shadowLeads.size > 0) {
+                                const leads = Array.from(shadowLeads.entries()).map(([tag, name]) => ({
+                                    player_tag: tag.startsWith('#') ? tag : `#${tag}`,
+                                    player_name: name
+                                }));
+
+                                const recruits = leads.map(l => ({
+                                    ...l,
+                                    source: 'SHADOW',
+                                    status: 'ACTIVE'
+                                }));
+
+                                // L2 Drivers: Sync to universal player registry first to satisfy FK
+                                await supabase.schema('drivers').from('players').upsert(leads, { onConflict: 'player_tag' });
+
+                                // L2 Drivers: Upsert to shadow recruitment queue
+                                const { error: leadErr } = await supabase.schema('drivers').from('recruits').upsert(recruits, { onConflict: 'player_tag' });
+                                if (leadErr) {
+                                    logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Upsert Failure', details: leadErr });
+                                }
                             }
                         }
                     } else {

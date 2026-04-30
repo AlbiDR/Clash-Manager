@@ -2,16 +2,16 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "valibot";
-import ScoringKernel from "../../../Backend-GAS/Scoring_Kernel.js";
-import Time from "../../../Backend-GAS/Time.js";
-import { KeyService } from "../KeyService.js";
-import { Network } from "./Network.js";
-import { RoyaleApiService } from "./RoyaleApiService.js";
+import ScoringKernel from "../../../Backend-GAS/Scoring_Kernel";
+import Time from "../../../Backend-GAS/Time";
+import { KeyService } from "../KeyService";
+import { Network } from "./Network";
+import { RoyaleApiService } from "./RoyaleApiService";
 import {
   RoyalePlayerSchema,
   RoyaleBattleLogResponseSchema,
   RoyaleTournamentResponseSchema,
-} from "../schemas.js";
+} from "../schemas";
 import type {
   FetchResult,
   ScoringWeights,
@@ -24,7 +24,7 @@ import type {
   ScanDebugInfo,
   TournamentTag,
   PlayerTag,
-} from "../types.js";
+} from "../types";
 
 /**
  * ============================================================================

@@ -45,9 +45,9 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 // Import targets after mocks are established
-import { processBatch, processScanBatch } from "../index.js";
-import { Network } from "../services/Network.js";
-import type { PlayerTag } from "../types.js";
+import { processBatch, processScanBatch } from "../index";
+import { Network } from "../services/Network";
+import type { PlayerTag } from "../types";
 
 describe("Worker Core Logic (index.ts)", () => {
   beforeEach(() => {

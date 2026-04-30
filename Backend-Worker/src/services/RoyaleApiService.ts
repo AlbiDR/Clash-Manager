@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { KeyService } from "../KeyService.js";
-import { Network } from "./Network.js";
-import type { FetchResult } from "../types.js";
+import { KeyService } from "../KeyService";
+import { Network } from "./Network";
+import type { FetchResult } from "../types";
 
 /**
  * ============================================================================

@@ -2,8 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "valibot";
-import { HubState, HubError } from "../types/HubTypes.js";
-import { GasRawFeedSchema } from "../schemas.js";
+import { HubState, HubError } from "../types/HubTypes";
+import { GasRawFeedSchema } from "../schemas";
 
 /**
  * ============================================================================
