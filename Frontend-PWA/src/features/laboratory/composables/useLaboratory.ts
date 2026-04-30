@@ -25,7 +25,8 @@ import {
   type SimulationState,
   type Inventory,
   type Rarity,
-  type OptimizationResult
+  type OptimizationResult,
+  type UpgradeAction
 } from '../logic';
 
 import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLaboratoryStore";
@@ -74,7 +75,7 @@ export function useLaboratory() {
   } = storeToRefs(store);
 
   const clashDataStore = useClashDataStore();
-  const { data: clashData, currentSource, hubSyncTime } = storeToRefs(clashDataStore);
+  const { data: clashData, currentSource, remoteSyncTime } = storeToRefs(clashDataStore);
 
   let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
 
@@ -283,11 +284,7 @@ export function useLaboratory() {
     syncError: fetchError.value || undefined,
     emptyMessage: !clashData.value?.playerTag ? 'Target Required' : 'No results found',
     emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
-    emptyIcon: 'flask',
-    hubInfo: currentSource.value ? {
-      source: currentSource.value,
-      hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
-    } : undefined
+    emptyIcon: 'flask'
   }));
 
   /**

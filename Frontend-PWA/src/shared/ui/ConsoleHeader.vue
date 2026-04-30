@@ -1,5 +1,3 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed, unref } from "vue";
 import { useHaptics } from "@core";
@@ -20,9 +18,9 @@ const props = defineProps<{
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   currentSort?: string;
   loading?: boolean;
-  hubInfo?: {
-    source: "WORKER" | "GAS";
-    hubAge: string | null;
+  remoteInfo?: {
+    source: "SUPABASE" | "WORKER" | "GAS";
+    dataAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
   reserveExtraSpace?: boolean;
@@ -92,7 +90,7 @@ const handleOpenSheet = () => {
             :type="props.status.type"
             :text="props.status.text"
             :nominal="props.status.nominal"
-            :hub-info="props.hubInfo"
+            :remote-info="props.remoteInfo"
             direction="left"
           />
         </div>

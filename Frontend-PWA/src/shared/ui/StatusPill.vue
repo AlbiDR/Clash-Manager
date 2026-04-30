@@ -1,5 +1,3 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useHaptics } from "@core";
@@ -9,9 +7,9 @@ const props = withDefaults(defineProps<{
   text: string;
   nominal?: boolean;
   direction?: "left" | "right";
-  hubInfo?: {
-    source: "WORKER" | "GAS";
-    hubAge: string | null;
+  remoteInfo?: {
+    source: "SUPABASE" | "WORKER" | "GAS";
+    dataAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
 }>(), {
@@ -63,10 +61,16 @@ const handleToggle = () => {
         <template v-if="props.type === 'loading'">
           <span class="status-label">Syncing...</span>
         </template>
-        <template v-else-if="props.hubInfo && isExpanded">
+        <template v-else-if="props.remoteInfo && isExpanded">
           <div class="hub-meta">
-            <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
-              <template v-if="props.hubInfo.source === 'WORKER'">
+            <span class="hub-source" :class="props.remoteInfo.source.toLowerCase()">
+              <template v-if="props.remoteInfo.source === 'SUPABASE'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
+                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                DB
+              </template>
+              <template v-else-if="props.remoteInfo.source === 'WORKER'">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
@@ -76,12 +80,12 @@ const handleToggle = () => {
                 GAS
               </template>
             </span>
-            <span v-if="props.hubInfo.hubAge" class="separator">|</span>
-            <span v-if="props.hubInfo.hubAge" class="hub-age">
-              {{ props.hubInfo.hubAge }}
+            <span v-if="props.remoteInfo.dataAge" class="separator">|</span>
+            <span v-if="props.remoteInfo.dataAge" class="hub-age">
+              {{ props.remoteInfo.dataAge }}
             </span>
-            <span v-if="props.hubInfo.source !== 'WORKER' && props.hubInfo.diagnosis" class="diagnosis-tag">
-              ({{ props.hubInfo.diagnosis }})
+            <span v-if="props.remoteInfo.source === 'GAS' && props.remoteInfo.diagnosis" class="diagnosis-tag">
+              ({{ props.remoteInfo.diagnosis }})
             </span>
           </div>
         </template>
@@ -205,6 +209,11 @@ const handleToggle = () => {
   padding: 2px 4px;
   border-radius: 4px;
   background: var(--sys-surf-c);
+}
+
+.hub-source.supabase {
+  color: var(--sys-primary);
+  background: var(--sys-primary-container);
 }
 
 .hub-source.worker {
