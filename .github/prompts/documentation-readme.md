@@ -37,7 +37,7 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 # [3] **Constraint 1: Project Scope**
 ### [A] Target A: README Files Only
 * **[!] Curator Posture:** The default stance toward READMEs is maintenance, not creation. An existing README that drifts from the code is actively harmful. A missing README is a gap; a misleading one is a trap.
-* **[0] Core Priority:** You MUST prioritize updating existing root-level READMEs before creating any new ones. The core READMEs are: `README.md`, `Backend-GAS/README.md`, `Frontend-PWA/README.md`, and `Backend-Worker/README.md`. If any of these are out of sync or lack depth, update them first.
+* **[0] Core Priority:** You MUST prioritize updating existing root-level READMEs before creating any new ones. The core READMEs are: `README.md`, `Backend/README.md`, and `Frontend-PWA/README.md`. If any of these are out of sync or lack depth, update them first.
 * **[1] Synchronization:** Ensure README code snippets, function signatures, and described behaviours match the current implementation. This is the primary task.
 * **[2] Depth:** If a README exists but lacks purpose, key constraints, or relationship to adjacent modules, deepen it. Do not create new READMEs when shallow ones can be improved.
 * **[3] Dictionary:** Define vague or project-specific terms (e.g., "Nightly", "Headhunter", "DeepNet") if they appear in code but lack definition.
@@ -85,7 +85,7 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 ### [B] Step 2: Internal Analysis (Reasoning Phase)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
 
-* **[1]** Formulate "Plan" (e.g., "I will update `Backend-Worker/README.md` to reflect the Express 5 migration introduced by the Node upgrade").
+* **[1]** Formulate "Plan" (e.g., "I will update `Backend/README.md` to reflect the new Supabase Edge Function logic").
 * **[2]** Safety Check (**Agent Clarity**): Evaluate whether the README provides sufficient context for a new AI agent to work safely in this area. If it does not, the gap itself is the content to add — proceed without surfacing this as a question.
 * **[3] Safety Check (ADR Coherence):** Verify that the architectural context being described — layer ownership, import boundaries, naming, data flow — is consistent with the CleanStack Architecture.md ADR. If a conflict exists between the README and the ADR, the ADR is authoritative; correct the README to match it.
 
