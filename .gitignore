@@ -61,6 +61,14 @@ coverage
 # Generated Assets
 Frontend-PWA/index.html
 
+# Supabase & Backend Temp
+Backend/supabase/.temp
+Backend/scripts/data/*.csv
+
+# Local Tools & Tests
+mcp_config.json
+Frontend-PWA/test-stack.js
+
 # Supabase
 Backend/supabase/.temp/
 
