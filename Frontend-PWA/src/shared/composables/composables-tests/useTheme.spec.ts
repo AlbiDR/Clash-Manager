@@ -32,10 +32,14 @@ describe("useTheme", () => {
       addEventListener: vi.fn(),
     }));
 
-    vi.stubGlobal("URL", {
-      createObjectURL: vi.fn().mockReturnValue("blob:manifest"),
-      revokeObjectURL: vi.fn(),
-    });
+    // Mock URL static methods without destroying the global URL constructor
+    if (!globalThis.URL.createObjectURL) {
+      globalThis.URL.createObjectURL = vi.fn().mockReturnValue("blob:manifest");
+      globalThis.URL.revokeObjectURL = vi.fn();
+    } else {
+      vi.spyOn(globalThis.URL, "createObjectURL").mockReturnValue("blob:manifest");
+      vi.spyOn(globalThis.URL, "revokeObjectURL").mockImplementation(() => {});
+    }
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       json: () => Promise.resolve({ name: "Clash Manager", screenshots: [] }),
