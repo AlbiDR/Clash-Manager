@@ -160,8 +160,9 @@ vi.mock("../../../../core/services/useBadge", () => ({
 }));
 
 vi.mock("../../../../core/api/SupabaseClient", () => ({
-  isWorkerConfigured: mocks.mockIsWorkerConfigured,
+  isConfigured: mocks.mockIsWorkerConfigured,
   subscribeToPush: mocks.mockSubscribeToPush,
+  lastSyncStatus: ref("SUCCESS"),
 }));
 
 vi.mock("../../../../core/services/useWakeLock", () => ({
@@ -489,63 +490,10 @@ describe("useSettings", () => {
     });
 
     describe("subscribePush", () => {
-      it("reports error if worker not configured", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(false);
+      it("shows info toast for pending Supabase integration", async () => {
         const { result } = withSetup(useSettings);
         await result.subscribePush();
-        expect(mocks.mockToast.error).toHaveBeenCalledWith("Cloud Worker not configured");
-      });
-
-      it("subscribes to push successfully", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(true);
-        const mockSubscribe = vi.fn().mockResolvedValue({ endpoint: "mock" });
-        vi.stubGlobal("navigator", {
-          serviceWorker: {
-            ready: Promise.resolve({
-              pushManager: { subscribe: mockSubscribe }
-            })
-          }
-        });
-
-        const { result } = withSetup(useSettings);
-        await result.subscribePush();
-
-        expect(mocks.mockHaptics.medium).toHaveBeenCalled();
-        expect(mockSubscribe).toHaveBeenCalled();
-        expect(mocks.mockSubscribeToPush).toHaveBeenCalledWith({ endpoint: "mock" });
-        expect(result.isPushSubscribed.value).toBe(true);
-        expect(mocks.mockToast.success).toHaveBeenCalledWith("Push Alerts Active");
-      });
-
-      it("handles push setup failure (navigator error)", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(true);
-        // Simulate navigator error by making ready a rejecting promise
-        vi.stubGlobal("navigator", {
-          serviceWorker: {
-            ready: Promise.reject(new Error("SW Failure"))
-          }
-        });
-
-        const { result } = withSetup(useSettings);
-        await result.subscribePush();
-        expect(mocks.mockToast.error).toHaveBeenCalledWith("Push setup failed");
-      });
-
-      it("handles server registration failure", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(true);
-        mocks.mockSubscribeToPush.mockResolvedValue(false);
-        const mockSubscribe = vi.fn().mockResolvedValue({ endpoint: "mock" });
-        vi.stubGlobal("navigator", {
-          serviceWorker: {
-            ready: Promise.resolve({
-              pushManager: { subscribe: mockSubscribe }
-            })
-          }
-        });
-
-        const { result } = withSetup(useSettings);
-        await result.subscribePush();
-        expect(mocks.mockToast.error).toHaveBeenCalledWith("Server registration failed");
+        expect(mocks.mockToast.info).toHaveBeenCalledWith("Push notifications coming soon for Supabase");
       });
     });
 

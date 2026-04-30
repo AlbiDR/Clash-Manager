@@ -65,6 +65,7 @@ vi.mock("@core/api/SupabaseClient", () => ({
   dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
   undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
   lastHubDiagnosis: { value: null },
+  lastSyncStatus: { value: null },
   NetworkError: class extends Error {
     constructor(m: string) {
       super(m);

@@ -249,11 +249,7 @@ describe("useConsoleController", () => {
       expect(status.value).toEqual({ type: "error", text: "Invalid API URL" });
     });
 
-    it("returns 'waking' when apiStatus is waking", () => {
-      sharedState.mockApiStatus.value = "waking";
-      const { status } = useConsoleController(createOptions());
-      expect(status.value).toEqual({ type: "loading", text: "Waking Server..." });
-    });
+
 
     it("returns 'offline' when connection status is offline", () => {
       sharedState.mockConnectionStatus.value = "offline";
@@ -476,33 +472,33 @@ describe("useConsoleController", () => {
   });
 
   describe("layoutProps and hubInfo", () => {
-    it("maps hubInfo correctly when source is present", () => {
+    it("maps remoteInfo correctly when source is present", () => {
       const options = createOptions();
       options.currentSource.value = "WORKER";
       options.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
       const { layoutProps } = useConsoleController(options);
 
-      expect(layoutProps.value.hubInfo).toMatchObject({
+      expect(layoutProps.value.remoteInfo).toMatchObject({
         source: "WORKER",
       });
-      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/1h ago/);
+      expect(layoutProps.value.remoteInfo?.dataAge).toMatch(/1h ago/);
     });
 
-    it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {
+    it("falls back to lastSyncTime for dataAge if lastCompiledTime is missing", () => {
       const options = createOptions();
       options.currentSource.value = "WORKER";
       options.lastCompiledTime.value = null;
       options.lastSyncTime.value = Date.now() - 7200000; // 2h ago
       const { layoutProps } = useConsoleController(options);
 
-      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/2h ago/);
+      expect(layoutProps.value.remoteInfo?.dataAge).toMatch(/2h ago/);
     });
 
-    it("leaves hubInfo undefined when source is null", () => {
+    it("leaves remoteInfo undefined when source is null", () => {
       const options = createOptions();
       options.currentSource.value = null;
       const { layoutProps } = useConsoleController(options);
-      expect(layoutProps.value.hubInfo).toBeUndefined();
+      expect(layoutProps.value.remoteInfo).toBeUndefined();
     });
 
     it("sets isEmpty correctly when data is empty and not loading", () => {
