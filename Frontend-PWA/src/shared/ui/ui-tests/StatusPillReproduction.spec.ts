@@ -34,7 +34,7 @@ describe("StatusPill Hub Source Display", () => {
       props: { 
         type: "success", 
         text: "Nominal", 
-        hubInfo: { source: "WORKER", hubAge: "5m ago" } 
+        remoteInfo: { source: "WORKER", dataAge: "5m ago" } 
       },
     });
     
@@ -54,7 +54,7 @@ describe("StatusPill Hub Source Display", () => {
       props: { 
         type: "success", 
         text: "Nominal", 
-        hubInfo: { source: "GAS", hubAge: "10m ago" } 
+        remoteInfo: { source: "GAS", dataAge: "10m ago" } 
       },
     });
     
