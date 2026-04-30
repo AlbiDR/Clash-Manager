@@ -67,7 +67,12 @@ import type {
   ClanMembers,
   CurrentRiverRace,
   RiverRaceLog,
+  RiverRaceLogItem,
+  RiverRaceStanding,
+  RiverRaceParticipant,
   ScanDebugInfo,
+  ProphetIntel,
+  FetchResult,
 } from "./types.js";
 
 // ============================================================================
@@ -722,14 +727,14 @@ app.post(
       // Pre-process war history
       const warHistory: WarHistory = {};
 
-      if (logData?.items) {
-        logData.items.forEach((logEntry) => {
+      if (logData && typeof logData === "object" && "items" in logData) {
+        (logData as RiverRaceLog).items.forEach((logEntry: RiverRaceLogItem) => {
           const weekId = RecruitmentService.calculateWarWeekId(logEntry.createdDate);
           const standings = logEntry.standings ?? [];
-          const myClan = standings.find((standing) => standing.clan.tag === rawTag);
+          const myClan = standings.find((standing: RiverRaceStanding) => standing.clan.tag === rawTag);
 
           if (myClan?.clan.participants) {
-            myClan.clan.participants.forEach((participant) => {
+            myClan.clan.participants.forEach((participant: RiverRaceParticipant) => {
               const participantTag = participant.tag as PlayerTag;
               if (!warHistory[participantTag]) {
                 warHistory[participantTag] = {};

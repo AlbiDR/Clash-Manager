@@ -300,7 +300,7 @@ export class RecruitmentService {
     apiKeys: string[] = [],
     concurrencyLimit: number = this.MAX_CONCURRENCY,
     dismissedPlayerTags: Set<PlayerTag> = new Set(),
-    prophetCache?: Record<string, ProphetIntel>,
+    _prophetCache?: Record<string, ProphetIntel>,
     diagnosticTrace?: ScanDebugInfo,
     globalKeys?: KeyService,
   ): Promise<ScoredPlayer[]> {
@@ -350,7 +350,7 @@ export class RecruitmentService {
         if (tournamentApiResponse.code === 200 && typeof tournamentApiResponse.content === "object" && tournamentApiResponse.content !== null) {
           const tournamentValidation = v.safeParse(RoyaleTournamentResponseSchema, tournamentApiResponse.content);
           if (tournamentValidation.success) {
-            tournamentValidation.output.membersList.forEach((memberCandidate) => {
+            (tournamentValidation.output.membersList ?? []).forEach((memberCandidate) => {
               if (memberCandidate.clan?.tag) return;
               const candidateTag = memberCandidate.tag as PlayerTag;
               if (dismissedPlayerTags.has(candidateTag)) return;
