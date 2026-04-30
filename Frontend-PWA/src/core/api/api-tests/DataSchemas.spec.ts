@@ -12,8 +12,7 @@ import {
   ExternalProfileSchema,
   MemberSchema,
   RecruitSchema,
-  WebAppDataSchema,
-  HubStateSchema
+  WebAppDataSchema
 } from "../DataSchemas";
 
 describe("Core DataSchemas", () => {
@@ -317,8 +316,8 @@ describe("Core DataSchemas", () => {
   describe("LaxNumberPipe", () => {
     it("should accept numbers", () => {
       // Testing via WebAppDataSchema which uses LaxNumberPipe for its metadata fields
-      const input = { lb: [], hh: [], timestamp: 1, hubTimestamp: 123 };
-      expect(v.parse(WebAppDataSchema, input).hubTimestamp).toBe(123);
+      const input = { lb: [], hh: [], timestamp: 1, remoteTimestamp: 123 };
+      expect(v.parse(WebAppDataSchema, input).remoteTimestamp).toBe(123);
     });
 
     it("should coerce numeric strings", () => {
@@ -368,14 +367,14 @@ describe("Core DataSchemas", () => {
       ],
       playerTag: "MYTAG",
       timestamp: 123456789,
-      dataSource: "WORKER",
-      hubTimestamp: "invalid_date" // LaxNumberPipe will handle this
+      dataSource: "SUPABASE",
+      remoteTimestamp: "invalid_date" // LaxNumberPipe will handle this
     };
 
-    it("should parse valid WebAppData with worker attribution", () => {
+    it("should parse valid WebAppData with Supabase attribution", () => {
       const result = v.parse(WebAppDataSchema, validAppData);
-      expect(result.dataSource).toBe("WORKER");
-      expect(result.hubTimestamp).toBe(0); // Coerced to 0
+      expect(result.dataSource).toBe("SUPABASE");
+      expect(result.remoteTimestamp).toBe(0); // Coerced to 0
       expect(result.lb).toHaveLength(1);
     });
 
@@ -394,27 +393,5 @@ describe("Core DataSchemas", () => {
     });
   });
 
-  describe("HubStateSchema", () => {
-    const validHubState = {
-      metadata: {
-        timestamp: "2026-03-29T00:00:00.000Z",
-        lastCompiled: "2026-04-03T21:22:06.463Z", // Worker emits ISO-8601 strings
-        lastFetched: "2026-04-03T21:22:05.824Z",  // Worker emits ISO-8601 strings
-        status: "ok", // [BOSS] Verified resilience
-        version: "1.0",
-        source: "worker"
-      },
-      data: {
-        roster: [],
-        headhunter: []
-      }
-    };
 
-    it("should parse valid hub state with non-standard status", () => {
-      const result = v.parse(HubStateSchema, validHubState);
-      expect(result.metadata.status).toBe("ok");
-      // lastFetched is an ISO-8601 string from the Worker; SupabaseClient converts to epoch ms after validation
-      expect(result.metadata.lastFetched).toBe("2026-04-03T21:22:05.824Z");
-    });
-  });
 });

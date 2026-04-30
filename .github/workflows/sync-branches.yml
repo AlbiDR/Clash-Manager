@@ -275,7 +275,7 @@ jobs:
           git checkout Beta
           git pull origin Beta
           npm install -g pnpm
-          pnpm install
+          pnpm install --no-frozen-lockfile
           if ! pnpm test; then
              echo "### Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
              echo "Unit tests failed on Beta. Downstream sync to Nightly aborted to protect the automated environment from contaminated state." >> $GITHUB_STEP_SUMMARY
