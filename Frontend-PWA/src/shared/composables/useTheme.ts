@@ -178,8 +178,10 @@ export function useTheme() {
         baseManifestCache = await fetch(fetchUrl).then((res) => res.json());
 
         // FIX: Resolve all relative icon paths to absolute to work with Blob URL
-        const baseUrl = import.meta.env.BASE_URL || "/";
+        const env = (import.meta as any).env || {};
+        const baseUrl = env.BASE_URL || "/";
         const resolvePath = (p: string) => {
+          if (!p || typeof p !== "string") return "";
           if (p.startsWith("/") || p.startsWith("http")) return p;
           // Ensure baseUrl ends with / if p doesn't start with it
           const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -204,7 +206,8 @@ export function useTheme() {
       }
 
       // 6. Construct new manifest
-      const baseUrl = import.meta.env.BASE_URL || "/";
+      const env = (import.meta as any).env || {};
+      const baseUrl = env.BASE_URL || "/";
       const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
       
       const themeColors = isDark

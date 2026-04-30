@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { onUnmounted } from "vue";
+import { getCurrentInstance, onUnmounted } from "vue";
 
 /**
  * Interface contract for cross-tab communication via the Broadcast Channel API.
@@ -81,13 +81,19 @@ export function useBroadcastChannel(
    * Rationale: Explicitly closing the channel and removing listeners prevents
    * memory leaks and ensures the browser can efficiently garbage collect
    * the execution context when the component unmounts.
+   *
+   * 🛡️ Logic: Safe lifecycle management.
+   * Rationale: Composables used in Pinia or services may not have a component instance.
    */
-  onUnmounted(() => {
-    if (channel) {
-      if (onMessage) channel.removeEventListener("message", handleMessage);
-      channel.close();
-    }
-  });
+  const instance = getCurrentInstance();
+  if (instance) {
+    onUnmounted(() => {
+      if (channel) {
+        if (onMessage) channel.removeEventListener("message", handleMessage);
+        channel.close();
+      }
+    });
+  }
 
   return {
     isSupported: !!channel,
