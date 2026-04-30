@@ -16,7 +16,8 @@ import { useClashDataStore } from '@core';
 // Mock SupabaseClient
 vi.mock('@core/api/SupabaseClient', () => ({
   triggerBackendUpdate: vi.fn(),
-  lastHubDiagnosis: ref(null)
+  lastHubDiagnosis: ref(null),
+  lastSyncStatus: ref(null)
 }));
 
 // Mock @shared to avoid icon rendering issues

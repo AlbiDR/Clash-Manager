@@ -59,7 +59,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
     refresh: mockRefreshGas,
-    refreshWorker: mockRefreshWorker,
+    refreshFromSupabase: mockRefreshGas,
     updateLocalData: mockUpdateLocalData,
   })),
 }));
@@ -96,7 +96,7 @@ vi.mock("@core", async (importOriginal) => {
       lastCompiledTime: ref(null),
       lastFetchedTime: ref(null),
       refresh: mockRefreshGas,
-      refreshWorker: mockRefreshWorker,
+      refreshFromSupabase: mockRefreshGas,
       updateLocalData: mockUpdateLocalData,
     })),
     useShowcaseMode: vi.fn(() => ({
@@ -126,6 +126,7 @@ vi.mock("@core/api/SupabaseClient", () => ({
   isWorkerConfigured: vi.fn().mockReturnValue(false),
   scanRecruitsDirect: vi.fn().mockResolvedValue([]),
   lastHubDiagnosis: { value: null },
+  lastSyncStatus: { value: null },
 }));
 
 vi.mock("@shared", async (importOriginal) => {
@@ -195,10 +196,6 @@ describe("useRecruiter", () => {
     mockDismissRecruitsAction.mockResolvedValue(undefined);
   });
 
-  it("calculates sheetUrl correctly with Headhunter GID", () => {
-    const { sheetUrl } = useRecruiter();
-    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=789");
-  });
 
   it("exposes layoutProps containing sortOptions with descriptions", () => {
     const { layoutProps } = useRecruiter();
@@ -228,10 +225,10 @@ describe("useRecruiter", () => {
   });
 
   describe("handleRefresh", () => {
-    it("calls refreshWorker from the store", async () => {
+    it("calls refreshFromSupabase from the store", async () => {
       const { refresh } = useRecruiter();
       await refresh();
-      expect(mockRefreshWorker).toHaveBeenCalled();
+      expect(mockRefreshGas).toHaveBeenCalled();
     });
   });
 

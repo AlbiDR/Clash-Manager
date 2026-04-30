@@ -10,6 +10,7 @@ vi.mock("../SupabaseClient", () => ({
   pingWorker: vi.fn(),
   getApiUrl: vi.fn(),
   lastHubDiagnosis: { value: null },
+  lastSyncStatus: { value: null },
 }));
 
 describe("useApiState", () => {
