@@ -10,8 +10,8 @@ const { sharedState } = vi.hoisted(() => ({
     mockShowcaseMode: { value: false },
     mockPingData: { 
       value: {
-        spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-        sheets: { Leaderboard: 456, Headhunter: 789 },
+        version: "1.0.0",
+        latency: 42,
       }
     },
     mockApiStatus: { value: "online" },
@@ -154,7 +154,6 @@ describe("useConsoleController", () => {
         deepLinkPrefix: "test-",
         batchIdMapper: (item: any) => item.id,
         statsLabel: "Test",
-        sheetName: "Leaderboard"
       };
   }
 
@@ -205,24 +204,6 @@ describe("useConsoleController", () => {
     };
     const { showSkeletons } = useConsoleController(options);
     expect(showSkeletons.value).toBe(false);
-  });
-
-  it("calculates sheetUrl correctly with string input", () => {
-    const options = {
-      ...createOptions(),
-      sheetName: "Leaderboard",
-    };
-    const { sheetUrl } = useConsoleController(options);
-    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=456");
-  });
-
-  it("calculates sheetUrl correctly with array input (first match)", () => {
-    const options = {
-      ...createOptions(),
-      sheetName: ["NonExistent", "Headhunter"],
-    };
-    const { sheetUrl } = useConsoleController(options);
-    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=789");
   });
 
   it("updates searchQuery via handleSearch", () => {
@@ -341,23 +322,9 @@ describe("useConsoleController", () => {
       expect((status.value as any).nominal).toBe(true);
     });
 
-    it("uses lastFetchedTime for age calculation when source is WORKER", () => {
+    it("uses lastSyncTime for age calculation", () => {
       const options = createOptions();
       const now = Date.now();
-      options.currentSource.value = "WORKER";
-      options.lastFetchedTime.value = now - 16 * 60000; // 16m ago (STALE)
-      options.lastSyncTime.value = now - 1 * 60000;    // 1m ago (NOT STALE)
-      options.data.value = [{ id: "1", n: "Test" }];
-
-      const { status } = useConsoleController(options);
-      expect(status.value.text).toBe("Stale Data");
-    });
-
-    it("uses lastSyncTime for age calculation when source is GAS", () => {
-      const options = createOptions();
-      const now = Date.now();
-      options.currentSource.value = "GAS";
-      options.lastFetchedTime.value = now - 1 * 60000;  // 1m ago
       options.lastSyncTime.value = now - 16 * 60000;   // 16m ago (STALE)
       options.data.value = [{ id: "1", n: "Test" }];
 

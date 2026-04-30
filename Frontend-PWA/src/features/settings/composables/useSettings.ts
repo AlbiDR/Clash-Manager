@@ -16,7 +16,7 @@ import { useWakeLock } from "@core/services/useWakeLock";
 import { useSystemInfo } from "@core/services/useSystemInfo";
 import { useApiState } from "@core/api/useApiState";
 import { useBadge } from "@core/services/useBadge";
-import { isWorkerConfigured, subscribeToPush } from "@core/api/SupabaseClient";
+import { subscribeToPush } from "@core/api/SupabaseClient";
 import { computed, ref, onMounted } from "vue";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
@@ -187,7 +187,7 @@ export function useSettings() {
     haptics.heavy();
     if (
       confirm(
-        "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Data on the Google Sheet will NOT be affected.",
+        "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
       )
     ) {
       localStorage.clear();
@@ -209,18 +209,16 @@ export function useSettings() {
     return syncDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   });
 
-  const hasWorker = computed(() => isWorkerConfigured());
-
   function updateApiUrl(newUrl: string) {
     if (newUrl.trim()) {
-      localStorage.setItem("cm_gas_url", newUrl.trim());
+      localStorage.setItem("cm_supabase_url", newUrl.trim());
       window.location.reload();
     }
   }
 
   function resetApiUrl() {
     if (confirm("Reset API URL to default?")) {
-      localStorage.removeItem("cm_gas_url");
+      localStorage.removeItem("cm_supabase_url");
       window.location.reload();
     }
   }
@@ -233,48 +231,8 @@ export function useSettings() {
   }
 
   async function subscribePush() {
-    if (!hasWorker.value) {
-      toast.error("Cloud Worker not configured");
-      return;
-    }
-
-    try {
-      haptics.medium();
-
-      if (!("serviceWorker" in navigator)) {
-        toast.error("Push setup failed");
-        return;
-      }
-
-      const swRegistration = await navigator.serviceWorker.ready;
-
-      let pushSubscription: PushSubscription | null = null;
-      try {
-        pushSubscription = await swRegistration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: "BMMA-EXAMPLE-KEY-REPLACE-WITH-REAL-VAPID-KEY-FROM-ENV",
-        });
-      } catch (pushError) {
-        console.warn("Push subscribe failed (likely missing VAPID)", pushError);
-        pushSubscription = {
-          endpoint: "https://fcm.googleapis.com/fcm/send/demo",
-        } as PushSubscription;
-      }
-
-      if (pushSubscription) {
-        const isRegistered = await subscribeToPush(pushSubscription);
-        if (isRegistered) {
-          isPushSubscribed.value = true;
-          toast.success("Push Alerts Active");
-        } else {
-          toast.error("Server registration failed");
-        }
-      }
-    } catch (pushSetupError) {
-      // DECISION LOG: Catching top-level setup failures (navigator or SW ready failures).
-      console.error(pushSetupError);
-      toast.error("Push setup failed");
-    }
+    // Rationale: Native Supabase Push integration pending Edge Function setup.
+    toast.info("Push notifications coming soon for Supabase");
   }
 
   async function sendTestNotification() {
@@ -307,7 +265,7 @@ export function useSettings() {
     status: apiStatusObject.value,
     loading: !isHydrated.value,
     isRefreshing: isRefreshing.value,
-    sheetUrl: "https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH",
+    sheetUrl: "https://supabase.com/dashboard/project/clash-manager",
     footerBadge: footerBadgeText.value,
   }));
 
@@ -336,7 +294,6 @@ export function useSettings() {
     notificationPermission,
     isPushSubscribed,
     lastSyncFormatted,
-    hasWorker,
 
     // Methods
     toggle,

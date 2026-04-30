@@ -7,7 +7,7 @@
 // Manual declarations below handle the necessary types for this project
 
 interface ImportMetaEnv {
-  readonly VITE_GAS_URL: string;
+  readonly VITE_SUPABASE_URL: string;
   readonly VITE_WORKER_URL: string;
   readonly VITE_APP_VERSION: string;
   readonly TEST: boolean;

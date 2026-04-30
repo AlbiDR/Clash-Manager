@@ -59,7 +59,7 @@ export interface WebAppData {
   readonly playerTag?: string; // Player tag without # to highlight
   readonly timestamp: number;
   readonly dataSource?: "SUPABASE";
-  readonly hubTimestamp?: number;
+  readonly remoteTimestamp?: number;
   readonly lastCompiled?: number;
   readonly lastFetched?: number;
   readonly lastSync?: number;

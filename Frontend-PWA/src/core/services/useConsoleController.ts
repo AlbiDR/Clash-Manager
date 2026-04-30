@@ -32,19 +32,13 @@ interface ConsoleLogicOptions<T> {
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
   /** Indicates if the initial local storage hydration has finished. */
   isHydrated?: Ref<boolean> | ComputedRef<boolean>;
-  /** Indicates if a background network sync (GAS or Worker) is in progress. */
-  isRefreshing?: Ref<boolean> | ComputedRef<boolean>;
-  /** Any error message encountered during the last synchronization attempt. */
-  syncError?: Ref<string | null> | ComputedRef<string | null>;
-  /** Epoch timestamp representing the last successful remote data refresh. */
-  lastSyncTime?: Ref<number | null> | ComputedRef<number | null>;
   /** The identified backend source that provided the current dataset. */
-  currentSource?: Ref<"WORKER" | "GAS" | null> | ComputedRef<"WORKER" | "GAS" | null>;
-  /** Epoch timestamp of when the Cloud Worker Hub last synced with the Royale API. */
-  hubSyncTime?: Ref<number | null> | ComputedRef<number | null>;
-  /** Epoch timestamp of when the Cloud Worker last compiled the current dataset. */
+  currentSource?: Ref<"SUPABASE" | null> | ComputedRef<"SUPABASE" | null>;
+  /** Epoch timestamp of when the remote Supabase view was last generated. */
+  remoteSyncTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Epoch timestamp of when the server last compiled the current dataset. */
   lastCompiledTime?: Ref<number | null> | ComputedRef<number | null>;
-  /** Epoch timestamp of when the Cloud Worker last fetched raw data from the API. */
+  /** Epoch timestamp of when the server last fetched raw data from the API. */
   lastFetchedTime?: Ref<number | null> | ComputedRef<number | null>;
   /** Returns an array of strings per item used for search filtering. */
   filterFn: (item: T) => string[];
@@ -62,8 +56,6 @@ interface ConsoleLogicOptions<T> {
   batchIdMapper: (item: T) => string;
   /** Singular display label for the item type (e.g., 'Member'). */
   statsLabel: string;
-  /** The name of the tab in the backing Google Sheet for external linking. */
-  sheetName?: string | string[];
   /** Optional function to extract a numeric score for threshold-based selection. */
   scoreGetter?: (item: T) => number;
   /** Trigger function to initiate a fresh data sync from the remote backend. */
@@ -107,8 +99,7 @@ interface ConsoleLogicOptions<T> {
  * - `showSkeletons`: Shimmer visibility flag.
  * - `layoutProps`: Consolidated object for direct injection into `ConsoleLayout`.
  */
-/** Build-time flag — never changes at runtime, intentionally module-scoped. */
-const WORKER_HUB_ENABLED = import.meta.env.VITE_USE_WORKER_HUB === "true";
+
 
 export function useConsoleController<T extends { id: string; n?: string }>(
   options: ConsoleLogicOptions<T>,
@@ -122,7 +113,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     syncError: storeSyncError,
     lastSyncTime: storeLastSync,
     currentSource: storeSource,
-    hubSyncTime: storeHubSync,
+    remoteSyncTime: storeRemoteSync,
     lastCompiledTime: storeLastCompiled,
     lastFetchedTime: storeLastFetched,
   } = storeToRefs(clashStore);
@@ -134,7 +125,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     syncError = storeSyncError,
     lastSyncTime = storeLastSync,
     currentSource = storeSource,
-    hubSyncTime = storeHubSync,
+    remoteSyncTime = storeRemoteSync,
     lastCompiledTime = storeLastCompiled,
     lastFetchedTime = storeLastFetched,
     filterFn,
@@ -145,9 +136,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     deepLinkPrefix,
     batchIdMapper,
     statsLabel,
-    sheetName,
     scoreGetter,
-    refresh: refreshFn = () => clashStore.refreshWorker(),
+    refresh: refreshFn = () => clashStore.refreshFromSupabase(),
     onDismiss: onDismissFn,
   } = options;
 
@@ -242,25 +232,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     setFabVisible(false);
   });
 
-  /**
-   * BACKING SHEET LINK
-   */
-  const sheetUrl = computed(() => {
-    if (!pingData.value?.spreadsheetUrl || !pingData.value?.sheets || !sheetName)
-      return undefined;
 
-    const potentialSheetNames = Array.isArray(sheetName) ? sheetName : [sheetName];
-    let sheetId: number | undefined;
-
-    for (const name of potentialSheetNames) {
-      sheetId = pingData.value.sheets[name];
-      if (sheetId !== undefined) break;
-    }
-
-    return sheetId !== undefined
-      ? `${pingData.value.spreadsheetUrl}#gid=${sheetId}`
-      : pingData.value.spreadsheetUrl;
-  });
 
   /**
    * SYSTEM STATUS RESOLVER
@@ -272,11 +244,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   const status = computed(() => {
     // [FIX] SOURCE-AUTHORITATIVE STALE LOGIC: Target A [1]
     // Rationale: data age must be calculated relative to the original find/fetch 
-    // at the source (GAS), not just the latest compilation in the worker hub.
+    // at the source (Supabase), not just the latest compilation.
     const now = Date.now();
-    const effectiveSyncTime = (currentSource.value === "WORKER" && lastFetchedTime.value)
-      ? lastFetchedTime.value
-      : (lastSyncTime.value || 0);
+    const effectiveSyncTime = lastSyncTime.value || 0;
 
     const ageMs = now - effectiveSyncTime;
     const ageMinutes = Math.floor(ageMs / 60000);
@@ -292,32 +262,19 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     // Priority 2: Remote execution or fetch failure (Synchronous error)
     if (syncError.value) return { type: "error", text: "Sync Error" } as const;
 
-    // Priority 3: Server Waking (Initial boot delay)
-    if (apiStatus.value === "waking" || apiStatus.value === "stale")
-      return { type: "loading", text: "Waking Server..." } as const;
-
-    // Priority 4: Background fetch in progress
+    // Priority 3: Background fetch in progress
     if (isRefreshing.value)
       return { type: "loading", text: "Syncing..." } as const;
 
-    // Priority 5: Warning States (Stale or GAS Fallback)
-    // Rationale: "Fallback" is only meaningful when the Worker Hub is the expected
-    // primary channel but GAS was used instead (degraded path). If VITE_USE_WORKER_HUB
-    // is not enabled, GAS is the intentional primary — no warning is warranted.
-    // "Stale Data" applies regardless of source when the age threshold is exceeded.
-    const isGasFallback = WORKER_HUB_ENABLED && currentSource.value === "GAS";
-
-    if (ageMinutes >= 15 || isGasFallback) {
-      const warningLabel = ageMinutes >= 15 ? "Stale Data" : "Fallback";
+    // Priority 4: Warning States (Stale Data)
+    if (ageMinutes >= 15) {
       return {
         type: "warning" as const,
-        text: warningLabel,
+        text: "Stale Data",
       };
     }
 
-    // Priority 6: Nominal (Clinical Purity)
-    // Rationale: If the Hub is < 15m old, we hide the label entirely.
-    // This reduces visual noise when the app is in a healthy state.
+    // Priority 5: Nominal (Clinical Purity)
     if (data.value && data.value.length > 0) {
       return {
         type: "success" as const,
@@ -420,7 +377,6 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     loading: showSkeletons.value,
     isRefreshing: isRefreshing.value,
     syncError: syncError.value || undefined,
-    sheetUrl: sheetUrl.value,
     stats: statsBadge.value,
     sortOptions,
     showSearch,
@@ -430,9 +386,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     totalCount: filteredItems.value.length,
     currentSort: sortBy.value,
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
-    hubInfo: currentSource?.value ? {
+    remoteInfo: currentSource?.value ? {
       source: currentSource.value,
-      hubAge: (lastCompiledTime?.value || lastSyncTime?.value) 
+      dataAge: (lastCompiledTime?.value || lastSyncTime?.value) 
         ? formatTimeAgo(new Date(Number(lastCompiledTime?.value || lastSyncTime.value)).toISOString())
         : null
     } : undefined
@@ -473,12 +429,11 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     statsBadge,
     showSkeletons,
     filteredItems,
-    sheetUrl,
     isRefreshing,
     syncError,
     isHydrated,
     currentSource,
-    hubSyncTime,
+    remoteSyncTime,
     data: storeRawData,
     layoutProps,
     layoutEvents,

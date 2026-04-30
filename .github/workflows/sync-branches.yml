@@ -141,6 +141,7 @@ jobs:
     outputs:
       merged: ${{ steps.merge.outputs.merged }}
       pwa_changed: ${{ steps.detect.outputs.pwa_changed }}
+      backend_changed: ${{ steps.detect.outputs.backend_changed }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -190,8 +191,16 @@ jobs:
             else
               echo "pwa_changed=false" >> $GITHUB_OUTPUT
             fi
+
+            # Backend: Backend/** or deploy-supabase.yml
+            if git diff --name-only $BEFORE $AFTER | grep -E "^Backend/|^\.github/workflows/deploy-supabase\.yml" | grep -v "\.md$" > /dev/null; then
+              echo "backend_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "backend_changed=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "pwa_changed=false" >> $GITHUB_OUTPUT
+            echo "backend_changed=false" >> $GITHUB_OUTPUT
           fi
 
   # ============================================================================
@@ -306,4 +315,17 @@ jobs:
         run: |
           echo "Triggering PWA Deployment (System: Nominal)..."
           gh workflow run deploy-pwa.yml --ref Stable -R ${{ github.repository }}
+
+  deploy-supabase:
+    name: "(Deploy) Supabase"
+    needs: beta-to-stable
+    if: always() && needs.beta-to-stable.outputs.backend_changed == 'true' && needs.beta-to-stable.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Supabase Deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Triggering Supabase Deployment (System: Nominal)..."
+          gh workflow run deploy-supabase.yml --ref Stable -R ${{ github.repository }}
 

@@ -28,7 +28,7 @@ describe("NetworkSettings.vue", () => {
 
     // Mock localStorage
     vi.stubGlobal("localStorage", {
-      getItem: vi.fn((key: string) => (key === "cm_gas_url" ? null : null)),
+      getItem: vi.fn((key: string) => (key === "cm_supabase_url" ? null : null)),
     });
   });
 
@@ -96,7 +96,7 @@ describe("NetworkSettings.vue", () => {
 
   it("handles resetting custom override via orchestrator", async () => {
     vi.stubGlobal("localStorage", {
-        getItem: vi.fn((key: string) => (key === "cm_gas_url" ? "https://custom.com" : null)),
+        getItem: vi.fn((key: string) => (key === "cm_supabase_url" ? "https://custom.com" : null)),
     });
 
     const wrapper = mount(NetworkSettings, {
