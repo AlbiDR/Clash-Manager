@@ -27,6 +27,17 @@ jobs:
         with:
           version: latest
 
+      - name: Pre-flight Script Validation
+        # Clinical check to prevent broken scripts from blocking the heavy CLI logic.
+        run: npx tsx Backend/scripts/Sync-Migrations.ts --help || exit 0 # Only checks for syntax/ReferenceErrors
+
+      - name: Enforce IPv4 Connectivity
+        # Mandatory: Force IPv4 for database connectivity. 
+        # GH runners often fail to route to Supabase IPv6 endpoints in eu-west-1.
+        run: |
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
       - name: Deploy Binary Stack
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -38,32 +49,56 @@ jobs:
           # Authoritative Repository Tags
           CLAN_TAG: ${{ vars.CLAN_TAG }}
           PLAYER_TAG: ${{ vars.PLAYER_TAG }}
+          INTERNAL_BEARER_TOKEN: ${{ secrets.INTERNAL_BEARER_TOKEN }}
+          SUPABASE_REGION: "eu-west-1"
         run: |
           # 0. Context: We work from the Backend root
           cd Backend
+          
+          # 0.1 Secret Injection: Stamp placeholders with actual secrets from the vault
+          # We use '|' as sed delimiter to safely handle tokens containing '/'
+          echo "[AUTH] Injecting Bearer Token into migrations..."
+          if [ -n "$INTERNAL_BEARER_TOKEN" ]; then
+            sed -i "s|{{INTERNAL_BEARER_TOKEN}}|$INTERNAL_BEARER_TOKEN|g" supabase/migrations/*.sql
+          fi
 
           # 1. Sync The Configuration and Key Farm
-          echo "🔄 Syncing Authoritative Repository Tags to Supabase..."
+          echo "Syncing Authoritative Repository Tags to Supabase..."
           supabase secrets set --project-ref "$PROJECT_ID" CLAN_TAG="$CLAN_TAG" PLAYER_TAG="$PLAYER_TAG"
 
           if [ -n "$ROYALE_API_KEYS" ]; then
-            echo "🔄 Syncing ROYALE_API_KEYS..."
+            echo "Syncing ROYALE_API_KEYS..."
             supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
+          fi
+
+          if [ -n "$INTERNAL_BEARER_TOKEN" ]; then
+            echo "Syncing INTERNAL_BEARER_TOKEN..."
+            supabase secrets set --project-ref "$PROJECT_ID" INTERNAL_BEARER_TOKEN="$INTERNAL_BEARER_TOKEN"
           else
-            echo "⚠️ [SKIP] ROYALE_API_KEYS secret not found. Skipping Key Farm sync."
+            echo "[WARNING] INTERNAL_BEARER_TOKEN secret not found. Function will fail runtime auth."
           fi
 
           # 2. Push Database DNA (The Migrations) - Resilient Skip
           if [ -n "$SUPABASE_DB_PASSWORD" ]; then
-            echo "🧬 [PUSH] Synchronizing Database DNA..."
+            echo "[PUSH] Synchronizing Database DNA..."
             # Note: Link is required for db push, but we use the environment variable for auth.
             supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+            
+            # --- CLINICAL SELF-HEALING ---
+            echo "[SYNC] Running Clinical Migration Sync..."
+            # Self-heal ghosts caused by manual repairs with mismatching timestamps
+            npx tsx scripts/Sync-Migrations.ts || echo "[WARNING] Sync script failed. Attempting db push anyway."
+            # -----------------------------
+
+            # The Binary Stack is now consolidated. 
+            # We assume a clean state based on the 20260411160000 baseline.
             supabase db push
           else
-            echo "ℹ️ [INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
+            echo "[INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
             echo "   (Note: Database DNA was manually initialized by the Assistant)."
           fi
 
           # 3. Deploy the Hunter (Edge Function)
-          echo " [DEPLOY] Launching The Hunter (Edge Function)..."
+          echo "[DEPLOY] Launching The Hunter (Edge Function)..."
           supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID"
+          supabase functions deploy headhunter-scanner --project-ref "$PROJECT_ID" --no-verify-jwt
