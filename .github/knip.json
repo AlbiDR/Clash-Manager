@@ -8,13 +8,11 @@
   ],
   "entry": [
     "Frontend-PWA/src/main.ts",
-    "Backend-GAS/API_Public.ts",
-    "Backend-Worker/src/index.ts"
+    "Backend/supabase/functions/*/index.ts"
   ],
   "project": [
     "Frontend-PWA/src/**/*.ts",
     "Frontend-PWA/src/**/*.vue",
-    "Backend-GAS/**/*.ts",
-    "Backend-Worker/src/**/*.ts"
+    "Backend/supabase/functions/**/*.ts"
   ]
 }

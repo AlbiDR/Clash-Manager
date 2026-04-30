@@ -9,10 +9,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { effectScope, nextTick, ref } from "vue";
 import { useBackendRefresher } from "../useBackendRefresher";
-import { triggerBackendUpdate } from "@core/api/GasClient";
+import { triggerBackendUpdate } from "@core/api/SupabaseClient";
 
-// Mock GasClient
-vi.mock("@core/api/GasClient", () => ({
+// Mock SupabaseClient
+vi.mock("@core/api/SupabaseClient", () => ({
   triggerBackendUpdate: vi.fn(),
   lastHubDiagnosis: ref(null),
 }));

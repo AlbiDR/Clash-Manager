@@ -1,10 +1,10 @@
 import { resetApiState, useApiState } from "../useApiState";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { isConfigured, ping, pingWorker, getApiUrl } from "../GasClient";
+import { isConfigured, ping, pingWorker, getApiUrl } from "../SupabaseClient";
 import { nextTick } from "vue";
 
-// Mock GasClient directly using deep import path to avoid singleton/barrel issues
-vi.mock("../GasClient", () => ({
+// Mock SupabaseClient directly using deep import path to avoid singleton/barrel issues
+vi.mock("../SupabaseClient", () => ({
   isConfigured: vi.fn(),
   ping: vi.fn(),
   pingWorker: vi.fn(),

@@ -1,19 +1,7 @@
-services:
-  - type: web
-    name: clash-manager-worker
-    runtime: node
-    plan: free
-    buildCommand: pnpm install && pnpm --filter clash-manager-worker run build
-    startCommand: node Backend-Worker/dist/Backend-Worker/src/index.js
-    envVars:
-      - key: WORKER_CONCURRENCY
-        value: "20"
-      - key: WORKER_TIMEOUT_SEC
-        value: "45"
-      - key: PORT
-        value: "10000"
-      - key: NODE_VERSION
-        value: "24"
-      - key: PNPM_VERSION
-        value: "10.32.1"
-
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+#
+# DECOMMISSIONED: Backend-Worker (Render Muscle) has been superseded by
+# Supabase Edge Functions and pg_cron scheduled jobs.
+# This file is retained as a historical reference only.
+# No active services are defined here.

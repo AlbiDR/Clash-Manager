@@ -3,7 +3,7 @@
 
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useWakeLock } from "./useWakeLock";
-import { fetchRemote, lastHubDiagnosis } from "../api/GasClient";
+import { fetchRemote, lastHubDiagnosis } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { MemberSchema, WebAppDataSchema } from "../api/DataSchemas";
@@ -50,7 +50,7 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Fault tolerance tracker; triggers user-visible errors only after 3 consecutive failures. */
   const consecutiveSyncFailures = ref(0);
 
-  /** Indicates the provenance of the dataset (Backend-Worker vs. Backend-GAS) for diagnostic tracing. */
+  /** Indicates the provenance of the dataset (SUPABASE) for diagnostic tracing. */
   const dataSource = ref<"WORKER" | "GAS" | null>(null);
 
   /** Authoritative health state of the Worker Hub used to guide synchronization fallbacks. */

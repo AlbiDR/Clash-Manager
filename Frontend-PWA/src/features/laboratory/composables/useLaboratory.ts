@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { getPlayerProfile } from "@core/api/GasClient";
+import { getPlayerProfile } from "@core/api/SupabaseClient";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import {

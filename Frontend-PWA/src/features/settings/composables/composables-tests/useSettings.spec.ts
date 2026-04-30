@@ -159,7 +159,7 @@ vi.mock("../../../../core/services/useBadge", () => ({
   })),
 }));
 
-vi.mock("../../../../core/api/GasClient", () => ({
+vi.mock("../../../../core/api/SupabaseClient", () => ({
   isWorkerConfigured: mocks.mockIsWorkerConfigured,
   subscribeToPush: mocks.mockSubscribeToPush,
 }));

@@ -413,7 +413,7 @@ describe("Core DataSchemas", () => {
     it("should parse valid hub state with non-standard status", () => {
       const result = v.parse(HubStateSchema, validHubState);
       expect(result.metadata.status).toBe("ok");
-      // lastFetched is an ISO-8601 string from the Worker; GasClient converts to epoch ms after validation
+      // lastFetched is an ISO-8601 string from the Worker; SupabaseClient converts to epoch ms after validation
       expect(result.metadata.lastFetched).toBe("2026-04-03T21:22:05.824Z");
     });
   });
