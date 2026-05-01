@@ -92,7 +92,7 @@ jobs:
 
             # The Binary Stack is now consolidated. 
             # We assume a clean state based on the 20260411160000 baseline.
-            supabase db push
+            supabase db push --include-all
           else
             echo "[INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
             echo "   (Note: Database DNA was manually initialized by the Assistant)."
