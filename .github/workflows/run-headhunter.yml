@@ -40,8 +40,10 @@ jobs:
             -d "$PAYLOAD")
 
           # 3. Handle Errors
-          if echo "$RESPONSE" | grep -q '"error"'; then
-            echo "::error::Scanner reported an error: $(echo $RESPONSE | jq -r '.error')"
+          if echo "$RESPONSE" | jq -e '.error != null' > /dev/null; then
+            ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error // "Unknown Error"')
+            echo "::error::Scanner reported an error: $ERROR_MSG"
+            echo "Full Response: $RESPONSE"
             exit 1
           fi
 
