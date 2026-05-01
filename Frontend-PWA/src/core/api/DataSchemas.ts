@@ -204,6 +204,47 @@ export const RecruitSchema = v.object({
  * [GUARD] WEB APP DATA SCHEMA
  * Authoritative validation boundary for the full application state.
  */
+/**
+ * [GUARD] SUPABASE ROSTER ROW SCHEMA
+ * Validates the raw shape of a row from the roster_view.
+ * Rationale: Ensures Supabase data is hardened before mapping to domain objects.
+ */
+export const SbRosterRowSchema = v.object({
+  player_tag: v.optional(SafeStringPipe, ""),
+  player_name: v.optional(SafeStringPipe, "Unknown"),
+  trophies: v.optional(SafeNumberPipe, 0),
+  pes: v.optional(SafeNumberPipe),
+  performance_score: v.optional(SafeNumberPipe, 0),
+  rpes: v.optional(SafeNumberPipe),
+  raw_performance_score: v.optional(SafeNumberPipe, 0),
+  last_seen_at: v.optional(v.nullable(SafeStringPipe)),
+  role: v.optional(SafeStringPipe, ""),
+  tenure_days: v.optional(SafeNumberPipe, 0),
+  last_seen_label: v.optional(SafeStringPipe, "-"),
+  stability_index: v.optional(SafeNumberPipe, 0),
+  week_fame: v.optional(SafeNumberPipe, 0),
+  exp_level: v.optional(SafeNumberPipe, 1),
+});
+
+/**
+ * [GUARD] SUPABASE HEADHUNTER ROW SCHEMA
+ * Validates the raw shape of a row from the headhunter_view.
+ * Rationale: Protects recruitment discovery pipeline from malformed edge data.
+ */
+export const SbHeadhunterRowSchema = v.object({
+  player_tag: v.optional(SafeStringPipe, ""),
+  player_name: v.optional(SafeStringPipe, "Unknown"),
+  trophies: v.optional(SafeNumberPipe, 0),
+  pos: v.optional(SafeNumberPipe),
+  potential_score: v.optional(SafeNumberPipe, 0),
+  rpos: v.optional(SafeNumberPipe),
+  raw_potential_score: v.optional(SafeNumberPipe, 0),
+  last_seen_at: v.optional(v.nullable(SafeStringPipe)),
+  donations: v.optional(SafeNumberPipe, 0),
+  war_wins: v.optional(SafeNumberPipe, 0),
+  longevity_label: v.optional(SafeStringPipe, "-"),
+});
+
 export const WebAppDataSchema = v.object({
   lb: v.array(MemberSchema),
   hh: v.array(RecruitSchema),
