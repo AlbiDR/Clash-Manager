@@ -27,7 +27,7 @@ export async function runTournamentDiscovery(
             console.error(`[TOURNAMENT_DISCOVERY] Anchor fetch error: ${aErr.message}. Falling back to hardcoded keywords.`);
         }
 
-        const FALLBACK_KEYWORDS = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int", "open", "free", "all"];
+        const FALLBACK_KEYWORDS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
         const keywords = anchors?.map((a: any) => a.keyword) || FALLBACK_KEYWORDS;
         const isUsingFallback = !anchors || anchors.length === 0;
 
@@ -95,11 +95,17 @@ export async function runTournamentDiscovery(
                                         count++;
                                         keywordYield++;
                                         foundInTournament++;
-                                    } else if (m.clan?.tag) {
+                                    } else {
                                         skippedClanned++;
+                                        // Log detailed skip reason periodically or in summary to avoid log bloat
                                     }
                                 });
-                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag}: ${foundInTournament} candidates added, ${skippedClanned} clanned players skipped`);
+                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag}: ${foundInTournament} candidates added, ${skippedClanned} players skipped (clanned or excluded)`);
+                                logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { 
+                                    tournament: t.tag, 
+                                    found: foundInTournament, 
+                                    skipped: skippedClanned 
+                                });
                             } else {
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag} had no membersList property`);
                             }
