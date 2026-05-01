@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-01] PR #526: docs(tsdoc): document SupabaseClient public contract
+**Commit**: `aaaef7aee64c6c7b152787d5502c946553e8c0aa`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/526)
+
+### Description
+Documented the `SupabaseClient.ts` public contract in the PWA. This includes adding module-level TSDoc, member-level TSDoc for all exported functions and constants, and inline decision logs explaining the rationale for specific implementation details like offline queueing and heartbeat-based timestamping. The changes ensure architectural clarity and intent are preserved for future maintenance.
+
+---
+*PR created automatically by Jules for task [2856103178521895131](https://jules.google.com/task/2856103178521895131) started by @AlbiDR*
+
+---
+
 ## [2026-05-01] PR #525: docs(readme): reconcile PWA transport and sync logic drift
 **Commit**: `52fce21c50065c50f96e08451134576cfe4797ee`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/525)
