@@ -33,9 +33,6 @@ jobs:
     name: Build & Verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - name: Suppress Git Advice
         run: git config --global advice.defaultBranchName false
@@ -70,9 +67,15 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Run Tests
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm test
 
       - name: Build Project
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm run build
 
       - name: Upload Pages Artifact
