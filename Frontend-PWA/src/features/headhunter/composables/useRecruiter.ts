@@ -47,7 +47,7 @@ export function useRecruiter() {
     const activeRecruits = (data.value?.hh || []).filter(
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
-    // [ADR] Parity with Spreadsheet: Show only the top 50 active recruits.
+    // [ADR] Parity with Source: Show only the top 50 active recruits.
     // The "infinite scroll" strategy is implemented via automatic replacement:
     // as items are dismissed, the next best results from the 100-item pre-compiled
     // pool slide in from the "backup" 50, maintaining the 50-recruit window.

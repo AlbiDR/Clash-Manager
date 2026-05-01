@@ -19,7 +19,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
 const mockGetPlayerProfile = vi.fn();
 vi.mock("@core/api/SupabaseClient", () => ({
   getPlayerProfile: (tag: string) => mockGetPlayerProfile(tag),
-  lastHubDiagnosis: { value: null },
+
   lastSyncStatus: { value: null },
   // Include other exports if needed to prevent breakage
   NetworkError: class extends Error { constructor(m:string){super(m); this.name="NetworkError";}}

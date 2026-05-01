@@ -7,7 +7,6 @@ import * as SupabaseClient from "@core/api/SupabaseClient";
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
 const mockRefreshStore = vi.fn();
-const mockRefreshWorker = vi.fn();
 const mockInjectRecruits = vi.fn().mockReturnValue(1);
 const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
@@ -25,8 +24,7 @@ const { mockPingData, mockClashData, mockIsShowcaseMode, mockIsSyntheticMode } =
   const { ref } = require("vue");
   return {
     mockPingData: ref({
-      spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-      sheets: { Headhunter: 789 },
+      dashboardUrl: "https://supabase.com/dashboard/project/clash-manager",
     }),
     mockClashData: ref({
       hh: [
@@ -55,7 +53,6 @@ vi.mock("@core/services/useClashDataStore", () => ({
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
     currentSource: ref("SUPABASE"),
-    hubSyncTime: ref(null),
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
     refresh: mockRefreshStore,
@@ -92,7 +89,6 @@ vi.mock("@core", async (importOriginal) => {
       syncError: ref(null),
       lastSyncTime: ref(1700000000000),
       currentSource: ref("SUPABASE"),
-      hubSyncTime: ref(null),
       lastCompiledTime: ref(null),
       lastFetchedTime: ref(null),
       refresh: mockRefreshStore,
@@ -123,9 +119,8 @@ vi.mock("@core", async (importOriginal) => {
 });
 
 vi.mock("@core/api/SupabaseClient", () => ({
-  isWorkerConfigured: vi.fn().mockReturnValue(false),
   scanRecruitsDirect: vi.fn().mockResolvedValue([]),
-  lastHubDiagnosis: { value: null },
+
   lastSyncStatus: { value: null },
 }));
 

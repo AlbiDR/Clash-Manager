@@ -33,7 +33,7 @@ Manages specialized application modes used for auditing and demonstration.
 ### Connectivity & API Management (NetworkSettings.vue)
 The primary interface for managing the distributed backend lifecycle.
 - **Handshake Discovery**: Reflects the logical API status (Online, Waking, Offline) derived from `@core/api/useApiState`.
-- **Endpoint Management**: Allows for manual overrides of the Google Apps Script Web App URL, persisted via LocalStorage to facilitate cross-environment migration.
+- **Endpoint Management**: Manages connectivity to the Supabase backend and Edge Functions, ensuring the PWA is pointed at the authoritative data source.
 
 ### Notifications & Push Alerts (NotificationSettings.vue)
 Orchestrates the application's reactive feedback loop.

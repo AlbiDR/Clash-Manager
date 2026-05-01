@@ -52,7 +52,7 @@ const props = defineProps<{
   totalCount?: number;
   /** Consolidated info about the remote data source. */
   remoteInfo?: {
-    source: "SUPABASE" | "WORKER";
+    source: "SUPABASE";
     dataAge: string | null;
   };
   footerBadge?: string;

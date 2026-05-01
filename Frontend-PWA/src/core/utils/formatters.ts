@@ -266,14 +266,14 @@ export function cleanTag(tag: string | undefined): string {
 
 /**
  * DESCRIPTION FORMATTER
- * Converts markdown-ish strings from Google Sheet notes into semantic HTML.
+ * Converts markdown-ish strings from remote data sources into semantic HTML.
  *
  * @remarks
  * Implements a custom parsing pipeline for section titles, bold text, and
  * bulleted lists. Specifically handles consecutive list items to wrap them
  * in valid <ul> tags for accessibility.
  *
- * @param text - The raw Markdown-like text from a spreadsheet cell.
+ * @param text - The raw Markdown-like text from a remote data cell.
  * @returns Sanitized and formatted HTML string.
  */
 export function formatHeaderDescription(text: string): string {
