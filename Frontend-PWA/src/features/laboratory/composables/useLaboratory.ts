@@ -61,7 +61,7 @@ let lastAnalyzedTag: string | null = null;
  *
  * **Behavioral Logic:**
  * - Triggers asynchronous simulation via `requestIdleCallback`.
- * - Fetches data from the GAS backend when `playerTag` changes.
+ * - Fetches data from the Supabase backend when `playerTag` changes.
  */
 export function useLaboratory() {
   const store = useLaboratoryStore();

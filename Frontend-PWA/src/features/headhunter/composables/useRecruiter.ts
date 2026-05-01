@@ -16,33 +16,28 @@ import type { Recruit } from "@core/types";
  * COMPOSABLE: useRecruiter
  *
  * @remarks
- * Specialized logic for the Recruiter view (Headhunter). Extracts data orchestration,
- * sorting strategies, turbo scan logic, and console controller configuration from the view.
+ * Specialized logic for the Recruiter view (Headhunter). Orchestrates Manual Scouting 
+ * and background synchronization with the Supabase backend.
  *
  * @returns
  * - All state and methods from `useConsoleController` (search, sort, selection).
- * - `sheetUrl`: Computed URL to the Headhunter tab in the backing Google Sheet.
  * - `isHydrated`: Indicates if initial data has been loaded from IndexedDB.
  * - `isShowcaseMode`: Boolean flag for demo/showcase state.
- * - `isRefreshing`: Indicates if a standard GAS sync is in progress.
- * - `isTurboScanning`: Indicates if a direct-to-worker "Turbo Scan" is active.
- * - `syncError`: Error message from the last sync attempt.
- * - `sortOptions`: Configuration for the recruitment-specific sorting UI.
- * - `handleRefresh`: Orchestrates both Turbo Scan and full GAS sync.
- * - `dismissBulk`: Triggers dismissal for all currently selected recruits.
+ * - `isRefreshing`: Indicates if a background sync is in progress.
+ * - `isTurboScanning`: Indicates if a manual scouting trigger is active.
  * - `onSelectScore`: Selection helper for score-based filtering.
  * - `handleSearchUpdate`: Proxy for controller search updates.
  *
  * @sideeffects
  * - Updates local state and IndexedDB via `updateLocalData`.
- * - Triggers asynchronous dismissals on the GAS backend.
+ * - Triggers asynchronous dismissals on the Supabase backend.
  * - Interacts with `useRecruitBlacklist` to manage dismissal tombstones.
  * - Dispatches toast notifications for user feedback.
  */
 export function useRecruiter() {
   const clashDataStore = useClashDataStore();
   const { data } = storeToRefs(clashDataStore);
-  const { refresh: refreshGas } = clashDataStore;
+  const { refresh: refreshStore } = clashDataStore;
   const { dismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
   const { undo, success, info } = useToast();
@@ -91,7 +86,7 @@ export function useRecruiter() {
    * Implements a "Zero Latency" pattern for UI responsiveness.
    *
    * 1. POINT-OF-IMPACT: Hide recruits immediately using local tombstones.
-   * 2. BACKGROUND SYNC: Dispatch the dismissal to the GAS backend.
+   * 2. BACKGROUND SYNC: Dispatch the dismissal to the Supabase backend.
    * 3. RECOVERY: Roll back local state only if the server explicitly rejects the change.
    */
   /**
@@ -141,7 +136,7 @@ export function useRecruiter() {
       } else if (isBackendContacted) {
         // Fallback if we don't have local data
         info("Restoring from server...");
-        refreshGas();
+        refreshStore();
       }
 
       success("Dismissal cancelled");

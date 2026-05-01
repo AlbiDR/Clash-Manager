@@ -6,7 +6,7 @@ import * as SupabaseClient from "@core/api/SupabaseClient";
 
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
-const mockRefreshGas = vi.fn();
+const mockRefreshStore = vi.fn();
 const mockRefreshWorker = vi.fn();
 const mockInjectRecruits = vi.fn().mockReturnValue(1);
 const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
@@ -54,12 +54,12 @@ vi.mock("@core/services/useClashDataStore", () => ({
     isRefreshing: ref(false),
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
-    currentSource: ref("GAS"),
+    currentSource: ref("SUPABASE"),
     hubSyncTime: ref(null),
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
-    refresh: mockRefreshGas,
-    refreshFromSupabase: mockRefreshGas,
+    refresh: mockRefreshStore,
+    refreshFromSupabase: mockRefreshStore,
     updateLocalData: mockUpdateLocalData,
   })),
 }));
@@ -91,12 +91,12 @@ vi.mock("@core", async (importOriginal) => {
       isRefreshing: ref(false),
       syncError: ref(null),
       lastSyncTime: ref(1700000000000),
-      currentSource: ref("GAS"),
+      currentSource: ref("SUPABASE"),
       hubSyncTime: ref(null),
       lastCompiledTime: ref(null),
       lastFetchedTime: ref(null),
-      refresh: mockRefreshGas,
-      refreshFromSupabase: mockRefreshGas,
+      refresh: mockRefreshStore,
+      refreshFromSupabase: mockRefreshStore,
       updateLocalData: mockUpdateLocalData,
     })),
     useShowcaseMode: vi.fn(() => ({
@@ -228,7 +228,7 @@ describe("useRecruiter", () => {
     it("calls refreshFromSupabase from the store", async () => {
       const { refresh } = useRecruiter();
       await refresh();
-      expect(mockRefreshGas).toHaveBeenCalled();
+      expect(mockRefreshStore).toHaveBeenCalled();
     });
   });
 
