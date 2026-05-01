@@ -48,6 +48,7 @@ export async function runProfiler(
                         const trophies = p.trophies || 0;
                         const donations = p.totalDonations || 0;
                         const war = p.warDayWins || 0;
+                        const cards = p.challengeCardsWon || 0;
                         
                         // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
                         const rawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
@@ -57,6 +58,7 @@ export async function runProfiler(
                             name: p.name,
                             trophies,
                             donations,
+                            cards,
                             war,
                             rawScore,
                             source: candidates.get(tag) || 'UNKNOWN'

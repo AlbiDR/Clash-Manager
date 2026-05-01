@@ -102,7 +102,7 @@ function mapSbHeadhunterRow(row: any): Recruit {
       don: Number(row.donations) || 0,
       war: Number(row.war_wins) || 0,
       ago: row.found_date || '-',
-      cards: 0,
+      cards: Number(row.cards) || 0,
     },
   };
 }
