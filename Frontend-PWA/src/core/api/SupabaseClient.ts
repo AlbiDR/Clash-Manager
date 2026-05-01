@@ -77,7 +77,7 @@ function mapSbRosterRow(row: any): LeaderboardMember {
     dt: 0, // roster_view currently does not provide a score delta
     d: {
       role: row.role || '',
-      days: Number(row.tenure_days) || 0,
+      days: Math.floor(Number(row.tenure_days)) || 0,
       avg: Number(row.donations) || 0,
       seen: row.last_seen_at || '-',
       rate: row.stability_index ? `${Math.round(Number(row.stability_index) * 100)}%` : '-',
