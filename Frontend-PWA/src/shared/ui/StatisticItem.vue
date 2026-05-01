@@ -26,8 +26,8 @@ const tooltipVal = computed(() => {
 
 <template>
   <div v-if="props.loading" class="stat-item skeleton-anim">
-    <div class="sk-label-box"></div>
-    <div class="sk-value-box"></div>
+    <div class="label"><div class="sk-label-box"></div></div>
+    <div class="value"><div class="sk-value-box"></div></div>
   </div>
   <div v-else class="stat-item hit-target" v-tooltip="tooltipVal" :aria-label="tooltipVal ? `${props.label}: ${props.value}. ${tooltipVal}` : `${props.label}: ${props.value}`">
     <span class="label" :aria-hidden="'true'">{{ props.label }}</span>
