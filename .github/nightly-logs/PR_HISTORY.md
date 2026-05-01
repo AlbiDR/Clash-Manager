@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-01] PR #522: fix(harden): secure Supabase data ingress and eliminate any pathogens
+**Commit**: `e860d8f759e730072b12aed09775b7af05b555a0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/522)
+
+### Description
+I have secured the Supabase data ingress boundary in the Frontend PWA. This change defines new Valibot schemas for raw Supabase roster and headhunter rows and integrates them into the `SupabaseClient` mapping logic. This eliminates the use of 'any' types and ensures that data from external Supabase views is validated before it enters the application's domain logic, adhering to the CleanStack Architecture standards. Additionally, I renamed several anemic variables to improve code clarity and structural purity. Verification was performed by running 59 relevant tests, all of which passed.
+
+---
+*PR created automatically by Jules for task [8568282731996792550](https://jules.google.com/task/8568282731996792550) started by @AlbiDR*
+
+---
+
 ## [2026-04-29] PR #520: chore(deps): bump knip from ^6.3.0 to ^6.7.0
 **Commit**: `4fbf1b279f9841caa4c33c83ddc5029c2cf25bab`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/520)
