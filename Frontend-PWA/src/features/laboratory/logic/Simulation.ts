@@ -245,6 +245,15 @@ export function* calculateProgressionPath(
   // Initialize Priority Queue
   const pq = new PriorityQueue<UpgradeCandidate>((a, b) => a.efficiencyIndex - b.efficiencyIndex);
 
+  // Pre-calculate target XP for Level Projection
+  let targetXp = -1;
+  if (settings.strategy === "Level Projection" && settings.targetLevel) {
+    const targetRow = KING_XP_TABLE.find(row => row.level === settings.targetLevel);
+    if (targetRow) {
+      targetXp = Number(targetRow.cumulative);
+    }
+  }
+
   // Initial population of the queue
   for (let i = 0; i < currentState.roster.length; i++) {
     const candidate = buildCandidate(currentState.roster[i], i, currentState.inventory, settings);
@@ -258,9 +267,8 @@ export function* calculateProgressionPath(
     const bestCandidate = pq.pop()!;
 
     // Check target level for Projection strategy
-    if (settings.strategy === "Level Projection" && settings.targetLevel) {
-      const kingLevel = calculateKingLevel(currentState.totalXp);
-      if (kingLevel >= settings.targetLevel) break;
+    if (targetXp !== -1 && Number(currentState.totalXp) >= targetXp) {
+      break;
     }
 
     // Apply the upgrade
