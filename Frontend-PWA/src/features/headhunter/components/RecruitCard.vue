@@ -83,7 +83,7 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
 
     <!-- [SLOT] EXPANDED CONTENT: Detailed recruitment metrics and actions. -->
     <template #expanded-content>
-      <StatsGrid :columns="3" :loading="props.appIsRefreshing">
+      <StatsGrid :columns="2" :loading="props.appIsRefreshing">
         <StatisticItem
           label="Donations"
           :value="props.recruit.d.don"
@@ -108,6 +108,14 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
           benchmark-metric="cardsWon"
           :benchmark-raw-value="props.recruit.d.cards || 0"
         />
+        <StatisticItem
+          label="RPoS"
+          :value="props.recruit.potentialRawScore.toLocaleString()"
+          :loading="props.appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="score"
+          :benchmark-raw-value="props.recruit.potentialScore"
+        />
       </StatsGrid>
 
       <CardActions
@@ -124,6 +132,6 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
 /* Content specific styles only */
 
 .card-actions-margin {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 </style>
