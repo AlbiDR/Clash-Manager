@@ -112,3 +112,4 @@ Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
 Frontend-PWA/src/features/roster/composables/composables-tests/useLeaderboard.spec.ts
 Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts
 Backend-Worker/src/services/RecruitmentService.ts
+Frontend-PWA/src/app/App.vue
