@@ -102,7 +102,7 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
         />
         <StatisticItem
           label="Cards Won"
-          :value="props.recruit.d.cards || '-'"
+          :value="props.recruit.d.cards"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="cardsWon"

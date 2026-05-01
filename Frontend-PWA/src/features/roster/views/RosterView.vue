@@ -60,7 +60,11 @@ const {
           :key="item.id"
           v-memo="getMemoKeys(item.id, [
             item.performanceScore,
-            item.dt
+            item.dt,
+            item.d.rate,
+            item.d.wfame,
+            item.d.avg,
+            item.d.seen
           ])"
           :id="`member-${item.id}`"
           :member="item"
