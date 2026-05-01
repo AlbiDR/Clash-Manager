@@ -68,12 +68,19 @@ watch(isOnline, (online, wasOnline) => {
 // SMART UPDATE: Automated PWA registration and update logic
 const { updateServiceWorker } = useRegisterSW({
   immediate: false, // Fix: Defer registration until window.onload to prevent PSI crashes
-  onRegistered(r: any) {
+  /**
+   * Post-registration lifecycle hook.
+   * Rationale: Establishes a background polling mechanism to check for
+   * Service Worker updates every hour, ensuring clients don't stay stale.
+   *
+   * @param registration - The authoritative SW registration object.
+   */
+  onRegistered(registration: ServiceWorkerRegistration | undefined) {
     // Check for updates every hour
-    r &&
+    registration &&
       setInterval(
         () => {
-          r.update();
+          registration.update();
         },
         60 * 60 * 1000,
       );
