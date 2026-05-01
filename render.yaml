@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 AlbiDR
-#
-# DECOMMISSIONED: Backend-Worker (Render Muscle) has been superseded by
-# Supabase Edge Functions and pg_cron scheduled jobs.
-# This file is retained as a historical reference only.
-# No active services are defined here.

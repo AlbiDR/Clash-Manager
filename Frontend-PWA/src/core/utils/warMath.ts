@@ -81,10 +81,10 @@ export interface HistoryEntry {
  *
  * @remarks
  * The parser is resilient to different delimiter styles (pipe or comma) used
- * by various versions of the GAS backend. It utilizes a strict regex for
+ * in historical data strings. It utilizes a strict regex for
  * week ID validation (YY'W'WW format).
  *
- * THREAT: Malformed history strings from legacy GAS versions causing UI crashes.
+ * THREAT: Malformed history strings causing UI crashes.
  * Rationale: Explicitly filtering Boolean and trimming ensures that whitespace
  * or trailing delimiters do not result in "undefined" entries in the array.
  */

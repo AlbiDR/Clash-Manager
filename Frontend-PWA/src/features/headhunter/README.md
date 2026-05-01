@@ -11,7 +11,7 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly siloed. No imports from `Laboratory` or `Roster`.
 - **Dependencies**:
-  - `@core/api/GasClient`: Backend communication (Dismissal/Turbo Scan).
+  - `@core/api/SupabaseClient`: Backend communication (Dismissal/Scouting).
   - `@core/services/useBadge`: External notification badges.
   - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
   - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
@@ -20,7 +20,7 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 
 ### Recruitment Orchestrator (useRecruiter.ts)
 The primary behavioral engine for the Headhunter interface.
-- **Dual-Phase Sync**: Orchestrates **Turbo Scan** (direct-to-worker fetch for discovery) and **GAS Sync** (consistency check with the backing spreadsheet).
+- **Dual-Phase Sync**: Orchestrates **Manual Scouting** (GitHub workflow trigger for discovery) and **Background Sync** (consistency check with the Supabase view).
 - **Hybrid Merge**: Injecting worker results directly into local reactive state to reduce perceived latency.
 - **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Score, Trophies, Wins) and deep-linking.
 
@@ -37,12 +37,12 @@ Manages the "tombstone" state for dismissed recruits.
 
 ## Key Constraints & Why Not X?
 
-- **Why Turbo Scan?**: Traditional GAS execution can take 5-10 seconds. Turbo Scan bypasses the GAS orchestration layer to query the Cloud Worker directly, delivering recruitment updates in <500ms.
-- **Why Tombstones?**: To ensure "Visual Purity". If a user dismisses a recruit, they should never see it again, even if a subsequent background refresh returns a stale payload from a Google Sheet that hasn't finished its write cycle yet.
+- **Why Manual Scouting?**: Controlled scouting runs via GitHub Actions allow for audited, high-fidelity metrics extraction and governance logging.
+- **Why Tombstones?**: To ensure "Visual Purity". If a user dismisses a recruit, they should never see it again, even if a subsequent background refresh returns a stale payload before the backend state has fully converged.
 - **No Cross-Feature Imports**: Headhunter must remain context-agnostic. It knows about "Recruits" but nothing about "Clan Members". Evaluation against internal benchmarks is handled server-side in the `Scoring_Kernel`.
 
 ## Data Flow
 1. **Ingestion**: `useRecruiter` triggers a sync.
 2. **Scoring**: Candidates are scored server-side using the **Hybrid Benchmark** (PeS/PoS logic).
 3. **Display**: Recruits are filtered against the local **Blacklist** (tombstones) and rendered via the `ConsoleLayout`.
-4. **Action**: User dismisses a recruit -> Tombstone injected -> GAS request dispatched -> Broadcast sent to other tabs.
+4. **Action**: User dismisses a recruit -> Tombstone injected -> Supabase request dispatched -> Broadcast sent to other tabs.

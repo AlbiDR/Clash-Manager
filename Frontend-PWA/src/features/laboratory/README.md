@@ -13,12 +13,12 @@ The Laboratory allows users to project their future King Level and resource cons
 - **Dependencies**:
   - `@core/utils/economy`: Branded currency arithmetic.
   - `@core/utils/PriorityQueue`: O(log N) candidate selection.
-  - `@core/api/GasClient`: Profile fetching.
+  - `@core/api/SupabaseClient`: Profile fetching.
 
 ## Logic Subsystems
 
 ### Validation Boundary (ProfileHydrator.ts)
-The Laboratory implements a strict validation boundary. Raw data from the Google Apps Script backend or external RoyaleAPI payloads is passed through `ProfileInputSchema` (Valibot) before being transformed into domain-specific types.
+The Laboratory implements a strict validation boundary. Raw data from the Supabase backend or external RoyaleAPI payloads is passed through `ProfileInputSchema` (Valibot) before being transformed into domain-specific types.
 
 ### Progression Engine (Simulation.ts)
 A non-blocking, generator-based engine that calculates the most efficient upgrade path.

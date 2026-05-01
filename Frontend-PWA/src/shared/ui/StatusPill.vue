@@ -8,7 +8,7 @@ const props = withDefaults(defineProps<{
   nominal?: boolean;
   direction?: "left" | "right";
   remoteInfo?: {
-    source: "SUPABASE" | "WORKER" | "GAS";
+    source: "SUPABASE" | "WORKER";
     dataAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
@@ -76,17 +76,12 @@ const handleToggle = () => {
                 </svg>
                 HUB
               </template>
-              <template v-else>
-                GAS
-              </template>
             </span>
             <span v-if="props.remoteInfo.dataAge" class="separator">|</span>
             <span v-if="props.remoteInfo.dataAge" class="hub-age">
               {{ props.remoteInfo.dataAge }}
             </span>
-            <span v-if="props.remoteInfo.source === 'GAS' && props.remoteInfo.diagnosis" class="diagnosis-tag">
-              ({{ props.remoteInfo.diagnosis }})
-            </span>
+
           </div>
         </template>
         <template v-else>
@@ -221,10 +216,7 @@ const handleToggle = () => {
   background: var(--sys-primary-container);
 }
 
-.hub-source.gas {
-  color: var(--sys-warning);
-  background: var(--sys-warning-container);
-}
+
 
 .hub-age {
   color: var(--sys-text-secondary);

@@ -5,7 +5,7 @@ import { setActivePinia, createPinia } from 'pinia';
 // --- Mocks ---
 
 const mockClashData = ref({ playerTag: '#TAG123' });
-const mockCurrentSource = ref('GAS_BACKEND');
+const mockCurrentSource = ref('SUPABASE');
 const mockRemoteSyncTime = ref(Date.now());
 
 vi.mock("@core/services/useClashDataStore", () => ({

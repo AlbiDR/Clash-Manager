@@ -49,20 +49,20 @@ describe("StatusPill Hub Source Display", () => {
     expect(wrapper.text()).toContain("5m ago");
   });
 
-  it("displays GAS source when hubInfo.source is GAS", async () => {
+  it("displays SUPABASE source when hubInfo.source is SUPABASE", async () => {
     const wrapper = mount(StatusPill, {
       props: { 
         type: "success", 
         text: "Nominal", 
-        remoteInfo: { source: "GAS", dataAge: "10m ago" } 
+        remoteInfo: { source: "SUPABASE", dataAge: "10m ago" } 
       },
     });
     
     // Expand
     await wrapper.trigger("click");
     
-    expect(wrapper.text()).toContain("GAS");
-    expect(wrapper.find(".hub-source.gas").exists()).toBe(true);
+    expect(wrapper.text()).toContain("DB");
+    expect(wrapper.find(".hub-source.supabase").exists()).toBe(true);
     expect(wrapper.text()).toContain("10m ago");
   });
 });
