@@ -38,8 +38,12 @@ SELECT
     substrate.format_tenure(s.tenure_days)         AS tenure_label,
     s.tenure_days,
     (
-        COALESCE(m.decks_used_weekly, 0)::numeric / 
-        (CASE WHEN (SELECT is_colosseum_week FROM features.tactical_awareness_view) THEN 20.0 ELSE 16.0 END)
+        COALESCE(m.decks_used_weekly, 0)::numeric /
+        (CASE WHEN EXISTS (
+            SELECT 1 FROM substrate.raw_river_race
+            WHERE (payload->>'sectionIndex')::INT = 3
+            LIMIT 1
+        ) THEN 20.0 ELSE 16.0 END)
     ) * 100.0 AS war_participation
 FROM drivers.members m
 LEFT JOIN features.scoring_view s ON s.player_tag = m.player_tag
