@@ -83,6 +83,7 @@ export async function runRescan(
                     .update({
                         trophies: p.trophies || 0,
                         donations: p.totalDonations || 0,
+                        cards: p.challengeCardsWon || 0,
                         war_wins: p.warDayWins || 0,
                         status: newStatus,
                         last_scan: new Date().toISOString()
