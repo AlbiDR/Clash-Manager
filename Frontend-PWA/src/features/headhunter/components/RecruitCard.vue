@@ -110,7 +110,7 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
         />
         <StatisticItem
           label="RPoS"
-          :value="props.recruit.potentialRawScore.toLocaleString()"
+          :value="props.recruit.potentialRawScore.toLocaleString(undefined, { maximumFractionDigits: 0 })"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="score"
